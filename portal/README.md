@@ -1,41 +1,22 @@
-# Classroom Upload Portal
+# Classroom Portal (Moderated Accounts + Uploads)
 
-This is a protected upload website for publishing student ZIP projects to GitHub Pages under one teacher-owned GitHub account.
+This portal is the backend companion for the GitHub Pages hub.
 
-## What it does
-- Login-protected upload form.
-- Accepts project ZIP uploads.
-- Finds the folder that contains `index.html`.
-- Runs `/Users/evanscandrett/Documents/GitHubTutorialSTEAM/publish_to_pages.js` automatically.
-- Returns:
-  - `LIVE LINK`
-  - `TUTORIAL LINK`
+What it adds:
+- Teacher login (`Champion` / `CPA` by default).
+- Student account requests (`/register`).
+- Teacher approval/rejection of requested usernames.
+- Student/teacher project ZIP upload.
+- Automatic publish via `publish_to_pages.js`.
+- Automatic append of project entries into `data/projects.json`.
 
-## Default login
-- Username: `champion`
-- Password: `CPA`
+## Start
 
-Change these immediately for real use.
-
-## Setup
-
-1. Authenticate GitHub CLI:
 ```bash
-gh auth login
-gh auth status
-```
+cd /Users/evanscandrett/Documents/GitHubTutorialSTEAM
 
-2. Optional: generate a hashed password:
-```bash
-node /Users/evanscandrett/Documents/GitHubTutorialSTEAM/portal/hash_password.js "YourStrongPassword"
-```
-
-3. Start the portal:
-```bash
-export PORTAL_USER="champion"
-export PORTAL_PASS="CPA"
-# Better: use hashed password instead of PORTAL_PASS
-# export PORTAL_PASS_HASH="scrypt$<saltHex>$<hashHex>"
+export ADMIN_USER="Champion"
+export ADMIN_PASS="CPA"
 export GITHUB_OWNER="MrScandrett"
 export REPO_PREFIX="student-showcase-"
 export PORT="8787"
@@ -43,15 +24,26 @@ export PORT="8787"
 node /Users/evanscandrett/Documents/GitHubTutorialSTEAM/portal/server.js
 ```
 
-4. Open:
-```text
-http://localhost:8787
-```
+Open:
+- `http://localhost:8787/login`
 
-## Security notes
-- This is a lightweight gate, not full identity management.
-- For better protection:
-  - use `PORTAL_PASS_HASH` (not plain `PORTAL_PASS`)
-  - run behind HTTPS and reverse proxy auth in production
-  - avoid student names in aliases/repo names
-  - rotate credentials regularly
+## Routes
+
+- `GET /login` teacher/student sign in
+- `GET /register` student account request
+- `GET /dashboard` teacher moderation + upload, or student upload
+- `POST /approve-user` teacher moderation action
+- `POST /reject-user` teacher moderation action
+- `POST /upload` publish and add project to hub
+
+## Data files
+
+Runtime account data is stored locally (ignored by git):
+- `portal/data/users.json`
+- `portal/data/pending_users.json`
+
+## Notes
+
+- Requires `git`, `gh`, and `unzip` on host machine.
+- Requires `gh auth login` completed.
+- Uploaded project ZIP must contain `index.html`.
