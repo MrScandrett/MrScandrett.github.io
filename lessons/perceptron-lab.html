@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Perceptron Lab · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Perceptron Lab lesson in the AI Origins unit." />
+  <meta name="description" content="Mark I Perceptron exhibit and lab in the AI Origins unit." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
 </head>
 <body>
@@ -23,32 +23,136 @@
   </header>
 
   <main id="main-content">
-    <section class="hero">
-      <p class="eyebrow">AI Origins · Lesson 03</p>
-      <h1>Perceptron Lab</h1>
-      <p>Train a one-layer classifier from weighted inputs and visualize why linear decision boundaries matter.</p>
+    <section class="section" id="perceptron-live">
+      <div class="section-head">
+        <p class="eyebrow">AI ORIGINS · LESSON 03</p>
+        <h1>MARK I PERCEPTRON DEMO CONSOLE</h1>
+        <p>Experience the system first: two channels into a decision unit, tuned like 1958 research hardware.</p>
+      </div>
+
+      <article class="card perceptron-lab perceptron-console">
+        <p class="perceptron-console-stamp">IBM 704 / MARK I PERCEPTRON / ROSENBLATT DEMONSTRATION MODE</p>
+
+        <div class="perceptron-grid">
+          <section class="perceptron-panel">
+            <h3>RETINA CHANNELS</h3>
+            <label class="perceptron-field" for="p-x1">
+              <span>X1 CHANNEL</span>
+              <input id="p-x1" type="range" min="0" max="1" step="0.1" value="1" />
+            </label>
+            <label class="perceptron-field" for="p-x2">
+              <span>X2 CHANNEL</span>
+              <input id="p-x2" type="range" min="0" max="1" step="0.1" value="0" />
+            </label>
+            <div class="perceptron-inline-values">
+              <p>X1 <strong id="p-x1-value" class="instrument">1.0</strong></p>
+              <p>X2 <strong id="p-x2-value" class="instrument">0.0</strong></p>
+            </div>
+          </section>
+
+          <section class="perceptron-panel">
+            <h3>DECISION UNIT</h3>
+            <button id="p-predict" type="button">RUN PREDICTION</button>
+            <ul class="perceptron-metrics">
+              <li>Z (WEIGHTED SUM): <strong id="p-sum" class="instrument">0.20</strong></li>
+              <li>Y^ (OUTPUT): <strong id="p-prediction" class="instrument">1</strong></li>
+              <li>THRESHOLD (-BIAS): <strong id="p-threshold" class="instrument">0.20</strong></li>
+              <li>CASE STATUS: <strong id="p-dataset-case" class="instrument">AND: WORKING CASE</strong></li>
+            </ul>
+          </section>
+
+          <section class="perceptron-panel">
+            <h3>CONTROL SETTINGS</h3>
+            <label class="perceptron-field" for="p-w1">
+              <span>WEIGHT W1</span>
+              <input id="p-w1" type="number" step="0.1" value="0.4" />
+            </label>
+            <label class="perceptron-field" for="p-w2">
+              <span>WEIGHT W2</span>
+              <input id="p-w2" type="number" step="0.1" value="0.4" />
+            </label>
+            <label class="perceptron-field" for="p-bias">
+              <span>BIAS</span>
+              <input id="p-bias" type="number" step="0.1" value="-0.2" />
+            </label>
+            <label class="perceptron-field" for="p-lr">
+              <span>LEARNING RATE</span>
+              <input id="p-lr" type="number" step="0.05" min="0.05" value="0.2" />
+            </label>
+          </section>
+        </div>
+
+        <section class="perceptron-presets" aria-label="Demo presets">
+          <h3>DEMO PRESETS</h3>
+          <div class="perceptron-presets-grid">
+            <button type="button" data-preset="and" class="is-active">AND: WORKING CASE</button>
+            <button type="button" data-preset="or">OR: WORKING CASE</button>
+            <button type="button" data-preset="nand">NAND: WORKING CASE</button>
+            <button type="button" data-preset="xor">XOR: IMPOSSIBLE CASE (SINGLE LAYER)</button>
+          </div>
+        </section>
+      </article>
+
+      <details class="perceptron-diagnostics">
+        <summary>OPEN DIAGNOSTICS</summary>
+        <div class="perceptron-diagnostics-body">
+          <div class="perceptron-actions">
+            <button id="p-train-1" type="button">TRAIN 1 EPOCH</button>
+            <button id="p-train-5" type="button">TRAIN BURST (5)</button>
+            <button id="p-reset" type="button">RESET WEIGHTS</button>
+          </div>
+
+          <ul class="perceptron-metrics">
+            <li>DATASET ACCURACY: <strong id="p-accuracy" class="instrument">0 / 4</strong></li>
+            <li>EPOCHS TRAINED: <strong id="p-epochs" class="instrument">0</strong></li>
+            <li>LINEARLY SEPARABLE: <strong id="p-separable" class="instrument">YES</strong></li>
+          </ul>
+
+          <div class="perceptron-table-wrap">
+            <table class="perceptron-table">
+              <caption>LAB LOGBOOK</caption>
+              <thead>
+                <tr>
+                  <th scope="col">x1</th>
+                  <th scope="col">x2</th>
+                  <th scope="col">target</th>
+                  <th scope="col">pred</th>
+                  <th scope="col">error</th>
+                </tr>
+              </thead>
+              <tbody id="p-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
     </section>
 
-    <section class="columns">
-      <article class="card">
-        <h3>Learning Goals</h3>
-        <ul class="rhythm">
-          <li><span>Goal 1</span><strong>Describe weighted sums and activation thresholds</strong></li>
-          <li><span>Goal 2</span><strong>Compare correct and incorrect classifications</strong></li>
-          <li><span>Goal 3</span><strong>Tune weights to reduce obvious errors</strong></li>
-          <li><span>Goal 4</span><strong>Explain why some datasets are not linearly separable</strong></li>
-        </ul>
-      </article>
+    <section class="section perceptron-brief" id="perceptron-limits">
+      <div class="section-head">
+        <h2>Limit Notes</h2>
+      </div>
+      <div class="perceptron-brief-grid">
+        <article class="card">
+          <h3>WHAT THIS IS</h3>
+          <p>A perceptron is a single-layer linear classifier. With two inputs, it draws one straight dividing line in 2D feature space.</p>
+        </article>
 
-      <article class="card">
-        <h3>Build Tasks</h3>
-        <ul class="rhythm">
-          <li><span>Task 1</span><strong>Set up a small labeled dataset</strong></li>
-          <li><span>Task 2</span><strong>Implement prediction from weights and bias</strong></li>
-          <li><span>Task 3</span><strong>Add a simple update rule for training</strong></li>
-          <li><span>Task 4</span><strong>Chart results before and after training</strong></li>
-        </ul>
-      </article>
+        <article class="card">
+          <h3>WHAT IT CAN'T DO</h3>
+          <p>It cannot solve XOR with two inputs, because XOR is not linearly separable. No single line can split XOR classes correctly.</p>
+        </article>
+
+        <article class="card">
+          <h3>HOW TO USE IT LIKE IT'S 1958</h3>
+          <ul class="perceptron-prompts">
+            <li>SET CHANNELS TO (1,0). RUN.</li>
+            <li>ADJUST W1 UPWARD UNTIL OUTPUT FLIPS.</li>
+            <li>USE SMALL LEARNING RATES.</li>
+            <li>TRAIN IN SHORT BURSTS; READ THE LOGBOOK.</li>
+            <li>SWITCH DATASET TO XOR. OBSERVE FAILURE MODE.</li>
+          </ul>
+        </article>
+      </div>
     </section>
 
     <section class="section" id="mark-i-history">
@@ -65,7 +169,7 @@
             <li><span>Hardware Context</span><strong>Implemented on an IBM 704 computer</strong></li>
             <li><span>Physical Machine</span><strong>Mark I Perceptron</strong></li>
           </ul>
-          <p class="history-note">Use this distinction in class: <strong>Perceptron</strong> is the general model; <strong>Mark I Perceptron</strong> was the demonstrated physical machine.</p>
+          <p class="history-note">Perceptron is the model. Mark I Perceptron was the physical machine.</p>
         </article>
 
         <article class="card timeline-card">
@@ -94,95 +198,6 @@
           </ol>
         </article>
       </div>
-    </section>
-
-    <section class="section" id="perceptron-live">
-      <div class="section-head">
-        <h2>Live Mark I Perceptron Emulator</h2>
-        <p>Adjust weights, bias, and learning rate, then train on AND, OR, NAND, and XOR datasets.</p>
-      </div>
-      <article class="card perceptron-lab">
-        <div class="perceptron-grid">
-          <div class="perceptron-panel">
-            <h3>Input Channels</h3>
-            <p class="perceptron-note">Simplified retina channels feeding a perceptron decision unit.</p>
-            <label class="perceptron-field" for="p-x1">
-              <span>Input X1</span>
-              <input id="p-x1" type="range" min="0" max="1" step="0.1" value="1" />
-            </label>
-            <label class="perceptron-field" for="p-x2">
-              <span>Input X2</span>
-              <input id="p-x2" type="range" min="0" max="1" step="0.1" value="0" />
-            </label>
-            <div class="perceptron-inline-values">
-              <p>X1 = <strong id="p-x1-value">1.0</strong></p>
-              <p>X2 = <strong id="p-x2-value">0.0</strong></p>
-            </div>
-            <button id="p-predict" type="button">Run Prediction</button>
-          </div>
-
-          <div class="perceptron-panel">
-            <h3>Parameters</h3>
-            <label class="perceptron-field" for="p-w1">
-              <span>Weight W1</span>
-              <input id="p-w1" type="number" step="0.1" value="0.4" />
-            </label>
-            <label class="perceptron-field" for="p-w2">
-              <span>Weight W2</span>
-              <input id="p-w2" type="number" step="0.1" value="0.4" />
-            </label>
-            <label class="perceptron-field" for="p-bias">
-              <span>Bias</span>
-              <input id="p-bias" type="number" step="0.1" value="-0.2" />
-            </label>
-            <label class="perceptron-field" for="p-lr">
-              <span>Learning Rate</span>
-              <input id="p-lr" type="number" step="0.05" min="0.05" value="0.2" />
-            </label>
-          </div>
-
-          <div class="perceptron-panel">
-            <h3>Training</h3>
-            <label class="perceptron-field" for="p-dataset">
-              <span>Dataset</span>
-              <select id="p-dataset">
-                <option value="and">AND (linearly separable)</option>
-                <option value="or">OR (linearly separable)</option>
-                <option value="nand">NAND (linearly separable)</option>
-                <option value="xor">XOR (not linearly separable)</option>
-              </select>
-            </label>
-            <div class="perceptron-actions">
-              <button id="p-train-1" type="button">Train 1 Epoch</button>
-              <button id="p-train-10" type="button">Train 10 Epochs</button>
-              <button id="p-reset" type="button">Reset Weights</button>
-            </div>
-            <ul class="perceptron-metrics">
-              <li>Weighted sum z: <strong id="p-sum">0.20</strong></li>
-              <li>Prediction y^: <strong id="p-prediction">1</strong></li>
-              <li>Dataset accuracy: <strong id="p-accuracy">0 / 4</strong></li>
-              <li>Epochs trained: <strong id="p-epochs">0</strong></li>
-              <li>Linearly separable: <strong id="p-separable">Yes</strong></li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="perceptron-table-wrap">
-          <table class="perceptron-table">
-            <caption>Current dataset evaluation</caption>
-            <thead>
-              <tr>
-                <th scope="col">x1</th>
-                <th scope="col">x2</th>
-                <th scope="col">target</th>
-                <th scope="col">pred</th>
-                <th scope="col">error</th>
-              </tr>
-            </thead>
-            <tbody id="p-table-body"></tbody>
-          </table>
-        </div>
-      </article>
     </section>
 
     <section class="section">

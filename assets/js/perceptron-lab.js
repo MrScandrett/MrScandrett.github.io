@@ -8,18 +8,24 @@ const w2Input = document.getElementById("p-w2");
 const biasInput = document.getElementById("p-bias");
 const lrInput = document.getElementById("p-lr");
 
-const datasetSelect = document.getElementById("p-dataset");
 const predictButton = document.getElementById("p-predict");
 const train1Button = document.getElementById("p-train-1");
-const train10Button = document.getElementById("p-train-10");
+const train5Button = document.getElementById("p-train-5");
 const resetButton = document.getElementById("p-reset");
 
 const sumOutput = document.getElementById("p-sum");
 const predictionOutput = document.getElementById("p-prediction");
+const thresholdOutput = document.getElementById("p-threshold");
+const datasetCaseOutput = document.getElementById("p-dataset-case");
+
 const accuracyOutput = document.getElementById("p-accuracy");
 const epochsOutput = document.getElementById("p-epochs");
 const separableOutput = document.getElementById("p-separable");
 const tableBody = document.getElementById("p-table-body");
+
+const presetButtons = Array.from(document.querySelectorAll("[data-preset]"));
+const diagnostics = document.querySelector(".perceptron-diagnostics");
+const diagnosticsSummary = diagnostics ? diagnostics.querySelector("summary") : null;
 
 const required = [
   x1Input,
@@ -30,20 +36,21 @@ const required = [
   w2Input,
   biasInput,
   lrInput,
-  datasetSelect,
   predictButton,
   train1Button,
-  train10Button,
+  train5Button,
   resetButton,
   sumOutput,
   predictionOutput,
+  thresholdOutput,
+  datasetCaseOutput,
   accuracyOutput,
   epochsOutput,
   separableOutput,
   tableBody
 ];
 
-if (required.some((node) => !node)) {
+if (required.some((node) => !node) || presetButtons.length === 0) {
   throw new Error("Perceptron Lab could not initialize. Missing required DOM nodes.");
 }
 
@@ -56,7 +63,7 @@ const DEFAULT_PARAMS = {
 
 const DATASETS = {
   and: {
-    name: "AND",
+    caseLabel: "AND: WORKING CASE",
     separable: true,
     samples: [
       { x1: 0, x2: 0, y: 0 },
@@ -66,7 +73,7 @@ const DATASETS = {
     ]
   },
   or: {
-    name: "OR",
+    caseLabel: "OR: WORKING CASE",
     separable: true,
     samples: [
       { x1: 0, x2: 0, y: 0 },
@@ -76,7 +83,7 @@ const DATASETS = {
     ]
   },
   nand: {
-    name: "NAND",
+    caseLabel: "NAND: WORKING CASE",
     separable: true,
     samples: [
       { x1: 0, x2: 0, y: 1 },
@@ -86,7 +93,7 @@ const DATASETS = {
     ]
   },
   xor: {
-    name: "XOR",
+    caseLabel: "XOR: IMPOSSIBLE CASE (SINGLE LAYER)",
     separable: false,
     samples: [
       { x1: 0, x2: 0, y: 0 },
@@ -98,6 +105,7 @@ const DATASETS = {
 };
 
 const state = {
+  datasetKey: "and",
   epochs: 0
 };
 
@@ -133,8 +141,19 @@ function predict(x1, x2, params) {
 }
 
 function currentDataset() {
-  const key = datasetSelect.value;
-  return DATASETS[key] || DATASETS.and;
+  return DATASETS[state.datasetKey] || DATASETS.and;
+}
+
+function setPreset(datasetKey) {
+  if (!DATASETS[datasetKey]) return;
+  state.datasetKey = datasetKey;
+  state.epochs = 0;
+
+  for (const button of presetButtons) {
+    const isActive = button.dataset.preset === datasetKey;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  }
 }
 
 function updateManualReadout() {
@@ -150,8 +169,7 @@ function evaluateDataset(params) {
     return {
       ...sample,
       yHat: result.yHat,
-      error,
-      z: result.z
+      error
     };
   });
 
@@ -160,7 +178,8 @@ function evaluateDataset(params) {
     rows,
     correct,
     total: rows.length,
-    separable: dataset.separable
+    separable: dataset.separable,
+    caseLabel: dataset.caseLabel
   };
 }
 
@@ -189,6 +208,7 @@ function renderManualPrediction(params) {
 
   sumOutput.textContent = result.z.toFixed(2);
   predictionOutput.textContent = String(result.yHat);
+  thresholdOutput.textContent = (-params.bias).toFixed(2);
 }
 
 function renderAll() {
@@ -198,8 +218,10 @@ function renderAll() {
 
   const evaluation = evaluateDataset(params);
   renderTable(evaluation.rows);
+
+  datasetCaseOutput.textContent = evaluation.caseLabel;
   accuracyOutput.textContent = `${evaluation.correct} / ${evaluation.total}`;
-  separableOutput.textContent = evaluation.separable ? "Yes" : "No";
+  separableOutput.textContent = evaluation.separable ? "YES" : "NO";
   epochsOutput.textContent = String(state.epochs);
 }
 
@@ -237,8 +259,8 @@ train1Button.addEventListener("click", () => {
   renderAll();
 });
 
-train10Button.addEventListener("click", () => {
-  for (let i = 0; i < 10; i += 1) {
+train5Button.addEventListener("click", () => {
+  for (let i = 0; i < 5; i += 1) {
     trainOneEpoch();
   }
   renderAll();
@@ -248,10 +270,12 @@ resetButton.addEventListener("click", () => {
   resetParameters();
 });
 
-datasetSelect.addEventListener("change", () => {
-  state.epochs = 0;
-  renderAll();
-});
+for (const button of presetButtons) {
+  button.addEventListener("click", () => {
+    setPreset(button.dataset.preset || "and");
+    resetParameters();
+  });
+}
 
 [x1Input, x2Input, w1Input, w2Input, biasInput, lrInput].forEach((input) => {
   input.addEventListener("input", () => {
@@ -259,4 +283,11 @@ datasetSelect.addEventListener("change", () => {
   });
 });
 
+if (diagnostics && diagnosticsSummary) {
+  diagnostics.addEventListener("toggle", () => {
+    diagnosticsSummary.textContent = diagnostics.open ? "CLOSE DIAGNOSTICS" : "OPEN DIAGNOSTICS";
+  });
+}
+
+setPreset(state.datasetKey);
 resetParameters();
