@@ -138,7 +138,7 @@ async function init() {
       return;
     }
 
-    document.title = `${project.title} · MrScandrett Classroom Hub`;
+    document.title = `${project.title} · Mr. Scandrett's ClassroomOS`;
 
     const hero = document.createElement("section");
     hero.className = "detail-hero";

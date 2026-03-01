@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Perceptron Lab · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Perceptron Lab lesson in the AI Origins unit." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav aria-label="Primary">
+        <a href="../index.html">Home</a>
+        <a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a>
+        <a href="../browse.html">Projects</a>
+        <a href="../about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero">
+      <p class="eyebrow">AI Origins · Lesson 03</p>
+      <h1>Perceptron Lab</h1>
+      <p>Train a one-layer classifier from weighted inputs and visualize why linear decision boundaries matter.</p>
+    </section>
+
+    <section class="columns">
+      <article class="card">
+        <h3>Learning Goals</h3>
+        <ul class="rhythm">
+          <li><span>Goal 1</span><strong>Describe weighted sums and activation thresholds</strong></li>
+          <li><span>Goal 2</span><strong>Compare correct and incorrect classifications</strong></li>
+          <li><span>Goal 3</span><strong>Tune weights to reduce obvious errors</strong></li>
+          <li><span>Goal 4</span><strong>Explain why some datasets are not linearly separable</strong></li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h3>Build Tasks</h3>
+        <ul class="rhythm">
+          <li><span>Task 1</span><strong>Set up a small labeled dataset</strong></li>
+          <li><span>Task 2</span><strong>Implement prediction from weights and bias</strong></li>
+          <li><span>Task 3</span><strong>Add a simple update rule for training</strong></li>
+          <li><span>Task 4</span><strong>Chart results before and after training</strong></li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="section" id="mark-i-history">
+      <div class="section-head">
+        <h2>History Panel: Mark I Perceptron (1958)</h2>
+        <p>The specific machine demonstrated in 1958 was the Mark I Perceptron.</p>
+      </div>
+      <div class="columns history-columns">
+        <article class="card history-card">
+          <h3>Machine Context</h3>
+          <ul class="rhythm">
+            <li><span>Scientist</span><strong>Frank Rosenblatt</strong></li>
+            <li><span>Institution</span><strong>Cornell</strong></li>
+            <li><span>Hardware Context</span><strong>Implemented on an IBM 704 computer</strong></li>
+            <li><span>Physical Machine</span><strong>Mark I Perceptron</strong></li>
+          </ul>
+          <p class="history-note">Use this distinction in class: <strong>Perceptron</strong> is the general model; <strong>Mark I Perceptron</strong> was the demonstrated physical machine.</p>
+        </article>
+
+        <article class="card timeline-card">
+          <h3>Where It Sits on the Timeline</h3>
+          <ol class="ai-timeline">
+            <li>
+              <time datetime="1950">1950</time>
+              <div><strong>Turing proposes the imitation game</strong></div>
+            </li>
+            <li class="timeline-eliza">
+              <time datetime="1958">1958</time>
+              <div><strong>Mark I Perceptron is demonstrated</strong></div>
+            </li>
+            <li>
+              <time datetime="1966">1966</time>
+              <div><strong>ELIZA demonstrates scripted NLP conversation</strong></div>
+            </li>
+            <li>
+              <time datetime="1970">1970s</time>
+              <div><strong>Expert systems expand symbolic AI</strong></div>
+            </li>
+            <li>
+              <time datetime="2012">2012</time>
+              <div><strong>Deep learning breakthroughs revive neural methods at scale</strong></div>
+            </li>
+          </ol>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="perceptron-live">
+      <div class="section-head">
+        <h2>Live Mark I Perceptron Emulator</h2>
+        <p>Adjust weights, bias, and learning rate, then train on AND, OR, NAND, and XOR datasets.</p>
+      </div>
+      <article class="card perceptron-lab">
+        <div class="perceptron-grid">
+          <div class="perceptron-panel">
+            <h3>Input Channels</h3>
+            <p class="perceptron-note">Simplified retina channels feeding a perceptron decision unit.</p>
+            <label class="perceptron-field" for="p-x1">
+              <span>Input X1</span>
+              <input id="p-x1" type="range" min="0" max="1" step="0.1" value="1" />
+            </label>
+            <label class="perceptron-field" for="p-x2">
+              <span>Input X2</span>
+              <input id="p-x2" type="range" min="0" max="1" step="0.1" value="0" />
+            </label>
+            <div class="perceptron-inline-values">
+              <p>X1 = <strong id="p-x1-value">1.0</strong></p>
+              <p>X2 = <strong id="p-x2-value">0.0</strong></p>
+            </div>
+            <button id="p-predict" type="button">Run Prediction</button>
+          </div>
+
+          <div class="perceptron-panel">
+            <h3>Parameters</h3>
+            <label class="perceptron-field" for="p-w1">
+              <span>Weight W1</span>
+              <input id="p-w1" type="number" step="0.1" value="0.4" />
+            </label>
+            <label class="perceptron-field" for="p-w2">
+              <span>Weight W2</span>
+              <input id="p-w2" type="number" step="0.1" value="0.4" />
+            </label>
+            <label class="perceptron-field" for="p-bias">
+              <span>Bias</span>
+              <input id="p-bias" type="number" step="0.1" value="-0.2" />
+            </label>
+            <label class="perceptron-field" for="p-lr">
+              <span>Learning Rate</span>
+              <input id="p-lr" type="number" step="0.05" min="0.05" value="0.2" />
+            </label>
+          </div>
+
+          <div class="perceptron-panel">
+            <h3>Training</h3>
+            <label class="perceptron-field" for="p-dataset">
+              <span>Dataset</span>
+              <select id="p-dataset">
+                <option value="and">AND (linearly separable)</option>
+                <option value="or">OR (linearly separable)</option>
+                <option value="nand">NAND (linearly separable)</option>
+                <option value="xor">XOR (not linearly separable)</option>
+              </select>
+            </label>
+            <div class="perceptron-actions">
+              <button id="p-train-1" type="button">Train 1 Epoch</button>
+              <button id="p-train-10" type="button">Train 10 Epochs</button>
+              <button id="p-reset" type="button">Reset Weights</button>
+            </div>
+            <ul class="perceptron-metrics">
+              <li>Weighted sum z: <strong id="p-sum">0.20</strong></li>
+              <li>Prediction y^: <strong id="p-prediction">1</strong></li>
+              <li>Dataset accuracy: <strong id="p-accuracy">0 / 4</strong></li>
+              <li>Epochs trained: <strong id="p-epochs">0</strong></li>
+              <li>Linearly separable: <strong id="p-separable">Yes</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="perceptron-table-wrap">
+          <table class="perceptron-table">
+            <caption>Current dataset evaluation</caption>
+            <thead>
+              <tr>
+                <th scope="col">x1</th>
+                <th scope="col">x2</th>
+                <th scope="col">target</th>
+                <th scope="col">pred</th>
+                <th scope="col">error</th>
+              </tr>
+            </thead>
+            <tbody id="p-table-body"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Lesson Outputs</h2>
+        <p>Each team should publish a short reflection and demo link at the end of class.</p>
+      </div>
+      <div class="tile-grid">
+        <a class="tile tile-hero" href="#perceptron-live">
+          <span class="tile-kicker">Starter Kit</span>
+          <strong>Perceptron Lab live starter workspace</strong>
+          <small>Use the built-in Mark I Perceptron emulator on this page</small>
+        </a>
+
+        <a class="tile" href="#" aria-disabled="true">
+          <span class="tile-kicker">Extension</span>
+          <strong>Try two-feature and three-feature datasets</strong>
+          <small>Optional challenge for advanced students</small>
+        </a>
+
+        <a class="tile" href="../steam-lessons.html">
+          <span class="tile-kicker">Navigate</span>
+          <strong>Back to STEAM Lessons</strong>
+          <small>Return to the full ClassroomOS lesson shelf</small>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p><a href="../steam-lessons.html">Back to STEAM Lessons</a></p>
+  </footer>
+  <script type="module" src="../assets/js/perceptron-lab.js"></script>
+</body>
+</html>

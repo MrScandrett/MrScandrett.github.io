@@ -1,4 +1,4 @@
-# MrScandrett Classroom Hub
+# Mr. Scandrett's ClassroomOS
 
 Protected GitHub Pages showcase + moderated upload portal.
 
@@ -6,12 +6,12 @@ Protected GitHub Pages showcase + moderated upload portal.
 
 - No student/sample names are preloaded.
 - `data/projects.json` starts empty.
-- Hub pages now require login before viewing:
+- ClassroomOS pages now require login before viewing:
   - Username: `Champion`
   - Password: `CPA`
 - Student account request + moderation + upload is handled by `portal/server.js`.
 
-## Hub (GitHub Pages)
+## ClassroomOS (GitHub Pages)
 
 Static pages:
 - `index.html`
