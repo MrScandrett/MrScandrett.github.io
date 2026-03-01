@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Rule Engine Expert System · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Rule Engine Expert System lesson in the AI Origins unit." />
+  <meta name="description" content="MYCIN-style expert system build lab with forward chaining, confidence factors, and rule traceability." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
 </head>
 <body>
@@ -26,29 +26,154 @@
     <section class="hero">
       <p class="eyebrow">AI Origins · Lesson 04</p>
       <h1>Rule Engine Expert System</h1>
-      <p>Create an if-then inference engine inspired by early expert systems such as MYCIN.</p>
+      <p>Build a MYCIN-style symbolic system: explicit IF-THEN rules, forward chaining, certainty factors, and full explanation trails.</p>
     </section>
 
-    <section class="columns">
-      <article class="card">
-        <h3>Learning Goals</h3>
-        <ul class="rhythm">
-          <li><span>Goal 1</span><strong>Model domain knowledge as readable rules</strong></li>
-          <li><span>Goal 2</span><strong>Apply certainty values to conclusions</strong></li>
-          <li><span>Goal 3</span><strong>Track which rules fired and why</strong></li>
-          <li><span>Goal 4</span><strong>Discuss trust and transparency in rule systems</strong></li>
-        </ul>
-      </article>
+    <section class="section" id="expert-live">
+      <div class="section-head">
+        <h2>Live Rule Engine Lab</h2>
+        <p>Choose starting facts, run inference, inspect which rules fired, and see how confidence compounds through the chain.</p>
+      </div>
 
-      <article class="card">
-        <h3>Build Tasks</h3>
-        <ul class="rhythm">
-          <li><span>Task 1</span><strong>Define at least twelve rules in JSON or JS</strong></li>
-          <li><span>Task 2</span><strong>Implement forward chaining through facts</strong></li>
-          <li><span>Task 3</span><strong>Calculate confidence scores per conclusion</strong></li>
-          <li><span>Task 4</span><strong>Display an explanation trail for each output</strong></li>
-        </ul>
+      <article class="card expert-lab">
+        <div class="expert-grid">
+          <section class="expert-panel">
+            <h3>Known Facts</h3>
+            <p class="expert-note">Set initial evidence before running forward chaining.</p>
+
+            <div class="expert-facts" id="expert-facts"></div>
+
+            <div class="expert-actions">
+              <button type="button" id="expert-run">Run Forward Chain</button>
+              <button type="button" id="expert-clear-facts">Clear Facts</button>
+            </div>
+          </section>
+
+          <section class="expert-panel">
+            <h3>Rule Base (JSON)</h3>
+            <p class="expert-note">Edit rules directly. Each rule has `if` conditions and a `then` conclusion with certainty.</p>
+            <label class="sr-only" for="expert-rules-editor">Rule JSON editor</label>
+            <textarea id="expert-rules-editor" spellcheck="false"></textarea>
+            <div class="expert-actions">
+              <button type="button" id="expert-load-defaults">Load Default 12+ Rules</button>
+            </div>
+            <p id="expert-rules-status" class="expert-status" aria-live="polite"></p>
+          </section>
+
+          <section class="expert-panel">
+            <h3>Inference Controls</h3>
+            <label class="expert-field" for="expert-conflict">
+              <span>Conflict Resolution</span>
+              <select id="expert-conflict">
+                <option value="mycin">MYCIN certainty combine</option>
+                <option value="max">Keep strongest evidence</option>
+                <option value="latest">Latest rule wins</option>
+              </select>
+            </label>
+
+            <label class="expert-field" for="expert-max-passes">
+              <span>Max Forward Passes</span>
+              <input id="expert-max-passes" type="number" min="1" max="20" step="1" value="8" />
+            </label>
+
+            <ul class="expert-metrics">
+              <li>Rules loaded: <strong id="expert-metric-rules">0</strong></li>
+              <li>Rules fired: <strong id="expert-metric-fired">0</strong></li>
+              <li>Passes used: <strong id="expert-metric-passes">0</strong></li>
+              <li>Conclusions produced: <strong id="expert-metric-conclusions">0</strong></li>
+            </ul>
+          </section>
+        </div>
+
+        <section class="expert-output">
+          <div class="expert-output-block">
+            <h3>Conclusions (Confidence)</h3>
+            <div class="expert-table-wrap">
+              <table class="expert-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Fact</th>
+                    <th scope="col">Confidence</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="expert-conclusions"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="expert-output-block">
+            <h3>Explanation Trail</h3>
+            <ol id="expert-trace" class="expert-trace"></ol>
+          </div>
+        </section>
       </article>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>What This Trains</h2>
+      </div>
+      <div class="columns">
+        <article class="card">
+          <h3>System Mechanics</h3>
+          <ul class="rhythm">
+            <li><span>Symbolic Logic</span><strong>Knowledge encoded as explicit IF-THEN rules</strong></li>
+            <li><span>State Machines</span><strong>Facts update in deterministic forward passes</strong></li>
+            <li><span>Weighted Inference</span><strong>Confidence factors model uncertainty beyond true/false</strong></li>
+            <li><span>Explainability</span><strong>Every conclusion can be traced to fired rules</strong></li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h3>Conceptual Questions</h3>
+          <ul class="rhythm">
+            <li><span>Trust</span><strong>Who authored the rules and where can bias hide?</strong></li>
+            <li><span>Conflict</span><strong>What should happen when rules disagree?</strong></li>
+            <li><span>Limits</span><strong>When does explicit logic stop scaling well?</strong></li>
+            <li><span>Bridge</span><strong>How does this compare to neural-network learning?</strong></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="mycin-history">
+      <div class="section-head">
+        <h2>Historical Context</h2>
+      </div>
+      <div class="columns history-columns">
+        <article class="card history-card">
+          <h3>Expert Systems Era</h3>
+          <ul class="rhythm">
+            <li><span>Approach</span><strong>Human knowledge formalized as transparent rules</strong></li>
+            <li><span>MYCIN</span><strong>Medical expert system using certainty factors and inference rules</strong></li>
+            <li><span>Strength</span><strong>Auditable reasoning path for each recommendation</strong></li>
+            <li><span>Weakness</span><strong>Rule authoring burden and brittle domain transfer</strong></li>
+          </ul>
+        </article>
+
+        <article class="card timeline-card">
+          <h3>AI Timeline Placement</h3>
+          <ol class="ai-timeline">
+            <li>
+              <time datetime="1958">1958</time>
+              <div><strong>Perceptron era begins neural-symbolic split</strong></div>
+            </li>
+            <li>
+              <time datetime="1966">1966</time>
+              <div><strong>ELIZA popularizes scripted language interaction</strong></div>
+            </li>
+            <li class="timeline-eliza">
+              <time datetime="1970">1970s</time>
+              <div><strong>Expert systems (including MYCIN-style ideas) scale symbolic AI</strong></div>
+            </li>
+            <li>
+              <time datetime="2012">2012</time>
+              <div><strong>Deep learning re-centers data-driven representation learning</strong></div>
+            </li>
+          </ol>
+        </article>
+      </div>
     </section>
 
     <section class="section">
@@ -57,15 +182,15 @@
         <p>Each team should publish a short reflection and demo link at the end of class.</p>
       </div>
       <div class="tile-grid">
-        <a class="tile tile-hero" href="#" aria-disabled="true">
+        <a class="tile tile-hero" href="#expert-live">
           <span class="tile-kicker">Starter Kit</span>
-          <strong>Rule Engine Expert System starter workspace</strong>
-          <small>Add your live lesson URL or repo link</small>
+          <strong>Rule Engine Expert System live starter workspace</strong>
+          <small>Use the built-in forward-chaining lab on this page</small>
         </a>
 
         <a class="tile" href="#" aria-disabled="true">
           <span class="tile-kicker">Extension</span>
-          <strong>Add conflict resolution when two rules disagree</strong>
+          <strong>Add conflict policies that vary by conclusion type</strong>
           <small>Optional challenge for advanced students</small>
         </a>
 
@@ -81,5 +206,6 @@
   <footer class="site-footer">
     <p><a href="../steam-lessons.html">Back to STEAM Lessons</a></p>
   </footer>
+  <script type="module" src="../assets/js/expert-system-lab.js"></script>
 </body>
 </html>
