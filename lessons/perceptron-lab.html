@@ -27,22 +27,47 @@
       <div class="section-head">
         <p class="eyebrow">AI ORIGINS · LESSON 03</p>
         <h1>MARK I PERCEPTRON DEMO CONSOLE</h1>
-        <p>Experience the system first: two channels into a decision unit, tuned like 1958 research hardware.</p>
+        <p class="perceptron-framing">A perceptron is a machine that learns to draw a line.</p>
+        <p>Experience the system first: tune channels, move the boundary, and watch where single-layer learning works and fails.</p>
       </div>
 
-      <article class="card perceptron-lab perceptron-console">
+      <article class="card perceptron-lab perceptron-console" id="perceptron-console" data-grade-mode="explorer" data-era="1958">
         <p class="perceptron-console-stamp">IBM 704 / MARK I PERCEPTRON / ROSENBLATT DEMONSTRATION MODE</p>
+
+        <section class="perceptron-control-strip" aria-label="Learning and accessibility controls">
+          <div class="perceptron-mode-group" role="group" aria-label="Grade mode">
+            <span>MODE</span>
+            <button type="button" data-grade-mode="explorer" aria-pressed="true">Explorer (6-8)</button>
+            <button type="button" data-grade-mode="analyst" aria-pressed="false">Analyst (9-10)</button>
+            <button type="button" data-grade-mode="architect" aria-pressed="false">Architect (11-12)</button>
+          </div>
+
+          <div class="perceptron-mode-group" role="group" aria-label="Era mode">
+            <span>ERA</span>
+            <button type="button" data-era-mode="1958" aria-pressed="true">1958 Hardware Mode</button>
+            <button type="button" data-era-mode="2012" aria-pressed="false">2012 Deep Learning Mode</button>
+          </div>
+
+          <div class="perceptron-toggle-group">
+            <label><input id="p-toggle-contrast" type="checkbox" /> High Contrast</label>
+            <label><input id="p-toggle-dyslexia" type="checkbox" /> Dyslexia Font</label>
+            <button id="p-print" type="button">Print-friendly worksheet</button>
+          </div>
+        </section>
+
+        <p id="p-mode-guidance" class="perceptron-guidance"></p>
+        <p id="p-era-note" class="perceptron-era-note"></p>
 
         <div class="perceptron-grid">
           <section class="perceptron-panel">
             <h3>RETINA CHANNELS</h3>
             <label class="perceptron-field" for="p-x1">
               <span>X1 CHANNEL</span>
-              <input id="p-x1" type="range" min="0" max="1" step="0.1" value="1" />
+              <input id="p-x1" type="range" min="0" max="1" step="0.1" value="1" aria-label="X1 input channel" />
             </label>
             <label class="perceptron-field" for="p-x2">
               <span>X2 CHANNEL</span>
-              <input id="p-x2" type="range" min="0" max="1" step="0.1" value="0" />
+              <input id="p-x2" type="range" min="0" max="1" step="0.1" value="0" aria-label="X2 input channel" />
             </label>
             <div class="perceptron-inline-values">
               <p>X1 <strong id="p-x1-value" class="instrument">1.0</strong></p>
@@ -52,60 +77,121 @@
 
           <section class="perceptron-panel">
             <h3>DECISION UNIT</h3>
-            <button id="p-predict" type="button">RUN PREDICTION</button>
+            <button id="p-predict" type="button" aria-label="Run prediction">RUN PREDICTION</button>
             <ul class="perceptron-metrics">
-              <li>Z (WEIGHTED SUM): <strong id="p-sum" class="instrument">0.20</strong></li>
+              <li><span id="p-score-label">SCORE BEFORE DECISION</span>: <strong id="p-sum" class="instrument">0.20</strong></li>
               <li>Y^ (OUTPUT): <strong id="p-prediction" class="instrument">1</strong></li>
               <li>THRESHOLD (-BIAS): <strong id="p-threshold" class="instrument">0.20</strong></li>
               <li>CASE STATUS: <strong id="p-dataset-case" class="instrument">AND: WORKING CASE</strong></li>
             </ul>
+            <div class="perceptron-progress-wrap" aria-label="Training progress">
+              <div id="p-accuracy-bar" class="perceptron-progress-bar"></div>
+            </div>
+            <p id="p-accuracy-inline" class="perceptron-progress-label">ACCURACY 0%</p>
           </section>
 
           <section class="perceptron-panel">
             <h3>CONTROL SETTINGS</h3>
-            <label class="perceptron-field" for="p-w1">
+
+            <label class="perceptron-field" for="p-w1-range">
               <span>WEIGHT W1</span>
-              <input id="p-w1" type="number" step="0.1" value="0.4" />
+              <div class="perceptron-dual-input">
+                <input id="p-w1-range" type="range" min="-2" max="2" step="0.1" value="0.4" aria-label="Weight W1 slider" />
+                <input id="p-w1" type="number" step="0.1" value="0.4" aria-label="Weight W1 value" />
+              </div>
             </label>
-            <label class="perceptron-field" for="p-w2">
+
+            <label class="perceptron-field" for="p-w2-range">
               <span>WEIGHT W2</span>
-              <input id="p-w2" type="number" step="0.1" value="0.4" />
+              <div class="perceptron-dual-input">
+                <input id="p-w2-range" type="range" min="-2" max="2" step="0.1" value="0.4" aria-label="Weight W2 slider" />
+                <input id="p-w2" type="number" step="0.1" value="0.4" aria-label="Weight W2 value" />
+              </div>
             </label>
-            <label class="perceptron-field" for="p-bias">
-              <span>BIAS</span>
-              <input id="p-bias" type="number" step="0.1" value="-0.2" />
+
+            <label class="perceptron-field" for="p-bias-range">
+              <span>BIAS / STARTING PUSH</span>
+              <div class="perceptron-dual-input">
+                <input id="p-bias-range" type="range" min="-2" max="2" step="0.1" value="-0.2" aria-label="Bias slider" />
+                <input id="p-bias" type="number" step="0.1" value="-0.2" aria-label="Bias value" />
+              </div>
             </label>
-            <label class="perceptron-field" for="p-lr">
+
+            <label class="perceptron-field" for="p-lr-range">
               <span>LEARNING RATE</span>
-              <input id="p-lr" type="number" step="0.05" min="0.05" value="0.2" />
+              <div class="perceptron-dual-input">
+                <input id="p-lr-range" type="range" min="0.05" max="1" step="0.05" value="0.2" aria-label="Learning rate slider" />
+                <input id="p-lr" type="number" step="0.05" min="0.05" value="0.2" aria-label="Learning rate value" />
+              </div>
             </label>
+          </section>
+
+          <section class="perceptron-panel perceptron-graph-panel">
+            <h3>GEOMETRY VIEW</h3>
+            <p class="perceptron-note">Points + decision line + class regions. Red glow marks current errors.</p>
+            <canvas id="p-graph" width="360" height="260" aria-label="Decision boundary graph"></canvas>
+            <button id="p-xor-toggle" type="button">Show why XOR fails</button>
+          </section>
+
+          <section class="perceptron-panel perceptron-equation-panel">
+            <h3>EQUATION ALIGNMENT</h3>
+            <p id="p-equation" class="perceptron-equation">
+              z = (<span id="p-eq-term-w1">w1*x1</span> + <span id="p-eq-term-w2">w2*x2</span>) + <span id="p-eq-term-bias">b</span><br />
+              y^ = step(z)
+            </p>
+            <div id="p-analyst-block" class="perceptron-analyst">
+              <p>Learning rule (analyst view):</p>
+              <p class="perceptron-equation">w = w + eta * error * x</p>
+            </div>
+            <div id="p-architect-block" class="perceptron-architect" hidden>
+              <p>Architect extension:</p>
+              <p>Single-layer perceptrons fail on XOR. A hidden layer can bend boundaries into non-linear regions.</p>
+              <div class="perceptron-hidden-diagram" aria-hidden="true">
+                <span>INPUT</span><span>HIDDEN</span><span>OUTPUT</span>
+              </div>
+            </div>
           </section>
         </div>
 
         <section class="perceptron-presets" aria-label="Demo presets">
           <h3>DEMO PRESETS</h3>
           <div class="perceptron-presets-grid">
-            <button type="button" data-preset="and" class="is-active">AND: WORKING CASE</button>
-            <button type="button" data-preset="or">OR: WORKING CASE</button>
-            <button type="button" data-preset="nand">NAND: WORKING CASE</button>
-            <button type="button" data-preset="xor">XOR: IMPOSSIBLE CASE (SINGLE LAYER)</button>
+            <button type="button" data-preset="and" class="is-active" aria-pressed="true">AND: WORKING CASE</button>
+            <button type="button" data-preset="or" aria-pressed="false">OR: WORKING CASE</button>
+            <button type="button" data-preset="nand" aria-pressed="false">NAND: WORKING CASE</button>
+            <button type="button" data-preset="xor" aria-pressed="false">XOR: IMPOSSIBLE CASE (SINGLE LAYER)</button>
           </div>
         </section>
+
+        <div id="p-xor-proof" class="perceptron-xor-proof" hidden>
+          <h3>XOR Visual Proof</h3>
+          <p>Try to separate XOR with one line. Drag angle and offset. You will not find a perfect split.</p>
+          <canvas id="p-xor-canvas" width="360" height="230" aria-label="XOR separability proof graph"></canvas>
+          <label class="perceptron-field" for="p-xor-angle">
+            <span>LINE ANGLE</span>
+            <input id="p-xor-angle" type="range" min="-85" max="85" step="1" value="0" aria-label="XOR line angle" />
+          </label>
+          <label class="perceptron-field" for="p-xor-offset">
+            <span>LINE OFFSET</span>
+            <input id="p-xor-offset" type="range" min="-1" max="1" step="0.02" value="0" aria-label="XOR line offset" />
+          </label>
+          <p id="p-xor-proof-text" class="perceptron-proof-text"></p>
+        </div>
       </article>
 
-      <details class="perceptron-diagnostics">
+      <details class="perceptron-diagnostics" id="p-diagnostics">
         <summary>OPEN DIAGNOSTICS</summary>
         <div class="perceptron-diagnostics-body">
           <div class="perceptron-actions">
-            <button id="p-train-1" type="button">TRAIN 1 EPOCH</button>
-            <button id="p-train-5" type="button">TRAIN BURST (5)</button>
-            <button id="p-reset" type="button">RESET WEIGHTS</button>
+            <button id="p-train-1" type="button" aria-label="Train one epoch">TRAIN 1 EPOCH</button>
+            <button id="p-train-5" type="button" aria-label="Train five epochs">TRAIN BURST (5)</button>
+            <button id="p-reset" type="button" aria-label="Reset all perceptron weights">RESET WEIGHTS</button>
           </div>
 
           <ul class="perceptron-metrics">
             <li>DATASET ACCURACY: <strong id="p-accuracy" class="instrument">0 / 4</strong></li>
             <li>EPOCHS TRAINED: <strong id="p-epochs" class="instrument">0</strong></li>
-            <li>LINEARLY SEPARABLE: <strong id="p-separable" class="instrument">YES</strong></li>
+            <li>LINEARLY SEPARABLE: <strong id="p-separable" class="instrument">VISUAL CHECK</strong></li>
           </ul>
 
           <div class="perceptron-table-wrap">
@@ -134,22 +220,21 @@
       <div class="perceptron-brief-grid">
         <article class="card">
           <h3>WHAT THIS IS</h3>
-          <p>A perceptron is a single-layer linear classifier. With two inputs, it draws one straight dividing line in 2D feature space.</p>
+          <p>A perceptron is a single-layer linear classifier. It learns by shifting one straight decision line.</p>
         </article>
 
         <article class="card">
           <h3>WHAT IT CAN'T DO</h3>
-          <p>It cannot solve XOR with two inputs, because XOR is not linearly separable. No single line can split XOR classes correctly.</p>
+          <p>XOR cannot be solved by one line in two dimensions. This is a structural limit, not just undertraining.</p>
         </article>
 
         <article class="card">
           <h3>HOW TO USE IT LIKE IT'S 1958</h3>
           <ul class="perceptron-prompts">
-            <li>SET CHANNELS TO (1,0). RUN.</li>
-            <li>ADJUST W1 UPWARD UNTIL OUTPUT FLIPS.</li>
-            <li>USE SMALL LEARNING RATES.</li>
-            <li>TRAIN IN SHORT BURSTS; READ THE LOGBOOK.</li>
-            <li>SWITCH DATASET TO XOR. OBSERVE FAILURE MODE.</li>
+            <li>Set channels to (1,0). Run.</li>
+            <li>Try 0.1 learning rate first. Watch what changes.</li>
+            <li>Adjust W1 upward until output flips.</li>
+            <li>Switch to XOR. Can you draw one line that separates all points? Try.</li>
           </ul>
         </article>
       </div>
@@ -165,7 +250,7 @@
           <h3>Machine Context</h3>
           <ul class="rhythm">
             <li><span>Scientist</span><strong>Frank Rosenblatt</strong></li>
-            <li><span>Institution</span><strong>Cornell</strong></li>
+            <li><span>Institution</span><strong>Cornell University</strong></li>
             <li><span>Hardware Context</span><strong>Implemented on an IBM 704 computer</strong></li>
             <li><span>Physical Machine</span><strong>Mark I Perceptron</strong></li>
           </ul>
@@ -214,7 +299,7 @@
 
         <a class="tile" href="#" aria-disabled="true">
           <span class="tile-kicker">Extension</span>
-          <strong>Try two-feature and three-feature datasets</strong>
+          <strong>Implement a two-layer XOR solver and compare traces</strong>
           <small>Optional challenge for advanced students</small>
         </a>
 
