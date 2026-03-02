@@ -3,70 +3,57 @@ const ingredientDefs = {
   Sauce: { cost: 2, type: "base" },
   Cheese: { cost: 3, type: "base" },
   Pepperoni: { cost: 4, type: "topping" },
-  Chicken: { cost: 4, type: "topping" },
-  Bacon: { cost: 4, type: "topping" },
   Olive: { cost: 3, type: "topping" },
   Mushroom: { cost: 3, type: "topping" },
   Pepper: { cost: 3, type: "topping" },
-  Pineapple: { cost: 3, type: "topping" },
-  Ham: { cost: 4, type: "topping" },
 };
 
 const upgrades = {
   fast_oven: { cost: 20, label: "Fast Oven", desc: "Bake meter moves faster" },
   cozy_tables: { cost: 24, label: "Cozy Tables", desc: "+$1 tip on perfect orders" },
   ad_board: { cost: 28, label: "Ad Board", desc: "+2 customers each day" },
-  dispatch_rider: { cost: 22, label: "Dispatch Rider", desc: "Ingredient deliveries arrive faster" },
 };
 
-function createInitialState() {
-  return {
-    day: 1,
-    money: 15,
-    reputation: 50,
-    served: 0,
-    combo: 0,
-    queue: [],
-    currentOrder: null,
-    dayOpen: false,
-    timeLeft: 60,
-    timerMax: 60,
-    pizza: {
-      hasDough: false,
-      hasSauce: false,
-      hasCheese: false,
-      toppings: [],
-    },
-    bake: {
-      active: false,
-      heat: 0,
-      dir: 1,
-      done: false,
-    },
-    inventory: {
-      Dough: 20,
-      Sauce: 20,
-      Cheese: 20,
-      Pepperoni: 20,
-      Chicken: 20,
-      Bacon: 20,
-      Olive: 20,
-      Mushroom: 20,
-      Pepper: 20,
-      Pineapple: 20,
-      Ham: 20,
-    },
-    employees: 0,
-    paused: false,
-    delivery: {
-      pending: [],
-      eta: 0,
-    },
-    ownedUpgrades: [],
-  };
-}
-
-const state = createInitialState();
+const state = {
+  day: 1,
+  money: 30,
+  reputation: 50,
+  served: 0,
+  combo: 0,
+  queue: [],
+  currentOrder: null,
+  dayOpen: false,
+  timeLeft: 60,
+  timerMax: 60,
+  pizza: {
+    hasDough: false,
+    hasSauce: false,
+    hasCheese: false,
+    toppings: [],
+  },
+  bake: {
+    active: false,
+    heat: 0,
+    dir: 1,
+    done: false,
+  },
+  inventory: {
+    Dough: 8,
+    Sauce: 10,
+    Cheese: 8,
+    Pepperoni: 8,
+    Olive: 6,
+    Mushroom: 6,
+    Pepper: 6,
+  },
+  employees: 0,
+  paused: false,
+  delivery: {
+    pending: [],
+    eta: 0,
+  },
+  ownedUpgrades: [],
+};
 
 const ui = {
   day: document.getElementById("day"),
@@ -91,7 +78,6 @@ const ui = {
   pauseBtn: document.getElementById("pauseBtn"),
   serveBtn: document.getElementById("serveBtn"),
   clearBtn: document.getElementById("clearBtn"),
-  restartBtn: document.getElementById("restartBtn"),
   nextDayBtn: document.getElementById("nextDayBtn"),
   shopGrid: document.getElementById("shopGrid"),
   deliveryGrid: document.getElementById("deliveryGrid"),
@@ -103,17 +89,6 @@ const SAVE_KEY = "pizza_sim_save_v1";
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
-}
-
-function getDeliveryEta() {
-  return hasUpgrade("dispatch_rider") ? 35 : 60;
-}
-
-function getToppingPortionSize(name) {
-  const stock = state.inventory[name];
-  if (stock < 2) return 0;
-  const maxPortion = Math.min(4, stock);
-  return 2 + Math.floor(Math.random() * (maxPortion - 1));
 }
 
 function hasUpgrade(id) {
@@ -139,7 +114,7 @@ function shuffle(arr) {
 }
 
 function makeOrder() {
-  const toppingPool = ["Pepperoni", "Chicken", "Bacon", "Olive", "Mushroom", "Pepper", "Pineapple", "Ham"];
+  const toppingPool = ["Pepperoni", "Olive", "Mushroom", "Pepper"];
   const toppingCount = 1 + Math.floor(Math.random() * 3);
   return {
     dough: true,
@@ -250,8 +225,7 @@ function renderIngredients() {
     const btn = document.createElement("button");
     btn.className = "ing-btn";
     btn.textContent = name;
-    const minUnits = ingredientDefs[name].type === "topping" ? 2 : 1;
-    btn.disabled = !state.dayOpen || state.inventory[name] < minUnits;
+    btn.disabled = !state.dayOpen || state.inventory[name] <= 0;
     btn.addEventListener("click", () => addIngredient(name));
     ui.ingredientButtons.appendChild(btn);
   }
@@ -299,7 +273,7 @@ function orderIngredient(name, qty, cost) {
   state.money -= cost;
   state.delivery.pending.push({ name, qty });
   if (state.delivery.eta <= 0) {
-    state.delivery.eta = getDeliveryEta();
+    state.delivery.eta = 60;
   }
   setStatus(`Ordered ${name} delivery (+${qty}).`, "");
   renderHud();
@@ -322,9 +296,6 @@ function applyDelivery() {
 
 function addIngredient(name) {
   if (!state.dayOpen) return;
-  const def = ingredientDefs[name];
-  if (!def) return;
-
   if (state.inventory[name] <= 0) {
     setStatus("Out of that ingredient.", "bad");
     return;
@@ -349,20 +320,7 @@ function addIngredient(name) {
       setStatus("Add cheese before toppings.", "bad");
       return;
     }
-    const portionSize = getToppingPortionSize(name);
-    if (portionSize < 2) {
-      setStatus(`Need at least 2 ${name} in stock.`, "bad");
-      return;
-    }
-    for (let i = 0; i < portionSize; i += 1) {
-      state.pizza.toppings.push(name);
-    }
-    state.inventory[name] -= portionSize;
-    setStatus(`Added ${portionSize}x ${name}.`);
-    renderInventory();
-    renderIngredients();
-    renderPizza();
-    return;
+    state.pizza.toppings.push(name);
   }
 
   state.inventory[name] -= 1;
@@ -400,14 +358,11 @@ function scorePizza() {
   if (state.pizza.hasCheese) score += 1;
 
   const required = new Set(state.currentOrder.toppings);
-  const made = new Set(state.pizza.toppings);
+  const made = state.pizza.toppings;
 
-  for (const t of required) {
-    if (made.has(t)) score += 1;
-    else score -= 1;
-  }
   for (const t of made) {
-    if (!required.has(t)) score -= 1;
+    if (required.has(t)) score += 1;
+    else score -= 1;
   }
 
   if (!state.bake.done) score -= 2;
@@ -493,37 +448,6 @@ function nextDay() {
   saveGame();
 }
 
-function restartGame() {
-  const shouldRestart = window.confirm("Restart game and erase saved progress?");
-  if (!shouldRestart) return;
-
-  Object.assign(state, createInitialState());
-
-  try {
-    localStorage.removeItem(SAVE_KEY);
-  } catch {
-    // Ignore storage failures.
-  }
-
-  ui.openBtn.disabled = false;
-  ui.nextDayBtn.disabled = true;
-  ui.serveBtn.disabled = true;
-  ui.clearBtn.disabled = true;
-  ui.bakeBtn.disabled = true;
-  ui.pauseBtn.textContent = "Pause";
-
-  setStatus("Game restarted. Press Open Shop to begin.");
-  renderHud();
-  renderInventory();
-  renderIngredients();
-  renderPizza();
-  renderTicket();
-  renderShop();
-  renderDeliveryShop();
-  renderDeliveryStatus();
-  saveGame();
-}
-
 function buyUpgrade(id) {
   const u = upgrades[id];
   if (!u || hasUpgrade(id)) return;
@@ -533,10 +457,6 @@ function buyUpgrade(id) {
   }
   state.money -= u.cost;
   state.ownedUpgrades.push(id);
-  if (id === "dispatch_rider" && state.delivery.pending.length) {
-    state.delivery.eta = Math.min(state.delivery.eta, getDeliveryEta());
-    renderDeliveryStatus();
-  }
   setStatus(`${u.label} purchased.`, "good");
   renderHud();
   renderShop();
@@ -626,7 +546,7 @@ function loadGame() {
     if (!raw) return;
     const data = JSON.parse(raw);
     state.day = Number(data.day) || 1;
-    state.money = Number(data.money) || 15;
+    state.money = Number(data.money) || 30;
     state.reputation = Number(data.reputation) || 50;
     state.served = Number(data.served) || 0;
     state.employees = Number(data.employees) || 0;
@@ -654,7 +574,6 @@ function bind() {
     resetPizza();
     renderPizza();
   });
-  ui.restartBtn.addEventListener("click", restartGame);
   ui.bakeBtn.addEventListener("click", () => {
     if (!state.dayOpen) return;
     if (!state.pizza.hasCheese) {
