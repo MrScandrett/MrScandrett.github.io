@@ -27,7 +27,7 @@ Data source:
 ### Run locally
 
 ```bash
-cd /Users/evanscandrett/Documents/GitHubTutorialSTEAM
+cd /Users/User/Documents/GitHubTutorialSTEAM
 node serve-local.js
 ```
 
@@ -37,7 +37,7 @@ Open:
 ## Portal backend (moderated accounts + uploads)
 
 ```bash
-cd /Users/evanscandrett/Documents/GitHubTutorialSTEAM
+cd /Users/User/Documents/GitHubTutorialSTEAM
 
 export ADMIN_USER="Champion"
 export ADMIN_PASS="CPA"
@@ -45,7 +45,7 @@ export GITHUB_OWNER="MrScandrett"
 export REPO_PREFIX="student-showcase-"
 export PORT="8787"
 
-node /Users/evanscandrett/Documents/GitHubTutorialSTEAM/portal/server.js
+node /Users/User/Documents/GitHubTutorialSTEAM/portal/server.js
 ```
 
 Open:
