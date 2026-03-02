@@ -1,0 +1,205 @@
+<!DOCTYPE html><html><head><title>Gravity Dodge</title><style>body{margin:0;background:#000;overflow:hidden;font-family:Arial}canvas{display:block;margin:auto;background:#050505}</style></head><body><canvas id="game"></canvas><script>const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let debris=[], particles=[], powerUps=[];
+let score=0, gameOver=false;
+let highScore=localStorage.getItem("gravityHighScore")||0;
+let currentSkin=localStorage.getItem("gravitySkin")||"classic";
+
+let shield=0, slowTime=0, doubleScore=0, dashCooldown=0;
+
+const skins={
+  classic:{color:"lime",unlock:0},
+  neon:{color:"cyan",unlock:0},
+  fire:{color:"orange",unlock:1000},
+  galaxy:{color:"purple",unlock:2500},
+  gold:{color:"gold",unlock:5000}
+};
+
+const skinKeys=["classic","neon","fire","galaxy","gold"];
+
+const player={
+  size:30,
+  x:canvas.width/2,
+  y:canvas.height/2,
+  speed:6,
+  dashSpeed:18
+};
+
+const keys={};
+document.addEventListener("keydown",e=>{
+  keys[e.code]=true;
+
+  if(e.code==="ShiftLeft" && dashCooldown<=0) dash();
+  if(e.code==="KeyR" && gameOver) restartGame();
+
+  // Skin switching
+  if(e.code.startsWith("Digit")){
+    const index=parseInt(e.code.replace("Digit",""))-1;
+    if(skinKeys[index]){
+      const chosen=skinKeys[index];
+      if(highScore>=skins[chosen].unlock){
+        currentSkin=chosen;
+        localStorage.setItem("gravitySkin",currentSkin);
+      }
+    }
+  }
+});
+document.addEventListener("keyup",e=>keys[e.code]=false);
+
+function dash(){
+  if(keys["ArrowLeft"]) player.x-=player.dashSpeed;
+  if(keys["ArrowRight"]) player.x+=player.dashSpeed;
+  if(keys["ArrowUp"]) player.y-=player.dashSpeed;
+  if(keys["ArrowDown"]) player.y+=player.dashSpeed;
+  dashCooldown=60;
+}
+
+function spawnDebris(){
+  const shapes=["circle","square","triangle","pentagon","hexagon"];
+  debris.push({
+    x:Math.random()*canvas.width,
+    y:-40,
+    size:20+Math.random()*15,
+    speed:3+Math.random()*2+score/2000,
+    shape:shapes[Math.floor(Math.random()*shapes.length)],
+    color:`hsl(${Math.random()*360},100%,50%)`
+  });
+}
+setInterval(spawnDebris,600);
+
+function neon(color){
+  ctx.shadowBlur=25;
+  ctx.shadowColor=color;
+}
+
+function drawShape(d){
+  neon(d.color);
+  ctx.fillStyle=d.color;
+  ctx.beginPath();
+
+  if(d.shape==="circle"){
+    ctx.arc(d.x,d.y,d.size,0,Math.PI*2);
+  } else {
+    const sides={square:4,triangle:3,pentagon:5,hexagon:6}[d.shape];
+    for(let i=0;i<sides;i++){
+      const angle=(i/sides)*Math.PI*2;
+      const x=d.x+Math.cos(angle)*d.size;
+      const y=d.y+Math.sin(angle)*d.size;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+  }
+
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur=0;
+}
+
+function update(){
+  if(gameOver) return;
+
+  score+=doubleScore>0?2:1;
+
+  if(keys["ArrowLeft"]) player.x-=player.speed;
+  if(keys["ArrowRight"]) player.x+=player.speed;
+  if(keys["ArrowUp"]) player.y-=player.speed;
+  if(keys["ArrowDown"]) player.y+=player.speed;
+
+  player.x=Math.max(0,Math.min(canvas.width-player.size,player.x));
+  player.y=Math.max(0,Math.min(canvas.height-player.size,player.y));
+
+  debris.forEach(d=>{
+    d.y+=slowTime>0?d.speed*0.4:d.speed;
+
+    if(
+      player.x < d.x+d.size &&
+      player.x+player.size > d.x &&
+      player.y < d.y+d.size &&
+      player.y+player.size > d.y
+    ){
+      if(shield<=0){
+        gameOver=true;
+        if(score>highScore){
+          highScore=score;
+          localStorage.setItem("gravityHighScore",highScore);
+        }
+      }
+    }
+  });
+
+  debris=debris.filter(d=>d.y<canvas.height+50);
+  if(dashCooldown>0) dashCooldown--;
+}
+
+function drawPlayer(){
+  const skin=skins[currentSkin];
+
+  if(currentSkin==="galaxy"){
+    const gradient=ctx.createLinearGradient(player.x,player.y,player.x+30,player.y+30);
+    gradient.addColorStop(0,"purple");
+    gradient.addColorStop(1,"blue");
+    ctx.fillStyle=gradient;
+    neon("purple");
+  } else {
+    ctx.fillStyle=skin.color;
+    neon(skin.color);
+  }
+
+  ctx.fillRect(player.x,player.y,player.size,player.size);
+  ctx.shadowBlur=0;
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  debris.forEach(drawShape);
+  drawPlayer();
+
+  ctx.fillStyle="white";
+  ctx.font="18px Arial";
+  ctx.fillText("Score: "+score,20,30);
+  ctx.fillText("High Score: "+highScore,20,55);
+  ctx.fillText("Skin: "+currentSkin,20,80);
+
+  ctx.fillText("1-5 to change skins",20,110);
+
+  if(gameOver){
+    ctx.textAlign="center";
+    ctx.font="50px Arial";
+    neon("white");
+    ctx.fillText("GAME OVER",canvas.width/2,canvas.height/2);
+    ctx.font="20px Arial";
+    ctx.fillText("Press R to Restart",canvas.width/2,canvas.height/2+40);
+    ctx.shadowBlur=0;
+  }
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();</script></body><script type="module">// Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyACCmBFWJSAVEdGTZGJhUPGuBoopm3wW_M",
+    authDomain: "gravity-dodge-90014.firebaseapp.com",
+    projectId: "gravity-dodge-90014",
+    storageBucket: "gravity-dodge-90014.firebasestorage.app",
+    messagingSenderId: "856223989549",
+    appId: "1:856223989549:web:46ab725d6c50afe88b5da4",
+    measurementId: "G-4P37M989LF"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);</script></html>
