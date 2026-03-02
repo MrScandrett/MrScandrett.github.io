@@ -565,41 +565,13 @@ function equipSkin(skin){ localStorage.setItem('lb_equipped', skin); applySkin(s
 function applySkin(skin){ const mapping = {gold:'#ffd700', white:'#ffffff', black:'#000000', green:'#2ecc71', camo:'#6b8e23'}; player.color = mapping[skin] || '#2ecc71'; player.skin = (skin === 'camo') ? 'camo' : 'solid'; localStorage.setItem('lb_equipped', skin); }
 
 requestAnimationFrame(loop);
-const levelSelect = document.getElementById("level"); const gameContainer = document.getElementById("game-container"); // Change background when level is selected levelSelect.addEventListener("change", () => { const level = levelSelect.value; // Remove old level classes gameContainer.classList.remove("plains", "forest", "mountain"); // Add new level class gameContainer.classList.add(level); }); // --- Your existing jumper game code goes below --- // Example placeholder: const canvas = document.getElementById("gameCanvas"); const ctx = canvas.getContext("2d"); // Example game loop function gameLoop() { ctx.clearRect(0, 0, canvas.width, canvas.height); // Your jumper game logic here... requestAnimationFrame(gameLoop); } gameLoop();
 const levelSelect = document.getElementById("level");
 const gameContainer = document.getElementById("game-container");
 
-levelSelect.addEventListener("change", () => {
+if (levelSelect && gameContainer) {
+  levelSelect.addEventListener("change", () => {
     const level = levelSelect.value;
-
-    console.log("Level changed to:", level); // Debug
-
-    // Remove all level classes
     gameContainer.className = "";
     gameContainer.classList.add(level);
-});
-
-// --- Your existing game code ---
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Your jumper game logic...
-
-    requestAnimationFrame(gameLoop);
+  });
 }
-
-gameLoop();
-const canvas = document.getElementById("game"); // ✅ This matches your HTML
-const ctx = canvas.getContext("2d");
-
-const levelSelect = document.getElementById("level");
-const gameContainer = document.getElementById("game-container");
-
-levelSelect.addEventListener("change", () => {
-  const level = levelSelect.value;
-  gameContainer.className = ""; // remove all classes
-  gameContainer.classList.add(level); // add selected level
-});

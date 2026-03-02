@@ -13,6 +13,7 @@ const APPS_DIR = path.join(ROOT, "apps");
 const MANIFEST_PATH = path.join(APPS_DIR, "manifest.json");
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg"]);
+const THUMB_EXTENSIONS = new Set([".webp", ".png", ".jpg", ".jpeg", ".svg", ".gif"]);
 const POSSIBLE_THUMB_NAMES = ["thumb.webp", "thumbnail.webp", "cover.webp", "hero.webp"];
 let imageToolsPromise = null;
 
@@ -243,10 +244,20 @@ async function chooseThumbnail(projectOutputDir, convertedWebps) {
   if (convertedWebps.length > 0) {
     return toPosixPath(path.relative(APPS_DIR, convertedWebps[0]));
   }
-
-  const entries = await fs.readdir(assetsDir);
-  if (entries.length > 0) {
-    return toPosixPath(path.join(path.relative(APPS_DIR, assetsDir), entries[0]));
+  const stack = [assetsDir];
+  while (stack.length) {
+    const current = stack.pop();
+    const entries = await fs.readdir(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(full);
+        continue;
+      }
+      const ext = path.extname(entry.name).toLowerCase();
+      if (!THUMB_EXTENSIONS.has(ext)) continue;
+      return toPosixPath(path.relative(APPS_DIR, full));
+    }
   }
 
   return null;
@@ -307,8 +318,8 @@ async function processProject(projectDir, slug) {
   return {
     name: projectTitle,
     slug,
-    url: `./${slug}/`,
-    thumbnail: thumbnailRel ? `./${thumbnailRel}` : null
+    url: `./apps/${slug}/`,
+    thumbnail: thumbnailRel ? `./apps/${thumbnailRel}` : null
   };
 }
 

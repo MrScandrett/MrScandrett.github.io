@@ -58,7 +58,7 @@ export function createProjectCard(project, options = {}) {
 
   const link = document.createElement("a");
   link.className = "card-link";
-  link.href = projectUrl(project.id);
+  link.href = project.appUrl || projectUrl(project.id);
   link.setAttribute("aria-label", `Open project: ${project.title} by ${project.student}`);
   link.addEventListener("keydown", (event) => {
     if (event.key === " ") {
