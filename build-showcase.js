@@ -157,6 +157,34 @@ function findWebProjectSources(rootDir) {
   return projects;
 }
 
+function isNestedInside(parentDir, childDir) {
+  const rel = path.relative(parentDir, childDir);
+  return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+}
+
+function pruneNestedWebSources(sources) {
+  const sorted = sources
+    .slice()
+    .sort((a, b) => a.projectDir.split(path.sep).length - b.projectDir.split(path.sep).length);
+
+  const kept = [];
+
+  for (const source of sorted) {
+    const duplicateNested = kept.some(
+      (existing) => existing.student === source.student && isNestedInside(existing.projectDir, source.projectDir)
+    );
+
+    if (duplicateNested) {
+      logStep(`Skipping nested duplicate project for ${source.student}: ${source.projectDir}`);
+      continue;
+    }
+
+    kept.push(source);
+  }
+
+  return kept;
+}
+
 function findScratchSources(rootDir) {
   const scratchProjects = [];
   const stack = [rootDir];
@@ -529,6 +557,18 @@ function ensureUniqueSlugs(projectSources) {
   return pairs;
 }
 
+async function removeStaleAppDirs(validSlugs) {
+  const entries = await fs.readdir(APPS_DIR, { withFileTypes: true });
+  const keep = new Set(validSlugs);
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    if (keep.has(entry.name)) continue;
+    await fs.rm(path.join(APPS_DIR, entry.name), { recursive: true, force: true });
+    logStep(`Removed stale app directory: /apps/${entry.name}/`);
+  }
+}
+
 async function main() {
   const strictMode = process.argv.includes("--strict");
   logStep("Starting showcase build.");
@@ -539,7 +579,7 @@ async function main() {
 
   await ensureDir(APPS_DIR);
 
-  const webSources = findWebProjectSources(STUDENT_PROJECTS_DIR);
+  const webSources = pruneNestedWebSources(findWebProjectSources(STUDENT_PROJECTS_DIR));
   const scratchSources = findScratchSources(STUDENT_PROJECTS_DIR);
   const projectSources = webSources.concat(scratchSources);
 
@@ -575,6 +615,7 @@ async function main() {
     }
   }
 
+  await removeStaleAppDirs(manifest.map((item) => item.slug));
   await fs.writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + "\n", "utf8");
   logStep(`Wrote manifest with ${manifest.length} project(s): ${MANIFEST_PATH}`);
 
