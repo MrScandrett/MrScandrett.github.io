@@ -13,7 +13,20 @@ const APPS_DIR = path.join(ROOT, "apps");
 const MANIFEST_PATH = path.join(APPS_DIR, "manifest.json");
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg"]);
-const MODEL_EXTENSIONS = new Set([".stl"]);
+const MODEL_EXTENSIONS = new Set([".stl", ".obj"]);
+const MODEL_RESOURCE_EXTENSIONS = new Set([
+  ".stl",
+  ".obj",
+  ".mtl",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".bmp",
+  ".webp",
+  ".svg",
+  ".tga",
+]);
 const THUMB_EXTENSIONS = new Set([".webp", ".png", ".jpg", ".jpeg", ".svg", ".gif"]);
 const POSSIBLE_THUMB_NAMES = ["thumb.webp", "thumbnail.webp", "cover.webp", "hero.webp"];
 let imageToolsPromise = null;
@@ -235,7 +248,7 @@ function findScratchSources(rootDir) {
   return scratchProjects;
 }
 
-function findStlSources(rootDir, ignoreDirectories = []) {
+function findModelSources(rootDir, ignoreDirectories = []) {
   const modelProjects = [];
   const stack = [rootDir];
 
@@ -260,7 +273,8 @@ function findStlSources(rootDir, ignoreDirectories = []) {
       const grade = gradeFromPath(full);
       const modelTitle = displayTitleFromFileName(entry.name) || "3D Model";
       modelProjects.push({
-        kind: "stl",
+        kind: "model",
+        format: ext === ".obj" ? "obj" : "stl",
         filePath: full,
         student,
         grade,
@@ -600,12 +614,16 @@ async function processScratchProject(source, slug) {
   };
 }
 
-function buildStlViewerScript({ modelUrl, title, student, grade }) {
+function buildModelViewerScript({ modelUrl, mtlUrl, modelFormat, title, student, grade }) {
   return `import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
 
 const MODEL_URL = ${JSON.stringify(modelUrl)};
+const MTL_URL = ${JSON.stringify(mtlUrl || "")};
+const MODEL_FORMAT = ${JSON.stringify(modelFormat)};
 const TITLE = ${JSON.stringify(title)};
 const STUDENT = ${JSON.stringify(student)};
 const GRADE = ${JSON.stringify(grade || "")};
@@ -652,7 +670,7 @@ const grid = new THREE.GridHelper(240, 24, 0x8fa0bc, 0xc8d2e2);
 grid.position.y = -32;
 scene.add(grid);
 
-let mesh = null;
+let modelRoot = null;
 let modelRadius = 60;
 let projectionMode = "Perspective";
 let homePosition = new THREE.Vector3(120, 120, 120);
@@ -681,8 +699,13 @@ function resize() {
   orthoCamera.updateProjectionMatrix();
 }
 
-function fitCamera(radius) {
-  const safeRadius = Math.max(radius || 40, 40);
+function fitCameraFromObject(root) {
+  const box = new THREE.Box3().setFromObject(root);
+  const center = box.getCenter(new THREE.Vector3());
+  root.position.sub(center);
+  const fittedBox = new THREE.Box3().setFromObject(root);
+  const size = fittedBox.getSize(new THREE.Vector3());
+  const safeRadius = Math.max(size.length() * 0.5, 40);
   modelRadius = safeRadius;
   const fov = (perspectiveCamera.fov * Math.PI) / 180;
   const distance = safeRadius / Math.tan(fov / 2) * 1.05;
@@ -693,6 +716,14 @@ function fitCamera(radius) {
   homePosition.copy(perspectiveCamera.position);
   homeTarget.copy(controls.target);
   resize();
+}
+
+function setModelRoot(root) {
+  if (modelRoot) scene.remove(modelRoot);
+  modelRoot = root;
+  scene.add(modelRoot);
+  fitCameraFromObject(modelRoot);
+  setStatus("Loaded: " + TITLE);
 }
 
 function switchProjection() {
@@ -739,43 +770,102 @@ window.addEventListener("resize", resize);
 updateProjectionLabel();
 resize();
 
-const loader = new STLLoader();
-loader.load(
-  MODEL_URL,
-  (geometry) => {
-    geometry.computeVertexNormals();
-    geometry.computeBoundingBox();
-    const center = new THREE.Vector3();
-    geometry.boundingBox.getCenter(center);
-    geometry.translate(-center.x, -center.y, -center.z);
-    geometry.computeBoundingSphere();
-    const radius = geometry.boundingSphere ? geometry.boundingSphere.radius : 48;
+function loadStl() {
+  const loader = new STLLoader();
+  loader.load(
+    MODEL_URL,
+    (geometry) => {
+      geometry.computeVertexNormals();
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x96a9c8,
+        roughness: 0.45,
+        metalness: 0.1,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      setModelRoot(mesh);
+    },
+    (event) => {
+      if (!event.total) return;
+      const pct = Math.max(0, Math.min(100, Math.round((event.loaded / event.total) * 100)));
+      setStatus("Loading model... " + pct + "%");
+    },
+    (error) => {
+      console.error(error);
+      setStatus("Could not load STL model. Check file format and path.");
+    }
+  );
+}
 
-    const material = new THREE.MeshStandardMaterial({
+function applyObjFallbackMaterials(object) {
+  object.traverse((child) => {
+    if (!child.isMesh) return;
+    if (child.material) return;
+    child.material = new THREE.MeshStandardMaterial({
       color: 0x96a9c8,
       roughness: 0.45,
       metalness: 0.1,
-      flatShading: false,
     });
+  });
+}
 
-    if (mesh) scene.remove(mesh);
-    mesh = new THREE.Mesh(geometry, material);
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
-    scene.add(mesh);
-    fitCamera(radius);
-    setStatus("Loaded: " + TITLE);
-  },
-  (event) => {
-    if (!event.total) return;
-    const pct = Math.max(0, Math.min(100, Math.round((event.loaded / event.total) * 100)));
-    setStatus("Loading model... " + pct + "%");
-  },
-  (error) => {
-    console.error(error);
-    setStatus("Could not load STL model. Check file format and path.");
+function loadObj() {
+  const objLoader = new OBJLoader();
+  const onObject = (object) => {
+    applyObjFallbackMaterials(object);
+    setModelRoot(object);
+  };
+
+  if (MTL_URL) {
+    const mtlLoader = new MTLLoader();
+    mtlLoader.load(
+      MTL_URL,
+      (materials) => {
+        materials.preload();
+        objLoader.setMaterials(materials);
+        objLoader.load(
+          MODEL_URL,
+          onObject,
+          undefined,
+          (error) => {
+            console.error(error);
+            setStatus("Could not load OBJ model. Check file format and path.");
+          }
+        );
+      },
+      undefined,
+      () => {
+        objLoader.load(
+          MODEL_URL,
+          onObject,
+          undefined,
+          (error) => {
+            console.error(error);
+            setStatus("Could not load OBJ model. Check file format and path.");
+          }
+        );
+      }
+    );
+    return;
   }
-);
+
+  objLoader.load(
+    MODEL_URL,
+    onObject,
+    undefined,
+    (error) => {
+      console.error(error);
+      setStatus("Could not load OBJ model. Check file format and path.");
+    }
+  );
+}
+
+if (MODEL_FORMAT === "obj") {
+  loadObj();
+} else {
+  loadStl();
+}
 
 function animate() {
   requestAnimationFrame(animate);
@@ -810,24 +900,75 @@ function buildStlThumbSvg({ title, student }) {
 `;
 }
 
-async function processStlProject(source, slug) {
+async function findObjMaterialFile(sourceObjPath) {
+  try {
+    const objText = await fs.readFile(sourceObjPath, "utf8");
+    const match = objText.match(/^\s*mtllib\s+([^\r\n]+)$/im);
+    if (!match) return "";
+    const raw = String(match[1] || "").trim();
+    if (!raw) return "";
+    return path.basename(raw);
+  } catch {
+    return "";
+  }
+}
+
+async function copyModelResources(sourceFilePath, destinationModelsDir) {
+  const sourceDir = path.dirname(sourceFilePath);
+  const copied = [];
+  const entries = await fs.readdir(sourceDir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const ext = path.extname(entry.name).toLowerCase();
+    if (!MODEL_RESOURCE_EXTENSIONS.has(ext)) continue;
+    const src = path.join(sourceDir, entry.name);
+    const dst = path.join(destinationModelsDir, entry.name);
+    await fs.copyFile(src, dst);
+    copied.push(entry.name);
+  }
+
+  return copied;
+}
+
+async function processModelProject(source, slug) {
   const outputDir = path.join(APPS_DIR, slug);
   const modelFileName = path.basename(source.filePath);
-  const modelOutName = modelFileName.replace(/[^\w.\- ]/g, "_");
-  const modelRelPath = `./assets/models/${encodeURIComponent(modelOutName)}`;
+  const modelFormat = source.format === "obj" ? "obj" : "stl";
+  const modelRelPath = `./assets/models/${encodeURIComponent(modelFileName)}`;
   const studentLabel = source.student || "Student";
   const gradeLabel = source.grade || "";
   const title = source.title || displayTitleFromFileName(modelFileName) || "3D Model";
 
   await fs.rm(outputDir, { recursive: true, force: true });
-  await ensureDir(path.join(outputDir, "assets", "models"));
-  await fs.copyFile(source.filePath, path.join(outputDir, "assets", "models", modelOutName));
+  const modelsOutDir = path.join(outputDir, "assets", "models");
+  await ensureDir(modelsOutDir);
+  const copiedFiles = await copyModelResources(source.filePath, modelsOutDir);
+
+  if (!copiedFiles.includes(modelFileName)) {
+    await fs.copyFile(source.filePath, path.join(modelsOutDir, modelFileName));
+  }
+
+  let mtlRelPath = "";
+  if (modelFormat === "obj") {
+    const declaredMtl = await findObjMaterialFile(source.filePath);
+    if (declaredMtl && copiedFiles.includes(declaredMtl)) {
+      mtlRelPath = `./assets/models/${encodeURIComponent(declaredMtl)}`;
+    } else {
+      const fallbackMtl = copiedFiles.find((name) => path.extname(name).toLowerCase() === ".mtl");
+      if (fallbackMtl) {
+        mtlRelPath = `./assets/models/${encodeURIComponent(fallbackMtl)}`;
+      }
+    }
+  }
 
   const viewerEntryPath = path.join(outputDir, ".stl-viewer-entry.js");
   await fs.writeFile(
     viewerEntryPath,
-    buildStlViewerScript({
+    buildModelViewerScript({
       modelUrl: modelRelPath,
+      mtlUrl: mtlRelPath,
+      modelFormat,
       title,
       student: studentLabel,
       grade: gradeLabel,
@@ -906,8 +1047,8 @@ async function processStlProject(source, slug) {
     student: studentLabel,
     category: "3D",
     program: gradeLabel || "3D Lab",
-    tech: ["STL", "Three.js"],
-    tags: ["student-upload", "3d-model", "stl"],
+    tech: [modelFormat.toUpperCase(), "Three.js"],
+    tags: ["student-upload", "3d-model", modelFormat],
     difficulty: "Beginner",
     date_added: new Date().toISOString().slice(0, 10),
   };
