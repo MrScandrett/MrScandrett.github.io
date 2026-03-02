@@ -34,6 +34,28 @@ node serve-local.js
 Open:
 - `http://localhost:8080/login.html`
 
+## Student upload build pipeline (Web + Scratch + 3D STL)
+
+Place student files under `student-projects/`:
+
+- Web app: `student-projects/<StudentName>/<ProjectFolder>/index.html`
+- Scratch: `student-projects/<StudentName>/<ProjectName>.sb3`
+- 3D model: `student-projects/<StudentName>/<Grade>/<ModelName>.stl`
+
+Then build:
+
+```bash
+cd /Users/evanscandrett/Documents/GitHubTutorialSTEAM
+npm ci
+npm run build
+```
+
+Output:
+
+- Built apps in `apps/<slug>/`
+- Showcase manifest in `apps/manifest.json`
+- STL models auto-render in an interactive viewer (orbit/zoom/pan, projection toggle, fullscreen)
+
 ## Portal backend (moderated accounts + uploads)
 
 ```bash
