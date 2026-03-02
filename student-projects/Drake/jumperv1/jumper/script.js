@@ -53,7 +53,16 @@ const diffSettings = {
 };
 
 const keys = {};
-addEventListener('keydown', e=>{ keys[e.key.toLowerCase()]=true; if(e.code==='Space') e.preventDefault(); });
+addEventListener('keydown', e=>{
+  const key = e.key.toLowerCase();
+  keys[key] = true;
+  if (e.code === 'Space') {
+    e.preventDefault();
+  }
+  if (!running && (e.code === 'Space' || key === 'w' || key === 'arrowup')) {
+    start();
+  }
+});
 addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 
 // touch controls already wired to keys in index.html
@@ -513,6 +522,35 @@ function drawJumpStripes(){
 // start on click/tap
 canvas.addEventListener('mousedown', ()=>{ if(!running) start(); });
 canvas.addEventListener('touchstart', ()=>{ if(!running) start(); });
+
+function bindTouchKey(buttonId, keyName) {
+  const btn = document.getElementById(buttonId);
+  if (!btn) return;
+
+  const press = (event) => {
+    event.preventDefault();
+    keys[keyName] = true;
+    if (!running && keyName === ' ') start();
+  };
+
+  const release = (event) => {
+    event.preventDefault();
+    keys[keyName] = false;
+  };
+
+  btn.addEventListener('pointerdown', press);
+  btn.addEventListener('pointerup', release);
+  btn.addEventListener('pointerleave', release);
+  btn.addEventListener('pointercancel', release);
+  btn.addEventListener('touchstart', press, { passive: false });
+  btn.addEventListener('touchend', release, { passive: false });
+  btn.addEventListener('mousedown', press);
+  btn.addEventListener('mouseup', release);
+}
+
+bindTouchKey('left', 'arrowleft');
+bindTouchKey('right', 'arrowright');
+bindTouchKey('jump', ' ');
 
 // difficulty controls binding
 Array.from(document.querySelectorAll('.diff')).forEach(btn=>{ btn.addEventListener('click', e=>{ const id = e.target.id; const d = id.replace('diff-',''); setDifficulty(d); Array.from(document.querySelectorAll('.diff')).forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); }); });

@@ -1,5 +1,9 @@
 const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const ctx = canvas ? canvas.getContext("2d") : null;
+
+if (!canvas || !ctx) {
+    throw new Error("Game canvas failed to initialize.");
+}
 
 const homeScreen = document.getElementById("home-screen");
 const kaijuGrid = document.getElementById("kaiju-grid");
@@ -28,20 +32,18 @@ const worldHeight = 2000;
 // =========================
 // SPRITE
 // =========================
-const godzillaImg = new Image();
-godzillaImg.src = "/assets/sprites/godzilla.png";
+function createSprite(fileName) {
+    const img = new Image();
+    // Relative path keeps sprite loading stable in /apps/* builds.
+    img.src = `./assets/sprites/${fileName}`;
+    return img;
+}
 
-const kongImg = new Image();
-kongImg.src = "/assets/sprites/kong.png";
-
-const mothraImg = new Image();
-mothraImg.src = "/assets/sprites/mothra.png";
-
-const rodanImg = new Image();
-rodanImg.src = "/assets/sprites/rodan.png";
-
-const mechaImg = new Image();
-mechaImg.src = "/assets/sprites/mecha.png";
+const godzillaImg = createSprite("godzilla.png");
+const kongImg = createSprite("kong.png");
+const mothraImg = createSprite("mothra.png");
+const rodanImg = createSprite("rodan.png");
+const mechaImg = createSprite("mecha.png");
 
 // =========================
 // ENTITY
@@ -65,6 +67,7 @@ class Entity {
         this.isBoss = false;
         this.thermoTimer = 0; // Timer for Thermo Nuclear state
         this.img = godzillaImg;
+        this.fallbackColor = "#4CAF50";
     }
 
     draw() {
@@ -88,7 +91,15 @@ class Entity {
         }
 
         ctx.scale(this.facing, 1);
-        ctx.drawImage(this.img, -this.size / 2, 0, this.size, this.size);
+        // Never crash the loop if a sprite is missing.
+        if (this.img && this.img.complete && this.img.naturalWidth > 0) {
+            ctx.drawImage(this.img, -this.size / 2, 0, this.size, this.size);
+        } else {
+            ctx.fillStyle = this.fallbackColor;
+            ctx.fillRect(-this.size / 2, 0, this.size, this.size);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+            ctx.fillRect(-this.size / 2 + 6, 6, this.size - 12, 12);
+        }
         ctx.restore();
 
         // Improved Health Bar
@@ -217,8 +228,39 @@ const floatingTexts = [];
 let isGameOver = false;
 let regenTimer = 0;
 let selectedKaiju = "godzilla";
-let gCells = parseInt(localStorage.getItem("kaiju_gcells")) || 0;
-let unlockedKaijus = JSON.parse(localStorage.getItem("kaiju_unlocked")) || ["godzilla"];
+
+function safeStorageGet(key, fallbackValue) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw === null ? fallbackValue : raw;
+    } catch (_) {
+        return fallbackValue;
+    }
+}
+
+function safeStorageSet(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (_) {
+        // Ignore storage write issues to keep gameplay running.
+    }
+}
+
+function readUnlockedKaijus() {
+    try {
+        const raw = safeStorageGet("kaiju_unlocked", null);
+        if (!raw) return ["godzilla"];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return ["godzilla"];
+        if (!parsed.includes("godzilla")) parsed.unshift("godzilla");
+        return parsed;
+    } catch (_) {
+        return ["godzilla"];
+    }
+}
+
+let gCells = Number.parseInt(safeStorageGet("kaiju_gcells", "0"), 10) || 0;
+let unlockedKaijus = readUnlockedKaijus();
 let isGameRunning = false;
 let enemiesDefeated = 0;
 let bossActive = false;
@@ -230,10 +272,18 @@ let isVictory = false;
 // =========================
 // SOUND SYSTEM (Web Audio API)
 // =========================
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const audioCtx = new AudioContext();
+const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+if (AudioCtxClass) {
+    try {
+        audioCtx = new AudioCtxClass();
+    } catch (_) {
+        audioCtx = null;
+    }
+}
 
 function playSound(type) {
+    if (!audioCtx) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
     const osc = audioCtx.createOscillator();
@@ -771,7 +821,7 @@ function applyDamage(hitbox, attacker, targets, damage, knockback) {
                 }
 
                 gCells += reward;
-                localStorage.setItem("kaiju_gcells", gCells);
+                safeStorageSet("kaiju_gcells", String(gCells));
                 updateGCellsUI();
                 addFloatingText(target.x + target.size / 2, target.y, `+${reward} G`, "255, 215, 0");
             }
@@ -932,10 +982,12 @@ function drawVictory() {
 
 function setupMatch() {
     const stats = kaijuData[selectedKaiju];
+    if (!stats) return;
     player.maxHealth = stats.hp;
     player.health = player.maxHealth;
     player.speed = stats.speed;
     player.img = stats.img;
+    player.fallbackColor = stats.fallbackColor || "#4CAF50";
     player.x = 200;
     player.y = 200;
     
@@ -1020,7 +1072,7 @@ function update() {
                     if (e.health <= 0) {
                         // Manual reward since we bypass applyDamage
                         gCells += 500;
-                        localStorage.setItem("kaiju_gcells", gCells);
+                        safeStorageSet("kaiju_gcells", String(gCells));
                         updateGCellsUI();
                         addFloatingText(e.x + e.size / 2, e.y, "+500 G", "255, 215, 0");
                         log.textContent = "BOSS SLAIN! +500 G";
@@ -1184,7 +1236,7 @@ function update() {
         if (bossActive) {
             isVictory = true;
             gCells += 1000; // Win Bonus
-            localStorage.setItem("kaiju_gcells", gCells);
+            safeStorageSet("kaiju_gcells", String(gCells));
             updateGCellsUI();
             log.textContent = "VICTORY! +1000 G";
         } else if (enemiesDefeated >= 10) {
@@ -1287,11 +1339,11 @@ function update() {
 // MENU & KAIJU SELECTION
 // =========================
 const kaijuData = {
-    godzilla: { name: "Godzilla", hp: 500, speed: 3, desc: "Balanced", price: 0, img: godzillaImg },
-    kong: { name: "Kong", hp: 700, speed: 2.5, desc: "Tank", price: 500, img: kongImg },
-    mothra: { name: "Mothra", hp: 300, speed: 5, desc: "Speedster", price: 300, img: mothraImg },
-    rodan: { name: "Rodan", hp: 400, speed: 4, desc: "Aerial", price: 100, img: rodanImg },
-    mecha: { name: "Mecha Godzilla", hp: 450, speed: 3.5, desc: "Attacker", price: 1000, img: mechaImg }
+    godzilla: { name: "Godzilla", hp: 500, speed: 3, desc: "Balanced", price: 0, img: godzillaImg, fallbackColor: "#4CAF50" },
+    kong: { name: "Kong", hp: 700, speed: 2.5, desc: "Tank", price: 500, img: kongImg, fallbackColor: "#8D6E63" },
+    mothra: { name: "Mothra", hp: 300, speed: 5, desc: "Speedster", price: 300, img: mothraImg, fallbackColor: "#BA68C8" },
+    rodan: { name: "Rodan", hp: 400, speed: 4, desc: "Aerial", price: 100, img: rodanImg, fallbackColor: "#EF5350" },
+    mecha: { name: "Mecha Godzilla", hp: 450, speed: 3.5, desc: "Attacker", price: 1000, img: mechaImg, fallbackColor: "#90A4AE" }
 };
 
 document.getElementById("mode-survival").onclick = () => setGameMode("survival");
@@ -1338,8 +1390,8 @@ function initMenu() {
                 if (gCells >= k.price) {
                     gCells -= k.price;
                     unlockedKaijus.push(key);
-                    localStorage.setItem("kaiju_gcells", gCells);
-                    localStorage.setItem("kaiju_unlocked", JSON.stringify(unlockedKaijus));
+                    safeStorageSet("kaiju_gcells", String(gCells));
+                    safeStorageSet("kaiju_unlocked", JSON.stringify(unlockedKaijus));
                     selectedKaiju = key;
                     initMenu(); // Redraw to show unlocked
                 } else {
@@ -1366,6 +1418,10 @@ function initMenu() {
 }
 
 function startGame() {
+    if (!unlockedKaijus.includes(selectedKaiju)) {
+        selectedKaiju = "godzilla";
+    }
+
     // Setup game state
     setupMatch();
 
