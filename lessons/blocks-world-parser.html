@@ -6,6 +6,7 @@
   <title>Blocks World Parser · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Blocks World Parser lesson in the AI Origins unit." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="labs/blocks-world/blocks-world.css" />
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -29,57 +30,99 @@
       <p>Parse structured commands and execute actions in a toy symbolic world inspired by SHRDLU.</p>
     </section>
 
-    <section class="columns">
-      <article class="card">
-        <h3>Learning Goals</h3>
-        <ul class="rhythm">
-          <li><span>Goal 1</span><strong>Map language commands to world actions</strong></li>
-          <li><span>Goal 2</span><strong>Represent world state with objects and relations</strong></li>
-          <li><span>Goal 3</span><strong>Validate preconditions before each action</strong></li>
-          <li><span>Goal 4</span><strong>Explain symbol grounding limits in toy worlds</strong></li>
-        </ul>
-      </article>
+    <section class="section" id="blocks-live">
+      <div class="section-head">
+        <h2>Live Blocks World Lab</h2>
+        <p>Type symbolic commands, watch the world update, and inspect each precondition + state transition.</p>
+      </div>
 
-      <article class="card">
-        <h3>Build Tasks</h3>
-        <ul class="rhythm">
-          <li><span>Task 1</span><strong>Implement parser patterns for core commands</strong></li>
-          <li><span>Task 2</span><strong>Create state update functions for move stack and clear</strong></li>
-          <li><span>Task 3</span><strong>Return readable error messages for invalid commands</strong></li>
-          <li><span>Task 4</span><strong>Log state transitions after each step</strong></li>
-        </ul>
+      <article class="card bw-lab">
+        <div class="bw-grid">
+          <section class="card bw-panel bw-console" aria-labelledby="bw-console-title">
+            <div class="bw-panel-head">
+              <h3 id="bw-console-title">Command Console</h3>
+              <details class="bw-help">
+                <summary>Help</summary>
+                <ul>
+                  <li><code>move X onto Y</code></li>
+                  <li><code>move X to table</code></li>
+                  <li><code>stack X on Y</code></li>
+                  <li><code>unstack X from Y</code></li>
+                  <li><code>clear X</code></li>
+                  <li><code>show state</code></li>
+                </ul>
+              </details>
+            </div>
+
+            <form id="bw-form" class="bw-input-row" autocomplete="off">
+              <label class="sr-only" for="bw-command">Blocks World command</label>
+              <input id="bw-command" type="text" placeholder="Try: move A onto B" aria-label="Type a blocks world command" required />
+              <button id="bw-run" type="submit">Run</button>
+            </form>
+
+            <div class="bw-examples" aria-label="Command examples">
+              <button type="button" data-example="move A onto B">move A onto B</button>
+              <button type="button" data-example="move A to table">move A to table</button>
+              <button type="button" data-example="stack A on B">stack A on B</button>
+              <button type="button" data-example="unstack A from B">unstack A from B</button>
+              <button type="button" data-example="clear B">clear B</button>
+              <button type="button" data-example="show state">show state</button>
+            </div>
+
+            <p id="bw-output" class="bw-output" aria-live="polite">Try: <code>move A onto B</code></p>
+            <ol id="bw-log" class="bw-log" aria-label="Action log"></ol>
+          </section>
+
+          <section class="card bw-panel bw-world-panel" aria-labelledby="bw-world-title">
+            <div class="bw-panel-head">
+              <h3 id="bw-world-title">World View</h3>
+              <button id="bw-reset" type="button">Reset world</button>
+            </div>
+
+            <div class="bw-world-wrap">
+              <div id="bw-world" class="bw-world" role="img" aria-label="Blocks world table and stacks"></div>
+            </div>
+
+            <section class="bw-state">
+              <h4>State</h4>
+              <pre id="bw-state-text"></pre>
+            </section>
+          </section>
+        </div>
       </article>
     </section>
 
     <section class="section">
-      <div class="section-head">
-        <h2>Lesson Outputs</h2>
-        <p>Each team should publish a short reflection and demo link at the end of class.</p>
-      </div>
-      <div class="tile-grid">
-        <a class="tile tile-hero" href="#" aria-disabled="true">
-          <span class="tile-kicker">Starter Kit</span>
-          <strong>Blocks World Parser starter workspace</strong>
-          <small>Add your live lesson URL or repo link</small>
-        </a>
+      <details class="card bw-about">
+        <summary>About this lab</summary>
+        <div class="bw-about-grid">
+          <article>
+            <h3>Learning Goals</h3>
+            <ul class="rhythm">
+              <li><span>Goal 1</span><strong>Map language commands to world actions</strong></li>
+              <li><span>Goal 2</span><strong>Represent world state with objects and relations</strong></li>
+              <li><span>Goal 3</span><strong>Validate preconditions before each action</strong></li>
+              <li><span>Goal 4</span><strong>Explain symbol grounding limits in toy worlds</strong></li>
+            </ul>
+          </article>
 
-        <a class="tile" href="#" aria-disabled="true">
-          <span class="tile-kicker">Extension</span>
-          <strong>Add pronoun resolution for follow-up commands</strong>
-          <small>Optional challenge for advanced students</small>
-        </a>
-
-        <a class="tile" href="../steam-lessons.html">
-          <span class="tile-kicker">Navigate</span>
-          <strong>Back to STEAM Lessons</strong>
-          <small>Return to the full ClassroomOS lesson shelf</small>
-        </a>
-      </div>
+          <article>
+            <h3>Build Tasks</h3>
+            <ul class="rhythm">
+              <li><span>Task 1</span><strong>Implement parser patterns for core commands</strong></li>
+              <li><span>Task 2</span><strong>Create state update functions for move stack and clear</strong></li>
+              <li><span>Task 3</span><strong>Return readable error messages for invalid commands</strong></li>
+              <li><span>Task 4</span><strong>Log state transitions after each step</strong></li>
+            </ul>
+          </article>
+        </div>
+      </details>
     </section>
   </main>
 
   <footer class="site-footer">
     <p><a href="../steam-lessons.html">Back to STEAM Lessons</a></p>
   </footer>
+  <script src="labs/blocks-world/blocks-world.js"></script>
 </body>
 </html>
