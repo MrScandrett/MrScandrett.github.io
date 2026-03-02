@@ -14,12 +14,25 @@ const els = {
   enableMidi: document.getElementById("enableMidi"),
   midiIn: document.getElementById("midiIn"),
   preset: document.getElementById("preset"),
-  status: document.getElementById("status")
+  status: document.getElementById("status"),
+  pianoRoll: document.getElementById("pianoRoll")
 };
 
-if (!els.enableAudio || !els.enableMidi || !els.midiIn || !els.preset || !els.status) {
+if (!els.enableAudio || !els.enableMidi || !els.midiIn || !els.preset || !els.status || !els.pianoRoll) {
   throw new Error("Music Lab could not initialize. Missing required DOM nodes.");
 }
+
+const PIANO_START_NOTE = 48; // C3
+const PIANO_END_NOTE = 72; // C5
+const BLACK_CLASSES = new Set([1, 3, 6, 8, 10]);
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+const pianoState = {
+  pointerDown: false,
+  pointerId: null,
+  activeNote: null,
+  keyByNote: new Map()
+};
 
 function setStatus(extra = "") {
   const a = audioCtx ? "on" : "off";
@@ -48,6 +61,15 @@ async function enableAudio() {
 
 function midiNoteToHz(note) {
   return 440 * Math.pow(2, (note - 69) / 12);
+}
+
+function noteName(note) {
+  const octave = Math.floor(note / 12) - 1;
+  return `${NOTE_NAMES[note % 12]}${octave}`;
+}
+
+function isBlackKey(note) {
+  return BLACK_CLASSES.has(note % 12);
 }
 
 function clearVoice(note) {
@@ -327,6 +349,156 @@ function stopVoice(note) {
   activeVoices.delete(note);
 }
 
+function noteOnFromUi(note, velocity = 0.82) {
+  ensureAudio();
+  if (audioCtx && audioCtx.state !== "running") {
+    audioCtx.resume();
+  }
+
+  if (els.preset.value === "piano") startPiano(note, velocity);
+  else startSynth(note, velocity);
+}
+
+function noteOffFromUi(note) {
+  stopVoice(note);
+}
+
+function setKeyActive(note, active) {
+  const key = pianoState.keyByNote.get(note);
+  if (!key) return;
+  key.classList.toggle("is-active", Boolean(active));
+}
+
+function releasePianoPointer() {
+  if (pianoState.activeNote !== null) {
+    noteOffFromUi(pianoState.activeNote);
+    setKeyActive(pianoState.activeNote, false);
+  }
+  pianoState.pointerDown = false;
+  pianoState.pointerId = null;
+  pianoState.activeNote = null;
+}
+
+function activatePianoNote(note) {
+  if (pianoState.activeNote === note) return;
+
+  if (pianoState.activeNote !== null) {
+    noteOffFromUi(pianoState.activeNote);
+    setKeyActive(pianoState.activeNote, false);
+  }
+
+  noteOnFromUi(note);
+  setKeyActive(note, true);
+  pianoState.activeNote = note;
+}
+
+function makePianoKey(note, keyClass, leftPct, widthPct) {
+  const key = document.createElement("button");
+  key.type = "button";
+  key.className = `music-piano-key ${keyClass}`;
+  key.dataset.note = String(note);
+  key.setAttribute("aria-label", `Piano key ${noteName(note)}`);
+  key.title = noteName(note);
+  key.style.left = `${leftPct}%`;
+  key.style.width = `${widthPct}%`;
+
+  key.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    pianoState.pointerDown = true;
+    pianoState.pointerId = event.pointerId;
+    activatePianoNote(note);
+    if (typeof key.setPointerCapture === "function") {
+      key.setPointerCapture(event.pointerId);
+    }
+  });
+
+  key.addEventListener("keydown", (event) => {
+    if (event.repeat) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    noteOnFromUi(note);
+    setKeyActive(note, true);
+  });
+
+  key.addEventListener("keyup", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    noteOffFromUi(note);
+    setKeyActive(note, false);
+  });
+
+  key.addEventListener("blur", () => {
+    noteOffFromUi(note);
+    setKeyActive(note, false);
+  });
+
+  pianoState.keyByNote.set(note, key);
+  return key;
+}
+
+function buildPianoRoll() {
+  const notes = [];
+  for (let note = PIANO_START_NOTE; note <= PIANO_END_NOTE; note += 1) {
+    notes.push(note);
+  }
+
+  const whiteNotes = notes.filter((note) => !isBlackKey(note));
+  const whiteWidth = 100 / whiteNotes.length;
+  const blackWidth = whiteWidth * 0.62;
+
+  const whiteIndexByNote = new Map();
+  whiteNotes.forEach((note, index) => {
+    whiteIndexByNote.set(note, index);
+  });
+
+  els.pianoRoll.innerHTML = "";
+
+  for (const note of whiteNotes) {
+    const index = whiteIndexByNote.get(note);
+    const left = index * whiteWidth;
+    els.pianoRoll.appendChild(makePianoKey(note, "music-piano-key--white", left, whiteWidth));
+  }
+
+  for (const note of notes.filter((n) => isBlackKey(n))) {
+    const previousWhite = note - 1;
+    const index = whiteIndexByNote.get(previousWhite);
+    if (typeof index !== "number") continue;
+    const left = (index + 1) * whiteWidth - blackWidth / 2;
+    els.pianoRoll.appendChild(makePianoKey(note, "music-piano-key--black", left, blackWidth));
+  }
+}
+
+function wirePianoRollPointer() {
+  els.pianoRoll.addEventListener("pointermove", (event) => {
+    if (!pianoState.pointerDown || event.pointerId !== pianoState.pointerId) return;
+    const hovered = document.elementFromPoint(event.clientX, event.clientY);
+    const key = hovered && hovered.closest(".music-piano-key");
+    if (!key || !els.pianoRoll.contains(key)) return;
+    const nextNote = Number(key.dataset.note);
+    if (!Number.isFinite(nextNote)) return;
+    activatePianoNote(nextNote);
+  });
+
+  els.pianoRoll.addEventListener("pointerup", (event) => {
+    if (event.pointerId !== pianoState.pointerId) return;
+    releasePianoPointer();
+  });
+
+  els.pianoRoll.addEventListener("pointercancel", (event) => {
+    if (event.pointerId !== pianoState.pointerId) return;
+    releasePianoPointer();
+  });
+
+  els.pianoRoll.addEventListener("pointerleave", (event) => {
+    if (!pianoState.pointerDown || event.pointerId !== pianoState.pointerId) return;
+    releasePianoPointer();
+  });
+
+  window.addEventListener("blur", () => {
+    releasePianoPointer();
+  });
+}
+
 function populateMidiInputs() {
   els.midiIn.innerHTML = "";
 
@@ -448,6 +620,10 @@ els.midiIn.addEventListener("change", (e) => {
   setMidiInput(e.target.value);
 });
 
+els.preset.addEventListener("change", () => {
+  releasePianoPointer();
+});
+
 for (const pad of document.querySelectorAll("[data-drum]")) {
   pad.addEventListener("mousedown", () => {
     triggerPad(pad.dataset.drum);
@@ -469,4 +645,6 @@ for (const pad of document.querySelectorAll("[data-drum]")) {
   });
 }
 
+buildPianoRoll();
+wirePianoRollPointer();
 setStatus();
