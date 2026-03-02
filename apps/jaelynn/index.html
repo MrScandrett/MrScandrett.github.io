@@ -1,0 +1,183 @@
+<!DOCTYPE html><html><head><title>Tune Master</title><style>body{font-family:Arial;text-align:center;background:linear-gradient(120deg,#ff9ad5,#a78bfa);color:#fff}button{padding:10px 15px;margin:5px;border:none;border-radius:10px;cursor:pointer}.instrument{display:none;margin-top:30px}.active{display:block}.piano{display:flex;justify-content:center;flex-wrap:wrap;max-width:500px;margin:auto}.key{width:60px;height:200px;background:#fff;border:1px solid #000;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;font-weight:700;color:#000}.string{width:400px;height:20px;background:silver;margin:10px auto;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;border-radius:10px}.flute{display:flex;justify-content:center;gap:15px;margin-top:20px;flex-wrap:wrap}.hole{width:50px;height:50px;background:#000;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}.screen{display:none}.show{display:block}.stats{margin-top:10px;font-size:18px}</style></head><body><h1>🎵 Tune Master</h1><button onclick="showScreen('game')">Game</button> <button onclick="showScreen('shop')">Shop</button><div class="stats"><div id="score">Coins: 0</div><div id="level">Level: 1</div><div id="combo">Combo: 0</div></div><button onclick="playTune()">🎧 Listen</button><h3 id="tune"></h3><div id="game" class="screen show"><div><button onclick="switchInstrument('piano')">🎹 Piano</button> <button onclick="switchInstrument('guitar')">🎸 Guitar</button> <button onclick="switchInstrument('flute')">🪈 Flute</button></div><div id="piano" class="instrument active"><div class="piano"><div class="key" onclick="play('C')">C</div><div class="key" onclick="play('D')">D</div><div class="key" onclick="play('E')">E</div><div class="key" onclick="play('F')">F</div><div class="key" onclick="play('G')">G</div><div class="key" onclick="play('A')">A</div><div class="key" onclick="play('B')">B</div></div></div><div id="guitar" class="instrument"><div class="string" onclick="play('C')">C</div><div class="string" onclick="play('D')">D</div><div class="string" onclick="play('E')">E</div><div class="string" onclick="play('F')">F</div><div class="string" onclick="play('G')">G</div><div class="string" onclick="play('A')">A</div><div class="string" onclick="play('B')">B</div></div><div id="flute" class="instrument"><div class="flute"><div class="hole" onclick="play('C')">C</div><div class="hole" onclick="play('D')">D</div><div class="hole" onclick="play('E')">E</div><div class="hole" onclick="play('F')">F</div><div class="hole" onclick="play('G')">G</div><div class="hole" onclick="play('A')">A</div><div class="hole" onclick="play('B')">B</div></div></div></div><div id="shop" class="screen"><h2>🛍 Shop</h2><p>Pink Piano Skin - 50 coins</p><button onclick="buy('pink')">Buy</button><p>Gold Piano Skin - 100 coins</p><button onclick="buy('gold')">Buy</button></div><script>let notes=["C","D","E","F","G","A","B"];
+
+let tune=[];
+let input=[];
+
+let coins=0;
+let level=1;
+let combo=0;
+
+let instrument="piano";
+
+function newTune(){
+
+input=[];
+
+let length=3+level;
+
+tune=[];
+
+for(let i=0;i<length;i++){
+tune.push(notes[Math.floor(Math.random()*notes.length)]);
+}
+
+document.getElementById("tune").innerText="Play: "+tune.join(" ");
+}
+
+function playTune(){
+
+let delay=0;
+
+tune.forEach(note=>{
+
+setTimeout(()=>{
+
+playSound(note);
+
+},delay);
+
+delay+=600;
+
+});
+
+}
+
+function showScreen(screen){
+
+document.querySelectorAll(".screen")
+.forEach(s=>s.classList.remove("show"));
+
+document.getElementById(screen).classList.add("show");
+
+}
+
+function switchInstrument(inst){
+
+instrument=inst;
+
+document.querySelectorAll(".instrument")
+.forEach(i=>i.classList.remove("active"));
+
+document.getElementById(inst).classList.add("active");
+
+}
+
+function play(note){
+
+playSound(note);
+
+input.push(note);
+
+check();
+
+}
+
+function playSound(note){
+
+let context=new (window.AudioContext||window.webkitAudioContext)();
+let osc=context.createOscillator();
+let gain=context.createGain();
+
+if(instrument==="piano") osc.type="square";
+if(instrument==="guitar") osc.type="triangle";
+if(instrument==="flute") osc.type="sine";
+
+let freq={
+C:261,
+D:294,
+E:329,
+F:349,
+G:392,
+A:440,
+B:494
+};
+
+osc.frequency.value=freq[note];
+
+osc.connect(gain);
+gain.connect(context.destination);
+
+osc.start();
+
+gain.gain.setValueAtTime(0.3,context.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001,context.currentTime+0.8);
+
+osc.stop(context.currentTime+0.8);
+
+}
+
+function check(){
+
+for(let i=0;i<input.length;i++){
+
+if(input[i]!==tune[i]){
+
+alert("Wrong tune!");
+
+combo=0;
+
+updateStats();
+
+input=[];
+
+return;
+
+}
+
+}
+
+if(input.length===tune.length){
+
+combo++;
+
+let reward=20+(combo*5);
+
+coins+=reward;
+
+if(combo%3===0){
+level++;
+}
+
+updateStats();
+
+alert("Correct! +" + reward + " coins");
+
+newTune();
+
+}
+
+}
+
+function updateStats(){
+
+document.getElementById("score").innerText="Coins: "+coins;
+document.getElementById("level").innerText="Level: "+level;
+document.getElementById("combo").innerText="Combo: "+combo;
+
+}
+
+function buy(item){
+
+if(item==="pink" && coins>=50){
+
+coins-=50;
+
+document.querySelectorAll(".key")
+.forEach(k=>k.style.background="#ffb6d9");
+
+}
+
+if(item==="gold" && coins>=100){
+
+coins-=100;
+
+document.querySelectorAll(".key")
+.forEach(k=>k.style.background="gold");
+
+}
+
+updateStats();
+
+}
+
+newTune();</script></body></html>

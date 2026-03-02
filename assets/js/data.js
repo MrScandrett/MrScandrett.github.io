@@ -64,22 +64,29 @@ function normalizeManifestApps(payload) {
     .filter((item) => item && item.slug && item.url)
     .map((item) => {
       const slug = String(item.slug).trim();
-      const prettyStudent = titleFromSlug(slug) || "Student";
+      const rawStudent = item.student && String(item.student).trim() ? String(item.student).trim() : titleFromSlug(slug) || "Student";
+      const prettyStudent = /[A-Z]/.test(rawStudent) ? rawStudent : titleFromSlug(rawStudent.replace(/\s+/g, "-")) || rawStudent;
       const title = item.name && String(item.name).trim() ? String(item.name).trim() : `${prettyStudent} Project`;
+      const tech = Array.isArray(item.tech) && item.tech.length > 0 ? item.tech : ["HTML", "CSS", "JavaScript"];
+      const tags = Array.isArray(item.tags) && item.tags.length > 0 ? item.tags : ["student-upload"];
+      const category = item.category && String(item.category).trim() ? String(item.category).trim() : "Web";
+      const term = item.term && String(item.term).trim() ? String(item.term).trim() : "Live";
+      const program = item.program && String(item.program).trim() ? String(item.program).trim() : "Student Upload";
+      const difficulty = item.difficulty && String(item.difficulty).trim() ? String(item.difficulty).trim() : "Beginner";
 
       return {
         id: `app-${slug}`,
         title,
         student: prettyStudent,
         year,
-        term: "Live",
-        program: "Student Upload",
-        category: "Web",
+        term,
+        program,
+        category,
         type: "Solo",
         jam: false,
-        difficulty: "Beginner",
-        tech: ["HTML", "CSS", "JavaScript"],
-        tags: ["student-upload"],
+        difficulty,
+        tech,
+        tags,
         thumbnail: item.thumbnail || PLACEHOLDER_THUMB,
         hero: item.thumbnail || PLACEHOLDER_THUMB,
         short_description: "Student project uploaded to the classroom showcase.",

@@ -50,6 +50,23 @@ function toTitleFromSlug(slug) {
     .join(" ");
 }
 
+function displayTitleFromFileName(fileName) {
+  return toTitleFromSlug(String(fileName || "").replace(/\.[^/.]+$/g, "").replace(/[_]+/g, "-"));
+}
+
+function studentFromPath(targetPath) {
+  const rel = path.relative(STUDENT_PROJECTS_DIR, targetPath);
+  if (!rel || rel.startsWith("..")) return "Student";
+  const first = rel.split(path.sep)[0];
+  if (!first) return "Student";
+  if (/[A-Z]/.test(first)) return first;
+  return first
+    .split(/[\s_-]+/g)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function normalizeRelativeUrl(url) {
   if (!url) return url;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -114,18 +131,61 @@ function listSubdirs(dirPath) {
   return out;
 }
 
-function findProjectDirs(rootDir) {
+function findWebProjectSources(rootDir) {
   const subdirs = listSubdirs(rootDir);
   const projects = [];
 
   for (const dir of subdirs) {
-    const indexPath = path.join(dir, "index.html");
-    if (exists(indexPath)) {
-      projects.push(dir);
-    }
+    const entries = fssync.readdirSync(dir, { withFileTypes: true });
+    const htmlFiles = entries.filter((entry) => entry.isFile() && /\.html$/i.test(entry.name)).map((entry) => entry.name);
+
+    if (htmlFiles.length === 0) continue;
+
+    const indexLike = htmlFiles.find((name) => name.toLowerCase() === "index.html");
+    const entryHtml = indexLike || (htmlFiles.length === 1 ? htmlFiles[0] : null);
+    if (!entryHtml) continue;
+
+    projects.push({
+      kind: "web",
+      projectDir: dir,
+      entryHtml,
+      student: studentFromPath(dir),
+      slugBase: path.basename(dir),
+    });
   }
 
   return projects;
+}
+
+function findScratchSources(rootDir) {
+  const scratchProjects = [];
+  const stack = [rootDir];
+
+  while (stack.length) {
+    const current = stack.pop();
+    const entries = fssync.readdirSync(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === ".git" || entry.name === "node_modules") continue;
+        stack.push(full);
+        continue;
+      }
+
+      if (!entry.isFile()) continue;
+      if (path.extname(entry.name).toLowerCase() !== ".sb3") continue;
+
+      const student = studentFromPath(full);
+      scratchProjects.push({
+        kind: "scratch",
+        filePath: full,
+        student,
+        slugBase: `${student}-${displayTitleFromFileName(entry.name)}`,
+      });
+    }
+  }
+
+  return scratchProjects;
 }
 
 async function copyDirectoryRecursive(sourceDir, destinationDir, options = {}) {
@@ -263,9 +323,10 @@ async function chooseThumbnail(projectOutputDir, convertedWebps) {
   return null;
 }
 
-async function processProject(projectDir, slug) {
+async function processProject(source, slug) {
+  const { projectDir, entryHtml, student } = source;
   const outputDir = path.join(APPS_DIR, slug);
-  const sourceIndexPath = path.join(projectDir, "index.html");
+  const sourceIndexPath = path.join(projectDir, entryHtml);
   const sourceStylePath = path.join(projectDir, "style.css");
   const sourceScriptPath = path.join(projectDir, "script.js");
   const hasStyle = exists(sourceStylePath);
@@ -276,7 +337,7 @@ async function processProject(projectDir, slug) {
 
   // Copy everything except root index/style/script; those are rebuilt below.
   await copyDirectoryRecursive(projectDir, outputDir, {
-    skipFiles: new Set(["index.html", "style.css", "script.js"])
+    skipFiles: new Set([entryHtml, "style.css", "script.js"])
   });
 
   if (hasScript) {
@@ -319,16 +380,140 @@ async function processProject(projectDir, slug) {
     name: projectTitle,
     slug,
     url: `./apps/${slug}/`,
-    thumbnail: thumbnailRel ? `./apps/${thumbnailRel}` : null
+    thumbnail: thumbnailRel ? `./apps/${thumbnailRel}` : null,
+    student,
+    category: "Web",
+    tech: ["HTML", "CSS", "JavaScript"],
+    tags: ["student-upload"],
+    date_added: new Date().toISOString().slice(0, 10),
   };
 }
 
-function ensureUniqueSlugs(projectDirs) {
+async function processScratchProject(source, slug) {
+  const outputDir = path.join(APPS_DIR, slug);
+  const scratchFileOut = path.join(outputDir, "project.sb3");
+  const sourceFileName = path.basename(source.filePath);
+  const title = displayTitleFromFileName(sourceFileName) || "Scratch Project";
+
+  await fs.rm(outputDir, { recursive: true, force: true });
+  await ensureDir(outputDir);
+  await fs.copyFile(source.filePath, scratchFileOut);
+
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${title} · Scratch Player</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #0f1724;
+      color: #eef4ff;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+    .head, .foot {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+      background: #111c2e;
+    }
+    .foot {
+      border-top: 1px solid rgba(255,255,255,0.14);
+      border-bottom: 0;
+      font-size: 0.9rem;
+      color: #d2dff5;
+    }
+    .head h1 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+    }
+    .stage {
+      padding: 0.8rem;
+      display: grid;
+      gap: 0.7rem;
+      align-items: start;
+      justify-items: center;
+    }
+    iframe {
+      width: min(96vw, 980px);
+      height: min(72vh, 760px);
+      border: 0;
+      border-radius: 10px;
+      background: #0a0a0a;
+    }
+    .actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    a {
+      color: #eef4ff;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 8px;
+      padding: 0.5rem 0.8rem;
+      background: #19283f;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    a:hover {
+      background: #243b5e;
+    }
+  </style>
+</head>
+<body>
+  <header class="head">
+    <h1>${title} · Scratch (.sb3)</h1>
+  </header>
+  <main class="stage">
+    <iframe id="player" title="Scratch project player" allowfullscreen loading="eager"></iframe>
+    <div class="actions">
+      <a id="open-editor" target="_blank" rel="noopener noreferrer">Open in TurboWarp Editor</a>
+      <a href="./project.sb3" download>Download .sb3</a>
+    </div>
+  </main>
+  <footer class="foot">
+    If the embed does not load, use "Open in TurboWarp Editor" or download the .sb3 file.
+  </footer>
+  <script>
+    (function () {
+      var fileUrl = new URL("./project.sb3", window.location.href).href;
+      var embedUrl = "https://turbowarp.org/embed?autoplay&settings-button&project_url=" + encodeURIComponent(fileUrl);
+      var editorUrl = "https://turbowarp.org/editor?project_url=" + encodeURIComponent(fileUrl);
+      document.getElementById("player").src = embedUrl;
+      document.getElementById("open-editor").href = editorUrl;
+    })();
+  </script>
+</body>
+</html>`;
+
+  await fs.writeFile(path.join(outputDir, "index.html"), html, "utf8");
+
+  return {
+    name: title,
+    slug,
+    url: `./apps/${slug}/`,
+    thumbnail: null,
+    student: source.student,
+    category: "Scratch",
+    tech: ["Scratch"],
+    tags: ["student-upload", "sb3", "scratch"],
+    date_added: new Date().toISOString().slice(0, 10),
+  };
+}
+
+function ensureUniqueSlugs(projectSources) {
   const used = new Set();
   const pairs = [];
 
-  for (const projectDir of projectDirs) {
-    const base = toSlug(path.basename(projectDir));
+  for (const source of projectSources) {
+    const base = toSlug(source.slugBase || (source.projectDir ? path.basename(source.projectDir) : "student-project"));
     let slug = base;
     let count = 2;
 
@@ -338,7 +523,7 @@ function ensureUniqueSlugs(projectDirs) {
     }
 
     used.add(slug);
-    pairs.push({ projectDir, slug });
+    pairs.push({ source, slug });
   }
 
   return pairs;
@@ -354,29 +539,38 @@ async function main() {
 
   await ensureDir(APPS_DIR);
 
-  const projectDirs = findProjectDirs(STUDENT_PROJECTS_DIR);
-  if (projectDirs.length === 0) {
+  const webSources = findWebProjectSources(STUDENT_PROJECTS_DIR);
+  const scratchSources = findScratchSources(STUDENT_PROJECTS_DIR);
+  const projectSources = webSources.concat(scratchSources);
+
+  if (projectSources.length === 0) {
     await fs.writeFile(MANIFEST_PATH, JSON.stringify([], null, 2) + "\n", "utf8");
-    logStep("No student projects with index.html were found. Wrote empty /apps/manifest.json.");
+    logStep("No student projects were found. Wrote empty /apps/manifest.json.");
     return;
   }
 
-  const uniqueProjects = ensureUniqueSlugs(projectDirs);
+  const uniqueProjects = ensureUniqueSlugs(projectSources);
   logStep(`Found ${uniqueProjects.length} project(s).`);
 
   const manifest = [];
   const failures = [];
 
-  for (const { projectDir, slug } of uniqueProjects) {
-    logStep(`Building ${slug} from ${projectDir}`);
+  for (const { source, slug } of uniqueProjects) {
+    const sourcePath = source.projectDir || source.filePath || "unknown";
+    logStep(`Building ${slug} from ${sourcePath}`);
 
     try {
-      const entry = await processProject(projectDir, slug);
+      let entry;
+      if (source.kind === "scratch") {
+        entry = await processScratchProject(source, slug);
+      } else {
+        entry = await processProject(source, slug);
+      }
       manifest.push(entry);
       logStep(`Built /apps/${slug}/`);
     } catch (error) {
       await fs.rm(path.join(APPS_DIR, slug), { recursive: true, force: true });
-      failures.push({ slug, projectDir, message: error.message });
+      failures.push({ slug, projectDir: sourcePath, message: error.message });
       logStep(`Skipped /apps/${slug}/ due to error: ${error.message}`);
     }
   }
