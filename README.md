@@ -40,7 +40,7 @@ Place student files under `student-projects/`:
 
 - Web app: `student-projects/<StudentName>/<ProjectFolder>/index.html`
 - Scratch: `student-projects/<StudentName>/<ProjectName>.sb3`
-- 3D model: `student-projects/<StudentName>/<Grade>/<ModelName>.stl`
+- 3D model: `student-projects/<StudentName>/<Grade>/<ModelName>.stl` or `.obj` (optional `.mtl` in same folder)
 
 Then build:
 
@@ -54,7 +54,7 @@ Output:
 
 - Built apps in `apps/<slug>/`
 - Showcase manifest in `apps/manifest.json`
-- STL models auto-render in an interactive viewer (orbit/zoom/pan, projection toggle, fullscreen)
+- STL/OBJ models auto-render in an interactive viewer (orbit/zoom/pan, projection toggle, fullscreen)
 
 ## Portal backend (moderated accounts + uploads)
 

@@ -1099,11 +1099,11 @@ async function main() {
 
   const webSources = pruneNestedWebSources(findWebProjectSources(STUDENT_PROJECTS_DIR));
   const scratchSources = findScratchSources(STUDENT_PROJECTS_DIR);
-  const stlSources = findStlSources(
+  const modelSources = findModelSources(
     STUDENT_PROJECTS_DIR,
     webSources.map((item) => item.projectDir)
   );
-  const projectSources = webSources.concat(scratchSources, stlSources);
+  const projectSources = webSources.concat(scratchSources, modelSources);
 
   if (projectSources.length === 0) {
     await fs.writeFile(MANIFEST_PATH, JSON.stringify([], null, 2) + "\n", "utf8");
@@ -1125,8 +1125,8 @@ async function main() {
       let entry;
       if (source.kind === "scratch") {
         entry = await processScratchProject(source, slug);
-      } else if (source.kind === "stl") {
-        entry = await processStlProject(source, slug);
+      } else if (source.kind === "model") {
+        entry = await processModelProject(source, slug);
       } else {
         entry = await processProject(source, slug);
       }
