@@ -22,20 +22,33 @@ const mime = {
 
 http
   .createServer((req, res) => {
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Range",
+      "Access-Control-Allow-Private-Network": "true",
+    };
+
+    if (req.method === "OPTIONS") {
+      res.writeHead(204, corsHeaders);
+      res.end();
+      return;
+    }
+
     const urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
     const normalized = path.normalize(urlPath).replace(/^([.][.][/\\])+/, "");
     let filePath = path.join(root, normalized);
     if (urlPath === "/") filePath = path.join(root, "index.html");
 
     if (!filePath.startsWith(root)) {
-      res.writeHead(403);
+      res.writeHead(403, corsHeaders);
       res.end("Forbidden");
       return;
     }
 
     fs.stat(filePath, (err, stat) => {
       if (err) {
-        res.writeHead(404);
+        res.writeHead(404, corsHeaders);
         res.end("Not Found");
         return;
       }
@@ -44,18 +57,18 @@ http
         const indexFile = path.join(filePath, "index.html");
         fs.readFile(indexFile, (indexErr, data) => {
           if (indexErr) {
-            res.writeHead(404);
+            res.writeHead(404, corsHeaders);
             res.end("Not Found");
             return;
           }
-          res.writeHead(200, { "Content-Type": mime[".html"] });
+          res.writeHead(200, { ...corsHeaders, "Content-Type": mime[".html"] });
           res.end(data);
         });
         return;
       }
 
       const ext = path.extname(filePath).toLowerCase();
-      res.writeHead(200, { "Content-Type": mime[ext] || "application/octet-stream" });
+      res.writeHead(200, { ...corsHeaders, "Content-Type": mime[ext] || "application/octet-stream" });
       fs.createReadStream(filePath).pipe(res);
     });
   })

@@ -40,10 +40,11 @@ function createSprite(fileName) {
 }
 
 const godzillaImg = createSprite("godzilla.png");
-const kongImg = createSprite("kong.png");
-const mothraImg = createSprite("mothra.png");
-const rodanImg = createSprite("rodan.png");
-const mechaImg = createSprite("mecha.png");
+// Fallback to the available sprite pack so selection never stalls on missing files.
+const kongImg = godzillaImg;
+const mothraImg = godzillaImg;
+const rodanImg = godzillaImg;
+const mechaImg = godzillaImg;
 
 // =========================
 // ENTITY

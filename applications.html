@@ -43,11 +43,11 @@
           <small>Block-based coding and game design</small>
         </a>
 
-        <a class="tile app-link app-link-tinkercad" href="https://www.tinkercad.com/" target="_blank" rel="noreferrer">
+        <button id="open-tinkercad-picker" class="tile app-link app-link-tinkercad app-link-button" type="button" aria-haspopup="dialog" aria-controls="tinkercad-picker">
           <span class="tile-kicker">3D Design</span>
           <strong>Tinkercad</strong>
-          <small>3D modeling and electronics simulation</small>
-        </a>
+          <small>Choose your class, then enter your name on Tinkercad</small>
+        </button>
 
         <a class="tile app-link app-link-clever" href="https://clever.com/" target="_blank" rel="noreferrer">
           <span class="tile-kicker">Class Access</span>
@@ -76,8 +76,73 @@
     </section>
   </main>
 
+  <section id="tinkercad-picker" class="class-picker hidden" role="dialog" aria-modal="true" aria-labelledby="class-picker-title">
+    <div class="class-picker-backdrop" data-close-picker="true"></div>
+    <div class="class-picker-panel">
+      <h2 id="class-picker-title">What class are you in?</h2>
+      <p>Pick your class to open the correct Tinkercad join code. Then type your name on the next screen.</p>
+
+      <div class="class-picker-grid" role="group" aria-label="Tinkercad class links">
+        <button type="button" data-join-url="https://www.tinkercad.com/joinclass/DEATHJGMC">Microschool</button>
+        <button type="button" data-join-url="https://www.tinkercad.com/joinclass/KTAE7QDDZ">K-2</button>
+        <button type="button" data-join-url="https://www.tinkercad.com/joinclass/JJHQDD8YD">2nd Period</button>
+        <button type="button" data-join-url="https://www.tinkercad.com/joinclass/JJHQDD8YD">3rd Period</button>
+        <button type="button" data-join-url="https://www.tinkercad.com/joinclass/CWR9GNTKT">Friday Study Hall</button>
+      </div>
+
+      <div class="class-picker-actions">
+        <button id="close-tinkercad-picker" type="button">Cancel</button>
+      </div>
+    </div>
+  </section>
+
   <footer class="site-footer">
     <p>All links open external sites in a new tab.</p>
   </footer>
+
+  <script>
+    (function () {
+      const openBtn = document.getElementById("open-tinkercad-picker");
+      const picker = document.getElementById("tinkercad-picker");
+      const closeBtn = document.getElementById("close-tinkercad-picker");
+
+      if (!openBtn || !picker || !closeBtn) return;
+
+      function openPicker() {
+        picker.classList.remove("hidden");
+        closeBtn.focus();
+      }
+
+      function closePicker() {
+        picker.classList.add("hidden");
+        openBtn.focus();
+      }
+
+      openBtn.addEventListener("click", openPicker);
+      closeBtn.addEventListener("click", closePicker);
+
+      picker.addEventListener("click", function (event) {
+        const closeTarget = event.target.closest("[data-close-picker='true']");
+        if (closeTarget) {
+          closePicker();
+          return;
+        }
+
+        const launchTarget = event.target.closest("[data-join-url]");
+        if (!launchTarget) return;
+
+        const url = launchTarget.getAttribute("data-join-url");
+        if (!url) return;
+        window.open(url, "_blank", "noopener");
+        closePicker();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && !picker.classList.contains("hidden")) {
+          closePicker();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

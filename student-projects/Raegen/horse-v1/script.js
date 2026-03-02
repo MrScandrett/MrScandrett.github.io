@@ -407,7 +407,7 @@ const game = {
 
         // AI Horses (Complex Mesh)
         const textureLoader = new THREE.TextureLoader();
-        const horseTexture = textureLoader.load('horse/sprites/textures/horsetexture.jpg');
+        const horseTexture = textureLoader.load('./sprites/textures/horsetexture.jpg');
         horseTexture.magFilter = THREE.NearestFilter;
         horseTexture.minFilter = THREE.NearestFilter;
 

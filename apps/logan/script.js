@@ -19,7 +19,8 @@ function preload() {
     this.load.image('ground', 'https://labs.phaser.io/assets/sprites/platform.png');
     this.load.spritesheet('knight', 'https://labs.phaser.io/assets/sprites/dude.png', { frameWidth: 32, frameHeight: 48 });
     this.load.image('bgFar', 'https://labs.phaser.io/assets/skies/space2.png');
-    this.load.image('bgMid', 'https://labs.phaser.io/assets/skies/nebula.png');
+    // Use the same CORS-safe source for both layers to avoid blocked remote assets.
+    this.load.image('bgMid', 'https://labs.phaser.io/assets/skies/space2.png');
 }
 
 function create() {
