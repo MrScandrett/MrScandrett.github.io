@@ -8,22 +8,86 @@ if (!boardElement || !statusElement || !logElement || !resetButton || !depthSele
   throw new Error("Chess AI Core could not initialize. Missing required DOM nodes.");
 }
 
-const SIZE = 4;
-const FILES = ["a", "b", "c", "d"];
+const SIZE = 8;
+const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
+const MATE_SCORE = 100000;
 
 const PIECE_TEXT = {
-  WK: "K",
-  WR: "R",
-  BK: "k",
-  BR: "r"
+  WP: "♙",
+  WN: "♘",
+  WB: "♗",
+  WR: "♖",
+  WQ: "♕",
+  WK: "♔",
+  BP: "♟",
+  BN: "♞",
+  BB: "♝",
+  BR: "♜",
+  BQ: "♛",
+  BK: "♚"
 };
 
 const PIECE_NAME = {
-  WK: "White King",
+  WP: "White Pawn",
+  WN: "White Knight",
+  WB: "White Bishop",
   WR: "White Rook",
-  BK: "Black King",
-  BR: "Black Rook"
+  WQ: "White Queen",
+  WK: "White King",
+  BP: "Black Pawn",
+  BN: "Black Knight",
+  BB: "Black Bishop",
+  BR: "Black Rook",
+  BQ: "Black Queen",
+  BK: "Black King"
 };
+
+const PIECE_VALUE = {
+  P: 100,
+  N: 320,
+  B: 330,
+  R: 500,
+  Q: 900,
+  K: 20000
+};
+
+const KNIGHT_DELTAS = [
+  [-2, -1],
+  [-2, 1],
+  [-1, -2],
+  [-1, 2],
+  [1, -2],
+  [1, 2],
+  [2, -1],
+  [2, 1]
+];
+
+const KING_DELTAS = [
+  [-1, -1],
+  [-1, 0],
+  [-1, 1],
+  [0, -1],
+  [0, 1],
+  [1, -1],
+  [1, 0],
+  [1, 1]
+];
+
+const BISHOP_DIRS = [
+  [-1, -1],
+  [-1, 1],
+  [1, -1],
+  [1, 1]
+];
+
+const ROOK_DIRS = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1]
+];
+
+const QUEEN_DIRS = [...BISHOP_DIRS, ...ROOK_DIRS];
 
 const state = {
   board: [],
@@ -34,6 +98,7 @@ const state = {
   legalTargets: [],
   winner: null,
   aiThinking: false,
+  inCheckColor: null,
   log: []
 };
 
@@ -69,6 +134,14 @@ function toCoord(index) {
   return `${FILES[colOf(index)]}${SIZE - rowOf(index)}`;
 }
 
+function findKing(board, color) {
+  const target = `${color}K`;
+  for (let i = 0; i < board.length; i += 1) {
+    if (board[i] === target) return i;
+  }
+  return -1;
+}
+
 function clearLine(board, from, to) {
   const fromRow = rowOf(from);
   const fromCol = colOf(from);
@@ -90,14 +163,6 @@ function clearLine(board, from, to) {
   return true;
 }
 
-function findKing(board, color) {
-  const target = `${color}K`;
-  for (let i = 0; i < board.length; i += 1) {
-    if (board[i] === target) return i;
-  }
-  return -1;
-}
-
 function isSquareAttacked(board, target, byColor) {
   const targetRow = rowOf(target);
   const targetCol = colOf(target);
@@ -110,6 +175,23 @@ function isSquareAttacked(board, target, byColor) {
     const fromRow = rowOf(i);
     const fromCol = colOf(i);
 
+    if (pieceType === "P") {
+      const dir = byColor === "W" ? -1 : 1;
+      if (fromRow + dir === targetRow && Math.abs(fromCol - targetCol) === 1) {
+        return true;
+      }
+      continue;
+    }
+
+    if (pieceType === "N") {
+      for (const [dr, dc] of KNIGHT_DELTAS) {
+        if (fromRow + dr === targetRow && fromCol + dc === targetCol) {
+          return true;
+        }
+      }
+      continue;
+    }
+
     if (pieceType === "K") {
       if (Math.max(Math.abs(fromRow - targetRow), Math.abs(fromCol - targetCol)) === 1) {
         return true;
@@ -117,9 +199,18 @@ function isSquareAttacked(board, target, byColor) {
       continue;
     }
 
-    if (pieceType === "R") {
-      if (fromRow === targetRow || fromCol === targetCol) {
-        if (clearLine(board, i, target)) return true;
+    const dirs = pieceType === "B" ? BISHOP_DIRS : pieceType === "R" ? ROOK_DIRS : QUEEN_DIRS;
+
+    for (const [dr, dc] of dirs) {
+      let row = fromRow + dr;
+      let col = fromCol + dc;
+
+      while (inBounds(row, col)) {
+        const square = idx(row, col);
+        if (square === target) return true;
+        if (board[square]) break;
+        row += dr;
+        col += dc;
       }
     }
   }
@@ -133,68 +224,121 @@ function isInCheck(board, color) {
   return isSquareAttacked(board, kingSquare, opposite(color));
 }
 
+function maybePromotion(piece, to) {
+  if (typeOf(piece) !== "P") return null;
+  const row = rowOf(to);
+  if (colorOf(piece) === "W" && row === 0) return "WQ";
+  if (colorOf(piece) === "B" && row === SIZE - 1) return "BQ";
+  return null;
+}
+
 function applyMove(board, move) {
   const next = board.slice();
-  next[move.to] = next[move.from];
+  const movingPiece = next[move.from];
   next[move.from] = null;
+  next[move.to] = move.promotion || movingPiece;
   return next;
 }
 
-function pseudoMovesForPiece(board, from, piece) {
+function pushMove(moves, board, from, to, color, allowKingCapture = false) {
+  const target = board[to];
+  if (target && colorOf(target) === color) return false;
+  if (target && typeOf(target) === "K" && !allowKingCapture) return false;
+  moves.push({ from, to, capture: target || null });
+  return !target;
+}
+
+function pseudoMovesForPiece(board, from, piece, attackOnly = false) {
   const moves = [];
   const row = rowOf(from);
   const col = colOf(from);
   const color = colorOf(piece);
+  const type = typeOf(piece);
 
-  if (typeOf(piece) === "K") {
-    for (let dr = -1; dr <= 1; dr += 1) {
-      for (let dc = -1; dc <= 1; dc += 1) {
-        if (dr === 0 && dc === 0) continue;
-        const nextRow = row + dr;
-        const nextCol = col + dc;
-        if (!inBounds(nextRow, nextCol)) continue;
+  if (type === "P") {
+    const dir = color === "W" ? -1 : 1;
+    const startRow = color === "W" ? SIZE - 2 : 1;
 
-        const to = idx(nextRow, nextCol);
-        const target = board[to];
-        if (target && colorOf(target) === color) continue;
+    if (!attackOnly) {
+      const forwardOneRow = row + dir;
+      if (inBounds(forwardOneRow, col)) {
+        const one = idx(forwardOneRow, col);
+        if (!board[one]) {
+          moves.push({ from, to: one, capture: null, promotion: maybePromotion(piece, one) });
 
+          const forwardTwoRow = row + dir * 2;
+          if (row === startRow && inBounds(forwardTwoRow, col)) {
+            const two = idx(forwardTwoRow, col);
+            if (!board[two]) {
+              moves.push({ from, to: two, capture: null });
+            }
+          }
+        }
+      }
+    }
+
+    for (const dc of [-1, 1]) {
+      const nextRow = row + dir;
+      const nextCol = col + dc;
+      if (!inBounds(nextRow, nextCol)) continue;
+
+      const to = idx(nextRow, nextCol);
+      const target = board[to];
+
+      if (attackOnly) {
         moves.push({ from, to, capture: target || null });
+      } else if (target && colorOf(target) !== color && typeOf(target) !== "K") {
+        moves.push({ from, to, capture: target, promotion: maybePromotion(piece, to) });
       }
     }
 
     return moves;
   }
 
-  const directions = [
-    [-1, 0],
-    [1, 0],
-    [0, -1],
-    [0, 1]
-  ];
+  if (type === "N") {
+    for (const [dr, dc] of KNIGHT_DELTAS) {
+      const nextRow = row + dr;
+      const nextCol = col + dc;
+      if (!inBounds(nextRow, nextCol)) continue;
+      pushMove(moves, board, from, idx(nextRow, nextCol), color);
+    }
+    return moves;
+  }
 
-  for (const [dr, dc] of directions) {
+  if (type === "K") {
+    for (const [dr, dc] of KING_DELTAS) {
+      const nextRow = row + dr;
+      const nextCol = col + dc;
+      if (!inBounds(nextRow, nextCol)) continue;
+      pushMove(moves, board, from, idx(nextRow, nextCol), color);
+    }
+    return moves;
+  }
+
+  const dirs = type === "B" ? BISHOP_DIRS : type === "R" ? ROOK_DIRS : QUEEN_DIRS;
+
+  for (const [dr, dc] of dirs) {
     let nextRow = row + dr;
     let nextCol = col + dc;
 
     while (inBounds(nextRow, nextCol)) {
-      const to = idx(nextRow, nextCol);
-      const target = board[to];
-
-      if (!target) {
-        moves.push({ from, to, capture: null });
-      } else {
-        if (colorOf(target) !== color) {
-          moves.push({ from, to, capture: target });
-        }
-        break;
-      }
-
+      const cont = pushMove(moves, board, from, idx(nextRow, nextCol), color);
+      if (!cont) break;
       nextRow += dr;
       nextCol += dc;
     }
   }
 
   return moves;
+}
+
+function moveOrderScore(move, movingPiece) {
+  let score = 0;
+  if (move.capture) {
+    score += PIECE_VALUE[typeOf(move.capture)] * 10 - PIECE_VALUE[typeOf(movingPiece)];
+  }
+  if (move.promotion) score += 8000;
+  return score;
 }
 
 function legalMoves(board, color) {
@@ -204,79 +348,82 @@ function legalMoves(board, color) {
     const piece = board[i];
     if (!piece || colorOf(piece) !== color) continue;
 
-    const pseudo = pseudoMovesForPiece(board, i, piece);
+    const pseudo = pseudoMovesForPiece(board, i, piece, false);
 
     for (const move of pseudo) {
       const next = applyMove(board, move);
-      if (findKing(next, color) === -1) continue;
       if (isInCheck(next, color)) continue;
-      all.push(move);
+      all.push({ ...move, piece });
     }
   }
 
+  all.sort((a, b) => moveOrderScore(b, b.piece) - moveOrderScore(a, a.piece));
   return all;
 }
 
-function outcomeForTurn(board, turn) {
-  const whiteKing = findKing(board, "W");
-  const blackKing = findKing(board, "B");
-
-  if (whiteKing === -1) return { type: "win", winner: "B" };
-  if (blackKing === -1) return { type: "win", winner: "W" };
-
+function analyzePosition(board, turn) {
   const moves = legalMoves(board, turn);
-  if (moves.length) return null;
+  const inCheck = isInCheck(board, turn);
 
-  if (isInCheck(board, turn)) {
-    return { type: "win", winner: opposite(turn) };
+  if (moves.length > 0) {
+    return { over: false, winner: null, inCheck, moves };
   }
 
-  return { type: "draw", winner: null };
+  if (inCheck) {
+    return { over: true, winner: opposite(turn), inCheck, moves };
+  }
+
+  return { over: true, winner: "D", inCheck: false, moves };
 }
 
 function evaluate(board, perspective) {
-  const terminal = outcomeForTurn(board, perspective);
-  if (terminal?.type === "win") {
-    return terminal.winner === perspective ? 10000 : -10000;
-  }
-  if (terminal?.type === "draw") return 0;
-
   let score = 0;
-  for (const piece of board) {
+
+  for (let i = 0; i < board.length; i += 1) {
+    const piece = board[i];
     if (!piece) continue;
-    const value = typeOf(piece) === "K" ? 1000 : 5;
-    score += colorOf(piece) === perspective ? value : -value;
+
+    const color = colorOf(piece);
+    const type = typeOf(piece);
+    const row = rowOf(i);
+    const col = colOf(i);
+    const value = PIECE_VALUE[type] || 0;
+
+    const centerDist = Math.abs(row - 3.5) + Math.abs(col - 3.5);
+    const centerBonus = type === "P" ? 2.5 - centerDist * 0.4 : 3 - centerDist * 0.5;
+
+    const signed = color === perspective ? 1 : -1;
+    score += signed * (value + centerBonus);
   }
 
-  const ownMobility = legalMoves(board, perspective).length;
-  const oppMobility = legalMoves(board, opposite(perspective)).length;
-  score += (ownMobility - oppMobility) * 0.12;
-
-  if (isInCheck(board, opposite(perspective))) score += 0.4;
-  if (isInCheck(board, perspective)) score -= 0.4;
+  if (isInCheck(board, opposite(perspective))) score += 18;
+  if (isInCheck(board, perspective)) score -= 18;
 
   return score;
 }
 
-function minimax(board, turn, depth, alpha, beta, perspective) {
-  const currentOutcome = outcomeForTurn(board, turn);
-  if (depth === 0 || currentOutcome) {
+function minimax(board, turn, depth, alpha, beta, perspective, ply = 0) {
+  if (depth <= 0) {
     return { score: evaluate(board, perspective), move: null };
   }
 
-  const moves = legalMoves(board, turn);
-  if (!moves.length) {
-    return { score: evaluate(board, perspective), move: null };
+  const analysis = analyzePosition(board, turn);
+  if (analysis.over) {
+    if (analysis.winner === "D") return { score: 0, move: null };
+    const sign = analysis.winner === perspective ? 1 : -1;
+    return { score: sign * (MATE_SCORE - ply), move: null };
   }
 
+  const moves = analysis.moves;
   const maximizing = turn === perspective;
   let bestMove = null;
 
   if (maximizing) {
     let bestScore = -Infinity;
+
     for (const move of moves) {
       const next = applyMove(board, move);
-      const result = minimax(next, opposite(turn), depth - 1, alpha, beta, perspective);
+      const result = minimax(next, opposite(turn), depth - 1, alpha, beta, perspective, ply + 1);
 
       if (result.score > bestScore) {
         bestScore = result.score;
@@ -286,13 +433,15 @@ function minimax(board, turn, depth, alpha, beta, perspective) {
       alpha = Math.max(alpha, bestScore);
       if (beta <= alpha) break;
     }
+
     return { score: bestScore, move: bestMove };
   }
 
   let bestScore = Infinity;
+
   for (const move of moves) {
     const next = applyMove(board, move);
-    const result = minimax(next, opposite(turn), depth - 1, alpha, beta, perspective);
+    const result = minimax(next, opposite(turn), depth - 1, alpha, beta, perspective, ply + 1);
 
     if (result.score < bestScore) {
       bestScore = result.score;
@@ -312,13 +461,17 @@ function selectTargets(from) {
 }
 
 function notation(move, movingPiece) {
-  const capture = move.capture ? ` x ${move.capture}` : "";
-  return `${movingPiece} ${toCoord(move.from)} -> ${toCoord(move.to)}${capture}`;
+  const from = toCoord(move.from);
+  const to = toCoord(move.to);
+  const pieceText = PIECE_TEXT[movingPiece] || movingPiece;
+  const captureText = move.capture ? ` x ${PIECE_TEXT[move.capture] || move.capture}` : " ->";
+  const promo = move.promotion ? ` = ${PIECE_TEXT[move.promotion]}` : "";
+  return `${pieceText} ${from}${captureText} ${to}${promo}`;
 }
 
 function pushLog(text) {
   state.log.unshift(text);
-  if (state.log.length > 24) state.log.length = 24;
+  if (state.log.length > 28) state.log.length = 28;
 }
 
 function renderLog() {
@@ -331,16 +484,19 @@ function renderLog() {
 }
 
 function statusText() {
-  if (state.winner === "W") return "White wins. Reset to play again.";
-  if (state.winner === "B") return "Black wins. Reset to play again.";
-  if (state.winner === "D") return "Draw (stalemate). Reset to play again.";
+  if (state.winner === "W") return "White wins by checkmate. Reset to play again.";
+  if (state.winner === "B") return "Black wins by checkmate. Reset to play again.";
+  if (state.winner === "D") return "Draw by stalemate. Reset to play again.";
   if (state.aiThinking) return "Black AI is thinking...";
-  if (state.turn === state.humanColor) return "Your move as White.";
-  return "Black to move.";
+
+  const checkNote = state.inCheckColor === state.turn ? " (in check)" : "";
+  return state.turn === state.humanColor ? `Your move as White${checkNote}.` : `Black to move${checkNote}.`;
 }
 
 function renderBoard() {
   boardElement.innerHTML = "";
+
+  const checkSquare = state.inCheckColor ? findKing(state.board, state.inCheckColor) : -1;
 
   for (let i = 0; i < state.board.length; i += 1) {
     const row = rowOf(i);
@@ -355,6 +511,7 @@ function renderBoard() {
 
     if (state.selected === i) button.classList.add("selected");
     if (state.legalTargets.includes(i)) button.classList.add("target");
+    if (checkSquare === i) button.classList.add("in-check");
 
     if (piece) {
       button.textContent = PIECE_TEXT[piece] || piece;
@@ -376,13 +533,11 @@ function renderBoard() {
   renderLog();
 }
 
-function advanceTurn() {
-  const outcome = outcomeForTurn(state.board, state.turn);
-  if (!outcome) return false;
-
-  if (outcome.type === "draw") state.winner = "D";
-  if (outcome.type === "win") state.winner = outcome.winner;
-  return true;
+function updateGameStatus() {
+  const analysis = analyzePosition(state.board, state.turn);
+  state.inCheckColor = analysis.inCheck ? state.turn : null;
+  state.winner = analysis.over ? analysis.winner : null;
+  return analysis;
 }
 
 function performMove(move, actorLabel) {
@@ -398,30 +553,28 @@ function runAiTurn() {
   renderBoard();
 
   window.setTimeout(() => {
-    const depth = Math.max(2, Math.min(4, Number(depthSelect.value) || 3));
-    const result = minimax(state.board, state.aiColor, depth, -Infinity, Infinity, state.aiColor);
-    const move = result.move;
+    const depth = Math.max(1, Math.min(3, Number(depthSelect.value) || 2));
+    const analysis = analyzePosition(state.board, state.aiColor);
 
-    state.aiThinking = false;
-    if (!move) {
-      advanceTurn();
+    if (analysis.over || analysis.moves.length === 0) {
+      state.aiThinking = false;
+      updateGameStatus();
       renderBoard();
       return;
     }
+
+    const result = minimax(state.board, state.aiColor, depth, -Infinity, Infinity, state.aiColor);
+    const move = result.move || analysis.moves[0];
 
     performMove(move, "Black");
     state.turn = state.humanColor;
-    if (!advanceTurn()) {
-      state.selected = null;
-      state.legalTargets = [];
-      renderBoard();
-      return;
-    }
-
     state.selected = null;
     state.legalTargets = [];
+
+    state.aiThinking = false;
+    updateGameStatus();
     renderBoard();
-  }, 40);
+  }, 55);
 }
 
 function onSquareClick(index) {
@@ -463,21 +616,26 @@ function onSquareClick(index) {
   state.legalTargets = [];
   state.turn = state.aiColor;
 
-  if (!advanceTurn()) {
-    renderBoard();
-    runAiTurn();
-    return;
-  }
-
+  updateGameStatus();
   renderBoard();
+
+  if (!state.winner) {
+    runAiTurn();
+  }
 }
 
 function freshBoard() {
   const board = new Array(SIZE * SIZE).fill(null);
-  board[idx(0, 0)] = "BK";
-  board[idx(0, 3)] = "BR";
-  board[idx(3, 0)] = "WK";
-  board[idx(3, 3)] = "WR";
+
+  const backRank = ["R", "N", "B", "Q", "K", "B", "N", "R"];
+
+  for (let c = 0; c < SIZE; c += 1) {
+    board[idx(0, c)] = `B${backRank[c]}`;
+    board[idx(1, c)] = "BP";
+    board[idx(6, c)] = "WP";
+    board[idx(7, c)] = `W${backRank[c]}`;
+  }
+
   return board;
 }
 
@@ -488,7 +646,13 @@ function resetGame() {
   state.legalTargets = [];
   state.winner = null;
   state.aiThinking = false;
-  state.log = ["New game started."];
+  state.inCheckColor = null;
+  state.log = [
+    "New 8x8 game started.",
+    "Rules in this lab: full piece movement + check/checkmate/stalemate, no castling or en passant."
+  ];
+
+  updateGameStatus();
   renderBoard();
 }
 

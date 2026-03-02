@@ -21,6 +21,7 @@ const resetButton = document.getElementById("p-reset");
 const sumOutput = document.getElementById("p-sum");
 const predictionOutput = document.getElementById("p-prediction");
 const thresholdOutput = document.getElementById("p-threshold");
+const thresholdLabel = document.getElementById("p-threshold-label");
 const datasetCaseOutput = document.getElementById("p-dataset-case");
 const scoreLabel = document.getElementById("p-score-label");
 
@@ -29,7 +30,9 @@ const accuracyBar = document.getElementById("p-accuracy-bar");
 
 const accuracyOutput = document.getElementById("p-accuracy");
 const epochsOutput = document.getElementById("p-epochs");
+const epochsLabel = document.getElementById("p-epochs-label");
 const separableOutput = document.getElementById("p-separable");
+const separableLabel = document.getElementById("p-separable-label");
 const tableBody = document.getElementById("p-table-body");
 
 const graphCanvas = document.getElementById("p-graph");
@@ -43,11 +46,14 @@ const xorProofText = document.getElementById("p-xor-proof-text");
 const eqTermW1 = document.getElementById("p-eq-term-w1");
 const eqTermW2 = document.getElementById("p-eq-term-w2");
 const eqTermBias = document.getElementById("p-eq-term-bias");
+const equationExplorer = document.getElementById("p-equation-explorer");
+const mathDetails = document.getElementById("p-math-details");
 
 const analystBlock = document.getElementById("p-analyst-block");
 const architectBlock = document.getElementById("p-architect-block");
 const modeGuidance = document.getElementById("p-mode-guidance");
 const eraNote = document.getElementById("p-era-note");
+const biasLabel = document.getElementById("p-bias-label");
 
 const consoleRoot = document.getElementById("perceptron-console");
 const diagnostics = document.getElementById("p-diagnostics");
@@ -81,13 +87,16 @@ const required = [
   sumOutput,
   predictionOutput,
   thresholdOutput,
+  thresholdLabel,
   datasetCaseOutput,
   scoreLabel,
   accuracyInline,
   accuracyBar,
   accuracyOutput,
   epochsOutput,
+  epochsLabel,
   separableOutput,
+  separableLabel,
   tableBody,
   graphCanvas,
   xorToggle,
@@ -99,10 +108,13 @@ const required = [
   eqTermW1,
   eqTermW2,
   eqTermBias,
+  equationExplorer,
+  mathDetails,
   analystBlock,
   architectBlock,
   modeGuidance,
   eraNote,
+  biasLabel,
   consoleRoot,
   diagnostics,
   contrastToggle,
@@ -284,11 +296,26 @@ function setGradeMode(mode) {
   modeGuidance.textContent = meta.guidance;
   scoreLabel.textContent = meta.scoreLabel;
 
-  analystBlock.hidden = mode === "explorer";
-  architectBlock.hidden = mode !== "architect";
-
   if (mode === "explorer") {
-    diagnostics.open = false;
+    analystBlock.hidden = true;
+    architectBlock.hidden = true;
+    thresholdLabel.textContent = "LINE CUT POINT";
+    biasLabel.textContent = "LINE STARTING PUSH";
+    epochsLabel.textContent = "ROUNDS TRAINED";
+    separableLabel.textContent = "ONE-LINE CHECK";
+    train1Button.textContent = "TRAIN 1 STEP";
+    equationExplorer.hidden = false;
+    mathDetails.open = false;
+  } else {
+    analystBlock.hidden = mode !== "analyst";
+    architectBlock.hidden = mode !== "architect";
+    thresholdLabel.textContent = "THRESHOLD (-BIAS)";
+    biasLabel.textContent = "BIAS / STARTING PUSH";
+    epochsLabel.textContent = "EPOCHS TRAINED";
+    separableLabel.textContent = "LINEARLY SEPARABLE";
+    train1Button.textContent = "TRAIN 1 EPOCH";
+    equationExplorer.hidden = true;
+    mathDetails.open = true;
   }
 
   updateControlClasses();

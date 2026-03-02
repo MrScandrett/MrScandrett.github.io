@@ -15,7 +15,7 @@ Protected GitHub Pages showcase + moderated upload portal.
 
 Static pages:
 - `index.html`
-- `browse.html`
+- `showcase.html`
 - `project.html?id=<id>`
 - `students.html`
 - `about.html`

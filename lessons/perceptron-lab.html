@@ -16,7 +16,7 @@
       <nav aria-label="Primary">
         <a href="../index.html">Home</a>
         <a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a>
-        <a href="../browse.html">Projects</a>
+        <a href="../showcase.html">Showcase</a>
         <a href="../about.html">About</a>
       </nav>
     </div>
@@ -27,8 +27,50 @@
       <div class="section-head">
         <p class="eyebrow">AI ORIGINS · LESSON 03</p>
         <h1>MARK I PERCEPTRON DEMO CONSOLE</h1>
-        <p class="perceptron-framing">A perceptron is a machine that learns to draw a line.</p>
-        <p>Experience the system first: tune channels, move the boundary, and watch where single-layer learning works and fails.</p>
+        <p class="perceptron-framing">START: Make the line guess right.</p>
+        <div class="perceptron-onboarding" aria-label="Perceptron onboarding">
+          <p class="perceptron-onboarding-summary">This machine tries to separate dots with ONE straight line. Training moves the line when a guess is wrong. AND and OR can fit one line. XOR cannot.</p>
+          <section class="perceptron-onboarding-block">
+            <h3>What to do</h3>
+            <ol class="perceptron-onboarding-steps">
+              <li>Click <strong>AND: WORKING CASE</strong></li>
+              <li>Click <strong>RESET WEIGHTS</strong></li>
+              <li>Click <strong>TRAIN BURST (5)</strong></li>
+            </ol>
+          </section>
+          <section class="perceptron-onboarding-block">
+            <h3>What to watch</h3>
+            <ul class="perceptron-onboarding-list">
+              <li>The line turns and slides.</li>
+              <li>Red glow = wrong guesses.</li>
+            </ul>
+            <p>When red glow shrinks, learning is happening.</p>
+          </section>
+          <section class="perceptron-onboarding-block">
+            <h3>Try these</h3>
+            <div class="perceptron-missions">
+              <article>
+                <h4>AND (works)</h4>
+                <p>Train a few times.</p>
+                <p>Goal: get most dots right with one line.</p>
+              </article>
+              <article>
+                <h4>OR (works)</h4>
+                <p>Click OR. Reset. Train.</p>
+                <p>Goal: it learns a new rule with the same machine.</p>
+              </article>
+              <article>
+                <h4>XOR (can’t with one line)</h4>
+                <p>Click XOR.</p>
+                <p>Try <strong>LINE ANGLE</strong> + <strong>LINE OFFSET</strong>.</p>
+                <p>Goal: notice you can’t make it perfect. That’s the lesson.</p>
+              </article>
+            </div>
+          </section>
+          <section class="perceptron-onboarding-block">
+            <p id="p-rule-explorer">Training moves the line when it is wrong.</p>
+          </section>
+        </div>
       </div>
 
       <article class="card perceptron-lab perceptron-console" id="perceptron-console" data-grade-mode="explorer" data-era="1958">
@@ -81,13 +123,14 @@
             <ul class="perceptron-metrics">
               <li><span id="p-score-label">SCORE BEFORE DECISION</span>: <strong id="p-sum" class="instrument">0.20</strong></li>
               <li>Y^ (OUTPUT): <strong id="p-prediction" class="instrument">1</strong></li>
-              <li>THRESHOLD (-BIAS): <strong id="p-threshold" class="instrument">0.20</strong></li>
+              <li><span id="p-threshold-label">LINE CUT POINT</span>: <strong id="p-threshold" class="instrument">0.20</strong></li>
               <li>CASE STATUS: <strong id="p-dataset-case" class="instrument">AND: WORKING CASE</strong></li>
             </ul>
             <div class="perceptron-progress-wrap" aria-label="Training progress">
               <div id="p-accuracy-bar" class="perceptron-progress-bar"></div>
             </div>
             <p id="p-accuracy-inline" class="perceptron-progress-label">ACCURACY 0%</p>
+            <p class="perceptron-accuracy-note">Accuracy is just "how many of the 4 points it gets right."</p>
           </section>
 
           <section class="perceptron-panel">
@@ -95,6 +138,7 @@
 
             <label class="perceptron-field" for="p-w1-range">
               <span>WEIGHT W1</span>
+              <small class="perceptron-field-hint">How strong X1 is.</small>
               <div class="perceptron-dual-input">
                 <input id="p-w1-range" type="range" min="-2" max="2" step="0.1" value="0.4" aria-label="Weight W1 slider" />
                 <input id="p-w1" type="number" step="0.1" value="0.4" aria-label="Weight W1 value" />
@@ -103,6 +147,7 @@
 
             <label class="perceptron-field" for="p-w2-range">
               <span>WEIGHT W2</span>
+              <small class="perceptron-field-hint">How strong X2 is.</small>
               <div class="perceptron-dual-input">
                 <input id="p-w2-range" type="range" min="-2" max="2" step="0.1" value="0.4" aria-label="Weight W2 slider" />
                 <input id="p-w2" type="number" step="0.1" value="0.4" aria-label="Weight W2 value" />
@@ -110,7 +155,7 @@
             </label>
 
             <label class="perceptron-field" for="p-bias-range">
-              <span>BIAS / STARTING PUSH</span>
+              <span id="p-bias-label">LINE STARTING PUSH</span>
               <div class="perceptron-dual-input">
                 <input id="p-bias-range" type="range" min="-2" max="2" step="0.1" value="-0.2" aria-label="Bias slider" />
                 <input id="p-bias" type="number" step="0.1" value="-0.2" aria-label="Bias value" />
@@ -135,21 +180,25 @@
 
           <section class="perceptron-panel perceptron-equation-panel">
             <h3>EQUATION ALIGNMENT</h3>
-            <p id="p-equation" class="perceptron-equation">
-              z = (<span id="p-eq-term-w1">w1*x1</span> + <span id="p-eq-term-w2">w2*x2</span>) + <span id="p-eq-term-bias">b</span><br />
-              y^ = step(z)
-            </p>
-            <div id="p-analyst-block" class="perceptron-analyst">
-              <p>Learning rule (analyst view):</p>
-              <p class="perceptron-equation">w = w + eta * error * x</p>
-            </div>
-            <div id="p-architect-block" class="perceptron-architect" hidden>
-              <p>Architect extension:</p>
-              <p>Single-layer perceptrons fail on XOR. A hidden layer can bend boundaries into non-linear regions.</p>
-              <div class="perceptron-hidden-diagram" aria-hidden="true">
-                <span>INPUT</span><span>HIDDEN</span><span>OUTPUT</span>
+            <p id="p-equation-explorer" class="perceptron-note">Explorer view: no formula needed. Watch how the line moves when guesses are wrong.</p>
+            <details id="p-math-details">
+              <summary>Show the math (older students)</summary>
+              <p id="p-equation" class="perceptron-equation">
+                z = (<span id="p-eq-term-w1">w1*x1</span> + <span id="p-eq-term-w2">w2*x2</span>) + <span id="p-eq-term-bias">b</span><br />
+                y^ = step(z)
+              </p>
+              <div id="p-analyst-block" class="perceptron-analyst">
+                <p>Short rule:</p>
+                <p class="perceptron-equation">w = w + eta * error * x</p>
               </div>
-            </div>
+              <div id="p-architect-block" class="perceptron-architect" hidden>
+                <p>Why XOR fails here:</p>
+                <p>One layer draws one straight boundary. Hidden layers can curve the boundary.</p>
+                <div class="perceptron-hidden-diagram" aria-hidden="true">
+                  <span>INPUT</span><span>HIDDEN</span><span>OUTPUT</span>
+                </div>
+              </div>
+            </details>
           </section>
         </div>
 
@@ -165,7 +214,7 @@
 
         <div id="p-xor-proof" class="perceptron-xor-proof" hidden>
           <h3>XOR Visual Proof</h3>
-          <p>Try to separate XOR with one line. Drag angle and offset. You will not find a perfect split.</p>
+          <p>XOR is a trick rule. One straight line can’t solve it.</p>
           <canvas id="p-xor-canvas" width="360" height="230" aria-label="XOR separability proof graph"></canvas>
           <label class="perceptron-field" for="p-xor-angle">
             <span>LINE ANGLE</span>
@@ -179,19 +228,19 @@
         </div>
       </article>
 
-      <details class="perceptron-diagnostics" id="p-diagnostics">
+      <details class="perceptron-diagnostics" id="p-diagnostics" open>
         <summary>OPEN DIAGNOSTICS</summary>
         <div class="perceptron-diagnostics-body">
           <div class="perceptron-actions">
-            <button id="p-train-1" type="button" aria-label="Train one epoch">TRAIN 1 EPOCH</button>
+            <button id="p-train-1" type="button" aria-label="Train one step">TRAIN 1 STEP</button>
             <button id="p-train-5" type="button" aria-label="Train five epochs">TRAIN BURST (5)</button>
             <button id="p-reset" type="button" aria-label="Reset all perceptron weights">RESET WEIGHTS</button>
           </div>
 
           <ul class="perceptron-metrics">
             <li>DATASET ACCURACY: <strong id="p-accuracy" class="instrument">0 / 4</strong></li>
-            <li>EPOCHS TRAINED: <strong id="p-epochs" class="instrument">0</strong></li>
-            <li>LINEARLY SEPARABLE: <strong id="p-separable" class="instrument">VISUAL CHECK</strong></li>
+            <li><span id="p-epochs-label">ROUNDS TRAINED</span>: <strong id="p-epochs" class="instrument">0</strong></li>
+            <li><span id="p-separable-label">ONE-LINE CHECK</span>: <strong id="p-separable" class="instrument">VISUAL CHECK</strong></li>
           </ul>
 
           <div class="perceptron-table-wrap">
@@ -220,7 +269,7 @@
       <div class="perceptron-brief-grid">
         <article class="card">
           <h3>WHAT THIS IS</h3>
-          <p>A perceptron is a single-layer linear classifier. It learns by shifting one straight decision line.</p>
+          <p>A perceptron is a small guess machine. It learns by moving one straight line.</p>
         </article>
 
         <article class="card">

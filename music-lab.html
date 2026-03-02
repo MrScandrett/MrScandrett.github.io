@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Music Lab · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="USB MIDI keyboard lab with WebMIDI and WebAudio presets." />
+  <link rel="stylesheet" href="assets/css/classroom-home.css" />
+  <style>
+    .music-lab-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 1.2rem 0 2rem;
+    }
+
+    .music-lab-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 0.9rem;
+    }
+
+    .music-lab-row {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .music-lab-btn {
+      padding: 0.58rem 0.72rem;
+      border-radius: 10px;
+      border: 1px solid #bccadd;
+      background: #fff;
+      color: #133f71;
+      font: inherit;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .music-lab-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .music-lab-field {
+      display: grid;
+      gap: 0.24rem;
+      font-size: 0.88rem;
+    }
+
+    .music-lab-field select {
+      padding: 0.52rem;
+      border-radius: 10px;
+      border: 1px solid #bccadd;
+      background: #fff;
+      color: #173a63;
+      font: inherit;
+    }
+
+    .music-lab-status {
+      margin: 0;
+      font-size: 0.93rem;
+      color: #30435a;
+    }
+
+    .music-lab-kbd {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+
+    .music-lab-pads {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 0.6rem;
+    }
+
+    .music-lab-pad {
+      padding: 0.92rem 0.45rem;
+      border-radius: 10px;
+      border: 1px solid #c8d2e0;
+      background: #f7faff;
+      color: #143d6d;
+      text-align: center;
+      user-select: none;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .music-lab-pad:active {
+      transform: translateY(1px);
+    }
+
+    @media (max-width: 860px) {
+      .music-lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="steam-lessons.html">STEAM Lessons</a>
+        <a href="showcase.html">Showcase</a>
+        <a href="about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="music-lab-wrap">
+    <section class="hero">
+      <p class="eyebrow">Create + Sound</p>
+      <h1>Music Lab</h1>
+      <p class="music-lab-status">
+        Plug in a USB MIDI keyboard, then press <span class="music-lab-kbd">Enable Audio</span>.
+        Choose a preset and play. Drums map across common GM drum notes and the pads below.
+      </p>
+    </section>
+
+    <section class="music-lab-grid">
+      <article class="card">
+        <h2>Connection</h2>
+        <div class="music-lab-row">
+          <button id="enableAudio" class="music-lab-btn" type="button">Enable Audio</button>
+          <button id="enableMidi" class="music-lab-btn" type="button" disabled>Enable MIDI</button>
+        </div>
+        <div style="height:0.65rem"></div>
+        <div class="music-lab-row">
+          <label class="music-lab-field" for="midiIn">
+            <span>MIDI Device</span>
+            <select id="midiIn" aria-label="MIDI input device"></select>
+          </label>
+          <label class="music-lab-field" for="preset">
+            <span>Preset</span>
+            <select id="preset" aria-label="Instrument preset">
+              <option value="synth">Synth Lead</option>
+              <option value="piano">Piano (simple)</option>
+              <option value="drums">Drums</option>
+            </select>
+          </label>
+        </div>
+        <div style="height:0.65rem"></div>
+        <p id="status" class="music-lab-status">Audio: off · MIDI: off</p>
+        <div style="height:0.65rem"></div>
+        <details>
+          <summary>Notes</summary>
+          <ul>
+            <li>WebMIDI usually requires HTTPS and a supported browser (Chrome/Edge).</li>
+            <li>Piano is a lightweight synthesized approximation for fast classroom load times.</li>
+            <li>Drums trigger on note-on. Pads below are clickable and touch-friendly.</li>
+          </ul>
+        </details>
+      </article>
+
+      <article class="card">
+        <h2>Drum Pads</h2>
+        <div class="music-lab-pads">
+          <button class="music-lab-pad" data-drum="kick" type="button">Kick</button>
+          <button class="music-lab-pad" data-drum="snare" type="button">Snare</button>
+          <button class="music-lab-pad" data-drum="hat" type="button">Hi-Hat</button>
+          <button class="music-lab-pad" data-drum="clap" type="button">Clap</button>
+          <button class="music-lab-pad" data-drum="tom1" type="button">Tom</button>
+          <button class="music-lab-pad" data-drum="tom2" type="button">Low Tom</button>
+          <button class="music-lab-pad" data-drum="perc" type="button">Perc</button>
+          <button class="music-lab-pad" data-drum="crash" type="button">Crash</button>
+        </div>
+        <div style="height:0.65rem"></div>
+        <p class="music-lab-status">Tip: Set preset to <span class="music-lab-kbd">Drums</span> for MIDI-triggered drums.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p><a href="index.html">Back to Home</a></p>
+  </footer>
+
+  <script src="music-lab.js"></script>
+</body>
+</html>
