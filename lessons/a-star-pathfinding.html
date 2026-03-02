@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>A* Pathfinding Agent · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="A* Pathfinding Agent lesson in the AI Origins unit." />
+  <title>Rescue Grid: The A* Mission · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Rescue Grid: a mission simulator for A* pathfinding in the AI Origins unit." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
 </head>
 <body>
@@ -23,63 +23,185 @@
   </header>
 
   <main id="main-content">
-    <section class="hero">
-      <p class="eyebrow">AI Origins · Lesson 07</p>
-      <h1>A* Pathfinding Agent</h1>
-      <p>Implement A* search to navigate grid maps with blocked cells and weighted movement.</p>
-    </section>
+    <section class="section" id="astar-live">
+      <div class="section-head">
+        <p class="eyebrow">AI ORIGINS · LESSON 07</p>
+        <h1>Rescue Grid: The A* Mission</h1>
+        <p>Guide the rover to the beacon using A* while terrain, fuel pressure, and mission rules change in real time.</p>
+      </div>
 
-    <section class="columns">
-      <article class="card">
-        <h3>Learning Goals</h3>
-        <ul class="rhythm">
-          <li><span>Goal 1</span><strong>Differentiate g h and f costs</strong></li>
-          <li><span>Goal 2</span><strong>Choose and justify a heuristic</strong></li>
-          <li><span>Goal 3</span><strong>Trace the open and closed sets</strong></li>
-          <li><span>Goal 4</span><strong>Compare A* to uninformed search</strong></li>
-        </ul>
-      </article>
+      <article class="card astar-mission-lab" aria-label="Live Mark I A* mission simulator">
+        <div class="astar-control-bar">
+          <div class="astar-control-group" role="group" aria-label="Grid configuration">
+            <label for="astar-grid-width">Grid Width</label>
+            <select id="astar-grid-width">
+              <option value="10">10</option>
+              <option value="12" selected>12</option>
+              <option value="14">14</option>
+              <option value="16">16</option>
+              <option value="18">18</option>
+            </select>
+            <label for="astar-grid-height">Grid Height</label>
+            <select id="astar-grid-height">
+              <option value="8" selected>8</option>
+              <option value="10">10</option>
+              <option value="12">12</option>
+            </select>
+            <button id="astar-build-grid" type="button">Build Grid</button>
+          </div>
 
-      <article class="card">
-        <h3>Build Tasks</h3>
-        <ul class="rhythm">
-          <li><span>Task 1</span><strong>Create a grid map with start and goal nodes</strong></li>
-          <li><span>Task 2</span><strong>Implement priority queue expansion by f score</strong></li>
-          <li><span>Task 3</span><strong>Reconstruct final path from parent pointers</strong></li>
-          <li><span>Task 4</span><strong>Visualize visited nodes and final route</strong></li>
-        </ul>
+          <div class="astar-control-group" role="group" aria-label="Node placement tools">
+            <span class="astar-label">Paint Tool</span>
+            <button type="button" class="astar-tool is-active" data-tool="start" aria-pressed="true">Rover</button>
+            <button type="button" class="astar-tool" data-tool="goal" aria-pressed="false">Beacon</button>
+            <button type="button" class="astar-tool" data-tool="blocked" aria-pressed="false">Debris</button>
+            <button type="button" class="astar-tool" data-tool="sand" aria-pressed="false">Sand (Cost 3)</button>
+            <button type="button" class="astar-tool" data-tool="clear" aria-pressed="false">Clear</button>
+          </div>
+
+          <div class="astar-control-group" role="group" aria-label="Mission run controls">
+            <label for="astar-mode">Mode</label>
+            <select id="astar-mode">
+              <option value="classic" selected>Classic Mode</option>
+              <option value="fuel">Fuel Critical Mode</option>
+              <option value="dynamic">Dynamic Obstacles Mode</option>
+              <option value="step">Step Mode</option>
+            </select>
+
+            <label for="astar-heuristic">Heuristic</label>
+            <select id="astar-heuristic">
+              <option value="manhattan" selected>Manhattan</option>
+              <option value="euclidean">Euclidean</option>
+              <option value="zero">Zero Heuristic (Dijkstra)</option>
+            </select>
+
+            <label for="astar-fuel-limit" id="astar-fuel-label" hidden>Max Mission Cost</label>
+            <input id="astar-fuel-limit" type="number" min="1" max="999" value="24" hidden />
+
+            <label for="astar-speed">Animation Speed</label>
+            <input id="astar-speed" type="range" min="40" max="240" step="10" value="90" />
+
+            <button id="astar-run" type="button">Run Mission</button>
+            <button id="astar-step" type="button" disabled>Step Expansion</button>
+            <button id="astar-clear-search" type="button">Reset Search</button>
+          </div>
+        </div>
+
+        <div class="astar-grid-layout">
+          <section class="astar-grid-panel" aria-label="Mission map simulation panel">
+            <div class="astar-grid" id="astar-grid" role="grid" aria-label="Rescue mission grid"></div>
+            <p id="astar-status" class="astar-status" aria-live="polite">Build your grid, then run the mission.</p>
+
+            <ul class="astar-legend" aria-label="Grid legend">
+              <li><span class="swatch rover"></span> Rover (Start)</li>
+              <li><span class="swatch beacon"></span> Beacon (Goal)</li>
+              <li><span class="swatch debris"></span> Debris (Blocked)</li>
+              <li><span class="swatch sand"></span> Sand (Fuel cost 3)</li>
+              <li><span class="swatch open"></span> Open Set</li>
+              <li><span class="swatch closed"></span> Closed Set</li>
+              <li><span class="swatch path"></span> Final Path</li>
+            </ul>
+          </section>
+
+          <aside class="astar-side-panel">
+            <section class="astar-panel">
+              <h3>Instrument Panel</h3>
+              <ul class="astar-instrument-list">
+                <li><span>Fuel Spent g(n)</span><strong id="astar-g">0.00</strong></li>
+                <li><span>Estimated Distance h(n)</span><strong id="astar-h">0.00</strong></li>
+                <li><span>Total Mission Cost f(n)</span><strong id="astar-f">0.00</strong></li>
+              </ul>
+            </section>
+
+            <section class="astar-panel">
+              <h3>Mission Metrics</h3>
+              <ul class="astar-metric-list">
+                <li><span>Nodes Expanded</span><strong id="astar-nodes-expanded">0</strong></li>
+                <li><span>Final Path Cost</span><strong id="astar-path-cost">--</strong></li>
+                <li><span>Time to Solve</span><strong id="astar-time">--</strong></li>
+                <li><span>Optimality Check</span><strong id="astar-optimality">Pending</strong></li>
+              </ul>
+            </section>
+
+            <section class="astar-panel">
+              <h3>Heuristic Comparison</h3>
+              <p class="astar-panel-note">Same grid, three heuristics.</p>
+              <div class="astar-table-wrap">
+                <table class="astar-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Heuristic</th>
+                      <th scope="col">Nodes</th>
+                      <th scope="col">Cost</th>
+                      <th scope="col">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="astar-compare-body">
+                    <tr>
+                      <td>Manhattan</td>
+                      <td>--</td>
+                      <td>--</td>
+                      <td>--</td>
+                    </tr>
+                    <tr>
+                      <td>Euclidean</td>
+                      <td>--</td>
+                      <td>--</td>
+                      <td>--</td>
+                    </tr>
+                    <tr>
+                      <td>Zero (Dijkstra)</td>
+                      <td>--</td>
+                      <td>--</td>
+                      <td>--</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </aside>
+        </div>
       </article>
     </section>
 
     <section class="section">
       <div class="section-head">
-        <h2>Lesson Outputs</h2>
-        <p>Each team should publish a short reflection and demo link at the end of class.</p>
+        <h2>Mission Brief</h2>
+        <p>You are testing how A* makes decisions under different constraints and mission rules.</p>
       </div>
-      <div class="tile-grid">
-        <a class="tile tile-hero" href="#" aria-disabled="true">
-          <span class="tile-kicker">Starter Kit</span>
-          <strong>A* Pathfinding Agent starter workspace</strong>
-          <small>Add your live lesson URL or repo link</small>
-        </a>
-
-        <a class="tile" href="#" aria-disabled="true">
-          <span class="tile-kicker">Extension</span>
-          <strong>Support dynamic obstacles and path recalculation</strong>
-          <small>Optional challenge for advanced students</small>
-        </a>
-
-        <a class="tile" href="../steam-lessons.html">
-          <span class="tile-kicker">Navigate</span>
-          <strong>Back to STEAM Lessons</strong>
-          <small>Return to the full ClassroomOS lesson shelf</small>
-        </a>
+      <div class="columns">
+        <article class="card">
+          <h3>Narrative Context</h3>
+          <p>The rover must cross a debris field to reach a rescue beacon. Some tiles are impassable, and sand burns extra fuel. In dynamic mode, terrain can shift while the rover plans.</p>
+        </article>
+        <article class="card">
+          <h3>What To Experiment With</h3>
+          <ul class="rhythm">
+            <li><span>Heuristics</span><strong>Compare speed and expansions across Manhattan, Euclidean, and Dijkstra.</strong></li>
+            <li><span>Mode Rules</span><strong>Test Fuel Critical and see when a valid route becomes impossible.</strong></li>
+            <li><span>Step Reasoning</span><strong>Use Step Mode to inspect how open and closed sets evolve node by node.</strong></li>
+          </ul>
+        </article>
       </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Reflection</h2>
+      </div>
+      <article class="card">
+        <ul class="rhythm">
+          <li><span>Prompt 1</span><strong>Which heuristic solved your map with the fewest node expansions, and why?</strong></li>
+          <li><span>Prompt 2</span><strong>What changed when you switched to Fuel Critical mode?</strong></li>
+          <li><span>Prompt 3</span><strong>In Dynamic Obstacles mode, what did the recalculation reveal about planning in changing environments?</strong></li>
+        </ul>
+      </article>
     </section>
   </main>
 
   <footer class="site-footer">
     <p><a href="../steam-lessons.html">Back to STEAM Lessons</a></p>
   </footer>
+  <script type="module" src="../assets/js/a-star-lab.js"></script>
 </body>
 </html>

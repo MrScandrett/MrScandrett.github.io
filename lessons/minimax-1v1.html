@@ -6,6 +6,478 @@
   <title>1v1 Game AI: Minimax · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="1v1 Game AI: Minimax lesson in the AI Origins unit." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    .minimax-page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 1rem 2.5rem;
+      font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .minimax-lab-ui {
+      display: grid;
+      gap: 1rem;
+      background: linear-gradient(180deg, #f8fbff 0%, #f4f8ff 100%);
+    }
+
+    .minimax-dashboard {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+      align-items: start;
+    }
+
+    .minimax-main,
+    .minimax-side {
+      display: grid;
+      gap: 1rem;
+      min-width: 0;
+    }
+
+    .minimax-card {
+      border: 1px solid #d8e0ed;
+      border-radius: 16px;
+      background: #ffffff;
+      padding: 1rem;
+      box-shadow: 0 10px 24px rgba(12, 26, 49, 0.07);
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .minimax-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .minimax-card-head h3 {
+      margin: 0;
+      font-size: 1.02rem;
+      letter-spacing: 0.01em;
+    }
+
+    .minimax-turn-pill {
+      margin: 0;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.33rem 0.58rem;
+      border: 1px solid #d1dbeb;
+      border-radius: 999px;
+      background: #f6f9ff;
+    }
+
+    .minimax-ai-choice {
+      margin: 0;
+      color: #324c71;
+      font-size: 0.92rem;
+      min-height: 1.25rem;
+    }
+
+    .minimax-board-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .minimax-board {
+      width: min(100%, 430px);
+      aspect-ratio: 1 / 1;
+      border: 2px solid #c6d3e7;
+      border-radius: 16px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+      background: #dbe5f4;
+    }
+
+    .minimax-cell {
+      position: relative;
+      border: 1px solid #c7d3e7;
+      background: #fbfdff;
+      color: #102d54;
+      font: 800 clamp(2rem, 8vw, 3.2rem) / 1 "SFMono-Regular", Menlo, Consolas, monospace;
+      cursor: pointer;
+      transition: background 140ms ease, transform 120ms ease;
+    }
+
+    .minimax-cell:hover:not(:disabled) {
+      background: #eef4ff;
+    }
+
+    .minimax-cell:focus-visible {
+      outline: 3px solid #1c6ed7;
+      outline-offset: -3px;
+      z-index: 4;
+    }
+
+    .minimax-cell:disabled {
+      cursor: not-allowed;
+      opacity: 1;
+    }
+
+    .minimax-cell.is-max {
+      color: #145cc8;
+    }
+
+    .minimax-cell.is-min {
+      color: #b8422f;
+    }
+
+    .minimax-cell.is-last-move {
+      box-shadow: inset 0 0 0 3px #265fbc;
+    }
+
+    .minimax-cell.is-last-move::after {
+      content: "LAST";
+      position: absolute;
+      right: 0.22rem;
+      bottom: 0.2rem;
+      font: 700 0.56rem/1 "SFMono-Regular", Menlo, Consolas, monospace;
+      letter-spacing: 0.04em;
+      color: #123b7b;
+      background: rgba(214, 229, 255, 0.96);
+      border: 1px solid #9fb9e7;
+      border-radius: 6px;
+      padding: 0.12rem 0.18rem;
+    }
+
+    .minimax-cell.is-ai-choice {
+      box-shadow: inset 0 0 0 3px #d3a635;
+    }
+
+    .minimax-cell.is-ai-choice::before {
+      content: "AI";
+      position: absolute;
+      left: 0.22rem;
+      top: 0.2rem;
+      font: 700 0.56rem/1 "SFMono-Regular", Menlo, Consolas, monospace;
+      letter-spacing: 0.04em;
+      color: #6b4500;
+      background: rgba(255, 237, 181, 0.97);
+      border: 1px solid #dfbf63;
+      border-radius: 6px;
+      padding: 0.12rem 0.2rem;
+    }
+
+    .minimax-primary-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .minimax-btn {
+      border-radius: 10px;
+      padding: 0.54rem 0.86rem;
+      font: inherit;
+      font-weight: 650;
+      border: 1px solid #b6c5dc;
+      cursor: pointer;
+    }
+
+    .minimax-btn:focus-visible {
+      outline: 3px solid #1c6ed7;
+      outline-offset: 2px;
+    }
+
+    .minimax-btn-primary {
+      background: #134c97;
+      color: #ffffff;
+      border-color: #134c97;
+    }
+
+    .minimax-btn-primary:hover:not(:disabled) {
+      background: #0f3f7c;
+    }
+
+    .minimax-btn-secondary {
+      background: #f8fbff;
+      color: #0f315d;
+    }
+
+    .minimax-btn-secondary:hover:not(:disabled) {
+      background: #edf3fc;
+    }
+
+    .minimax-control-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      align-items: end;
+    }
+
+    .minimax-field {
+      display: grid;
+      gap: 0.25rem;
+      font-size: 0.88rem;
+    }
+
+    .minimax-field select {
+      border: 1px solid #c9d4e6;
+      border-radius: 10px;
+      padding: 0.45rem 0.55rem;
+      background: #fff;
+      font: inherit;
+      color: #173860;
+    }
+
+    .minimax-toggles {
+      display: grid;
+      gap: 0.42rem;
+      font-size: 0.9rem;
+    }
+
+    .minimax-toggles label {
+      display: flex;
+      align-items: center;
+      gap: 0.42rem;
+    }
+
+    .minimax-metric-tiles {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+
+    .minimax-metric {
+      border: 1px solid #dbe3f0;
+      border-radius: 12px;
+      background: #f9fbff;
+      padding: 0.58rem;
+      display: grid;
+      gap: 0.18rem;
+    }
+
+    .minimax-metric-value {
+      margin: 0;
+      font-size: 1.42rem;
+      font-weight: 760;
+      letter-spacing: -0.01em;
+      color: #123a73;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .minimax-metric-label {
+      margin: 0;
+      font-size: 0.76rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #4b607d;
+    }
+
+    .minimax-score-strip {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+
+    .minimax-score-strip li {
+      border: 1px solid #dde4f0;
+      border-radius: 10px;
+      background: #f8fbff;
+      padding: 0.44rem 0.5rem;
+      display: grid;
+      gap: 0.2rem;
+      text-align: center;
+    }
+
+    .minimax-score-strip span {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .minimax-score-strip strong {
+      font-size: 1.06rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .minimax-note {
+      margin: 0;
+      color: #4a627f;
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .minimax-log {
+      border: 1px solid #e1e8f3;
+      border-radius: 12px;
+      background: #fbfdff;
+      max-height: 190px;
+      overflow: auto;
+      padding: 0.52rem 0.56rem;
+      display: grid;
+      gap: 0.2rem;
+      font: 0.78rem/1.45 "SFMono-Regular", Menlo, Consolas, monospace;
+      color: #2f455f;
+    }
+
+    .minimax-log.is-expanded {
+      max-height: 370px;
+    }
+
+    .minimax-log-line {
+      border-bottom: 1px solid #edf2f8;
+      padding-bottom: 0.14rem;
+    }
+
+    .minimax-log-line:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .minimax-log-toggle {
+      justify-self: start;
+    }
+
+    .minimax-collapsible {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .minimax-collapsible summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.82rem 0.98rem;
+      border-bottom: 1px solid #e3e9f4;
+      font-weight: 700;
+      color: #213f66;
+    }
+
+    .minimax-collapsible summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .minimax-summary-meta {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #57739a;
+      font-weight: 600;
+    }
+
+    .minimax-collapsible-body {
+      padding: 0.9rem 0.98rem 1rem;
+      display: grid;
+      gap: 0.58rem;
+    }
+
+    .minimax-tree {
+      display: grid;
+      gap: 0.56rem;
+    }
+
+    .minimax-tree-level {
+      display: grid;
+      gap: 0.34rem;
+    }
+
+    .minimax-tree-level h4 {
+      margin: 0;
+      font-size: 0.82rem;
+      color: #4a617e;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .minimax-tree-nodes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(146px, 1fr));
+      gap: 0.36rem;
+    }
+
+    .minimax-tree-node {
+      border: 1px solid #d6dbe3;
+      border-radius: 10px;
+      background: #f9fbff;
+      padding: 0.42rem 0.48rem;
+      display: grid;
+      gap: 0.18rem;
+    }
+
+    .minimax-tree-node.is-terminal {
+      border-color: #e4cf90;
+      background: #fffaf0;
+    }
+
+    .minimax-tree-node-title,
+    .minimax-tree-node-board,
+    .minimax-tree-node-score,
+    .minimax-tree-node-pick {
+      margin: 0;
+      font-size: 0.76rem;
+    }
+
+    .minimax-tree-node-board {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      color: #455b75;
+    }
+
+    .minimax-debug-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.58rem;
+      align-items: center;
+      font-size: 0.86rem;
+    }
+
+    .minimax-debug-log {
+      margin: 0;
+      border: 1px solid #e1e8f3;
+      border-radius: 12px;
+      background: #fbfdff;
+      max-height: 220px;
+      overflow: auto;
+      padding: 0.56rem 0.62rem;
+      font: 0.77rem/1.4 "SFMono-Regular", Menlo, Consolas, monospace;
+      color: #2f4258;
+      white-space: pre-wrap;
+    }
+
+    .minimax-role-max,
+    .minimax-tree-node.is-max .minimax-tree-node-title {
+      color: #1f6feb;
+    }
+
+    .minimax-role-min,
+    .minimax-tree-node.is-min .minimax-tree-node-title {
+      color: #c0392b;
+    }
+
+    .minimax-terminal,
+    .minimax-tree-node-terminal {
+      color: #9f7a08;
+      font-weight: 700;
+    }
+
+    @media (max-width: 899px) {
+      .minimax-dashboard {
+        grid-template-columns: 1fr;
+      }
+
+      .minimax-card {
+        padding: 0.88rem;
+      }
+
+      .minimax-metric-tiles,
+      .minimax-score-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .minimax-tree-nodes {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -22,7 +494,7 @@
     </div>
   </header>
 
-  <main id="main-content">
+  <main id="main-content" class="minimax-page">
     <section class="hero">
       <p class="eyebrow">AI Origins · Lesson 05</p>
       <h1>1v1 Game AI: Minimax</h1>
@@ -35,77 +507,116 @@
         <p>Play as X (maximizer). The AI plays O (minimizer) and returns best score + best move each turn.</p>
       </div>
 
-      <article class="card minimax-lab" id="minimax-lab">
-        <div class="minimax-grid">
-          <section class="minimax-board-panel">
-            <div class="minimax-turnline">
-              <p id="mm-turn-role" class="minimax-role-tag minimax-role-max" aria-live="polite">X turn · Maximizer</p>
+      <article class="card minimax-lab minimax-lab-ui" id="minimax-lab">
+        <div class="minimax-dashboard">
+          <section class="minimax-main">
+            <article class="minimax-card minimax-card-board">
+              <header class="minimax-card-head">
+                <h3>Tic-Tac-Toe Board</h3>
+                <p id="mm-turn-role" class="minimax-turn-pill minimax-role-max" aria-live="polite">X turn · Maximizer</p>
+              </header>
+
               <p id="mm-ai-choice" class="minimax-ai-choice">AI choice will appear here after search.</p>
-            </div>
 
-            <div class="minimax-board" id="mm-board" role="grid" aria-label="Tic-Tac-Toe board"></div>
+              <div class="minimax-board-wrap">
+                <div class="minimax-board" id="mm-board" role="grid" aria-label="Tic-Tac-Toe board"></div>
+              </div>
 
-            <div class="minimax-controls">
-              <button id="mm-reset" type="button">Reset Game</button>
-              <button id="mm-ai-move" type="button">Run AI Move</button>
-              <label class="minimax-field" for="mm-depth">
-                <span>Search Depth</span>
-                <select id="mm-depth">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9" selected>9 (full tree)</option>
-                </select>
-              </label>
-            </div>
-
-            <div class="minimax-toggles">
-              <label><input id="mm-fast-wins" type="checkbox" /> Prefer Faster Wins</label>
-              <label><input id="mm-tree-toggle" type="checkbox" /> Show Partial Game Tree</label>
-            </div>
+              <div class="minimax-primary-controls">
+                <button id="mm-ai-move" class="minimax-btn minimax-btn-primary" type="button">Run AI Move</button>
+                <button id="mm-reset" class="minimax-btn minimax-btn-secondary" type="button">Reset Game</button>
+              </div>
+            </article>
           </section>
 
-          <section class="minimax-side-panel">
-            <article class="minimax-panel">
-              <h3>Terminal Scoring</h3>
-              <ul class="rhythm">
+          <aside class="minimax-side">
+            <article class="minimax-card">
+              <header class="minimax-card-head">
+                <h3>Lab Controls</h3>
+              </header>
+
+              <div class="minimax-control-grid">
+                <label class="minimax-field" for="mm-depth">
+                  <span>Search Depth</span>
+                  <select id="mm-depth">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9" selected>9 (full tree)</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="minimax-toggles">
+                <label><input id="mm-fast-wins" type="checkbox" /> Prefer Faster Wins</label>
+                <label><input id="mm-tree-toggle" type="checkbox" /> Show Partial Game Tree</label>
+              </div>
+            </article>
+
+            <article class="minimax-card">
+              <header class="minimax-card-head">
+                <h3>Search Metrics</h3>
+              </header>
+              <div class="minimax-metric-tiles">
+                <article class="minimax-metric">
+                  <p id="mm-metric-depth" class="minimax-metric-value">0</p>
+                  <p class="minimax-metric-label">Depth</p>
+                </article>
+                <article class="minimax-metric">
+                  <p id="mm-metric-nodes" class="minimax-metric-value">0</p>
+                  <p class="minimax-metric-label">Nodes</p>
+                </article>
+                <article class="minimax-metric">
+                  <p id="mm-metric-branching" class="minimax-metric-value">0.00</p>
+                  <p class="minimax-metric-label">Branching</p>
+                </article>
+              </div>
+            </article>
+
+            <article class="minimax-card">
+              <header class="minimax-card-head">
+                <h3>Terminal Scoring</h3>
+              </header>
+              <ul class="minimax-score-strip" aria-label="Terminal scoring">
                 <li><span class="minimax-role-max">Win</span><strong>+1</strong></li>
                 <li><span class="minimax-role-min">Loss</span><strong>-1</strong></li>
                 <li><span class="minimax-terminal">Draw</span><strong>0</strong></li>
               </ul>
               <p class="minimax-note">Evaluated board states from the latest AI search:</p>
               <div id="mm-eval-log" class="minimax-log" aria-live="polite"></div>
+              <button id="mm-log-expand" class="minimax-btn minimax-btn-secondary minimax-log-toggle" type="button" aria-expanded="false">Show more</button>
             </article>
-
-            <article class="minimax-panel">
-              <h3>Search Metrics</h3>
-              <ul class="rhythm">
-                <li><span>Current Search Depth</span><strong id="mm-metric-depth">0</strong></li>
-                <li><span>Total Nodes Evaluated</span><strong id="mm-metric-nodes">0</strong></li>
-                <li><span>Branching Factor Estimate</span><strong id="mm-metric-branching">0.00</strong></li>
-              </ul>
-            </article>
-          </section>
+          </aside>
         </div>
 
-        <section id="mm-tree-panel" class="minimax-tree-panel" hidden>
-          <h3>Game Tree Snapshot (Partial)</h3>
-          <p class="minimax-note">Blue nodes maximize, red nodes minimize, gold nodes are terminal outcomes.</p>
-          <div id="mm-tree" class="minimax-tree" aria-live="polite"></div>
-        </section>
-
-        <details class="minimax-debug">
-          <summary>Debug Console</summary>
-          <div class="minimax-debug-controls">
-            <label><input id="mm-debug-toggle" type="checkbox" /> Enable debug logging</label>
-            <button id="mm-debug-clear" type="button">Clear Debug Log</button>
+        <details id="mm-tree-panel" class="minimax-card minimax-collapsible" hidden>
+          <summary>
+            <span>Game Tree Snapshot</span>
+            <span class="minimax-summary-meta">Partial tree</span>
+          </summary>
+          <div class="minimax-collapsible-body">
+            <p class="minimax-note">Blue nodes maximize, red nodes minimize, gold nodes are terminal outcomes.</p>
+            <div id="mm-tree" class="minimax-tree" aria-live="polite"></div>
           </div>
-          <pre id="mm-debug-log" class="minimax-debug-log"></pre>
+        </details>
+
+        <details class="minimax-card minimax-collapsible minimax-debug">
+          <summary>
+            <span>Debug Console</span>
+            <span class="minimax-summary-meta">Engine events</span>
+          </summary>
+          <div class="minimax-collapsible-body">
+            <div class="minimax-debug-controls">
+              <label><input id="mm-debug-toggle" type="checkbox" /> Enable debug logging</label>
+              <button id="mm-debug-clear" class="minimax-btn minimax-btn-secondary" type="button">Clear Debug Log</button>
+            </div>
+            <pre id="mm-debug-log" class="minimax-debug-log"></pre>
+          </div>
         </details>
       </article>
     </section>

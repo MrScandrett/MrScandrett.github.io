@@ -29,51 +29,96 @@
       <p>Recreate a pre-LLM language modeling baseline using n-gram probability tables.</p>
     </section>
 
-    <section class="columns">
-      <article class="card">
-        <h3>Learning Goals</h3>
-        <ul class="rhythm">
-          <li><span>Goal 1</span><strong>Tokenize text into clean sequences</strong></li>
-          <li><span>Goal 2</span><strong>Build unigram bigram and trigram counts</strong></li>
-          <li><span>Goal 3</span><strong>Predict next tokens from context windows</strong></li>
-          <li><span>Goal 4</span><strong>Evaluate output quality with simple metrics</strong></li>
-        </ul>
-      </article>
+    <section class="section" id="ngram-live">
+      <div class="section-head">
+        <h2>Live N-gram Playground</h2>
+        <p>Paste a corpus, build probability tables, then predict and generate token-by-token text.</p>
+      </div>
 
-      <article class="card">
-        <h3>Build Tasks</h3>
-        <ul class="rhythm">
-          <li><span>Task 1</span><strong>Ingest a small classroom corpus</strong></li>
-          <li><span>Task 2</span><strong>Compute frequency and conditional probability tables</strong></li>
-          <li><span>Task 3</span><strong>Generate text from a seed phrase</strong></li>
-          <li><span>Task 4</span><strong>Compare n values and smoothing choices</strong></li>
-        </ul>
+      <article class="card ngram-lab">
+        <div class="ngram-grid">
+          <section class="ngram-panel">
+            <h3>Corpus Builder</h3>
+            <label class="ngram-field" for="ngram-corpus">Corpus text</label>
+            <textarea id="ngram-corpus" rows="10" placeholder="Paste or load a small text corpus..."></textarea>
+
+            <div class="ngram-row ngram-controls">
+              <label class="ngram-field" for="ngram-order">N</label>
+              <select id="ngram-order" aria-label="N-gram order">
+                <option value="1">1 (Unigram)</option>
+                <option value="2" selected>2 (Bigram)</option>
+                <option value="3">3 (Trigram)</option>
+              </select>
+
+              <label class="ngram-field" for="ngram-smoothing">Smoothing</label>
+              <select id="ngram-smoothing" aria-label="Smoothing method">
+                <option value="none" selected>None</option>
+                <option value="laplace">Laplace (+1)</option>
+              </select>
+
+              <button id="ngram-load-sample" type="button">Load Sample</button>
+              <button id="ngram-build" type="button">Build Tables</button>
+            </div>
+          </section>
+
+          <section class="ngram-panel">
+            <h3>Predict + Generate</h3>
+            <label class="ngram-field" for="ngram-seed">Seed text</label>
+            <input id="ngram-seed" type="text" placeholder="Type a seed phrase..." />
+
+            <div class="ngram-row ngram-controls">
+              <label class="ngram-field" for="ngram-length">Tokens</label>
+              <input id="ngram-length" type="number" min="1" max="200" value="30" />
+
+              <label class="ngram-field" for="ngram-temp">Temperature</label>
+              <input id="ngram-temp" type="number" min="0" step="0.1" value="0.9" />
+
+              <button id="ngram-generate" type="button">Generate</button>
+            </div>
+
+            <h4>Top Next-Token Predictions</h4>
+            <ol id="ngram-predictions" class="ngram-predictions"></ol>
+          </section>
+        </div>
+
+        <div class="ngram-grid ngram-output-grid">
+          <section class="ngram-panel">
+            <h3>Generated Text</h3>
+            <pre id="ngram-output" class="ngram-output">Build tables, then generate from a seed.</pre>
+          </section>
+
+          <section class="ngram-panel">
+            <h3>Quick Metrics</h3>
+            <pre id="ngram-metrics" class="ngram-output">{
+  "status": "waiting"
+}</pre>
+          </section>
+        </div>
       </article>
     </section>
 
     <section class="section">
       <div class="section-head">
-        <h2>Lesson Outputs</h2>
-        <p>Each team should publish a short reflection and demo link at the end of class.</p>
+        <h2>Mission Brief</h2>
+        <p>Test how context window size and smoothing change text prediction behavior.</p>
       </div>
-      <div class="tile-grid">
-        <a class="tile tile-hero" href="#" aria-disabled="true">
-          <span class="tile-kicker">Starter Kit</span>
-          <strong>N-gram Text Predictor starter workspace</strong>
-          <small>Add your live lesson URL or repo link</small>
-        </a>
-
-        <a class="tile" href="#" aria-disabled="true">
-          <span class="tile-kicker">Extension</span>
-          <strong>Add temperature-like randomness to generation</strong>
-          <small>Optional challenge for advanced students</small>
-        </a>
-
-        <a class="tile" href="../steam-lessons.html">
-          <span class="tile-kicker">Navigate</span>
-          <strong>Back to STEAM Lessons</strong>
-          <small>Return to the full ClassroomOS lesson shelf</small>
-        </a>
+      <div class="columns">
+        <article class="card">
+          <h3>What To Try</h3>
+          <ul class="rhythm">
+            <li><span>Experiment 1</span><strong>Build with bigrams, then switch to trigrams and compare top predictions.</strong></li>
+            <li><span>Experiment 2</span><strong>Turn on Laplace smoothing and watch unseen contexts become less brittle.</strong></li>
+            <li><span>Experiment 3</span><strong>Keep corpus fixed, vary temperature, and compare output diversity.</strong></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Reflection Prompts</h3>
+          <ul class="rhythm">
+            <li><span>Prompt 1</span><strong>How does larger n improve local coherence?</strong></li>
+            <li><span>Prompt 2</span><strong>When does smoothing help versus blur useful signal?</strong></li>
+            <li><span>Prompt 3</span><strong>Which settings produced readable output for your corpus and why?</strong></li>
+          </ul>
+        </article>
       </div>
     </section>
   </main>
@@ -81,5 +126,6 @@
   <footer class="site-footer">
     <p><a href="../steam-lessons.html">Back to STEAM Lessons</a></p>
   </footer>
+  <script src="../assets/js/ngram-lab.js"></script>
 </body>
 </html>

@@ -13,6 +13,7 @@ const metricNodesEl = document.getElementById("mm-metric-nodes");
 const metricBranchEl = document.getElementById("mm-metric-branching");
 
 const evalLogEl = document.getElementById("mm-eval-log");
+const evalLogExpandBtn = document.getElementById("mm-log-expand");
 const treePanelEl = document.getElementById("mm-tree-panel");
 const treeEl = document.getElementById("mm-tree");
 
@@ -33,6 +34,7 @@ const required = [
   metricNodesEl,
   metricBranchEl,
   evalLogEl,
+  evalLogExpandBtn,
   treePanelEl,
   treeEl,
   debugToggle,
@@ -59,9 +61,12 @@ const state = {
   board: Array(9).fill(null),
   turn: "X",
   winner: null,
+  lastMove: null,
+  aiLastMove: null,
   aiHighlight: null,
   aiPending: false,
   treeVisible: false,
+  evalLogExpanded: false,
   preferFasterWins: false,
   debugEnabled: false,
   lastMetrics: {
@@ -366,6 +371,11 @@ function renderEvalLog(entries) {
 
   if (!entries.length) {
     evalLogEl.textContent = "Run an AI move to populate evaluated states.";
+    evalLogEl.classList.remove("is-expanded");
+    state.evalLogExpanded = false;
+    evalLogExpandBtn.hidden = true;
+    evalLogExpandBtn.setAttribute("aria-expanded", "false");
+    evalLogExpandBtn.textContent = "Show more";
     return;
   }
 
@@ -377,6 +387,20 @@ function renderEvalLog(entries) {
     frag.appendChild(line);
   }
   evalLogEl.appendChild(frag);
+
+  const shouldShowToggle = entries.length > 14;
+  evalLogExpandBtn.hidden = !shouldShowToggle;
+  if (!shouldShowToggle) {
+    evalLogEl.classList.remove("is-expanded");
+    state.evalLogExpanded = false;
+    evalLogExpandBtn.setAttribute("aria-expanded", "false");
+    evalLogExpandBtn.textContent = "Show more";
+    return;
+  }
+
+  evalLogEl.classList.toggle("is-expanded", state.evalLogExpanded);
+  evalLogExpandBtn.setAttribute("aria-expanded", state.evalLogExpanded ? "true" : "false");
+  evalLogExpandBtn.textContent = state.evalLogExpanded ? "Show less" : "Show more";
 }
 
 function renderDebugLog() {
@@ -392,16 +416,16 @@ function outcomeMessage(winner) {
 
 function renderTurnRole() {
   if (state.winner) {
-    turnRoleEl.className = "minimax-role-tag minimax-terminal";
+    turnRoleEl.className = "minimax-turn-pill minimax-terminal";
     turnRoleEl.textContent = outcomeMessage(state.winner);
     return;
   }
 
   if (state.turn === "X") {
-    turnRoleEl.className = "minimax-role-tag minimax-role-max";
+    turnRoleEl.className = "minimax-turn-pill minimax-role-max";
     turnRoleEl.textContent = "X turn · Maximizer";
   } else {
-    turnRoleEl.className = "minimax-role-tag minimax-role-min";
+    turnRoleEl.className = "minimax-turn-pill minimax-role-min";
     turnRoleEl.textContent = "O turn · Minimizer";
   }
 }
@@ -426,7 +450,11 @@ function renderBoard() {
       button.classList.add(value === "X" ? "is-max" : "is-min");
     }
 
-    if (state.aiHighlight === i) {
+    if (state.lastMove === i) {
+      button.classList.add("is-last-move");
+    }
+
+    if (state.aiHighlight === i || state.aiLastMove === i) {
       button.classList.add("is-ai-choice");
     }
 
@@ -448,6 +476,10 @@ function setWinnerIfEnded() {
 function applyMove(index, player) {
   if (state.board[index] || state.winner) return;
   state.board[index] = player;
+  state.lastMove = index;
+  if (player === "O") {
+    state.aiLastMove = index;
+  }
   setWinnerIfEnded();
   if (!state.winner) {
     state.turn = opposite(player);
@@ -486,6 +518,7 @@ function runAiSearchAndMove() {
   }
 
   state.aiHighlight = result.move;
+  state.aiLastMove = result.move;
   aiChoiceEl.textContent = `AI chose ${moveLabel(result.move)} with score ${result.score.toFixed(2)}.`;
   renderBoard();
 
@@ -521,8 +554,11 @@ function resetGame() {
   state.board = Array(9).fill(null);
   state.turn = "X";
   state.winner = null;
+  state.lastMove = null;
+  state.aiLastMove = null;
   state.aiHighlight = null;
   state.aiPending = false;
+  state.evalLogExpanded = false;
 
   aiChoiceEl.textContent = "AI choice will appear here after search.";
 
@@ -556,7 +592,17 @@ fastWinsToggle.addEventListener("change", () => {
 
 treeToggle.addEventListener("change", () => {
   state.treeVisible = treeToggle.checked;
+  if (state.treeVisible) {
+    treePanelEl.open = window.matchMedia("(min-width: 900px)").matches;
+  }
   renderTree();
+});
+
+evalLogExpandBtn.addEventListener("click", () => {
+  state.evalLogExpanded = !state.evalLogExpanded;
+  evalLogEl.classList.toggle("is-expanded", state.evalLogExpanded);
+  evalLogExpandBtn.setAttribute("aria-expanded", state.evalLogExpanded ? "true" : "false");
+  evalLogExpandBtn.textContent = state.evalLogExpanded ? "Show less" : "Show more";
 });
 
 debugToggle.addEventListener("change", () => {
