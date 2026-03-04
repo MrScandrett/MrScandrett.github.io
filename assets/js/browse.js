@@ -21,7 +21,6 @@ function blankState() {
     term: new Set(),
     type: new Set(),
     program: new Set(),
-    jam: null,
   };
 }
 
@@ -40,8 +39,6 @@ function readStateFromQuery() {
         .forEach((item) => state[key].add(item));
     }
   });
-  if (params.get("jam") === "true") state.jam = true;
-  if (params.get("jam") === "false") state.jam = false;
   return state;
 }
 
@@ -54,8 +51,6 @@ function writeStateToQuery(state) {
       params.set(key, Array.from(state[key]).join(","));
     }
   });
-  if (state.jam !== null) params.set("jam", String(state.jam));
-
   const query = params.toString();
   const next = query ? `${window.location.pathname}?${query}` : window.location.pathname;
   window.history.replaceState({}, "", next);
@@ -102,36 +97,6 @@ function renderChipGroup({ mount, title, values, selectedSet, onToggle }) {
   mount.appendChild(group);
 }
 
-function renderJamGroup({ mount, state, onChange }) {
-  const group = document.createElement("section");
-  group.className = "filter-group";
-  const heading = document.createElement("h3");
-  heading.textContent = "Jam";
-  group.appendChild(heading);
-
-  const chips = document.createElement("div");
-  chips.className = "chips";
-
-  const modes = [
-    { label: "Any", value: null },
-    { label: "Jam", value: true },
-    { label: "Non-Jam", value: false },
-  ];
-
-  modes.forEach((mode) => {
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = "chip";
-    chip.textContent = mode.label;
-    chip.setAttribute("aria-pressed", String(state.jam === mode.value));
-    chip.addEventListener("click", () => onChange(mode.value));
-    chips.appendChild(chip);
-  });
-
-  group.appendChild(chips);
-  mount.appendChild(group);
-}
-
 function updateControlsFromState(state, dom) {
   dom.search.value = state.q;
   applySelectValue(dom.sort, state.sort);
@@ -149,6 +114,8 @@ function init() {
     search: document.getElementById("search-input"),
     sort: document.getElementById("sort-select"),
     clear: document.getElementById("clear-filters"),
+    filterToggle: document.getElementById("filter-toggle"),
+    filterPanel: document.getElementById("filter-panel"),
     groups: document.getElementById("filter-groups"),
     grid: document.getElementById("browse-grid"),
     count: document.getElementById("result-count"),
@@ -156,6 +123,16 @@ function init() {
   };
 
   if (!dom.grid) return;
+
+  // Filter panel toggle
+  if (dom.filterToggle && dom.filterPanel) {
+    dom.filterToggle.addEventListener("click", () => {
+      const isOpen = !dom.filterPanel.hidden;
+      dom.filterPanel.hidden = isOpen;
+      dom.filterToggle.setAttribute("aria-expanded", isOpen ? "false" : "true");
+      dom.filterToggle.textContent = isOpen ? "Filters \u25be" : "Filters \u25b4";
+    });
+  }
 
   const state = readStateFromQuery();
 
@@ -267,15 +244,6 @@ function init() {
             apply();
           },
         });
-
-        renderJamGroup({
-          mount: dom.groups,
-          state,
-          onChange: (value) => {
-            state.jam = value;
-            apply();
-          },
-        });
       }
 
       function apply() {
@@ -333,7 +301,6 @@ function init() {
         FILTER_KEYS.forEach((key) => {
           state[key].clear();
         });
-        state.jam = reset.jam;
         apply();
       });
 

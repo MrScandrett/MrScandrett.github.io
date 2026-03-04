@@ -301,7 +301,6 @@ export function projectMatches(project, state) {
   if (state.term.size > 0 && !state.term.has(project.term)) return false;
   if (state.type.size > 0 && !state.type.has(project.type)) return false;
   if (state.program.size > 0 && !state.program.has(project.program)) return false;
-  if (state.jam !== null && Boolean(project.jam) !== state.jam) return false;
 
   return true;
 }
