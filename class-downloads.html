@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Class Downloads · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Download project files, templates, and resources for class." />
+  <link rel="stylesheet" href="assets/css/classroom-home.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="steam-lessons.html">STEAM Lessons</a></li>
+          <li><a href="showcase.html">Showcase</a></li>
+          <li><a href="applications.html">Applications</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero">
+      <p class="eyebrow">Class Files</p>
+      <h1>Class Downloads</h1>
+      <p>Files uploaded by Mr. Scandrett for use in class projects. Click a card to download.</p>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Available Files</h2>
+        <p id="dl-subtitle">Loading files…</p>
+      </div>
+
+      <div class="dl-grid" id="dl-grid" aria-live="polite" aria-label="Downloadable class files">
+        <!-- Cards injected by script -->
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="https://github.com/MrScandrett" target="_blank" rel="noreferrer">GitHub</a></p>
+  </footer>
+
+  <script>
+    (async function () {
+      const grid     = document.getElementById('dl-grid');
+      const subtitle = document.getElementById('dl-subtitle');
+
+      /* ── File-type emoji map ─────────────────────────────── */
+      function iconFor(filename) {
+        if (!filename) return '📄';
+        const ext = filename.split('.').pop().toLowerCase();
+        const map = {
+          pdf:  '📕',
+          doc:  '📝', docx: '📝',
+          ppt:  '📊', pptx: '📊',
+          xls:  '📈', xlsx: '📈',
+          txt:  '📄',
+          md:   '📄',
+          zip:  '🗜️', rar: '🗜️', '7z': '🗜️',
+          png:  '🖼️', jpg: '🖼️', jpeg: '🖼️', gif: '🖼️', svg: '🖼️', webp: '🖼️',
+          mp3:  '🎵', wav: '🎵', ogg: '🎵',
+          mp4:  '🎬', mov: '🎬', webm: '🎬',
+          html: '🌐', htm: '🌐',
+          css:  '🎨',
+          js:   '⚙️',
+          ino:  '⚡', // Arduino sketch
+          py:   '🐍',
+          sb3:  '🐱', // Scratch project
+          json: '🔧',
+        };
+        return map[ext] || '📄';
+      }
+
+      /* ── Format date string ──────────────────────────────── */
+      function fmtDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso + 'T12:00:00');
+        return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+
+      /* ── Build a single download card ───────────────────── */
+      function buildCard(item) {
+        const card = document.createElement('article');
+        card.className = 'dl-card';
+
+        const filePath = 'downloads/' + item.file;
+
+        card.innerHTML =
+          '<div class="dl-card-top">' +
+            '<span class="dl-icon" aria-hidden="true">' + iconFor(item.file) + '</span>' +
+            '<div class="dl-info">' +
+              '<p class="dl-name">' + escHtml(item.name) + '</p>' +
+              (item.description
+                ? '<p class="dl-desc">' + escHtml(item.description) + '</p>'
+                : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="dl-meta">' +
+            (item.tag ? '<span class="dl-tag">' + escHtml(item.tag) + '</span>' : '') +
+            (item.date ? '<span class="dl-date">📅 ' + fmtDate(item.date) + '</span>' : '') +
+          '</div>' +
+          '<a class="dl-btn" href="' + escAttr(filePath) + '" download>' +
+            '⬇ Download' +
+          '</a>';
+
+        return card;
+      }
+
+      /* ── Escape helpers ──────────────────────────────────── */
+      function escHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+      function escAttr(str) {
+        return String(str).replace(/"/g, '%22');
+      }
+
+      /* ── Fetch manifest and render ───────────────────────── */
+      try {
+        const res  = await fetch('downloads/manifest.json');
+        if (!res.ok) throw new Error('manifest fetch failed ' + res.status);
+        const data = await res.json();
+        const list = Array.isArray(data.downloads) ? data.downloads : [];
+
+        grid.innerHTML = '';
+
+        if (list.length === 0) {
+          grid.innerHTML =
+            '<div class="dl-empty">' +
+              '<div class="dl-empty-icon">📂</div>' +
+              '<strong>No files yet</strong>' +
+              '<p>Check back soon — Mr. Scandrett will upload files here for class.</p>' +
+            '</div>';
+          subtitle.textContent = 'No files available yet.';
+        } else {
+          list.forEach(function (item) { grid.appendChild(buildCard(item)); });
+          subtitle.textContent =
+            list.length === 1
+              ? '1 file available for download.'
+              : list.length + ' files available for download.';
+        }
+      } catch (err) {
+        grid.innerHTML =
+          '<div class="dl-empty">' +
+            '<div class="dl-empty-icon">⚠️</div>' +
+            '<strong>Could not load files</strong>' +
+            '<p>Please try refreshing the page, or ask Mr. Scandrett for help.</p>' +
+          '</div>';
+        subtitle.textContent = 'Error loading file list.';
+      }
+    })();
+  </script>
+</body>
+</html>
