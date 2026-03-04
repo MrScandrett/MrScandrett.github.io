@@ -165,58 +165,72 @@
 
   <script>
     (async function () {
-      const verseEl  = document.getElementById('votd-verse');
-      const refEl    = document.getElementById('votd-ref');
+      const verseEl    = document.getElementById('votd-verse');
+      const refEl      = document.getElementById('votd-ref');
       const chapterBtn = document.getElementById('votd-chapter');
-      const aiBtn    = document.getElementById('votd-ai');
-      const yvBtn    = document.getElementById('votd-youversion');
+      const aiBtn      = document.getElementById('votd-ai');
+      const yvBtn      = document.getElementById('votd-youversion');
 
       let text      = '';
       let reference = '';
       let deeplink  = 'https://www.bible.com/verse-of-the-day';
 
-      // 1️⃣  OurManna — free daily verse API, returns YouVersion deep link
+      // 1️⃣  YouVersion official developer API — exact daily verse match
       try {
-        const res  = await fetch('https://beta.ourmanna.com/api/v1/get/?format=json&order=daily');
-        if (!res.ok) throw new Error();
+        const res = await fetch(
+          'https://developers.youversion.com/api/1/verse_of_the_day.json',
+          { headers: { 'X-YouVersion-Developer-Token': 'l0Hk73nR0qc21q1z0I04hjgGX4EPTyAtcI1ZfmgSAMp4ORq4' } }
+        );
+        if (!res.ok) throw new Error('YouVersion API error ' + res.status);
         const data = await res.json();
-        const d    = data.verse.details;
-        text       = d.text.trim();
-        reference  = d.reference.trim();
-        if (d.deeplinkurl) deeplink = d.deeplinkurl;
+        const v    = data.verse;
+        text       = v.text.trim();
+        reference  = v.human_reference.trim();
+        if (v.url) deeplink = v.url;
       } catch (_) {
 
-        // 2️⃣  Fallback: labs.bible.org NET Bible VOTD
+        // 2️⃣  OurManna fallback — "Powered by YouVersion", free & no-auth
         try {
-          const res  = await fetch('https://labs.bible.org/api/?passage=votd&type=json');
+          const res  = await fetch('https://beta.ourmanna.com/api/v1/get/?format=json&order=daily');
           if (!res.ok) throw new Error();
           const data = await res.json();
-          const v    = data[0];
-          reference  = v.bookname + ' ' + v.chapter + ':' + v.verse;
-          // Strip any HTML tags the API might include
-          text = v.text.replace(/<[^>]+>/g, '').trim();
+          const d    = data.verse.details;
+          text       = d.text.trim();
+          reference  = d.reference.trim();
+          if (d.deeplinkurl) deeplink = d.deeplinkurl;
         } catch (_) {
 
-          // 3️⃣  Static fallback — always works
-          text      = 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.';
-          reference = 'John 3:16 (NIV)';
+          // 3️⃣  labs.bible.org NET Bible VOTD
+          try {
+            const res  = await fetch('https://labs.bible.org/api/?passage=votd&type=json');
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            const v    = data[0];
+            reference  = v.bookname + ' ' + v.chapter + ':' + v.verse;
+            text       = v.text.replace(/<[^>]+>/g, '').trim();
+          } catch (_) {
+
+            // 4️⃣  Static failsafe — always renders something
+            text      = 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.';
+            reference = 'John 3:16 (NIV)';
+          }
         }
       }
 
-      // Render verse
+      // Render verse and reference
       verseEl.textContent = '\u201c' + text + '\u201d';
       refEl.textContent   = '\u2014 ' + reference;
 
-      // Full chapter: "Psalm 119:105 (NIV)" → "Psalm 119"
+      // Full chapter: "Psalm 119:105" → "Psalm 119"
       const chapterRef = reference.replace(/:\d+.*$/, '').trim();
-      chapterBtn.href = 'https://www.biblegateway.com/passage/?search='
+      chapterBtn.href  = 'https://www.biblegateway.com/passage/?search='
         + encodeURIComponent(chapterRef) + '&version=NIV';
 
-      // Google AI Overview — search engineered to surface AI annotation panel
+      // Google AI Overview — query surfaces AI annotation panel for the passage
       aiBtn.href = 'https://www.google.com/search?q='
         + encodeURIComponent('Bible ' + reference + ' meaning and commentary');
 
-      // YouVersion deep link from API (or verse-of-the-day page)
+      // YouVersion deep link (exact verse URL from API response)
       yvBtn.href = deeplink;
     })();
   </script>
