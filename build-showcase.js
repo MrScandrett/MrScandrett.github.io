@@ -73,7 +73,13 @@ function displayTitleFromFileName(fileName) {
 function studentFromPath(targetPath) {
   const rel = path.relative(STUDENT_PROJECTS_DIR, targetPath);
   if (!rel || rel.startsWith("..")) return "Student";
-  const first = rel.split(path.sep)[0];
+  const parts = rel.split(path.sep).filter(Boolean);
+  if (parts.length === 0) return "Student";
+  let first = parts[0];
+  if (parts.length === 1) {
+    const ext = path.extname(first);
+    if (ext) first = path.basename(first, ext);
+  }
   if (!first) return "Student";
   if (/[A-Z]/.test(first)) return first;
   return first
@@ -678,6 +684,201 @@ async function processScratchProject(source, slug) {
   };
 }
 
+function buildPivotThumbSvg({ title, student }) {
+  const safeTitle = String(title || "Pivot Animation").replace(/[<&>"]/g, "");
+  const safeStudent = String(student || "Student").replace(/[<&>"]/g, "");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Pivot animation thumbnail">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#0f3b4c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <g transform="translate(120 140)" stroke="#eaf6ff" stroke-width="20" fill="none" stroke-linecap="round">
+    <circle cx="180" cy="140" r="56"/>
+    <line x1="180" y1="196" x2="180" y2="420"/>
+    <line x1="180" y1="250" x2="92" y2="330"/>
+    <line x1="180" y1="250" x2="268" y2="330"/>
+    <line x1="180" y1="420" x2="110" y2="550"/>
+    <line x1="180" y1="420" x2="248" y2="550"/>
+  </g>
+  <text x="520" y="350" fill="#f4fbff" font-size="64" font-family="Segoe UI, Arial, sans-serif" font-weight="700">${safeTitle}</text>
+  <text x="520" y="430" fill="#cfe4ef" font-size="40" font-family="Segoe UI, Arial, sans-serif">Pivot Animation · ${safeStudent}</text>
+</svg>
+`;
+}
+
+async function processPivotProject(source, slug) {
+  const outputDir = path.join(APPS_DIR, slug);
+  const sourceFileName = path.basename(source.filePath);
+  const pivotExt = path.extname(sourceFileName).slice(1).toUpperCase() || "PIV";
+  const title = source.title || displayTitleFromFileName(sourceFileName) || "Pivot Animation";
+  const studentLabel = source.student || "Student";
+
+  await fs.rm(outputDir, { recursive: true, force: true });
+  const mediaOutDir = path.join(outputDir, "assets", "media");
+  await ensureDir(mediaOutDir);
+
+  const sourcePivotOutName = sourceFileName;
+  await fs.copyFile(source.filePath, path.join(mediaOutDir, sourcePivotOutName));
+
+  const hasPreview = Boolean(source.previewPath);
+  let previewOutName = "";
+  let previewRel = "";
+  let previewExt = "";
+  if (hasPreview) {
+    previewOutName = path.basename(source.previewPath);
+    previewExt = path.extname(previewOutName).toLowerCase();
+    await fs.copyFile(source.previewPath, path.join(mediaOutDir, previewOutName));
+    previewRel = `./assets/media/${encodeURIComponent(previewOutName)}`;
+  }
+
+  const pivotRel = `./assets/media/${encodeURIComponent(sourcePivotOutName)}`;
+  const isVideoPreview = hasPreview && previewExt !== ".gif";
+  const embed = hasPreview
+    ? isVideoPreview
+      ? `<video controls autoplay loop muted playsinline preload="metadata"><source src="${previewRel}" /></video>`
+      : `<img src="${previewRel}" alt="${title} animation preview" loading="eager" decoding="async" />`
+    : `<div class="empty">No preview media found yet. Add a .webm, .mp4, .gif, or .mov with the same filename as the Pivot file to enable in-browser playback.</div>`;
+
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${title} · Pivot Viewer</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0f172a;
+      color: #eff6ff;
+      font-family: "Segoe UI", Arial, sans-serif;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+    .head, .foot {
+      padding: 0.9rem 1rem;
+      background: #12213b;
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+    }
+    .foot {
+      border-top: 1px solid rgba(255,255,255,0.14);
+      border-bottom: 0;
+      color: #cddcf0;
+      font-size: 0.92rem;
+    }
+    .head h1 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .head p {
+      margin: 0.35rem 0 0 0;
+      color: #c6d7ef;
+      font-size: 0.92rem;
+    }
+    .stage {
+      display: grid;
+      gap: 0.8rem;
+      padding: 0.9rem;
+      align-content: start;
+      justify-items: center;
+    }
+    video, img {
+      width: min(96vw, 1200px);
+      max-height: 78vh;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: #0a0f1c;
+      object-fit: contain;
+    }
+    .empty {
+      width: min(96vw, 1000px);
+      border-radius: 12px;
+      border: 1px dashed rgba(255,255,255,0.35);
+      background: rgba(17, 32, 60, 0.8);
+      padding: 1rem;
+      color: #d8e7f9;
+      line-height: 1.5;
+    }
+    .actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .actions a {
+      color: #eff6ff;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 8px;
+      padding: 0.5rem 0.8rem;
+      background: #1b3156;
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+    .actions a:hover {
+      background: #284679;
+    }
+  </style>
+</head>
+<body>
+  <header class="head">
+    <h1>${title}</h1>
+    <p>${studentLabel} · Pivot ${pivotExt}</p>
+  </header>
+  <main class="stage">
+    ${embed}
+    <div class="actions">
+      <a href="${pivotRel}" download>Download Original .${pivotExt.toLowerCase()}</a>
+    </div>
+  </main>
+  <footer class="foot">
+    ${hasPreview ? "Playback uses the exported preview media file stored with this Pivot project." : "Export a preview video or GIF to watch this animation directly in the browser."}
+  </footer>
+</body>
+</html>`;
+
+  const minifiedHtml = await minify(html, {
+    collapseWhitespace: true,
+    removeComments: true,
+    removeRedundantAttributes: true,
+    removeEmptyAttributes: true,
+    minifyCSS: true,
+    minifyJS: false,
+    keepClosingSlash: true,
+  });
+
+  await fs.writeFile(path.join(outputDir, "index.html"), minifiedHtml, "utf8");
+
+  let thumbnail = null;
+  if (hasPreview) {
+    thumbnail = `./apps/${slug}/assets/media/${encodeURIComponent(previewOutName)}`;
+  } else {
+    const thumbSvg = buildPivotThumbSvg({ title, student: studentLabel });
+    await ensureDir(path.join(outputDir, "assets"));
+    await fs.writeFile(path.join(outputDir, "assets", "thumb.svg"), thumbSvg, "utf8");
+    thumbnail = `./apps/${slug}/assets/thumb.svg`;
+  }
+
+  return {
+    name: `${title} (Pivot Animation)`,
+    slug,
+    url: `./apps/${slug}/`,
+    thumbnail,
+    student: studentLabel,
+    category: "Animation",
+    program: "Student Upload",
+    tech: ["Pivot Animator", hasPreview ? path.extname(previewOutName).slice(1).toUpperCase() : pivotExt],
+    tags: ["student-upload", "pivot-animation"],
+    difficulty: "Beginner",
+    date_added: new Date().toISOString().slice(0, 10),
+  };
+}
+
 function buildModelViewerScript({ modelUrl, mtlUrl, modelFormat, title, student, grade }) {
   return `import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -1167,7 +1368,11 @@ async function main() {
     STUDENT_PROJECTS_DIR,
     webSources.map((item) => item.projectDir)
   );
-  const projectSources = webSources.concat(scratchSources, modelSources);
+  const pivotSources = findPivotSources(
+    STUDENT_PROJECTS_DIR,
+    webSources.map((item) => item.projectDir)
+  );
+  const projectSources = webSources.concat(scratchSources, modelSources, pivotSources);
 
   if (projectSources.length === 0) {
     await fs.writeFile(MANIFEST_PATH, JSON.stringify([], null, 2) + "\n", "utf8");
@@ -1189,6 +1394,8 @@ async function main() {
       let entry;
       if (source.kind === "scratch") {
         entry = await processScratchProject(source, slug);
+      } else if (source.kind === "pivot") {
+        entry = await processPivotProject(source, slug);
       } else if (source.kind === "model") {
         entry = await processModelProject(source, slug);
       } else {
