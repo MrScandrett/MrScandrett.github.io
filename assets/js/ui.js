@@ -49,7 +49,6 @@ export function createProjectCard(project, options = {}) {
   article.dataset.program = project.program;
   article.dataset.term = project.term;
   article.dataset.year = String(project.year);
-  article.dataset.jam = String(Boolean(project.jam));
   article.dataset.tech = (project.tech || []).join("|").toLowerCase();
   article.dataset.tags = (project.tags || []).join("|").toLowerCase();
   article.dataset.search = [project.title, project.student, ...(project.tech || []), ...(project.tags || [])]
