@@ -6,12 +6,16 @@ function resolveThumbPath(value) {
   const raw = String(value || "").trim();
   if (!raw) return PLACEHOLDER_THUMB;
 
-  if (raw.startsWith("/thumbs/")) return `./assets${raw}`;
-  if (raw.startsWith("thumbs/")) return `./assets/${raw}`;
-  if (raw.startsWith("./thumbs/")) return `./assets/${raw.slice(2)}`;
-  if (raw.startsWith("/assets/thumbs/")) return `.${raw}`;
+  // Normalise all recognised shorthand forms to ./assets/thumbs/...
+  if (raw.startsWith("/thumbs/"))          return `./assets${raw}`;
+  if (raw.startsWith("thumbs/"))           return `./assets/${raw}`;
+  if (raw.startsWith("./thumbs/"))         return `./assets/${raw.slice(2)}`;
+  if (raw.startsWith("/assets/thumbs/"))   return `.${raw}`;
+  if (raw.startsWith("./assets/thumbs/"))  return raw;
+  if (raw.startsWith("assets/thumbs/"))    return `./${raw}`;
 
-  return raw;
+  // Any path outside assets/thumbs/ is rejected — use placeholder.
+  return PLACEHOLDER_THUMB;
 }
 
 function titleFromSlug(slug) {
