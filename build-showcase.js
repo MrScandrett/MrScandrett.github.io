@@ -14,6 +14,8 @@ const MANIFEST_PATH = path.join(APPS_DIR, "manifest.json");
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg"]);
 const MODEL_EXTENSIONS = new Set([".stl", ".obj"]);
+const PIVOT_SOURCE_EXTENSIONS = new Set([".piv", ".stk"]);
+const PIVOT_PREVIEW_EXTENSIONS = [".webm", ".mp4", ".gif", ".mov"];
 const MODEL_RESOURCE_EXTENSIONS = new Set([
   ".stl",
   ".obj",
@@ -285,6 +287,68 @@ function findModelSources(rootDir, ignoreDirectories = []) {
   }
 
   return modelProjects;
+}
+
+function resolvePivotPreviewPath(sourceFilePath) {
+  const sourceDir = path.dirname(sourceFilePath);
+  const sourceBase = path.basename(sourceFilePath, path.extname(sourceFilePath)).toLowerCase();
+  const entries = fssync.readdirSync(sourceDir, { withFileTypes: true });
+  const files = entries.filter((entry) => entry.isFile()).map((entry) => entry.name);
+
+  for (const previewExt of PIVOT_PREVIEW_EXTENSIONS) {
+    const exact = files.find(
+      (name) => path.extname(name).toLowerCase() === previewExt && path.basename(name, path.extname(name)).toLowerCase() === sourceBase
+    );
+    if (exact) return path.join(sourceDir, exact);
+  }
+
+  for (const previewExt of PIVOT_PREVIEW_EXTENSIONS) {
+    const fallback = files.find((name) => path.extname(name).toLowerCase() === previewExt);
+    if (fallback) return path.join(sourceDir, fallback);
+  }
+
+  return "";
+}
+
+function findPivotSources(rootDir, ignoreDirectories = []) {
+  const pivotProjects = [];
+  const stack = [rootDir];
+
+  while (stack.length) {
+    const current = stack.pop();
+    const entries = fssync.readdirSync(current, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === ".git" || entry.name === "node_modules") continue;
+        if (isInsideAnyDir(full, ignoreDirectories)) continue;
+        stack.push(full);
+        continue;
+      }
+
+      if (!entry.isFile()) continue;
+      if (isInsideAnyDir(full, ignoreDirectories)) continue;
+
+      const ext = path.extname(entry.name).toLowerCase();
+      if (!PIVOT_SOURCE_EXTENSIONS.has(ext)) continue;
+
+      const student = studentFromPath(full);
+      const title = displayTitleFromFileName(entry.name) || "Pivot Animation";
+      const previewPath = resolvePivotPreviewPath(full);
+
+      pivotProjects.push({
+        kind: "pivot",
+        filePath: full,
+        previewPath,
+        student,
+        title,
+        slugBase: `${student}-${title}`,
+      });
+    }
+  }
+
+  return pivotProjects;
 }
 
 async function copyDirectoryRecursive(sourceDir, destinationDir, options = {}) {
