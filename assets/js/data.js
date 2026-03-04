@@ -1,6 +1,18 @@
 let cache = null;
 let loadingPromise = null;
-const PLACEHOLDER_THUMB = "./assets/thumbs/eco-campus-site.svg";
+const PLACEHOLDER_THUMB = "./assets/thumbs/student-showcase-thumb.png";
+
+function resolveThumbPath(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return PLACEHOLDER_THUMB;
+
+  if (raw.startsWith("/thumbs/")) return `./assets${raw}`;
+  if (raw.startsWith("thumbs/")) return `./assets/${raw}`;
+  if (raw.startsWith("./thumbs/")) return `./assets/${raw.slice(2)}`;
+  if (raw.startsWith("/assets/thumbs/")) return `.${raw}`;
+
+  return raw;
+}
 
 function titleFromSlug(slug) {
   return String(slug || "")
@@ -26,8 +38,8 @@ function normalizeProjects(projects) {
       difficulty: p.difficulty || "Beginner",
       tech: Array.isArray(p.tech) ? p.tech : [],
       tags: Array.isArray(p.tags) ? p.tags : [],
-      thumbnail: p.thumbnail || PLACEHOLDER_THUMB,
-      hero: p.hero || p.thumbnail || PLACEHOLDER_THUMB,
+      thumbnail: resolveThumbPath(p.thumbnail),
+      hero: resolveThumbPath(p.hero || p.thumbnail),
       short_description: p.short_description || "Student project submission.",
       long_description: p.long_description || "Built and published as part of the classroom showcase.",
       links: p.links || {},
@@ -87,8 +99,8 @@ function normalizeManifestApps(payload) {
         difficulty,
         tech,
         tags,
-        thumbnail: item.thumbnail || PLACEHOLDER_THUMB,
-        hero: item.thumbnail || PLACEHOLDER_THUMB,
+        thumbnail: resolveThumbPath(item.thumbnail),
+        hero: resolveThumbPath(item.thumbnail),
         short_description: "Student project uploaded to the classroom showcase.",
         long_description: "Open the app to play or explore the student build.",
         links: { play: item.url },
