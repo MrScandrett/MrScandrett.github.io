@@ -3,9 +3,19 @@ const statusElement = document.getElementById("chess-status");
 const logElement = document.getElementById("chess-log");
 const resetButton = document.getElementById("chess-reset");
 const depthSelect = document.getElementById("chess-depth");
+const modelSelect = document.getElementById("chess-model");
+const modelNoteElement = document.getElementById("chess-model-note");
 
-if (!boardElement || !statusElement || !logElement || !resetButton || !depthSelect) {
-  throw new Error("Chess AI Core could not initialize. Missing required DOM nodes.");
+if (
+  !boardElement ||
+  !statusElement ||
+  !logElement ||
+  !resetButton ||
+  !depthSelect ||
+  !modelSelect ||
+  !modelNoteElement
+) {
+  throw new Error("Chess lesson could not initialize. Missing required DOM nodes.");
 }
 
 const SIZE = 8;
@@ -51,6 +61,69 @@ const PIECE_VALUE = {
   K: 20000
 };
 
+const MODEL_PROFILES = {
+  turochamp1951: {
+    label: "Turochamp (1951)",
+    logLabel: "Turochamp",
+    summary: "Early rule-based style: shallow lookahead with noisier move choices.",
+    baseDepth: 1,
+    recommendedBudget: 2,
+    variability: 0.58,
+    blunderWindow: 210,
+    materialWeight: 0.95,
+    centerWeight: 0.35,
+    pawnAdvanceWeight: 0.8,
+    checkBonus: 9,
+    captureBias: 0.12,
+    thinkDelay: 120
+  },
+  machack1967: {
+    label: "Mac Hack VI (1967)",
+    logLabel: "Mac Hack VI",
+    summary: "Tournament-era search with stronger material play and moderate lookahead.",
+    baseDepth: 2,
+    recommendedBudget: 2,
+    variability: 0.28,
+    blunderWindow: 120,
+    materialWeight: 1,
+    centerWeight: 0.7,
+    pawnAdvanceWeight: 0.9,
+    checkBonus: 12,
+    captureBias: 0.18,
+    thinkDelay: 90
+  },
+  deepblue1997: {
+    label: "Deep Blue Style (1997)",
+    logLabel: "Deep Blue",
+    summary: "Consistent alpha-beta search with aggressive tactical pressure.",
+    baseDepth: 3,
+    recommendedBudget: 2,
+    variability: 0.08,
+    blunderWindow: 45,
+    materialWeight: 1.03,
+    centerWeight: 1.05,
+    pawnAdvanceWeight: 1,
+    checkBonus: 18,
+    captureBias: 0.22,
+    thinkDelay: 75
+  },
+  modern2020s: {
+    label: "Modern Engine Style (2020s)",
+    logLabel: "Modern Engine",
+    summary: "Sharper positional scoring with low randomness and deeper practical play.",
+    baseDepth: 3,
+    recommendedBudget: 3,
+    variability: 0.03,
+    blunderWindow: 25,
+    materialWeight: 1.07,
+    centerWeight: 1.24,
+    pawnAdvanceWeight: 1.15,
+    checkBonus: 21,
+    captureBias: 0.26,
+    thinkDelay: 60
+  }
+};
+
 const KNIGHT_DELTAS = [
   [-2, -1],
   [-2, 1],
@@ -94,6 +167,7 @@ const state = {
   turn: "W",
   humanColor: "W",
   aiColor: "B",
+  aiModelId: "deepblue1997",
   selected: null,
   legalTargets: [],
   winner: null,
@@ -101,6 +175,10 @@ const state = {
   inCheckColor: null,
   log: []
 };
+
+function activeModel() {
+  return MODEL_PROFILES[state.aiModelId] || MODEL_PROFILES.deepblue1997;
+}
 
 function idx(row, col) {
   return row * SIZE + col;
@@ -140,27 +218,6 @@ function findKing(board, color) {
     if (board[i] === target) return i;
   }
   return -1;
-}
-
-function clearLine(board, from, to) {
-  const fromRow = rowOf(from);
-  const fromCol = colOf(from);
-  const toRow = rowOf(to);
-  const toCol = colOf(to);
-
-  const stepRow = Math.sign(toRow - fromRow);
-  const stepCol = Math.sign(toCol - fromCol);
-
-  let row = fromRow + stepRow;
-  let col = fromCol + stepCol;
-
-  while (row !== toRow || col !== toCol) {
-    if (board[idx(row, col)]) return false;
-    row += stepRow;
-    col += stepCol;
-  }
-
-  return true;
 }
 
 function isSquareAttacked(board, target, byColor) {
@@ -376,7 +433,7 @@ function analyzePosition(board, turn) {
   return { over: true, winner: "D", inCheck: false, moves };
 }
 
-function evaluate(board, perspective) {
+function evaluate(board, perspective, profile) {
   let score = 0;
 
   for (let i = 0; i < board.length; i += 1) {
@@ -387,24 +444,31 @@ function evaluate(board, perspective) {
     const type = typeOf(piece);
     const row = rowOf(i);
     const col = colOf(i);
-    const value = PIECE_VALUE[type] || 0;
+    const baseValue = PIECE_VALUE[type] || 0;
 
     const centerDist = Math.abs(row - 3.5) + Math.abs(col - 3.5);
-    const centerBonus = type === "P" ? 2.5 - centerDist * 0.4 : 3 - centerDist * 0.5;
+    const baseCenter = type === "P" ? 2.5 - centerDist * 0.4 : 3 - centerDist * 0.5;
+    const centerBonus = baseCenter * profile.centerWeight;
+
+    let pawnAdvance = 0;
+    if (type === "P") {
+      const advancement = color === "W" ? SIZE - 1 - row : row;
+      pawnAdvance = advancement * profile.pawnAdvanceWeight;
+    }
 
     const signed = color === perspective ? 1 : -1;
-    score += signed * (value + centerBonus);
+    score += signed * (baseValue * profile.materialWeight + centerBonus + pawnAdvance);
   }
 
-  if (isInCheck(board, opposite(perspective))) score += 18;
-  if (isInCheck(board, perspective)) score -= 18;
+  if (isInCheck(board, opposite(perspective))) score += profile.checkBonus;
+  if (isInCheck(board, perspective)) score -= profile.checkBonus;
 
   return score;
 }
 
-function minimax(board, turn, depth, alpha, beta, perspective, ply = 0) {
+function minimax(board, turn, depth, alpha, beta, perspective, profile, ply = 0) {
   if (depth <= 0) {
-    return { score: evaluate(board, perspective), move: null };
+    return { score: evaluate(board, perspective, profile), move: null };
   }
 
   const analysis = analyzePosition(board, turn);
@@ -423,7 +487,7 @@ function minimax(board, turn, depth, alpha, beta, perspective, ply = 0) {
 
     for (const move of moves) {
       const next = applyMove(board, move);
-      const result = minimax(next, opposite(turn), depth - 1, alpha, beta, perspective, ply + 1);
+      const result = minimax(next, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1);
 
       if (result.score > bestScore) {
         bestScore = result.score;
@@ -441,7 +505,7 @@ function minimax(board, turn, depth, alpha, beta, perspective, ply = 0) {
 
   for (const move of moves) {
     const next = applyMove(board, move);
-    const result = minimax(next, opposite(turn), depth - 1, alpha, beta, perspective, ply + 1);
+    const result = minimax(next, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1);
 
     if (result.score < bestScore) {
       bestScore = result.score;
@@ -453,6 +517,53 @@ function minimax(board, turn, depth, alpha, beta, perspective, ply = 0) {
   }
 
   return { score: bestScore, move: bestMove };
+}
+
+function resolveSearchDepth(profile) {
+  const budget = Math.max(1, Math.min(3, Number(depthSelect.value) || profile.recommendedBudget || 2));
+  return Math.max(1, Math.min(4, profile.baseDepth + (budget - 2)));
+}
+
+function scoreCandidateMove(board, move, depth, profile) {
+  const next = applyMove(board, move);
+  if (depth <= 1) {
+    return evaluate(next, state.aiColor, profile);
+  }
+
+  const result = minimax(next, opposite(state.aiColor), depth - 1, -Infinity, Infinity, state.aiColor, profile, 1);
+  let score = result.score;
+
+  if (move.capture) {
+    score += (PIECE_VALUE[typeOf(move.capture)] || 0) * profile.captureBias;
+  }
+
+  return score;
+}
+
+function chooseAiMove(board, profile) {
+  const analysis = analyzePosition(board, state.aiColor);
+  if (analysis.over || analysis.moves.length === 0) return null;
+
+  const depth = resolveSearchDepth(profile);
+  const scored = analysis.moves.map((move) => ({
+    move,
+    score: scoreCandidateMove(board, move, depth, profile)
+  }));
+
+  scored.sort((a, b) => b.score - a.score);
+  const best = scored[0];
+  if (!best) return null;
+
+  const topPool = scored.filter((entry, index) => {
+    if (index >= Math.min(4, scored.length)) return false;
+    return entry.score >= best.score - profile.blunderWindow;
+  });
+
+  if (topPool.length === 0) return best.move;
+  if (topPool.length === 1 || Math.random() > profile.variability) return topPool[0].move;
+
+  const randomIndex = Math.floor(Math.random() * topPool.length);
+  return topPool[randomIndex].move;
 }
 
 function selectTargets(from) {
@@ -484,13 +595,22 @@ function renderLog() {
 }
 
 function statusText() {
+  const model = activeModel();
   if (state.winner === "W") return "White wins by checkmate. Reset to play again.";
-  if (state.winner === "B") return "Black wins by checkmate. Reset to play again.";
+  if (state.winner === "B") return `Black (${model.label}) wins by checkmate. Reset to play again.`;
   if (state.winner === "D") return "Draw by stalemate. Reset to play again.";
-  if (state.aiThinking) return "Black AI is thinking...";
+  if (state.aiThinking) return `${model.label} is thinking...`;
 
   const checkNote = state.inCheckColor === state.turn ? " (in check)" : "";
-  return state.turn === state.humanColor ? `Your move as White${checkNote}.` : `Black to move${checkNote}.`;
+  if (state.turn === state.humanColor) {
+    return `Your move as White${checkNote}.`;
+  }
+  return `Black (${model.label}) to move${checkNote}.`;
+}
+
+function renderModelNote() {
+  const model = activeModel();
+  modelNoteElement.textContent = `${model.label}: ${model.summary}`;
 }
 
 function renderBoard() {
@@ -529,6 +649,10 @@ function renderBoard() {
     boardElement.appendChild(button);
   }
 
+  depthSelect.disabled = state.aiThinking;
+  modelSelect.disabled = state.aiThinking;
+
+  renderModelNote();
   statusElement.textContent = statusText();
   renderLog();
 }
@@ -549,11 +673,11 @@ function performMove(move, actorLabel) {
 function runAiTurn() {
   if (state.winner || state.turn !== state.aiColor) return;
 
+  const model = activeModel();
   state.aiThinking = true;
   renderBoard();
 
   window.setTimeout(() => {
-    const depth = Math.max(1, Math.min(3, Number(depthSelect.value) || 2));
     const analysis = analyzePosition(state.board, state.aiColor);
 
     if (analysis.over || analysis.moves.length === 0) {
@@ -563,10 +687,9 @@ function runAiTurn() {
       return;
     }
 
-    const result = minimax(state.board, state.aiColor, depth, -Infinity, Infinity, state.aiColor);
-    const move = result.move || analysis.moves[0];
+    const move = chooseAiMove(state.board, model) || analysis.moves[0];
 
-    performMove(move, "Black");
+    performMove(move, model.logLabel);
     state.turn = state.humanColor;
     state.selected = null;
     state.legalTargets = [];
@@ -574,7 +697,7 @@ function runAiTurn() {
     state.aiThinking = false;
     updateGameStatus();
     renderBoard();
-  }, 55);
+  }, model.thinkDelay);
 }
 
 function onSquareClick(index) {
@@ -626,7 +749,6 @@ function onSquareClick(index) {
 
 function freshBoard() {
   const board = new Array(SIZE * SIZE).fill(null);
-
   const backRank = ["R", "N", "B", "Q", "K", "B", "N", "R"];
 
   for (let c = 0; c < SIZE; c += 1) {
@@ -640,6 +762,7 @@ function freshBoard() {
 }
 
 function resetGame() {
+  const model = activeModel();
   state.board = freshBoard();
   state.turn = "W";
   state.selected = null;
@@ -648,7 +771,8 @@ function resetGame() {
   state.aiThinking = false;
   state.inCheckColor = null;
   state.log = [
-    "New 8x8 game started.",
+    `New 8x8 game started vs ${model.label}.`,
+    `Model note: ${model.summary}`,
     "Rules in this lab: full piece movement + check/checkmate/stalemate, no castling or en passant."
   ];
 
@@ -656,8 +780,28 @@ function resetGame() {
   renderBoard();
 }
 
+function syncModelSelection(shouldReset) {
+  const selectedId = modelSelect.value;
+  if (MODEL_PROFILES[selectedId]) {
+    state.aiModelId = selectedId;
+  } else {
+    modelSelect.value = state.aiModelId;
+  }
+
+  const profile = activeModel();
+  depthSelect.value = String(profile.recommendedBudget);
+  renderModelNote();
+
+  if (shouldReset) resetGame();
+}
+
 resetButton.addEventListener("click", () => {
   resetGame();
 });
 
+modelSelect.addEventListener("change", () => {
+  syncModelSelection(true);
+});
+
+syncModelSelection(false);
 resetGame();
