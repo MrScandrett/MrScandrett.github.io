@@ -667,13 +667,15 @@ function applyFrame(rawFrame) {
   nodesExpandedEl.textContent = String(frame.expandedCount || 0);
 
   if (frame.message) {
-    updateStatus(frame.message);
+    updateStatus(`${getAiName()}: ${frame.message}`);
   }
 
   renderGrid(frame);
 }
 
 function playAnimation() {
+  const theme = getTheme();
+  const ai = getAiName();
   stopAnimation();
 
   if (!state.frames.length) {
@@ -689,9 +691,9 @@ function playAnimation() {
     if (state.frameIndex >= state.frames.length) {
       stopAnimation();
       if (state.lastResult?.success) {
-        updateStatus("Mission complete. Rover reached the beacon.");
+        updateStatus(`${ai} reached the ${theme.goalLabel.toLowerCase()}. Mission complete.`);
       } else {
-        updateStatus("Mission ended with no valid route.");
+        updateStatus(`${ai} could not find a valid route.`);
       }
       return;
     }
@@ -761,6 +763,7 @@ function computeHeuristicComparison(cells, options) {
 }
 
 function runMission() {
+  const ai = getAiName();
   stopAnimation();
   state.mode = modeEl.value;
   state.heuristic = heuristicEl.value;
@@ -775,7 +778,7 @@ function runMission() {
   pathCostEl.textContent = "--";
   solveTimeEl.textContent = "--";
   optimalityEl.textContent = "Pending";
-  updateStatus("Mission in progress...");
+  updateStatus(`${ai} is exploring...`);
 
   const solveStartedAt = performance.now();
 
@@ -818,13 +821,13 @@ function runMission() {
   optimalityEl.textContent = computeOptimalityLabel(result, comparison.zero.result);
 
   if (!missionFrames.length) {
-    updateStatus("No route search steps available. Check map setup and try again.");
+    updateStatus(`${ai} found no route search steps. Check map setup and try again.`);
     return;
   }
 
   if (state.mode === "step") {
     renderGrid();
-    updateStatus("Step mode ready. Press Step Expansion to advance the search.");
+    updateStatus(`${ai} is ready in Step mode. Press Step Expansion to advance.`);
     return;
   }
 
@@ -832,6 +835,8 @@ function runMission() {
 }
 
 function stepMission() {
+  const ai = getAiName();
+  const theme = getTheme();
   if (state.mode !== "step") return;
 
   if (!state.frames.length || state.frameIndex >= state.frames.length) {
@@ -844,9 +849,9 @@ function stepMission() {
 
   if (state.frameIndex >= state.frames.length) {
     if (state.lastResult?.success) {
-      updateStatus("Step mode complete: beacon reached.");
+      updateStatus(`Step mode complete: ${ai} reached the ${theme.goalLabel.toLowerCase()}.`);
     } else {
-      updateStatus("Step mode complete: mission ended with no route.");
+      updateStatus(`Step mode complete: ${ai} ended with no valid route.`);
     }
   }
 }
@@ -869,7 +874,7 @@ function updateModeUI() {
   const stepActive = state.mode === "step";
   stepBtn.disabled = !stepActive;
 
-  updateStatus(MODE_COPY[state.mode]);
+  updateStatus(modeCopy(state.mode));
 }
 
 function createDefaultGrid() {
@@ -935,11 +940,12 @@ function terrainClass(terrain) {
 }
 
 function describeCell(x, y, terrain, frame) {
+  const theme = getTheme();
   let desc = "Clear";
-  if (isStart(x, y)) desc = "Rover start";
-  else if (isGoal(x, y)) desc = "Beacon goal";
-  else if (terrain === "blocked") desc = "Debris blocked";
-  else if (terrain === "sand") desc = "Sand cost three";
+  if (isStart(x, y)) desc = `${theme.startLabel} start`;
+  else if (isGoal(x, y)) desc = `${theme.goalLabel} goal`;
+  else if (terrain === "blocked") desc = `${theme.blockedLabel} blocked`;
+  else if (terrain === "sand") desc = `${theme.slowLabel} cost three`;
 
   const key = keyOf(x, y);
   if (frame?.currentKey === key) {
@@ -956,6 +962,7 @@ function describeCell(x, y, terrain, frame) {
 }
 
 function renderGrid(frame = state.currentFrame) {
+  const theme = getTheme();
   gridEl.style.setProperty("--astar-cols", String(state.width));
 
   const fragment = document.createDocumentFragment();
@@ -977,10 +984,10 @@ function renderGrid(frame = state.currentFrame) {
       if (isStart(x, y)) btn.classList.add("is-rover");
       if (isGoal(x, y)) btn.classList.add("is-beacon");
 
-      if (isStart(x, y)) btn.textContent = "R";
-      else if (isGoal(x, y)) btn.textContent = "B";
-      else if (terrainAt(state.cells, x, y) === "blocked") btn.textContent = "#";
-      else if (terrainAt(state.cells, x, y) === "sand") btn.textContent = "3";
+      if (isStart(x, y)) btn.textContent = theme.startSymbol;
+      else if (isGoal(x, y)) btn.textContent = theme.goalSymbol;
+      else if (terrainAt(state.cells, x, y) === "blocked") btn.textContent = theme.blockedSymbol;
+      else if (terrainAt(state.cells, x, y) === "sand") btn.textContent = theme.slowSymbol;
       else if (frame?.pathSet?.has(key)) btn.textContent = "•";
       else btn.textContent = "";
 
@@ -994,11 +1001,12 @@ function renderGrid(frame = state.currentFrame) {
 }
 
 buildGridBtn.addEventListener("click", () => {
+  const ai = getAiName();
   stopAnimation();
   createDefaultGrid();
   clearSearchOverlay();
   renderGrid();
-  updateStatus("New mission grid ready. Paint cells, then run.");
+  updateStatus(`New mission grid ready. ${ai} is waiting for instructions.`);
 });
 
 gridEl.addEventListener("click", (event) => {
@@ -1012,7 +1020,7 @@ gridEl.addEventListener("click", (event) => {
 
   updateCellByTool(x, y);
   clearSearchOverlay();
-  updateStatus("Grid updated. Run Mission to test the new route.");
+  updateStatus(`${getAiName()} found a new map setup. Run Mission to test the route.`);
 });
 
 for (const button of toolButtons) {
@@ -1027,7 +1035,20 @@ modeEl.addEventListener("change", () => {
 heuristicEl.addEventListener("change", () => {
   state.heuristic = heuristicEl.value;
   clearSearchOverlay();
-  updateStatus(`Heuristic set to ${HEURISTIC_LABEL[state.heuristic]}.`);
+  updateStatus(`${getAiName()} switched to ${HEURISTIC_LABEL[state.heuristic]} heuristic.`);
+});
+
+themeEl.addEventListener("change", () => {
+  state.theme = themeEl.value;
+  applyThemeUI();
+  clearSearchOverlay();
+  renderGrid();
+  updateStatus(`${getAiName()} loaded the ${getTheme().title} theme.`);
+});
+
+aiNameEl.addEventListener("input", () => {
+  state.aiName = aiNameEl.value.trim();
+  updateStatus(modeCopy(state.mode));
 });
 
 fuelInputEl.addEventListener("input", () => {
@@ -1042,11 +1063,14 @@ runBtn.addEventListener("click", runMission);
 stepBtn.addEventListener("click", stepMission);
 clearBtn.addEventListener("click", () => {
   clearSearchOverlay();
-  updateStatus("Search overlay reset. Grid terrain unchanged.");
+  updateStatus(`${getAiName()} reset search overlays. Grid terrain unchanged.`);
 });
 
 setTool("start");
+state.theme = themeEl.value;
+state.aiName = aiNameEl.value.trim();
+applyThemeUI();
 createDefaultGrid();
 updateModeUI();
 clearSearchOverlay();
-updateStatus("Mission ready. Place rover/beacon or press Run Mission.");
+updateStatus(`${getAiName()} is ready. Place start/goal tiles or press Run Mission.`);
