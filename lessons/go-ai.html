@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Deep Blue to AlphaGo · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Why conquering Go required a completely different kind of AI — and play a live 9×9 game against a Monte Carlo AI." />
+  <meta name="description" content="Why conquering Go required a completely different kind of AI — and play a live 9x9 game against a Monte Carlo AI." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
 </head>
-<body>
+<body class="go-lesson-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <header class="topbar">
@@ -23,85 +23,193 @@
   </header>
 
   <main id="main-content">
-    <section class="hero">
-      <p class="eyebrow">AI Origins · Lesson 12</p>
-      <h1>Deep Blue to AlphaGo: The Go Challenge</h1>
-      <p>Chess fell to brute force. Go needed something entirely new.</p>
-    </section>
-
-    <!-- ── Context: The Two-Machine Story ── -->
-    <section class="section">
-      <div class="section-head">
-        <h2>The Two-Machine Story</h2>
-        <p>Two games. Two eras. Two completely different AI breakthroughs.</p>
+    <section class="hero go-hero">
+      <div class="go-hero-copy">
+        <p class="eyebrow">AI Origins · Lesson 12</p>
+        <h1>Deep Blue to AlphaGo: The Go Challenge</h1>
+        <p class="go-hero-lead">Chess fell to brute force. Go forced AI to become selective, probabilistic, and far more human-looking in the way it searches.</p>
+        <div class="go-hero-actions">
+          <a class="go-chip-link" href="#go-live">Launch the 9x9 lab</a>
+          <a class="go-chip-link is-secondary" href="#go-breakthrough">See the AlphaGo recipe</a>
+        </div>
       </div>
 
-      <section class="columns">
-        <article class="card">
-          <h3>IBM Deep Blue (1997)</h3>
-          <ul class="rhythm">
-            <li><span>What it did</span><strong>Defeated world chess champion Garry Kasparov 3½–2½ in a 6-game match.</strong></li>
-            <li><span>How it worked</span><strong>Minimax search + alpha-beta pruning, evaluating up to 200 million positions per second on custom hardware.</strong></li>
-            <li><span>Board size</span><strong>8×8 — 64 squares, branching factor ~35 moves per turn.</strong></li>
-            <li><span>Why chess was solvable</span><strong>Material values (queen = 9, rook = 5…) gave a reliable evaluation function. Deeper search = stronger play.</strong></li>
-          </ul>
-        </article>
-
-        <article class="card">
-          <h3>Why Go Broke Everything</h3>
-          <ul class="rhythm">
-            <li><span>Board size</span><strong>19×19 — 361 intersections. More possible game positions than there are atoms in the observable universe (~10¹⁷⁰ vs 10⁸⁰).</strong></li>
-            <li><span>Branching factor</span><strong>~200 legal moves per turn (vs ~35 in chess). Minimax runs out of time before reaching a useful depth.</strong></li>
-            <li><span>No easy evaluation</span><strong>There is no "capture the king." Territory scoring requires strategic intuition — a beginner cannot tell who is winning by counting pieces.</strong></li>
-            <li><span>Life &amp; death</span><strong>A group is alive if it can form two "eyes" (enclosed empty spaces). Reading life and death requires seeing many moves ahead in an impossibly large tree.</strong></li>
-          </ul>
-        </article>
-
-        <article class="card">
-          <h3>AlphaGo (DeepMind, 2016)</h3>
-          <ul class="rhythm">
-            <li><span>The breakthrough</span><strong>Defeated 9-dan professional Lee Sedol 4–1 in March 2016 — a milestone most experts thought was a decade away.</strong></li>
-            <li><span>Policy network</span><strong>A deep neural network trained on millions of expert games learned which moves humans consider, cutting the branching factor dramatically.</strong></li>
-            <li><span>Value network</span><strong>A second neural network estimated the probability of winning from any position — replacing the impossible task of searching to the end.</strong></li>
-            <li><span>Monte Carlo Tree Search</span><strong>MCTS guided the search: explore promising branches deeper, abandon weak ones faster — similar (in spirit) to the AI in this lesson.</strong></li>
-          </ul>
-        </article>
-      </section>
+      <aside class="go-hero-panel" aria-label="Go lesson overview">
+        <p class="go-panel-kicker">Why this lesson matters</p>
+        <h2>Go is where "search harder" stopped being enough.</h2>
+        <div class="go-metric-grid">
+          <article class="go-metric">
+            <strong>~35</strong>
+            <span>Typical legal chess moves</span>
+          </article>
+          <article class="go-metric">
+            <strong>~200</strong>
+            <span>Typical legal Go moves</span>
+          </article>
+          <article class="go-metric">
+            <strong>10^170</strong>
+            <span>Estimated Go positions</span>
+          </article>
+          <article class="go-metric">
+            <strong>2016</strong>
+            <span>AlphaGo defeats Lee Sedol 4-1</span>
+          </article>
+        </div>
+        <p class="go-hero-note">Deep Blue won by evaluating millions of positions. AlphaGo won by learning which positions were worth evaluating at all.</p>
+      </aside>
     </section>
 
-    <!-- ── Live Go Game ── -->
+    <section class="section" id="two-machine-story">
+      <div class="section-head">
+        <h2>The Two-Machine Story</h2>
+        <p>One machine pushed classical search to its limit. The next had to combine learning with search to survive Go's branching explosion.</p>
+      </div>
+
+      <div class="go-story-grid">
+        <article class="card go-story-card go-story-card--blue">
+          <p class="go-story-step">01 · IBM Deep Blue (1997)</p>
+          <h3>Brute force plus a hand-built evaluator conquered chess.</h3>
+          <ul class="rhythm">
+            <li><span>Result</span><strong>Defeated Garry Kasparov 3.5-2.5 in a 6-game rematch.</strong></li>
+            <li><span>Engine</span><strong>Minimax plus alpha-beta pruning, accelerated by custom hardware.</strong></li>
+            <li><span>Speed</span><strong>Evaluated up to 200 million chess positions per second.</strong></li>
+            <li><span>Why it worked</span><strong>Chess has a manageable branching factor and a strong evaluation function based on material, structure, and king safety.</strong></li>
+          </ul>
+        </article>
+
+        <article class="card go-story-card go-story-card--green">
+          <p class="go-story-step">02 · Why Go Broke Classical AI</p>
+          <h3>Go's board is bigger, murkier, and strategically harder to score.</h3>
+          <ul class="rhythm">
+            <li><span>Board size</span><strong>19x19 means 361 intersections instead of 64 squares.</strong></li>
+            <li><span>Branching factor</span><strong>Roughly 200 legal moves per turn, so minimax explodes before it reaches useful depth.</strong></li>
+            <li><span>Evaluation problem</span><strong>You cannot count "piece values" to know who is winning. Territory and influence are global and fluid.</strong></li>
+            <li><span>Life and death</span><strong>Reading whether a group will live often requires many moves of tactical foresight inside an enormous search tree.</strong></li>
+          </ul>
+        </article>
+
+        <article class="card go-story-card go-story-card--gold">
+          <p class="go-story-step">03 · AlphaGo (2016)</p>
+          <h3>DeepMind combined learning and search instead of relying on raw depth.</h3>
+          <ul class="rhythm">
+            <li><span>Result</span><strong>Defeated 9-dan professional Lee Sedol 4-1 in March 2016, years earlier than most experts expected.</strong></li>
+            <li><span>Policy</span><strong>A neural network learned which moves were plausible, shrinking the search space.</strong></li>
+            <li><span>Value</span><strong>A second network estimated win probability from a position without playing the whole game out.</strong></li>
+            <li><span>Search</span><strong>Monte Carlo Tree Search explored promising branches more deeply and abandoned weak branches sooner.</strong></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="go-breakthrough">
+      <div class="section-head">
+        <h2>The AlphaGo Recipe</h2>
+        <p>AlphaGo's breakthrough was not one trick. It was a stack: learned priors, learned evaluation, search, and then self-play.</p>
+      </div>
+
+      <div class="go-stack-grid">
+        <article class="go-stack-card">
+          <span class="go-stack-step">1</span>
+          <h3>Policy Network</h3>
+          <p>Trained on expert games to predict strong candidate moves so the engine did not waste time exploring nonsense.</p>
+        </article>
+
+        <article class="go-stack-card">
+          <span class="go-stack-step">2</span>
+          <h3>Value Network</h3>
+          <p>Estimated who was winning from a board position, replacing the impossible idea of searching all the way to the end.</p>
+        </article>
+
+        <article class="go-stack-card">
+          <span class="go-stack-step">3</span>
+          <h3>MCTS</h3>
+          <p>Monte Carlo Tree Search balanced exploration and exploitation, directing more compute toward the moves that looked promising.</p>
+        </article>
+
+        <article class="go-stack-card">
+          <span class="go-stack-step">4</span>
+          <h3>AlphaGo Zero</h3>
+          <p>Later versions learned entirely from self-play, showing that powerful strategic intuition could emerge without human game data.</p>
+        </article>
+      </div>
+    </section>
+
     <section class="section" id="go-live">
       <div class="section-head">
-        <h2>Play 9×9 Go vs. Monte Carlo AI</h2>
-        <p>You are Black and go first. The AI plays White using Monte Carlo random playouts — the same core idea behind AlphaGo's search, without the neural networks.</p>
+        <h2>Play 9x9 Go vs. Monte Carlo AI</h2>
+        <p>You are Black and move first. This classroom bot uses random playouts plus legality checks, so you can feel the strengths and limits of search without neural networks.</p>
       </div>
 
       <article class="card go-lab">
-        <div class="go-lab-grid">
+        <div class="go-lab-topline">
+          <div>
+            <p class="go-lab-kicker">Classroom Lab</p>
+            <h3>Pure Monte Carlo search on a compact board</h3>
+          </div>
+          <p class="go-lab-note">Open near the center, build a stable group, and watch for moments when the AI handles local fights better than global planning.</p>
+        </div>
 
-          <!-- Board -->
-          <div class="go-board-wrap">
-            <div class="go-board" id="go-board" role="grid" aria-label="9 by 9 Go board"></div>
+        <div class="go-lab-grid">
+          <div class="go-board-column">
+            <div class="go-board-frame">
+              <div class="go-axis go-axis--horizontal go-axis--top" aria-hidden="true">
+                <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>J</span>
+              </div>
+              <div class="go-axis go-axis--horizontal go-axis--bottom" aria-hidden="true">
+                <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>J</span>
+              </div>
+              <div class="go-axis go-axis--vertical go-axis--left" aria-hidden="true">
+                <span>9</span><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+              </div>
+              <div class="go-axis go-axis--vertical go-axis--right" aria-hidden="true">
+                <span>9</span><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+              </div>
+              <div class="go-board-wrap">
+                <div class="go-board" id="go-board" role="grid" aria-label="9 by 9 Go board"></div>
+              </div>
+            </div>
+
+            <p class="go-board-caption"><strong>Observation prompt</strong> Notice how the bot can stumble into good local shapes but still miss the larger territorial plan that a stronger neural system would see.</p>
           </div>
 
-          <!-- Side panel -->
           <div class="go-side">
-            <p class="go-status" id="go-status"></p>
+            <p class="go-status" id="go-status" aria-live="polite"></p>
+
+            <div class="go-dashboard" aria-label="Game dashboard">
+              <article class="go-dashboard-card">
+                <span>Turn</span>
+                <strong id="go-turn-label">Black to play</strong>
+              </article>
+              <article class="go-dashboard-card">
+                <span>Moves played</span>
+                <strong id="go-move-count">0</strong>
+              </article>
+              <article class="go-dashboard-card">
+                <span>Area score snapshot</span>
+                <strong id="go-score-estimate">Black 0 | White 6.5</strong>
+              </article>
+              <article class="go-dashboard-card">
+                <span>Last action</span>
+                <strong id="go-last-move">None yet</strong>
+              </article>
+            </div>
 
             <div class="go-controls">
-              <button type="button" id="go-pass">Pass</button>
-              <button type="button" id="go-resign">Resign</button>
-              <button type="button" id="go-reset">New Game</button>
+              <button type="button" id="go-pass" class="go-control">Pass</button>
+              <button type="button" id="go-resign" class="go-control go-control--quiet">Resign</button>
+              <button type="button" id="go-reset" class="go-control go-control--primary">New Game</button>
             </div>
 
             <div class="go-captures">
               <div class="go-capture-row">
                 <span class="go-capture-dot black"></span>
-                Black captured: <strong id="black-captures">0</strong>
+                <span class="go-capture-label">Black captured</span>
+                <strong id="black-captures">0</strong>
               </div>
               <div class="go-capture-row">
                 <span class="go-capture-dot white"></span>
-                White captured: <strong id="white-captures">0</strong>
+                <span class="go-capture-label">White captured</span>
+                <strong id="white-captures">0</strong>
               </div>
             </div>
 
@@ -109,87 +217,123 @@
               <h3>Go in 30 Seconds</h3>
               <ul class="rhythm">
                 <li><span>Place</span><strong>Click any open intersection to place your Black stone.</strong></li>
-                <li><span>Capture</span><strong>Surround all of an opponent's group on every side — those stones are removed.</strong></li>
-                <li><span>Territory</span><strong>Empty intersections fully surrounded by your stones count as your territory at the end.</strong></li>
-                <li><span>Pass</span><strong>Hit Pass when you have no useful moves. Two passes in a row end the game.</strong></li>
-                <li><span>Komi</span><strong>White gets 6.5 bonus points (komi) for going second.</strong></li>
+                <li><span>Capture</span><strong>Surround every liberty of an opponent's group and those stones are removed.</strong></li>
+                <li><span>Territory</span><strong>Empty points fully surrounded by your stones count toward your final score.</strong></li>
+                <li><span>Pass</span><strong>Use Pass when no move helps. Two passes in a row end the game.</strong></li>
+                <li><span>Komi</span><strong>White receives 6.5 bonus points for moving second.</strong></li>
               </ul>
             </div>
-          </div>
 
+            <div class="go-ai-explainer">
+              <h3>What this AI is actually doing</h3>
+              <ol class="go-mini-list">
+                <li>Generate legal candidate moves.</li>
+                <li>Test random continuations from each move.</li>
+                <li>Keep the moves that win more often in simulation.</li>
+                <li>Play the candidate with the strongest playout score.</li>
+              </ol>
+            </div>
+          </div>
         </div>
       </article>
     </section>
 
-    <!-- ── Learning Goals + Key Concepts ── -->
-    <section class="columns">
-      <article class="card">
-        <h3>Learning Goals</h3>
-        <ul class="rhythm">
-          <li><span>Goal 1</span><strong>Explain why Go's branching factor makes minimax impractical without a better search strategy.</strong></li>
-          <li><span>Goal 2</span><strong>Describe the role of Monte Carlo random playouts in estimating move quality.</strong></li>
-          <li><span>Goal 3</span><strong>Distinguish Deep Blue's brute-force approach from AlphaGo's neural network + MCTS hybrid.</strong></li>
-          <li><span>Goal 4</span><strong>Identify at least one way AlphaGo Zero improved on AlphaGo without human game data.</strong></li>
-        </ul>
-      </article>
-
-      <article class="card">
-        <h3>Key Concepts</h3>
-        <ul class="rhythm">
-          <li><span>Liberty</span><strong>An empty intersection directly adjacent to a stone or group. Zero liberties = captured.</strong></li>
-          <li><span>Ko rule</span><strong>You cannot return the board to its exact previous position — prevents infinite loops.</strong></li>
-          <li><span>MCTS</span><strong>Monte Carlo Tree Search: explore → simulate random games → back-propagate win/loss to guide future exploration.</strong></li>
-          <li><span>Komi</span><strong>Points given to White to compensate for Black's first-move advantage.</strong></li>
-        </ul>
-      </article>
-    </section>
-
-    <!-- ── Play Against a Neural-Net AI ── -->
     <section class="section">
       <div class="section-head">
-        <h2>Go Further: Play Against a Neural-Net AI</h2>
-        <p>The Monte Carlo AI above has no neural networks. To experience AlphaGo-style play, try the bots on Online Go Server — they use neural networks trained on millions of games.</p>
+        <h2>What Students Should Be Able to Explain</h2>
+        <p>By the end of the lesson, students should be able to connect the game they just played to the larger shift from Deep Blue to AlphaGo.</p>
       </div>
-      <article class="card">
-        <ul class="rhythm">
-          <li><span>OGS Bots</span><strong>Online Go Server (OGS) offers free play against neural-net bots like KataGo — the strongest open-source Go AI, the direct descendant of AlphaGo's architecture.</strong></li>
-          <li><span>Board size</span><strong>Start with a 9×9 board on OGS to match this lesson, then try 13×13 or 19×19 when you're ready.</strong></li>
-          <li><span>Compare</span><strong>After playing the MCTS bot above, start a 9×9 game against a KataGo bot on OGS. Notice how differently the neural AI plays — it has strategic intuition the pure random-playout AI lacks.</strong></li>
-        </ul>
-        <p style="margin-top:1rem;">
-          <a href="https://online-go.com" target="_blank" rel="noreferrer"
-             style="display:inline-block;padding:0.5rem 1.1rem;background:#2a6496;color:#fff;border-radius:8px;font-size:0.9rem;text-decoration:none;">
-            Open Online Go Server →
-          </a>
-        </p>
-      </article>
+
+      <div class="go-foundations-grid">
+        <article class="card">
+          <h3>Learning Goals</h3>
+          <ul class="rhythm">
+            <li><span>Goal 1</span><strong>Explain why Go's branching factor makes brute-force minimax impractical.</strong></li>
+            <li><span>Goal 2</span><strong>Describe how Monte Carlo playouts estimate move quality without searching to the end.</strong></li>
+            <li><span>Goal 3</span><strong>Contrast Deep Blue's hand-built search with AlphaGo's learned priors plus search.</strong></li>
+            <li><span>Goal 4</span><strong>Explain why AlphaGo Zero mattered even more than AlphaGo itself.</strong></li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h3>Key Concepts</h3>
+          <ul class="rhythm">
+            <li><span>Liberty</span><strong>An empty intersection directly adjacent to a stone or connected group.</strong></li>
+            <li><span>Ko rule</span><strong>You cannot immediately recreate the exact previous board position.</strong></li>
+            <li><span>MCTS</span><strong>Monte Carlo Tree Search explores, simulates, and back-propagates outcomes.</strong></li>
+            <li><span>Komi</span><strong>White receives points to offset Black's first-move advantage.</strong></li>
+          </ul>
+        </article>
+
+        <article class="card go-note-card">
+          <h3>Look For These Moments</h3>
+          <p>Use these prompts while students are playing or debriefing.</p>
+          <ul class="go-mini-list">
+            <li>When does the AI make a move that seems locally smart but globally awkward?</li>
+            <li>Which move made it easiest to tell who controlled territory?</li>
+            <li>What kind of position would be hardest for random playouts to judge correctly?</li>
+          </ul>
+        </article>
+      </div>
     </section>
 
-    <!-- ── Lesson Outputs ── -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Go Further: Try a Neural-Net Bot</h2>
+        <p>The Monte Carlo AI above has no neural network. To experience the next step in Go AI, compare it with KataGo or another neural-net bot on Online Go Server.</p>
+      </div>
+
+      <div class="go-next-grid">
+        <article class="card go-next-card">
+          <h3>Run the Comparison</h3>
+          <ul class="rhythm">
+            <li><span>Start small</span><strong>Play 9x9 on OGS first so the board size matches this classroom lab.</strong></li>
+            <li><span>Use KataGo</span><strong>KataGo is one of the strongest open-source descendants of AlphaGo-style architecture.</strong></li>
+            <li><span>Watch style</span><strong>Neural-net bots usually show stronger whole-board judgment, shape, and timing than a pure playout bot.</strong></li>
+          </ul>
+          <p class="go-cta-wrap">
+            <a class="go-cta" href="https://online-go.com" target="_blank" rel="noreferrer">Open Online Go Server</a>
+          </p>
+        </article>
+
+        <article class="card go-next-card">
+          <h3>Debrief Questions</h3>
+          <ul class="go-mini-list">
+            <li>How did the Monte Carlo bot's move quality compare to KataGo's move quality?</li>
+            <li>Where did the neural-net bot seem to understand the whole board better?</li>
+            <li>If you could add one improvement to this classroom AI, would you add better search or better evaluation first?</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
     <section class="section">
       <div class="section-head">
         <h2>Lesson Outputs</h2>
-        <p>Play at least one full game, then discuss with your group.</p>
+        <p>Play at least one full game, then discuss using specific evidence from the board rather than vague impressions.</p>
       </div>
-      <div class="tile-grid">
-        <a class="tile tile-hero" href="#" aria-disabled="true">
-          <span class="tile-kicker">Discussion</span>
-          <strong>After your game, answer these questions</strong>
-          <small>① How does the Monte Carlo AI's move quality compare to the KataGo neural-net bot on OGS, and why?<br />
-                 ② If you could add one improvement to make the MCTS AI stronger, what would it be?<br />
-                 ③ AlphaGo Zero learned with zero human games. What does that suggest about AI and intuition?</small>
+
+      <div class="go-output-grid">
+        <article class="card go-output-card go-output-card--feature">
+          <span class="go-output-label">Discussion</span>
+          <h3>After the game, answer these three questions</h3>
+          <ul class="go-output-list">
+            <li>Why does Monte Carlo search help more in Go than brute-force minimax alone?</li>
+            <li>What would a neural network add that this classroom bot does not have?</li>
+            <li>What does AlphaGo Zero suggest about the relationship between learning, data, and intuition?</li>
+          </ul>
+        </article>
+
+        <a class="card go-output-card" href="deep-blue.html">
+          <span class="go-output-label">Compare</span>
+          <h3>Return to Deep Blue</h3>
+          <p>Compare the Go lesson with the chess lesson and name the exact point where the brute-force strategy breaks.</p>
         </a>
 
-        <a class="tile" href="#" aria-disabled="true">
-          <span class="tile-kicker">Extension</span>
-          <strong>Implement UCB1 selection in MCTS</strong>
-          <small>Replace random candidate sampling with Upper Confidence Bound scoring to balance exploration and exploitation.</small>
-        </a>
-
-        <a class="tile" href="../steam-lessons.html">
-          <span class="tile-kicker">Navigate</span>
-          <strong>Back to STEAM Lessons</strong>
-          <small>Return to the full ClassroomOS lesson shelf</small>
+        <a class="card go-output-card" href="../steam-lessons.html">
+          <span class="go-output-label">Navigate</span>
+          <h3>Back to STEAM Lessons</h3>
+          <p>Return to the full ClassroomOS lesson shelf.</p>
         </a>
       </div>
     </section>

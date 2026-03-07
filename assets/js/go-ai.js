@@ -2,6 +2,7 @@
 const SIZE = 9;
 const EMPTY = 0, BLACK = 1, WHITE = 2;
 const KOMI = 6.5; // Standard komi: White compensation for going second
+const GO_COLUMNS = ["A", "B", "C", "D", "E", "F", "G", "H", "J"];
 
 // Star points (hoshi) on a 9×9 board, 0-indexed
 const STAR_POINTS = new Set(["2,2", "2,6", "4,4", "6,2", "6,6"]);
@@ -226,7 +227,7 @@ function chooseBestMove(board, color, prevHash) {
 }
 
 // ─── Game State ───────────────────────────────────────────────────────────────
-let board, prevHash, blackCaps, whiteCaps, consecutivePasses, gameOver, aiThinking, lastPlaced;
+let board, prevHash, blackCaps, whiteCaps, consecutivePasses, gameOver, aiThinking, lastPlaced, moveCount, lastEvent;
 
 function resetGame() {
   board = createBoard();
@@ -237,9 +238,9 @@ function resetGame() {
   gameOver = false;
   aiThinking = false;
   lastPlaced = null;
+  moveCount = 0;
+  lastEvent = "None yet";
 
-  document.getElementById("go-pass").disabled = false;
-  document.getElementById("go-resign").disabled = false;
   renderBoard();
   setStatus("Your turn — place a Black stone on any intersection.");
 }
@@ -249,9 +250,35 @@ function setStatus(msg) {
   document.getElementById("go-status").textContent = msg;
 }
 
+function formatMoveLabel(r, c) {
+  return `${GO_COLUMNS[c]}${SIZE - r}`;
+}
+
 function updateCaptures() {
   document.getElementById("black-captures").textContent = blackCaps;
   document.getElementById("white-captures").textContent = whiteCaps;
+}
+
+function updateControls() {
+  document.getElementById("go-pass").disabled = gameOver || aiThinking;
+  document.getElementById("go-resign").disabled = gameOver || aiThinking;
+}
+
+function updateHud() {
+  const turnLabel = gameOver ? "Game complete" : aiThinking ? "White evaluating" : "Black to play";
+  const { black, white } = scoreBoard(board);
+  const lead = black === white
+    ? "Even"
+    : black > white
+      ? `Black +${(black - white).toFixed(1)}`
+      : `White +${(white - black).toFixed(1)}`;
+
+  document.getElementById("go-turn-label").textContent = turnLabel;
+  document.getElementById("go-move-count").textContent = String(moveCount);
+  document.getElementById("go-score-estimate").textContent =
+    `Black ${black.toFixed(1)} | White ${white.toFixed(1)} (${lead})`;
+  document.getElementById("go-last-move").textContent = lastEvent;
+  updateControls();
 }
 
 function renderBoard() {
@@ -261,11 +288,12 @@ function renderBoard() {
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       const cell = document.createElement("button");
+      const point = formatMoveLabel(r, c);
       cell.type = "button";
       cell.className = "go-intersection";
       cell.dataset.row = r;
       cell.dataset.col = c;
-      cell.setAttribute("aria-label", `Row ${r + 1}, Column ${c + 1}`);
+      cell.setAttribute("aria-label", `Intersection ${point}`);
 
       // Hoshi dot
       if (STAR_POINTS.has(`${r},${c}`)) {
@@ -281,7 +309,7 @@ function renderBoard() {
         stone.className = `go-stone ${board[r][c] === BLACK ? "black" : "white"}${isLast ? " last" : ""}`;
         cell.appendChild(stone);
         cell.setAttribute("aria-label",
-          `${board[r][c] === BLACK ? "Black" : "White"} stone, row ${r + 1}, column ${c + 1}`);
+          `${board[r][c] === BLACK ? "Black" : "White"} stone at ${point}`);
       }
 
       // Interactivity
@@ -296,6 +324,7 @@ function renderBoard() {
   }
 
   updateCaptures();
+  updateHud();
 }
 
 // ─── Game Actions ─────────────────────────────────────────────────────────────
@@ -303,12 +332,17 @@ function handlePlayerMove(r, c) {
   if (gameOver || aiThinking) return;
 
   const result = tryPlace(board, BLACK, r, c, prevHash);
-  if (!result) return; // illegal move — silently ignore
+  if (!result) {
+    setStatus("Illegal move there. Try a point with at least one liberty.");
+    return;
+  }
 
   blackCaps += result.captured;
   prevHash = boardHash(result.board);
   board = result.board;
   lastPlaced = [r, c];
+  moveCount++;
+  lastEvent = `Black played ${formatMoveLabel(r, c)}`;
   consecutivePasses = 0;
 
   renderBoard();
@@ -317,10 +351,12 @@ function handlePlayerMove(r, c) {
 
 function handlePlayerPass() {
   if (gameOver || aiThinking) return;
+  lastPlaced = null;
+  lastEvent = "Black passed";
   consecutivePasses++;
   if (consecutivePasses >= 2) { endGame(); return; }
-  lastPlaced = null;
   setStatus("You passed. AI is thinking…");
+  renderBoard();
   triggerAI();
 }
 
@@ -328,14 +364,14 @@ function handleResign() {
   if (gameOver) return;
   gameOver = true;
   lastPlaced = null;
+  lastEvent = "Black resigned";
   setStatus("You resigned. White wins.");
-  document.getElementById("go-pass").disabled = true;
-  document.getElementById("go-resign").disabled = true;
   renderBoard();
 }
 
 function triggerAI() {
   aiThinking = true;
+  setStatus("AI is thinking… planning White's move.");
   renderBoard();
 
   // Yield to the browser to paint the "AI is thinking…" state first.
@@ -345,6 +381,7 @@ function triggerAI() {
     if (!move) {
       consecutivePasses++;
       aiThinking = false;
+      lastEvent = "White passed";
       if (consecutivePasses >= 2) { endGame(); return; }
       setStatus("AI passed. Your turn — place a Black stone.");
       lastPlaced = null;
@@ -354,12 +391,19 @@ function triggerAI() {
 
     const [r, c] = move;
     const result = tryPlace(board, WHITE, r, c, prevHash);
-    if (!result) { aiThinking = false; return; } // shouldn't happen
+    if (!result) {
+      aiThinking = false;
+      setStatus("AI hit an invalid line and recovered. Your turn — place a Black stone.");
+      renderBoard();
+      return;
+    }
 
     whiteCaps += result.captured;
     prevHash = boardHash(result.board);
     board = result.board;
     lastPlaced = [r, c];
+    moveCount++;
+    lastEvent = `White played ${formatMoveLabel(r, c)}`;
     consecutivePasses = 0;
     aiThinking = false;
 
@@ -375,8 +419,6 @@ function endGame() {
   const hi = Math.max(black, white).toFixed(1);
   const lo = Math.min(black, white).toFixed(1);
   setStatus(`Game over — ${winner} wins ${hi}–${lo}${white > black ? ` (includes ${KOMI} komi)` : ""}.`);
-  document.getElementById("go-pass").disabled = true;
-  document.getElementById("go-resign").disabled = true;
   renderBoard();
 }
 
