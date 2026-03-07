@@ -84,6 +84,18 @@ const TERRAIN = {
   blocked: Infinity
 };
 
+const PLATFORMER = {
+  maxRunSpeed: 2,
+  jumpVelocity: -4,
+  maxFallSpeed: 3,
+  gravity: 1,
+  reversePenalty: 0.35,
+  jumpPenalty: 0.45,
+  airControlPenalty: 0.1,
+  momentumPenalty: 0.08,
+  hazardPenalty: 2
+};
+
 const THEMES = {
   mars: {
     title: "Rescue Grid: The A* Mission",
@@ -178,7 +190,7 @@ const THEMES = {
   },
   mario: {
     title: "Grid Platformer: Mario Adventure",
-    subtitle: "Train Mario's AI brain to find a safe route to the flag.",
+    subtitle: "Train Mario's AI brain to search with jump arcs, gravity, and momentum on the way to the flag.",
     startLabel: "Mario",
     goalLabel: "Flag",
     blockedLabel: "Blocks",
@@ -187,7 +199,7 @@ const THEMES = {
     goalSymbol: "🏁",
     blockedSymbol: "🧱",
     slowSymbol: "🐢",
-    narrative: "Train Mario's AI brain to find the safest route to the flag."
+    narrative: "Mario Adventure uses platformer physics: legal moves depend on support, gravity, jump height, and momentum, not just adjacent grid squares."
   }
 };
 
@@ -318,6 +330,10 @@ function cloneFrame(frame) {
 }
 
 function heuristicValue(kind, x, y, gx, gy) {
+  if (state.theme === "mario") {
+    return platformerHeuristicValue(kind, x, y, gx, gy);
+  }
+
   const dx = Math.abs(gx - x);
   const dy = Math.abs(gy - y);
   if (kind === "euclidean") {
@@ -327,6 +343,23 @@ function heuristicValue(kind, x, y, gx, gy) {
     return 0;
   }
   return dx + dy;
+}
+
+function platformerHeuristicValue(kind, x, y, gx, gy) {
+  const dx = Math.abs(gx - x);
+  const dy = gy - y;
+  const horizontalTicks = Math.ceil(dx / PLATFORMER.maxRunSpeed);
+  const verticalTicks = dy < 0
+    ? Math.ceil(Math.abs(dy) / Math.abs(PLATFORMER.jumpVelocity))
+    : Math.ceil(Math.abs(dy) / PLATFORMER.maxFallSpeed);
+
+  if (kind === "euclidean") {
+    return Math.hypot(horizontalTicks, verticalTicks);
+  }
+  if (kind === "zero") {
+    return 0;
+  }
+  return horizontalTicks + verticalTicks;
 }
 
 function chooseBestOpen(openMap) {
@@ -361,7 +394,7 @@ function reconstructPath(cameFrom, goalKey) {
   return path;
 }
 
-function runAStar(cells, start, goal, options) {
+function runGridAStar(cells, start, goal, options) {
   const theme = getTheme();
   const heuristic = options.heuristic || "manhattan";
   const fuelLimit = Number.isFinite(options.fuelLimit) ? options.fuelLimit : Infinity;
@@ -491,6 +524,315 @@ function runAStar(cells, start, goal, options) {
   };
 }
 
+function platformerStateKey(x, y, vx, vy) {
+  return `${x},${y}|${vx},${vy}`;
+}
+
+function isPlatformerSolid(cells, x, y) {
+  if (x < 0 || x >= state.width) return true;
+  if (y < 0 || y >= state.height) return true;
+  return terrainAt(cells, x, y) === "blocked";
+}
+
+function hasPlatformerSupport(cells, x, y) {
+  return isPlatformerSolid(cells, x, y + 1);
+}
+
+function applyPlatformerInput(vx, inputX) {
+  let nextVx = vx;
+
+  if (inputX > 0) {
+    nextVx += 1;
+  } else if (inputX < 0) {
+    nextVx -= 1;
+  } else if (nextVx > 0) {
+    nextVx -= 1;
+  } else if (nextVx < 0) {
+    nextVx += 1;
+  }
+
+  return clamp(nextVx, -PLATFORMER.maxRunSpeed, PLATFORMER.maxRunSpeed);
+}
+
+function projectNodesToCells(nodes) {
+  const cellKeys = new Set();
+  for (const node of nodes) {
+    if (!node) continue;
+    cellKeys.add(node.cellKey || keyOf(node.x, node.y));
+  }
+  return [...cellKeys];
+}
+
+function projectStateKeysToCells(keys, stateByKey) {
+  const cellKeys = new Set();
+  for (const stateKey of keys) {
+    const node = stateByKey.get(stateKey);
+    if (!node) continue;
+    cellKeys.add(node.cellKey || keyOf(node.x, node.y));
+  }
+  return [...cellKeys];
+}
+
+function compressPlatformerScoresByCell(stateByKey) {
+  const nodeScores = new Map();
+
+  for (const node of stateByKey.values()) {
+    const existing = nodeScores.get(node.cellKey);
+    if (!existing || node.g < existing.g) {
+      nodeScores.set(node.cellKey, { g: node.g, h: node.h, f: node.f });
+    }
+  }
+
+  return nodeScores;
+}
+
+function getPlatformerActions(grounded) {
+  if (grounded) {
+    return [
+      { inputX: -1, jump: false, label: "run left" },
+      { inputX: 0, jump: false, label: "wait" },
+      { inputX: 1, jump: false, label: "run right" },
+      { inputX: -1, jump: true, label: "jump left" },
+      { inputX: 0, jump: true, label: "jump straight" },
+      { inputX: 1, jump: true, label: "jump right" }
+    ];
+  }
+
+  return [
+    { inputX: -1, jump: false, label: "air drift left" },
+    { inputX: 0, jump: false, label: "coast" },
+    { inputX: 1, jump: false, label: "air drift right" }
+  ];
+}
+
+function simulatePlatformerStep(cells, node, action) {
+  const wasGrounded = hasPlatformerSupport(cells, node.x, node.y);
+  let nextVx = applyPlatformerInput(node.vx, action.inputX);
+  let nextVy = wasGrounded
+    ? (action.jump ? PLATFORMER.jumpVelocity : 0)
+    : clamp(node.vy + PLATFORMER.gravity, PLATFORMER.jumpVelocity, PLATFORMER.maxFallSpeed);
+
+  let x = node.x;
+  let y = node.y;
+  let touchedHazard = false;
+  const trail = [keyOf(x, y)];
+  const horizontalDir = Math.sign(nextVx);
+  const verticalDir = Math.sign(nextVy);
+  const totalHorizontalSteps = Math.abs(nextVx);
+  const totalVerticalSteps = Math.abs(nextVy);
+  const microSteps = Math.max(totalHorizontalSteps, totalVerticalSteps, 1);
+
+  let movedX = 0;
+  let movedY = 0;
+
+  for (let step = 0; step < microSteps; step += 1) {
+    if (movedY < totalVerticalSteps) {
+      const targetY = y + verticalDir;
+      if (isPlatformerSolid(cells, x, targetY)) {
+        nextVy = 0;
+        movedY = totalVerticalSteps;
+      } else {
+        y = targetY;
+        movedY += 1;
+        touchedHazard = touchedHazard || terrainAt(cells, x, y) === "sand";
+        if (trail[trail.length - 1] !== keyOf(x, y)) {
+          trail.push(keyOf(x, y));
+        }
+      }
+    }
+
+    if (movedX < totalHorizontalSteps) {
+      const targetX = x + horizontalDir;
+      if (isPlatformerSolid(cells, targetX, y)) {
+        nextVx = 0;
+        movedX = totalHorizontalSteps;
+      } else {
+        x = targetX;
+        movedX += 1;
+        touchedHazard = touchedHazard || terrainAt(cells, x, y) === "sand";
+        if (trail[trail.length - 1] !== keyOf(x, y)) {
+          trail.push(keyOf(x, y));
+        }
+      }
+    }
+  }
+
+  let cost = 1;
+  if (action.jump && wasGrounded) {
+    cost += PLATFORMER.jumpPenalty;
+  }
+  if (!wasGrounded) {
+    cost += PLATFORMER.airControlPenalty;
+  }
+  if (Math.sign(node.vx) !== 0 && action.inputX !== 0 && Math.sign(node.vx) !== Math.sign(action.inputX)) {
+    cost += PLATFORMER.reversePenalty;
+  }
+  if (Math.abs(nextVx) > 0) {
+    cost += Math.abs(nextVx) * PLATFORMER.momentumPenalty;
+  }
+  if (touchedHazard || terrainAt(cells, x, y) === "sand") {
+    cost += PLATFORMER.hazardPenalty;
+  }
+
+  return {
+    key: platformerStateKey(x, y, nextVx, nextVy),
+    cellKey: keyOf(x, y),
+    x,
+    y,
+    vx: nextVx,
+    vy: nextVy,
+    cost,
+    trail,
+    actionLabel: action.label
+  };
+}
+
+function runMarioAStar(cells, start, goal, options) {
+  const theme = getTheme();
+  const heuristic = options.heuristic || "manhattan";
+  const fuelLimit = Number.isFinite(options.fuelLimit) ? options.fuelLimit : Infinity;
+  const recordFrames = options.recordFrames !== false;
+
+  const startKey = platformerStateKey(start.x, start.y, 0, 0);
+  const openMap = new Map();
+  const closedStates = new Set();
+  const cameFrom = new Map();
+  const gScore = new Map();
+  const stateByKey = new Map();
+  const frames = [];
+
+  const startNode = {
+    key: startKey,
+    cellKey: keyOf(start.x, start.y),
+    x: start.x,
+    y: start.y,
+    vx: 0,
+    vy: 0,
+    trail: [keyOf(start.x, start.y)],
+    g: 0,
+    h: heuristicValue(heuristic, start.x, start.y, goal.x, goal.y),
+    f: heuristicValue(heuristic, start.x, start.y, goal.x, goal.y)
+  };
+
+  openMap.set(startKey, startNode);
+  gScore.set(startKey, 0);
+  stateByKey.set(startKey, startNode);
+
+  let expandedCount = 0;
+  let success = false;
+  let finalKey = null;
+
+  while (openMap.size > 0 && expandedCount < 16000) {
+    const current = chooseBestOpen(openMap);
+    if (!current) break;
+
+    openMap.delete(current.key);
+    if (closedStates.has(current.key)) continue;
+
+    closedStates.add(current.key);
+    expandedCount += 1;
+
+    if (current.x === goal.x && current.y === goal.y) {
+      success = true;
+      finalKey = current.key;
+      if (recordFrames) {
+        frames.push({
+          type: "search",
+          openSet: projectNodesToCells(openMap.values()),
+          closedSet: projectStateKeysToCells(closedStates, stateByKey),
+          pathSet: [],
+          currentKey: current.cellKey,
+          g: current.g,
+          h: current.h,
+          f: current.f,
+          expandedCount,
+          message: `${theme.goalLabel} reached with vx=${current.vx}, vy=${current.vy}. Reconstructing route.`
+        });
+      }
+      break;
+    }
+
+    const grounded = hasPlatformerSupport(cells, current.x, current.y);
+    const actions = getPlatformerActions(grounded);
+
+    for (const action of actions) {
+      const neighbor = simulatePlatformerStep(cells, current, action);
+      if (closedStates.has(neighbor.key)) continue;
+
+      const tentativeG = current.g + neighbor.cost;
+      if (tentativeG > fuelLimit) continue;
+
+      const previousG = gScore.get(neighbor.key);
+      if (previousG !== undefined && tentativeG >= previousG) continue;
+
+      const h = heuristicValue(heuristic, neighbor.x, neighbor.y, goal.x, goal.y);
+      const candidate = {
+        ...neighbor,
+        g: tentativeG,
+        h,
+        f: tentativeG + h
+      };
+
+      cameFrom.set(candidate.key, current.key);
+      gScore.set(candidate.key, tentativeG);
+      openMap.set(candidate.key, candidate);
+      stateByKey.set(candidate.key, candidate);
+    }
+
+    if (recordFrames) {
+      frames.push({
+        type: "search",
+        openSet: projectNodesToCells(openMap.values()),
+        closedSet: projectStateKeysToCells(closedStates, stateByKey),
+        pathSet: [],
+        currentKey: current.cellKey,
+        g: current.g,
+        h: current.h,
+        f: current.f,
+        expandedCount,
+        message: `Expanding (${current.x + 1}, ${current.y + 1}) with vx=${current.vx}, vy=${current.vy}.`
+      });
+    }
+  }
+
+  const statePath = success ? reconstructPath(cameFrom, finalKey) : [];
+  const pathScores = [];
+  for (const stateKey of statePath) {
+    const node = stateByKey.get(stateKey);
+    if (!node) continue;
+
+    const trail = Array.isArray(node.trail) && node.trail.length ? node.trail : [node.cellKey];
+    for (const trailKey of trail) {
+      if (pathScores[pathScores.length - 1]?.key === trailKey) continue;
+      pathScores.push({
+        key: trailKey,
+        g: node.g,
+        h: node.h,
+        f: node.f
+      });
+    }
+  }
+
+  return {
+    success,
+    frames,
+    path: pathScores.map((entry) => entry.key),
+    pathScores,
+    finalCost: success ? gScore.get(finalKey) : null,
+    expandedCount,
+    nodeScores: compressPlatformerScoresByCell(stateByKey),
+    closedSet: new Set(projectStateKeysToCells(closedStates, stateByKey)),
+    message: success ? "Route solved with platformer physics." : "No platform route under current constraints."
+  };
+}
+
+function runAStar(cells, start, goal, options) {
+  if (state.theme === "mario") {
+    return runMarioAStar(cells, start, goal, options);
+  }
+  return runGridAStar(cells, start, goal, options);
+}
+
 function buildPathFrames(result, prefixExpansions = 0) {
   if (!result.path.length) return [];
 
@@ -499,7 +841,7 @@ function buildPathFrames(result, prefixExpansions = 0) {
 
   for (let i = 0; i < result.path.length; i += 1) {
     const key = result.path[i];
-    const scores = result.nodeScores.get(key) || { g: 0, h: 0, f: 0 };
+    const scores = result.pathScores?.[i] || result.nodeScores.get(key) || { g: 0, h: 0, f: 0 };
 
     frames.push({
       type: "path",
@@ -882,6 +1224,54 @@ function createDefaultGrid() {
   state.height = Number(heightEl.value);
   state.cells = Array(state.width * state.height).fill("clear");
 
+  if (state.theme === "mario") {
+    const floorY = state.height - 1;
+    const groundY = clamp(floorY - 1, 0, state.height - 1);
+    const pipeX = clamp(Math.floor(state.width * 0.35), 2, state.width - 5);
+    const midPlatformY = clamp(state.height - 3, 2, floorY - 1);
+    const upperPlatformY = clamp(state.height - 5, 1, midPlatformY - 1);
+    const midStart = clamp(pipeX + 1, 3, state.width - 5);
+    const midEnd = clamp(midStart + 2, midStart, state.width - 3);
+    const upperStart = clamp(midEnd + 1, midEnd + 1, state.width - 3);
+    const upperEnd = clamp(upperStart + 2, upperStart, state.width - 2);
+
+    state.start = { x: 1, y: groundY };
+    state.goal = { x: clamp(upperEnd - 1, upperStart, upperEnd), y: clamp(upperPlatformY - 1, 0, state.height - 1) };
+
+    for (let x = 0; x < state.width; x += 1) {
+      state.cells[cellIndex(x, floorY)] = "blocked";
+    }
+
+    for (let x = midStart; x <= midEnd; x += 1) {
+      state.cells[cellIndex(x, midPlatformY)] = "blocked";
+    }
+
+    for (let x = upperStart; x <= upperEnd; x += 1) {
+      state.cells[cellIndex(x, upperPlatformY)] = "blocked";
+    }
+
+    state.cells[cellIndex(pipeX, floorY)] = "blocked";
+    if (groundY >= 0) {
+      state.cells[cellIndex(pipeX, groundY)] = "blocked";
+    }
+    if (state.height > 9) {
+      state.cells[cellIndex(pipeX, clamp(groundY - 1, 0, state.height - 1))] = "blocked";
+    }
+
+    const enemyTiles = [
+      { x: clamp(pipeX + 1, 0, state.width - 1), y: groundY },
+      { x: clamp(midStart + 1, 0, state.width - 1), y: clamp(midPlatformY - 1, 0, state.height - 1) }
+    ];
+
+    for (const tile of enemyTiles) {
+      if (isStart(tile.x, tile.y) || isGoal(tile.x, tile.y)) continue;
+      if (terrainAt(state.cells, tile.x, tile.y) === "blocked") continue;
+      state.cells[cellIndex(tile.x, tile.y)] = "sand";
+    }
+
+    return;
+  }
+
   state.start = {
     x: clamp(1, 0, state.width - 1),
     y: clamp(Math.floor(state.height / 2), 0, state.height - 1)
@@ -1043,6 +1433,10 @@ themeEl.addEventListener("change", () => {
   applyThemeUI();
   clearSearchOverlay();
   renderGrid();
+  if (state.theme === "mario") {
+    updateStatus(`${getAiName()} loaded Mario Adventure. Press Build Grid for the platform layout with gravity and jump physics.`);
+    return;
+  }
   updateStatus(`${getAiName()} loaded the ${getTheme().title} theme.`);
 });
 

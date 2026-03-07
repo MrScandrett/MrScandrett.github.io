@@ -4,9 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Music Lab · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="USB MIDI keyboard lab with WebMIDI and WebAudio presets." />
+  <meta name="description" content="USB MIDI keyboard lab with WebMIDI and WebAudio — oscilloscope, scale lock, ADSR, and step sequencer." />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <style>
+    /* ===== Music Lab ===== */
     .music-lab-wrap {
       max-width: 980px;
       margin: 0 auto;
@@ -17,6 +18,7 @@
       display: grid;
       grid-template-columns: 1.2fr 0.8fr;
       gap: 0.9rem;
+      margin-bottom: 0.9rem;
     }
 
     .music-lab-row {
@@ -35,12 +37,11 @@
       font: inherit;
       cursor: pointer;
       font-weight: 600;
+      transition: background 0.13s, border-color 0.13s;
     }
-
-    .music-lab-btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
+    .music-lab-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .music-lab-btn.btn-active { background: #3357e5; color: #fff; border-color: #2244cc; }
+    .music-lab-btn:hover:not(:disabled):not(.btn-active) { background: #f0f4ff; border-color: #8ba8e8; }
 
     .music-lab-field {
       display: grid;
@@ -67,6 +68,7 @@
       font-family: "SFMono-Regular", Menlo, Consolas, monospace;
     }
 
+    /* ── Piano Roll ── */
     .music-lab-pads {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -85,11 +87,9 @@
       font: inherit;
       font-weight: 600;
       cursor: pointer;
+      transition: background 0.1s;
     }
-
-    .music-lab-pad:active {
-      transform: translateY(1px);
-    }
+    .music-lab-pad:active { transform: translateY(1px); background: #dde8ff; }
 
     .music-piano-wrap {
       border: 1px solid #c8d2e0;
@@ -127,8 +127,8 @@
       color: #34465f;
       font: 600 0.72rem/1 "SFMono-Regular", Menlo, Consolas, monospace;
       cursor: pointer;
+      transition: filter 0.06s;
     }
-
     .music-piano-key--black {
       z-index: 3;
       border: 1px solid #0e141b;
@@ -137,31 +137,116 @@
       color: #e8effa;
       height: 64%;
     }
-
-    .music-piano-key--white {
-      z-index: 1;
-      height: 100%;
-    }
-
+    .music-piano-key--white { z-index: 1; height: 100%; }
     .music-piano-key.is-active {
-      box-shadow: inset 0 0 0 2px rgba(128, 255, 201, 0.58), 0 0 12px rgba(110, 234, 182, 0.45);
-      filter: brightness(1.04);
+      box-shadow: inset 0 0 0 2px rgba(128,255,201,0.58), 0 0 12px rgba(110,234,182,0.45);
+      filter: brightness(1.05);
+    }
+    .music-piano-key:focus-visible { outline: 2px solid #2e7ac6; outline-offset: -2px; z-index: 5; }
+
+    /* Scale-blocked keys */
+    .music-piano-key.scale-blocked {
+      opacity: 0.18;
+      cursor: not-allowed;
     }
 
-    .music-piano-key:focus-visible {
-      outline: 2px solid #2e7ac6;
-      outline-offset: -2px;
-      z-index: 5;
+    /* Theory overlay: note name labels */
+    .key-label {
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.58rem;
+      font-weight: 700;
+      pointer-events: none;
+      color: #546e8a;
+      white-space: nowrap;
+    }
+    .music-piano-key--black .key-label { color: #aabbc8; font-size: 0.5rem; bottom: 3px; }
+
+    /* ── Oscilloscope ── */
+    .ml-osc-card  { margin-bottom: 0.9rem; }
+    .ml-osc-canvas {
+      display: block;
+      width: 100%;
+      height: 80px;
+      border-radius: 10px;
+      background: #1c2430;
     }
 
+    /* ── ADSR ── */
+    .ml-adsr-card { margin-bottom: 0.9rem; }
+    .ml-adsr-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.1rem;
+    }
+    .ml-slider-field {
+      display: grid;
+      gap: 0.35rem;
+      font-size: 0.875rem;
+    }
+    .ml-slider-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .ml-slider-val { font-weight: 700; color: #3357e5; }
+    .ml-slider-field input[type=range] { width: 100%; accent-color: #3357e5; }
+    .ml-adsr-note { font-size: 0.78rem; font-weight: 400; color: #888; margin-left: 0.5rem; }
+
+    /* ── Step Sequencer ── */
+    .ml-seq-card { margin-bottom: 0.9rem; }
+    .ml-seq-controls {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .ml-seq-bpm-field {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+    .ml-seq-bpm-field input[type=range] { width: 110px; accent-color: #3357e5; }
+    .ml-seq-bpm-val { font-weight: 700; color: #3357e5; min-width: 2.4rem; }
+    .ml-seq-grid { display: flex; flex-direction: column; gap: 0.32rem; }
+    .ml-seq-row  { display: flex; align-items: center; gap: 0.4rem; }
+    .ml-seq-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #30435a;
+      width: 3.6rem;
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .ml-seq-steps { display: flex; gap: 0.2rem; }
+    .ml-seq-step {
+      width: 1.95rem;
+      height: 1.65rem;
+      border-radius: 5px;
+      border: 1px solid #c8d2e0;
+      background: #f0f4f8;
+      cursor: pointer;
+      padding: 0;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .ml-seq-step.on  { background: #3357e5; border-color: #2244cc; }
+    .ml-seq-step.seq-current { outline: 2px solid #f5a623; outline-offset: -2px; }
+    .ml-seq-step.on.seq-current { background: #f5a623; border-color: #d48a18; }
+    .ml-seq-beat-gap { width: 0.35rem; flex-shrink: 0; }
+
+    /* ── Responsive ── */
     @media (max-width: 860px) {
-      .music-lab-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .music-piano-roll {
-        height: 160px;
-      }
+      .music-lab-grid { grid-template-columns: 1fr; }
+      .music-piano-roll { height: 160px; }
+      .ml-adsr-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .ml-seq-step  { width: 1.5rem; height: 1.4rem; }
+      .ml-seq-label { width: 2.8rem; font-size: 0.63rem; }
     }
   </style>
 </head>
@@ -186,18 +271,23 @@
       <h1>Music Lab</h1>
       <p class="music-lab-status">
         Plug in a USB MIDI keyboard, then press <span class="music-lab-kbd">Enable Audio</span>.
-        Choose a preset and play. Drums map across common GM drum notes and the pads below.
+        Choose a preset and play. Use Scale Lock to stay in key, and the Step Sequencer to build drum patterns.
       </p>
     </section>
 
-    <section class="music-lab-grid">
+    <!-- ── Row 1: Connection + Piano Roll ── -->
+    <div class="music-lab-grid">
+
       <article class="card">
         <h2>Connection</h2>
+
         <div class="music-lab-row">
           <button id="enableAudio" class="music-lab-btn" type="button">Enable Audio</button>
-          <button id="enableMidi" class="music-lab-btn" type="button" disabled>Enable MIDI</button>
+          <button id="enableMidi"  class="music-lab-btn" type="button" disabled>Enable MIDI</button>
         </div>
+
         <div style="height:0.65rem"></div>
+
         <div class="music-lab-row">
           <label class="music-lab-field" for="midiIn">
             <span>MIDI Device</span>
@@ -212,15 +302,41 @@
             </select>
           </label>
         </div>
+
+        <div style="height:0.65rem"></div>
+
+        <div class="music-lab-row">
+          <label class="music-lab-field" for="scaleLock">
+            <span>Scale Lock</span>
+            <select id="scaleLock" aria-label="Scale lock">
+              <option value="">Off</option>
+              <option value="cmaj">C Major</option>
+              <option value="cmin">C Minor</option>
+              <option value="cpent">C Pentatonic</option>
+              <option value="cblues">C Blues</option>
+            </select>
+          </label>
+
+          <label class="music-lab-field" style="justify-content:end">
+            <span>Overlays</span>
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.88rem;padding-top:0.25rem">
+              <input type="checkbox" id="overlayNames"> Note names
+            </label>
+          </label>
+        </div>
+
         <div style="height:0.65rem"></div>
         <p id="status" class="music-lab-status">Audio: off · MIDI: off</p>
         <div style="height:0.65rem"></div>
+
         <details>
           <summary>Notes</summary>
           <ul>
             <li>WebMIDI usually requires HTTPS and a supported browser (Chrome/Edge).</li>
             <li>Piano is a lightweight synthesized approximation for fast classroom load times.</li>
             <li>Drums trigger on note-on. Pads below are clickable and touch-friendly.</li>
+            <li>Scale Lock greys out and silences keys outside the selected scale.</li>
+            <li>ADSR sliders shape the volume envelope for Synth and Piano presets.</li>
           </ul>
         </details>
       </article>
@@ -232,19 +348,66 @@
           <div id="pianoRoll" class="music-piano-roll" role="group" aria-label="On-screen piano roll"></div>
         </div>
         <div class="music-lab-pads">
-          <button class="music-lab-pad" data-drum="kick" type="button">Kick</button>
+          <button class="music-lab-pad" data-drum="kick"  type="button">Kick</button>
           <button class="music-lab-pad" data-drum="snare" type="button">Snare</button>
-          <button class="music-lab-pad" data-drum="hat" type="button">Hi-Hat</button>
-          <button class="music-lab-pad" data-drum="clap" type="button">Clap</button>
-          <button class="music-lab-pad" data-drum="tom1" type="button">Tom</button>
-          <button class="music-lab-pad" data-drum="tom2" type="button">Low Tom</button>
-          <button class="music-lab-pad" data-drum="perc" type="button">Perc</button>
+          <button class="music-lab-pad" data-drum="hat"   type="button">Hi-Hat</button>
+          <button class="music-lab-pad" data-drum="clap"  type="button">Clap</button>
+          <button class="music-lab-pad" data-drum="tom1"  type="button">Tom</button>
+          <button class="music-lab-pad" data-drum="tom2"  type="button">Low Tom</button>
+          <button class="music-lab-pad" data-drum="perc"  type="button">Perc</button>
           <button class="music-lab-pad" data-drum="crash" type="button">Crash</button>
         </div>
         <div style="height:0.65rem"></div>
         <p class="music-lab-status">Tip: Set preset to <span class="music-lab-kbd">Drums</span> for MIDI-triggered drums.</p>
       </article>
-    </section>
+
+    </div><!-- /music-lab-grid -->
+
+    <!-- ── Row 2: Oscilloscope ── -->
+    <article class="card ml-osc-card">
+      <h2>Waveform</h2>
+      <canvas id="oscCanvas" class="ml-osc-canvas" width="1200" height="120"
+              aria-label="Live audio oscilloscope"></canvas>
+    </article>
+
+    <!-- ── Row 3: ADSR ── -->
+    <article class="card ml-adsr-card">
+      <h2>Envelope (ADSR) <span class="ml-adsr-note">Synth &amp; Piano</span></h2>
+      <div class="ml-adsr-grid">
+        <label class="ml-slider-field">
+          <span class="ml-slider-label-row">Attack <span class="ml-slider-val" id="adsrAVal">10ms</span></span>
+          <input type="range" id="adsrA" min="1" max="500" value="10" aria-label="Attack time">
+        </label>
+        <label class="ml-slider-field">
+          <span class="ml-slider-label-row">Decay <span class="ml-slider-val" id="adsrDVal">120ms</span></span>
+          <input type="range" id="adsrD" min="10" max="2000" value="120" aria-label="Decay time">
+        </label>
+        <label class="ml-slider-field">
+          <span class="ml-slider-label-row">Sustain <span class="ml-slider-val" id="adsrSVal">25%</span></span>
+          <input type="range" id="adsrS" min="0" max="100" value="25" aria-label="Sustain level">
+        </label>
+        <label class="ml-slider-field">
+          <span class="ml-slider-label-row">Release <span class="ml-slider-val" id="adsrRVal">120ms</span></span>
+          <input type="range" id="adsrR" min="10" max="1000" value="120" aria-label="Release time">
+        </label>
+      </div>
+    </article>
+
+    <!-- ── Row 4: Step Sequencer ── -->
+    <article class="card ml-seq-card">
+      <h2>Step Sequencer</h2>
+      <div class="ml-seq-controls">
+        <button id="seqPlay"  class="music-lab-btn" type="button">▶ Play</button>
+        <button id="seqClear" class="music-lab-btn" type="button">✕ Clear</button>
+        <div class="ml-seq-bpm-field">
+          <label for="seqBpmSlider">BPM</label>
+          <input type="range" id="seqBpmSlider" min="60" max="200" value="120" aria-label="Sequencer BPM">
+          <span class="ml-seq-bpm-val" id="seqBpmVal">120</span>
+        </div>
+      </div>
+      <div id="seqGrid" class="ml-seq-grid" aria-label="Drum step sequencer grid"></div>
+    </article>
+
   </main>
 
   <footer class="site-footer">
