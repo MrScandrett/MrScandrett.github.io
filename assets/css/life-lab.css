@@ -1,0 +1,642 @@
+/* ── Life Lab Classroom — lesson-scoped styles ───────────────────────────── */
+/* All component rules live under .ll-app to avoid conflicts with            */
+/* classroom-home.css. Body-level rules use body.life-lab-page.              */
+
+/* ── Page background (dark cellular-automata theme) ─────────────────────── */
+body.life-lab-page {
+  background:
+    radial-gradient(circle at 15% 8%, rgba(255, 107, 53, 0.12), transparent 28%),
+    radial-gradient(circle at 80% 0%, rgba(41, 166, 131, 0.12), transparent 34%),
+    linear-gradient(180deg, #0b1417 0%, #102026 100%);
+  min-height: 100vh;
+}
+
+body.life-lab-page.worksheet-mode {
+  background: #fff;
+  color: #111;
+}
+
+/* ── App wrapper + scoped CSS vars ──────────────────────────────────────── */
+.ll-app {
+  --ll-bg: #f2efe4;
+  --ll-panel: #fffdf6;
+  --ll-ink: #1c2a31;
+  --ll-muted: #334a55;
+  --ll-accent: #ff6b35;
+  --ll-accent-dark: #cc4a1f;
+  --ll-line: #d5d0bf;
+  --ll-shadow: 0 16px 40px rgba(28, 42, 49, 0.12);
+  font-family: "Bricolage Grotesque", sans-serif;
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+
+.ll-app > *:not(#ambient-life) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Ambient background canvas ───────────────────────────────────────────── */
+#ambient-life {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.18;
+  filter: blur(0.3px);
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.ll-app .ll-hero {
+  max-width: 1100px;
+  margin: 2.8rem auto 1.4rem;
+  padding: 0 1rem;
+  animation: ll-rise 0.7s ease;
+  color: #e9f2ee;
+}
+
+.ll-app .ll-eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b8ccd1;
+  margin-bottom: 0.35rem;
+}
+
+.ll-app h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  line-height: 0.96;
+}
+
+.ll-app .hero-copy {
+  max-width: 760px;
+  font-size: 1.08rem;
+  margin: 1rem 0 1.2rem;
+  color: #d8e5e2;
+}
+
+/* ── Primary button + general buttons ───────────────────────────────────── */
+.ll-app .primary-btn,
+.ll-app button {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.92rem;
+  letter-spacing: 0.01em;
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.ll-app .primary-btn {
+  display: inline-block;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(120deg, var(--ll-accent), #f78f40);
+  padding: 0.58rem 0.95rem;
+  border-radius: 18px;
+  font-size: 0.88rem;
+}
+
+.ll-app .primary-btn:hover,
+.ll-app button:hover {
+  transform: translateY(-1px);
+}
+
+.ll-app button:active {
+  transform: translateY(1px);
+}
+
+/* ── Main grid layout ────────────────────────────────────────────────────── */
+.ll-app main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1rem 2.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+/* ── Panels ──────────────────────────────────────────────────────────────── */
+.ll-app .panel {
+  background: var(--ll-panel);
+  border: 1px solid var(--ll-line);
+  border-radius: 20px;
+  padding: 0.9rem;
+  box-shadow: var(--ll-shadow);
+}
+
+.ll-app .simulator-panel {
+  animation: ll-rise 0.9s ease;
+}
+
+.ll-app .panel-head h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.ll-app .panel-head p {
+  margin: 0.4rem 0 0.8rem;
+  color: var(--ll-muted);
+}
+
+/* ── Simulator controls ──────────────────────────────────────────────────── */
+.ll-app .controls-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+}
+
+.ll-app .studio-card .panel-head h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.35rem;
+  line-height: 1.06;
+}
+
+.ll-app .studio-card .sub {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  color: var(--ll-muted);
+}
+
+.ll-app .control-pair {
+  display: grid;
+  grid-template-columns: 106px 1fr;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .ll-app .controls-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.8rem;
+  }
+}
+
+.ll-app .control-pair label,
+.ll-app .speed-row > label {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--ll-muted);
+  line-height: 1.08;
+}
+
+.ll-app label {
+  display: grid;
+  gap: 0;
+  font-size: 0.94rem;
+  color: var(--ll-muted);
+}
+
+.ll-app select,
+.ll-app input[type="range"],
+.ll-app input[type="color"] {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--ll-line);
+  background: #fff;
+  font-family: "IBM Plex Mono", monospace;
+  padding: 0.48rem 0.6rem;
+  min-height: 40px;
+  font-size: 0.9rem;
+}
+
+.ll-app input[type="color"] {
+  min-height: 38px;
+  padding: 0.22rem;
+  cursor: pointer;
+}
+
+.ll-app .speed-row {
+  display: grid;
+  grid-template-columns: 106px 1fr;
+  gap: 0.55rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.ll-app .speed-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.ll-app .speed-inline input[type="range"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.ll-app .speed-readout {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  color: var(--ll-muted);
+  white-space: nowrap;
+}
+
+.ll-app .button-row {
+  margin-top: 0.65rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.ll-app button {
+  color: #fff;
+  background: #2f4950;
+  padding: 0.5rem 0.75rem;
+  min-height: 41px;
+  border-radius: 14px;
+  font-size: 0.85rem;
+}
+
+.ll-app #applyPatternBtn {
+  grid-column: 1 / -1;
+}
+
+.ll-app .stats-row {
+  margin-top: 0.62rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.ll-app .stats-row p {
+  margin: 0;
+  color: var(--ll-muted);
+}
+
+.ll-app .canvas-wrap {
+  margin-top: 0.8rem;
+  border: 1px solid var(--ll-line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f9f7ef;
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  --sim-size: 520px;
+}
+
+.ll-app canvas {
+  width: min(100%, var(--sim-size));
+  aspect-ratio: 1 / 1;
+  height: auto;
+  display: block;
+  touch-action: none;
+}
+
+.ll-app .voxel-viewport {
+  width: min(100%, var(--sim-size));
+  aspect-ratio: 1 / 1;
+  height: auto;
+  background: radial-gradient(circle at 50% 35%, #1d2b33, #0d1418 70%);
+}
+
+.ll-app .hidden {
+  display: none !important;
+}
+
+.ll-app .hint {
+  margin: 0.5rem 0 0;
+  color: var(--ll-muted);
+  font-size: 0.82rem;
+}
+
+/* ── Learning console ────────────────────────────────────────────────────── */
+.ll-app .learning-console .panel-head p,
+.ll-app .learning-section .panel-head p {
+  max-width: 66ch;
+}
+
+.ll-app .learning-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.ll-app .mode-toggle {
+  display: inline-flex;
+  gap: 0.4rem;
+  padding: 0.2rem;
+  border: 1px solid var(--ll-line);
+  border-radius: 999px;
+  background: #f7f3e7;
+}
+
+.ll-app .mode-btn,
+.ll-app .worksheet-btn {
+  min-height: 34px;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: #3b5560;
+  color: #fff;
+  font-size: 0.78rem;
+}
+
+.ll-app .mode-btn.is-active {
+  background: linear-gradient(120deg, var(--ll-accent), #ef9258);
+}
+
+body.life-lab-page.mode-beginner .ll-app #beginnerModeBtn,
+body.life-lab-page.mode-advanced .ll-app #advancedModeBtn {
+  background: linear-gradient(120deg, var(--ll-accent), #ef9258);
+}
+
+body.life-lab-page.mode-advanced .ll-app .mode-btn {
+  background: #3b5560;
+}
+
+.ll-app .mode-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.83rem;
+  color: var(--ll-muted);
+  max-width: 72ch;
+}
+
+/* ── Learning cards ──────────────────────────────────────────────────────── */
+.ll-app .learning-cards,
+.ll-app .project-grid,
+.ll-app .visual-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.ll-app .learning-card,
+.ll-app .project-card,
+.ll-app .visual-card,
+.ll-app .rubric-card {
+  border: 1px solid var(--ll-line);
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: linear-gradient(150deg, #fffdf7, #f7f1e3);
+}
+
+.ll-app h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.ll-app .learning-card p,
+.ll-app .project-card p,
+.ll-app .visual-card p,
+.ll-app .rubric-card p {
+  margin: 0.45rem 0 0;
+  color: var(--ll-muted);
+  line-height: 1.35;
+  font-size: 0.9rem;
+  max-width: 70ch;
+}
+
+.ll-app .learning-card ul,
+.ll-app .project-card ul,
+.ll-app .rubric-card ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.05rem;
+  display: grid;
+  gap: 0.25rem;
+  color: var(--ll-ink);
+  font-size: 0.88rem;
+}
+
+.ll-app .task-box {
+  margin-top: 0.6rem;
+  border: 1px dashed #b8ad8f;
+  border-radius: 11px;
+  padding: 0.5rem 0.55rem;
+  background: #fff8e8;
+}
+
+.ll-app .task-box strong {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ll-app .task-box p {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+/* ── Advanced / beginner mode toggle ─────────────────────────────────────── */
+.ll-app .advanced-only {
+  display: none;
+}
+
+body.life-lab-page.mode-advanced .advanced-only {
+  display: grid;
+}
+
+.ll-app .inline-term {
+  border-bottom: 1px dotted var(--ll-muted);
+}
+
+/* ── SVG diagrams ────────────────────────────────────────────────────────── */
+.ll-app .mini-diagram {
+  margin-top: 0.55rem;
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+}
+
+.ll-app .mini-diagram.wide {
+  max-width: 240px;
+}
+
+.ll-app .mini-diagram rect {
+  fill: #d9e0d8;
+  stroke: #294550;
+  stroke-width: 1;
+}
+
+.ll-app .mini-diagram .grid-off {
+  fill: #eef2ea;
+}
+
+.ll-app .mini-diagram .cell-center {
+  fill: #ff8b4a;
+}
+
+.ll-app .mini-diagram .cell-on {
+  fill: #ff6b35;
+}
+
+/* ── Rubric ──────────────────────────────────────────────────────────────── */
+.ll-app .rubric-card {
+  margin-top: 0.75rem;
+  background: linear-gradient(160deg, #fff8e9, #f6eedf);
+}
+
+.ll-app .bonus-line {
+  margin-top: 0.45rem;
+  font-weight: 600;
+}
+
+/* ── Glossary ────────────────────────────────────────────────────────────── */
+.ll-app .glossary-section .panel-head p {
+  margin-bottom: 0.45rem;
+}
+
+.ll-app .glossary-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ll-app .term-chip {
+  background: #f6efe0;
+  color: #1c2a31;
+  border: 1px solid #c7bfa8;
+  border-radius: 999px;
+  min-height: 32px;
+  padding: 0.35rem 0.68rem;
+  font-size: 0.78rem;
+}
+
+.ll-app .term-chip.is-active {
+  background: #ffe2d2;
+  border-color: #f3976f;
+}
+
+.ll-app .glossary-definition {
+  margin-top: 0.55rem;
+  border: 1px solid var(--ll-line);
+  border-radius: 11px;
+  padding: 0.5rem 0.6rem;
+  background: #fff;
+  min-height: 48px;
+  color: var(--ll-muted);
+  font-size: 0.86rem;
+  max-width: 75ch;
+}
+
+/* ── Worksheet mode ──────────────────────────────────────────────────────── */
+body.life-lab-page.worksheet-mode .ll-hero,
+body.life-lab-page.worksheet-mode #simulator,
+body.life-lab-page.worksheet-mode .ll-app .mode-toggle,
+body.life-lab-page.worksheet-mode .ll-app .mode-note,
+body.life-lab-page.worksheet-mode .ll-app footer {
+  display: none;
+}
+
+body.life-lab-page.worksheet-mode .ll-app main {
+  max-width: 900px;
+}
+
+body.life-lab-page.worksheet-mode .ll-app .learning-toolbar {
+  justify-content: flex-end;
+}
+
+body.life-lab-page.worksheet-mode .ll-app .panel {
+  box-shadow: none;
+  border: 1px solid #999;
+  background: #fff;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.ll-app footer {
+  padding: 0.5rem 1rem 2rem;
+  text-align: center;
+  font-size: 0.92rem;
+}
+
+.ll-app footer a {
+  color: #7ec8a0;
+  text-decoration: none;
+}
+
+.ll-app footer a:hover {
+  text-decoration: underline;
+}
+
+/* ── Print ───────────────────────────────────────────────────────────────── */
+@media print {
+  .ll-hero,
+  #simulator,
+  .ll-app .learning-toolbar,
+  .ll-app .mode-note,
+  .ll-app footer {
+    display: none !important;
+  }
+
+  body.life-lab-page {
+    background: #fff;
+  }
+
+  .ll-app .panel {
+    box-shadow: none;
+    border: 1px solid #777;
+    page-break-inside: avoid;
+  }
+}
+
+/* ── Mobile (≤ 720px) ────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .ll-app .ll-hero {
+    margin-top: 2rem;
+  }
+
+  .ll-app .panel {
+    padding: 0.7rem;
+  }
+
+  .ll-app .control-pair,
+  .ll-app .speed-row {
+    grid-template-columns: 94px 1fr;
+    gap: 0.42rem;
+  }
+
+  .ll-app .speed-readout {
+    font-size: 0.78rem;
+  }
+
+  .ll-app .learning-toolbar {
+    align-items: stretch;
+  }
+
+  .ll-app .mode-toggle {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .ll-app .mode-btn,
+  .ll-app .worksheet-btn {
+    flex: 1 1 auto;
+    font-size: 0.75rem;
+    padding: 0.42rem 0.58rem;
+  }
+
+  .ll-app .visual-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ll-app button {
+    min-height: 40px;
+    font-size: 0.82rem;
+  }
+
+  .ll-app select,
+  .ll-app input[type="range"],
+  .ll-app input[type="color"] {
+    min-height: 38px;
+  }
+}
+
+/* ── Animation ───────────────────────────────────────────────────────────── */
+@keyframes ll-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
