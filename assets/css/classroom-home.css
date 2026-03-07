@@ -95,6 +95,135 @@ body {
   color: #111;
 }
 
+/* ── Topbar (lesson pages) — mirrors .site-header / .nav-wrap / .site-nav ── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: saturate(160%) blur(12px);
+  background: rgba(245, 245, 247, 0.86);
+  border-bottom: 1px solid rgba(210, 210, 215, 0.8);
+}
+
+.topbar-inner {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.topbar nav {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.topbar nav a {
+  color: #3a3a3c;
+  text-decoration: none;
+  font-size: 0.87rem;
+}
+
+.topbar nav a[aria-current="page"] {
+  color: #111;
+  font-weight: 600;
+}
+
+.topbar nav a:hover {
+  color: #111;
+}
+
+/* ── Hamburger toggle (hidden at desktop widths) ─────────────────────────── */
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  color: #3a3a3c;
+  border-radius: 6px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.nav-toggle:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ── Mobile nav (≤ 680 px) ───────────────────────────────────────────────── */
+@media (max-width: 680px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  /* Allow header row to wrap so collapsed nav appears below brand + toggle */
+  .nav-wrap,
+  .topbar-inner {
+    flex-wrap: wrap;
+  }
+
+  /* site-header pattern: collapse .site-nav */
+  .site-nav {
+    display: none;
+    width: 100%;
+    order: 3;
+    padding-bottom: 0.6rem;
+  }
+
+  .site-nav.is-open {
+    display: block;
+  }
+
+  .site-nav ul {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .site-nav a {
+    display: block;
+    padding: 0.55rem 0.1rem;
+    font-size: 0.95rem;
+    border-bottom: 1px solid rgba(210, 210, 215, 0.55);
+  }
+
+  .site-nav ul li:last-child a {
+    border-bottom: none;
+  }
+
+  /* topbar pattern: collapse nav */
+  .topbar nav {
+    display: none;
+    width: 100%;
+    order: 3;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding-bottom: 0.6rem;
+  }
+
+  .topbar nav.is-open {
+    display: flex;
+  }
+
+  .topbar nav a {
+    display: block;
+    padding: 0.55rem 0.1rem;
+    font-size: 0.95rem;
+    border-bottom: 1px solid rgba(210, 210, 215, 0.55);
+    width: 100%;
+  }
+
+  .topbar nav a:last-child {
+    border-bottom: none;
+  }
+}
+
 main,
 .site-footer {
   width: min(1180px, calc(100% - 2rem));
@@ -3737,3 +3866,207 @@ h1 {
 .deep-blue-tile .tile-kicker { color: #b5c8f0; }
 .deep-blue-tile strong       { color: #ffffff; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.64); }
 .deep-blue-tile small        { color: #c4d4f0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Skeleton loading shimmer
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+.skeleton {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #e5e5ea 25%,
+    #f2f2f7 50%,
+    #e5e5ea 75%
+  );
+  background-size: 1200px 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-text {
+  height: 1.05em;
+  margin-bottom: 0.55em;
+  border-radius: 4px;
+}
+
+.skeleton-text:last-child {
+  margin-bottom: 0;
+}
+
+.skeleton-card {
+  min-height: 130px;
+  border-radius: var(--radius);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dark mode
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:     #1c1c1e;
+    --text:   #f5f5f7;
+    --muted:  #98989d;
+    --line:   #3a3a3c;
+    --white:  #2c2c2e;
+    --shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Header / nav */
+  .site-header,
+  .topbar {
+    background: rgba(28, 28, 30, 0.88);
+    border-bottom-color: rgba(58, 58, 60, 0.9);
+  }
+
+  .brand {
+    color: #f5f5f7;
+  }
+
+  .site-nav a,
+  .topbar nav a,
+  .nav-toggle {
+    color: #e5e5ea;
+  }
+
+  .site-nav a[aria-current="page"],
+  .topbar nav a[aria-current="page"],
+  .site-nav a:hover,
+  .topbar nav a:hover {
+    color: #ffffff;
+  }
+
+  .site-nav a,
+  .topbar nav a {
+    border-bottom-color: rgba(58, 58, 60, 0.6);
+  }
+
+  /* Cards & rhythm rows */
+  .card {
+    border-color: rgba(58, 58, 60, 0.8);
+  }
+
+  .rhythm li {
+    border-color: #3a3a3c;
+  }
+
+  /* Light tile-hero (white background) */
+  .tile-hero {
+    background:
+      radial-gradient(900px 380px at -10% 0%, rgba(0, 113, 227, 0.16), transparent 60%),
+      radial-gradient(800px 300px at 110% 100%, rgba(0, 113, 227, 0.12), transparent 60%),
+      #1e1e20;
+  }
+
+  .tile {
+    border-color: rgba(58, 58, 60, 0.8);
+  }
+
+  /* VOTD card */
+  .votd-card {
+    background:
+      radial-gradient(130% 70% at 0% 0%, rgba(170, 120, 30, 0.10), transparent 58%),
+      #18120a;
+    border-color: rgba(110, 82, 20, 0.45);
+  }
+
+  .votd-eyebrow {
+    color: #c49a30;
+  }
+
+  .votd-eyebrow-dot {
+    color: rgba(196, 154, 48, 0.35);
+  }
+
+  .votd-verse {
+    color: #f2e8d0;
+  }
+
+  .votd-ref {
+    color: #b08030;
+  }
+
+  /* Weekly schedule cards */
+  .weekly-day-card {
+    background: #2c2c2e;
+    border-color: #3a3a3c;
+  }
+
+  .weekly-day-card--off {
+    background: #232325;
+  }
+
+  /* dl-cards (class downloads) */
+  .dl-card {
+    border-color: rgba(58, 58, 60, 0.8);
+  }
+
+  /* Buttons */
+  button.secondary,
+  .button.secondary {
+    background: #3a3a3c;
+    border-color: #555;
+    color: #f5f5f7;
+  }
+
+  /* Inputs */
+  input[type="search"],
+  input[type="text"],
+  select {
+    background: #2c2c2e;
+    border-color: #3a3a3c;
+    color: #f5f5f7;
+  }
+
+  /* Go / Chess game UI panels */
+  .go-status,
+  .chess-status {
+    background: #2c2c2e;
+    border-color: #3a3a3c;
+    color: #e5e5ea;
+  }
+
+  .go-captures,
+  .chess-rules {
+    background: #232325;
+    border-color: #3a3a3c;
+  }
+
+  .chess-log {
+    background: #232325;
+    border-color: #3a3a3c;
+  }
+
+  /* Chess squares — keep them recognisable in dark */
+  .chess-square.light {
+    background: #b8c4d0;
+  }
+
+  .chess-square.dark {
+    background: #6e8496;
+  }
+
+  /* Go board keeps its bamboo colour (already dark enough) */
+
+  /* Skeleton shimmer — darker palette */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #2c2c2e 25%,
+      #3a3a3c 50%,
+      #2c2c2e 75%
+    );
+    background-size: 1200px 100%;
+  }
+
+  /* Footer */
+  .site-footer a {
+    color: #6e9ecf;
+  }
+}

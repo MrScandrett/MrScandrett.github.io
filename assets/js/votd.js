@@ -58,7 +58,8 @@ function renderVerse(payload) {
   const reference = payload && payload.reference ? payload.reference : DEFAULT_VERSE.reference;
   const deeplink = payload && payload.deeplink ? payload.deeplink : DEFAULT_VERSE.deeplink;
 
-  verseEl.textContent = `“${text}”`;
+  verseEl.textContent = `”${text}”`;
+  verseEl.removeAttribute(“aria-busy”);
   refEl.textContent = `— ${reference}`;
   setLinks(reference, deeplink);
 }
