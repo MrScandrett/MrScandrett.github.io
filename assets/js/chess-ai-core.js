@@ -5,6 +5,7 @@ const resetButton = document.getElementById("chess-reset");
 const depthSelect = document.getElementById("chess-depth");
 const modelSelect = document.getElementById("chess-model");
 const modelNoteElement = document.getElementById("chess-model-note");
+const labElement = document.getElementById("chess-lab");
 
 if (
   !boardElement ||
@@ -13,7 +14,8 @@ if (
   !resetButton ||
   !depthSelect ||
   !modelSelect ||
-  !modelNoteElement
+  !modelNoteElement ||
+  !labElement
 ) {
   throw new Error("Chess lesson could not initialize. Missing required DOM nodes.");
 }
@@ -66,6 +68,10 @@ const MODEL_PROFILES = {
     label: "Turochamp (1951)",
     logLabel: "Turochamp",
     summary: "Early rule-based style: shallow lookahead with noisier move choices.",
+    themeTitle: "Paper Logic",
+    themeKicker: "1951 · Hand-built rules",
+    themePrompt: "Expect short lookahead, more surprises, and moves that feel clever one turn but shaky the next.",
+    themeTags: ["Shallow search", "Rule-based", "More randomness"],
     baseDepth: 1,
     recommendedBudget: 2,
     variability: 0.58,
@@ -81,6 +87,10 @@ const MODEL_PROFILES = {
     label: "Mac Hack VI (1967)",
     logLabel: "Mac Hack VI",
     summary: "Tournament-era search with stronger material play and moderate lookahead.",
+    themeTitle: "Mainframe Green",
+    themeKicker: "1967 · Tournament-era computing",
+    themePrompt: "Watch for steadier material play and fewer obvious mistakes, but not the crushing calculation of later engines.",
+    themeTags: ["Mainframe era", "Material-first", "Steadier search"],
     baseDepth: 2,
     recommendedBudget: 2,
     variability: 0.28,
@@ -96,6 +106,10 @@ const MODEL_PROFILES = {
     label: "Deep Blue Style (1997)",
     logLabel: "Deep Blue",
     summary: "Consistent alpha-beta search with aggressive tactical pressure.",
+    themeTitle: "Supercomputer Blue",
+    themeKicker: "1997 · Industrial brute force",
+    themePrompt: "This era should feel colder and more tactical: sharper captures, faster punishment, and less hesitation.",
+    themeTags: ["Alpha-beta", "Tactical pressure", "Custom hardware"],
     baseDepth: 3,
     recommendedBudget: 2,
     variability: 0.08,
@@ -111,6 +125,10 @@ const MODEL_PROFILES = {
     label: "Modern Engine Style (2020s)",
     logLabel: "Modern Engine",
     summary: "Sharper positional scoring with low randomness and deeper practical play.",
+    themeTitle: "Precision Engine",
+    themeKicker: "2020s · Clean modern evaluation",
+    themePrompt: "Look for calmer, cleaner positions and fewer flashy mistakes. The engine should feel more balanced and less chaotic.",
+    themeTags: ["Lower randomness", "Better position play", "Deeper practical search"],
     baseDepth: 3,
     recommendedBudget: 3,
     variability: 0.03,
@@ -175,6 +193,12 @@ const state = {
   inCheckColor: null,
   log: []
 };
+
+const initialModelId = new URLSearchParams(window.location.search).get("model");
+if (initialModelId && MODEL_PROFILES[initialModelId]) {
+  state.aiModelId = initialModelId;
+  modelSelect.value = initialModelId;
+}
 
 function activeModel() {
   return MODEL_PROFILES[state.aiModelId] || MODEL_PROFILES.deepblue1997;
@@ -610,7 +634,15 @@ function statusText() {
 
 function renderModelNote() {
   const model = activeModel();
-  modelNoteElement.textContent = `${model.label}: ${model.summary}`;
+  document.body.dataset.chessTheme = state.aiModelId;
+  labElement.dataset.modelTheme = state.aiModelId;
+  modelNoteElement.innerHTML = `
+    <span class="chess-model-kicker">${model.themeKicker}</span>
+    <strong class="chess-model-title">${model.themeTitle}</strong>
+    <p class="chess-model-summary"><strong>${model.label}</strong>: ${model.summary}</p>
+    <p class="chess-model-prompt"><strong>What to notice:</strong> ${model.themePrompt}</p>
+    <div class="chess-model-tags">${model.themeTags.map((tag) => `<span>${tag}</span>`).join("")}</div>
+  `;
 }
 
 function renderBoard() {
