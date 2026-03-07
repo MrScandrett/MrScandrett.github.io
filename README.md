@@ -1,15 +1,12 @@
 # Mr. Scandrett's ClassroomOS
 
-Protected GitHub Pages showcase + moderated upload portal.
+Open GitHub Pages showcase + upload portal.
 
 ## What changed
 
 - No student/sample names are preloaded.
 - `data/projects.json` starts empty.
-- ClassroomOS pages now require login before viewing:
-  - Username: `Champion`
-  - Password: `CPA`
-- Student account request + moderation + upload is handled by `portal/server.js`.
+- Project uploads + publishing are handled by `portal/server.js`.
 
 ## ClassroomOS (GitHub Pages)
 
@@ -19,7 +16,6 @@ Static pages:
 - `project.html?id=<id>`
 - `students.html`
 - `about.html`
-- `login.html`
 
 Data source:
 - `data/projects.json`
@@ -32,7 +28,7 @@ node serve-local.js
 ```
 
 Open:
-- `http://localhost:8080/login.html`
+- `http://localhost:8080/index.html`
 
 ## Student upload build pipeline (Web + Scratch + 3D + Pivot)
 
@@ -61,13 +57,11 @@ Output:
 - Showcase manifest in `apps/manifest.json`
 - STL/OBJ models auto-render in an interactive viewer (orbit/zoom/pan, projection toggle, fullscreen)
 
-## Portal backend (moderated accounts + uploads)
+## Portal backend (open uploads)
 
 ```bash
 cd /Users/User/Documents/GitHubTutorialSTEAM
 
-export ADMIN_USER="Champion"
-export ADMIN_PASS="CPA"
 export GITHUB_OWNER="MrScandrett"
 export REPO_PREFIX="student-showcase-"
 export PORT="8787"
@@ -76,13 +70,12 @@ node /Users/User/Documents/GitHubTutorialSTEAM/portal/server.js
 ```
 
 Open:
-- `http://localhost:8787/login`
+- `http://localhost:8787/dashboard`
 
 Student flow:
-1. Student requests username at `/register`.
-2. Teacher approves in teacher dashboard.
-3. Student logs in and uploads ZIP.
-4. Portal publishes to GitHub Pages and appends project to `data/projects.json`.
+1. Open the dashboard.
+2. Upload a project ZIP.
+3. Portal publishes to GitHub Pages and appends project to `data/projects.json`.
 
 ## Add project manually (optional)
 

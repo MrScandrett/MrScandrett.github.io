@@ -4,46 +4,33 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const crypto = require("crypto");
 const { spawnSync } = require("child_process");
 
 const PORT = Number(process.env.PORT || "8787");
 const ROOT_DIR = path.resolve(__dirname, "..");
 const PORTAL_DIR = __dirname;
 const STATIC_DIR = path.join(PORTAL_DIR, "static");
-const DATA_DIR = path.join(PORTAL_DIR, "data");
 const WORK_DIR = path.join(PORTAL_DIR, "work");
 const UPLOADS_DIR = path.join(PORTAL_DIR, "uploads");
-const USERS_FILE = path.join(DATA_DIR, "users.json");
-const PENDING_FILE = path.join(DATA_DIR, "pending_users.json");
 const HUB_DATA_FILE = path.join(ROOT_DIR, "data", "projects.json");
 const PUBLISH_SCRIPT = path.join(ROOT_DIR, "publish_to_pages.js");
 
-const ADMIN_USER = process.env.ADMIN_USER || "Champion";
-const ADMIN_PASS = process.env.ADMIN_PASS || "CPA";
-const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || "";
 const GITHUB_OWNER = process.env.GITHUB_OWNER || "MrScandrett";
 const REPO_PREFIX = process.env.REPO_PREFIX || "student-showcase-";
 const DEFAULT_VISIBILITY = (process.env.DEFAULT_VISIBILITY || "public").toLowerCase();
 
-const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
-
-const sessions = new Map();
+const OPEN_SESSION = Object.freeze({
+  username: "portal",
+  role: "teacher",
+});
 
 function ensureDirs() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.mkdirSync(WORK_DIR, { recursive: true });
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   fs.mkdirSync(path.join(ROOT_DIR, "assets", "thumbs"), { recursive: true });
   fs.mkdirSync(path.join(ROOT_DIR, "assets", "heroes"), { recursive: true });
 
-  if (!fs.existsSync(USERS_FILE)) {
-    fs.writeFileSync(USERS_FILE, JSON.stringify({ users: [] }, null, 2));
-  }
-  if (!fs.existsSync(PENDING_FILE)) {
-    fs.writeFileSync(PENDING_FILE, JSON.stringify({ requests: [] }, null, 2));
-  }
   if (!fs.existsSync(HUB_DATA_FILE)) {
     fs.mkdirSync(path.dirname(HUB_DATA_FILE), { recursive: true });
     fs.writeFileSync(HUB_DATA_FILE, JSON.stringify({ projects: [] }, null, 2));
@@ -54,29 +41,12 @@ function ensureDirs() {
   }
 }
 
-function now() {
-  return Date.now();
-}
-
 function escapeHtml(value) {
   return String(value || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-function parseCookies(cookieHeader) {
-  const cookies = {};
-  if (!cookieHeader) return cookies;
-  cookieHeader.split(";").forEach((pair) => {
-    const idx = pair.indexOf("=");
-    if (idx === -1) return;
-    const key = pair.slice(0, idx).trim();
-    const value = pair.slice(idx + 1).trim();
-    cookies[key] = value;
-  });
-  return cookies;
 }
 
 function sendHtml(res, statusCode, html) {
@@ -105,19 +75,6 @@ function readBody(req, maxBytes) {
     req.on("end", () => resolve(Buffer.concat(chunks)));
     req.on("error", reject);
   });
-}
-
-function parseUrlEncoded(bodyBuffer) {
-  const out = {};
-  const text = bodyBuffer.toString("utf8");
-  text.split("&").forEach((part) => {
-    if (!part) return;
-    const idx = part.indexOf("=");
-    const key = idx === -1 ? part : part.slice(0, idx);
-    const rawValue = idx === -1 ? "" : part.slice(idx + 1);
-    out[decodeURIComponent(key.replace(/\+/g, " "))] = decodeURIComponent(rawValue.replace(/\+/g, " "));
-  });
-  return out;
 }
 
 function splitBuffer(buf, sep) {
@@ -208,33 +165,6 @@ function normalizeUsername(value) {
   return sanitizeSlug(String(value || "").replace(/[_.]/g, "-"), "").slice(0, 24);
 }
 
-function randomToken() {
-  return crypto.randomBytes(24).toString("hex");
-}
-
-function buildPasswordHash(password) {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto.scryptSync(password, Buffer.from(salt, "hex"), 64).toString("hex");
-  return `scrypt$${salt}$${hash}`;
-}
-
-function verifyHash(passwordAttempt, storedHash) {
-  const parts = String(storedHash || "").split("$");
-  if (parts.length !== 3 || parts[0] !== "scrypt") return false;
-  const expected = Buffer.from(parts[2], "hex");
-  const actual = Buffer.from(
-    crypto.scryptSync(passwordAttempt, Buffer.from(parts[1], "hex"), 64).toString("hex"),
-    "hex"
-  );
-  if (expected.length !== actual.length) return false;
-  return crypto.timingSafeEqual(expected, actual);
-}
-
-function verifyAdminPassword(passwordAttempt) {
-  if (ADMIN_PASS_HASH) return verifyHash(passwordAttempt, ADMIN_PASS_HASH);
-  return passwordAttempt === ADMIN_PASS;
-}
-
 function readJson(file, fallback) {
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -245,65 +175,6 @@ function readJson(file, fallback) {
 
 function writeJson(file, value) {
   fs.writeFileSync(file, JSON.stringify(value, null, 2));
-}
-
-function loadUsers() {
-  const data = readJson(USERS_FILE, { users: [] });
-  return Array.isArray(data.users) ? data.users : [];
-}
-
-function saveUsers(users) {
-  writeJson(USERS_FILE, { users });
-}
-
-function loadPending() {
-  const data = readJson(PENDING_FILE, { requests: [] });
-  return Array.isArray(data.requests) ? data.requests : [];
-}
-
-function savePending(requests) {
-  writeJson(PENDING_FILE, { requests });
-}
-
-function verifyCredential(usernameRaw, password) {
-  const username = normalizeUsername(usernameRaw);
-  if (!username || !password) return null;
-
-  if (username === normalizeUsername(ADMIN_USER)) {
-    if (!verifyAdminPassword(password)) return null;
-    return { username: ADMIN_USER, role: "teacher" };
-  }
-
-  const user = loadUsers().find((u) => u.username === username && u.status === "approved");
-  if (!user) return null;
-  if (!verifyHash(password, user.passwordHash)) return null;
-  return { username: user.username, role: "student" };
-}
-
-function getSession(req) {
-  const token = parseCookies(req.headers.cookie || "").portal_session;
-  if (!token) return null;
-  const session = sessions.get(token);
-  if (!session) return null;
-  if (session.expiresAt < now()) {
-    sessions.delete(token);
-    return null;
-  }
-  session.expiresAt = now() + SESSION_TTL_MS;
-  return { token, session };
-}
-
-function requireAuth(req, res, allowedRoles = null) {
-  const wrapped = getSession(req);
-  if (!wrapped) {
-    redirect(res, "/login");
-    return null;
-  }
-  if (Array.isArray(allowedRoles) && !allowedRoles.includes(wrapped.session.role)) {
-    sendHtml(res, 403, pageShell("Access denied", `<section class="panel error"><p>Not allowed.</p></section>`));
-    return null;
-  }
-  return wrapped;
 }
 
 function pageShell(title, body, banner = "") {
@@ -323,7 +194,7 @@ function pageShell(title, body, banner = "") {
     <header class="panel hero">
       <p class="eyebrow">Classroom Portal</p>
       <h1>${escapeHtml(title)}</h1>
-      <p class="subtitle">Protected moderation + uploads for <code>${escapeHtml(GITHUB_OWNER)}</code>.</p>
+      <p class="subtitle">Open uploads for <code>${escapeHtml(GITHUB_OWNER)}</code>.</p>
       ${banner}
     </header>
     ${body}
@@ -332,87 +203,15 @@ function pageShell(title, body, banner = "") {
 </html>`;
 }
 
-function renderLogin(errorText = "", noticeText = "") {
-  const error = errorText
-    ? `<section class="panel error"><p><strong>Login error:</strong> ${escapeHtml(errorText)}</p></section>`
-    : "";
-  const notice = noticeText ? `<section class="panel"><p>${escapeHtml(noticeText)}</p></section>` : "";
-
-  return pageShell(
-    "Sign In",
-    `${notice}${error}
-<section class="panel">
-  <h2>Access</h2>
-  <form method="post" action="/login" class="stack">
-    <label>Username
-      <input name="username" required autocomplete="username" />
-    </label>
-    <label>Password
-      <input name="password" type="password" required autocomplete="current-password" />
-    </label>
-    <button type="submit">Login</button>
-  </form>
-  <p><strong>Teacher default:</strong> ${escapeHtml(ADMIN_USER)} / ${ADMIN_PASS_HASH ? "(hashed password)" : escapeHtml(ADMIN_PASS)}</p>
-  <p><a href="/register">Student account request</a></p>
-</section>`
-  );
-}
-
-function renderRegister(errorText = "", noticeText = "") {
-  const error = errorText
-    ? `<section class="panel error"><p><strong>Request error:</strong> ${escapeHtml(errorText)}</p></section>`
-    : "";
-  const notice = noticeText ? `<section class="panel"><p>${escapeHtml(noticeText)}</p></section>` : "";
-
-  return pageShell(
-    "Student Account Request",
-    `${notice}${error}
-<section class="panel">
-  <h2>Create Request</h2>
-  <form method="post" action="/register" class="stack">
-    <label>Requested username
-      <input name="username" placeholder="team-alpha" required />
-    </label>
-    <label>Password
-      <input name="password" type="password" minlength="6" required />
-    </label>
-    <label>Confirm password
-      <input name="confirmPassword" type="password" minlength="6" required />
-    </label>
-    <button type="submit">Send request</button>
-  </form>
-  <p><a href="/login">Back to login</a></p>
-</section>`
-  );
-}
-
-function renderUploadForm(session, isTeacher) {
+function renderUploadForm(session) {
   const currentYear = new Date().getFullYear();
-  const ownerControl = isTeacher
-    ? `<label>Project owner alias
-      <input name="ownerAlias" placeholder="team-01" required />
-    </label>`
-    : `<input type="hidden" name="ownerAlias" value="${escapeHtml(session.username)}" />
-      <p><strong>Owner:</strong> ${escapeHtml(session.username)}</p>`;
-
-  const visibilityControl = isTeacher
-    ? `<label>Visibility
-      <select name="visibility">
-        <option value="public" ${DEFAULT_VISIBILITY === "public" ? "selected" : ""}>public</option>
-        <option value="private" ${DEFAULT_VISIBILITY === "private" ? "selected" : ""}>private</option>
-      </select>
-    </label>`
-    : `<input type="hidden" name="visibility" value="public" />`;
-
-  const featuredControl = isTeacher
-    ? `<label class="checkline"><input type="checkbox" name="featured" /><span>Mark as featured</span></label>`
-    : "";
-
   return `<section class="panel">
   <h2>Upload Project ZIP</h2>
+  <p><strong>Mode:</strong> Open access (${escapeHtml(session.role)})</p>
   <form method="post" action="/upload" enctype="multipart/form-data" class="stack">
-    <input type="hidden" name="csrf" value="${escapeHtml(session.csrf)}" />
-    ${ownerControl}
+    <label>Project owner alias
+      <input name="ownerAlias" placeholder="team-01" required />
+    </label>
 
     <label>Project title
       <input name="projectTitle" placeholder="My Project" required />
@@ -470,7 +269,7 @@ function renderUploadForm(session, isTeacher) {
     </div>
 
     <label class="checkline"><input type="checkbox" name="jam" /><span>Game jam build</span></label>
-    ${featuredControl}
+    <label class="checkline"><input type="checkbox" name="featured" /><span>Mark as featured</span></label>
 
     <label>Tech list (comma separated)
       <input name="tech" placeholder="Godot, VS Code" />
@@ -488,7 +287,12 @@ function renderUploadForm(session, isTeacher) {
       <textarea name="longDescription" rows="5" required></textarea>
     </label>
 
-    ${visibilityControl}
+    <label>Visibility
+      <select name="visibility">
+        <option value="public" ${DEFAULT_VISIBILITY === "public" ? "selected" : ""}>public</option>
+        <option value="private" ${DEFAULT_VISIBILITY === "private" ? "selected" : ""}>private</option>
+      </select>
+    </label>
 
     <label class="checkline"><input type="checkbox" name="teacherMode" checked /><span>Teacher mode for generated tutorial</span></label>
 
@@ -501,45 +305,9 @@ function renderUploadForm(session, isTeacher) {
 </section>`;
 }
 
-function renderTeacherDashboard(session, pendingRequests, flash = "") {
+function renderDashboard(session, flash = "") {
   const flashBlock = flash ? `<section class="panel"><p>${flash}</p></section>` : "";
-  const pendingList = pendingRequests.length
-    ? pendingRequests
-        .map(
-          (req) => `<li><strong>${escapeHtml(req.username)}</strong> • requested ${escapeHtml(req.requestedAt)}
-            <form method="post" action="/approve-user" style="display:inline;">
-              <input type="hidden" name="csrf" value="${escapeHtml(session.csrf)}" />
-              <input type="hidden" name="username" value="${escapeHtml(req.username)}" />
-              <button type="submit">Approve</button>
-            </form>
-            <form method="post" action="/reject-user" style="display:inline;">
-              <input type="hidden" name="csrf" value="${escapeHtml(session.csrf)}" />
-              <input type="hidden" name="username" value="${escapeHtml(req.username)}" />
-              <button type="submit" class="secondary">Reject</button>
-            </form>
-          </li>`
-        )
-        .join("")
-    : "<li>No pending account requests.</li>";
-
-  return pageShell(
-    "Teacher Dashboard",
-    `${flashBlock}
-<section class="panel"><h2>Pending Student Accounts</h2><ul>${pendingList}</ul></section>
-${renderUploadForm(session, true)}
-<section class="panel"><p><a href="/logout">Log out</a></p></section>`
-  );
-}
-
-function renderStudentDashboard(session, flash = "") {
-  const flashBlock = flash ? `<section class="panel"><p>${flash}</p></section>` : "";
-  return pageShell(
-    "Student Dashboard",
-    `${flashBlock}
-<section class="panel"><p>Logged in as <strong>${escapeHtml(session.username)}</strong>.</p></section>
-${renderUploadForm(session, false)}
-<section class="panel"><p><a href="/logout">Log out</a></p></section>`
-  );
+  return pageShell("Upload Dashboard", `${flashBlock}${renderUploadForm(session)}`);
 }
 
 function renderResult(title, lines, links) {
@@ -734,13 +502,6 @@ function appendProjectAndPublishHubEntry(meta, publishResult) {
   return { entry, warnings };
 }
 
-function cleanupSessions() {
-  const t = now();
-  for (const [token, session] of sessions.entries()) {
-    if (session.expiresAt < t) sessions.delete(token);
-  }
-}
-
 function serveStatic(req, res) {
   const file = req.url === "/static/style.css" ? "style.css" : "";
   if (!file) return false;
@@ -763,215 +524,45 @@ function buildRepoName(ownerAlias, repoNameInput) {
   return sanitizeSlug(`${REPO_PREFIX}${ownerAlias}-${stamp}`, `${REPO_PREFIX}project-${stamp}`);
 }
 
-async function handle(req, res) {
-  if (req.url.startsWith("/static/")) {
-    if (serveStatic(req, res)) return;
+async function handleUpload(req, res) {
+  ensureBinaryChecks();
+
+  const contentType = req.headers["content-type"] || "";
+  if (!/multipart\/form-data/i.test(contentType)) {
+    throw new Error("Expected multipart form upload.");
+  }
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  const boundary = ((boundaryMatch && (boundaryMatch[1] || boundaryMatch[2])) || "").trim();
+  if (!boundary) throw new Error("Missing upload boundary.");
+
+  const body = await readBody(req, MAX_UPLOAD_BYTES);
+  const parsed = parseMultipart(body, boundary);
+
+  const ownerAlias = normalizeUsername(parsed.fields.ownerAlias || "") || "project";
+  const projectTitle = String(parsed.fields.projectTitle || "").trim();
+  if (!projectTitle) throw new Error("Project title is required.");
+
+  const visibility = String(parsed.fields.visibility || DEFAULT_VISIBILITY).toLowerCase();
+  if (!["public", "private"].includes(visibility)) {
+    throw new Error("Visibility must be public or private.");
   }
 
-  if (req.method === "GET" && req.url === "/health") {
-    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-    res.end(JSON.stringify({ ok: true, time: new Date().toISOString() }));
-    return;
+  const year = Number(parsed.fields.year || new Date().getFullYear());
+  if (!Number.isInteger(year) || year < 2020 || year > 2100) {
+    throw new Error("Year must be between 2020 and 2100.");
   }
 
-  if (req.method === "GET" && req.url === "/") {
-    const s = getSession(req);
-    redirect(res, s ? "/dashboard" : "/login");
-    return;
-  }
+  const zipFile = parsed.files.projectZip;
+  if (!zipFile) throw new Error("Missing project ZIP file.");
+  if (!hasZipSignature(zipFile.data)) throw new Error("Uploaded file is not a valid ZIP.");
 
-  if (req.method === "GET" && req.url === "/login") {
-    sendHtml(res, 200, renderLogin());
-    return;
-  }
+  const repoName = buildRepoName(ownerAlias, parsed.fields.repoName || "");
 
-  if (req.method === "POST" && req.url === "/login") {
-    const body = await readBody(req, 1024 * 20);
-    const fields = parseUrlEncoded(body);
-    const auth = verifyCredential(fields.username || "", fields.password || "");
-    if (!auth) {
-      sendHtml(res, 401, renderLogin("Invalid username or password."));
-      return;
-    }
+  const stamp = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+  const zipPath = path.join(UPLOADS_DIR, `${ownerAlias}-${stamp}.zip`);
+  const extractDir = path.join(WORK_DIR, `${ownerAlias}-${stamp}`);
 
-    const token = randomToken();
-    sessions.set(token, {
-      username: auth.username,
-      role: auth.role,
-      csrf: randomToken(),
-      expiresAt: now() + SESSION_TTL_MS,
-    });
-
-    res.writeHead(302, {
-      Location: "/dashboard",
-      "Set-Cookie": `portal_session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${Math.floor(
-        SESSION_TTL_MS / 1000
-      )}`,
-    });
-    res.end();
-    return;
-  }
-
-  if (req.method === "GET" && req.url === "/register") {
-    sendHtml(res, 200, renderRegister());
-    return;
-  }
-
-  if (req.method === "POST" && req.url === "/register") {
-    const body = await readBody(req, 1024 * 40);
-    const fields = parseUrlEncoded(body);
-
-    const username = normalizeUsername(fields.username || "");
-    const password = String(fields.password || "");
-    const confirmPassword = String(fields.confirmPassword || "");
-
-    if (!username || username.length < 3) {
-      sendHtml(res, 400, renderRegister("Username must be at least 3 characters."));
-      return;
-    }
-    if (password.length < 6) {
-      sendHtml(res, 400, renderRegister("Password must be at least 6 characters."));
-      return;
-    }
-    if (password !== confirmPassword) {
-      sendHtml(res, 400, renderRegister("Passwords do not match."));
-      return;
-    }
-    if (username === normalizeUsername(ADMIN_USER)) {
-      sendHtml(res, 400, renderRegister("That username is reserved."));
-      return;
-    }
-
-    const users = loadUsers();
-    const pending = loadPending();
-    if (users.some((u) => u.username === username) || pending.some((p) => p.username === username)) {
-      sendHtml(res, 400, renderRegister("Username already exists or is pending moderation."));
-      return;
-    }
-
-    pending.push({
-      username,
-      passwordHash: buildPasswordHash(password),
-      requestedAt: new Date().toISOString(),
-    });
-    savePending(pending);
-
-    sendHtml(res, 200, renderRegister("", "Request submitted. Wait for teacher approval."));
-    return;
-  }
-
-  if (req.method === "GET" && req.url === "/logout") {
-    const s = getSession(req);
-    if (s) sessions.delete(s.token);
-    res.writeHead(302, {
-      Location: "/login",
-      "Set-Cookie": "portal_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax",
-    });
-    res.end();
-    return;
-  }
-
-  if (req.method === "GET" && req.url === "/dashboard") {
-    const wrapped = requireAuth(req, res);
-    if (!wrapped) return;
-
-    const session = wrapped.session;
-    if (!session.csrf) session.csrf = randomToken();
-
-    if (session.role === "teacher") {
-      sendHtml(res, 200, renderTeacherDashboard(session, loadPending()));
-    } else {
-      sendHtml(res, 200, renderStudentDashboard(session));
-    }
-    return;
-  }
-
-  if (req.method === "POST" && (req.url === "/approve-user" || req.url === "/reject-user")) {
-    const wrapped = requireAuth(req, res, ["teacher"]);
-    if (!wrapped) return;
-
-    const body = await readBody(req, 1024 * 20);
-    const fields = parseUrlEncoded(body);
-    if (!fields.csrf || fields.csrf !== wrapped.session.csrf) {
-      throw new Error("Invalid CSRF token.");
-    }
-
-    const username = normalizeUsername(fields.username || "");
-    const pending = loadPending();
-    const idx = pending.findIndex((p) => p.username === username);
-    if (idx === -1) throw new Error("Pending account not found.");
-
-    const request = pending[idx];
-    pending.splice(idx, 1);
-    savePending(pending);
-
-    if (req.url === "/approve-user") {
-      const users = loadUsers();
-      if (!users.some((u) => u.username === username)) {
-        users.push({
-          username,
-          role: "student",
-          status: "approved",
-          passwordHash: request.passwordHash,
-          approvedAt: new Date().toISOString(),
-        });
-        saveUsers(users);
-      }
-    }
-
-    redirect(res, "/dashboard");
-    return;
-  }
-
-  if (req.method === "POST" && req.url === "/upload") {
-    const wrapped = requireAuth(req, res, ["teacher", "student"]);
-    if (!wrapped) return;
-
-    ensureBinaryChecks();
-
-    const contentType = req.headers["content-type"] || "";
-    if (!/multipart\/form-data/i.test(contentType)) {
-      throw new Error("Expected multipart form upload.");
-    }
-    const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
-    const boundary = ((boundaryMatch && (boundaryMatch[1] || boundaryMatch[2])) || "").trim();
-    if (!boundary) throw new Error("Missing upload boundary.");
-
-    const body = await readBody(req, MAX_UPLOAD_BYTES);
-    const parsed = parseMultipart(body, boundary);
-    if (!parsed.fields.csrf || parsed.fields.csrf !== wrapped.session.csrf) {
-      throw new Error("Invalid CSRF token.");
-    }
-
-    const isTeacher = wrapped.session.role === "teacher";
-    const ownerAlias = isTeacher
-      ? normalizeUsername(parsed.fields.ownerAlias || "") || "project"
-      : normalizeUsername(wrapped.session.username) || "project";
-
-    const projectTitle = String(parsed.fields.projectTitle || "").trim();
-    if (!projectTitle) throw new Error("Project title is required.");
-
-    const visibility = isTeacher
-      ? String(parsed.fields.visibility || DEFAULT_VISIBILITY).toLowerCase()
-      : "public";
-    if (!["public", "private"].includes(visibility)) {
-      throw new Error("Visibility must be public or private.");
-    }
-
-    const year = Number(parsed.fields.year || new Date().getFullYear());
-    if (!Number.isInteger(year) || year < 2020 || year > 2100) {
-      throw new Error("Year must be between 2020 and 2100.");
-    }
-
-    const zipFile = parsed.files.projectZip;
-    if (!zipFile) throw new Error("Missing project ZIP file.");
-    if (!hasZipSignature(zipFile.data)) throw new Error("Uploaded file is not a valid ZIP.");
-
-    const repoName = buildRepoName(ownerAlias, parsed.fields.repoName || "");
-
-    const stamp = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
-    const zipPath = path.join(UPLOADS_DIR, `${ownerAlias}-${stamp}.zip`);
-    const extractDir = path.join(WORK_DIR, `${ownerAlias}-${stamp}`);
+  try {
     fs.mkdirSync(extractDir, { recursive: true });
     fs.writeFileSync(zipPath, zipFile.data);
 
@@ -1004,13 +595,13 @@ async function handle(req, res) {
         tags: parseCsvList(parsed.fields.tags || ""),
         shortDescription: String(parsed.fields.shortDescription || "").trim() || "New project upload.",
         longDescription: String(parsed.fields.longDescription || "").trim() || "Uploaded via classroom portal.",
-        featured: isTeacher ? parsed.fields.featured === "on" : false,
+        featured: parsed.fields.featured === "on",
       },
       publishResult
     );
 
     const notes = [
-      `[PORTAL] Role: ${wrapped.session.role}`,
+      "[PORTAL] Mode: open",
       `[PORTAL] Owner alias: ${ownerAlias}`,
       `[PORTAL] Repo: ${GITHUB_OWNER}/${repoName}`,
       `[PORTAL] Root detection: ${scan.note}`,
@@ -1024,14 +615,46 @@ async function handle(req, res) {
     links.push({ label: "Hub Home", url: `https://${GITHUB_OWNER.toLowerCase()}.github.io/` });
 
     sendHtml(res, 200, renderResult("Publish Complete", [...notes, ...publishResult.lines], links));
+  } finally {
+    fs.rmSync(zipPath, { force: true });
+    fs.rmSync(extractDir, { recursive: true, force: true });
+  }
+}
+
+async function handle(req, res) {
+  if (req.url.startsWith("/static/")) {
+    if (serveStatic(req, res)) return;
+  }
+
+  if (req.method === "GET" && req.url === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ ok: true, time: new Date().toISOString() }));
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/") {
+    redirect(res, "/dashboard");
+    return;
+  }
+
+  if (req.url === "/login" || req.url === "/register" || req.url === "/logout") {
+    redirect(res, "/dashboard");
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/dashboard") {
+    sendHtml(res, 200, renderDashboard(OPEN_SESSION));
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/upload") {
+    await handleUpload(req, res);
     return;
   }
 
   res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
   res.end("Not found");
 }
-
-setInterval(cleanupSessions, 1000 * 60 * 10).unref();
 
 ensureDirs();
 
@@ -1050,6 +673,6 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Portal running on http://localhost:${PORT}`);
-  console.log(`Teacher login: ${ADMIN_USER}`);
+  console.log("Open dashboard: /dashboard");
   console.log(`GitHub owner target: ${GITHUB_OWNER}`);
 });
