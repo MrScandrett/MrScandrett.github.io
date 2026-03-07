@@ -63,9 +63,9 @@ function removeGroup(board, r, c) {
 }
 
 // ─── Move Logic ───────────────────────────────────────────────────────────────
-// Returns { board, captured } if the move is legal, or null if illegal.
-function tryPlace(board, color, r, c, prevHash) {
-  if (board[r][c] !== EMPTY) return null;
+// Returns legality info so the UI can explain why a move failed.
+function evaluateMove(board, color, r, c, prevHash) {
+  if (board[r][c] !== EMPTY) return { ok: false, reason: "occupied" };
 
   const nb = cloneBoard(board);
   const opp = color === BLACK ? WHITE : BLACK;
@@ -82,19 +82,26 @@ function tryPlace(board, color, r, c, prevHash) {
 
   // Suicide rule: own group must have at least one liberty after captures.
   const { liberties: ownLibs } = getGroup(nb, r, c);
-  if (ownLibs.size === 0) return null;
+  if (ownLibs.size === 0) return { ok: false, reason: "no-liberties" };
 
   // Ko rule: cannot recreate the board state from the previous turn.
-  if (prevHash && boardHash(nb) === prevHash) return null;
+  if (prevHash && boardHash(nb) === prevHash) return { ok: false, reason: "ko" };
 
-  return { board: nb, captured };
+  return { ok: true, board: nb, captured };
+}
+
+// Preserve the original engine interface for search code.
+function tryPlace(board, color, r, c, prevHash) {
+  const result = evaluateMove(board, color, r, c, prevHash);
+  return result.ok ? { board: result.board, captured: result.captured } : null;
 }
 
 function getLegalMoves(board, color, prevHash) {
   const moves = [];
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
-      if (board[r][c] === EMPTY && tryPlace(board, color, r, c, prevHash)) {
+      const result = board[r][c] === EMPTY ? evaluateMove(board, color, r, c, prevHash) : null;
+      if (result && result.ok) {
         moves.push([r, c]);
       }
     }
@@ -242,12 +249,25 @@ function resetGame() {
   lastEvent = "None yet";
 
   renderBoard();
-  setStatus("Your turn — place a Black stone on any intersection.");
+  setStatus("Your turn. Place a Black stone on any empty crossing. Goal: surround more space than White.");
 }
 
 // ─── UI Helpers ───────────────────────────────────────────────────────────────
 function setStatus(msg) {
   document.getElementById("go-status").textContent = msg;
+}
+
+function explainIllegalMove(reason) {
+  if (reason === "occupied") {
+    return "That crossing already has a stone on it. Pick an empty one.";
+  }
+  if (reason === "no-liberties") {
+    return "That move would leave your stone with no breathing space. Try another spot or capture first.";
+  }
+  if (reason === "ko") {
+    return "Ko rule: you cannot instantly remake the exact board from the last turn.";
+  }
+  return "Illegal move there. Try another crossing.";
 }
 
 function formatMoveLabel(r, c) {
@@ -331,9 +351,9 @@ function renderBoard() {
 function handlePlayerMove(r, c) {
   if (gameOver || aiThinking) return;
 
-  const result = tryPlace(board, BLACK, r, c, prevHash);
-  if (!result) {
-    setStatus("Illegal move there. Try a point with at least one liberty.");
+  const result = evaluateMove(board, BLACK, r, c, prevHash);
+  if (!result.ok) {
+    setStatus(explainIllegalMove(result.reason));
     return;
   }
 
