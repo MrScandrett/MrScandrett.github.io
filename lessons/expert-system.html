@@ -6,6 +6,297 @@
   <title>Robotics Troubleshooter Rule Lab · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Robotics rule engine lab with forward chaining, confidence factors, and explainable reasoning." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Mode tabs ─────────────────────────────────────────────── */
+    .eg-mode-tabs {
+      display: flex;
+      gap: 0.4rem;
+      padding: 0 var(--page-padding, 1.2rem);
+      margin-bottom: -0.25rem;
+    }
+    .eg-mode-tab {
+      background: #f0f2f5;
+      border: 1px solid #d4d8e0;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      padding: 0.5rem 1.2rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted, #666);
+      cursor: pointer;
+      transition: background 0.14s, color 0.14s;
+    }
+    .eg-mode-tab.is-active {
+      background: #fff;
+      color: var(--ink);
+      border-color: #d0d3da;
+      position: relative;
+      z-index: 1;
+    }
+    .eg-mode-tab:hover:not(.is-active) { background: #e8ebf2; }
+
+    /* ── Clinic card wrapper ───────────────────────────────────── */
+    .eg-clinic-card { padding: 0; overflow: hidden; }
+
+    /* ── HUD bar ───────────────────────────────────────────────── */
+    .eg-hud {
+      display: flex;
+      gap: 0;
+      background: #1c2a31;
+      color: #fff;
+    }
+    .eg-hud-item {
+      flex: 1;
+      padding: 0.55rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      text-align: center;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    .eg-hud-item:last-child { border-right: none; }
+    .eg-hud-score { color: #ffd166; }
+    .eg-hud-insp  { color: #7ec8e3; }
+
+    /* ── Layout ────────────────────────────────────────────────── */
+    .eg-layout {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+      gap: 0;
+    }
+    @media (max-width: 680px) {
+      .eg-layout { grid-template-columns: 1fr; }
+    }
+    .eg-left  { padding: 1.2rem; border-right: 1px solid #e8eaed; }
+    .eg-right { padding: 1.2rem; }
+
+    /* ── Patient card ──────────────────────────────────────────── */
+    .eg-patient-card {
+      background: #f7f8fa;
+      border: 1px solid #e2e5ea;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.1rem;
+    }
+    .eg-patient-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 0 0 0.45rem;
+      color: var(--ink);
+    }
+    .eg-patient-flavour {
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: var(--muted, #555);
+      margin: 0;
+    }
+
+    /* ── Inspect block ─────────────────────────────────────────── */
+    .eg-inspect-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted, #666);
+      margin: 0 0 0.55rem;
+    }
+    .eg-inspect-note { font-weight: 400; font-style: italic; }
+
+    .eg-area-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-bottom: 1.1rem;
+    }
+    .eg-area-btn {
+      background: #fff;
+      border: 2px solid #d0d4dc;
+      border-radius: 8px;
+      padding: 0.5rem 0.6rem;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.14s, background 0.14s;
+    }
+    .eg-area-btn:hover:not(:disabled):not(.is-used) {
+      border-color: var(--accent, #3357e5);
+      background: #edf2ff;
+    }
+    .eg-area-btn.is-used {
+      opacity: 0.45;
+      cursor: default;
+      text-decoration: line-through;
+    }
+    .eg-area-btn:disabled:not(.is-used) { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Clues list ────────────────────────────────────────────── */
+    .eg-clues-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted, #666);
+      margin: 0 0 0.45rem;
+    }
+    .eg-clues-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .eg-clue {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #eef5ec;
+      border: 1px solid #c3e0be;
+      border-radius: 6px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.855rem;
+    }
+    .eg-clue-empty {
+      background: #f7f7f7;
+      border-color: #e0e0e0;
+      color: var(--muted, #888);
+      font-style: italic;
+    }
+    .eg-clue-icon { flex-shrink: 0; }
+    .eg-no-clues  { color: var(--muted, #aaa); font-size: 0.855rem; font-style: italic; list-style: none; }
+
+    /* ── AI analysis bars ──────────────────────────────────────── */
+    .eg-analysis-label, .eg-diag-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted, #666);
+      margin: 0 0 0.5rem;
+    }
+    .eg-analysis-bars { margin-bottom: 0.3rem; }
+    .eg-analysis-empty { font-size: 0.855rem; color: var(--muted, #999); font-style: italic; margin: 0 0 0.5rem; }
+    .eg-analysis-note { font-size: 0.77rem; color: var(--muted, #aaa); margin: 0 0 1.2rem; font-style: italic; }
+
+    .eg-bar-row {
+      display: grid;
+      grid-template-columns: 9rem 1fr 2.8rem;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+    }
+    .eg-bar-label { font-size: 0.8rem; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .eg-bar-track { background: #e8eaed; border-radius: 999px; height: 10px; overflow: hidden; }
+    .eg-bar-fill  { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+    .eg-bar-pct   { font-size: 0.78rem; font-weight: 600; color: var(--muted, #666); text-align: right; }
+
+    /* ── Diagnosis buttons ─────────────────────────────────────── */
+    .eg-diag-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .eg-diag-btn {
+      background: #f0f2f5;
+      border: 2px solid #d4d8e0;
+      border-radius: 8px;
+      padding: 0.5rem 0.9rem;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.14s, background 0.14s;
+    }
+    .eg-diag-btn:hover:not(:disabled) { border-color: var(--accent, #3357e5); background: #edf2ff; }
+    .eg-diag-btn:disabled { opacity: 0.45; cursor: default; }
+    .eg-diag-btn.is-correct { background: #d1fae5; border-color: #34d399; color: #065f46; }
+    .eg-diag-btn.is-wrong   { background: #fee2e2; border-color: #f87171; color: #991b1b; }
+    .eg-diag-btn.is-answer  { background: #d1fae5; border-color: #34d399; }
+
+    /* ── Result banner ─────────────────────────────────────────── */
+    .eg-result-banner {
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 0.9rem;
+    }
+    .eg-result-banner.is-correct { background: #d1fae5; border: 1px solid #6ee7b7; }
+    .eg-result-banner.is-wrong   { background: #fee2e2; border: 1px solid #fca5a5; }
+
+    .eg-result-top {
+      display: flex;
+      gap: 0.7rem;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .eg-result-icon { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
+    .eg-result-top strong { display: block; font-size: 1rem; margin-bottom: 0.25rem; }
+    .eg-result-top p { margin: 0; font-size: 0.875rem; line-height: 1.5; }
+    .eg-result-note { font-size: 0.835rem; font-style: italic; color: #374151; margin: 0 0 0.3rem; line-height: 1.5; }
+    .eg-engine-agreed { font-size: 0.835rem; color: #065f46; background: rgba(52,211,153,0.18); border-radius: 5px; padding: 0.25rem 0.6rem; margin: 0; display: inline-block; }
+
+    /* ── Next button ───────────────────────────────────────────── */
+    .eg-next-btn {
+      background: var(--ink, #1c2a31);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.4rem;
+      font-family: inherit;
+      font-size: 0.925rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity 0.14s;
+    }
+    .eg-next-btn:hover { opacity: 0.82; }
+
+    /* ── Final screen ──────────────────────────────────────────── */
+    .eg-final-card { padding: 1.5rem; text-align: center; }
+    .eg-final-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.3rem; }
+    .eg-final-pts   { font-size: 2.4rem; font-weight: 900; color: var(--accent, #3357e5); margin-bottom: 1.2rem; }
+
+    .eg-final-breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      max-width: 420px;
+      margin: 0 auto 1.2rem;
+      text-align: left;
+    }
+    .eg-final-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 0.6rem;
+      align-items: center;
+      background: #f7f8fa;
+      border-radius: 7px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.875rem;
+    }
+    .eg-final-note { font-size: 0.875rem; color: var(--muted, #666); max-width: 480px; margin: 0 auto 1.2rem; line-height: 1.6; }
+
+    .eg-play-again-btn {
+      background: none;
+      border: 2px solid #d4d8e0;
+      border-radius: 8px;
+      padding: 0.55rem 1.4rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted, #555);
+      transition: background 0.14s, border-color 0.14s;
+    }
+    .eg-play-again-btn:hover { background: #f0f2f5; border-color: #aaa; }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -25,10 +316,88 @@
   <main id="main-content">
     <section class="hero">
       <p class="eyebrow">AI Origins · Lesson 11</p>
-      <h1>Robotics Troubleshooter Rule Lab</h1>
-      <p>Use IF-THEN rules to troubleshoot classroom robots with forward chaining, confidence factors, and clear explanations.</p>
+      <h1>Robot Repair Clinic</h1>
+      <p>Five broken robots need a diagnosis. Use IF-THEN rules to find each fault — the fewer clues you need, the better your reasoning.</p>
     </section>
 
+    <!-- Mode tabs -->
+    <div class="eg-mode-tabs" role="tablist" aria-label="Choose activity">
+      <button class="eg-mode-tab is-active" id="eg-tab-game" role="tab" aria-selected="true"  aria-controls="eg-game-panel">🎮 Robot Clinic Game</button>
+      <button class="eg-mode-tab"            id="eg-tab-lab"  role="tab" aria-selected="false" aria-controls="expert-live-panel">🔬 Rule Engine Lab</button>
+    </div>
+
+    <!-- ═══ GAME PANEL ════════════════════════════════════════════════ -->
+    <div id="eg-game-panel" role="tabpanel" aria-labelledby="eg-tab-game">
+
+      <section class="section">
+        <article class="card eg-clinic-card">
+
+          <!-- Header bar -->
+          <div class="eg-hud">
+            <span id="eg-round" class="eg-hud-item">Round 1 / 5</span>
+            <span id="eg-score" class="eg-hud-item eg-hud-score">Score: 0</span>
+            <span id="eg-insp-left" class="eg-hud-item eg-hud-insp">4 inspects left</span>
+          </div>
+
+          <div class="eg-layout">
+
+            <!-- Left col: patient + inspect -->
+            <div class="eg-left">
+              <div class="eg-patient-card">
+                <h2 class="eg-patient-name" id="eg-patient-name">🤖 Loading…</h2>
+                <p class="eg-patient-flavour" id="eg-patient-flavour"></p>
+              </div>
+
+              <div class="eg-inspect-block">
+                <p class="eg-inspect-label">Inspect an area <span class="eg-inspect-note">(each costs 1 token)</span></p>
+                <div class="eg-area-btns" id="eg-area-btns" role="group" aria-label="Inspection areas"></div>
+              </div>
+
+              <div class="eg-clues-block">
+                <p class="eg-clues-label">Clues found so far</p>
+                <ul class="eg-clues-list" id="eg-revealed"></ul>
+              </div>
+            </div>
+
+            <!-- Right col: AI analysis + diagnosis -->
+            <div class="eg-right">
+              <div class="eg-analysis-block">
+                <p class="eg-analysis-label">AI Rule Engine — live analysis</p>
+                <div class="eg-analysis-bars" id="eg-analysis">
+                  <p class="eg-analysis-empty">Inspect the robot to gather evidence. The AI will update here.</p>
+                </div>
+                <p class="eg-analysis-note">The engine fires IF-THEN rules as each clue arrives.</p>
+              </div>
+
+              <div class="eg-diag-block">
+                <p class="eg-diag-label">Your diagnosis</p>
+                <div class="eg-diag-btns" id="eg-diag-btns" role="group" aria-label="Diagnosis options"></div>
+              </div>
+
+              <div class="eg-result-banner" id="eg-result" hidden></div>
+
+              <button type="button" class="eg-next-btn" id="eg-next" hidden>Next Patient →</button>
+            </div>
+
+          </div>
+        </article>
+      </section>
+
+      <!-- Final screen (hidden until end) -->
+      <section class="section" id="eg-final" hidden>
+        <div class="section-head">
+          <h2>Clinic Complete</h2>
+        </div>
+        <article class="card eg-final-card">
+          <div id="eg-final-score"></div>
+          <button type="button" class="eg-play-again-btn" id="eg-play-again">↺ Play Again</button>
+        </article>
+      </section>
+
+    </div><!-- /eg-game-panel -->
+
+    <!-- ═══ LAB PANEL (existing) ══════════════════════════════════════ -->
+    <div id="expert-live-panel" role="tabpanel" aria-labelledby="eg-tab-lab" hidden>
     <section class="section" id="expert-live">
       <div class="section-head">
         <h2>Live Rule Engine Lab</h2>
@@ -147,6 +516,8 @@
       </article>
     </section>
 
+    </div><!-- /expert-live-panel -->
+
     <section class="section">
       <div class="section-head">
         <h2>What This Trains</h2>
@@ -245,6 +616,30 @@
     <p><a href="../steam-lessons.html">Back to STEAM Lessons</a></p>
   </footer>
   <script type="module" src="../assets/js/expert-system-lab.js"></script>
+  <script src="../assets/js/expert-game.js"></script>
   <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    // Tab switcher
+    (function () {
+      const tabGame   = document.getElementById('eg-tab-game');
+      const tabLab    = document.getElementById('eg-tab-lab');
+      const panelGame = document.getElementById('eg-game-panel');
+      const panelLab  = document.getElementById('expert-live-panel');
+      if (!tabGame || !tabLab) return;
+
+      tabGame.addEventListener('click', function () {
+        tabGame.classList.add('is-active');   tabGame.setAttribute('aria-selected', 'true');
+        tabLab.classList.remove('is-active'); tabLab.setAttribute('aria-selected', 'false');
+        panelGame.hidden = false;
+        panelLab.hidden  = true;
+      });
+      tabLab.addEventListener('click', function () {
+        tabLab.classList.add('is-active');     tabLab.setAttribute('aria-selected', 'true');
+        tabGame.classList.remove('is-active'); tabGame.setAttribute('aria-selected', 'false');
+        panelLab.hidden  = false;
+        panelGame.hidden = true;
+      });
+    })();
+  </script>
 </body>
 </html>
