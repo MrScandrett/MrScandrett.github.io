@@ -2,6 +2,8 @@ const gridEl = document.getElementById("astar-grid");
 const statusEl = document.getElementById("astar-status");
 const widthEl = document.getElementById("astar-grid-width");
 const heightEl = document.getElementById("astar-grid-height");
+const themeEl = document.getElementById("astar-theme");
+const aiNameEl = document.getElementById("astar-ai-name");
 const buildGridBtn = document.getElementById("astar-build-grid");
 const modeEl = document.getElementById("astar-mode");
 const heuristicEl = document.getElementById("astar-heuristic");
@@ -12,6 +14,18 @@ const runBtn = document.getElementById("astar-run");
 const stepBtn = document.getElementById("astar-step");
 const clearBtn = document.getElementById("astar-clear-search");
 const toolButtons = Array.from(document.querySelectorAll(".astar-tool"));
+const toolStartBtn = document.getElementById("astar-tool-start");
+const toolGoalBtn = document.getElementById("astar-tool-goal");
+const toolBlockedBtn = document.getElementById("astar-tool-blocked");
+const toolSandBtn = document.getElementById("astar-tool-sand");
+
+const missionTitleEl = document.getElementById("astar-mission-title");
+const missionSubtitleEl = document.getElementById("astar-mission-subtitle");
+const missionNarrativeEl = document.getElementById("astar-mission-narrative");
+const legendStartEl = document.getElementById("astar-legend-start");
+const legendGoalEl = document.getElementById("astar-legend-goal");
+const legendBlockedEl = document.getElementById("astar-legend-blocked");
+const legendSlowEl = document.getElementById("astar-legend-slow");
 
 const instrumentG = document.getElementById("astar-g");
 const instrumentH = document.getElementById("astar-h");
@@ -28,6 +42,8 @@ const required = [
   statusEl,
   widthEl,
   heightEl,
+  themeEl,
+  aiNameEl,
   buildGridBtn,
   modeEl,
   heuristicEl,
@@ -37,6 +53,17 @@ const required = [
   runBtn,
   stepBtn,
   clearBtn,
+  toolStartBtn,
+  toolGoalBtn,
+  toolBlockedBtn,
+  toolSandBtn,
+  missionTitleEl,
+  missionSubtitleEl,
+  missionNarrativeEl,
+  legendStartEl,
+  legendGoalEl,
+  legendBlockedEl,
+  legendSlowEl,
   instrumentG,
   instrumentH,
   instrumentF,
@@ -57,12 +84,114 @@ const TERRAIN = {
   blocked: Infinity
 };
 
-const MODE_COPY = {
-  classic: "Classic mode: balanced mission routing.",
-  fuel: "Fuel Critical mode: route cost cannot exceed max mission cost.",
-  dynamic: "Dynamic Obstacles mode: debris appears mid-mission, then A* recalculates.",
-  step: "Step mode: press Step Expansion to advance one node at a time."
+const THEMES = {
+  mars: {
+    title: "Rescue Grid: The A* Mission",
+    subtitle: "Guide the rover to the beacon using A* while terrain, fuel pressure, and mission rules change in real time.",
+    startLabel: "Rover",
+    goalLabel: "Beacon",
+    blockedLabel: "Craters",
+    slowLabel: "Sand",
+    startSymbol: "🤖",
+    goalSymbol: "📡",
+    blockedSymbol: "🪨",
+    slowSymbol: "🟡",
+    narrative: "Navigate across the Martian surface to reach the rescue beacon while avoiding craters and slow sand zones."
+  },
+  restaurant: {
+    title: "Restaurant AI: Robot Waiter Route",
+    subtitle: "Train the robot waiter to deliver food to the right table while avoiding chairs and slippery spills.",
+    startLabel: "Robot",
+    goalLabel: "Dinner Table",
+    blockedLabel: "Chairs",
+    slowLabel: "Spill",
+    startSymbol: "🤖",
+    goalSymbol: "🍽",
+    blockedSymbol: "🪑",
+    slowSymbol: "🧃",
+    narrative: "Train the restaurant robot to deliver food to the correct table while avoiding chairs and slippery spills."
+  },
+  car: {
+    title: "City Navigator: Self-Driving Car",
+    subtitle: "Teach the car to reach its destination by finding the most efficient route through city streets.",
+    startLabel: "Car",
+    goalLabel: "Destination",
+    blockedLabel: "Roadblocks",
+    slowLabel: "Traffic",
+    startSymbol: "🚗",
+    goalSymbol: "🏠",
+    blockedSymbol: "🚧",
+    slowSymbol: "🚦",
+    narrative: "Teach the car how to navigate city streets and reach the destination using the most efficient route."
+  },
+  drone: {
+    title: "Delivery Drone: Urban Route Planning",
+    subtitle: "Program the drone to deliver a package through the city while avoiding buildings and wind zones.",
+    startLabel: "Drone",
+    goalLabel: "Delivery House",
+    blockedLabel: "Buildings",
+    slowLabel: "Wind Zones",
+    startSymbol: "🚁",
+    goalSymbol: "📦",
+    blockedSymbol: "🏢",
+    slowSymbol: "🌬",
+    narrative: "Program the drone to deliver a package through the city while avoiding buildings and strong winds."
+  },
+  firefighter: {
+    title: "Emergency Route: Firefighter Rescue",
+    subtitle: "Find the fastest route through blocked streets to reach the emergency location.",
+    startLabel: "Fire Truck",
+    goalLabel: "House on Fire",
+    blockedLabel: "Debris",
+    slowLabel: "Flooded Roads",
+    startSymbol: "🚒",
+    goalSymbol: "🏠",
+    blockedSymbol: "🚧",
+    slowSymbol: "🌊",
+    narrative: "Find the fastest route through blocked streets to reach the emergency."
+  },
+  hospital: {
+    title: "Care Route: Hospital Robot",
+    subtitle: "Train the hospital robot nurse to deliver medicine as quickly as possible.",
+    startLabel: "Robot Nurse",
+    goalLabel: "Patient Room",
+    blockedLabel: "Closed Doors",
+    slowLabel: "Crowded Hallway",
+    startSymbol: "🤖",
+    goalSymbol: "🛏",
+    blockedSymbol: "🚪",
+    slowSymbol: "👥",
+    narrative: "Train the hospital robot to bring medicine to the patient as quickly as possible."
+  },
+  treasure: {
+    title: "Jungle Quest: Treasure Hunter",
+    subtitle: "Plan the safest route through hazards to reach the treasure.",
+    startLabel: "Explorer",
+    goalLabel: "Treasure",
+    blockedLabel: "Jungle",
+    slowLabel: "Swamp",
+    startSymbol: "🧭",
+    goalSymbol: "💰",
+    blockedSymbol: "🌳",
+    slowSymbol: "🐊",
+    narrative: "Find the safest path through the jungle to reach the treasure."
+  },
+  mario: {
+    title: "Grid Platformer: Mario Adventure",
+    subtitle: "Train Mario's AI brain to find a safe route to the flag.",
+    startLabel: "Mario",
+    goalLabel: "Flag",
+    blockedLabel: "Blocks",
+    slowLabel: "Enemy Tile",
+    startSymbol: "🧑",
+    goalSymbol: "🏁",
+    blockedSymbol: "🧱",
+    slowSymbol: "🐢",
+    narrative: "Train Mario's AI brain to find the safest route to the flag."
+  }
 };
+
+const FALLBACK_AI_NAME = "Byte";
 
 const HEURISTIC_LABEL = {
   manhattan: "Manhattan",
@@ -78,6 +207,8 @@ const state = {
   goal: { x: 10, y: 6 },
   tool: "start",
   mode: modeEl.value,
+  theme: themeEl.value,
+  aiName: aiNameEl.value.trim(),
   heuristic: heuristicEl.value,
   fuelLimit: Number(fuelInputEl.value),
   speed: Number(speedEl.value),
@@ -89,6 +220,49 @@ const state = {
   lastResult: null,
   pendingDynamicGrid: null
 };
+
+function getTheme() {
+  return THEMES[state.theme] || THEMES.mars;
+}
+
+function getAiName() {
+  const candidate = String(state.aiName || "").trim();
+  return candidate || FALLBACK_AI_NAME;
+}
+
+function modeCopy(mode) {
+  const theme = getTheme();
+  const ai = getAiName();
+  const lowerStart = theme.startLabel.toLowerCase();
+  if (mode === "fuel") {
+    return `${ai} in Fuel Critical mode: keep total route cost within mission limits.`;
+  }
+  if (mode === "dynamic") {
+    return `${ai} in Dynamic Obstacles mode: ${lowerStart} path may change while searching.`;
+  }
+  if (mode === "step") {
+    return `${ai} in Step mode: press Step Expansion to advance one node at a time.`;
+  }
+  return `${ai} in Classic mode: balanced route planning.`;
+}
+
+function applyThemeUI() {
+  const theme = getTheme();
+
+  missionTitleEl.textContent = theme.title;
+  missionSubtitleEl.textContent = theme.subtitle;
+  missionNarrativeEl.textContent = theme.narrative;
+
+  toolStartBtn.textContent = theme.startLabel;
+  toolGoalBtn.textContent = theme.goalLabel;
+  toolBlockedBtn.textContent = theme.blockedLabel;
+  toolSandBtn.textContent = `${theme.slowLabel} (Cost 3)`;
+
+  legendStartEl.textContent = `${theme.startLabel} (Start)`;
+  legendGoalEl.textContent = `${theme.goalLabel} (Goal)`;
+  legendBlockedEl.textContent = `${theme.blockedLabel} (Blocked)`;
+  legendSlowEl.textContent = `${theme.slowLabel} (Cost 3)`;
+}
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -188,6 +362,7 @@ function reconstructPath(cameFrom, goalKey) {
 }
 
 function runAStar(cells, start, goal, options) {
+  const theme = getTheme();
   const heuristic = options.heuristic || "manhattan";
   const fuelLimit = Number.isFinite(options.fuelLimit) ? options.fuelLimit : Infinity;
   const recordFrames = options.recordFrames !== false;
@@ -241,7 +416,7 @@ function runAStar(cells, start, goal, options) {
           h: current.h,
           f: current.f,
           expandedCount,
-          message: "Beacon reached. Reconstructing optimal route."
+          message: `${theme.goalLabel} reached. Reconstructing optimal route.`
         });
       }
       break;
@@ -312,7 +487,7 @@ function runAStar(cells, start, goal, options) {
     expandedCount,
     nodeScores,
     closedSet,
-    message: success ? "Mission route solved." : "Mission failed: no route under current constraints."
+    message: success ? "Route solved." : "No route under current constraints."
   };
 }
 
@@ -367,6 +542,7 @@ function pickDynamicObstacle(path, cells) {
 }
 
 function runDynamicMission(baseCells, options) {
+  const theme = getTheme();
   const firstPass = runAStar(baseCells, state.start, state.goal, {
     heuristic: options.heuristic,
     fuelLimit: options.fuelLimit,
@@ -387,13 +563,13 @@ function runDynamicMission(baseCells, options) {
   const shiftedCells = baseCells.slice();
   const obstacleKey = pickDynamicObstacle(firstPass.path, shiftedCells);
 
-  let eventMessage = "Debris shifted. Recalculating route.";
+  let eventMessage = `${theme.blockedLabel} shifted. Recalculating route.`;
   if (obstacleKey) {
     const { x, y } = coordsFromKey(obstacleKey);
     shiftedCells[cellIndex(x, y)] = "blocked";
-    eventMessage = `Debris moved to (${x + 1}, ${y + 1}). Recalculating route.`;
+    eventMessage = `${theme.blockedLabel} moved to (${x + 1}, ${y + 1}). Recalculating route.`;
   } else {
-    eventMessage = "No safe tile found for dynamic obstacle. Continuing route.";
+    eventMessage = `No safe tile found for new ${theme.blockedLabel.toLowerCase()}. Continuing route.`;
   }
 
   combinedFrames.push({
