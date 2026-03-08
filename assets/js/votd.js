@@ -21,9 +21,12 @@ async function fetchDailyVerse() {
     const details = data && data.verse && data.verse.details ? data.verse.details : null;
     if (!details || !details.text || !details.reference) throw new Error("Malformed OurManna response");
 
+    const version = details.version ? String(details.version).trim() : "";
+    const reference = String(details.reference).trim();
+
     return {
       text: String(details.text).trim(),
-      reference: String(details.reference).trim(),
+      reference: version && !reference.includes(`(${version})`) ? `${reference} (${version})` : reference,
       deeplink: String(details.deeplinkurl || DEFAULT_VERSE.deeplink).trim(),
     };
   } finally {
@@ -58,8 +61,8 @@ function renderVerse(payload) {
   const reference = payload && payload.reference ? payload.reference : DEFAULT_VERSE.reference;
   const deeplink = payload && payload.deeplink ? payload.deeplink : DEFAULT_VERSE.deeplink;
 
-  verseEl.textContent = `”${text}”`;
-  verseEl.removeAttribute(“aria-busy”);
+  verseEl.textContent = `"${text}"`;
+  verseEl.removeAttribute("aria-busy");
   refEl.textContent = `— ${reference}`;
   setLinks(reference, deeplink);
 }
