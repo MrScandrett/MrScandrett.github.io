@@ -1354,6 +1354,9 @@ function describeCell(x, y, terrain, frame) {
 function renderGrid(frame = state.currentFrame) {
   const theme = getTheme();
   gridEl.style.setProperty("--astar-cols", String(state.width));
+  gridEl.dataset.theme = state.theme;
+  const panel = gridEl.closest(".astar-grid-panel");
+  if (panel) panel.dataset.theme = state.theme;
 
   const fragment = document.createDocumentFragment();
 
