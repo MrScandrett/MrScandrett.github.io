@@ -14,7 +14,11 @@ function resolveThumbPath(value) {
   if (raw.startsWith("./assets/thumbs/"))  return raw;
   if (raw.startsWith("assets/thumbs/"))    return `./${raw}`;
 
-  // Any path outside assets/thumbs/ is rejected — use placeholder.
+  // Allow app-relative paths (manifest thumbnails live inside ./apps/<slug>/)
+  if (raw.startsWith("./apps/"))           return raw;
+  if (raw.startsWith("apps/"))             return `./${raw}`;
+
+  // Any other path is rejected — use placeholder.
   return PLACEHOLDER_THUMB;
 }
 
