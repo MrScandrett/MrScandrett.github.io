@@ -11,7 +11,6 @@
       overflow: hidden;
       position: relative;
     }
-    #flag3d { display: block; width: 100%; height: 100%; }
   </style>
   </head>
   <body class="theme-eliza1966">
@@ -31,12 +30,70 @@
       <header class="lesson-hero">
         <p class="lesson-kicker">USA Civics / Ritual</p>
         <h1>American Flag Waving Simulator</h1>
-        <p class="lesson-subtitle">Stand, read, and recite together. Optional MIDI patriotic backing track.</p>
+        <p class="lesson-subtitle">Stand, read, and recite together with a reliable waving flag and optional classroom backing track.</p>
       </header>
 
       <section class="terminal eliza-app">
-        <div class="flag-stage" aria-label="3D animated American flag">
-          <canvas id="flag3d" role="img" aria-label="American flag waving in three dimensions"></canvas>
+        <div class="flag-stage" aria-label="Animated American flag">
+          <svg id="flagSvg" class="flag-svg" viewBox="0 0 1400 820" role="img" aria-labelledby="flagTitle flagDesc">
+            <title id="flagTitle">American flag waving on a flagpole</title>
+            <desc id="flagDesc">An animated American flag with adjustable wind strength for classroom recitation.</desc>
+            <defs>
+              <filter id="flagWave" x="-12%" y="-18%" width="124%" height="136%" color-interpolation-filters="sRGB">
+                <feTurbulence id="flagNoise" type="fractalNoise" baseFrequency="0.011 0.032" numOctaves="2" seed="7" result="noise" />
+                <feDisplacementMap id="flagDisplacement" in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G" />
+              </filter>
+              <clipPath id="flagClip">
+                <rect x="198" y="148" width="988" height="520" rx="16" ry="16" />
+              </clipPath>
+              <linearGradient id="fabricShade" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3" />
+                <stop offset="38%" stop-color="#ffffff" stop-opacity="0.08" />
+                <stop offset="65%" stop-color="#0f1b31" stop-opacity="0.08" />
+                <stop offset="100%" stop-color="#0f1b31" stop-opacity="0.22" />
+              </linearGradient>
+              <linearGradient id="poleMetal" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#70839b" />
+                <stop offset="48%" stop-color="#dbe5f1" />
+                <stop offset="100%" stop-color="#7a8da2" />
+              </linearGradient>
+              <linearGradient id="ropeColor" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#f6efe3" />
+                <stop offset="100%" stop-color="#ccb992" />
+              </linearGradient>
+              <radialGradient id="sunGlow" cx="78%" cy="20%" r="38%">
+                <stop offset="0%" stop-color="#fff6d8" stop-opacity="0.9" />
+                <stop offset="40%" stop-color="#fff0be" stop-opacity="0.3" />
+                <stop offset="100%" stop-color="#fff0be" stop-opacity="0" />
+              </radialGradient>
+              <symbol id="flagStar" viewBox="-50 -50 100 100">
+                <path d="M0,-48 L13,-15 L47,-15 L19,5 L30,38 L0,18 L-30,38 L-19,5 L-47,-15 L-13,-15 Z" />
+              </symbol>
+            </defs>
+
+            <circle cx="1110" cy="150" r="160" fill="url(#sunGlow)" />
+
+            <g aria-hidden="true">
+              <rect x="122" y="82" width="20" height="636" rx="10" fill="url(#poleMetal)" />
+              <rect x="118" y="712" width="28" height="64" rx="10" fill="#6a7a90" opacity="0.9" />
+              <circle cx="132" cy="74" r="25" fill="#d6a83f" />
+              <circle cx="132" cy="74" r="15" fill="#f5dc82" opacity="0.72" />
+              <line x1="155" y1="166" x2="155" y2="614" stroke="url(#ropeColor)" stroke-width="5" stroke-linecap="round" />
+              <line x1="155" y1="166" x2="198" y2="176" stroke="url(#ropeColor)" stroke-width="4" stroke-linecap="round" />
+              <line x1="155" y1="614" x2="198" y2="640" stroke="url(#ropeColor)" stroke-width="4" stroke-linecap="round" />
+            </g>
+
+            <g id="flagMotionGroup" filter="url(#flagWave)">
+              <g id="flagArtwork" clip-path="url(#flagClip)"></g>
+              <rect x="198" y="148" width="988" height="520" rx="16" ry="16" fill="url(#fabricShade)" />
+              <rect x="198" y="148" width="988" height="520" rx="16" ry="16" fill="none" stroke="#ffffff" stroke-opacity="0.38" stroke-width="4" />
+            </g>
+
+            <g aria-hidden="true">
+              <circle class="grommet" cx="198" cy="206" r="12" />
+              <circle class="grommet" cx="198" cy="610" r="12" />
+            </g>
+          </svg>
         </div>
 
         <div class="pledge-panel">
@@ -55,7 +112,7 @@
             <button class="btn primary" id="btnPlay" type="button">Play Music</button>
             <button class="btn" id="btnPause" type="button">Pause</button>
             <button class="btn" id="btnRestart" type="button">Restart</button>
-            <button class="btn" id="btnMute" type="button" aria-pressed="true">Unmute</button>
+            <button class="btn" id="btnMute" type="button" aria-pressed="false">Mute</button>
             <button class="btn" id="btnFullscreen" type="button">Fullscreen</button>
           </div>
 
@@ -87,14 +144,13 @@
           </details>
 
           <p class="small-note">
-            Note: browsers don’t natively play .mid files reliably. This demo uses an .mp3 placeholder by default.
-            If you want true MIDI playback, load a tiny MIDI synth library or pre-render to audio.
+            Note: this page now ships with a small built-in backing track so playback works on GitHub Pages.
+            Swap the audio file if you want a different recording for class.
           </p>
+          <p class="audio-status" id="audioStatus" aria-live="polite">Backing track ready.</p>
 
-          <!-- OPTION A (recommended): use an audio render (mp3/ogg) -->
-          <audio id="patrioticAudio" preload="auto" muted>
-            <!-- TODO: Replace with your actual file. Star-Spangled Banner is public domain; recordings vary. -->
-            <source src="../assets/audio/patriotic.mp3" type="audio/mpeg" />
+          <audio id="patrioticAudio" preload="auto" loop>
+            <source src="../assets/audio/patriotic.wav" type="audio/wav" />
           </audio>
         </div>
       </section>
@@ -106,194 +162,159 @@
           <li>Use Fullscreen for whole-class recitation.</li>
           <li>Set Wind to calm, medium, or strong based on classroom tone.</li>
           <li>Optional: students take turns leading the pledge.</li>
-          <li>Engineering extension: tune displacement and shading in the SVG filter.</li>
+          <li>Engineering extension: tune the SVG displacement filter to compare calm and stormy motion.</li>
         </ul>
       </section>
 
       <a href="../showcase.html">Back to Showcase</a>
     </main>
 
-    <script type="module">
-      import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.min.js';
+    <script>
+      const SVG_NS = 'http://www.w3.org/2000/svg';
+      const flagArtwork = document.getElementById('flagArtwork');
+      const flagNoise = document.getElementById('flagNoise');
+      const flagDisplacement = document.getElementById('flagDisplacement');
+      const flagMotionGroup = document.getElementById('flagMotionGroup');
 
-      /* ── Flag texture (drawn procedurally) ───────────────────── */
-      function buildFlagTexture() {
-        const W = 1140, H = 600;
-        const c = Object.assign(document.createElement('canvas'), { width: W, height: H });
-        const ctx = c.getContext('2d');
+      const FLAG = {
+        x: 198,
+        y: 148,
+        width: 988,
+        height: 520,
+      };
+      FLAG.cantonWidth = FLAG.width * 0.4;
+      FLAG.cantonHeight = FLAG.height * 7 / 13;
 
-        // 13 alternating stripes
-        const stripeH = H / 13;
+      function svgNode(tag, attrs = {}) {
+        const node = document.createElementNS(SVG_NS, tag);
+        Object.entries(attrs).forEach(([key, value]) => {
+          node.setAttribute(key, value);
+          if (key === 'href') {
+            node.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', value);
+          }
+        });
+        return node;
+      }
+
+      function buildFlagArtwork() {
+        flagArtwork.textContent = '';
+
+        const stripeHeight = FLAG.height / 13;
         for (let i = 0; i < 13; i++) {
-          ctx.fillStyle = i % 2 === 0 ? '#B22234' : '#FFFFFF';
-          ctx.fillRect(0, i * stripeH, W, stripeH + 0.5);
+          flagArtwork.appendChild(svgNode('rect', {
+            x: FLAG.x,
+            y: FLAG.y + (i * stripeHeight),
+            width: FLAG.width,
+            height: stripeHeight + 0.5,
+            fill: i % 2 === 0 ? '#b22234' : '#ffffff',
+          }));
         }
 
-        // Blue canton — 2/5 of fly width × 7/13 of height
-        const cantonW = W * 2 / 5;
-        const cantonH = stripeH * 7;
-        ctx.fillStyle = '#3C3B6E';
-        ctx.fillRect(0, 0, cantonW, cantonH);
+        flagArtwork.appendChild(svgNode('rect', {
+          x: FLAG.x,
+          y: FLAG.y,
+          width: FLAG.cantonWidth,
+          height: FLAG.cantonHeight,
+          fill: '#3c3b6e',
+        }));
 
-        // 50 stars in 9 rows (alternating 6 and 5)
-        ctx.fillStyle = '#FFFFFF';
-        const colUnit = cantonW / 12;
-        const rowUnit = cantonH / 10;
-        for (let r = 0; r < 9; r++) {
-          const is6 = r % 2 === 0;
-          const cols = is6 ? 6 : 5;
-          for (let col = 0; col < cols; col++) {
-            const x = is6 ? colUnit + col * 2 * colUnit : 2 * colUnit + col * 2 * colUnit;
-            const y = rowUnit * (r + 1);
-            drawStar(ctx, x, y, 7, 16);
+        const starsGroup = svgNode('g', {
+          fill: '#ffffff',
+        });
+
+        const colUnit = FLAG.cantonWidth / 12;
+        const rowUnit = FLAG.cantonHeight / 10;
+        for (let row = 0; row < 9; row++) {
+          const starCount = row % 2 === 0 ? 6 : 5;
+          for (let col = 0; col < starCount; col++) {
+            const x = row % 2 === 0
+              ? FLAG.x + colUnit + (col * 2 * colUnit)
+              : FLAG.x + (2 * colUnit) + (col * 2 * colUnit);
+            const y = FLAG.y + rowUnit * (row + 1);
+            starsGroup.appendChild(svgNode('use', {
+              href: '#flagStar',
+              transform: `translate(${x} ${y}) scale(0.22)`,
+            }));
           }
         }
-        return new THREE.CanvasTexture(c);
+
+        flagArtwork.appendChild(starsGroup);
       }
 
-      function drawStar(ctx, cx, cy, innerR, outerR) {
-        ctx.beginPath();
-        for (let i = 0; i < 10; i++) {
-          const r = i % 2 === 0 ? outerR : innerR;
-          const a = (i * Math.PI / 5) - Math.PI / 2;
-          i === 0 ? ctx.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r)
-                  : ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
-        }
-        ctx.closePath();
-        ctx.fill();
-      }
+      buildFlagArtwork();
 
-      /* ── Scene setup ─────────────────────────────────────────── */
-      const canvas  = document.getElementById('flag3d');
-      const stage   = document.querySelector('.flag-stage');
-
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-      renderer.setClearColor(0x000000, 0); // transparent — CSS sky shows through
-
-      const scene  = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(42, 2, 0.1, 100);
-      camera.position.set(0.6, 0.8, 11.5);
-      camera.lookAt(0.4, 0, 0);
-
-      // Lighting
-      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-      const sun = new THREE.DirectionalLight(0xfff8e8, 1.05);
-      sun.position.set(5, 7, 9);
-      scene.add(sun);
-      scene.add(new THREE.HemisphereLight(0x87ceeb, 0x8c7843, 0.38));
-
-      /* ── Flag cloth ──────────────────────────────────────────── */
-      const FLAG_W = 9.12, FLAG_H = 4.8;
-      const geo = new THREE.PlaneGeometry(FLAG_W, FLAG_H, 64, 36);
-      const mat = new THREE.MeshPhongMaterial({
-        map: buildFlagTexture(),
-        side: THREE.FrontSide,
-        shininess: 10,
-        specular: new THREE.Color(0x555555),
-      });
-      const flag = new THREE.Mesh(geo, mat);
-      flag.position.x = FLAG_W / 2; // pin left edge at x = 0
-      scene.add(flag);
-
-      /* ── Flagpole ────────────────────────────────────────────── */
-      const POLE_H = 11;
-      const pole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.07, 0.095, POLE_H, 20),
-        new THREE.MeshPhongMaterial({ color: 0xb8c4d0, shininess: 100, specular: 0xaaaaaa })
-      );
-      pole.position.set(-0.09, -0.4, 0.1);
-      scene.add(pole);
-
-      // Gold finial ball
-      const finial = new THREE.Mesh(
-        new THREE.SphereGeometry(0.22, 20, 14),
-        new THREE.MeshPhongMaterial({ color: 0xcfa030, shininess: 160, specular: 0xffffff })
-      );
-      finial.position.set(-0.09, POLE_H / 2 - 0.4, 0.1);
-      scene.add(finial);
-
-      // Brass grommets
-      [FLAG_H * 0.47, -FLAG_H * 0.47].forEach(y => {
-        const g = new THREE.Mesh(
-          new THREE.TorusGeometry(0.115, 0.038, 10, 20),
-          new THREE.MeshPhongMaterial({ color: 0xb89010, shininess: 80 })
-        );
-        g.position.set(0, y, 0.12);
-        scene.add(g);
-      });
-
-      /* ── Wind settings ───────────────────────────────────────── */
       const WIND = {
-        calm:   { amp: 0.16, freq: 0.50, speed: 1.1 },
-        medium: { amp: 0.30, freq: 0.68, speed: 1.8 },
-        strong: { amp: 0.52, freq: 0.90, speed: 2.7 },
+        calm:   { amp: 12, sway: 1.8, speed: 0.75, freqX: 0.0105, freqY: 0.028 },
+        medium: { amp: 18, sway: 3.2, speed: 1.05, freqX: 0.0125, freqY: 0.034 },
+        strong: { amp: 26, sway: 5.0, speed: 1.5,  freqX: 0.0155, freqY: 0.041 },
       };
       let wind = WIND.calm;
 
-      const posAttr = geo.attributes.position;
-      const basePos = new Float32Array(posAttr.array); // snapshot of rest positions
+      function animateFlag(time) {
+        const t = time * 0.001;
+        const driftX = Math.sin(t * wind.speed * 0.9) * (wind.sway * 0.9);
+        const driftY = Math.cos(t * wind.speed * 0.45) * 1.4;
+        const skewY = Math.sin(t * wind.speed * 1.2) * wind.sway;
+        const baseX = wind.freqX + (Math.sin(t * 0.32) * 0.0008);
+        const baseY = wind.freqY + (Math.cos(t * 0.27) * 0.0014);
+        const scale = wind.amp + (Math.sin(t * wind.speed * 1.5) * wind.amp * 0.12);
 
-      function waveCloth(t) {
-        for (let i = 0; i < posAttr.count; i++) {
-          const bx = basePos[i * 3];
-          const by = basePos[i * 3 + 1];
-          const u    = (bx + FLAG_W / 2) / FLAG_W;   // 0 at pole → 1 at fly edge
-          const ease = u * u;                          // quadratic: calm at hoist
-          const z = (
-            Math.sin(bx * wind.freq        + t * wind.speed)       * wind.amp
-          + Math.sin(bx * wind.freq * 1.72 + t * wind.speed * 1.15) * wind.amp * 0.30
-          + Math.sin(by * 0.48             + t * wind.speed * 0.65) * wind.amp * 0.11
-          ) * ease;
-          posAttr.setZ(i, z);
-        }
-        posAttr.needsUpdate = true;
-        geo.computeVertexNormals();
+        flagNoise.setAttribute('baseFrequency', `${baseX.toFixed(4)} ${baseY.toFixed(4)}`);
+        flagDisplacement.setAttribute('scale', scale.toFixed(2));
+        flagMotionGroup.setAttribute(
+          'transform',
+          `translate(${driftX.toFixed(2)} ${driftY.toFixed(2)}) skewY(${skewY.toFixed(2)})`
+        );
+
+        requestAnimationFrame(animateFlag);
       }
 
-      /* ── Resize handling ─────────────────────────────────────── */
-      function onResize() {
-        const w = stage.clientWidth, h = stage.clientHeight;
-        if (!w || !h) return;
-        renderer.setSize(w, h, false);
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-      }
-      new ResizeObserver(onResize).observe(stage);
-      onResize();
-
-      /* ── Render loop ─────────────────────────────────────────── */
-      const clock = new THREE.Clock();
-      (function animate() {
-        requestAnimationFrame(animate);
-        waveCloth(clock.getElapsedTime());
-        renderer.render(scene, camera);
-      })();
+      requestAnimationFrame(animateFlag);
 
       /* ── UI controls ─────────────────────────────────────────── */
+      const stage = document.querySelector('.flag-stage');
       const audio         = document.getElementById('patrioticAudio');
+      const btnPlay       = document.getElementById('btnPlay');
+      const btnPause      = document.getElementById('btnPause');
+      const btnRestart    = document.getElementById('btnRestart');
       const btnMute       = document.getElementById('btnMute');
+      const btnFullscreen = document.getElementById('btnFullscreen');
+      const audioStatus   = document.getElementById('audioStatus');
       const volumeControl = document.getElementById('volumeControl');
       const volumeValue   = document.getElementById('volumeValue');
+      const musicButtons  = [btnPlay, btnPause, btnRestart, btnMute];
 
-      if (audio) audio.volume = 0.7;
+      function setAudioAvailability(available, message) {
+        musicButtons.forEach((button) => {
+          if (button) button.disabled = !available;
+        });
+        if (volumeControl) volumeControl.disabled = !available;
+        if (audioStatus) audioStatus.textContent = message;
+      }
 
-      document.getElementById('btnPlay')?.addEventListener('click', () => {
-        if (!audio) return;
+      if (audio) {
+        audio.volume = 0.7;
         audio.muted = false;
-        btnMute.textContent = 'Mute';
-        btnMute.setAttribute('aria-pressed', 'false');
+      }
+
+      audio?.addEventListener('canplaythrough', () => {
+        setAudioAvailability(true, 'Backing track ready.');
+      }, { once: true });
+
+      audio?.addEventListener('error', () => {
+        setAudioAvailability(false, 'Backing track unavailable. Add a new file to assets/audio if you want music here.');
+      });
+
+      btnPlay?.addEventListener('click', () => {
+        if (!audio) return;
         audio.play?.();
       });
 
-      document.getElementById('btnPause')?.addEventListener('click', () => audio?.pause?.());
+      btnPause?.addEventListener('click', () => audio?.pause?.());
 
-      document.getElementById('btnRestart')?.addEventListener('click', () => {
+      btnRestart?.addEventListener('click', () => {
         if (!audio) return;
         audio.currentTime = 0;
-        audio.muted = false;
-        btnMute.textContent = 'Mute';
-        btnMute.setAttribute('aria-pressed', 'false');
         audio.play?.();
       });
 
@@ -304,22 +325,35 @@
         btnMute.setAttribute('aria-pressed', audio.muted ? 'true' : 'false');
       });
 
-      document.getElementById('btnFullscreen')?.addEventListener('click', async () => {
+      btnFullscreen?.addEventListener('click', async () => {
         try {
           if (!document.fullscreenElement) await stage.requestFullscreen?.();
           else await document.exitFullscreen?.();
         } catch { /* ignore */ }
       });
 
-      document.getElementById('windMode')?.addEventListener('change', e => {
+      document.getElementById('windMode')?.addEventListener('change', (e) => {
         wind = WIND[e.target.value] || WIND.calm;
       });
 
-      volumeControl?.addEventListener('input', e => {
+      volumeControl?.addEventListener('input', (e) => {
         if (!audio) return;
         const val = Number(e.target.value);
         audio.volume = val / 100;
         if (volumeValue) volumeValue.textContent = `${val}%`;
+      });
+
+      window.addEventListener('load', () => {
+        if (!audio?.currentSrc) {
+          setAudioAvailability(false, 'Backing track unavailable. Add a new file to assets/audio if you want music here.');
+          return;
+        }
+        audio.load();
+        setTimeout(() => {
+          if (audio.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+            setAudioAvailability(false, 'Backing track unavailable. Add a new file to assets/audio if you want music here.');
+          }
+        }, 1200);
       });
     </script>
   </body>
