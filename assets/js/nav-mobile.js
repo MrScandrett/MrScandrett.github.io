@@ -17,10 +17,8 @@
     '</svg>';
 
   var LIGHTING_OPTIONS = [
-    { id: "morning", label: "Morning", detail: "Bright glass and cool forest haze." },
-    { id: "day", label: "Day", detail: "Balanced contrast for class launch." },
-    { id: "dusk", label: "Dusk", detail: "Warm copper glow through the glass." },
-    { id: "night", label: "Night", detail: "Quiet, darker panels with ember highlights." }
+    { id: "day", label: "Day", detail: "Default bright ClassroomOS look." },
+    { id: "night", label: "Night", detail: "A darker version for evening use." }
   ];
 
   var STORAGE_MODE = "classroomos-lighting-mode";
@@ -69,11 +67,7 @@
 
   function getPhaseFromDate(date) {
     var hours = date.getHours();
-
-    if (hours >= 5 && hours < 10) return "morning";
-    if (hours >= 10 && hours < 16) return "day";
-    if (hours >= 16 && hours < 20) return "dusk";
-    return "night";
+    return (hours >= 6 && hours < 19) ? "day" : "night";
   }
 
   function ensureLightingApi() {
@@ -87,6 +81,7 @@
 
     function getStoredPhase() {
       var stored = readStorage(STORAGE_PHASE);
+      if (stored === "morning" || stored === "dusk") return "day";
       return isValidPhase(stored) ? stored : "day";
     }
 
@@ -185,10 +180,10 @@
     "</button>" +
     '<div class="nav-settings-panel" id="' + panelId + '" hidden>' +
       '<div class="nav-settings-head">' +
-        '<p class="nav-settings-eyebrow">Woodland Lighting</p>' +
+        '<p class="nav-settings-eyebrow">Appearance</p>' +
         '<p class="nav-settings-current" aria-live="polite"></p>' +
       "</div>" +
-      '<p class="nav-settings-note">Use one shared lighting profile across ClassroomOS, from bright morning glass to a quieter evening glow.</p>' +
+      '<p class="nav-settings-note">Keep the site on the default bright look, switch to night mode, or let it change with local time.</p>' +
       '<label class="nav-settings-auto">' +
         '<input type="checkbox" class="nav-settings-auto-input" />' +
         "<span>Follow local time</span>" +

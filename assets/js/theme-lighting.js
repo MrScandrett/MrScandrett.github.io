@@ -2,17 +2,13 @@
   var REFRESH_MS = 15 * 60 * 1000;
   var STORAGE_MODE = "classroomos-lighting-mode";
   var STORAGE_PHASE = "classroomos-lighting-phase";
-  var VALID_PHASES = ["morning", "day", "dusk", "night"];
+  var VALID_PHASES = ["day", "night"];
   var currentPhase = null;
   var CHANGE_EVENT = "classroomos:lightingchange";
 
   function getPhase(date) {
     var hours = date.getHours();
-
-    if (hours >= 5 && hours < 10) return "morning";
-    if (hours >= 10 && hours < 16) return "day";
-    if (hours >= 16 && hours < 20) return "dusk";
-    return "night";
+    return (hours >= 6 && hours < 19) ? "day" : "night";
   }
 
   function isValidPhase(phase) {
@@ -41,6 +37,7 @@
 
   function getStoredPhase() {
     var stored = readStorage(STORAGE_PHASE);
+    if (stored === "morning" || stored === "dusk") return "day";
     return isValidPhase(stored) ? stored : "day";
   }
 
