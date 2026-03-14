@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Video Library · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Videos uploaded by Mr. Scandrett for the classroom." />
+  <link rel="stylesheet" href="assets/css/classroom-home.css" />
+  <style>
+    .vl-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem 1rem;
+    }
+    @media (max-width: 1000px) { .vl-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 700px)  { .vl-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 440px)  { .vl-grid { grid-template-columns: 1fr; } }
+
+    .vl-card {
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      text-align: left;
+      width: 100%;
+    }
+    .vl-card:hover .vl-play-icon { opacity: 1; }
+    .vl-card:hover .vl-thumb { opacity: 0.82; }
+
+    .vl-thumb-wrap {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      background: #1a1a1a;
+    }
+    .vl-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.15s;
+    }
+    .vl-play-icon {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .vl-play-icon svg {
+      width: 40px;
+      height: 40px;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
+    }
+    .vl-duration {
+      position: absolute;
+      bottom: 5px;
+      right: 6px;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      letter-spacing: 0.02em;
+    }
+
+    .vl-meta {
+      padding: 0.45rem 0 0;
+    }
+    .vl-category {
+      font-size: 0.64rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 0.15rem;
+    }
+    .vl-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin: 0 0 0.2rem;
+      line-height: 1.35;
+      color: var(--text);
+    }
+    .vl-desc {
+      font-size: 0.73rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ── Modal ── */
+    .vl-modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.86);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+    .vl-modal-backdrop.open { display: flex; }
+
+    .vl-modal {
+      width: 100%;
+      max-width: 880px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #111;
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.75);
+      position: relative;
+    }
+    .vl-modal video {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+    }
+    .vl-modal-info {
+      padding: 0.8rem 1rem 1rem;
+    }
+    .vl-modal-category {
+      font-size: 0.64rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #777;
+      margin: 0 0 0.15rem;
+    }
+    .vl-modal-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 0.3rem;
+    }
+    .vl-modal-desc {
+      font-size: 0.8rem;
+      color: #999;
+      margin: 0;
+      line-height: 1.5;
+    }
+    .vl-modal-close {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      border: none;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="steam-lessons.html">STEAM Lessons</a></li>
+          <li><a href="showcase.html">Showcase</a></li>
+          <li><a href="applications.html">Applications</a></li>
+          <li><a href="video-library.html" aria-current="page">Video Library</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero">
+      <p class="eyebrow">Mr. Scandrett</p>
+      <h1>Video Library</h1>
+      <p>Videos uploaded for class — watch, learn, and reflect.</p>
+    </section>
+
+    <section class="section">
+      <div class="vl-grid" id="vl-grid"></div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div class="vl-modal-backdrop" id="vl-modal-backdrop" role="dialog" aria-modal="true" aria-label="Video player">
+    <div class="vl-modal">
+      <button class="vl-modal-close" id="vl-modal-close" aria-label="Close video">✕</button>
+      <video id="vl-modal-video" controls></video>
+      <div class="vl-modal-info">
+        <p class="vl-modal-category" id="vl-modal-category"></p>
+        <p class="vl-modal-title" id="vl-modal-title"></p>
+        <p class="vl-modal-desc" id="vl-modal-desc"></p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="https://github.com/MrScandrett" target="_blank" rel="noreferrer">GitHub</a></p>
+  </footer>
+
+  <script src="assets/js/nav-mobile.js"></script>
+  <script>
+    const VIDEOS = [
+      {
+        src: 'assets/videos/stevejobs_onfailure.mp4',
+        title: 'Steve Jobs on Failure',
+        category: 'Interview',
+        desc: 'A rare interview clip where Steve Jobs reflects on failure, resilience, and what it really means to build something that matters.',
+        seekTo: 1
+      },
+      {
+        src: 'assets/videos/stevejobs_life.mp4',
+        title: 'Steve Jobs on Life',
+        category: 'Interview',
+        desc: 'Steve Jobs shares his perspective on life, purpose, and the importance of following what you love — even when the path isn\'t clear.',
+        seekTo: 1
+      },
+      {
+        src: 'assets/videos/carlsagan_palebluedot.mp4',
+        title: 'Carl Sagan — Pale Blue Dot',
+        category: 'Science & Perspective',
+        desc: 'Carl Sagan reflects on a photograph of Earth taken from 3.7 billion miles away, and what it means for how we treat each other and our world.',
+        seekTo: 3
+      }
+    ];
+
+    function fmtDuration(s) {
+      if (!s || !isFinite(s)) return '';
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60).toString().padStart(2, '0');
+      return `${m}:${sec}`;
+    }
+
+    function captureThumbnail(src, seekTo, imgEl) {
+      const vid = document.createElement('video');
+      vid.muted = true;
+      vid.preload = 'metadata';
+      vid.src = src;
+      vid.addEventListener('loadedmetadata', () => {
+        vid.currentTime = Math.min(seekTo, vid.duration * 0.1);
+      });
+      vid.addEventListener('seeked', () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = vid.videoWidth || 640;
+        canvas.height = vid.videoHeight || 360;
+        canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
+        imgEl.src = canvas.toDataURL('image/jpeg', 0.85);
+        vid.src = '';
+      }, { once: true });
+    }
+
+    const grid = document.getElementById('vl-grid');
+    const backdrop = document.getElementById('vl-modal-backdrop');
+    const modalVideo = document.getElementById('vl-modal-video');
+    const modalCategory = document.getElementById('vl-modal-category');
+    const modalTitle = document.getElementById('vl-modal-title');
+    const modalDesc = document.getElementById('vl-modal-desc');
+
+    VIDEOS.forEach(v => {
+      const card = document.createElement('button');
+      card.className = 'vl-card';
+      card.type = 'button';
+      card.setAttribute('aria-label', `Play: ${v.title}`);
+
+      const thumbWrap = document.createElement('div');
+      thumbWrap.className = 'vl-thumb-wrap';
+
+      const img = document.createElement('img');
+      img.className = 'vl-thumb';
+      img.alt = '';
+
+      const playIcon = document.createElement('div');
+      playIcon.className = 'vl-play-icon';
+      playIcon.innerHTML = `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.9"/>
+        <polygon points="22,16 44,28 22,40" fill="#111"/>
+      </svg>`;
+
+      const durEl = document.createElement('span');
+      durEl.className = 'vl-duration';
+      const tmpVid = document.createElement('video');
+      tmpVid.preload = 'metadata';
+      tmpVid.src = v.src;
+      tmpVid.addEventListener('loadedmetadata', () => {
+        durEl.textContent = fmtDuration(tmpVid.duration);
+        tmpVid.src = '';
+      });
+
+      thumbWrap.append(img, playIcon, durEl);
+
+      const meta = document.createElement('div');
+      meta.className = 'vl-meta';
+      meta.innerHTML = `
+        <p class="vl-category">${v.category}</p>
+        <p class="vl-title">${v.title}</p>
+        <p class="vl-desc">${v.desc}</p>
+      `;
+
+      card.append(thumbWrap, meta);
+      grid.appendChild(card);
+      captureThumbnail(v.src, v.seekTo, img);
+
+      card.addEventListener('click', () => {
+        modalVideo.src = v.src;
+        modalCategory.textContent = v.category;
+        modalTitle.textContent = v.title;
+        modalDesc.textContent = v.desc;
+        backdrop.classList.add('open');
+        modalVideo.play();
+      });
+    });
+
+    function closeModal() {
+      backdrop.classList.remove('open');
+      modalVideo.pause();
+      modalVideo.src = '';
+    }
+
+    document.getElementById('vl-modal-close').addEventListener('click', closeModal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+  </script>
+</body>
+</html>

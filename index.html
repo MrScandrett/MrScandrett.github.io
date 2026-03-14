@@ -19,6 +19,7 @@
           <li><a href="steam-lessons.html">STEAM Lessons</a></li>
           <li><a href="showcase.html">Showcase</a></li>
           <li><a href="applications.html">Applications</a></li>
+          <li><a href="video-library.html">Video Library</a></li>
           <li><a href="about.html">About</a></li>
         </ul>
       </nav>
@@ -84,6 +85,12 @@
           <strong>Class Downloads</strong>
           <small>Download project files, templates, and resources uploaded by Mr. Scandrett</small>
         </a>
+
+        <a class="tile video-library-tile" href="video-library.html">
+          <span class="tile-kicker">Video Library</span>
+          <strong>Class Videos</strong>
+          <small>Watch videos uploaded by Mr. Scandrett — interviews, lessons, and inspiration</small>
+        </a>
       </div>
     </section>
 
@@ -117,6 +124,31 @@
              href="https://www.bible.com/verse-of-the-day"
              target="_blank"
              rel="noreferrer">YouVersion →</a>
+        </div>
+      </article>
+    </section>
+
+    <!-- Video of the Day -->
+    <section class="section">
+      <article class="vod-card" aria-label="Video of the day">
+        <p class="vod-eyebrow">🎬 Video of the Day</p>
+        <div class="vod-inner">
+          <div class="vod-thumb-wrap" id="vod-thumb-wrap">
+            <img class="vod-thumb" id="vod-thumb" alt="" />
+            <button class="vod-play-btn" id="vod-play-btn" aria-label="Play video">
+              <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.92"/>
+                <polygon points="22,16 44,28 22,40" fill="#111"/>
+              </svg>
+            </button>
+            <span class="vod-duration" id="vod-duration"></span>
+          </div>
+          <div class="vod-copy">
+            <p class="vod-category" id="vod-category"></p>
+            <p class="vod-title" id="vod-title"></p>
+            <p class="vod-desc" id="vod-desc"></p>
+            <a class="vod-link" href="video-library.html">View all videos →</a>
+          </div>
         </div>
       </article>
     </section>
@@ -175,5 +207,55 @@
 
   <script type="module" src="assets/js/votd.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      const VOD_LIST = [
+        { src: 'assets/videos/stevejobs_onfailure.mp4', title: 'Steve Jobs on Failure', category: 'Interview', desc: 'Steve Jobs reflects on failure, resilience, and what it really means to build something that matters.', seekTo: 1 },
+        { src: 'assets/videos/stevejobs_life.mp4', title: 'Steve Jobs on Life', category: 'Interview', desc: 'Steve Jobs shares his perspective on life, purpose, and the importance of following what you love.', seekTo: 1 },
+        { src: 'assets/videos/carlsagan_palebluedot.mp4', title: 'Carl Sagan — Pale Blue Dot', category: 'Science & Perspective', desc: 'Carl Sagan reflects on a photograph of Earth taken from 3.7 billion miles away, and what it means for how we treat each other.', seekTo: 3 }
+      ];
+
+      const v = VOD_LIST[Math.floor(Math.random() * VOD_LIST.length)];
+
+      document.getElementById('vod-category').textContent = v.category;
+      document.getElementById('vod-title').textContent = v.title;
+      document.getElementById('vod-desc').textContent = v.desc;
+
+      // Generate thumbnail
+      const thumbImg = document.getElementById('vod-thumb');
+      const tmpVid = document.createElement('video');
+      tmpVid.muted = true;
+      tmpVid.preload = 'metadata';
+      tmpVid.src = v.src;
+      tmpVid.addEventListener('loadedmetadata', () => {
+        const s = tmpVid.duration;
+        if (s && isFinite(s)) {
+          const m = Math.floor(s / 60);
+          document.getElementById('vod-duration').textContent = m + ':' + Math.floor(s % 60).toString().padStart(2, '0');
+        }
+        tmpVid.currentTime = Math.min(v.seekTo, tmpVid.duration * 0.1);
+      });
+      tmpVid.addEventListener('seeked', () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = tmpVid.videoWidth || 640;
+        canvas.height = tmpVid.videoHeight || 360;
+        canvas.getContext('2d').drawImage(tmpVid, 0, 0, canvas.width, canvas.height);
+        thumbImg.src = canvas.toDataURL('image/jpeg', 0.85);
+        tmpVid.src = '';
+      }, { once: true });
+
+      // Play button
+      document.getElementById('vod-play-btn').addEventListener('click', () => {
+        const wrap = document.getElementById('vod-thumb-wrap');
+        const player = document.createElement('video');
+        player.src = v.src;
+        player.controls = true;
+        player.autoplay = true;
+        player.className = 'vod-player';
+        wrap.innerHTML = '';
+        wrap.appendChild(player);
+      });
+    })();
+  </script>
 </body>
 </html>
