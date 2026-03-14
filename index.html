@@ -133,8 +133,18 @@
       <article class="vod-card" aria-label="Video of the day">
         <p class="vod-eyebrow">🎬 Video of the Day</p>
         <div class="vod-inner">
-          <div class="vod-thumb-wrap" id="vod-thumb-wrap">
+          <div class="vod-copy">
+            <p class="vod-category" id="vod-category"></p>
+            <p class="vod-title" id="vod-title"></p>
+            <p class="vod-desc" id="vod-desc"></p>
+            <a class="vod-link" href="video-library.html">View all videos →</a>
+          </div>
+          <div class="vod-thumb-wrap" id="vod-thumb-wrap" role="button" tabindex="0" aria-label="Play video of the day">
             <img class="vod-thumb" id="vod-thumb" alt="" />
+            <div class="vod-fallback" id="vod-fallback" aria-hidden="true">
+              <p class="vod-fallback-kicker">Featured Today</p>
+              <p class="vod-fallback-title" id="vod-fallback-title"></p>
+            </div>
             <button class="vod-play-btn" id="vod-play-btn" aria-label="Play video">
               <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.92"/>
@@ -142,12 +152,6 @@
               </svg>
             </button>
             <span class="vod-duration" id="vod-duration"></span>
-          </div>
-          <div class="vod-copy">
-            <p class="vod-category" id="vod-category"></p>
-            <p class="vod-title" id="vod-title"></p>
-            <p class="vod-desc" id="vod-desc"></p>
-            <a class="vod-link" href="video-library.html">View all videos →</a>
           </div>
         </div>
       </article>
@@ -242,10 +246,24 @@
       document.getElementById('vod-category').textContent = v.category;
       document.getElementById('vod-title').textContent = v.title;
       document.getElementById('vod-desc').textContent = v.desc;
+      document.getElementById('vod-fallback-title').textContent = v.title;
 
       // Generate thumbnail via canvas
+      const thumbWrap = document.getElementById('vod-thumb-wrap');
       const thumbImg = document.getElementById('vod-thumb');
       const tmpVid = document.createElement('video');
+      thumbWrap.classList.add('vod-thumb-wrap--fallback');
+
+      function showVodFallback() {
+        thumbWrap.classList.add('vod-thumb-wrap--fallback');
+        thumbImg.removeAttribute('src');
+        tmpVid.src = '';
+      }
+
+      function hideVodFallback() {
+        thumbWrap.classList.remove('vod-thumb-wrap--fallback');
+      }
+
       tmpVid.muted = true;
       tmpVid.preload = 'metadata';
       tmpVid.src = v.src;
@@ -261,21 +279,38 @@
         const canvas = document.createElement('canvas');
         canvas.width = tmpVid.videoWidth || 640;
         canvas.height = tmpVid.videoHeight || 360;
-        canvas.getContext('2d').drawImage(tmpVid, 0, 0, canvas.width, canvas.height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          showVodFallback();
+          return;
+        }
+        ctx.drawImage(tmpVid, 0, 0, canvas.width, canvas.height);
         thumbImg.src = canvas.toDataURL('image/jpeg', 0.85);
+        hideVodFallback();
         tmpVid.src = '';
       }, { once: true });
+      tmpVid.addEventListener('error', showVodFallback, { once: true });
+      thumbImg.addEventListener('error', showVodFallback);
 
       // Play button → open modal
       const backdrop = document.getElementById('vod-modal-backdrop');
       const modalVideo = document.getElementById('vod-modal-video');
 
-      document.getElementById('vod-play-btn').addEventListener('click', () => {
+      function openVodcast() {
         document.getElementById('vod-modal-category').textContent = v.category;
         document.getElementById('vod-modal-title').textContent = v.title;
         modalVideo.src = v.src;
         backdrop.classList.add('open');
         modalVideo.play();
+      }
+
+      document.getElementById('vod-play-btn').addEventListener('click', openVodcast);
+      document.getElementById('vod-thumb-wrap').addEventListener('click', openVodcast);
+      document.getElementById('vod-thumb-wrap').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openVodcast();
+        }
       });
 
       function closeModal() {
