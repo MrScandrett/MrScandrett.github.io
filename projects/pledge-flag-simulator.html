@@ -30,7 +30,7 @@
       <header class="lesson-hero">
         <p class="lesson-kicker">USA Civics / Ritual</p>
         <h1>American Flag Waving Simulator</h1>
-        <p class="lesson-subtitle">Stand, read, and recite together with a reliable waving flag and optional classroom backing track.</p>
+        <p class="lesson-subtitle">Stand, read, and recite together with a 50-star flag drawn to federal-style proportions and an optional classroom backing track.</p>
       </header>
 
       <section class="terminal eliza-app">
@@ -40,11 +40,11 @@
             <desc id="flagDesc">An animated American flag with adjustable wind strength for classroom recitation.</desc>
             <defs>
               <filter id="flagWave" x="-12%" y="-18%" width="124%" height="136%" color-interpolation-filters="sRGB">
-                <feTurbulence id="flagNoise" type="fractalNoise" baseFrequency="0.011 0.032" numOctaves="2" seed="7" result="noise" />
-                <feDisplacementMap id="flagDisplacement" in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G" />
+                <feTurbulence id="flagNoise" type="fractalNoise" baseFrequency="0.010 0.028" numOctaves="2" seed="7" result="noise" />
+                <feDisplacementMap id="flagDisplacement" in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G" />
               </filter>
               <clipPath id="flagClip">
-                <rect x="198" y="148" width="988" height="520" rx="16" ry="16" />
+                <rect x="198" y="148" width="988" height="520" />
               </clipPath>
               <linearGradient id="fabricShade" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3" />
@@ -66,9 +66,6 @@
                 <stop offset="40%" stop-color="#fff0be" stop-opacity="0.3" />
                 <stop offset="100%" stop-color="#fff0be" stop-opacity="0" />
               </radialGradient>
-              <symbol id="flagStar" viewBox="-50 -50 100 100">
-                <path d="M0,-48 L13,-15 L47,-15 L19,5 L30,38 L0,18 L-30,38 L-19,5 L-47,-15 L-13,-15 Z" />
-              </symbol>
             </defs>
 
             <circle cx="1110" cy="150" r="160" fill="url(#sunGlow)" />
@@ -85,8 +82,8 @@
 
             <g id="flagMotionGroup" filter="url(#flagWave)">
               <g id="flagArtwork" clip-path="url(#flagClip)"></g>
-              <rect x="198" y="148" width="988" height="520" rx="16" ry="16" fill="url(#fabricShade)" />
-              <rect x="198" y="148" width="988" height="520" rx="16" ry="16" fill="none" stroke="#ffffff" stroke-opacity="0.38" stroke-width="4" />
+              <rect x="198" y="148" width="988" height="520" fill="url(#fabricShade)" />
+              <rect x="198" y="148" width="988" height="520" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2.5" />
             </g>
 
             <g aria-hidden="true">
@@ -95,6 +92,7 @@
             </g>
           </svg>
         </div>
+        <p class="flag-spec-note">Flag geometry now follows the 50-star proportions used in Executive Order 10834.</p>
 
         <div class="pledge-panel">
           <h2 class="pledge-title">Pledge of Allegiance</h2>
@@ -182,8 +180,19 @@
         width: 988,
         height: 520,
       };
-      FLAG.cantonWidth = FLAG.width * 0.4;
-      FLAG.cantonHeight = FLAG.height * 7 / 13;
+      const FLAG_SPEC = {
+        hoist: FLAG.height,
+        fly: FLAG.height * 1.9,
+        unionHoist: FLAG.height * (7 / 13),
+        unionFly: FLAG.height * 0.76,
+        stripe: FLAG.height / 13,
+        starDiameter: FLAG.height * 0.0616,
+      };
+      FLAG.width = FLAG_SPEC.fly;
+      FLAG.cantonWidth = FLAG_SPEC.unionFly;
+      FLAG.cantonHeight = FLAG_SPEC.unionHoist;
+      FLAG.rowOffset = FLAG.cantonHeight / 10;
+      FLAG.columnOffset = FLAG.cantonWidth / 12;
 
       function svgNode(tag, attrs = {}) {
         const node = document.createElementNS(SVG_NS, tag);
@@ -196,17 +205,29 @@
         return node;
       }
 
+      function buildStarPath(cx, cy, outerRadius, innerRadius) {
+        const points = [];
+        for (let i = 0; i < 10; i++) {
+          const radius = i % 2 === 0 ? outerRadius : innerRadius;
+          const angle = (-Math.PI / 2) + (i * Math.PI / 5);
+          const x = cx + (Math.cos(angle) * radius);
+          const y = cy + (Math.sin(angle) * radius);
+          points.push(`${i === 0 ? 'M' : 'L'}${x.toFixed(3)} ${y.toFixed(3)}`);
+        }
+        return `${points.join(' ')} Z`;
+      }
+
       function buildFlagArtwork() {
         flagArtwork.textContent = '';
 
-        const stripeHeight = FLAG.height / 13;
+        const stripeHeight = FLAG_SPEC.stripe;
         for (let i = 0; i < 13; i++) {
           flagArtwork.appendChild(svgNode('rect', {
             x: FLAG.x,
             y: FLAG.y + (i * stripeHeight),
             width: FLAG.width,
             height: stripeHeight + 0.5,
-            fill: i % 2 === 0 ? '#b22234' : '#ffffff',
+            fill: i % 2 === 0 ? '#b31942' : '#ffffff',
           }));
         }
 
@@ -215,25 +236,25 @@
           y: FLAG.y,
           width: FLAG.cantonWidth,
           height: FLAG.cantonHeight,
-          fill: '#3c3b6e',
+          fill: '#0a3161',
         }));
 
         const starsGroup = svgNode('g', {
           fill: '#ffffff',
         });
 
-        const colUnit = FLAG.cantonWidth / 12;
-        const rowUnit = FLAG.cantonHeight / 10;
+        const starOuterRadius = FLAG_SPEC.starDiameter / 2;
+        const starInnerRadius = starOuterRadius * 0.38196601125;
+        const rowPattern = [6, 5, 6, 5, 6, 5, 6, 5, 6];
+
         for (let row = 0; row < 9; row++) {
-          const starCount = row % 2 === 0 ? 6 : 5;
+          const starCount = rowPattern[row];
+          const startX = starCount === 6 ? FLAG.columnOffset : FLAG.columnOffset * 2;
+          const cy = FLAG.y + (FLAG.rowOffset * (row + 1));
           for (let col = 0; col < starCount; col++) {
-            const x = row % 2 === 0
-              ? FLAG.x + colUnit + (col * 2 * colUnit)
-              : FLAG.x + (2 * colUnit) + (col * 2 * colUnit);
-            const y = FLAG.y + rowUnit * (row + 1);
-            starsGroup.appendChild(svgNode('use', {
-              href: '#flagStar',
-              transform: `translate(${x} ${y}) scale(0.22)`,
+            const cx = FLAG.x + startX + (col * 2 * FLAG.columnOffset);
+            starsGroup.appendChild(svgNode('path', {
+              d: buildStarPath(cx, cy, starOuterRadius, starInnerRadius),
             }));
           }
         }
@@ -244,27 +265,23 @@
       buildFlagArtwork();
 
       const WIND = {
-        calm:   { amp: 12, sway: 1.8, speed: 0.75, freqX: 0.0105, freqY: 0.028 },
-        medium: { amp: 18, sway: 3.2, speed: 1.05, freqX: 0.0125, freqY: 0.034 },
-        strong: { amp: 26, sway: 5.0, speed: 1.5,  freqX: 0.0155, freqY: 0.041 },
+        calm:   { amp: 7,  drift: 1.1, speed: 0.65, freqX: 0.0088, freqY: 0.022 },
+        medium: { amp: 11, drift: 2.0, speed: 0.9,  freqX: 0.0104, freqY: 0.027 },
+        strong: { amp: 15, drift: 3.0, speed: 1.22, freqX: 0.0122, freqY: 0.032 },
       };
       let wind = WIND.calm;
 
       function animateFlag(time) {
         const t = time * 0.001;
-        const driftX = Math.sin(t * wind.speed * 0.9) * (wind.sway * 0.9);
-        const driftY = Math.cos(t * wind.speed * 0.45) * 1.4;
-        const skewY = Math.sin(t * wind.speed * 1.2) * wind.sway;
-        const baseX = wind.freqX + (Math.sin(t * 0.32) * 0.0008);
-        const baseY = wind.freqY + (Math.cos(t * 0.27) * 0.0014);
-        const scale = wind.amp + (Math.sin(t * wind.speed * 1.5) * wind.amp * 0.12);
+        const driftX = Math.sin(t * wind.speed * 0.7) * wind.drift;
+        const driftY = Math.cos(t * wind.speed * 0.32) * 0.85;
+        const baseX = wind.freqX + (Math.sin(t * 0.28) * 0.00055);
+        const baseY = wind.freqY + (Math.cos(t * 0.24) * 0.0011);
+        const scale = wind.amp + (Math.sin(t * wind.speed * 1.15) * wind.amp * 0.08);
 
         flagNoise.setAttribute('baseFrequency', `${baseX.toFixed(4)} ${baseY.toFixed(4)}`);
         flagDisplacement.setAttribute('scale', scale.toFixed(2));
-        flagMotionGroup.setAttribute(
-          'transform',
-          `translate(${driftX.toFixed(2)} ${driftY.toFixed(2)}) skewY(${skewY.toFixed(2)})`
-        );
+        flagMotionGroup.setAttribute('transform', `translate(${driftX.toFixed(2)} ${driftY.toFixed(2)})`);
 
         requestAnimationFrame(animateFlag);
       }
