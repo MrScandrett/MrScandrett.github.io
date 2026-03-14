@@ -719,41 +719,39 @@ h1 {
 .vod-card {
   border-radius: var(--radius);
   background: #0d0d0e;
-  border: 1px solid rgba(60, 60, 65, 0.7);
+  border: 1px solid rgba(60, 60, 65, 0.6);
   box-shadow: var(--shadow);
-  padding: 1.4rem 1.5rem 1.25rem;
-  overflow: hidden;
+  padding: 1.25rem 1.4rem 1.3rem;
 }
 
 .vod-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
+  font-size: 0.67rem;
   font-weight: 700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: #666;
-  margin: 0 0 1rem;
+  color: #555;
+  margin: 0 0 0.85rem;
 }
 
 .vod-inner {
   display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 1.25rem;
-  align-items: start;
+  grid-template-columns: 260px 1fr;
+  gap: 1.4rem;
+  align-items: center;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .vod-inner { grid-template-columns: 1fr; }
 }
 
 .vod-thumb-wrap {
   position: relative;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   aspect-ratio: 16 / 9;
-  background: #1a1a1a;
+  background: #111;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .vod-thumb {
@@ -761,7 +759,10 @@ h1 {
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: opacity 0.15s;
 }
+
+.vod-thumb-wrap:hover .vod-thumb { opacity: 0.78; }
 
 .vod-play-btn {
   position: absolute;
@@ -769,80 +770,150 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.22);
+  background: transparent;
   border: none;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
-.vod-play-btn:hover { background: rgba(0, 0, 0, 0.45); }
-
 .vod-play-btn svg {
-  width: 52px;
-  height: 52px;
-  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.7));
+  width: 42px;
+  height: 42px;
+  opacity: 0.88;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.65));
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.vod-thumb-wrap:hover .vod-play-btn svg {
+  transform: scale(1.1);
+  opacity: 1;
 }
 
 .vod-duration {
   position: absolute;
-  bottom: 6px;
-  right: 8px;
+  bottom: 5px;
+  right: 6px;
   background: rgba(0, 0, 0, 0.85);
   color: #fff;
-  font-size: 0.68rem;
+  font-size: 0.67rem;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 3px;
-}
-
-.vod-player {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  display: block;
-  border-radius: 10px;
-  background: #000;
+  pointer-events: none;
 }
 
 .vod-copy {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .vod-category {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: #666;
+  color: #555;
   margin: 0;
 }
 
 .vod-title {
-  font-size: 1.15rem;
+  font-size: 1.08rem;
   font-weight: 700;
-  color: #fff;
+  color: #f0f0f0;
   margin: 0;
   line-height: 1.3;
 }
 
 .vod-desc {
-  font-size: 0.84rem;
-  color: #777;
+  font-size: 0.81rem;
+  color: #6e6e73;
   margin: 0;
   line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .vod-link {
   display: inline-block;
-  font-size: 0.8rem;
+  font-size: 0.77rem;
   color: #5aa0f0;
   text-decoration: none;
   font-weight: 600;
-  margin-top: 0.25rem;
+  margin-top: 0.2rem;
 }
 
 .vod-link:hover { text-decoration: underline; }
+
+/* VOD modal */
+.vod-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.86);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.vod-modal-backdrop.open { display: flex; }
+
+.vod-modal {
+  width: 100%;
+  max-width: 880px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #111;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.75);
+  position: relative;
+}
+
+.vod-modal video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+.vod-modal-info {
+  padding: 0.8rem 1rem 1rem;
+}
+
+.vod-modal-category {
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #666;
+  margin: 0 0 0.15rem;
+}
+
+.vod-modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.vod-modal-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
 
 /* ── Recipe Book page ─────────────────────────── */
 
@@ -6146,3 +6217,132 @@ a.go-output-card:hover {
     border-color: rgba(40, 87, 60, 0.34);
   }
 }
+
+/* ═══════════════════════════════════════════════
+   MODULE BANNERS  (steam-lessons.html)
+   ═══════════════════════════════════════════════ */
+
+.module-section {
+  margin-bottom: 3rem;
+}
+
+.module-banner {
+  border-radius: 18px 18px 0 0;
+  padding: 1.3rem 1.6rem 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.module-banner-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.module-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.module-banner-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 0.18rem;
+  letter-spacing: -0.01em;
+}
+
+.module-banner-sub {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.module-banner-count {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.13);
+  color: rgba(255, 255, 255, 0.82);
+  padding: 4px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.module-tile-grid {
+  border-radius: 0 0 18px 18px;
+  overflow: hidden;
+  padding: 0.9rem;
+  gap: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .module-tile-grid { grid-template-columns: 1fr; }
+}
+
+/* Computer Science module */
+.cs-banner {
+  background:
+    linear-gradient(135deg, rgba(0, 60, 200, 0.55) 0%, rgba(0, 20, 100, 0.8) 100%),
+    #08102a;
+  border: 1px solid rgba(80, 130, 255, 0.3);
+  border-bottom: none;
+}
+
+.cs-tile-grid {
+  background:
+    linear-gradient(180deg, #08102a 0%, #060d1f 100%);
+  border: 1px solid rgba(80, 130, 255, 0.18);
+  border-top: none;
+}
+
+/* Space Science module */
+.space-banner {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(120, 50, 220, 0.5), transparent 60%),
+    radial-gradient(ellipse at 80% 30%, rgba(30, 100, 200, 0.35), transparent 55%),
+    #050510;
+  border: 1px solid rgba(140, 80, 255, 0.3);
+  border-bottom: none;
+}
+
+.space-tile-grid {
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(80, 30, 160, 0.25), transparent 50%),
+    #050510;
+  border: 1px solid rgba(140, 80, 255, 0.18);
+  border-top: none;
+}
+
+/* ── Pale Blue Dot tile ───────────────────────── */
+
+.pale-blue-dot-tile {
+  background:
+    linear-gradient(180deg, rgba(0, 5, 20, 0.12) 0%, rgba(0, 5, 30, 0.85) 100%),
+    radial-gradient(ellipse 80% 60% at 65% 25%, rgba(60, 120, 255, 0.45), transparent 65%),
+    radial-gradient(ellipse 50% 40% at 25% 70%, rgba(20, 50, 160, 0.3), transparent 55%),
+    #020510;
+}
+
+.pale-blue-dot-tile .tile-kicker { color: #a8c8ff; }
+.pale-blue-dot-tile strong       { color: #ffffff; text-shadow: 0 2px 14px rgba(0,0,0,0.7); }
+.pale-blue-dot-tile small        { color: #c0d8ff; }
+
+/* ── Mars Rover Lander tile ───────────────────── */
+
+.mars-rover-tile {
+  background:
+    linear-gradient(180deg, rgba(30, 8, 2, 0.12) 0%, rgba(30, 8, 2, 0.86) 100%),
+    radial-gradient(ellipse 75% 55% at 40% 25%, rgba(210, 80, 30, 0.5), transparent 62%),
+    radial-gradient(ellipse 55% 45% at 75% 72%, rgba(160, 50, 15, 0.38), transparent 55%),
+    #1a0803;
+}
+
+.mars-rover-tile .tile-kicker { color: #ffcba8; }
+.mars-rover-tile strong       { color: #ffffff; text-shadow: 0 2px 14px rgba(0,0,0,0.7); }
+.mars-rover-tile small        { color: #f5c0a0; }

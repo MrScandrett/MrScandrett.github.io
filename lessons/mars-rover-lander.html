@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mars Rover Landing · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Land a rover on Mars. Manage fuel, fight wind, and nail the landing pad." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    body { background: #100604; color: #e8d0c0; margin: 0; overflow-x: hidden; }
+
+    .mrl-topbar {
+      position: sticky; top: 0; z-index: 30;
+      backdrop-filter: blur(12px) saturate(140%);
+      background: rgba(18, 6, 2, 0.9);
+      border-bottom: 1px solid rgba(180, 60, 20, 0.25);
+    }
+    .mrl-topbar-inner {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .mrl-topbar a { color: #d08060; text-decoration: none; font-size: 0.82rem; }
+    .mrl-topbar a:hover { color: #fff; }
+    .mrl-topbar-title { font-size: 0.9rem; font-weight: 700; color: #e8b090; }
+
+    .mrl-hero {
+      text-align: center; padding: 2.5rem 1.5rem 1.2rem;
+      max-width: 640px; margin: 0 auto;
+    }
+    .mrl-hero h1 {
+      font-size: clamp(1.6rem, 4vw, 2.5rem);
+      font-weight: 800; color: #fff; margin: 0 0 0.4rem; letter-spacing: -0.02em;
+    }
+    .mrl-hero p { font-size: 0.88rem; color: #906050; line-height: 1.6; margin: 0; }
+
+    /* ── Game wrap ── */
+    .mrl-game-wrap {
+      max-width: 920px; margin: 1.2rem auto 0;
+      border-radius: 18px; overflow: hidden;
+      border: 1px solid rgba(160, 50, 20, 0.3);
+      box-shadow: 0 0 60px rgba(180, 60, 20, 0.12);
+      position: relative;
+    }
+    #mrl-canvas { display: block; width: 100%; cursor: default; }
+
+    /* ── Controls row ── */
+    .mrl-controls-row {
+      max-width: 920px; margin: 1rem auto 0;
+      padding: 0 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.8rem;
+    }
+    .mrl-key-legend {
+      display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;
+    }
+    .mrl-key {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: rgba(60, 20, 10, 0.7);
+      border: 1px solid rgba(160, 60, 30, 0.5);
+      border-radius: 8px; padding: 0.3rem 0.6rem;
+      font-size: 0.75rem; font-weight: 700; color: #c08060;
+      letter-spacing: 0.02em;
+    }
+    .mrl-key kbd {
+      background: rgba(200, 80, 30, 0.2);
+      border-radius: 4px; padding: 1px 5px;
+      font-size: 0.72rem; color: #ff9060;
+      font-family: inherit;
+    }
+    .mrl-btn {
+      background: rgba(200, 60, 20, 0.25);
+      border: 1px solid rgba(200, 80, 30, 0.5);
+      color: #e08060; border-radius: 10px;
+      padding: 0.45rem 1.2rem; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .mrl-btn:hover { background: rgba(200, 60, 20, 0.5); color: #fff; }
+
+    /* ── Touch controls ── */
+    .mrl-touch-controls {
+      max-width: 920px; margin: 0.8rem auto 0;
+      padding: 0 1rem;
+      display: none;
+      justify-content: center; gap: 1rem;
+    }
+    @media (pointer: coarse) { .mrl-touch-controls { display: flex; } }
+    .mrl-touch-btn {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(180, 60, 20, 0.25);
+      border: 2px solid rgba(200, 80, 40, 0.5);
+      color: #ff9060; font-size: 1.4rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── Info section ── */
+    .mrl-info {
+      max-width: 920px; margin: 1.5rem auto 3rem;
+      padding: 0 1rem;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.7rem;
+    }
+    .mrl-info-card {
+      background: rgba(30, 10, 5, 0.7);
+      border: 1px solid rgba(120, 40, 15, 0.35);
+      border-radius: 12px; padding: 0.8rem 1rem;
+    }
+    .mrl-info-title { font-size: 0.78rem; font-weight: 700; color: #c07050; margin: 0 0 0.25rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .mrl-info-body  { font-size: 0.78rem; color: #806050; margin: 0; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+  <nav class="mrl-topbar">
+    <div class="mrl-topbar-inner">
+      <a href="../steam-lessons.html">← Space Science</a>
+      <span class="mrl-topbar-title">Mars Rover Landing</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="mrl-hero">
+    <h1>Mars Rover Landing</h1>
+    <p>You're entering Martian atmosphere. Fight gravity and wind, manage your fuel, and land precisely on the pad. Too fast or off-target — and it's over.</p>
+  </div>
+
+  <div class="mrl-game-wrap">
+    <canvas id="mrl-canvas"></canvas>
+  </div>
+
+  <div class="mrl-controls-row">
+    <div class="mrl-key-legend">
+      <span class="mrl-key"><kbd>↑</kbd> Main thruster</span>
+      <span class="mrl-key"><kbd>←</kbd><kbd>→</kbd> Rotate</span>
+      <span class="mrl-key"><kbd>R</kbd> Restart</span>
+    </div>
+    <button class="mrl-btn" id="mrl-restart-btn">↺ Restart</button>
+  </div>
+
+  <div class="mrl-touch-controls" id="mrl-touch">
+    <button class="mrl-touch-btn" id="tc-left">◀</button>
+    <button class="mrl-touch-btn" id="tc-thrust">▲</button>
+    <button class="mrl-touch-btn" id="tc-right">▶</button>
+  </div>
+
+  <div class="mrl-info">
+    <div class="mrl-info-card">
+      <p class="mrl-info-title">🔴 Mars Gravity</p>
+      <p class="mrl-info-body">3.72 m/s² — about 38% of Earth's. Objects fall slower, but you still need thrust to slow your descent.</p>
+    </div>
+    <div class="mrl-info-card">
+      <p class="mrl-info-title">💨 Martian Wind</p>
+      <p class="mrl-info-body">Mars has thin but persistent winds. A new wind direction and strength is set each game — watch the indicator.</p>
+    </div>
+    <div class="mrl-info-card">
+      <p class="mrl-info-title">⛽ Fuel Management</p>
+      <p class="mrl-info-body">Every thruster burn costs fuel. If you run out before landing, you'll fall uncontrolled. Burn smart.</p>
+    </div>
+    <div class="mrl-info-card">
+      <p class="mrl-info-title">🎯 Landing Criteria</p>
+      <p class="mrl-info-body">Hit the pad with vertical speed &lt; 4 m/s, horizontal speed &lt; 2.5 m/s, and tilt within 12°.</p>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const canvas = document.getElementById('mrl-canvas');
+    const ctx    = canvas.getContext('2d');
+    const wrap   = canvas.parentElement;
+
+    // ── Sizing ──
+    let W, H;
+    function resize() {
+      W = wrap.clientWidth;
+      H = Math.round(W * 0.58);
+      H = Math.max(H, 340);
+      canvas.width  = W;
+      canvas.height = H;
+    }
+    resize();
+    window.addEventListener('resize', () => { resize(); buildTerrain(); });
+
+    // ── Physics constants ──
+    const FPS      = 60;
+    const DT       = 1 / FPS;
+    const GRAVITY  = 38;          // px/s² (tuned for feel; represents ~3.72 m/s²)
+    const THRUST   = 110;         // px/s² main engine
+    const ROT_SPD  = 90;          // deg/s
+    const FUEL_MAX = 100;
+    const FUEL_BURN= 22;          // % per second of thrust
+    const SAFE_VSPD= 75;          // px/s (safe vertical landing speed)
+    const SAFE_HSPD= 55;          // px/s (safe horizontal)
+    const SAFE_TILT= 12;          // degrees from vertical
+
+    // ── State ──
+    let state;     // 'playing' | 'landed' | 'crashed'
+    let lander, terrain, padX, padW, wind, windLabel;
+    let keys = {};
+
+    // ── Terrain ──
+    function buildTerrain() {
+      const pts = [];
+      const segW = W / 14;
+      // Flat ground level with bumps
+      let y = H * 0.72;
+      for (let i = 0; i <= 14; i++) {
+        if (i === 0 || i === 14) { pts.push({ x: i * segW, y }); continue; }
+        y = H * 0.68 + Math.random() * H * 0.10;
+        pts.push({ x: i * segW, y });
+      }
+      // Landing pad: flat segment
+      const padSeg = 4 + Math.floor(Math.random() * 6);
+      const pY = H * 0.70 + Math.random() * H * 0.06;
+      pts[padSeg].y = pY;
+      pts[padSeg + 1] = pts[padSeg + 1] || {};
+      pts[padSeg + 1].x = (padSeg + 1) * segW;
+      pts[padSeg + 1].y = pY;
+      padX = pts[padSeg].x;
+      padW = segW;
+
+      terrain = pts;
+    }
+
+    function resetLander() {
+      lander = {
+        x:    W * 0.5,
+        y:    H * 0.08,
+        vx:   0,
+        vy:   0,
+        angle: 0,      // deg, 0 = pointing up
+        fuel: FUEL_MAX,
+        thrusting: false,
+      };
+      // Random wind per game
+      const wmag = 8 + Math.random() * 18;
+      const wdir = Math.random() < 0.5 ? 1 : -1;
+      wind = wmag * wdir;
+      windLabel = (wdir > 0 ? '→' : '←') + ' ' + wmag.toFixed(1) + ' m/s';
+    }
+
+    function initGame() {
+      buildTerrain();
+      resetLander();
+      state = 'playing';
+    }
+
+    // ── Collision detection ──
+    function terrainYAt(x) {
+      if (!terrain || terrain.length < 2) return H;
+      for (let i = 0; i < terrain.length - 1; i++) {
+        const a = terrain[i], b = terrain[i + 1];
+        if (x >= a.x && x <= b.x) {
+          const t = (x - a.x) / (b.x - a.x);
+          return a.y + t * (b.y - a.y);
+        }
+      }
+      return H;
+    }
+
+    function isOnPad(x) { return x >= padX && x <= padX + padW; }
+
+    function checkLanding() {
+      const gY = terrainYAt(lander.x);
+      if (lander.y + 16 >= gY) {
+        const vspd  = Math.abs(lander.vy);
+        const hspd  = Math.abs(lander.vx);
+        const tilt  = Math.abs(lander.angle) % 360;
+        const normTilt = tilt > 180 ? 360 - tilt : tilt;
+        const onPad = isOnPad(lander.x);
+        if (onPad && vspd < SAFE_VSPD && hspd < SAFE_HSPD && normTilt < SAFE_TILT) {
+          state = 'landed';
+        } else {
+          state = 'crashed';
+        }
+        lander.y = gY - 16;
+        lander.vy = 0; lander.vx = 0;
+      }
+    }
+
+    // ── Update ──
+    function update() {
+      if (state !== 'playing') return;
+
+      // Rotation
+      if (keys['ArrowLeft']  || keys['a']) lander.angle -= ROT_SPD * DT;
+      if (keys['ArrowRight'] || keys['d']) lander.angle += ROT_SPD * DT;
+
+      // Thrust
+      const thrusting = (keys['ArrowUp'] || keys['w'] || keys[' ']) && lander.fuel > 0;
+      lander.thrusting = thrusting;
+      if (thrusting) {
+        const rad = (lander.angle - 90) * Math.PI / 180;
+        lander.vx += Math.cos(rad) * THRUST * DT;
+        lander.vy += Math.sin(rad) * THRUST * DT;
+        lander.fuel = Math.max(0, lander.fuel - FUEL_BURN * DT);
+      }
+
+      // Wind (horizontal force)
+      lander.vx += wind * DT;
+
+      // Gravity
+      lander.vy += GRAVITY * DT;
+
+      // Integrate
+      lander.x += lander.vx * DT;
+      lander.y += lander.vy * DT;
+
+      // Bounds
+      if (lander.x < 10) { lander.x = 10; lander.vx *= -0.4; }
+      if (lander.x > W - 10) { lander.x = W - 10; lander.vx *= -0.4; }
+
+      checkLanding();
+    }
+
+    // ── Draw helpers ──
+    function drawTerrain() {
+      if (!terrain) return;
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      terrain.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(W, H);
+      ctx.closePath();
+
+      const tGrad = ctx.createLinearGradient(0, H * 0.65, 0, H);
+      tGrad.addColorStop(0, '#6b2a14');
+      tGrad.addColorStop(0.3, '#4a1a0a');
+      tGrad.addColorStop(1, '#2a0d05');
+      ctx.fillStyle = tGrad;
+      ctx.fill();
+
+      // Terrain outline
+      ctx.beginPath();
+      terrain.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.strokeStyle = '#8b3a1e';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Landing pad
+      const pY = terrainYAt(padX + padW / 2);
+      ctx.fillStyle = '#e08040';
+      ctx.fillRect(padX, pY - 6, padW, 6);
+      // Pad lights
+      for (let i = 0; i <= 4; i++) {
+        ctx.beginPath();
+        ctx.arc(padX + (i / 4) * padW, pY - 6, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffe080';
+        ctx.fill();
+      }
+      // Pad label
+      ctx.font = 'bold 11px -apple-system, sans-serif';
+      ctx.fillStyle = '#ffc060';
+      ctx.textAlign = 'center';
+      ctx.fillText('LANDING ZONE', padX + padW / 2, pY - 14);
+    }
+
+    function drawLander() {
+      const { x, y, angle, thrusting } = lander;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle * Math.PI / 180);
+
+      // Thrust flame
+      if (thrusting) {
+        const flameH = 18 + Math.random() * 10;
+        const flameGrad = ctx.createLinearGradient(0, 10, 0, 10 + flameH);
+        flameGrad.addColorStop(0, 'rgba(255,180,50,0.95)');
+        flameGrad.addColorStop(0.5, 'rgba(255,80,20,0.7)');
+        flameGrad.addColorStop(1, 'rgba(255,40,0,0)');
+        ctx.beginPath();
+        ctx.moveTo(-6, 10);
+        ctx.lineTo(0, 10 + flameH);
+        ctx.lineTo(6, 10);
+        ctx.closePath();
+        ctx.fillStyle = flameGrad;
+        ctx.fill();
+      }
+
+      // Body (lander capsule)
+      ctx.beginPath();
+      ctx.moveTo(0, -16);
+      ctx.lineTo(10, 2);
+      ctx.lineTo(10, 10);
+      ctx.lineTo(-10, 10);
+      ctx.lineTo(-10, 2);
+      ctx.closePath();
+      ctx.fillStyle = '#d0c0b0';
+      ctx.fill();
+      ctx.strokeStyle = '#706050';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Landing legs
+      ctx.strokeStyle = '#a09080';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-8, 8);  ctx.lineTo(-14, 16); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(8, 8);   ctx.lineTo(14, 16);  ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-14, 16); ctx.lineTo(-18, 16); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(14, 16);  ctx.lineTo(18, 16);  ctx.stroke();
+
+      // Viewport
+      ctx.beginPath();
+      ctx.arc(0, -5, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#60a8d0';
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawHUD() {
+      const pad = 14;
+      const fuelPct = lander.fuel / FUEL_MAX;
+
+      // ── Fuel bar ──
+      const bx = pad, by = pad, bw = 120, bh = 14;
+      ctx.fillStyle = 'rgba(20,8,4,0.7)';
+      ctx.beginPath(); ctx.roundRect(bx - 6, by - 6, bw + 50, bh + 24, 8); ctx.fill();
+
+      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.fillStyle = '#c07050';
+      ctx.textAlign = 'left';
+      ctx.fillText('FUEL', bx, by + 10);
+
+      ctx.fillStyle = 'rgba(100,30,10,0.6)';
+      ctx.fillRect(bx + 34, by, bw, bh);
+      const fc = fuelPct > 0.3 ? '#e07030' : '#ff4010';
+      ctx.fillStyle = fc;
+      ctx.fillRect(bx + 34, by, bw * fuelPct, bh);
+      ctx.strokeStyle = 'rgba(180,60,20,0.5)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx + 34, by, bw, bh);
+
+      // ── Telemetry ──
+      const tx = W - pad;
+      const vspd  = lander.vy.toFixed(1);
+      const hspd  = lander.vx.toFixed(1);
+      const alt   = Math.max(0, terrainYAt(lander.x) - lander.y - 16).toFixed(0);
+      const tilt  = (Math.abs(lander.angle) % 360);
+      const normT = tilt > 180 ? (360 - tilt).toFixed(1) : tilt.toFixed(1);
+
+      ctx.fillStyle = 'rgba(20,8,4,0.7)';
+      ctx.beginPath(); ctx.roundRect(tx - 140, pad - 6, 144, 92, 8); ctx.fill();
+
+      ctx.font = '11px -apple-system, monospace';
+      ctx.textAlign = 'right';
+      const lines = [
+        [`ALT`, `${alt} m`],
+        [`V-SPD`, `${vspd > 0 ? '↓' : '↑'} ${Math.abs(vspd)} m/s`],
+        [`H-SPD`, `${hspd >= 0 ? '→' : '←'} ${Math.abs(hspd)} m/s`],
+        [`TILT`, `${normT}°`],
+      ];
+      lines.forEach(([label, val], i) => {
+        const ly = pad + 14 + i * 18;
+        ctx.fillStyle = '#805040';
+        ctx.fillText(label, tx - 64, ly);
+        const danger = (label === 'V-SPD' && Math.abs(lander.vy) > SAFE_VSPD) ||
+                       (label === 'H-SPD' && Math.abs(lander.vx) > SAFE_HSPD) ||
+                       (label === 'TILT'  && parseFloat(normT) > SAFE_TILT);
+        ctx.fillStyle = danger ? '#ff6030' : '#d09070';
+        ctx.fillText(val, tx, ly);
+      });
+
+      // ── Wind indicator ──
+      const wx = W / 2, wy = pad + 8;
+      ctx.fillStyle = 'rgba(20,8,4,0.65)';
+      ctx.beginPath(); ctx.roundRect(wx - 70, wy - 4, 140, 22, 6); ctx.fill();
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.fillStyle = '#c07848';
+      ctx.textAlign = 'center';
+      ctx.fillText(`WIND  ${windLabel}`, wx, wy + 12);
+    }
+
+    function drawSky() {
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.7);
+      skyGrad.addColorStop(0,   '#0a0402');
+      skyGrad.addColorStop(0.4, '#1e0c06');
+      skyGrad.addColorStop(0.8, '#3a1408');
+      skyGrad.addColorStop(1,   '#6b2a10');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Dust haze
+      const haze = ctx.createLinearGradient(0, H * 0.55, 0, H * 0.72);
+      haze.addColorStop(0, 'rgba(160,60,20,0)');
+      haze.addColorStop(1, 'rgba(160,60,20,0.18)');
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, H * 0.55, W, H * 0.17);
+    }
+
+    function drawOverlay() {
+      ctx.fillStyle = 'rgba(10,4,2,0.75)';
+      ctx.fillRect(0, 0, W, H);
+
+      const cx = W / 2, cy = H / 2;
+
+      if (state === 'landed') {
+        ctx.font = `bold ${Math.round(W * 0.055)}px -apple-system, sans-serif`;
+        ctx.fillStyle = '#80ff80';
+        ctx.textAlign = 'center';
+        ctx.fillText('LANDED SUCCESSFULLY', cx, cy - 24);
+
+        const fuelLeft = lander.fuel.toFixed(1);
+        ctx.font = `${Math.round(W * 0.028)}px -apple-system, sans-serif`;
+        ctx.fillStyle = '#a0e0a0';
+        ctx.fillText(`Fuel remaining: ${fuelLeft}%`, cx, cy + 16);
+      } else {
+        ctx.font = `bold ${Math.round(W * 0.055)}px -apple-system, sans-serif`;
+        ctx.fillStyle = '#ff6040';
+        ctx.textAlign = 'center';
+        const onPad = isOnPad(lander.x);
+        ctx.fillText(onPad ? 'CRASH — TOO FAST' : 'CRASH — MISSED PAD', cx, cy - 24);
+      }
+
+      ctx.font = `${Math.round(W * 0.025)}px -apple-system, sans-serif`;
+      ctx.fillStyle = '#c07050';
+      ctx.fillText('Press R or tap Restart to try again', cx, cy + 52);
+    }
+
+    // ── Main loop ──
+    let lastTime = 0;
+    let accum = 0;
+    function loop(ts) {
+      const elapsed = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
+      if (state === 'playing') {
+        accum += elapsed;
+        while (accum >= DT) { update(); accum -= DT; }
+      }
+
+      drawSky();
+      drawTerrain();
+      drawLander();
+      drawHUD();
+      if (state !== 'playing') drawOverlay();
+
+      requestAnimationFrame(loop);
+    }
+
+    // ── Input ──
+    document.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      if (e.key === 'r' || e.key === 'R') { initGame(); }
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+    });
+    document.addEventListener('keyup',  e => { keys[e.key] = false; });
+
+    document.getElementById('mrl-restart-btn').addEventListener('click', initGame);
+
+    // Touch controls
+    function touchKey(id, key, on) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const set = v => { keys[key] = v; };
+      el.addEventListener('touchstart', e => { e.preventDefault(); set(on); }, { passive: false });
+      el.addEventListener('touchend',   e => { e.preventDefault(); set(false); }, { passive: false });
+    }
+    touchKey('tc-thrust', 'ArrowUp',    true);
+    touchKey('tc-left',   'ArrowLeft',  true);
+    touchKey('tc-right',  'ArrowRight', true);
+
+    // ── Boot ──
+    initGame();
+    requestAnimationFrame(loop);
+  })();
+  </script>
+
+</body>
+</html>

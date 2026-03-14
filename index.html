@@ -138,7 +138,7 @@
             <button class="vod-play-btn" id="vod-play-btn" aria-label="Play video">
               <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.92"/>
-                <polygon points="22,16 44,28 22,40" fill="#111"/>
+                <polygon points="23,17 43,28 23,39" fill="#111"/>
               </svg>
             </button>
             <span class="vod-duration" id="vod-duration"></span>
@@ -152,6 +152,18 @@
         </div>
       </article>
     </section>
+
+  <!-- VOD Modal -->
+  <div class="vod-modal-backdrop" id="vod-modal-backdrop" role="dialog" aria-modal="true" aria-label="Video player">
+    <div class="vod-modal">
+      <button class="vod-modal-close" id="vod-modal-close" aria-label="Close video">✕</button>
+      <video id="vod-modal-video" controls></video>
+      <div class="vod-modal-info">
+        <p class="vod-modal-category" id="vod-modal-category"></p>
+        <p class="vod-modal-title" id="vod-modal-title"></p>
+      </div>
+    </div>
+  </div>
 
     <section class="columns">
       <article class="card">
@@ -221,7 +233,7 @@
       document.getElementById('vod-title').textContent = v.title;
       document.getElementById('vod-desc').textContent = v.desc;
 
-      // Generate thumbnail
+      // Generate thumbnail via canvas
       const thumbImg = document.getElementById('vod-thumb');
       const tmpVid = document.createElement('video');
       tmpVid.muted = true;
@@ -244,17 +256,27 @@
         tmpVid.src = '';
       }, { once: true });
 
-      // Play button
+      // Play button → open modal
+      const backdrop = document.getElementById('vod-modal-backdrop');
+      const modalVideo = document.getElementById('vod-modal-video');
+
       document.getElementById('vod-play-btn').addEventListener('click', () => {
-        const wrap = document.getElementById('vod-thumb-wrap');
-        const player = document.createElement('video');
-        player.src = v.src;
-        player.controls = true;
-        player.autoplay = true;
-        player.className = 'vod-player';
-        wrap.innerHTML = '';
-        wrap.appendChild(player);
+        document.getElementById('vod-modal-category').textContent = v.category;
+        document.getElementById('vod-modal-title').textContent = v.title;
+        modalVideo.src = v.src;
+        backdrop.classList.add('open');
+        modalVideo.play();
       });
+
+      function closeModal() {
+        backdrop.classList.remove('open');
+        modalVideo.pause();
+        modalVideo.src = '';
+      }
+
+      document.getElementById('vod-modal-close').addEventListener('click', closeModal);
+      backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
     })();
   </script>
 </body>
