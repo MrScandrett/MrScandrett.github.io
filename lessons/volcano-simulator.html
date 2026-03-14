@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Volcano Simulator · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Simulate famous volcanic eruptions in 3D — lava flows, ash columns, pyroclastic surges and more." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    body { background: #060308; color: #e0d0c0; margin: 0; overflow-x: hidden; }
+
+    /* ── Topbar ── */
+    .vs-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px);
+      background: rgba(10, 4, 2, 0.92);
+      border-bottom: 1px solid rgba(200, 80, 20, 0.2);
+    }
+    .vs-topbar-inner {
+      width: min(1440px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .vs-topbar a { color: #e09060; text-decoration: none; font-size: 0.82rem; }
+    .vs-topbar a:hover { color: #fff; }
+    .vs-topbar-title { font-size: 0.9rem; font-weight: 700; color: #f0d0b0; }
+
+    /* ── Hero ── */
+    .vs-hero {
+      text-align: center; padding: 2rem 1.5rem 0.8rem;
+      max-width: 720px; margin: 0 auto;
+    }
+    .vs-hero h1 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
+    .vs-hero p { font-size: 0.88rem; color: rgba(220,190,160,0.7); margin: 0; line-height: 1.55; }
+
+    /* ── Main layout ── */
+    .vs-wrap {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 1rem;
+      padding: 0.8rem 1.1rem 1.5rem;
+      max-width: 1440px;
+      margin: 0 auto;
+      align-items: start;
+    }
+    @media (max-width: 960px) { .vs-wrap { grid-template-columns: 1fr; } }
+
+    /* ── Canvas ── */
+    .volcano-outer {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #060308;
+      aspect-ratio: 4/3;
+      box-shadow: 0 0 60px rgba(200,60,10,0.12), inset 0 0 40px rgba(0,0,0,0.5);
+    }
+    #vol-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+    #vol-canvas:active { cursor: grabbing; }
+    .vol-overlay {
+      position: absolute; top: 12px; left: 14px;
+      display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+    }
+    .vol-badge {
+      background: rgba(10,4,2,0.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(200,80,20,0.35);
+      border-radius: 999px; padding: 5px 14px;
+      font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; color: #f0a060;
+    }
+    .vei-badge {
+      background: rgba(10,4,2,0.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(200,80,20,0.25);
+      border-radius: 999px; padding: 4px 12px;
+      font-size: 0.7rem; font-weight: 700; color: rgba(220,180,140,0.8);
+    }
+    .drag-hint {
+      position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+      font-size: 0.68rem; color: rgba(200,160,120,0.4); pointer-events: none; white-space: nowrap;
+    }
+
+    /* ── Control Panel ── */
+    .vs-panel { display: flex; flex-direction: column; gap: 0.9rem; }
+
+    /* Eruption cards (horizontal scroll) */
+    .eruption-scroll {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+      scrollbar-width: thin; scrollbar-color: rgba(200,80,20,0.3) transparent;
+    }
+    .eruption-scroll::-webkit-scrollbar { height: 3px; }
+    .eruption-scroll::-webkit-scrollbar-thumb { background: rgba(200,80,20,0.3); border-radius: 99px; }
+    .ev-card {
+      flex-shrink: 0; width: 130px;
+      background: rgba(20,8,4,0.7);
+      border: 1px solid rgba(180,70,15,0.25);
+      border-radius: 12px; padding: 9px 10px;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    }
+    .ev-card:hover { border-color: rgba(230,100,30,0.5); background: rgba(30,10,4,0.85); }
+    .ev-card.active { border-color: rgba(255,130,40,0.7); background: rgba(40,12,3,0.9); }
+    .ev-flag { font-size: 1.1rem; line-height: 1; }
+    .ev-name { font-size: 0.68rem; font-weight: 700; color: #e8c090; margin: 3px 0 2px; line-height: 1.25; }
+    .ev-year { font-size: 0.62rem; color: rgba(200,150,100,0.6); }
+    .ev-vei  { display: inline-block; font-size: 0.6rem; font-weight: 800; padding: 1px 6px;
+               border-radius: 999px; background: rgba(200,60,10,0.25);
+               color: #ff9060; margin-top: 3px; }
+
+    /* Volcano type selector */
+    .type-tabs {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+      background: rgba(15,5,2,0.6);
+      border: 1px solid rgba(180,70,15,0.2);
+      border-radius: 12px; padding: 5px;
+    }
+    .type-tab {
+      border: none; border-radius: 8px; padding: 7px 4px;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.02em;
+      cursor: pointer; transition: background 0.18s, color 0.18s;
+      background: transparent; color: rgba(200,150,100,0.5);
+      text-align: center; line-height: 1.3;
+    }
+    .type-tab:hover { background: rgba(200,80,20,0.12); color: #e0a060; }
+    .type-tab.active { background: rgba(200,70,15,0.22); color: #f5c080; border: 1px solid rgba(220,100,30,0.3); }
+
+    /* Controls card */
+    .vs-card {
+      background: rgba(15,5,2,0.65);
+      border: 1px solid rgba(180,70,15,0.2);
+      border-radius: 15px; padding: 1rem 1.1rem;
+    }
+    .vs-card h3 {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em;
+      color: rgba(200,150,100,0.5); text-transform: uppercase; margin: 0 0 0.85rem;
+    }
+    .param-row { margin-bottom: 0.8rem; }
+    .param-row:last-child { margin-bottom: 0; }
+    .param-label { display: flex; justify-content: space-between; font-size: 0.77rem; color: rgba(220,190,150,0.75); margin-bottom: 5px; }
+    .param-label strong { color: #f0c080; font-variant-numeric: tabular-nums; }
+    input[type=range] {
+      width: 100%; height: 4px; border-radius: 999px;
+      background: rgba(180,70,15,0.25); outline: none; cursor: pointer;
+      -webkit-appearance: none; appearance: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px;
+      border-radius: 50%; background: #e06820;
+      border: 2px solid #f0a060; box-shadow: 0 0 6px rgba(230,100,30,0.5);
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #e06820; border: 2px solid #f0a060;
+    }
+    .range-ends { display: flex; justify-content: space-between; font-size: 0.61rem; color: rgba(180,130,80,0.4); margin-top: 3px; }
+
+    /* Readouts */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .stat-card {
+      background: rgba(10,3,1,0.6);
+      border: 1px solid rgba(180,70,15,0.18);
+      border-radius: 11px; padding: 9px 11px;
+    }
+    .stat-lbl { font-size: 0.63rem; font-weight: 700; letter-spacing: 0.05em; color: rgba(180,130,80,0.5); text-transform: uppercase; }
+    .stat-val { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .stat-val.low    { color: #90c870; }
+    .stat-val.medium { color: #f0c040; }
+    .stat-val.high   { color: #ff8030; }
+    .stat-val.extreme{ color: #ff3020; }
+    .stat-val.lava   { color: #ff9050; }
+    .stat-val.blue   { color: #60b8ff; }
+
+    /* Event description */
+    .event-desc {
+      background: rgba(10,3,1,0.6);
+      border: 1px solid rgba(180,70,15,0.15);
+      border-radius: 11px; padding: 10px 12px;
+      font-size: 0.76rem; line-height: 1.55;
+      color: rgba(210,175,135,0.75);
+    }
+    .event-desc strong { color: #f0c080; display: block; margin-bottom: 4px; font-size: 0.78rem; }
+
+    /* Info */
+    .vs-info { max-width: min(1440px, calc(100% - 2.2rem)); margin: 0 auto; padding: 0 1.1rem 3rem; }
+    .info-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; }
+    @media (max-width: 700px) { .info-row { grid-template-columns: 1fr; } }
+    .info-card { background: rgba(15,5,2,0.65); border: 1px solid rgba(180,70,15,0.18); border-radius: 13px; padding: 1rem; }
+    .info-card h4 { font-size: 0.8rem; font-weight: 700; color: #f0a060; margin: 0 0 0.4rem; }
+    .info-card p  { font-size: 0.77rem; color: rgba(210,175,135,0.65); margin: 0; line-height: 1.55; }
+
+    /* VEI bar */
+    .vei-bar-wrap { margin-top: 0.7rem; }
+    .vei-bar-row { display: flex; gap: 3px; align-items: center; margin-bottom: 4px; }
+    .vei-seg {
+      height: 8px; border-radius: 3px; transition: opacity 0.3s;
+      flex: 1; opacity: 0.2;
+    }
+    .vei-seg.active { opacity: 1; }
+    .vei-labels { display: flex; justify-content: space-between; font-size: 0.6rem; color: rgba(180,130,80,0.4); }
+  </style>
+</head>
+<body>
+
+  <nav class="vs-topbar">
+    <div class="vs-topbar-inner">
+      <a href="../steam-lessons.html">← Earth Science</a>
+      <span class="vs-topbar-title">🌋 Volcano Simulator</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <header class="vs-hero">
+    <h1>🌋 Volcano Simulator</h1>
+    <p>Explore real volcano types and replay history's most notorious eruptions — from Pompeii to Yellowstone. Watch lava flows, ash columns, and pyroclastic surges unfold in 3D.</p>
+  </header>
+
+  <div class="vs-wrap">
+
+    <!-- 3D Canvas -->
+    <div class="volcano-outer" id="vol-outer">
+      <canvas id="vol-canvas"></canvas>
+      <div class="vol-overlay">
+        <span class="vol-badge" id="vol-name-badge">🌋 Mt Vesuvius — 79 AD</span>
+        <span class="vei-badge" id="vei-badge">VEI 5 · Stratovolcano</span>
+      </div>
+      <div class="drag-hint">Drag to orbit · Scroll to zoom</div>
+    </div>
+
+    <!-- Controls -->
+    <div class="vs-panel">
+
+      <!-- Famous eruptions -->
+      <div class="vs-card">
+        <h3>Famous Eruptions</h3>
+        <div class="eruption-scroll" id="eruption-scroll"></div>
+      </div>
+
+      <!-- Volcano type -->
+      <div class="vs-card">
+        <h3>Volcano Type</h3>
+        <div class="type-tabs" id="type-tabs">
+          <button class="type-tab" data-vtype="shield">🛡️<br>Shield</button>
+          <button class="type-tab active" data-vtype="strato">🗻<br>Strato</button>
+          <button class="type-tab" data-vtype="caldera">🕳️<br>Caldera</button>
+          <button class="type-tab" data-vtype="super">💥<br>Super</button>
+        </div>
+      </div>
+
+      <!-- Sliders -->
+      <div class="vs-card">
+        <h3>Eruption Controls</h3>
+        <div class="param-row">
+          <div class="param-label">Eruption Intensity <strong id="v-intensity">72%</strong></div>
+          <input type="range" id="s-intensity" min="0" max="100" value="72" />
+          <div class="range-ends"><span>Dormant</span><span>Maximum</span></div>
+        </div>
+        <div class="param-row">
+          <div class="param-label">Column Height <strong id="v-column">18 km</strong></div>
+          <input type="range" id="s-column" min="1" max="45" value="18" />
+          <div class="range-ends"><span>1 km</span><span>45 km</span></div>
+        </div>
+        <div class="param-row">
+          <div class="param-label">Lava Viscosity <strong id="v-viscosity">Andesite</strong></div>
+          <input type="range" id="s-viscosity" min="0" max="100" value="50" step="1" />
+          <div class="range-ends"><span>Basalt (fluid)</span><span>Rhyolite (thick)</span></div>
+        </div>
+        <div class="param-row">
+          <div class="param-label">Pyroclastic Flow <strong id="v-pyro">40%</strong></div>
+          <input type="range" id="s-pyro" min="0" max="100" value="40" />
+          <div class="range-ends"><span>None</span><span>Full surge</span></div>
+        </div>
+      </div>
+
+      <!-- Readouts -->
+      <div class="vs-card">
+        <h3>Eruption Data</h3>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-lbl">Ejecta Vol.</div><div class="stat-val high" id="out-ejecta">1.2 km³</div></div>
+          <div class="stat-card"><div class="stat-lbl">Temp (°C)</div><div class="stat-val lava" id="out-temp">1 050°C</div></div>
+          <div class="stat-card"><div class="stat-lbl">Column</div><div class="stat-val medium" id="out-col">18 km</div></div>
+          <div class="stat-card"><div class="stat-lbl">SO₂ Output</div><div class="stat-val high" id="out-so2">2.4 Mt</div></div>
+          <div class="stat-card"><div class="stat-lbl">Ash Radius</div><div class="stat-val medium" id="out-ash">320 km</div></div>
+          <div class="stat-card"><div class="stat-lbl">VEI</div><div class="stat-val extreme" id="out-vei">5</div></div>
+        </div>
+        <!-- VEI bar -->
+        <div class="vei-bar-wrap">
+          <div class="vei-bar-row" id="vei-bar"></div>
+          <div class="vei-labels"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+        </div>
+      </div>
+
+      <!-- Event description -->
+      <div class="event-desc" id="event-desc">
+        <strong>Mt Vesuvius — 79 AD · Italy</strong>
+        Pyroclastic surges reaching 300 °C buried Pompeii and Herculaneum under 4–6 m of ash and pumice. 16,000–20,000 people perished. The eruption lasted 18 hours and ejected 3 km³ of material.
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Info -->
+  <section class="vs-info">
+    <div class="vs-card" style="margin-bottom:1rem">
+      <h3>Volcanology Essentials</h3>
+      <div class="info-row">
+        <div class="info-card">
+          <h4>🔥 Magma Types</h4>
+          <p><strong>Basaltic</strong> magma (Hawaii) has low silica and is runny — it erupts effusively, creating broad shield volcanoes and flowing lava rivers. <strong>Rhyolitic</strong> magma (Yellowstone) has high silica, is incredibly viscous, and traps gas — leading to explosive, catastrophic eruptions.</p>
+        </div>
+        <div class="info-card">
+          <h4>📊 VEI Scale</h4>
+          <p>The <em>Volcanic Explosivity Index</em> measures eruption magnitude on a 0–8 logarithmic scale. Each step is 10× more powerful. VEI 8 "supereruptions" are rare but can lower global temperatures for years by injecting sulfur dioxide into the stratosphere.</p>
+        </div>
+        <div class="info-card">
+          <h4>💨 Pyroclastic Flows</h4>
+          <p>The most lethal volcanic hazard — dense, fast-moving avalanches of hot gas, ash, and rock fragments travelling at 100–700 km/h at 300–800 °C. No natural shelter can protect against a direct flow. They were responsible for most deaths at Vesuvius and St. Helens.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ══════════════════════════════════════════
+       NOISE
+    ══════════════════════════════════════════ */
+    function hashN(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+    function hash2(x, y) { return hashN(x + y * 57); }
+    function sst(t) { return t * t * (3 - 2 * t); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function vn(x, y) {
+      const ix = Math.floor(x), iy = Math.floor(y);
+      const fx = x - ix, fy = y - iy;
+      return lerp(lerp(hash2(ix, iy), hash2(ix + 1, iy), sst(fx)),
+                  lerp(hash2(ix, iy + 1), hash2(ix + 1, iy + 1), sst(fx)), sst(fy));
+    }
+    function fbm(x, y, o) {
+      let v = 0, a = 0.5, f = 1;
+      for (let i = 0; i < o; i++) { v += a * vn(x * f, y * f); a *= 0.5; f *= 2; }
+      return v;
+    }
+
+    /* ══════════════════════════════════════════
+       FAMOUS ERUPTION PRESETS
+    ══════════════════════════════════════════ */
+    const ERUPTIONS = [
+      { id:'vesuvius79',  flag:'🇮🇹', name:'Mt Vesuvius', year:'79 AD',    vei:5, vtype:'strato',  intensity:82, column:27, viscosity:70, pyro:80,
+        desc:'<strong>Mt Vesuvius — 79 AD · Italy</strong>Pyroclastic surges at 300 °C buried Pompeii and Herculaneum under 4–6 m of ash. 16,000–20,000 killed. Eruption lasted 18 hours, ejecting 3 km³ of material.' },
+      { id:'tambora1815', flag:'🇮🇩', name:'Tambora',     year:'1815',     vei:7, vtype:'caldera', intensity:100, column:43, viscosity:80, pyro:95,
+        desc:'<strong>Tambora — 1815 · Indonesia</strong>Deadliest eruption in recorded history. 71,000+ killed. Ejected 160 km³ of material. Caused "Year Without Summer" in 1816, triggering crop failures and famine worldwide.' },
+      { id:'krakatoa1883',flag:'🇮🇩', name:'Krakatoa',    year:'1883',     vei:6, vtype:'caldera', intensity:95, column:36, viscosity:75, pyro:90,
+        desc:'<strong>Krakatoa — 1883 · Indonesia</strong>Explosion heard 4,800 km away — the loudest sound in recorded history. Tsunamis up to 30 m killed 36,000. The island largely collapsed into its magma chamber.' },
+      { id:'sthelenr1980',flag:'🇺🇸', name:'Mt St Helens',year:'1980',     vei:5, vtype:'strato',  intensity:78, column:24, viscosity:65, pyro:72,
+        desc:'<strong>Mt St Helens — 1980 · USA</strong>A lateral blast removed the north face in seconds. 57 deaths. Ash column reached 24 km. Lahars and pyroclastic flows devastated 600 km² of forest.' },
+      { id:'pinatubo1991', flag:'🇵🇭', name:'Pinatubo',   year:'1991',     vei:6, vtype:'strato',  intensity:92, column:35, viscosity:78, pyro:88,
+        desc:'<strong>Pinatubo — 1991 · Philippines</strong>Second-largest 20th-century eruption. Injected 20 Mt of SO₂ into the stratosphere, cooling the Earth by ~0.5 °C for 2 years. 800 deaths.' },
+      { id:'eyja2010',     flag:'🇮🇸', name:'Eyjafjallajökull',year:'2010', vei:4, vtype:'strato',  intensity:48, column:10, viscosity:40, pyro:18,
+        desc:'<strong>Eyjafjallajökull — 2010 · Iceland</strong>Subglacial eruption melted the ice cap, sending meltwater floods. Fine ash cloud grounded 100,000 flights across Europe for 6 days.' },
+      { id:'maunaloa2022', flag:'🇺🇸', name:'Mauna Loa',  year:'2022',     vei:1, vtype:'shield',  intensity:38, column:4,  viscosity:10, pyro:5,
+        desc:'<strong>Mauna Loa — 2022 · Hawaii, USA</strong>Earth\'s largest active volcano erupted for the first time since 1984. Spectacular lava fountains and low-viscosity basaltic flows moved toward populated areas.' },
+      { id:'yellowstone',  flag:'🇺🇸', name:'Yellowstone',year:'Hypothetical', vei:8, vtype:'super', intensity:100, column:45, viscosity:95, pyro:100,
+        desc:'<strong>Yellowstone — Hypothetical Supereruption</strong>A full VEI 8 eruption would bury North America in metres of ash and inject enough SO₂ to trigger a decade-long volcanic winter. Last occurred 640,000 years ago.' },
+    ];
+
+    /* ══════════════════════════════════════════
+       THREE.JS SETUP
+    ══════════════════════════════════════════ */
+    const canvas  = document.getElementById('vol-canvas');
+    const outer   = document.getElementById('vol-outer');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+
+    const scene  = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x180805, 0.018);
+
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 500);
+    let camDist = 18, camTheta = 0.5, camPhi = 1.1;
+
+    function updateCam() {
+      camera.position.set(
+        camDist * Math.sin(camPhi) * Math.sin(camTheta),
+        camDist * Math.cos(camPhi),
+        camDist * Math.sin(camPhi) * Math.cos(camTheta)
+      );
+      camera.lookAt(0, 2, 0);
+    }
+    updateCam();
+
+    /* ── Orbit controls ── */
+    let isDrag = false, lastMX = 0, lastMY = 0;
+    canvas.addEventListener('mousedown', e => { isDrag = true; lastMX = e.clientX; lastMY = e.clientY; });
+    window.addEventListener('mouseup',   () => { isDrag = false; });
+    canvas.addEventListener('mousemove', e => {
+      if (!isDrag) return;
+      camTheta -= (e.clientX - lastMX) * 0.009;
+      camPhi = clamp(camPhi - (e.clientY - lastMY) * 0.007, 0.22, 1.4);
+      lastMX = e.clientX; lastMY = e.clientY; updateCam();
+    });
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      camDist = clamp(camDist + e.deltaY * 0.04, 5, 50);
+      updateCam();
+    }, { passive: false });
+    let lTD = 0, lTX = 0, lTY = 0;
+    canvas.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) { isDrag = true; lTX = e.touches[0].clientX; lTY = e.touches[0].clientY; }
+      if (e.touches.length === 2) lTD = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    }, { passive: true });
+    canvas.addEventListener('touchend', () => { isDrag = false; });
+    canvas.addEventListener('touchmove', e => {
+      if (e.touches.length === 1 && isDrag) {
+        camTheta -= (e.touches[0].clientX - lTX) * 0.012;
+        camPhi = clamp(camPhi - (e.touches[0].clientY - lTY) * 0.009, 0.22, 1.4);
+        lTX = e.touches[0].clientX; lTY = e.touches[0].clientY; updateCam();
+      }
+      if (e.touches.length === 2) {
+        const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        camDist = clamp(camDist - (d - lTD) * 0.04, 5, 50);
+        lTD = d; updateCam();
+      }
+    }, { passive: true });
+
+    /* ── Resize ── */
+    function onResize() {
+      const W = outer.clientWidth, H = outer.clientHeight;
+      renderer.setSize(W, H, false);
+      camera.aspect = W / H; camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', onResize);
+    requestAnimationFrame(onResize);
+
+    /* ══════════════════════════════════════════
+       LIGHTING
+    ══════════════════════════════════════════ */
+    const sunLight = new THREE.DirectionalLight(0xffd090, 1.2);
+    sunLight.position.set(8, 14, 6);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
+    scene.add(new THREE.AmbientLight(0x301810, 0.9));
+    const fillLight = new THREE.DirectionalLight(0x4060a0, 0.2);
+    fillLight.position.set(-6, 2, -5);
+    scene.add(fillLight);
+
+    // Lava crater glow — PointLight
+    const lavaLight = new THREE.PointLight(0xff6010, 0, 12);
+    lavaLight.position.set(0, 6, 0);
+    scene.add(lavaLight);
+
+    // Rim-light for dramatic backlight
+    const rimLight = new THREE.DirectionalLight(0xff3010, 0);
+    rimLight.position.set(0, -2, -8);
+    scene.add(rimLight);
+
+    /* ══════════════════════════════════════════
+       SKY
+    ══════════════════════════════════════════ */
+    const skyGeo = new THREE.SphereGeometry(200, 32, 16);
+    const skyMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide });
+    const sky = new THREE.Mesh(skyGeo, skyMat);
+    scene.add(sky);
+
+    function updateSky(intensity) {
+      const t = intensity / 100;
+      if (t < 0.3) {
+        skyMat.color.setRGB(0.08, 0.12, 0.22);
+      } else if (t < 0.7) {
+        const f = (t - 0.3) / 0.4;
+        skyMat.color.setRGB(lerp(0.08, 0.18, f), lerp(0.12, 0.07, f), lerp(0.22, 0.04, f));
+      } else {
+        const f = (t - 0.7) / 0.3;
+        skyMat.color.setRGB(lerp(0.18, 0.04, f), lerp(0.07, 0.03, f), lerp(0.04, 0.02, f));
+      }
+      scene.fog.color.copy(skyMat.color);
+    }
+
+    /* ══════════════════════════════════════════
+       TERRAIN
+    ══════════════════════════════════════════ */
+    const TERRAIN_SEGS = 120;
+    const TERRAIN_SIZE = 40;
+
+    // Volcano profile functions — height in world units
+    function volcanoH(x, z, vtype) {
+      const r = Math.sqrt(x * x + z * z);
+      const R = TERRAIN_SIZE * 0.38;
+      const noise = fbm(x * 0.18, z * 0.18, 6) * 0.9;
+      const micro = fbm(x * 0.6 + 99, z * 0.6 + 33, 4) * 0.25;
+      const base  = fbm(x * 0.08, z * 0.08, 3) * 0.6;
+
+      let h = 0;
+      switch (vtype) {
+        case 'shield': {
+          const k = Math.max(0, 1 - (r / R) * 1.05);
+          h = 4.5 * Math.pow(k, 1.4) + noise * 0.25 + micro * 0.1;
+          break;
+        }
+        case 'strato': {
+          const k = Math.max(0, 1 - r / R);
+          h = 10 * Math.pow(k, 2.1) + noise * 0.38 + micro * 0.15;
+          break;
+        }
+        case 'caldera': {
+          const k = Math.max(0, 1 - r / R);
+          const cone = 9 * Math.pow(k, 2.3) + noise * 0.35;
+          const cRim = R * 0.16;
+          const depression = r < cRim ? -3.5 * Math.pow(1 - r / cRim, 2) : 0;
+          h = cone + depression + micro * 0.12;
+          break;
+        }
+        case 'super': {
+          const edgeR = R * 0.6;
+          const rim = 5.5 * Math.exp(-Math.pow((r - edgeR) / (R * 0.3), 2)) + noise * 0.6;
+          const floor = Math.max(0, 0.8 - r / R * 0.5) + micro * 0.15;
+          h = Math.max(rim, floor);
+          break;
+        }
+        case 'cinder': {
+          const k = Math.max(0, 1 - r / (R * 0.55));
+          h = 5 * Math.pow(k, 3) + noise * 0.2 + micro * 0.1;
+          break;
+        }
+      }
+      return h + base * Math.max(0, 1 - r / R);
+    }
+
+    // Color per vertex
+    function terrainColor(x, z, y, maxH, vtype, lavaIntensity) {
+      const r = Math.sqrt(x * x + z * z);
+      const R = TERRAIN_SIZE * 0.38;
+      const hFrac = y / maxH;
+
+      // Lava channels: radial slots flowing downhill
+      const ang = Math.atan2(z, x);
+      const channel = Math.abs(Math.sin(ang * 4) * 0.5 + Math.sin(ang * 9) * 0.25);
+      const isLava = channel < lavaIntensity * 0.28 && r < R * 0.85 && hFrac > 0.05;
+      const heatFrac = isLava ? clamp(1.0 - r / (R * 0.7), 0, 1) * lavaIntensity : 0;
+
+      if (isLava && lavaIntensity > 0.1) {
+        // Hot lava — white-yellow → orange → dark red
+        if (heatFrac > 0.7) return [1.0, 0.95, 0.6];
+        if (heatFrac > 0.4) return [1.0, 0.55, 0.1];
+        if (heatFrac > 0.1) return [0.7, 0.15, 0.02];
+        return [0.25, 0.04, 0.01];
+      }
+
+      // Snow/ice cap (stratovolcano)
+      if (hFrac > 0.88 && vtype !== 'shield' && vtype !== 'super') return [0.93, 0.94, 0.97];
+      // Bare rock high
+      if (hFrac > 0.72) return [0.52, 0.46, 0.42];
+      // Rocky mid
+      if (hFrac > 0.52) return [0.40, 0.34, 0.28];
+      // Dark ash/scree
+      if (hFrac > 0.35) return [0.28, 0.22, 0.18];
+      // Lower soil
+      if (hFrac > 0.18) return [0.22, 0.30, 0.12];
+      // Lush base
+      return [0.14, 0.25, 0.08];
+    }
+
+    // Ocean plane for island volcanoes
+    const oceanGeo = new THREE.PlaneGeometry(TERRAIN_SIZE * 3, TERRAIN_SIZE * 3, 1, 1);
+    oceanGeo.rotateX(-Math.PI / 2);
+    const oceanMat = new THREE.MeshPhongMaterial({
+      color: 0x0a2a48, specular: 0x204070, shininess: 120,
+      transparent: true, opacity: 0.88
+    });
+    const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+    ocean.visible = false;
+    scene.add(ocean);
+
+    let terrainMesh = null;
+    let currentMaxH = 10;
+    let craterPos = new THREE.Vector3(0, 10, 0);
+
+    function buildTerrain(vtype, lavaIntensity) {
+      if (terrainMesh) { scene.remove(terrainMesh); terrainMesh.geometry.dispose(); }
+
+      const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEGS, TERRAIN_SEGS);
+      geo.rotateX(-Math.PI / 2);
+
+      const pos   = geo.attributes.position;
+      const colors = new Float32Array(pos.count * 3);
+
+      let maxH = 0;
+      // First pass — heights
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), z = pos.getZ(i);
+        const h = Math.max(0, volcanoH(x, z, vtype));
+        pos.setY(i, h);
+        if (h > maxH) maxH = h;
+      }
+      currentMaxH = maxH;
+
+      // Second pass — colors
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+        const [r, g, b] = terrainColor(x, z, y, maxH, vtype, lavaIntensity);
+        colors[i * 3]     = r;
+        colors[i * 3 + 1] = g;
+        colors[i * 3 + 2] = b;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      geo.computeVertexNormals();
+
+      const mat = new THREE.MeshPhongMaterial({
+        vertexColors: true, shininess: 12,
+        specular: new THREE.Color(0.06, 0.04, 0.03)
+      });
+      terrainMesh = new THREE.Mesh(geo, mat);
+      terrainMesh.receiveShadow = true;
+      terrainMesh.castShadow = true;
+      scene.add(terrainMesh);
+
+      // Summit position for crater light
+      craterPos.set(0, maxH, 0);
+      lavaLight.position.copy(craterPos).addScaledVector(new THREE.Vector3(0, 1, 0), 1.5);
+
+      ocean.visible = (vtype === 'shield');
+      ocean.position.y = -0.2;
+    }
+
+    /* ══════════════════════════════════════════
+       PARTICLE POOLS
+    ══════════════════════════════════════════ */
+    class ParticlePool {
+      constructor(scene, maxN, mat) {
+        this.max = maxN;
+        this.pos = new Float32Array(maxN * 3);
+        this.vel = new Float32Array(maxN * 3);
+        this.age = new Float32Array(maxN);
+        this.life = new Float32Array(maxN);
+        this.alive = new Uint8Array(maxN);
+        this.col = new Float32Array(maxN * 3);
+        this.sz  = new Float32Array(maxN);
+
+        this.geo = new THREE.BufferGeometry();
+        this.posAttr = new THREE.BufferAttribute(this.pos, 3); this.posAttr.setUsage(THREE.DynamicDrawUsage);
+        this.colAttr = new THREE.BufferAttribute(this.col, 3); this.colAttr.setUsage(THREE.DynamicDrawUsage);
+        this.szAttr  = new THREE.BufferAttribute(this.sz,  1); this.szAttr.setUsage(THREE.DynamicDrawUsage);
+        this.geo.setAttribute('position', this.posAttr);
+        this.geo.setAttribute('color',    this.colAttr);
+        this.geo.setAttribute('size',     this.szAttr);
+        this.mat = mat;
+        this.pts = new THREE.Points(this.geo, mat);
+        this.pts.frustumCulled = false;
+        scene.add(this.pts);
+      }
+
+      findDead() {
+        for (let i = 0; i < this.max; i++) if (!this.alive[i]) return i;
+        return -1;
+      }
+
+      emit(px, py, pz, vx, vy, vz, life, r, g, b, size) {
+        const i = this.findDead(); if (i < 0) return;
+        this.alive[i] = 1; this.age[i] = 0; this.life[i] = life;
+        this.pos[i*3]=px; this.pos[i*3+1]=py; this.pos[i*3+2]=pz;
+        this.vel[i*3]=vx; this.vel[i*3+1]=vy; this.vel[i*3+2]=vz;
+        this.col[i*3]=r;  this.col[i*3+1]=g;  this.col[i*3+2]=b;
+        this.sz[i] = size;
+      }
+
+      update(dt, onTick) {
+        for (let i = 0; i < this.max; i++) {
+          if (!this.alive[i]) { this.pos[i*3+1] = -9999; continue; }
+          this.age[i] += dt;
+          if (this.age[i] >= this.life[i]) { this.alive[i] = 0; this.pos[i*3+1] = -9999; continue; }
+          const t = this.age[i] / this.life[i];
+          onTick(i, t, this);
+        }
+        this.posAttr.needsUpdate = true;
+        this.colAttr.needsUpdate = true;
+        this.szAttr.needsUpdate  = true;
+      }
+    }
+
+    // ── ASH COLUMN ──
+    const ashPool = new ParticlePool(scene, 1800, new THREE.PointsMaterial({
+      size: 0.5, vertexColors: true, transparent: true, opacity: 0.65,
+      depthWrite: false, sizeAttenuation: true
+    }));
+
+    // ── LAVA BOMBS ──
+    const bombPool = new ParticlePool(scene, 400, new THREE.PointsMaterial({
+      size: 0.35, vertexColors: true, transparent: true, opacity: 0.9,
+      depthWrite: false, sizeAttenuation: true,
+      blending: THREE.AdditiveBlending
+    }));
+
+    // ── PYROCLASTIC FLOW ──
+    const pyroPool = new ParticlePool(scene, 800, new THREE.PointsMaterial({
+      size: 0.55, vertexColors: true, transparent: true, opacity: 0.75,
+      depthWrite: false, sizeAttenuation: true
+    }));
+
+    // ── STEAM / GAS ──
+    const steamPool = new ParticlePool(scene, 400, new THREE.PointsMaterial({
+      size: 0.45, vertexColors: true, transparent: true, opacity: 0.45,
+      depthWrite: false, sizeAttenuation: true
+    }));
+
+    function spawnAsh(intensity, column) {
+      const n = Math.round(intensity * 3.5);
+      for (let i = 0; i < n; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const sp  = intensity * 0.8 * (0.3 + Math.random() * 0.7);
+        const spread = intensity * 0.06;
+        ashPool.emit(
+          (Math.random() - 0.5) * 0.8,
+          craterPos.y,
+          (Math.random() - 0.5) * 0.8,
+          Math.cos(ang) * spread, sp * 0.55 + 1.5, Math.sin(ang) * spread,
+          column * 0.28 + 2,
+          0.12 + Math.random() * 0.08, 0.1, 0.1 + Math.random() * 0.05,
+          0.3 + Math.random() * 0.3
+        );
+      }
+    }
+
+    function spawnBomb(intensity) {
+      if (Math.random() > intensity * 0.55 + 0.02) return;
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 4 + intensity * 3 + Math.random() * 2;
+      const elev = 0.5 + Math.random() * 0.4;
+      bombPool.emit(
+        0, craterPos.y, 0,
+        Math.cos(ang) * spd * Math.cos(elev),
+        spd * Math.sin(elev),
+        Math.sin(ang) * spd * Math.cos(elev),
+        1.2 + Math.random() * 1.0,
+        1.0, 0.7 + Math.random() * 0.3, 0.1,
+        0.25 + Math.random() * 0.15
+      );
+    }
+
+    function spawnPyroclastic(pyro) {
+      if (pyro < 0.15 || Math.random() > pyro * 0.7) return;
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 4 + pyro * 5;
+      pyroPool.emit(
+        (Math.random() - 0.5), craterPos.y * 0.7, (Math.random() - 0.5),
+        Math.cos(ang) * spd, -0.5 + Math.random(), Math.sin(ang) * spd,
+        3 + Math.random() * 2,
+        0.35 + pyro * 0.2, 0.15, 0.05,
+        0.4 + Math.random() * 0.25
+      );
+    }
+
+    function spawnSteam(intensity) {
+      if (Math.random() > intensity * 0.4 + 0.1) return;
+      const ang = Math.random() * Math.PI * 2;
+      steamPool.emit(
+        (Math.random() - 0.5) * 1.5, craterPos.y - 0.5, (Math.random() - 0.5) * 1.5,
+        Math.cos(ang) * 0.3, 0.6 + Math.random() * 0.5, Math.sin(ang) * 0.3,
+        4 + Math.random() * 2,
+        0.85, 0.88, 0.9,
+        0.35 + Math.random() * 0.2
+      );
+    }
+
+    /* ══════════════════════════════════════════
+       STATE
+    ══════════════════════════════════════════ */
+    const state = { intensity:72, column:18, viscosity:50, pyro:40, vtype:'strato' };
+    let rebuildTimer = 0;
+    let activeEruption = 'vesuvius79';
+
+    function computeStats() {
+      const i = state.intensity / 100;
+      const vei = clamp(Math.round(i * 6 + state.column / 15), 0, 8);
+      const ejecta = Math.pow(10, vei - 4) * 0.1;
+      const temp = 700 + i * 450 + (100 - state.viscosity) * 1.5;
+      const so2 = ejecta * (0.5 + state.viscosity / 100 * 1.5);
+      const ashR = state.column * 18 * i;
+      return { vei, ejecta, temp, so2, ashR };
+    }
+
+    function updateReadouts() {
+      const s = computeStats();
+      const i = state.intensity;
+      const lvl = i < 25 ? 'low' : i < 55 ? 'medium' : i < 80 ? 'high' : 'extreme';
+      document.getElementById('out-ejecta').textContent = s.ejecta < 0.01 ? '<0.01 km³' : s.ejecta.toFixed(2) + ' km³';
+      document.getElementById('out-ejecta').className = 'stat-val ' + lvl;
+      document.getElementById('out-temp').textContent = Math.round(s.temp).toLocaleString() + ' °C';
+      document.getElementById('out-col').textContent = state.column + ' km';
+      document.getElementById('out-col').className = 'stat-val ' + lvl;
+      document.getElementById('out-so2').textContent = s.so2.toFixed(1) + ' Mt';
+      document.getElementById('out-ash').textContent = Math.round(s.ashR) + ' km';
+      const veiEl = document.getElementById('out-vei');
+      veiEl.textContent = s.vei;
+      veiEl.className = 'stat-val ' + (s.vei < 3 ? 'low' : s.vei < 5 ? 'medium' : s.vei < 7 ? 'high' : 'extreme');
+      // VEI bar
+      document.querySelectorAll('.vei-seg').forEach((seg, idx) => {
+        seg.classList.toggle('active', idx <= s.vei);
+      });
+      document.getElementById('vei-badge').textContent = 'VEI ' + s.vei + ' · ' + vtypeName(state.vtype);
+    }
+
+    function vtypeName(t) {
+      return { shield:'Shield Volcano', strato:'Stratovolcano', caldera:'Caldera', super:'Supervolcano', cinder:'Cinder Cone' }[t] || t;
+    }
+
+    /* ══════════════════════════════════════════
+       UI BINDINGS
+    ══════════════════════════════════════════ */
+    // Build VEI bar
+    const veiColors = ['#90c860','#b0e040','#f0d030','#f0a020','#f06020','#e03010','#c01010','#a00808','#800000'];
+    const veiBar = document.getElementById('vei-bar');
+    veiColors.forEach((c, idx) => {
+      const seg = document.createElement('div');
+      seg.className = 'vei-seg' + (idx <= 5 ? ' active' : '');
+      seg.style.background = c;
+      veiBar.appendChild(seg);
+    });
+
+    // Build eruption cards
+    const scroll = document.getElementById('eruption-scroll');
+    ERUPTIONS.forEach(ev => {
+      const card = document.createElement('div');
+      card.className = 'ev-card' + (ev.id === activeEruption ? ' active' : '');
+      card.dataset.id = ev.id;
+      card.innerHTML = `<div class="ev-flag">${ev.flag}</div><div class="ev-name">${ev.name}</div><div class="ev-year">${ev.year}</div><span class="ev-vei">VEI ${ev.vei}</span>`;
+      card.addEventListener('click', () => loadEruption(ev.id));
+      scroll.appendChild(card);
+    });
+
+    function loadEruption(id) {
+      const ev = ERUPTIONS.find(e => e.id === id);
+      if (!ev) return;
+      activeEruption = id;
+
+      // Update active card
+      document.querySelectorAll('.ev-card').forEach(c => c.classList.toggle('active', c.dataset.id === id));
+
+      // Set sliders
+      state.intensity = ev.intensity; state.column = ev.column;
+      state.viscosity = ev.viscosity; state.pyro = ev.pyro;
+      state.vtype     = ev.vtype;
+      document.getElementById('s-intensity').value = ev.intensity;
+      document.getElementById('s-column').value    = ev.column;
+      document.getElementById('s-viscosity').value = ev.viscosity;
+      document.getElementById('s-pyro').value      = ev.pyro;
+      document.getElementById('v-intensity').textContent = ev.intensity + '%';
+      document.getElementById('v-column').textContent    = ev.column + ' km';
+      document.getElementById('v-viscosity').textContent = viscosityLabel(ev.viscosity);
+      document.getElementById('v-pyro').textContent      = ev.pyro + '%';
+
+      // Type tabs
+      document.querySelectorAll('.type-tab').forEach(t => t.classList.toggle('active', t.dataset.vtype === ev.vtype));
+
+      // Badges and description
+      document.getElementById('vol-name-badge').textContent = ev.flag + ' ' + ev.name + ' — ' + ev.year;
+      document.getElementById('event-desc').innerHTML = ev.desc;
+
+      rebuildTerrain();
+      updateReadouts();
+      updateSky(ev.intensity);
+      updateLighting(ev.intensity / 100);
+    }
+
+    function viscosityLabel(v) {
+      if (v < 25) return 'Basalt (fluid)';
+      if (v < 50) return 'Andesite';
+      if (v < 75) return 'Dacite';
+      return 'Rhyolite (thick)';
+    }
+
+    function rebuildTerrain() {
+      const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
+      buildTerrain(state.vtype, lavaI);
+    }
+
+    // Slider listeners
+    function bindSlider(id, key, fmtFn) {
+      document.getElementById('s-' + id).addEventListener('input', function () {
+        state[key] = parseFloat(this.value);
+        document.getElementById('v-' + id).textContent = fmtFn(state[key]);
+        if (key === 'viscosity' || key === 'intensity') { clearTimeout(rebuildTimer); rebuildTimer = setTimeout(rebuildTerrain, 250); }
+        updateReadouts();
+        updateSky(state.intensity);
+        updateLighting(state.intensity / 100);
+      });
+    }
+    bindSlider('intensity', 'intensity', v => v + '%');
+    bindSlider('column',    'column',    v => v + ' km');
+    bindSlider('viscosity', 'viscosity', viscosityLabel);
+    bindSlider('pyro',      'pyro',      v => v + '%');
+
+    // Type tab clicks
+    document.getElementById('type-tabs').addEventListener('click', e => {
+      const btn = e.target.closest('.type-tab');
+      if (!btn) return;
+      document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      state.vtype = btn.dataset.vtype;
+      rebuildTerrain();
+      updateReadouts();
+    });
+
+    function updateLighting(t) {
+      lavaLight.intensity = t * t * 3.5;
+      lavaLight.color.setRGB(1.0, 0.35 + t * 0.2, 0.05);
+      rimLight.intensity = t * 0.6;
+      sunLight.intensity = lerp(1.2, 0.35, t * 0.7);
+    }
+
+    /* ══════════════════════════════════════════
+       PARTICLE TICK CALLBACKS
+    ══════════════════════════════════════════ */
+    const GRAVITY = 4.5;
+
+    function tickAsh(i, t, pool) {
+      pool.vel[i*3]   += (Math.random()-0.5)*0.02;
+      pool.vel[i*3+2] += (Math.random()-0.5)*0.02;
+      pool.vel[i*3+1] -= GRAVITY * 0.04 * t; // slight drag
+      pool.pos[i*3]   += pool.vel[i*3] * 0.016;
+      pool.pos[i*3+1] += pool.vel[i*3+1] * 0.016;
+      pool.pos[i*3+2] += pool.vel[i*3+2] * 0.016;
+      const bright = Math.max(0, 1 - t);
+      pool.col[i*3] = lerp(0.12, 0.4, t);
+      pool.col[i*3+1] = lerp(0.10, 0.38, t);
+      pool.col[i*3+2] = lerp(0.10, 0.36, t);
+      pool.sz[i] = 0.3 + t * 0.8; // ash grows as it billows
+    }
+
+    function tickBomb(i, t, pool) {
+      pool.vel[i*3+1] -= GRAVITY * 0.016;
+      pool.pos[i*3]   += pool.vel[i*3] * 0.016;
+      pool.pos[i*3+1] += pool.vel[i*3+1] * 0.016;
+      pool.pos[i*3+2] += pool.vel[i*3+2] * 0.016;
+      // Cool from white-yellow to red to dark
+      const heat = Math.max(0, 1 - t * 1.2);
+      pool.col[i*3]   = 1.0;
+      pool.col[i*3+1] = heat * 0.7;
+      pool.col[i*3+2] = heat * heat * 0.15;
+    }
+
+    function tickPyro(i, t, pool) {
+      pool.vel[i*3+1] -= GRAVITY * 0.03 * t;
+      pool.vel[i*3]   *= 0.996;
+      pool.vel[i*3+2] *= 0.996;
+      pool.pos[i*3]   += pool.vel[i*3] * 0.016;
+      pool.pos[i*3+1] += pool.vel[i*3+1] * 0.016;
+      pool.pos[i*3+2] += pool.vel[i*3+2] * 0.016;
+      pool.col[i*3]   = lerp(0.8, 0.15, t);
+      pool.col[i*3+1] = lerp(0.3, 0.05, t);
+      pool.col[i*3+2] = lerp(0.05, 0.02, t);
+      pool.sz[i] = lerp(0.55, 0.15, t);
+    }
+
+    function tickSteam(i, t, pool) {
+      pool.vel[i*3] += (Math.random()-0.5)*0.015;
+      pool.vel[i*3+2] += (Math.random()-0.5)*0.015;
+      pool.pos[i*3]   += pool.vel[i*3] * 0.016;
+      pool.pos[i*3+1] += pool.vel[i*3+1] * 0.016;
+      pool.pos[i*3+2] += pool.vel[i*3+2] * 0.016;
+      pool.sz[i] = 0.3 + t * 0.5;
+      const fade = Math.min(1, t * 3) * Math.max(0, 1 - t * 1.5);
+      pool.col[i*3] = pool.col[i*3+1] = pool.col[i*3+2] = 0.85 * fade + 0.6 * (1 - fade);
+    }
+
+    /* ══════════════════════════════════════════
+       ANIMATION LOOP
+    ══════════════════════════════════════════ */
+    let lastTs = 0, spawnAcc = 0;
+
+    function animate(ts) {
+      requestAnimationFrame(animate);
+      const dt = Math.min((ts - lastTs) / 1000, 0.05);
+      lastTs = ts;
+
+      if (!isDrag) { camTheta += dt * 0.04; updateCam(); }
+
+      spawnAcc += dt;
+      const tickRate = 0.04;
+      if (spawnAcc >= tickRate) {
+        spawnAcc = 0;
+        const i = state.intensity / 100;
+        const pi = state.pyro / 100;
+
+        if (i > 0.02) {
+          spawnAsh(i * 12, state.column);
+          spawnBomb(i);
+          spawnSteam(i);
+          if (pi > 0.1) spawnPyroclastic(pi);
+        }
+      }
+
+      ashPool.update(0.016,  tickAsh);
+      bombPool.update(0.016, tickBomb);
+      pyroPool.update(0.016, tickPyro);
+      steamPool.update(0.016, tickSteam);
+
+      // Pulse crater light
+      lavaLight.intensity = (state.intensity / 100) * (2.5 + Math.sin(ts * 0.003) * 0.8);
+
+      renderer.render(scene, camera);
+    }
+
+    /* ══════════════════════════════════════════
+       INIT
+    ══════════════════════════════════════════ */
+    loadEruption('vesuvius79');
+    requestAnimationFrame(animate);
+
+  })();
+  </script>
+
+</body>
+</html>

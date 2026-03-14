@@ -278,11 +278,12 @@
     const modalTitle = document.getElementById('vl-modal-title');
     const modalDesc = document.getElementById('vl-modal-desc');
 
-    VIDEOS.forEach(v => {
+    VIDEOS.forEach((v, index) => {
       const card = document.createElement('button');
       card.className = 'vl-card';
       card.type = 'button';
       card.setAttribute('aria-label', `Play: ${v.title}`);
+      if (index === 0) card.classList.add('vl-card--feature');
 
       const thumbWrap = document.createElement('div');
       thumbWrap.className = 'vl-thumb-wrap';
@@ -328,7 +329,10 @@
         modalTitle.textContent = v.title;
         modalDesc.textContent = v.desc;
         backdrop.classList.add('open');
-        modalVideo.play();
+        const playPromise = modalVideo.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {});
+        }
       });
     });
 
