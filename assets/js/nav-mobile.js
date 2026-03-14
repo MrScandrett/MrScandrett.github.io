@@ -281,7 +281,8 @@
     if (isLiquidWoodland) {
       var lighting = getLightingApi();
       if (lighting && typeof lighting.setMode === "function") {
-        lighting.setMode(autoInput.checked ? "auto" : "manual");
+        if (autoInput.checked) lighting.setMode("auto");
+        else if (typeof lighting.setPhase === "function") lighting.setPhase(lighting.getCurrentPhase());
         updateSettingsUi(lighting.getMode(), lighting.getCurrentPhase());
       }
     } else {
