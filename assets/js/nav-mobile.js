@@ -16,9 +16,13 @@
     '<circle cx="8" cy="8" r="2.05" stroke="currentColor" stroke-width="1.15"/>' +
     '</svg>';
 
-  var LIGHTING_OPTIONS = [
+  var THEME_OPTIONS = [
     { id: "day", label: "Day", detail: "Default bright ClassroomOS look." },
-    { id: "night", label: "Night", detail: "A darker version for evening use." }
+    { id: "night", label: "Night", detail: "A darker version for evening use." },
+    { id: "sakura", label: "Sakura", detail: "Soft pink and white with cherry blossom drift." },
+    { id: "diamond", label: "Diamond", detail: "An icy light blue gemstone glow." },
+    { id: "emerald", label: "Emerald", detail: "A pale green gemstone shine." },
+    { id: "topaz", label: "Topaz", detail: "A warm orange gemstone wash." }
   ];
 
   var STORAGE_MODE = "classroomos-lighting-mode";
@@ -61,39 +65,53 @@
     }
   }
 
-  function isValidPhase(phase) {
-    for (var i = 0; i < LIGHTING_OPTIONS.length; i++) {
-      if (LIGHTING_OPTIONS[i].id === phase) return true;
+  function isValidTheme(theme) {
+    for (var i = 0; i < THEME_OPTIONS.length; i++) {
+      if (THEME_OPTIONS[i].id === theme) return true;
     }
     return false;
   }
 
-  function getPhaseFromDate(date) {
+  function normalizeTheme(theme) {
+    if (theme === "morning" || theme === "dusk") return "day";
+    if (theme === "kiwi") return "emerald";
+    if (theme === "mango") return "topaz";
+    return isValidTheme(theme) ? theme : "day";
+  }
+
+  function getThemeFromDate(date) {
     var hours = date.getHours();
     return (hours >= 6 && hours < 19) ? "day" : "night";
+  }
+
+  function getLightingForTheme(theme) {
+    return normalizeTheme(theme) === "night" ? "night" : "day";
   }
 
   function ensureLightingApi() {
     if (window.ClassroomOSThemeLighting) return window.ClassroomOSThemeLighting;
 
-    var currentPhase = null;
+    var currentTheme = null;
 
     function getMode() {
       return readStorage(STORAGE_MODE) === "manual" ? "manual" : "auto";
     }
 
-    function getStoredPhase() {
-      var stored = readStorage(STORAGE_PHASE);
-      if (stored === "morning" || stored === "dusk") return "day";
-      return isValidPhase(stored) ? stored : "day";
+    function getStoredTheme() {
+      return normalizeTheme(readStorage(STORAGE_PHASE));
     }
 
-    function resolvePhase() {
-      return getMode() === "manual" ? getStoredPhase() : getPhaseFromDate(new Date());
+    function resolveTheme() {
+      return getMode() === "manual" ? getStoredTheme() : getThemeFromDate(new Date());
     }
 
-    function emitChange(phase) {
-      var detail = { phase: phase, mode: getMode() };
+    function emitChange(theme) {
+      var detail = {
+        theme: theme,
+        phase: theme,
+        lighting: getLightingForTheme(theme),
+        mode: getMode()
+      };
       var event;
 
       if (typeof window.CustomEvent === "function") {
@@ -106,21 +124,50 @@
       window.dispatchEvent(event);
     }
 
-    function applyPhase(phase) {
-      if (document.body) {
-        document.body.dataset.lighting = phase;
-        document.body.dataset.lightingMode = getMode();
+    function applyTheme(theme) {
+      if (isThemeIndependent) {
+        document.documentElement.removeAttribute("data-theme");
+        document.documentElement.removeAttribute("data-theme-mode");
+        document.documentElement.removeAttribute("data-lighting");
+        document.documentElement.removeAttribute("data-lighting-mode");
+        document.documentElement.removeAttribute("data-site-theme");
+        document.documentElement.removeAttribute("data-site-theme-mode");
+        document.documentElement.style.colorScheme = "";
+        if (document.body) {
+          document.body.removeAttribute("data-theme");
+          document.body.removeAttribute("data-theme-mode");
+          document.body.removeAttribute("data-lighting");
+          document.body.removeAttribute("data-lighting-mode");
+        }
+        currentTheme = null;
+        return theme;
       }
 
-      document.documentElement.dataset.lighting = phase;
-      document.documentElement.dataset.lightingMode = getMode();
-      currentPhase = phase;
-      emitChange(phase);
-      return phase;
+      var lightingMode = getMode();
+      var lighting = getLightingForTheme(theme);
+
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.dataset.themeMode = lightingMode;
+      document.documentElement.dataset.lighting = lighting;
+      document.documentElement.dataset.lightingMode = lightingMode;
+      document.documentElement.setAttribute("data-site-theme", theme);
+      document.documentElement.setAttribute("data-site-theme-mode", lightingMode);
+      document.documentElement.style.colorScheme = lighting === "night" ? "dark" : "light";
+
+      if (document.body) {
+        document.body.dataset.theme = theme;
+        document.body.dataset.themeMode = lightingMode;
+        document.body.dataset.lighting = lighting;
+        document.body.dataset.lightingMode = lightingMode;
+      }
+
+      currentTheme = theme;
+      emitChange(theme);
+      return theme;
     }
 
     function sync() {
-      return applyPhase(resolvePhase());
+      return applyTheme(resolveTheme());
     }
 
     function setMode(mode) {
@@ -128,9 +175,9 @@
       return sync();
     }
 
-    function setPhase(phase) {
-      if (!isValidPhase(phase)) phase = "day";
-      writeStorage(STORAGE_PHASE, phase);
+    function setTheme(theme) {
+      theme = normalizeTheme(theme);
+      writeStorage(STORAGE_PHASE, theme);
       writeStorage(STORAGE_MODE, "manual");
       return sync();
     }
@@ -142,29 +189,30 @@
     });
 
     window.ClassroomOSThemeLighting = {
-      getPhase: getPhaseFromDate,
+      getPhase: getThemeFromDate,
+      getTheme: getThemeFromDate,
       getMode: getMode,
-      getStoredPhase: getStoredPhase,
+      getStoredPhase: getStoredTheme,
+      getStoredTheme: getStoredTheme,
       getCurrentPhase: function () {
-        return currentPhase || document.documentElement.dataset.lighting || resolvePhase();
+        return currentTheme || document.documentElement.dataset.theme || resolveTheme();
       },
+      getCurrentTheme: function () {
+        return currentTheme || document.documentElement.dataset.theme || resolveTheme();
+      },
+      getLightingForTheme: getLightingForTheme,
       setMode: setMode,
-      setPhase: setPhase,
+      setPhase: setTheme,
+      setTheme: setTheme,
       sync: sync
     };
 
     return window.ClassroomOSThemeLighting;
   }
 
-  function clearLegacyThemeAttrs() {
-    document.documentElement.removeAttribute("data-site-theme");
-    document.documentElement.removeAttribute("data-site-theme-mode");
-    document.documentElement.style.colorScheme = "";
-  }
-
   function getOptionLabel(optionId) {
-    for (var i = 0; i < LIGHTING_OPTIONS.length; i++) {
-      if (LIGHTING_OPTIONS[i].id === optionId) return LIGHTING_OPTIONS[i].label;
+    for (var i = 0; i < THEME_OPTIONS.length; i++) {
+      if (THEME_OPTIONS[i].id === optionId) return THEME_OPTIONS[i].label;
     }
     return "Day";
   }
@@ -192,10 +240,10 @@
       "</button>" +
       '<div class="nav-settings-panel" id="' + panelId + '" hidden>' +
         '<div class="nav-settings-head">' +
-          '<p class="nav-settings-eyebrow">Appearance</p>' +
+          '<p class="nav-settings-eyebrow">Theme</p>' +
           '<p class="nav-settings-current" aria-live="polite"></p>' +
         "</div>" +
-        '<p class="nav-settings-note">Keep the site on the default bright look, switch to night mode, or let it change with local time.</p>' +
+        '<p class="nav-settings-note">Choose a theme, or follow local time to switch between Day and Night automatically.</p>' +
         '<label class="nav-settings-auto">' +
           '<input type="checkbox" class="nav-settings-auto-input" />' +
           "<span>Follow local time</span>" +
@@ -214,7 +262,7 @@
     autoInput = settingsContainer.querySelector(".nav-settings-auto-input");
     themeGrid = settingsContainer.querySelector(".nav-theme-grid");
 
-    LIGHTING_OPTIONS.forEach(function (option) {
+    THEME_OPTIONS.forEach(function (option) {
       var optionBtn = document.createElement("button");
       optionBtn.type = "button";
       optionBtn.className = "nav-theme-chip";
@@ -227,7 +275,8 @@
           "<small>" + option.detail + "</small>" +
         "</span>";
       optionBtn.addEventListener("click", function () {
-        lighting.setPhase(option.id);
+        if (typeof lighting.setTheme === "function") lighting.setTheme(option.id);
+        else lighting.setPhase(option.id);
         syncLightingUi();
       });
       themeGrid.appendChild(optionBtn);
@@ -254,12 +303,12 @@
 
     if (settingsCurrent) {
       settingsCurrent.textContent = mode === "auto"
-        ? "Auto lighting, currently " + getOptionLabel(activeId)
-        : "Pinned to " + getOptionLabel(activeId);
+        ? "Following local time, currently " + getOptionLabel(activeId)
+        : getOptionLabel(activeId);
     }
 
     if (settingsStatus) {
-      settingsStatus.textContent = mode === "auto" ? getOptionLabel(activeId) : "Pinned";
+      settingsStatus.textContent = getOptionLabel(activeId);
     }
 
     if (autoInput) autoInput.checked = mode === "auto";
@@ -274,10 +323,11 @@
 
   function syncLightingUi() {
     if (!lighting) return;
-    clearLegacyThemeAttrs();
-    var activeId = typeof lighting.sync === "function" ? lighting.sync() : document.documentElement.dataset.lighting || "day";
+    var activeId = typeof lighting.sync === "function" ? lighting.sync() : document.documentElement.dataset.theme || "day";
     var mode = typeof lighting.getMode === "function" ? lighting.getMode() : "auto";
-    var current = typeof lighting.getCurrentPhase === "function" ? lighting.getCurrentPhase() : activeId;
+    var current = typeof lighting.getCurrentTheme === "function"
+      ? lighting.getCurrentTheme()
+      : (typeof lighting.getCurrentPhase === "function" ? lighting.getCurrentPhase() : activeId);
     updateSettingsUi(mode, current || activeId);
   }
 
@@ -309,6 +359,7 @@
   if (autoInput) {
     autoInput.addEventListener("change", function () {
       if (autoInput.checked) lighting.setMode("auto");
+      else if (typeof lighting.setTheme === "function") lighting.setTheme(lighting.getCurrentTheme());
       else lighting.setPhase(lighting.getCurrentPhase());
       syncLightingUi();
     });
@@ -337,7 +388,7 @@
         return;
       }
 
-      updateSettingsUi(event.detail.mode || "auto", event.detail.phase || "day");
+      updateSettingsUi(event.detail.mode || "auto", event.detail.theme || event.detail.phase || "day");
     });
 
     syncLightingUi();

@@ -1,9 +1,9 @@
 (function () {
   var REFRESH_MS = 15 * 60 * 1000;
   var STORAGE_MODE = "classroomos-lighting-mode";
-  var STORAGE_PHASE = "classroomos-lighting-phase";
-  var VALID_PHASES = ["day", "night"];
-  var currentPhase = null;
+  var STORAGE_THEME = "classroomos-lighting-phase";
+  var VALID_THEMES = ["day", "night", "sakura", "diamond", "emerald", "topaz"];
+  var currentTheme = null;
   var CHANGE_EVENT = "classroomos:lightingchange";
 
   function isThemeIndependent() {
@@ -12,13 +12,24 @@
     return htmlScope === "independent" || bodyScope === "independent";
   }
 
-  function getPhase(date) {
+  function getAutoTheme(date) {
     var hours = date.getHours();
     return (hours >= 6 && hours < 19) ? "day" : "night";
   }
 
-  function isValidPhase(phase) {
-    return VALID_PHASES.indexOf(phase) !== -1;
+  function isValidTheme(theme) {
+    return VALID_THEMES.indexOf(theme) !== -1;
+  }
+
+  function normalizeTheme(theme) {
+    if (theme === "morning" || theme === "dusk") return "day";
+    if (theme === "kiwi") return "emerald";
+    if (theme === "mango") return "topaz";
+    return isValidTheme(theme) ? theme : "day";
+  }
+
+  function getLightingForTheme(theme) {
+    return theme === "night" ? "night" : "day";
   }
 
   function readStorage(key) {
@@ -41,41 +52,21 @@
     return readStorage(STORAGE_MODE) === "manual" ? "manual" : "auto";
   }
 
-  function getStoredPhase() {
-    var stored = readStorage(STORAGE_PHASE);
-    if (stored === "morning" || stored === "dusk") return "day";
-    return isValidPhase(stored) ? stored : "day";
+  function getStoredTheme() {
+    return normalizeTheme(readStorage(STORAGE_THEME));
   }
 
-  function resolvePhase() {
-    return getMode() === "manual" ? getStoredPhase() : getPhase(new Date());
+  function resolveTheme() {
+    return getMode() === "manual" ? getStoredTheme() : getAutoTheme(new Date());
   }
 
-  function applyPhase(phase) {
-    if (isThemeIndependent()) {
-      document.documentElement.removeAttribute("data-lighting");
-      document.documentElement.removeAttribute("data-lighting-mode");
-      if (document.body) {
-        document.body.removeAttribute("data-lighting");
-        document.body.removeAttribute("data-lighting-mode");
-      }
-      currentPhase = null;
-      return phase;
-    }
-
-    if (!document.body) return phase;
-
-    document.body.dataset.lighting = phase;
-    document.body.dataset.lightingMode = getMode();
-    document.documentElement.dataset.lighting = phase;
-    document.documentElement.dataset.lightingMode = getMode();
-    currentPhase = phase;
-    emitChange(phase);
-    return phase;
-  }
-
-  function emitChange(phase) {
-    var detail = { phase: phase, mode: getMode() };
+  function emitChange(theme) {
+    var detail = {
+      theme: theme,
+      phase: theme,
+      lighting: getLightingForTheme(theme),
+      mode: getMode()
+    };
     var event;
 
     if (typeof window.CustomEvent === "function") {
@@ -88,8 +79,50 @@
     window.dispatchEvent(event);
   }
 
+  function applyTheme(theme) {
+    if (isThemeIndependent()) {
+      document.documentElement.removeAttribute("data-theme");
+      document.documentElement.removeAttribute("data-theme-mode");
+      document.documentElement.removeAttribute("data-lighting");
+      document.documentElement.removeAttribute("data-lighting-mode");
+      document.documentElement.removeAttribute("data-site-theme");
+      document.documentElement.removeAttribute("data-site-theme-mode");
+      document.documentElement.style.colorScheme = "";
+      if (document.body) {
+        document.body.removeAttribute("data-theme");
+        document.body.removeAttribute("data-theme-mode");
+        document.body.removeAttribute("data-lighting");
+        document.body.removeAttribute("data-lighting-mode");
+      }
+      currentTheme = null;
+      return theme;
+    }
+
+    if (!document.body) return theme;
+
+    var lighting = getLightingForTheme(theme);
+    var mode = getMode();
+
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.themeMode = mode;
+    document.documentElement.dataset.lighting = lighting;
+    document.documentElement.dataset.lightingMode = mode;
+    document.documentElement.setAttribute("data-site-theme", theme);
+    document.documentElement.setAttribute("data-site-theme-mode", mode);
+    document.documentElement.style.colorScheme = lighting === "night" ? "dark" : "light";
+
+    document.body.dataset.theme = theme;
+    document.body.dataset.themeMode = mode;
+    document.body.dataset.lighting = lighting;
+    document.body.dataset.lightingMode = mode;
+
+    currentTheme = theme;
+    emitChange(theme);
+    return theme;
+  }
+
   function sync() {
-    return applyPhase(resolvePhase());
+    return applyTheme(resolveTheme());
   }
 
   function setMode(mode) {
@@ -97,22 +130,29 @@
     return sync();
   }
 
-  function setPhase(phase) {
-    if (!isValidPhase(phase)) phase = "day";
-    writeStorage(STORAGE_PHASE, phase);
+  function setTheme(theme) {
+    theme = normalizeTheme(theme);
+    writeStorage(STORAGE_THEME, theme);
     writeStorage(STORAGE_MODE, "manual");
     return sync();
   }
 
   window.ClassroomOSThemeLighting = {
-    getPhase: getPhase,
+    getPhase: getAutoTheme,
+    getTheme: getAutoTheme,
     getMode: getMode,
-    getStoredPhase: getStoredPhase,
+    getStoredPhase: getStoredTheme,
+    getStoredTheme: getStoredTheme,
     getCurrentPhase: function () {
-      return currentPhase || document.body && document.body.dataset.lighting || resolvePhase();
+      return currentTheme || document.documentElement.dataset.theme || resolveTheme();
     },
+    getCurrentTheme: function () {
+      return currentTheme || document.documentElement.dataset.theme || resolveTheme();
+    },
+    getLightingForTheme: getLightingForTheme,
     setMode: setMode,
-    setPhase: setPhase,
+    setPhase: setTheme,
+    setTheme: setTheme,
     sync: sync,
     isThemeIndependent: isThemeIndependent,
   };
@@ -124,7 +164,7 @@
   }
 
   window.addEventListener("storage", function (event) {
-    if (!event || event.key === STORAGE_MODE || event.key === STORAGE_PHASE || event.key === null) {
+    if (!event || event.key === STORAGE_MODE || event.key === STORAGE_THEME || event.key === null) {
       sync();
     }
   });
