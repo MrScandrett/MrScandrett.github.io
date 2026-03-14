@@ -24,6 +24,9 @@
   var STORAGE_MODE = "classroomos-lighting-mode";
   var STORAGE_PHASE = "classroomos-lighting-phase";
   var LIGHTING_EVENT = "classroomos:lightingchange";
+  var themeScope = (document.documentElement && document.documentElement.dataset.themeScope) ||
+    (document.body && document.body.dataset.themeScope) || "";
+  var isThemeIndependent = themeScope === "independent";
 
   var header = document.querySelector(".site-header") || document.querySelector(".topbar");
   if (!header) return;
@@ -166,74 +169,87 @@
     return "Day";
   }
 
-  var lighting = ensureLightingApi();
+  var lighting = isThemeIndependent ? null : ensureLightingApi();
 
-  var settingsContainer = document.createElement(nav.querySelector("ul") ? "li" : "div");
-  settingsContainer.className = "nav-settings nav-settings--lighting";
+  var settingsContainer = null;
+  var settingsToggle = null;
+  var settingsPanel = null;
+  var settingsCurrent = null;
+  var settingsStatus = null;
+  var autoInput = null;
+  var themeGrid = null;
 
-  var panelId = nav.id + "-settings-panel";
-  settingsContainer.innerHTML =
-    '<button type="button" class="nav-settings-toggle" aria-expanded="false" aria-haspopup="dialog" aria-controls="' + panelId + '">' +
-      ICON_SETTINGS +
-      '<span>Settings</span>' +
-      '<span class="nav-settings-status" aria-hidden="true"></span>' +
-    "</button>" +
-    '<div class="nav-settings-panel" id="' + panelId + '" hidden>' +
-      '<div class="nav-settings-head">' +
-        '<p class="nav-settings-eyebrow">Appearance</p>' +
-        '<p class="nav-settings-current" aria-live="polite"></p>' +
-      "</div>" +
-      '<p class="nav-settings-note">Keep the site on the default bright look, switch to night mode, or let it change with local time.</p>' +
-      '<label class="nav-settings-auto">' +
-        '<input type="checkbox" class="nav-settings-auto-input" />' +
-        "<span>Follow local time</span>" +
-      "</label>" +
-      '<div class="nav-theme-grid" role="list"></div>' +
-    "</div>";
+  if (!isThemeIndependent) {
+    settingsContainer = document.createElement(nav.querySelector("ul") ? "li" : "div");
+    settingsContainer.className = "nav-settings nav-settings--lighting";
 
-  var navList = nav.querySelector("ul");
-  if (navList) navList.appendChild(settingsContainer);
-  else nav.appendChild(settingsContainer);
+    var panelId = nav.id + "-settings-panel";
+    settingsContainer.innerHTML =
+      '<button type="button" class="nav-settings-toggle" aria-expanded="false" aria-haspopup="dialog" aria-controls="' + panelId + '">' +
+        ICON_SETTINGS +
+        '<span>Settings</span>' +
+        '<span class="nav-settings-status" aria-hidden="true"></span>' +
+      "</button>" +
+      '<div class="nav-settings-panel" id="' + panelId + '" hidden>' +
+        '<div class="nav-settings-head">' +
+          '<p class="nav-settings-eyebrow">Appearance</p>' +
+          '<p class="nav-settings-current" aria-live="polite"></p>' +
+        "</div>" +
+        '<p class="nav-settings-note">Keep the site on the default bright look, switch to night mode, or let it change with local time.</p>' +
+        '<label class="nav-settings-auto">' +
+          '<input type="checkbox" class="nav-settings-auto-input" />' +
+          "<span>Follow local time</span>" +
+        "</label>" +
+        '<div class="nav-theme-grid" role="list"></div>' +
+      "</div>";
 
-  var settingsToggle = settingsContainer.querySelector(".nav-settings-toggle");
-  var settingsPanel = settingsContainer.querySelector(".nav-settings-panel");
-  var settingsCurrent = settingsContainer.querySelector(".nav-settings-current");
-  var settingsStatus = settingsContainer.querySelector(".nav-settings-status");
-  var autoInput = settingsContainer.querySelector(".nav-settings-auto-input");
-  var themeGrid = settingsContainer.querySelector(".nav-theme-grid");
+    var navList = nav.querySelector("ul");
+    if (navList) navList.appendChild(settingsContainer);
+    else nav.appendChild(settingsContainer);
 
-  LIGHTING_OPTIONS.forEach(function (option) {
-    var optionBtn = document.createElement("button");
-    optionBtn.type = "button";
-    optionBtn.className = "nav-theme-chip";
-    optionBtn.setAttribute("data-theme", option.id);
-    optionBtn.setAttribute("role", "listitem");
-    optionBtn.innerHTML =
-      '<span class="nav-theme-swatch" aria-hidden="true"></span>' +
-      '<span class="nav-theme-label">' +
-        "<strong>" + option.label + "</strong>" +
-        "<small>" + option.detail + "</small>" +
-      "</span>";
-    optionBtn.addEventListener("click", function () {
-      lighting.setPhase(option.id);
-      syncLightingUi();
+    settingsToggle = settingsContainer.querySelector(".nav-settings-toggle");
+    settingsPanel = settingsContainer.querySelector(".nav-settings-panel");
+    settingsCurrent = settingsContainer.querySelector(".nav-settings-current");
+    settingsStatus = settingsContainer.querySelector(".nav-settings-status");
+    autoInput = settingsContainer.querySelector(".nav-settings-auto-input");
+    themeGrid = settingsContainer.querySelector(".nav-theme-grid");
+
+    LIGHTING_OPTIONS.forEach(function (option) {
+      var optionBtn = document.createElement("button");
+      optionBtn.type = "button";
+      optionBtn.className = "nav-theme-chip";
+      optionBtn.setAttribute("data-theme", option.id);
+      optionBtn.setAttribute("role", "listitem");
+      optionBtn.innerHTML =
+        '<span class="nav-theme-swatch" aria-hidden="true"></span>' +
+        '<span class="nav-theme-label">' +
+          "<strong>" + option.label + "</strong>" +
+          "<small>" + option.detail + "</small>" +
+        "</span>";
+      optionBtn.addEventListener("click", function () {
+        lighting.setPhase(option.id);
+        syncLightingUi();
+      });
+      themeGrid.appendChild(optionBtn);
     });
-    themeGrid.appendChild(optionBtn);
-  });
+  }
 
   function openSettings() {
+    if (!settingsContainer) return;
     settingsContainer.classList.add("is-open");
     settingsToggle.setAttribute("aria-expanded", "true");
     settingsPanel.hidden = false;
   }
 
   function closeSettings() {
+    if (!settingsContainer) return;
     settingsContainer.classList.remove("is-open");
     settingsToggle.setAttribute("aria-expanded", "false");
     settingsPanel.hidden = true;
   }
 
   function updateSettingsUi(mode, activeId) {
+    if (!themeGrid) return;
     var themeButtons = themeGrid.querySelectorAll(".nav-theme-chip");
 
     if (settingsCurrent) {
@@ -257,6 +273,7 @@
   }
 
   function syncLightingUi() {
+    if (!lighting) return;
     clearLegacyThemeAttrs();
     var activeId = typeof lighting.sync === "function" ? lighting.sync() : document.documentElement.dataset.lighting || "day";
     var mode = typeof lighting.getMode === "function" ? lighting.getMode() : "auto";
@@ -283,15 +300,19 @@
     nav.classList.contains("is-open") ? closeNav() : openNav();
   });
 
-  settingsToggle.addEventListener("click", function () {
-    settingsContainer.classList.contains("is-open") ? closeSettings() : openSettings();
-  });
+  if (settingsToggle) {
+    settingsToggle.addEventListener("click", function () {
+      settingsContainer.classList.contains("is-open") ? closeSettings() : openSettings();
+    });
+  }
 
-  autoInput.addEventListener("change", function () {
-    if (autoInput.checked) lighting.setMode("auto");
-    else lighting.setPhase(lighting.getCurrentPhase());
-    syncLightingUi();
-  });
+  if (autoInput) {
+    autoInput.addEventListener("change", function () {
+      if (autoInput.checked) lighting.setMode("auto");
+      else lighting.setPhase(lighting.getCurrentPhase());
+      syncLightingUi();
+    });
+  }
 
   document.addEventListener("click", function (e) {
     if (!header.contains(e.target)) {
@@ -299,7 +320,7 @@
       return;
     }
 
-    if (!settingsContainer.contains(e.target)) closeSettings();
+    if (settingsContainer && !settingsContainer.contains(e.target)) closeSettings();
   });
 
   document.addEventListener("keydown", function (e) {
@@ -309,14 +330,16 @@
     }
   });
 
-  window.addEventListener(LIGHTING_EVENT, function (event) {
-    if (!event || !event.detail) {
-      syncLightingUi();
-      return;
-    }
+  if (!isThemeIndependent) {
+    window.addEventListener(LIGHTING_EVENT, function (event) {
+      if (!event || !event.detail) {
+        syncLightingUi();
+        return;
+      }
 
-    updateSettingsUi(event.detail.mode || "auto", event.detail.phase || "day");
-  });
+      updateSettingsUi(event.detail.mode || "auto", event.detail.phase || "day");
+    });
 
-  syncLightingUi();
+    syncLightingUi();
+  }
 }());

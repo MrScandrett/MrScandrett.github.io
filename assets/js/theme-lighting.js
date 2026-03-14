@@ -6,6 +6,12 @@
   var currentPhase = null;
   var CHANGE_EVENT = "classroomos:lightingchange";
 
+  function isThemeIndependent() {
+    var htmlScope = document.documentElement && document.documentElement.dataset.themeScope;
+    var bodyScope = document.body && document.body.dataset.themeScope;
+    return htmlScope === "independent" || bodyScope === "independent";
+  }
+
   function getPhase(date) {
     var hours = date.getHours();
     return (hours >= 6 && hours < 19) ? "day" : "night";
@@ -46,6 +52,17 @@
   }
 
   function applyPhase(phase) {
+    if (isThemeIndependent()) {
+      document.documentElement.removeAttribute("data-lighting");
+      document.documentElement.removeAttribute("data-lighting-mode");
+      if (document.body) {
+        document.body.removeAttribute("data-lighting");
+        document.body.removeAttribute("data-lighting-mode");
+      }
+      currentPhase = null;
+      return phase;
+    }
+
     if (!document.body) return phase;
 
     document.body.dataset.lighting = phase;
@@ -97,6 +114,7 @@
     setMode: setMode,
     setPhase: setPhase,
     sync: sync,
+    isThemeIndependent: isThemeIndependent,
   };
 
   if (document.readyState === "loading") {
