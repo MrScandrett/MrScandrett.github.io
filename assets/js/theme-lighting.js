@@ -4,6 +4,7 @@
   var STORAGE_PHASE = "classroomos-lighting-phase";
   var VALID_PHASES = ["morning", "day", "dusk", "night"];
   var currentPhase = null;
+  var CHANGE_EVENT = "classroomos:lightingchange";
 
   function getPhase(date) {
     var hours = date.getHours();
@@ -55,7 +56,22 @@
     document.documentElement.dataset.lighting = phase;
     document.documentElement.dataset.lightingMode = getMode();
     currentPhase = phase;
+    emitChange(phase);
     return phase;
+  }
+
+  function emitChange(phase) {
+    var detail = { phase: phase, mode: getMode() };
+    var event;
+
+    if (typeof window.CustomEvent === "function") {
+      event = new CustomEvent(CHANGE_EVENT, { detail: detail });
+    } else {
+      event = document.createEvent("CustomEvent");
+      event.initCustomEvent(CHANGE_EVENT, false, false, detail);
+    }
+
+    window.dispatchEvent(event);
   }
 
   function sync() {
@@ -91,6 +107,12 @@
   } else {
     sync();
   }
+
+  window.addEventListener("storage", function (event) {
+    if (!event || event.key === STORAGE_MODE || event.key === STORAGE_PHASE || event.key === null) {
+      sync();
+    }
+  });
 
   window.setInterval(sync, REFRESH_MS);
 }());

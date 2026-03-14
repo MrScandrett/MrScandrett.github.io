@@ -1,4 +1,4 @@
-/* nav-mobile.js — shared nav controls + appearance settings */
+/* nav-mobile.js — shared nav controls + universal lighting settings */
 (function () {
   var ICON_MENU = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
     '<rect x="2" y="4"  width="16" height="2" rx="1" fill="currentColor"/>' +
@@ -16,18 +16,6 @@
     '<circle cx="8" cy="8" r="2.05" stroke="currentColor" stroke-width="1.15"/>' +
     '</svg>';
 
-  var LEGACY_THEME_OPTIONS = [
-    { id: "day", label: "Day" },
-    { id: "night", label: "Night" },
-    { id: "sakura", label: "Sakura" },
-    { id: "cherry", label: "Cherry" },
-    { id: "obsidian", label: "Obsidian" },
-    { id: "mahogany", label: "Mahogany" },
-    { id: "kiwi", label: "Kiwi" },
-    { id: "mango", label: "Mango" },
-    { id: "diamond", label: "Diamond" }
-  ];
-
   var LIGHTING_OPTIONS = [
     { id: "morning", label: "Morning", detail: "Bright glass and cool forest haze." },
     { id: "day", label: "Day", detail: "Balanced contrast for class launch." },
@@ -35,8 +23,9 @@
     { id: "night", label: "Night", detail: "Quiet, darker panels with ember highlights." }
   ];
 
-  var STORAGE_MODE = "classroomos-theme-mode";
-  var STORAGE_THEME = "classroomos-theme-name";
+  var STORAGE_MODE = "classroomos-lighting-mode";
+  var STORAGE_PHASE = "classroomos-lighting-phase";
+  var LIGHTING_EVENT = "classroomos:lightingchange";
 
   var header = document.querySelector(".site-header") || document.querySelector(".topbar");
   if (!header) return;
@@ -45,9 +34,6 @@
   if (!nav) return;
 
   if (!nav.id) nav.id = "primary-nav";
-
-  var isLiquidWoodland = !!(document.body && document.body.classList.contains("theme-liquid-woodland"));
-  var optionSet = isLiquidWoodland ? LIGHTING_OPTIONS : LEGACY_THEME_OPTIONS;
 
   var btn = document.createElement("button");
   btn.type = "button";
@@ -74,27 +60,102 @@
     }
   }
 
-  function getStoredMode() {
-    return readStorage(STORAGE_MODE) === "manual" ? "manual" : "auto";
-  }
-
-  function getStoredTheme() {
-    var stored = readStorage(STORAGE_THEME) || "diamond";
-    for (var i = 0; i < LEGACY_THEME_OPTIONS.length; i++) {
-      if (LEGACY_THEME_OPTIONS[i].id === stored) return stored;
+  function isValidPhase(phase) {
+    for (var i = 0; i < LIGHTING_OPTIONS.length; i++) {
+      if (LIGHTING_OPTIONS[i].id === phase) return true;
     }
-    return "diamond";
+    return false;
   }
 
-  function getSystemTheme() {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "night" : "day";
+  function getPhaseFromDate(date) {
+    var hours = date.getHours();
+
+    if (hours >= 5 && hours < 10) return "morning";
+    if (hours >= 10 && hours < 16) return "day";
+    if (hours >= 16 && hours < 20) return "dusk";
+    return "night";
   }
 
-  function getOptionLabel(optionId) {
-    for (var i = 0; i < optionSet.length; i++) {
-      if (optionSet[i].id === optionId) return optionSet[i].label;
+  function ensureLightingApi() {
+    if (window.ClassroomOSThemeLighting) return window.ClassroomOSThemeLighting;
+
+    var currentPhase = null;
+
+    function getMode() {
+      return readStorage(STORAGE_MODE) === "manual" ? "manual" : "auto";
     }
-    return isLiquidWoodland ? "Day" : "Diamond";
+
+    function getStoredPhase() {
+      var stored = readStorage(STORAGE_PHASE);
+      return isValidPhase(stored) ? stored : "day";
+    }
+
+    function resolvePhase() {
+      return getMode() === "manual" ? getStoredPhase() : getPhaseFromDate(new Date());
+    }
+
+    function emitChange(phase) {
+      var detail = { phase: phase, mode: getMode() };
+      var event;
+
+      if (typeof window.CustomEvent === "function") {
+        event = new CustomEvent(LIGHTING_EVENT, { detail: detail });
+      } else {
+        event = document.createEvent("CustomEvent");
+        event.initCustomEvent(LIGHTING_EVENT, false, false, detail);
+      }
+
+      window.dispatchEvent(event);
+    }
+
+    function applyPhase(phase) {
+      if (document.body) {
+        document.body.dataset.lighting = phase;
+        document.body.dataset.lightingMode = getMode();
+      }
+
+      document.documentElement.dataset.lighting = phase;
+      document.documentElement.dataset.lightingMode = getMode();
+      currentPhase = phase;
+      emitChange(phase);
+      return phase;
+    }
+
+    function sync() {
+      return applyPhase(resolvePhase());
+    }
+
+    function setMode(mode) {
+      writeStorage(STORAGE_MODE, mode === "manual" ? "manual" : "auto");
+      return sync();
+    }
+
+    function setPhase(phase) {
+      if (!isValidPhase(phase)) phase = "day";
+      writeStorage(STORAGE_PHASE, phase);
+      writeStorage(STORAGE_MODE, "manual");
+      return sync();
+    }
+
+    window.addEventListener("storage", function (event) {
+      if (!event || event.key === STORAGE_MODE || event.key === STORAGE_PHASE || event.key === null) {
+        sync();
+      }
+    });
+
+    window.ClassroomOSThemeLighting = {
+      getPhase: getPhaseFromDate,
+      getMode: getMode,
+      getStoredPhase: getStoredPhase,
+      getCurrentPhase: function () {
+        return currentPhase || document.documentElement.dataset.lighting || resolvePhase();
+      },
+      setMode: setMode,
+      setPhase: setPhase,
+      sync: sync
+    };
+
+    return window.ClassroomOSThemeLighting;
   }
 
   function clearLegacyThemeAttrs() {
@@ -103,80 +164,37 @@
     document.documentElement.style.colorScheme = "";
   }
 
-  function getLightingApi() {
-    return window.ClassroomOSThemeLighting || null;
-  }
-
-  function applyLegacyAppearance() {
-    var mode = getStoredMode();
-    var theme = mode === "manual" ? getStoredTheme() : getSystemTheme();
-
-    document.documentElement.setAttribute("data-site-theme", theme);
-    document.documentElement.setAttribute("data-site-theme-mode", mode);
-    document.documentElement.style.colorScheme = (theme === "night" || theme === "obsidian") ? "dark" : "light";
-    updateSettingsUi(mode, theme);
-  }
-
-  function applyLiquidAppearance() {
-    var lighting = getLightingApi();
-    var mode = "auto";
-    var phase = "day";
-
-    clearLegacyThemeAttrs();
-
-    if (lighting) {
-      phase = lighting.sync();
-      mode = typeof lighting.getMode === "function" ? lighting.getMode() : "auto";
-      phase = typeof lighting.getCurrentPhase === "function" ? lighting.getCurrentPhase() : phase;
-    } else if (document.body) {
-      phase = document.body.dataset.lighting || "day";
+  function getOptionLabel(optionId) {
+    for (var i = 0; i < LIGHTING_OPTIONS.length; i++) {
+      if (LIGHTING_OPTIONS[i].id === optionId) return LIGHTING_OPTIONS[i].label;
     }
-
-    updateSettingsUi(mode, phase);
+    return "Day";
   }
 
-  function applyAppearance() {
-    if (isLiquidWoodland) applyLiquidAppearance();
-    else applyLegacyAppearance();
-  }
+  var lighting = ensureLightingApi();
 
   var settingsContainer = document.createElement(nav.querySelector("ul") ? "li" : "div");
-  settingsContainer.className = "nav-settings" + (isLiquidWoodland ? " nav-settings--lighting" : "");
+  settingsContainer.className = "nav-settings nav-settings--lighting";
 
   var panelId = nav.id + "-settings-panel";
-  settingsContainer.innerHTML = isLiquidWoodland
-    ? '<button type="button" class="nav-settings-toggle" aria-expanded="false" aria-haspopup="dialog" aria-controls="' + panelId + '">' +
-        ICON_SETTINGS +
-        '<span>Settings</span>' +
-        '<span class="nav-settings-status" aria-hidden="true"></span>' +
-      "</button>" +
-      '<div class="nav-settings-panel" id="' + panelId + '" hidden>' +
-        '<div class="nav-settings-head">' +
-          '<p class="nav-settings-eyebrow">Woodland Lighting</p>' +
-          '<p class="nav-settings-current" aria-live="polite"></p>' +
-        "</div>" +
-        '<p class="nav-settings-note">Shift the glass from bright morning clarity to a warmer evening glow.</p>' +
-        '<label class="nav-settings-auto">' +
-          '<input type="checkbox" class="nav-settings-auto-input" />' +
-          "<span>Follow local time</span>" +
-        "</label>" +
-        '<div class="nav-theme-grid" role="list"></div>' +
-      "</div>"
-    : '<button type="button" class="nav-settings-toggle" aria-expanded="false" aria-haspopup="dialog" aria-controls="' + panelId + '">' +
-        ICON_SETTINGS +
-        "<span>Settings</span>" +
-      "</button>" +
-      '<div class="nav-settings-panel" id="' + panelId + '" hidden>' +
-        '<div class="nav-settings-head">' +
-          '<p class="nav-settings-eyebrow">Appearance</p>' +
-          '<p class="nav-settings-current" aria-live="polite"></p>' +
-        "</div>" +
-        '<label class="nav-settings-auto">' +
-          '<input type="checkbox" class="nav-settings-auto-input" />' +
-          "<span>Auto Day/Night</span>" +
-        "</label>" +
-        '<div class="nav-theme-grid" role="list"></div>' +
-      "</div>";
+  settingsContainer.innerHTML =
+    '<button type="button" class="nav-settings-toggle" aria-expanded="false" aria-haspopup="dialog" aria-controls="' + panelId + '">' +
+      ICON_SETTINGS +
+      '<span>Settings</span>' +
+      '<span class="nav-settings-status" aria-hidden="true"></span>' +
+    "</button>" +
+    '<div class="nav-settings-panel" id="' + panelId + '" hidden>' +
+      '<div class="nav-settings-head">' +
+        '<p class="nav-settings-eyebrow">Woodland Lighting</p>' +
+        '<p class="nav-settings-current" aria-live="polite"></p>' +
+      "</div>" +
+      '<p class="nav-settings-note">Use one shared lighting profile across ClassroomOS, from bright morning glass to a quieter evening glow.</p>' +
+      '<label class="nav-settings-auto">' +
+        '<input type="checkbox" class="nav-settings-auto-input" />' +
+        "<span>Follow local time</span>" +
+      "</label>" +
+      '<div class="nav-theme-grid" role="list"></div>' +
+    "</div>";
 
   var navList = nav.querySelector("ul");
   if (navList) navList.appendChild(settingsContainer);
@@ -189,32 +207,21 @@
   var autoInput = settingsContainer.querySelector(".nav-settings-auto-input");
   var themeGrid = settingsContainer.querySelector(".nav-theme-grid");
 
-  optionSet.forEach(function (option) {
+  LIGHTING_OPTIONS.forEach(function (option) {
     var optionBtn = document.createElement("button");
     optionBtn.type = "button";
     optionBtn.className = "nav-theme-chip";
     optionBtn.setAttribute("data-theme", option.id);
     optionBtn.setAttribute("role", "listitem");
-    optionBtn.innerHTML = isLiquidWoodland
-      ? '<span class="nav-theme-swatch" aria-hidden="true"></span>' +
-        '<span class="nav-theme-label">' +
-          "<strong>" + option.label + "</strong>" +
-          "<small>" + option.detail + "</small>" +
-        "</span>"
-      : '<span class="nav-theme-swatch" aria-hidden="true"></span>' +
-        "<span>" + option.label + "</span>";
+    optionBtn.innerHTML =
+      '<span class="nav-theme-swatch" aria-hidden="true"></span>' +
+      '<span class="nav-theme-label">' +
+        "<strong>" + option.label + "</strong>" +
+        "<small>" + option.detail + "</small>" +
+      "</span>";
     optionBtn.addEventListener("click", function () {
-      if (isLiquidWoodland) {
-        var lighting = getLightingApi();
-        if (lighting && typeof lighting.setPhase === "function") {
-          lighting.setPhase(option.id);
-          updateSettingsUi(lighting.getMode(), lighting.getCurrentPhase());
-        }
-      } else {
-        writeStorage(STORAGE_THEME, option.id);
-        writeStorage(STORAGE_MODE, "manual");
-        applyLegacyAppearance();
-      }
+      lighting.setPhase(option.id);
+      syncLightingUi();
     });
     themeGrid.appendChild(optionBtn);
   });
@@ -235,9 +242,9 @@
     var themeButtons = themeGrid.querySelectorAll(".nav-theme-chip");
 
     if (settingsCurrent) {
-      settingsCurrent.textContent = isLiquidWoodland
-        ? (mode === "auto" ? "Auto lighting, currently " + getOptionLabel(activeId) : "Pinned to " + getOptionLabel(activeId))
-        : (mode === "auto" ? "Following system: " + getOptionLabel(activeId) : "Current theme: " + getOptionLabel(activeId));
+      settingsCurrent.textContent = mode === "auto"
+        ? "Auto lighting, currently " + getOptionLabel(activeId)
+        : "Pinned to " + getOptionLabel(activeId);
     }
 
     if (settingsStatus) {
@@ -252,6 +259,14 @@
       button.classList.toggle("is-active", isActive);
       button.classList.toggle("is-muted", mode === "auto" && !isActive);
     });
+  }
+
+  function syncLightingUi() {
+    clearLegacyThemeAttrs();
+    var activeId = typeof lighting.sync === "function" ? lighting.sync() : document.documentElement.dataset.lighting || "day";
+    var mode = typeof lighting.getMode === "function" ? lighting.getMode() : "auto";
+    var current = typeof lighting.getCurrentPhase === "function" ? lighting.getCurrentPhase() : activeId;
+    updateSettingsUi(mode, current || activeId);
   }
 
   function openNav() {
@@ -278,17 +293,9 @@
   });
 
   autoInput.addEventListener("change", function () {
-    if (isLiquidWoodland) {
-      var lighting = getLightingApi();
-      if (lighting && typeof lighting.setMode === "function") {
-        if (autoInput.checked) lighting.setMode("auto");
-        else if (typeof lighting.setPhase === "function") lighting.setPhase(lighting.getCurrentPhase());
-        updateSettingsUi(lighting.getMode(), lighting.getCurrentPhase());
-      }
-    } else {
-      writeStorage(STORAGE_MODE, autoInput.checked ? "auto" : "manual");
-      applyLegacyAppearance();
-    }
+    if (autoInput.checked) lighting.setMode("auto");
+    else lighting.setPhase(lighting.getCurrentPhase());
+    syncLightingUi();
   });
 
   document.addEventListener("click", function (e) {
@@ -307,16 +314,14 @@
     }
   });
 
-  if (!isLiquidWoodland) {
-    var mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    function handleSchemeChange() {
-      if (getStoredMode() === "auto") applyLegacyAppearance();
+  window.addEventListener(LIGHTING_EVENT, function (event) {
+    if (!event || !event.detail) {
+      syncLightingUi();
+      return;
     }
 
-    if (typeof mediaQuery.addEventListener === "function") mediaQuery.addEventListener("change", handleSchemeChange);
-    else if (typeof mediaQuery.addListener === "function") mediaQuery.addListener(handleSchemeChange);
-  }
+    updateSettingsUi(event.detail.mode || "auto", event.detail.phase || "day");
+  });
 
-  applyAppearance();
+  syncLightingUi();
 }());
