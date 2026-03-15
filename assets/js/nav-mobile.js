@@ -40,6 +40,33 @@
 
   if (!nav.id) nav.id = "primary-nav";
 
+  function normalizePath(path) {
+    path = String(path || "").split("#")[0].split("?")[0].replace(/\\/g, "/");
+    if (!path) return "index.html";
+    if (path.endsWith("/")) path += "index.html";
+    if (path.charAt(0) === "/") path = path.slice(1);
+    return path || "index.html";
+  }
+
+  function syncCurrentNavLink() {
+    var currentPath = normalizePath(window.location.pathname);
+    var links = nav.querySelectorAll('a[href]');
+
+    links.forEach(function (link) {
+      var href = link.getAttribute("href");
+      if (!href || href.indexOf("://") !== -1 || href.charAt(0) === "#") return;
+
+      link.removeAttribute("aria-current");
+
+      var resolvedPath = normalizePath(new URL(href, window.location.href).pathname);
+      if (resolvedPath === currentPath) {
+        link.setAttribute("aria-current", "page");
+      }
+    });
+  }
+
+  syncCurrentNavLink();
+
   var btn = document.createElement("button");
   btn.type = "button";
   btn.className = "nav-toggle";

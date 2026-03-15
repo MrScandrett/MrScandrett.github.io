@@ -7,7 +7,7 @@
   <meta name="description" content="ClassroomOS STEAM lesson library — Computer Science and Space Science modules." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
   <script src="assets/js/theme-lighting.js"></script>
@@ -25,6 +25,8 @@
           <li><a href="showcase.html">Showcase</a></li>
           <li><a href="applications.html">Applications</a></li>
           <li><a href="video-library.html">Video Library</a></li>
+          <li><a href="recipe-book.html">Library</a></li>
+          <li><a href="class-downloads.html">Class Downloads</a></li>
           <li><a href="about.html">About</a></li>
         </ul>
       </nav>
@@ -34,9 +36,133 @@
   <main id="main-content">
     <section class="hero">
       <p class="eyebrow">Modules</p>
-      <h1>STEAM Lessons</h1>
+      <h1 class="steam-title" aria-label="STEAM Lessons">
+        <span class="stl" data-key="S" style="--gc:#ff3b30">S</span><span
+             class="stl" data-key="T" style="--gc:#ff9500">T</span><span
+             class="stl" data-key="E" style="--gc:#ffcc00">E</span><span
+             class="stl" data-key="A" style="--gc:#34c759">A</span><span
+             class="stl" data-key="M" style="--gc:#007aff">M</span> <span
+             class="stl stl-word" data-key="Lessons" style="--gc:#af52de">Lessons</span>
+      </h1>
+      <div class="stl-tip" id="stl-tip" role="status" aria-live="polite"></div>
       <p>Choose a module below. Each contains hands-on labs, simulations, and interactive experiences.</p>
     </section>
+
+    <style>
+      .steam-title { cursor: default; user-select: none; }
+
+      .stl {
+        display: inline;
+        cursor: pointer;
+        transition: text-shadow 0.18s, color 0.18s;
+      }
+      .stl:hover,
+      .stl.stl--active {
+        color: var(--gc);
+        text-shadow: 0 0 18px color-mix(in srgb, var(--gc) 55%, transparent),
+                     0 0 40px color-mix(in srgb, var(--gc) 25%, transparent);
+      }
+
+      /* tooltip */
+      .stl-tip {
+        min-height: 0;
+        max-width: 420px;
+        margin: 0.6rem auto 0;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity 0.18s, transform 0.18s;
+        pointer-events: none;
+      }
+      .stl-tip.stl-tip--visible {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+      .stl-tip-inner {
+        border-radius: 12px;
+        border: 1.5px solid var(--tip-color, rgba(255,255,255,0.3));
+        background: var(--glass-fill-strong);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        padding: 0.75rem 1.1rem;
+        text-align: left;
+      }
+      .stl-tip-word {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--tip-color, var(--text-muted));
+        margin: 0 0 0.25rem;
+      }
+      .stl-tip-def {
+        font-size: 0.84rem;
+        color: var(--text-main);
+        margin: 0 0 0.5rem;
+        line-height: 1.5;
+      }
+      .stl-tip-jobs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.28rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .stl-tip-jobs li {
+        font-size: 0.72rem;
+        padding: 0.18rem 0.5rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--tip-color, #888) 12%, transparent);
+        border: 1px solid color-mix(in srgb, var(--tip-color, #888) 28%, transparent);
+        color: var(--text-main);
+      }
+    </style>
+
+    <script>
+      (function () {
+        var DATA = {
+          S: { word: "Science",     color: "#ff3b30", def: "Exploring the natural world through observation, questioning, and experimentation.", jobs: ["Research Scientist","Marine Biologist","Chemist","Environmental Scientist","Neuroscientist"] },
+          T: { word: "Technology",  color: "#ff9500", def: "Creating tools, systems, and software that solve real-world problems.", jobs: ["Software Engineer","UX Designer","Data Scientist","Cybersecurity Analyst","AI Researcher"] },
+          E: { word: "Engineering", color: "#ffcc00", def: "Designing and building structures, machines, and systems that work.", jobs: ["Civil Engineer","Aerospace Engineer","Robotics Engineer","Electrical Engineer","Biomedical Engineer"] },
+          A: { word: "Art",         color: "#34c759", def: "Applying creativity and design thinking to make ideas visible and meaningful.", jobs: ["Graphic Designer","Animator","Architect","Game Designer","Industrial Designer"] },
+          M: { word: "Math",        color: "#007aff", def: "The language of patterns, logic, and quantitative reasoning underlying everything.", jobs: ["Actuary","Statistician","Cryptographer","Economist","Financial Analyst"] },
+          Lessons: { word: "Lessons", color: "#af52de", def: "What you are about to partake in! 🎉", jobs: [] }
+        };
+
+        var tip    = document.getElementById("stl-tip");
+        var spans  = document.querySelectorAll(".stl");
+        var active = null;
+
+        function show(key) {
+          var d = DATA[key];
+          if (!d) return;
+          active = key;
+          spans.forEach(function(s){ s.classList.toggle("stl--active", s.dataset.key === key); });
+          var jobsHTML = d.jobs.length
+            ? '<ul class="stl-tip-jobs">' + d.jobs.map(function(j){ return "<li>" + j + "</li>"; }).join("") + "</ul>"
+            : "";
+          tip.style.setProperty("--tip-color", d.color);
+          tip.innerHTML = '<div class="stl-tip-inner"><p class="stl-tip-word">' + d.word + '</p><p class="stl-tip-def">' + d.def + "</p>" + jobsHTML + "</div>";
+          tip.classList.add("stl-tip--visible");
+        }
+
+        function hide() {
+          active = null;
+          spans.forEach(function(s){ s.classList.remove("stl--active"); });
+          tip.classList.remove("stl-tip--visible");
+        }
+
+        spans.forEach(function(span) {
+          var key = span.dataset.key;
+          span.addEventListener("mouseenter", function(){ show(key); });
+          span.addEventListener("mouseleave", function(){ hide(); });
+          // iOS touch: show briefly then disappear on lift
+          span.addEventListener("touchstart", function(e){ e.preventDefault(); show(key); }, { passive: false });
+          span.addEventListener("touchend",   function(){ setTimeout(hide, 900); });
+        });
+      })();
+    </script>
 
     <!-- ══ Computer Science ══ -->
     <section class="section module-section" id="module-cs">
@@ -189,6 +315,160 @@
           <small>Navigate a rover through Martian atmosphere. Manage fuel, counteract wind, and stick the landing on a rocky alien surface.</small>
         </a>
 
+      </div>
+      </div><!-- /.module-drawer -->
+    </section>
+
+    <!-- ══ Chemistry ══ -->
+    <section class="section module-section" id="module-chemistry">
+      <div class="module-banner chemistry-banner" role="button" tabindex="0" aria-expanded="false">
+        <span class="module-banner-icon">🧪</span>
+        <div class="module-banner-text">
+          <h2 class="module-banner-title">Chemistry</h2>
+          <p class="module-banner-sub">Reactions, molecular bonding, the periodic table, and lab simulations — understanding matter at the atomic level</p>
+        </div>
+        <span class="module-banner-count">Coming Soon</span>
+        <span class="module-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="module-drawer">
+      <div class="module-tile-grid chemistry-tile-grid">
+        <div class="tile tile-coming-soon">
+          <span class="tile-kicker">Module in Development</span>
+          <strong>Lessons Coming Soon</strong>
+          <small>Periodic table explorer, molecular bonding lab, reaction simulations, and more.</small>
+        </div>
+      </div>
+      </div><!-- /.module-drawer -->
+    </section>
+
+    <!-- ══ Physics ══ -->
+    <section class="section module-section" id="module-physics">
+      <div class="module-banner physics-banner" role="button" tabindex="0" aria-expanded="false">
+        <span class="module-banner-icon">⚡</span>
+        <div class="module-banner-text">
+          <h2 class="module-banner-title">Physics</h2>
+          <p class="module-banner-sub">Forces, motion, waves, optics, and electricity — interactive simulations of the laws that govern the physical world</p>
+        </div>
+        <span class="module-banner-count">Coming Soon</span>
+        <span class="module-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="module-drawer">
+      <div class="module-tile-grid physics-tile-grid">
+        <div class="tile tile-coming-soon">
+          <span class="tile-kicker">Module in Development</span>
+          <strong>Lessons Coming Soon</strong>
+          <small>Newton's laws sandbox, wave interference, optics ray tracer, circuits builder, and more.</small>
+        </div>
+      </div>
+      </div><!-- /.module-drawer -->
+    </section>
+
+    <!-- ══ Mathematics ══ -->
+    <section class="section module-section" id="module-math">
+      <div class="module-banner math-banner" role="button" tabindex="0" aria-expanded="false">
+        <span class="module-banner-icon">📐</span>
+        <div class="module-banner-text">
+          <h2 class="module-banner-title">Mathematics</h2>
+          <p class="module-banner-sub">Algebra, geometry, probability, and proofs — visual and interactive explorations of mathematical thinking</p>
+        </div>
+        <span class="module-banner-count">Coming Soon</span>
+        <span class="module-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="module-drawer">
+      <div class="module-tile-grid math-tile-grid">
+        <div class="tile tile-coming-soon">
+          <span class="tile-kicker">Module in Development</span>
+          <strong>Lessons Coming Soon</strong>
+          <small>Graphing explorer, probability simulator, geometry proofs, fractal lab, and more.</small>
+        </div>
+      </div>
+      </div><!-- /.module-drawer -->
+    </section>
+
+    <!-- ══ Engineering ══ -->
+    <section class="section module-section" id="module-engineering">
+      <div class="module-banner engineering-banner" role="button" tabindex="0" aria-expanded="false">
+        <span class="module-banner-icon">⚙️</span>
+        <div class="module-banner-text">
+          <h2 class="module-banner-title">Engineering</h2>
+          <p class="module-banner-sub">Design thinking, structures, mechanisms, and systems — build, test, and iterate like a real engineer</p>
+        </div>
+        <span class="module-banner-count">Coming Soon</span>
+        <span class="module-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="module-drawer">
+      <div class="module-tile-grid engineering-tile-grid">
+        <div class="tile tile-coming-soon">
+          <span class="tile-kicker">Module in Development</span>
+          <strong>Lessons Coming Soon</strong>
+          <small>Bridge load simulator, gear systems, design-build-test challenges, CAD fundamentals, and more.</small>
+        </div>
+      </div>
+      </div><!-- /.module-drawer -->
+    </section>
+
+    <!-- ══ Fabrication ══ -->
+    <section class="section module-section" id="module-fabrication">
+      <div class="module-banner fabrication-banner" role="button" tabindex="0" aria-expanded="false">
+        <span class="module-banner-icon">🔧</span>
+        <div class="module-banner-text">
+          <h2 class="module-banner-title">Fabrication</h2>
+          <p class="module-banner-sub">3D printing, laser cutting, electronics, and physical making — turning digital designs into real-world objects</p>
+        </div>
+        <span class="module-banner-count">Coming Soon</span>
+        <span class="module-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="module-drawer">
+      <div class="module-tile-grid fabrication-tile-grid">
+        <div class="tile tile-coming-soon">
+          <span class="tile-kicker">Module in Development</span>
+          <strong>Lessons Coming Soon</strong>
+          <small>3D model prep, Snap Circuits labs, laser cutter design, soldering basics, and more.</small>
+        </div>
+      </div>
+      </div><!-- /.module-drawer -->
+    </section>
+
+    <!-- ══ Art & Design ══ -->
+    <section class="section module-section" id="module-art">
+      <div class="module-banner art-banner" role="button" tabindex="0" aria-expanded="false">
+        <span class="module-banner-icon">🎨</span>
+        <div class="module-banner-text">
+          <h2 class="module-banner-title">Art &amp; Design</h2>
+          <p class="module-banner-sub">Visual design, typography, color theory, and creative coding — where aesthetics meets technology</p>
+        </div>
+        <span class="module-banner-count">Coming Soon</span>
+        <span class="module-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="module-drawer">
+      <div class="module-tile-grid art-tile-grid">
+        <div class="tile tile-coming-soon">
+          <span class="tile-kicker">Module in Development</span>
+          <strong>Lessons Coming Soon</strong>
+          <small>Color theory explorer, typography lab, generative art with code, UI/UX design challenges, and more.</small>
+        </div>
+      </div>
+      </div><!-- /.module-drawer -->
+    </section>
+
+    <!-- ══ Systems & Society ══ -->
+    <section class="section module-section" id="module-systems">
+      <div class="module-banner systems-banner" role="button" tabindex="0" aria-expanded="false">
+        <span class="module-banner-icon">🌐</span>
+        <div class="module-banner-text">
+          <h2 class="module-banner-title">Systems &amp; Society</h2>
+          <p class="module-banner-sub">Economics, ethics, civics, and technology's role in shaping the world — thinking critically about complex systems</p>
+        </div>
+        <span class="module-banner-count">Coming Soon</span>
+        <span class="module-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="module-drawer">
+      <div class="module-tile-grid systems-tile-grid">
+        <div class="tile tile-coming-soon">
+          <span class="tile-kicker">Module in Development</span>
+          <strong>Lessons Coming Soon</strong>
+          <small>Supply chain simulator, AI ethics debates, voting systems, feedback loops, and more.</small>
+        </div>
       </div>
       </div><!-- /.module-drawer -->
     </section>

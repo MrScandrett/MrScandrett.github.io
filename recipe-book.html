@@ -3,10 +3,357 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Recipe Book · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Student-friendly project catalog for robotics, electronics, game development, 3D design, and build challenges." />
+  <title>Library · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Free science e-books, activity downloads, and student project recipes for the classroom." />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <script src="assets/js/theme-lighting.js"></script>
+  <style>
+    /* ════════════════════════════════════════════════
+       LIBRARY · BOOKSHELF UI
+    ════════════════════════════════════════════════ */
+
+    .library-hero-lead { max-width: 52ch; margin: 0 auto; }
+
+    /* ── Section intro bar ──────────────────────── */
+    .shelf-section-intro {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin-bottom: 1.4rem;
+    }
+    .shelf-section-intro h2 { margin: 0; }
+    .shelf-section-intro p  { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--text-muted, #6e6e73); }
+    .shelf-section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.22rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(0,113,227,0.08);
+      border: 1px solid rgba(0,113,227,0.18);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--blue, #0071e3);
+      text-decoration: none;
+      white-space: nowrap;
+      align-self: flex-start;
+      margin-top: 0.1rem;
+    }
+    .shelf-section-badge:hover { background: rgba(0,113,227,0.14); }
+
+    .shelf-hint {
+      font-size: 0.7rem;
+      color: var(--text-muted, #6e6e73);
+      text-align: center;
+      margin-top: 0.7rem;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Bookcase shell ─────────────────────────── */
+    .bookcase {
+      background: linear-gradient(160deg, #3d2200 0%, #2a1600 40%, #1c0e00 100%);
+      border-radius: 12px 12px 0 0;
+      padding: 1.6rem 1.6rem 0;
+      box-shadow:
+        0 16px 56px rgba(0,0,0,0.45),
+        inset 0 0 80px rgba(0,0,0,0.18),
+        inset 0 2px 0 rgba(255,255,255,0.06);
+      overflow: visible;
+      position: relative;
+    }
+
+    /* Base panel below the bookcase */
+    .bookcase-base {
+      height: 14px;
+      background: linear-gradient(180deg, #6e4418 0%, #3e2008 100%);
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+      margin-bottom: 0.3rem;
+    }
+
+    /* Flex-wrap variant for recipe section */
+    .bookcase-flex {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      column-gap: 4px;
+      row-gap: 22px;
+      background: linear-gradient(160deg, #3d2200 0%, #2a1600 40%, #1c0e00 100%);
+      border-radius: 12px 12px 0 0;
+      padding: 1.6rem 1.6rem 1.8rem;
+      box-shadow:
+        0 16px 56px rgba(0,0,0,0.45),
+        inset 0 0 80px rgba(0,0,0,0.18),
+        inset 0 2px 0 rgba(255,255,255,0.06);
+      overflow: visible;
+      position: relative;
+    }
+
+    /* ── Shelf row + board ──────────────────────── */
+    .shelf-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      position: relative;
+      overflow: visible;
+    }
+    .shelf-board {
+      height: 18px;
+      background: linear-gradient(180deg,
+        #e0c07a 0%,
+        #c49040 20%,
+        #9a6e22 58%,
+        #7a4e10 100%
+      );
+      margin: 0 -1.6rem;
+      box-shadow:
+        0 5px 20px rgba(0,0,0,0.5),
+        inset 0 2px 0 rgba(255,255,255,0.15),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+      position: relative;
+      z-index: 5;
+    }
+    .shelf-spacer { height: 1.2rem; }
+
+    /* ── Individual book spine ──────────────────── */
+    .book {
+      position: relative;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.34, 1.45, 0.64, 1);
+      z-index: 2;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .book:hover,
+    .book.is-active {
+      transform: translateY(-12px);
+      z-index: 50;
+    }
+
+    .book-spine {
+      width: 100%;
+      height: 100%;
+      border-radius: 3px 3px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      /* Spine edge lighting: bright left, dark right */
+      background: linear-gradient(90deg,
+        rgba(255,255,255,0.22) 0%,
+        rgba(255,255,255,0.07) 16%,
+        var(--sc) 16%,
+        var(--sc) 85%,
+        rgba(0,0,0,0.32) 85%,
+        rgba(0,0,0,0.18) 100%
+      );
+      box-shadow:
+        -3px 0 8px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+
+    /* Subtle horizontal grain lines */
+    .book-spine::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.025) 0px,
+        transparent 1px,
+        transparent 7px
+      );
+      pointer-events: none;
+    }
+
+    .book-spine-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-family: "Univers", "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      line-height: 1.1;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.75);
+      padding: 0.5rem 0.18rem;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      max-height: calc(100% - 0.8rem);
+      display: block;
+    }
+
+    /* ── Hover / tap popup card ─────────────────── */
+    .book-popup {
+      position: absolute;
+      bottom: calc(100% + 14px);
+      left: 50%;
+      transform: translateX(calc(-50% + var(--pop-shift, 0px))) translateY(8px);
+      width: 238px;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 1rem 1.1rem 0.9rem;
+      box-shadow:
+        0 22px 64px rgba(0,0,0,0.22),
+        0 4px 16px rgba(0,0,0,0.1),
+        0 0 0 1px rgba(0,0,0,0.06);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.16s ease, transform 0.16s ease;
+      z-index: 200;
+      text-align: left;
+    }
+    /* Caret arrow */
+    .book-popup::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: calc(50% - var(--pop-shift, 0px));
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border: 8px solid transparent;
+      border-top-color: #ffffff;
+      filter: drop-shadow(0 3px 2px rgba(0,0,0,0.1));
+    }
+    .book:hover .book-popup,
+    .book.is-active .book-popup {
+      opacity: 1;
+      transform: translateX(calc(-50% + var(--pop-shift, 0px))) translateY(0);
+      pointer-events: auto;
+    }
+
+    .book-popup-tag {
+      font-size: 0.58rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6e6e73;
+      margin: 0 0 0.28rem;
+    }
+    .book-popup-title {
+      font-size: 0.9rem;
+      font-weight: 800;
+      line-height: 1.3;
+      color: #1d1d1f;
+      margin: 0 0 0.18rem;
+    }
+    .book-popup-author {
+      font-size: 0.67rem;
+      font-style: italic;
+      color: #6e6e73;
+      margin: 0 0 0.5rem;
+    }
+    .book-popup-desc {
+      font-size: 0.71rem;
+      line-height: 1.55;
+      color: #3a3a3c;
+      margin: 0 0 0.65rem;
+    }
+    .book-popup-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      font-size: 0.71rem;
+      font-weight: 700;
+      color: #0071e3;
+      text-decoration: none;
+    }
+    .book-popup-cta:hover { text-decoration: underline; }
+
+    /* Dark mode */
+    [data-theme="night"] .book-popup {
+      background: #1c1c1e;
+      box-shadow:
+        0 22px 64px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(255,255,255,0.08);
+    }
+    [data-theme="night"] .book-popup::after { border-top-color: #1c1c1e; }
+    [data-theme="night"] .book-popup-tag    { color: #98989d; }
+    [data-theme="night"] .book-popup-title  { color: #f5f5f7; }
+    [data-theme="night"] .book-popup-author { color: #98989d; }
+    [data-theme="night"] .book-popup-desc   { color: #c7c7cc; }
+    [data-theme="night"] .book-popup-cta    { color: #4aa8ff; }
+
+    /* ── Filter bar (recipes) ───────────────────── */
+    .book-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 1.2rem;
+    }
+    .book-filter-bar button {
+      padding: 0.28rem 0.85rem;
+      font-size: 0.73rem;
+      font-weight: 700;
+      border-radius: 999px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: transparent;
+      color: var(--text-muted, #6e6e73);
+      cursor: pointer;
+      transition: background 0.14s, color 0.14s, border-color 0.14s;
+    }
+    .book-filter-bar button.is-active,
+    .book-filter-bar button:hover {
+      background: var(--blue, #0071e3);
+      color: #fff;
+      border-color: var(--blue, #0071e3);
+    }
+    .book-filter-stats {
+      font-size: 0.72rem;
+      color: var(--text-muted, #6e6e73);
+      margin-bottom: 0.9rem;
+    }
+
+    /* ── Recipe template cards ──────────────────── */
+    .recipe-template-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.2rem;
+    }
+    .recipe-template-card {
+      background: var(--glass-fill, rgba(255,255,255,0.7));
+      border: 1px solid var(--glass-stroke, rgba(0,0,0,0.08));
+      border-radius: 14px;
+      padding: 1.4rem 1.6rem;
+    }
+    .recipe-template-card h3 { margin: 0 0 0.8rem; font-size: 1rem; }
+    .recipe-template-list {
+      list-style: none;
+      padding: 0; margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.38rem;
+    }
+    .recipe-template-list li {
+      font-size: 0.81rem;
+      padding-left: 1.2rem;
+      position: relative;
+      color: var(--text-muted, #6e6e73);
+    }
+    .recipe-template-list li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--blue, #0071e3);
+    }
+
+    /* ── Mobile ─────────────────────────────────── */
+    @media (max-width: 640px) {
+      .bookcase, .bookcase-flex {
+        padding-left: 0.8rem;
+        padding-right: 0.8rem;
+        border-radius: 8px 8px 0 0;
+      }
+      .bookcase-flex { padding-bottom: 1rem; }
+      .shelf-board   { margin: 0 -0.8rem; }
+      .book-popup    { width: 200px; }
+    }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -21,6 +368,8 @@
           <li><a href="showcase.html">Showcase</a></li>
           <li><a href="applications.html">Applications</a></li>
           <li><a href="video-library.html">Video Library</a></li>
+          <li><a href="recipe-book.html" aria-current="page">Library</a></li>
+          <li><a href="class-downloads.html">Class Downloads</a></li>
           <li><a href="about.html">About</a></li>
         </ul>
       </nav>
@@ -28,395 +377,401 @@
   </header>
 
   <main id="main-content">
+
+    <!-- ══ Hero ══════════════════════════════════ -->
     <section class="hero recipe-catalog-hero">
-      <p class="eyebrow">Ideas &amp; Inspiration</p>
-      <h1>Recipe Book</h1>
-      <p class="recipe-hero-lead">Browse projects by pathway, difficulty, and build style. Each recipe is written for fast student scanning: what you make, how long it takes, what you need, and what to do next.</p>
-
-      <div class="recipe-hero-grid">
-        <article class="recipe-hero-panel">
-          <p class="recipe-hero-label">How to use this page</p>
-          <ul class="recipe-hero-list">
-            <li>Pick a pathway that matches what you want to build.</li>
-            <li>Choose a recipe with the right time, tools, and difficulty.</li>
-            <li>Open the project, build a first version, then improve it.</li>
-          </ul>
-        </article>
-
-        <article class="recipe-hero-panel recipe-hero-panel--accent">
-          <p class="recipe-hero-label">Student submissions</p>
-          <p class="recipe-hero-copy">This page is now structured for student-made recipes too. When you propose a build, include the goal, tools, time, steps, mistakes to avoid, and one stretch challenge.</p>
-        </article>
-      </div>
+      <p class="eyebrow">ClassroomOS</p>
+      <h1>Library</h1>
+      <p class="library-hero-lead">Browse the shelves — free NASA e-books, printable activity packs, and hands-on project recipes. Hover any spine to preview.</p>
     </section>
 
-    <section class="section recipe-command-center">
-      <div class="section-head">
-        <h2>Find a Build Fast</h2>
-        <p>Filter by pathway or difficulty instead of reading the whole page.</p>
-      </div>
-
-      <div class="recipe-filter-bar" role="toolbar" aria-label="Recipe filters">
-        <button class="recipe-filter is-active" type="button" data-filter="all">All Recipes</button>
-        <button class="recipe-filter" type="button" data-filter="robots">Robots</button>
-        <button class="recipe-filter" type="button" data-filter="electronics">Electronics</button>
-        <button class="recipe-filter" type="button" data-filter="gamedev">Game Dev</button>
-        <button class="recipe-filter" type="button" data-filter="design">3D Design</button>
-        <button class="recipe-filter" type="button" data-filter="challenge">Challenges</button>
-        <button class="recipe-filter" type="button" data-filter="beginner">Beginner</button>
-        <button class="recipe-filter" type="button" data-filter="intermediate">Intermediate</button>
-        <button class="recipe-filter" type="button" data-filter="advanced">Advanced</button>
-      </div>
-
-      <div class="recipe-stats" id="recipe-stats" aria-live="polite">Showing 15 recipes</div>
-    </section>
-
+    <!-- ══ NASA Resources ════════════════════════ -->
     <section class="section">
-      <div class="section-head">
-        <h2>Student Pathways</h2>
-        <p>Choose the kind of work you want to do first. Tools come second.</p>
+      <div class="shelf-section-intro">
+        <div>
+          <h2>NASA Resources</h2>
+          <p>Free activity books and science reading — straight from NASA's public library.</p>
+        </div>
+        <a class="shelf-section-badge" href="https://science.nasa.gov/multimedia/science-e-books/" target="_blank" rel="noreferrer">
+          🚀 All NASA e-Books ↗
+        </a>
       </div>
 
-      <div class="recipe-pathway-grid">
-        <article class="recipe-pathway-card recipe-pathway-card--robots">
-          <p class="recipe-pathway-kicker">Robots</p>
-          <h3>Motion, sensors, and real-world behavior</h3>
-          <p>Best for LEGO Mindstorms, Arduino motors, and Raspberry Pi experiments.</p>
-        </article>
+      <div class="bookcase" aria-label="NASA bookcase">
 
-        <article class="recipe-pathway-card recipe-pathway-card--electronics">
-          <p class="recipe-pathway-kicker">Electronics</p>
-          <h3>Circuits you can build and debug quickly</h3>
-          <p>Best for first builds, breadboards, LEDs, buzzers, sensors, and servo control.</p>
-        </article>
+        <!-- ── Shelf 1 · Activity Books (6) ──── -->
+        <div class="shelf-row">
 
-        <article class="recipe-pathway-card recipe-pathway-card--gamedev">
-          <p class="recipe-pathway-kicker">Game Dev</p>
-          <h3>Interactive systems, art, and gameplay loops</h3>
-          <p>Best for browser games, UI ideas, logic practice, and challenge-based coding.</p>
-        </article>
+          <div class="book" style="width:38px; height:185px; --sc:#1a3461;">
+            <div class="book-spine"><span class="book-spine-label">Webb Fun Pad</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Activity Book</p>
+              <p class="book-popup-title">Webb Telescope Fun Pad</p>
+              <p class="book-popup-author">Source: NASA / JWST</p>
+              <p class="book-popup-desc">Word games, mazes, and puzzles celebrating the James Webb Space Telescope and its deep-universe discoveries.</p>
+              <a class="book-popup-cta" href="https://science.nasa.gov/wp-content/uploads/2023/12/jwstsciencefunpad.pdf" target="_blank" rel="noreferrer">⬇ Download PDF</a>
+            </div>
+          </div>
 
-        <article class="recipe-pathway-card recipe-pathway-card--design">
-          <p class="recipe-pathway-kicker">3D Design</p>
-          <h3>Modeling, animation, and visual storytelling</h3>
-          <p>Best for Blender, low-poly scenes, object design, and rendered challenges.</p>
-        </article>
-      </div>
+          <div class="book" style="width:44px; height:200px; --sc:#b04a00;">
+            <div class="book-spine"><span class="book-spine-label">Space Place Explorer</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Activity Book</p>
+              <p class="book-popup-title">Space Place Explorer Activity Book</p>
+              <p class="book-popup-author">Source: NASA Space Place</p>
+              <p class="book-popup-desc">Universe-themed brainteasers, puzzles, and activities designed to make space science hands-on for young explorers.</p>
+              <a class="book-popup-cta" href="https://assets.science.nasa.gov/content/dam/science/missions/hubble/multimedia/e-books/other_ebooks/space_place_activity-book_universe.pdf" target="_blank" rel="noreferrer">⬇ Download PDF</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:40px; height:175px; --sc:#8a6200;">
+            <div class="book-spine"><span class="book-spine-label">Solar System Activities</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Activity Book</p>
+              <p class="book-popup-title">Power Up With Solar System Activities</p>
+              <p class="book-popup-author">Source: NASA / RPS</p>
+              <p class="book-popup-desc">Sidewalk chalk art, planetary scale hunts, and hands-on build projects for exploring our solar neighborhood.</p>
+              <a class="book-popup-cta" href="https://assets.science.nasa.gov/content/dam/science/missions/hubble/multimedia/e-books/other_ebooks/RPS-Solar-System-Chalk-Activity.pdf" target="_blank" rel="noreferrer">⬇ Download PDF</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:36px; height:195px; --sc:#5a1d80;">
+            <div class="book-spine"><span class="book-spine-label">Hubble Workbook</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Activity Book</p>
+              <p class="book-popup-title">Hubble Activity Workbook</p>
+              <p class="book-popup-author">Source: NASA / Hubble</p>
+              <p class="book-popup-desc">Coloring pages, connect-the-dots, and word activities built around the stunning imagery captured by Hubble.</p>
+              <a class="book-popup-cta" href="https://assets.science.nasa.gov/content/dam/science/missions/hubble/multimedia/STScI-01F2JG6AYMZJDHRVB9EPPG5HD5.pdf" target="_blank" rel="noreferrer">⬇ Download PDF</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:46px; height:210px; --sc:#7a1800;">
+            <div class="book-spine"><span class="book-spine-label">Exoplanet Coloring</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Coloring Book</p>
+              <p class="book-popup-title">Exoplanet Travel Bureau Coloring Book</p>
+              <p class="book-popup-author">Source: NASA Exoplanet Exploration</p>
+              <p class="book-popup-desc">Creative coloring pages that imagine what it would feel like to visit worlds orbiting distant stars.</p>
+              <a class="book-popup-cta" href="https://science.nasa.gov/resource/exoplanet-travel-bureau-coloring-book/" target="_blank" rel="noreferrer">Read on NASA ↗</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:38px; height:180px; --sc:#1a5a50;">
+            <div class="book-spine"><span class="book-spine-label">NASA Coloring Pages</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Coloring</p>
+              <p class="book-popup-title">NASA Coloring Pages</p>
+              <p class="book-popup-author">Source: NASA Space Place</p>
+              <p class="book-popup-desc">Printable coloring sheets featuring planets, moons, spacecraft, and astronauts — ready for class or home.</p>
+              <a class="book-popup-cta" href="https://spaceplace.nasa.gov/coloring-pages/en/" target="_blank" rel="noreferrer">Read on NASA ↗</a>
+            </div>
+          </div>
+
+        </div><!-- /shelf-row 1 -->
+        <div class="shelf-board"></div>
+        <div class="shelf-spacer"></div>
+
+        <!-- ── Shelf 2 · Science Reading (8) ─── -->
+        <div class="shelf-row">
+
+          <div class="book" style="width:44px; height:218px; --sc:#0d0d1e;">
+            <div class="book-spine"><span class="book-spine-label">Black Holes: Vortex</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Astrophysics</p>
+              <p class="book-popup-title">Black Holes: Into the Vortex</p>
+              <p class="book-popup-author">Source: NASA / Hubble</p>
+              <p class="book-popup-desc">How the Hubble Space Telescope transformed our understanding of black holes — objects so massive that not even light can escape.</p>
+              <a class="book-popup-cta" href="https://science.nasa.gov/mission/hubble/multimedia/e-books/hubble-focus-black-holes-into-the-vortex/" target="_blank" rel="noreferrer">Read on NASA ↗</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:40px; height:205px; --sc:#122840;">
+            <div class="book-spine"><span class="book-spine-label">Earth at Night</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Earth Science</p>
+              <p class="book-popup-title">Earth at Night</p>
+              <p class="book-popup-author">Source: NASA</p>
+              <p class="book-popup-desc">A visual journey through how humans, cities, wildfires, and ocean bioluminescence light up the planet — as seen from orbit.</p>
+              <a class="book-popup-cta" href="https://www.nasa.gov/ebooks/earth-at-night/" target="_blank" rel="noreferrer">Read on NASA ↗</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:38px; height:195px; --sc:#1a4a1a;">
+            <div class="book-spine"><span class="book-spine-label">Earth as Art</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Earth Science</p>
+              <p class="book-popup-title">Earth as Art</p>
+              <p class="book-popup-author">Source: NASA / Landsat</p>
+              <p class="book-popup-desc">75 breathtaking satellite images celebrating the unexpected beauty of Earth's surface — deserts, glaciers, deltas, and coastlines from above.</p>
+              <a class="book-popup-cta" href="https://www.nasa.gov/ebooks/earth-as-art/" target="_blank" rel="noreferrer">Read on NASA ↗</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:48px; height:215px; --sc:#5a3a14;">
+            <div class="book-spine"><span class="book-spine-label">Saturn: Cassini's Eyes</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Planets</p>
+              <p class="book-popup-title">The Saturn System: Through Cassini's Eyes</p>
+              <p class="book-popup-author">Source: NASA / Cassini</p>
+              <p class="book-popup-desc">Stunning imagery, science, and discoveries from Cassini's groundbreaking 13-year orbital mission around Saturn and its moons.</p>
+              <a class="book-popup-cta" href="https://science.nasa.gov/resource/the-saturn-system-through-the-eyes-of-cassini/" target="_blank" rel="noreferrer">Read on NASA ↗</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:42px; height:200px; --sc:#7a1212;">
+            <div class="book-spine"><span class="book-spine-label">Our Solar System</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Planets</p>
+              <p class="book-popup-title">Our Amazing Solar System</p>
+              <p class="book-popup-author">Source: NASA / Hubble</p>
+              <p class="book-popup-desc">Hubble telescope observations of planets, moons, rings, and smaller bodies — a tour of our entire solar neighborhood.</p>
+              <a class="book-popup-cta" href="https://science.nasa.gov/mission/hubble/multimedia/e-books/hubble-focus-our-amazing-solar-system/" target="_blank" rel="noreferrer">Read on NASA ↗</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:36px; height:190px; --sc:#2a206a;">
+            <div class="book-spine"><span class="book-spine-label">Strange New Worlds</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Exoplanets</p>
+              <p class="book-popup-title">Strange New Worlds</p>
+              <p class="book-popup-author">Source: NASA / Hubble</p>
+              <p class="book-popup-desc">Hubble's contributions to detecting and studying exoplanets — alien worlds orbiting stars far beyond our own sun.</p>
+              <a class="book-popup-cta" href="https://science.nasa.gov/mission/hubble/multimedia/e-books/hubble-focus-strange-new-worlds/" target="_blank" rel="noreferrer">Read on NASA ↗</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:40px; height:208px; --sc:#7a4000;">
+            <div class="book-spine"><span class="book-spine-label">Lives of Stars</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Astrophysics</p>
+              <p class="book-popup-title">The Lives of Stars</p>
+              <p class="book-popup-author">Source: NASA / Hubble</p>
+              <p class="book-popup-desc">The full lifecycle of stars — from swirling gas clouds to brilliant supernovae — documented across decades through Hubble's lens.</p>
+              <a class="book-popup-cta" href="https://science.nasa.gov/mission/hubble/multimedia/e-books/hubble-focus-the-lives-of-stars/" target="_blank" rel="noreferrer">Read on NASA ↗</a>
+            </div>
+          </div>
+
+          <div class="book" style="width:38px; height:222px; --sc:#0e0c22;">
+            <div class="book-spine"><span class="book-spine-label">Dark Universe</span></div>
+            <div class="book-popup">
+              <p class="book-popup-tag">NASA · Astrophysics</p>
+              <p class="book-popup-title">Dark Universe</p>
+              <p class="book-popup-author">Source: NASA / Hubble</p>
+              <p class="book-popup-desc">The latest findings on dark matter and dark energy — the invisible forces that account for most of the mass and energy in the universe.</p>
+              <a class="book-popup-cta" href="https://science.nasa.gov/mission/hubble/multimedia/e-books/hubble-focus-dark-universe/" target="_blank" rel="noreferrer">Read on NASA ↗</a>
+            </div>
+          </div>
+
+        </div><!-- /shelf-row 2 -->
+        <div class="shelf-board"></div>
+
+      </div><!-- /bookcase -->
+      <div class="bookcase-base"></div>
+      <p class="shelf-hint">📖 Hover any book spine to preview · All titles are free &amp; publicly available from NASA</p>
     </section>
 
+    <!-- ══ Project Recipes ════════════════════════ -->
     <section class="section">
-      <div class="section-head">
-        <h2>Recipe Catalog</h2>
-        <p>Every card answers the same questions: what you build, how hard it is, how long it takes, and what you need.</p>
+      <div class="shelf-section-intro">
+        <div>
+          <h2>Project Recipes</h2>
+          <p>Filter by pathway. Hover any spine for the full brief — what you build, how long, and what you'll need.</p>
+        </div>
       </div>
 
-      <div class="recipe-catalog" id="recipe-catalog">
-        <article class="recipe-catalog-card" data-tags="robots beginner">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Robots</p>
-            <span class="recipe-level recipe-level--beginner">Beginner</span>
-          </div>
-          <h3>LEGO Mindstorms Maze Bot</h3>
-          <p class="recipe-catalog-hook">Build a robot that drives forward, detects walls, and turns its way out of a maze.</p>
-          <div class="recipe-meta-row">
-            <span>45-60 min</span>
-            <span>Team build</span>
-            <span>Mindstorms</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A working autonomous robot with simple sensor logic.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: LEGO Mindstorms kit, distance sensor, laptop</li>
-            <li>Focus: loops, conditions, debugging behavior</li>
-            <li>Stretch: add faster pathfinding or obstacle memory</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="robots intermediate">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Robots</p>
-            <span class="recipe-level recipe-level--intermediate">Intermediate</span>
-          </div>
-          <h3>Arduino Servo Radar</h3>
-          <p class="recipe-catalog-hook">Sweep an ultrasonic sensor across a room and map object distance like a mini radar display.</p>
-          <div class="recipe-meta-row">
-            <span>60-75 min</span>
-            <span>Solo build</span>
-            <span>Arduino</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A scanning sensor rig with live serial data.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: Arduino, servo, ultrasonic sensor, jumper wires</li>
-            <li>Focus: servo control, serial output, measurement accuracy</li>
-            <li>Stretch: build a visual radar in Processing or JavaScript</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="robots advanced">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Robots</p>
-            <span class="recipe-level recipe-level--advanced">Advanced</span>
-          </div>
-          <h3>Raspberry Pi Camera Rover</h3>
-          <p class="recipe-catalog-hook">Combine motors, a camera, and remote control into a rover that can stream what it sees.</p>
-          <div class="recipe-meta-row">
-            <span>90+ min</span>
-            <span>Teacher help</span>
-            <span>Raspberry Pi</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A mobile robot platform with live vision.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: Raspberry Pi, camera, motor driver, battery pack</li>
-            <li>Focus: hardware wiring, Python control, troubleshooting</li>
-            <li>Stretch: detect objects or follow a color target</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="electronics beginner">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Electronics</p>
-            <span class="recipe-level recipe-level--beginner">Beginner</span>
-          </div>
-          <h3>Blink + Signal Codes</h3>
-          <p class="recipe-catalog-hook">Start with a blinking LED, then turn it into a coded signal pattern like a status light.</p>
-          <div class="recipe-meta-row">
-            <span>20-30 min</span>
-            <span>Best first project</span>
-            <span>Arduino</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A first circuit and a programmable light behavior.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: Arduino, LED, resistor, breadboard</li>
-            <li>Focus: outputs, timing, code upload flow</li>
-            <li>Stretch: turn it into a traffic or alert signal</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="electronics intermediate">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Electronics</p>
-            <span class="recipe-level recipe-level--intermediate">Intermediate</span>
-          </div>
-          <h3>Sensor Station</h3>
-          <p class="recipe-catalog-hook">Read temperature, light, or distance data and turn it into a small live dashboard.</p>
-          <div class="recipe-meta-row">
-            <span>45-60 min</span>
-            <span>Solo build</span>
-            <span>Arduino</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A working data station that reacts to the real world.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: Arduino, one sensor, breadboard, USB cable</li>
-            <li>Focus: inputs, calibration, reading values correctly</li>
-            <li>Stretch: trigger sound or light from sensor thresholds</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="electronics intermediate">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Electronics</p>
-            <span class="recipe-level recipe-level--intermediate">Intermediate</span>
-          </div>
-          <h3>Servo Challenge Arm</h3>
-          <p class="recipe-catalog-hook">Program a servo to sweep, pause, aim, or sort objects using different angles and timing.</p>
-          <div class="recipe-meta-row">
-            <span>35-50 min</span>
-            <span>Fast win</span>
-            <span>Arduino</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A moving mechanism with repeatable physical motion.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: Arduino, servo motor, jumper wires</li>
-            <li>Focus: PWM control, motion sequencing, testing angles</li>
-            <li>Stretch: create a simple sorter or pointer system</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="gamedev beginner">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Game Dev</p>
-            <span class="recipe-level recipe-level--beginner">Beginner</span>
-          </div>
-          <h3>Clicker Prototype</h3>
-          <p class="recipe-catalog-hook">Make a simple game loop where each click earns points, upgrades speed, or unlocks feedback.</p>
-          <div class="recipe-meta-row">
-            <span>25-40 min</span>
-            <span>Solo build</span>
-            <span>Browser</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A complete mini-game with state and progression.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: HTML, CSS, JavaScript, text editor</li>
-            <li>Focus: variables, event listeners, UI updates</li>
-            <li>Stretch: add upgrades, timers, or sound effects</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="gamedev intermediate">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Game Dev</p>
-            <span class="recipe-level recipe-level--intermediate">Intermediate</span>
-          </div>
-          <h3>Platformer Room</h3>
-          <p class="recipe-catalog-hook">Build one strong platformer level room with movement, hazards, and a clear win state.</p>
-          <div class="recipe-meta-row">
-            <span>60-75 min</span>
-            <span>Team build</span>
-            <span>Game engine or JS</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A playable challenge room with rules and level design.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: Scratch, JavaScript, or another class engine</li>
-            <li>Focus: collision, layout, player feedback</li>
-            <li>Stretch: add collectibles or moving enemies</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="gamedev advanced">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Game Dev</p>
-            <span class="recipe-level recipe-level--advanced">Advanced</span>
-          </div>
-          <h3>Arcade Boss Fight</h3>
-          <p class="recipe-catalog-hook">Design a full boss battle with phases, attack patterns, health, and a victory screen.</p>
-          <div class="recipe-meta-row">
-            <span>90+ min</span>
-            <span>Capstone</span>
-            <span>Game engine</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A polished gameplay encounter with escalating difficulty.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: Scratch, Godot, or JavaScript canvas</li>
-            <li>Focus: state machines, balancing, telegraphing attacks</li>
-            <li>Stretch: add cutscenes, music, or difficulty modes</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="design beginner">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">3D Design</p>
-            <span class="recipe-level recipe-level--beginner">Beginner</span>
-          </div>
-          <h3>Blender Low-Poly Desk Setup</h3>
-          <p class="recipe-catalog-hook">Model a simple scene with a desk, monitor, keyboard, and lamp using basic shapes.</p>
-          <div class="recipe-meta-row">
-            <span>40-55 min</span>
-            <span>Solo build</span>
-            <span>Blender</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A complete 3D environment with multiple simple objects.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: Blender, mouse, reference image</li>
-            <li>Focus: move, scale, extrude, camera setup</li>
-            <li>Stretch: add lighting and one animation</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="design intermediate">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">3D Design</p>
-            <span class="recipe-level recipe-level--intermediate">Intermediate</span>
-          </div>
-          <h3>Character Turntable</h3>
-          <p class="recipe-catalog-hook">Design a stylized character or robot and render a rotating showcase video.</p>
-          <div class="recipe-meta-row">
-            <span>60-80 min</span>
-            <span>Portfolio build</span>
-            <span>Blender</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A model and a clean presentation render.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: Blender, concept sketch, render settings</li>
-            <li>Focus: shape language, materials, camera motion</li>
-            <li>Stretch: add rigging or expression changes</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="design advanced">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">3D Design</p>
-            <span class="recipe-level recipe-level--advanced">Advanced</span>
-          </div>
-          <h3>Challenge Scene: Future Classroom</h3>
-          <p class="recipe-catalog-hook">Create a full 3D scene showing what a future classroom could look like and how students use it.</p>
-          <div class="recipe-meta-row">
-            <span>90+ min</span>
-            <span>Story build</span>
-            <span>Blender</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A world-building scene with visual storytelling.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: Blender, planning sketch, references</li>
-            <li>Focus: layout, lighting, scale, storytelling details</li>
-            <li>Stretch: add animation or flythrough camera motion</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="challenge beginner">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Challenges</p>
-            <span class="recipe-level recipe-level--beginner">Beginner</span>
-          </div>
-          <h3>Paper Tower Sprint</h3>
-          <p class="recipe-catalog-hook">Build the tallest freestanding tower using limited paper and a strict time limit.</p>
-          <div class="recipe-meta-row">
-            <span>20 min</span>
-            <span>Team build</span>
-            <span>Physical challenge</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A fast prototype and a better second attempt.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: paper, scissors, timer, ruler</li>
-            <li>Focus: iteration, stability, constraints</li>
-            <li>Stretch: hold extra weight for 10 seconds</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="challenge intermediate">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Challenges</p>
-            <span class="recipe-level recipe-level--intermediate">Intermediate</span>
-          </div>
-          <h3>Rubber Band Vehicle Distance Test</h3>
-          <p class="recipe-catalog-hook">Build a lightweight vehicle and race for maximum distance using stored elastic energy.</p>
-          <div class="recipe-meta-row">
-            <span>45-60 min</span>
-            <span>Team build</span>
-            <span>Physical challenge</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A moving machine and a tested redesign.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: cardboard, axles, wheels, rubber band, tape</li>
-            <li>Focus: alignment, friction, stored energy</li>
-            <li>Stretch: optimize for speed instead of distance</li>
-          </ul>
-        </article>
-
-        <article class="recipe-catalog-card" data-tags="challenge advanced">
-          <div class="recipe-catalog-top">
-            <p class="recipe-catalog-path">Challenges</p>
-            <span class="recipe-level recipe-level--advanced">Advanced</span>
-          </div>
-          <h3>Egg Drop Engineering Brief</h3>
-          <p class="recipe-catalog-hook">Protect an egg from a major drop using only approved materials and one design plan.</p>
-          <div class="recipe-meta-row">
-            <span>75-90 min</span>
-            <span>Teacher help</span>
-            <span>Physical challenge</span>
-          </div>
-          <p class="recipe-catalog-outcome"><strong>You make:</strong> A tested protective system with evidence-based redesign notes.</p>
-          <ul class="recipe-checklist">
-            <li>Needs: egg, cushioning, structure materials, test plan</li>
-            <li>Focus: force, impact reduction, tradeoff decisions</li>
-            <li>Stretch: explain why your design worked using physics</li>
-          </ul>
-        </article>
+      <div class="book-filter-bar" role="toolbar" aria-label="Filter recipes">
+        <button class="is-active" type="button" data-rfilter="all">All Recipes</button>
+        <button type="button" data-rfilter="robots">Robots</button>
+        <button type="button" data-rfilter="electronics">Electronics</button>
+        <button type="button" data-rfilter="gamedev">Game Dev</button>
+        <button type="button" data-rfilter="design">3D Design</button>
+        <button type="button" data-rfilter="challenge">Challenges</button>
       </div>
+      <div class="book-filter-stats" id="recipe-stats" aria-live="polite">Showing 15 recipes</div>
+
+      <div class="bookcase-flex" id="recipe-bookcase" aria-label="Project recipe bookcase">
+
+        <!-- ── Robots ──── -->
+        <div class="book" style="width:38px; height:185px; --sc:#b84400;" data-rtags="robots beginner">
+          <div class="book-spine"><span class="book-spine-label">Maze Bot</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Robots · Beginner · 45–60 min</p>
+            <p class="book-popup-title">LEGO Mindstorms Maze Bot</p>
+            <p class="book-popup-author">Mr. Scandrett · Team Build</p>
+            <p class="book-popup-desc">Build a robot that drives forward, detects walls with sensors, and turns its way out of a maze autonomously.</p>
+            <span class="book-popup-cta">Needs: Mindstorms kit, distance sensor, laptop</span>
+          </div>
+        </div>
+
+        <div class="book" style="width:40px; height:200px; --sc:#882800;" data-rtags="robots intermediate">
+          <div class="book-spine"><span class="book-spine-label">Servo Radar</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Robots · Intermediate · 60–75 min</p>
+            <p class="book-popup-title">Arduino Servo Radar</p>
+            <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
+            <p class="book-popup-desc">Sweep an ultrasonic sensor on a servo across a room and map object distances like a working mini radar station.</p>
+            <span class="book-popup-cta">Needs: Arduino, servo, ultrasonic sensor, wires</span>
+          </div>
+        </div>
+
+        <div class="book" style="width:42px; height:215px; --sc:#601400;" data-rtags="robots advanced">
+          <div class="book-spine"><span class="book-spine-label">Camera Rover</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Robots · Advanced · 90+ min</p>
+            <p class="book-popup-title">Raspberry Pi Camera Rover</p>
+            <p class="book-popup-author">Mr. Scandrett · Teacher Help</p>
+            <p class="book-popup-desc">Combine motors, a Pi camera, and remote control into a rover that streams live video as it explores the room.</p>
+            <span class="book-popup-cta">Needs: Raspberry Pi, camera, motor driver, battery</span>
+          </div>
+        </div>
+
+        <!-- ── Electronics ──── -->
+        <div class="book" style="width:36px; height:175px; --sc:#7a5800;" data-rtags="electronics beginner">
+          <div class="book-spine"><span class="book-spine-label">Blink + Signal</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Electronics · Beginner · 20–30 min</p>
+            <p class="book-popup-title">Blink + Signal Codes</p>
+            <p class="book-popup-author">Mr. Scandrett · Best First Project</p>
+            <p class="book-popup-desc">Start with a blinking LED and evolve it into a programmable coded signal system — the perfect first electronics build.</p>
+            <span class="book-popup-cta">Needs: Arduino, LED, resistor, breadboard</span>
+          </div>
+        </div>
+
+        <div class="book" style="width:40px; height:192px; --sc:#604200;" data-rtags="electronics intermediate">
+          <div class="book-spine"><span class="book-spine-label">Sensor Station</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Electronics · Intermediate · 45–60 min</p>
+            <p class="book-popup-title">Sensor Station</p>
+            <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
+            <p class="book-popup-desc">Read temperature, light, or distance data from real sensors and turn it into a live dashboard that reacts to the world around it.</p>
+            <span class="book-popup-cta">Needs: Arduino, one sensor, breadboard, USB</span>
+          </div>
+        </div>
+
+        <div class="book" style="width:38px; height:185px; --sc:#483000;" data-rtags="electronics intermediate">
+          <div class="book-spine"><span class="book-spine-label">Servo Arm</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Electronics · Intermediate · 35–50 min</p>
+            <p class="book-popup-title">Servo Challenge Arm</p>
+            <p class="book-popup-author">Mr. Scandrett · Fast Win</p>
+            <p class="book-popup-desc">Program a servo motor to sweep, pause, aim, and sort objects at precise angles — a hands-on intro to physical motion control.</p>
+            <span class="book-popup-cta">Needs: Arduino, servo motor, jumper wires</span>
+          </div>
+        </div>
+
+        <!-- ── Game Dev ──── -->
+        <div class="book" style="width:40px; height:180px; --sc:#1a5a30;" data-rtags="gamedev beginner">
+          <div class="book-spine"><span class="book-spine-label">Clicker Prototype</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Game Dev · Beginner · 25–40 min</p>
+            <p class="book-popup-title">Clicker Prototype</p>
+            <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
+            <p class="book-popup-desc">Build a simple game loop from scratch where clicks earn points, trigger upgrades, and create satisfying feedback loops.</p>
+            <span class="book-popup-cta">Needs: HTML, CSS, JavaScript, text editor</span>
+          </div>
+        </div>
+
+        <div class="book" style="width:38px; height:196px; --sc:#0e3a1e;" data-rtags="gamedev intermediate">
+          <div class="book-spine"><span class="book-spine-label">Platformer Room</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Game Dev · Intermediate · 60–75 min</p>
+            <p class="book-popup-title">Platformer Room</p>
+            <p class="book-popup-author">Mr. Scandrett · Team Build</p>
+            <p class="book-popup-desc">Design one tight platformer level with solid movement, hazards, collectibles, and a clear win state the player can actually reach.</p>
+            <span class="book-popup-cta">Needs: Scratch, JavaScript, or a class engine</span>
+          </div>
+        </div>
+
+        <div class="book" style="width:44px; height:212px; --sc:#0a2414;" data-rtags="gamedev advanced">
+          <div class="book-spine"><span class="book-spine-label">Boss Fight</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Game Dev · Advanced · 90+ min</p>
+            <p class="book-popup-title">Arcade Boss Fight</p>
+            <p class="book-popup-author">Mr. Scandrett · Capstone Build</p>
+            <p class="book-popup-desc">Design a full boss battle with attack phases, health systems, player telegraphing, and a polished victory screen.</p>
+            <span class="book-popup-cta">Needs: Scratch, Godot, or JS canvas</span>
+          </div>
+        </div>
+
+        <!-- ── 3D Design ──── -->
+        <div class="book" style="width:36px; height:182px; --sc:#3a1060;" data-rtags="design beginner">
+          <div class="book-spine"><span class="book-spine-label">Low-Poly Desk</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">3D Design · Beginner · 40–55 min</p>
+            <p class="book-popup-title">Blender Low-Poly Desk Setup</p>
+            <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
+            <p class="book-popup-desc">Model a complete desk scene with monitor, keyboard, and lamp using only basic shapes — the perfect Blender starter project.</p>
+            <span class="book-popup-cta">Needs: Blender, mouse, reference image</span>
+          </div>
+        </div>
+
+        <div class="book" style="width:40px; height:198px; --sc:#581880;" data-rtags="design intermediate">
+          <div class="book-spine"><span class="book-spine-label">Character Turntable</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">3D Design · Intermediate · 60–80 min</p>
+            <p class="book-popup-title">Character Turntable</p>
+            <p class="book-popup-author">Mr. Scandrett · Portfolio Build</p>
+            <p class="book-popup-desc">Design a stylized character or robot and render a clean 360° rotating showcase video — portfolio-ready from day one.</p>
+            <span class="book-popup-cta">Needs: Blender, concept sketch, render settings</span>
+          </div>
+        </div>
+
+        <div class="book" style="width:42px; height:215px; --sc:#3a0a5a;" data-rtags="design advanced">
+          <div class="book-spine"><span class="book-spine-label">Future Classroom</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">3D Design · Advanced · 90+ min</p>
+            <p class="book-popup-title">Challenge Scene: Future Classroom</p>
+            <p class="book-popup-author">Mr. Scandrett · Story Build</p>
+            <p class="book-popup-desc">Build a full 3D environment imagining what a future classroom looks like — with lighting, scale, and visual storytelling.</p>
+            <span class="book-popup-cta">Needs: Blender, planning sketch, references</span>
+          </div>
+        </div>
+
+        <!-- ── Challenges ──── -->
+        <div class="book" style="width:38px; height:178px; --sc:#8a0a1a;" data-rtags="challenge beginner">
+          <div class="book-spine"><span class="book-spine-label">Paper Tower Sprint</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Challenges · Beginner · 20 min</p>
+            <p class="book-popup-title">Paper Tower Sprint</p>
+            <p class="book-popup-author">Mr. Scandrett · Team Build</p>
+            <p class="book-popup-desc">Build the tallest freestanding tower possible using only limited paper and a strict time constraint. Iteration required.</p>
+            <span class="book-popup-cta">Needs: paper, scissors, timer, ruler</span>
+          </div>
+        </div>
+
+        <div class="book" style="width:40px; height:193px; --sc:#680814;" data-rtags="challenge intermediate">
+          <div class="book-spine"><span class="book-spine-label">Rubber Band Racer</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Challenges · Intermediate · 45–60 min</p>
+            <p class="book-popup-title">Rubber Band Vehicle Distance Test</p>
+            <p class="book-popup-author">Mr. Scandrett · Team Build</p>
+            <p class="book-popup-desc">Build a lightweight vehicle and race it for maximum distance using stored elastic energy. Alignment and friction are your enemies.</p>
+            <span class="book-popup-cta">Needs: cardboard, axles, wheels, rubber band, tape</span>
+          </div>
+        </div>
+
+        <div class="book" style="width:36px; height:206px; --sc:#4a020e;" data-rtags="challenge advanced">
+          <div class="book-spine"><span class="book-spine-label">Egg Drop</span></div>
+          <div class="book-popup">
+            <p class="book-popup-tag">Challenges · Advanced · 75–90 min</p>
+            <p class="book-popup-title">Egg Drop Engineering Brief</p>
+            <p class="book-popup-author">Mr. Scandrett · Teacher Help</p>
+            <p class="book-popup-desc">Protect an egg from a major drop using only approved materials and one design plan. Engineering at its most dramatic — and most delicious when wrong.</p>
+            <span class="book-popup-cta">Needs: egg, cushioning materials, test plan</span>
+          </div>
+        </div>
+
+      </div><!-- /bookcase-flex -->
+      <div class="bookcase-base"></div>
+      <p class="shelf-hint">📖 Hover any spine to preview the brief · Click to visit the linked resource</p>
     </section>
 
-    <section class="section recipe-template-section">
+    <!-- ══ Student Recipe Template ════════════════ -->
+    <section class="section">
       <div class="section-head">
         <h2>Student Recipe Template</h2>
-        <p>Use this structure whenever you submit your own build idea so every project reads clearly for the next student.</p>
+        <p>Use this structure when you submit a build idea so every project reads clearly for the next student.</p>
       </div>
 
       <div class="recipe-template-grid">
@@ -445,6 +800,7 @@
         </article>
       </div>
     </section>
+
   </main>
 
   <footer class="site-footer">
@@ -454,32 +810,81 @@
   <script src="assets/js/nav-mobile.js"></script>
   <script>
     (function () {
-      const filters = Array.from(document.querySelectorAll('.recipe-filter'));
-      const cards = Array.from(document.querySelectorAll('.recipe-catalog-card'));
-      const stats = document.getElementById('recipe-stats');
+
+      /* ── Popup overflow correction ─────────────── */
+      var POPUP_W = 238;
+      var EDGE    = 10;
+
+      function fixPopupShift(book) {
+        var rect = book.getBoundingClientRect();
+        var vw   = window.innerWidth;
+        var center = rect.left + rect.width / 2;
+        var popLeft  = center - POPUP_W / 2;
+        var popRight = center + POPUP_W / 2;
+        var shift = 0;
+        if (popLeft  < EDGE)        shift =  EDGE - popLeft;
+        if (popRight > vw - EDGE)   shift = -(popRight - vw + EDGE);
+        book.style.setProperty('--pop-shift', shift + 'px');
+      }
+
+      /* ── Book interactions ─────────────────────── */
+      var allBooks = Array.from(document.querySelectorAll('.book'));
+
+      allBooks.forEach(function (book) {
+
+        /* Mouse hover */
+        book.addEventListener('mouseenter', function () { fixPopupShift(book); });
+        book.addEventListener('mouseleave', function () {
+          book.style.removeProperty('--pop-shift');
+        });
+
+        /* Touch / click toggle */
+        book.addEventListener('click', function (e) {
+          var wasActive = book.classList.contains('is-active');
+          /* Close all others */
+          allBooks.forEach(function (b) { b.classList.remove('is-active'); });
+          if (!wasActive) {
+            book.classList.add('is-active');
+            fixPopupShift(book);
+          }
+          e.stopPropagation();
+        });
+      });
+
+      /* Tap outside closes active popup */
+      document.addEventListener('click', function () {
+        allBooks.forEach(function (b) { b.classList.remove('is-active'); });
+      });
+
+      /* ── Recipe filter ─────────────────────────── */
+      var filterBtns   = Array.from(document.querySelectorAll('[data-rfilter]'));
+      var recipeBooks  = Array.from(document.querySelectorAll('[data-rtags]'));
+      var statsEl      = document.getElementById('recipe-stats');
 
       function applyFilter(tag) {
-        let visible = 0;
-        cards.forEach((card) => {
-          const match = tag === 'all' || card.dataset.tags.split(' ').includes(tag);
-          card.hidden = !match;
-          if (match) visible += 1;
+        var count = 0;
+        recipeBooks.forEach(function (book) {
+          var tags  = book.dataset.rtags.split(' ');
+          var match = tag === 'all' || tags.indexOf(tag) !== -1;
+          book.hidden = !match;
+          if (match) count++;
         });
-        if (stats) {
-          stats.textContent = `Showing ${visible} recipe${visible === 1 ? '' : 's'}`;
+        if (statsEl) {
+          statsEl.textContent = 'Showing ' + count + ' recipe' + (count === 1 ? '' : 's');
         }
       }
 
-      filters.forEach((button) => {
-        button.addEventListener('click', () => {
-          filters.forEach((item) => item.classList.remove('is-active'));
-          button.classList.add('is-active');
-          applyFilter(button.dataset.filter);
+      filterBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          filterBtns.forEach(function (b) { b.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          applyFilter(btn.dataset.rfilter);
         });
       });
 
       applyFilter('all');
-    })();
+
+    }());
   </script>
 </body>
 </html>

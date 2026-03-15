@@ -157,10 +157,20 @@
     isThemeIndependent: isThemeIndependent,
   };
 
+  function highlightBrandOS() {
+    document.querySelectorAll("a.brand, .brand[href]").forEach(function (el) {
+      if (!el.querySelector(".brand-os")) {
+        var highlighted = el.innerHTML.replace(/OS\b/g, '<span class="brand-os">OS</span>');
+        el.innerHTML = '<span class="brand-text">' + highlighted + '</span>';
+      }
+    });
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", sync, { once: true });
+    document.addEventListener("DOMContentLoaded", function () { sync(); highlightBrandOS(); }, { once: true });
   } else {
     sync();
+    highlightBrandOS();
   }
 
   window.addEventListener("storage", function (event) {
