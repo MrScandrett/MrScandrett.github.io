@@ -1,0 +1,1187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bridge Over Troubled Water · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Engineering Lesson 01 — design a simple bridge that can safely carry an ambulance by balancing span, structure, material, and safety factor." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    .bridge-page {
+      padding-bottom: 3.6rem;
+    }
+
+    .bridge-shell {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 0;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .bridge-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .bridge-hero-copy,
+    .bridge-hero-mission,
+    .bridge-card,
+    .bridge-builder {
+      border-radius: 26px;
+      border: 1px solid rgba(196, 208, 220, 0.9);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 252, 0.96));
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    .bridge-hero-copy,
+    .bridge-hero-mission,
+    .bridge-card,
+    .bridge-builder {
+      padding: 1.3rem;
+    }
+
+    .bridge-hero-copy {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 14% 20%, rgba(255, 179, 77, 0.16), transparent 32%),
+        radial-gradient(circle at 88% 16%, rgba(93, 205, 255, 0.16), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(245, 249, 252, 0.96));
+    }
+
+    .bridge-hero-copy::after {
+      content: "";
+      position: absolute;
+      right: -34px;
+      bottom: -44px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(78, 181, 240, 0.14) 0%, rgba(78, 181, 240, 0) 72%);
+      pointer-events: none;
+    }
+
+    .bridge-eyebrow,
+    .bridge-kicker {
+      margin: 0 0 0.45rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #687d90;
+    }
+
+    .bridge-hero-copy h1 {
+      margin: 0;
+      max-width: 10.5ch;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1.02;
+      letter-spacing: -0.045em;
+      color: #142331;
+    }
+
+    .bridge-lede,
+    .bridge-card p,
+    .bridge-mission-copy,
+    .bridge-meter-note,
+    .bridge-stage-note,
+    .bridge-checklist li,
+    .bridge-tip-card small,
+    .bridge-force-card small,
+    .bridge-step-card small {
+      color: #486277;
+      line-height: 1.66;
+    }
+
+    .bridge-lede {
+      margin: 0.9rem 0 0;
+      max-width: 64ch;
+      font-size: 1rem;
+    }
+
+    .bridge-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .bridge-meta span,
+    .bridge-mission-stat strong,
+    .bridge-status-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.85rem;
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(141, 167, 188, 0.3);
+      background: rgba(241, 247, 251, 0.94);
+      color: #214f77;
+      font-size: 0.77rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .bridge-hero-mission {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+      background:
+        radial-gradient(circle at top right, rgba(255, 180, 84, 0.12), transparent 38%),
+        linear-gradient(180deg, rgba(248, 251, 253, 0.98), rgba(244, 249, 252, 0.96));
+    }
+
+    .bridge-hero-mission h2,
+    .bridge-card h2,
+    .bridge-builder h2 {
+      margin: 0;
+      color: #142331;
+      letter-spacing: -0.02em;
+    }
+
+    .bridge-mission-grid,
+    .bridge-force-grid,
+    .bridge-step-grid,
+    .bridge-tip-grid,
+    .bridge-quiz {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-top: 0.85rem;
+    }
+
+    .bridge-mission-stat,
+    .bridge-force-card,
+    .bridge-step-card,
+    .bridge-tip-card,
+    .bridge-question {
+      border-radius: 18px;
+      border: 1px solid rgba(198, 210, 221, 0.94);
+      background: rgba(255, 255, 255, 0.7);
+      padding: 0.95rem 1rem;
+    }
+
+    .bridge-mission-stat strong {
+      margin-bottom: 0.4rem;
+      padding-left: 0;
+      padding-right: 0;
+      min-height: auto;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      color: #153453;
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .bridge-mission-stat span {
+      display: block;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #111f2c;
+    }
+
+    .bridge-mission-stat small {
+      display: block;
+      margin-top: 0.24rem;
+      color: #61778a;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .bridge-card p {
+      margin: 0.55rem 0 0;
+      font-size: 0.9rem;
+    }
+
+    .bridge-force-card strong,
+    .bridge-step-card strong,
+    .bridge-tip-card strong,
+    .bridge-question p {
+      display: block;
+      margin-bottom: 0.3rem;
+      color: #142331;
+    }
+
+    .bridge-builder {
+      display: grid;
+      gap: 1rem;
+      background:
+        radial-gradient(circle at top left, rgba(77, 180, 255, 0.08), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 249, 252, 0.96));
+    }
+
+    .bridge-builder-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .bridge-builder-sub {
+      margin: 0.35rem 0 0;
+      color: #61778a;
+      font-size: 0.86rem;
+    }
+
+    .bridge-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.95rem 1rem;
+      align-items: start;
+    }
+
+    .bridge-field {
+      display: grid;
+      gap: 0.38rem;
+    }
+
+    .bridge-field label,
+    .bridge-field legend {
+      margin: 0;
+      padding: 0;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6a8094;
+    }
+
+    .bridge-select,
+    .bridge-slider {
+      width: 100%;
+      font: inherit;
+    }
+
+    .bridge-select {
+      appearance: none;
+      border-radius: 12px;
+      border: 1.5px solid rgba(182, 195, 207, 0.95);
+      background: rgba(255, 255, 255, 0.92);
+      color: #142331;
+      padding: 0.72rem 0.85rem;
+      font-size: 0.88rem;
+    }
+
+    .bridge-select:focus,
+    .bridge-slider:focus {
+      outline: none;
+      border-color: rgba(75, 157, 211, 0.75);
+      box-shadow: 0 0 0 3px rgba(75, 157, 211, 0.12);
+    }
+
+    .bridge-slider-wrap {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .bridge-slider {
+      accent-color: #3488c9;
+    }
+
+    .bridge-slider-value {
+      min-width: 74px;
+      text-align: right;
+      font-size: 0.86rem;
+      font-weight: 800;
+      color: #153453;
+    }
+
+    .bridge-toggle-group {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    .bridge-toggle {
+      border: 1px solid rgba(181, 194, 206, 0.95);
+      background: rgba(255, 255, 255, 0.82);
+      color: #142331;
+      border-radius: 999px;
+      padding: 0.55rem 0.8rem;
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
+    }
+
+    .bridge-toggle:hover {
+      transform: translateY(-1px);
+      border-color: rgba(75, 157, 211, 0.5);
+    }
+
+    .bridge-toggle.is-active {
+      background: rgba(52, 136, 201, 0.12);
+      border-color: rgba(52, 136, 201, 0.48);
+      color: #19466a;
+    }
+
+    .bridge-builder-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(270px, 0.85fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .bridge-stage {
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      min-height: 350px;
+      border: 1px solid rgba(170, 194, 214, 0.92);
+      background:
+        linear-gradient(180deg, #d8eefb 0 46%, #6eb0da 46% 58%, #2e6b9c 58% 100%);
+    }
+
+    .bridge-stage::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 44%;
+      height: 20px;
+      background:
+        radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.28), transparent 26%),
+        radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.22), transparent 24%),
+        radial-gradient(circle at 72% 50%, rgba(255, 255, 255, 0.22), transparent 26%);
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .bridge-stage-note {
+      position: absolute;
+      left: 1rem;
+      bottom: 1rem;
+      margin: 0;
+      max-width: 26ch;
+      padding: 0.65rem 0.8rem;
+      border-radius: 14px;
+      background: rgba(13, 26, 38, 0.52);
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 0.78rem;
+      line-height: 1.55;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .bridge-stage svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 350px;
+    }
+
+    .bridge-meter {
+      display: grid;
+      gap: 0.9rem;
+      align-content: start;
+    }
+
+    .bridge-status {
+      border-radius: 22px;
+      border: 1px solid rgba(183, 198, 211, 0.95);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 252, 0.96));
+      padding: 1rem 1.05rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .bridge-status-pass {
+      border-color: rgba(52, 199, 89, 0.26);
+      background:
+        linear-gradient(180deg, rgba(230, 253, 237, 0.96), rgba(245, 251, 247, 0.94));
+    }
+
+    .bridge-status-fail {
+      border-color: rgba(255, 59, 48, 0.24);
+      background:
+        linear-gradient(180deg, rgba(255, 242, 240, 0.96), rgba(252, 247, 246, 0.94));
+    }
+
+    .bridge-status-pill {
+      width: fit-content;
+      margin-bottom: 0.65rem;
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .bridge-capacity {
+      margin: 0;
+      font-size: clamp(1.9rem, 4.5vw, 2.45rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      color: #142331;
+    }
+
+    .bridge-capacity small {
+      display: block;
+      margin-top: 0.22rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #60778b;
+    }
+
+    .bridge-meter-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .bridge-meter-row {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 0.65rem;
+      align-items: baseline;
+    }
+
+    .bridge-meter-row dt {
+      margin: 0;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #687d90;
+    }
+
+    .bridge-meter-row dd {
+      margin: 0;
+      font-size: 0.93rem;
+      font-weight: 700;
+      color: #142331;
+    }
+
+    .bridge-meter-note {
+      margin: 0;
+      font-size: 0.83rem;
+    }
+
+    .bridge-checklist {
+      margin: 0;
+      padding-left: 1.15rem;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .bridge-options {
+      display: grid;
+      gap: 0.45rem;
+      margin-top: 0.7rem;
+    }
+
+    .bridge-option {
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(183, 198, 211, 0.95);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.86);
+      color: #142331;
+      padding: 0.72rem 0.8rem;
+      font: inherit;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      cursor: pointer;
+      transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
+    }
+
+    .bridge-option:hover {
+      transform: translateY(-1px);
+      border-color: rgba(75, 157, 211, 0.5);
+    }
+
+    .bridge-option.is-correct {
+      border-color: rgba(52, 199, 89, 0.42);
+      background: rgba(52, 199, 89, 0.08);
+    }
+
+    .bridge-option.is-wrong {
+      border-color: rgba(255, 59, 48, 0.4);
+      background: rgba(255, 59, 48, 0.08);
+    }
+
+    .bridge-feedback {
+      min-height: 2.3em;
+      margin-top: 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.5;
+      color: #60778b;
+    }
+
+    .bridge-feedback.correct {
+      color: #177334;
+    }
+
+    .bridge-feedback.wrong {
+      color: #b12720;
+    }
+
+    .bridge-footer-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.4rem;
+      color: #24507a;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .bridge-footer-link:hover {
+      color: #16344e;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 960px) {
+      .bridge-hero,
+      .bridge-builder-grid,
+      .bridge-force-grid,
+      .bridge-step-grid,
+      .bridge-tip-grid,
+      .bridge-quiz {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .bridge-shell {
+        width: min(100%, calc(100% - 1rem));
+      }
+
+      .bridge-hero-copy,
+      .bridge-hero-mission,
+      .bridge-card,
+      .bridge-builder {
+        padding: 1rem;
+        border-radius: 22px;
+      }
+
+      .bridge-controls,
+      .bridge-mission-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bridge-meter-row {
+        grid-template-columns: 1fr;
+        gap: 0.18rem;
+      }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="bridge-page">
+    <div class="bridge-shell">
+      <section class="bridge-hero">
+        <article class="bridge-hero-copy">
+          <p class="bridge-eyebrow">Engineering · Lesson 01</p>
+          <h1>Bridge Over Troubled Water</h1>
+          <p class="bridge-lede">A storm washed out the crossing to a rural clinic. Your job is to design a simple bridge that can carry an ambulance safely across the gap. That means thinking like a real engineer: identify the load, choose a structure, add a safety factor, and make sure the force has a clear path into the supports.</p>
+          <div class="bridge-meta">
+            <span>Structures</span>
+            <span>Load paths</span>
+            <span>Safety factor</span>
+            <span>Iterate and test</span>
+          </div>
+          <a class="bridge-footer-link" href="../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
+        </article>
+
+        <aside class="bridge-hero-mission" aria-label="Bridge mission brief">
+          <div>
+            <p class="bridge-kicker">Mission brief</p>
+            <h2>Get the ambulance across</h2>
+            <p class="bridge-mission-copy">Assume a fully loaded ambulance has a mass of about <strong>6,500 kg</strong>. That produces a weight of about <strong>64 kN</strong>. Engineers do not stop there. They also account for braking, bumps, and uncertainty, so this lesson uses a <strong>target design load of 105 kN</strong>.</p>
+          </div>
+
+          <div class="bridge-mission-grid">
+            <div class="bridge-mission-stat">
+              <strong>Vehicle</strong>
+              <span>6,500 kg</span>
+              <small>Ambulance with crew and gear</small>
+            </div>
+            <div class="bridge-mission-stat">
+              <strong>Weight</strong>
+              <span>64 kN</span>
+              <small>Force from gravity on the vehicle</small>
+            </div>
+            <div class="bridge-mission-stat">
+              <strong>Target</strong>
+              <span>105 kN</span>
+              <small>Design load after safety margin</small>
+            </div>
+            <div class="bridge-mission-stat">
+              <strong>Goal</strong>
+              <span>Pass</span>
+              <small>Capacity must meet or beat the target</small>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="bridge-card">
+        <h2>What a bridge must do</h2>
+        <p>A bridge does not magically "hold up weight." It moves force. The ambulance pushes down on the deck. The deck passes that load into beams or trusses. Those members send forces into the supports, and the supports push back on the ground. If any part of that path is weak, the bridge fails there first.</p>
+
+        <div class="bridge-force-grid">
+          <article class="bridge-force-card">
+            <strong>Compression</strong>
+            <small>Members under compression are being squeezed. Top chords, arches, and some vertical supports usually carry compression.</small>
+          </article>
+          <article class="bridge-force-card">
+            <strong>Tension</strong>
+            <small>Members under tension are being pulled. Bottom chords, hangers, and tie members often carry tension.</small>
+          </article>
+          <article class="bridge-force-card">
+            <strong>Triangulation</strong>
+            <small>Triangles lock a structure into shape. A rectangular frame can rack sideways, but triangles turn bending into cleaner tension-and-compression paths.</small>
+          </article>
+          <article class="bridge-force-card">
+            <strong>Safety factor</strong>
+            <small>Engineers design for more than the expected load. Real traffic is messy, materials vary, and weather plus impact loads add extra stress.</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="bridge-builder">
+        <div class="bridge-builder-head">
+          <div>
+            <p class="bridge-kicker">Design lab</p>
+            <h2>Simple Bridge Builder</h2>
+            <p class="bridge-builder-sub">Change the bridge and see whether the design can carry the ambulance. This model is intentionally simplified so the structural ideas stay visible.</p>
+          </div>
+          <span class="bridge-status-pill" id="bridge-status-pill">Testing design</span>
+        </div>
+
+        <div class="bridge-controls">
+          <div class="bridge-field">
+            <label for="bridge-material">Material</label>
+            <select class="bridge-select" id="bridge-material">
+              <option value="timber">Timber</option>
+              <option value="steel" selected>Steel</option>
+              <option value="concrete">Reinforced concrete</option>
+            </select>
+          </div>
+
+          <fieldset class="bridge-field">
+            <legend>Structure</legend>
+            <div class="bridge-toggle-group" id="bridge-structure">
+              <button class="bridge-toggle" type="button" data-structure="beam">Flat beam</button>
+              <button class="bridge-toggle is-active" type="button" data-structure="truss">Triangle truss</button>
+              <button class="bridge-toggle" type="button" data-structure="arch">Tied arch</button>
+            </div>
+          </fieldset>
+
+          <div class="bridge-field">
+            <label for="bridge-span">Span length</label>
+            <div class="bridge-slider-wrap">
+              <input class="bridge-slider" id="bridge-span" type="range" min="8" max="24" step="1" value="12" />
+              <span class="bridge-slider-value" id="bridge-span-value">12 m</span>
+            </div>
+          </div>
+
+          <div class="bridge-field">
+            <label for="bridge-depth">Bridge depth</label>
+            <div class="bridge-slider-wrap">
+              <input class="bridge-slider" id="bridge-depth" type="range" min="1.0" max="4.0" step="0.1" value="2.2" />
+              <span class="bridge-slider-value" id="bridge-depth-value">2.2 m</span>
+            </div>
+          </div>
+
+          <fieldset class="bridge-field">
+            <legend>Support layout</legend>
+            <div class="bridge-toggle-group" id="bridge-support">
+              <button class="bridge-toggle is-active" type="button" data-support="none">No center pier</button>
+              <button class="bridge-toggle" type="button" data-support="pier">Add center pier</button>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="bridge-builder-grid">
+          <div class="bridge-stage">
+            <svg id="bridge-svg" viewBox="0 0 780 380" aria-label="Bridge design visualization" role="img">
+              <defs>
+                <linearGradient id="bridgeSteel" x1="0" x2="1">
+                  <stop offset="0%" stop-color="#7c8ea1" />
+                  <stop offset="50%" stop-color="#c0ccd7" />
+                  <stop offset="100%" stop-color="#6f8398" />
+                </linearGradient>
+                <linearGradient id="bridgeTimber" x1="0" x2="1">
+                  <stop offset="0%" stop-color="#8d5b2c" />
+                  <stop offset="50%" stop-color="#bf8747" />
+                  <stop offset="100%" stop-color="#7e4f27" />
+                </linearGradient>
+                <linearGradient id="bridgeConcrete" x1="0" x2="1">
+                  <stop offset="0%" stop-color="#9099a3" />
+                  <stop offset="50%" stop-color="#c2c8cf" />
+                  <stop offset="100%" stop-color="#848c96" />
+                </linearGradient>
+              </defs>
+
+              <rect x="0" y="0" width="780" height="175" fill="transparent"></rect>
+
+              <g id="bridge-left-bank">
+                <rect x="28" y="182" width="118" height="136" rx="16" fill="#8a765c"></rect>
+                <rect x="40" y="174" width="130" height="18" rx="9" fill="#9b876d"></rect>
+              </g>
+
+              <g id="bridge-right-bank">
+                <rect x="634" y="182" width="118" height="136" rx="16" fill="#8a765c"></rect>
+                <rect x="610" y="174" width="130" height="18" rx="9" fill="#9b876d"></rect>
+              </g>
+
+              <g id="bridge-middle-pier" opacity="0">
+                <rect x="370" y="192" width="40" height="126" rx="12" fill="#8a765c"></rect>
+                <rect x="358" y="180" width="64" height="18" rx="9" fill="#9b876d"></rect>
+              </g>
+
+              <g id="bridge-structure-group">
+                <path id="bridge-main-shape" d="" fill="none" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"></path>
+                <g id="bridge-diagonals"></g>
+                <path id="bridge-deck" d="" fill="none" stroke="#1e2a33" stroke-width="20" stroke-linecap="round"></path>
+              </g>
+
+              <g id="bridge-ambulance">
+                <rect x="337" y="130" width="84" height="32" rx="8" fill="#ffffff"></rect>
+                <rect x="356" y="108" width="38" height="28" rx="8" fill="#ffffff"></rect>
+                <rect x="371" y="117" width="14" height="10" rx="3" fill="#9bd2ff"></rect>
+                <rect x="351" y="138" width="56" height="9" rx="4" fill="#ff4d4f"></rect>
+                <rect x="375" y="128" width="9" height="28" rx="4" fill="#ff4d4f"></rect>
+                <circle cx="356" cy="165" r="12" fill="#222"></circle>
+                <circle cx="404" cy="165" r="12" fill="#222"></circle>
+                <circle cx="356" cy="165" r="5" fill="#96a7b8"></circle>
+                <circle cx="404" cy="165" r="5" fill="#96a7b8"></circle>
+              </g>
+            </svg>
+            <p class="bridge-stage-note" id="bridge-stage-note">Triangles split the load into tension and compression, which is why trusses are common for medium spans.</p>
+          </div>
+
+          <div class="bridge-meter">
+            <section class="bridge-status" id="bridge-status-card" aria-live="polite">
+              <p class="bridge-capacity" id="bridge-capacity">0 kN<small>Estimated capacity</small></p>
+              <dl class="bridge-meter-grid">
+                <div class="bridge-meter-row">
+                  <dt>Target</dt>
+                  <dd id="bridge-target">105 kN</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Margin</dt>
+                  <dd id="bridge-margin">0 kN</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Safety</dt>
+                  <dd id="bridge-safety">0.00x ambulance weight</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Verdict</dt>
+                  <dd id="bridge-verdict">Adjust the design</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="bridge-status">
+              <h2>Design checklist</h2>
+              <ul class="bridge-checklist">
+                <li>Shorter spans are easier to carry than longer spans.</li>
+                <li>Deeper structures resist bending better than shallow ones.</li>
+                <li>Trusses and arches create cleaner load paths than a plain beam.</li>
+                <li>A center pier cuts the effective span and boosts capacity.</li>
+              </ul>
+              <p class="bridge-meter-note">This simulator is a classroom estimate. Real bridge design also checks buckling, connection details, dynamic loading, fatigue, deck weight, soil conditions, and material codes.</p>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="bridge-card">
+        <h2>Build sequence</h2>
+        <p>A safe bridge is usually the result of process, not a lucky guess. Engineers move through a repeating loop of define, sketch, analyze, build, and improve.</p>
+
+        <div class="bridge-step-grid">
+          <article class="bridge-step-card">
+            <strong>1. Define the job</strong>
+            <small>What must cross? How heavy is it? What is the span? What weather or site limits matter?</small>
+          </article>
+          <article class="bridge-step-card">
+            <strong>2. Pick a structure</strong>
+            <small>Beam, truss, and arch bridges each solve the load problem differently. Match the form to the span and the material.</small>
+          </article>
+          <article class="bridge-step-card">
+            <strong>3. Add safety margin</strong>
+            <small>Design above the expected load so the bridge can handle dynamic effects, wear, and uncertainty.</small>
+          </article>
+          <article class="bridge-step-card">
+            <strong>4. Test and revise</strong>
+            <small>If the first design fails, engineers do not panic. They change span, depth, material, or supports and test again.</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="bridge-card">
+        <h2>Quick design tips</h2>
+        <p>If your bridge keeps failing the ambulance test, try these moves first.</p>
+
+        <div class="bridge-tip-grid">
+          <article class="bridge-tip-card">
+            <strong>Increase the depth</strong>
+            <small>A deeper bridge places more material farther from the neutral axis, which helps resist bending.</small>
+          </article>
+          <article class="bridge-tip-card">
+            <strong>Change to a truss</strong>
+            <small>Triangle geometry spreads the load through many members instead of making one beam carry everything.</small>
+          </article>
+          <article class="bridge-tip-card">
+            <strong>Add a pier if the site allows it</strong>
+            <small>Cutting one long span into two shorter spans is one of the fastest ways to raise capacity.</small>
+          </article>
+          <article class="bridge-tip-card">
+            <strong>Choose the right material</strong>
+            <small>Steel usually carries more load for a given size than timber, but the best answer depends on cost, speed, and site conditions.</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="bridge-card">
+        <h2>Quick Check</h2>
+        <p>Choose the best answer for each engineering question.</p>
+
+        <div class="bridge-quiz">
+          <div class="bridge-question" data-answer="b" data-explanation="A bridge is really a force-routing system. The ambulance load must move from the deck into the main structure, then into the supports and the ground.">
+            <p>1. What is the bridge's most important job in this lesson?</p>
+            <div class="bridge-options">
+              <button class="bridge-option" type="button" data-choice="a">Make the ambulance travel faster</button>
+              <button class="bridge-option" type="button" data-choice="b">Carry the load safely into the supports</button>
+              <button class="bridge-option" type="button" data-choice="c">Eliminate gravity on the vehicle</button>
+            </div>
+            <div class="bridge-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="bridge-question" data-answer="c" data-explanation="Triangles are hard to deform without changing the length of a side, so they provide a much more stable load path than rectangles.">
+            <p>2. Why are triangles used so often in truss bridges?</p>
+            <div class="bridge-options">
+              <button class="bridge-option" type="button" data-choice="a">They make bridges lighter than air</button>
+              <button class="bridge-option" type="button" data-choice="b">They prevent the need for supports</button>
+              <button class="bridge-option" type="button" data-choice="c">They lock the structure into a stable shape</button>
+            </div>
+            <div class="bridge-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="bridge-question" data-answer="a" data-explanation="A safety factor means the bridge is designed for more than the expected load so it can handle shocks, uncertainty, and material variation.">
+            <p>3. Why does the lesson use a 105 kN target instead of just the ambulance's 64 kN weight?</p>
+            <div class="bridge-options">
+              <button class="bridge-option" type="button" data-choice="a">Because engineers add a safety margin above the expected load</button>
+              <button class="bridge-option" type="button" data-choice="b">Because a bridge can only be tested with made-up numbers</button>
+              <button class="bridge-option" type="button" data-choice="c">Because the ambulance becomes heavier in daylight</button>
+            </div>
+            <div class="bridge-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="bridge-question" data-answer="b" data-explanation="Adding a center pier shortens the unsupported distance, which strongly reduces bending demands and raises capacity.">
+            <p>4. Which change usually helps the most if a bridge is failing because the span is too long?</p>
+            <div class="bridge-options">
+              <button class="bridge-option" type="button" data-choice="a">Paint it a brighter color</button>
+              <button class="bridge-option" type="button" data-choice="b">Add a center pier</button>
+              <button class="bridge-option" type="button" data-choice="c">Remove the deck entirely</button>
+            </div>
+            <div class="bridge-feedback" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      const TARGET_LOAD = 105;
+      const AMBULANCE_WEIGHT = 64;
+
+      const materials = {
+        timber: { label: 'Timber', base: 46, stroke: 'url(#bridgeTimber)' },
+        steel: { label: 'Steel', base: 68, stroke: 'url(#bridgeSteel)' },
+        concrete: { label: 'Reinforced concrete', base: 58, stroke: 'url(#bridgeConcrete)' }
+      };
+
+      const structures = {
+        beam: {
+          label: 'Flat beam',
+          multiplier: 0.78,
+          note: 'A flat beam is simple, but it bends more because the force is concentrated into one main member.'
+        },
+        truss: {
+          label: 'Triangle truss',
+          multiplier: 1.22,
+          note: 'Triangles split the load into tension and compression, which is why trusses are common for medium spans.'
+        },
+        arch: {
+          label: 'Tied arch',
+          multiplier: 1.08,
+          note: 'An arch redirects much of the force into compression, but it still needs a strong deck or tie to keep the ends from spreading.'
+        }
+      };
+
+      const supports = {
+        none: { label: 'No center pier', multiplier: 1 },
+        pier: { label: 'Center pier', multiplier: 1.42 }
+      };
+
+      const materialInput = document.getElementById('bridge-material');
+      const spanInput = document.getElementById('bridge-span');
+      const depthInput = document.getElementById('bridge-depth');
+      const spanValue = document.getElementById('bridge-span-value');
+      const depthValue = document.getElementById('bridge-depth-value');
+
+      const structureButtons = document.querySelectorAll('[data-structure]');
+      const supportButtons = document.querySelectorAll('[data-support]');
+
+      const mainShape = document.getElementById('bridge-main-shape');
+      const deckShape = document.getElementById('bridge-deck');
+      const diagonals = document.getElementById('bridge-diagonals');
+      const middlePier = document.getElementById('bridge-middle-pier');
+      const ambulance = document.getElementById('bridge-ambulance');
+
+      const statusCard = document.getElementById('bridge-status-card');
+      const statusPill = document.getElementById('bridge-status-pill');
+      const capacityEl = document.getElementById('bridge-capacity');
+      const targetEl = document.getElementById('bridge-target');
+      const marginEl = document.getElementById('bridge-margin');
+      const safetyEl = document.getElementById('bridge-safety');
+      const verdictEl = document.getElementById('bridge-verdict');
+      const stageNote = document.getElementById('bridge-stage-note');
+
+      let structure = 'truss';
+      let support = 'none';
+
+      function activateGroup(buttons, activeValue, key) {
+        buttons.forEach((button) => {
+          button.classList.toggle('is-active', button.dataset[key] === activeValue);
+        });
+      }
+
+      function depthFactor(depth) {
+        return 0.6 + depth / 3.2;
+      }
+
+      function spanFactor(span) {
+        return Math.pow(12 / span, 1.3);
+      }
+
+      function computeCapacity() {
+        const material = materials[materialInput.value];
+        const structureData = structures[structure];
+        const supportData = supports[support];
+        const span = Number(spanInput.value);
+        const depth = Number(depthInput.value);
+        const capacity = material.base * structureData.multiplier * supportData.multiplier * depthFactor(depth) * spanFactor(span);
+
+        return {
+          capacity: Math.round(capacity),
+          span,
+          depth,
+          material,
+          structureData,
+          supportData
+        };
+      }
+
+      function renderBridgeVisual(state) {
+        const deckY = 160;
+        const leftX = 146;
+        const rightX = 634;
+        const spanScale = (state.span - 8) / 16;
+        const bridgeLeft = leftX + spanScale * 26;
+        const bridgeRight = rightX - spanScale * 26;
+        const spanWidth = bridgeRight - bridgeLeft;
+        const depthPx = 34 + ((state.depth - 1) / 3) * 84;
+        const topY = deckY - depthPx;
+        const stroke = state.material.stroke;
+
+        mainShape.setAttribute('stroke', stroke);
+        deckShape.setAttribute('d', 'M ' + bridgeLeft + ' ' + deckY + ' L ' + bridgeRight + ' ' + deckY);
+        diagonals.innerHTML = '';
+
+        if (structure === 'beam') {
+          mainShape.setAttribute('d', 'M ' + bridgeLeft + ' ' + topY + ' L ' + bridgeRight + ' ' + topY);
+        }
+
+        if (structure === 'truss') {
+          mainShape.setAttribute('d', 'M ' + bridgeLeft + ' ' + topY + ' L ' + bridgeRight + ' ' + topY);
+          const panelCount = 6;
+          const panelWidth = spanWidth / panelCount;
+          for (let i = 0; i < panelCount; i += 1) {
+            const x1 = bridgeLeft + panelWidth * i;
+            const x2 = bridgeLeft + panelWidth * (i + 1);
+            const vertical = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            vertical.setAttribute('x1', x1);
+            vertical.setAttribute('y1', topY);
+            vertical.setAttribute('x2', x1);
+            vertical.setAttribute('y2', deckY);
+            vertical.setAttribute('stroke', stroke);
+            vertical.setAttribute('stroke-width', '10');
+            vertical.setAttribute('stroke-linecap', 'round');
+            diagonals.appendChild(vertical);
+
+            const diagonal = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            diagonal.setAttribute('x1', x1);
+            diagonal.setAttribute('y1', deckY);
+            diagonal.setAttribute('x2', x2);
+            diagonal.setAttribute('y2', topY);
+            diagonal.setAttribute('stroke', stroke);
+            diagonal.setAttribute('stroke-width', '10');
+            diagonal.setAttribute('stroke-linecap', 'round');
+            diagonals.appendChild(diagonal);
+          }
+          const endVertical = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          endVertical.setAttribute('x1', bridgeRight);
+          endVertical.setAttribute('y1', topY);
+          endVertical.setAttribute('x2', bridgeRight);
+          endVertical.setAttribute('y2', deckY);
+          endVertical.setAttribute('stroke', stroke);
+          endVertical.setAttribute('stroke-width', '10');
+          endVertical.setAttribute('stroke-linecap', 'round');
+          diagonals.appendChild(endVertical);
+        }
+
+        if (structure === 'arch') {
+          const archHeight = depthPx + 18;
+          const d = [
+            'M', bridgeLeft, deckY,
+            'Q', (bridgeLeft + bridgeRight) / 2, deckY - archHeight,
+            bridgeRight, deckY
+          ].join(' ');
+          mainShape.setAttribute('d', d);
+
+          const hangerCount = 6;
+          for (let i = 1; i < hangerCount; i += 1) {
+            const x = bridgeLeft + (spanWidth / hangerCount) * i;
+            const t = (x - bridgeLeft) / spanWidth;
+            const archY = (1 - Math.pow((t * 2) - 1, 2)) * archHeight + (deckY - archHeight);
+            const hanger = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            hanger.setAttribute('x1', x);
+            hanger.setAttribute('y1', archY);
+            hanger.setAttribute('x2', x);
+            hanger.setAttribute('y2', deckY);
+            hanger.setAttribute('stroke', stroke);
+            hanger.setAttribute('stroke-width', '7');
+            hanger.setAttribute('stroke-linecap', 'round');
+            diagonals.appendChild(hanger);
+          }
+        }
+
+        middlePier.setAttribute('opacity', support === 'pier' ? '1' : '0');
+
+        const ambulanceX = support === 'pier' ? 348 : 337;
+        ambulance.setAttribute('transform', 'translate(' + (ambulanceX - 337) + ', ' + (deckY - 160) + ')');
+      }
+
+      function update() {
+        const state = computeCapacity();
+        const margin = state.capacity - TARGET_LOAD;
+        const safetyFactor = state.capacity / AMBULANCE_WEIGHT;
+        const pass = state.capacity >= TARGET_LOAD;
+
+        spanValue.textContent = state.span + ' m';
+        depthValue.textContent = state.depth.toFixed(1) + ' m';
+        targetEl.textContent = TARGET_LOAD + ' kN';
+        capacityEl.innerHTML = state.capacity + ' kN<small>Estimated capacity</small>';
+        marginEl.textContent = (margin >= 0 ? '+' : '') + margin + ' kN';
+        safetyEl.textContent = safetyFactor.toFixed(2) + 'x ambulance weight';
+        verdictEl.textContent = pass
+          ? 'Passes the ambulance challenge'
+          : 'Fails the target load';
+        stageNote.textContent = state.structureData.note;
+        statusPill.textContent = pass ? 'Ambulance can cross' : 'Revise the bridge';
+
+        statusCard.classList.toggle('bridge-status-pass', pass);
+        statusCard.classList.toggle('bridge-status-fail', !pass);
+
+        renderBridgeVisual(state);
+      }
+
+      structureButtons.forEach((button) => {
+        button.addEventListener('click', function () {
+          structure = button.dataset.structure;
+          activateGroup(structureButtons, structure, 'structure');
+          update();
+        });
+      });
+
+      supportButtons.forEach((button) => {
+        button.addEventListener('click', function () {
+          support = button.dataset.support;
+          activateGroup(supportButtons, support, 'support');
+          update();
+        });
+      });
+
+      materialInput.addEventListener('input', update);
+      spanInput.addEventListener('input', update);
+      depthInput.addEventListener('input', update);
+
+      document.querySelectorAll('.bridge-question').forEach((question) => {
+        const answer = question.dataset.answer;
+        const explanation = question.dataset.explanation;
+        const feedback = question.querySelector('.bridge-feedback');
+        const options = question.querySelectorAll('.bridge-option');
+
+        options.forEach((option) => {
+          option.addEventListener('click', function () {
+            options.forEach((button) => {
+              button.classList.remove('is-correct', 'is-wrong');
+              if (button.dataset.choice === answer) {
+                button.classList.add('is-correct');
+              }
+            });
+
+            if (option.dataset.choice === answer) {
+              feedback.className = 'bridge-feedback correct';
+              feedback.textContent = 'Correct. ' + explanation;
+              return;
+            }
+
+            option.classList.add('is-wrong');
+            feedback.className = 'bridge-feedback wrong';
+            feedback.textContent = 'Not quite. ' + explanation;
+          });
+        });
+      });
+
+      update();
+    }());
+  </script>
+</body>
+</html>
