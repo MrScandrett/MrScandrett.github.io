@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Periodic Table of Elements · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Chemistry Lesson 01 — an interactive lesson on the periodic table of elements with atomic structure, families, periods, and animated Bohr models." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page ─────────────────────────────────────────── */
+    .pt-page { padding-bottom: 3rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .pt-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .pt-hero h1 { max-width: 28ch; margin-left: 0; margin-right: 0;
+      font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .pt-hero-meta { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .pt-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .pt-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65;
+      font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .pt-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Lesson primer ───────────────────────────────── */
+    .pt-primer {
+      display: grid;
+      gap: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .pt-primer-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+    .pt-primer-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1rem;
+    }
+    .pt-primer-card h2,
+    .pt-primer-card h3 {
+      margin: 0 0 0.35rem;
+      letter-spacing: -0.02em;
+    }
+    .pt-primer-card h2 {
+      font-size: 1.15rem;
+    }
+    .pt-primer-card h3 {
+      font-size: 0.98rem;
+    }
+    .pt-primer-card p {
+      margin: 0;
+      color: #3f4f65;
+      font-size: 0.86rem;
+      line-height: 1.58;
+    }
+    [data-theme="night"] .pt-primer-card {
+      background: var(--white, #2c2c2e);
+    }
+    [data-theme="night"] .pt-primer-card p {
+      color: rgba(245,245,247,0.72);
+    }
+
+    /* ── Controls ─────────────────────────────────────── */
+    .pt-controls { display: flex; flex-wrap: wrap; gap: 0.5rem;
+      align-items: center; margin-bottom: 0.9rem; }
+    .pt-filter-btn { padding: 5px 11px; border-radius: 999px; border: 1.5px solid;
+      font-size: 0.74rem; font-weight: 700; cursor: pointer; background: transparent;
+      transition: opacity 0.15s, background 0.15s, color 0.15s; font-family: inherit; }
+    .pt-filter-btn:hover { opacity: 0.85; }
+    .pt-filter-btn.pt-btn-active { color: #fff !important; }
+    .pt-filter-btn.pt-btn-dimmed { opacity: 0.28; }
+    .pt-search { margin-left: auto; padding: 6px 13px; border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 999px; font-size: 0.82rem; background: var(--white, #fff);
+      color: var(--text, #1d1d1f); width: 165px; outline: none; font-family: inherit; }
+    .pt-search:focus { border-color: var(--blue, #0071e3); }
+
+    /* ── Table container ──────────────────────────────── */
+    .pt-wrap { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1rem 1rem 1.2rem; overflow-x: auto; }
+    .pt-grid { display: grid;
+      grid-template-columns: repeat(18, minmax(40px, 1fr));
+      grid-template-rows: repeat(7, 46px) 24px repeat(2, 46px);
+      gap: 2px; min-width: 740px; }
+
+    /* ── Element cell ─────────────────────────────────── */
+    .el { border-radius: 5px; padding: 3px 3px 4px; display: flex; flex-direction: column;
+      justify-content: space-between; cursor: pointer; user-select: none;
+      border: 1.5px solid transparent; transition: transform 0.13s, box-shadow 0.13s, opacity 0.2s;
+      font-family: inherit; text-align: left; }
+    .el:hover { transform: scale(1.14) translateZ(0); z-index: 20;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.22); }
+    .el.el-selected { border-color: rgba(0,0,0,0.45) !important;
+      transform: scale(1.1); z-index: 20; }
+    .el.el-dimmed { opacity: 0.15; pointer-events: none; }
+    .el-num  { font-size: 0.52rem; font-weight: 700; opacity: 0.75; line-height: 1; }
+    .el-sym  { font-size: 1rem;    font-weight: 800; line-height: 1.1; text-align: center; }
+    .el-name { font-size: 0.42rem; text-align: center; opacity: 0.8;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .el-mass { font-size: 0.42rem; text-align: center; opacity: 0.6; }
+
+    /* ── f-block placeholder ──────────────────────────── */
+    .pt-ph { border-radius: 5px; background: rgba(0,0,0,0.04);
+      border: 1px dashed rgba(0,0,0,0.15); display: flex; align-items: center;
+      justify-content: center; font-size: 0.48rem; font-weight: 700;
+      color: #888; cursor: default; }
+    [data-theme="night"] .pt-ph { background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.12); color: #aaa; }
+
+    /* ── f-block divider row ──────────────────────────── */
+    .pt-frow { grid-column: 1 / -1; grid-row: 8; display: flex; align-items: center;
+      gap: 0.4rem; padding: 0 2px; }
+    .pt-frow-line { flex: 1; height: 1px; background: rgba(0,0,0,0.1); }
+    .pt-frow-label { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #aaa; white-space: nowrap; }
+    [data-theme="night"] .pt-frow-line { background: rgba(255,255,255,0.1); }
+
+    /* ── Legend ───────────────────────────────────────── */
+    .pt-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.8rem;
+      margin-top: 0.9rem; padding-top: 0.75rem;
+      border-top: 1px solid var(--line, #d2d2d7); }
+    .pt-legend-item { display: flex; align-items: center; gap: 0.3rem;
+      font-size: 0.7rem; font-weight: 500; color: var(--text, #1d1d1f); }
+    .pt-legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── Element detail panel ─────────────────────────── */
+    .el-panel { margin-top: 1rem; background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7); border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      display: none; gap: 1.4rem; padding: 1.4rem 1.6rem; align-items: start; }
+    .el-panel.ep-open { display: grid; grid-template-columns: auto 1fr;
+      animation: epSlide 0.28s cubic-bezier(0.4,0,0.2,1); }
+    @keyframes epSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* ── Bohr SVG ─────────────────────────────────────── */
+    .bohr-svg { display: block; }
+    .orbit-ring { fill: none; stroke: rgba(0,0,0,0.1); stroke-width: 1; }
+    [data-theme="night"] .orbit-ring { stroke: rgba(255,255,255,0.13); }
+    @keyframes orb-cw  { to { transform: rotate(360deg);  } }
+    @keyframes orb-ccw { to { transform: rotate(-360deg); } }
+
+    /* ── Panel info ───────────────────────────────────── */
+    .ep-info { display: flex; flex-direction: column; gap: 0.55rem; min-width: 0; }
+    .ep-top  { display: flex; align-items: flex-start; gap: 0.7rem; }
+    .ep-header { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+    .ep-sym  { font-size: 2.8rem; font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
+    .ep-name { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.01em;
+      color: var(--text, #1d1d1f); }
+    .ep-meta { display: flex; flex-wrap: wrap; gap: 0.35rem 0.85rem;
+      font-size: 0.8rem; color: #64748b; }
+    .ep-meta strong { color: var(--text, #1d1d1f); font-weight: 700; }
+    .ep-badge { display: inline-block; padding: 3px 10px; border-radius: 999px;
+      font-size: 0.7rem; font-weight: 700; color: #fff; width: fit-content; }
+    .ep-config { font-size: 0.8rem; font-family: 'SF Mono', monospace;
+      background: rgba(0,0,0,0.04); padding: 7px 11px; border-radius: 8px;
+      color: var(--text, #1d1d1f); letter-spacing: 0.01em; }
+    [data-theme="night"] .ep-config { background: rgba(255,255,255,0.07); }
+    .ep-desc { font-size: 0.87rem; line-height: 1.65; color: #3f4f65; max-width: 60ch; }
+    [data-theme="night"] .ep-desc { color: rgba(245,245,247,0.7); }
+    .ep-close { background: none; border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px; padding: 4px 10px; font-size: 0.76rem; cursor: pointer;
+      color: #777; font-family: inherit; margin-left: auto; flex-shrink: 0; }
+    .ep-close:hover { background: var(--line, #d2d2d7); }
+
+    @media (max-width: 700px) {
+      .el-panel.ep-open { grid-template-columns: 1fr; }
+      .bohr-svg { margin: 0 auto; }
+      .pt-primer-grid { grid-template-columns: 1fr; }
+    }
+    [data-theme="night"] .pt-wrap,
+    [data-theme="night"] .el-panel { background: var(--white, #2c2c2e); }
+    [data-theme="night"] .el { background: rgba(255,255,255,0.06) !important; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="pt-page">
+    <section class="hero pt-hero">
+      <p class="eyebrow">Chemistry · Lesson 01</p>
+      <h1>Periodic Table of Elements</h1>
+      <div class="pt-hero-meta">
+        <span>118 elements</span>
+        <span class="dot"></span>
+        <span>Animated Bohr models</span>
+        <span class="dot"></span>
+        <span>Click any element to explore</span>
+      </div>
+      <p class="pt-lede">Every substance in the universe is built from atoms of pure elements. Use this lesson to read the table by periods, groups, and families, then click any element to inspect its atomic structure and electron shells.</p>
+    </section>
+
+    <section class="pt-primer" aria-label="How to read the periodic table">
+      <div class="pt-primer-card">
+        <h2>How to read the table</h2>
+        <p>The periodic table is arranged by atomic number. That means every step to the right adds one proton, and the layout reveals repeating patterns in chemical behavior.</p>
+      </div>
+      <div class="pt-primer-grid">
+        <article class="pt-primer-card">
+          <h3>Periods</h3>
+          <p>Rows are called periods. As you move across a row, atomic number increases and properties shift in a regular way.</p>
+        </article>
+        <article class="pt-primer-card">
+          <h3>Groups</h3>
+          <p>Columns are groups. Elements in the same group often have similar outer electron patterns, so they react in related ways.</p>
+        </article>
+        <article class="pt-primer-card">
+          <h3>Families</h3>
+          <p>Labels like alkali metals, halogens, and noble gases help chemists predict reactivity, bonding, and other shared traits.</p>
+        </article>
+        <article class="pt-primer-card">
+          <h3>Patterns</h3>
+          <p>Metals mostly appear on the left, nonmetals cluster on the right, and the staircase region between them holds the metalloids.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <div class="pt-controls" id="pt-controls" role="toolbar" aria-label="Filter elements by category">
+      <button class="pt-filter-btn" data-cat="all" style="color:#555;border-color:#bbb;"
+        aria-pressed="true">All 118</button>
+      <input class="pt-search" type="search" placeholder="🔍  Search elements…"
+        id="pt-search" aria-label="Search elements by name, symbol, or number" />
+    </div>
+
+    <!-- Table -->
+    <div class="pt-wrap">
+      <div class="pt-grid" id="pt-grid" role="grid" aria-label="Periodic table of elements"></div>
+      <div class="pt-legend" id="pt-legend" aria-label="Element category legend"></div>
+    </div>
+
+    <!-- Detail Panel -->
+    <div class="el-panel" id="el-panel" role="region" aria-label="Element details" aria-live="polite">
+      <div class="bohr-wrap">
+        <svg class="bohr-svg" id="bohr-svg" viewBox="0 0 280 280" width="210" height="210" aria-hidden="true"></svg>
+      </div>
+      <div class="ep-info">
+        <div class="ep-top">
+          <div style="flex:1;min-width:0;">
+            <div class="ep-header">
+              <span class="ep-sym" id="ep-sym"></span>
+              <span class="ep-name" id="ep-name"></span>
+            </div>
+            <div class="ep-meta">
+              <span><strong id="ep-num"></strong> protons</span>
+              <span><strong id="ep-mass"></strong> amu</span>
+            </div>
+          </div>
+          <button class="ep-close" id="ep-close" aria-label="Close element panel">✕ Close</button>
+        </div>
+        <span class="ep-badge" id="ep-badge"></span>
+        <div class="ep-config" id="ep-config"></div>
+        <p class="ep-desc" id="ep-desc"></p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+    /* ── Categories ───────────────────────────────────── */
+    const CATS = {
+      ak: { label: 'Alkali Metal',     color: '#c0392b' },
+      ae: { label: 'Alkaline Earth',   color: '#d35400' },
+      tm: { label: 'Transition Metal', color: '#b7791f' },
+      pt: { label: 'Post-Transition',  color: '#27ae60' },
+      ml: { label: 'Metalloid',        color: '#2471a3' },
+      nm: { label: 'Nonmetal',         color: '#1a5276' },
+      ha: { label: 'Halogen',          color: '#7d3c98' },
+      ng: { label: 'Noble Gas',        color: '#b03a78' },
+      ln: { label: 'Lanthanide',       color: '#148f77' },
+      ac: { label: 'Actinide',         color: '#7e5109' },
+    };
+
+    /* ── Element data ─────────────────────────────────── */
+    /* [z, sym, name, mass, cat, shells[], col, row, description] */
+    const EL = [
+      [1,'H','Hydrogen',1.008,'nm',[1],1,1,'The lightest and most abundant element in the universe, making up about 75% of all visible matter. It fuels stars through nuclear fusion and is a key ingredient in water (H₂O).'],
+      [2,'He','Helium',4.003,'ng',[2],18,1,'The second most abundant element in the universe. So light it escapes Earth\'s gravity into space. Used in balloons, MRI machines, and as a coolant for rocket fuel.'],
+      [3,'Li','Lithium',6.941,'ak',[2,1],1,2,'The lightest metal on Earth — light enough to float on water. Powers rechargeable batteries in phones, laptops, and electric vehicles.'],
+      [4,'Be','Beryllium',9.012,'ae',[2,2],2,2,'An extremely stiff, lightweight metal used in aerospace and X-ray equipment. Its low density and high stiffness make it ideal for spacecraft structures.'],
+      [5,'B','Boron',10.811,'ml',[2,3],13,2,'A tough metalloid used in heat-resistant Pyrex glass, ceramics, and detergents. Boron compounds give fireworks a brilliant green color.'],
+      [6,'C','Carbon',12.011,'nm',[2,4],14,2,'The basis of all life on Earth. Depending on arrangement, carbon atoms form soft graphite, brilliant diamond, or the ultra-strong buckminsterfullerene (C₆₀).'],
+      [7,'N','Nitrogen',14.007,'nm',[2,5],15,2,'Makes up 78% of the air we breathe. Every amino acid and DNA molecule contains nitrogen. Liquid nitrogen at −196°C is used to freeze and preserve biological samples.'],
+      [8,'O','Oxygen',15.999,'nm',[2,6],16,2,'Essential for breathing and combustion. The third most abundant element in the universe. Makes up about 21% of Earth\'s atmosphere and 65% of the human body by mass.'],
+      [9,'F','Fluorine',18.998,'ha',[2,7],17,2,'The most reactive and electronegative of all elements. Found in toothpaste (fluoride protects teeth) and non-stick cookware (PTFE/Teflon).'],
+      [10,'Ne','Neon',20.180,'ng',[2,8],18,2,'A noble gas that glows bright orange-red in electric discharge tubes — the original "neon sign." Rare on Earth but the fifth most abundant element in the universe.'],
+      [11,'Na','Sodium',22.990,'ak',[2,8,1],1,3,'A soft, silvery metal that reacts violently with water. Combined with chlorine it forms table salt (NaCl), essential for flavor and life itself.'],
+      [12,'Mg','Magnesium',24.305,'ae',[2,8,2],2,3,'A lightweight structural metal found in smartphones, car parts, and airplane bodies. Burns with a brilliant white flame — used in flares and fireworks.'],
+      [13,'Al','Aluminum',26.982,'pt',[2,8,3],13,3,'The most abundant metal in Earth\'s crust. Lightweight, strong, and highly recyclable — used in aircraft, cans, foil, and construction worldwide.'],
+      [14,'Si','Silicon',28.086,'ml',[2,8,4],14,3,'The foundation of modern electronics. Silicon semiconductors power every computer chip, solar cell, and smartphone processor on the planet.'],
+      [15,'P','Phosphorus',30.974,'nm',[2,8,5],15,3,'Critical for life — forms the backbone of DNA and ATP (the cell\'s energy currency). White phosphorus glows in the dark and ignites spontaneously in air.'],
+      [16,'S','Sulfur',32.06,'nm',[2,8,6],16,3,'A bright yellow solid found near volcanoes. Used in fertilizers, rubber vulcanization, and medicine. Responsible for the smell of rotten eggs (H₂S).'],
+      [17,'Cl','Chlorine',35.45,'ha',[2,8,7],17,3,'A yellow-green toxic gas used to disinfect drinking water and swimming pools. Combined with sodium it forms completely harmless table salt.'],
+      [18,'Ar','Argon',39.948,'ng',[2,8,8],18,3,'The third most abundant gas in Earth\'s atmosphere (about 1%). Used to fill incandescent light bulbs and to create inert atmospheres for welding.'],
+      [19,'K','Potassium',39.098,'ak',[2,8,8,1],1,4,'An essential mineral that regulates heartbeat and muscle function in the human body. Bananas are a famous dietary source of potassium.'],
+      [20,'Ca','Calcium',40.078,'ae',[2,8,8,2],2,4,'The most abundant mineral in the human body, forming bones and teeth. Also critical for muscle contraction, nerve signaling, and blood clotting.'],
+      [21,'Sc','Scandium',44.956,'tm',[2,8,9,2],3,4,'A rare silvery-white metal used in aerospace alloys and sports equipment. Even tiny amounts added to aluminum dramatically increase its strength.'],
+      [22,'Ti','Titanium',47.867,'tm',[2,8,10,2],4,4,'As strong as steel but 45% lighter. Highly resistant to corrosion. Used in aircraft engines, medical implants, spacecraft, and bicycle frames.'],
+      [23,'V','Vanadium',50.942,'tm',[2,8,11,2],5,4,'A hard metal that strengthens steel for tools and construction. Vanadium flow batteries are promising for large-scale renewable energy storage.'],
+      [24,'Cr','Chromium',51.996,'tm',[2,8,13,1],6,4,'Gives stainless steel its resistance to rust. Also responsible for the vivid colors in rubies (red) and emeralds (green).'],
+      [25,'Mn','Manganese',54.938,'tm',[2,8,13,2],7,4,'Essential for making steel and aluminum alloys. Also a vital trace mineral involved in human metabolism, bone formation, and antioxidant defense.'],
+      [26,'Fe','Iron',55.845,'tm',[2,8,14,2],8,4,'The most commonly used metal on Earth and the main component of our planet\'s core. The iron atom in hemoglobin carries oxygen through our bloodstream.'],
+      [27,'Co','Cobalt',58.933,'tm',[2,8,15,2],9,4,'Used in high-strength alloys, rechargeable batteries (lithium cobalt oxide), and blue pigments. An essential component of vitamin B12.'],
+      [28,'Ni','Nickel',58.693,'tm',[2,8,16,2],10,4,'Highly corrosion-resistant. Used in stainless steel, coins, and rechargeable batteries. The US 5-cent coin is actually 75% copper and only 25% nickel.'],
+      [29,'Cu','Copper',63.546,'tm',[2,8,18,1],11,4,'One of humanity\'s first metals, used for over 10,000 years. The best electrical conductor among common metals — the basis of nearly all electrical wiring.'],
+      [30,'Zn','Zinc',65.38,'tm',[2,8,18,2],12,4,'Used to galvanize (coat) steel to prevent rust. An essential trace mineral for immune function and wound healing in the human body.'],
+      [31,'Ga','Gallium',69.723,'pt',[2,8,18,3],13,4,'A metal that melts in your hand (melting point 29.8°C). Used in semiconductors, LEDs, and solar panels. Gallium arsenide powers smartphone amplifiers.'],
+      [32,'Ge','Germanium',72.63,'ml',[2,8,18,4],14,4,'A semiconductor used in fiber optic cables and infrared optics. Mendeleev predicted its existence before it was discovered — a triumph for the periodic table.'],
+      [33,'As','Arsenic',74.922,'ml',[2,8,18,5],15,4,'A toxic metalloid historically used as a poison. Today used in semiconductors, pesticides, and to strengthen lead and copper alloys.'],
+      [34,'Se','Selenium',78.971,'nm',[2,8,18,6],16,4,'Conducts electricity better in light than in the dark — useful in solar cells and photocopiers. An essential trace mineral for thyroid function.'],
+      [35,'Br','Bromine',79.904,'ha',[2,8,18,7],17,4,'One of only two elements that is liquid at room temperature. A dark reddish-brown, pungent liquid used in flame retardants and water purification.'],
+      [36,'Kr','Krypton',83.798,'ng',[2,8,18,8],18,4,'A noble gas used in high-powered lasers and photographic flash lamps. The krypton-86 atom was once the international standard definition of the meter.'],
+      [37,'Rb','Rubidium',85.468,'ak',[2,8,18,8,1],1,5,'A soft, silvery alkali metal so reactive it ignites spontaneously in air. Used in atomic clocks that power GPS and internet time synchronization.'],
+      [38,'Sr','Strontium',87.62,'ae',[2,8,18,8,2],2,5,'Its compounds burn with a brilliant crimson-red flame — a staple of fireworks and emergency flares. Strontium-90 is a hazardous radioactive fallout product.'],
+      [39,'Y','Yttrium',88.906,'tm',[2,8,18,9,2],3,5,'Used in phosphors for LED displays to produce red color, and in YAG lasers used in medicine and manufacturing. Also strengthens aluminum and magnesium alloys.'],
+      [40,'Zr','Zirconium',91.224,'tm',[2,8,18,10,2],4,5,'Extremely heat and corrosion-resistant. Used as nuclear reactor fuel rod cladding. Cubic zirconia (ZrO₂) is a popular, affordable diamond simulant.'],
+      [41,'Nb','Niobium',92.906,'tm',[2,8,18,12,1],5,5,'Added to steel to produce high-strength structural alloys for pipelines, cars, and buildings. A superconductor at very low temperatures. Most comes from Brazil.'],
+      [42,'Mo','Molybdenum',95.96,'tm',[2,8,18,13,1],6,5,'Adds strength and toughness to steel alloys for aircraft and missiles. Also an essential trace element for plant nitrogen fixation, vital for agriculture.'],
+      [43,'Tc','Technetium',98,'tm',[2,8,18,13,2],7,5,'The lightest element with no stable isotopes — every form is radioactive. Technetium-99m is the most widely used radiotracer in medical diagnostic imaging.'],
+      [44,'Ru','Ruthenium',101.07,'tm',[2,8,18,15,1],8,5,'A hard, rare platinum-group metal used in electrical contacts and as a catalyst. Ruthenium dioxide coatings give titanium extraordinary corrosion resistance.'],
+      [45,'Rh','Rhodium',102.906,'tm',[2,8,18,16,1],9,5,'One of the rarest and most expensive metals on Earth. Used in catalytic converters to convert harmful car exhaust gases into less toxic emissions.'],
+      [46,'Pd','Palladium',106.42,'tm',[2,8,18,18],10,5,'Can absorb up to 900 times its own volume of hydrogen gas. Used in catalytic converters, electronics, and jewelry. Has recently exceeded the price of gold.'],
+      [47,'Ag','Silver',107.868,'tm',[2,8,18,18,1],11,5,'The best electrical and thermal conductor of all elements. Used in electronics, mirrors, and photography. Natural antimicrobial properties make it useful in medicine.'],
+      [48,'Cd','Cadmium',112.411,'tm',[2,8,18,18,2],12,5,'A toxic heavy metal used in NiCd rechargeable batteries and as a yellow pigment. It bioaccumulates in food chains and poses serious environmental risks.'],
+      [49,'In','Indium',114.818,'pt',[2,8,18,18,3],13,5,'Indium tin oxide (ITO) forms the transparent conductive layer in every touchscreen and LCD display. Indium is rarer than silver and mostly recovered from zinc smelting.'],
+      [50,'Sn','Tin',118.710,'pt',[2,8,18,18,4],14,5,'One of the earliest metals used by humans — combined with copper to make bronze. Used to coat steel cans for food preservation and in solder for electronics.'],
+      [51,'Sb','Antimony',121.760,'ml',[2,8,18,18,5],15,5,'A brittle metalloid used in flame retardants and lead-acid batteries. Ancient Egyptians used antimony sulfide (stibnite) as kohl eye makeup.'],
+      [52,'Te','Tellurium',127.60,'ml',[2,8,18,18,6],16,5,'A rare metalloid used in thin-film solar panels, rewritable DVDs, and to improve metal machinability. Earth\'s crust contains less tellurium than gold.'],
+      [53,'I','Iodine',126.904,'ha',[2,8,18,18,7],17,5,'Essential for thyroid hormone production. Iodized salt prevents iodine deficiency disorders affecting 2 billion people worldwide. Also a common antiseptic.'],
+      [54,'Xe','Xenon',131.293,'ng',[2,8,18,18,8],18,5,'Used in flash lamps, high-intensity film projector bulbs, and ion thrusters that propel spacecraft. The first noble gas shown to form chemical compounds (1962).'],
+      [55,'Cs','Cesium',132.905,'ak',[2,8,18,18,8,1],1,6,'Cesium atomic clocks lose less than 1 second per 300 million years — the most accurate timekeepers ever made. They are the foundation of GPS and internet time.'],
+      [56,'Ba','Barium',137.327,'ae',[2,8,18,18,8,2],2,6,'Barium sulfate is swallowed as a "barium meal" to make the digestive tract visible on X-rays. Barium compounds also produce vibrant green colors in fireworks.'],
+      [57,'La','Lanthanum',138.905,'ln',[2,8,18,18,9,2],3,9,'The first lanthanide. Used in camera and telescope lenses for exceptional optical clarity. Also used in hybrid car batteries and hydrogen storage materials.'],
+      [58,'Ce','Cerium',140.116,'ln',[2,8,18,19,9,2],4,9,'The most abundant rare earth element. Used in catalytic converters, self-cleaning oven linings (CeO₂), and as a yellow/orange colorant in glass and ceramics.'],
+      [59,'Pr','Praseodymium',140.908,'ln',[2,8,18,21,8,2],5,9,'Creates ultra-strong neodymium-praseodymium permanent magnets for electric motors and wind turbines. Gives glass and enamel a striking yellow-green color.'],
+      [60,'Nd','Neodymium',144.242,'ln',[2,8,18,22,8,2],6,9,'Makes the strongest permanent magnets known. Neodymium magnets are in every set of headphones, hard drive, electric car motor, and MRI machine in the world.'],
+      [61,'Pm','Promethium',145,'ln',[2,8,18,23,8,2],7,9,'The only lanthanide with no stable isotopes. Used in nuclear-powered pacemakers and miniature batteries for spacecraft where solar power is unavailable.'],
+      [62,'Sm','Samarium',150.36,'ln',[2,8,18,24,8,2],8,9,'Samarium-cobalt magnets withstand much higher temperatures than neodymium magnets — essential for jet engines, military equipment, and high-temperature motors.'],
+      [63,'Eu','Europium',151.964,'ln',[2,8,18,25,8,2],9,9,'The most reactive lanthanide. Its unique phosphorescence is used as an anti-counterfeiting feature in euro banknotes and in energy-efficient fluorescent lamps.'],
+      [64,'Gd','Gadolinium',157.25,'ln',[2,8,18,25,9,2],10,9,'A key MRI contrast agent that makes blood vessels and tumors visible on scans. Has extraordinary magnetic properties near room temperature.'],
+      [65,'Tb','Terbium',158.925,'ln',[2,8,18,27,8,2],11,9,'Produces green phosphorescence in energy-saving fluorescent lamps and color TV screens. Expands and contracts in magnetic fields — a property called magnetostriction.'],
+      [66,'Dy','Dysprosium',162.500,'ln',[2,8,18,28,8,2],12,9,'Essential for neodymium magnets to maintain strength at high temperatures, enabling electric vehicles to have powerful, heat-resistant motors.'],
+      [67,'Ho','Holmium',164.930,'ln',[2,8,18,29,8,2],13,9,'Has the highest magnetic moment of any natural element. Used in powerful magnets for MRI machines and in lasers for minimally invasive surgery.'],
+      [68,'Er','Erbium',167.259,'ln',[2,8,18,30,8,2],14,9,'Erbium-doped fiber amplifiers (EDFAs) are the technology that makes long-distance fiber optic internet possible. Gives glass a distinctive pink-red color.'],
+      [69,'Tm','Thulium',168.934,'ln',[2,8,18,31,8,2],15,9,'The least abundant naturally occurring lanthanide. Used in portable X-ray devices and in surgical lasers for precise, minimally invasive medical procedures.'],
+      [70,'Yb','Ytterbium',173.045,'ln',[2,8,18,32,8,2],16,9,'Used in the world\'s most precise optical atomic clocks. Could one day detect gravitational waves from colliding black holes. Also used in medical X-ray sources.'],
+      [71,'Lu','Lutetium',174.967,'ln',[2,8,18,32,9,2],17,9,'The heaviest and hardest lanthanide. Lutetium oxyorthosilicate crystals are used in PET scanners that detect cancer by imaging radioactive tracers in the body.'],
+      [72,'Hf','Hafnium',178.49,'tm',[2,8,18,32,10,2],4,6,'Used in nuclear reactor control rods because it absorbs neutrons extremely well. Intel uses hafnium oxide in modern transistor gates to reduce energy leakage.'],
+      [73,'Ta','Tantalum',180.948,'tm',[2,8,18,32,11,2],5,6,'Extraordinarily corrosion-resistant. Used in tiny capacitors inside virtually every smartphone, tablet, and laptop — a critical material for mobile technology.'],
+      [74,'W','Tungsten',183.84,'tm',[2,8,18,32,12,2],6,6,'Has the highest melting point of any element (3,422°C). Used in light bulb filaments, X-ray tube anodes, and the tips of ballpoint pens.'],
+      [75,'Re','Rhenium',186.207,'tm',[2,8,18,32,13,2],7,6,'One of the rarest elements on Earth. Used in superalloys for jet engine turbine blades that must operate at temperatures above 1,000°C.'],
+      [76,'Os','Osmium',190.23,'tm',[2,8,18,32,14,2],8,6,'The densest naturally occurring element. A cube the size of a sugar cube weighs nearly as much as a can of soda. Used in electrical contacts and fountain pen tips.'],
+      [77,'Ir','Iridium',192.217,'tm',[2,8,18,32,15,2],9,6,'The most corrosion-resistant metal known. A worldwide layer of iridium-rich clay marks the exact moment 66 million years ago when an asteroid caused mass extinction.'],
+      [78,'Pt','Platinum',195.084,'tm',[2,8,18,32,17,1],10,6,'A precious, highly unreactive metal used in catalytic converters, fuel cells, and laboratory equipment. Platinum-based drugs like cisplatin treat several cancers.'],
+      [79,'Au','Gold',196.967,'tm',[2,8,18,32,18,1],11,6,'One of the least reactive metals. Its rarity, luster, and resistance to tarnish made gold the global standard for currency and wealth for thousands of years.'],
+      [80,'Hg','Mercury',200.592,'tm',[2,8,18,32,18,2],12,6,'The only metal liquid at room temperature. Used in thermometers and barometers, but now recognized as highly toxic to the nervous system and environment.'],
+      [81,'Tl','Thallium',204.383,'pt',[2,8,18,32,18,3],13,6,'Extremely toxic — historically used as a "poison of choice" in murders. Today used in heart stress tests (thallium scans) and infrared optical lenses.'],
+      [82,'Pb','Lead',207.2,'pt',[2,8,18,32,18,4],14,6,'One of the earliest metals used by humans. Widely used in paint and plumbing pipes until the 20th century, when its severe neurotoxic effects on children were established.'],
+      [83,'Bi','Bismuth',208.980,'pt',[2,8,18,32,18,5],15,6,'Forms stunning rainbow-colored staircase crystals. Used in cosmetics, Pepto-Bismol stomach medicine, and as a lead substitute in ammunition and fishing sinkers.'],
+      [84,'Po','Polonium',209,'ml',[2,8,18,32,18,6],16,6,'Highly radioactive. Discovered by Marie Curie in 1898 and named after her homeland Poland. Used in anti-static devices and tragically in a 2006 assassination.'],
+      [85,'At','Astatine',210,'ha',[2,8,18,32,18,7],17,6,'The rarest naturally occurring element on Earth — at any moment, less than 28 grams exist in the entire crust. Highly radioactive with a half-life of only 8.1 hours.'],
+      [86,'Rn','Radon',222,'ng',[2,8,18,32,18,8],18,6,'A colorless, odorless radioactive gas that seeps from rocks and soil into buildings. The second leading cause of lung cancer in the US, after cigarette smoking.'],
+      [87,'Fr','Francium',223,'ak',[2,8,18,32,18,8,1],1,7,'The most unstable naturally occurring element and one of the rarest. At any time, only about 20–30 grams exist in Earth\'s entire crust. Decays in minutes.'],
+      [88,'Ra','Radium',226,'ae',[2,8,18,32,18,8,2],2,7,'Discovered by Marie and Pierre Curie in 1898. Glows faintly blue from its own intense radioactivity. Once painted on watch dials — causing fatal illness in workers.'],
+      [89,'Ac','Actinium',227,'ac',[2,8,18,32,18,9,2],3,10,'The first actinide, giving its name to the series. Glows blue in the dark from intense radioactivity. Actinium-225 is used in targeted alpha-particle cancer therapy.'],
+      [90,'Th','Thorium',232.038,'ac',[2,8,18,32,18,10,2],4,10,'A radioactive metal considered a potential fuel for safer nuclear reactors — more abundant than uranium and producing far less long-lived radioactive waste.'],
+      [91,'Pa','Protactinium',231.036,'ac',[2,8,18,32,20,9,2],5,10,'One of the rarest and most toxic radioactive elements. Has few practical applications due to its extreme scarcity, radioactivity, and toxicity.'],
+      [92,'U','Uranium',238.029,'ac',[2,8,18,32,21,9,2],6,10,'The primary fuel for nuclear power plants, which provide about 10% of the world\'s electricity. Uranium-235 atoms split (fission), releasing enormous energy.'],
+      [93,'Np','Neptunium',237,'ac',[2,8,18,32,22,9,2],7,10,'The first transuranic element — made in a lab, not found in nature (in significant amounts). Named after Neptune. Tiny traces form naturally in uranium ores.'],
+      [94,'Pu','Plutonium',244,'ac',[2,8,18,32,24,8,2],8,10,'Used in nuclear weapons and as reactor fuel. Plutonium-238 generates heat through radioactive decay, powering the Voyager and New Horizons spacecraft.'],
+      [95,'Am','Americium',243,'ac',[2,8,18,32,25,8,2],9,10,'Found in household smoke detectors — a tiny amount of Am-241 ionizes air to detect smoke particles. Named after the Americas where it was first produced.'],
+      [96,'Cm','Curium',247,'ac',[2,8,18,32,25,9,2],10,10,'Named after Marie and Pierre Curie. The alpha-particle X-ray spectrometer on Mars rovers uses curium to analyze the elemental composition of Martian rocks.'],
+      [97,'Bk','Berkelium',247,'ac',[2,8,18,32,27,8,2],11,10,'Named after Berkeley, California. Has limited uses outside of fundamental nuclear research due to its extreme scarcity and rapid radioactive decay.'],
+      [98,'Cf','Californium',251,'ac',[2,8,18,32,28,8,2],12,10,'An intense neutron emitter used to start up nuclear reactors and in portable devices for oil well surveying and cancer treatment.'],
+      [99,'Es','Einsteinium',252,'ac',[2,8,18,32,29,8,2],13,10,'Named after Albert Einstein. First discovered in the radioactive debris of the first hydrogen bomb test (Ivy Mike, 1952). No practical applications.'],
+      [100,'Fm','Fermium',257,'ac',[2,8,18,32,30,8,2],14,10,'Named after Enrico Fermi, father of the nuclear reactor. Also first found in H-bomb fallout. Too rare and radioactive for any practical application.'],
+      [101,'Md','Mendelevium',258,'ac',[2,8,18,32,31,8,2],15,10,'Named after Dmitri Mendeleev, creator of the periodic table. Produced one atom at a time in particle accelerators and decays within hours.'],
+      [102,'No','Nobelium',259,'ac',[2,8,18,32,32,8,2],16,10,'Named after Alfred Nobel, inventor of dynamite and founder of the Nobel Prize. Produced in tiny quantities and decays in seconds to minutes.'],
+      [103,'Lr','Lawrencium',266,'ac',[2,8,18,32,32,8,3],17,10,'Named after Ernest O. Lawrence, inventor of the cyclotron accelerator. The last actinide, completing the f-block of the periodic table.'],
+      [104,'Rf','Rutherfordium',267,'tm',[2,8,18,32,32,10,2],4,7,'The first transactinide, named after Ernest Rutherford who discovered the nucleus. Decays in seconds and is studied only in physics research facilities.'],
+      [105,'Db','Dubnium',268,'tm',[2,8,18,32,32,11,2],5,7,'Named after Dubna, Russia. A synthetic element that exists for only a few seconds before decaying into lighter elements.'],
+      [106,'Sg','Seaborgium',269,'tm',[2,8,18,32,32,12,2],6,7,'Named after Glenn T. Seaborg, who synthesized 10 new elements and won the Nobel Prize. The first element named after a living person at the time of naming.'],
+      [107,'Bh','Bohrium',270,'tm',[2,8,18,32,32,13,2],7,7,'Named after Niels Bohr, pioneer of the atomic model and quantum mechanics. Only a few atoms have ever been created; each decays within seconds.'],
+      [108,'Hs','Hassium',277,'tm',[2,8,18,32,32,14,2],8,7,'Named after Hesse, Germany. A synthetic, radioactive element produced in particle accelerators with a half-life measured in seconds.'],
+      [109,'Mt','Meitnerium',278,'tm',[2,8,18,32,32,15,2],9,7,'Named after Lise Meitner, physicist who co-discovered nuclear fission. She was controversially excluded from the Nobel Prize awarded for that work.'],
+      [110,'Ds','Darmstadtium',281,'tm',[2,8,18,32,32,16,2],10,7,'Named after Darmstadt, Germany. A synthetic element with no known uses outside fundamental research. Half-life ranges from microseconds to minutes.'],
+      [111,'Rg','Roentgenium',282,'tm',[2,8,18,32,32,17,2],11,7,'Named after Wilhelm Röntgen, who discovered X-rays. An extremely unstable synthetic element — only a handful of atoms have ever been observed.'],
+      [112,'Cn','Copernicium',285,'tm',[2,8,18,32,32,18,2],12,7,'Named after Nicolaus Copernicus. Relativistic effects are so strong in this heavy element that it may behave more like a gas than a metal at room temperature.'],
+      [113,'Nh','Nihonium',286,'pt',[2,8,18,32,32,18,3],13,7,'Named after "Nihon" (Japan in Japanese), making it the first element discovered in Asia. Officially confirmed and named in 2016.'],
+      [114,'Fl','Flerovium',289,'pt',[2,8,18,32,32,18,4],14,7,'Named after the Flerov Laboratory in Russia. May be a gas or volatile liquid at room temperature — potentially the most inert metal if it is a metal at all.'],
+      [115,'Mc','Moscovium',290,'pt',[2,8,18,32,32,18,5],15,7,'Named after Moscow Oblast. First synthesized in 2003 by a Russian-American collaboration. Decays in milliseconds into nihonium.'],
+      [116,'Lv','Livermorium',293,'pt',[2,8,18,32,32,18,6],16,7,'Named after Lawrence Livermore National Laboratory in California. One of the heaviest elements ever created. Decays almost instantly into flerovium.'],
+      [117,'Ts','Tennessine',294,'ha',[2,8,18,32,32,18,7],17,7,'Named after Tennessee, home to Oak Ridge National Laboratory, Vanderbilt, and UT. Confirmed in 2010. Only a handful of atoms have ever been observed.'],
+      [118,'Og','Oganesson',294,'ng',[2,8,18,32,32,18,8],18,7,'Named after physicist Yuri Oganessian. The heaviest confirmed element and the only period-7 noble gas. May actually be a solid at room temperature.'],
+    ];
+
+    /* ── Build filter buttons ─────────────────────────── */
+    const ctrl = document.getElementById('pt-controls');
+    const allBtn = ctrl.querySelector('[data-cat="all"]');
+    allBtn.style.borderColor = '#bbb';
+    allBtn.style.color = '#555';
+
+    Object.entries(CATS).forEach(([key, {label, color}]) => {
+      const btn = document.createElement('button');
+      btn.className = 'pt-filter-btn';
+      btn.dataset.cat = key;
+      btn.textContent = label;
+      btn.style.color = color;
+      btn.style.borderColor = color;
+      btn.setAttribute('aria-pressed', 'false');
+      ctrl.insertBefore(btn, document.getElementById('pt-search'));
+    });
+
+    /* ── Build legend ─────────────────────────────────── */
+    const legend = document.getElementById('pt-legend');
+    Object.entries(CATS).forEach(([key, {label, color}]) => {
+      const item = document.createElement('div');
+      item.className = 'pt-legend-item';
+      item.innerHTML = `<span class="pt-legend-dot" style="background:${color}25;border:1.5px solid ${color};"></span>${label}`;
+      legend.appendChild(item);
+    });
+
+    /* ── Build grid ───────────────────────────────────── */
+    const grid = document.getElementById('pt-grid');
+
+    // f-block divider (row 8)
+    const frow = document.createElement('div');
+    frow.className = 'pt-frow';
+    frow.setAttribute('aria-hidden', 'true');
+    frow.innerHTML = '<div class="pt-frow-line"></div><span class="pt-frow-label">f-block</span><div class="pt-frow-line"></div>';
+    grid.appendChild(frow);
+
+    // Period-6 and period-7 f-block placeholders
+    [[3, 6, '57–71'], [3, 7, '89–103']].forEach(([col, row, label]) => {
+      const ph = document.createElement('div');
+      ph.className = 'pt-ph';
+      ph.style.gridColumn = col;
+      ph.style.gridRow = row;
+      ph.textContent = label;
+      ph.setAttribute('aria-hidden', 'true');
+      grid.appendChild(ph);
+    });
+
+    // Element cells
+    EL.forEach(([z, sym, name, mass, cat, shells, col, row, desc]) => {
+      const color = CATS[cat].color;
+      const cell = document.createElement('button');
+      cell.className = 'el';
+      cell.dataset.z = z;
+      cell.dataset.cat = cat;
+      cell.style.gridColumn = col;
+      cell.style.gridRow = row;
+      cell.style.background = color + '22';
+      cell.style.color = color;
+      cell.setAttribute('aria-label', `${name}, element ${z}`);
+      cell.innerHTML =
+        `<span class="el-num">${z}</span>` +
+        `<span class="el-sym">${sym}</span>` +
+        `<span class="el-name">${name}</span>` +
+        `<span class="el-mass">${mass}</span>`;
+      cell.addEventListener('click', () => showEl(z, sym, name, mass, cat, shells, desc));
+      grid.appendChild(cell);
+    });
+
+    /* ── Filter ───────────────────────────────────────── */
+    let activeCat = 'all', searchQ = '';
+
+    function applyFilter() {
+      document.querySelectorAll('.el').forEach(c => {
+        const matchCat  = activeCat === 'all' || c.dataset.cat === activeCat;
+        const matchSrch = !searchQ ||
+          c.querySelector('.el-sym').textContent.toLowerCase().includes(searchQ) ||
+          c.querySelector('.el-name').textContent.toLowerCase().includes(searchQ) ||
+          c.dataset.z.startsWith(searchQ);
+        c.classList.toggle('el-dimmed', !(matchCat && matchSrch));
+      });
+    }
+
+    ctrl.addEventListener('click', e => {
+      const btn = e.target.closest('.pt-filter-btn');
+      if (!btn) return;
+      activeCat = btn.dataset.cat;
+      document.querySelectorAll('.pt-filter-btn').forEach(b => {
+        const active = b === btn;
+        b.classList.toggle('pt-btn-active', active);
+        b.classList.toggle('pt-btn-dimmed', !active && activeCat !== 'all');
+        b.setAttribute('aria-pressed', active);
+        if (active && activeCat !== 'all') {
+          b.style.background = CATS[activeCat]?.color || '#555';
+        } else {
+          b.style.background = '';
+        }
+      });
+      if (activeCat === 'all') {
+        document.querySelectorAll('.pt-filter-btn').forEach(b => {
+          b.classList.remove('pt-btn-dimmed', 'pt-btn-active');
+          b.style.background = '';
+        });
+      }
+      applyFilter();
+    });
+
+    document.getElementById('pt-search').addEventListener('input', e => {
+      searchQ = e.target.value.toLowerCase().trim();
+      applyFilter();
+    });
+
+    /* ── Bohr model SVG ───────────────────────────────── */
+    function buildBohr(shells, color) {
+      const cx = 140, cy = 140;
+      const rSteps = [34, 58, 82, 102, 120, 136, 150];
+      const speeds  = [3.5, 5.5, 8, 11, 14, 17, 20];
+      let svg = `<g transform="translate(${cx},${cy})">`;
+
+      // Orbit rings
+      shells.forEach((n, i) => {
+        const r = rSteps[i] ?? rSteps[rSteps.length-1] + (i-6)*13;
+        svg += `<circle class="orbit-ring" cx="0" cy="0" r="${r}"/>`;
+      });
+
+      // Electrons
+      shells.forEach((n, i) => {
+        const r     = rSteps[i] ?? rSteps[rSteps.length-1] + (i-6)*13;
+        const spd   = speeds[i] ?? 22;
+        const dir   = i % 2 === 0 ? 'orb-cw' : 'orb-ccw';
+        if (n > 0 && n <= 20) {
+          const step  = (2 * Math.PI) / n;
+          let dots = '';
+          for (let j = 0; j < n; j++) {
+            const a = step * j;
+            dots += `<circle cx="${(r * Math.cos(a)).toFixed(1)}" cy="${(r * Math.sin(a)).toFixed(1)}" r="4.5" fill="${color}" opacity="0.88"/>`;
+          }
+          svg += `<g style="animation:${dir} ${spd}s linear infinite">${dots}</g>`;
+        } else if (n > 20) {
+          svg += `<text x="${r+7}" y="0" style="font-size:8px;font-weight:700;fill:${color};dominant-baseline:central;">${n}e⁻</text>`;
+        }
+      });
+
+      // Nucleus
+      const totalE = shells.reduce((a,b)=>a+b,0);
+      const nr = Math.min(26, 9 + shells.length * 2.2);
+      svg += `<circle cx="0" cy="0" r="${nr.toFixed(1)}" fill="${color}" opacity="0.85"/>`;
+      const fs = totalE > 99 ? 9 : totalE > 9 ? 11 : 14;
+      svg += `<text x="0" y="0" style="font-size:${fs}px;font-weight:800;fill:#fff;text-anchor:middle;dominant-baseline:central;">${totalE}</text>`;
+      svg += '</g>';
+      return svg;
+    }
+
+    /* ── Show element panel ───────────────────────────── */
+    let curZ = null;
+    function showEl(z, sym, name, mass, cat, shells, desc) {
+      document.querySelectorAll('.el.el-selected').forEach(c => c.classList.remove('el-selected'));
+      document.querySelector(`.el[data-z="${z}"]`)?.classList.add('el-selected');
+      curZ = z;
+
+      const color = CATS[cat].color;
+      document.getElementById('bohr-svg').innerHTML = buildBohr(shells, color);
+      document.getElementById('ep-sym').textContent  = sym;
+      document.getElementById('ep-sym').style.color  = color;
+      document.getElementById('ep-name').textContent = name;
+      document.getElementById('ep-num').textContent  = z;
+      document.getElementById('ep-mass').textContent = mass;
+      document.getElementById('ep-badge').textContent      = CATS[cat].label;
+      document.getElementById('ep-badge').style.background = color;
+      document.getElementById('ep-config').textContent =
+        shells.map((n,i) => `Shell ${i+1}: ${n}e⁻`).join('  ·  ');
+      document.getElementById('ep-desc').textContent = desc;
+
+      const panel = document.getElementById('el-panel');
+      panel.classList.remove('ep-open');
+      void panel.offsetWidth;
+      panel.classList.add('ep-open');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    document.getElementById('ep-close').addEventListener('click', () => {
+      document.getElementById('el-panel').classList.remove('ep-open');
+      document.querySelectorAll('.el.el-selected').forEach(c => c.classList.remove('el-selected'));
+      curZ = null;
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && curZ) {
+        document.getElementById('el-panel').classList.remove('ep-open');
+        document.querySelectorAll('.el.el-selected').forEach(c => c.classList.remove('el-selected'));
+        curZ = null;
+      }
+    });
+
+  })();
+  </script>
+</body>
+</html>
