@@ -400,6 +400,141 @@
     }
     .classics-source-note a:hover { text-decoration: underline; }
 
+    /* ── Smooth scroll ──────────────────────────── */
+    html { scroll-behavior: smooth; }
+    .lib-anchor { scroll-margin-top: 84px; }
+
+    /* ── Library directory nav ──────────────────── */
+    .lib-directory {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.85rem 1.3rem;
+      background: linear-gradient(135deg, #2a1600 0%, #1a0e00 100%);
+      border-radius: 12px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+      margin-bottom: 3rem;
+    }
+    .lib-directory-label {
+      font-size: 0.56rem;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,215,110,0.38);
+      padding-right: 0.85rem;
+      border-right: 1px solid rgba(255,215,110,0.1);
+      margin-right: 0.2rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .lib-dir-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.48rem;
+      padding: 0.38rem 0.85rem;
+      border-radius: 8px;
+      background: rgba(255,215,110,0.06);
+      border: 1px solid rgba(255,215,110,0.12);
+      color: rgba(255,215,110,0.65);
+      font-size: 0.73rem;
+      font-weight: 700;
+      letter-spacing: 0.025em;
+      text-decoration: none;
+      transition: background 0.14s, color 0.14s, border-color 0.14s;
+      white-space: nowrap;
+    }
+    .lib-dir-tab:hover {
+      background: rgba(255,215,110,0.14);
+      color: rgba(255,215,110,1);
+      border-color: rgba(255,215,110,0.28);
+    }
+    .lib-dir-count {
+      background: rgba(255,215,110,0.13);
+      border-radius: 999px;
+      padding: 0.05rem 0.42rem;
+      font-size: 0.6rem;
+      font-weight: 800;
+    }
+    .lib-dir-hint {
+      margin-left: auto;
+      font-size: 0.62rem;
+      color: rgba(255,215,110,0.3);
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    /* ── Room header ─────────────────────────────── */
+    .lib-room-header {
+      padding-bottom: 1.1rem;
+      margin-bottom: 1.4rem;
+      border-bottom: 1px solid var(--line, rgba(210,210,215,0.5));
+    }
+    .lib-room-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+    }
+    .lib-room-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.42rem;
+    }
+    .lib-room-num {
+      font-size: 0.56rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--blue, #0071e3);
+      background: rgba(0,113,227,0.07);
+      border: 1px solid rgba(0,113,227,0.14);
+      border-radius: 6px;
+      padding: 0.14rem 0.52rem;
+    }
+    .lib-room-count-tag {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--text-muted, #6e6e73);
+    }
+    .lib-room-header h2 {
+      margin: 0 0 0.26rem;
+      font-size: clamp(1.1rem, 2.4vw, 1.35rem);
+      line-height: 1.2;
+    }
+    .lib-room-header > p,
+    .lib-room-header-row > p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--text-muted, #6e6e73);
+      max-width: 62ch;
+    }
+
+    /* ── Section room divider ────────────────────── */
+    .lib-room-divider {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      margin: 3.6rem 0 3.2rem;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-muted, #b0b0b8);
+      user-select: none;
+    }
+    .lib-room-divider::before,
+    .lib-room-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--line, #d2d2d7), transparent);
+    }
+    [data-theme="night"] .lib-room-divider { color: #48484a; }
+    [data-theme="night"] .lib-room-header { border-bottom-color: rgba(58,58,60,0.7); }
+
     /* ── Mobile ─────────────────────────────────── */
     @media (max-width: 640px) {
       .bookcase, .bookcase-flex {
@@ -410,6 +545,8 @@
       .bookcase-flex { padding-bottom: 1rem; }
       .shelf-board   { margin: 0 -0.8rem; }
       .book-popup    { width: 200px; }
+      .lib-dir-hint  { display: none; }
+      .lib-directory { gap: 0.4rem; padding: 0.7rem 0.9rem; }
     }
   </style>
 </head>
@@ -440,16 +577,38 @@
     <section class="hero recipe-catalog-hero">
       <p class="eyebrow">ClassroomOS</p>
       <h1>Library</h1>
-      <p class="library-hero-lead">Browse the shelves — free NASA e-books, printable activity packs, and hands-on project recipes. Hover any spine to preview.</p>
+      <p class="library-hero-lead">43 titles across three collections — classic science fiction, NASA science, and hands-on project recipes. Hover any book spine to preview it.</p>
+    </section>
+
+    <!-- ══ Library Directory Nav ════════════════ -->
+    <section class="section" style="padding-top:0; padding-bottom:0;">
+      <nav class="lib-directory" aria-label="Jump to library section">
+        <span class="lib-directory-label">Library</span>
+        <a class="lib-dir-tab" href="#section-classics">
+          📚 Time-Traveler Classics
+          <span class="lib-dir-count">14</span>
+        </a>
+        <a class="lib-dir-tab" href="#section-nasa">
+          🚀 NASA Resources
+          <span class="lib-dir-count">14</span>
+        </a>
+        <a class="lib-dir-tab" href="#section-recipes">
+          🔧 Project Recipes
+          <span class="lib-dir-count">15</span>
+        </a>
+        <span class="lib-dir-hint">Hover any spine to preview</span>
+      </nav>
     </section>
 
     <!-- ══ STEAM Time-Traveler Library ══════════ -->
-    <section class="section">
-      <div class="shelf-section-intro">
-        <div>
-          <h2>STEAM Time-Traveler Library</h2>
-          <p>Classic public-domain novels organized by the big idea they planted in human imagination.</p>
+    <section class="section lib-anchor" id="section-classics">
+      <div class="lib-room-header">
+        <div class="lib-room-eyebrow">
+          <span class="lib-room-num">Room I</span>
+          <span class="lib-room-count-tag">14 titles · Public Domain · Free</span>
         </div>
+        <h2>STEAM Time-Traveler Library</h2>
+        <p>Classic science fiction organized by the big idea each book planted in human imagination — long before the technology existed to make it real.</p>
       </div>
 
       <div class="steam-insight-box">
@@ -648,19 +807,27 @@
         <a href="https://archive.org" target="_blank" rel="noreferrer">Internet Archive</a> ·
         <a href="https://standardebooks.org" target="_blank" rel="noreferrer">Standard Ebooks</a>
       </div>
-      <p class="shelf-hint">📖 Hover any spine to preview · Every title links directly to a free legal copy</p>
+      <p class="shelf-hint">Every title is free &amp; legal — links open directly on Project Gutenberg</p>
     </section>
 
+    <div class="lib-room-divider" aria-hidden="true">Next Room</div>
+
     <!-- ══ NASA Resources ════════════════════════ -->
-    <section class="section">
-      <div class="shelf-section-intro">
-        <div>
-          <h2>NASA Resources</h2>
-          <p>Free activity books and science reading — straight from NASA's public library.</p>
+    <section class="section lib-anchor" id="section-nasa">
+      <div class="lib-room-header">
+        <div class="lib-room-header-row">
+          <div>
+            <div class="lib-room-eyebrow">
+              <span class="lib-room-num">Room II</span>
+              <span class="lib-room-count-tag">14 titles · NASA Public Domain · Free</span>
+            </div>
+            <h2>NASA Resources</h2>
+            <p>Activity books, coloring packs, and science e-books — released free by NASA for exactly this kind of classroom use.</p>
+          </div>
+          <a class="shelf-section-badge" href="https://science.nasa.gov/multimedia/science-e-books/" target="_blank" rel="noreferrer">
+            🚀 Full NASA e-Book Library ↗
+          </a>
         </div>
-        <a class="shelf-section-badge" href="https://science.nasa.gov/multimedia/science-e-books/" target="_blank" rel="noreferrer">
-          🚀 All NASA e-Books ↗
-        </a>
       </div>
 
       <div class="bookcase" aria-label="NASA bookcase">
@@ -834,16 +1001,20 @@
 
       </div><!-- /bookcase -->
       <div class="bookcase-base"></div>
-      <p class="shelf-hint">📖 Hover any book spine to preview · All titles are free &amp; publicly available from NASA</p>
+      <p class="shelf-hint">All titles link directly to free downloads or the NASA reading page</p>
     </section>
 
+    <div class="lib-room-divider" aria-hidden="true">Next Room</div>
+
     <!-- ══ Project Recipes ════════════════════════ -->
-    <section class="section">
-      <div class="shelf-section-intro">
-        <div>
-          <h2>Project Recipes</h2>
-          <p>Filter by pathway. Hover any spine for the full brief — what you build, how long, and what you'll need.</p>
+    <section class="section lib-anchor" id="section-recipes">
+      <div class="lib-room-header">
+        <div class="lib-room-eyebrow">
+          <span class="lib-room-num">Room III</span>
+          <span class="lib-room-count-tag">15 project recipes · Filter by pathway</span>
         </div>
+        <h2>Project Recipes</h2>
+        <p>Hands-on builds across five pathways. Hover any spine for the full brief — what you make, how long it takes, and what you'll need.</p>
       </div>
 
       <div class="book-filter-bar" role="toolbar" aria-label="Filter recipes">
@@ -1030,7 +1201,7 @@
 
       </div><!-- /bookcase-flex -->
       <div class="bookcase-base"></div>
-      <p class="shelf-hint">📖 Hover any spine to preview the brief · Click to visit the linked resource</p>
+      <p class="shelf-hint">Hover a spine to preview the brief · Filter buttons above narrow the shelf</p>
     </section>
 
     <!-- ══ Student Recipe Template ════════════════ -->
