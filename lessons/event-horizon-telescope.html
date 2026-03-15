@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Event Horizon Telescope · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Space Science Lesson 03 - explore how the Event Horizon Telescope used eight synchronized observatories to act like an Earth-size telescope and capture the first image of a black hole." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    body {
+      margin: 0;
+      color: #d9e6ff;
+      background:
+        radial-gradient(1200px 520px at 12% -10%, rgba(108, 84, 255, 0.18), transparent 58%),
+        radial-gradient(900px 460px at 100% 0%, rgba(56, 124, 255, 0.18), transparent 54%),
+        linear-gradient(180deg, #02040f 0%, #050919 100%);
+      overflow-x: hidden;
+    }
+
+    .eht-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(14px) saturate(150%);
+      background: rgba(2, 4, 15, 0.9);
+      border-bottom: 1px solid rgba(108, 130, 255, 0.18);
+    }
+
+    .eht-topbar-inner,
+    .eht-wrap,
+    .eht-info {
+      width: min(1380px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    .eht-topbar-inner {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .eht-topbar a {
+      color: #9db7ff;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .eht-topbar a:hover {
+      color: #ffffff;
+    }
+
+    .eht-topbar-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #dbe8ff;
+      letter-spacing: -0.01em;
+    }
+
+    .eht-hero {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 2rem 1rem 1rem;
+      text-align: center;
+    }
+
+    .eht-hero h1 {
+      margin: 0 0 0.45rem;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      line-height: 1.03;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+    }
+
+    .eht-hero p {
+      margin: 0;
+      font-size: 0.94rem;
+      color: rgba(216, 229, 255, 0.76);
+      line-height: 1.65;
+    }
+
+    .eht-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 1rem;
+      align-items: start;
+      padding-bottom: 1.1rem;
+    }
+
+    @media (max-width: 980px) {
+      .eht-wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .eht-stage-shell,
+    .eht-card,
+    .eht-info-card {
+      border-radius: 22px;
+      border: 1px solid rgba(92, 114, 174, 0.22);
+      background: rgba(6, 10, 26, 0.72);
+      box-shadow: 0 22px 42px rgba(2, 6, 16, 0.28);
+      backdrop-filter: blur(12px);
+    }
+
+    .eht-stage-shell {
+      overflow: hidden;
+    }
+
+    .eht-stage-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.82fr);
+      gap: 0;
+      min-height: 560px;
+    }
+
+    @media (max-width: 980px) {
+      .eht-stage-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .eht-map-panel,
+    .eht-image-panel {
+      position: relative;
+      min-height: 280px;
+    }
+
+    .eht-map-panel {
+      background:
+        radial-gradient(circle at 55% 8%, rgba(74, 136, 255, 0.2), transparent 34%),
+        linear-gradient(180deg, #081224 0%, #09182e 100%);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .eht-image-panel {
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255, 166, 94, 0.12), transparent 34%),
+        linear-gradient(180deg, #060914 0%, #0a0e18 100%);
+    }
+
+    @media (max-width: 980px) {
+      .eht-map-panel {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+    }
+
+    .eht-map-head,
+    .eht-image-head {
+      position: absolute;
+      left: 16px;
+      top: 16px;
+      z-index: 2;
+      display: grid;
+      gap: 0.45rem;
+      pointer-events: none;
+    }
+
+    .eht-badge,
+    .eht-note-badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 1.8rem;
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(4, 8, 20, 0.76);
+      border: 1px solid rgba(158, 188, 255, 0.2);
+      color: #dbefff;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      backdrop-filter: blur(8px);
+    }
+
+    .eht-note-badge {
+      text-transform: none;
+      letter-spacing: 0.02em;
+      font-weight: 700;
+      color: rgba(220, 234, 255, 0.82);
+    }
+
+    #ehtMap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .eht-map-hint,
+    .eht-image-hint {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      color: rgba(202, 220, 240, 0.4);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      pointer-events: none;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    #reconstructionCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .eht-stage-footer {
+      padding: 0.9rem 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(5, 9, 20, 0.74);
+      color: rgba(219, 232, 255, 0.74);
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+
+    .eht-panel {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .eht-card {
+      padding: 1rem;
+    }
+
+    .eht-kicker {
+      margin: 0 0 0.35rem;
+      color: rgba(166, 190, 240, 0.56);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .eht-card h3 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 1.02rem;
+      letter-spacing: -0.02em;
+    }
+
+    .eht-card p,
+    .eht-card li,
+    .eht-info-card p,
+    .eht-info-card li {
+      color: rgba(215, 229, 255, 0.76);
+      line-height: 1.6;
+    }
+
+    .eht-control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.85rem;
+    }
+
+    .eht-control-row button,
+    .eht-station-button {
+      appearance: none;
+      border-radius: 999px;
+      border: 1px solid rgba(200, 220, 255, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+      color: #eef6ff;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.46rem 0.78rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .eht-control-row button:hover,
+    .eht-station-button:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(140, 188, 255, 0.34);
+    }
+
+    .eht-sync-button.is-on {
+      background: linear-gradient(180deg, rgba(62, 198, 144, 0.3), rgba(60, 124, 255, 0.2));
+      border-color: rgba(118, 226, 180, 0.42);
+    }
+
+    .eht-readout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+      margin-top: 0.85rem;
+    }
+
+    .eht-readout-card {
+      padding: 0.82rem;
+      border-radius: 16px;
+      background: rgba(10, 20, 42, 0.58);
+      border: 1px solid rgba(155, 182, 222, 0.12);
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .eht-readout-card span {
+      color: rgba(166, 190, 240, 0.56);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eht-readout-card strong {
+      color: #ffffff;
+      font-size: 0.95rem;
+      letter-spacing: -0.02em;
+    }
+
+    .eht-alert {
+      margin-top: 0.9rem;
+      padding: 0.72rem 0.82rem;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .eht-alert.safe {
+      background: rgba(44, 178, 113, 0.12);
+      border-color: rgba(72, 214, 138, 0.26);
+      color: #8aefb4;
+    }
+
+    .eht-alert.warn {
+      background: rgba(255, 181, 76, 0.12);
+      border-color: rgba(255, 181, 76, 0.28);
+      color: #ffcf86;
+    }
+
+    .eht-alert.danger {
+      background: rgba(255, 96, 96, 0.12);
+      border-color: rgba(255, 96, 96, 0.28);
+      color: #ffabab;
+    }
+
+    .eht-station-list {
+      display: grid;
+      gap: 0.55rem;
+      margin-top: 0.85rem;
+    }
+
+    .eht-station-button {
+      width: 100%;
+      text-align: left;
+      border-radius: 16px;
+      padding: 0.76rem 0.82rem;
+      display: grid;
+      gap: 0.2rem;
+      background: rgba(10, 20, 42, 0.46);
+      border-color: rgba(155, 182, 222, 0.12);
+    }
+
+    .eht-station-button.is-active {
+      background: linear-gradient(180deg, rgba(64, 130, 255, 0.24), rgba(55, 92, 196, 0.18));
+      border-color: rgba(134, 182, 255, 0.34);
+    }
+
+    .eht-station-button strong {
+      font-size: 0.84rem;
+      color: #f4f8ff;
+      letter-spacing: -0.01em;
+    }
+
+    .eht-station-button small {
+      color: rgba(201, 218, 246, 0.66);
+      font-size: 0.72rem;
+    }
+
+    .eht-info {
+      padding-bottom: 3rem;
+    }
+
+    .eht-info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .eht-info-card {
+      padding: 1rem;
+    }
+
+    .eht-info-card h4 {
+      margin: 0 0 0.35rem;
+      color: #ffffff;
+      font-size: 0.95rem;
+      letter-spacing: -0.02em;
+    }
+
+    .eht-info-card ul {
+      margin: 0.65rem 0 0;
+      padding-left: 1.05rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .eht-info-card ul li::marker {
+      color: #86bcff;
+    }
+
+    @media (max-width: 980px) {
+      .eht-info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .eht-readout-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .eht-topbar-title {
+        display: none;
+      }
+
+      .eht-map-hint,
+      .eht-image-hint {
+        white-space: normal;
+        width: calc(100% - 2rem);
+      }
+    }
+
+    .map-grid line {
+      stroke: rgba(233, 243, 255, 0.07);
+      stroke-width: 1;
+    }
+
+    .world path {
+      fill: rgba(84, 112, 162, 0.18);
+      stroke: rgba(188, 209, 244, 0.08);
+      stroke-width: 1.5;
+    }
+
+    .baseline-line {
+      stroke: rgba(127, 196, 255, 0.18);
+      stroke-width: 1.4;
+    }
+
+    .station-dot {
+      stroke: rgba(255, 255, 255, 0.18);
+      stroke-width: 1.3;
+    }
+
+    .station-label {
+      fill: rgba(230, 240, 255, 0.84);
+      font: 700 14px/1 "Inter", system-ui, sans-serif;
+      pointer-events: none;
+      text-anchor: middle;
+    }
+  </style>
+</head>
+<body>
+  <nav class="eht-topbar" aria-label="Page navigation">
+    <div class="eht-topbar-inner">
+      <a href="../steam-lessons.html#module-space">Back to Space Science</a>
+      <span class="eht-topbar-title">Event Horizon Telescope</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <header class="eht-hero">
+    <h1>Event Horizon Telescope</h1>
+    <p>The Event Horizon Telescope is an international collaboration that linked radio observatories across Earth and produced the first image of a black hole. This lesson models the big idea: more synchronized stations, longer baselines, sharper detail.</p>
+  </header>
+
+  <main class="eht-wrap">
+    <section class="eht-stage-shell" aria-labelledby="eht-stage-title">
+      <div class="eht-stage-grid">
+        <div class="eht-map-panel">
+          <div class="eht-map-head">
+            <span class="eht-badge">Global Array</span>
+            <span class="eht-note-badge" id="mapNote">Eight observatories act like one Earth-size instrument.</span>
+          </div>
+
+          <svg id="ehtMap" viewBox="0 0 1000 520" aria-label="Map of participating Event Horizon Telescope observatories">
+            <g class="map-grid" aria-hidden="true">
+              <line x1="0" y1="130" x2="1000" y2="130"></line>
+              <line x1="0" y1="260" x2="1000" y2="260"></line>
+              <line x1="0" y1="390" x2="1000" y2="390"></line>
+              <line x1="200" y1="0" x2="200" y2="520"></line>
+              <line x1="400" y1="0" x2="400" y2="520"></line>
+              <line x1="600" y1="0" x2="600" y2="520"></line>
+              <line x1="800" y1="0" x2="800" y2="520"></line>
+            </g>
+
+            <g class="world" aria-hidden="true">
+              <path d="M126 116 L176 88 L262 98 L330 130 L352 184 L324 228 L268 238 L218 214 L178 170 Z" />
+              <path d="M338 76 L378 62 L414 82 L402 124 L358 132 Z" />
+              <path d="M302 256 L344 232 L366 266 L374 322 L352 386 L314 424 L286 366 L282 308 Z" />
+              <path d="M532 118 L614 84 L710 92 L816 126 L862 174 L826 206 L760 198 L712 236 L646 228 L560 188 Z" />
+              <path d="M530 206 L582 198 L618 246 L610 316 L566 378 L518 338 L500 274 Z" />
+              <path d="M658 232 L694 224 L706 258 L684 286 L646 276 Z" />
+              <path d="M796 334 L854 322 L902 346 L896 388 L840 404 L792 384 Z" />
+              <path d="M348 456 L434 444 L538 438 L654 444 L748 454 L708 486 L594 496 L456 492 L360 482 Z" />
+            </g>
+
+            <g id="baselineLayer"></g>
+            <g id="stationLayer"></g>
+          </svg>
+
+          <div class="eht-map-hint">Toggle stations to change the baselines. Longer, synchronized baselines mean finer resolution.</div>
+        </div>
+
+        <div class="eht-image-panel">
+          <div class="eht-image-head">
+            <span class="eht-badge">Reconstruction Preview</span>
+            <span class="eht-note-badge" id="imageNote">This is a classroom model of how the ring sharpens as the array improves.</span>
+          </div>
+          <canvas id="reconstructionCanvas"></canvas>
+          <div class="eht-image-hint">This is not a visible-light snapshot. It is a radio reconstruction built from correlated data.</div>
+        </div>
+      </div>
+
+      <div class="eht-stage-footer" id="eht-stage-title">
+        The real Event Horizon Telescope used very-long-baseline interferometry. Each observatory recorded radio data with extremely precise timing, then the signals were combined later to act like a telescope nearly as wide as Earth.
+      </div>
+    </section>
+
+    <aside class="eht-panel">
+      <section class="eht-card">
+        <p class="eht-kicker">Controls</p>
+        <h3>Build the array</h3>
+        <div class="eht-control-row">
+          <button type="button" id="selectAllButton">Select all</button>
+          <button type="button" id="clearButton">Clear</button>
+          <button type="button" class="eht-sync-button is-on" id="syncButton">Clock sync ON</button>
+        </div>
+
+        <div class="eht-readout-grid">
+          <div class="eht-readout-card">
+            <span>Active Stations</span>
+            <strong id="activeCount">8 of 8</strong>
+          </div>
+          <div class="eht-readout-card">
+            <span>Longest Baseline</span>
+            <strong id="baselineValue">13,000 km</strong>
+          </div>
+          <div class="eht-readout-card">
+            <span>Image Quality</span>
+            <strong id="qualityValue">Ring emerging</strong>
+          </div>
+          <div class="eht-readout-card">
+            <span>Sync Status</span>
+            <strong id="syncValue">Correlated</strong>
+          </div>
+        </div>
+
+        <div class="eht-alert safe" id="alertBar">
+          With all eight synchronized stations, the array reaches Earth-size class resolution and the ring structure becomes much clearer.
+        </div>
+      </section>
+
+      <section class="eht-card">
+        <p class="eht-kicker">Participating Telescopes</p>
+        <h3>Click a station to toggle it</h3>
+        <div class="eht-station-list" id="stationList"></div>
+      </section>
+
+      <section class="eht-card">
+        <p class="eht-kicker">Why It Worked</p>
+        <h3>Three ideas to keep in mind</h3>
+        <ul>
+          <li>One dish is not enough to resolve a black hole shadow from Earth.</li>
+          <li>Large separations create long baselines, which improve angular resolution.</li>
+          <li>Without synchronized clocks, the recordings cannot be aligned and combined.</li>
+        </ul>
+      </section>
+    </aside>
+  </main>
+
+  <section class="eht-info">
+    <div class="eht-info-grid">
+      <article class="eht-info-card">
+        <p class="eht-kicker">Concept 01</p>
+        <h4>Very-long-baseline interferometry</h4>
+        <p>The EHT did not build a literal giant dish. It combined observations from telescopes spread across Earth so the array behaved like a much larger instrument.</p>
+      </article>
+      <article class="eht-info-card">
+        <p class="eht-kicker">Concept 02</p>
+        <h4>Atomic clocks and correlation</h4>
+        <p>Each site timestamped its data extremely precisely. Later, correlators aligned those recordings so the wave patterns could be combined instead of becoming meaningless noise.</p>
+      </article>
+      <article class="eht-info-card">
+        <p class="eht-kicker">Concept 03</p>
+        <h4>What the image shows</h4>
+        <p>The famous ring is glowing material around the black hole. The darker center is the shadow region connected to the event horizon, where gravity bends light and traps anything crossing the boundary.</p>
+      </article>
+      <article class="eht-info-card">
+        <p class="eht-kicker">Concept 04</p>
+        <h4>Why the first image mattered</h4>
+        <p>The first EHT image gave direct visual evidence of black hole-scale structure and showed that a global collaboration could use Earth itself as a telescope platform.</p>
+      </article>
+    </div>
+  </section>
+
+  <script>
+    const stations = [
+      {
+        id: 'alma',
+        short: 'ALMA',
+        name: 'Atacama Large Millimeter Array',
+        region: 'Chile',
+        lat: -23.03,
+        lon: -67.76,
+        labelDx: -16,
+        labelDy: -14
+      },
+      {
+        id: 'apex',
+        short: 'APEX',
+        name: 'Atacama Pathfinder Experiment',
+        region: 'Chile',
+        lat: -23.0,
+        lon: -67.72,
+        labelDx: 22,
+        labelDy: 14
+      },
+      {
+        id: 'iram',
+        short: 'IRAM',
+        name: 'IRAM 30m Telescope',
+        region: 'Spain',
+        lat: 37.06,
+        lon: -3.39,
+        labelDx: 0,
+        labelDy: -16
+      },
+      {
+        id: 'jcmt',
+        short: 'JCMT',
+        name: 'James Clerk Maxwell Telescope',
+        region: 'Hawaii',
+        lat: 19.82,
+        lon: -155.47,
+        labelDx: -18,
+        labelDy: -16
+      },
+      {
+        id: 'lmt',
+        short: 'LMT',
+        name: 'Large Millimeter Telescope',
+        region: 'Mexico',
+        lat: 18.99,
+        lon: -97.31,
+        labelDx: -8,
+        labelDy: -16
+      },
+      {
+        id: 'sma',
+        short: 'SMA',
+        name: 'Submillimeter Array',
+        region: 'Hawaii',
+        lat: 19.83,
+        lon: -155.42,
+        labelDx: 22,
+        labelDy: 14
+      },
+      {
+        id: 'spt',
+        short: 'SPT',
+        name: 'South Pole Telescope',
+        region: 'South Pole',
+        lat: -90,
+        lon: 0,
+        labelDx: 0,
+        labelDy: -18
+      },
+      {
+        id: 'smt',
+        short: 'SMT',
+        name: 'Heinrich Hertz Submillimeter Telescope',
+        region: 'Arizona',
+        lat: 32.7,
+        lon: -109.89,
+        labelDx: 0,
+        labelDy: -16
+      }
+    ];
+
+    const state = {
+      active: new Set(stations.map((station) => station.id)),
+      synced: true
+    };
+
+    const baselineLayer = document.getElementById('baselineLayer');
+    const stationLayer = document.getElementById('stationLayer');
+    const stationList = document.getElementById('stationList');
+    const selectAllButton = document.getElementById('selectAllButton');
+    const clearButton = document.getElementById('clearButton');
+    const syncButton = document.getElementById('syncButton');
+
+    const activeCount = document.getElementById('activeCount');
+    const baselineValue = document.getElementById('baselineValue');
+    const qualityValue = document.getElementById('qualityValue');
+    const syncValue = document.getElementById('syncValue');
+    const alertBar = document.getElementById('alertBar');
+    const mapNote = document.getElementById('mapNote');
+    const imageNote = document.getElementById('imageNote');
+
+    const canvas = document.getElementById('reconstructionCanvas');
+    const ctx = canvas.getContext('2d');
+    const stationButtons = new Map();
+
+    function project(lon, lat) {
+      return {
+        x: ((lon + 180) / 360) * 1000,
+        y: ((90 - lat) / 180) * 520
+      };
+    }
+
+    function haversineKm(a, b) {
+      const toRad = (deg) => deg * Math.PI / 180;
+      const dLat = toRad(b.lat - a.lat);
+      const dLon = toRad(b.lon - a.lon);
+      const lat1 = toRad(a.lat);
+      const lat2 = toRad(b.lat);
+      const sinLat = Math.sin(dLat / 2);
+      const sinLon = Math.sin(dLon / 2);
+      const h = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLon * sinLon;
+      return 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(h)));
+    }
+
+    function getActiveStations() {
+      return stations.filter((station) => state.active.has(station.id));
+    }
+
+    function calculateMetrics() {
+      const activeStations = getActiveStations();
+
+      if (!state.synced || activeStations.length < 2) {
+        return {
+          count: activeStations.length,
+          longestBaseline: 0,
+          qualityScore: activeStations.length < 2 ? 0.06 : 0.1,
+          qualityLabel: activeStations.length < 2 ? 'No array yet' : 'Unsynced recordings',
+          syncLabel: state.synced ? 'Waiting for more dishes' : 'Uncorrelated',
+          alertClass: activeStations.length < 2 ? 'warn' : 'danger',
+          alertText: activeStations.length < 2
+            ? 'At least two stations are needed before the array can form a useful baseline.'
+            : 'Clock sync is OFF, so the data cannot be combined into one image even if many stations are active.'
+        };
+      }
+
+      let longestBaseline = 0;
+      activeStations.forEach((station, index) => {
+        for (let i = index + 1; i < activeStations.length; i += 1) {
+          longestBaseline = Math.max(longestBaseline, haversineKm(station, activeStations[i]));
+        }
+      });
+
+      const coverage = activeStations.length / stations.length;
+      const baselineFactor = Math.min(1, longestBaseline / 14000);
+      const qualityScore = Math.min(1, 0.14 + coverage * 0.46 + baselineFactor * 0.4);
+
+      let qualityLabel = 'Very blurry';
+      let alertClass = 'warn';
+      let alertText = 'The array is working, but with limited station coverage the black hole ring is still only partially resolved.';
+
+      if (qualityScore >= 0.78) {
+        qualityLabel = 'First image territory';
+        alertClass = 'safe';
+        alertText = 'With many synchronized, widely separated dishes, the array reaches Earth-size class resolution and the ring structure becomes much more distinct.';
+      } else if (qualityScore >= 0.58) {
+        qualityLabel = 'Ring emerging';
+        alertText = 'The bright ring begins to stand out because the array now spans much of Earth with several strong baselines.';
+      } else if (qualityScore >= 0.36) {
+        qualityLabel = 'Low resolution';
+      }
+
+      return {
+        count: activeStations.length,
+        longestBaseline,
+        qualityScore,
+        qualityLabel,
+        syncLabel: 'Correlated',
+        alertClass,
+        alertText
+      };
+    }
+
+    function renderStationList() {
+      stationList.innerHTML = '';
+
+      stations.forEach((station) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'eht-station-button';
+        button.innerHTML = `<strong>${station.name}</strong><small>${station.region}</small>`;
+        button.addEventListener('click', () => {
+          if (state.active.has(station.id)) {
+            state.active.delete(station.id);
+          } else {
+            state.active.add(station.id);
+          }
+          renderAll();
+        });
+        stationButtons.set(station.id, button);
+        stationList.appendChild(button);
+      });
+    }
+
+    function renderMap() {
+      baselineLayer.innerHTML = '';
+      stationLayer.innerHTML = '';
+
+      const activeStations = getActiveStations();
+
+      if (state.synced && activeStations.length >= 2) {
+        activeStations.forEach((station, index) => {
+          const from = project(station.lon, station.lat);
+          for (let i = index + 1; i < activeStations.length; i += 1) {
+            const toStation = activeStations[i];
+            const to = project(toStation.lon, toStation.lat);
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', from.x);
+            line.setAttribute('y1', from.y);
+            line.setAttribute('x2', to.x);
+            line.setAttribute('y2', to.y);
+            line.setAttribute('class', 'baseline-line');
+            baselineLayer.appendChild(line);
+          }
+        });
+      }
+
+      stations.forEach((station) => {
+        const point = project(station.lon, station.lat);
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        const active = state.active.has(station.id);
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', point.x);
+        circle.setAttribute('cy', point.y);
+        circle.setAttribute('r', active ? '6.5' : '4');
+        circle.setAttribute('fill', active ? '#8ad7ff' : 'rgba(168,188,220,0.35)');
+        circle.setAttribute('class', 'station-dot');
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', point.x + station.labelDx);
+        label.setAttribute('y', point.y + station.labelDy);
+        label.setAttribute('class', 'station-label');
+        label.setAttribute('fill', active ? '#ecf6ff' : 'rgba(210,220,234,0.42)');
+        label.textContent = station.short;
+
+        group.appendChild(circle);
+        group.appendChild(label);
+        stationLayer.appendChild(group);
+      });
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      renderImage();
+    }
+
+    function drawStars(width, height) {
+      for (let i = 0; i < 70; i += 1) {
+        const x = (i * 83) % width;
+        const y = (i * 149) % height;
+        const radius = (i % 5) === 0 ? 1.2 : 0.7;
+        ctx.beginPath();
+        ctx.fillStyle = i % 3 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(156,188,255,0.34)';
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function renderImage() {
+      const width = canvas.getBoundingClientRect().width;
+      const height = canvas.getBoundingClientRect().height;
+      if (!width || !height) return;
+
+      const metrics = calculateMetrics();
+      ctx.clearRect(0, 0, width, height);
+
+      const background = ctx.createRadialGradient(width * 0.5, height * 0.3, 10, width * 0.5, height * 0.5, Math.max(width, height) * 0.7);
+      background.addColorStop(0, '#0f1420');
+      background.addColorStop(1, '#050811');
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, width, height);
+
+      drawStars(width, height);
+
+      const cx = width * 0.52;
+      const cy = height * 0.53;
+      const ringRadius = Math.min(width, height) * 0.24;
+      const blur = 28 - metrics.qualityScore * 24;
+      const thickness = 52 - metrics.qualityScore * 30;
+
+      ctx.save();
+      ctx.filter = `blur(${Math.max(3, blur)}px)`;
+      ctx.strokeStyle = 'rgba(255, 183, 84, 0.82)';
+      ctx.lineWidth = Math.max(14, thickness);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, ringRadius * 1.05, ringRadius * 0.92, -0.25, 0.1, Math.PI * 1.95);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255, 228, 160, 0.72)';
+      ctx.lineWidth = Math.max(10, thickness * 0.52);
+      ctx.beginPath();
+      ctx.ellipse(cx - ringRadius * 0.12, cy - ringRadius * 0.02, ringRadius * 0.88, ringRadius * 0.76, -0.28, Math.PI * 0.06, Math.PI * 1.18);
+      ctx.stroke();
+      ctx.restore();
+
+      if (metrics.qualityScore > 0.58) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 214, 146, 0.86)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.ellipse(cx - ringRadius * 0.12, cy - ringRadius * 0.02, ringRadius * 0.9, ringRadius * 0.78, -0.28, Math.PI * 0.1, Math.PI * 1.12);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.beginPath();
+      ctx.fillStyle = '#050811';
+      ctx.arc(cx, cy, ringRadius * 0.62, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (!state.synced) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 100, 100, 0.34)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 18; i += 1) {
+          ctx.beginPath();
+          ctx.moveTo(width * 0.24, 40 + i * 18);
+          ctx.lineTo(width * 0.82, 46 + i * 18);
+          ctx.stroke();
+        }
+        ctx.restore();
+      } else if (metrics.qualityScore < 0.52) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 236, 190, 0.12)';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 11; i += 1) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, ringRadius * 0.55 + i * 7, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      ctx.fillStyle = 'rgba(217, 230, 255, 0.7)';
+      ctx.font = '700 14px system-ui, sans-serif';
+      ctx.fillText('Modeled black hole reconstruction', 18, height - 44);
+      ctx.fillStyle = 'rgba(180, 201, 228, 0.54)';
+      ctx.font = '12px system-ui, sans-serif';
+      ctx.fillText('More synchronized baselines reduce blur and reveal the ring.', 18, height - 24);
+    }
+
+    function renderReadout() {
+      const metrics = calculateMetrics();
+      const baselineText = metrics.longestBaseline > 0
+        ? `${Math.round(metrics.longestBaseline).toLocaleString()} km`
+        : 'Not formed yet';
+
+      activeCount.textContent = `${metrics.count} of ${stations.length}`;
+      baselineValue.textContent = baselineText;
+      qualityValue.textContent = metrics.qualityLabel;
+      syncValue.textContent = metrics.syncLabel;
+
+      alertBar.className = `eht-alert ${metrics.alertClass}`;
+      alertBar.textContent = metrics.alertText;
+
+      mapNote.textContent = state.synced
+        ? 'Signals can be combined because the clocks are synchronized.'
+        : 'Stations are active, but the clocks are not synchronized.';
+
+      imageNote.textContent = state.synced
+        ? 'This classroom model sharpens as coverage and baseline length increase.'
+        : 'Without synchronization, the recordings cannot reconstruct a clean ring.';
+
+      syncButton.classList.toggle('is-on', state.synced);
+      syncButton.textContent = state.synced ? 'Clock sync ON' : 'Clock sync OFF';
+
+      stations.forEach((station) => {
+        const button = stationButtons.get(station.id);
+        button.classList.toggle('is-active', state.active.has(station.id));
+      });
+    }
+
+    function renderAll() {
+      renderMap();
+      renderReadout();
+      renderImage();
+    }
+
+    selectAllButton.addEventListener('click', () => {
+      state.active = new Set(stations.map((station) => station.id));
+      renderAll();
+    });
+
+    clearButton.addEventListener('click', () => {
+      state.active = new Set();
+      renderAll();
+    });
+
+    syncButton.addEventListener('click', () => {
+      state.synced = !state.synced;
+      renderAll();
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    renderStationList();
+    renderAll();
+    resizeCanvas();
+  </script>
+</body>
+</html>
