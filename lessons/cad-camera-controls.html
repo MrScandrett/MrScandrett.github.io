@@ -1,0 +1,1360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CAD Camera Controls &amp; Orientation · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Fabrication Lesson 01 - learn orbit, pan, zoom, home view, the orientation cube, and axis awareness with an interactive 3D CAD camera simulation." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    body {
+      margin: 0;
+      color: #182631;
+      background:
+        radial-gradient(1100px 520px at 10% -10%, rgba(255, 166, 77, 0.18), transparent 58%),
+        radial-gradient(920px 460px at 100% 0%, rgba(70, 210, 196, 0.16), transparent 54%),
+        linear-gradient(180deg, #f7fafc 0%, #eef3f6 100%);
+    }
+
+    .cadnav-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(14px) saturate(140%);
+      background: rgba(247, 250, 252, 0.88);
+      border-bottom: 1px solid rgba(122, 146, 160, 0.18);
+    }
+
+    .cadnav-topbar-inner,
+    .cadnav-shell {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    .cadnav-topbar-inner {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .cadnav-topbar a {
+      color: #24507a;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .cadnav-topbar a:hover {
+      color: #132f4a;
+    }
+
+    .cadnav-topbar-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      text-align: center;
+      color: #172634;
+    }
+
+    .cadnav-shell {
+      padding: 2rem 0 2.4rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .cadnav-card {
+      border-radius: 26px;
+      border: 1px solid rgba(194, 206, 218, 0.92);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(247, 250, 252, 0.96));
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    .cadnav-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .cadnav-hero-copy,
+    .cadnav-hero-panel,
+    .cadnav-section,
+    .cadnav-term-card,
+    .cadnav-transfer-card,
+    .cadnav-exit-card {
+      border-radius: 26px;
+      border: 1px solid rgba(194, 206, 218, 0.92);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 252, 0.96));
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    .cadnav-hero-copy,
+    .cadnav-hero-panel,
+    .cadnav-section {
+      padding: 1.3rem;
+    }
+
+    .cadnav-hero-copy {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cadnav-hero-copy::after {
+      content: "";
+      position: absolute;
+      right: -28px;
+      bottom: -34px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(255, 164, 84, 0.14) 0%, rgba(255, 164, 84, 0) 70%);
+      pointer-events: none;
+    }
+
+    .cadnav-eyebrow,
+    .cadnav-kicker {
+      margin: 0 0 0.45rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #6b7f91;
+    }
+
+    .cadnav-hero h1 {
+      margin: 0;
+      max-width: 11ch;
+      font-size: clamp(2rem, 4vw, 3.35rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    .cadnav-lede,
+    .cadnav-body,
+    .cadnav-checklist li,
+    .cadnav-term-card p,
+    .cadnav-transfer-card p,
+    .cadnav-exit-card p,
+    .cadnav-viewer-note,
+    .cadnav-missions li,
+    .cadnav-active-term p {
+      color: #456074;
+      line-height: 1.65;
+    }
+
+    .cadnav-lede {
+      margin: 0.9rem 0 0;
+      max-width: 63ch;
+      font-size: 1rem;
+    }
+
+    .cadnav-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .cadnav-meta span,
+    .cadnav-status-card strong,
+    .cadnav-mini-note {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.8rem;
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(141, 167, 188, 0.32);
+      background: rgba(241, 247, 251, 0.9);
+      color: #214f77;
+      font-size: 0.77rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .cadnav-hero-panel {
+      display: grid;
+      gap: 0.9rem;
+      align-content: start;
+      background:
+        radial-gradient(circle at top right, rgba(76, 214, 197, 0.12), transparent 36%),
+        linear-gradient(180deg, rgba(248, 251, 253, 0.98), rgba(244, 249, 252, 0.96));
+    }
+
+    .cadnav-hero-panel h2,
+    .cadnav-section-head h2,
+    .cadnav-transfer-card h3,
+    .cadnav-exit-card h3,
+    .cadnav-active-term h3 {
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .cadnav-checklist {
+      margin: 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .cadnav-note {
+      margin: 0;
+      font-size: 0.88rem;
+      color: #5b7185;
+    }
+
+    .cadnav-terms {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .cadnav-term-card {
+      padding: 1rem;
+      display: grid;
+      gap: 0.45rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .cadnav-term-card:hover,
+    .cadnav-term-card.is-active {
+      transform: translateY(-1px);
+      border-color: rgba(255, 154, 67, 0.44);
+      box-shadow: 0 18px 34px rgba(15, 23, 42, 0.1);
+    }
+
+    .cadnav-term-card h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .cadnav-section-head {
+      display: grid;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+    }
+
+    .cadnav-section-head p {
+      margin: 0;
+    }
+
+    .cadnav-lab-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.82fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .cadnav-viewer-card {
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(27, 38, 50, 0.88);
+      background:
+        linear-gradient(180deg, rgba(11, 21, 31, 0.98), rgba(16, 29, 42, 0.98));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 22px 42px rgba(12, 18, 28, 0.22);
+    }
+
+    .cadnav-toolbar {
+      padding: 0.85rem 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(8, 15, 24, 0.68);
+    }
+
+    .cadnav-mode-group,
+    .cadnav-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+    }
+
+    .cadnav-chip,
+    .cadnav-action,
+    .cadnav-cube-button,
+    .cadnav-mission-reset {
+      appearance: none;
+      border: 1px solid rgba(197, 219, 236, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+      color: #eef7ff;
+      border-radius: 999px;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.46rem 0.78rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .cadnav-chip:hover,
+    .cadnav-action:hover,
+    .cadnav-cube-button:hover,
+    .cadnav-mission-reset:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 208, 166, 0.4);
+    }
+
+    .cadnav-chip.is-active,
+    .cadnav-cube-button.is-active {
+      background: linear-gradient(180deg, rgba(255, 164, 84, 0.28), rgba(255, 164, 84, 0.18));
+      border-color: rgba(255, 179, 112, 0.62);
+    }
+
+    .cadnav-action[data-kind="accent"] {
+      background: linear-gradient(180deg, rgba(67, 198, 190, 0.34), rgba(38, 154, 145, 0.22));
+      border-color: rgba(99, 224, 211, 0.42);
+    }
+
+    .cadnav-canvas-wrap {
+      padding: 0.85rem;
+    }
+
+    #cadCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 10;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 50% 10%, rgba(58, 128, 184, 0.22), transparent 46%),
+        linear-gradient(180deg, #0f1823 0%, #132130 100%);
+      cursor: grab;
+    }
+
+    #cadCanvas.is-panning {
+      cursor: move;
+    }
+
+    #cadCanvas.is-dragging {
+      cursor: grabbing;
+    }
+
+    .cadnav-viewer-note {
+      margin: 0;
+      padding: 0 0.95rem 0.95rem;
+      font-size: 0.84rem;
+      color: rgba(227, 239, 250, 0.78);
+    }
+
+    .cadnav-panel-stack {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .cadnav-panel-card {
+      padding: 1rem;
+      border-radius: 22px;
+      border: 1px solid rgba(194, 206, 218, 0.9);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 252, 0.96));
+      box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+    }
+
+    .cadnav-active-term {
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .cadnav-active-term p {
+      margin: 0;
+    }
+
+    .cadnav-status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.85rem;
+    }
+
+    .cadnav-status-card {
+      display: grid;
+      gap: 0.28rem;
+      padding: 0.85rem;
+      border-radius: 18px;
+      background: rgba(240, 246, 250, 0.84);
+      border: 1px solid rgba(201, 213, 224, 0.88);
+    }
+
+    .cadnav-status-card span {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b7f91;
+    }
+
+    .cadnav-status-card strong {
+      width: fit-content;
+      background: rgba(255, 255, 255, 0.88);
+      color: #173f63;
+    }
+
+    .cadnav-cube-grid {
+      display: grid;
+      gap: 0.45rem;
+      justify-items: center;
+      margin-top: 0.85rem;
+    }
+
+    .cadnav-cube-row {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .cadnav-cube-button {
+      min-width: 70px;
+      color: #17344b;
+      background: rgba(244, 248, 251, 0.96);
+      border-color: rgba(172, 191, 206, 0.9);
+    }
+
+    .cadnav-cube-button.is-active {
+      color: #10293d;
+      background: linear-gradient(180deg, rgba(255, 193, 128, 0.72), rgba(255, 167, 86, 0.52));
+      border-color: rgba(245, 153, 62, 0.7);
+    }
+
+    .cadnav-missions {
+      list-style: none;
+      margin: 0.85rem 0 0;
+      padding: 0;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .cadnav-missions li {
+      position: relative;
+      min-height: 2.5rem;
+      padding: 0.7rem 0.85rem 0.7rem 2.7rem;
+      border-radius: 16px;
+      background: rgba(242, 247, 250, 0.9);
+      border: 1px solid rgba(201, 213, 224, 0.86);
+      font-size: 0.9rem;
+    }
+
+    .cadnav-missions li::before {
+      content: "";
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      width: 1.05rem;
+      height: 1.05rem;
+      border-radius: 50%;
+      border: 2px solid rgba(110, 131, 146, 0.36);
+      transform: translateY(-50%);
+      background: #fff;
+    }
+
+    .cadnav-missions li.is-done {
+      border-color: rgba(72, 179, 130, 0.34);
+      background: rgba(236, 250, 244, 0.92);
+      color: #234a34;
+    }
+
+    .cadnav-missions li.is-done::before {
+      border-color: rgba(72, 179, 130, 0.62);
+      background: radial-gradient(circle at 50% 50%, rgba(72, 179, 130, 0.96) 0 42%, transparent 44%);
+    }
+
+    .cadnav-mission-reset {
+      margin-top: 0.85rem;
+      color: #16344c;
+      background: rgba(244, 248, 251, 0.96);
+      border-color: rgba(172, 191, 206, 0.9);
+    }
+
+    .cadnav-transfer-grid,
+    .cadnav-exit-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .cadnav-transfer-card,
+    .cadnav-exit-card {
+      padding: 1.05rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .cadnav-transfer-card p,
+    .cadnav-exit-card p {
+      margin: 0;
+    }
+
+    .cadnav-mini-note {
+      width: fit-content;
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    @media (max-width: 980px) {
+      .cadnav-hero,
+      .cadnav-lab-grid,
+      .cadnav-transfer-grid,
+      .cadnav-exit-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 780px) {
+      .cadnav-terms {
+        grid-template-columns: 1fr;
+      }
+
+      .cadnav-status-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cadnav-topbar-title {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="cadnav-topbar">
+    <div class="cadnav-topbar-inner">
+      <a href="../steam-lessons.html#module-fabrication">Back to Fabrication</a>
+      <div class="cadnav-topbar-title">CAD Camera Controls &amp; Orientation</div>
+      <a href="../index.html">Home</a>
+    </div>
+  </div>
+
+  <main id="main-content" class="cadnav-shell">
+    <section class="cadnav-hero">
+      <div class="cadnav-hero-copy">
+        <p class="cadnav-eyebrow">Fabrication · Lesson 01</p>
+        <h1>Camera Controls in 3D CAD</h1>
+        <p class="cadnav-lede">If a part looks upside down, tiny, or lost in space, the problem is usually navigation. This lesson teaches the camera language shared by tools like Tinkercad and Autodesk Fusion 360: orbit, pan, zoom, home view, the orientation cube, and axis awareness.</p>
+        <div class="cadnav-meta" aria-label="Lesson focus">
+          <span>Orbit</span>
+          <span>Pan</span>
+          <span>Zoom</span>
+          <span>Home view</span>
+          <span>Orientation cube</span>
+          <span>Simulation lab</span>
+        </div>
+      </div>
+
+      <aside class="cadnav-hero-panel">
+        <p class="cadnav-kicker">Why this matters</p>
+        <h2>Control the view before you edit the model.</h2>
+        <ul class="cadnav-checklist">
+          <li>The camera changes what you see, not the shape you built.</li>
+          <li>Top, front, and right views help you sketch and measure from the correct side.</li>
+          <li>Orbit helps inspection. Pan re-centers the workspace. Zoom helps detail work.</li>
+          <li>Home view and fit view recover the model when you get lost.</li>
+        </ul>
+        <p class="cadnav-note">Different software maps these actions to different mouse buttons and gestures, but the vocabulary stays consistent.</p>
+      </aside>
+    </section>
+
+    <section class="cadnav-section">
+      <div class="cadnav-section-head">
+        <p class="cadnav-kicker">Core Terms</p>
+        <h2>Learn the camera words that transfer between CAD programs.</h2>
+        <p class="cadnav-body">Click any card to spotlight the term in the lab panel, then practice it in the simulation below.</p>
+      </div>
+      <div class="cadnav-terms">
+        <article class="cadnav-term-card is-active" data-term="orbit" tabindex="0">
+          <p class="cadnav-kicker">Angle</p>
+          <h3>Orbit</h3>
+          <p>Orbit rotates the camera around the model so you can inspect the front, sides, top, and corners without moving the object itself.</p>
+        </article>
+        <article class="cadnav-term-card" data-term="pan" tabindex="0">
+          <p class="cadnav-kicker">Position</p>
+          <h3>Pan</h3>
+          <p>Pan slides the camera left, right, up, or down. Use it when the part drifts off center but the viewing angle is already correct.</p>
+        </article>
+        <article class="cadnav-term-card" data-term="zoom" tabindex="0">
+          <p class="cadnav-kicker">Distance</p>
+          <h3>Zoom</h3>
+          <p>Zoom changes how close the camera feels to the model. Zoom in to inspect details and zoom out to see the whole build area.</p>
+        </article>
+        <article class="cadnav-term-card" data-term="home" tabindex="0">
+          <p class="cadnav-kicker">Recovery</p>
+          <h3>Home View</h3>
+          <p>Home view returns you to a safe starting angle. In many CAD tools, fit view also re-centers the model inside the window.</p>
+        </article>
+        <article class="cadnav-term-card" data-term="cube" tabindex="0">
+          <p class="cadnav-kicker">Standard Views</p>
+          <h3>Orientation Cube</h3>
+          <p>The orientation cube lets you snap quickly to front, right, top, left, or isometric views so your work starts from a known direction.</p>
+        </article>
+        <article class="cadnav-term-card" data-term="axis" tabindex="0">
+          <p class="cadnav-kicker">Reference</p>
+          <h3>Axes</h3>
+          <p>X, Y, and Z axes tell you which way is left-right, up-down, and depth. CAD navigation makes more sense when you watch the axes as you move.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="cadnav-section" aria-labelledby="simulation-title">
+      <div class="cadnav-section-head">
+        <p class="cadnav-kicker">Interactive Simulation</p>
+        <h2 id="simulation-title">Practice the camera on a sample fabrication part.</h2>
+        <p class="cadnav-body">Drag inside the viewer, use the orientation cube buttons, and complete the practice mission. The model is only a stand-in. The real lesson is how to move your view intentionally.</p>
+      </div>
+
+      <div class="cadnav-lab-grid">
+        <div class="cadnav-viewer-card">
+          <div class="cadnav-toolbar">
+            <div class="cadnav-mode-group" aria-label="Drag mode">
+              <button type="button" class="cadnav-chip is-active" data-mode="orbit">Orbit drag</button>
+              <button type="button" class="cadnav-chip" data-mode="pan">Pan drag</button>
+            </div>
+            <div class="cadnav-action-row" aria-label="Camera actions">
+              <button type="button" class="cadnav-action" data-action="zoom-in">Zoom in</button>
+              <button type="button" class="cadnav-action" data-action="zoom-out">Zoom out</button>
+              <button type="button" class="cadnav-action" data-action="fit">Fit</button>
+              <button type="button" class="cadnav-action" data-action="projection">Projection</button>
+              <button type="button" class="cadnav-action" data-action="home" data-kind="accent">Home</button>
+            </div>
+          </div>
+          <div class="cadnav-canvas-wrap">
+            <canvas id="cadCanvas" aria-label="3D CAD camera control simulation"></canvas>
+          </div>
+          <p class="cadnav-viewer-note">Drag to rotate or pan. Use the mouse wheel or the zoom buttons to change distance. Keyboard: arrow keys orbit, Shift + arrows pan, plus and minus zoom, 1 front, 2 right, 3 top, 4 home.</p>
+        </div>
+
+        <aside class="cadnav-panel-stack">
+          <div class="cadnav-panel-card">
+            <div class="cadnav-active-term">
+              <p class="cadnav-kicker">Active term</p>
+              <h3 id="termName">Orbit</h3>
+              <p id="termDescription">Orbit rotates the camera around the model so you can inspect it from new angles without changing the model itself.</p>
+            </div>
+            <div class="cadnav-status-grid">
+              <div class="cadnav-status-card">
+                <span>Current view</span>
+                <strong id="viewValue">Home</strong>
+              </div>
+              <div class="cadnav-status-card">
+                <span>Projection</span>
+                <strong id="projectionValue">Perspective</strong>
+              </div>
+              <div class="cadnav-status-card">
+                <span>Zoom</span>
+                <strong id="zoomValue">108%</strong>
+              </div>
+              <div class="cadnav-status-card">
+                <span>Camera angles</span>
+                <strong id="anglesValue">-43 deg / -30 deg</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="cadnav-panel-card">
+            <p class="cadnav-kicker">Orientation cube</p>
+            <div class="cadnav-cube-grid" aria-label="View presets">
+              <div class="cadnav-cube-row">
+                <button type="button" class="cadnav-cube-button" data-preset="top">Top</button>
+              </div>
+              <div class="cadnav-cube-row">
+                <button type="button" class="cadnav-cube-button" data-preset="left">Left</button>
+                <button type="button" class="cadnav-cube-button" data-preset="front">Front</button>
+                <button type="button" class="cadnav-cube-button" data-preset="right">Right</button>
+              </div>
+              <div class="cadnav-cube-row">
+                <button type="button" class="cadnav-cube-button" data-preset="back">Back</button>
+              </div>
+              <div class="cadnav-cube-row">
+                <button type="button" class="cadnav-cube-button" data-preset="iso">Iso</button>
+                <button type="button" class="cadnav-cube-button" data-preset="home">Home</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="cadnav-panel-card">
+            <p class="cadnav-kicker">Practice mission</p>
+            <p class="cadnav-body">Complete each camera move once. This is not about speed. It is about knowing which control solves which problem.</p>
+            <ul class="cadnav-missions">
+              <li data-mission="orbit">Orbit to a new angle and inspect the stepped top of the part.</li>
+              <li data-mission="pan">Pan the workspace so the part slides away from center.</li>
+              <li data-mission="zoom">Zoom in or out to change your distance from the model.</li>
+              <li data-mission="preset">Use the orientation cube to snap to a standard view.</li>
+              <li data-mission="home">Return to home view when you are done.</li>
+            </ul>
+            <button type="button" class="cadnav-mission-reset" id="resetMission">Reset mission</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="cadnav-transfer-grid" aria-label="How the terms transfer to software">
+      <article class="cadnav-transfer-card">
+        <span class="cadnav-mini-note">Tinkercad</span>
+        <h3>Use the view cube and home tools.</h3>
+        <p>Tinkercad keeps navigation beginner-friendly. The important habit is still the same: orbit to inspect, pan to re-center, zoom for detail, and snap to top or front before starting a sketch.</p>
+      </article>
+      <article class="cadnav-transfer-card">
+        <span class="cadnav-mini-note">Autodesk Fusion 360</span>
+        <h3>Use the navigation bar with the same language.</h3>
+        <p>Fusion 360 gives you more tools, but the view words do not change. Orbit, pan, zoom, fit, and the view cube still control the camera before you make fabrication decisions.</p>
+      </article>
+      <article class="cadnav-transfer-card">
+        <span class="cadnav-mini-note">Universal habit</span>
+        <h3>Choose the view on purpose.</h3>
+        <p>If measurements look confusing, snap to a standard view. If the model disappears, use home or fit. If the part is off-center, pan instead of rebuilding anything.</p>
+      </article>
+    </section>
+
+    <section class="cadnav-exit-grid" aria-label="Exit ticket">
+      <article class="cadnav-exit-card">
+        <span class="cadnav-mini-note">Say it</span>
+        <h3>What changes the angle?</h3>
+        <p>Orbit changes the camera angle around the part. It does not move the part itself.</p>
+      </article>
+      <article class="cadnav-exit-card">
+        <span class="cadnav-mini-note">Do it</span>
+        <h3>How do you recover when lost?</h3>
+        <p>Use home view or fit view to bring the model back into a useful frame, then continue working from a standard direction.</p>
+      </article>
+      <article class="cadnav-exit-card">
+        <span class="cadnav-mini-note">Apply it</span>
+        <h3>When would you use top view?</h3>
+        <p>Top view is useful for sketching a footprint, aligning parts on a workplane, or checking how a design will sit on a printer bed or fabrication surface.</p>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('cadCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const termName = document.getElementById('termName');
+    const termDescription = document.getElementById('termDescription');
+    const viewValue = document.getElementById('viewValue');
+    const projectionValue = document.getElementById('projectionValue');
+    const zoomValue = document.getElementById('zoomValue');
+    const anglesValue = document.getElementById('anglesValue');
+
+    const modeButtons = Array.from(document.querySelectorAll('[data-mode]'));
+    const actionButtons = Array.from(document.querySelectorAll('[data-action]'));
+    const presetButtons = Array.from(document.querySelectorAll('[data-preset]'));
+    const termCards = Array.from(document.querySelectorAll('.cadnav-term-card'));
+    const missionItems = Array.from(document.querySelectorAll('[data-mission]'));
+    const resetMissionButton = document.getElementById('resetMission');
+
+    const termCopy = {
+      orbit: {
+        title: 'Orbit',
+        description: 'Orbit rotates the camera around the model so you can inspect it from new angles without changing the model itself.'
+      },
+      pan: {
+        title: 'Pan',
+        description: 'Pan slides the camera window left, right, up, or down. Use it when the angle is correct but the part is not centered.'
+      },
+      zoom: {
+        title: 'Zoom',
+        description: 'Zoom changes your distance from the model. It helps you move from a whole-part view to detailed inspection and back again.'
+      },
+      home: {
+        title: 'Home View',
+        description: 'Home view returns the camera to a safe reference angle. It is the quick recovery move when the part feels lost in space.'
+      },
+      cube: {
+        title: 'Orientation Cube',
+        description: 'The orientation cube snaps the camera to standard views like front, top, and right so your work starts from a clear direction.'
+      },
+      axis: {
+        title: 'Axes',
+        description: 'The X, Y, and Z axes tell you left-right, up-down, and depth. Watching the axes helps you stay oriented while orbiting.'
+      }
+    };
+
+    const state = {
+      mode: 'orbit',
+      yaw: -0.75,
+      pitch: -0.52,
+      zoom: 1.08,
+      panX: 0,
+      panY: 0,
+      projection: 'perspective',
+      dragging: false,
+      activeTerm: 'orbit'
+    };
+
+    const missions = {
+      orbit: false,
+      pan: false,
+      zoom: false,
+      preset: false,
+      home: false
+    };
+
+    const viewport = {
+      width: 0,
+      height: 0
+    };
+
+    const presets = {
+      front: { label: 'Front', yaw: 0, pitch: 0 },
+      right: { label: 'Right', yaw: Math.PI / 2, pitch: 0 },
+      left: { label: 'Left', yaw: -Math.PI / 2, pitch: 0 },
+      back: { label: 'Back', yaw: Math.PI, pitch: 0 },
+      top: { label: 'Top', yaw: 0, pitch: -Math.PI / 2 + 0.001 },
+      iso: { label: 'Isometric', yaw: -0.75, pitch: -0.52 },
+      home: { label: 'Home', yaw: -0.75, pitch: -0.52 }
+    };
+
+    function cuboid(minX, minY, minZ, maxX, maxY, maxZ, fills) {
+      const vertices = [
+        { x: minX, y: minY, z: minZ },
+        { x: maxX, y: minY, z: minZ },
+        { x: maxX, y: maxY, z: minZ },
+        { x: minX, y: maxY, z: minZ },
+        { x: minX, y: minY, z: maxZ },
+        { x: maxX, y: minY, z: maxZ },
+        { x: maxX, y: maxY, z: maxZ },
+        { x: minX, y: maxY, z: maxZ }
+      ];
+
+      const faces = [
+        { indices: [4, 5, 6, 7], fill: fills.front },
+        { indices: [0, 1, 2, 3], fill: fills.back },
+        { indices: [0, 4, 7, 3], fill: fills.left },
+        { indices: [1, 5, 6, 2], fill: fills.right },
+        { indices: [3, 2, 6, 7], fill: fills.top },
+        { indices: [0, 1, 5, 4], fill: fills.bottom }
+      ];
+
+      return { vertices, faces };
+    }
+
+    const solids = [
+      cuboid(-92, -60, -70, 92, -8, 70, {
+        front: '#5e8bad',
+        back: '#274155',
+        left: '#36586f',
+        right: '#487494',
+        top: '#8dd1ff',
+        bottom: '#243544'
+      }),
+      cuboid(-18, -8, -16, 56, 34, 42, {
+        front: '#af7a39',
+        back: '#6f4d1e',
+        left: '#8b622d',
+        right: '#9d6e31',
+        top: '#f4bb6f',
+        bottom: '#62451b'
+      }),
+      cuboid(-82, -8, 20, -32, 12, 56, {
+        front: '#56b6ae',
+        back: '#1f5f5a',
+        left: '#2b7f78',
+        right: '#3a9b91',
+        top: '#7ce1d7',
+        bottom: '#1c4845'
+      })
+    ];
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function angleDistance(a, b) {
+      let diff = (a - b) % (Math.PI * 2);
+      if (diff > Math.PI) diff -= Math.PI * 2;
+      if (diff < -Math.PI) diff += Math.PI * 2;
+      return Math.abs(diff);
+    }
+
+    function setActiveTerm(termKey) {
+      const entry = termCopy[termKey];
+      if (!entry) return;
+      state.activeTerm = termKey;
+      termName.textContent = entry.title;
+      termDescription.textContent = entry.description;
+      termCards.forEach((card) => {
+        card.classList.toggle('is-active', card.dataset.term === termKey);
+      });
+    }
+
+    function markMission(key) {
+      if (!(key in missions) || missions[key]) return;
+      missions[key] = true;
+      updateMissionUI();
+    }
+
+    function resetMissions() {
+      Object.keys(missions).forEach((key) => {
+        missions[key] = false;
+      });
+      updateMissionUI();
+    }
+
+    function updateMissionUI() {
+      missionItems.forEach((item) => {
+        item.classList.toggle('is-done', Boolean(missions[item.dataset.mission]));
+      });
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      viewport.width = rect.width;
+      viewport.height = rect.height;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawScene();
+    }
+
+    function rotatePoint(point) {
+      const cosYaw = Math.cos(state.yaw);
+      const sinYaw = Math.sin(state.yaw);
+      const cosPitch = Math.cos(state.pitch);
+      const sinPitch = Math.sin(state.pitch);
+
+      const x1 = point.x * cosYaw - point.z * sinYaw;
+      const z1 = point.x * sinYaw + point.z * cosYaw;
+      const y1 = point.y;
+
+      return {
+        x: x1,
+        y: y1 * cosPitch - z1 * sinPitch,
+        z: y1 * sinPitch + z1 * cosPitch
+      };
+    }
+
+    function projectRotated(rotated) {
+      const centerX = viewport.width / 2 + state.panX;
+      const centerY = viewport.height / 2 + state.panY;
+
+      if (state.projection === 'orthographic') {
+        const scale = 1.3 * state.zoom;
+        return {
+          x: centerX + rotated.x * scale,
+          y: centerY - rotated.y * scale,
+          depth: rotated.z
+        };
+      }
+
+      const distance = 420;
+      const focal = 230 * state.zoom;
+      const depth = distance + rotated.z;
+      const scale = focal / depth;
+
+      return {
+        x: centerX + rotated.x * scale,
+        y: centerY - rotated.y * scale,
+        depth: rotated.z
+      };
+    }
+
+    function transformPoint(point) {
+      const rotated = rotatePoint(point);
+      const projected = projectRotated(rotated);
+      return {
+        x: projected.x,
+        y: projected.y,
+        depth: projected.depth,
+        rotated
+      };
+    }
+
+    function drawPolygon(points, fill, stroke, lineWidth) {
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i += 1) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+    }
+
+    function drawWorkplane() {
+      const plane = [
+        transformPoint({ x: -220, y: -60, z: -220 }),
+        transformPoint({ x: 220, y: -60, z: -220 }),
+        transformPoint({ x: 220, y: -60, z: 220 }),
+        transformPoint({ x: -220, y: -60, z: 220 })
+      ];
+
+      drawPolygon(plane, 'rgba(20, 33, 47, 0.52)', 'rgba(118, 149, 174, 0.18)', 1.2);
+
+      ctx.strokeStyle = 'rgba(149, 183, 210, 0.18)';
+      ctx.lineWidth = 1;
+      for (let step = -180; step <= 180; step += 30) {
+        const a = transformPoint({ x: step, y: -60, z: -180 });
+        const b = transformPoint({ x: step, y: -60, z: 180 });
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+
+        const c = transformPoint({ x: -180, y: -60, z: step });
+        const d = transformPoint({ x: 180, y: -60, z: step });
+        ctx.beginPath();
+        ctx.moveTo(c.x, c.y);
+        ctx.lineTo(d.x, d.y);
+        ctx.stroke();
+      }
+    }
+
+    function drawSolids() {
+      const faces = [];
+
+      solids.forEach((solid) => {
+        const transformed = solid.vertices.map(transformPoint);
+        solid.faces.forEach((face) => {
+          const points = face.indices.map((index) => transformed[index]);
+          const avgDepth = points.reduce((sum, point) => sum + point.depth, 0) / points.length;
+          faces.push({ points, avgDepth, fill: face.fill });
+        });
+      });
+
+      faces.sort((a, b) => a.avgDepth - b.avgDepth);
+      faces.forEach((face) => {
+        drawPolygon(face.points, face.fill, 'rgba(7, 14, 22, 0.48)', 1.15);
+      });
+    }
+
+    function drawAxes() {
+      const origin = transformPoint({ x: 0, y: -60, z: 0 });
+      const xAxis = transformPoint({ x: 120, y: -60, z: 0 });
+      const yAxis = transformPoint({ x: 0, y: 70, z: 0 });
+      const zAxis = transformPoint({ x: 0, y: -60, z: 120 });
+
+      const axes = [
+        { point: xAxis, color: '#ff8c69', label: 'X' },
+        { point: yAxis, color: '#88f0ae', label: 'Y' },
+        { point: zAxis, color: '#7fd5ff', label: 'Z' }
+      ];
+
+      axes.forEach((axis) => {
+        ctx.beginPath();
+        ctx.moveTo(origin.x, origin.y);
+        ctx.lineTo(axis.point.x, axis.point.y);
+        ctx.strokeStyle = axis.color;
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+
+        ctx.fillStyle = axis.color;
+        ctx.beginPath();
+        ctx.arc(axis.point.x, axis.point.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font = '700 13px system-ui, sans-serif';
+        ctx.fillText(axis.label, axis.point.x + 8, axis.point.y - 8);
+      });
+    }
+
+    function detectViewLabel() {
+      const current = { yaw: state.yaw, pitch: state.pitch };
+      const candidates = Object.values(presets);
+      let best = { label: 'Custom', score: Infinity };
+
+      candidates.forEach((preset) => {
+        const score = angleDistance(current.yaw, preset.yaw) + Math.abs(current.pitch - preset.pitch);
+        if (score < best.score) {
+          best = { label: preset.label, score };
+        }
+      });
+
+      if (best.score < 0.24) {
+        if (best.label === 'Isometric' && Math.abs(state.panX) < 3 && Math.abs(state.panY) < 3 && Math.abs(state.zoom - 1.08) < 0.04) {
+          return 'Home';
+        }
+        return best.label;
+      }
+
+      return 'Custom';
+    }
+
+    function updateStatus() {
+      const viewLabel = detectViewLabel();
+      viewValue.textContent = viewLabel;
+      projectionValue.textContent = state.projection === 'perspective' ? 'Perspective' : 'Orthographic';
+      zoomValue.textContent = `${Math.round(state.zoom * 100)}%`;
+      anglesValue.textContent = `${Math.round((state.yaw * 180) / Math.PI)} deg / ${Math.round((state.pitch * 180) / Math.PI)} deg`;
+
+      modeButtons.forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.mode === state.mode);
+      });
+
+      presetButtons.forEach((button) => {
+        const presetName = button.dataset.preset;
+        const label = presets[presetName].label;
+        const active = label === viewLabel || (presetName === 'home' && viewLabel === 'Home') || (presetName === 'iso' && viewLabel === 'Isometric');
+        button.classList.toggle('is-active', active);
+      });
+
+      canvas.classList.toggle('is-panning', state.mode === 'pan' && !state.dragging);
+      canvas.classList.toggle('is-dragging', state.dragging);
+    }
+
+    function drawScene() {
+      if (!viewport.width || !viewport.height) return;
+      ctx.clearRect(0, 0, viewport.width, viewport.height);
+
+      const background = ctx.createLinearGradient(0, 0, 0, viewport.height);
+      background.addColorStop(0, '#101924');
+      background.addColorStop(1, '#152536');
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, viewport.width, viewport.height);
+
+      ctx.fillStyle = 'rgba(115, 168, 207, 0.1)';
+      ctx.beginPath();
+      ctx.ellipse(viewport.width / 2, viewport.height * 0.18, viewport.width * 0.34, viewport.height * 0.24, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      drawWorkplane();
+      drawSolids();
+      drawAxes();
+      updateStatus();
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      setActiveTerm(mode === 'pan' ? 'pan' : 'orbit');
+      updateStatus();
+    }
+
+    function setPreset(name) {
+      const preset = presets[name];
+      state.yaw = preset.yaw;
+      state.pitch = preset.pitch;
+      state.panX = 0;
+      state.panY = 0;
+      if (name === 'home' || name === 'iso') {
+        state.zoom = 1.08;
+      }
+      setActiveTerm(name === 'home' ? 'home' : 'cube');
+      markMission('preset');
+      if (name === 'home') {
+        markMission('home');
+      }
+      drawScene();
+    }
+
+    function changeZoom(multiplier) {
+      state.zoom = clamp(state.zoom * multiplier, 0.55, 2.6);
+      setActiveTerm('zoom');
+      markMission('zoom');
+      drawScene();
+    }
+
+    function fitView() {
+      state.panX = 0;
+      state.panY = 0;
+      state.zoom = 1.08;
+      setActiveTerm('home');
+      drawScene();
+    }
+
+    function toggleProjection() {
+      state.projection = state.projection === 'perspective' ? 'orthographic' : 'perspective';
+      drawScene();
+    }
+
+    modeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        setMode(button.dataset.mode);
+      });
+    });
+
+    actionButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const action = button.dataset.action;
+        if (action === 'zoom-in') changeZoom(1.12);
+        if (action === 'zoom-out') changeZoom(0.89);
+        if (action === 'fit') fitView();
+        if (action === 'projection') toggleProjection();
+        if (action === 'home') setPreset('home');
+      });
+    });
+
+    presetButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        setPreset(button.dataset.preset);
+      });
+    });
+
+    termCards.forEach((card) => {
+      const activateCard = () => setActiveTerm(card.dataset.term);
+      card.addEventListener('click', activateCard);
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          activateCard();
+        }
+      });
+    });
+
+    resetMissionButton.addEventListener('click', resetMissions);
+
+    let dragOrigin = null;
+
+    canvas.addEventListener('pointerdown', (event) => {
+      dragOrigin = { x: event.clientX, y: event.clientY };
+      state.dragging = true;
+      try {
+        canvas.setPointerCapture(event.pointerId);
+      } catch (error) {
+        // Pointer capture is optional for this simulation.
+      }
+      updateStatus();
+    });
+
+    canvas.addEventListener('pointermove', (event) => {
+      if (!state.dragging || !dragOrigin) return;
+      const dx = event.clientX - dragOrigin.x;
+      const dy = event.clientY - dragOrigin.y;
+      dragOrigin = { x: event.clientX, y: event.clientY };
+
+      if (state.mode === 'orbit') {
+        state.yaw += dx * 0.012;
+        state.pitch = clamp(state.pitch + dy * 0.012, -1.45, 1.45);
+        setActiveTerm('orbit');
+        markMission('orbit');
+      } else {
+        state.panX += dx;
+        state.panY += dy;
+        setActiveTerm('pan');
+        markMission('pan');
+      }
+
+      drawScene();
+    });
+
+    function endDrag(event) {
+      if (state.dragging) {
+        state.dragging = false;
+        dragOrigin = null;
+        try {
+          canvas.releasePointerCapture(event.pointerId);
+        } catch (error) {
+          // Pointer capture may already be released.
+        }
+        updateStatus();
+      }
+    }
+
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointerleave', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    canvas.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      changeZoom(event.deltaY < 0 ? 1.08 : 0.92);
+    }, { passive: false });
+
+    window.addEventListener('keydown', (event) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+      if (event.key === 'ArrowLeft' && event.shiftKey) {
+        event.preventDefault();
+        state.panX -= 12;
+        setActiveTerm('pan');
+        markMission('pan');
+        drawScene();
+        return;
+      }
+      if (event.key === 'ArrowRight' && event.shiftKey) {
+        event.preventDefault();
+        state.panX += 12;
+        setActiveTerm('pan');
+        markMission('pan');
+        drawScene();
+        return;
+      }
+      if (event.key === 'ArrowUp' && event.shiftKey) {
+        event.preventDefault();
+        state.panY -= 12;
+        setActiveTerm('pan');
+        markMission('pan');
+        drawScene();
+        return;
+      }
+      if (event.key === 'ArrowDown' && event.shiftKey) {
+        event.preventDefault();
+        state.panY += 12;
+        setActiveTerm('pan');
+        markMission('pan');
+        drawScene();
+        return;
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        state.yaw -= 0.08;
+        setActiveTerm('orbit');
+        markMission('orbit');
+        drawScene();
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        state.yaw += 0.08;
+        setActiveTerm('orbit');
+        markMission('orbit');
+        drawScene();
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        state.pitch = clamp(state.pitch - 0.08, -1.45, 1.45);
+        setActiveTerm('orbit');
+        markMission('orbit');
+        drawScene();
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        state.pitch = clamp(state.pitch + 0.08, -1.45, 1.45);
+        setActiveTerm('orbit');
+        markMission('orbit');
+        drawScene();
+      }
+      if (event.key === '+' || event.key === '=') {
+        event.preventDefault();
+        changeZoom(1.08);
+      }
+      if (event.key === '-') {
+        event.preventDefault();
+        changeZoom(0.92);
+      }
+      if (event.key === '1') {
+        event.preventDefault();
+        setPreset('front');
+      }
+      if (event.key === '2') {
+        event.preventDefault();
+        setPreset('right');
+      }
+      if (event.key === '3') {
+        event.preventDefault();
+        setPreset('top');
+      }
+      if (event.key === '4') {
+        event.preventDefault();
+        setPreset('home');
+      }
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    setActiveTerm('orbit');
+    resetMissions();
+    resizeCanvas();
+  </script>
+</body>
+</html>
