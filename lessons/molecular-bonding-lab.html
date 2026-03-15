@@ -1,0 +1,1546 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Molecular Bonding Lab · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Chemistry Lesson 02 - use an interactive Atom Snapper lab to explore ionic and covalent bonding, valence shells, the octet rule, electronegativity, and why salt and water behave differently." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    :root {
+      --bond-green: #34c759;
+      --bond-teal: #20c5c8;
+      --bond-amber: #ffb347;
+      --bond-ink: #163047;
+      --bond-muted: #496175;
+      --bond-line: rgba(190, 206, 219, 0.9);
+      --bond-card: rgba(255, 255, 255, 0.96);
+      --bond-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    body {
+      margin: 0;
+      color: var(--bond-ink);
+      background:
+        radial-gradient(1100px 520px at 12% -10%, rgba(52, 199, 89, 0.14), transparent 58%),
+        radial-gradient(900px 460px at 100% 0%, rgba(32, 197, 200, 0.16), transparent 54%),
+        linear-gradient(180deg, #f7fbfb 0%, #edf4f6 100%);
+    }
+
+    .bondlab-page {
+      padding-bottom: 3rem;
+    }
+
+    .bondlab-hero {
+      padding: 0.45rem 0 1.35rem;
+      text-align: left;
+    }
+
+    .bondlab-hero h1 {
+      margin-left: 0;
+      margin-right: 0;
+      max-width: 13ch;
+      font-size: clamp(1.8rem, 4vw, 2.85rem);
+      letter-spacing: -0.04em;
+      line-height: 1.03;
+    }
+
+    .bondlab-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem 0.7rem;
+      margin: 0.6rem 0 0;
+      color: #617486;
+      font-size: 0.83rem;
+      font-weight: 600;
+    }
+
+    .bondlab-hero-meta .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.35;
+      align-self: center;
+    }
+
+    .bondlab-lede,
+    .bondlab-section-head p,
+    .bondlab-primer-card p,
+    .bondlab-readout-summary,
+    .bondlab-viewer-note,
+    .bondlab-observe-list li,
+    .bondlab-property-list li,
+    .bondlab-compare-card p {
+      color: var(--bond-muted);
+      line-height: 1.64;
+    }
+
+    .bondlab-lede {
+      max-width: 72ch;
+      margin: 0.75rem 0 0;
+      font-size: 0.98rem;
+    }
+
+    .bondlab-primer,
+    .bondlab-section,
+    .bondlab-compare-card {
+      border-radius: 24px;
+      border: 1px solid var(--bond-line);
+      background: var(--bond-card);
+      box-shadow: var(--bond-shadow);
+    }
+
+    .bondlab-primer,
+    .bondlab-section {
+      padding: 1.15rem;
+      margin-bottom: 1rem;
+    }
+
+    .bondlab-primer {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .bondlab-primer-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .bondlab-primer-card {
+      padding: 1rem;
+      border-radius: 20px;
+      border: 1px solid rgba(204, 216, 226, 0.92);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 250, 251, 0.96));
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
+    }
+
+    .bondlab-primer-card--wide {
+      background:
+        radial-gradient(circle at top right, rgba(52, 199, 89, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(247, 253, 249, 0.98), rgba(244, 249, 250, 0.96));
+    }
+
+    .bondlab-primer-card h2,
+    .bondlab-primer-card h3,
+    .bondlab-section-head h2,
+    .bondlab-panel-card h3,
+    .bondlab-compare-card h3 {
+      margin: 0 0 0.35rem;
+      letter-spacing: -0.02em;
+    }
+
+    .bondlab-primer-card h2 {
+      font-size: 1.18rem;
+    }
+
+    .bondlab-primer-card h3,
+    .bondlab-panel-card h3,
+    .bondlab-compare-card h3 {
+      font-size: 1rem;
+    }
+
+    .bondlab-kicker {
+      margin: 0 0 0.4rem;
+      color: #6b7f92;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .bondlab-section-head {
+      display: grid;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+    }
+
+    .bondlab-section-head p {
+      margin: 0;
+      max-width: 74ch;
+    }
+
+    .bondlab-lab-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.84fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .bondlab-viewer-card {
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(16, 30, 40, 0.9);
+      background:
+        linear-gradient(180deg, rgba(10, 21, 29, 0.98), rgba(12, 28, 40, 0.98));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 22px 42px rgba(12, 18, 28, 0.22);
+    }
+
+    .bondlab-toolbar {
+      padding: 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(8, 15, 21, 0.72);
+    }
+
+    .bondlab-toolbar-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+    }
+
+    .bondlab-pair-button,
+    .bondlab-action-button {
+      appearance: none;
+      border-radius: 999px;
+      border: 1px solid rgba(213, 232, 236, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+      color: #eff8fb;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.48rem 0.8rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .bondlab-pair-button:hover,
+    .bondlab-action-button:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 196, 129, 0.4);
+    }
+
+    .bondlab-pair-button.is-active {
+      background: linear-gradient(180deg, rgba(46, 186, 113, 0.34), rgba(30, 160, 179, 0.22));
+      border-color: rgba(90, 222, 166, 0.52);
+    }
+
+    .bondlab-action-button[data-action="snap"] {
+      background: linear-gradient(180deg, rgba(255, 179, 86, 0.34), rgba(255, 149, 71, 0.2));
+      border-color: rgba(255, 186, 116, 0.48);
+    }
+
+    .bondlab-stage {
+      position: relative;
+      min-height: 460px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 12%, rgba(84, 145, 179, 0.18), transparent 40%),
+        linear-gradient(180deg, #10202d 0%, #132837 100%);
+      touch-action: none;
+    }
+
+    .bondlab-stage::before,
+    .bondlab-stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .bondlab-stage::before {
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.46), transparent 92%);
+    }
+
+    .bondlab-stage::after {
+      background:
+        radial-gradient(circle at center, rgba(108, 168, 202, 0.14), transparent 34%);
+    }
+
+    .bondlab-stage-center {
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      transform: translate(-50%, -50%);
+      color: rgba(225, 238, 245, 0.42);
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      pointer-events: none;
+      text-align: center;
+    }
+
+    .bondlab-stage.has-bond .bondlab-stage-center {
+      opacity: 0.2;
+    }
+
+    .bondlab-atom {
+      position: absolute;
+      width: 148px;
+      height: 148px;
+      border-radius: 50%;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08), transparent 54%),
+        radial-gradient(circle at 30% 28%, var(--atom-glow), transparent 38%),
+        linear-gradient(180deg, var(--atom-deep), rgba(9, 14, 18, 0.92));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        0 16px 30px rgba(3, 10, 16, 0.28),
+        0 0 0 1px rgba(255, 255, 255, 0.04);
+      transform: translate(-50%, -50%);
+      transition: left 0.45s ease, top 0.45s ease, box-shadow 0.25s ease, transform 0.45s ease;
+    }
+
+    .bondlab-atom.is-draggable:hover {
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.09),
+        0 20px 34px rgba(3, 10, 16, 0.34),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    .bondlab-atom.is-dragging {
+      cursor: grabbing;
+      transition: none;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 24px 38px rgba(3, 10, 16, 0.38),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+      z-index: 6;
+    }
+
+    .bondlab-atom.is-bonded {
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 24px 42px rgba(3, 10, 16, 0.42),
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 0 0 10px rgba(255, 255, 255, 0.03);
+    }
+
+    .bondlab-atom-shell {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(223, 243, 250, 0.16);
+      pointer-events: none;
+    }
+
+    .bondlab-atom-shell--inner {
+      inset: 38px;
+    }
+
+    .bondlab-atom-shell--outer {
+      inset: 16px;
+    }
+
+    .bondlab-electrons {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .bondlab-electron {
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #eafcff;
+      box-shadow: 0 0 0 3px rgba(234, 252, 255, 0.08), 0 0 18px rgba(198, 245, 255, 0.28);
+      transform: translate(-50%, -50%);
+    }
+
+    .bondlab-nucleus {
+      position: absolute;
+      inset: 46px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      gap: 0.2rem;
+      background:
+        radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.22), transparent 38%),
+        linear-gradient(180deg, var(--atom-core), rgba(16, 21, 28, 0.94));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+    }
+
+    .bondlab-symbol {
+      font-size: 1.5rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .bondlab-name {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: rgba(239, 248, 250, 0.84);
+    }
+
+    .bondlab-valence {
+      display: block;
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(214, 240, 246, 0.78);
+    }
+
+    .bondlab-charge {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      min-width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: #0e2131;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 8px 18px rgba(5, 9, 14, 0.2);
+      opacity: 0;
+      transform: scale(0.7);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      pointer-events: none;
+    }
+
+    .bondlab-atom.has-charge .bondlab-charge {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .bondlab-shared-pair,
+    .bondlab-transfer-tag,
+    .bondlab-status-banner {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .bondlab-shared-pair {
+      width: 88px;
+      height: 40px;
+      border-radius: 999px;
+      display: grid;
+      grid-auto-flow: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      background: rgba(240, 250, 252, 0.92);
+      border: 1px solid rgba(190, 215, 222, 0.9);
+      box-shadow: 0 12px 22px rgba(5, 15, 20, 0.2);
+      opacity: 0;
+      transition: opacity 0.28s ease, transform 0.28s ease, left 0.4s ease, top 0.4s ease;
+    }
+
+    .bondlab-shared-pair span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #89e9ff, #3cbfd5);
+      box-shadow: 0 0 0 3px rgba(76, 202, 222, 0.12);
+    }
+
+    .bondlab-shared-pair small {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #23485f;
+    }
+
+    .bondlab-shared-pair.is-visible {
+      opacity: 1;
+    }
+
+    .bondlab-transfer-tag {
+      min-width: 54px;
+      min-height: 32px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.2rem 0.55rem;
+      background: linear-gradient(180deg, rgba(255, 247, 224, 0.96), rgba(255, 230, 177, 0.94));
+      border: 1px solid rgba(255, 205, 113, 0.9);
+      color: #5c3c0e;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      box-shadow: 0 12px 22px rgba(14, 22, 30, 0.2);
+      opacity: 0;
+      transition: left 0.72s ease, top 0.72s ease, opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .bondlab-transfer-tag.is-visible {
+      opacity: 1;
+    }
+
+    .bondlab-status-banner {
+      top: auto;
+      bottom: 18px;
+      min-height: 36px;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(194, 220, 230, 0.18);
+      background: rgba(8, 16, 22, 0.76);
+      color: rgba(229, 241, 246, 0.92);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      max-width: calc(100% - 1.6rem);
+      text-align: center;
+    }
+
+    .bondlab-status-banner[data-state="ionic"] {
+      border-color: rgba(255, 186, 116, 0.34);
+      color: #ffe6bc;
+    }
+
+    .bondlab-status-banner[data-state="covalent"] {
+      border-color: rgba(111, 227, 204, 0.34);
+      color: #d8fff6;
+    }
+
+    .bondlab-viewer-note {
+      margin: 0;
+      padding: 0.9rem;
+      font-size: 0.84rem;
+      color: rgba(226, 239, 246, 0.78);
+    }
+
+    .bondlab-panel-stack {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .bondlab-panel-card {
+      padding: 1rem;
+      border-radius: 22px;
+      border: 1px solid rgba(194, 206, 218, 0.92);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 252, 0.96));
+      box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+    }
+
+    .bondlab-result-header {
+      display: grid;
+      gap: 0.45rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .bondlab-result-badge {
+      width: fit-content;
+      min-height: 1.75rem;
+      padding: 0.26rem 0.68rem;
+      border-radius: 999px;
+      border: 1px solid rgba(179, 198, 212, 0.58);
+      background: rgba(244, 248, 250, 0.88);
+      color: #224964;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .bondlab-result-badge[data-type="ionic"] {
+      background: rgba(255, 245, 224, 0.94);
+      border-color: rgba(255, 195, 121, 0.66);
+      color: #7a4c10;
+    }
+
+    .bondlab-result-badge[data-type="covalent"] {
+      background: rgba(226, 255, 245, 0.94);
+      border-color: rgba(111, 227, 204, 0.6);
+      color: #18584b;
+    }
+
+    .bondlab-readout-summary {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    .bondlab-readout-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.9rem;
+    }
+
+    .bondlab-readout-card {
+      padding: 0.82rem;
+      border-radius: 18px;
+      background: rgba(241, 246, 250, 0.92);
+      border: 1px solid rgba(201, 213, 224, 0.88);
+      display: grid;
+      gap: 0.28rem;
+    }
+
+    .bondlab-readout-card span {
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b7f92;
+    }
+
+    .bondlab-readout-card strong {
+      font-size: 0.92rem;
+      letter-spacing: -0.01em;
+      color: #17344b;
+    }
+
+    .bondlab-meter {
+      margin-top: 0.95rem;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .bondlab-meter-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      font-size: 0.8rem;
+      color: #496175;
+      font-weight: 700;
+    }
+
+    .bondlab-meter-track {
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(220, 231, 237, 0.84);
+      box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    .bondlab-meter-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(88, 214, 161, 0.9), rgba(255, 179, 86, 0.95));
+      transition: width 0.28s ease;
+    }
+
+    .bondlab-meter-scale {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #74889a;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .bondlab-octet-note {
+      margin: 0.9rem 0 0;
+      font-size: 0.88rem;
+      color: var(--bond-muted);
+      line-height: 1.6;
+    }
+
+    .bondlab-property-list,
+    .bondlab-observe-list {
+      margin: 0.85rem 0 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .bondlab-property-list li::marker,
+    .bondlab-observe-list li::marker {
+      color: var(--bond-green);
+    }
+
+    .bondlab-compare-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .bondlab-compare-card {
+      padding: 1.05rem;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .bondlab-compare-card p {
+      margin: 0;
+    }
+
+    .bondlab-compare-card--salt {
+      background:
+        radial-gradient(circle at top right, rgba(255, 192, 104, 0.16), transparent 34%),
+        linear-gradient(180deg, rgba(255, 252, 245, 0.98), rgba(249, 246, 239, 0.96));
+    }
+
+    .bondlab-compare-card--water {
+      background:
+        radial-gradient(circle at top right, rgba(68, 198, 210, 0.16), transparent 34%),
+        linear-gradient(180deg, rgba(245, 252, 253, 0.98), rgba(239, 247, 249, 0.96));
+    }
+
+    .bondlab-compare-card--rule {
+      background:
+        radial-gradient(circle at top right, rgba(52, 199, 89, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(246, 253, 248, 0.98), rgba(241, 248, 244, 0.96));
+    }
+
+    @media (max-width: 980px) {
+      .bondlab-primer-grid,
+      .bondlab-lab-grid,
+      .bondlab-compare-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .bondlab-stage {
+        min-height: 420px;
+      }
+
+      .bondlab-toolbar {
+        align-items: flex-start;
+      }
+
+      .bondlab-readout-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bondlab-atom {
+        width: 130px;
+        height: 130px;
+      }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="bondlab-page">
+    <section class="hero bondlab-hero">
+      <p class="eyebrow">Chemistry · Lesson 02</p>
+      <h1>Molecular Bonding Lab</h1>
+      <div class="bondlab-hero-meta" aria-label="Lesson focus">
+        <span>Atom Snapper simulation</span>
+        <span class="dot"></span>
+        <span>Ionic and covalent bonding</span>
+        <span class="dot"></span>
+        <span>Valence shells and electronegativity</span>
+      </div>
+      <p class="bondlab-lede">The periodic table tells you which electrons sit on the outside of an atom. Bonding explains what those outer electrons do next. In this lab, drag atoms together and watch whether electrons transfer or overlap, then connect that behavior to crystal salts, polar molecules, and the reason water is liquid at room temperature.</p>
+    </section>
+
+    <section class="bondlab-primer" aria-label="Bonding concepts">
+      <div class="bondlab-primer-card bondlab-primer-card--wide">
+        <p class="bondlab-kicker">Big Idea</p>
+        <h2>Atoms react because outer shells want to become more stable.</h2>
+        <p>Most atoms in this lesson are trying to reach 8 valence electrons, which is called the octet rule. Hydrogen is the special case: its first shell is full with 2 electrons. Metals tend to give electrons away more easily. Nonmetals tend to pull electrons toward themselves.</p>
+      </div>
+      <div class="bondlab-primer-grid">
+        <article class="bondlab-primer-card">
+          <p class="bondlab-kicker">Shells</p>
+          <h3>Valence Electrons</h3>
+          <p>The electrons in the outermost shell control most chemical bonding. If that shell is nearly empty or nearly full, the atom is more likely to react.</p>
+        </article>
+        <article class="bondlab-primer-card">
+          <p class="bondlab-kicker">Stability</p>
+          <h3>Octet Rule</h3>
+          <p>Main-group atoms often become more stable when their outer shell reaches 8 electrons. Hydrogen follows a duet rule and becomes stable with 2.</p>
+        </article>
+        <article class="bondlab-primer-card">
+          <p class="bondlab-kicker">Pull</p>
+          <h3>Electronegativity</h3>
+          <p>Electronegativity measures how strongly an atom attracts electrons in a bond. A large difference often leads to ionic transfer. A smaller difference usually leads to sharing.</p>
+        </article>
+        <article class="bondlab-primer-card">
+          <p class="bondlab-kicker">Outcome</p>
+          <h3>Ionic vs Covalent</h3>
+          <p>Metal + nonmetal often becomes ionic. Two nonmetals usually become covalent. Those different structures help explain why substances have different physical properties.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="bondlab-section" aria-labelledby="bondlab-title">
+      <div class="bondlab-section-head">
+        <p class="bondlab-kicker">Interactive Lab</p>
+        <h2 id="bondlab-title">Atom Snapper</h2>
+        <p>Choose a pair, then drag the atoms close together or use the <strong>Snap together</strong> button. Metal + nonmetal pairs should transfer electrons. Two nonmetals should overlap and share electrons.</p>
+      </div>
+
+      <div class="bondlab-lab-grid">
+        <div class="bondlab-viewer-card">
+          <div class="bondlab-toolbar">
+            <div class="bondlab-toolbar-group" aria-label="Pair presets">
+              <button type="button" class="bondlab-pair-button is-active" data-pair="na-cl">Na + Cl</button>
+              <button type="button" class="bondlab-pair-button" data-pair="mg-o">Mg + O</button>
+              <button type="button" class="bondlab-pair-button" data-pair="h-cl">H + Cl</button>
+              <button type="button" class="bondlab-pair-button" data-pair="cl-cl">Cl + Cl</button>
+            </div>
+            <div class="bondlab-toolbar-group" aria-label="Lab actions">
+              <button type="button" class="bondlab-action-button" data-action="snap">Snap together</button>
+              <button type="button" class="bondlab-action-button" data-action="reset">Reset pair</button>
+            </div>
+          </div>
+
+          <div class="bondlab-stage" id="bondStage">
+            <div class="bondlab-stage-center">Drag atoms together</div>
+
+            <div class="bondlab-shared-pair" id="sharedPair" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <small>shared</small>
+            </div>
+
+            <div class="bondlab-transfer-tag" id="transferTag" aria-hidden="true"></div>
+
+            <div class="bondlab-status-banner" id="statusBanner" aria-live="polite" data-state="ready">
+              Drag the pair together to test the bond.
+            </div>
+
+            <div class="bondlab-atom is-draggable" id="atomLeft" data-side="left">
+              <div class="bondlab-atom-shell bondlab-atom-shell--inner"></div>
+              <div class="bondlab-atom-shell bondlab-atom-shell--outer"></div>
+              <div class="bondlab-electrons"></div>
+              <div class="bondlab-nucleus">
+                <span class="bondlab-symbol"></span>
+                <small class="bondlab-name"></small>
+                <span class="bondlab-valence"></span>
+              </div>
+              <div class="bondlab-charge"></div>
+            </div>
+
+            <div class="bondlab-atom is-draggable" id="atomRight" data-side="right">
+              <div class="bondlab-atom-shell bondlab-atom-shell--inner"></div>
+              <div class="bondlab-atom-shell bondlab-atom-shell--outer"></div>
+              <div class="bondlab-electrons"></div>
+              <div class="bondlab-nucleus">
+                <span class="bondlab-symbol"></span>
+                <small class="bondlab-name"></small>
+                <span class="bondlab-valence"></span>
+              </div>
+              <div class="bondlab-charge"></div>
+            </div>
+          </div>
+
+          <p class="bondlab-viewer-note">The lab simplifies Lewis-style bonding on purpose. Use it to watch the decision: transfer or share. Then read the chemistry notes on the right for the full explanation.</p>
+        </div>
+
+        <aside class="bondlab-panel-stack">
+          <div class="bondlab-panel-card">
+            <p class="bondlab-kicker">Lab Readout</p>
+            <div class="bondlab-result-header">
+              <span class="bondlab-result-badge" id="resultBadge" data-type="ready">Prediction</span>
+              <h3 id="pairTitle">Sodium + Chlorine</h3>
+            </div>
+            <p class="bondlab-readout-summary" id="resultSummary">A metal with a loose outer electron is meeting a nonmetal that strongly wants one more. Bring them together to see whether the electron transfers.</p>
+
+            <div class="bondlab-readout-grid">
+              <div class="bondlab-readout-card">
+                <span>Bond Type</span>
+                <strong id="bondTypeValue">Metal + nonmetal</strong>
+              </div>
+              <div class="bondlab-readout-card">
+                <span>Electron Behavior</span>
+                <strong id="electronBehaviorValue">Watch for transfer</strong>
+              </div>
+              <div class="bondlab-readout-card">
+                <span>Electronegativity Gap</span>
+                <strong id="deltaValue">2.23</strong>
+              </div>
+              <div class="bondlab-readout-card">
+                <span>Structure</span>
+                <strong id="structureValue">Likely ionic lattice</strong>
+              </div>
+            </div>
+
+            <div class="bondlab-meter" aria-label="Electronegativity comparison">
+              <div class="bondlab-meter-head">
+                <span id="leftEN">Na 0.93</span>
+                <span id="rightEN">Cl 3.16</span>
+              </div>
+              <div class="bondlab-meter-track">
+                <div class="bondlab-meter-fill" id="meterFill"></div>
+              </div>
+              <div class="bondlab-meter-scale">
+                <span>small gap</span>
+                <span>large gap</span>
+              </div>
+            </div>
+
+            <p class="bondlab-octet-note" id="octetNote">Sodium can lose 1 valence electron and reveal a full inner shell. Chlorine can gain 1 and complete its octet.</p>
+
+            <ul class="bondlab-property-list" id="propertyList">
+              <li>Usually forms a repeating crystal lattice.</li>
+              <li>High melting point compared with many molecular substances.</li>
+              <li>Conducts electricity when melted or dissolved in water.</li>
+            </ul>
+          </div>
+
+          <div class="bondlab-panel-card">
+            <p class="bondlab-kicker">What to Notice</p>
+            <h3>Use the movement to explain the bond.</h3>
+            <ul class="bondlab-observe-list">
+              <li>If one atom clearly gives electrons away, you are looking at ionic bonding and ion charges matter.</li>
+              <li>If the atoms overlap around a shared pair, you are looking at covalent bonding and the electrons belong to both atoms.</li>
+              <li>Bigger electronegativity gaps push the bond toward transfer. Smaller gaps favor sharing.</li>
+              <li>Structure affects properties: lattices behave differently from separate molecules.</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="bondlab-section" aria-labelledby="compare-title">
+      <div class="bondlab-section-head">
+        <p class="bondlab-kicker">Properties</p>
+        <h2 id="compare-title">Why salt is a crystal but water is a liquid</h2>
+        <p>Bonding behavior does not stop once the atoms connect. The way particles arrange in bulk changes melting point, state of matter, brittleness, and conductivity.</p>
+      </div>
+
+      <div class="bondlab-compare-grid">
+        <article class="bondlab-compare-card bondlab-compare-card--salt">
+          <p class="bondlab-kicker">Ionic Example</p>
+          <h3>Salt forms a crystal lattice.</h3>
+          <p>In sodium chloride, positive and negative ions lock into a repeating three-dimensional pattern. That rigid ionic lattice makes salt a brittle crystal with a high melting point.</p>
+        </article>
+        <article class="bondlab-compare-card bondlab-compare-card--water">
+          <p class="bondlab-kicker">Covalent Example</p>
+          <h3>Water is made of separate H2O molecules.</h3>
+          <p>Inside each water molecule, electrons are shared covalently. Between molecules, hydrogen bonding pulls them together strongly enough for a liquid, but not into the same rigid kind of ionic crystal lattice that salt forms.</p>
+        </article>
+        <article class="bondlab-compare-card bondlab-compare-card--rule">
+          <p class="bondlab-kicker">Rule of Thumb</p>
+          <h3>Electron arrangement predicts physical behavior.</h3>
+          <p>If atoms become charged ions and build a lattice, expect crystal-like behavior. If atoms stay inside discrete molecules, expect lower melting points and states like gases or liquids more often.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const atomCatalog = {
+      Na: {
+        symbol: 'Na',
+        name: 'Sodium',
+        type: 'metal',
+        valence: 1,
+        fullShell: 8,
+        electronegativity: 0.93,
+        glow: 'rgba(255, 183, 94, 0.38)',
+        deep: '#3a2414',
+        core: '#9f6024'
+      },
+      Cl: {
+        symbol: 'Cl',
+        name: 'Chlorine',
+        type: 'nonmetal',
+        valence: 7,
+        fullShell: 8,
+        electronegativity: 3.16,
+        glow: 'rgba(102, 241, 158, 0.38)',
+        deep: '#103125',
+        core: '#22724e'
+      },
+      Mg: {
+        symbol: 'Mg',
+        name: 'Magnesium',
+        type: 'metal',
+        valence: 2,
+        fullShell: 8,
+        electronegativity: 1.31,
+        glow: 'rgba(255, 174, 104, 0.36)',
+        deep: '#3f2719',
+        core: '#b46b2d'
+      },
+      O: {
+        symbol: 'O',
+        name: 'Oxygen',
+        type: 'nonmetal',
+        valence: 6,
+        fullShell: 8,
+        electronegativity: 3.44,
+        glow: 'rgba(105, 226, 222, 0.36)',
+        deep: '#0d2831',
+        core: '#1b7284'
+      },
+      H: {
+        symbol: 'H',
+        name: 'Hydrogen',
+        type: 'nonmetal',
+        valence: 1,
+        fullShell: 2,
+        electronegativity: 2.2,
+        glow: 'rgba(147, 219, 255, 0.34)',
+        deep: '#14324a',
+        core: '#26628a'
+      }
+    };
+
+    const pairPresets = {
+      'na-cl': {
+        id: 'na-cl',
+        left: 'Na',
+        right: 'Cl',
+        title: 'Sodium + Chlorine',
+        preview: 'A metal with a loose outer electron is meeting a nonmetal that strongly wants one more. Bring them together to see whether the electron transfers.',
+        result: 'Sodium transfers its one valence electron to chlorine. The atoms become oppositely charged ions, and ionic attraction locks them into a crystal lattice.',
+        electronText: '1 electron transferred',
+        structure: 'Ionic lattice',
+        octet: 'Sodium loses 1 valence electron and reveals a full inner shell. Chlorine gains 1 electron and completes its octet of 8.',
+        properties: [
+          'Usually forms a repeating crystal lattice.',
+          'High melting point compared with many molecular substances.',
+          'Conducts electricity when melted or dissolved in water.'
+        ]
+      },
+      'mg-o': {
+        id: 'mg-o',
+        left: 'Mg',
+        right: 'O',
+        title: 'Magnesium + Oxygen',
+        preview: 'Magnesium has 2 outer electrons it can lose, while oxygen needs 2 more to fill its valence shell. Drag them together to test the transfer.',
+        result: 'Magnesium gives up 2 electrons to oxygen. Both atoms reach more stable shells, and the resulting ions fit into a strong ionic solid.',
+        electronText: '2 electrons transferred',
+        structure: 'Ionic lattice',
+        octet: 'Magnesium loses 2 valence electrons and reveals a full inner shell. Oxygen gains 2 electrons and completes an octet of 8.',
+        properties: [
+          'Builds a rigid ionic solid with strong attractions.',
+          'Very high melting point because many ions pull on each other.',
+          'Harder and less molecule-like than covalent substances.'
+        ]
+      },
+      'h-cl': {
+        id: 'h-cl',
+        left: 'H',
+        right: 'Cl',
+        title: 'Hydrogen + Chlorine',
+        preview: 'These are two nonmetals, so expect sharing instead of full transfer. Chlorine still pulls harder because it is more electronegative.',
+        result: 'Hydrogen and chlorine overlap around a shared pair of electrons. The sharing is uneven, so this is a polar covalent bond rather than an ionic one.',
+        electronText: '1 shared pair',
+        structure: 'Polar covalent molecule',
+        octet: 'Hydrogen fills its first shell with 2 electrons. Chlorine counts the shared pair and reaches a stable outer shell of 8.',
+        properties: [
+          'Forms discrete molecules instead of a giant ionic lattice.',
+          'Electrons are shared unevenly because chlorine is more electronegative.',
+          'Molecular substances often have lower melting and boiling points than ionic salts.'
+        ]
+      },
+      'cl-cl': {
+        id: 'cl-cl',
+        left: 'Cl',
+        right: 'Cl',
+        title: 'Chlorine + Chlorine',
+        preview: 'Two identical nonmetals have the same electronegativity, so expect equal sharing when the atoms overlap.',
+        result: 'Each chlorine contributes one electron to a shared pair. Because the atoms pull equally, the covalent bond is nonpolar.',
+        electronText: '1 shared pair',
+        structure: 'Nonpolar covalent molecule',
+        octet: 'Each chlorine counts the shared pair and reaches an octet of 8 valence electrons.',
+        properties: [
+          'Forms separate molecules rather than a crystal lattice.',
+          'Equal sharing means no strongly positive or negative end.',
+          'Usually has a much lower boiling point than an ionic compound.'
+        ]
+      }
+    };
+
+    const stage = document.getElementById('bondStage');
+    const atomElements = {
+      left: document.getElementById('atomLeft'),
+      right: document.getElementById('atomRight')
+    };
+
+    const pairButtons = Array.from(document.querySelectorAll('[data-pair]'));
+    const actionButtons = Array.from(document.querySelectorAll('[data-action]'));
+    const sharedPair = document.getElementById('sharedPair');
+    const transferTag = document.getElementById('transferTag');
+    const statusBanner = document.getElementById('statusBanner');
+
+    const resultBadge = document.getElementById('resultBadge');
+    const pairTitle = document.getElementById('pairTitle');
+    const resultSummary = document.getElementById('resultSummary');
+    const bondTypeValue = document.getElementById('bondTypeValue');
+    const electronBehaviorValue = document.getElementById('electronBehaviorValue');
+    const deltaValue = document.getElementById('deltaValue');
+    const structureValue = document.getElementById('structureValue');
+    const leftEN = document.getElementById('leftEN');
+    const rightEN = document.getElementById('rightEN');
+    const meterFill = document.getElementById('meterFill');
+    const octetNote = document.getElementById('octetNote');
+    const propertyList = document.getElementById('propertyList');
+
+    const atomState = {
+      left: { x: 0, y: 0 },
+      right: { x: 0, y: 0 }
+    };
+
+    const bondState = {
+      active: false,
+      type: null,
+      donor: null
+    };
+
+    let currentPair = pairPresets['na-cl'];
+    let dragState = null;
+    let transferTimeout = null;
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function atomRef(side) {
+      const root = atomElements[side];
+      return {
+        root,
+        symbol: root.querySelector('.bondlab-symbol'),
+        name: root.querySelector('.bondlab-name'),
+        valence: root.querySelector('.bondlab-valence'),
+        electrons: root.querySelector('.bondlab-electrons'),
+        charge: root.querySelector('.bondlab-charge')
+      };
+    }
+
+    const atomRefs = {
+      left: atomRef('left'),
+      right: atomRef('right')
+    };
+
+    function getPairGap() {
+      const leftAtom = atomCatalog[currentPair.left];
+      const rightAtom = atomCatalog[currentPair.right];
+      return Math.abs(leftAtom.electronegativity - rightAtom.electronegativity);
+    }
+
+    function getPredictedType() {
+      const leftAtom = atomCatalog[currentPair.left];
+      const rightAtom = atomCatalog[currentPair.right];
+
+      if (
+        (leftAtom.type === 'metal' && rightAtom.type === 'nonmetal') ||
+        (leftAtom.type === 'nonmetal' && rightAtom.type === 'metal')
+      ) {
+        return 'ionic';
+      }
+
+      if (leftAtom.type === 'nonmetal' && rightAtom.type === 'nonmetal') {
+        return 'covalent';
+      }
+
+      return 'metallic';
+    }
+
+    function formatCharge(count, sign) {
+      return count === 1 ? sign : `${count}${sign}`;
+    }
+
+    function getElectronDisplay(side) {
+      const atomSymbol = currentPair[side];
+      const atom = atomCatalog[atomSymbol];
+
+      if (!bondState.active || bondState.type === 'covalent') {
+        return atom.valence;
+      }
+
+      const transferCount = currentPair.id === 'mg-o' ? 2 : 1;
+      if (side === bondState.donor) {
+        return Math.max(0, atom.valence - transferCount);
+      }
+
+      return Math.min(atom.fullShell, atom.valence + transferCount);
+    }
+
+    function getChargeDisplay(side) {
+      if (!bondState.active || bondState.type !== 'ionic') {
+        return '';
+      }
+
+      const transferCount = currentPair.id === 'mg-o' ? 2 : 1;
+      return side === bondState.donor
+        ? formatCharge(transferCount, '+')
+        : formatCharge(transferCount, '-');
+    }
+
+    function placeElectronDots(container, count) {
+      container.innerHTML = '';
+      if (count <= 0) return;
+
+      const angles = count === 1
+        ? [-90]
+        : Array.from({ length: count }, (_, index) => (-90 + (360 / count) * index));
+
+      angles.forEach((angle) => {
+        const electron = document.createElement('span');
+        electron.className = 'bondlab-electron';
+        const radians = angle * Math.PI / 180;
+        const radius = 56;
+        electron.style.left = `calc(50% + ${Math.cos(radians) * radius}px)`;
+        electron.style.top = `calc(50% + ${Math.sin(radians) * radius}px)`;
+        container.appendChild(electron);
+      });
+    }
+
+    function renderAtom(side) {
+      const ref = atomRefs[side];
+      const atom = atomCatalog[currentPair[side]];
+      const chargeText = getChargeDisplay(side);
+      const displayedElectrons = getElectronDisplay(side);
+      const valenceLabel = bondState.active && bondState.type === 'ionic'
+        ? `${displayedElectrons} shown`
+        : `${atom.valence} valence`;
+
+      ref.root.style.left = `${atomState[side].x}px`;
+      ref.root.style.top = `${atomState[side].y}px`;
+      ref.root.style.setProperty('--atom-glow', atom.glow);
+      ref.root.style.setProperty('--atom-deep', atom.deep);
+      ref.root.style.setProperty('--atom-core', atom.core);
+
+      ref.symbol.textContent = atom.symbol;
+      ref.name.textContent = atom.name;
+      ref.valence.textContent = valenceLabel;
+      ref.charge.textContent = chargeText;
+
+      ref.root.classList.toggle('has-charge', Boolean(chargeText));
+      ref.root.classList.toggle('is-bonded', bondState.active);
+      ref.root.classList.toggle('is-draggable', !bondState.active);
+
+      placeElectronDots(ref.electrons, displayedElectrons);
+    }
+
+    function renderStage() {
+      renderAtom('left');
+      renderAtom('right');
+      stage.classList.toggle('has-bond', bondState.active);
+    }
+
+    function defaultPositions() {
+      const rect = stage.getBoundingClientRect();
+      const minX = 90;
+      const maxX = rect.width - 90;
+      const centerY = rect.height * 0.5;
+
+      atomState.left.x = clamp(rect.width * 0.26, minX, maxX);
+      atomState.left.y = centerY;
+      atomState.right.x = clamp(rect.width * 0.74, minX, maxX);
+      atomState.right.y = centerY;
+    }
+
+    function bondedPositions() {
+      const rect = stage.getBoundingClientRect();
+
+      if (bondState.type === 'ionic') {
+        atomState.left.x = rect.width * 0.34;
+        atomState.right.x = rect.width * 0.66;
+        atomState.left.y = rect.height * 0.5;
+        atomState.right.y = rect.height * 0.5;
+      } else if (bondState.type === 'covalent') {
+        atomState.left.x = rect.width * 0.46;
+        atomState.right.x = rect.width * 0.56;
+        atomState.left.y = rect.height * 0.5;
+        atomState.right.y = rect.height * 0.5;
+      }
+    }
+
+    function clearAnimations() {
+      sharedPair.classList.remove('is-visible');
+      transferTag.classList.remove('is-visible');
+      transferTag.style.left = '';
+      transferTag.style.top = '';
+      if (transferTimeout) {
+        window.clearTimeout(transferTimeout);
+        transferTimeout = null;
+      }
+    }
+
+    function cancelDrag() {
+      if (!dragState) return;
+      atomElements[dragState.side].classList.remove('is-dragging');
+      dragState = null;
+    }
+
+    function updateStatus(text, state = 'ready') {
+      statusBanner.textContent = text;
+      statusBanner.dataset.state = state;
+    }
+
+    function updatePropertyList(items) {
+      propertyList.innerHTML = '';
+      items.forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        propertyList.appendChild(li);
+      });
+    }
+
+    function updateReadout() {
+      const leftAtom = atomCatalog[currentPair.left];
+      const rightAtom = atomCatalog[currentPair.right];
+      const predictedType = getPredictedType();
+      const gap = getPairGap();
+
+      pairTitle.textContent = currentPair.title;
+      leftEN.textContent = `${leftAtom.symbol} ${leftAtom.electronegativity.toFixed(2)}`;
+      rightEN.textContent = `${rightAtom.symbol} ${rightAtom.electronegativity.toFixed(2)}`;
+      deltaValue.textContent = gap.toFixed(2);
+      meterFill.style.width = `${Math.min(100, (gap / 3.5) * 100)}%`;
+
+      if (!bondState.active) {
+        resultBadge.textContent = 'Prediction';
+        resultBadge.dataset.type = 'ready';
+        resultSummary.textContent = currentPair.preview;
+        bondTypeValue.textContent = predictedType === 'ionic' ? 'Metal + nonmetal' : 'Two nonmetals';
+        electronBehaviorValue.textContent = predictedType === 'ionic' ? 'Watch for transfer' : 'Watch for overlap';
+        structureValue.textContent = predictedType === 'ionic' ? 'Likely ionic lattice' : 'Likely molecule';
+        octetNote.textContent = currentPair.octet;
+        updatePropertyList(currentPair.properties);
+        return;
+      }
+
+      resultBadge.textContent = bondState.type === 'ionic' ? 'Ionic bond' : 'Covalent bond';
+      resultBadge.dataset.type = bondState.type;
+      resultSummary.textContent = currentPair.result;
+      bondTypeValue.textContent = bondState.type === 'ionic' ? 'Ionic' : 'Covalent';
+      electronBehaviorValue.textContent = currentPair.electronText;
+      structureValue.textContent = currentPair.structure;
+      octetNote.textContent = currentPair.octet;
+      updatePropertyList(currentPair.properties);
+    }
+
+    function setPair(pairId) {
+      cancelDrag();
+      currentPair = pairPresets[pairId];
+      bondState.active = false;
+      bondState.type = null;
+      bondState.donor = null;
+      clearAnimations();
+      defaultPositions();
+      renderStage();
+      updateReadout();
+
+      pairButtons.forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.pair === pairId);
+      });
+
+      const predictedType = getPredictedType();
+      updateStatus(
+        predictedType === 'ionic'
+          ? 'Drag the pair together. The metal should give electrons away.'
+          : 'Drag the pair together. The nonmetals should overlap and share.',
+        'ready'
+      );
+    }
+
+    function positionSharedPair() {
+      const gapShift = clamp((atomCatalog[currentPair.right].electronegativity - atomCatalog[currentPair.left].electronegativity) * 10, -12, 12);
+      const x = ((atomState.left.x + atomState.right.x) / 2) + gapShift;
+      const y = ((atomState.left.y + atomState.right.y) / 2);
+      sharedPair.style.left = `${x}px`;
+      sharedPair.style.top = `${y}px`;
+      sharedPair.classList.add('is-visible');
+    }
+
+    function animateTransfer() {
+      clearAnimations();
+
+      const donorSide = bondState.donor;
+      const acceptorSide = donorSide === 'left' ? 'right' : 'left';
+      const donorX = atomState[donorSide].x + (donorSide === 'left' ? 48 : -48);
+      const acceptorX = atomState[acceptorSide].x + (acceptorSide === 'left' ? 48 : -48);
+      const startY = atomState[donorSide].y - 14;
+      const endY = atomState[acceptorSide].y - 6;
+      const count = currentPair.id === 'mg-o' ? 2 : 1;
+
+      transferTag.textContent = count === 1 ? 'e-' : `${count}e-`;
+      transferTag.style.left = `${donorX}px`;
+      transferTag.style.top = `${startY}px`;
+      transferTag.classList.add('is-visible');
+
+      requestAnimationFrame(() => {
+        transferTag.style.left = `${acceptorX}px`;
+        transferTag.style.top = `${endY}px`;
+      });
+
+      transferTimeout = window.setTimeout(() => {
+        transferTag.classList.remove('is-visible');
+      }, 820);
+    }
+
+    function resolveBond() {
+      if (bondState.active) return;
+
+      const predictedType = getPredictedType();
+      bondState.active = true;
+      bondState.type = predictedType;
+      bondState.donor = predictedType === 'ionic' && atomCatalog[currentPair.left].type === 'metal' ? 'left' : 'right';
+
+      bondedPositions();
+      renderStage();
+
+      if (predictedType === 'ionic') {
+        animateTransfer();
+        updateStatus(`Ionic bond formed: ${currentPair.electronText}.`, 'ionic');
+      } else {
+        clearAnimations();
+        positionSharedPair();
+        updateStatus(`Covalent bond formed: ${currentPair.electronText}.`, 'covalent');
+      }
+
+      updateReadout();
+    }
+
+    function resetPair() {
+      cancelDrag();
+      bondState.active = false;
+      bondState.type = null;
+      bondState.donor = null;
+      clearAnimations();
+      defaultPositions();
+      renderStage();
+      updateReadout();
+
+      const predictedType = getPredictedType();
+      updateStatus(
+        predictedType === 'ionic'
+          ? 'Pair reset. Drag together to watch electron transfer.'
+          : 'Pair reset. Drag together to watch electron sharing.',
+        'ready'
+      );
+    }
+
+    function maybeBondFromDistance() {
+      if (bondState.active) return;
+      const dx = atomState.left.x - atomState.right.x;
+      const dy = atomState.left.y - atomState.right.y;
+      const distance = Math.hypot(dx, dy);
+      const threshold = stage.getBoundingClientRect().width < 600 ? 150 : 170;
+
+      if (distance <= threshold) {
+        resolveBond();
+      }
+    }
+
+    function startDrag(event) {
+      if (bondState.active) return;
+
+      const side = event.currentTarget.dataset.side;
+      const rect = stage.getBoundingClientRect();
+
+      dragState = {
+        side,
+        pointerId: event.pointerId,
+        offsetX: event.clientX - rect.left - atomState[side].x,
+        offsetY: event.clientY - rect.top - atomState[side].y
+      };
+
+      event.currentTarget.classList.add('is-dragging');
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch (error) {
+        // Pointer capture is optional.
+      }
+    }
+
+    function moveDrag(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+
+      const rect = stage.getBoundingClientRect();
+      const atomSize = atomElements.left.getBoundingClientRect().width;
+      const minX = atomSize / 2 + 12;
+      const maxX = rect.width - atomSize / 2 - 12;
+      const minY = atomSize / 2 + 16;
+      const maxY = rect.height - atomSize / 2 - 54;
+
+      atomState[dragState.side].x = clamp(event.clientX - rect.left - dragState.offsetX, minX, maxX);
+      atomState[dragState.side].y = clamp(event.clientY - rect.top - dragState.offsetY, minY, maxY);
+      renderStage();
+    }
+
+    function endDrag(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+
+      const side = dragState.side;
+      atomElements[side].classList.remove('is-dragging');
+      try {
+        atomElements[side].releasePointerCapture(event.pointerId);
+      } catch (error) {
+        // Safe to ignore if capture was already released.
+      }
+
+      dragState = null;
+      maybeBondFromDistance();
+    }
+
+    pairButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        setPair(button.dataset.pair);
+      });
+    });
+
+    actionButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const action = button.dataset.action;
+        if (action === 'snap') {
+          resolveBond();
+        }
+        if (action === 'reset') {
+          resetPair();
+        }
+      });
+    });
+
+    Object.values(atomElements).forEach((atom) => {
+      atom.addEventListener('pointerdown', startDrag);
+    });
+
+    window.addEventListener('pointermove', moveDrag);
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+
+    window.addEventListener('resize', () => {
+      if (bondState.active) {
+        bondedPositions();
+      } else {
+        defaultPositions();
+      }
+
+      renderStage();
+
+      if (bondState.active && bondState.type === 'covalent') {
+        positionSharedPair();
+      }
+    });
+
+    setPair('na-cl');
+  </script>
+</body>
+</html>
