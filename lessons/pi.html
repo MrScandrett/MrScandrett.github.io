@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pi &amp; Circles · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Mathematics Lesson 02 — explore Pi, circles, circumference, and area with interactive tools, a digit explorer, and practice problems." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page ─────────────────────────────────────────── */
+    .pi-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .pi-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .pi-hero h1 { max-width: 26ch; margin-left: 0; margin-right: 0;
+      font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .pi-hero-meta { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .pi-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .pi-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65;
+      font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .pi-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Section card ─────────────────────────────────── */
+    .pi-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #007aff);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .pi-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .pi-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .pi-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .pi-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .pi-card { background: var(--white, #2c2c2e); }
+    [data-theme="night"] .pi-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Pi symbol display ────────────────────────────── */
+    .pi-symbol-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 1.4rem; flex-wrap: wrap;
+      background: linear-gradient(135deg, rgba(175,82,222,0.07), rgba(0,122,255,0.07));
+      border: 1px solid rgba(175,82,222,0.2);
+      border-radius: 14px; padding: 1.1rem 1.4rem; margin: 0.8rem 0;
+    }
+    .pi-big { font-size: clamp(3rem,8vw,5rem); font-weight: 900; color: #af52de;
+      line-height: 1; letter-spacing: -0.04em; }
+    .pi-approx { font-size: clamp(1.1rem,3vw,1.6rem); font-weight: 800;
+      color: var(--text,#1d1d1f); letter-spacing: -0.02em; }
+    .pi-label { font-size: 0.8rem; color: #64748b; max-width: 22ch; text-align: center; line-height: 1.5; }
+
+    /* ── Ratio visual ─────────────────────────────────── */
+    .pi-ratio-wrap { margin: 0.9rem 0; }
+    .pi-ratio-label { font-size: 0.82rem; font-weight: 700; color: #64748b;
+      text-align: center; margin-bottom: 0.4rem; }
+    .pi-ratio-bars { display: flex; flex-direction: column; gap: 0.5rem; }
+    .pi-bar-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; }
+    .pi-bar-name { width: 110px; font-weight: 700; flex-shrink: 0; }
+    .pi-bar { height: 18px; border-radius: 4px; display: flex; align-items: center;
+      padding: 0 7px; font-size: 0.72rem; font-weight: 800; color: #fff;
+      transition: width 0.4s; }
+
+    /* ── Formulas ─────────────────────────────────────── */
+    .pi-formulas {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin: 0.8rem 0;
+    }
+    .pi-formula-box {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.9rem; text-align: center;
+    }
+    [data-theme="night"] .pi-formula-box { background: rgba(255,255,255,0.04); }
+    .pi-formula-box .label { font-size: 0.74rem; font-weight: 700; color: #64748b;
+      letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.4rem; display: block; }
+    .pi-formula-box .formula { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.02em;
+      color: var(--text,#1d1d1f); }
+    .pi-formula-box .sub { font-size: 0.76rem; color: #64748b; margin-top: 0.3rem; display: block; }
+    .pi-color-pi { color: #af52de; }
+    .pi-color-r  { color: #007aff; }
+    .pi-color-d  { color: #ff9500; }
+    .pi-color-c  { color: #34c759; }
+    .pi-color-a  { color: #ff3b30; }
+
+    /* ── Interactive circle explorer ──────────────────── */
+    .pi-explorer {
+      background: var(--white,#fff);
+      border: 1px solid var(--line,#d2d2d7);
+      border-left: 3.5px solid #af52de;
+      border-radius: var(--radius,18px);
+      box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+    }
+    [data-theme="night"] .pi-explorer { background: var(--white,#2c2c2e); }
+    .pi-explorer h2 { margin: 0 0 0.18rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .pi-explorer-sub { margin: 0 0 1rem; font-size: 0.84rem; color: #64748b; }
+    .pi-explorer-body {
+      display: grid; grid-template-columns: 1fr auto; gap: 1.6rem; align-items: start;
+    }
+    .pi-slider-row { margin-bottom: 0.8rem; }
+    .pi-slider-label { display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 0.82rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .pi-slider-label .val { font-size: 1.05rem; font-weight: 900; }
+    input[type="range"].pi-range {
+      width: 100%; -webkit-appearance: none; appearance: none;
+      height: 6px; border-radius: 3px; outline: none; cursor: pointer;
+      background: linear-gradient(90deg, #af52de 0%, #af52de 30%, rgba(0,0,0,0.1) 30%);
+    }
+    input[type="range"].pi-range::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      border-radius: 50%; background: #af52de; cursor: pointer;
+    }
+    [data-theme="night"] input[type="range"].pi-range {
+      background: linear-gradient(90deg, #af52de 0%, #af52de 30%, rgba(255,255,255,0.12) 30%);
+    }
+    .pi-stats {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin-top: 0.3rem;
+    }
+    .pi-stat {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 10px; padding: 0.6rem 0.8rem;
+    }
+    [data-theme="night"] .pi-stat { background: rgba(255,255,255,0.04); }
+    .pi-stat .stat-name { font-size: 0.72rem; font-weight: 700; color: #64748b;
+      display: block; letter-spacing: 0.04em; text-transform: uppercase; }
+    .pi-stat .stat-val { font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums;
+      display: block; margin-top: 0.1rem; }
+    .pi-canvas-wrap { width: 220px; flex-shrink: 0; }
+    #pi-canvas { display: block; border-radius: 10px; }
+
+    /* ── Digits explorer ──────────────────────────────── */
+    .pi-digits-wrap {
+      font-family: 'SF Mono', ui-monospace, monospace;
+      font-size: 0.8rem; line-height: 1.75; letter-spacing: 0.04em;
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.9rem 1rem; margin: 0.8rem 0;
+      word-break: break-all; max-height: 180px; overflow-y: auto;
+    }
+    [data-theme="night"] .pi-digits-wrap { background: rgba(255,255,255,0.04); }
+    .pi-digit-pi  { color: #af52de; font-weight: 900; font-size: 1rem; }
+    .pi-digit-hi  { background: rgba(255,204,0,0.35); border-radius: 2px; }
+
+    /* ── History timeline ─────────────────────────────── */
+    .pi-timeline { list-style: none; padding: 0; margin: 0.7rem 0 0;
+      display: flex; flex-direction: column; gap: 0.6rem; }
+    .pi-timeline li { display: flex; gap: 0.75rem; align-items: flex-start;
+      font-size: 0.86rem; color: #3f4f65; line-height: 1.55; }
+    [data-theme="night"] .pi-timeline li { color: rgba(245,245,247,0.72); }
+    .pi-timeline-year { flex-shrink: 0; min-width: 64px; font-weight: 800;
+      color: #af52de; font-size: 0.82rem; padding-top: 0.05rem; }
+
+    /* ── Pi in the world ──────────────────────────────── */
+    .pi-world-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin-top: 0.7rem;
+    }
+    .pi-world-card {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.85rem; display: flex; gap: 0.7rem; align-items: flex-start;
+    }
+    [data-theme="night"] .pi-world-card { background: rgba(255,255,255,0.04); }
+    .pi-world-icon { font-size: 1.55rem; line-height: 1; flex-shrink: 0; }
+    .pi-world-text strong { display: block; font-size: 0.86rem; margin-bottom: 0.18rem; }
+    .pi-world-text small  { font-size: 0.78rem; color: #64748b; line-height: 1.5; display: block; }
+
+    /* ── Practice problems ────────────────────────────── */
+    .pi-practice { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 0.8rem; }
+    .pi-problem {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.9rem 1rem;
+    }
+    [data-theme="night"] .pi-problem { background: rgba(255,255,255,0.04); }
+    .pi-problem p { margin: 0 0 0.5rem; font-size: 0.87rem;
+      color: var(--text,#1d1d1f); font-weight: 600; }
+    .pi-problem-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .pi-ans-input {
+      width: 88px; padding: 6px 10px; border: 1.5px solid var(--line,#d2d2d7);
+      border-radius: 8px; font-size: 0.88rem; font-family: inherit;
+      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none;
+    }
+    .pi-ans-input:focus { border-color: #af52de; }
+    .pi-check-btn {
+      padding: 6px 14px; border-radius: 8px; border: none;
+      background: #af52de; color: #fff;
+      font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .pi-check-btn:hover { opacity: 0.85; }
+    .pi-feedback {
+      font-size: 0.8rem; font-weight: 700; padding: 4px 10px;
+      border-radius: 999px; display: none;
+    }
+    .pi-feedback.correct { background: rgba(52,199,89,0.15); color: #1a7a2e; display: inline-block; }
+    .pi-feedback.wrong   { background: rgba(255,59,48,0.12); color: #c0392b; display: inline-block; }
+    [data-theme="night"] .pi-feedback.correct { color: #34c759; }
+    [data-theme="night"] .pi-feedback.wrong   { color: #ff6b6b; }
+    .pi-hint { font-size: 0.77rem; color: #64748b; margin-top: 0.35rem; display: none; }
+    .pi-hint.visible { display: block; }
+
+    /* ── Steps ────────────────────────────────────────── */
+    .pi-steps { list-style: none; padding: 0; margin: 0.6rem 0 0;
+      display: flex; flex-direction: column; gap: 0.5rem; }
+    .pi-steps li { display: flex; gap: 0.7rem; align-items: flex-start;
+      font-size: 0.87rem; color: #3f4f65; line-height: 1.55; }
+    [data-theme="night"] .pi-steps li { color: rgba(245,245,247,0.72); }
+    .pi-step-num { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+      background: #af52de; color: #fff; font-size: 0.72rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; }
+
+    @media (max-width: 780px) {
+      .pi-explorer-body { grid-template-columns: 1fr; }
+      .pi-canvas-wrap { width: 100%; display: flex; justify-content: center; }
+      #pi-canvas { width: 200px; height: 200px; }
+      .pi-formulas { grid-template-columns: 1fr; }
+      .pi-world-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="pi-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero pi-hero">
+      <p class="eyebrow">Mathematics · Lesson 02</p>
+      <h1>Pi &amp; Circles</h1>
+      <div class="pi-hero-meta">
+        <span>π = 3.14159…</span>
+        <span class="dot"></span>
+        <span>Circumference &amp; area</span>
+        <span class="dot"></span>
+        <span>Infinite digits</span>
+        <span class="dot"></span>
+        <span>Practice problems</span>
+      </div>
+      <p class="pi-lede">Pi is one of the most famous numbers in all of mathematics — and it shows up everywhere, from the orbit of planets to the waves in your earbuds. In this lesson you'll discover what Pi really is, why it never ends, and how to use it.</p>
+    </section>
+
+    <!-- ── What is Pi? ── -->
+    <section class="pi-card" style="--card-accent:#af52de;">
+      <h2>What is Pi (π)?</h2>
+      <p>Pi is the ratio of a circle's <strong>circumference</strong> (the distance around) to its <strong>diameter</strong> (the distance across). No matter how big or small the circle, this ratio is always the same number:</p>
+
+      <div class="pi-symbol-row" role="img" aria-label="Pi equals approximately 3.14159">
+        <span class="pi-big">π</span>
+        <div>
+          <div class="pi-approx">≈ 3.14159 265 358…</div>
+          <div style="font-size:0.8rem;color:#64748b;margin-top:0.25rem;">
+            circumference ÷ diameter = π, always
+          </div>
+        </div>
+        <div class="pi-label">An <strong>irrational</strong> number — its decimal digits go on forever without repeating or ending.</div>
+      </div>
+
+      <p>Take any circle — a coin, a planet, a wheel. Divide its circumference by its diameter. You always get π. This is not a coincidence or a rule someone invented. It is a fundamental truth about the geometry of curved space.</p>
+
+      <div class="pi-ratio-wrap">
+        <div class="pi-ratio-label">Circumference vs. Diameter — a circle with diameter 1 has circumference π</div>
+        <div class="pi-ratio-bars">
+          <div class="pi-bar-row">
+            <span class="pi-bar-name" style="color:#ff9500;">Diameter (d)</span>
+            <div class="pi-bar" style="width:180px;background:#ff9500;">= 1</div>
+          </div>
+          <div class="pi-bar-row">
+            <span class="pi-bar-name" style="color:#34c759;">Circumference (C)</span>
+            <div class="pi-bar" style="width:565px;max-width:calc(100% - 120px);background:#34c759;">= π ≈ 3.14159…</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── The Formulas ── -->
+    <section class="pi-card" style="--card-accent:#34c759;">
+      <h2>The Two Essential Formulas</h2>
+      <p>Once you know Pi, you can calculate anything about a circle using just the <strong style="color:#007aff;">radius</strong> (r) — the distance from center to edge, which is half the diameter.</p>
+
+      <div class="pi-formulas">
+        <div class="pi-formula-box">
+          <span class="label">Circumference</span>
+          <div class="formula">
+            <span class="pi-color-c">C</span> = 2<span class="pi-color-pi">π</span><span class="pi-color-r">r</span>
+          </div>
+          <span class="sub">or C = <span class="pi-color-pi">π</span><span class="pi-color-d">d</span> &nbsp;(diameter × π)</span>
+        </div>
+        <div class="pi-formula-box">
+          <span class="label">Area</span>
+          <div class="formula">
+            <span class="pi-color-a">A</span> = <span class="pi-color-pi">π</span><span class="pi-color-r">r</span><sup style="font-size:0.6em;vertical-align:super;">2</sup>
+          </div>
+          <span class="sub">radius squared, then multiply by π</span>
+        </div>
+      </div>
+
+      <h3>Solving step by step</h3>
+      <ol class="pi-steps">
+        <li><span class="pi-step-num">1</span>Identify what you know: radius, diameter, or circumference.</li>
+        <li><span class="pi-step-num">2</span>If you have the diameter, halve it to get the radius (r = d ÷ 2).</li>
+        <li><span class="pi-step-num">3</span>Plug into the formula. Use π ≈ 3.14159 or the π key on a calculator.</li>
+        <li><span class="pi-step-num">4</span>Round your answer to the precision the problem asks for.</li>
+      </ol>
+    </section>
+
+    <!-- ── Interactive Explorer ── -->
+    <section class="pi-explorer">
+      <h2>Circle Explorer</h2>
+      <p class="pi-explorer-sub">Drag the slider to change the radius — circumference and area update instantly.</p>
+      <div class="pi-explorer-body">
+        <div>
+          <div class="pi-slider-row">
+            <div class="pi-slider-label" style="color:#af52de;">
+              <span>Radius <strong>r</strong></span>
+              <span class="val" id="pi-val-r">5</span>
+            </div>
+            <input type="range" class="pi-range" id="pi-slider" min="1" max="20" value="5"
+              aria-label="Circle radius" />
+          </div>
+          <div class="pi-stats">
+            <div class="pi-stat">
+              <span class="stat-name">Diameter</span>
+              <span class="stat-val" id="pi-diam" style="color:#ff9500;"></span>
+            </div>
+            <div class="pi-stat">
+              <span class="stat-name">Circumference</span>
+              <span class="stat-val" id="pi-circ" style="color:#34c759;"></span>
+            </div>
+            <div class="pi-stat">
+              <span class="stat-name">Area</span>
+              <span class="stat-val" id="pi-area" style="color:#ff3b30;"></span>
+            </div>
+            <div class="pi-stat">
+              <span class="stat-name">C ÷ d</span>
+              <span class="stat-val" id="pi-ratio" style="color:#af52de;"></span>
+            </div>
+          </div>
+        </div>
+        <div class="pi-canvas-wrap">
+          <canvas id="pi-canvas" width="220" height="220" aria-label="Circle diagram"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── History of Pi ── -->
+    <section class="pi-card" style="--card-accent:#ff9500;">
+      <h2>A 4,000-Year History</h2>
+      <p>Humans have been trying to pin down Pi for longer than written history. Each era got a little closer to the infinite truth.</p>
+      <ul class="pi-timeline">
+        <li>
+          <span class="pi-timeline-year">~1900 BCE</span>
+          <span>Babylonian mathematicians approximated Pi as 25/8 = 3.125, and Egyptian mathematicians in the Rhind Papyrus used (16/9)² ≈ 3.1605.</span>
+        </li>
+        <li>
+          <span class="pi-timeline-year">~250 BCE</span>
+          <span>Archimedes of Syracuse squeezed Pi between two polygons — one inside the circle, one outside — calculating it lies between 3 10/71 and 3 1/7. His method was so clever it remained the gold standard for 1,500 years.</span>
+        </li>
+        <li>
+          <span class="pi-timeline-year">~480 CE</span>
+          <span>Chinese mathematician Zu Chongzhi calculated Pi to 7 decimal places (3.1415926), a record that stood for nearly 900 years.</span>
+        </li>
+        <li>
+          <span class="pi-timeline-year">1706</span>
+          <span>Welsh mathematician William Jones first used the Greek letter <strong>π</strong> (pi) to represent the ratio. Euler popularised the symbol later, and it has been universal ever since.</span>
+        </li>
+        <li>
+          <span class="pi-timeline-year">1914</span>
+          <span>Indian genius Srinivasa Ramanujan, largely self-taught, derived extraordinarily fast-converging infinite series for Pi — series that are still used inside modern Pi-computing software.</span>
+        </li>
+        <li>
+          <span class="pi-timeline-year">2024</span>
+          <span>Using cloud computing, researchers calculated Pi to over <strong>105 trillion digits</strong> — more digits than there are atoms in your body. Yet the digits never repeat and show no pattern.</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ── The Digits of Pi ── -->
+    <section class="pi-card" style="--card-accent:#007aff;">
+      <h2>The Digits of Pi</h2>
+      <p>Pi is <strong>irrational</strong> — it cannot be written as a simple fraction. Its decimal expansion goes on forever without ever settling into a repeating pattern. Here are the first 200 digits:</p>
+      <div class="pi-digits-wrap" id="pi-digits-display" aria-label="First 200 digits of Pi"></div>
+      <p style="margin-top:0.6rem;">Pi is also believed to be <strong>normal</strong> — meaning every digit (0–9) appears with equal frequency in the long run. No digit is "special." The digit 3 is no more common than 7 over billions of digits.</p>
+    </section>
+
+    <!-- ── Pi in the Real World ── -->
+    <section class="pi-card" style="--card-accent:#5856d6;">
+      <h2>Pi in the Real World</h2>
+      <p>Pi doesn't stay on paper — it is woven into physics, engineering, and technology everywhere you look.</p>
+      <div class="pi-world-grid">
+        <div class="pi-world-card">
+          <span class="pi-world-icon">🌊</span>
+          <div class="pi-world-text">
+            <strong>Sound &amp; Light Waves</strong>
+            <small>Pi appears in the equations describing all wave motion — sound, light, radio, and ocean waves. Your earbuds and phone antenna both depend on it.</small>
+          </div>
+        </div>
+        <div class="pi-world-card">
+          <span class="pi-world-icon">🚀</span>
+          <div class="pi-world-text">
+            <strong>Space Navigation</strong>
+            <small>NASA uses Pi to calculate orbital paths, planetary positions, and antenna dish sizes for deep-space communication with probes like Voyager.</small>
+          </div>
+        </div>
+        <div class="pi-world-card">
+          <span class="pi-world-icon">🏗️</span>
+          <div class="pi-world-text">
+            <strong>Engineering &amp; Design</strong>
+            <small>Gears, pipes, tunnels, wheels, and domes — any circular or cylindrical structure requires Pi to calculate materials, forces, and dimensions.</small>
+          </div>
+        </div>
+        <div class="pi-world-card">
+          <span class="pi-world-icon">🧬</span>
+          <div class="pi-world-text">
+            <strong>DNA &amp; Biology</strong>
+            <small>The DNA double helix is a spiral, and Pi appears in equations describing its geometry. Pi also shows up in statistical models used in medical research.</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Practice Problems ── -->
+    <section class="pi-card" style="--card-accent:#ff9500;">
+      <h2>Practice Problems</h2>
+      <p style="color:#64748b;font-size:0.84rem;">Use π ≈ 3.14159. Round answers to one decimal place unless it works out exactly.</p>
+      <div class="pi-practice">
+
+        <div class="pi-problem">
+          <p>1. A circle has radius r = 7. What is its circumference? (C = 2πr)</p>
+          <div class="pi-problem-row">
+            <input type="number" class="pi-ans-input" id="pans-1" step="0.1" placeholder="C = ?" />
+            <button class="pi-check-btn" onclick="piCheck(1, 43.98, 0.2)">Check</button>
+            <span class="pi-feedback" id="pfb-1"></span>
+          </div>
+          <div class="pi-hint" id="phint-1">Hint: C = 2 × 3.14159 × 7 = 43.98…</div>
+        </div>
+
+        <div class="pi-problem">
+          <p>2. A circle has radius r = 5. What is its area? (A = πr²)</p>
+          <div class="pi-problem-row">
+            <input type="number" class="pi-ans-input" id="pans-2" step="0.1" placeholder="A = ?" />
+            <button class="pi-check-btn" onclick="piCheck(2, 78.54, 0.2)">Check</button>
+            <span class="pi-feedback" id="pfb-2"></span>
+          </div>
+          <div class="pi-hint" id="phint-2">Hint: A = 3.14159 × 5² = 3.14159 × 25 = 78.54…</div>
+        </div>
+
+        <div class="pi-problem">
+          <p>3. A wheel has diameter d = 10 inches. How far does it travel in one full rotation? (C = πd)</p>
+          <div class="pi-problem-row">
+            <input type="number" class="pi-ans-input" id="pans-3" step="0.1" placeholder="C = ?" />
+            <button class="pi-check-btn" onclick="piCheck(3, 31.42, 0.2)">Check</button>
+            <span class="pi-feedback" id="pfb-3"></span>
+          </div>
+          <div class="pi-hint" id="phint-3">Hint: C = 3.14159 × 10 = 31.4159…</div>
+        </div>
+
+        <div class="pi-problem">
+          <p>4. A circular pizza has diameter 12 inches. What is its area? (Use r = d ÷ 2 first)</p>
+          <div class="pi-problem-row">
+            <input type="number" class="pi-ans-input" id="pans-4" step="0.1" placeholder="A = ?" />
+            <button class="pi-check-btn" onclick="piCheck(4, 113.1, 0.3)">Check</button>
+            <span class="pi-feedback" id="pfb-4"></span>
+          </div>
+          <div class="pi-hint" id="phint-4">Hint: r = 6, A = 3.14159 × 36 = 113.1…</div>
+        </div>
+
+        <div class="pi-problem">
+          <p>5. A circular running track has circumference 400 meters. What is its radius? (r = C ÷ 2π)</p>
+          <div class="pi-problem-row">
+            <input type="number" class="pi-ans-input" id="pans-5" step="0.1" placeholder="r = ?" />
+            <button class="pi-check-btn" onclick="piCheck(5, 63.7, 0.3)">Check</button>
+            <span class="pi-feedback" id="pfb-5"></span>
+          </div>
+          <div class="pi-hint" id="phint-5">Hint: r = 400 ÷ (2 × 3.14159) = 400 ÷ 6.2832 ≈ 63.7</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+    const PI = Math.PI;
+
+    /* ── Digit display ────────────────────────────────── */
+    const piDigits =
+      '3.14159265358979323846264338327950288419716939937510' +
+      '58209749445923078164062862089986280348253421170679' +
+      '82148086513282306647093844609550582231725359408128' +
+      '48111745028410270193852110555964462294895493038196';
+
+    const digWrap = document.getElementById('pi-digits-display');
+    let html = '';
+    for (let i = 0; i < piDigits.length; i++) {
+      const ch = piDigits[i];
+      if (i === 0) {
+        html += `<span class="pi-digit-pi">${ch}</span>`;
+      } else if (ch === '.') {
+        html += `<span style="color:#af52de;font-weight:800;">.</span>`;
+      } else {
+        html += `<span>${ch}</span>`;
+      }
+    }
+    digWrap.innerHTML = html;
+
+    /* ── Canvas drawing ───────────────────────────────── */
+    const canvas = document.getElementById('pi-canvas');
+    const ctx    = canvas.getContext('2d');
+
+    function drawCircle(r) {
+      const W = canvas.width, H = canvas.height;
+      const cx = W / 2, cy = H / 2;
+      const maxR = W / 2 - 20;
+      const scale = Math.min(maxR / 20, maxR / r); // max r is 20
+      const sr = r * scale;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Circle fill
+      ctx.beginPath();
+      ctx.arc(cx, cy, sr, 0, 2 * PI);
+      ctx.fillStyle = 'rgba(175,82,222,0.1)';
+      ctx.fill();
+
+      // Circle stroke
+      ctx.strokeStyle = '#34c759';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Diameter line
+      ctx.strokeStyle = '#ff9500';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(cx - sr, cy);
+      ctx.lineTo(cx + sr, cy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Radius line
+      ctx.strokeStyle = '#af52de';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + sr, cy);
+      ctx.stroke();
+
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4, 0, 2 * PI);
+      ctx.fillStyle = '#af52de';
+      ctx.fill();
+
+      // Labels
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.textAlign = 'center';
+
+      ctx.fillStyle = '#af52de';
+      ctx.fillText('r', cx + sr / 2, cy - 7);
+
+      ctx.fillStyle = '#ff9500';
+      ctx.fillText('d', cx, cy + sr + 15);
+
+      ctx.fillStyle = '#34c759';
+      // Circumference label along top arc
+      ctx.fillText('C', cx - sr - 12, cy - 8);
+    }
+
+    /* ── Slider update ────────────────────────────────── */
+    function updateSliderBg(slider, val) {
+      const pct = (val - slider.min) / (slider.max - slider.min) * 100;
+      slider.style.background =
+        `linear-gradient(90deg, #af52de ${pct}%, rgba(0,0,0,0.1) ${pct}%)`;
+    }
+
+    function updateExplorer() {
+      const r = parseFloat(document.getElementById('pi-slider').value);
+      const d = r * 2;
+      const C = 2 * PI * r;
+      const A = PI * r * r;
+
+      document.getElementById('pi-val-r').textContent = r;
+      document.getElementById('pi-diam').textContent = d;
+      document.getElementById('pi-circ').textContent = C.toFixed(2);
+      document.getElementById('pi-area').textContent = A.toFixed(2);
+      document.getElementById('pi-ratio').textContent = (C / d).toFixed(5);
+
+      drawCircle(r);
+      updateSliderBg(document.getElementById('pi-slider'), r);
+    }
+
+    document.getElementById('pi-slider').addEventListener('input', updateExplorer);
+    updateExplorer();
+
+    /* ── Practice checker ─────────────────────────────── */
+    window.piCheck = function (num, correct, tol) {
+      const input = document.getElementById('pans-' + num);
+      const fb    = document.getElementById('pfb-' + num);
+      const hint  = document.getElementById('phint-' + num);
+      const val   = parseFloat(input.value);
+
+      fb.className = 'pi-feedback';
+      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('wrong'); return; }
+
+      if (Math.abs(val - correct) <= tol) {
+        fb.textContent = '✓ Correct!';
+        fb.classList.add('correct');
+        hint.classList.remove('visible');
+        input.style.borderColor = '#34c759';
+      } else {
+        fb.textContent = '✗ Try again';
+        fb.classList.add('wrong');
+        hint.classList.add('visible');
+        input.style.borderColor = '#ff3b30';
+      }
+    };
+
+  })();
+  </script>
+</body>
+</html>
