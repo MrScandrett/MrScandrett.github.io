@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pythagoras &amp; Triangles · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Mathematics Lesson 01 — learn the Pythagorean theorem with interactive proofs, triangle types, and real-world applications." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page ─────────────────────────────────────────── */
+    .py-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .py-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .py-hero h1 { max-width: 26ch; margin-left: 0; margin-right: 0;
+      font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .py-hero-meta { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .py-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .py-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65;
+      font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .py-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Section card ─────────────────────────────────── */
+    .py-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #007aff);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .py-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .py-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .py-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .py-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .py-card { background: var(--white, #2c2c2e); }
+    [data-theme="night"] .py-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Theorem display ──────────────────────────────── */
+    .py-theorem {
+      display: flex; align-items: center; justify-content: center;
+      gap: 1.2rem; flex-wrap: wrap;
+      background: linear-gradient(135deg, rgba(0,122,255,0.06) 0%, rgba(88,86,214,0.06) 100%);
+      border: 1px solid rgba(0,122,255,0.18);
+      border-radius: 14px; padding: 1.1rem 1.4rem; margin: 0.8rem 0;
+    }
+    .py-formula {
+      font-size: clamp(1.4rem, 4vw, 2.2rem); font-weight: 900; letter-spacing: -0.02em;
+      color: var(--text, #1d1d1f);
+    }
+    .py-formula sup { font-size: 0.6em; vertical-align: super; }
+    .py-formula .sq-a { color: #ff3b30; }
+    .py-formula .sq-b { color: #ff9500; }
+    .py-formula .sq-c { color: #007aff; }
+    .py-theorem-label {
+      font-size: 0.8rem; color: #64748b; max-width: 24ch; text-align: center; line-height: 1.5;
+    }
+
+    /* ── Triangle types grid ──────────────────────────── */
+    .py-tri-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; margin: 0.8rem 0;
+    }
+    .py-tri-type {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px; padding: 0.9rem; text-align: center;
+    }
+    [data-theme="night"] .py-tri-type { background: rgba(255,255,255,0.04); }
+    .py-tri-type svg { display: block; margin: 0 auto 0.5rem; }
+    .py-tri-type strong { display: block; font-size: 0.88rem; margin-bottom: 0.2rem; }
+    .py-tri-type small { font-size: 0.76rem; color: #64748b; line-height: 1.45; display: block; }
+
+    /* ── Interactive explorer ─────────────────────────── */
+    .py-explorer {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid #34c759;
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+    }
+    [data-theme="night"] .py-explorer { background: var(--white, #2c2c2e); }
+    .py-explorer h2 { margin: 0 0 0.2rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .py-explorer-sub { margin: 0 0 1rem; font-size: 0.84rem; color: #64748b; }
+    .py-explorer-body {
+      display: grid; grid-template-columns: 1fr auto; gap: 1.4rem; align-items: start;
+    }
+    .py-sliders { display: flex; flex-direction: column; gap: 0.8rem; }
+    .py-slider-row { display: flex; flex-direction: column; gap: 0.25rem; }
+    .py-slider-label {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 0.82rem; font-weight: 700;
+    }
+    .py-slider-label .val {
+      font-size: 1rem; font-weight: 900; font-variant-numeric: tabular-nums;
+    }
+    input[type="range"].py-range {
+      width: 100%; -webkit-appearance: none; appearance: none;
+      height: 6px; border-radius: 3px; outline: none; cursor: pointer;
+    }
+    input[type="range"].py-range::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: currentColor; cursor: pointer; margin-top: -6px;
+    }
+    input[type="range"].py-range::-webkit-slider-runnable-track {
+      height: 6px; border-radius: 3px; background: rgba(0,0,0,0.1);
+    }
+    [data-theme="night"] input[type="range"].py-range::-webkit-slider-runnable-track {
+      background: rgba(255,255,255,0.12);
+    }
+    .py-result-box {
+      background: linear-gradient(135deg, rgba(0,122,255,0.06), rgba(88,86,214,0.06));
+      border: 1px solid rgba(0,122,255,0.18);
+      border-radius: 12px; padding: 0.9rem 1.1rem; margin-top: 0.9rem;
+      display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap;
+    }
+    .py-result-eq {
+      font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums;
+      letter-spacing: -0.01em; color: var(--text, #1d1d1f);
+    }
+    .py-result-check {
+      font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; color: #fff;
+    }
+    .py-canvas-wrap {
+      width: 230px; flex-shrink: 0;
+    }
+    #py-canvas { display: block; border-radius: 10px; }
+
+    /* ── Proof visual ─────────────────────────────────── */
+    .py-proof-wrap {
+      display: flex; justify-content: center; margin: 0.8rem 0;
+    }
+
+    /* ── Steps list ───────────────────────────────────── */
+    .py-steps { list-style: none; padding: 0; margin: 0.6rem 0 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .py-steps li {
+      display: flex; gap: 0.7rem; align-items: flex-start;
+      font-size: 0.87rem; color: #3f4f65; line-height: 1.55;
+    }
+    [data-theme="night"] .py-steps li { color: rgba(245,245,247,0.72); }
+    .py-step-num {
+      flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+      background: var(--card-accent, #007aff); color: #fff;
+      font-size: 0.72rem; font-weight: 800; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Applications grid ────────────────────────────── */
+    .py-apps {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin-top: 0.7rem;
+    }
+    .py-app-card {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px; padding: 0.85rem; display: flex; gap: 0.7rem; align-items: flex-start;
+    }
+    [data-theme="night"] .py-app-card { background: rgba(255,255,255,0.04); }
+    .py-app-icon { font-size: 1.55rem; line-height: 1; flex-shrink: 0; }
+    .py-app-text strong { display: block; font-size: 0.86rem; margin-bottom: 0.18rem; }
+    .py-app-text small { font-size: 0.78rem; color: #64748b; line-height: 1.5; display: block; }
+
+    /* ── Practice problems ────────────────────────────── */
+    .py-practice {
+      display: flex; flex-direction: column; gap: 0.9rem; margin-top: 0.8rem;
+    }
+    .py-problem {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px; padding: 0.9rem 1rem;
+    }
+    [data-theme="night"] .py-problem { background: rgba(255,255,255,0.04); }
+    .py-problem p { margin: 0 0 0.5rem; font-size: 0.87rem; color: var(--text, #1d1d1f); font-weight: 600; }
+    .py-problem-input-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .py-ans-input {
+      width: 80px; padding: 6px 10px; border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 8px; font-size: 0.88rem; font-family: inherit;
+      background: var(--white, #fff); color: var(--text, #1d1d1f); outline: none;
+    }
+    .py-ans-input:focus { border-color: var(--blue, #0071e3); }
+    .py-check-btn {
+      padding: 6px 14px; border-radius: 8px; border: none;
+      background: var(--blue, #0071e3); color: #fff;
+      font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .py-check-btn:hover { opacity: 0.85; }
+    .py-feedback {
+      font-size: 0.8rem; font-weight: 700; padding: 4px 10px;
+      border-radius: 999px; display: none;
+    }
+    .py-feedback.correct { background: rgba(52,199,89,0.15); color: #1a7a2e; display: inline-block; }
+    .py-feedback.wrong   { background: rgba(255,59,48,0.12); color: #c0392b; display: inline-block; }
+    [data-theme="night"] .py-feedback.correct { color: #34c759; }
+    [data-theme="night"] .py-feedback.wrong   { color: #ff6b6b; }
+    .py-hint { font-size: 0.77rem; color: #64748b; margin-top: 0.35rem; display: none; }
+    .py-hint.visible { display: block; }
+
+    /* ── Proof SVG ────────────────────────────────────── */
+    .py-proof-svg text { font-family: inherit; }
+
+    @media (max-width: 780px) {
+      .py-explorer-body { grid-template-columns: 1fr; }
+      .py-canvas-wrap { width: 100%; display: flex; justify-content: center; }
+      #py-canvas { width: 200px; height: 200px; }
+      .py-tri-grid { grid-template-columns: 1fr; }
+      .py-apps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="py-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero py-hero">
+      <p class="eyebrow">Mathematics · Lesson 01</p>
+      <h1>Pythagoras &amp; Triangles</h1>
+      <div class="py-hero-meta">
+        <span>Right triangles</span>
+        <span class="dot"></span>
+        <span>a² + b² = c²</span>
+        <span class="dot"></span>
+        <span>Interactive explorer</span>
+        <span class="dot"></span>
+        <span>Practice problems</span>
+      </div>
+      <p class="py-lede">Over 2,500 years ago, Pythagoras proved that a simple relationship connects the three sides of every right triangle. That one idea is still used by architects, engineers, GPS systems, and game developers today.</p>
+    </section>
+
+    <!-- ── Who was Pythagoras? ── -->
+    <section class="py-card" style="--card-accent:#7c3aed;">
+      <h2>Who was Pythagoras?</h2>
+      <p>Pythagoras of Samos was a Greek philosopher and mathematician who lived around 570–495 BCE. He founded a school of thought that believed mathematics was the foundation of all reality — long before anyone had calculators, computers, or even algebra as we know it today.</p>
+      <p>Although the theorem that bears his name was likely known to Babylonian and Indian mathematicians even earlier, Pythagoras and his followers are credited with providing the first formal <em>proof</em> — a logical argument showing it must always be true, for every right triangle, without exception.</p>
+    </section>
+
+    <!-- ── The Theorem ── -->
+    <section class="py-card" style="--card-accent:#007aff;">
+      <h2>The Pythagorean Theorem</h2>
+      <p>A <strong>right triangle</strong> is any triangle with one 90° angle (the right angle, shown with a small square). The two sides that form the right angle are called the <strong>legs</strong>. The side opposite the right angle — always the longest side — is the <strong>hypotenuse</strong>.</p>
+
+      <div class="py-theorem" role="img" aria-label="a squared plus b squared equals c squared">
+        <div>
+          <div class="py-formula">
+            <span class="sq-a">a<sup>2</sup></span>
+            <span style="color:#888;margin:0 0.3em;">+</span>
+            <span class="sq-b">b<sup>2</sup></span>
+            <span style="color:#888;margin:0 0.3em;">=</span>
+            <span class="sq-c">c<sup>2</sup></span>
+          </div>
+        </div>
+        <div class="py-theorem-label">
+          <strong style="color:#ff3b30;">a</strong> and <strong style="color:#ff9500;">b</strong> are the legs.<br>
+          <strong style="color:#007aff;">c</strong> is the hypotenuse.
+        </div>
+        <svg width="140" height="120" viewBox="0 0 140 120" aria-hidden="true">
+          <!-- Right triangle -->
+          <polygon points="10,110 10,20 110,110" fill="rgba(0,122,255,0.07)" stroke="#007aff" stroke-width="2"/>
+          <!-- Right angle marker -->
+          <polyline points="10,95 25,95 25,110" fill="none" stroke="#007aff" stroke-width="1.5"/>
+          <!-- Labels -->
+          <text x="2" y="68" font-size="13" font-weight="800" fill="#ff3b30" font-family="Inter,sans-serif">a</text>
+          <text x="58" y="118" font-size="13" font-weight="800" fill="#ff9500" font-family="Inter,sans-serif">b</text>
+          <text x="66" y="60" font-size="13" font-weight="800" fill="#007aff" font-family="Inter,sans-serif">c</text>
+        </svg>
+      </div>
+
+      <p>The theorem states: <em>the square of the hypotenuse equals the sum of the squares of the two legs.</em> Square leg <strong style="color:#ff3b30;">a</strong>, square leg <strong style="color:#ff9500;">b</strong>, add them together — and you get the square of hypotenuse <strong style="color:#007aff;">c</strong>.</p>
+
+      <h3>Solving for the hypotenuse</h3>
+      <p>If you know both legs, find c by taking the square root of (a² + b²):</p>
+      <div style="text-align:center;padding:0.6rem 0;font-size:1.1rem;font-weight:800;letter-spacing:-0.01em;">
+        c = √(<span style="color:#ff3b30;">a²</span> + <span style="color:#ff9500;">b²</span>)
+      </div>
+
+      <h3>Famous example — the 3-4-5 triangle</h3>
+      <p>The simplest whole-number right triangle has sides 3, 4, and 5. Check: 3² + 4² = 9 + 16 = 25 = 5². Ancient Egyptian rope-stretchers used a rope with 12 equally-spaced knots tied in a 3-4-5 triangle to create perfect right angles when building the pyramids.</p>
+    </section>
+
+    <!-- ── Visual Proof ── -->
+    <section class="py-card" style="--card-accent:#ff9500;">
+      <h2>The Square Proof</h2>
+      <p>One of the most beautiful ways to see why the theorem works: draw a square on each side of a right triangle. The area of the square on the hypotenuse <em>exactly equals</em> the combined area of the squares on the two legs.</p>
+
+      <div class="py-proof-wrap">
+        <svg class="py-proof-svg" width="300" height="260" viewBox="0 0 300 260" aria-label="Square proof of Pythagorean theorem">
+          <!-- The right triangle (3-4-5 scaled): legs 60 and 80, hyp 100 -->
+          <!-- Triangle points: A(120,200) B(120,120) C(200,200) -->
+          <!-- Leg a = AB = 80 (vertical), Leg b = AC = 80, adjusted for square 3-4-5: -->
+          <!-- Use: A(110,210) B(110,130) C(170,210). a=80, b=60, c=100 -->
+          <g transform="translate(10,10)">
+            <!-- Main triangle -->
+            <polygon points="100,200 100,110 165,200" fill="rgba(0,122,255,0.08)" stroke="#007aff" stroke-width="2.5"/>
+            <!-- Right angle -->
+            <polyline points="100,185 115,185 115,200" fill="none" stroke="#007aff" stroke-width="1.8"/>
+
+            <!-- Square on leg a (vertical, left side) a=90 -->
+            <!-- A=(100,200), B=(100,110). Square extends left. -->
+            <polygon points="100,200 100,110 10,110 10,200"
+              fill="rgba(255,59,48,0.12)" stroke="#ff3b30" stroke-width="1.8" stroke-dasharray="4,3"/>
+            <text x="50" y="162" font-size="12" font-weight="800" fill="#ff3b30" text-anchor="middle" font-family="Inter,sans-serif">a²</text>
+
+            <!-- Square on leg b (horizontal, bottom) b=65 -->
+            <!-- A=(100,200), C=(165,200). Square extends down. -->
+            <polygon points="100,200 165,200 165,265 100,265"
+              fill="rgba(255,149,0,0.12)" stroke="#ff9500" stroke-width="1.8" stroke-dasharray="4,3"/>
+            <text x="132" y="240" font-size="12" font-weight="800" fill="#ff9500" text-anchor="middle" font-family="Inter,sans-serif">b²</text>
+
+            <!-- Square on hypotenuse c -->
+            <!-- B=(100,110) C=(165,200). Hyp vector (65,90). Perpendicular: (90,-65) -->
+            <!-- Four corners: B, C, C+(90,-65), B+(90,-65) -->
+            <polygon points="100,110 165,200 255,135 190,45"
+              fill="rgba(0,122,255,0.12)" stroke="#007aff" stroke-width="1.8" stroke-dasharray="4,3"/>
+            <text x="196" y="118" font-size="12" font-weight="800" fill="#007aff" text-anchor="middle" font-family="Inter,sans-serif">c²</text>
+
+            <!-- Side labels -->
+            <text x="86" y="162" font-size="13" font-weight="800" fill="#ff3b30" text-anchor="middle" font-family="Inter,sans-serif">a</text>
+            <text x="134" y="214" font-size="13" font-weight="800" fill="#ff9500" text-anchor="middle" font-family="Inter,sans-serif">b</text>
+            <text x="148" y="148" font-size="13" font-weight="800" fill="#007aff" text-anchor="middle" font-family="Inter,sans-serif">c</text>
+          </g>
+        </svg>
+      </div>
+      <p>The red square (a²) plus the orange square (b²) equals the blue square (c²) — in area, every time, for every right triangle. This is why we write it as an equation: a² + b² = c².</p>
+    </section>
+
+    <!-- ── Triangle Types ── -->
+    <section class="py-card" style="--card-accent:#ff3b30;">
+      <h2>Types of Triangles</h2>
+      <p>Every triangle has three angles that add up to exactly 180°. The relationship between those angles determines which of the three types it is — and whether Pythagoras applies.</p>
+      <div class="py-tri-grid">
+        <div class="py-tri-type">
+          <svg width="100" height="80" viewBox="0 0 100 80" aria-hidden="true">
+            <polygon points="10,70 10,10 90,70" fill="rgba(52,199,89,0.12)" stroke="#34c759" stroke-width="2"/>
+            <polyline points="10,57 22,57 22,70" fill="none" stroke="#34c759" stroke-width="1.8"/>
+          </svg>
+          <strong>Right Triangle</strong>
+          <small>Exactly one 90° angle. The Pythagorean theorem applies. The hypotenuse is always the longest side.</small>
+        </div>
+        <div class="py-tri-type">
+          <svg width="100" height="80" viewBox="0 0 100 80" aria-hidden="true">
+            <polygon points="50,8 5,72 95,72" fill="rgba(0,122,255,0.1)" stroke="#007aff" stroke-width="2"/>
+          </svg>
+          <strong>Acute Triangle</strong>
+          <small>All three angles are less than 90°. Pythagoras doesn't apply, but a² + b² &gt; c² is true.</small>
+        </div>
+        <div class="py-tri-type">
+          <svg width="100" height="80" viewBox="0 0 100 80" aria-hidden="true">
+            <polygon points="10,65 90,65 30,15" fill="rgba(255,149,0,0.1)" stroke="#ff9500" stroke-width="2"/>
+            <!-- Arc showing obtuse angle at vertex (10,65) -->
+          </svg>
+          <strong>Obtuse Triangle</strong>
+          <small>One angle is greater than 90°. Pythagoras doesn't apply. Here a² + b² &lt; c².</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Interactive Explorer ── -->
+    <section class="py-explorer">
+      <h2>Interactive Explorer</h2>
+      <p class="py-explorer-sub">Adjust the legs and watch a² + b² = c² update in real time.</p>
+      <div class="py-explorer-body">
+        <div>
+          <div class="py-sliders">
+            <div class="py-slider-row">
+              <div class="py-slider-label" style="color:#ff3b30;">
+                <span>Leg <strong>a</strong></span>
+                <span class="val" id="val-a">3</span>
+              </div>
+              <input type="range" class="py-range" id="slider-a" min="1" max="20" value="3"
+                style="color:#ff3b30;background:linear-gradient(90deg,#ff3b30 0%,#ff3b30 0%,rgba(0,0,0,0.1) 0%)"
+                aria-label="Side a length" />
+            </div>
+            <div class="py-slider-row">
+              <div class="py-slider-label" style="color:#ff9500;">
+                <span>Leg <strong>b</strong></span>
+                <span class="val" id="val-b">4</span>
+              </div>
+              <input type="range" class="py-range" id="slider-b" min="1" max="20" value="4"
+                style="color:#ff9500;"
+                aria-label="Side b length" />
+            </div>
+          </div>
+          <div class="py-result-box" id="result-box">
+            <span class="py-result-eq" id="result-eq"></span>
+            <span class="py-result-check" id="result-check"></span>
+          </div>
+        </div>
+        <div class="py-canvas-wrap">
+          <canvas id="py-canvas" width="230" height="230" aria-label="Right triangle diagram"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── How to Solve ── -->
+    <section class="py-card" style="--card-accent:#34c759;">
+      <h2>How to Solve Problems</h2>
+      <h3>Finding the hypotenuse (c)</h3>
+      <ol class="py-steps">
+        <li><span class="py-step-num" style="background:#34c759;">1</span>Identify the two legs: a and b.</li>
+        <li><span class="py-step-num" style="background:#34c759;">2</span>Square each leg: calculate a² and b².</li>
+        <li><span class="py-step-num" style="background:#34c759;">3</span>Add them: a² + b².</li>
+        <li><span class="py-step-num" style="background:#34c759;">4</span>Take the square root of the result: c = √(a² + b²).</li>
+      </ol>
+      <h3>Finding a missing leg (a or b)</h3>
+      <ol class="py-steps">
+        <li><span class="py-step-num" style="background:#007aff;">1</span>Rearrange: if you know c and b, then a² = c² − b².</li>
+        <li><span class="py-step-num" style="background:#007aff;">2</span>Calculate c² and b².</li>
+        <li><span class="py-step-num" style="background:#007aff;">3</span>Subtract: c² − b².</li>
+        <li><span class="py-step-num" style="background:#007aff;">4</span>Take the square root: a = √(c² − b²).</li>
+      </ol>
+    </section>
+
+    <!-- ── Real-World Applications ── -->
+    <section class="py-card" style="--card-accent:#5856d6;">
+      <h2>Real-World Applications</h2>
+      <p>The Pythagorean theorem isn't just a classroom exercise — it's one of the most-used mathematical tools in the world.</p>
+      <div class="py-apps">
+        <div class="py-app-card">
+          <span class="py-app-icon">🏗️</span>
+          <div class="py-app-text">
+            <strong>Architecture &amp; Construction</strong>
+            <small>Builders use 3-4-5 right triangles to check that corners are perfectly square — the same technique ancient Egyptians used on the pyramids.</small>
+          </div>
+        </div>
+        <div class="py-app-card">
+          <span class="py-app-icon">📡</span>
+          <div class="py-app-text">
+            <strong>GPS &amp; Navigation</strong>
+            <small>Calculating the straight-line distance between two points on a map is a direct application of the theorem in two and three dimensions.</small>
+          </div>
+        </div>
+        <div class="py-app-card">
+          <span class="py-app-icon">🎮</span>
+          <div class="py-app-text">
+            <strong>Video Games</strong>
+            <small>Game engines use the theorem thousands of times per second to calculate distances between objects, detect collisions, and render 3D graphics.</small>
+          </div>
+        </div>
+        <div class="py-app-card">
+          <span class="py-app-icon">🚀</span>
+          <div class="py-app-text">
+            <strong>Space &amp; Engineering</strong>
+            <small>NASA engineers use it to calculate trajectories, antenna angles, and structural loads on spacecraft — it works in any dimension, including 3D and beyond.</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Practice Problems ── -->
+    <section class="py-card" style="--card-accent:#ff9500;">
+      <h2>Practice Problems</h2>
+      <p style="color:#64748b;font-size:0.84rem;">Type your answer and press Check. Round decimals to one place.</p>
+      <div class="py-practice">
+
+        <div class="py-problem" id="prob-1">
+          <p>1. A right triangle has legs a = 3 and b = 4. What is the hypotenuse c?</p>
+          <div class="py-problem-input-row">
+            <input type="number" class="py-ans-input" id="ans-1" placeholder="c = ?" aria-label="Answer for problem 1" />
+            <button class="py-check-btn" onclick="checkAnswer(1, 5)">Check</button>
+            <span class="py-feedback" id="fb-1"></span>
+          </div>
+          <div class="py-hint" id="hint-1">Hint: √(3² + 4²) = √(9 + 16) = √25 = 5</div>
+        </div>
+
+        <div class="py-problem" id="prob-2">
+          <p>2. A right triangle has legs a = 5 and b = 12. What is the hypotenuse c?</p>
+          <div class="py-problem-input-row">
+            <input type="number" class="py-ans-input" id="ans-2" placeholder="c = ?" aria-label="Answer for problem 2" />
+            <button class="py-check-btn" onclick="checkAnswer(2, 13)">Check</button>
+            <span class="py-feedback" id="fb-2"></span>
+          </div>
+          <div class="py-hint" id="hint-2">Hint: √(5² + 12²) = √(25 + 144) = √169 = 13</div>
+        </div>
+
+        <div class="py-problem" id="prob-3">
+          <p>3. A right triangle has hypotenuse c = 10 and one leg b = 6. What is leg a?</p>
+          <div class="py-problem-input-row">
+            <input type="number" class="py-ans-input" id="ans-3" placeholder="a = ?" aria-label="Answer for problem 3" />
+            <button class="py-check-btn" onclick="checkAnswer(3, 8)">Check</button>
+            <span class="py-feedback" id="fb-3"></span>
+          </div>
+          <div class="py-hint" id="hint-3">Hint: a = √(c² − b²) = √(100 − 36) = √64 = 8</div>
+        </div>
+
+        <div class="py-problem" id="prob-4">
+          <p>4. A screen is 9 inches wide and 12 inches tall. How long is the diagonal (corner to corner)?</p>
+          <div class="py-problem-input-row">
+            <input type="number" class="py-ans-input" id="ans-4" placeholder="d = ?" aria-label="Answer for problem 4" />
+            <button class="py-check-btn" onclick="checkAnswer(4, 15)">Check</button>
+            <span class="py-feedback" id="fb-4"></span>
+          </div>
+          <div class="py-hint" id="hint-4">Hint: Think of the screen as a right triangle with legs 9 and 12. √(81 + 144) = √225 = 15</div>
+        </div>
+
+        <div class="py-problem" id="prob-5">
+          <p>5. A ladder 13 feet long leans against a wall. Its base is 5 feet from the wall. How high up the wall does the ladder reach?</p>
+          <div class="py-problem-input-row">
+            <input type="number" class="py-ans-input" id="ans-5" placeholder="h = ?" aria-label="Answer for problem 5" />
+            <button class="py-check-btn" onclick="checkAnswer(5, 12)">Check</button>
+            <span class="py-feedback" id="fb-5"></span>
+          </div>
+          <div class="py-hint" id="hint-5">Hint: h = √(13² − 5²) = √(169 − 25) = √144 = 12</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+
+    /* ── Canvas drawing ───────────────────────────────── */
+    const canvas = document.getElementById('py-canvas');
+    const ctx    = canvas.getContext('2d');
+
+    function drawTriangle(a, b) {
+      const W = canvas.width, H = canvas.height;
+      const pad = 28;
+      const maxLen = W - pad * 2;
+
+      // Scale to fit
+      const scale = maxLen / Math.max(a, b, Math.sqrt(a*a+b*b));
+      const sa = a * scale, sb = b * scale;
+
+      // Positions: right-angle at bottom-left
+      const ox = pad, oy = H - pad;
+      const ax = ox,       ay = oy - sa;  // top of leg a
+      const bx = ox + sb,  by = oy;       // end of leg b
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Fill
+      ctx.beginPath();
+      ctx.moveTo(ox, oy); ctx.lineTo(ax, ay); ctx.lineTo(bx, by);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(0,122,255,0.07)';
+      ctx.fill();
+
+      // Leg a (red)
+      ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ax, ay); ctx.stroke();
+
+      // Leg b (orange)
+      ctx.strokeStyle = '#ff9500'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(bx, by); ctx.stroke();
+
+      // Hypotenuse (blue)
+      ctx.strokeStyle = '#007aff'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+
+      // Right-angle box
+      const sq = 10;
+      ctx.strokeStyle = '#007aff'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(ox, oy - sq, sq, sq);
+
+      // Labels
+      ctx.font = 'bold 14px Inter, sans-serif';
+      ctx.textAlign = 'center';
+
+      ctx.fillStyle = '#ff3b30';
+      ctx.fillText('a', ox - 14, (oy + ay) / 2);
+
+      ctx.fillStyle = '#ff9500';
+      ctx.fillText('b', (ox + bx) / 2, oy + 18);
+
+      const c = Math.sqrt(a*a + b*b);
+      ctx.fillStyle = '#007aff';
+      const cx = (ax + bx) / 2 + 12, cy = (ay + by) / 2 - 6;
+      ctx.fillText('c', cx, cy);
+
+      // Values
+      ctx.font = '11px Inter, sans-serif';
+      ctx.fillStyle = '#ff3b30';
+      ctx.fillText(a, ox - 28, (oy + ay) / 2 + 5);
+
+      ctx.fillStyle = '#ff9500';
+      ctx.fillText(b, (ox + bx) / 2, oy + 30);
+    }
+
+    /* ── Slider logic ─────────────────────────────────── */
+    function updateSliderTrack(slider) {
+      const pct = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+      slider.style.background =
+        `linear-gradient(90deg, currentColor ${pct}%, rgba(0,0,0,0.1) ${pct}%)`;
+    }
+
+    function update() {
+      const a = parseInt(document.getElementById('slider-a').value);
+      const b = parseInt(document.getElementById('slider-b').value);
+      const c = Math.sqrt(a*a + b*b);
+      const cRound = Math.round(c * 10) / 10;
+
+      document.getElementById('val-a').textContent = a;
+      document.getElementById('val-b').textContent = b;
+
+      const isPerfect = Number.isInteger(c);
+      const cDisplay = isPerfect ? c : cRound + ' ≈ √' + (a*a+b*b);
+
+      document.getElementById('result-eq').innerHTML =
+        `<span style="color:#ff3b30">${a}²</span> + <span style="color:#ff9500">${b}²</span> = ` +
+        `${a*a} + ${b*b} = ${a*a+b*b} &nbsp;→&nbsp; ` +
+        `<span style="color:#007aff">c = ${cDisplay}</span>`;
+
+      const check = document.getElementById('result-check');
+      if (isPerfect) {
+        check.textContent = '✓ Perfect triple';
+        check.style.background = '#34c759';
+      } else {
+        check.textContent = 'c ≈ ' + cRound;
+        check.style.background = '#007aff';
+      }
+
+      drawTriangle(a, b);
+
+      updateSliderTrack(document.getElementById('slider-a'));
+      updateSliderTrack(document.getElementById('slider-b'));
+    }
+
+    document.getElementById('slider-a').addEventListener('input', update);
+    document.getElementById('slider-b').addEventListener('input', update);
+    update();
+
+    /* ── Practice problems ────────────────────────────── */
+    window.checkAnswer = function (num, correct) {
+      const input = document.getElementById('ans-' + num);
+      const fb    = document.getElementById('fb-' + num);
+      const hint  = document.getElementById('hint-' + num);
+      const val   = parseFloat(input.value);
+
+      fb.className = 'py-feedback';
+      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('wrong'); return; }
+
+      if (Math.abs(val - correct) < 0.2) {
+        fb.textContent = '✓ Correct!';
+        fb.classList.add('correct');
+        hint.classList.remove('visible');
+        input.style.borderColor = '#34c759';
+      } else {
+        fb.textContent = '✗ Try again';
+        fb.classList.add('wrong');
+        hint.classList.add('visible');
+        input.style.borderColor = '#ff3b30';
+      }
+    };
+
+  })();
+  </script>
+</body>
+</html>
