@@ -1,0 +1,1349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Graphing Calculator · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Mathematics Lesson 03 — learn how to read and plot functions on a coordinate plane, explore linear, quadratic, and trigonometric equations with an interactive graphing calculator." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page ─────────────────────────────────────────────── */
+    .gc-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────────────── */
+    .gc-hero { padding: 0.4rem 0 1.35rem; text-align: left; }
+    .gc-hero h1 { max-width: 22ch; margin-left: 0; margin-right: 0; font-size: clamp(1.65rem, 3.7vw, 2.4rem); }
+    .gc-hero-meta {
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.35rem 0.5rem; font-size: 0.78rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--text-muted, #6e6e73); margin: 0.55rem 0 0.75rem;
+    }
+    .gc-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+    .gc-lede { max-width: 68ch; font-size: clamp(0.95rem, 1.6vw, 1.05rem); color: var(--text-muted, #6e6e73); margin: 0 0 1rem; line-height: 1.65; }
+    .gc-back-link { font-size: 0.82rem; font-weight: 600; color: var(--accent, #007aff); text-decoration: none; }
+    .gc-back-link:hover { text-decoration: underline; }
+
+    /* ── Cards ────────────────────────────────────────────── */
+    .gc-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--gc-accent, #007aff);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .gc-card h2 { font-size: clamp(1.05rem, 2vw, 1.25rem); font-weight: 700; margin: 0 0 0.7rem; }
+    .gc-card h3 { font-size: 0.95rem; font-weight: 700; margin: 1rem 0 0.35rem; }
+    .gc-card p  { margin: 0 0 0.7rem; font-size: 0.93rem; line-height: 1.65; }
+    .gc-card p:last-child { margin-bottom: 0; }
+
+    /* ── Callout ──────────────────────────────────────────── */
+    .gc-callout {
+      background: var(--surface, #f5f5f7); border-radius: 10px;
+      padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.9rem; line-height: 1.6;
+    }
+    .gc-callout strong { display: block; margin-bottom: 0.25rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #6e6e73); }
+
+    /* ── Axis diagram SVG ─────────────────────────────────── */
+    .gc-axis-wrap { overflow-x: auto; margin: 0.8rem 0; }
+    .gc-axis-svg  { display: block; min-width: 380px; width: 100%; max-width: 580px; height: auto; }
+
+    /* ── Function type grid ───────────────────────────────── */
+    .gc-fn-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      gap: 0.7rem; margin: 0.8rem 0;
+    }
+    .gc-fn-chip {
+      background: var(--surface, #f5f5f7); border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px; padding: 0.7rem 0.9rem; font-size: 0.84rem; line-height: 1.5;
+    }
+    .gc-fn-chip strong { display: block; margin-bottom: 0.15rem; }
+    .gc-fn-chip code { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: #007aff; background: rgba(0,122,255,0.07); padding: 1px 5px; border-radius: 4px; }
+
+    /* ── Syntax reference ─────────────────────────────────── */
+    .gc-syntax-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin: 0.7rem 0; }
+    .gc-syntax-table th { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 2px solid var(--line, #d2d2d7); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted, #6e6e73); }
+    .gc-syntax-table td { padding: 0.38rem 0.6rem; border-bottom: 1px solid var(--line, #d2d2d7); vertical-align: middle; }
+    .gc-syntax-table tr:last-child td { border-bottom: none; }
+    .gc-syntax-table code { font-family: 'JetBrains Mono', monospace; font-size: 0.83rem; color: #007aff; background: rgba(0,122,255,0.07); padding: 1px 5px; border-radius: 4px; }
+
+    /* ══════════════════════════════════════════════════════════
+       GRAPHING CALCULATOR
+    ══════════════════════════════════════════════════════════ */
+    .gc-calc {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .gc-calc h2 { font-size: clamp(1.05rem, 2vw, 1.25rem); font-weight: 700; margin: 0 0 0.35rem; }
+    .gc-calc-desc { font-size: 0.87rem; color: var(--text-muted, #6e6e73); margin: 0 0 1rem; }
+
+    /* Layout: canvas left, controls right */
+    .gc-layout {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 700px) { .gc-layout { grid-template-columns: 1fr; } }
+
+    /* Canvas */
+    .gc-canvas-wrap {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--line, #d2d2d7);
+      background: #0d0d14;
+      aspect-ratio: 4/3;
+    }
+    #gc-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .gc-coords-display {
+      position: absolute;
+      top: 8px; left: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.55);
+      pointer-events: none;
+      background: rgba(0,0,0,0.4);
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+    .gc-zoom-btns {
+      position: absolute;
+      bottom: 8px; right: 8px;
+      display: flex;
+      gap: 4px;
+    }
+    .gc-zoom-btn {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .gc-zoom-btn:hover { background: rgba(255,255,255,0.15); }
+
+    /* Sidebar controls */
+    .gc-sidebar { display: flex; flex-direction: column; gap: 0.7rem; }
+
+    /* Presets */
+    .gc-sidebar-label {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-muted, #6e6e73);
+      margin-bottom: 0.2rem;
+    }
+    .gc-presets { display: flex; flex-direction: column; gap: 0.3rem; }
+    .gc-preset-btn {
+      padding: 0.32rem 0.65rem;
+      border-radius: 7px;
+      font-size: 0.78rem; font-weight: 500;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+      cursor: pointer; text-align: left;
+      font-family: 'JetBrains Mono', monospace;
+      transition: border-color 0.13s;
+    }
+    .gc-preset-btn:hover { border-color: #007aff; color: #007aff; }
+
+    /* Input row */
+    .gc-input-row {
+      display: flex; gap: 0.4rem; align-items: center;
+    }
+    .gc-fn-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem; font-weight: 600;
+      color: var(--text-muted, #6e6e73);
+      white-space: nowrap;
+    }
+    .gc-eq-input {
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      padding: 0.4rem 0.55rem;
+      border-radius: 7px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+      outline: none;
+      transition: border-color 0.13s;
+    }
+    .gc-eq-input:focus { border-color: #007aff; }
+    .gc-eq-input.is-error { border-color: #ff3b30; }
+    .gc-add-btn {
+      padding: 0.4rem 0.7rem;
+      border-radius: 7px;
+      font-size: 0.82rem; font-weight: 700;
+      border: none;
+      background: #007aff; color: #fff;
+      cursor: pointer;
+    }
+    .gc-add-btn:hover { background: #0066d6; }
+
+    /* Function list */
+    .gc-fn-list { display: flex; flex-direction: column; gap: 0.35rem; }
+    .gc-fn-item {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: 7px;
+      background: var(--surface, #f5f5f7);
+      border: 1px solid var(--line, #d2d2d7);
+      font-size: 0.78rem;
+    }
+    .gc-fn-swatch {
+      width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+    }
+    .gc-fn-expr {
+      flex: 1; font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .gc-fn-remove {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-muted, #6e6e73); font-size: 0.8rem;
+      cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      padding: 0;
+    }
+    .gc-fn-remove:hover { background: #ff3b3020; color: #ff3b30; }
+
+    /* Clear btn */
+    .gc-clear-btn {
+      padding: 0.35rem 0.7rem;
+      border-radius: 7px; font-size: 0.78rem; font-weight: 600;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: transparent; color: var(--text-muted, #6e6e73);
+      cursor: pointer;
+    }
+    .gc-clear-btn:hover { border-color: #ff3b30; color: #ff3b30; }
+
+    /* Error message */
+    .gc-parse-error {
+      font-size: 0.78rem; color: #ff3b30; margin-top: 0.2rem;
+      min-height: 1rem;
+    }
+
+    /* ── Explorations card ────────────────────────────────── */
+    .gc-explore-list {
+      list-style: none; padding: 0; margin: 0.5rem 0 0;
+      display: flex; flex-direction: column; gap: 0.6rem;
+    }
+    .gc-explore-list li {
+      display: flex; gap: 0.6rem; align-items: flex-start;
+      font-size: 0.88rem; line-height: 1.55;
+    }
+    .gc-explore-num {
+      display: flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #007aff; color: #fff;
+      font-size: 0.72rem; font-weight: 800;
+      flex-shrink: 0; margin-top: 0.05rem;
+    }
+    .gc-explore-list code { font-family: 'JetBrains Mono', monospace; font-size: 0.83rem; color: #007aff; background: rgba(0,122,255,0.08); padding: 1px 5px; border-radius: 4px; }
+
+    /* ── Vocab grid ───────────────────────────────────────── */
+    .gc-vocab-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 0.7rem; margin: 0.7rem 0;
+    }
+    .gc-vocab-chip {
+      background: var(--surface, #f5f5f7); border-radius: 10px;
+      padding: 0.75rem 0.9rem; font-size: 0.84rem; line-height: 1.5;
+    }
+    .gc-vocab-chip strong { display: block; margin-bottom: 0.15rem; font-size: 0.88rem; }
+
+    /* ── Quiz ─────────────────────────────────────────────── */
+    .gc-quiz {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem; margin-bottom: 1rem;
+    }
+    .gc-quiz h2 { font-size: clamp(1.05rem, 2vw, 1.25rem); font-weight: 700; margin: 0 0 1rem; }
+    .gc-question { margin-bottom: 1.25rem; }
+    .gc-question:last-child { margin-bottom: 0; }
+    .gc-question p { font-size: 0.92rem; font-weight: 600; margin: 0 0 0.5rem; }
+    .gc-options { display: flex; flex-direction: column; gap: 0.35rem; }
+    .gc-option {
+      padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.87rem; font-weight: 500;
+      border: 1.5px solid var(--line, #d2d2d7); background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f); cursor: pointer; text-align: left; transition: border-color 0.13s;
+    }
+    .gc-option:hover:not(:disabled) { border-color: #007aff; }
+    .gc-option.is-correct { background: #34c75914; border-color: #34c759; color: #34c759; }
+    .gc-option.is-wrong   { background: #ff3b3014; border-color: #ff3b30; color: #ff3b30; }
+    .gc-q-feedback { margin-top: 0.4rem; font-size: 0.82rem; font-weight: 600; min-height: 1rem; color: var(--text-muted, #6e6e73); }
+
+    /* ── Dark mode ────────────────────────────────────────── */
+    [data-theme="night"] .gc-card,
+    [data-theme="night"] .gc-calc,
+    [data-theme="night"] .gc-quiz { background: var(--white, #1c1c1e); border-color: var(--line, #3a3a3c); }
+    [data-theme="night"] .gc-callout,
+    [data-theme="night"] .gc-fn-chip,
+    [data-theme="night"] .gc-vocab-chip,
+    [data-theme="night"] .gc-fn-item { background: #2c2c2e; border-color: #3a3a3c; }
+    [data-theme="night"] .gc-eq-input,
+    [data-theme="night"] .gc-preset-btn,
+    [data-theme="night"] .gc-option { background: #2c2c2e; border-color: #3a3a3c; color: #f5f5f7; }
+    [data-theme="night"] .gc-canvas-wrap { border-color: #3a3a3c; }
+
+    /* ── Responsive ───────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .gc-card, .gc-calc, .gc-quiz { padding: 1rem 1rem; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="gc-page">
+
+    <!-- ── Hero ──────────────────────────────────────────── -->
+    <section class="hero gc-hero">
+      <p class="eyebrow">Mathematics · Lesson 03</p>
+      <h1>Graphing Calculator</h1>
+      <div class="gc-hero-meta">
+        <span>Functions</span>
+        <span class="dot"></span>
+        <span>Algebra</span>
+        <span class="dot"></span>
+        <span>Coordinate Plane</span>
+        <span class="dot"></span>
+        <span>Graphing</span>
+      </div>
+      <p class="gc-lede">Every equation tells a story. When you plot it on a coordinate plane, the numbers become a shape — a line, a curve, a wave. In this lesson you'll learn to read those shapes and use an interactive graphing calculator to explore them yourself.</p>
+      <a class="gc-back-link" href="../steam-lessons.html#module-math">&larr; Back to Mathematics</a>
+    </section>
+
+    <!-- ── What is a Graph? ───────────────────────────────── -->
+    <section class="gc-card" style="--gc-accent:#5856d6;">
+      <h2>What Is a Graph?</h2>
+      <p>A <strong>graph</strong> is a visual picture of a relationship between two quantities. On a standard coordinate plane (also called the Cartesian plane), we use two perpendicular number lines — the horizontal <strong>x-axis</strong> and the vertical <strong>y-axis</strong> — that cross at the <strong>origin</strong> (0, 0).</p>
+      <p>Every point on the plane can be described by an ordered pair <strong>(x, y)</strong>. A <strong>function</strong> is a rule that assigns exactly one y-value to each x-value. When you plot all those pairs, you get the graph of the function.</p>
+      <div class="gc-callout">
+        <strong>Key idea</strong>
+        If the rule is y = 2x + 1, then for every x you choose, multiply by 2 and add 1 to get y. Plug in x = 0 → y = 1. Plug in x = 3 → y = 7. Connect all those points and you get a straight line.
+      </div>
+    </section>
+
+    <!-- ── Reading a Graph ────────────────────────────────── -->
+    <section class="gc-card" style="--gc-accent:#007aff;">
+      <h2>Reading the Coordinate Plane</h2>
+      <p>Before graphing equations, you need to be comfortable reading the plane itself.</p>
+
+      <div class="gc-axis-wrap">
+        <svg class="gc-axis-svg" viewBox="0 0 560 340" xmlns="http://www.w3.org/2000/svg" aria-label="Labeled coordinate plane diagram">
+          <!-- Background -->
+          <rect width="560" height="340" fill="#0d0d14" rx="10"/>
+          <!-- Grid -->
+          <g stroke="#ffffff0e" stroke-width="0.8">
+            <line x1="80"  y1="20" x2="80"  y2="320"/>
+            <line x1="130" y1="20" x2="130" y2="320"/>
+            <line x1="180" y1="20" x2="180" y2="320"/>
+            <line x1="230" y1="20" x2="230" y2="320"/>
+            <line x1="330" y1="20" x2="330" y2="320"/>
+            <line x1="380" y1="20" x2="380" y2="320"/>
+            <line x1="430" y1="20" x2="430" y2="320"/>
+            <line x1="480" y1="20" x2="480" y2="320"/>
+            <line x1="30" y1="70"  x2="530" y2="70"/>
+            <line x1="30" y1="120" x2="530" y2="120"/>
+            <line x1="30" y1="170" x2="530" y2="170"/>
+            <line x1="30" y1="270" x2="530" y2="270"/>
+            <line x1="30" y1="295" x2="530" y2="295"/>
+          </g>
+          <!-- Axes -->
+          <line x1="30" y1="220" x2="530" y2="220" stroke="#ffffff55" stroke-width="1.5"/>
+          <line x1="280" y1="20" x2="280" y2="320" stroke="#ffffff55" stroke-width="1.5"/>
+          <!-- Axis arrows -->
+          <polygon points="530,220 520,215 520,225" fill="#ffffff55"/>
+          <polygon points="280,20 275,30 285,30" fill="#ffffff55"/>
+          <!-- Axis labels -->
+          <text x="535" y="224" fill="#ffffff88" font-family="Inter,sans-serif" font-size="13" font-weight="700">x</text>
+          <text x="284" y="16" fill="#ffffff88" font-family="Inter,sans-serif" font-size="13" font-weight="700">y</text>
+          <text x="272" y="235" fill="#ffffff55" font-family="Inter,sans-serif" font-size="11">0</text>
+
+          <!-- Tick labels x -->
+          <text x="126" y="234" fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="middle">−3</text>
+          <text x="176" y="234" fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="middle">−2</text>
+          <text x="226" y="234" fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="middle">−1</text>
+          <text x="330" y="234" fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="middle">1</text>
+          <text x="380" y="234" fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="middle">2</text>
+          <text x="430" y="234" fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="middle">3</text>
+          <text x="480" y="234" fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="middle">4</text>
+
+          <!-- Tick labels y -->
+          <text x="270" y="72"  fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="end">3</text>
+          <text x="270" y="122" fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="end">2</text>
+          <text x="270" y="172" fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="end">1</text>
+          <text x="270" y="272" fill="#ffffff44" font-family="Inter,sans-serif" font-size="9" text-anchor="end">−1</text>
+
+          <!-- Example line: y = 0.8x + 1 -->
+          <line x1="80" y1="294" x2="500" y2="46" stroke="#007aff" stroke-width="2" stroke-linecap="round"/>
+
+          <!-- Point (2, 2.6) -->
+          <circle cx="380" cy="92" r="5" fill="#ff9500" stroke="#fff" stroke-width="1.5"/>
+
+          <!-- Labels -->
+          <!-- y-intercept -->
+          <circle cx="280" cy="170" r="5" fill="#34c759" stroke="#fff" stroke-width="1.5"/>
+          <line x1="280" y1="165" x2="240" y2="140" stroke="#34c75988" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="235" y="135" fill="#34c759" font-family="Inter,sans-serif" font-size="11" font-weight="700" text-anchor="end">y-intercept (0, 1)</text>
+
+          <!-- Point label -->
+          <line x1="380" y1="87" x2="430" y2="60" stroke="#ff950088" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="433" y="57" fill="#ff9500" font-family="Inter,sans-serif" font-size="11" font-weight="700">(2, 2.6)</text>
+
+          <!-- Slope annotation -->
+          <!-- Rise/Run triangle -->
+          <line x1="330" y1="132" x2="380" y2="132" stroke="#af52de88" stroke-width="1.5" stroke-dasharray="3,3"/>
+          <line x1="380" y1="132" x2="380" y2="92"  stroke="#af52de88" stroke-width="1.5" stroke-dasharray="3,3"/>
+          <text x="355" y="145" fill="#af52de" font-family="Inter,sans-serif" font-size="10" font-weight="700" text-anchor="middle">run = 1</text>
+          <text x="395" y="116" fill="#af52de" font-family="Inter,sans-serif" font-size="10" font-weight="700">rise</text>
+
+          <!-- Equation label -->
+          <text x="500" y="42" fill="#007affcc" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700">y = 0.8x + 1</text>
+
+          <!-- Quadrant labels -->
+          <text x="160" y="155" fill="#ffffff18" font-family="Inter,sans-serif" font-size="20" font-weight="800" text-anchor="middle">II</text>
+          <text x="410" y="155" fill="#ffffff18" font-family="Inter,sans-serif" font-size="20" font-weight="800" text-anchor="middle">I</text>
+          <text x="160" y="290" fill="#ffffff18" font-family="Inter,sans-serif" font-size="20" font-weight="800" text-anchor="middle">III</text>
+          <text x="410" y="290" fill="#ffffff18" font-family="Inter,sans-serif" font-size="20" font-weight="800" text-anchor="middle">IV</text>
+        </svg>
+      </div>
+
+      <h3>Key Parts of a Graph</h3>
+      <div class="gc-fn-grid">
+        <div class="gc-fn-chip">
+          <strong>x-intercept</strong>
+          Where the curve crosses the x-axis (y = 0). Set the equation equal to zero and solve for x.
+        </div>
+        <div class="gc-fn-chip">
+          <strong>y-intercept</strong>
+          Where the curve crosses the y-axis (x = 0). Substitute x = 0 into the equation.
+        </div>
+        <div class="gc-fn-chip">
+          <strong>Slope (m)</strong>
+          How steep a line is. Slope = rise ÷ run. Positive slope rises left-to-right; negative slope falls.
+        </div>
+        <div class="gc-fn-chip">
+          <strong>Vertex</strong>
+          The highest or lowest point of a parabola. For y = ax² + bx + c, it sits at x = −b/(2a).
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Types of Functions ─────────────────────────────── -->
+    <section class="gc-card" style="--gc-accent:#34c759;">
+      <h2>Types of Functions</h2>
+      <p>Different equation forms produce different graph shapes. Recognising the shape from the equation (and vice versa) is a core algebra skill.</p>
+      <div class="gc-fn-grid">
+        <div class="gc-fn-chip">
+          <strong>Linear</strong>
+          <code>y = mx + b</code>
+          A straight line. m controls steepness, b sets where it crosses the y-axis.
+        </div>
+        <div class="gc-fn-chip">
+          <strong>Quadratic</strong>
+          <code>y = ax² + bx + c</code>
+          A U-shaped parabola. Opens up when a &gt; 0, down when a &lt; 0.
+        </div>
+        <div class="gc-fn-chip">
+          <strong>Cubic</strong>
+          <code>y = ax³ + …</code>
+          An S-shaped curve with two bends. Can have up to three x-intercepts.
+        </div>
+        <div class="gc-fn-chip">
+          <strong>Absolute Value</strong>
+          <code>y = abs(x)</code>
+          A V-shape. Always non-negative — it flips negative values up.
+        </div>
+        <div class="gc-fn-chip">
+          <strong>Square Root</strong>
+          <code>y = sqrt(x)</code>
+          Starts at the origin, curves right. Only defined for x ≥ 0.
+        </div>
+        <div class="gc-fn-chip">
+          <strong>Sine / Cosine</strong>
+          <code>y = sin(x)</code>
+          A repeating wave. Period is 2π (~6.28). Oscillates between −1 and 1.
+        </div>
+        <div class="gc-fn-chip">
+          <strong>Exponential</strong>
+          <code>y = 2^x</code>
+          Grows (or decays) at an accelerating rate. Never touches the x-axis.
+        </div>
+        <div class="gc-fn-chip">
+          <strong>Rational</strong>
+          <code>y = 1/x</code>
+          Has a vertical asymptote at x = 0 — the curve approaches but never crosses it.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Calculator Syntax ──────────────────────────────── -->
+    <section class="gc-card" style="--gc-accent:#ff9500;">
+      <h2>How to Type Equations</h2>
+      <p>The calculator below uses standard math notation. Here's a quick reference:</p>
+      <table class="gc-syntax-table" aria-label="Calculator syntax reference">
+        <thead>
+          <tr><th>Operation</th><th>Type this</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Multiply</td><td><code>*</code></td><td><code>3*x</code></td></tr>
+          <tr><td>Exponent / Power</td><td><code>^</code></td><td><code>x^2</code></td></tr>
+          <tr><td>Square root</td><td><code>sqrt(…)</code></td><td><code>sqrt(x)</code></td></tr>
+          <tr><td>Absolute value</td><td><code>abs(…)</code></td><td><code>abs(x-2)</code></td></tr>
+          <tr><td>Sine / Cosine</td><td><code>sin(…)</code> / <code>cos(…)</code></td><td><code>sin(x)</code></td></tr>
+          <tr><td>Natural log</td><td><code>ln(…)</code></td><td><code>ln(x)</code></td></tr>
+          <tr><td>Log base 10</td><td><code>log(…)</code></td><td><code>log(x)</code></td></tr>
+          <tr><td>Pi</td><td><code>pi</code></td><td><code>sin(2*pi*x)</code></td></tr>
+          <tr><td>e (Euler's number)</td><td><code>e</code></td><td><code>e^x</code></td></tr>
+        </tbody>
+      </table>
+      <div class="gc-callout">
+        <strong>Always write multiplication explicitly</strong>
+        Write <code>3*x</code> not <code>3x</code>. The calculator needs the asterisk to know you mean multiply.
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════
+         THE GRAPHING CALCULATOR
+    ════════════════════════════════════════════════════ -->
+    <section class="gc-calc" id="gc-calculator">
+      <h2>Graphing Calculator</h2>
+      <p class="gc-calc-desc">Type an equation in terms of x, press <strong>Plot</strong> (or Enter), and it appears on the graph. Pan by dragging, zoom with scroll or the +/− buttons. Hover over the graph to read exact coordinates.</p>
+
+      <div class="gc-layout">
+
+        <!-- Canvas side -->
+        <div>
+          <div class="gc-canvas-wrap">
+            <canvas id="gc-canvas"></canvas>
+            <div class="gc-coords-display" id="gc-coords">x: —  y: —</div>
+            <div class="gc-zoom-btns">
+              <button class="gc-zoom-btn" id="gc-zoom-in"  aria-label="Zoom in">+</button>
+              <button class="gc-zoom-btn" id="gc-zoom-out" aria-label="Zoom out">−</button>
+              <button class="gc-zoom-btn" id="gc-zoom-reset" aria-label="Reset view" title="Reset view" style="font-size:0.72rem;width:36px;">↺</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="gc-sidebar">
+
+          <!-- Input -->
+          <div>
+            <p class="gc-sidebar-label">Add equation</p>
+            <div class="gc-input-row">
+              <span class="gc-fn-label">y =</span>
+              <input class="gc-eq-input" id="gc-eq-input" type="text" placeholder="x^2 - 2" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="gc-parse-error" id="gc-parse-error"></div>
+            <button class="gc-add-btn" id="gc-add-btn" style="margin-top:0.4rem;width:100%;">Plot →</button>
+          </div>
+
+          <!-- Presets -->
+          <div>
+            <p class="gc-sidebar-label">Quick presets</p>
+            <div class="gc-presets" id="gc-presets">
+              <button class="gc-preset-btn" data-eq="x">y = x</button>
+              <button class="gc-preset-btn" data-eq="2*x + 1">y = 2x + 1</button>
+              <button class="gc-preset-btn" data-eq="x^2">y = x²</button>
+              <button class="gc-preset-btn" data-eq="x^2 - 4">y = x² − 4</button>
+              <button class="gc-preset-btn" data-eq="x^3 - 3*x">y = x³ − 3x</button>
+              <button class="gc-preset-btn" data-eq="sin(x)">y = sin(x)</button>
+              <button class="gc-preset-btn" data-eq="cos(x)">y = cos(x)</button>
+              <button class="gc-preset-btn" data-eq="abs(x)">y = |x|</button>
+              <button class="gc-preset-btn" data-eq="sqrt(x)">y = √x</button>
+              <button class="gc-preset-btn" data-eq="1/x">y = 1/x</button>
+              <button class="gc-preset-btn" data-eq="2^x">y = 2ˣ</button>
+            </div>
+          </div>
+
+          <!-- Plotted functions list -->
+          <div>
+            <p class="gc-sidebar-label">Plotted functions</p>
+            <div class="gc-fn-list" id="gc-fn-list">
+              <span style="font-size:0.78rem;color:var(--text-muted,#6e6e73);">None yet — add one above.</span>
+            </div>
+            <button class="gc-clear-btn" id="gc-clear-btn" style="margin-top:0.5rem;">Clear all</button>
+          </div>
+
+        </div><!-- /sidebar -->
+      </div><!-- /layout -->
+    </section>
+
+    <!-- ── Guided Explorations ────────────────────────────── -->
+    <section class="gc-card" style="--gc-accent:#af52de;">
+      <h2>Guided Explorations</h2>
+      <p>Use the calculator above to investigate these questions. Each one reveals something important about how functions behave.</p>
+      <ol class="gc-explore-list">
+        <li>
+          <span class="gc-explore-num">1</span>
+          <span><strong>Slope &amp; steepness:</strong> Plot <code>x</code>, <code>2*x</code>, and <code>0.5*x</code> together. What does changing the coefficient do to the line? Now try <code>-x</code>. What happens when the slope is negative?</span>
+        </li>
+        <li>
+          <span class="gc-explore-num">2</span>
+          <span><strong>The y-intercept:</strong> Plot <code>x + 3</code>, <code>x</code>, and <code>x - 3</code>. All three have the same slope. What is the only thing that changes? Which number in the equation controls the vertical shift?</span>
+        </li>
+        <li>
+          <span class="gc-explore-num">3</span>
+          <span><strong>Parabolas &amp; the a-value:</strong> Plot <code>x^2</code>, <code>2*x^2</code>, and <code>0.3*x^2</code>. How does the leading coefficient affect the width? Now try <code>-x^2</code>. What does a negative a-value do?</span>
+        </li>
+        <li>
+          <span class="gc-explore-num">4</span>
+          <span><strong>Finding intersections:</strong> Plot <code>x + 2</code> and <code>x^2</code>. Where do they cross? Hover your mouse near the intersection to read the approximate coordinates. Can you solve it algebraically? Set <code>x + 2 = x²</code> and solve for x.</span>
+        </li>
+        <li>
+          <span class="gc-explore-num">5</span>
+          <span><strong>Waves:</strong> Plot <code>sin(x)</code> and <code>sin(2*x)</code>. How does multiplying inside the sine change the wave? Try <code>2*sin(x)</code> — what does the multiplier outside change?</span>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ── Key Vocabulary ─────────────────────────────────── -->
+    <section class="gc-card" style="--gc-accent:#30b0c7;">
+      <h2>Key Vocabulary</h2>
+      <div class="gc-vocab-grid">
+        <div class="gc-vocab-chip">
+          <strong>Function</strong>
+          A rule where every input (x) gives exactly one output (y).
+        </div>
+        <div class="gc-vocab-chip">
+          <strong>Domain</strong>
+          The set of all allowed x-values (inputs).
+        </div>
+        <div class="gc-vocab-chip">
+          <strong>Range</strong>
+          The set of all possible y-values (outputs).
+        </div>
+        <div class="gc-vocab-chip">
+          <strong>Slope</strong>
+          Rise over run — the rate at which y changes per unit of x.
+        </div>
+        <div class="gc-vocab-chip">
+          <strong>Intercept</strong>
+          Where a graph crosses an axis. x-intercept: y = 0. y-intercept: x = 0.
+        </div>
+        <div class="gc-vocab-chip">
+          <strong>Asymptote</strong>
+          A line the graph approaches but never touches (e.g. x = 0 for y = 1/x).
+        </div>
+        <div class="gc-vocab-chip">
+          <strong>Period</strong>
+          The horizontal distance before a wave repeats. For sin(x), period = 2π.
+        </div>
+        <div class="gc-vocab-chip">
+          <strong>Vertex</strong>
+          The turning point of a parabola — its maximum or minimum value.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Quick Check ────────────────────────────────────── -->
+    <section class="gc-quiz">
+      <h2>Quick Check</h2>
+
+      <div class="gc-question" data-answer="b" data-explanation="The y-intercept is the value of y when x = 0. For y = 3x − 5, substitute x = 0: y = 3(0) − 5 = −5. So the y-intercept is −5 (the point (0, −5)).">
+        <p>1. What is the y-intercept of y = 3x − 5?</p>
+        <div class="gc-options" role="group">
+          <button class="gc-option" data-choice="a">3</button>
+          <button class="gc-option" data-choice="b">−5</button>
+          <button class="gc-option" data-choice="c">5</button>
+          <button class="gc-option" data-choice="d">0</button>
+        </div>
+        <div class="gc-q-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="gc-question" data-answer="c" data-explanation="In y = ax², the parabola opens upward when a > 0 and downward when a < 0. With a = −2, the parabola opens downward and is narrower than y = x² (|a| > 1 makes it narrower).">
+        <p>2. The equation y = −2x² produces which shape?</p>
+        <div class="gc-options" role="group">
+          <button class="gc-option" data-choice="a">A straight line sloping downward</button>
+          <button class="gc-option" data-choice="b">A U-shaped parabola opening upward</button>
+          <button class="gc-option" data-choice="c">An upside-down parabola opening downward</button>
+          <button class="gc-option" data-choice="d">A V-shape</button>
+        </div>
+        <div class="gc-q-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="gc-question" data-answer="a" data-explanation="Slope = rise ÷ run. In y = mx + b, m is the slope. Comparing y = 4x + 1 and y = x + 1, the first has slope 4 and the second has slope 1 — so y = 4x + 1 is steeper.">
+        <p>3. Which line is steeper: y = 4x + 1 or y = x + 1?</p>
+        <div class="gc-options" role="group">
+          <button class="gc-option" data-choice="a">y = 4x + 1, because its slope (4) is larger</button>
+          <button class="gc-option" data-choice="b">y = x + 1, because it has a smaller slope</button>
+          <button class="gc-option" data-choice="c">They are equally steep — both have the same y-intercept</button>
+          <button class="gc-option" data-choice="d">Cannot be determined without graphing</button>
+        </div>
+        <div class="gc-q-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="gc-question" data-answer="d" data-explanation="y = sin(x) is a periodic wave that oscillates between −1 and 1, repeating every 2π ≈ 6.28 units. It is not a parabola, line, or V-shape.">
+        <p>4. Which best describes the graph of y = sin(x)?</p>
+        <div class="gc-options" role="group">
+          <button class="gc-option" data-choice="a">A straight line through the origin</button>
+          <button class="gc-option" data-choice="b">A U-shaped parabola</button>
+          <button class="gc-option" data-choice="c">A V-shape that bounces at zero</button>
+          <button class="gc-option" data-choice="d">A repeating wave that oscillates between −1 and 1</button>
+        </div>
+        <div class="gc-q-feedback" aria-live="polite"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ═══════════════════════════════════════════════════════
+       MATH EXPRESSION PARSER
+    ═══════════════════════════════════════════════════════ */
+    function evalExpr(rawExpr, xVal) {
+      let str = rawExpr
+        .replace(/\s+/g, '')
+        .toLowerCase()
+        .replace(/\bpi\b/g, '(' + Math.PI + ')')
+        .replace(/\be\b(?!\^)/g, '(' + Math.E + ')');
+
+      // Implicit multiplication: 2x → 2*x, 2(… → 2*(…, )(x → )*(x
+      str = str
+        .replace(/(\d)(x)/g, '$1*$2')
+        .replace(/(\d)\(/g, '$1*(')
+        .replace(/\)(x)/g, ')*$2')
+        .replace(/\)\(/g, ')*(');
+
+      let pos = 0;
+
+      function peek()    { return str[pos]; }
+      function consume() { return str[pos++]; }
+
+      function parseExpr()    { return parseAdd(); }
+
+      function parseAdd() {
+        let left = parseMul();
+        while (peek() === '+' || (peek() === '-' && str[pos - 1] !== '^')) {
+          const op = consume();
+          const right = parseMul();
+          left = op === '+' ? left + right : left - right;
+        }
+        return left;
+      }
+
+      function parseMul() {
+        let left = parsePow();
+        while (peek() === '*' || peek() === '/') {
+          const op = consume();
+          const right = parsePow();
+          if (op === '*') left *= right;
+          else left /= right;
+        }
+        return left;
+      }
+
+      function parsePow() {
+        let base = parseUnary();
+        if (peek() === '^') {
+          consume();
+          const exp = parsePow(); // right-associative
+          base = Math.pow(base, exp);
+        }
+        return base;
+      }
+
+      function parseUnary() {
+        if (peek() === '-') { consume(); return -parsePrimary(); }
+        if (peek() === '+') { consume(); return  parsePrimary(); }
+        return parsePrimary();
+      }
+
+      function parseFunc(name) {
+        consume(); // '('
+        const arg = parseExpr();
+        if (peek() === ')') consume(); // ')'
+        switch (name) {
+          case 'sin':   return Math.sin(arg);
+          case 'cos':   return Math.cos(arg);
+          case 'tan':   return Math.tan(arg);
+          case 'sqrt':  return Math.sqrt(arg);
+          case 'abs':   return Math.abs(arg);
+          case 'log':   return Math.log10(arg);
+          case 'ln':    return Math.log(arg);
+          case 'floor': return Math.floor(arg);
+          case 'ceil':  return Math.ceil(arg);
+          case 'round': return Math.round(arg);
+          default:      return NaN;
+        }
+      }
+
+      function parsePrimary() {
+        // Number
+        if (/[\d.]/.test(peek())) {
+          let num = '';
+          while (pos < str.length && /[\d.]/.test(str[pos])) num += str[pos++];
+          return parseFloat(num);
+        }
+        // Parentheses
+        if (peek() === '(') {
+          consume();
+          const val = parseExpr();
+          if (peek() === ')') consume();
+          return val;
+        }
+        // Variable or named function/constant
+        if (/[a-z]/.test(peek())) {
+          let name = '';
+          while (pos < str.length && /[a-z]/.test(str[pos])) name += str[pos++];
+          if (peek() === '(') return parseFunc(name);
+          if (name === 'x') return xVal;
+          return NaN;
+        }
+        // Unknown character — skip
+        if (pos < str.length) consume();
+        return NaN;
+      }
+
+      try {
+        const result = parseExpr();
+        return isFinite(result) ? result : NaN;
+      } catch (e) {
+        return NaN;
+      }
+    }
+
+    // Validate: try a few x values; if all NaN, it's broken
+    function validateExpr(expr) {
+      if (!expr.trim()) return false;
+      const testVals = [-3, -1, 0, 1, 3, 5];
+      const results = testVals.map(x => evalExpr(expr, x));
+      return results.some(v => !isNaN(v));
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CANVAS & VIEW STATE
+    ═══════════════════════════════════════════════════════ */
+    const canvas   = document.getElementById('gc-canvas');
+    const ctx      = canvas ? canvas.getContext('2d') : null;
+    const coordsEl = document.getElementById('gc-coords');
+
+    if (!ctx) return;
+
+    // View state
+    const view = { xMin: -10, xMax: 10, yMin: -7.5, yMax: 7.5 };
+    const DEFAULT_VIEW = { xMin: -10, xMax: 10, yMin: -7.5, yMax: 7.5 };
+
+    // Plotted functions
+    const COLORS = ['#007aff', '#ff3b30', '#34c759', '#ff9500', '#af52de', '#30b0c7', '#ff375f'];
+    let fns = []; // { expr, color }
+    let colorIdx = 0;
+
+    // Dragging
+    let dragging = false;
+    let dragStart = { x: 0, y: 0, xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
+
+    // Trace
+    let tracePos = null; // { x, y } in canvas pixels
+
+    /* ─── Coordinate transforms ─────────────────────────── */
+    function toCanvasX(wx) {
+      return (wx - view.xMin) / (view.xMax - view.xMin) * canvas.width;
+    }
+    function toCanvasY(wy) {
+      return canvas.height - (wy - view.yMin) / (view.yMax - view.yMin) * canvas.height;
+    }
+    function toWorldX(cx) {
+      return view.xMin + (cx / canvas.width)  * (view.xMax - view.xMin);
+    }
+    function toWorldY(cy) {
+      return view.yMin + (1 - cy / canvas.height) * (view.yMax - view.yMin);
+    }
+
+    /* ─── Resize handler ────────────────────────────────── */
+    function resizeCanvas() {
+      const wrap = canvas.parentElement;
+      const w = wrap.clientWidth;
+      const h = Math.round(w * 0.75); // 4:3
+      canvas.width  = w;
+      canvas.height = h;
+      draw();
+    }
+
+    /* ─── Drawing ───────────────────────────────────────── */
+    function draw() {
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      // Background
+      ctx.fillStyle = '#0d0d14';
+      ctx.fillRect(0, 0, W, H);
+
+      drawGrid(W, H);
+      drawAxes(W, H);
+
+      // Plot functions
+      fns.forEach(fn => plotFn(fn));
+
+      // Trace crosshair
+      if (tracePos) drawTrace(tracePos.cx, tracePos.cy);
+    }
+
+    function niceStep(range, targetTicks) {
+      const raw = range / targetTicks;
+      const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+      const nice = [1, 2, 2.5, 5, 10].find(n => n * mag >= raw);
+      return nice * mag;
+    }
+
+    function drawGrid(W, H) {
+      const xRange = view.xMax - view.xMin;
+      const yRange = view.yMax - view.yMin;
+      const step = niceStep(Math.max(xRange, yRange), 12);
+
+      ctx.strokeStyle = '#ffffff0d';
+      ctx.lineWidth = 0.8;
+
+      // Vertical grid lines
+      const xStart = Math.ceil(view.xMin / step) * step;
+      for (let wx = xStart; wx <= view.xMax + step * 0.01; wx += step) {
+        const cx = toCanvasX(wx);
+        ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+      }
+
+      // Horizontal grid lines
+      const yStart = Math.ceil(view.yMin / step) * step;
+      for (let wy = yStart; wy <= view.yMax + step * 0.01; wy += step) {
+        const cy = toCanvasY(wy);
+        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
+      }
+
+      // Axis tick labels
+      ctx.fillStyle = '#ffffff44';
+      ctx.font = `${Math.max(9, Math.min(11, W * 0.018))}px Inter, sans-serif`;
+      ctx.textAlign = 'center';
+
+      const ax0 = toCanvasX(0);
+      const ay0 = toCanvasY(0);
+      const labelPad = 4;
+
+      for (let wx = xStart; wx <= view.xMax + step * 0.01; wx += step) {
+        const val = Math.round(wx / step) * step; // avoid float noise
+        if (Math.abs(val) < step * 0.01) continue; // skip 0
+        const cx = toCanvasX(val);
+        const labelY = Math.min(Math.max(ay0 + 14, 14), H - 4);
+        ctx.fillText(round4(val), cx, labelY);
+      }
+
+      ctx.textAlign = 'right';
+      for (let wy = yStart; wy <= view.yMax + step * 0.01; wy += step) {
+        const val = Math.round(wy / step) * step;
+        if (Math.abs(val) < step * 0.01) continue;
+        const cy = toCanvasY(val);
+        const labelX = Math.min(Math.max(ax0 - 5, 24), W - 4);
+        ctx.fillText(round4(val), labelX, cy + 3.5);
+      }
+    }
+
+    function drawAxes(W, H) {
+      const ax0 = Math.max(0, Math.min(W, toCanvasX(0)));
+      const ay0 = Math.max(0, Math.min(H, toCanvasY(0)));
+
+      ctx.strokeStyle = '#ffffff66';
+      ctx.lineWidth = 1.5;
+
+      // x-axis
+      ctx.beginPath(); ctx.moveTo(0, ay0); ctx.lineTo(W, ay0); ctx.stroke();
+      // y-axis
+      ctx.beginPath(); ctx.moveTo(ax0, 0); ctx.lineTo(ax0, H); ctx.stroke();
+
+      // Axis arrows
+      const aw = 6;
+      ctx.fillStyle = '#ffffff66';
+      // → right arrow on x-axis
+      ctx.beginPath();
+      ctx.moveTo(W, ay0);
+      ctx.lineTo(W - aw, ay0 - aw * 0.5);
+      ctx.lineTo(W - aw, ay0 + aw * 0.5);
+      ctx.fill();
+      // ↑ up arrow on y-axis
+      ctx.beginPath();
+      ctx.moveTo(ax0, 0);
+      ctx.lineTo(ax0 - aw * 0.5, aw);
+      ctx.lineTo(ax0 + aw * 0.5, aw);
+      ctx.fill();
+
+      // Axis labels
+      ctx.fillStyle = '#ffffff88';
+      ctx.font = `bold ${Math.max(10, Math.min(13, W * 0.022))}px Inter, sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.fillText('x', W - 14, ay0 - 8);
+      ctx.textAlign = 'center';
+      ctx.fillText('y', ax0 + 9, 14);
+    }
+
+    function plotFn(fn) {
+      const W = canvas.width;
+      const steps = W * 2;
+      const xRange = view.xMax - view.xMin;
+
+      ctx.strokeStyle = fn.color;
+      ctx.lineWidth = 2.2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap  = 'round';
+      ctx.shadowColor = fn.color + '55';
+      ctx.shadowBlur  = 6;
+
+      ctx.beginPath();
+      let penDown = false;
+      let prevCy = null;
+
+      for (let i = 0; i <= steps; i++) {
+        const wx = view.xMin + (i / steps) * xRange;
+        const wy = evalExpr(fn.expr, wx);
+
+        if (isNaN(wy) || !isFinite(wy)) {
+          penDown = false;
+          continue;
+        }
+
+        const cx = toCanvasX(wx);
+        const cy = toCanvasY(wy);
+
+        // Break line on large jumps (asymptotes)
+        if (penDown && prevCy !== null && Math.abs(cy - prevCy) > canvas.height * 1.2) {
+          penDown = false;
+        }
+
+        if (!penDown) { ctx.moveTo(cx, cy); penDown = true; }
+        else          { ctx.lineTo(cx, cy); }
+
+        prevCy = cy;
+      }
+
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    function drawTrace(cx, cy) {
+      const wx = toWorldX(cx);
+      const W  = canvas.width, H = canvas.height;
+
+      // Crosshair lines
+      ctx.strokeStyle = '#ffffff30';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Dots on each curve at this x
+      fns.forEach(fn => {
+        const wy = evalExpr(fn.expr, wx);
+        if (isNaN(wy)) return;
+        const fcy = toCanvasY(wy);
+        if (fcy < -10 || fcy > H + 10) return;
+
+        ctx.beginPath();
+        ctx.arc(cx, fcy, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = fn.color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+    }
+
+    function round4(n) {
+      return Math.abs(n) < 1e-9 ? 0 : parseFloat(n.toPrecision(4));
+    }
+
+    /* ─── Zoom helpers ──────────────────────────────────── */
+    function zoom(factor, cx, cy) {
+      const wx = cx !== undefined ? toWorldX(cx) : (view.xMin + view.xMax) / 2;
+      const wy = cy !== undefined ? toWorldY(cy) : (view.yMin + view.yMax) / 2;
+
+      const xRange = (view.xMax - view.xMin) * factor;
+      const yRange = (view.yMax - view.yMin) * factor;
+      const xRatio = cx !== undefined ? cx / canvas.width : 0.5;
+      const yRatio = cy !== undefined ? 1 - cy / canvas.height : 0.5;
+
+      view.xMin = wx - xRange * xRatio;
+      view.xMax = wx + xRange * (1 - xRatio);
+      view.yMin = wy - yRange * yRatio;
+      view.yMax = wy + yRange * (1 - yRatio);
+      draw();
+    }
+
+    /* ─── Canvas events ─────────────────────────────────── */
+    canvas.addEventListener('mousedown', function (e) {
+      dragging = true;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width  / rect.width;
+      const scaleY = canvas.height / rect.height;
+      dragStart = {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top)  * scaleY,
+        xMin: view.xMin, xMax: view.xMax, yMin: view.yMin, yMax: view.yMax
+      };
+    });
+
+    canvas.addEventListener('mousemove', function (e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width  / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const cx = (e.clientX - rect.left) * scaleX;
+      const cy = (e.clientY - rect.top)  * scaleY;
+
+      if (dragging) {
+        const dx = dragStart.x - cx;
+        const dy = dragStart.y - cy;
+        const wxPx = (dragStart.xMax - dragStart.xMin) / canvas.width;
+        const wyPx = (dragStart.yMax - dragStart.yMin) / canvas.height;
+        view.xMin = dragStart.xMin + dx * wxPx;
+        view.xMax = dragStart.xMax + dx * wxPx;
+        view.yMin = dragStart.yMin - dy * wyPx;
+        view.yMax = dragStart.yMax - dy * wyPx;
+      }
+
+      tracePos = { cx, cy };
+      const wx = round4(toWorldX(cx));
+      const wy = round4(toWorldY(cy));
+      if (coordsEl) coordsEl.textContent = `x: ${wx}  y: ${wy}`;
+
+      draw();
+    });
+
+    canvas.addEventListener('mouseup',    () => { dragging = false; });
+    canvas.addEventListener('mouseleave', () => { dragging = false; tracePos = null; draw(); if (coordsEl) coordsEl.textContent = 'x: —  y: —'; });
+
+    // Scroll to zoom
+    canvas.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width  / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const cx = (e.clientX - rect.left) * scaleX;
+      const cy = (e.clientY - rect.top)  * scaleY;
+      const factor = e.deltaY > 0 ? 1.12 : 1 / 1.12;
+      zoom(factor, cx, cy);
+    }, { passive: false });
+
+    // Touch pan
+    let lastTouch = null;
+    canvas.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 1) {
+        lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    }, { passive: true });
+    canvas.addEventListener('touchmove', function (e) {
+      if (e.touches.length === 1 && lastTouch) {
+        e.preventDefault();
+        const dx = lastTouch.x - e.touches[0].clientX;
+        const dy = lastTouch.y - e.touches[0].clientY;
+        const rect = canvas.getBoundingClientRect();
+        const wxPx = (view.xMax - view.xMin) / rect.width;
+        const wyPx = (view.yMax - view.yMin) / rect.height;
+        view.xMin += dx * wxPx; view.xMax += dx * wxPx;
+        view.yMin -= dy * wyPx; view.yMax -= dy * wyPx;
+        lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        draw();
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => { lastTouch = null; }, { passive: true });
+
+    // Zoom buttons
+    document.getElementById('gc-zoom-in') .addEventListener('click', () => zoom(1 / 1.3));
+    document.getElementById('gc-zoom-out').addEventListener('click', () => zoom(1.3));
+    document.getElementById('gc-zoom-reset').addEventListener('click', () => {
+      Object.assign(view, DEFAULT_VIEW);
+      draw();
+    });
+
+    /* ─── Function management ───────────────────────────── */
+    function addFn(expr) {
+      if (fns.length >= COLORS.length) {
+        showError('Max 7 functions. Clear some first.');
+        return false;
+      }
+      if (!validateExpr(expr)) {
+        showError('Could not parse that expression. Check your syntax.');
+        return false;
+      }
+      const color = COLORS[colorIdx % COLORS.length];
+      colorIdx++;
+      fns.push({ expr, color });
+      clearError();
+      renderFnList();
+      draw();
+      return true;
+    }
+
+    function removeFn(idx) {
+      fns.splice(idx, 1);
+      renderFnList();
+      draw();
+    }
+
+    function clearAll() {
+      fns = [];
+      colorIdx = 0;
+      renderFnList();
+      draw();
+    }
+
+    function renderFnList() {
+      const list = document.getElementById('gc-fn-list');
+      if (!list) return;
+      if (fns.length === 0) {
+        list.innerHTML = '<span style="font-size:0.78rem;color:var(--text-muted,#6e6e73);">None yet — add one above.</span>';
+        return;
+      }
+      list.innerHTML = '';
+      fns.forEach((fn, i) => {
+        const item = document.createElement('div');
+        item.className = 'gc-fn-item';
+        const swatch = document.createElement('span');
+        swatch.className = 'gc-fn-swatch';
+        swatch.style.background = fn.color;
+        const label = document.createElement('span');
+        label.className = 'gc-fn-expr';
+        label.title = 'y = ' + fn.expr;
+        label.textContent = 'y = ' + fn.expr;
+        const del = document.createElement('button');
+        del.className = 'gc-fn-remove';
+        del.setAttribute('aria-label', 'Remove ' + fn.expr);
+        del.textContent = '✕';
+        del.addEventListener('click', () => removeFn(i));
+        item.append(swatch, label, del);
+        list.appendChild(item);
+      });
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('gc-parse-error');
+      const inp = document.getElementById('gc-eq-input');
+      if (el)  el.textContent = msg;
+      if (inp) inp.classList.add('is-error');
+    }
+    function clearError() {
+      const el = document.getElementById('gc-parse-error');
+      const inp = document.getElementById('gc-eq-input');
+      if (el)  el.textContent = '';
+      if (inp) inp.classList.remove('is-error');
+    }
+
+    /* ─── UI events ─────────────────────────────────────── */
+    const addBtn   = document.getElementById('gc-add-btn');
+    const eqInput  = document.getElementById('gc-eq-input');
+    const clearBtn = document.getElementById('gc-clear-btn');
+    const presets  = document.getElementById('gc-presets');
+
+    if (addBtn) {
+      addBtn.addEventListener('click', function () {
+        const expr = eqInput.value.trim();
+        if (!expr) return;
+        if (addFn(expr)) eqInput.value = '';
+      });
+    }
+
+    if (eqInput) {
+      eqInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          const expr = eqInput.value.trim();
+          if (!expr) return;
+          if (addFn(expr)) eqInput.value = '';
+        }
+      });
+      eqInput.addEventListener('input', clearError);
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', clearAll);
+    }
+
+    if (presets) {
+      presets.addEventListener('click', function (e) {
+        const btn = e.target.closest('.gc-preset-btn');
+        if (!btn) return;
+        addFn(btn.dataset.eq);
+      });
+    }
+
+    /* ─── Init ──────────────────────────────────────────── */
+    const ro = window.ResizeObserver ? new ResizeObserver(resizeCanvas) : null;
+    if (ro) ro.observe(canvas.parentElement);
+    else    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Seed with one friendly default
+    addFn('x^2 - 4');
+
+    /* ═══════════════════════════════════════════════════════
+       QUICK CHECK QUIZ
+    ═══════════════════════════════════════════════════════ */
+    document.querySelectorAll('.gc-question').forEach(function (question) {
+      const answer      = question.dataset.answer;
+      const explanation = question.dataset.explanation;
+      const feedback    = question.querySelector('.gc-q-feedback');
+      const options     = question.querySelectorAll('.gc-option');
+
+      options.forEach(function (opt) {
+        opt.addEventListener('click', function () {
+          if (opt.disabled) return;
+          options.forEach(function (o) {
+            o.disabled = true;
+            o.classList.remove('is-correct', 'is-wrong');
+            if (o.dataset.choice === answer) o.classList.add('is-correct');
+          });
+          if (opt.dataset.choice !== answer) opt.classList.add('is-wrong');
+          feedback.textContent = (opt.dataset.choice === answer ? '✓ Correct. ' : '✗ Not quite. ') + explanation;
+          feedback.style.color = opt.dataset.choice === answer ? '#34c759' : '#ff3b30';
+        });
+      });
+    });
+
+  })();
+  </script>
+</body>
+</html>
