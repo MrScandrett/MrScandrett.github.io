@@ -1,0 +1,1737 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Breadboard Basics · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 03 — learn how solderless breadboards work, how their internal connections are laid out, and practice building basic circuits in an interactive simulator." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page wrapper ──────────────────────────────────── */
+    .bb-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ──────────────────────────────────────────── */
+    .bb-hero {
+      padding: 0.4rem 0 1.35rem;
+      text-align: left;
+    }
+    .bb-hero h1 {
+      max-width: 20ch;
+      margin-left: 0;
+      margin-right: 0;
+      font-size: clamp(1.65rem, 3.7vw, 2.4rem);
+    }
+    .bb-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem 0.5rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #6e6e73);
+      margin: 0.55rem 0 0.75rem;
+    }
+    .bb-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+    .bb-lede {
+      max-width: 68ch;
+      font-size: clamp(0.95rem, 1.6vw, 1.05rem);
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 1rem;
+      line-height: 1.65;
+    }
+    .bb-back-link {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent, #007aff);
+      text-decoration: none;
+    }
+    .bb-back-link:hover { text-decoration: underline; }
+
+    /* ── Cards ─────────────────────────────────────────── */
+    .bb-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--bb-accent, #007aff);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .bb-card h2 {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 700;
+      margin: 0 0 0.7rem;
+    }
+    .bb-card p { margin: 0 0 0.7rem; font-size: 0.95rem; line-height: 1.65; }
+    .bb-card p:last-child { margin-bottom: 0; }
+
+    /* ── Callout box (inside cards) ─────────────────────── */
+    .bb-callout {
+      background: var(--surface, #f5f5f7);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      margin: 0.8rem 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .bb-callout strong { display: block; margin-bottom: 0.25rem; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #6e6e73); }
+
+    /* ── Anatomy diagram ────────────────────────────────── */
+    .bb-anatomy-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 0.75rem 0;
+    }
+    .bb-anatomy-svg {
+      display: block;
+      min-width: 540px;
+      width: 100%;
+      max-width: 700px;
+      height: auto;
+    }
+
+    /* ── Connection rule table ──────────────────────────── */
+    .bb-conn-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 0.8rem 0;
+    }
+    .bb-conn-table th {
+      text-align: left;
+      font-weight: 700;
+      padding: 0.45rem 0.6rem;
+      border-bottom: 2px solid var(--line, #d2d2d7);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted, #6e6e73);
+    }
+    .bb-conn-table td {
+      padding: 0.45rem 0.6rem;
+      border-bottom: 1px solid var(--line, #d2d2d7);
+      vertical-align: top;
+    }
+    .bb-conn-table tr:last-child td { border-bottom: none; }
+    .bb-swatch {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+
+    /* ── Component chips ────────────────────────────────── */
+    .bb-comp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin: 0.8rem 0;
+    }
+    .bb-comp-chip {
+      background: var(--surface, #f5f5f7);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .bb-comp-chip strong { display: block; font-size: 0.9rem; margin-bottom: 0.15rem; }
+
+    /* ── Explorer section ───────────────────────────────── */
+    .bb-explorer {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .bb-explorer h2 {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+    }
+    .bb-explorer-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 0.9rem;
+    }
+    .bb-canvas-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 10px;
+      border: 1px solid var(--line, #d2d2d7);
+      background: #1a1a2e;
+    }
+    #bb-explorer-canvas {
+      display: block;
+      cursor: crosshair;
+    }
+    .bb-explorer-caption {
+      min-height: 2.2rem;
+      font-size: 0.88rem;
+      color: var(--text-muted, #6e6e73);
+      margin: 0.55rem 0 0;
+      font-style: italic;
+    }
+    .bb-explorer-caption span { color: var(--text, #1d1d1f); font-style: normal; font-weight: 600; }
+
+    /* ── Challenges section ─────────────────────────────── */
+    .bb-challenges {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .bb-challenges h2 {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 700;
+      margin: 0 0 0.3rem;
+    }
+    .bb-challenges-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 1rem;
+    }
+
+    /* Challenge step indicator */
+    .bb-steps {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.1rem;
+      flex-wrap: wrap;
+    }
+    .bb-step-pip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: var(--surface, #f5f5f7);
+      color: var(--text-muted, #6e6e73);
+      border: 1.5px solid transparent;
+      transition: all 0.2s;
+    }
+    .bb-step-pip.is-active {
+      background: #007aff14;
+      color: #007aff;
+      border-color: #007aff40;
+    }
+    .bb-step-pip.is-done {
+      background: #34c75914;
+      color: #34c759;
+      border-color: #34c75940;
+    }
+
+    /* Challenge layout */
+    .bb-challenge-area {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 680px) {
+      .bb-challenge-area { grid-template-columns: 1fr; }
+    }
+    .bb-challenge-info {}
+    .bb-challenge-goal {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 0.25rem;
+    }
+    .bb-challenge-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+    }
+    .bb-challenge-instruction {
+      font-size: 0.88rem;
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 0.85rem;
+      line-height: 1.6;
+    }
+
+    /* Palette */
+    .bb-palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+    }
+    .bb-palette-btn {
+      padding: 0.38rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 2px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .bb-palette-btn:hover { border-color: #007aff; }
+    .bb-palette-btn.is-selected {
+      background: #007aff;
+      color: #fff;
+      border-color: #007aff;
+    }
+    .bb-palette-btn[data-tool="wire-red"].is-selected { background: #ff3b30; border-color: #ff3b30; }
+    .bb-palette-btn[data-tool="wire-black"].is-selected { background: #1c1c1e; border-color: #1c1c1e; }
+    .bb-palette-btn[data-tool="resistor"].is-selected { background: #ff9500; border-color: #ff9500; }
+    .bb-palette-btn[data-tool="led"].is-selected { background: #34c759; border-color: #34c759; }
+
+    /* Challenge canvas */
+    .bb-chal-canvas-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--line, #d2d2d7);
+      background: #1a1a2e;
+    }
+    #bb-chal-canvas { display: block; cursor: crosshair; }
+
+    /* Feedback bar */
+    .bb-chal-feedback {
+      min-height: 2rem;
+      margin-top: 0.65rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      display: none;
+    }
+    .bb-chal-feedback.correct {
+      display: block;
+      background: #34c75914;
+      color: #34c759;
+      border: 1px solid #34c75940;
+    }
+    .bb-chal-feedback.wrong {
+      display: block;
+      background: #ff3b3014;
+      color: #ff3b30;
+      border: 1px solid #ff3b3040;
+    }
+    .bb-chal-feedback.info {
+      display: block;
+      background: #007aff14;
+      color: #007aff;
+      border: 1px solid #007aff40;
+    }
+
+    /* Next challenge button */
+    .bb-next-btn {
+      margin-top: 0.75rem;
+      padding: 0.5rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      background: #007aff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: none;
+    }
+    .bb-next-btn:hover { background: #0066d6; }
+    .bb-next-btn.visible { display: inline-block; }
+
+    /* Reset button */
+    .bb-reset-btn {
+      margin-top: 0.5rem;
+      padding: 0.38rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: transparent;
+      color: var(--text-muted, #6e6e73);
+      border: 1.5px solid var(--line, #d2d2d7);
+      cursor: pointer;
+    }
+    .bb-reset-btn:hover { border-color: #ff3b30; color: #ff3b30; }
+
+    /* Panel (side info) */
+    .bb-panel {
+      width: 200px;
+      flex-shrink: 0;
+      background: var(--surface, #f5f5f7);
+      border-radius: 10px;
+      padding: 0.85rem;
+      font-size: 0.82rem;
+      line-height: 1.55;
+    }
+    .bb-panel strong { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #6e6e73); margin-bottom: 0.3rem; }
+    @media (max-width: 680px) { .bb-panel { width: 100%; } }
+
+    /* ── Quiz section ───────────────────────────────────── */
+    .bb-quiz {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .bb-quiz h2 {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 700;
+      margin: 0 0 1rem;
+    }
+    .bb-question { margin-bottom: 1.25rem; }
+    .bb-question:last-child { margin-bottom: 0; }
+    .bb-question p { font-size: 0.92rem; font-weight: 600; margin: 0 0 0.5rem; }
+    .bb-options { display: flex; flex-direction: column; gap: 0.35rem; }
+    .bb-option {
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.87rem;
+      font-weight: 500;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s;
+    }
+    .bb-option:hover:not(:disabled) { border-color: #007aff; }
+    .bb-option.is-correct { background: #34c75914; border-color: #34c759; color: #34c759; }
+    .bb-option.is-wrong   { background: #ff3b3014; border-color: #ff3b30; color: #ff3b30; }
+    .bb-q-feedback { margin-top: 0.4rem; font-size: 0.82rem; font-weight: 600; min-height: 1rem; color: var(--text-muted,#6e6e73); }
+
+    /* ── Real-world grid ────────────────────────────────── */
+    .bb-uses-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 0.75rem;
+      margin: 0.8rem 0;
+    }
+    .bb-use-tile {
+      background: var(--surface, #f5f5f7);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .bb-use-tile strong { display: block; font-size: 0.9rem; margin-bottom: 0.2rem; }
+
+    /* ── Tips list ──────────────────────────────────────── */
+    .bb-tips {
+      list-style: none;
+      padding: 0;
+      margin: 0.5rem 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .bb-tips li {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+    .bb-tips li::before {
+      content: "→";
+      font-weight: 700;
+      color: #007aff;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+
+    /* ── Dark mode ──────────────────────────────────────── */
+    [data-theme="night"] .bb-card,
+    [data-theme="night"] .bb-explorer,
+    [data-theme="night"] .bb-challenges,
+    [data-theme="night"] .bb-quiz {
+      background: var(--white, #1c1c1e);
+      border-color: var(--line, #3a3a3c);
+    }
+    [data-theme="night"] .bb-callout,
+    [data-theme="night"] .bb-comp-chip,
+    [data-theme="night"] .bb-use-tile,
+    [data-theme="night"] .bb-panel { background: #2c2c2e; border-color: #3a3a3c; }
+    [data-theme="night"] .bb-palette-btn,
+    [data-theme="night"] .bb-option { background: #2c2c2e; border-color: #3a3a3c; color: #f5f5f7; }
+
+    /* ── LED glow animation ─────────────────────────────── */
+    @keyframes bb-led-glow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .bb-card, .bb-explorer, .bb-challenges, .bb-quiz { padding: 1rem 1rem; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="bb-page">
+
+    <!-- ── Hero ─────────────────────────────────────────── -->
+    <section class="hero bb-hero">
+      <p class="eyebrow">Physics · Lesson 03</p>
+      <h1>Breadboard Basics</h1>
+      <div class="bb-hero-meta">
+        <span>Electricity</span>
+        <span class="dot"></span>
+        <span>Circuits</span>
+        <span class="dot"></span>
+        <span>Prototyping</span>
+        <span class="dot"></span>
+        <span>Electronics</span>
+      </div>
+      <p class="bb-lede">Before you solder a single wire, you prototype. A breadboard lets you snap components in and out, test ideas in seconds, and fix mistakes without a soldering iron. Understanding how its hidden connections work is the first real skill in electronics.</p>
+      <a class="bb-back-link" href="../steam-lessons.html#module-physics">&larr; Back to Physics</a>
+    </section>
+
+    <!-- ── What Is a Breadboard? ──────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#ff9500;">
+      <h2>What Is a Breadboard?</h2>
+      <p>A <strong>breadboard</strong> (also called a <em>solderless breadboard</em>) is a rectangular plastic board covered in small holes. Underneath those holes are spring-loaded metal clips that grip component leads and wire ends. Because nothing is soldered, you can build a circuit in minutes and tear it down just as fast.</p>
+      <div class="bb-callout">
+        <strong>Why "breadboard"?</strong>
+        Early electronics hobbyists literally nailed components onto a wooden cutting board and ran wires between them. The name stuck even as the design evolved into the plastic form we use today.
+      </div>
+      <p>Breadboards are the standard tool for <strong>prototyping</strong> — the stage where you test whether a circuit idea works before committing it to a permanent design. Professional engineers, hobbyists, and students all use them.</p>
+    </section>
+
+    <!-- ── Anatomy ──────────────────────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#34c759;">
+      <h2>Anatomy of a Breadboard</h2>
+      <p>A standard half-size breadboard has four main regions. Every hole in the same region is connected in a predictable way — that pattern is what makes the breadboard useful.</p>
+
+      <div class="bb-anatomy-wrap">
+        <!-- SVG anatomy diagram -->
+        <svg class="bb-anatomy-svg" viewBox="0 0 700 310" xmlns="http://www.w3.org/2000/svg" aria-label="Breadboard anatomy diagram">
+          <!-- Board body -->
+          <rect x="10" y="10" width="680" height="290" rx="14" fill="#e8e8d0" stroke="#b8b8a0" stroke-width="2"/>
+
+          <!-- Top power rail + -->
+          <rect x="30" y="25" width="640" height="28" rx="6" fill="#ffecec" stroke="#ff3b30" stroke-width="1.5"/>
+          <text x="42" y="43" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#ff3b30">+  POWER RAIL (V+) — all holes in this row are connected to each other</text>
+
+          <!-- Top power rail - -->
+          <rect x="30" y="57" width="640" height="28" rx="6" fill="#ecf0ff" stroke="#007aff" stroke-width="1.5"/>
+          <text x="42" y="75" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#007aff">−  GROUND RAIL (GND) — all holes in this row are connected to each other</text>
+
+          <!-- Top tie-point section label -->
+          <rect x="30" y="94" width="640" height="80" rx="6" fill="#f0ffe8" stroke="#34c759" stroke-width="1.5"/>
+          <text x="42" y="112" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#34c759">TIE-POINT ROWS a – e</text>
+          <text x="42" y="128" font-family="Inter,sans-serif" font-size="10" fill="#2d6a3f">Each column (1, 2, 3…) connects rows a through e together.</text>
+          <text x="42" y="143" font-family="Inter,sans-serif" font-size="10" fill="#2d6a3f">Holes in the SAME column but DIFFERENT rows a–e share one electrical node.</text>
+          <text x="42" y="158" font-family="Inter,sans-serif" font-size="10" fill="#2d6a3f">Example: (col 5, row a), (col 5, row b), (col 5, row c), (col 5, row d), (col 5, row e) are ALL the same node.</text>
+
+          <!-- DIP notch / center gap label -->
+          <rect x="30" y="182" width="640" height="24" rx="6" fill="#fff8e6" stroke="#ff9500" stroke-width="1.5"/>
+          <text x="42" y="198" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#ff9500">CENTER GAP (DIP NOTCH) — no connections cross this gap. ICs straddle it.</text>
+
+          <!-- Bottom tie-point section label -->
+          <rect x="30" y="214" width="640" height="56" rx="6" fill="#f0ffe8" stroke="#34c759" stroke-width="1.5"/>
+          <text x="42" y="232" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#34c759">TIE-POINT ROWS f – j</text>
+          <text x="42" y="248" font-family="Inter,sans-serif" font-size="10" fill="#2d6a3f">Same rule as above — each column connects rows f through j together.</text>
+          <text x="42" y="263" font-family="Inter,sans-serif" font-size="10" fill="#2d6a3f">The top half (a–e) and bottom half (f–j) are NOT connected to each other within the same column.</text>
+
+          <!-- Bottom power rails -->
+          <rect x="30" y="278" width="640" height="18" rx="5" fill="#ffecec" stroke="#ff3b30" stroke-width="1"/>
+          <text x="42" y="290" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#ff3b30">+  Bottom power rail (mirrors the top)</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- ── How Connections Work ─────────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#007aff;">
+      <h2>How the Connections Work</h2>
+      <p>Under each section of the breadboard, strips of phosphor-bronze metal run in one direction. When you push a component lead into a hole, the metal strip grips it. Anything else pushed into the <em>same strip</em> makes electrical contact — no solder, no glue, just pressure.</p>
+
+      <table class="bb-conn-table" aria-label="Breadboard connection rules">
+        <thead>
+          <tr>
+            <th>Zone</th>
+            <th>Which holes connect?</th>
+            <th>Direction of strip</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="bb-swatch" style="background:#ff3b30;"></span>Power rail (+)</td>
+            <td>Every hole in the + row, across the full length of the board</td>
+            <td>Horizontal ↔</td>
+          </tr>
+          <tr>
+            <td><span class="bb-swatch" style="background:#007aff;"></span>Ground rail (−)</td>
+            <td>Every hole in the − row, across the full length of the board</td>
+            <td>Horizontal ↔</td>
+          </tr>
+          <tr>
+            <td><span class="bb-swatch" style="background:#34c759;"></span>Tie-points a–e</td>
+            <td>All 5 holes in the same column (e.g. column 7, rows a through e)</td>
+            <td>Vertical ↕</td>
+          </tr>
+          <tr>
+            <td><span class="bb-swatch" style="background:#30d158;"></span>Tie-points f–j</td>
+            <td>All 5 holes in the same column (e.g. column 7, rows f through j)</td>
+            <td>Vertical ↕</td>
+          </tr>
+          <tr>
+            <td><span class="bb-swatch" style="background:#ff9500;"></span>Center gap</td>
+            <td>Nothing — the gap separates the top and bottom halves</td>
+            <td>No strip here</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="bb-callout">
+        <strong>The Golden Rule</strong>
+        Two components share a node if and only if at least one of their leads sits in the same connected strip. Different columns = different nodes. Same column, different half = different nodes. Same column, same half = same node.
+      </div>
+    </section>
+
+    <!-- ── Common Components ────────────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#af52de;">
+      <h2>Common Components &amp; How to Place Them</h2>
+      <p>Here are the parts you will use most often on a breadboard:</p>
+      <div class="bb-comp-grid">
+        <div class="bb-comp-chip">
+          <strong>🔴 LED</strong>
+          Two leads: <em>anode</em> (+, longer lead) and <em>cathode</em> (−, shorter lead). The longer lead must connect toward positive voltage. LEDs need a resistor in series or they burn out.
+        </div>
+        <div class="bb-comp-chip">
+          <strong>🟡 Resistor</strong>
+          Limits current. No polarity — place either end in either hole. Color bands on the body tell you the resistance value (e.g. 220 Ω is red-red-brown).
+        </div>
+        <div class="bb-comp-chip">
+          <strong>🔵 Jumper Wire</strong>
+          A short insulated wire with bare ends. Used to connect holes that are not already in the same strip — e.g. to bring power from a rail to a tie-point row.
+        </div>
+        <div class="bb-comp-chip">
+          <strong>🟢 IC Chip (DIP package)</strong>
+          Straddles the center gap so each pin is in a different half. This keeps the two rows of pins from shorting together, and gives you 5 extra holes to connect to each pin.
+        </div>
+        <div class="bb-comp-chip">
+          <strong>🔋 Battery / Power Supply</strong>
+          Connect the positive terminal to the + power rail and the negative terminal to the − (ground) rail using jumper wires. Everything else draws from those rails.
+        </div>
+        <div class="bb-comp-chip">
+          <strong>🔘 Pushbutton</strong>
+          Straddles the center gap like an IC. Pressing the button connects the two sides. Releasing it opens the circuit again.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Connection Explorer ──────────────────────────── -->
+    <section class="bb-explorer" id="bb-explorer-section">
+      <h2>Connection Explorer</h2>
+      <p class="bb-explorer-desc">Click any hole to see which other holes it connects to. Watch the internal strips light up.</p>
+      <div class="bb-canvas-wrap">
+        <canvas id="bb-explorer-canvas" width="620" height="420"></canvas>
+      </div>
+      <p class="bb-explorer-caption" id="bb-explorer-caption">Click a hole to explore its connections.</p>
+    </section>
+
+    <!-- ── Circuit Challenges ───────────────────────────── -->
+    <section class="bb-challenges" id="bb-challenges-section">
+      <h2>Circuit Challenges</h2>
+      <p class="bb-challenges-desc">Build a working LED circuit step by step. Select a component from the palette, then click the source hole — the board will show you where valid connections can go.</p>
+
+      <!-- Step indicators -->
+      <div class="bb-steps" id="bb-steps">
+        <div class="bb-step-pip is-active" id="pip-1">Step 1: Power up the rails</div>
+        <div class="bb-step-pip" id="pip-2">Step 2: Add a resistor</div>
+        <div class="bb-step-pip" id="pip-3">Step 3: Light the LED</div>
+        <div class="bb-step-pip" id="pip-4">Step 4: Close the loop</div>
+      </div>
+
+      <div class="bb-challenge-area">
+        <div class="bb-challenge-info">
+          <p class="bb-challenge-goal" id="chal-goal">Challenge 1 of 4</p>
+          <p class="bb-challenge-title" id="chal-title">Power Up the Rails</p>
+          <p class="bb-challenge-instruction" id="chal-instruction">
+            Connect the battery to the breadboard. Select <strong>Red Wire</strong> from the palette, then click the battery <strong>+ terminal</strong> (top-left), then click the <strong>+ power rail</strong>. Then select <strong>Black Wire</strong> and connect the battery <strong>− terminal</strong> to the <strong>− power rail</strong>.
+          </p>
+
+          <!-- Component palette -->
+          <div class="bb-palette" id="bb-palette">
+            <button class="bb-palette-btn" data-tool="wire-red">🔴 Red Wire</button>
+            <button class="bb-palette-btn" data-tool="wire-black">⚫ Black Wire</button>
+            <button class="bb-palette-btn" data-tool="resistor" disabled>🟡 Resistor</button>
+            <button class="bb-palette-btn" data-tool="led" disabled>💡 LED</button>
+          </div>
+
+          <div class="bb-chal-feedback" id="bb-chal-feedback"></div>
+          <button class="bb-next-btn" id="bb-next-btn">Next Step →</button>
+          <br>
+          <button class="bb-reset-btn" id="bb-reset-btn">↺ Reset Challenge</button>
+        </div>
+
+        <div>
+          <div class="bb-chal-canvas-wrap">
+            <canvas id="bb-chal-canvas" width="360" height="420"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hint panel -->
+      <div class="bb-callout" id="bb-chal-hint" style="margin-top:0.85rem;">
+        <strong>Hint</strong>
+        <span id="bb-hint-text">A complete circuit needs a path from + to − through every component. Start by giving the board power from the battery.</span>
+      </div>
+    </section>
+
+    <!-- ── Pro Tips ─────────────────────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#30b0c7;">
+      <h2>Pro Tips for Breadboarding</h2>
+      <ul class="bb-tips">
+        <li>Keep wires short and flat against the board. Long dangling wires fall out and make debugging harder.</li>
+        <li>Use color coding: red for power, black for ground, other colors for signals. Future-you will thank present-you.</li>
+        <li>Always disconnect the power supply before rearranging components.</li>
+        <li>If an LED doesn't light up, flip it — polarity is the most common mistake.</li>
+        <li>Always use a current-limiting resistor with an LED. Without one, the LED draws too much current and burns out instantly.</li>
+        <li>Push component leads firmly all the way down. A half-seated lead creates an intermittent connection — the bane of debugging sessions.</li>
+        <li>Test one sub-circuit at a time. Add power → rails → one component → test → add next component → test.</li>
+      </ul>
+    </section>
+
+    <!-- ── Real-World Prototyping ───────────────────────── -->
+    <section class="bb-card" style="--bb-accent:#ff375f;">
+      <h2>Where Breadboarding Leads</h2>
+      <p>Once a circuit works on a breadboard, the next step is usually to move it to a more permanent form:</p>
+      <div class="bb-uses-grid">
+        <div class="bb-use-tile">
+          <strong>Perfboard / Stripboard</strong>
+          A PCB-like board where you solder components at fixed hole positions. More permanent than a breadboard but still hand-built.
+        </div>
+        <div class="bb-use-tile">
+          <strong>Custom PCB</strong>
+          Design software (like KiCad or EasyEDA) lets you lay out a printed circuit board. You can order them manufactured for a few dollars.
+        </div>
+        <div class="bb-use-tile">
+          <strong>Arduino / Microcontroller</strong>
+          Add a programmable brain to your breadboard circuit. LEDs, sensors, motors — all controlled by code you write.
+        </div>
+        <div class="bb-use-tile">
+          <strong>TinkerCAD Circuits</strong>
+          A free online simulator by Autodesk. Design and test breadboard circuits in a browser before touching any physical component.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Quick Check ──────────────────────────────────── -->
+    <section class="bb-quiz">
+      <h2>Quick Check</h2>
+
+      <div class="bb-question" data-answer="b" data-explanation="Tie-point rows are vertical — all 5 holes in the same column (e.g. a5 through e5) are connected.">
+        <p>1. On a breadboard, which holes are connected to each other in the tie-point section?</p>
+        <div class="bb-options" role="group">
+          <button class="bb-option" data-choice="a">All holes in the same row (e.g. every column in row a)</button>
+          <button class="bb-option" data-choice="b">All holes in the same column within the same half (e.g. rows a–e in column 5)</button>
+          <button class="bb-option" data-choice="c">All holes on the entire board</button>
+          <button class="bb-option" data-choice="d">Only adjacent holes horizontally</button>
+        </div>
+        <div class="bb-q-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="bb-question" data-answer="c" data-explanation="The center gap physically separates the two halves of the tie-point section. A DIP IC is placed so its two rows of pins straddle this gap, keeping each pin on its own separate node.">
+        <p>2. Why do IC chips (DIP packages) straddle the center gap?</p>
+        <div class="bb-options" role="group">
+          <button class="bb-option" data-choice="a">To make them easier to remove later</button>
+          <button class="bb-option" data-choice="b">Because one side is positive and the other is negative</button>
+          <button class="bb-option" data-choice="c">So each row of pins is isolated from the other — no short circuit between them</button>
+          <button class="bb-option" data-choice="d">The chip is too big to fit on one side</button>
+        </div>
+        <div class="bb-q-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="bb-question" data-answer="a" data-explanation="Without a current-limiting resistor, an LED has almost no resistance and will draw far more current than it can handle — burning out in a fraction of a second.">
+        <p>3. Why must you always use a resistor in series with an LED?</p>
+        <div class="bb-options" role="group">
+          <button class="bb-option" data-choice="a">To limit the current flowing through the LED and prevent it from burning out</button>
+          <button class="bb-option" data-choice="b">To make the LED glow brighter</button>
+          <button class="bb-option" data-choice="c">To give the circuit a return path to ground</button>
+          <button class="bb-option" data-choice="d">LEDs do not need resistors — this is a common myth</button>
+        </div>
+        <div class="bb-q-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="bb-question" data-answer="d" data-explanation="Power rails run horizontally across the full length of the board. This makes it easy to distribute one voltage level to any column.">
+        <p>4. In which direction do the internal metal strips run under the power rails?</p>
+        <div class="bb-options" role="group">
+          <button class="bb-option" data-choice="a">Vertically, like the tie-point strips</button>
+          <button class="bb-option" data-choice="b">Diagonally across the board</button>
+          <button class="bb-option" data-choice="c">They are not strips — each hole is isolated</button>
+          <button class="bb-option" data-choice="d">Horizontally, connecting all holes in the same rail row end-to-end</button>
+        </div>
+        <div class="bb-q-feedback" aria-live="polite"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ═══════════════════════════════════════════════════════
+       BREADBOARD CONSTANTS & HELPERS
+    ═══════════════════════════════════════════════════════ */
+    const COLS = 20;              // number of columns shown
+    const HOLE_R = 6;             // hole radius px
+    const COL_SP = 26;            // column spacing px
+    const ROW_SP = 24;            // row spacing px
+    const LEFT_PAD = 44;          // left margin (for row labels)
+    const RIGHT_PAD = 18;
+
+    // Y coordinates for each zone
+    const Y = {
+      'rail-top-plus':  22,
+      'rail-top-minus': 46,
+      'a': 92, 'b': 116, 'c': 140, 'd': 164, 'e': 188,
+      'gap': 213,
+      'f': 234, 'g': 258, 'h': 282, 'i': 306, 'j': 330,
+      'rail-bot-minus': 360,
+      'rail-bot-plus':  384,
+    };
+
+    // Row metadata
+    const ROW_META = {
+      'rail-top-plus':  { type: 'rail', rail: 'top-plus',  color: '#ff3b30', label: '+' },
+      'rail-top-minus': { type: 'rail', rail: 'top-minus', color: '#0a84ff', label: '−' },
+      'a': { type: 'tie', half: 'top', color: '#34c759', label: 'a' },
+      'b': { type: 'tie', half: 'top', color: '#34c759', label: 'b' },
+      'c': { type: 'tie', half: 'top', color: '#34c759', label: 'c' },
+      'd': { type: 'tie', half: 'top', color: '#34c759', label: 'd' },
+      'e': { type: 'tie', half: 'top', color: '#34c759', label: 'e' },
+      'f': { type: 'tie', half: 'bot', color: '#30d158', label: 'f' },
+      'g': { type: 'tie', half: 'bot', color: '#30d158', label: 'g' },
+      'h': { type: 'tie', half: 'bot', color: '#30d158', label: 'h' },
+      'i': { type: 'tie', half: 'bot', color: '#30d158', label: 'i' },
+      'j': { type: 'tie', half: 'bot', color: '#30d158', label: 'j' },
+      'rail-bot-minus': { type: 'rail', rail: 'bot-minus', color: '#0a84ff', label: '−' },
+      'rail-bot-plus':  { type: 'rail', rail: 'bot-plus',  color: '#ff3b30', label: '+' },
+    };
+
+    const TIE_ROWS_TOP = ['a','b','c','d','e'];
+    const TIE_ROWS_BOT = ['f','g','h','i','j'];
+    const RAIL_ROWS = ['rail-top-plus','rail-top-minus','rail-bot-minus','rail-bot-plus'];
+
+    function holeX(col) { return LEFT_PAD + (col - 1) * COL_SP; }
+    function holeY(row) { return Y[row]; }
+
+    // Get all holes connected to (row, col)
+    function getConnected(row, col) {
+      const meta = ROW_META[row];
+      if (!meta) return [];
+      if (meta.type === 'rail') {
+        // All columns on same rail
+        return Array.from({ length: COLS }, (_, i) => ({ row, col: i + 1 }));
+      }
+      if (meta.type === 'tie') {
+        // Same column, same half
+        const group = meta.half === 'top' ? TIE_ROWS_TOP : TIE_ROWS_BOT;
+        return group.map(r => ({ row: r, col }));
+      }
+      return [];
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       EXPLORER CANVAS
+    ═══════════════════════════════════════════════════════ */
+    const exCanvas = document.getElementById('bb-explorer-canvas');
+    const exCtx = exCanvas ? exCanvas.getContext('2d') : null;
+    const exCaption = document.getElementById('bb-explorer-caption');
+
+    let exSelected = null; // { row, col }
+    let exHovered  = null;
+
+    function drawExplorerBoard(selectedHole, hoveredHole) {
+      if (!exCtx) return;
+      const W = exCanvas.width;
+      const H = exCanvas.height;
+      exCtx.clearRect(0, 0, W, H);
+
+      // Background
+      exCtx.fillStyle = '#1a1a2e';
+      exCtx.beginPath();
+      exCtx.roundRect(0, 0, W, H, 10);
+      exCtx.fill();
+
+      // Board body
+      exCtx.fillStyle = '#2d2d1e';
+      exCtx.beginPath();
+      exCtx.roundRect(6, 6, W - 12, H - 12, 8);
+      exCtx.fill();
+
+      // Rail band backgrounds
+      function railBand(y, color) {
+        exCtx.fillStyle = color + '22';
+        exCtx.fillRect(LEFT_PAD - 4, y - HOLE_R - 6, COLS * COL_SP + 8, HOLE_R * 2 + 12);
+      }
+      railBand(Y['rail-top-plus'],  '#ff3b30');
+      railBand(Y['rail-top-minus'], '#0a84ff');
+      railBand(Y['rail-bot-minus'], '#0a84ff');
+      railBand(Y['rail-bot-plus'],  '#ff3b30');
+
+      // Center gap label
+      exCtx.fillStyle = '#ff950055';
+      exCtx.fillRect(LEFT_PAD - 4, Y['gap'] - 2, COLS * COL_SP + 8, 16);
+      exCtx.fillStyle = '#ff9500';
+      exCtx.font = '9px Inter, sans-serif';
+      exCtx.textAlign = 'center';
+      exCtx.fillText('CENTER GAP — no connections cross here', LEFT_PAD + (COLS * COL_SP) / 2, Y['gap'] + 9);
+
+      // Determine highlighted connections
+      const connectedSet = new Set();
+      const highlightSource = selectedHole || hoveredHole;
+      if (highlightSource) {
+        const conns = getConnected(highlightSource.row, highlightSource.col);
+        conns.forEach(c => connectedSet.add(c.row + ':' + c.col));
+      }
+
+      // Draw row labels
+      const allRows = Object.keys(ROW_META);
+      allRows.forEach(row => {
+        const meta = ROW_META[row];
+        if (!meta || row === 'gap') return;
+        const y = holeY(row);
+        // Row label
+        exCtx.fillStyle = meta.color + 'cc';
+        exCtx.font = 'bold 10px Inter, sans-serif';
+        exCtx.textAlign = 'right';
+        exCtx.fillText(meta.label, LEFT_PAD - 10, y + 3.5);
+      });
+
+      // Draw highlighted strip lines first (behind holes)
+      if (highlightSource) {
+        const meta = ROW_META[highlightSource.row];
+        if (meta) {
+          if (meta.type === 'rail') {
+            // Horizontal strip line
+            exCtx.strokeStyle = '#ffd60a80';
+            exCtx.lineWidth = HOLE_R * 1.6;
+            exCtx.lineCap = 'round';
+            exCtx.beginPath();
+            exCtx.moveTo(holeX(1), holeY(highlightSource.row));
+            exCtx.lineTo(holeX(COLS), holeY(highlightSource.row));
+            exCtx.stroke();
+          } else if (meta.type === 'tie') {
+            // Vertical strip line (within the half, at this column)
+            const group = meta.half === 'top' ? TIE_ROWS_TOP : TIE_ROWS_BOT;
+            const y0 = holeY(group[0]);
+            const y1 = holeY(group[group.length - 1]);
+            exCtx.strokeStyle = '#ffd60a80';
+            exCtx.lineWidth = HOLE_R * 1.6;
+            exCtx.lineCap = 'round';
+            exCtx.beginPath();
+            exCtx.moveTo(holeX(highlightSource.col), y0);
+            exCtx.lineTo(holeX(highlightSource.col), y1);
+            exCtx.stroke();
+          }
+        }
+      }
+
+      // Draw holes
+      allRows.forEach(row => {
+        if (row === 'gap') return;
+        const meta = ROW_META[row];
+        if (!meta) return;
+        const y = holeY(row);
+        for (let col = 1; col <= COLS; col++) {
+          const x = holeX(col);
+          const key = row + ':' + col;
+          const isSelected = selectedHole && selectedHole.row === row && selectedHole.col === col;
+          const isHovered  = hoveredHole  && hoveredHole.row  === row && hoveredHole.col  === col;
+          const isConn     = connectedSet.has(key);
+
+          // Outer ring
+          exCtx.beginPath();
+          exCtx.arc(x, y, HOLE_R + 1.5, 0, Math.PI * 2);
+          exCtx.fillStyle = isSelected ? '#ffd60a'
+                          : isConn    ? '#ffd60a88'
+                          : isHovered ? '#ffffff44'
+                          : '#ffffff18';
+          exCtx.fill();
+
+          // Metal clip face
+          exCtx.beginPath();
+          exCtx.arc(x, y, HOLE_R, 0, Math.PI * 2);
+          exCtx.fillStyle = isSelected ? '#ffcc00'
+                          : isConn    ? '#ffd60a'
+                          : meta.color + 'bb';
+          exCtx.fill();
+
+          // Inner hole (dark)
+          exCtx.beginPath();
+          exCtx.arc(x, y, HOLE_R - 2.8, 0, Math.PI * 2);
+          exCtx.fillStyle = isSelected ? '#ff9500'
+                          : isConn    ? '#cc9900'
+                          : '#111118';
+          exCtx.fill();
+        }
+      });
+
+      // Column numbers at bottom
+      exCtx.fillStyle = '#ffffff44';
+      exCtx.font = '9px Inter, sans-serif';
+      exCtx.textAlign = 'center';
+      for (let col = 1; col <= COLS; col += 2) {
+        exCtx.fillText(String(col), holeX(col), H - 8);
+      }
+    }
+
+    function hitTestExplorer(mx, my) {
+      const allRows = Object.keys(ROW_META);
+      for (const row of allRows) {
+        if (row === 'gap') continue;
+        const y = holeY(row);
+        for (let col = 1; col <= COLS; col++) {
+          const x = holeX(col);
+          const dx = mx - x, dy = my - y;
+          if (dx * dx + dy * dy <= (HOLE_R + 4) * (HOLE_R + 4)) {
+            return { row, col };
+          }
+        }
+      }
+      return null;
+    }
+
+    if (exCanvas) {
+      drawExplorerBoard(null, null);
+
+      exCanvas.addEventListener('mousemove', function (e) {
+        const rect = exCanvas.getBoundingClientRect();
+        const scaleX = exCanvas.width  / rect.width;
+        const scaleY = exCanvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top)  * scaleY;
+        exHovered = hitTestExplorer(mx, my);
+        drawExplorerBoard(exSelected, exHovered);
+
+        if (exHovered && !exSelected) {
+          const meta = ROW_META[exHovered.row];
+          const conns = getConnected(exHovered.row, exHovered.col);
+          if (meta.type === 'rail') {
+            exCaption.innerHTML = `Hovering: <span>${meta.label} rail</span> — this hole connects to all ${conns.length} holes in this rail row.`;
+          } else {
+            exCaption.innerHTML = `Hovering: <span>Row ${meta.label}, Column ${exHovered.col}</span> — shares a node with rows ${meta.half === 'top' ? 'a–e' : 'f–j'} in column ${exHovered.col}.`;
+          }
+        } else if (!exHovered && !exSelected) {
+          exCaption.textContent = 'Click a hole to explore its connections.';
+        }
+      });
+
+      exCanvas.addEventListener('mouseleave', function () {
+        exHovered = null;
+        drawExplorerBoard(exSelected, null);
+        if (!exSelected) exCaption.textContent = 'Click a hole to explore its connections.';
+      });
+
+      exCanvas.addEventListener('click', function (e) {
+        const rect = exCanvas.getBoundingClientRect();
+        const scaleX = exCanvas.width  / rect.width;
+        const scaleY = exCanvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top)  * scaleY;
+        const hit = hitTestExplorer(mx, my);
+
+        if (hit) {
+          if (exSelected && exSelected.row === hit.row && exSelected.col === hit.col) {
+            exSelected = null;
+            exCaption.textContent = 'Click a hole to explore its connections.';
+          } else {
+            exSelected = hit;
+            const meta = ROW_META[hit.row];
+            const conns = getConnected(hit.row, hit.col);
+            if (meta.type === 'rail') {
+              exCaption.innerHTML = `Selected: <span>${meta.label === '+' ? 'Power (+)' : 'Ground (−)'} rail</span> — ${conns.length} holes all share this voltage. Click same hole to deselect.`;
+            } else {
+              exCaption.innerHTML = `Selected: <span>Row ${meta.label}, Column ${hit.col}</span> — connected to ${conns.length} holes (rows ${meta.half === 'top' ? 'a–e' : 'f–j'}, column ${hit.col}). Click same hole to deselect.`;
+            }
+          }
+          drawExplorerBoard(exSelected, exHovered);
+        }
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CIRCUIT CHALLENGE ENGINE
+    ═══════════════════════════════════════════════════════ */
+    const chalCanvas  = document.getElementById('bb-chal-canvas');
+    const chalCtx     = chalCanvas ? chalCanvas.getContext('2d') : null;
+    const chalFeedback = document.getElementById('bb-chal-feedback');
+    const nextBtn     = document.getElementById('bb-next-btn');
+    const resetBtn    = document.getElementById('bb-reset-btn');
+    const palette     = document.getElementById('bb-palette');
+    const hintText    = document.getElementById('bb-hint-text');
+    const chalGoal    = document.getElementById('chal-goal');
+    const chalTitle   = document.getElementById('chal-title');
+    const chalInstr   = document.getElementById('chal-instruction');
+
+    // Challenge breadboard uses 12 columns, same row layout
+    const CHAL_COLS  = 12;
+    const CHAL_LEFT  = 52;
+    const CHAL_COL_SP = 26;
+
+    function chalHoleX(col) { return CHAL_LEFT + (col - 1) * CHAL_COL_SP; }
+    function chalHoleY(row) { return Y[row]; }
+
+    // ── State ──────────────────────────────────────────────
+    const state = {
+      challenge: 1,          // 1-4
+      selectedTool: null,    // 'wire-red' | 'wire-black' | 'resistor' | 'led'
+      pendingFrom: null,     // { row, col } — first click
+      placedComponents: [],  // { type, from:{row,col}, to:{row,col} }
+      chalComplete: [false, false, false, false], // per challenge
+      ledOn: false,
+    };
+
+    // ── Challenge definitions ──────────────────────────────
+    const CHALLENGES = [
+      {
+        id: 1,
+        goal: 'Challenge 1 of 4',
+        title: 'Power Up the Rails',
+        instruction: 'Connect the battery to the breadboard. Select <strong>Red Wire</strong>, click the battery <strong>+ terminal</strong> (glowing red dot, top-left), then click anywhere on the <strong>+ power rail</strong>. Then select <strong>Black Wire</strong> and connect the battery <strong>−</strong> to the <strong>− rail</strong>.',
+        hint: 'A complete circuit needs power. The battery terminals are the two dots to the left of the board. Connect + (red) to the + rail, and − (black) to the − rail.',
+        availableTools: ['wire-red', 'wire-black'],
+        // Validate: need wire-red from battery+ to rail-top-plus, wire-black from battery- to rail-top-minus
+        validate(comps) {
+          const hasRed   = comps.some(c => c.type === 'wire-red'   && c.from.special === 'bat+' && c.to.row === 'rail-top-plus');
+          const hasBlack = comps.some(c => c.type === 'wire-black' && c.from.special === 'bat-' && c.to.row === 'rail-top-minus');
+          return hasRed && hasBlack;
+        }
+      },
+      {
+        id: 2,
+        goal: 'Challenge 2 of 4',
+        title: 'Add the Resistor',
+        instruction: 'Select <strong>Resistor</strong> from the palette. Click hole <strong>row a, column 3</strong> as the first lead, then click <strong>row a, column 6</strong> as the second lead. This places a 220 Ω current-limiting resistor.',
+        hint: 'A resistor limits the current flowing to the LED. Place it flat across the board — both leads in the same half (rows a–e), connecting column 3 to column 6.',
+        availableTools: ['wire-red', 'wire-black', 'resistor'],
+        validate(comps) {
+          return comps.some(c => c.type === 'resistor'
+            && ((c.from.row === 'a' && c.from.col === 3 && c.to.row === 'a' && c.to.col === 6)
+             || (c.from.row === 'a' && c.from.col === 6 && c.to.row === 'a' && c.to.col === 3)));
+        }
+      },
+      {
+        id: 3,
+        goal: 'Challenge 3 of 4',
+        title: 'Place the LED',
+        instruction: 'Select <strong>LED</strong> from the palette. Click <strong>row a, column 7</strong> (anode +) as the first lead, then <strong>row a, column 9</strong> (cathode −) as the second. Polarity matters — longer lead (anode) goes toward positive voltage.',
+        hint: 'The LED anode (+, longer lead) must go toward the positive side. Here the current flows left-to-right: resistor → LED → ground.',
+        availableTools: ['wire-red', 'wire-black', 'resistor', 'led'],
+        validate(comps) {
+          return comps.some(c => c.type === 'led'
+            && c.from.row === 'a' && c.from.col === 7
+            && c.to.row === 'a' && c.to.col === 9);
+        }
+      },
+      {
+        id: 4,
+        goal: 'Challenge 4 of 4',
+        title: 'Close the Loop',
+        instruction: 'The circuit still needs a return path to ground. Select <strong>Black Wire</strong>, click <strong>row a, column 3</strong> (the resistor\'s input end), and connect it to the <strong>+ power rail</strong>. Then click <strong>row a, column 9</strong> (LED cathode) and connect it to the <strong>− power rail</strong>.',
+        hint: 'Current must have a complete path: + rail → wire → resistor → LED → wire → − rail. Without both wires the circuit is open and the LED stays dark.',
+        availableTools: ['wire-red', 'wire-black', 'resistor', 'led'],
+        validate(comps) {
+          const inputWire  = comps.some(c => c.type === 'wire-red'
+            && ((c.from.row === 'rail-top-plus' && c.to.row === 'a' && c.to.col === 3)
+             || (c.to.row   === 'rail-top-plus' && c.from.row === 'a' && c.from.col === 3)));
+          const outputWire = comps.some(c => c.type === 'wire-black'
+            && ((c.from.row === 'rail-top-minus' && c.to.row === 'a' && c.to.col === 9)
+             || (c.to.row   === 'rail-top-minus' && c.from.row === 'a' && c.from.col === 9)
+             || (c.from.row === 'a' && c.from.col === 9 && c.to.row === 'rail-top-minus')
+             || (c.to.row   === 'a' && c.to.col === 9   && c.from.row === 'rail-top-minus')));
+          return inputWire && outputWire;
+        }
+      },
+    ];
+
+    // ── Battery terminal positions (special anchors left of board) ──
+    const BAT_PLUS_X  = 18;
+    const BAT_PLUS_Y  = chalHoleY('rail-top-plus');
+    const BAT_MINUS_X = 18;
+    const BAT_MINUS_Y = chalHoleY('rail-top-minus');
+
+    // ── Drawing the challenge board ────────────────────────
+    let ledGlowPhase = 0;
+    let animFrame = null;
+
+    function drawChalBoard() {
+      if (!chalCtx) return;
+      const W = chalCanvas.width;
+      const H = chalCanvas.height;
+      chalCtx.clearRect(0, 0, W, H);
+
+      // Background
+      chalCtx.fillStyle = '#1a1a2e';
+      chalCtx.beginPath();
+      if (chalCtx.roundRect) chalCtx.roundRect(0, 0, W, H, 10);
+      else chalCtx.rect(0, 0, W, H);
+      chalCtx.fill();
+
+      // Board body
+      chalCtx.fillStyle = '#2d2d1e';
+      chalCtx.beginPath();
+      if (chalCtx.roundRect) chalCtx.roundRect(6, 6, W - 12, H - 12, 8);
+      else chalCtx.rect(6, 6, W - 12, H - 12);
+      chalCtx.fill();
+
+      // Rail bands
+      function railBand(row, color) {
+        const y = chalHoleY(row);
+        chalCtx.fillStyle = color + '22';
+        chalCtx.fillRect(CHAL_LEFT - 4, y - HOLE_R - 5, CHAL_COLS * CHAL_COL_SP + 8, HOLE_R * 2 + 10);
+      }
+      railBand('rail-top-plus', '#ff3b30');
+      railBand('rail-top-minus', '#0a84ff');
+      railBand('rail-bot-minus', '#0a84ff');
+      railBand('rail-bot-plus', '#ff3b30');
+
+      // Center gap
+      chalCtx.fillStyle = '#ff950033';
+      chalCtx.fillRect(CHAL_LEFT - 4, Y['gap'] - 2, CHAL_COLS * CHAL_COL_SP + 8, 14);
+
+      // Draw placed components (wires / resistor / LED)
+      state.placedComponents.forEach(comp => drawComponent(comp));
+
+      // Pending wire preview (from source)
+      if (state.pendingFrom) {
+        const pf = state.pendingFrom;
+        const fx = pf.special === 'bat+' ? BAT_PLUS_X  :
+                   pf.special === 'bat-' ? BAT_MINUS_X :
+                   chalHoleX(pf.col);
+        const fy = pf.special === 'bat+' ? BAT_PLUS_Y  :
+                   pf.special === 'bat-' ? BAT_MINUS_Y :
+                   chalHoleY(pf.row);
+        chalCtx.strokeStyle = state.selectedTool === 'wire-red' ? '#ff3b30aa' : '#0a84ffaa';
+        chalCtx.lineWidth = 2;
+        chalCtx.setLineDash([4, 4]);
+        chalCtx.beginPath();
+        chalCtx.arc(fx, fy, HOLE_R + 4, 0, Math.PI * 2);
+        chalCtx.stroke();
+        chalCtx.setLineDash([]);
+      }
+
+      // Row labels
+      const rowKeys = Object.keys(ROW_META);
+      rowKeys.forEach(row => {
+        if (row === 'gap') return;
+        const meta = ROW_META[row];
+        const y = chalHoleY(row);
+        chalCtx.fillStyle = meta.color + 'cc';
+        chalCtx.font = 'bold 9px Inter, sans-serif';
+        chalCtx.textAlign = 'right';
+        chalCtx.fillText(meta.label, CHAL_LEFT - 8, y + 3);
+      });
+
+      // Holes
+      rowKeys.forEach(row => {
+        if (row === 'gap') return;
+        const meta = ROW_META[row];
+        const y = chalHoleY(row);
+        for (let col = 1; col <= CHAL_COLS; col++) {
+          const x = chalHoleX(col);
+          const isTarget = isTargetHole(row, col);
+          const isPending = state.pendingFrom &&
+                            !state.pendingFrom.special &&
+                            state.pendingFrom.row === row &&
+                            state.pendingFrom.col === col;
+          // Outer
+          chalCtx.beginPath();
+          chalCtx.arc(x, y, HOLE_R + 1, 0, Math.PI * 2);
+          chalCtx.fillStyle = isPending ? '#ffcc00' : isTarget ? '#ffd60a66' : '#ffffff11';
+          chalCtx.fill();
+          // Metal face
+          chalCtx.beginPath();
+          chalCtx.arc(x, y, HOLE_R, 0, Math.PI * 2);
+          chalCtx.fillStyle = isPending ? '#ffcc00' : isTarget ? '#ffd60a' : meta.color + '99';
+          chalCtx.fill();
+          // Inner
+          chalCtx.beginPath();
+          chalCtx.arc(x, y, HOLE_R - 2.5, 0, Math.PI * 2);
+          chalCtx.fillStyle = '#111118';
+          chalCtx.fill();
+        }
+      });
+
+      // Column numbers
+      chalCtx.fillStyle = '#ffffff33';
+      chalCtx.font = '8px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      for (let col = 1; col <= CHAL_COLS; col++) {
+        chalCtx.fillText(String(col), chalHoleX(col), H - 8);
+      }
+
+      // Battery terminals
+      drawBatteryTerminals();
+
+      // LED glow if on
+      if (state.ledOn) {
+        drawLEDGlow();
+      }
+    }
+
+    function drawBatteryTerminals() {
+      // + terminal
+      chalCtx.beginPath();
+      chalCtx.arc(BAT_PLUS_X, BAT_PLUS_Y, 9, 0, Math.PI * 2);
+      chalCtx.fillStyle = '#ff3b30';
+      chalCtx.fill();
+      chalCtx.fillStyle = '#fff';
+      chalCtx.font = 'bold 11px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      chalCtx.fillText('+', BAT_PLUS_X, BAT_PLUS_Y + 4);
+
+      // − terminal
+      chalCtx.beginPath();
+      chalCtx.arc(BAT_MINUS_X, BAT_MINUS_Y, 9, 0, Math.PI * 2);
+      chalCtx.fillStyle = '#0a84ff';
+      chalCtx.fill();
+      chalCtx.fillStyle = '#fff';
+      chalCtx.font = 'bold 14px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      chalCtx.fillText('−', BAT_MINUS_X, BAT_MINUS_Y + 4);
+
+      // Battery label
+      chalCtx.fillStyle = '#ffffff66';
+      chalCtx.font = '8px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      chalCtx.fillText('BAT', BAT_PLUS_X, BAT_PLUS_Y - 14);
+    }
+
+    function drawComponent(comp) {
+      const { type, from, to } = comp;
+      const fx = from.special === 'bat+' ? BAT_PLUS_X  :
+                 from.special === 'bat-' ? BAT_MINUS_X :
+                 chalHoleX(from.col);
+      const fy = from.special === 'bat+' ? BAT_PLUS_Y  :
+                 from.special === 'bat-' ? BAT_MINUS_Y :
+                 chalHoleY(from.row);
+      const tx = to.special === 'bat+' ? BAT_PLUS_X  :
+                 to.special === 'bat-' ? BAT_MINUS_X :
+                 chalHoleX(to.col);
+      const ty = to.special === 'bat+' ? BAT_PLUS_Y  :
+                 to.special === 'bat-' ? BAT_MINUS_Y :
+                 chalHoleY(to.row);
+
+      if (type === 'wire-red' || type === 'wire-black') {
+        chalCtx.strokeStyle = type === 'wire-red' ? '#ff3b30' : '#5e5ce6';
+        chalCtx.lineWidth = 3.5;
+        chalCtx.lineCap = 'round';
+        chalCtx.shadowColor = type === 'wire-red' ? '#ff3b3066' : '#5e5ce666';
+        chalCtx.shadowBlur = 6;
+        chalCtx.beginPath();
+        chalCtx.moveTo(fx, fy);
+        // Slight curve for visual interest
+        const mx = (fx + tx) / 2;
+        const my = (fy + ty) / 2 - 8;
+        chalCtx.quadraticCurveTo(mx, my, tx, ty);
+        chalCtx.stroke();
+        chalCtx.shadowBlur = 0;
+      } else if (type === 'resistor') {
+        drawResistor(fx, fy, tx, ty);
+      } else if (type === 'led') {
+        drawLED(fx, fy, tx, ty);
+      }
+    }
+
+    function drawResistor(fx, fy, tx, ty) {
+      // Lead lines
+      chalCtx.strokeStyle = '#c8a84b';
+      chalCtx.lineWidth = 2;
+      const cx = (fx + tx) / 2;
+      const bw = Math.abs(tx - fx) * 0.45;
+      const bh = 7;
+
+      chalCtx.beginPath();
+      chalCtx.moveTo(fx, fy);
+      chalCtx.lineTo(cx - bw, fy);
+      chalCtx.stroke();
+      chalCtx.beginPath();
+      chalCtx.moveTo(tx, ty);
+      chalCtx.lineTo(cx + bw, ty);
+      chalCtx.stroke();
+
+      // Body
+      chalCtx.fillStyle = '#d4a017';
+      chalCtx.strokeStyle = '#a07808';
+      chalCtx.lineWidth = 1.5;
+      chalCtx.beginPath();
+      if (chalCtx.roundRect) chalCtx.roundRect(cx - bw, fy - bh, bw * 2, bh * 2, 3);
+      else chalCtx.rect(cx - bw, fy - bh, bw * 2, bh * 2);
+      chalCtx.fill();
+      chalCtx.stroke();
+
+      // Color bands (220Ω: red-red-brown)
+      const bands = ['#cc0000', '#cc0000', '#7b3f00', '#c0a000'];
+      bands.forEach((color, i) => {
+        const bx = cx - bw + 4 + i * ((bw * 2 - 8) / 3.5);
+        chalCtx.fillStyle = color;
+        chalCtx.fillRect(bx, fy - bh + 1, 3.5, bh * 2 - 2);
+      });
+
+      // Label
+      chalCtx.fillStyle = '#ffffff88';
+      chalCtx.font = '7px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      chalCtx.fillText('220Ω', cx, fy - bh - 3);
+    }
+
+    function drawLED(fx, fy, tx, ty) {
+      // Leads
+      const cx = (fx + tx) / 2;
+      const sw = Math.abs(tx - fx) * 0.35;
+      chalCtx.strokeStyle = '#aaa';
+      chalCtx.lineWidth = 1.5;
+      chalCtx.beginPath();
+      chalCtx.moveTo(fx, fy);
+      chalCtx.lineTo(cx - sw, fy);
+      chalCtx.stroke();
+      chalCtx.beginPath();
+      chalCtx.moveTo(tx, ty);
+      chalCtx.lineTo(cx + sw, ty);
+      chalCtx.stroke();
+
+      // Triangle (diode body)
+      const h = 9;
+      chalCtx.fillStyle = state.ledOn ? '#34c759' : '#2d5a3d';
+      chalCtx.strokeStyle = state.ledOn ? '#30d158' : '#3a7a50';
+      chalCtx.lineWidth = 1.5;
+      chalCtx.beginPath();
+      chalCtx.moveTo(cx - sw, fy - h);
+      chalCtx.lineTo(cx - sw, fy + h);
+      chalCtx.lineTo(cx + sw, fy);
+      chalCtx.closePath();
+      chalCtx.fill();
+      chalCtx.stroke();
+
+      // Cathode bar
+      chalCtx.strokeStyle = state.ledOn ? '#30d158' : '#3a7a50';
+      chalCtx.lineWidth = 2.5;
+      chalCtx.beginPath();
+      chalCtx.moveTo(cx + sw, fy - h);
+      chalCtx.lineTo(cx + sw, fy + h);
+      chalCtx.stroke();
+
+      // Light rays when on
+      if (state.ledOn) {
+        const alpha = 0.4 + 0.3 * Math.sin(ledGlowPhase);
+        const rays = [[1, -1], [1.4, -0.5], [1.4, 0.5]];
+        rays.forEach(([dx, dy]) => {
+          chalCtx.strokeStyle = `rgba(52,199,89,${alpha})`;
+          chalCtx.lineWidth = 1.5;
+          chalCtx.beginPath();
+          chalCtx.moveTo(cx + sw + 4, fy + dy * 3);
+          chalCtx.lineTo(cx + sw + 4 + dx * 8, fy + dy * 10);
+          chalCtx.stroke();
+        });
+      }
+
+      // Label
+      chalCtx.fillStyle = state.ledOn ? '#34c759' : '#ffffff55';
+      chalCtx.font = '7px Inter, sans-serif';
+      chalCtx.textAlign = 'center';
+      chalCtx.fillText('LED', cx, fy - h - 3);
+    }
+
+    function drawLEDGlow() {
+      // Large ambient glow around LED position
+      const cx = chalHoleX(7) + (chalHoleX(9) - chalHoleX(7)) / 2;
+      const cy = chalHoleY('a');
+      const alpha = 0.15 + 0.1 * Math.sin(ledGlowPhase);
+      const grad = chalCtx.createRadialGradient(cx, cy, 5, cx, cy, 45);
+      grad.addColorStop(0, `rgba(52,199,89,${alpha + 0.2})`);
+      grad.addColorStop(1, 'rgba(52,199,89,0)');
+      chalCtx.fillStyle = grad;
+      chalCtx.beginPath();
+      chalCtx.arc(cx, cy, 45, 0, Math.PI * 2);
+      chalCtx.fill();
+    }
+
+    function animateGlow(ts) {
+      ledGlowPhase = ts / 600;
+      drawChalBoard();
+      if (state.ledOn) animFrame = requestAnimationFrame(animateGlow);
+    }
+
+    // ── Target hole highlighting ───────────────────────────
+    function isTargetHole(row, col) {
+      if (!state.selectedTool || !state.pendingFrom) return false;
+      // After first click, show the valid second-click targets
+      const ch = state.challenge;
+      if (ch === 1) {
+        if (state.pendingFrom.special === 'bat+' && row === 'rail-top-plus') return true;
+        if (state.pendingFrom.special === 'bat-' && row === 'rail-top-minus') return true;
+      }
+      if (ch === 2) {
+        if (state.pendingFrom.row === 'a' && state.pendingFrom.col === 3 && row === 'a' && col === 6) return true;
+        if (state.pendingFrom.row === 'a' && state.pendingFrom.col === 6 && row === 'a' && col === 3) return true;
+      }
+      if (ch === 3) {
+        if (state.pendingFrom.row === 'a' && state.pendingFrom.col === 7 && row === 'a' && col === 9) return true;
+      }
+      if (ch === 4) {
+        if (state.pendingFrom.row === 'rail-top-plus'  && row === 'a' && col === 3) return true;
+        if (state.pendingFrom.row === 'a' && state.pendingFrom.col === 3  && row === 'rail-top-plus') return true;
+        if (state.pendingFrom.row === 'rail-top-minus' && row === 'a' && col === 9) return true;
+        if (state.pendingFrom.row === 'a' && state.pendingFrom.col === 9  && row === 'rail-top-minus') return true;
+      }
+      return false;
+    }
+
+    // ── Palette selection ──────────────────────────────────
+    if (palette) {
+      palette.addEventListener('click', function (e) {
+        const btn = e.target.closest('.bb-palette-btn');
+        if (!btn || btn.disabled) return;
+        const tool = btn.dataset.tool;
+        if (state.selectedTool === tool) {
+          state.selectedTool = null;
+          btn.classList.remove('is-selected');
+        } else {
+          palette.querySelectorAll('.bb-palette-btn').forEach(b => b.classList.remove('is-selected'));
+          state.selectedTool = tool;
+          btn.classList.add('is-selected');
+        }
+        state.pendingFrom = null;
+        drawChalBoard();
+      });
+    }
+
+    // ── Hit test on challenge canvas ───────────────────────
+    function hitTestChal(mx, my) {
+      // Check battery terminals first
+      if (Math.hypot(mx - BAT_PLUS_X, my - BAT_PLUS_Y) <= 12)  return { special: 'bat+' };
+      if (Math.hypot(mx - BAT_MINUS_X, my - BAT_MINUS_Y) <= 12) return { special: 'bat-' };
+
+      // Check board holes
+      const rowKeys = Object.keys(ROW_META);
+      for (const row of rowKeys) {
+        if (row === 'gap') continue;
+        const y = chalHoleY(row);
+        for (let col = 1; col <= CHAL_COLS; col++) {
+          const x = chalHoleX(col);
+          if (Math.hypot(mx - x, my - y) <= HOLE_R + 5) return { row, col };
+        }
+      }
+      return null;
+    }
+
+    // ── Canvas click handler ───────────────────────────────
+    if (chalCanvas) {
+      chalCanvas.addEventListener('click', function (e) {
+        if (!state.selectedTool) {
+          showFeedback('Select a component from the palette first.', 'info');
+          return;
+        }
+        const rect = chalCanvas.getBoundingClientRect();
+        const scaleX = chalCanvas.width  / rect.width;
+        const scaleY = chalCanvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top)  * scaleY;
+        const hit = hitTestChal(mx, my);
+        if (!hit) return;
+
+        if (!state.pendingFrom) {
+          // First click — set source
+          state.pendingFrom = hit;
+          showFeedback('Source selected. Now click the destination hole.', 'info');
+        } else {
+          // Second click — complete placement
+          const from = state.pendingFrom;
+          const to   = hit;
+          state.pendingFrom = null;
+
+          // Avoid placing on same hole
+          if (from.row === to.row && from.col === to.col && !from.special && !to.special) {
+            showFeedback('Pick two different holes.', 'wrong');
+            drawChalBoard();
+            return;
+          }
+
+          // Place the component
+          state.placedComponents.push({ type: state.selectedTool, from, to });
+
+          // Validate challenge
+          const ch = CHALLENGES[state.challenge - 1];
+          if (ch.validate(state.placedComponents)) {
+            state.chalComplete[state.challenge - 1] = true;
+            updateStepPip(state.challenge, 'done');
+            if (state.challenge === 4) {
+              // All done — light the LED!
+              state.ledOn = true;
+              showFeedback('🎉 Circuit complete! The LED is lit — you did it!', 'correct');
+              if (animFrame) cancelAnimationFrame(animFrame);
+              animFrame = requestAnimationFrame(animateGlow);
+              nextBtn.textContent = '↺ Try Again';
+              nextBtn.classList.add('visible');
+            } else {
+              showFeedback('✓ Correct connection! Move to the next step.', 'correct');
+              nextBtn.textContent = 'Next Step →';
+              nextBtn.classList.add('visible');
+            }
+          } else {
+            showFeedback('Placed! Keep adding connections to complete this step.', 'info');
+          }
+          drawChalBoard();
+        }
+      });
+    }
+
+    function showFeedback(msg, type) {
+      if (!chalFeedback) return;
+      chalFeedback.textContent = msg;
+      chalFeedback.className = 'bb-chal-feedback ' + type;
+    }
+
+    function updateStepPip(step, status) {
+      const pip = document.getElementById('pip-' + step);
+      if (!pip) return;
+      pip.classList.remove('is-active', 'is-done');
+      if (status === 'done')   pip.classList.add('is-done');
+      if (status === 'active') pip.classList.add('is-active');
+    }
+
+    // ── Next / Reset buttons ───────────────────────────────
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function () {
+        if (state.challenge === 4) {
+          // Reset all
+          resetChallenge(1);
+          return;
+        }
+        state.challenge++;
+        loadChallenge(state.challenge);
+        nextBtn.classList.remove('visible');
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        resetChallenge(state.challenge);
+      });
+    }
+
+    function resetChallenge(toStep) {
+      state.selectedTool = null;
+      state.pendingFrom = null;
+      state.placedComponents = [];
+      state.ledOn = false;
+      state.chalComplete = [false, false, false, false];
+      if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+
+      if (palette) {
+        palette.querySelectorAll('.bb-palette-btn').forEach(b => b.classList.remove('is-selected'));
+      }
+      nextBtn.classList.remove('visible');
+      chalFeedback.className = 'bb-chal-feedback';
+
+      // Reset pips
+      for (let i = 1; i <= 4; i++) {
+        const pip = document.getElementById('pip-' + i);
+        if (pip) { pip.classList.remove('is-active','is-done'); }
+      }
+
+      loadChallenge(toStep);
+    }
+
+    function loadChallenge(num) {
+      state.challenge = num;
+      const ch = CHALLENGES[num - 1];
+      if (!ch) return;
+
+      if (chalGoal)  chalGoal.textContent   = ch.goal;
+      if (chalTitle) chalTitle.textContent  = ch.title;
+      if (chalInstr) chalInstr.innerHTML    = ch.instruction;
+      if (hintText)  hintText.textContent   = ch.hint;
+
+      // Enable / disable palette buttons
+      if (palette) {
+        palette.querySelectorAll('.bb-palette-btn').forEach(btn => {
+          const tool = btn.dataset.tool;
+          btn.disabled = !ch.availableTools.includes(tool);
+          btn.classList.remove('is-selected');
+        });
+      }
+
+      updateStepPip(num, 'active');
+      drawChalBoard();
+    }
+
+    // ── Init ───────────────────────────────────────────────
+    if (chalCanvas) {
+      loadChallenge(1);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       QUICK CHECK QUIZ
+    ═══════════════════════════════════════════════════════ */
+    document.querySelectorAll('.bb-question').forEach(function (question) {
+      const answer      = question.dataset.answer;
+      const explanation = question.dataset.explanation;
+      const feedback    = question.querySelector('.bb-q-feedback');
+      const options     = question.querySelectorAll('.bb-option');
+
+      options.forEach(function (opt) {
+        opt.addEventListener('click', function () {
+          if (opt.disabled) return;
+          options.forEach(function (o) {
+            o.disabled = true;
+            o.classList.remove('is-correct', 'is-wrong');
+            if (o.dataset.choice === answer) o.classList.add('is-correct');
+          });
+          if (opt.dataset.choice !== answer) opt.classList.add('is-wrong');
+
+          if (opt.dataset.choice === answer) {
+            feedback.textContent = '✓ Correct. ' + explanation;
+            feedback.style.color = '#34c759';
+          } else {
+            feedback.textContent = '✗ Not quite. ' + explanation;
+            feedback.style.color = '#ff3b30';
+          }
+        });
+      });
+    });
+
+  })();
+  </script>
+</body>
+</html>
