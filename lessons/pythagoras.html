@@ -197,8 +197,28 @@
     .py-hint { font-size: 0.77rem; color: #64748b; margin-top: 0.35rem; display: none; }
     .py-hint.visible { display: block; }
 
-    /* ── Proof SVG ────────────────────────────────────── */
-    .py-proof-svg text { font-family: inherit; }
+    /* ── Score bar ────────────────────────────────────── */
+    .py-score-bar { display:flex; justify-content:flex-end; margin-bottom:0.6rem; }
+    #py-score { font-size:0.8rem; font-weight:700; color:#64748b;
+      background:rgba(0,0,0,0.05); border-radius:999px; padding:3px 11px;
+      transition: color 0.4s; }
+    [data-theme="night"] #py-score { background:rgba(255,255,255,0.08); }
+
+    /* ── Shake on wrong answer ────────────────────────── */
+    @keyframes py-shake {
+      0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)}
+      40%{transform:translateX(5px)}   60%{transform:translateX(-4px)}
+      80%{transform:translateX(4px)} }
+    .py-shake { animation:py-shake 0.35s ease; }
+
+    /* ── Solved problem ───────────────────────────────── */
+    .py-problem { transition: border-left 0.3s, background 0.3s; }
+    .py-problem.solved { border-left:3.5px solid #34c759; background:rgba(52,199,89,0.04); }
+    [data-theme="night"] .py-problem.solved { background:rgba(52,199,89,0.06); }
+
+    /* ── Proof canvas note ────────────────────────────── */
+    .py-proof-note { font-size:0.78rem; color:#64748b; text-align:center;
+      margin-top:0.4rem; font-style:italic; }
 
     @media (max-width: 780px) {
       .py-explorer-body { grid-template-columns: 1fr; }
@@ -304,43 +324,10 @@
       <p>One of the most beautiful ways to see why the theorem works: draw a square on each side of a right triangle. The area of the square on the hypotenuse <em>exactly equals</em> the combined area of the squares on the two legs.</p>
 
       <div class="py-proof-wrap">
-        <svg class="py-proof-svg" width="300" height="260" viewBox="0 0 300 260" aria-label="Square proof of Pythagorean theorem">
-          <!-- The right triangle (3-4-5 scaled): legs 60 and 80, hyp 100 -->
-          <!-- Triangle points: A(120,200) B(120,120) C(200,200) -->
-          <!-- Leg a = AB = 80 (vertical), Leg b = AC = 80, adjusted for square 3-4-5: -->
-          <!-- Use: A(110,210) B(110,130) C(170,210). a=80, b=60, c=100 -->
-          <g transform="translate(10,10)">
-            <!-- Main triangle -->
-            <polygon points="100,200 100,110 165,200" fill="rgba(0,122,255,0.08)" stroke="#007aff" stroke-width="2.5"/>
-            <!-- Right angle -->
-            <polyline points="100,185 115,185 115,200" fill="none" stroke="#007aff" stroke-width="1.8"/>
-
-            <!-- Square on leg a (vertical, left side) a=90 -->
-            <!-- A=(100,200), B=(100,110). Square extends left. -->
-            <polygon points="100,200 100,110 10,110 10,200"
-              fill="rgba(255,59,48,0.12)" stroke="#ff3b30" stroke-width="1.8" stroke-dasharray="4,3"/>
-            <text x="50" y="162" font-size="12" font-weight="800" fill="#ff3b30" text-anchor="middle" font-family="Inter,sans-serif">a²</text>
-
-            <!-- Square on leg b (horizontal, bottom) b=65 -->
-            <!-- A=(100,200), C=(165,200). Square extends down. -->
-            <polygon points="100,200 165,200 165,265 100,265"
-              fill="rgba(255,149,0,0.12)" stroke="#ff9500" stroke-width="1.8" stroke-dasharray="4,3"/>
-            <text x="132" y="240" font-size="12" font-weight="800" fill="#ff9500" text-anchor="middle" font-family="Inter,sans-serif">b²</text>
-
-            <!-- Square on hypotenuse c -->
-            <!-- B=(100,110) C=(165,200). Hyp vector (65,90). Perpendicular: (90,-65) -->
-            <!-- Four corners: B, C, C+(90,-65), B+(90,-65) -->
-            <polygon points="100,110 165,200 255,135 190,45"
-              fill="rgba(0,122,255,0.12)" stroke="#007aff" stroke-width="1.8" stroke-dasharray="4,3"/>
-            <text x="196" y="118" font-size="12" font-weight="800" fill="#007aff" text-anchor="middle" font-family="Inter,sans-serif">c²</text>
-
-            <!-- Side labels -->
-            <text x="86" y="162" font-size="13" font-weight="800" fill="#ff3b30" text-anchor="middle" font-family="Inter,sans-serif">a</text>
-            <text x="134" y="214" font-size="13" font-weight="800" fill="#ff9500" text-anchor="middle" font-family="Inter,sans-serif">b</text>
-            <text x="148" y="148" font-size="13" font-weight="800" fill="#007aff" text-anchor="middle" font-family="Inter,sans-serif">c</text>
-          </g>
-        </svg>
+        <canvas id="py-proof" width="300" height="260"
+          aria-label="Animated square proof of Pythagorean theorem"></canvas>
       </div>
+      <p class="py-proof-note">Adjust the Explorer sliders below — the squares update live.</p>
       <p>The red square (a²) plus the orange square (b²) equals the blue square (c²) — in area, every time, for every right triangle. This is why we write it as an equation: a² + b² = c².</p>
     </section>
 
@@ -352,22 +339,36 @@
         <div class="py-tri-type">
           <svg width="100" height="80" viewBox="0 0 100 80" aria-hidden="true">
             <polygon points="10,70 10,10 90,70" fill="rgba(52,199,89,0.12)" stroke="#34c759" stroke-width="2"/>
-            <polyline points="10,57 22,57 22,70" fill="none" stroke="#34c759" stroke-width="1.8"/>
+            <!-- Right-angle square marker -->
+            <rect x="10" y="57" width="13" height="13" fill="rgba(52,199,89,0.2)" stroke="#34c759" stroke-width="1.5"/>
+            <!-- Angle label -->
+            <text x="30" y="66" font-size="10" font-weight="700" fill="#34c759" font-family="Inter,sans-serif">90°</text>
+            <!-- Hypotenuse label -->
+            <text x="53" y="36" font-size="9" fill="#34c759" font-family="Inter,sans-serif" transform="rotate(48,53,36)">hyp</text>
           </svg>
           <strong>Right Triangle</strong>
           <small>Exactly one 90° angle. The Pythagorean theorem applies. The hypotenuse is always the longest side.</small>
         </div>
         <div class="py-tri-type">
           <svg width="100" height="80" viewBox="0 0 100 80" aria-hidden="true">
-            <polygon points="50,8 5,72 95,72" fill="rgba(0,122,255,0.1)" stroke="#007aff" stroke-width="2"/>
+            <polygon points="50,8 5,72 95,72" fill="rgba(0,122,255,0.10)" stroke="#007aff" stroke-width="2"/>
+            <!-- Arc at top vertex (acute) -->
+            <path d="M 43,18 A 10,10 0 0 1 57,18" fill="none" stroke="#007aff" stroke-width="1.5"/>
+            <!-- Arc at bottom-left -->
+            <path d="M 14,65 A 11,11 0 0 1 21,57" fill="none" stroke="#007aff" stroke-width="1.5"/>
+            <!-- Arc at bottom-right -->
+            <path d="M 86,65 A 11,11 0 0 0 80,57" fill="none" stroke="#007aff" stroke-width="1.5"/>
+            <text x="50" y="25" font-size="9" font-weight="700" fill="#007aff" text-anchor="middle" font-family="Inter,sans-serif">&lt;90°</text>
           </svg>
           <strong>Acute Triangle</strong>
           <small>All three angles are less than 90°. Pythagoras doesn't apply, but a² + b² &gt; c² is true.</small>
         </div>
         <div class="py-tri-type">
           <svg width="100" height="80" viewBox="0 0 100 80" aria-hidden="true">
-            <polygon points="10,65 90,65 30,15" fill="rgba(255,149,0,0.1)" stroke="#ff9500" stroke-width="2"/>
-            <!-- Arc showing obtuse angle at vertex (10,65) -->
+            <polygon points="10,65 90,65 30,15" fill="rgba(255,149,0,0.10)" stroke="#ff9500" stroke-width="2"/>
+            <!-- Arc showing obtuse angle at bottom-left vertex (10,65) -->
+            <path d="M 24,62 A 16,16 0 0 1 18,50" fill="none" stroke="#ff9500" stroke-width="1.5"/>
+            <text x="27" y="58" font-size="9" font-weight="700" fill="#ff9500" font-family="Inter,sans-serif">&gt;90°</text>
           </svg>
           <strong>Obtuse Triangle</strong>
           <small>One angle is greater than 90°. Pythagoras doesn't apply. Here a² + b² &lt; c².</small>
@@ -471,6 +472,7 @@
     <section class="py-card" style="--card-accent:#ff9500;">
       <h2>Practice Problems</h2>
       <p style="color:#64748b;font-size:0.84rem;">Type your answer and press Check. Round decimals to one place.</p>
+      <div class="py-score-bar"><span id="py-score">0 / 5 correct</span></div>
       <div class="py-practice">
 
         <div class="py-problem" id="prob-1">
@@ -536,72 +538,207 @@
   <script>
   (function () {
 
-    /* ── Canvas drawing ───────────────────────────────── */
+    /* ═══════════════════════════════════════════════════
+       PROOF CANVAS — squares grow from the triangle sides
+       ═══════════════════════════════════════════════════ */
+    const pcanvas = document.getElementById('py-proof');
+    const pc      = pcanvas ? pcanvas.getContext('2d') : null;
+
+    /* Given two inner edge points and an expansion vector, return
+       the 4 corners of the square grown to progress t [0..1]. */
+    function squarePts(p1, p2, dx, dy, t) {
+      return [
+        p1,
+        p2,
+        [p2[0] + dx * t, p2[1] + dy * t],
+        [p1[0] + dx * t, p1[1] + dy * t]
+      ];
+    }
+
+    function fillSquare(ctx2, pts, fillColor, strokeColor) {
+      ctx2.beginPath();
+      ctx2.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx2.lineTo(pts[i][0], pts[i][1]);
+      ctx2.closePath();
+      ctx2.fillStyle = fillColor;
+      ctx2.fill();
+      ctx2.strokeStyle = strokeColor;
+      ctx2.lineWidth = 1.8;
+      ctx2.setLineDash([4, 3]);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+    }
+
+    function labelSquare(ctx2, pts, text, color, alpha) {
+      const cx = (pts[0][0] + pts[1][0] + pts[2][0] + pts[3][0]) / 4;
+      const cy = (pts[0][1] + pts[1][1] + pts[2][1] + pts[3][1]) / 4;
+      /* side length ≈ diagonal / √2 */
+      const dx = pts[0][0] - pts[2][0], dy = pts[0][1] - pts[2][1];
+      const side = Math.sqrt(dx * dx + dy * dy) / Math.SQRT2;
+      if (side < 30) return;
+      const fs = Math.max(9, Math.min(13, side / 3.2));
+      ctx2.save();
+      ctx2.globalAlpha = alpha;
+      ctx2.font = `bold ${fs}px Inter, sans-serif`;
+      ctx2.fillStyle = color;
+      ctx2.textAlign = 'center';
+      ctx2.textBaseline = 'middle';
+      ctx2.fillText(text, cx, cy);
+      ctx2.restore();
+    }
+
+    function drawProofSquares(a, b, t) {
+      if (!pc) return;
+      const W = pcanvas.width, H = pcanvas.height;
+      const c2 = a * a + b * b;
+      /* Bounding box (unit coords, right-angle at origin, a up, b right):
+         x ∈ [−a, a+b],  y ∈ [−(a+b), b]
+         width = 2a+b,   height = a+2b                                      */
+      const margin = 24, pad = 18;
+      const scale = Math.min(
+        (W - 2 * margin - 2 * pad) / (2 * a + b),
+        (H - 2 * margin - 2 * pad) / (a + 2 * b)
+      );
+      const Ox = margin + pad + a * scale;
+      const Oy = margin + pad + (a + b) * scale;
+      pc.clearRect(0, 0, W, H);
+
+      const O = [Ox, Oy];
+      const A = [Ox,            Oy - a * scale];   /* top of leg a */
+      const B = [Ox + b * scale, Oy];               /* end of leg b */
+
+      /* -- Square on a: extends LEFT from OA -- */
+      const ta = t;
+      const ptsA = squarePts(O, A, -a * scale, 0, ta);
+      fillSquare(pc, ptsA, `rgba(255,59,48,${0.13 * ta})`, '#ff3b30');
+      if (ta > 0.6) labelSquare(pc, ptsA, `a²=${a * a}`, '#ff3b30', (ta - 0.6) / 0.4);
+
+      /* -- Square on b: extends DOWN from OB (staggered start) -- */
+      const tb = Math.max(0, (t - 0.15) / 0.85);
+      const ptsB = squarePts(O, B, 0, b * scale, tb);
+      fillSquare(pc, ptsB, `rgba(255,149,0,${0.13 * tb})`, '#ff9500');
+      if (tb > 0.6) labelSquare(pc, ptsB, `b²=${b * b}`, '#ff9500', (tb - 0.6) / 0.4);
+
+      /* -- Square on c: extends upper-right (outward perp = (a·s, −b·s)) -- */
+      const tc = Math.max(0, (t - 0.3) / 0.7);
+      const ptsC = squarePts(A, B, a * scale, -b * scale, tc);
+      fillSquare(pc, ptsC, `rgba(0,122,255,${0.13 * tc})`, '#007aff');
+      if (tc > 0.6) labelSquare(pc, ptsC, `c²=${c2}`, '#007aff', (tc - 0.6) / 0.4);
+
+      /* -- Main triangle (drawn on top of squares) -- */
+      pc.beginPath();
+      pc.moveTo(O[0], O[1]); pc.lineTo(A[0], A[1]); pc.lineTo(B[0], B[1]);
+      pc.closePath();
+      const g = pc.createLinearGradient(O[0], O[1], B[0], A[1]);
+      g.addColorStop(0, 'rgba(0,122,255,0.05)');
+      g.addColorStop(1, 'rgba(88,86,214,0.13)');
+      pc.fillStyle = g; pc.fill();
+
+      [[O, A, '#ff3b30'], [O, B, '#ff9500'], [A, B, '#007aff']].forEach(([p1, p2, col]) => {
+        pc.beginPath(); pc.moveTo(p1[0], p1[1]); pc.lineTo(p2[0], p2[1]);
+        pc.strokeStyle = col; pc.lineWidth = 2.2; pc.setLineDash([]); pc.stroke();
+      });
+
+      /* right-angle marker */
+      const sq = 9;
+      pc.fillStyle = 'rgba(0,122,255,0.15)';
+      pc.fillRect(O[0], O[1] - sq, sq, sq);
+      pc.strokeStyle = '#007aff'; pc.lineWidth = 1.3;
+      pc.strokeRect(O[0], O[1] - sq, sq, sq);
+
+      /* side letters */
+      pc.font = 'bold 11px Inter, sans-serif';
+      pc.textAlign = 'center'; pc.textBaseline = 'middle';
+      pc.fillStyle = '#ff3b30'; pc.fillText('a', O[0] - 9, (O[1] + A[1]) / 2);
+      pc.fillStyle = '#ff9500'; pc.fillText('b', (O[0] + B[0]) / 2, O[1] + 11);
+      pc.fillStyle = '#007aff';
+      const mhx = (A[0] + B[0]) / 2, mhy = (A[1] + B[1]) / 2;
+      const hl  = Math.sqrt(Math.pow(B[0] - A[0], 2) + Math.pow(B[1] - A[1], 2));
+      pc.fillText('c', mhx + (B[1] - A[1]) / hl * 11, mhy - (B[0] - A[0]) / hl * 11);
+    }
+
+    /* Animated entrance */
+    let proofRafId = null;
+    function animateProofIn(a, b) {
+      if (proofRafId) { cancelAnimationFrame(proofRafId); proofRafId = null; }
+      let t = 0;
+      const tick = () => {
+        t = Math.min(1, t + 0.025);
+        drawProofSquares(a, b, t);
+        if (t < 1) proofRafId = requestAnimationFrame(tick);
+        else proofRafId = null;
+      };
+      proofRafId = requestAnimationFrame(tick);
+    }
+    function drawProofNow(a, b) {
+      if (proofRafId) { cancelAnimationFrame(proofRafId); proofRafId = null; }
+      drawProofSquares(a, b, 1);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       TRIANGLE CANVAS
+       ═══════════════════════════════════════════════════ */
     const canvas = document.getElementById('py-canvas');
     const ctx    = canvas.getContext('2d');
 
     function drawTriangle(a, b) {
       const W = canvas.width, H = canvas.height;
-      const pad = 28;
-      const maxLen = W - pad * 2;
-
-      // Scale to fit
-      const scale = maxLen / Math.max(a, b, Math.sqrt(a*a+b*b));
+      const pad = 32;
+      const c = Math.sqrt(a * a + b * b);
+      const scale = (Math.min(W, H) - pad * 2) / Math.max(a, b, c);
       const sa = a * scale, sb = b * scale;
-
-      // Positions: right-angle at bottom-left
       const ox = pad, oy = H - pad;
-      const ax = ox,       ay = oy - sa;  // top of leg a
-      const bx = ox + sb,  by = oy;       // end of leg b
+      const ax = ox,      ay = oy - sa;
+      const bx = ox + sb, by = oy;
 
       ctx.clearRect(0, 0, W, H);
 
-      // Fill
+      /* gradient fill */
+      const grd = ctx.createLinearGradient(ox, oy, bx, ay);
+      grd.addColorStop(0, 'rgba(0,122,255,0.04)');
+      grd.addColorStop(1, 'rgba(88,86,214,0.10)');
       ctx.beginPath();
       ctx.moveTo(ox, oy); ctx.lineTo(ax, ay); ctx.lineTo(bx, by);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(0,122,255,0.07)';
-      ctx.fill();
+      ctx.fillStyle = grd; ctx.fill();
 
-      // Leg a (red)
-      ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ax, ay); ctx.stroke();
+      /* sides */
+      [[ox,oy,ax,ay,'#ff3b30'],[ox,oy,bx,by,'#ff9500'],[ax,ay,bx,by,'#007aff']].forEach(([x1,y1,x2,y2,col]) => {
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.stroke();
+      });
 
-      // Leg b (orange)
-      ctx.strokeStyle = '#ff9500'; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(bx, by); ctx.stroke();
-
-      // Hypotenuse (blue)
-      ctx.strokeStyle = '#007aff'; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
-
-      // Right-angle box
-      const sq = 10;
+      /* right-angle box (filled) */
+      const sq = 11;
+      ctx.fillStyle = 'rgba(0,122,255,0.15)';
+      ctx.fillRect(ox, oy - sq, sq, sq);
       ctx.strokeStyle = '#007aff'; ctx.lineWidth = 1.5;
       ctx.strokeRect(ox, oy - sq, sq, sq);
 
-      // Labels
-      ctx.font = 'bold 14px Inter, sans-serif';
-      ctx.textAlign = 'center';
+      const lbl = (txt, x, y, col) => {
+        ctx.font = 'bold 13px Inter, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = col; ctx.fillText(txt, x, y);
+      };
+      const val = (txt, x, y, col) => {
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = col; ctx.fillText(txt, x, y);
+      };
 
-      ctx.fillStyle = '#ff3b30';
-      ctx.fillText('a', ox - 14, (oy + ay) / 2);
+      lbl('a', ox - 12, (oy + ay) / 2,      '#ff3b30');
+      val(a,   ox - 25, (oy + ay) / 2 + 14,  '#ff3b30');
+      lbl('b', (ox + bx) / 2, oy + 17,       '#ff9500');
+      val(b,   (ox + bx) / 2, oy + 29,       '#ff9500');
 
-      ctx.fillStyle = '#ff9500';
-      ctx.fillText('b', (ox + bx) / 2, oy + 18);
-
-      const c = Math.sqrt(a*a + b*b);
-      ctx.fillStyle = '#007aff';
-      const cx = (ax + bx) / 2 + 12, cy = (ay + by) / 2 - 6;
-      ctx.fillText('c', cx, cy);
-
-      // Values
-      ctx.font = '11px Inter, sans-serif';
-      ctx.fillStyle = '#ff3b30';
-      ctx.fillText(a, ox - 28, (oy + ay) / 2 + 5);
-
-      ctx.fillStyle = '#ff9500';
-      ctx.fillText(b, (ox + bx) / 2, oy + 30);
+      /* c label offset perpendicular outward from hypotenuse */
+      const mhx = (ax + bx) / 2, mhy = (ay + by) / 2;
+      const hl  = Math.sqrt(Math.pow(bx - ax, 2) + Math.pow(by - ay, 2));
+      const nx  = (by - ay) / hl, ny = -(bx - ax) / hl;
+      const cRound = Math.round(c * 10) / 10;
+      const isPerfect = Number.isInteger(c);
+      lbl('c',                          mhx + nx * 13, mhy + ny * 13, '#007aff');
+      val(isPerfect ? c : '≈' + cRound, mhx + nx * 26, mhy + ny * 26, '#007aff');
     }
 
     /* ── Slider logic ─────────────────────────────────── */
@@ -614,14 +751,13 @@
     function update() {
       const a = parseInt(document.getElementById('slider-a').value);
       const b = parseInt(document.getElementById('slider-b').value);
-      const c = Math.sqrt(a*a + b*b);
+      const c = Math.sqrt(a * a + b * b);
       const cRound = Math.round(c * 10) / 10;
+      const isPerfect = Number.isInteger(c);
+      const cDisplay = isPerfect ? c : cRound + ' ≈ √' + (a * a + b * b);
 
       document.getElementById('val-a').textContent = a;
       document.getElementById('val-b').textContent = b;
-
-      const isPerfect = Number.isInteger(c);
-      const cDisplay = isPerfect ? c : cRound + ' ≈ √' + (a*a+b*b);
 
       document.getElementById('result-eq').innerHTML =
         `<span style="color:#ff3b30">${a}²</span> + <span style="color:#ff9500">${b}²</span> = ` +
@@ -629,46 +765,78 @@
         `<span style="color:#007aff">c = ${cDisplay}</span>`;
 
       const check = document.getElementById('result-check');
-      if (isPerfect) {
-        check.textContent = '✓ Perfect triple';
-        check.style.background = '#34c759';
-      } else {
-        check.textContent = 'c ≈ ' + cRound;
-        check.style.background = '#007aff';
-      }
+      check.textContent  = isPerfect ? '✓ Perfect triple' : 'c ≈ ' + cRound;
+      check.style.background = isPerfect ? '#34c759' : '#007aff';
 
       drawTriangle(a, b);
-
       updateSliderTrack(document.getElementById('slider-a'));
       updateSliderTrack(document.getElementById('slider-b'));
+      return { a, b };
     }
 
-    document.getElementById('slider-a').addEventListener('input', update);
-    document.getElementById('slider-b').addEventListener('input', update);
-    update();
+    document.getElementById('slider-a').addEventListener('input', () => {
+      const { a, b } = update(); drawProofNow(a, b);
+    });
+    document.getElementById('slider-b').addEventListener('input', () => {
+      const { a, b } = update(); drawProofNow(a, b);
+    });
 
-    /* ── Practice problems ────────────────────────────── */
+    update();
+    animateProofIn(3, 4);   /* entrance animation on page load */
+
+    /* ═══════════════════════════════════════════════════
+       PRACTICE PROBLEMS
+       ═══════════════════════════════════════════════════ */
+    const solvedSet = new Set();
+    function updateScore() {
+      const el = document.getElementById('py-score');
+      if (!el) return;
+      el.textContent = `${solvedSet.size} / 5 correct`;
+      if (solvedSet.size === 5) el.style.color = '#34c759';
+    }
+
     window.checkAnswer = function (num, correct) {
       const input = document.getElementById('ans-' + num);
-      const fb    = document.getElementById('fb-' + num);
+      const fb    = document.getElementById('fb-'  + num);
       const hint  = document.getElementById('hint-' + num);
+      const prob  = document.getElementById('prob-' + num);
       const val   = parseFloat(input.value);
 
       fb.className = 'py-feedback';
-      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('wrong'); return; }
+      if (isNaN(val)) {
+        fb.textContent = 'Enter a number.';
+        fb.classList.add('wrong');
+        return;
+      }
 
       if (Math.abs(val - correct) < 0.2) {
         fb.textContent = '✓ Correct!';
         fb.classList.add('correct');
         hint.classList.remove('visible');
         input.style.borderColor = '#34c759';
+        input.disabled = true;
+        prob.classList.add('solved');
+        if (!solvedSet.has(num)) { solvedSet.add(num); updateScore(); }
       } else {
         fb.textContent = '✗ Try again';
         fb.classList.add('wrong');
         hint.classList.add('visible');
         input.style.borderColor = '#ff3b30';
+        prob.classList.remove('py-shake');
+        void prob.offsetWidth;   /* force reflow to restart animation */
+        prob.classList.add('py-shake');
       }
     };
+
+    /* Enter key submits */
+    document.querySelectorAll('.py-ans-input').forEach(input => {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter')
+          input.closest('.py-problem').querySelector('.py-check-btn').click();
+      });
+    });
+
+    updateScore();
 
   })();
   </script>

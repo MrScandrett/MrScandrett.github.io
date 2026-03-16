@@ -717,6 +717,27 @@
       text-decoration: underline;
     }
 
+    /* ── Ambulance flashing lights ──────────────────────── */
+    @keyframes bridge-amb-flash {
+      0%, 44% { fill: #ff4d4f; }
+      50%, 94% { fill: #5bc4ff; }
+      100%     { fill: #ff4d4f; }
+    }
+    .bridge-amb-running .amb-light {
+      animation: bridge-amb-flash 0.55s ease-in-out infinite;
+    }
+
+    /* ── Test speed control ─────────────────────────────── */
+    .bridge-speed-row {
+      display: flex; align-items: center; gap: 0.45rem;
+      flex-wrap: wrap; margin-top: 0.5rem;
+    }
+    .bridge-speed-label {
+      font-size: 0.73rem; font-weight: 800;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      color: #6a8094; white-space: nowrap;
+    }
+
     @media (max-width: 960px) {
       .bridge-hero,
       .bridge-lab-topbar,
@@ -893,8 +914,15 @@
             </div>
             <div class="bridge-action-row">
               <button class="bridge-action-button is-primary" type="button" id="bridge-test-btn">Run Test</button>
+              <button class="bridge-action-button" type="button" id="bridge-replay-btn" style="display:none;">↺ Replay</button>
               <button class="bridge-action-button" type="button" id="bridge-example-btn">Load Example</button>
               <button class="bridge-action-button" type="button" id="bridge-reset-btn">Reset Level</button>
+            </div>
+            <div class="bridge-speed-row">
+              <span class="bridge-speed-label">Speed</span>
+              <button class="bridge-toggle is-active" type="button" data-speed="1">1×</button>
+              <button class="bridge-toggle" type="button" data-speed="0.5">½×</button>
+              <button class="bridge-toggle" type="button" data-speed="2">2×</button>
             </div>
           </div>
         </div>
@@ -936,7 +964,7 @@
                 <rect x="-28" y="-16" width="56" height="20" rx="6" fill="#ffffff"></rect>
                 <rect x="-6" y="-28" width="22" height="14" rx="4" fill="#ffffff"></rect>
                 <rect x="-1" y="-25" width="10" height="7" rx="2" fill="#9bd2ff"></rect>
-                <rect x="-12" y="-10" width="22" height="6" rx="3" fill="#ff4d4f"></rect>
+                <rect x="-12" y="-10" width="22" height="6" rx="3" fill="#ff4d4f" class="amb-light"></rect>
                 <rect x="-4" y="-16" width="6" height="18" rx="3" fill="#ff4d4f"></rect>
                 <circle cx="-16" cy="8" r="7" fill="#1f2933"></circle>
                 <circle cx="16" cy="8" r="7" fill="#1f2933"></circle>
@@ -1222,6 +1250,7 @@
       const toolCopy = document.getElementById('bridge-tool-copy');
       const toolLabel = document.getElementById('bridge-tool-label');
       const stagePrompt = document.getElementById('bridge-stage-prompt');
+      const replayBtn = document.getElementById('bridge-replay-btn');
 
       let bridgeState = createStarterState();
       let selectedTool = 'road';
@@ -1230,6 +1259,7 @@
       let suppressClick = false;
       let animationFrameId = 0;
       let testState = createEmptyTestState();
+      let testSpeed = 1;
 
       function createNode(id, x, y, fixed) {
         return {
@@ -1322,7 +1352,10 @@
           maxStrain: 0,
           maxSag: 0,
           maxSlope: 0,
-          vehicleLabel: 'Waiting on the left bank'
+          vehicleLabel: 'Waiting on the left bank',
+          collapsing: false,
+          collapseFrames: 0,
+          collapseMessage: ''
         };
       }
 
@@ -1390,6 +1423,8 @@
         selectedNodeId = null;
         dragState = null;
         suppressClick = false;
+        ambulance.classList.remove('bridge-amb-running');
+        replayBtn.style.display = 'none';
         clearTestState();
         render();
         updateDashboard();
@@ -1609,15 +1644,16 @@
       }
 
       function stressColor(member, ratio) {
-        if (ratio > 1) {
-          return '#e24a3b';
+        if (testState.collapsing) {
+          const p = Math.min(1, testState.collapseFrames / 38);
+          const r = Math.max(ratio, p * 1.4);
+          if (r > 0.75) { return '#e24a3b'; }
+          if (r > 0.4)  { return '#ef8d3e'; }
+          return MATERIALS[member.type].color;
         }
-        if (ratio > 0.75) {
-          return '#ef8d3e';
-        }
-        if (ratio > 0.45) {
-          return '#f1c34b';
-        }
+        if (ratio > 1)    { return '#e24a3b'; }
+        if (ratio > 0.75) { return '#ef8d3e'; }
+        if (ratio > 0.45) { return '#f1c34b'; }
         return MATERIALS[member.type].color;
       }
 
@@ -1685,6 +1721,7 @@
       function finishTest(result, message) {
         stopAnimation();
         testState.running = false;
+        testState.collapsing = false;
         testState.finished = true;
         testState.result = result;
         testState.message = message;
@@ -1693,6 +1730,8 @@
           : result === 'warn'
             ? 'Crossed, but over budget'
             : 'Test failed';
+        ambulance.classList.remove('bridge-amb-running');
+        replayBtn.style.display = '';
         render();
         updateDashboard();
       }
@@ -1719,11 +1758,34 @@
         testState.simNodes = createSimulationNodes(bridgeState);
         testState.message = 'Ambulance rolling onto the bridge. Watch the sag, slope, and orange members.';
         testState.vehicleLabel = 'Rolling onto the bridge';
+        ambulance.classList.add('bridge-amb-running');
+        replayBtn.style.display = 'none';
 
         let lastTimestamp = performance.now();
 
         function tick(timestamp) {
           if (!testState.running) {
+            return;
+          }
+
+          /* ── Collapse animation ─────────────────────────── */
+          if (testState.collapsing) {
+            testState.collapseFrames += 1;
+            testState.simNodes.forEach(function (node) {
+              if (node.fixed) { node.x = node.homeX; node.y = node.homeY; return; }
+              var vx = (node.x - node.prevX) * 0.91;
+              var vy = (node.y - node.prevY) * 0.91;
+              node.prevX = node.x; node.prevY = node.y;
+              node.x = clamp(BUILD_ZONE.left - 60, node.x + vx, BUILD_ZONE.right + 60);
+              node.y = clamp(BUILD_ZONE.top - 20,  node.y + vy + 2.0, BUILD_ZONE.bottom + 120);
+            });
+            testState.memberRatios = computeMemberRatios(testState.simNodes);
+            render();
+            if (testState.collapseFrames >= 38) {
+              finishTest('fail', testState.collapseMessage);
+              return;
+            }
+            animationFrameId = requestAnimationFrame(tick);
             return;
           }
 
@@ -1793,7 +1855,7 @@
             }
           }
 
-          testState.progress = Math.min(1, testState.progress + (0.0035 * frameScale));
+          testState.progress = Math.min(1, testState.progress + (0.0035 * frameScale * testSpeed));
           testState.memberRatios = computeMemberRatios(testState.simNodes);
 
           const metrics = measureBridge(testState.simNodes, testState.path);
@@ -1806,7 +1868,13 @@
           updateDashboard();
 
           if (metrics.maxStrain > 1 || metrics.maxSag > ROAD_FAILURE_SAG || metrics.maxSlope > ROAD_FAILURE_SLOPE) {
-            finishTest('fail', failureMessage(metrics));
+            testState.collapsing = true;
+            testState.collapseFrames = 0;
+            testState.collapseMessage = failureMessage(metrics);
+            verdictEl.textContent = 'Structure failing — collapse in progress.';
+            statusPill.textContent = 'Collapsing';
+            statusCard.classList.add('bridge-status-fail');
+            animationFrameId = requestAnimationFrame(tick);
             return;
           }
 
@@ -2174,6 +2242,17 @@
       });
       resetButton.addEventListener('click', function () {
         loadState(createStarterState);
+      });
+
+      replayBtn.addEventListener('click', runTest);
+
+      document.querySelectorAll('[data-speed]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          testSpeed = parseFloat(btn.dataset.speed);
+          document.querySelectorAll('[data-speed]').forEach(function (b) {
+            b.classList.toggle('is-active', b === btn);
+          });
+        });
       });
 
       document.querySelectorAll('.bridge-question').forEach((question) => {
