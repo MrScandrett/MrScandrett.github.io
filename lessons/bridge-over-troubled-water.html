@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bridge Over Troubled Water · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Engineering Lesson 01 — design a simple bridge that can safely carry an ambulance by balancing span, structure, material, and safety factor." />
+  <meta name="description" content="Engineering Lesson 01 — build a bridge in a construction sim, triangulate the span, manage budget, and stress-test it with an ambulance." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -235,6 +235,98 @@
       font-size: 0.86rem;
     }
 
+    .bridge-lab-topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.95fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .bridge-objective-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+
+    .bridge-objective-card,
+    .bridge-controls-card {
+      border-radius: 20px;
+      border: 1px solid rgba(188, 202, 216, 0.95);
+      background: rgba(255, 255, 255, 0.74);
+      padding: 0.95rem 1rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    }
+
+    .bridge-objective-card strong,
+    .bridge-stage-help strong {
+      display: block;
+      margin-bottom: 0.32rem;
+      color: #142331;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .bridge-objective-card span {
+      display: block;
+      color: #17324b;
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .bridge-objective-card small,
+    .bridge-tool-copy,
+    .bridge-stage-help span {
+      display: block;
+      margin-top: 0.26rem;
+      color: #587084;
+      font-size: 0.82rem;
+      line-height: 1.55;
+    }
+
+    .bridge-tool-copy {
+      margin: 0;
+    }
+
+    .bridge-controls-card {
+      display: grid;
+      gap: 0.9rem;
+      align-content: start;
+    }
+
+    .bridge-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .bridge-action-button {
+      border: 1px solid rgba(181, 194, 206, 0.95);
+      background: rgba(255, 255, 255, 0.88);
+      color: #142331;
+      border-radius: 14px;
+      padding: 0.68rem 0.92rem;
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .bridge-action-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(75, 157, 211, 0.48);
+    }
+
+    .bridge-action-button.is-primary {
+      border-color: rgba(45, 113, 163, 0.78);
+      background: linear-gradient(180deg, #2d78af, #225f8e);
+      color: #f7fbff;
+      box-shadow: 0 14px 28px rgba(34, 95, 142, 0.18);
+    }
+
     .bridge-controls {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -340,7 +432,7 @@
       position: relative;
       overflow: hidden;
       border-radius: 24px;
-      min-height: 350px;
+      min-height: 380px;
       border: 1px solid rgba(170, 194, 214, 0.92);
       background:
         linear-gradient(180deg, #d8eefb 0 46%, #6eb0da 46% 58%, #2e6b9c 58% 100%);
@@ -377,11 +469,32 @@
       -webkit-backdrop-filter: blur(8px);
     }
 
+    .bridge-stage-help {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      z-index: 2;
+      max-width: min(320px, calc(100% - 2rem));
+      padding: 0.7rem 0.85rem;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(176, 196, 214, 0.94);
+      box-shadow: 0 12px 26px rgba(20, 35, 49, 0.12);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
     .bridge-stage svg {
       display: block;
       width: 100%;
       height: 100%;
-      min-height: 350px;
+      min-height: 380px;
+      touch-action: none;
+    }
+
+    .bridge-stage svg [data-node-id],
+    .bridge-stage svg [data-member-id] {
+      cursor: pointer;
     }
 
     .bridge-meter {
@@ -411,6 +524,12 @@
         linear-gradient(180deg, rgba(255, 242, 240, 0.96), rgba(252, 247, 246, 0.94));
     }
 
+    .bridge-status-warn {
+      border-color: rgba(245, 158, 11, 0.28);
+      background:
+        linear-gradient(180deg, rgba(255, 248, 231, 0.98), rgba(255, 252, 245, 0.96));
+    }
+
     .bridge-status-pill {
       width: fit-content;
       margin-bottom: 0.65rem;
@@ -433,6 +552,49 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: #60778b;
+    }
+
+    .bridge-progress-block {
+      display: grid;
+      gap: 0.45rem;
+      margin: 0.9rem 0;
+    }
+
+    .bridge-progress-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: baseline;
+      color: #14304b;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    .bridge-progress-head span {
+      color: #647d90;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.72rem;
+    }
+
+    .bridge-progress-track {
+      overflow: hidden;
+      border-radius: 999px;
+      height: 0.62rem;
+      background: rgba(211, 223, 233, 0.92);
+    }
+
+    .bridge-progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #62c96b, #35a160);
+      transition: width 0.18s ease;
+    }
+
+    .bridge-progress-fill.is-risk {
+      background: linear-gradient(90deg, #f3c148, #f1853a, #e24a3b);
     }
 
     .bridge-meter-grid {
@@ -466,6 +628,17 @@
     .bridge-meter-note {
       margin: 0;
       font-size: 0.83rem;
+    }
+
+    .bridge-status h2 {
+      margin: 0 0 0.78rem;
+      color: #142331;
+      font-size: 1.02rem;
+      letter-spacing: -0.02em;
+    }
+
+    .bridge-meter-note strong {
+      color: #153453;
     }
 
     .bridge-checklist {
@@ -546,7 +719,9 @@
 
     @media (max-width: 960px) {
       .bridge-hero,
+      .bridge-lab-topbar,
       .bridge-builder-grid,
+      .bridge-objective-grid,
       .bridge-force-grid,
       .bridge-step-grid,
       .bridge-tip-grid,
@@ -569,13 +744,18 @@
       }
 
       .bridge-controls,
-      .bridge-mission-grid {
+      .bridge-mission-grid,
+      .bridge-action-row {
         grid-template-columns: 1fr;
       }
 
       .bridge-meter-row {
         grid-template-columns: 1fr;
         gap: 0.18rem;
+      }
+
+      .bridge-action-row {
+        display: grid;
       }
     }
   </style>
@@ -607,11 +787,11 @@
         <article class="bridge-hero-copy">
           <p class="bridge-eyebrow">Engineering · Lesson 01</p>
           <h1>Bridge Over Troubled Water</h1>
-          <p class="bridge-lede">A storm washed out the crossing to a rural clinic. Your job is to design a simple bridge that can carry an ambulance safely across the gap. That means thinking like a real engineer: identify the load, choose a structure, add a safety factor, and make sure the force has a clear path into the supports.</p>
+          <p class="bridge-lede">A storm washed out the crossing to a rural clinic. In this construction sim, you will place joints, draw road and support members, then watch the ambulance test your design. A good bridge keeps a clear load path, stays under budget, and uses triangles to keep the road from sagging.</p>
           <div class="bridge-meta">
-            <span>Structures</span>
-            <span>Load paths</span>
-            <span>Safety factor</span>
+            <span>Construction sim</span>
+            <span>Triangulation</span>
+            <span>Stress test</span>
             <span>Iterate and test</span>
           </div>
           <a class="bridge-footer-link" href="../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
@@ -676,148 +856,159 @@
       <section class="bridge-builder">
         <div class="bridge-builder-head">
           <div>
-            <p class="bridge-kicker">Design lab</p>
-            <h2>Simple Bridge Builder</h2>
-            <p class="bridge-builder-sub">Change the bridge and see whether the design can carry the ambulance. This model is intentionally simplified so the structural ideas stay visible.</p>
+            <p class="bridge-kicker">Construction sim</p>
+            <h2>Bridge Build Lab</h2>
+            <p class="bridge-builder-sub">Place joints, connect road and support members, then run the ambulance test. Flat decks usually fail. Triangles, depth, and clean load paths win.</p>
           </div>
-          <span class="bridge-status-pill" id="bridge-status-pill">Testing design</span>
+          <span class="bridge-status-pill" id="bridge-status-pill">Edit mode</span>
         </div>
 
-        <div class="bridge-controls">
-          <div class="bridge-field">
-            <label for="bridge-material">Material</label>
-            <select class="bridge-select" id="bridge-material">
-              <option value="timber">Timber</option>
-              <option value="steel" selected>Steel</option>
-              <option value="concrete">Reinforced concrete</option>
-            </select>
+        <div class="bridge-lab-topbar">
+          <div class="bridge-objective-grid">
+            <article class="bridge-objective-card">
+              <strong>Mission</strong>
+              <span>Connect the clinic road</span>
+              <small>Build one continuous road path from the left anchor to the right bank.</small>
+            </article>
+            <article class="bridge-objective-card">
+              <strong>Load</strong>
+              <span>105 kN target</span>
+              <small>The ambulance weighs about 64 kN, but the lesson tests a higher design load for safety.</small>
+            </article>
+            <article class="bridge-objective-card">
+              <strong>Constraint</strong>
+              <span>Stay under budget</span>
+              <small>Road is required, wood is cheap for triangles, and steel is stronger but costs more.</small>
+            </article>
           </div>
 
-          <fieldset class="bridge-field">
-            <legend>Structure</legend>
-            <div class="bridge-toggle-group" id="bridge-structure">
-              <button class="bridge-toggle" type="button" data-structure="beam">Flat beam</button>
-              <button class="bridge-toggle is-active" type="button" data-structure="truss">Triangle truss</button>
-              <button class="bridge-toggle" type="button" data-structure="arch">Tied arch</button>
+          <div class="bridge-controls-card">
+            <p class="bridge-tool-copy" id="bridge-tool-copy">Road selected. Click the grid to place a joint, then click another joint to connect a road segment.</p>
+            <div class="bridge-toggle-group" id="bridge-tool-group" aria-label="Bridge build tools">
+              <button class="bridge-toggle" type="button" data-tool="move">Move</button>
+              <button class="bridge-toggle is-active" type="button" data-tool="road">Road</button>
+              <button class="bridge-toggle" type="button" data-tool="wood">Wood</button>
+              <button class="bridge-toggle" type="button" data-tool="steel">Steel</button>
+              <button class="bridge-toggle" type="button" data-tool="delete">Delete</button>
             </div>
-          </fieldset>
-
-          <div class="bridge-field">
-            <label for="bridge-span">Span length</label>
-            <div class="bridge-slider-wrap">
-              <input class="bridge-slider" id="bridge-span" type="range" min="8" max="24" step="1" value="12" />
-              <span class="bridge-slider-value" id="bridge-span-value">12 m</span>
-            </div>
-          </div>
-
-          <div class="bridge-field">
-            <label for="bridge-depth">Bridge depth</label>
-            <div class="bridge-slider-wrap">
-              <input class="bridge-slider" id="bridge-depth" type="range" min="1.0" max="4.0" step="0.1" value="2.2" />
-              <span class="bridge-slider-value" id="bridge-depth-value">2.2 m</span>
+            <div class="bridge-action-row">
+              <button class="bridge-action-button is-primary" type="button" id="bridge-test-btn">Run Test</button>
+              <button class="bridge-action-button" type="button" id="bridge-example-btn">Load Example</button>
+              <button class="bridge-action-button" type="button" id="bridge-reset-btn">Reset Level</button>
             </div>
           </div>
-
-          <fieldset class="bridge-field">
-            <legend>Support layout</legend>
-            <div class="bridge-toggle-group" id="bridge-support">
-              <button class="bridge-toggle is-active" type="button" data-support="none">No center pier</button>
-              <button class="bridge-toggle" type="button" data-support="pier">Add center pier</button>
-            </div>
-          </fieldset>
         </div>
 
         <div class="bridge-builder-grid">
           <div class="bridge-stage">
-            <svg id="bridge-svg" viewBox="0 0 780 380" aria-label="Bridge design visualization" role="img">
+            <div class="bridge-stage-help" aria-live="polite">
+              <strong id="bridge-tool-label">Road Tool</strong>
+              <span id="bridge-stage-prompt">Click empty grid points to drop joints. Click two joints to connect a road panel.</span>
+            </div>
+            <svg id="bridge-svg" viewBox="0 0 780 380" aria-label="Bridge construction simulator" role="img">
               <defs>
-                <linearGradient id="bridgeSteel" x1="0" x2="1">
-                  <stop offset="0%" stop-color="#7c8ea1" />
-                  <stop offset="50%" stop-color="#c0ccd7" />
-                  <stop offset="100%" stop-color="#6f8398" />
-                </linearGradient>
-                <linearGradient id="bridgeTimber" x1="0" x2="1">
-                  <stop offset="0%" stop-color="#8d5b2c" />
-                  <stop offset="50%" stop-color="#bf8747" />
-                  <stop offset="100%" stop-color="#7e4f27" />
-                </linearGradient>
-                <linearGradient id="bridgeConcrete" x1="0" x2="1">
-                  <stop offset="0%" stop-color="#9099a3" />
-                  <stop offset="50%" stop-color="#c2c8cf" />
-                  <stop offset="100%" stop-color="#848c96" />
-                </linearGradient>
+                <pattern id="bridgeGrid" width="55" height="36" patternUnits="userSpaceOnUse">
+                  <path d="M 55 0 L 0 0 0 36" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="1"></path>
+                </pattern>
               </defs>
 
-              <rect x="0" y="0" width="780" height="175" fill="transparent"></rect>
+              <rect x="170" y="100" width="440" height="180" fill="url(#bridgeGrid)"></rect>
+              <rect x="170" y="100" width="440" height="180" fill="#ffffff" fill-opacity="0.04"></rect>
 
               <g id="bridge-left-bank">
-                <rect x="28" y="182" width="118" height="136" rx="16" fill="#8a765c"></rect>
-                <rect x="40" y="174" width="130" height="18" rx="9" fill="#9b876d"></rect>
+                <rect x="24" y="178" width="146" height="140" rx="18" fill="#8a765c"></rect>
+                <rect x="38" y="166" width="148" height="22" rx="11" fill="#9b876d"></rect>
               </g>
 
               <g id="bridge-right-bank">
-                <rect x="634" y="182" width="118" height="136" rx="16" fill="#8a765c"></rect>
-                <rect x="610" y="174" width="130" height="18" rx="9" fill="#9b876d"></rect>
+                <rect x="610" y="178" width="146" height="140" rx="18" fill="#8a765c"></rect>
+                <rect x="594" y="166" width="148" height="22" rx="11" fill="#9b876d"></rect>
               </g>
 
-              <g id="bridge-middle-pier" opacity="0">
-                <rect x="370" y="192" width="40" height="126" rx="12" fill="#8a765c"></rect>
-                <rect x="358" y="180" width="64" height="18" rx="9" fill="#9b876d"></rect>
-              </g>
+              <text x="54" y="94" fill="#111f2c" fill-opacity="0.72" font-size="14" font-weight="800" letter-spacing="0.08em">START BANK</text>
+              <text x="612" y="94" fill="#111f2c" fill-opacity="0.72" font-size="14" font-weight="800" letter-spacing="0.08em">CLINIC BANK</text>
 
-              <g id="bridge-structure-group">
-                <path id="bridge-main-shape" d="" fill="none" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"></path>
-                <g id="bridge-diagonals"></g>
-                <path id="bridge-deck" d="" fill="none" stroke="#1e2a33" stroke-width="20" stroke-linecap="round"></path>
-              </g>
+              <g id="bridge-member-layer"></g>
+              <g id="bridge-node-layer"></g>
+              <g id="bridge-selection-layer"></g>
 
               <g id="bridge-ambulance">
-                <rect x="337" y="130" width="84" height="32" rx="8" fill="#ffffff"></rect>
-                <rect x="356" y="108" width="38" height="28" rx="8" fill="#ffffff"></rect>
-                <rect x="371" y="117" width="14" height="10" rx="3" fill="#9bd2ff"></rect>
-                <rect x="351" y="138" width="56" height="9" rx="4" fill="#ff4d4f"></rect>
-                <rect x="375" y="128" width="9" height="28" rx="4" fill="#ff4d4f"></rect>
-                <circle cx="356" cy="165" r="12" fill="#222"></circle>
-                <circle cx="404" cy="165" r="12" fill="#222"></circle>
-                <circle cx="356" cy="165" r="5" fill="#96a7b8"></circle>
-                <circle cx="404" cy="165" r="5" fill="#96a7b8"></circle>
+                <rect x="-28" y="-16" width="56" height="20" rx="6" fill="#ffffff"></rect>
+                <rect x="-6" y="-28" width="22" height="14" rx="4" fill="#ffffff"></rect>
+                <rect x="-1" y="-25" width="10" height="7" rx="2" fill="#9bd2ff"></rect>
+                <rect x="-12" y="-10" width="22" height="6" rx="3" fill="#ff4d4f"></rect>
+                <rect x="-4" y="-16" width="6" height="18" rx="3" fill="#ff4d4f"></rect>
+                <circle cx="-16" cy="8" r="7" fill="#1f2933"></circle>
+                <circle cx="16" cy="8" r="7" fill="#1f2933"></circle>
+                <circle cx="-16" cy="8" r="3" fill="#8ba2b6"></circle>
+                <circle cx="16" cy="8" r="3" fill="#8ba2b6"></circle>
               </g>
             </svg>
-            <p class="bridge-stage-note" id="bridge-stage-note">Triangles split the load into tension and compression, which is why trusses are common for medium spans.</p>
+            <p class="bridge-stage-note" id="bridge-stage-note">The starter deck is intentionally weak. Add joints under the road, connect them into triangles, and watch how the sag drops when you retest.</p>
           </div>
 
           <div class="bridge-meter">
             <section class="bridge-status" id="bridge-status-card" aria-live="polite">
-              <p class="bridge-capacity" id="bridge-capacity">0 kN<small>Estimated capacity</small></p>
+              <p class="bridge-capacity" id="bridge-budget-display">$0<small>Budget spent</small></p>
+              <div class="bridge-progress-block">
+                <div class="bridge-progress-head">
+                  <span>Budget</span>
+                  <strong id="bridge-budget-summary">$4,800 left</strong>
+                </div>
+                <div class="bridge-progress-track">
+                  <div class="bridge-progress-fill" id="bridge-budget-bar"></div>
+                </div>
+              </div>
+              <div class="bridge-progress-block">
+                <div class="bridge-progress-head">
+                  <span>Stability</span>
+                  <strong id="bridge-risk-summary">Run the test</strong>
+                </div>
+                <div class="bridge-progress-track">
+                  <div class="bridge-progress-fill is-risk" id="bridge-risk-bar"></div>
+                </div>
+              </div>
               <dl class="bridge-meter-grid">
                 <div class="bridge-meter-row">
                   <dt>Target</dt>
-                  <dd id="bridge-target">105 kN</dd>
+                  <dd id="bridge-target">105 kN design load</dd>
                 </div>
                 <div class="bridge-meter-row">
-                  <dt>Margin</dt>
-                  <dd id="bridge-margin">0 kN</dd>
+                  <dt>Deck path</dt>
+                  <dd id="bridge-deck-path">Gap not connected</dd>
                 </div>
                 <div class="bridge-meter-row">
-                  <dt>Safety</dt>
-                  <dd id="bridge-safety">0.00x ambulance weight</dd>
+                  <dt>Max strain</dt>
+                  <dd id="bridge-strain">Not tested</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Deck sag</dt>
+                  <dd id="bridge-sag">Not tested</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Road slope</dt>
+                  <dd id="bridge-slope">Not tested</dd>
+                </div>
+                <div class="bridge-meter-row">
+                  <dt>Vehicle</dt>
+                  <dd id="bridge-vehicle-status">Waiting on the left bank</dd>
                 </div>
                 <div class="bridge-meter-row">
                   <dt>Verdict</dt>
-                  <dd id="bridge-verdict">Adjust the design</dd>
+                  <dd id="bridge-verdict">Connect the road, add triangles, then run the ambulance test.</dd>
                 </div>
               </dl>
             </section>
 
             <section class="bridge-status">
-              <h2>Design checklist</h2>
+              <h2>How To Build</h2>
               <ul class="bridge-checklist">
-                <li>Shorter spans are easier to carry than longer spans.</li>
-                <li>Deeper structures resist bending better than shallow ones.</li>
-                <li>Trusses and arches create cleaner load paths than a plain beam.</li>
-                <li>A center pier cuts the effective span and boosts capacity.</li>
+                <li>With Road, Wood, or Steel selected, click an empty grid point to drop a joint.</li>
+                <li>Click one joint, then another, to place a member. The second joint stays selected so you can keep building.</li>
+                <li>Use Move to drag free joints and flatten the deck before you test.</li>
+                <li>Use Delete to remove one member or a non-anchor joint.</li>
               </ul>
-              <p class="bridge-meter-note">This simulator is a classroom estimate. Real bridge design also checks buckling, connection details, dynamic loading, fatigue, deck weight, soil conditions, and material codes.</p>
+              <p class="bridge-meter-note"><strong>Road</strong> carries the ambulance. <strong>Wood</strong> is cheaper and works well in short triangles. <strong>Steel</strong> costs more but holds longer spans and bottom chords more effectively.</p>
             </section>
           </div>
         </div>
@@ -825,48 +1016,48 @@
 
       <section class="bridge-card">
         <h2>Build sequence</h2>
-        <p>A safe bridge is usually the result of process, not a lucky guess. Engineers move through a repeating loop of define, sketch, analyze, build, and improve.</p>
+        <p>A safe bridge is usually the result of process, not a lucky guess. Construction-sim games teach the same loop real engineers use: build, test, watch what fails, and revise.</p>
 
         <div class="bridge-step-grid">
           <article class="bridge-step-card">
-            <strong>1. Define the job</strong>
-            <small>What must cross? How heavy is it? What is the span? What weather or site limits matter?</small>
+            <strong>1. Lay the road</strong>
+            <small>Start with a continuous deck from one bank to the other. If the road is broken, the vehicle has nowhere to go.</small>
           </article>
           <article class="bridge-step-card">
-            <strong>2. Pick a structure</strong>
-            <small>Beam, truss, and arch bridges each solve the load problem differently. Match the form to the span and the material.</small>
+            <strong>2. Drop lower joints</strong>
+            <small>Add joints below the deck so your support members can form triangles instead of leaving the road as one loose chain.</small>
           </article>
           <article class="bridge-step-card">
-            <strong>3. Add safety margin</strong>
-            <small>Design above the expected load so the bridge can handle dynamic effects, wear, and uncertainty.</small>
+            <strong>3. Triangulate the span</strong>
+            <small>Wood and steel members under the road turn bending into cleaner tension-and-compression paths.</small>
           </article>
           <article class="bridge-step-card">
-            <strong>4. Test and revise</strong>
-            <small>If the first design fails, engineers do not panic. They change span, depth, material, or supports and test again.</small>
+            <strong>4. Test and tune</strong>
+            <small>Run the ambulance, watch strain, sag, and slope, then move joints or swap materials until the bridge is stable and affordable.</small>
           </article>
         </div>
       </section>
 
       <section class="bridge-card">
         <h2>Quick design tips</h2>
-        <p>If your bridge keeps failing the ambulance test, try these moves first.</p>
+        <p>If your bridge keeps failing the ambulance run, try these moves first.</p>
 
         <div class="bridge-tip-grid">
           <article class="bridge-tip-card">
-            <strong>Increase the depth</strong>
-            <small>A deeper bridge places more material farther from the neutral axis, which helps resist bending.</small>
+            <strong>Shorten each road panel</strong>
+            <small>Long flat road panels sag fast. More joints mean smaller spans and better control of the deck shape.</small>
           </article>
           <article class="bridge-tip-card">
-            <strong>Change to a truss</strong>
-            <small>Triangle geometry spreads the load through many members instead of making one beam carry everything.</small>
+            <strong>Put triangles under the load</strong>
+            <small>A road segment becomes much stronger when two braces meet below it and create a triangular load path.</small>
           </article>
           <article class="bridge-tip-card">
-            <strong>Add a pier if the site allows it</strong>
-            <small>Cutting one long span into two shorter spans is one of the fastest ways to raise capacity.</small>
+            <strong>Use steel where it matters</strong>
+            <small>Save steel for longer bottom chords or heavily loaded diagonals, then let cheaper wood fill the shorter braces.</small>
           </article>
           <article class="bridge-tip-card">
-            <strong>Choose the right material</strong>
-            <small>Steel usually carries more load for a given size than timber, but the best answer depends on cost, speed, and site conditions.</small>
+            <strong>Keep the deck smooth</strong>
+            <small>If the road tilts too sharply between joints, the ambulance will lose its path even if the rest of the frame looks strong.</small>
           </article>
         </div>
       </section>
@@ -929,228 +1120,1061 @@
     (function () {
       const TARGET_LOAD = 105;
       const AMBULANCE_WEIGHT = 64;
-
-      const materials = {
-        timber: { label: 'Timber', base: 46, stroke: 'url(#bridgeTimber)' },
-        steel: { label: 'Steel', base: 68, stroke: 'url(#bridgeSteel)' },
-        concrete: { label: 'Reinforced concrete', base: 58, stroke: 'url(#bridgeConcrete)' }
+      const LEVEL_BUDGET = 4800;
+      const LEFT_ANCHOR_ID = 0;
+      const RIGHT_ANCHOR_ID = 4;
+      const DECK_Y = 172;
+      const BUILD_ZONE = {
+        left: 170,
+        right: 610,
+        top: 100,
+        bottom: 280
       };
+      const GRID = {
+        x: 55,
+        y: 36
+      };
+      const METERS_PER_PIXEL = 16 / (BUILD_ZONE.right - BUILD_ZONE.left);
+      const ROAD_FAILURE_SAG = 20;
+      const ROAD_FAILURE_SLOPE = 0.18;
 
-      const structures = {
-        beam: {
-          label: 'Flat beam',
-          multiplier: 0.78,
-          note: 'A flat beam is simple, but it bends more because the force is concentrated into one main member.'
+      const MATERIALS = {
+        road: {
+          label: 'Road',
+          cost: 120,
+          stiffness: 0.24,
+          breakStrain: 0.035,
+          width: 12,
+          color: '#1b2734'
         },
-        truss: {
-          label: 'Triangle truss',
-          multiplier: 1.22,
-          note: 'Triangles split the load into tension and compression, which is why trusses are common for medium spans.'
+        wood: {
+          label: 'Wood',
+          cost: 55,
+          stiffness: 0.18,
+          breakStrain: 0.08,
+          width: 8,
+          color: '#c2803f'
         },
-        arch: {
-          label: 'Tied arch',
-          multiplier: 1.08,
-          note: 'An arch redirects much of the force into compression, but it still needs a strong deck or tie to keep the ends from spreading.'
+        steel: {
+          label: 'Steel',
+          cost: 90,
+          stiffness: 0.26,
+          breakStrain: 0.11,
+          width: 8,
+          color: '#7f97b2'
         }
       };
 
-      const supports = {
-        none: { label: 'No center pier', multiplier: 1 },
-        pier: { label: 'Center pier', multiplier: 1.42 }
+      const TOOL_HINTS = {
+        move: {
+          label: 'Move Tool',
+          copy: 'Move selected. Drag any free joint to change the bridge shape and update the member lengths.',
+          prompt: 'Drag joints to flatten the road or deepen the truss before the next test.'
+        },
+        road: {
+          label: 'Road Tool',
+          copy: 'Road selected. Click the grid to place a joint, then click another joint to connect a road segment.',
+          prompt: 'Road is the driveable deck. Keep it continuous and reasonably flat from bank to bank.'
+        },
+        wood: {
+          label: 'Wood Tool',
+          copy: 'Wood selected. Use it for short braces and triangles under the deck where cost matters.',
+          prompt: 'Wood is cheaper than steel. Use it to turn long flat spans into smaller triangular panels.'
+        },
+        steel: {
+          label: 'Steel Tool',
+          copy: 'Steel selected. Save it for longer spans, bottom chords, or braces that keep stretching.',
+          prompt: 'Steel is stiffer and pricier. Use it where wood keeps sagging too much.'
+        },
+        delete: {
+          label: 'Delete Tool',
+          copy: 'Delete selected. Click one member or one non-anchor joint to remove it from the design.',
+          prompt: 'Trim extra pieces, remove bad joints, and watch the budget come back under control.'
+        }
       };
 
-      const materialInput = document.getElementById('bridge-material');
-      const spanInput = document.getElementById('bridge-span');
-      const depthInput = document.getElementById('bridge-depth');
-      const spanValue = document.getElementById('bridge-span-value');
-      const depthValue = document.getElementById('bridge-depth-value');
+      const toolButtons = document.querySelectorAll('[data-tool]');
+      const testButton = document.getElementById('bridge-test-btn');
+      const exampleButton = document.getElementById('bridge-example-btn');
+      const resetButton = document.getElementById('bridge-reset-btn');
 
-      const structureButtons = document.querySelectorAll('[data-structure]');
-      const supportButtons = document.querySelectorAll('[data-support]');
-
-      const mainShape = document.getElementById('bridge-main-shape');
-      const deckShape = document.getElementById('bridge-deck');
-      const diagonals = document.getElementById('bridge-diagonals');
-      const middlePier = document.getElementById('bridge-middle-pier');
+      const svg = document.getElementById('bridge-svg');
+      const memberLayer = document.getElementById('bridge-member-layer');
+      const nodeLayer = document.getElementById('bridge-node-layer');
+      const selectionLayer = document.getElementById('bridge-selection-layer');
       const ambulance = document.getElementById('bridge-ambulance');
 
       const statusCard = document.getElementById('bridge-status-card');
       const statusPill = document.getElementById('bridge-status-pill');
-      const capacityEl = document.getElementById('bridge-capacity');
+      const budgetDisplay = document.getElementById('bridge-budget-display');
+      const budgetSummary = document.getElementById('bridge-budget-summary');
+      const budgetBar = document.getElementById('bridge-budget-bar');
+      const riskSummary = document.getElementById('bridge-risk-summary');
+      const riskBar = document.getElementById('bridge-risk-bar');
       const targetEl = document.getElementById('bridge-target');
-      const marginEl = document.getElementById('bridge-margin');
-      const safetyEl = document.getElementById('bridge-safety');
+      const deckPathEl = document.getElementById('bridge-deck-path');
+      const strainEl = document.getElementById('bridge-strain');
+      const sagEl = document.getElementById('bridge-sag');
+      const slopeEl = document.getElementById('bridge-slope');
+      const vehicleStatusEl = document.getElementById('bridge-vehicle-status');
       const verdictEl = document.getElementById('bridge-verdict');
       const stageNote = document.getElementById('bridge-stage-note');
+      const toolCopy = document.getElementById('bridge-tool-copy');
+      const toolLabel = document.getElementById('bridge-tool-label');
+      const stagePrompt = document.getElementById('bridge-stage-prompt');
 
-      let structure = 'truss';
-      let support = 'none';
+      let bridgeState = createStarterState();
+      let selectedTool = 'road';
+      let selectedNodeId = null;
+      let dragState = null;
+      let suppressClick = false;
+      let animationFrameId = 0;
+      let testState = createEmptyTestState();
 
-      function activateGroup(buttons, activeValue, key) {
-        buttons.forEach((button) => {
-          button.classList.toggle('is-active', button.dataset[key] === activeValue);
-        });
-      }
-
-      function depthFactor(depth) {
-        return 0.6 + depth / 3.2;
-      }
-
-      function spanFactor(span) {
-        return Math.pow(12 / span, 1.3);
-      }
-
-      function computeCapacity() {
-        const material = materials[materialInput.value];
-        const structureData = structures[structure];
-        const supportData = supports[support];
-        const span = Number(spanInput.value);
-        const depth = Number(depthInput.value);
-        const capacity = material.base * structureData.multiplier * supportData.multiplier * depthFactor(depth) * spanFactor(span);
-
+      function createNode(id, x, y, fixed) {
         return {
-          capacity: Math.round(capacity),
-          span,
-          depth,
-          material,
-          structureData,
-          supportData
+          id,
+          x,
+          y,
+          fixed: Boolean(fixed)
         };
       }
 
-      function renderBridgeVisual(state) {
-        const deckY = 160;
-        const leftX = 146;
-        const rightX = 634;
-        const spanScale = (state.span - 8) / 16;
-        const bridgeLeft = leftX + spanScale * 26;
-        const bridgeRight = rightX - spanScale * 26;
-        const spanWidth = bridgeRight - bridgeLeft;
-        const depthPx = 34 + ((state.depth - 1) / 3) * 84;
-        const topY = deckY - depthPx;
-        const stroke = state.material.stroke;
-
-        mainShape.setAttribute('stroke', stroke);
-        deckShape.setAttribute('d', 'M ' + bridgeLeft + ' ' + deckY + ' L ' + bridgeRight + ' ' + deckY);
-        diagonals.innerHTML = '';
-
-        if (structure === 'beam') {
-          mainShape.setAttribute('d', 'M ' + bridgeLeft + ' ' + topY + ' L ' + bridgeRight + ' ' + topY);
-        }
-
-        if (structure === 'truss') {
-          mainShape.setAttribute('d', 'M ' + bridgeLeft + ' ' + topY + ' L ' + bridgeRight + ' ' + topY);
-          const panelCount = 6;
-          const panelWidth = spanWidth / panelCount;
-          for (let i = 0; i < panelCount; i += 1) {
-            const x1 = bridgeLeft + panelWidth * i;
-            const x2 = bridgeLeft + panelWidth * (i + 1);
-            const vertical = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            vertical.setAttribute('x1', x1);
-            vertical.setAttribute('y1', topY);
-            vertical.setAttribute('x2', x1);
-            vertical.setAttribute('y2', deckY);
-            vertical.setAttribute('stroke', stroke);
-            vertical.setAttribute('stroke-width', '10');
-            vertical.setAttribute('stroke-linecap', 'round');
-            diagonals.appendChild(vertical);
-
-            const diagonal = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            diagonal.setAttribute('x1', x1);
-            diagonal.setAttribute('y1', deckY);
-            diagonal.setAttribute('x2', x2);
-            diagonal.setAttribute('y2', topY);
-            diagonal.setAttribute('stroke', stroke);
-            diagonal.setAttribute('stroke-width', '10');
-            diagonal.setAttribute('stroke-linecap', 'round');
-            diagonals.appendChild(diagonal);
-          }
-          const endVertical = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          endVertical.setAttribute('x1', bridgeRight);
-          endVertical.setAttribute('y1', topY);
-          endVertical.setAttribute('x2', bridgeRight);
-          endVertical.setAttribute('y2', deckY);
-          endVertical.setAttribute('stroke', stroke);
-          endVertical.setAttribute('stroke-width', '10');
-          endVertical.setAttribute('stroke-linecap', 'round');
-          diagonals.appendChild(endVertical);
-        }
-
-        if (structure === 'arch') {
-          const archHeight = depthPx + 18;
-          const d = [
-            'M', bridgeLeft, deckY,
-            'Q', (bridgeLeft + bridgeRight) / 2, deckY - archHeight,
-            bridgeRight, deckY
-          ].join(' ');
-          mainShape.setAttribute('d', d);
-
-          const hangerCount = 6;
-          for (let i = 1; i < hangerCount; i += 1) {
-            const x = bridgeLeft + (spanWidth / hangerCount) * i;
-            const t = (x - bridgeLeft) / spanWidth;
-            const archY = (1 - Math.pow((t * 2) - 1, 2)) * archHeight + (deckY - archHeight);
-            const hanger = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            hanger.setAttribute('x1', x);
-            hanger.setAttribute('y1', archY);
-            hanger.setAttribute('x2', x);
-            hanger.setAttribute('y2', deckY);
-            hanger.setAttribute('stroke', stroke);
-            hanger.setAttribute('stroke-width', '7');
-            hanger.setAttribute('stroke-linecap', 'round');
-            diagonals.appendChild(hanger);
-          }
-        }
-
-        middlePier.setAttribute('opacity', support === 'pier' ? '1' : '0');
-
-        const ambulanceX = support === 'pier' ? 348 : 337;
-        ambulance.setAttribute('transform', 'translate(' + (ambulanceX - 337) + ', ' + (deckY - 160) + ')');
+      function createMember(id, a, b, type, nodes) {
+        return {
+          id,
+          a,
+          b,
+          type,
+          restLength: distance(nodeMapFrom(nodes).get(a), nodeMapFrom(nodes).get(b))
+        };
       }
 
-      function update() {
-        const state = computeCapacity();
-        const margin = state.capacity - TARGET_LOAD;
-        const safetyFactor = state.capacity / AMBULANCE_WEIGHT;
-        const pass = state.capacity >= TARGET_LOAD;
+      function createStarterState() {
+        const nodes = [
+          createNode(LEFT_ANCHOR_ID, 170, DECK_Y, true),
+          createNode(1, 280, DECK_Y, false),
+          createNode(2, 390, DECK_Y, false),
+          createNode(3, 500, DECK_Y, false),
+          createNode(RIGHT_ANCHOR_ID, 610, DECK_Y, true)
+        ];
 
-        spanValue.textContent = state.span + ' m';
-        depthValue.textContent = state.depth.toFixed(1) + ' m';
-        targetEl.textContent = TARGET_LOAD + ' kN';
-        capacityEl.innerHTML = state.capacity + ' kN<small>Estimated capacity</small>';
-        marginEl.textContent = (margin >= 0 ? '+' : '') + margin + ' kN';
-        safetyEl.textContent = safetyFactor.toFixed(2) + 'x ambulance weight';
-        verdictEl.textContent = pass
-          ? 'Passes the ambulance challenge'
-          : 'Fails the target load';
-        stageNote.textContent = state.structureData.note;
-        statusPill.textContent = pass ? 'Ambulance can cross' : 'Revise the bridge';
-
-        statusCard.classList.toggle('bridge-status-pass', pass);
-        statusCard.classList.toggle('bridge-status-fail', !pass);
-
-        renderBridgeVisual(state);
+        return {
+          nodes,
+          members: [
+            createMember(0, 0, 1, 'road', nodes),
+            createMember(1, 1, 2, 'road', nodes),
+            createMember(2, 2, 3, 'road', nodes),
+            createMember(3, 3, 4, 'road', nodes)
+          ],
+          nextNodeId: 5,
+          nextMemberId: 4
+        };
       }
 
-      structureButtons.forEach((button) => {
+      function createExampleState() {
+        const nodes = [
+          createNode(LEFT_ANCHOR_ID, 170, DECK_Y, true),
+          createNode(1, 280, DECK_Y, false),
+          createNode(2, 390, DECK_Y, false),
+          createNode(3, 500, DECK_Y, false),
+          createNode(RIGHT_ANCHOR_ID, 610, DECK_Y, true),
+          createNode(5, 225, 244, false),
+          createNode(6, 335, 244, false),
+          createNode(7, 445, 244, false),
+          createNode(8, 555, 244, false)
+        ];
+
+        return {
+          nodes,
+          members: [
+            createMember(0, 0, 1, 'road', nodes),
+            createMember(1, 1, 2, 'road', nodes),
+            createMember(2, 2, 3, 'road', nodes),
+            createMember(3, 3, 4, 'road', nodes),
+            createMember(4, 0, 5, 'wood', nodes),
+            createMember(5, 5, 1, 'wood', nodes),
+            createMember(6, 1, 6, 'wood', nodes),
+            createMember(7, 6, 2, 'wood', nodes),
+            createMember(8, 2, 7, 'wood', nodes),
+            createMember(9, 7, 3, 'wood', nodes),
+            createMember(10, 3, 8, 'wood', nodes),
+            createMember(11, 8, 4, 'wood', nodes),
+            createMember(12, 5, 6, 'steel', nodes),
+            createMember(13, 6, 7, 'steel', nodes),
+            createMember(14, 7, 8, 'steel', nodes)
+          ],
+          nextNodeId: 9,
+          nextMemberId: 15
+        };
+      }
+
+      function createEmptyTestState() {
+        return {
+          running: false,
+          finished: false,
+          result: 'edit',
+          message: 'Connect the road, add triangles, then run the ambulance test.',
+          progress: 0,
+          path: null,
+          simNodes: null,
+          memberRatios: new Map(),
+          maxStrain: 0,
+          maxSag: 0,
+          maxSlope: 0,
+          vehicleLabel: 'Waiting on the left bank'
+        };
+      }
+
+      function nodeMapFrom(nodes) {
+        return new Map(nodes.map((node) => [node.id, node]));
+      }
+
+      function nodeById(nodes, id) {
+        return nodes.find((node) => node.id === id) || null;
+      }
+
+      function distance(a, b) {
+        return Math.hypot(b.x - a.x, b.y - a.y);
+      }
+
+      function clamp(min, value, max) {
+        return Math.max(min, Math.min(value, max));
+      }
+
+      function isBuildTool(tool) {
+        return tool === 'road' || tool === 'wood' || tool === 'steel';
+      }
+
+      function formatCurrency(value) {
+        return '$' + Math.round(value).toLocaleString();
+      }
+
+      function asPercent(value) {
+        return Math.round(value * 100) + '%';
+      }
+
+      function memberBetween(state, a, b) {
+        return state.members.find((member) => {
+          return (member.a === a && member.b === b) || (member.a === b && member.b === a);
+        }) || null;
+      }
+
+      function setMemberRestLength(member) {
+        const lookup = nodeMapFrom(bridgeState.nodes);
+        member.restLength = distance(lookup.get(member.a), lookup.get(member.b));
+      }
+
+      function updateConnectedRestLengths(nodeId) {
+        bridgeState.members.forEach((member) => {
+          if (member.a === nodeId || member.b === nodeId) {
+            setMemberRestLength(member);
+          }
+        });
+      }
+
+      function stopAnimation() {
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = 0;
+        }
+      }
+
+      function clearTestState() {
+        stopAnimation();
+        testState = createEmptyTestState();
+      }
+
+      function loadState(factory) {
+        bridgeState = factory();
+        selectedNodeId = null;
+        dragState = null;
+        suppressClick = false;
+        clearTestState();
+        render();
+        updateDashboard();
+      }
+
+      function computeCost(state) {
+        const nodes = nodeMapFrom(state.nodes);
+        return state.members.reduce((total, member) => {
+          return total + (distance(nodes.get(member.a), nodes.get(member.b)) * METERS_PER_PIXEL * MATERIALS[member.type].cost);
+        }, 0);
+      }
+
+      function findRoadPath(state, workingNodes) {
+        const nodes = workingNodes || state.nodes;
+        const lookup = nodeMapFrom(nodes);
+        const adjacency = new Map(state.nodes.map((node) => [node.id, []]));
+
+        state.members.forEach((member) => {
+          if (member.type !== 'road') {
+            return;
+          }
+
+          const a = lookup.get(member.a);
+          const b = lookup.get(member.b);
+
+          if (!a || !b) {
+            return;
+          }
+
+          const weight = distance(a, b);
+          adjacency.get(member.a).push({ to: member.b, weight });
+          adjacency.get(member.b).push({ to: member.a, weight });
+        });
+
+        const distances = new Map(state.nodes.map((node) => [node.id, Infinity]));
+        const previous = new Map();
+        const queue = state.nodes.map((node) => node.id);
+        distances.set(LEFT_ANCHOR_ID, 0);
+
+        while (queue.length) {
+          queue.sort((a, b) => distances.get(a) - distances.get(b));
+          const current = queue.shift();
+
+          if (current === RIGHT_ANCHOR_ID) {
+            break;
+          }
+
+          adjacency.get(current).forEach((edge) => {
+            const nextDistance = distances.get(current) + edge.weight;
+            if (nextDistance < distances.get(edge.to)) {
+              distances.set(edge.to, nextDistance);
+              previous.set(edge.to, current);
+            }
+          });
+        }
+
+        if (!previous.has(RIGHT_ANCHOR_ID)) {
+          return null;
+        }
+
+        const path = [RIGHT_ANCHOR_ID];
+        let cursor = RIGHT_ANCHOR_ID;
+
+        while (cursor !== LEFT_ANCHOR_ID) {
+          cursor = previous.get(cursor);
+          if (cursor == null) {
+            return null;
+          }
+          path.unshift(cursor);
+        }
+
+        return path;
+      }
+
+      function locateVehicle(path, nodes, progress) {
+        if (!path || path.length < 2) {
+          return null;
+        }
+
+        const lookup = nodeMapFrom(nodes);
+        const segments = [];
+        let totalLength = 0;
+
+        for (let index = 0; index < path.length - 1; index += 1) {
+          const a = lookup.get(path[index]);
+          const b = lookup.get(path[index + 1]);
+          const length = distance(a, b);
+          segments.push({ a, b, length });
+          totalLength += length;
+        }
+
+        if (totalLength === 0) {
+          return null;
+        }
+
+        let travel = clamp(0, progress, 1) * totalLength;
+
+        for (let index = 0; index < segments.length; index += 1) {
+          const segment = segments[index];
+          if (travel <= segment.length || index === segments.length - 1) {
+            const t = segment.length === 0 ? 0 : travel / segment.length;
+            const x = segment.a.x + ((segment.b.x - segment.a.x) * t);
+            const y = segment.a.y + ((segment.b.y - segment.a.y) * t);
+
+            return {
+              x,
+              y,
+              angle: Math.atan2(segment.b.y - segment.a.y, segment.b.x - segment.a.x),
+              a: segment.a.id,
+              b: segment.b.id,
+              t
+            };
+          }
+
+          travel -= segment.length;
+        }
+
+        return null;
+      }
+
+      function createSimulationNodes(state) {
+        return state.nodes.map((node) => {
+          return {
+            id: node.id,
+            x: node.x,
+            y: node.y,
+            homeX: node.x,
+            homeY: node.y,
+            prevX: node.x,
+            prevY: node.y,
+            fixed: node.fixed
+          };
+        });
+      }
+
+      function roadNodeSet(state) {
+        const nodes = new Set();
+        state.members.forEach((member) => {
+          if (member.type === 'road') {
+            nodes.add(member.a);
+            nodes.add(member.b);
+          }
+        });
+        return nodes;
+      }
+
+      function computeMemberRatios(displayNodes) {
+        const lookup = nodeMapFrom(displayNodes);
+        const ratios = new Map();
+
+        bridgeState.members.forEach((member) => {
+          const a = lookup.get(member.a);
+          const b = lookup.get(member.b);
+          const strain = Math.abs(distance(a, b) - member.restLength) / Math.max(member.restLength, 1);
+          ratios.set(member.id, strain / MATERIALS[member.type].breakStrain);
+        });
+
+        return ratios;
+      }
+
+      function measureBridge(displayNodes, path) {
+        const lookup = nodeMapFrom(displayNodes);
+        let maxStrain = 0;
+        let maxSag = 0;
+        let maxSlope = 0;
+
+        bridgeState.members.forEach((member) => {
+          const a = lookup.get(member.a);
+          const b = lookup.get(member.b);
+          const strain = Math.abs(distance(a, b) - member.restLength) / Math.max(member.restLength, 1);
+          maxStrain = Math.max(maxStrain, strain / MATERIALS[member.type].breakStrain);
+        });
+
+        if (path) {
+          for (let index = 1; index < path.length - 1; index += 1) {
+            const node = lookup.get(path[index]);
+            maxSag = Math.max(maxSag, Math.max(0, node.y - DECK_Y));
+          }
+
+          for (let index = 0; index < path.length - 1; index += 1) {
+            const a = lookup.get(path[index]);
+            const b = lookup.get(path[index + 1]);
+            const dx = b.x - a.x;
+            const slope = dx === 0 ? 1 : Math.abs((b.y - a.y) / dx);
+            maxSlope = Math.max(maxSlope, slope);
+          }
+        }
+
+        return {
+          maxStrain,
+          maxSag,
+          maxSlope
+        };
+      }
+
+      function failureMessage(metrics) {
+        const reasons = [
+          {
+            key: 'strain',
+            value: metrics.maxStrain,
+            message: 'One or more members stretched too far. Shorten the longest panel or swap a critical brace to steel.'
+          },
+          {
+            key: 'sag',
+            value: metrics.maxSag / ROAD_FAILURE_SAG,
+            message: 'The road sagged too much. Add lower joints and triangles under the longest road panels.'
+          },
+          {
+            key: 'slope',
+            value: metrics.maxSlope / ROAD_FAILURE_SLOPE,
+            message: 'The road became too steep for the ambulance. Pull the deck flatter with deeper support triangles.'
+          }
+        ];
+
+        reasons.sort((a, b) => b.value - a.value);
+        return reasons[0].message;
+      }
+
+      function stressColor(member, ratio) {
+        if (ratio > 1) {
+          return '#e24a3b';
+        }
+        if (ratio > 0.75) {
+          return '#ef8d3e';
+        }
+        if (ratio > 0.45) {
+          return '#f1c34b';
+        }
+        return MATERIALS[member.type].color;
+      }
+
+      function renderVehicle(displayNodes) {
+        let transform = 'translate(120 156)';
+        let opacity = '0.88';
+        let path = findRoadPath(bridgeState, bridgeState.nodes);
+        let progress = 0;
+
+        if (testState.running || testState.finished) {
+          path = testState.path;
+          progress = testState.progress;
+          opacity = '1';
+        }
+
+        if (path) {
+          const vehicle = locateVehicle(path, displayNodes, progress);
+          if (vehicle) {
+            transform = 'translate(' + vehicle.x.toFixed(1) + ' ' + (vehicle.y - 14).toFixed(1) + ') rotate(' + ((vehicle.angle * 180) / Math.PI).toFixed(1) + ')';
+          }
+        }
+
+        ambulance.setAttribute('transform', transform);
+        ambulance.setAttribute('opacity', opacity);
+      }
+
+      function render() {
+        const displayNodes = (testState.running || testState.finished) && testState.simNodes ? testState.simNodes : bridgeState.nodes;
+        const lookup = nodeMapFrom(displayNodes);
+        const ratios = (testState.running || testState.finished) ? testState.memberRatios : new Map();
+
+        memberLayer.innerHTML = bridgeState.members.map((member) => {
+          const a = lookup.get(member.a);
+          const b = lookup.get(member.b);
+          const ratio = ratios.get(member.id) || 0;
+          const material = MATERIALS[member.type];
+
+          return '<line data-member-id="' + member.id + '" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) + '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '" stroke="' + stressColor(member, ratio) + '" stroke-width="' + material.width + '" stroke-linecap="round" stroke-linejoin="round" opacity="' + (member.type === 'road' ? '1' : '0.95') + '"></line>';
+        }).join('');
+
+        nodeLayer.innerHTML = displayNodes.map((node) => {
+          const radius = node.fixed ? 9 : 6;
+          const halo = node.fixed
+            ? '<circle cx="' + node.x.toFixed(1) + '" cy="' + node.y.toFixed(1) + '" r="13" fill="#5099d6" fill-opacity="0.2"></circle>'
+            : '';
+
+          return '<g data-node-id="' + node.id + '">' +
+            halo +
+            '<circle cx="' + node.x.toFixed(1) + '" cy="' + node.y.toFixed(1) + '" r="' + radius + '" fill="' + (node.fixed ? '#17324b' : '#f5fbff') + '" stroke="' + (node.fixed ? '#9dd6ff' : '#23465f') + '" stroke-width="' + (node.fixed ? '3' : '2') + '"></circle>' +
+            '</g>';
+        }).join('');
+
+        if (!testState.running && !testState.finished && selectedNodeId != null) {
+          const selected = lookup.get(selectedNodeId);
+          selectionLayer.innerHTML = selected
+            ? '<circle cx="' + selected.x.toFixed(1) + '" cy="' + selected.y.toFixed(1) + '" r="13" fill="none" stroke="#1f7bd3" stroke-width="3" stroke-dasharray="5 4"></circle>'
+            : '';
+        } else {
+          selectionLayer.innerHTML = '';
+        }
+
+        renderVehicle(displayNodes);
+      }
+
+      function finishTest(result, message) {
+        stopAnimation();
+        testState.running = false;
+        testState.finished = true;
+        testState.result = result;
+        testState.message = message;
+        testState.vehicleLabel = result === 'pass'
+          ? 'Reached the clinic'
+          : result === 'warn'
+            ? 'Crossed, but over budget'
+            : 'Test failed';
+        render();
+        updateDashboard();
+      }
+
+      function runTest() {
+        const path = findRoadPath(bridgeState, bridgeState.nodes);
+
+        if (!path) {
+          clearTestState();
+          testState.finished = true;
+          testState.result = 'fail';
+          testState.message = 'The road is broken. Connect one continuous deck from bank to bank before you test.';
+          testState.vehicleLabel = 'Cannot start';
+          render();
+          updateDashboard();
+          return;
+        }
+
+        stopAnimation();
+        selectedNodeId = null;
+        testState = createEmptyTestState();
+        testState.running = true;
+        testState.path = path;
+        testState.simNodes = createSimulationNodes(bridgeState);
+        testState.message = 'Ambulance rolling onto the bridge. Watch the sag, slope, and orange members.';
+        testState.vehicleLabel = 'Rolling onto the bridge';
+
+        let lastTimestamp = performance.now();
+
+        function tick(timestamp) {
+          if (!testState.running) {
+            return;
+          }
+
+          const frameScale = Math.min((timestamp - lastTimestamp) / 16.6667, 2);
+          lastTimestamp = timestamp;
+          const movingRoadNodes = roadNodeSet(bridgeState);
+          const vehicle = locateVehicle(testState.path, testState.simNodes, testState.progress);
+
+          for (let step = 0; step < 6; step += 1) {
+            const loads = new Map(testState.simNodes.map((node) => [node.id, movingRoadNodes.has(node.id) ? 0.5 : 0.08]));
+
+            if (vehicle) {
+              loads.set(vehicle.a, loads.get(vehicle.a) + (10 * (1 - vehicle.t)));
+              loads.set(vehicle.b, loads.get(vehicle.b) + (10 * vehicle.t));
+            }
+
+            testState.simNodes.forEach((node) => {
+              if (node.fixed) {
+                node.x = node.homeX;
+                node.y = node.homeY;
+                node.prevX = node.homeX;
+                node.prevY = node.homeY;
+                return;
+              }
+
+              const vx = (node.x - node.prevX) * 0.988;
+              const vy = (node.y - node.prevY) * 0.988;
+
+              node.prevX = node.x;
+              node.prevY = node.y;
+              node.x = clamp(BUILD_ZONE.left, node.x + vx, BUILD_ZONE.right);
+              node.y = clamp(BUILD_ZONE.top, node.y + vy + (loads.get(node.id) * 0.055), BUILD_ZONE.bottom + 28);
+            });
+
+            for (let iteration = 0; iteration < 8; iteration += 1) {
+              bridgeState.members.forEach((member) => {
+                const lookup = nodeMapFrom(testState.simNodes);
+                const a = lookup.get(member.a);
+                const b = lookup.get(member.b);
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const length = Math.hypot(dx, dy) || 1;
+                const difference = (length - member.restLength) / length;
+                const factor = difference * MATERIALS[member.type].stiffness;
+
+                if (a.fixed && b.fixed) {
+                  return;
+                }
+
+                if (a.fixed) {
+                  b.x -= dx * factor;
+                  b.y -= dy * factor;
+                  return;
+                }
+
+                if (b.fixed) {
+                  a.x += dx * factor;
+                  a.y += dy * factor;
+                  return;
+                }
+
+                a.x += dx * factor * 0.5;
+                a.y += dy * factor * 0.5;
+                b.x -= dx * factor * 0.5;
+                b.y -= dy * factor * 0.5;
+              });
+            }
+          }
+
+          testState.progress = Math.min(1, testState.progress + (0.0035 * frameScale));
+          testState.memberRatios = computeMemberRatios(testState.simNodes);
+
+          const metrics = measureBridge(testState.simNodes, testState.path);
+          testState.maxStrain = Math.max(testState.maxStrain, metrics.maxStrain);
+          testState.maxSag = Math.max(testState.maxSag, metrics.maxSag);
+          testState.maxSlope = Math.max(testState.maxSlope, metrics.maxSlope);
+          testState.vehicleLabel = Math.round(testState.progress * 100) + '% across';
+
+          render();
+          updateDashboard();
+
+          if (metrics.maxStrain > 1 || metrics.maxSag > ROAD_FAILURE_SAG || metrics.maxSlope > ROAD_FAILURE_SLOPE) {
+            finishTest('fail', failureMessage(metrics));
+            return;
+          }
+
+          if (testState.progress >= 1) {
+            if (computeCost(bridgeState) > LEVEL_BUDGET) {
+              finishTest('warn', 'The ambulance made it, but the design missed the budget target. Remove extras or replace some steel with wood.');
+            } else {
+              finishTest('pass', 'Ambulance delivered. The road stayed flat enough and the load path held together.');
+            }
+            return;
+          }
+
+          animationFrameId = requestAnimationFrame(tick);
+        }
+
+        animationFrameId = requestAnimationFrame(tick);
+        render();
+        updateDashboard();
+      }
+
+      function pointFromEvent(event) {
+        const bounds = svg.getBoundingClientRect();
+        return {
+          x: ((event.clientX - bounds.left) / bounds.width) * 780,
+          y: ((event.clientY - bounds.top) / bounds.height) * 380
+        };
+      }
+
+      function pointInBuildZone(point) {
+        return point.x >= BUILD_ZONE.left - 10 &&
+          point.x <= BUILD_ZONE.right + 10 &&
+          point.y >= BUILD_ZONE.top - 10 &&
+          point.y <= BUILD_ZONE.bottom + 10;
+      }
+
+      function snapPoint(point) {
+        const snappedX = BUILD_ZONE.left + (Math.round((point.x - BUILD_ZONE.left) / GRID.x) * GRID.x);
+        const snappedY = BUILD_ZONE.top + (Math.round((point.y - BUILD_ZONE.top) / GRID.y) * GRID.y);
+
+        return {
+          x: clamp(BUILD_ZONE.left, snappedX, BUILD_ZONE.right),
+          y: clamp(BUILD_ZONE.top, snappedY, BUILD_ZONE.bottom)
+        };
+      }
+
+      function nodeNearPoint(point, ignoreId) {
+        return bridgeState.nodes.find((node) => {
+          return node.id !== ignoreId && distance(node, point) < 16;
+        }) || null;
+      }
+
+      function addNode(point) {
+        const existing = nodeNearPoint(point, null);
+        if (existing) {
+          return existing;
+        }
+
+        const node = createNode(bridgeState.nextNodeId, point.x, point.y, false);
+        bridgeState.nextNodeId += 1;
+        bridgeState.nodes.push(node);
+        return node;
+      }
+
+      function removeNode(nodeId) {
+        const node = nodeById(bridgeState.nodes, nodeId);
+        if (!node || node.fixed) {
+          return;
+        }
+
+        bridgeState.nodes = bridgeState.nodes.filter((candidate) => candidate.id !== nodeId);
+        bridgeState.members = bridgeState.members.filter((member) => member.a !== nodeId && member.b !== nodeId);
+
+        if (selectedNodeId === nodeId) {
+          selectedNodeId = null;
+        }
+      }
+
+      function removeMember(memberId) {
+        bridgeState.members = bridgeState.members.filter((member) => member.id !== memberId);
+      }
+
+      function connectNodes(a, b, type) {
+        if (a === b) {
+          return;
+        }
+
+        const existing = memberBetween(bridgeState, a, b);
+
+        if (existing) {
+          existing.type = type;
+          setMemberRestLength(existing);
+        } else {
+          bridgeState.members.push({
+            id: bridgeState.nextMemberId,
+            a,
+            b,
+            type,
+            restLength: distance(nodeById(bridgeState.nodes, a), nodeById(bridgeState.nodes, b))
+          });
+          bridgeState.nextMemberId += 1;
+        }
+
+        selectedNodeId = b;
+      }
+
+      function setTool(tool) {
+        selectedTool = tool;
+        if (!isBuildTool(tool)) {
+          selectedNodeId = null;
+        }
+
+        toolButtons.forEach((button) => {
+          button.classList.toggle('is-active', button.dataset.tool === tool);
+        });
+
+        updateDashboard();
+        render();
+      }
+
+      function handleNodeInteraction(nodeId) {
+        clearTestState();
+        const node = nodeById(bridgeState.nodes, nodeId);
+        if (!node) {
+          return;
+        }
+
+        if (selectedTool === 'delete') {
+          removeNode(nodeId);
+        } else if (selectedTool === 'move') {
+          selectedNodeId = nodeId;
+        } else if (isBuildTool(selectedTool)) {
+          if (selectedNodeId == null) {
+            selectedNodeId = nodeId;
+          } else if (selectedNodeId === nodeId) {
+            selectedNodeId = null;
+          } else {
+            connectNodes(selectedNodeId, nodeId, selectedTool);
+          }
+        }
+
+        render();
+        updateDashboard();
+      }
+
+      function handleMemberInteraction(memberId) {
+        if (selectedTool !== 'delete') {
+          return;
+        }
+
+        clearTestState();
+        removeMember(memberId);
+        render();
+        updateDashboard();
+      }
+
+      function handleStageClick(point) {
+        if (!pointInBuildZone(point)) {
+          selectedNodeId = null;
+          render();
+          updateDashboard();
+          return;
+        }
+
+        if (!isBuildTool(selectedTool)) {
+          selectedNodeId = null;
+          render();
+          updateDashboard();
+          return;
+        }
+
+        clearTestState();
+        const snapped = snapPoint(point);
+        const node = addNode(snapped);
+
+        if (selectedNodeId != null && selectedNodeId !== node.id) {
+          connectNodes(selectedNodeId, node.id, selectedTool);
+        } else {
+          selectedNodeId = node.id;
+        }
+
+        render();
+        updateDashboard();
+      }
+
+      function updateDashboard() {
+        const cost = computeCost(bridgeState);
+        const budgetDelta = LEVEL_BUDGET - cost;
+        const budgetRatio = cost / LEVEL_BUDGET;
+        const path = findRoadPath(bridgeState, bridgeState.nodes);
+        const tested = testState.running || testState.finished;
+        const riskValue = tested
+          ? Math.max(testState.maxStrain, testState.maxSag / ROAD_FAILURE_SAG, testState.maxSlope / ROAD_FAILURE_SLOPE)
+          : 0;
+
+        budgetDisplay.innerHTML = formatCurrency(cost) + '<small>Budget spent</small>';
+        budgetSummary.textContent = budgetDelta >= 0
+          ? formatCurrency(budgetDelta) + ' left'
+          : formatCurrency(Math.abs(budgetDelta)) + ' over';
+        budgetBar.style.width = Math.min(100, budgetRatio * 100).toFixed(1) + '%';
+        budgetBar.style.background = budgetDelta >= 0
+          ? 'linear-gradient(90deg, #62c96b, #35a160)'
+          : 'linear-gradient(90deg, #f3c148, #e24a3b)';
+
+        riskSummary.textContent = tested ? asPercent(Math.min(riskValue, 1.5)) + ' of limit' : 'Run the test';
+        riskBar.style.width = Math.min(100, riskValue * 100).toFixed(1) + '%';
+        targetEl.textContent = TARGET_LOAD + ' kN design load (' + AMBULANCE_WEIGHT + ' kN ambulance)';
+        deckPathEl.textContent = path ? 'Connected from bank to bank' : 'Gap not connected';
+        strainEl.textContent = tested ? asPercent(testState.maxStrain) : 'Not tested';
+        sagEl.textContent = tested ? testState.maxSag.toFixed(1) + ' px' : 'Not tested';
+        slopeEl.textContent = tested ? asPercent(testState.maxSlope) : 'Not tested';
+        vehicleStatusEl.textContent = tested ? testState.vehicleLabel : 'Waiting on the left bank';
+        toolCopy.textContent = TOOL_HINTS[selectedTool].copy;
+        toolLabel.textContent = TOOL_HINTS[selectedTool].label;
+        stagePrompt.textContent = TOOL_HINTS[selectedTool].prompt;
+
+        statusCard.classList.remove('bridge-status-pass', 'bridge-status-fail', 'bridge-status-warn');
+
+        if (testState.running) {
+          statusPill.textContent = 'Ambulance testing';
+          verdictEl.textContent = 'Testing in progress. Watch the road shape and the stress colors.';
+          stageNote.textContent = 'Orange and red members are taking the heaviest strain. If the deck dips too far, the run will fail.';
+        } else if (testState.finished && testState.result === 'pass') {
+          statusPill.textContent = 'Clinic reached';
+          statusCard.classList.add('bridge-status-pass');
+          verdictEl.textContent = testState.message;
+          stageNote.textContent = 'This design kept the deck nearly level. Notice how the triangles under the road shortened the bending spans.';
+        } else if (testState.finished && testState.result === 'warn') {
+          statusPill.textContent = 'Over budget';
+          statusCard.classList.add('bridge-status-warn');
+          verdictEl.textContent = testState.message;
+          stageNote.textContent = 'The bridge works, but it costs too much. Swap a few long steel pieces for wood only if the deck stays stable.';
+        } else if (testState.finished && testState.result === 'fail') {
+          statusPill.textContent = 'Bridge failed';
+          statusCard.classList.add('bridge-status-fail');
+          verdictEl.textContent = testState.message;
+          stageNote.textContent = testState.message;
+        } else if (!path) {
+          statusPill.textContent = 'Edit mode';
+          verdictEl.textContent = 'Build one continuous road from the start bank to the clinic bank before you test.';
+          stageNote.textContent = 'Road pieces are the only parts the ambulance can drive on. Connect the gap first, then reinforce it.';
+        } else if (budgetDelta < 0) {
+          statusPill.textContent = 'Edit mode';
+          verdictEl.textContent = 'This design is over budget. Trim extra members or replace some steel with cheaper wood before testing.';
+          stageNote.textContent = 'The deck is connected, but the cost target is blown. Remove unused members and keep only the triangles that carry load.';
+        } else {
+          statusPill.textContent = 'Edit mode';
+          verdictEl.textContent = 'Road connected. Add triangles under the deck and run the ambulance test.';
+          stageNote.textContent = 'The starter road is only the beginning. The strongest student designs make deep triangles below the longest panels.';
+        }
+      }
+
+      svg.addEventListener('pointerdown', function (event) {
+        if (testState.running) {
+          return;
+        }
+
+        const target = event.target instanceof Element ? event.target : null;
+        const nodeElement = target ? target.closest('[data-node-id]') : null;
+
+        if (selectedTool !== 'move' || !nodeElement) {
+          return;
+        }
+
+        const nodeId = Number(nodeElement.dataset.nodeId);
+        const node = nodeById(bridgeState.nodes, nodeId);
+
+        if (!node || node.fixed) {
+          return;
+        }
+
+        clearTestState();
+        selectedNodeId = nodeId;
+        dragState = {
+          pointerId: event.pointerId,
+          nodeId,
+          moved: false
+        };
+        suppressClick = false;
+        svg.setPointerCapture(event.pointerId);
+        render();
+        updateDashboard();
+      });
+
+      svg.addEventListener('pointermove', function (event) {
+        if (!dragState) {
+          return;
+        }
+
+        const point = snapPoint(pointFromEvent(event));
+        const overlap = nodeNearPoint(point, dragState.nodeId);
+
+        if (overlap) {
+          return;
+        }
+
+        const node = nodeById(bridgeState.nodes, dragState.nodeId);
+
+        if (!node) {
+          return;
+        }
+
+        if (Math.abs(node.x - point.x) > 0.5 || Math.abs(node.y - point.y) > 0.5) {
+          dragState.moved = true;
+          suppressClick = true;
+        }
+
+        node.x = point.x;
+        node.y = point.y;
+        updateConnectedRestLengths(node.id);
+        render();
+        updateDashboard();
+      });
+
+      window.addEventListener('pointerup', function (event) {
+        if (!dragState) {
+          return;
+        }
+
+        if (svg.hasPointerCapture(dragState.pointerId)) {
+          svg.releasePointerCapture(dragState.pointerId);
+        }
+
+        dragState = null;
+        window.setTimeout(function () {
+          suppressClick = false;
+        }, 0);
+      });
+
+      svg.addEventListener('click', function (event) {
+        if (testState.running) {
+          return;
+        }
+
+        if (suppressClick) {
+          suppressClick = false;
+          return;
+        }
+
+        const target = event.target instanceof Element ? event.target : null;
+        const nodeElement = target ? target.closest('[data-node-id]') : null;
+        const memberElement = target ? target.closest('[data-member-id]') : null;
+
+        if (nodeElement) {
+          handleNodeInteraction(Number(nodeElement.dataset.nodeId));
+          return;
+        }
+
+        if (memberElement) {
+          handleMemberInteraction(Number(memberElement.dataset.memberId));
+          return;
+        }
+
+        handleStageClick(pointFromEvent(event));
+      });
+
+      toolButtons.forEach((button) => {
         button.addEventListener('click', function () {
-          structure = button.dataset.structure;
-          activateGroup(structureButtons, structure, 'structure');
-          update();
+          setTool(button.dataset.tool);
         });
       });
 
-      supportButtons.forEach((button) => {
-        button.addEventListener('click', function () {
-          support = button.dataset.support;
-          activateGroup(supportButtons, support, 'support');
-          update();
-        });
+      testButton.addEventListener('click', runTest);
+      exampleButton.addEventListener('click', function () {
+        loadState(createExampleState);
       });
-
-      materialInput.addEventListener('input', update);
-      spanInput.addEventListener('input', update);
-      depthInput.addEventListener('input', update);
+      resetButton.addEventListener('click', function () {
+        loadState(createStarterState);
+      });
 
       document.querySelectorAll('.bridge-question').forEach((question) => {
         const answer = question.dataset.answer;
@@ -1180,7 +2204,8 @@
         });
       });
 
-      update();
+      render();
+      updateDashboard();
     }());
   </script>
 </body>
