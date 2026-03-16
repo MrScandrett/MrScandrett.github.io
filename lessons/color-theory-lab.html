@@ -1,0 +1,1735 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Color Theory Lab · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Art and Design Lesson 01 - explore hue, saturation, value, color harmony, contrast, and mood with a live palette builder and poster preview." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    :root {
+      --ctl-bg: #f7f0eb;
+      --ctl-ink: #1f2430;
+      --ctl-muted: #5f6776;
+      --ctl-line: rgba(196, 204, 216, 0.9);
+      --ctl-card: rgba(255, 255, 255, 0.94);
+      --ctl-shadow: 0 18px 46px rgba(24, 24, 32, 0.1);
+      --ctl-coral: #ff7b68;
+      --ctl-amber: #ffb657;
+      --ctl-gold: #ffd45b;
+      --ctl-mint: #48d2c4;
+      --ctl-blue: #5a97ff;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ctl-ink);
+      background:
+        radial-gradient(1200px 540px at 10% -10%, rgba(255, 182, 87, 0.18), transparent 58%),
+        radial-gradient(1000px 520px at 100% 0%, rgba(72, 210, 196, 0.18), transparent 54%),
+        linear-gradient(180deg, #fbf6f1 0%, #f0eef5 100%);
+    }
+
+    .ctl-page {
+      padding-bottom: 3rem;
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    .ctl-page h1,
+    .ctl-page h2,
+    .ctl-page h3 {
+      font-family: "Fraunces", serif;
+      font-weight: 700;
+    }
+
+    .ctl-shell {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding-top: 1rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .ctl-hero,
+    .ctl-primer,
+    .ctl-lab,
+    .ctl-card,
+    .ctl-prompt-card {
+      border-radius: 28px;
+      border: 1px solid var(--ctl-line);
+      background: var(--ctl-card);
+      box-shadow: var(--ctl-shadow);
+    }
+
+    .ctl-hero,
+    .ctl-primer,
+    .ctl-lab,
+    .ctl-card {
+      padding: 1.25rem;
+    }
+
+    .ctl-hero {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 16% 18%, rgba(255, 182, 87, 0.2), transparent 30%),
+        radial-gradient(circle at 84% 22%, rgba(72, 210, 196, 0.18), transparent 32%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 246, 242, 0.94));
+    }
+
+    .ctl-hero::after {
+      content: "";
+      position: absolute;
+      right: -42px;
+      top: -26px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(90, 151, 255, 0.12) 0%, rgba(90, 151, 255, 0) 68%);
+      pointer-events: none;
+    }
+
+    .ctl-eyebrow,
+    .ctl-kicker {
+      margin: 0 0 0.45rem;
+      color: #6d7485;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .ctl-hero h1 {
+      margin: 0;
+      max-width: 10ch;
+      font-size: clamp(2.2rem, 4vw, 3.7rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+    }
+
+    .ctl-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem 0.6rem;
+      margin-top: 0.85rem;
+      color: #697385;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .ctl-meta .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.38;
+      align-self: center;
+    }
+
+    .ctl-lede,
+    .ctl-card p,
+    .ctl-primer-card p,
+    .ctl-lab-head p,
+    .ctl-note-list li,
+    .ctl-prompt-card p,
+    .ctl-slider-help {
+      color: var(--ctl-muted);
+      line-height: 1.66;
+    }
+
+    .ctl-lede {
+      max-width: 72ch;
+      margin: 0.8rem 0 0;
+      font-size: 1rem;
+    }
+
+    .ctl-back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 1rem;
+      color: #2d5d86;
+      font-size: 0.84rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .ctl-back-link:hover {
+      color: #173754;
+      text-decoration: underline;
+    }
+
+    .ctl-primer {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .ctl-primer-grid,
+    .ctl-note-grid,
+    .ctl-prompts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .ctl-primer-card,
+    .ctl-note-card {
+      padding: 1rem;
+      border-radius: 22px;
+      border: 1px solid rgba(203, 211, 223, 0.92);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 245, 250, 0.94));
+      box-shadow: 0 12px 28px rgba(24, 24, 32, 0.05);
+    }
+
+    .ctl-primer-card--wide {
+      background:
+        radial-gradient(circle at top right, rgba(255, 182, 87, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 245, 250, 0.94));
+    }
+
+    .ctl-primer-card h2,
+    .ctl-primer-card h3,
+    .ctl-lab-head h2,
+    .ctl-card h2,
+    .ctl-note-card h3,
+    .ctl-prompt-card h3 {
+      margin: 0 0 0.35rem;
+      letter-spacing: -0.03em;
+    }
+
+    .ctl-primer-card h2 {
+      font-size: 1.18rem;
+    }
+
+    .ctl-primer-card h3,
+    .ctl-note-card h3,
+    .ctl-prompt-card h3 {
+      font-size: 1rem;
+    }
+
+    .ctl-lab {
+      display: grid;
+      gap: 1rem;
+      background:
+        radial-gradient(circle at top left, rgba(255, 182, 87, 0.08), transparent 34%),
+        radial-gradient(circle at 92% 16%, rgba(72, 210, 196, 0.08), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 244, 250, 0.96));
+    }
+
+    .ctl-lab-head {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .ctl-lab-head p {
+      margin: 0;
+      max-width: 74ch;
+    }
+
+    .ctl-toolbar {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .ctl-toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .ctl-toolbar-label {
+      color: #646f82;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .ctl-button,
+    .ctl-action {
+      appearance: none;
+      border: 1px solid rgba(186, 196, 210, 0.95);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.86);
+      color: #1f2430;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.55rem 0.82rem;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .ctl-button:hover,
+    .ctl-action:hover {
+      transform: translateY(-1px);
+      border-color: rgba(72, 136, 210, 0.48);
+    }
+
+    .ctl-button.is-active {
+      background: linear-gradient(180deg, rgba(255, 182, 87, 0.18), rgba(72, 210, 196, 0.16));
+      border-color: rgba(255, 149, 86, 0.48);
+      color: #16334e;
+    }
+
+    .ctl-action {
+      border-radius: 14px;
+      padding-inline: 0.95rem;
+    }
+
+    .ctl-action--emphasis {
+      border-color: rgba(255, 149, 86, 0.55);
+      background: linear-gradient(180deg, rgba(255, 179, 86, 0.24), rgba(255, 135, 95, 0.16));
+    }
+
+    .ctl-lab-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.78fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .ctl-stage-card,
+    .ctl-panel {
+      border-radius: 24px;
+      border: 1px solid rgba(196, 205, 218, 0.94);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .ctl-stage-card,
+    .ctl-panel {
+      padding: 1rem;
+    }
+
+    .ctl-stage-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.1fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .ctl-wheel-card,
+    .ctl-preview-card,
+    .ctl-panel-card {
+      border-radius: 22px;
+      border: 1px solid rgba(198, 207, 220, 0.92);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 244, 248, 0.94));
+      padding: 0.95rem;
+      box-shadow: 0 12px 30px rgba(22, 22, 32, 0.05);
+    }
+
+    .ctl-wheel-card {
+      display: grid;
+      gap: 0.85rem;
+      justify-items: center;
+    }
+
+    .ctl-wheel-wrap {
+      position: relative;
+      width: min(100%, 270px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+    }
+
+    .ctl-wheel {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, rgba(255, 255, 255, 0.95) 0 24%, rgba(255, 255, 255, 0.04) 25% 43%, transparent 44% 100%),
+        conic-gradient(
+          #ff5e5b 0deg,
+          #ffb247 55deg,
+          #ffe25e 95deg,
+          #43d2c5 180deg,
+          #4f92ff 245deg,
+          #dc6b9f 310deg,
+          #ff5e5b 360deg
+        );
+      box-shadow: inset 0 0 0 14px rgba(255, 255, 255, 0.72), 0 22px 36px rgba(24, 24, 32, 0.16);
+    }
+
+    .ctl-wheel::after {
+      content: "";
+      position: absolute;
+      inset: 50%;
+      width: 38%;
+      height: 38%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(196, 205, 218, 0.92);
+      box-shadow: 0 12px 20px rgba(22, 22, 32, 0.1);
+    }
+
+    .ctl-wheel-core {
+      position: absolute;
+      inset: 50%;
+      width: 34%;
+      height: 34%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      z-index: 2;
+      color: #ffffff;
+      box-shadow: 0 16px 24px rgba(20, 20, 28, 0.18);
+    }
+
+    .ctl-core-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.92;
+    }
+
+    .ctl-core-meta {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      opacity: 0.92;
+    }
+
+    .ctl-wheel-markers {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+    }
+
+    .ctl-marker {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 6px 18px rgba(16, 18, 28, 0.26);
+    }
+
+    .ctl-marker.is-base {
+      width: 18px;
+      height: 18px;
+      border-width: 3px;
+    }
+
+    .ctl-wheel-note {
+      margin: 0;
+      color: var(--ctl-muted);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      text-align: center;
+      max-width: 28ch;
+    }
+
+    .ctl-preview-card {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .ctl-poster {
+      --poster-bg-a: #ffffff;
+      --poster-bg-b: #e9f1ff;
+      --poster-accent-a: #ff7b68;
+      --poster-accent-b: #48d2c4;
+      --poster-anchor: #243046;
+      --poster-ink: #111827;
+      --poster-ink-soft: rgba(17, 24, 39, 0.72);
+      position: relative;
+      overflow: hidden;
+      min-height: 340px;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 18% 24%, var(--poster-accent-a) 0 14%, transparent 15%),
+        radial-gradient(circle at 84% 20%, rgba(255, 255, 255, 0.26), transparent 24%),
+        linear-gradient(155deg, var(--poster-bg-a) 0%, var(--poster-bg-b) 100%);
+      color: var(--poster-ink);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54), 0 18px 34px rgba(24, 24, 32, 0.12);
+    }
+
+    .ctl-poster::before,
+    .ctl-poster::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0.82;
+      mix-blend-mode: multiply;
+    }
+
+    .ctl-poster::before {
+      width: 220px;
+      height: 220px;
+      right: -36px;
+      bottom: -72px;
+      background: radial-gradient(circle, var(--poster-accent-b) 0 48%, transparent 49%);
+    }
+
+    .ctl-poster::after {
+      width: 160px;
+      height: 160px;
+      left: -46px;
+      bottom: 56px;
+      background: radial-gradient(circle, var(--poster-anchor) 0 42%, transparent 43%);
+      opacity: 0.18;
+    }
+
+    .ctl-poster-inner {
+      position: relative;
+      z-index: 1;
+      padding: 1.1rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .ctl-poster-badge,
+    .ctl-poster-chip {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 1.75rem;
+      padding: 0.24rem 0.62rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      background: rgba(255, 255, 255, 0.14);
+      color: var(--poster-ink);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .ctl-poster-copy {
+      display: grid;
+      gap: 0.55rem;
+      max-width: 16ch;
+    }
+
+    .ctl-poster-copy h3 {
+      margin: 0;
+      font-size: clamp(1.7rem, 4vw, 2.7rem);
+      line-height: 0.94;
+      letter-spacing: -0.05em;
+    }
+
+    .ctl-poster-copy p {
+      margin: 0;
+      color: var(--poster-ink-soft);
+      font-size: 0.86rem;
+      line-height: 1.62;
+    }
+
+    .ctl-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .ctl-poster-accent {
+      position: absolute;
+      right: 1rem;
+      top: 5.5rem;
+      width: 104px;
+      height: 132px;
+      border-radius: 26px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
+        linear-gradient(160deg, var(--poster-accent-a) 0%, var(--poster-accent-b) 100%);
+      box-shadow: 0 18px 26px rgba(16, 18, 28, 0.16);
+      transform: rotate(8deg);
+    }
+
+    .ctl-poster-grid {
+      margin-top: 0.35rem;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+
+    .ctl-poster-grid span {
+      display: block;
+      min-height: 54px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .ctl-palette-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .ctl-swatch {
+      overflow: hidden;
+      border-radius: 18px;
+      border: 1px solid rgba(197, 207, 220, 0.92);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: 0 12px 22px rgba(24, 24, 32, 0.06);
+    }
+
+    .ctl-swatch-chip {
+      height: 62px;
+    }
+
+    .ctl-swatch-copy {
+      padding: 0.72rem;
+      display: grid;
+      gap: 0.22rem;
+    }
+
+    .ctl-swatch-copy strong {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .ctl-swatch-copy span {
+      color: #233146;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .ctl-swatch-copy small {
+      color: #687385;
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+
+    .ctl-sliders {
+      margin-top: 0.95rem;
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .ctl-slider-card {
+      border-radius: 18px;
+      border: 1px solid rgba(197, 206, 219, 0.92);
+      background: rgba(255, 255, 255, 0.82);
+      padding: 0.85rem 0.95rem;
+      box-shadow: 0 10px 22px rgba(24, 24, 32, 0.05);
+    }
+
+    .ctl-slider-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: baseline;
+      margin-bottom: 0.45rem;
+    }
+
+    .ctl-slider-head strong {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .ctl-slider-value {
+      color: #20344a;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .ctl-slider-card input {
+      width: 100%;
+      accent-color: #4d92ff;
+    }
+
+    .ctl-slider-help {
+      margin: 0.4rem 0 0;
+      font-size: 0.8rem;
+    }
+
+    .ctl-panel {
+      display: grid;
+      gap: 0.85rem;
+      align-content: start;
+    }
+
+    .ctl-panel-card h3 {
+      margin-bottom: 0.4rem;
+    }
+
+    .ctl-panel-card p {
+      margin: 0;
+      color: var(--ctl-muted);
+      font-size: 0.85rem;
+      line-height: 1.62;
+    }
+
+    .ctl-mood {
+      margin: 0;
+      font-size: 1.38rem;
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+    }
+
+    .ctl-meter-group {
+      display: grid;
+      gap: 0.7rem;
+      margin-top: 0.85rem;
+    }
+
+    .ctl-meter {
+      display: grid;
+      gap: 0.34rem;
+    }
+
+    .ctl-meter-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      align-items: baseline;
+      color: #233146;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .ctl-meter-head span {
+      color: #687385;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.7rem;
+    }
+
+    .ctl-meter-track {
+      overflow: hidden;
+      border-radius: 999px;
+      height: 0.62rem;
+      background: rgba(215, 223, 235, 0.92);
+    }
+
+    .ctl-meter-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #5a97ff, #48d2c4);
+      transition: width 0.2s ease;
+    }
+
+    .ctl-meter-fill--warmth {
+      background: linear-gradient(90deg, #4da1ff, #48d2c4, #ffd45b, #ff7b68);
+    }
+
+    .ctl-meter-fill--contrast {
+      background: linear-gradient(90deg, #c8d2e2, #5a97ff);
+    }
+
+    .ctl-readout-list {
+      margin: 0.9rem 0 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.55rem;
+      color: var(--ctl-muted);
+      font-size: 0.82rem;
+      line-height: 1.58;
+    }
+
+    .ctl-harmony-note {
+      margin-top: 0.5rem;
+      display: grid;
+      gap: 0.6rem;
+    }
+
+    .ctl-callout {
+      padding: 0.8rem 0.9rem;
+      border-radius: 16px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 245, 250, 0.94));
+      border: 1px solid rgba(201, 210, 223, 0.92);
+    }
+
+    .ctl-callout strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .ctl-hex-list {
+      display: grid;
+      gap: 0.55rem;
+      margin-top: 0.8rem;
+    }
+
+    .ctl-hex-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.65rem;
+      align-items: center;
+      padding: 0.55rem 0.65rem;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid rgba(203, 211, 223, 0.9);
+    }
+
+    .ctl-hex-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.92);
+      box-shadow: 0 4px 10px rgba(22, 22, 32, 0.12);
+    }
+
+    .ctl-hex-item strong,
+    .ctl-hex-item span {
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    .ctl-hex-item strong {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .ctl-hex-item span {
+      color: #334155;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .ctl-note-list {
+      margin: 0;
+      padding-left: 1.15rem;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .ctl-prompts {
+      gap: 0.9rem;
+    }
+
+    .ctl-prompt-card {
+      padding: 1rem;
+      border-radius: 24px;
+      border: 1px solid rgba(197, 206, 219, 0.92);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 245, 250, 0.94));
+      box-shadow: 0 12px 28px rgba(24, 24, 32, 0.05);
+    }
+
+    @media (max-width: 980px) {
+      .ctl-primer-grid,
+      .ctl-note-grid,
+      .ctl-prompts,
+      .ctl-lab-grid,
+      .ctl-stage-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .ctl-shell {
+        width: min(100%, calc(100% - 1rem));
+      }
+
+      .ctl-hero,
+      .ctl-primer,
+      .ctl-lab,
+      .ctl-card {
+        padding: 1rem;
+        border-radius: 24px;
+      }
+
+      .ctl-palette-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .ctl-toolbar-row {
+        align-items: stretch;
+      }
+
+      .ctl-meta {
+        gap: 0.35rem 0.55rem;
+      }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="ctl-page">
+    <div class="ctl-shell">
+      <section class="ctl-hero">
+        <p class="ctl-eyebrow">Art &amp; Design · Lesson 01</p>
+        <h1>Color Theory Lab</h1>
+        <div class="ctl-meta">
+          <span>Hue</span>
+          <span class="dot"></span>
+          <span>Saturation</span>
+          <span class="dot"></span>
+          <span>Value</span>
+          <span class="dot"></span>
+          <span>Harmony</span>
+          <span class="dot"></span>
+          <span>Live poster preview</span>
+        </div>
+        <p class="ctl-lede">Color does more than decorate. It sets mood, builds hierarchy, creates contrast, and changes how a message feels before anyone reads a single word. Use this lab to build palettes, compare harmony schemes, and see how one color decision can shift an entire design.</p>
+        <a class="ctl-back-link" href="../steam-lessons.html#module-art">&larr; Back to Art &amp; Design</a>
+      </section>
+
+      <section class="ctl-primer" aria-label="Color theory primer">
+        <div class="ctl-primer-card ctl-primer-card--wide">
+          <h2>How to read color like a designer</h2>
+          <p>Designers usually think about three sliders first: <strong>hue</strong> for the color family, <strong>saturation</strong> for intensity, and <strong>value</strong> for light versus dark. Then they ask how the colors relate on the wheel. That relationship is called <strong>harmony</strong>, and it is what makes a palette feel calm, sharp, playful, or dramatic.</p>
+        </div>
+        <div class="ctl-primer-grid">
+          <article class="ctl-primer-card">
+            <h3>Hue</h3>
+            <p>Hue is where a color sits on the wheel. Red, blue, and green are different hues. Shifting hue changes the emotional family of the palette.</p>
+          </article>
+          <article class="ctl-primer-card">
+            <h3>Saturation</h3>
+            <p>Saturation controls how vivid or muted a color feels. High saturation is loud and energetic. Lower saturation feels softer and more controlled.</p>
+          </article>
+          <article class="ctl-primer-card">
+            <h3>Value</h3>
+            <p>Value is the lightness or darkness of a color. Strong value contrast is what makes text readable and focal points stand out.</p>
+          </article>
+          <article class="ctl-primer-card">
+            <h3>Harmony</h3>
+            <p>Analogous palettes feel unified. Complementary palettes create contrast. Triadic palettes feel playful. Monochromatic palettes feel refined and focused.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="ctl-lab" aria-label="Interactive color theory lab">
+        <div class="ctl-lab-head">
+          <p class="ctl-kicker">Interactive studio</p>
+          <h2>Build a palette and watch the message change</h2>
+          <p>Pick a harmony scheme, load a challenge preset, then adjust hue, saturation, and value. The wheel shows where your colors sit. The poster preview shows how those same choices affect mood, contrast, and hierarchy.</p>
+        </div>
+
+        <div class="ctl-toolbar">
+          <div class="ctl-toolbar-row">
+            <span class="ctl-toolbar-label">Harmony</span>
+            <button class="ctl-button" type="button" data-harmony="analogous">Analogous</button>
+            <button class="ctl-button" type="button" data-harmony="complementary">Complementary</button>
+            <button class="ctl-button" type="button" data-harmony="triadic">Triadic</button>
+            <button class="ctl-button" type="button" data-harmony="split">Split Complementary</button>
+            <button class="ctl-button" type="button" data-harmony="monochromatic">Monochromatic</button>
+          </div>
+          <div class="ctl-toolbar-row">
+            <span class="ctl-toolbar-label">Preset mission</span>
+            <button class="ctl-button" type="button" data-preset="sunrise">Warm Sunrise</button>
+            <button class="ctl-button" type="button" data-preset="ocean">Calm Ocean</button>
+            <button class="ctl-button" type="button" data-preset="neon">Neon Night</button>
+            <button class="ctl-button" type="button" data-preset="museum">Museum Label</button>
+            <button class="ctl-action ctl-action--emphasis" type="button" id="ctl-shuffle-btn">Shuffle Palette</button>
+          </div>
+        </div>
+
+        <div class="ctl-lab-grid">
+          <div class="ctl-stage-card">
+            <div class="ctl-stage-grid">
+              <article class="ctl-wheel-card">
+                <p class="ctl-kicker">Palette map</p>
+                <div class="ctl-wheel-wrap">
+                  <div class="ctl-wheel" aria-hidden="true"></div>
+                  <div class="ctl-wheel-core" id="ctl-wheel-core">
+                    <div>
+                      <span class="ctl-core-label">Base color</span>
+                      <span class="ctl-core-meta" id="ctl-core-meta">H 24 / S 78 / V 92</span>
+                    </div>
+                  </div>
+                  <div class="ctl-wheel-markers" id="ctl-wheel-markers"></div>
+                </div>
+                <p class="ctl-wheel-note" id="ctl-wheel-note">Analogous colors sit near one another on the wheel, so they create unity and softer transitions.</p>
+              </article>
+
+              <article class="ctl-preview-card">
+                <p class="ctl-kicker">Live design preview</p>
+                <div class="ctl-poster" id="ctl-poster">
+                  <div class="ctl-poster-inner">
+                    <span class="ctl-poster-badge" id="ctl-poster-badge">Analogous</span>
+                    <div class="ctl-poster-copy">
+                      <h3>Color Moves the Message</h3>
+                      <p id="ctl-poster-copy">When the palette shifts, the same layout can feel calm, playful, loud, or focused.</p>
+                    </div>
+                    <div class="ctl-chip-row">
+                      <span class="ctl-poster-chip" id="ctl-poster-chip-a">Warm and inviting</span>
+                      <span class="ctl-poster-chip" id="ctl-poster-chip-b">Contrast ready</span>
+                    </div>
+                    <div class="ctl-poster-grid">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <div class="ctl-poster-accent"></div>
+                  </div>
+                </div>
+                <div class="ctl-palette-strip" id="ctl-palette-strip"></div>
+              </article>
+            </div>
+
+            <div class="ctl-sliders">
+              <label class="ctl-slider-card" for="ctl-hue">
+                <div class="ctl-slider-head">
+                  <strong>Hue</strong>
+                  <span class="ctl-slider-value" id="ctl-hue-value">24 deg</span>
+                </div>
+                <input id="ctl-hue" type="range" min="0" max="359" value="24" />
+                <p class="ctl-slider-help">Hue changes the color family around the wheel: warm reds and oranges, balanced greens, or cool blues.</p>
+              </label>
+              <label class="ctl-slider-card" for="ctl-sat">
+                <div class="ctl-slider-head">
+                  <strong>Saturation</strong>
+                  <span class="ctl-slider-value" id="ctl-sat-value">78%</span>
+                </div>
+                <input id="ctl-sat" type="range" min="10" max="100" value="78" />
+                <p class="ctl-slider-help">Higher saturation makes colors louder. Lower saturation creates calmer, more muted palettes.</p>
+              </label>
+              <label class="ctl-slider-card" for="ctl-val">
+                <div class="ctl-slider-head">
+                  <strong>Value</strong>
+                  <span class="ctl-slider-value" id="ctl-val-value">92%</span>
+                </div>
+                <input id="ctl-val" type="range" min="20" max="100" value="92" />
+                <p class="ctl-slider-help">Value controls light and dark. Strong value contrast is often the fastest way to improve readability and hierarchy.</p>
+              </label>
+            </div>
+          </div>
+
+          <aside class="ctl-panel">
+            <section class="ctl-panel-card">
+              <p class="ctl-kicker">Current read</p>
+              <h3 class="ctl-mood" id="ctl-mood-title">Warm and inviting</h3>
+              <p id="ctl-mood-copy">This palette leans warm with moderate contrast, so it feels open, friendly, and good for welcoming posters.</p>
+              <div class="ctl-meter-group">
+                <div class="ctl-meter">
+                  <div class="ctl-meter-head">
+                    <span>Warmth</span>
+                    <strong id="ctl-temp-label">Warm leaning</strong>
+                  </div>
+                  <div class="ctl-meter-track">
+                    <div class="ctl-meter-fill ctl-meter-fill--warmth" id="ctl-temp-fill"></div>
+                  </div>
+                </div>
+                <div class="ctl-meter">
+                  <div class="ctl-meter-head">
+                    <span>Energy</span>
+                    <strong id="ctl-energy-label">Lively</strong>
+                  </div>
+                  <div class="ctl-meter-track">
+                    <div class="ctl-meter-fill" id="ctl-energy-fill"></div>
+                  </div>
+                </div>
+                <div class="ctl-meter">
+                  <div class="ctl-meter-head">
+                    <span>Contrast</span>
+                    <strong id="ctl-contrast-label">7.4:1</strong>
+                  </div>
+                  <div class="ctl-meter-track">
+                    <div class="ctl-meter-fill ctl-meter-fill--contrast" id="ctl-contrast-fill"></div>
+                  </div>
+                </div>
+              </div>
+              <ul class="ctl-readout-list">
+                <li id="ctl-readout-one">Analogous harmony keeps the palette unified, so one accent can stand out without fighting the rest.</li>
+                <li id="ctl-readout-two">The current value range is wide enough to support readable text and a clear focal point.</li>
+                <li id="ctl-readout-three">Warm palettes usually feel closer and more energetic than cool palettes.</li>
+              </ul>
+            </section>
+
+            <section class="ctl-panel-card">
+              <p class="ctl-kicker">Palette strategy</p>
+              <h3 id="ctl-strategy-title">Analogous for unity</h3>
+              <div class="ctl-harmony-note">
+                <div class="ctl-callout">
+                  <strong>Harmony note</strong>
+                  <p id="ctl-harmony-note">Analogous palettes use neighboring hues. They are easier to keep cohesive because the colors already share a visual family.</p>
+                </div>
+                <div class="ctl-callout">
+                  <strong>Design tip</strong>
+                  <p id="ctl-design-tip">If the composition starts to feel flat, keep most colors close together and push one accent darker or brighter to create emphasis.</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="ctl-panel-card">
+              <p class="ctl-kicker">Swatch codes</p>
+              <h3>Palette recipe</h3>
+              <div class="ctl-hex-list" id="ctl-hex-list"></div>
+            </section>
+
+            <section class="ctl-panel-card">
+              <p class="ctl-kicker">Studio challenge</p>
+              <h3 id="ctl-mission-title">Warm Sunrise poster</h3>
+              <p id="ctl-mission-copy">Build a welcoming event poster that feels hopeful and bright. Keep the palette warm, balanced, and readable.</p>
+              <ul class="ctl-note-list">
+                <li id="ctl-mission-goal-one">Try an analogous or split-complementary palette if you want warmth without chaos.</li>
+                <li id="ctl-mission-goal-two">Use the darkest swatch for headlines if your background stays very bright.</li>
+                <li id="ctl-mission-goal-three">Watch the contrast meter. Beautiful color still has to communicate clearly.</li>
+              </ul>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section class="ctl-card">
+        <p class="ctl-kicker">Studio moves</p>
+        <h2>What strong color choices usually do</h2>
+        <div class="ctl-note-grid">
+          <article class="ctl-note-card">
+            <h3>Set the mood fast</h3>
+            <p>Warm palettes often feel energetic, social, or playful. Cool palettes tend to feel calm, distant, technical, or reflective.</p>
+          </article>
+          <article class="ctl-note-card">
+            <h3>Build hierarchy</h3>
+            <p>High value contrast pulls attention first. Designers often use one strong dark-light pairing to make a headline or button obvious.</p>
+          </article>
+          <article class="ctl-note-card">
+            <h3>Control visual noise</h3>
+            <p>Not every color needs equal intensity. When every swatch is loud, nothing feels special. One accent works harder than five.</p>
+          </article>
+          <article class="ctl-note-card">
+            <h3>Create a focal point</h3>
+            <p>Complementary contrast is powerful, but it works best when one hue leads and the opposite hue plays the accent role.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="ctl-card">
+        <p class="ctl-kicker">Try these</p>
+        <h2>Studio prompts for the lab</h2>
+        <div class="ctl-prompts">
+          <article class="ctl-prompt-card">
+            <h3>Calm event flyer</h3>
+            <p>Use analogous or monochromatic colors to make the design feel steady and organized. Lower the saturation if it still feels too busy.</p>
+          </article>
+          <article class="ctl-prompt-card">
+            <h3>Sports poster</h3>
+            <p>Push saturation and test complementary or triadic harmony. Then check whether the headline still reads clearly at a distance.</p>
+          </article>
+          <article class="ctl-prompt-card">
+            <h3>Museum label</h3>
+            <p>Try monochromatic colors with one dark anchor. The goal is control, elegance, and easy reading rather than maximum excitement.</p>
+          </article>
+          <article class="ctl-prompt-card">
+            <h3>App landing screen</h3>
+            <p>Use one accent color for action and let the rest support it. If every block is bright, the call to action disappears.</p>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      const HARMONIES = {
+        analogous: {
+          label: 'Analogous',
+          offsets: [-32, -14, 0, 16, 34],
+          satOffsets: [-10, -4, 0, 6, -8],
+          valOffsets: [12, 6, 0, -8, -16],
+          note: 'Analogous palettes use neighboring hues. They create unity, softer transitions, and a calmer visual rhythm.',
+          strategy: 'Analogous for unity',
+          tip: 'If the layout feels flat, keep most hues close together and make one swatch darker or brighter so the focal point stands out.'
+        },
+        complementary: {
+          label: 'Complementary',
+          offsets: [-18, 0, 18, 180, 198],
+          satOffsets: [-6, 0, 8, -8, 4],
+          valOffsets: [14, 2, -10, 10, -16],
+          note: 'Complementary palettes use opposite hues. They create strong contrast and can feel bold, sporty, or urgent.',
+          strategy: 'Complementary for contrast',
+          tip: 'Let one side dominate and use the opposite hue as the accent. Equal amounts of both colors can feel noisy.'
+        },
+        triadic: {
+          label: 'Triadic',
+          offsets: [0, 118, 238, 20, 138],
+          satOffsets: [0, -8, -10, 10, 6],
+          valOffsets: [2, 12, 6, -12, -18],
+          note: 'Triadic palettes spread three main hues around the wheel. They feel playful and dynamic when value is controlled.',
+          strategy: 'Triadic for playful balance',
+          tip: 'Keep one hue in charge and let the other two support it. Value contrast matters even more when multiple hues compete.'
+        },
+        split: {
+          label: 'Split Complementary',
+          offsets: [0, 148, 210, 22, 184],
+          satOffsets: [0, -6, -6, 8, 4],
+          valOffsets: [2, 12, 8, -10, -18],
+          note: 'Split complementary palettes soften the intensity of a direct complement while still giving you lively contrast.',
+          strategy: 'Split complementary for controlled energy',
+          tip: 'This is a good compromise when complementary feels too sharp. Keep the base hue dominant and use the split pair for accents.'
+        },
+        monochromatic: {
+          label: 'Monochromatic',
+          offsets: [0, 0, 0, 0, 0],
+          satOffsets: [-38, -18, 0, 10, 18],
+          valOffsets: [22, 10, 0, -12, -26],
+          note: 'Monochromatic palettes stay inside one hue family. They rely on value and saturation shifts instead of hue contrast.',
+          strategy: 'Monochromatic for focus',
+          tip: 'When hue stays constant, value does the heavy lifting. Push the darkest swatch far enough so text and hierarchy stay clear.'
+        }
+      };
+
+      const PRESETS = {
+        sunrise: {
+          label: 'Warm Sunrise poster',
+          copy: 'Build a welcoming event poster that feels hopeful and bright. Keep the palette warm, balanced, and readable.',
+          harmony: 'analogous',
+          hue: 24,
+          sat: 78,
+          val: 92,
+          goals: [
+            'Try an analogous or split-complementary palette if you want warmth without chaos.',
+            'Use the darkest swatch for headlines if your background stays very bright.',
+            'Watch the contrast meter. Beautiful color still has to communicate clearly.'
+          ]
+        },
+        ocean: {
+          label: 'Calm Ocean campaign',
+          copy: 'Design a calm community poster that feels cool, stable, and spacious without becoming dull.',
+          harmony: 'split',
+          hue: 196,
+          sat: 62,
+          val: 84,
+          goals: [
+            'Let cool blues and teals do most of the work, then use one warm accent carefully.',
+            'If the palette feels too quiet, raise saturation before adding more hues.',
+            'A calm palette still needs one strong dark-light contrast for the headline.'
+          ]
+        },
+        neon: {
+          label: 'Neon Night flyer',
+          copy: 'Make a high-energy poster for a night event. The colors should feel electric, fast, and impossible to ignore.',
+          harmony: 'complementary',
+          hue: 312,
+          sat: 90,
+          val: 86,
+          goals: [
+            'Use the complement as an accent rather than filling the entire composition with equal intensity.',
+            'If every swatch is bright, lower one or two so the focal point has room to punch through.',
+            'Check contrast carefully. Vibrant color can still fail if the values are too close.'
+          ]
+        },
+        museum: {
+          label: 'Museum Label system',
+          copy: 'Create a refined, readable palette that feels quiet and trustworthy. The tone should be controlled rather than loud.',
+          harmony: 'monochromatic',
+          hue: 205,
+          sat: 34,
+          val: 76,
+          goals: [
+            'Keep saturation restrained and let value changes create the hierarchy.',
+            'Monochromatic palettes can feel elegant when one dark anchor carries the text.',
+            'If the design feels flat, push the accent darker instead of adding a new hue.'
+          ]
+        }
+      };
+
+      const ROLE_LABELS = ['Backdrop', 'Surface', 'Base', 'Accent', 'Anchor'];
+      const ENERGY_BOOST = {
+        analogous: 0.16,
+        complementary: 0.34,
+        triadic: 0.38,
+        split: 0.28,
+        monochromatic: 0.08
+      };
+
+      const state = {
+        harmony: PRESETS.sunrise.harmony,
+        hue: PRESETS.sunrise.hue,
+        sat: PRESETS.sunrise.sat,
+        val: PRESETS.sunrise.val,
+        preset: 'sunrise'
+      };
+
+      const harmonyButtons = document.querySelectorAll('[data-harmony]');
+      const presetButtons = document.querySelectorAll('[data-preset]');
+      const shuffleButton = document.getElementById('ctl-shuffle-btn');
+
+      const hueInput = document.getElementById('ctl-hue');
+      const satInput = document.getElementById('ctl-sat');
+      const valInput = document.getElementById('ctl-val');
+
+      const hueValue = document.getElementById('ctl-hue-value');
+      const satValue = document.getElementById('ctl-sat-value');
+      const valValue = document.getElementById('ctl-val-value');
+
+      const wheelCore = document.getElementById('ctl-wheel-core');
+      const coreMeta = document.getElementById('ctl-core-meta');
+      const wheelMarkers = document.getElementById('ctl-wheel-markers');
+      const wheelNote = document.getElementById('ctl-wheel-note');
+      const paletteStrip = document.getElementById('ctl-palette-strip');
+
+      const poster = document.getElementById('ctl-poster');
+      const posterBadge = document.getElementById('ctl-poster-badge');
+      const posterCopy = document.getElementById('ctl-poster-copy');
+      const posterChipA = document.getElementById('ctl-poster-chip-a');
+      const posterChipB = document.getElementById('ctl-poster-chip-b');
+
+      const moodTitle = document.getElementById('ctl-mood-title');
+      const moodCopy = document.getElementById('ctl-mood-copy');
+      const tempLabel = document.getElementById('ctl-temp-label');
+      const tempFill = document.getElementById('ctl-temp-fill');
+      const energyLabel = document.getElementById('ctl-energy-label');
+      const energyFill = document.getElementById('ctl-energy-fill');
+      const contrastLabel = document.getElementById('ctl-contrast-label');
+      const contrastFill = document.getElementById('ctl-contrast-fill');
+
+      const readoutOne = document.getElementById('ctl-readout-one');
+      const readoutTwo = document.getElementById('ctl-readout-two');
+      const readoutThree = document.getElementById('ctl-readout-three');
+
+      const strategyTitle = document.getElementById('ctl-strategy-title');
+      const harmonyNote = document.getElementById('ctl-harmony-note');
+      const designTip = document.getElementById('ctl-design-tip');
+      const hexList = document.getElementById('ctl-hex-list');
+
+      const missionTitle = document.getElementById('ctl-mission-title');
+      const missionCopy = document.getElementById('ctl-mission-copy');
+      const missionGoalOne = document.getElementById('ctl-mission-goal-one');
+      const missionGoalTwo = document.getElementById('ctl-mission-goal-two');
+      const missionGoalThree = document.getElementById('ctl-mission-goal-three');
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(value, max));
+      }
+
+      function normalizeHue(value) {
+        return (value % 360 + 360) % 360;
+      }
+
+      function hsvToRgb(h, s, v) {
+        const saturation = clamp(s, 0, 100) / 100;
+        const value = clamp(v, 0, 100) / 100;
+        const chroma = value * saturation;
+        const segment = h / 60;
+        const x = chroma * (1 - Math.abs((segment % 2) - 1));
+        let r = 0;
+        let g = 0;
+        let b = 0;
+
+        if (segment >= 0 && segment < 1) {
+          r = chroma;
+          g = x;
+        } else if (segment < 2) {
+          r = x;
+          g = chroma;
+        } else if (segment < 3) {
+          g = chroma;
+          b = x;
+        } else if (segment < 4) {
+          g = x;
+          b = chroma;
+        } else if (segment < 5) {
+          r = x;
+          b = chroma;
+        } else {
+          r = chroma;
+          b = x;
+        }
+
+        const match = value - chroma;
+
+        return {
+          r: Math.round((r + match) * 255),
+          g: Math.round((g + match) * 255),
+          b: Math.round((b + match) * 255)
+        };
+      }
+
+      function rgbToHex(rgb) {
+        return '#' + [rgb.r, rgb.g, rgb.b].map((channel) => {
+          return channel.toString(16).padStart(2, '0');
+        }).join('');
+      }
+
+      function rgbString(rgb) {
+        return 'rgb(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ')';
+      }
+
+      function rgbaString(rgb, alpha) {
+        return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
+      }
+
+      function mixRgb(a, b, amount) {
+        return {
+          r: Math.round(a.r + ((b.r - a.r) * amount)),
+          g: Math.round(a.g + ((b.g - a.g) * amount)),
+          b: Math.round(a.b + ((b.b - a.b) * amount))
+        };
+      }
+
+      function relativeLuminance(rgb) {
+        function convert(channel) {
+          const scaled = channel / 255;
+          return scaled <= 0.03928 ? scaled / 12.92 : Math.pow((scaled + 0.055) / 1.055, 2.4);
+        }
+
+        return (0.2126 * convert(rgb.r)) + (0.7152 * convert(rgb.g)) + (0.0722 * convert(rgb.b));
+      }
+
+      function contrastRatio(a, b) {
+        const luminanceA = relativeLuminance(a);
+        const luminanceB = relativeLuminance(b);
+        const lighter = Math.max(luminanceA, luminanceB);
+        const darker = Math.min(luminanceA, luminanceB);
+        return (lighter + 0.05) / (darker + 0.05);
+      }
+
+      function bestTextColor(background) {
+        const dark = { r: 17, g: 24, b: 39 };
+        const light = { r: 255, g: 255, b: 255 };
+        const darkContrast = contrastRatio(background, dark);
+        const lightContrast = contrastRatio(background, light);
+
+        return darkContrast >= lightContrast
+          ? { rgb: dark, contrast: darkContrast }
+          : { rgb: light, contrast: lightContrast };
+      }
+
+      function warmthForHue(hue) {
+        const angle = normalizeHue(hue);
+
+        if (angle <= 55 || angle >= 330) {
+          return 1;
+        }
+        if (angle <= 95) {
+          return 0.55;
+        }
+        if (angle <= 165) {
+          return -0.1;
+        }
+        if (angle <= 255) {
+          return -1;
+        }
+        if (angle <= 305) {
+          return -0.35;
+        }
+        return 0.5;
+      }
+
+      function buildPalette() {
+        const harmony = HARMONIES[state.harmony];
+
+        return harmony.offsets.map(function (offset, index) {
+          const hue = normalizeHue(state.hue + offset);
+          const saturation = clamp(state.sat + harmony.satOffsets[index], 10, 100);
+          const value = clamp(state.val + harmony.valOffsets[index], 18, 100);
+          const rgb = hsvToRgb(hue, saturation, value);
+
+          return {
+            role: ROLE_LABELS[index],
+            hue: hue,
+            sat: saturation,
+            val: value,
+            rgb: rgb,
+            hex: rgbToHex(rgb)
+          };
+        });
+      }
+
+      function describePalette(palette, contrast) {
+        const temperature = palette.reduce(function (sum, swatch) {
+          return sum + warmthForHue(swatch.hue);
+        }, 0) / palette.length;
+
+        const averageSaturation = palette.reduce(function (sum, swatch) {
+          return sum + swatch.sat;
+        }, 0) / palette.length;
+        const averageValue = palette.reduce(function (sum, swatch) {
+          return sum + swatch.val;
+        }, 0) / palette.length;
+
+        const energy = clamp(
+          ((averageSaturation / 100) * 0.48) +
+          ((averageValue / 100) * 0.12) +
+          (ENERGY_BOOST[state.harmony] || 0) +
+          (Math.min(contrast / 8, 1) * 0.22),
+          0,
+          1
+        );
+
+        const temperatureLabel = temperature > 0.22
+          ? 'Warm leaning'
+          : temperature < -0.22
+            ? 'Cool leaning'
+            : 'Balanced';
+
+        const energyLabelText = energy > 0.72
+          ? 'High energy'
+          : energy > 0.48
+            ? 'Lively'
+            : 'Controlled';
+
+        let title = 'Balanced and controlled';
+        if (temperature > 0.22 && energy > 0.62) {
+          title = 'Warm and energetic';
+        } else if (temperature > 0.22) {
+          title = 'Warm and inviting';
+        } else if (temperature < -0.22 && energy > 0.62) {
+          title = 'Cool and electric';
+        } else if (temperature < -0.22) {
+          title = 'Cool and calm';
+        } else if (energy > 0.62) {
+          title = 'Balanced and lively';
+        }
+
+        const contrastLabelText = contrast >= 7
+          ? 'Strong contrast'
+          : contrast >= 4.5
+            ? 'Readable contrast'
+            : 'Low contrast';
+
+        return {
+          temperature: temperature,
+          temperatureLabel: temperatureLabel,
+          energy: energy,
+          energyLabel: energyLabelText,
+          contrastLabel: contrastLabelText,
+          title: title
+        };
+      }
+
+      function renderPaletteStrip(palette) {
+        paletteStrip.innerHTML = palette.map(function (swatch) {
+          return '<article class="ctl-swatch">' +
+            '<div class="ctl-swatch-chip" style="background:' + swatch.hex + ';"></div>' +
+            '<div class="ctl-swatch-copy">' +
+            '<strong>' + swatch.role + '</strong>' +
+            '<span>' + swatch.hex.toUpperCase() + '</span>' +
+            '<small>H ' + swatch.hue + ' / S ' + swatch.sat + ' / V ' + swatch.val + '</small>' +
+            '</div>' +
+            '</article>';
+        }).join('');
+
+        hexList.innerHTML = palette.map(function (swatch) {
+          return '<div class="ctl-hex-item">' +
+            '<span class="ctl-hex-dot" style="background:' + swatch.hex + ';"></span>' +
+            '<strong>' + swatch.role + '</strong>' +
+            '<span>' + swatch.hex.toUpperCase() + '</span>' +
+            '</div>';
+        }).join('');
+      }
+
+      function renderWheel(palette) {
+        const baseColor = palette[2];
+        const baseText = bestTextColor(baseColor.rgb);
+        wheelCore.style.background = baseColor.hex;
+        wheelCore.style.color = rgbString(baseText.rgb);
+        coreMeta.textContent = 'H ' + state.hue + ' / S ' + state.sat + ' / V ' + state.val;
+
+        wheelMarkers.innerHTML = palette.map(function (swatch, index) {
+          const angle = ((swatch.hue - 90) * Math.PI) / 180;
+          const x = 50 + (Math.cos(angle) * 38);
+          const y = 50 + (Math.sin(angle) * 38);
+          return '<span class="ctl-marker' + (index === 2 ? ' is-base' : '') + '" style="left:' + x.toFixed(2) + '%; top:' + y.toFixed(2) + '%; background:' + swatch.hex + ';"></span>';
+        }).join('');
+
+        wheelNote.textContent = HARMONIES[state.harmony].note;
+      }
+
+      function updateMission() {
+        const preset = state.preset && PRESETS[state.preset] ? PRESETS[state.preset] : null;
+
+        if (!preset) {
+          missionTitle.textContent = 'Custom palette study';
+          missionCopy.textContent = 'You are no longer on a preset. Keep experimenting and watch how harmony, contrast, and temperature change together.';
+          missionGoalOne.textContent = 'Try switching harmony first, then adjust saturation and value to see which change affects mood the most.';
+          missionGoalTwo.textContent = 'If the preview feels messy, simplify the palette before adding more contrast.';
+          missionGoalThree.textContent = 'Use the meters and swatch roles to decide which color should lead and which colors should support.';
+          return;
+        }
+
+        missionTitle.textContent = preset.label;
+        missionCopy.textContent = preset.copy;
+        missionGoalOne.textContent = preset.goals[0];
+        missionGoalTwo.textContent = preset.goals[1];
+        missionGoalThree.textContent = preset.goals[2];
+      }
+
+      function updateButtons() {
+        harmonyButtons.forEach(function (button) {
+          button.classList.toggle('is-active', button.dataset.harmony === state.harmony);
+        });
+
+        presetButtons.forEach(function (button) {
+          button.classList.toggle('is-active', button.dataset.preset === state.preset);
+        });
+      }
+
+      function render() {
+        const palette = buildPalette();
+        const background = mixRgb(palette[0].rgb, palette[1].rgb, 0.45);
+        const surface = mixRgb(palette[1].rgb, palette[2].rgb, 0.32);
+        const accentA = palette[3].rgb;
+        const accentB = palette[2].rgb;
+        const anchor = palette[4].rgb;
+        const textChoice = bestTextColor(background);
+        const contrast = textChoice.contrast;
+        const readout = describePalette(palette, contrast);
+        const harmony = HARMONIES[state.harmony];
+
+        hueValue.textContent = state.hue + ' deg';
+        satValue.textContent = state.sat + '%';
+        valValue.textContent = state.val + '%';
+
+        renderWheel(palette);
+        renderPaletteStrip(palette);
+        updateMission();
+        updateButtons();
+
+        poster.style.setProperty('--poster-bg-a', rgbString(background));
+        poster.style.setProperty('--poster-bg-b', rgbString(surface));
+        poster.style.setProperty('--poster-accent-a', rgbString(accentA));
+        poster.style.setProperty('--poster-accent-b', rgbString(accentB));
+        poster.style.setProperty('--poster-anchor', rgbString(anchor));
+        poster.style.setProperty('--poster-ink', rgbString(textChoice.rgb));
+        poster.style.setProperty('--poster-ink-soft', rgbaString(textChoice.rgb, 0.72));
+
+        posterBadge.textContent = harmony.label;
+        posterChipA.textContent = readout.title;
+        posterChipB.textContent = contrast >= 7 ? 'Strong contrast' : contrast >= 4.5 ? 'Readable contrast' : 'Needs more contrast';
+        posterCopy.textContent = contrast >= 7
+          ? 'The current palette has enough value separation to support clear text and a strong focal point.'
+          : contrast >= 4.5
+            ? 'This palette reads well for large headlines, but smaller text may need a darker anchor or lighter background.'
+            : 'The hues may be interesting, but the values are too close. Push the light-dark contrast further.';
+
+        moodTitle.textContent = readout.title;
+        moodCopy.textContent = readout.temperature > 0.22
+          ? 'This palette leans warm, so it tends to feel closer, friendlier, and more energetic. Warm palettes often work well for events, food, and social energy.'
+          : readout.temperature < -0.22
+            ? 'This palette leans cool, so it feels calmer, more spacious, and slightly more technical or reflective. Cool palettes often support focus and trust.'
+            : 'This palette sits between warm and cool, so it can feel versatile and balanced. Small changes in value or accent color will shift the mood quickly.';
+
+        tempLabel.textContent = readout.temperatureLabel;
+        tempFill.style.width = (((readout.temperature + 1) / 2) * 100).toFixed(1) + '%';
+
+        energyLabel.textContent = readout.energyLabel;
+        energyFill.style.width = (readout.energy * 100).toFixed(1) + '%';
+
+        contrastLabel.textContent = contrast.toFixed(1) + ':1';
+        contrastFill.style.width = (Math.min(contrast / 9, 1) * 100).toFixed(1) + '%';
+
+        readoutOne.textContent = harmony.note;
+        readoutTwo.textContent = contrast >= 7
+          ? 'The value range is wide enough to support readable text and a clear visual hierarchy.'
+          : 'The values are closer together, so the design may need a darker anchor or lighter surface to read more clearly.';
+        readoutThree.textContent = state.sat >= 75
+          ? 'High saturation increases intensity. Reserve the loudest color for the element you want people to notice first.'
+          : 'Because the saturation is more restrained, the palette feels calmer and more mature. Value becomes the main hierarchy tool.';
+
+        strategyTitle.textContent = harmony.strategy;
+        harmonyNote.textContent = harmony.note;
+        designTip.textContent = contrast < 4.5
+          ? 'Raise the value difference between the lightest and darkest swatches. A palette can be beautiful and still fail if the text disappears.'
+          : harmony.tip;
+      }
+
+      function loadPreset(key) {
+        const preset = PRESETS[key];
+        if (!preset) {
+          return;
+        }
+
+        state.preset = key;
+        state.harmony = preset.harmony;
+        state.hue = preset.hue;
+        state.sat = preset.sat;
+        state.val = preset.val;
+
+        hueInput.value = String(state.hue);
+        satInput.value = String(state.sat);
+        valInput.value = String(state.val);
+
+        render();
+      }
+
+      function handleManualChange() {
+        state.preset = null;
+        state.hue = Number(hueInput.value);
+        state.sat = Number(satInput.value);
+        state.val = Number(valInput.value);
+        render();
+      }
+
+      harmonyButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          state.harmony = button.dataset.harmony;
+          state.preset = null;
+          render();
+        });
+      });
+
+      presetButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          loadPreset(button.dataset.preset);
+        });
+      });
+
+      hueInput.addEventListener('input', handleManualChange);
+      satInput.addEventListener('input', handleManualChange);
+      valInput.addEventListener('input', handleManualChange);
+
+      shuffleButton.addEventListener('click', function () {
+        const harmonyKeys = Object.keys(HARMONIES);
+        state.preset = null;
+        state.harmony = harmonyKeys[Math.floor(Math.random() * harmonyKeys.length)];
+        state.hue = Math.floor(Math.random() * 360);
+        state.sat = Math.floor(40 + (Math.random() * 55));
+        state.val = Math.floor(55 + (Math.random() * 40));
+
+        hueInput.value = String(state.hue);
+        satInput.value = String(state.sat);
+        valInput.value = String(state.val);
+
+        render();
+      });
+
+      render();
+    }());
+  </script>
+</body>
+</html>
