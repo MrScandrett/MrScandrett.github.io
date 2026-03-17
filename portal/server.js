@@ -18,6 +18,9 @@ const PUBLISH_SCRIPT = path.join(ROOT_DIR, "publish_to_pages.js");
 const GITHUB_OWNER = process.env.GITHUB_OWNER || "MrScandrett";
 const REPO_PREFIX = process.env.REPO_PREFIX || "student-showcase-";
 const DEFAULT_VISIBILITY = (process.env.DEFAULT_VISIBILITY || "public").toLowerCase();
+const PORTAL_HOST = process.env.PORTAL_HOST || "127.0.0.1";
+const ALLOW_REMOTE_PORTAL = /^(1|true|yes)$/i.test(String(process.env.ALLOW_REMOTE_PORTAL || ""));
+const ACCESS_MODE = ALLOW_REMOTE_PORTAL ? "remote-enabled" : "local-only";
 
 const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
 const OPEN_SESSION = Object.freeze({
@@ -57,6 +60,48 @@ function sendHtml(res, statusCode, html) {
 function redirect(res, location) {
   res.writeHead(302, { Location: location });
   res.end();
+}
+
+function normalizeRemoteAddress(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (raw === "::1") return "127.0.0.1";
+  if (raw.startsWith("::ffff:")) return raw.slice(7);
+  return raw;
+}
+
+function isLoopbackAddress(value) {
+  const address = normalizeRemoteAddress(value);
+  return address === "127.0.0.1" || address === "localhost";
+}
+
+function forwardedAddresses(headerValue) {
+  return String(headerValue || "")
+    .split(",")
+    .map((entry) => normalizeRemoteAddress(entry))
+    .filter(Boolean);
+}
+
+function rejectIfRemote(req, res) {
+  if (ALLOW_REMOTE_PORTAL) return false;
+
+  const remoteAddress = normalizeRemoteAddress(
+    (req.socket && req.socket.remoteAddress) || (req.connection && req.connection.remoteAddress) || ""
+  );
+  const forwarded = forwardedAddresses(req.headers["x-forwarded-for"]);
+  const remoteViaProxy = forwarded.some((address) => !isLoopbackAddress(address));
+
+  if (isLoopbackAddress(remoteAddress) && !remoteViaProxy) return false;
+
+  sendHtml(
+    res,
+    403,
+    pageShell(
+      "Portal Locked",
+      `<section class="panel error"><p>This publish portal only accepts requests from this machine.</p><p>Keep the public site on GitHub Pages; use the portal locally at <code>http://127.0.0.1:${PORT}/dashboard</code>.</p></section>`
+    )
+  );
+  return true;
 }
 
 function readBody(req, maxBytes) {
@@ -178,6 +223,9 @@ function writeJson(file, value) {
 }
 
 function pageShell(title, body, banner = "") {
+  const subtitle = ALLOW_REMOTE_PORTAL
+    ? `Publish portal for <code>${escapeHtml(GITHUB_OWNER)}</code>.`
+    : `Local publish portal for <code>${escapeHtml(GITHUB_OWNER)}</code>.`;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -194,7 +242,7 @@ function pageShell(title, body, banner = "") {
     <header class="panel hero">
       <p class="eyebrow">Classroom Portal</p>
       <h1>${escapeHtml(title)}</h1>
-      <p class="subtitle">Open uploads for <code>${escapeHtml(GITHUB_OWNER)}</code>.</p>
+      <p class="subtitle">${subtitle}</p>
       ${banner}
     </header>
     ${body}
@@ -207,7 +255,7 @@ function renderUploadForm(session) {
   const currentYear = new Date().getFullYear();
   return `<section class="panel">
   <h2>Upload Project ZIP</h2>
-  <p><strong>Mode:</strong> Open access (${escapeHtml(session.role)})</p>
+  <p><strong>Mode:</strong> ${escapeHtml(ACCESS_MODE)} (${escapeHtml(session.role)})</p>
   <form method="post" action="/upload" enctype="multipart/form-data" class="stack">
     <label>Project owner alias
       <input name="ownerAlias" placeholder="team-01" required />
@@ -601,7 +649,7 @@ async function handleUpload(req, res) {
     );
 
     const notes = [
-      "[PORTAL] Mode: open",
+      `[PORTAL] Mode: ${ACCESS_MODE}`,
       `[PORTAL] Owner alias: ${ownerAlias}`,
       `[PORTAL] Repo: ${GITHUB_OWNER}/${repoName}`,
       `[PORTAL] Root detection: ${scan.note}`,
@@ -622,6 +670,8 @@ async function handleUpload(req, res) {
 }
 
 async function handle(req, res) {
+  if (rejectIfRemote(req, res)) return;
+
   if (req.url.startsWith("/static/")) {
     if (serveStatic(req, res)) return;
   }
@@ -671,8 +721,9 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Portal running on http://localhost:${PORT}`);
+server.listen(PORT, PORTAL_HOST, () => {
+  console.log(`Portal running on http://${PORTAL_HOST}:${PORT}`);
   console.log("Open dashboard: /dashboard");
   console.log(`GitHub owner target: ${GITHUB_OWNER}`);
+  console.log(`Portal access mode: ${ACCESS_MODE}`);
 });

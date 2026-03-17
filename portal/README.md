@@ -1,4 +1,4 @@
-# Classroom Portal (Open Uploads)
+# Classroom Portal (Local-Only by Default)
 
 This portal is the backend companion for the GitHub Pages hub.
 
@@ -38,3 +38,5 @@ Runtime upload workspace is stored locally (ignored by git):
 - Requires `git`, `gh`, and `unzip` on host machine.
 - Requires `gh auth login` completed.
 - Uploaded project ZIP must contain `index.html`.
+- Binds to `127.0.0.1` by default and rejects non-loopback requests.
+- To intentionally expose it beyond the local machine, set `ALLOW_REMOTE_PORTAL=1` and choose a non-local `PORTAL_HOST`.

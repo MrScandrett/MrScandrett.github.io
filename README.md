@@ -1,6 +1,6 @@
 # Mr. Scandrett's ClassroomOS
 
-Open GitHub Pages showcase + upload portal.
+Open GitHub Pages showcase + local publish portal.
 
 ## What changed
 
@@ -57,7 +57,7 @@ Output:
 - Showcase manifest in `apps/manifest.json`
 - STL/OBJ models auto-render in an interactive viewer (orbit/zoom/pan, projection toggle, fullscreen)
 
-## Portal backend (open uploads)
+## Portal backend (local-only by default)
 
 ```bash
 cd /Users/User/Documents/GitHubTutorialSTEAM
@@ -72,7 +72,7 @@ node /Users/User/Documents/GitHubTutorialSTEAM/portal/server.js
 Open:
 - `http://localhost:8787/dashboard`
 
-Student flow:
+Teacher-local flow:
 1. Open the dashboard.
 2. Upload a project ZIP.
 3. Portal publishes to GitHub Pages and appends project to `data/projects.json`.
