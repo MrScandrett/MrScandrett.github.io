@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Heliocentrism · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Space Science Lesson 04 — Aristarchus proposed the Sun-centered solar system 1,800 years before anyone believed him. Explore heliocentrism, Kepler's laws, and Galileo's evidence with an interactive orbital simulator." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page ─────────────────────────────────────────── */
+    .hs-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .hs-hero { padding: 0.4rem 0 1.3rem; }
+    .hs-hero h1 { max-width: 28ch; margin-left: 0;
+      font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .hs-hero-meta { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .hs-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .hs-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65;
+      font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .hs-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Card ─────────────────────────────────────────── */
+    .hs-card {
+      background: var(--white,#fff);
+      border: 1px solid var(--line,#d2d2d7);
+      border-left: 3.5px solid var(--card-accent,#5856d6);
+      border-radius: var(--radius,18px);
+      box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+    }
+    .hs-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .hs-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .hs-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .hs-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .hs-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .hs-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Callout ──────────────────────────────────────── */
+    .hs-callout {
+      border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0;
+      font-size: 0.85rem; line-height: 1.6; color: #3f4f65;
+    }
+    [data-theme="night"] .hs-callout { color: rgba(245,245,247,0.72); }
+    .hs-callout.indigo { background: rgba(88,86,214,0.07); border: 1px solid rgba(88,86,214,0.2); }
+    .hs-callout.gold   { background: rgba(255,204,0,0.08);  border: 1px solid rgba(255,204,0,0.25); }
+    .hs-callout.orange { background: rgba(255,149,0,0.07);  border: 1px solid rgba(255,149,0,0.2); }
+    .hs-callout.green  { background: rgba(52,199,89,0.07);  border: 1px solid rgba(52,199,89,0.2); }
+    .hs-callout.red    { background: rgba(255,59,48,0.07);  border: 1px solid rgba(255,59,48,0.2); }
+    .hs-callout strong { color: var(--text,#1d1d1f); }
+
+    /* ── Bio ──────────────────────────────────────────── */
+    .hs-bio { display: flex; gap: 1rem; align-items: flex-start; }
+    .hs-bio-portrait {
+      width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 2rem;
+    }
+    .hs-bio-text { flex: 1; font-size: 0.87rem; color: #3f4f65; line-height: 1.62; }
+    [data-theme="night"] .hs-bio-text { color: rgba(245,245,247,0.72); }
+    .hs-bio-text strong { color: var(--text,#1d1d1f); }
+
+    /* ── Truth quote ──────────────────────────────────── */
+    .hs-truth-box {
+      background: linear-gradient(135deg, rgba(88,86,214,0.1), rgba(175,82,222,0.08));
+      border: 1.5px solid rgba(88,86,214,0.3);
+      border-radius: 16px; padding: 1.2rem 1.4rem; margin: 0.9rem 0;
+      text-align: center;
+    }
+    .hs-truth-quote {
+      font-size: clamp(1rem,2.5vw,1.25rem); font-weight: 800; font-style: italic;
+      color: var(--text,#1d1d1f); line-height: 1.5; margin: 0 0 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .hs-truth-sub { font-size: 0.82rem; color: #64748b; margin: 0; }
+
+    /* ── Evidence cards grid ──────────────────────────── */
+    .hs-evidence { display: grid; grid-template-columns: repeat(2,1fr);
+      gap: 0.8rem; margin: 0.8rem 0; }
+    .hs-evidence-card { border-radius: 12px; padding: 0.9rem;
+      border: 1px solid var(--line,#d2d2d7); background: rgba(0,0,0,0.03); }
+    [data-theme="night"] .hs-evidence-card { background: rgba(255,255,255,0.04); }
+    .hs-evidence-icon { font-size: 1.6rem; margin-bottom: 0.35rem; line-height: 1; display: block; }
+    .hs-evidence-card strong { display: block; font-size: 0.88rem; margin-bottom: 0.25rem; }
+    .hs-evidence-card p { font-size: 0.79rem; color: #3f4f65; line-height: 1.55; margin: 0; }
+    [data-theme="night"] .hs-evidence-card p { color: rgba(245,245,247,0.65); }
+
+    /* ── Kepler laws ──────────────────────────────────── */
+    .hs-laws { display: flex; flex-direction: column; gap: 0.75rem; margin: 0.8rem 0; }
+    .hs-law  { display: flex; gap: 0.85rem; align-items: flex-start; }
+    .hs-law-badge {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 900; color: #fff; background: #34c759;
+      margin-top: 0.05rem;
+    }
+    .hs-law-body { flex: 1; }
+    .hs-law-title { font-size: 0.9rem; font-weight: 800; color: var(--text,#1d1d1f);
+      margin: 0 0 0.2rem; }
+    .hs-law-text { font-size: 0.84rem; color: #3f4f65; line-height: 1.6; margin: 0; }
+    [data-theme="night"] .hs-law-text { color: rgba(245,245,247,0.68); }
+
+    /* ── Timeline ─────────────────────────────────────── */
+    .hs-timeline { list-style: none; padding: 0; margin: 0.8rem 0;
+      display: flex; flex-direction: column; gap: 0; }
+    .hs-timeline li { display: flex; gap: 0; position: relative; }
+    .hs-timeline li:not(:last-child)::before {
+      content: ''; position: absolute; left: 44px; top: 44px;
+      width: 2px; height: calc(100% - 12px);
+      background: var(--line,#d2d2d7); z-index: 0;
+    }
+    .hs-tl-year { flex-shrink: 0; width: 84px; padding-top: 0.75rem;
+      font-size: 0.76rem; font-weight: 800; color: #64748b;
+      text-align: right; padding-right: 0.8rem; line-height: 1.3; }
+    .hs-tl-dot {
+      flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+      margin-top: 0.7rem; z-index: 1;
+      border: 3px solid var(--white,#fff);
+      box-shadow: 0 0 0 1.5px var(--line,#d2d2d7);
+    }
+    .hs-tl-body { flex: 1; padding: 0.55rem 0 1rem 0.85rem; }
+    .hs-tl-name { font-size: 0.9rem; font-weight: 800; color: var(--text,#1d1d1f); margin: 0 0 0.15rem; }
+    .hs-tl-text { font-size: 0.82rem; color: #3f4f65; line-height: 1.58; margin: 0; }
+    [data-theme="night"] .hs-tl-text { color: rgba(245,245,247,0.68); }
+    .hs-tl-tag { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; padding: 2px 8px; border-radius: 999px;
+      display: inline-block; margin-bottom: 0.25rem; }
+
+    /* ── Orbital Simulator ────────────────────────────── */
+    .hs-sim {
+      background: var(--white,#fff);
+      border: 1px solid var(--line,#d2d2d7);
+      border-left: 3.5px solid #ffcc00;
+      border-radius: var(--radius,18px);
+      box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+    }
+    [data-theme="night"] .hs-sim { background: var(--white,#2c2c2e); }
+    .hs-sim h2 { margin: 0 0 0.2rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .hs-sim-sub { margin: 0 0 1rem; font-size: 0.84rem; color: #64748b; }
+
+    .hs-sim-header { display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.7rem; margin-bottom: 0.85rem; }
+    .hs-mode-toggle { display: flex; border: 1.5px solid var(--line,#d2d2d7);
+      border-radius: 10px; overflow: hidden; }
+    .hs-mode-btn { padding: 7px 14px; border: none; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; background: transparent;
+      color: #64748b; transition: background 0.15s, color 0.15s; }
+    .hs-mode-btn.active { background: #5856d6; color: #fff; }
+    [data-theme="night"] .hs-mode-btn { color: rgba(255,255,255,0.5); }
+    [data-theme="night"] .hs-mode-btn.active { color: #fff; }
+
+    .hs-sim-controls { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+    .hs-ctrl-label { font-size: 0.74rem; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+    .hs-speed-slider { accent-color: #ffcc00; width: 120px; }
+    .hs-play-btn { padding: 7px 14px; border-radius: 8px; border: none;
+      background: #ffcc00; color: #1d1d1f; font-size: 0.82rem; font-weight: 800;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+    .hs-play-btn:hover { opacity: 0.85; }
+
+    #hs-canvas { display: block; border-radius: 14px; width: 100%;
+      background: #050510; }
+
+    .hs-sim-label { margin-top: 0.65rem; font-size: 0.8rem; color: #64748b;
+      text-align: center; min-height: 1.2em; }
+    .hs-sim-label strong { color: var(--text,#1d1d1f); }
+
+    /* ── Practice ─────────────────────────────────────── */
+    .hs-practice { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 0.8rem; }
+    .hs-problem { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.9rem 1rem; }
+    [data-theme="night"] .hs-problem { background: rgba(255,255,255,0.04); }
+    .hs-problem p { margin: 0 0 0.5rem; font-size: 0.87rem;
+      color: var(--text,#1d1d1f); font-weight: 600; }
+    .hs-problem-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .hs-ans-input { width: 110px; padding: 6px 10px;
+      border: 1.5px solid var(--line,#d2d2d7); border-radius: 8px;
+      font-size: 0.88rem; font-family: inherit;
+      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none; }
+    .hs-ans-input:focus { border-color: #5856d6; }
+    .hs-check-btn { padding: 6px 14px; border-radius: 8px; border: none;
+      background: #5856d6; color: #fff; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+    .hs-check-btn:hover { opacity: 0.85; }
+    .hs-feedback { font-size: 0.8rem; font-weight: 700; padding: 4px 10px;
+      border-radius: 999px; display: none; }
+    .hs-feedback.correct { background: rgba(52,199,89,0.15); color: #1a7a2e; display: inline-block; }
+    .hs-feedback.wrong   { background: rgba(255,59,48,0.12);  color: #c0392b; display: inline-block; }
+    [data-theme="night"] .hs-feedback.correct { color: #34c759; }
+    [data-theme="night"] .hs-feedback.wrong   { color: #ff6b6b; }
+    .hs-hint { font-size: 0.77rem; color: #64748b; margin-top: 0.35rem; display: none; }
+    .hs-hint.visible { display: block; }
+    .hs-diff { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+      margin-right: 0.4rem; vertical-align: middle; }
+    .diff-easy { background: rgba(52,199,89,0.12); color: #1a7a2e; }
+    .diff-mid  { background: rgba(88,86,214,0.12); color: #3c3aab; }
+    .diff-hard { background: rgba(255,149,0,0.12); color: #b35900; }
+    [data-theme="night"] .diff-easy { color: #34c759; }
+    [data-theme="night"] .diff-mid  { color: #a29cff; }
+    [data-theme="night"] .diff-hard { color: #ff9500; }
+
+    @media (max-width: 680px) {
+      .hs-bio      { flex-direction: column; align-items: center; text-align: center; }
+      .hs-evidence { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="hs-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero hs-hero">
+      <p class="eyebrow">Space Science · Lesson 04</p>
+      <h1>Heliocentrism — The Sun at the Center</h1>
+      <div class="hs-hero-meta">
+        <span>Aristarchus · 270 BC</span>
+        <span class="dot"></span>
+        <span>Kepler's Laws</span>
+        <span class="dot"></span>
+        <span>Galileo's Evidence</span>
+        <span class="dot"></span>
+        <span>K–12</span>
+      </div>
+      <p class="hs-lede">One man figured out that the Earth orbits the Sun — 1,800 years before the world was ready to believe it. This is the story of Aristarchus of Samos, the scientists who proved him right, and what it means when truth arrives before acceptance.</p>
+    </section>
+
+    <!-- ── The Big Idea ── -->
+    <section class="hs-card" style="--card-accent:#5856d6;">
+      <h2>Two Models of the Solar System</h2>
+      <p>For most of human history, people believed the obvious: the Earth is the center of everything. Every morning the Sun rises, crosses the sky, and sets. The stars wheel overhead. Everything <em>appears</em> to revolve around us. This is called the <strong>geocentric model</strong> ("geo" = Earth).</p>
+      <p>The competing idea — the <strong>heliocentric model</strong> ("helios" = Sun) — says Earth and all the planets orbit the Sun. For over a thousand years this idea was dismissed, suppressed, or simply ignored. But it was correct.</p>
+
+      <div class="hs-truth-box">
+        <p class="hs-truth-quote">"The truth can exist long before the world chooses to accept it."</p>
+        <p class="hs-truth-sub">Aristarchus of Samos proposed the heliocentric model around 270 BC. The world wouldn't fully accept it until the 1600s — nearly two millennia later. He was right the whole time.</p>
+      </div>
+
+      <div class="hs-callout indigo">
+        <strong>Why did geocentrism seem so obvious?</strong> From Earth, we don't <em>feel</em> ourselves moving. We see the Sun, Moon, and stars orbit us every day. Aristotle — the most trusted philosopher in the ancient world — taught that Earth was fixed and everything else revolved around it. The Catholic Church later adopted this as official doctrine. Disagreeing wasn't just scientifically brave — it could be dangerous.
+      </div>
+    </section>
+
+    <!-- ── Aristarchus ── -->
+    <section class="hs-card" style="--card-accent:#ffcc00;">
+      <h2>Aristarchus of Samos — The First Heliocentrist</h2>
+      <div class="hs-bio">
+        <div class="hs-bio-portrait" style="background:linear-gradient(135deg,#5856d6,#ffcc00);" aria-hidden="true">☀️</div>
+        <p class="hs-bio-text">
+          <strong>Aristarchus of Samos (310–230 BC)</strong> was a Greek astronomer from the island of Samos. Around <strong>270 BC</strong>, he proposed something radical: the Sun, not the Earth, is the center of the solar system. The stars appeared fixed because they were unimaginably far away — not because Earth was stationary. Earth rotated on its axis daily and orbited the Sun annually. He was roughly 1,800 years ahead of Copernicus and 1,900 years ahead of Galileo.
+        </p>
+      </div>
+
+      <h3>How Did Aristarchus Figure It Out?</h3>
+      <p>Aristarchus didn't just guess — he used careful geometric reasoning from observations anyone could make:</p>
+
+      <div class="hs-evidence">
+        <div class="hs-evidence-card">
+          <span class="hs-evidence-icon">🌙</span>
+          <strong>The Size of the Sun</strong>
+          <p>During a lunar eclipse, Aristarchus noticed that Earth's shadow on the Moon was curved and about twice the Moon's diameter. Using geometry, he deduced that the Sun must be <em>much larger</em> than Earth — and if the Sun is far larger, it made no sense for it to orbit something smaller. Smaller objects orbit larger ones, not the other way around.</p>
+        </div>
+        <div class="hs-evidence-card">
+          <span class="hs-evidence-icon">📐</span>
+          <strong>Measuring the Sun's Distance</strong>
+          <p>When the Moon is exactly half-lit (quarter Moon), the Sun, Moon, and Earth form a right angle. Aristarchus measured the angle at Earth between the Moon and Sun as about 87°. Using trigonometry, he calculated the Sun was at least 18 times farther away than the Moon — far larger than Earth. His value was an underestimate, but the method was perfectly sound.</p>
+        </div>
+        <div class="hs-evidence-card">
+          <span class="hs-evidence-icon">⭐</span>
+          <strong>The Stars Don't Shift</strong>
+          <p>If Earth orbits the Sun, nearby stars should appear to shift position slightly as Earth moves — a phenomenon called <em>stellar parallax</em>. Aristarchus correctly predicted this parallax must exist, but said it was too small to measure because the stars were <em>inconceivably far away</em>. He was right. Stellar parallax wasn't measured until 1838.</p>
+        </div>
+        <div class="hs-evidence-card">
+          <span class="hs-evidence-icon">🔄</span>
+          <strong>Retrograde Motion</strong>
+          <p>Outer planets like Mars sometimes appear to move <em>backward</em> across the sky before continuing forward. In a geocentric model, this requires complex loops called "epicycles." In a heliocentric model, it happens naturally — it's an optical illusion caused by Earth overtaking a slower outer planet. The heliocentric model is simply more elegant.</p>
+        </div>
+      </div>
+
+      <h3>Why Was He Ignored?</h3>
+      <p>The Greek philosopher <strong>Cleanthes</strong> reportedly argued that Aristarchus should be charged with impiety — an ancient equivalent of blasphemy — for suggesting the Earth moved. Aristotle's geocentric model was the dominant framework in philosophy and science. Aristarchus had no telescope, no precise instruments, and no powerful institution to support him. His main surviving work is a mathematical treatise on the sizes and distances of the Sun and Moon; the book where he laid out heliocentrism was lost to history.</p>
+      <p>He was right. The world simply wasn't ready.</p>
+    </section>
+
+    <!-- ── Timeline ── -->
+    <section class="hs-card" style="--card-accent:#ff9500;">
+      <h2>The Long Road to Acceptance</h2>
+      <p>From Aristarchus's lonely insight to scientific consensus took nearly 2,000 years of evidence, bravery, and mathematics.</p>
+      <ul class="hs-timeline">
+
+        <li>
+          <div class="hs-tl-year">~270 BC</div>
+          <div class="hs-tl-dot" style="background:#ffcc00;"></div>
+          <div class="hs-tl-body">
+            <p class="hs-tl-name">Aristarchus of Samos</p>
+            <span class="hs-tl-tag" style="background:rgba(255,204,0,0.15);color:#8a6800;">Heliocentric Model Proposed</span>
+            <p class="hs-tl-text">Proposes the Sun-centered solar system using observations of eclipses and the Moon's phases. Argues the stars are fixed and immensely distant. His idea is noted but rejected by the scientific establishment of his time.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="hs-tl-year">~150 AD</div>
+          <div class="hs-tl-dot" style="background:#ff3b30;"></div>
+          <div class="hs-tl-body">
+            <p class="hs-tl-name">Claudius Ptolemy (Alexandria)</p>
+            <span class="hs-tl-tag" style="background:rgba(255,59,48,0.1);color:#c0392b;">Geocentric Model Codified</span>
+            <p class="hs-tl-text">Publishes the <em>Almagest</em> — a comprehensive mathematical model of the geocentric universe using "epicycles" (circles upon circles) to explain planetary motion. It works well enough to predict positions, so it becomes the accepted model for 1,400 years. In science, a model that predicts doesn't have to be correct — just useful.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="hs-tl-year">1543</div>
+          <div class="hs-tl-dot" style="background:#5856d6;"></div>
+          <div class="hs-tl-body">
+            <p class="hs-tl-name">Nicolaus Copernicus (Poland)</p>
+            <span class="hs-tl-tag" style="background:rgba(88,86,214,0.1);color:#3c3aab;">Heliocentrism Revived</span>
+            <p class="hs-tl-text">Publishes <em>De revolutionibus orbium coelestium</em> — reviving and formalising the heliocentric model. He cites Aristarchus directly, acknowledging he was not the first. Copernicus's model still uses perfect circles (not quite right), but it is far simpler than Ptolemy's epicycles. He delays publication until his deathbed, fearing the reaction.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="hs-tl-year">1609–1619</div>
+          <div class="hs-tl-dot" style="background:#34c759;"></div>
+          <div class="hs-tl-body">
+            <p class="hs-tl-name">Johannes Kepler (Germany)</p>
+            <span class="hs-tl-tag" style="background:rgba(52,199,89,0.12);color:#1a7a2e;">Mathematical Proof</span>
+            <p class="hs-tl-text">Using the precise observational data of Tycho Brahe, Kepler discovers that planetary orbits are <strong>ellipses</strong>, not circles — and derives his three laws of planetary motion. These laws fit the heliocentric model perfectly and cannot be explained by geocentrism. For the first time, someone could mathematically <em>predict</em> every planetary position with precision.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="hs-tl-year">1609–1633</div>
+          <div class="hs-tl-dot" style="background:#ff9500;"></div>
+          <div class="hs-tl-body">
+            <p class="hs-tl-name">Galileo Galilei (Italy)</p>
+            <span class="hs-tl-tag" style="background:rgba(255,149,0,0.12);color:#b35900;">Telescopic Evidence</span>
+            <p class="hs-tl-text">Turns a telescope to the sky for the first time in 1609. Discovers Jupiter's four largest moons — proof that not everything orbits Earth. Observes the phases of Venus — impossible in the geocentric model. Is tried by the Inquisition in 1633 and forced to recant his support for heliocentrism. Reportedly muttered afterward, <em>"And yet it moves."</em> He spent the rest of his life under house arrest.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="hs-tl-year">1687</div>
+          <div class="hs-tl-dot" style="background:#007aff;"></div>
+          <div class="hs-tl-body">
+            <p class="hs-tl-name">Isaac Newton (England)</p>
+            <span class="hs-tl-tag" style="background:rgba(0,122,255,0.1);color:#0055cc;">Gravity Explains Why</span>
+            <p class="hs-tl-text">Newton's law of universal gravitation finally explains <em>why</em> planets orbit the Sun — gravity. The Sun's enormous mass pulls every planet into orbit. Kepler's laws follow mathematically from Newton's equations. Heliocentrism was no longer just a model — it was explained from first principles. The debate was over.</p>
+          </div>
+        </li>
+
+        <li>
+          <div class="hs-tl-year">Today</div>
+          <div class="hs-tl-dot" style="background:#34c759; border-color:#34c759;"></div>
+          <div class="hs-tl-body">
+            <p class="hs-tl-name">Modern Understanding</p>
+            <span class="hs-tl-tag" style="background:rgba(52,199,89,0.12);color:#1a7a2e;">Confirmed</span>
+            <p class="hs-tl-text">We've sent spacecraft throughout the solar system — every trajectory calculated using heliocentric mechanics. We know the Sun is one of ~200–400 billion stars in the Milky Way galaxy, which itself is one of ~2 trillion galaxies in the observable universe. We are not the center. We never were. Aristarchus had the right idea 2,300 years ago.</p>
+          </div>
+        </li>
+
+      </ul>
+    </section>
+
+    <!-- ── Orbital Simulator ── -->
+    <section class="hs-sim">
+      <h2>Geocentric vs. Heliocentric Simulator</h2>
+      <p class="hs-sim-sub">Switch between the two models. In geocentric view, watch the complex spirograph paths planets trace around Earth — Ptolemy needed circles upon circles to explain this. In heliocentric view, everything becomes simple and elegant.</p>
+
+      <div class="hs-sim-header">
+        <div class="hs-mode-toggle" role="group" aria-label="View mode">
+          <button class="hs-mode-btn active" id="hs-helio-btn">☀️ Heliocentric</button>
+          <button class="hs-mode-btn" id="hs-geo-btn">🌍 Geocentric</button>
+        </div>
+        <div class="hs-sim-controls">
+          <span class="hs-ctrl-label">Speed</span>
+          <input type="range" class="hs-speed-slider" id="hs-speed" min="0.2" max="4" step="0.1" value="1" />
+          <button class="hs-play-btn" id="hs-play-btn">⏸ Pause</button>
+        </div>
+      </div>
+
+      <canvas id="hs-canvas" height="340" aria-label="Solar system orbital simulator"></canvas>
+      <p class="hs-sim-label" id="hs-sim-label">Heliocentric model — planets follow simple elliptical orbits around the Sun.</p>
+    </section>
+
+    <!-- ── Galileo's Evidence ── -->
+    <section class="hs-card" style="--card-accent:#ff9500;">
+      <h2>Galileo's Telescopic Evidence</h2>
+      <p>In 1609, Galileo Galilei was the first person to systematically turn a telescope at the night sky. What he saw permanently destroyed the geocentric model.</p>
+
+      <div class="hs-evidence">
+        <div class="hs-evidence-card">
+          <span class="hs-evidence-icon">🪐</span>
+          <strong>The Moons of Jupiter (1610)</strong>
+          <p>Galileo discovered four moons orbiting Jupiter — now called the Galilean moons (Io, Europa, Ganymede, Callisto). This was the first direct proof that not everything in the universe orbits Earth. If Jupiter has moons orbiting it, the geocentric model was broken.</p>
+        </div>
+        <div class="hs-evidence-card">
+          <span class="hs-evidence-icon">🌑</span>
+          <strong>Phases of Venus (1610)</strong>
+          <p>Venus shows a full range of phases — from thin crescent to full disc — just like the Moon. In the geocentric model, Venus orbiting between Earth and Sun could <em>never</em> show a full phase. The only explanation is that Venus orbits the Sun, sometimes on the far side of it from Earth. This was devastating to geocentrism.</p>
+        </div>
+        <div class="hs-evidence-card">
+          <span class="hs-evidence-icon">🌌</span>
+          <strong>The Milky Way Is Stars (1610)</strong>
+          <p>Galileo resolved the Milky Way's hazy glow into thousands of individual stars — all too faint to see individually. This matched Aristarchus's prediction that the stars were incomprehensibly distant. It hinted that the universe was vastly larger than anyone had imagined, and Earth was a very small part of it.</p>
+        </div>
+        <div class="hs-evidence-card">
+          <span class="hs-evidence-icon">🔭</span>
+          <strong>Sunspots (1612)</strong>
+          <p>Galileo tracked sunspots moving across the Sun's surface, proving the Sun rotates on its own axis. He also showed that sunspots moved in a way consistent with a spherical rotating Sun. This contradicted Aristotle's claim that the Sun was a perfect, unchanging celestial sphere — further eroding the geocentric worldview built on Aristotle's authority.</p>
+        </div>
+      </div>
+
+      <div class="hs-callout red">
+        <strong>The trial of Galileo (1633):</strong> The Inquisition found Galileo "vehemently suspect of heresy" for supporting heliocentrism. He was forced to publicly recant his beliefs and spent the last nine years of his life under house arrest. His books were banned. It wasn't until <strong>1992</strong> — 359 years later — that the Catholic Church formally acknowledged the error of the trial. Galileo's story is one of history's starkest examples of truth being punished.
+      </div>
+    </section>
+
+    <!-- ── Kepler's Laws ── -->
+    <section class="hs-card" style="--card-accent:#34c759;">
+      <h2>Kepler's Laws — The Mathematics of Orbits</h2>
+      <p>Johannes Kepler spent years analysing the most accurate astronomical data in history (compiled by the Danish astronomer <strong>Tycho Brahe</strong>, who spent decades measuring planetary positions to the nearest arcminute). What Kepler found transformed our understanding forever.</p>
+
+      <div class="hs-laws">
+        <div class="hs-law">
+          <div class="hs-law-badge">1</div>
+          <div class="hs-law-body">
+            <p class="hs-law-title">The Law of Ellipses</p>
+            <p class="hs-law-text">Every planet orbits the Sun in an <strong>ellipse</strong> — not a circle — with the Sun at one of the two <em>foci</em>. This was a shock: centuries of astronomers had assumed orbits must be perfect circles (the most "perfect" geometric shape). The fact that they are ellipses explained all the small errors in Copernicus's circular model. It also means planets are sometimes closer to the Sun (perihelion) and sometimes farther (aphelion).</p>
+          </div>
+        </div>
+        <div class="hs-law">
+          <div class="hs-law-badge">2</div>
+          <div class="hs-law-body">
+            <p class="hs-law-title">The Law of Equal Areas</p>
+            <p class="hs-law-text">A line drawn from the Sun to a planet sweeps out <strong>equal areas in equal times</strong>. This means a planet moves <em>faster</em> when it is near the Sun and <em>slower</em> when it is far away. Earth moves fastest in January (closest to Sun) and slowest in July (farthest). Watch the simulator closely — the inner planets visibly rush past the outer ones.</p>
+          </div>
+        </div>
+        <div class="hs-law">
+          <div class="hs-law-badge">3</div>
+          <div class="hs-law-body">
+            <p class="hs-law-title">The Law of Periods</p>
+            <p class="hs-law-text">The square of a planet's orbital period is proportional to the cube of its average distance from the Sun: <strong>T² ∝ a³</strong>. Double the distance from the Sun and the year gets about 2.83× longer. This precise mathematical relationship links every planet's speed to its distance — and it only works if the Sun is the anchor of the solar system. Newton later showed this law follows directly from his law of gravitation.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="hs-callout green">
+        <strong>Why Kepler matters:</strong> Before Kepler, heliocentrism was an appealing <em>hypothesis</em>. After Kepler, it was a <em>quantitative prediction machine</em>. His laws could tell you where Mars would be on any date in the future — and they were right. No geocentric model, no matter how many epicycles it added, could match this precision. Mathematics had spoken.
+      </div>
+    </section>
+
+    <!-- ── Lesson of Aristarchus ── -->
+    <section class="hs-card" style="--card-accent:#af52de;">
+      <h2>The Lesson of Aristarchus</h2>
+      <p>Aristarchus's story is not just about astronomy. It is about what happens when evidence points to an uncomfortable truth, and institutions, tradition, and power resist it.</p>
+      <p>He had no telescope. He had no powerful patron. He had no printing press to spread his ideas. He had logic, geometry, and the courage to follow the evidence wherever it led — even somewhere deeply unpopular. He was dismissed, and his heliocentric writings were largely lost.</p>
+
+      <div class="hs-truth-box">
+        <p class="hs-truth-quote">"It takes far more courage to accept an unwelcome truth than to defend a comfortable illusion."</p>
+        <p class="hs-truth-sub">Aristarchus was correct in ~270 BC. Copernicus confirmed it in 1543. Galileo proved it with a telescope in 1610. Kepler proved it with mathematics. Newton explained why. The truth was always there — waiting.</p>
+      </div>
+
+      <p>History is full of similar stories: <strong>Ignaz Semmelweis</strong> discovered that handwashing saved lives in hospitals decades before germ theory — and was ridiculed. <strong>Alfred Wegener</strong> proposed continental drift in 1912 and was laughed at for 50 years. <strong>Barry Marshall</strong> drank a solution of bacteria to prove ulcers were caused by infection, not stress — and won the Nobel Prize in 2005.</p>
+      <p>The lesson is not that every contrarian is right. Most are wrong. The lesson is that <strong>evidence matters more than authority</strong>, that science is a process of revision, and that the right question to ask is never "who believes this?" but always "what does the evidence say?"</p>
+
+      <div class="hs-callout indigo">
+        <strong>Think about it:</strong> What ideas that seem obvious today might be wrong? What uncomfortable truths might be sitting in plain sight, waiting 1,800 years for the right instruments, the right data, or just a world brave enough to look?
+      </div>
+    </section>
+
+    <!-- ── Practice Problems ── -->
+    <section class="hs-card" style="--card-accent:#5856d6;">
+      <h2>Practice Problems</h2>
+      <p style="color:#64748b;font-size:0.84rem;">Some problems use Kepler's Third Law: T² ∝ a³, or T² = a³ when T is in Earth years and a is in AU (astronomical units).</p>
+      <div class="hs-practice">
+
+        <div class="hs-problem">
+          <p><span class="hs-diff diff-easy">Easy</span>1. Aristarchus proposed heliocentrism around 270 BC. Galileo provided telescopic evidence in 1610. How many years passed between the idea and the first hard observational proof?</p>
+          <div class="hs-problem-row">
+            <input type="number" class="hs-ans-input" id="hans-1" placeholder="years" />
+            <button class="hs-check-btn" onclick="hsCheck(1, 1880, 5)">Check</button>
+            <span class="hs-feedback" id="hfb-1"></span>
+          </div>
+          <div class="hs-hint" id="hhint-1">Hint: 1610 − (−270) = 1610 + 270 = 1,880 years</div>
+        </div>
+
+        <div class="hs-problem">
+          <p><span class="hs-diff diff-easy">Easy</span>2. Kepler's Third Law states T² = a³ (T in years, a in AU). Mars is 1.52 AU from the Sun. Calculate T² for Mars, then find T (the length of a Mars year). Round to 1 decimal place.</p>
+          <div class="hs-problem-row">
+            <input type="number" class="hs-ans-input" id="hans-2" step="0.1" placeholder="years" />
+            <button class="hs-check-btn" onclick="hsCheck(2, 1.9, 0.1)">Check</button>
+            <span class="hs-feedback" id="hfb-2"></span>
+          </div>
+          <div class="hs-hint" id="hhint-2">Hint: a³ = 1.52³ = 3.51 → T = √3.51 ≈ 1.9 Earth years</div>
+        </div>
+
+        <div class="hs-problem">
+          <p><span class="hs-diff diff-mid">Medium</span>3. Jupiter orbits the Sun every 11.9 Earth years. Using T² = a³, calculate Jupiter's average distance from the Sun in AU. Round to 1 decimal place.</p>
+          <div class="hs-problem-row">
+            <input type="number" class="hs-ans-input" id="hans-3" step="0.1" placeholder="AU" />
+            <button class="hs-check-btn" onclick="hsCheck(3, 5.2, 0.1)">Check</button>
+            <span class="hs-feedback" id="hfb-3"></span>
+          </div>
+          <div class="hs-hint" id="hhint-3">Hint: T² = 11.9² = 141.6 → a = ∛141.6 ≈ 5.2 AU</div>
+        </div>
+
+        <div class="hs-problem">
+          <p><span class="hs-diff diff-mid">Medium</span>4. Venus's phases were impossible to explain in the geocentric model. In Ptolemy's model, Venus orbits between Earth and the Sun and should only ever show crescent phases. Galileo observed a <em>full</em> Venus. Which number correctly describes what percentage of its disc was lit during a full-phase observation: 10%, 50%, or 100%? Enter 10, 50, or 100.</p>
+          <div class="hs-problem-row">
+            <input type="number" class="hs-ans-input" id="hans-4" placeholder="%" />
+            <button class="hs-check-btn" onclick="hsCheck(4, 100, 0)">Check</button>
+            <span class="hs-feedback" id="hfb-4"></span>
+          </div>
+          <div class="hs-hint" id="hhint-4">Hint: A "full" phase means the entire disc is illuminated — 100%. This only happens when Venus is on the far side of the Sun from Earth, which is impossible in Ptolemy's model.</div>
+        </div>
+
+        <div class="hs-problem">
+          <p><span class="hs-diff diff-hard">Challenge</span>5. An exoplanet orbiting a distant star has an orbital period of 8 Earth years. Assuming the star has the same mass as our Sun, use Kepler's Third Law to estimate how many AU the exoplanet is from its star. Round to 1 decimal place.</p>
+          <div class="hs-problem-row">
+            <input type="number" class="hs-ans-input" id="hans-5" step="0.1" placeholder="AU" />
+            <button class="hs-check-btn" onclick="hsCheck(5, 4.0, 0.1)">Check</button>
+            <span class="hs-feedback" id="hfb-5"></span>
+          </div>
+          <div class="hs-hint" id="hhint-5">Hint: T² = 8² = 64 → a = ∛64 = 4.0 AU</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+
+    /* ── Orbital Simulator ─────────────────────────────── */
+    const canvas   = document.getElementById('hs-canvas');
+    const ctx      = canvas.getContext('2d');
+    const simLabel = document.getElementById('hs-sim-label');
+    const playBtn  = document.getElementById('hs-play-btn');
+    const speedEl  = document.getElementById('hs-speed');
+    const helioBtn = document.getElementById('hs-helio-btn');
+    const geoBtn   = document.getElementById('hs-geo-btn');
+
+    let mode    = 'helio'; // 'helio' | 'geo'
+    let running = true;
+    let t       = 0;
+    let lastTS  = null;
+    let animFrame = null;
+
+    // Planet data: r = heliocentric radius in canvas units, period in seconds
+    const PLANETS = [
+      { name:'Mercury', color:'#b0b0b0', r:36,  period:2.4,  size:3.5 },
+      { name:'Venus',   color:'#e8c090', r:58,  period:6.2,  size:5   },
+      { name:'Earth',   color:'#4a9fd4', r:82,  period:10,   size:5.5 },
+      { name:'Mars',    color:'#c1440e', r:110, period:18.8, size:4.5 },
+      { name:'Jupiter', color:'#c9956c', r:152, period:42,   size:10  },
+      { name:'Saturn',  color:'#d4b86a', r:190, period:105,  size:9   },
+    ];
+    const EARTH_IDX = 2;
+    const TRAIL_LEN = 700;
+
+    // Trail storage for geocentric mode (last N positions per planet)
+    const trails = PLANETS.map(() => []);
+
+    function getPlanetXY(p, time) {
+      const angle = (2 * Math.PI * time) / p.period;
+      return { x: p.r * Math.cos(angle), y: p.r * Math.sin(angle) };
+    }
+
+    function drawStars(W, H) {
+      // Pseudo-random star field seeded by position
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      const seed = [[0.05,0.08],[0.15,0.6],[0.22,0.2],[0.32,0.85],[0.41,0.4],
+        [0.52,0.12],[0.6,0.7],[0.7,0.32],[0.79,0.9],[0.88,0.15],[0.94,0.55],
+        [0.1,0.95],[0.38,0.05],[0.65,0.05],[0.85,0.78],[0.25,0.45],[0.75,0.55],
+        [0.45,0.72],[0.55,0.28],[0.92,0.38]];
+      seed.forEach(([sx, sy]) => {
+        ctx.beginPath();
+        ctx.arc(sx * W, sy * H, 0.9, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawFrame(time) {
+      const W = canvas.offsetWidth || 600;
+      canvas.width = W;
+      const H = canvas.height;
+      const cx = W / 2;
+      const cy = H / 2;
+
+      // Dark space background
+      ctx.fillStyle = '#050510';
+      ctx.fillRect(0, 0, W, H);
+      drawStars(W, H);
+
+      // Scale canvas to fit all orbits
+      const maxR = PLANETS[PLANETS.length - 1].r;
+      const margin = 22;
+      const scale = (Math.min(W, H) / 2 - margin) / maxR;
+
+      if (mode === 'helio') {
+        // ── HELIOCENTRIC ──────────────────────────────
+
+        // Orbit rings
+        PLANETS.forEach(p => {
+          ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(cx, cy, p.r * scale, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+
+        // Sun
+        const sunGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 18 * scale / 3);
+        sunGrad.addColorStop(0, '#fff9a0');
+        sunGrad.addColorStop(0.3, '#ffe066');
+        sunGrad.addColorStop(0.7, '#ffb300');
+        sunGrad.addColorStop(1, 'rgba(255,180,0,0)');
+        ctx.fillStyle = sunGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 18 * scale / 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Sun core
+        ctx.fillStyle = '#fff7b0';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 9 * scale / 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.font = `bold ${Math.max(8,scale*6)}px Inter,sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText('Sun', cx, cy + 20 * scale / 3);
+
+        // Planets
+        PLANETS.forEach(p => {
+          const pos = getPlanetXY(p, time);
+          const px = cx + pos.x * scale;
+          const py = cy + pos.y * scale;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(px, py, p.size * scale / 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          // Label
+          ctx.fillStyle = 'rgba(255,255,255,0.65)';
+          ctx.font = `${Math.max(7, scale * 4.5)}px Inter,sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText(p.name, px, py - p.size * scale / 3.5 - 4);
+        });
+
+        simLabel.innerHTML = '<strong>Heliocentric model</strong> — planets follow simple elliptical orbits around the Sun.';
+
+      } else {
+        // ── GEOCENTRIC ───────────────────────────────
+
+        const earthPos = getPlanetXY(PLANETS[EARTH_IDX], time);
+
+        // Compute geocentric positions
+        const geoPos = PLANETS.map((p, i) => {
+          const hp = getPlanetXY(p, time);
+          return { x: hp.x - earthPos.x, y: hp.y - earthPos.y };
+        });
+
+        // Update trails
+        PLANETS.forEach((p, i) => {
+          if (i === EARTH_IDX) return;
+          trails[i].push({ ...geoPos[i] });
+          if (trails[i].length > TRAIL_LEN) trails[i].shift();
+        });
+
+        // Max geocentric distance to scale
+        const geoMaxR = PLANETS[PLANETS.length - 1].r + PLANETS[EARTH_IDX].r;
+        const geoScale = (Math.min(W, H) / 2 - margin) / geoMaxR;
+
+        // Draw trails
+        PLANETS.forEach((p, i) => {
+          if (i === EARTH_IDX) return;
+          if (trails[i].length < 2) return;
+          for (let j = 1; j < trails[i].length; j++) {
+            const alpha = (j / trails[i].length) * 0.55;
+            ctx.strokeStyle = p.color.replace(')', `,${alpha})`).replace('rgb', 'rgba');
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx + trails[i][j-1].x * geoScale, cy + trails[i][j-1].y * geoScale);
+            ctx.lineTo(cx + trails[i][j].x * geoScale,   cy + trails[i][j].y * geoScale);
+            ctx.stroke();
+          }
+        });
+
+        // Earth glow
+        const earthGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 20);
+        earthGrad.addColorStop(0, 'rgba(100,180,255,0.3)');
+        earthGrad.addColorStop(1, 'rgba(100,180,255,0)');
+        ctx.fillStyle = earthGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Earth
+        ctx.fillStyle = '#4a9fd4';
+        ctx.beginPath();
+        ctx.arc(cx, cy, PLANETS[EARTH_IDX].size * geoScale / 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.font = `${Math.max(7, geoScale * 4.5)}px Inter,sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText('Earth', cx, cy + PLANETS[EARTH_IDX].size * geoScale / 3.5 + 13);
+
+        // Other planets
+        PLANETS.forEach((p, i) => {
+          if (i === EARTH_IDX) return;
+          const gp = geoPos[i];
+          const px = cx + gp.x * geoScale;
+          const py = cy + gp.y * geoScale;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(px, py, p.size * geoScale / 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.65)';
+          ctx.font = `${Math.max(7, geoScale * 4.5)}px Inter,sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText(p.name, px, py - p.size * geoScale / 3.5 - 4);
+        });
+
+        simLabel.innerHTML = '<strong>Geocentric model</strong> — from Earth\'s perspective, planets loop in complex spirograph patterns. Ptolemy needed dozens of epicycles to explain this.';
+      }
+    }
+
+    function loop(ts) {
+      if (lastTS === null) lastTS = ts;
+      const delta = (ts - lastTS) / 1000;
+      lastTS = ts;
+
+      if (running) {
+        const speed = parseFloat(speedEl.value);
+        t += delta * speed;
+      }
+
+      drawFrame(t);
+      animFrame = requestAnimationFrame(loop);
+    }
+
+    // Clear trails when switching modes so they rebuild fresh
+    helioBtn.addEventListener('click', () => {
+      mode = 'helio';
+      helioBtn.classList.add('active');
+      geoBtn.classList.remove('active');
+      trails.forEach(tr => tr.length = 0);
+    });
+    geoBtn.addEventListener('click', () => {
+      mode = 'geo';
+      geoBtn.classList.add('active');
+      helioBtn.classList.remove('active');
+      trails.forEach(tr => tr.length = 0);
+    });
+
+    playBtn.addEventListener('click', () => {
+      running = !running;
+      playBtn.textContent = running ? '⏸ Pause' : '▶ Play';
+      if (running) lastTS = null;
+    });
+
+    animFrame = requestAnimationFrame(loop);
+
+    /* ── Practice checker ─────────────────────────────── */
+    window.hsCheck = function (num, correct, tol) {
+      const input = document.getElementById('hans-' + num);
+      const fb    = document.getElementById('hfb-' + num);
+      const hint  = document.getElementById('hhint-' + num);
+      const val   = parseFloat(input.value);
+
+      fb.className = 'hs-feedback';
+      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('wrong'); return; }
+
+      if (Math.abs(val - correct) <= tol) {
+        fb.textContent = '✓ Correct!';
+        fb.classList.add('correct');
+        hint.classList.remove('visible');
+        input.style.borderColor = '#34c759';
+      } else {
+        fb.textContent = '✗ Try again';
+        fb.classList.add('wrong');
+        hint.classList.add('visible');
+        input.style.borderColor = '#ff3b30';
+      }
+    };
+
+  })();
+  </script>
+</body>
+</html>

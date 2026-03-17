@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Newton's Laws of Motion · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 04 — explore Newton's three laws of motion: inertia, F=ma, and action-reaction, with interactive simulations and real-world examples for K-12." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page ─────────────────────────────────────────── */
+    .nl-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .nl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .nl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0;
+      font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .nl-hero-meta { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .nl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .nl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65;
+      font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .nl-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Section card ─────────────────────────────────── */
+    .nl-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #5856d6);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .nl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .nl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .nl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .nl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .nl-card { background: var(--white, #2c2c2e); }
+    [data-theme="night"] .nl-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Law banner (big numbered law display) ────────── */
+    .nl-law-box {
+      display: flex; align-items: flex-start; gap: 1rem;
+      background: linear-gradient(135deg, rgba(0,0,0,0.03), rgba(0,0,0,0.01));
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px; padding: 1rem 1.2rem; margin: 0.8rem 0;
+    }
+    [data-theme="night"] .nl-law-box { background: rgba(255,255,255,0.04); }
+    .nl-law-num {
+      font-size: clamp(2.4rem, 6vw, 3.8rem); font-weight: 900;
+      line-height: 1; letter-spacing: -0.04em;
+      flex-shrink: 0; width: 56px; text-align: center;
+    }
+    .nl-law-body { flex: 1; }
+    .nl-law-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: #64748b; margin: 0 0 0.3rem; }
+    .nl-law-statement { font-size: clamp(0.9rem, 2vw, 1.05rem); font-weight: 700;
+      color: var(--text, #1d1d1f); line-height: 1.45; margin: 0 0 0.4rem; }
+    .nl-law-plain { font-size: 0.84rem; color: #3f4f65; line-height: 1.6; margin: 0; }
+    [data-theme="night"] .nl-law-plain { color: rgba(245,245,247,0.68); }
+
+    /* ── Examples grid ────────────────────────────────── */
+    .nl-examples { display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 0.7rem; margin: 0.9rem 0; }
+    .nl-example { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.8rem; }
+    [data-theme="night"] .nl-example { background: rgba(255,255,255,0.04); }
+    .nl-example-icon { font-size: 1.6rem; margin-bottom: 0.35rem; line-height: 1; }
+    .nl-example strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .nl-example small { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    /* ── F = ma display ───────────────────────────────── */
+    .nl-formula-box {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.8rem; flex-wrap: wrap;
+      background: linear-gradient(135deg, rgba(0,122,255,0.08), rgba(88,86,214,0.06));
+      border: 1px solid rgba(0,122,255,0.22);
+      border-radius: 14px; padding: 1.1rem 1.4rem; margin: 0.8rem 0;
+    }
+    .nl-formula-sym {
+      font-size: clamp(2rem, 5vw, 3rem); font-weight: 900;
+      color: #007aff; line-height: 1; letter-spacing: -0.04em;
+    }
+    .nl-formula-vars { display: flex; flex-direction: column; gap: 0.3rem; }
+    .nl-formula-var { font-size: 0.82rem; color: #3f4f65; line-height: 1.45; }
+    .nl-formula-var strong { color: var(--text,#1d1d1f); }
+    [data-theme="night"] .nl-formula-var { color: rgba(245,245,247,0.68); }
+
+    /* ── Units table ──────────────────────────────────── */
+    .nl-table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; font-size: 0.84rem; }
+    .nl-table th { text-align: left; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase; color: #64748b;
+      padding: 0.4rem 0.6rem; border-bottom: 2px solid var(--line,#d2d2d7); }
+    .nl-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line,#d2d2d7);
+      color: var(--text,#1d1d1f); vertical-align: middle; }
+    .nl-table tr:last-child td { border-bottom: none; }
+    .nl-table .hl { font-weight: 800; color: #007aff; }
+
+    /* ── Force Sandbox ────────────────────────────────── */
+    .nl-sandbox {
+      background: var(--white,#fff);
+      border: 1px solid var(--line,#d2d2d7);
+      border-left: 3.5px solid #007aff;
+      border-radius: var(--radius,18px);
+      box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+    }
+    [data-theme="night"] .nl-sandbox { background: var(--white,#2c2c2e); }
+    .nl-sandbox h2 { margin: 0 0 0.2rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .nl-sandbox-sub { margin: 0 0 1rem; font-size: 0.84rem; color: #64748b; }
+
+    .nl-sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem 1.4rem;
+      margin-bottom: 1rem; }
+    .nl-slider-group { display: flex; flex-direction: column; gap: 0.3rem; }
+    .nl-slider-label { font-size: 0.75rem; font-weight: 700; color: #64748b;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      display: flex; justify-content: space-between; }
+    .nl-slider-label span { font-weight: 800; color: var(--text,#1d1d1f); }
+    .nl-slider { width: 100%; accent-color: #007aff; cursor: pointer; }
+
+    #nl-canvas { display: block; border-radius: 10px; width: 100%;
+      background: #f0f4f8; }
+    [data-theme="night"] #nl-canvas { background: #1c1c1e; }
+
+    .nl-readout { display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 0.6rem; margin-top: 0.8rem; }
+    .nl-readout-cell { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 10px; padding: 0.6rem 0.8rem; text-align: center; }
+    [data-theme="night"] .nl-readout-cell { background: rgba(255,255,255,0.05); }
+    .nl-readout-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .nl-readout-val { font-size: 1.1rem; font-weight: 900; letter-spacing: -0.02em;
+      color: var(--text,#1d1d1f); }
+    .nl-readout-unit { font-size: 0.72rem; color: #64748b; font-weight: 500; }
+
+    .nl-sandbox-btns { display: flex; gap: 0.6rem; margin-top: 0.8rem; flex-wrap: wrap; }
+    .nl-btn {
+      padding: 8px 16px; border-radius: 8px; border: none;
+      background: #007aff; color: #fff; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+    }
+    .nl-btn:hover { opacity: 0.85; }
+    .nl-btn.secondary { background: rgba(0,0,0,0.08); color: var(--text,#1d1d1f); }
+    [data-theme="night"] .nl-btn.secondary { background: rgba(255,255,255,0.1); color: #fff; }
+
+    /* ── Rocket demo ──────────────────────────────────── */
+    .nl-rocket-box {
+      background: #0a0a1a; border-radius: 14px;
+      padding: 0; overflow: hidden; margin: 0.8rem 0;
+      position: relative; height: 140px;
+    }
+    #nl-rocket-canvas { display: block; width: 100%; height: 100%; }
+
+    /* ── Newton bio card ──────────────────────────────── */
+    .nl-bio { display: flex; gap: 1rem; align-items: flex-start; }
+    .nl-bio-portrait {
+      width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #ffcc00 0%, #ff9500 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; line-height: 1;
+    }
+    .nl-bio-text { flex: 1; font-size: 0.87rem; color: #3f4f65; line-height: 1.62; }
+    [data-theme="night"] .nl-bio-text { color: rgba(245,245,247,0.72); }
+    .nl-bio-text strong { color: var(--text,#1d1d1f); }
+
+    /* ── Summary strip ────────────────────────────────── */
+    .nl-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.8rem;
+      margin: 0.8rem 0; }
+    .nl-sum-card { border-radius: 14px; padding: 1rem; text-align: center; }
+    .nl-sum-card.law1 { background: linear-gradient(135deg,rgba(255,149,0,0.1),rgba(255,59,48,0.06));
+      border: 1px solid rgba(255,149,0,0.25); }
+    .nl-sum-card.law2 { background: linear-gradient(135deg,rgba(0,122,255,0.1),rgba(88,86,214,0.06));
+      border: 1px solid rgba(0,122,255,0.25); }
+    .nl-sum-card.law3 { background: linear-gradient(135deg,rgba(52,199,89,0.1),rgba(48,209,88,0.06));
+      border: 1px solid rgba(52,199,89,0.25); }
+    .nl-sum-num { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #64748b; margin-bottom: 0.3rem; }
+    .nl-sum-name { font-size: 0.92rem; font-weight: 800; margin-bottom: 0.35rem;
+      color: var(--text,#1d1d1f); }
+    .nl-sum-short { font-size: 0.78rem; color: #64748b; line-height: 1.5; }
+
+    /* ── Real-world applications ──────────────────────── */
+    .nl-apps { display: grid; grid-template-columns: repeat(2,1fr);
+      gap: 0.8rem; margin-top: 0.7rem; }
+    .nl-app-card { background: rgba(0,0,0,0.03);
+      border: 1px solid var(--line,#d2d2d7); border-radius: 12px;
+      padding: 0.85rem; display: flex; gap: 0.7rem; align-items: flex-start; }
+    [data-theme="night"] .nl-app-card { background: rgba(255,255,255,0.04); }
+    .nl-app-icon { font-size: 1.55rem; line-height: 1; flex-shrink: 0; }
+    .nl-app-text strong { display: block; font-size: 0.86rem; margin-bottom: 0.18rem; }
+    .nl-app-text small  { font-size: 0.78rem; color: #64748b; line-height: 1.5; display: block; }
+    .nl-app-law { display: inline-block; font-size: 0.66rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 999px; margin-top: 0.3rem; }
+    .tag-law1 { background: rgba(255,149,0,0.12); color: #b35900; }
+    .tag-law2 { background: rgba(0,122,255,0.12); color: #0055cc; }
+    .tag-law3 { background: rgba(52,199,89,0.12); color: #1a7a2e; }
+    [data-theme="night"] .tag-law1 { color: #ff9500; }
+    [data-theme="night"] .tag-law2 { color: #5ac8fa; }
+    [data-theme="night"] .tag-law3 { color: #34c759; }
+
+    /* ── Practice problems ────────────────────────────── */
+    .nl-practice { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 0.8rem; }
+    .nl-problem { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.9rem 1rem; }
+    [data-theme="night"] .nl-problem { background: rgba(255,255,255,0.04); }
+    .nl-problem p { margin: 0 0 0.5rem; font-size: 0.87rem;
+      color: var(--text,#1d1d1f); font-weight: 600; }
+    .nl-problem-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .nl-ans-input { width: 100px; padding: 6px 10px;
+      border: 1.5px solid var(--line,#d2d2d7); border-radius: 8px;
+      font-size: 0.88rem; font-family: inherit;
+      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none; }
+    .nl-ans-input:focus { border-color: #007aff; }
+    .nl-check-btn { padding: 6px 14px; border-radius: 8px; border: none;
+      background: #007aff; color: #fff; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+    .nl-check-btn:hover { opacity: 0.85; }
+    .nl-feedback { font-size: 0.8rem; font-weight: 700; padding: 4px 10px;
+      border-radius: 999px; display: none; }
+    .nl-feedback.correct { background: rgba(52,199,89,0.15); color: #1a7a2e; display: inline-block; }
+    .nl-feedback.wrong   { background: rgba(255,59,48,0.12); color: #c0392b; display: inline-block; }
+    [data-theme="night"] .nl-feedback.correct { color: #34c759; }
+    [data-theme="night"] .nl-feedback.wrong   { color: #ff6b6b; }
+    .nl-hint { font-size: 0.77rem; color: #64748b; margin-top: 0.35rem; display: none; }
+    .nl-hint.visible { display: block; }
+    .nl-problem-diff { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+      margin-right: 0.4rem; vertical-align: middle; }
+    .diff-easy { background: rgba(52,199,89,0.12); color: #1a7a2e; }
+    .diff-mid  { background: rgba(0,122,255,0.12); color: #0055cc; }
+    .diff-hard { background: rgba(255,149,0,0.12); color: #b35900; }
+    [data-theme="night"] .diff-easy { color: #34c759; }
+    [data-theme="night"] .diff-mid  { color: #5ac8fa; }
+    [data-theme="night"] .diff-hard { color: #ff9500; }
+
+    /* ── Callout box ──────────────────────────────────── */
+    .nl-callout {
+      border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0;
+      font-size: 0.85rem; line-height: 1.6; color: #3f4f65;
+    }
+    [data-theme="night"] .nl-callout { color: rgba(245,245,247,0.72); }
+    .nl-callout.blue   { background: rgba(0,122,255,0.07); border: 1px solid rgba(0,122,255,0.2); }
+    .nl-callout.orange { background: rgba(255,149,0,0.07); border: 1px solid rgba(255,149,0,0.2); }
+    .nl-callout.green  { background: rgba(52,199,89,0.07); border: 1px solid rgba(52,199,89,0.2); }
+    .nl-callout strong { color: var(--text,#1d1d1f); }
+
+    @media (max-width: 680px) {
+      .nl-examples { grid-template-columns: 1fr; }
+      .nl-summary  { grid-template-columns: 1fr; }
+      .nl-apps     { grid-template-columns: 1fr; }
+      .nl-sliders  { grid-template-columns: 1fr; }
+      .nl-readout  { grid-template-columns: repeat(3,1fr); }
+      .nl-bio      { flex-direction: column; align-items: center; text-align: center; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="nl-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero nl-hero">
+      <p class="eyebrow">Physics · Lesson 04</p>
+      <h1>Newton's Laws of Motion</h1>
+      <div class="nl-hero-meta">
+        <span>Force &amp; Motion</span>
+        <span class="dot"></span>
+        <span>F = ma</span>
+        <span class="dot"></span>
+        <span>Inertia</span>
+        <span class="dot"></span>
+        <span>Action &amp; Reaction</span>
+        <span class="dot"></span>
+        <span>K–12</span>
+      </div>
+      <p class="nl-lede">In 1687, Isaac Newton published three simple rules that explain how everything moves — from a rolling marble to a rocket heading to the Moon. Over 300 years later, engineers still use these same three laws every day.</p>
+    </section>
+
+    <!-- ── Who Was Newton? ── -->
+    <section class="nl-card" style="--card-accent:#ffcc00;">
+      <h2>Who Was Isaac Newton?</h2>
+      <div class="nl-bio">
+        <div class="nl-bio-portrait" aria-hidden="true">🍎</div>
+        <p class="nl-bio-text">
+          <strong>Isaac Newton (1643–1727)</strong> was an English mathematician and physicist who changed science forever. According to legend, watching an apple fall from a tree made him wonder: why do things fall <em>down</em>? That question led him to develop the laws of gravity and motion. He published his three laws of motion in his masterwork <em>Principia Mathematica</em> in 1687. Newton also invented calculus, designed the first reflecting telescope, and explained why white light contains every color of the rainbow. Scientists consider him one of the most influential people who ever lived.
+        </p>
+      </div>
+    </section>
+
+    <!-- ── Three Laws Summary ── -->
+    <section class="nl-card" style="--card-accent:#5856d6;">
+      <h2>The Three Laws at a Glance</h2>
+      <p>Newton described three rules that govern how objects move and how forces change that motion. Together, they explain almost every motion you can observe with the naked eye.</p>
+      <div class="nl-summary">
+        <div class="nl-sum-card law1">
+          <div class="nl-sum-num">First Law</div>
+          <div class="nl-sum-name">Inertia</div>
+          <div class="nl-sum-short">Objects resist changes in motion — still things stay still, moving things keep moving.</div>
+        </div>
+        <div class="nl-sum-card law2">
+          <div class="nl-sum-num">Second Law</div>
+          <div class="nl-sum-name">F = ma</div>
+          <div class="nl-sum-short">Force equals mass times acceleration — push harder or use less mass to go faster.</div>
+        </div>
+        <div class="nl-sum-card law3">
+          <div class="nl-sum-num">Third Law</div>
+          <div class="nl-sum-name">Action–Reaction</div>
+          <div class="nl-sum-short">Every force has an equal and opposite force pushing back the other way.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Law 1 ── -->
+    <section class="nl-card" style="--card-accent:#ff9500;">
+      <h2>First Law — The Law of Inertia</h2>
+
+      <div class="nl-law-box">
+        <div class="nl-law-num" style="color:#ff9500;">1</div>
+        <div class="nl-law-body">
+          <p class="nl-law-title">Newton's First Law</p>
+          <p class="nl-law-statement">"An object at rest stays at rest, and an object in motion stays in motion at the same speed and in the same direction, unless acted upon by an unbalanced external force."</p>
+          <p class="nl-law-plain">In plain English: things don't change what they're doing on their own. You need to <em>push or pull</em> something to make it start, stop, speed up, slow down, or turn.</p>
+        </div>
+      </div>
+
+      <h3>What is Inertia?</h3>
+      <p><strong>Inertia</strong> is the tendency of an object to resist any change in its state of motion. The more mass an object has, the more inertia it has — meaning the harder it is to start moving, stop, or change direction.</p>
+      <p>Think about pushing an empty shopping cart versus a full one. The full cart has more mass, so it has more inertia — it is much harder to get moving, and much harder to stop once it is rolling.</p>
+
+      <div class="nl-callout orange">
+        <strong>Everyday test:</strong> Slide a book across a table. It slows down and stops — not because of inertia, but because <strong>friction</strong> is the external force acting against it. In deep space, far from any friction or air resistance, that same book would keep sliding forever at exactly the same speed. That is inertia at work.
+      </div>
+
+      <h3>Real-World Examples of the First Law</h3>
+      <div class="nl-examples">
+        <div class="nl-example">
+          <div class="nl-example-icon">🚗</div>
+          <strong>Seatbelts</strong>
+          <small>When a car brakes hard, your body wants to keep moving forward (inertia). The seatbelt applies the external force that stops you — not the car door.</small>
+        </div>
+        <div class="nl-example">
+          <div class="nl-example-icon">🏒</div>
+          <strong>Hockey Puck</strong>
+          <small>A puck on ice has very little friction. Once hit, it glides for a long time — nearly unchanged motion, just like Newton's First Law predicts.</small>
+        </div>
+        <div class="nl-example">
+          <div class="nl-example-icon">🧺</div>
+          <strong>Tablecloth Trick</strong>
+          <small>Pull a tablecloth out fast and the dishes stay put. The dishes have inertia — they resist the sudden horizontal force and barely move.</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Law 2 ── -->
+    <section class="nl-card" style="--card-accent:#007aff;">
+      <h2>Second Law — Force, Mass, and Acceleration</h2>
+
+      <div class="nl-law-box">
+        <div class="nl-law-num" style="color:#007aff;">2</div>
+        <div class="nl-law-body">
+          <p class="nl-law-title">Newton's Second Law</p>
+          <p class="nl-law-statement">"The acceleration of an object depends directly on the net force acting on it, and inversely on its mass."</p>
+          <p class="nl-law-plain">The bigger the force you apply, the faster the object accelerates. The heavier the object, the less it accelerates for the same force. This relationship is captured in the most famous equation in mechanics:</p>
+        </div>
+      </div>
+
+      <div class="nl-formula-box" role="img" aria-label="F equals m times a">
+        <span class="nl-formula-sym">F = ma</span>
+        <div class="nl-formula-vars">
+          <div class="nl-formula-var"><strong>F</strong> = Force (measured in Newtons, N)</div>
+          <div class="nl-formula-var"><strong>m</strong> = Mass (measured in kilograms, kg)</div>
+          <div class="nl-formula-var"><strong>a</strong> = Acceleration (measured in m/s²)</div>
+        </div>
+      </div>
+
+      <h3>Understanding the Equation</h3>
+      <p>The equation <strong>F = ma</strong> can be rearranged to find any of the three values:</p>
+      <table class="nl-table" aria-label="F=ma rearrangements">
+        <thead>
+          <tr>
+            <th>To find…</th>
+            <th>Use this formula</th>
+            <th>Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="hl">Force (F)</td>
+            <td>F = m × a</td>
+            <td>2 kg × 3 m/s² = <strong>6 N</strong></td>
+          </tr>
+          <tr>
+            <td class="hl">Acceleration (a)</td>
+            <td>a = F ÷ m</td>
+            <td>10 N ÷ 5 kg = <strong>2 m/s²</strong></td>
+          </tr>
+          <tr>
+            <td class="hl">Mass (m)</td>
+            <td>m = F ÷ a</td>
+            <td>12 N ÷ 4 m/s² = <strong>3 kg</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Real-World Examples of the Second Law</h3>
+      <div class="nl-examples">
+        <div class="nl-example">
+          <div class="nl-example-icon">⚽</div>
+          <strong>Kicking a Ball</strong>
+          <small>Kick harder (more force) and the ball accelerates faster. The same kick on a bowling ball barely moves it — more mass means less acceleration.</small>
+        </div>
+        <div class="nl-example">
+          <div class="nl-example-icon">🚀</div>
+          <strong>Rocket Launch</strong>
+          <small>Rockets burn fuel (reducing mass) while producing thrust (constant force). As mass drops, acceleration increases — that's why rockets speed up as they climb.</small>
+        </div>
+        <div class="nl-example">
+          <div class="nl-example-icon">🚲</div>
+          <strong>Cycling</strong>
+          <small>Pedalling harder increases force and accelerates the bike. A loaded cargo bike is harder to accelerate than an empty one — same force, more mass.</small>
+        </div>
+      </div>
+
+      <div class="nl-callout blue">
+        <strong>What is a Newton?</strong> One Newton (1 N) is the force needed to accelerate a 1 kg object at 1 m/s². To feel roughly 1 N, hold a small apple — the Earth pulls it down with about 1 N of gravitational force. The unit is named after Isaac Newton himself.
+      </div>
+    </section>
+
+    <!-- ── Force Sandbox Simulator ── -->
+    <section class="nl-sandbox">
+      <h2>Force Sandbox — F = ma in Action</h2>
+      <p class="nl-sandbox-sub">Adjust the force and mass sliders, then launch the block. Watch how changing each variable changes acceleration and how far the block travels.</p>
+
+      <div class="nl-sliders">
+        <div class="nl-slider-group">
+          <label class="nl-slider-label" for="nl-force-slider">
+            Force <span id="nl-force-val">20 N</span>
+          </label>
+          <input type="range" class="nl-slider" id="nl-force-slider" min="1" max="100" value="20" />
+        </div>
+        <div class="nl-slider-group">
+          <label class="nl-slider-label" for="nl-mass-slider">
+            Mass <span id="nl-mass-val">5 kg</span>
+          </label>
+          <input type="range" class="nl-slider" id="nl-mass-slider" min="1" max="40" value="5" />
+        </div>
+      </div>
+
+      <canvas id="nl-canvas" height="100" aria-label="Force sandbox animation"></canvas>
+
+      <div class="nl-readout">
+        <div class="nl-readout-cell">
+          <span class="nl-readout-label">Force</span>
+          <span class="nl-readout-val" id="nl-r-force">20</span>
+          <span class="nl-readout-unit">N</span>
+        </div>
+        <div class="nl-readout-cell">
+          <span class="nl-readout-label">Mass</span>
+          <span class="nl-readout-val" id="nl-r-mass">5</span>
+          <span class="nl-readout-unit">kg</span>
+        </div>
+        <div class="nl-readout-cell">
+          <span class="nl-readout-label">Acceleration</span>
+          <span class="nl-readout-val" id="nl-r-accel">4.0</span>
+          <span class="nl-readout-unit">m/s²</span>
+        </div>
+      </div>
+
+      <div class="nl-sandbox-btns">
+        <button class="nl-btn" id="nl-launch-btn">Launch block ›</button>
+        <button class="nl-btn secondary" id="nl-reset-btn">Reset</button>
+      </div>
+    </section>
+
+    <!-- ── Law 3 ── -->
+    <section class="nl-card" style="--card-accent:#34c759;">
+      <h2>Third Law — Action and Reaction</h2>
+
+      <div class="nl-law-box">
+        <div class="nl-law-num" style="color:#34c759;">3</div>
+        <div class="nl-law-body">
+          <p class="nl-law-title">Newton's Third Law</p>
+          <p class="nl-law-statement">"For every action, there is an equal and opposite reaction."</p>
+          <p class="nl-law-plain">Whenever one object pushes or pulls on another, the second object pushes or pulls back with the <em>same amount of force</em> — but in the <em>opposite direction</em>. Forces always come in pairs.</p>
+        </div>
+      </div>
+
+      <h3>The Key Insight: Forces Always Come in Pairs</h3>
+      <p>You can never have just one force. Every force is part of an <strong>action-reaction pair</strong> acting on <em>two different objects</em>. The forces are equal in size but opposite in direction.</p>
+
+      <div class="nl-callout green">
+        <strong>Important:</strong> The two paired forces act on <em>different objects</em>, so they do not cancel each other out. When you push against a wall, you push the wall forward and the wall pushes you backward — those forces act on two different things (you and the wall), so the wall does not move (it is attached to the Earth).
+      </div>
+
+      <h3>Rocket Launch — Law 3 in Action</h3>
+      <p>A rocket works entirely because of Newton's Third Law. The rocket engine forces hot gas downward at high speed (the <em>action</em>). That gas pushes back up on the rocket with equal force (the <em>reaction</em>), propelling it upward. No air is needed — rockets work in the vacuum of space for exactly this reason.</p>
+
+      <div class="nl-rocket-box" aria-label="Rocket launch animation demonstrating action-reaction">
+        <canvas id="nl-rocket-canvas"></canvas>
+      </div>
+      <div style="display:flex;gap:0.6rem;margin-top:0.5rem;">
+        <button class="nl-btn" id="nl-rocket-btn" style="background:#34c759;">Launch Rocket ›</button>
+        <button class="nl-btn secondary" id="nl-rocket-reset">Reset</button>
+      </div>
+
+      <h3>Real-World Examples of the Third Law</h3>
+      <div class="nl-examples">
+        <div class="nl-example">
+          <div class="nl-example-icon">🏊</div>
+          <strong>Swimming</strong>
+          <small>Your hands push backward against the water (action). The water pushes your body forward (reaction). That's how you move through the pool.</small>
+        </div>
+        <div class="nl-example">
+          <div class="nl-example-icon">🚤</div>
+          <strong>Jumping Off a Boat</strong>
+          <small>You push backward on the boat (action) as you jump forward. The boat pushes you forward — but also slides backward away from the dock (reaction).</small>
+        </div>
+        <div class="nl-example">
+          <div class="nl-example-icon">🔫</div>
+          <strong>Gun Recoil</strong>
+          <small>Expanding gas pushes the bullet forward (action). The same gas pushes the gun backward into the shooter's shoulder (reaction) — that backward kick is called recoil.</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Real-World Applications ── -->
+    <section class="nl-card" style="--card-accent:#ff3b30;">
+      <h2>Newton's Laws in the Real World</h2>
+      <p>These three laws are not just classroom theory — engineers use them constantly to design everything from cars to spacecraft.</p>
+      <div class="nl-apps">
+        <div class="nl-app-card">
+          <span class="nl-app-icon">🛸</span>
+          <div class="nl-app-text">
+            <strong>Spacecraft Navigation</strong>
+            <small>NASA engineers use all three laws to plan every rocket burn. Law 1 keeps a spacecraft coasting between planets. Law 2 calculates how much thrust is needed for a course correction. Law 3 is why rocket engines work at all.</small>
+            <span class="nl-app-law tag-law1">Law 1</span>
+            <span class="nl-app-law tag-law2">Law 2</span>
+            <span class="nl-app-law tag-law3">Law 3</span>
+          </div>
+        </div>
+        <div class="nl-app-card">
+          <span class="nl-app-icon">🚗</span>
+          <div class="nl-app-text">
+            <strong>Car Safety Design</strong>
+            <small>Crumple zones slow the deceleration of a crash (Law 2: spreading force over more time reduces acceleration). Airbags and seatbelts stop your body's inertia (Law 1) from throwing you through the windshield.</small>
+            <span class="nl-app-law tag-law1">Law 1</span>
+            <span class="nl-app-law tag-law2">Law 2</span>
+          </div>
+        </div>
+        <div class="nl-app-card">
+          <span class="nl-app-icon">🏗️</span>
+          <div class="nl-app-text">
+            <strong>Building Structures</strong>
+            <small>Every beam in a building must handle pairs of forces (Law 3). A floor beam pushes down on its supports; the supports push up with equal force. Engineers calculate these to make sure nothing snaps.</small>
+            <span class="nl-app-law tag-law3">Law 3</span>
+          </div>
+        </div>
+        <div class="nl-app-card">
+          <span class="nl-app-icon">⚽</span>
+          <div class="nl-app-text">
+            <strong>Sports Science</strong>
+            <small>A sprinter explodes off starting blocks by pushing backward against them (Law 3). A heavier shot-put requires more force to throw the same distance (Law 2). A ball keeps rolling on smooth ground (Law 1).</small>
+            <span class="nl-app-law tag-law1">Law 1</span>
+            <span class="nl-app-law tag-law2">Law 2</span>
+            <span class="nl-app-law tag-law3">Law 3</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Practice Problems ── -->
+    <section class="nl-card" style="--card-accent:#007aff;">
+      <h2>Practice Problems</h2>
+      <p style="color:#64748b;font-size:0.84rem;">Use F = ma and its rearrangements. Round to one decimal place where needed.</p>
+      <div class="nl-practice">
+
+        <div class="nl-problem">
+          <p><span class="nl-problem-diff diff-easy">Easy</span>1. A force of 30 N acts on a 6 kg box. What is the acceleration? (a = F ÷ m)</p>
+          <div class="nl-problem-row">
+            <input type="number" class="nl-ans-input" id="nans-1" step="0.1" placeholder="m/s²" />
+            <button class="nl-check-btn" onclick="nlCheck(1, 5, 0.1)">Check</button>
+            <span class="nl-feedback" id="nfb-1"></span>
+          </div>
+          <div class="nl-hint" id="nhint-1">Hint: a = 30 ÷ 6 = 5 m/s²</div>
+        </div>
+
+        <div class="nl-problem">
+          <p><span class="nl-problem-diff diff-easy">Easy</span>2. A 4 kg object accelerates at 3 m/s². What force caused this? (F = m × a)</p>
+          <div class="nl-problem-row">
+            <input type="number" class="nl-ans-input" id="nans-2" step="0.1" placeholder="N" />
+            <button class="nl-check-btn" onclick="nlCheck(2, 12, 0.1)">Check</button>
+            <span class="nl-feedback" id="nfb-2"></span>
+          </div>
+          <div class="nl-hint" id="nhint-2">Hint: F = 4 × 3 = 12 N</div>
+        </div>
+
+        <div class="nl-problem">
+          <p><span class="nl-problem-diff diff-mid">Medium</span>3. A 10 N force produces an acceleration of 2.5 m/s². What is the mass of the object? (m = F ÷ a)</p>
+          <div class="nl-problem-row">
+            <input type="number" class="nl-ans-input" id="nans-3" step="0.1" placeholder="kg" />
+            <button class="nl-check-btn" onclick="nlCheck(3, 4, 0.1)">Check</button>
+            <span class="nl-feedback" id="nfb-3"></span>
+          </div>
+          <div class="nl-hint" id="nhint-3">Hint: m = 10 ÷ 2.5 = 4 kg</div>
+        </div>
+
+        <div class="nl-problem">
+          <p><span class="nl-problem-diff diff-mid">Medium</span>4. A car of mass 1,200 kg accelerates at 3 m/s². What net force does the engine produce?</p>
+          <div class="nl-problem-row">
+            <input type="number" class="nl-ans-input" id="nans-4" placeholder="N" />
+            <button class="nl-check-btn" onclick="nlCheck(4, 3600, 10)">Check</button>
+            <span class="nl-feedback" id="nfb-4"></span>
+          </div>
+          <div class="nl-hint" id="nhint-4">Hint: F = 1,200 × 3 = 3,600 N</div>
+        </div>
+
+        <div class="nl-problem">
+          <p><span class="nl-problem-diff diff-hard">Challenge</span>5. A rocket weighs 500,000 kg at launch. Its engines produce 7,500,000 N of thrust. What is its initial acceleration? (Ignore gravity for this calculation.)</p>
+          <div class="nl-problem-row">
+            <input type="number" class="nl-ans-input" id="nans-5" step="0.1" placeholder="m/s²" />
+            <button class="nl-check-btn" onclick="nlCheck(5, 15, 0.1)">Check</button>
+            <span class="nl-feedback" id="nfb-5"></span>
+          </div>
+          <div class="nl-hint" id="nhint-5">Hint: a = 7,500,000 ÷ 500,000 = 15 m/s²</div>
+        </div>
+
+        <div class="nl-problem">
+          <p><span class="nl-problem-diff diff-hard">Challenge</span>6. A swimmer pushes against the pool wall with a force of 180 N. By Newton's Third Law, with what force does the wall push the swimmer back?</p>
+          <div class="nl-problem-row">
+            <input type="number" class="nl-ans-input" id="nans-6" placeholder="N" />
+            <button class="nl-check-btn" onclick="nlCheck(6, 180, 1)">Check</button>
+            <span class="nl-feedback" id="nfb-6"></span>
+          </div>
+          <div class="nl-hint" id="nhint-6">Hint: Newton's Third Law — equal and opposite. Same force: 180 N.</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+
+    /* ── Force Sandbox ─────────────────────────────────── */
+    const canvas     = document.getElementById('nl-canvas');
+    const ctx        = canvas.getContext('2d');
+    const forceSlider = document.getElementById('nl-force-slider');
+    const massSlider  = document.getElementById('nl-mass-slider');
+    const forceVal    = document.getElementById('nl-force-val');
+    const massVal     = document.getElementById('nl-mass-val');
+    const rForce      = document.getElementById('nl-r-force');
+    const rMass       = document.getElementById('nl-r-mass');
+    const rAccel      = document.getElementById('nl-r-accel');
+    const launchBtn   = document.getElementById('nl-launch-btn');
+    const resetBtn    = document.getElementById('nl-reset-btn');
+
+    let animFrame = null;
+    let blockX    = 0;
+    let animating = false;
+
+    function getF() { return parseInt(forceSlider.value); }
+    function getM() { return parseInt(massSlider.value); }
+    function getA() { return (getF() / getM()); }
+
+    function updateReadout() {
+      const f = getF(), m = getM(), a = getA();
+      forceVal.textContent = f + ' N';
+      massVal.textContent  = m + ' kg';
+      rForce.textContent   = f;
+      rMass.textContent    = m;
+      rAccel.textContent   = a.toFixed(1);
+    }
+
+    function drawSandbox(bx) {
+      const W = canvas.offsetWidth || 600;
+      canvas.width = W;
+      const H = canvas.height;
+      const PAD = 20;
+      const GROUND_Y = H - 28;
+      const BLOCK_H  = 32;
+      const BLOCK_W  = Math.max(24, Math.min(44, 44 - getM() * 0.6));
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Ground
+      ctx.fillStyle = 'rgba(0,0,0,0.06)';
+      ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, GROUND_Y);
+      ctx.lineTo(W, GROUND_Y);
+      ctx.stroke();
+
+      // Force arrow (only if not at far right)
+      const blockLeft = PAD + bx;
+      if (blockLeft < W - BLOCK_W - PAD * 2) {
+        const arrowLen = Math.min(80, 20 + getF() * 0.6);
+        const arrowX   = blockLeft - arrowLen - 6;
+        const arrowY   = GROUND_Y - BLOCK_H / 2;
+        if (arrowX > 0) {
+          ctx.strokeStyle = '#007aff';
+          ctx.lineWidth   = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(arrowX, arrowY);
+          ctx.lineTo(blockLeft - 2, arrowY);
+          ctx.stroke();
+          // arrowhead
+          ctx.fillStyle = '#007aff';
+          ctx.beginPath();
+          ctx.moveTo(blockLeft - 2, arrowY);
+          ctx.lineTo(blockLeft - 10, arrowY - 5);
+          ctx.lineTo(blockLeft - 10, arrowY + 5);
+          ctx.closePath();
+          ctx.fill();
+          // F label
+          ctx.fillStyle = '#007aff';
+          ctx.font = 'bold 11px Inter,sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(getF() + ' N', arrowX + arrowLen / 2 - 3, arrowY - 7);
+        }
+      }
+
+      // Block (color shifts with mass)
+      const massRatio = (getM() - 1) / 39;
+      const r = Math.round(0 + massRatio * 88);
+      const g = Math.round(122 - massRatio * 50);
+      const b = Math.round(255 - massRatio * 100);
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.roundRect(blockLeft, GROUND_Y - BLOCK_H, BLOCK_W, BLOCK_H, 4);
+      ctx.fill();
+
+      // Mass label on block
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 10px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(getM() + 'kg', blockLeft + BLOCK_W / 2, GROUND_Y - BLOCK_H / 2 + 4);
+
+      // Acceleration label below block
+      ctx.fillStyle = '#64748b';
+      ctx.font = '10px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('a = ' + getA().toFixed(1) + ' m/s²', blockLeft + BLOCK_W / 2, GROUND_Y + 16);
+    }
+
+    function launch() {
+      if (animating) return;
+      animating = true;
+      launchBtn.disabled = true;
+
+      const W  = canvas.offsetWidth || 600;
+      const PAD = 20;
+      const maxTravel = W - PAD * 2 - 60;
+      const accel = getA();
+      // Scale: higher accel = faster animation
+      const duration = Math.max(600, 3000 - accel * 60);
+      const start = performance.now();
+
+      function frame(now) {
+        const t = Math.min((now - start) / duration, 1);
+        // Ease: simulate acceleration (quadratic)
+        const eased = t * t;
+        blockX = eased * maxTravel;
+        drawSandbox(blockX);
+
+        if (t < 1) {
+          animFrame = requestAnimationFrame(frame);
+        } else {
+          animating = false;
+          launchBtn.disabled = false;
+        }
+      }
+      animFrame = requestAnimationFrame(frame);
+    }
+
+    function reset() {
+      if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+      animating = false;
+      blockX = 0;
+      launchBtn.disabled = false;
+      drawSandbox(0);
+    }
+
+    forceSlider.addEventListener('input', () => { updateReadout(); if (!animating) drawSandbox(blockX); });
+    massSlider.addEventListener('input',  () => { updateReadout(); if (!animating) drawSandbox(blockX); });
+    launchBtn.addEventListener('click', launch);
+    resetBtn.addEventListener('click', reset);
+
+    updateReadout();
+    drawSandbox(0);
+
+    /* ── Rocket Demo ───────────────────────────────────── */
+    const rc   = document.getElementById('nl-rocket-canvas');
+    const rctx = rc.getContext('2d');
+    const rBtn    = document.getElementById('nl-rocket-btn');
+    const rReset  = document.getElementById('nl-rocket-reset');
+    let rFrame = null;
+    let rLaunched = false;
+    let rocketY = 0;
+
+    function drawRocket(ry, thrust) {
+      const W = rc.offsetWidth || 600;
+      rc.width  = W;
+      rc.height = 140;
+      const H = rc.height;
+
+      // Space bg
+      rctx.fillStyle = '#0a0a1a';
+      rctx.fillRect(0, 0, W, H);
+
+      // Stars
+      rctx.fillStyle = 'rgba(255,255,255,0.45)';
+      [[0.1,0.15],[0.22,0.6],[0.38,0.1],[0.52,0.75],[0.65,0.25],[0.78,0.55],[0.9,0.1],[0.45,0.45]].forEach(([sx,sy]) => {
+        rctx.beginPath();
+        rctx.arc(sx*W, sy*H, 1, 0, Math.PI*2);
+        rctx.fill();
+      });
+
+      const cx = W / 2;
+      const baseY = H - 20 - ry;
+
+      // Exhaust flame (action — downward)
+      if (thrust > 0 && ry < H - 20) {
+        const flameLen = 30 + Math.random() * 10;
+        const flame = rctx.createLinearGradient(cx, baseY + 24, cx, baseY + 24 + flameLen);
+        flame.addColorStop(0, 'rgba(52,199,89,0.9)');
+        flame.addColorStop(0.4, 'rgba(255,149,0,0.8)');
+        flame.addColorStop(1, 'rgba(255,59,48,0)');
+        rctx.fillStyle = flame;
+        rctx.beginPath();
+        rctx.ellipse(cx, baseY + 24 + flameLen/2, 7, flameLen/2, 0, 0, Math.PI*2);
+        rctx.fill();
+
+        // "Action: gas pushed DOWN" label
+        if (ry < 80) {
+          rctx.fillStyle = '#34c759';
+          rctx.font = 'bold 9px Inter,sans-serif';
+          rctx.textAlign = 'left';
+          rctx.fillText('ACTION: gas forced down ↓', cx + 24, baseY + 24 + flameLen/2);
+        }
+      }
+
+      // Rocket body
+      // Nose cone
+      rctx.fillStyle = '#c0c0c8';
+      rctx.beginPath();
+      rctx.moveTo(cx, baseY - 28);
+      rctx.lineTo(cx - 10, baseY - 8);
+      rctx.lineTo(cx + 10, baseY - 8);
+      rctx.closePath();
+      rctx.fill();
+
+      // Body
+      const bodyGrad = rctx.createLinearGradient(cx-10, 0, cx+10, 0);
+      bodyGrad.addColorStop(0, '#888');
+      bodyGrad.addColorStop(0.4, '#e0e0e8');
+      bodyGrad.addColorStop(1, '#888');
+      rctx.fillStyle = bodyGrad;
+      rctx.fillRect(cx - 10, baseY - 8, 20, 32);
+
+      // Fins
+      rctx.fillStyle = '#ff3b30';
+      rctx.beginPath();
+      rctx.moveTo(cx - 10, baseY + 24);
+      rctx.lineTo(cx - 22, baseY + 32);
+      rctx.lineTo(cx - 10, baseY + 16);
+      rctx.closePath();
+      rctx.fill();
+      rctx.beginPath();
+      rctx.moveTo(cx + 10, baseY + 24);
+      rctx.lineTo(cx + 22, baseY + 32);
+      rctx.lineTo(cx + 10, baseY + 16);
+      rctx.closePath();
+      rctx.fill();
+
+      // Window
+      rctx.fillStyle = '#5ac8fa';
+      rctx.beginPath();
+      rctx.arc(cx, baseY + 6, 5, 0, Math.PI * 2);
+      rctx.fill();
+
+      // "Reaction: rocket goes UP" label
+      if (thrust > 0 && ry > 5) {
+        rctx.fillStyle = '#5ac8fa';
+        rctx.font = 'bold 9px Inter,sans-serif';
+        rctx.textAlign = 'right';
+        rctx.fillText('REACTION: rocket goes up ↑', cx - 26, baseY);
+      }
+
+      // Ground pad
+      if (ry < 5) {
+        rctx.fillStyle = '#2c3e50';
+        rctx.fillRect(cx - 30, H - 20, 60, 8);
+        rctx.fillStyle = '#95a5a6';
+        rctx.fillRect(cx - 2, H - 20, 4, -(10));
+      }
+    }
+
+    function launchRocket() {
+      if (rLaunched) return;
+      rLaunched = true;
+      rBtn.disabled = true;
+      const totalTravel = 110;
+      const dur = 2800;
+      const startTime = performance.now();
+
+      function rframe(now) {
+        const t = Math.min((now - startTime) / dur, 1);
+        const ease = 1 - Math.pow(1 - t, 2); // ease-out
+        rocketY = ease * totalTravel;
+        drawRocket(rocketY, 1);
+        if (t < 1) {
+          rFrame = requestAnimationFrame(rframe);
+        } else {
+          rBtn.disabled = false;
+        }
+      }
+      rFrame = requestAnimationFrame(rframe);
+    }
+
+    function resetRocket() {
+      if (rFrame) { cancelAnimationFrame(rFrame); rFrame = null; }
+      rLaunched = false;
+      rocketY = 0;
+      rBtn.disabled = false;
+      drawRocket(0, 0);
+    }
+
+    rBtn.addEventListener('click', launchRocket);
+    rReset.addEventListener('click', resetRocket);
+    drawRocket(0, 0);
+
+    /* ── Practice checker ─────────────────────────────── */
+    window.nlCheck = function (num, correct, tol) {
+      const input = document.getElementById('nans-' + num);
+      const fb    = document.getElementById('nfb-' + num);
+      const hint  = document.getElementById('nhint-' + num);
+      const val   = parseFloat(input.value);
+
+      fb.className = 'nl-feedback';
+      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('wrong'); return; }
+
+      if (Math.abs(val - correct) <= tol) {
+        fb.textContent = '✓ Correct!';
+        fb.classList.add('correct');
+        hint.classList.remove('visible');
+        input.style.borderColor = '#34c759';
+      } else {
+        fb.textContent = '✗ Try again';
+        fb.classList.add('wrong');
+        hint.classList.add('visible');
+        input.style.borderColor = '#ff3b30';
+      }
+    };
+
+  })();
+  </script>
+</body>
+</html>

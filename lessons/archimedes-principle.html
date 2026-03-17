@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Archimedes' Principle · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 05 — explore Archimedes' Principle, buoyancy, density, and the Sink or Float Machine interactive lab. Designed for K–12." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page ─────────────────────────────────────────── */
+    .ap-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .ap-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .ap-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0;
+      font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .ap-hero-meta { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .ap-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .ap-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65;
+      font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .ap-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Section card ─────────────────────────────────── */
+    .ap-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #5ac8fa);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .ap-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .ap-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .ap-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .ap-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .ap-card { background: var(--white, #2c2c2e); }
+    [data-theme="night"] .ap-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Eureka box ───────────────────────────────────── */
+    .ap-eureka {
+      display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap;
+      background: linear-gradient(135deg, rgba(90,200,250,0.1), rgba(0,122,255,0.06));
+      border: 1px solid rgba(90,200,250,0.3);
+      border-radius: 14px; padding: 1rem 1.2rem; margin: 0.8rem 0;
+    }
+    .ap-eureka-word {
+      font-size: clamp(2rem, 5vw, 3rem); font-weight: 900;
+      color: #5ac8fa; letter-spacing: -0.03em; line-height: 1;
+      flex-shrink: 0;
+    }
+    .ap-eureka-text { font-size: 0.87rem; color: #3f4f65; line-height: 1.6; flex: 1; }
+    [data-theme="night"] .ap-eureka-text { color: rgba(245,245,247,0.72); }
+    .ap-eureka-text strong { color: var(--text,#1d1d1f); }
+
+    /* ── Principle statement ──────────────────────────── */
+    .ap-principle {
+      background: linear-gradient(135deg, rgba(90,200,250,0.09), rgba(0,122,255,0.07));
+      border: 1.5px solid rgba(90,200,250,0.3);
+      border-radius: 14px; padding: 1rem 1.2rem; margin: 0.8rem 0;
+      font-size: clamp(0.88rem, 2vw, 1rem); font-weight: 700;
+      color: var(--text,#1d1d1f); line-height: 1.55;
+      text-align: center;
+    }
+    .ap-principle em { color: #5ac8fa; font-style: normal; }
+
+    /* ── Density formula ──────────────────────────────── */
+    .ap-formula-box {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.8rem; flex-wrap: wrap;
+      background: linear-gradient(135deg, rgba(88,86,214,0.08), rgba(90,200,250,0.06));
+      border: 1px solid rgba(88,86,214,0.2);
+      border-radius: 14px; padding: 1rem 1.4rem; margin: 0.8rem 0;
+    }
+    .ap-formula-sym { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 900;
+      color: #5856d6; line-height: 1; letter-spacing: -0.03em; }
+    .ap-formula-vars { display: flex; flex-direction: column; gap: 0.3rem; }
+    .ap-formula-var { font-size: 0.82rem; color: #3f4f65; line-height: 1.45; }
+    .ap-formula-var strong { color: var(--text,#1d1d1f); }
+    [data-theme="night"] .ap-formula-var { color: rgba(245,245,247,0.68); }
+
+    /* ── Density comparison table ─────────────────────── */
+    .ap-table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; font-size: 0.84rem; }
+    .ap-table th { text-align: left; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase; color: #64748b;
+      padding: 0.4rem 0.6rem; border-bottom: 2px solid var(--line,#d2d2d7); }
+    .ap-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line,#d2d2d7);
+      color: var(--text,#1d1d1f); vertical-align: middle; }
+    .ap-table tr:last-child td { border-bottom: none; }
+    .ap-table .floats { color: #34c759; font-weight: 800; }
+    .ap-table .sinks  { color: #ff3b30; font-weight: 800; }
+    .ap-density-bar-wrap { width: 100px; display: inline-block;
+      background: rgba(0,0,0,0.06); border-radius: 4px; height: 12px;
+      vertical-align: middle; overflow: hidden; }
+    [data-theme="night"] .ap-density-bar-wrap { background: rgba(255,255,255,0.08); }
+    .ap-density-bar { height: 100%; border-radius: 4px; }
+
+    /* ── Callout ──────────────────────────────────────── */
+    .ap-callout {
+      border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0;
+      font-size: 0.85rem; line-height: 1.6; color: #3f4f65;
+    }
+    [data-theme="night"] .ap-callout { color: rgba(245,245,247,0.72); }
+    .ap-callout.blue  { background: rgba(90,200,250,0.08); border: 1px solid rgba(90,200,250,0.22); }
+    .ap-callout.green { background: rgba(52,199,89,0.07);  border: 1px solid rgba(52,199,89,0.2); }
+    .ap-callout.orange{ background: rgba(255,149,0,0.07);  border: 1px solid rgba(255,149,0,0.2); }
+    .ap-callout strong { color: var(--text,#1d1d1f); }
+
+    /* ── Bio ──────────────────────────────────────────── */
+    .ap-bio { display: flex; gap: 1rem; align-items: flex-start; }
+    .ap-bio-portrait {
+      width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #5ac8fa 0%, #007aff 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; line-height: 1;
+    }
+    .ap-bio-text { flex: 1; font-size: 0.87rem; color: #3f4f65; line-height: 1.62; }
+    [data-theme="night"] .ap-bio-text { color: rgba(245,245,247,0.72); }
+    .ap-bio-text strong { color: var(--text,#1d1d1f); }
+
+    /* ── Sink or Float Machine ────────────────────────── */
+    .ap-machine {
+      background: var(--white,#fff);
+      border: 1px solid var(--line,#d2d2d7);
+      border-left: 3.5px solid #5ac8fa;
+      border-radius: var(--radius,18px);
+      box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+    }
+    [data-theme="night"] .ap-machine { background: var(--white,#2c2c2e); }
+    .ap-machine h2 { margin: 0 0 0.2rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .ap-machine-sub { margin: 0 0 1rem; font-size: 0.84rem; color: #64748b; }
+
+    /* Object picker */
+    .ap-obj-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 0.55rem; margin-bottom: 1rem;
+    }
+    .ap-obj-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+      padding: 0.6rem 0.4rem; border-radius: 12px; border: 1.5px solid var(--line,#d2d2d7);
+      background: var(--white,#fff); cursor: pointer; font-family: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    [data-theme="night"] .ap-obj-btn { background: rgba(255,255,255,0.04); color: #fff; }
+    .ap-obj-btn:hover { border-color: #5ac8fa; background: rgba(90,200,250,0.07); }
+    .ap-obj-btn.selected { border-color: #5ac8fa; background: rgba(90,200,250,0.12); }
+    .ap-obj-icon { font-size: 1.5rem; line-height: 1; }
+    .ap-obj-name { font-size: 0.72rem; font-weight: 700; color: var(--text,#1d1d1f); text-align: center; }
+    .ap-obj-density { font-size: 0.65rem; color: #64748b; }
+
+    /* Custom density slider */
+    .ap-custom-row {
+      display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;
+      margin-bottom: 1rem; padding: 0.7rem 1rem;
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 10px;
+    }
+    [data-theme="night"] .ap-custom-row { background: rgba(255,255,255,0.04); }
+    .ap-custom-row label { font-size: 0.76rem; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+    .ap-custom-row input[type="range"] { flex: 1; accent-color: #5ac8fa; min-width: 80px; }
+    .ap-custom-density-val { font-size: 0.88rem; font-weight: 800;
+      color: var(--text,#1d1d1f); min-width: 70px; text-align: right; }
+
+    /* Canvas tank */
+    #ap-tank-canvas { display: block; border-radius: 12px; width: 100%; }
+
+    /* Result panel */
+    .ap-result-row {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 0.6rem; margin-top: 0.75rem;
+    }
+    .ap-result-cell { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 10px; padding: 0.6rem 0.8rem; text-align: center; }
+    [data-theme="night"] .ap-result-cell { background: rgba(255,255,255,0.05); }
+    .ap-result-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .ap-result-val { font-size: 1rem; font-weight: 900; color: var(--text,#1d1d1f); }
+    .ap-result-unit { font-size: 0.68rem; color: #64748b; font-weight: 500; }
+    .ap-result-verdict { font-size: 0.82rem; font-weight: 800; padding: 0.3rem 0.7rem;
+      border-radius: 999px; display: inline-block; margin-top: 0.3rem; }
+    .verdict-float { background: rgba(52,199,89,0.15); color: #1a7a2e; }
+    .verdict-sink  { background: rgba(255,59,48,0.12);  color: #c0392b; }
+    [data-theme="night"] .verdict-float { color: #34c759; }
+    [data-theme="night"] .verdict-sink  { color: #ff6b6b; }
+
+    .ap-machine-btns { display: flex; gap: 0.6rem; margin-top: 0.8rem; flex-wrap: wrap; }
+    .ap-btn { padding: 8px 16px; border-radius: 8px; border: none;
+      background: #5ac8fa; color: #fff; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+    .ap-btn:hover { opacity: 0.85; }
+    .ap-btn.secondary { background: rgba(0,0,0,0.08); color: var(--text,#1d1d1f); }
+    [data-theme="night"] .ap-btn.secondary { background: rgba(255,255,255,0.1); color: #fff; }
+
+    /* ── How ships float ──────────────────────────────── */
+    .ap-ship-row { display: flex; gap: 1rem; align-items: stretch; margin: 0.8rem 0; }
+    .ap-ship-card { flex: 1; border-radius: 12px; padding: 0.85rem;
+      border: 1px solid var(--line,#d2d2d7); background: rgba(0,0,0,0.03); }
+    [data-theme="night"] .ap-ship-card { background: rgba(255,255,255,0.04); }
+    .ap-ship-card-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #64748b; margin: 0 0 0.4rem; }
+    .ap-ship-visual { height: 60px; border-radius: 8px; margin-bottom: 0.5rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; }
+    .ap-ship-visual.water-bg {
+      background: linear-gradient(to bottom, #e0f4ff 0%, #5ac8fa 50%, #007aff 100%); }
+    .ap-ship-card p { font-size: 0.78rem; color: #3f4f65; line-height: 1.55; margin: 0; }
+    [data-theme="night"] .ap-ship-card p { color: rgba(245,245,247,0.68); }
+
+    /* ── Applications grid ────────────────────────────── */
+    .ap-apps { display: grid; grid-template-columns: repeat(2,1fr);
+      gap: 0.8rem; margin-top: 0.7rem; }
+    .ap-app-card { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.85rem; display: flex; gap: 0.7rem; align-items: flex-start; }
+    [data-theme="night"] .ap-app-card { background: rgba(255,255,255,0.04); }
+    .ap-app-icon { font-size: 1.55rem; line-height: 1; flex-shrink: 0; }
+    .ap-app-text strong { display: block; font-size: 0.86rem; margin-bottom: 0.18rem; }
+    .ap-app-text small  { font-size: 0.78rem; color: #64748b; line-height: 1.5; display: block; }
+
+    /* ── Practice problems ────────────────────────────── */
+    .ap-practice { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 0.8rem; }
+    .ap-problem { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.9rem 1rem; }
+    [data-theme="night"] .ap-problem { background: rgba(255,255,255,0.04); }
+    .ap-problem p { margin: 0 0 0.5rem; font-size: 0.87rem;
+      color: var(--text,#1d1d1f); font-weight: 600; }
+    .ap-problem-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .ap-ans-input { width: 110px; padding: 6px 10px;
+      border: 1.5px solid var(--line,#d2d2d7); border-radius: 8px;
+      font-size: 0.88rem; font-family: inherit;
+      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none; }
+    .ap-ans-input:focus { border-color: #5ac8fa; }
+    .ap-check-btn { padding: 6px 14px; border-radius: 8px; border: none;
+      background: #5ac8fa; color: #fff; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+    .ap-check-btn:hover { opacity: 0.85; }
+    .ap-feedback { font-size: 0.8rem; font-weight: 700; padding: 4px 10px;
+      border-radius: 999px; display: none; }
+    .ap-feedback.correct { background: rgba(52,199,89,0.15); color: #1a7a2e; display: inline-block; }
+    .ap-feedback.wrong   { background: rgba(255,59,48,0.12); color: #c0392b; display: inline-block; }
+    [data-theme="night"] .ap-feedback.correct { color: #34c759; }
+    [data-theme="night"] .ap-feedback.wrong   { color: #ff6b6b; }
+    .ap-hint { font-size: 0.77rem; color: #64748b; margin-top: 0.35rem; display: none; }
+    .ap-hint.visible { display: block; }
+    .ap-problem-diff { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+      margin-right: 0.4rem; vertical-align: middle; }
+    .diff-easy { background: rgba(52,199,89,0.12); color: #1a7a2e; }
+    .diff-mid  { background: rgba(90,200,250,0.15); color: #0071a4; }
+    .diff-hard { background: rgba(255,149,0,0.12);  color: #b35900; }
+    [data-theme="night"] .diff-easy { color: #34c759; }
+    [data-theme="night"] .diff-mid  { color: #5ac8fa; }
+    [data-theme="night"] .diff-hard { color: #ff9500; }
+
+    @media (max-width: 680px) {
+      .ap-bio      { flex-direction: column; align-items: center; text-align: center; }
+      .ap-apps     { grid-template-columns: 1fr; }
+      .ap-ship-row { flex-direction: column; }
+      .ap-result-row { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="ap-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero ap-hero">
+      <p class="eyebrow">Physics · Lesson 05</p>
+      <h1>Archimedes' Principle</h1>
+      <div class="ap-hero-meta">
+        <span>Buoyancy</span>
+        <span class="dot"></span>
+        <span>Density</span>
+        <span class="dot"></span>
+        <span>Sink or Float</span>
+        <span class="dot"></span>
+        <span>Fluids</span>
+        <span class="dot"></span>
+        <span>K–12</span>
+      </div>
+      <p class="ap-lede">Why does a massive steel ship float while a tiny pebble sinks? The answer is a 2,200-year-old discovery made in a bathtub — and it explains everything from submarines to hot air balloons.</p>
+    </section>
+
+    <!-- ── Who Was Archimedes? ── -->
+    <section class="ap-card" style="--card-accent:#5ac8fa;">
+      <h2>Who Was Archimedes?</h2>
+      <div class="ap-bio">
+        <div class="ap-bio-portrait" aria-hidden="true">🛁</div>
+        <p class="ap-bio-text">
+          <strong>Archimedes of Syracuse (287–212 BC)</strong> was an ancient Greek mathematician, physicist, and inventor — one of the greatest scientists of the ancient world. Legend says that King Hiero II of Syracuse asked him to figure out whether a golden crown was pure gold or mixed with cheaper silver, without melting it down. While stepping into a bath, Archimedes noticed the water level rise as he got in, and suddenly understood the answer. He was so excited that he reportedly ran through the streets shouting <strong>"Eureka!"</strong> — Greek for "I have found it!" Archimedes also designed war machines, calculated the value of π, and invented the Archimedes screw, still used to pump water today.
+        </p>
+      </div>
+    </section>
+
+    <!-- ── What is Buoyancy? ── -->
+    <section class="ap-card" style="--card-accent:#007aff;">
+      <h2>What is Buoyancy?</h2>
+
+      <div class="ap-eureka">
+        <div class="ap-eureka-word">Eureka!</div>
+        <div class="ap-eureka-text">
+          When you push an object into water, the water has to move out of the way. The water "fights back" — it pushes upward on the object. This upward push is called the <strong>buoyant force</strong>. It is why things feel lighter when you hold them underwater.
+        </div>
+      </div>
+
+      <h3>Archimedes' Principle — The Big Idea</h3>
+      <div class="ap-principle">
+        "An object submerged in a fluid experiences an upward buoyant force equal to the
+        <em>weight of the fluid it displaces.</em>"
+      </div>
+
+      <p>In plain English: the more water your object pushes aside (displaces), the harder the water pushes back up. A large hollow object displaces a lot of water, so it gets a very strong upward push. A small dense object displaces very little water, so the upward push is weak.</p>
+
+      <div class="ap-callout blue">
+        <strong>Feel it yourself:</strong> Fill a bowl with water and slowly push a sealed empty plastic bottle under the surface. You can feel the water pushing back! That push is the buoyant force — and it equals the weight of all the water the bottle is shoving out of the way.
+      </div>
+
+      <h3>The Two Forces on Every Submerged Object</h3>
+      <p>Every object in a fluid has two forces acting on it vertically:</p>
+      <p><strong>↓ Weight (gravity)</strong> — pulls the object down. Depends on how much mass the object has.<br>
+      <strong>↑ Buoyant Force</strong> — pushes the object up. Depends on how much fluid the object displaces.</p>
+      <p>If the buoyant force is greater than or equal to the weight → the object <strong style="color:#34c759">floats</strong>.<br>
+      If the weight is greater than the buoyant force → the object <strong style="color:#ff3b30">sinks</strong>.</p>
+    </section>
+
+    <!-- ── Density ── -->
+    <section class="ap-card" style="--card-accent:#5856d6;">
+      <h2>Density — The Key to Sink or Float</h2>
+      <p>The easiest way to predict whether something sinks or floats is to compare its <strong>density</strong> to the density of the fluid.</p>
+
+      <div class="ap-formula-box" role="img" aria-label="Density equals mass divided by volume">
+        <span class="ap-formula-sym">ρ = m ÷ V</span>
+        <div class="ap-formula-vars">
+          <div class="ap-formula-var"><strong>ρ</strong> (rho) = Density (g/cm³ or kg/m³)</div>
+          <div class="ap-formula-var"><strong>m</strong> = Mass (grams or kilograms)</div>
+          <div class="ap-formula-var"><strong>V</strong> = Volume (cm³ or m³)</div>
+        </div>
+      </div>
+
+      <div class="ap-callout orange">
+        <strong>The golden rule:</strong> If an object's density is <em>less</em> than the fluid's density → it floats. If it's <em>greater</em> → it sinks. Water has a density of <strong>1.0 g/cm³</strong>. Anything denser than 1.0 sinks in water. Anything less dense floats.
+      </div>
+
+      <h3>Density of Common Materials vs. Water</h3>
+      <table class="ap-table" aria-label="Density of common materials compared to water">
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th>Density (g/cm³)</th>
+            <th>Compared to water</th>
+            <th>Result in water</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🪵 Pine wood</td>
+            <td>0.55</td>
+            <td><div class="ap-density-bar-wrap"><div class="ap-density-bar" style="width:55%;background:#8B4513;"></div></div></td>
+            <td class="floats">Floats ✓</td>
+          </tr>
+          <tr>
+            <td>🧊 Ice</td>
+            <td>0.92</td>
+            <td><div class="ap-density-bar-wrap"><div class="ap-density-bar" style="width:92%;background:#b0d8f5;"></div></div></td>
+            <td class="floats">Floats ✓</td>
+          </tr>
+          <tr>
+            <td>💧 Water</td>
+            <td>1.00</td>
+            <td><div class="ap-density-bar-wrap"><div class="ap-density-bar" style="width:100%;background:#5ac8fa;"></div></div></td>
+            <td style="color:#64748b;font-weight:600;">Neutral</td>
+          </tr>
+          <tr>
+            <td>🪨 Granite rock</td>
+            <td>2.70</td>
+            <td><div class="ap-density-bar-wrap"><div class="ap-density-bar" style="width:100%;background:#888;"></div></div> &gt;max</td>
+            <td class="sinks">Sinks ✗</td>
+          </tr>
+          <tr>
+            <td>🔩 Aluminum</td>
+            <td>2.70</td>
+            <td><div class="ap-density-bar-wrap"><div class="ap-density-bar" style="width:100%;background:#aaa;"></div></div> &gt;max</td>
+            <td class="sinks">Sinks ✗</td>
+          </tr>
+          <tr>
+            <td>⚙️ Steel</td>
+            <td>7.85</td>
+            <td><div class="ap-density-bar-wrap"><div class="ap-density-bar" style="width:100%;background:#555;"></div></div> &gt;max</td>
+            <td class="sinks">Sinks ✗</td>
+          </tr>
+          <tr>
+            <td>🪙 Gold</td>
+            <td>19.30</td>
+            <td><div class="ap-density-bar-wrap"><div class="ap-density-bar" style="width:100%;background:#FFD700;"></div></div> &gt;max</td>
+            <td class="sinks">Sinks ✗</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── Sink or Float Machine ── -->
+    <section class="ap-machine">
+      <h2>Sink or Float Machine</h2>
+      <p class="ap-machine-sub">Select an object (or set a custom density), then drop it into the tank. Watch it sink or float and see the forces at work.</p>
+
+      <div class="ap-obj-grid" id="ap-obj-grid" role="group" aria-label="Choose an object to drop">
+        <!-- Filled by JS -->
+      </div>
+
+      <div class="ap-custom-row">
+        <label for="ap-density-slider">Custom density</label>
+        <input type="range" id="ap-density-slider" min="0.1" max="5.0" step="0.05" value="1.0" />
+        <span class="ap-custom-density-val" id="ap-custom-val">1.00 g/cm³</span>
+      </div>
+
+      <canvas id="ap-tank-canvas" height="220" aria-label="Water tank simulation showing sink or float"></canvas>
+
+      <div class="ap-result-row" id="ap-result-row" style="display:none;">
+        <div class="ap-result-cell">
+          <span class="ap-result-label">Object density</span>
+          <span class="ap-result-val" id="ap-r-density">—</span>
+          <span class="ap-result-unit">g/cm³</span>
+        </div>
+        <div class="ap-result-cell">
+          <span class="ap-result-label">vs. Water (1.0)</span>
+          <span class="ap-result-val" id="ap-r-compare">—</span>
+        </div>
+        <div class="ap-result-cell">
+          <span class="ap-result-label">Result</span>
+          <span id="ap-r-verdict"></span>
+        </div>
+      </div>
+
+      <div class="ap-machine-btns">
+        <button class="ap-btn" id="ap-drop-btn">Drop it in ›</button>
+        <button class="ap-btn secondary" id="ap-reset-btn">Reset tank</button>
+      </div>
+    </section>
+
+    <!-- ── How Ships Float ── -->
+    <section class="ap-card" style="--card-accent:#34c759;">
+      <h2>How Do Steel Ships Float?</h2>
+      <p>Steel has a density of about 7.85 g/cm³ — nearly 8 times denser than water. So why doesn't a steel ship immediately sink? The answer is <strong>shape and air</strong>.</p>
+
+      <div class="ap-ship-row">
+        <div class="ap-ship-card">
+          <div class="ap-ship-card-title">Solid steel ball</div>
+          <div class="ap-ship-visual water-bg">⚙️</div>
+          <p>A solid steel ball has no air inside. Its overall density is 7.85 g/cm³ — much greater than water. The water cannot push it up hard enough. It <strong style="color:#ff3b30;">sinks</strong>.</p>
+        </div>
+        <div class="ap-ship-card">
+          <div class="ap-ship-card-title">Hollow steel hull (ship)</div>
+          <div class="ap-ship-visual water-bg">🚢</div>
+          <p>A ship's hull is hollow and filled with air. The <em>average density</em> of the whole ship (steel + air + everything inside) is much less than 1.0 g/cm³. The ship displaces enough water to balance its weight. It <strong style="color:#34c759;">floats</strong>.</p>
+        </div>
+      </div>
+
+      <div class="ap-callout green">
+        <strong>The key insight:</strong> Whether something floats depends on the <em>average density of the whole object</em>, not just the material it is made of. A crumpled-up ball of aluminum foil sinks — but the same piece of foil shaped into a boat floats. Shape changes the average density by trapping air.
+      </div>
+
+      <h3>Submarines: Controlling Buoyancy on Purpose</h3>
+      <p>Submarines can both sink and rise by changing their average density. They carry large tanks called <strong>ballast tanks</strong>. When the tanks are filled with water, the sub gets denser and dives. When compressed air is pumped into the tanks (pushing the water out), the sub gets less dense and rises. This is pure Archimedes' Principle — on demand.</p>
+    </section>
+
+    <!-- ── Real-World Applications ── -->
+    <section class="ap-card" style="--card-accent:#ff9500;">
+      <h2>Archimedes' Principle in the Real World</h2>
+      <p>Buoyancy appears everywhere — from ocean engineering to meteorology to medicine.</p>
+      <div class="ap-apps">
+        <div class="ap-app-card">
+          <span class="ap-app-icon">🚢</span>
+          <div class="ap-app-text">
+            <strong>Ship Design</strong>
+            <small>Naval engineers design hull shapes that displace enough water to support the ship's weight, plus cargo, passengers, and fuel — with a safety margin called the <em>load line</em>.</small>
+          </div>
+        </div>
+        <div class="ap-app-card">
+          <span class="ap-app-icon">🎈</span>
+          <div class="ap-app-text">
+            <strong>Hot Air Balloons</strong>
+            <small>Heating air makes it less dense. A balloon filled with hot air is less dense than the surrounding cool air, so the air "floats" upward — the same principle, just in air instead of water.</small>
+          </div>
+        </div>
+        <div class="ap-app-card">
+          <span class="ap-app-icon">🤿</span>
+          <div class="ap-app-text">
+            <strong>Scuba Diving</strong>
+            <small>Divers wear <em>buoyancy compensators</em> — inflatable vests that let them add or release air to hover at any depth, ascend, or descend without swimming hard.</small>
+          </div>
+        </div>
+        <div class="ap-app-card">
+          <span class="ap-app-icon">🏊</span>
+          <div class="ap-app-text">
+            <strong>Dead Sea</strong>
+            <small>The Dead Sea is so salty (density ~1.24 g/cm³) that the human body (density ~1.0 g/cm³) floats effortlessly without any swimming. The denser the fluid, the stronger the buoyant force.</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Practice Problems ── -->
+    <section class="ap-card" style="--card-accent:#5ac8fa;">
+      <h2>Practice Problems</h2>
+      <p style="color:#64748b;font-size:0.84rem;">Use ρ = m ÷ V and compare to water (1.0 g/cm³). Round to two decimal places.</p>
+      <div class="ap-practice">
+
+        <div class="ap-problem">
+          <p><span class="ap-problem-diff diff-easy">Easy</span>1. An object has a density of 0.7 g/cm³. Will it sink or float in water? Type 1 for float, 0 for sink.</p>
+          <div class="ap-problem-row">
+            <input type="number" class="ap-ans-input" id="aans-1" placeholder="1 or 0" />
+            <button class="ap-check-btn" onclick="apCheck(1, 1, 0)">Check</button>
+            <span class="ap-feedback" id="afb-1"></span>
+          </div>
+          <div class="ap-hint" id="ahint-1">Hint: 0.7 &lt; 1.0 (water), so it floats. Answer: 1</div>
+        </div>
+
+        <div class="ap-problem">
+          <p><span class="ap-problem-diff diff-easy">Easy</span>2. A rock has a mass of 270 g and a volume of 100 cm³. What is its density in g/cm³? (ρ = m ÷ V)</p>
+          <div class="ap-problem-row">
+            <input type="number" class="ap-ans-input" id="aans-2" step="0.01" placeholder="g/cm³" />
+            <button class="ap-check-btn" onclick="apCheck(2, 2.70, 0.05)">Check</button>
+            <span class="ap-feedback" id="afb-2"></span>
+          </div>
+          <div class="ap-hint" id="ahint-2">Hint: 270 ÷ 100 = 2.70 g/cm³</div>
+        </div>
+
+        <div class="ap-problem">
+          <p><span class="ap-problem-diff diff-mid">Medium</span>3. A piece of wood has a mass of 110 g and a volume of 200 cm³. What is its density, and will it sink or float? Enter just the density value.</p>
+          <div class="ap-problem-row">
+            <input type="number" class="ap-ans-input" id="aans-3" step="0.01" placeholder="g/cm³" />
+            <button class="ap-check-btn" onclick="apCheck(3, 0.55, 0.02)">Check</button>
+            <span class="ap-feedback" id="afb-3"></span>
+          </div>
+          <div class="ap-hint" id="ahint-3">Hint: 110 ÷ 200 = 0.55 g/cm³ — less than 1.0, so it floats.</div>
+        </div>
+
+        <div class="ap-problem">
+          <p><span class="ap-problem-diff diff-mid">Medium</span>4. Ice has a density of 0.92 g/cm³. What percentage of an ice cube is below the waterline? (Use: % submerged = object density ÷ fluid density × 100)</p>
+          <div class="ap-problem-row">
+            <input type="number" class="ap-ans-input" id="aans-4" step="0.1" placeholder="%" />
+            <button class="ap-check-btn" onclick="apCheck(4, 92, 0.5)">Check</button>
+            <span class="ap-feedback" id="afb-4"></span>
+          </div>
+          <div class="ap-hint" id="ahint-4">Hint: 0.92 ÷ 1.0 × 100 = 92%. That's why most of an iceberg is underwater!</div>
+        </div>
+
+        <div class="ap-problem">
+          <p><span class="ap-problem-diff diff-hard">Challenge</span>5. A hollow steel sphere has an outer volume of 400 cm³ and a mass of 120 g. What is its average density, and will it float?</p>
+          <div class="ap-problem-row">
+            <input type="number" class="ap-ans-input" id="aans-5" step="0.01" placeholder="g/cm³" />
+            <button class="ap-check-btn" onclick="apCheck(5, 0.30, 0.02)">Check</button>
+            <span class="ap-feedback" id="afb-5"></span>
+          </div>
+          <div class="ap-hint" id="ahint-5">Hint: avg density = total mass ÷ total volume = 120 ÷ 400 = 0.30 g/cm³. Less than 1.0 → it floats, even though it is made of steel!</div>
+        </div>
+
+        <div class="ap-problem">
+          <p><span class="ap-problem-diff diff-hard">Challenge</span>6. The Dead Sea has a density of 1.24 g/cm³. A human body has an average density of about 1.00 g/cm³. What percentage of a person's body floats above the surface? (% above = (1 − body density ÷ fluid density) × 100)</p>
+          <div class="ap-problem-row">
+            <input type="number" class="ap-ans-input" id="aans-6" step="0.1" placeholder="%" />
+            <button class="ap-check-btn" onclick="apCheck(6, 19.4, 0.5)">Check</button>
+            <span class="ap-feedback" id="afb-6"></span>
+          </div>
+          <div class="ap-hint" id="ahint-6">Hint: (1 − 1.00 ÷ 1.24) × 100 = (1 − 0.806) × 100 ≈ 19.4%. Nearly a fifth of your body sits above the water!</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+
+    /* ── Objects data ──────────────────────────────────── */
+    const OBJECTS = [
+      { id:'duck',   icon:'🦆', name:'Rubber Duck',   density: 0.30, color:'#FFD700' },
+      { id:'wood',   icon:'🪵', name:'Pine Wood',     density: 0.55, color:'#8B4513' },
+      { id:'ice',    icon:'🧊', name:'Ice',            density: 0.92, color:'#b0d8f5' },
+      { id:'cork',   icon:'🍾', name:'Cork',           density: 0.25, color:'#d4a96a' },
+      { id:'rock',   icon:'🪨', name:'Granite Rock',  density: 2.70, color:'#888' },
+      { id:'steel',  icon:'⚙️', name:'Steel Ball',    density: 7.85, color:'#6e7c8c' },
+      { id:'coin',   icon:'🪙', name:'Gold Coin',     density:19.30, color:'#FFD700' },
+      { id:'foil',   icon:'🫙', name:'Foil Ball',     density: 2.70, color:'#c0c0c0' },
+    ];
+
+    /* ── Build object grid ─────────────────────────────── */
+    const grid = document.getElementById('ap-obj-grid');
+    let selectedId = 'duck';
+    let customDensity = 1.0;
+    let usingCustom = false;
+
+    OBJECTS.forEach(obj => {
+      const btn = document.createElement('button');
+      btn.className = 'ap-obj-btn' + (obj.id === selectedId ? ' selected' : '');
+      btn.dataset.id = obj.id;
+      btn.innerHTML = `<span class="ap-obj-icon">${obj.icon}</span>
+        <span class="ap-obj-name">${obj.name}</span>
+        <span class="ap-obj-density">${obj.density} g/cm³</span>`;
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.ap-obj-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedId = obj.id;
+        usingCustom = false;
+        drawTank(null, 0);
+        hideResult();
+      });
+      grid.appendChild(btn);
+    });
+
+    /* ── Custom density slider ─────────────────────────── */
+    const densitySlider = document.getElementById('ap-density-slider');
+    const customValEl   = document.getElementById('ap-custom-val');
+
+    densitySlider.addEventListener('input', () => {
+      customDensity = parseFloat(densitySlider.value);
+      customValEl.textContent = customDensity.toFixed(2) + ' g/cm³';
+      usingCustom = true;
+      document.querySelectorAll('.ap-obj-btn').forEach(b => b.classList.remove('selected'));
+      drawTank(null, 0);
+      hideResult();
+    });
+
+    /* ── Canvas ────────────────────────────────────────── */
+    const canvas = document.getElementById('ap-tank-canvas');
+    const ctx    = canvas.getContext('2d');
+    let animFrame = null;
+
+    const WATER_DENSITY = 1.0; // g/cm³
+    const WATER_COLOR   = 'rgba(90,200,250,0.45)';
+    const DEEP_COLOR    = 'rgba(0,122,255,0.6)';
+
+    function drawTank(objProgress, objDensity) {
+      const W = canvas.offsetWidth || 600;
+      canvas.width = W;
+      const H = canvas.height;
+      const PAD = 18;
+      const TANK_TOP    = PAD + 10;
+      const WATER_TOP   = TANK_TOP + 24;
+      const TANK_BOTTOM = H - PAD;
+      const TANK_H      = TANK_BOTTOM - TANK_TOP;
+      const WATER_H     = TANK_BOTTOM - WATER_TOP;
+      const OBJ_R       = 22;
+
+      // Background
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#f0f8ff';
+      ctx.fillRect(0, 0, W, H);
+
+      // Tank glass walls
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 2;
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath();
+      ctx.roundRect(PAD, TANK_TOP, W - PAD*2, TANK_H, [0, 0, 10, 10]);
+      ctx.fill();
+      ctx.stroke();
+
+      // Water fill
+      const waterGrad = ctx.createLinearGradient(0, WATER_TOP, 0, TANK_BOTTOM);
+      waterGrad.addColorStop(0, WATER_COLOR);
+      waterGrad.addColorStop(1, DEEP_COLOR);
+      ctx.fillStyle = waterGrad;
+      ctx.beginPath();
+      ctx.roundRect(PAD + 1, WATER_TOP, W - PAD*2 - 2, WATER_H, [0, 0, 9, 9]);
+      ctx.fill();
+
+      // Water surface shimmer line
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.moveTo(PAD + 6, WATER_TOP + 1);
+      ctx.lineTo(W - PAD - 6, WATER_TOP + 1);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // "Water (1.0 g/cm³)" label
+      ctx.fillStyle = 'rgba(0,80,140,0.7)';
+      ctx.font = 'bold 10px Inter,sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('Water  1.0 g/cm³', W - PAD - 8, WATER_TOP - 6);
+
+      if (objProgress === null) return;
+
+      // Determine float/sink and final Y
+      const floats = objDensity < WATER_DENSITY;
+      const cx = W / 2;
+
+      // Animate: progress 0→1
+      // Float: obj travels from top into water, then rises to float line
+      // Sink: obj travels from top through water to bottom
+      let objY;
+      let submergedFraction; // how much of object is underwater (0 to 1)
+
+      if (floats) {
+        const floatLine = WATER_TOP + OBJ_R * objDensity; // float at correct depth
+        const startY    = TANK_TOP + OBJ_R + 4;
+        // phase 1 (0→0.6): drop from top to float line
+        // phase 2 (0.6→1): bob slightly then settle
+        if (objProgress <= 0.6) {
+          const t = objProgress / 0.6;
+          const ease = 1 - Math.pow(1 - t, 2);
+          objY = startY + (floatLine - startY) * ease;
+        } else {
+          const t = (objProgress - 0.6) / 0.4;
+          const bob = Math.sin(t * Math.PI * 3) * 6 * (1 - t);
+          objY = floatLine + bob;
+        }
+        submergedFraction = Math.max(0, Math.min(1, (objY - WATER_TOP + OBJ_R) / (OBJ_R * 2)));
+      } else {
+        const startY  = TANK_TOP + OBJ_R + 4;
+        const bottomY = TANK_BOTTOM - OBJ_R - 4;
+        const ease = objProgress < 0.5
+          ? 2 * objProgress * objProgress
+          : 1 - Math.pow(-2 * objProgress + 2, 2) / 2;
+        objY = startY + (bottomY - startY) * ease;
+        submergedFraction = Math.max(0, Math.min(1, (objY - WATER_TOP + OBJ_R) / (OBJ_R * 2)));
+      }
+
+      // Draw force arrows (only when in water)
+      if (submergedFraction > 0.1 && objProgress > 0.2) {
+        const arrowAlpha = Math.min(1, (submergedFraction - 0.1) / 0.3);
+
+        // Weight arrow (down)
+        const wLen = 36;
+        ctx.globalAlpha = arrowAlpha;
+        ctx.strokeStyle = '#ff3b30';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, objY + OBJ_R + 4);
+        ctx.lineTo(cx, objY + OBJ_R + 4 + wLen);
+        ctx.stroke();
+        ctx.fillStyle = '#ff3b30';
+        ctx.beginPath();
+        ctx.moveTo(cx, objY + OBJ_R + 4 + wLen + 6);
+        ctx.lineTo(cx - 5, objY + OBJ_R + 4 + wLen);
+        ctx.lineTo(cx + 5, objY + OBJ_R + 4 + wLen);
+        ctx.closePath();
+        ctx.fill();
+        ctx.font = 'bold 9px Inter,sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Weight ↓', cx + 7, objY + OBJ_R + 28);
+
+        // Buoyancy arrow (up)
+        const bLen = floats ? 42 : 24;
+        ctx.strokeStyle = '#34c759';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, objY - OBJ_R - 4);
+        ctx.lineTo(cx, objY - OBJ_R - 4 - bLen);
+        ctx.stroke();
+        ctx.fillStyle = '#34c759';
+        ctx.beginPath();
+        ctx.moveTo(cx, objY - OBJ_R - 4 - bLen - 6);
+        ctx.lineTo(cx - 5, objY - OBJ_R - 4 - bLen);
+        ctx.lineTo(cx + 5, objY - OBJ_R - 4 - bLen);
+        ctx.closePath();
+        ctx.fill();
+        ctx.textAlign = 'right';
+        ctx.fillText('Buoyancy ↑', cx - 7, objY - OBJ_R - 12);
+        ctx.globalAlpha = 1;
+      }
+
+      // Draw object
+      const obj = usingCustom ? null : OBJECTS.find(o => o.id === selectedId);
+      const objColor = obj ? obj.color : '#af52de';
+
+      // Clip circle to only show above-water part without the water overlay
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, objY, OBJ_R, 0, Math.PI * 2);
+      ctx.fillStyle = objColor;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+
+      // Emoji / label
+      if (obj) {
+        ctx.font = `${OBJ_R * 1.1}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(obj.icon, cx, objY);
+        ctx.textBaseline = 'alphabetic';
+      } else {
+        // Custom: show density number
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px Inter,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(customDensity.toFixed(2), cx, objY);
+        ctx.textBaseline = 'alphabetic';
+      }
+    }
+
+    function showResult(density) {
+      const row = document.getElementById('ap-result-row');
+      row.style.display = 'grid';
+      document.getElementById('ap-r-density').textContent = density.toFixed(2);
+      const diff = density - WATER_DENSITY;
+      const compareEl = document.getElementById('ap-r-compare');
+      if (density < WATER_DENSITY) {
+        compareEl.textContent = (Math.abs(diff)).toFixed(2) + ' less';
+        compareEl.style.color = '#34c759';
+      } else if (density > WATER_DENSITY) {
+        compareEl.textContent = diff.toFixed(2) + ' more';
+        compareEl.style.color = '#ff3b30';
+      } else {
+        compareEl.textContent = 'Equal';
+        compareEl.style.color = '#64748b';
+      }
+      const verdict = document.getElementById('ap-r-verdict');
+      if (density <= WATER_DENSITY) {
+        verdict.textContent = 'Floats ✓';
+        verdict.className = 'ap-result-verdict verdict-float';
+      } else {
+        verdict.textContent = 'Sinks ✗';
+        verdict.className = 'ap-result-verdict verdict-sink';
+      }
+    }
+
+    function hideResult() {
+      document.getElementById('ap-result-row').style.display = 'none';
+    }
+
+    /* ── Drop animation ────────────────────────────────── */
+    document.getElementById('ap-drop-btn').addEventListener('click', () => {
+      if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+      const density = usingCustom
+        ? customDensity
+        : OBJECTS.find(o => o.id === selectedId)?.density ?? 1.0;
+      const dur = 2000;
+      const start = performance.now();
+      document.getElementById('ap-drop-btn').disabled = true;
+
+      function frame(now) {
+        const t = Math.min((now - start) / dur, 1);
+        drawTank(t, density);
+        if (t < 1) {
+          animFrame = requestAnimationFrame(frame);
+        } else {
+          document.getElementById('ap-drop-btn').disabled = false;
+          showResult(density);
+        }
+      }
+      animFrame = requestAnimationFrame(frame);
+    });
+
+    document.getElementById('ap-reset-btn').addEventListener('click', () => {
+      if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+      document.getElementById('ap-drop-btn').disabled = false;
+      hideResult();
+      drawTank(null, 0);
+    });
+
+    // Initial draw
+    drawTank(null, 0);
+
+    /* ── Practice checker ─────────────────────────────── */
+    window.apCheck = function (num, correct, tol) {
+      const input = document.getElementById('aans-' + num);
+      const fb    = document.getElementById('afb-' + num);
+      const hint  = document.getElementById('ahint-' + num);
+      const val   = parseFloat(input.value);
+
+      fb.className = 'ap-feedback';
+      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('wrong'); return; }
+
+      if (Math.abs(val - correct) <= tol) {
+        fb.textContent = '✓ Correct!';
+        fb.classList.add('correct');
+        hint.classList.remove('visible');
+        input.style.borderColor = '#34c759';
+      } else {
+        fb.textContent = '✗ Try again';
+        fb.classList.add('wrong');
+        hint.classList.add('visible');
+        input.style.borderColor = '#ff3b30';
+      }
+    };
+
+  })();
+  </script>
+</body>
+</html>
