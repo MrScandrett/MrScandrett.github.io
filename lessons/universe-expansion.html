@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Universe Expansion · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Space Science Lesson 05 — Edwin Hubble proved the universe is expanding. Explore redshift, Hubble's Law, and an interactive expanding universe simulator." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page ─────────────────────────────────────────── */
+    .ue-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .ue-hero { padding: 0.4rem 0 1.3rem; }
+    .ue-hero h1 { max-width: 30ch; margin-left: 0;
+      font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .ue-hero-meta { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .ue-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .ue-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65;
+      font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .ue-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Card ─────────────────────────────────────────── */
+    .ue-card {
+      background: var(--white,#fff);
+      border: 1px solid var(--line,#d2d2d7);
+      border-radius: 14px;
+      padding: 1.4rem 1.5rem;
+      margin-bottom: 1.1rem;
+      --card-accent: #5856d6;
+      border-left: 4px solid var(--card-accent);
+    }
+    [data-theme="night"] .ue-card {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .ue-card h2, .ue-card h3 {
+      margin: 0 0 0.55rem;
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .ue-card p { margin: 0 0 0.7rem; font-size: 0.92rem; line-height: 1.65; color: var(--text-main); }
+    .ue-card p:last-child { margin-bottom: 0; }
+
+    /* ── Eyebrow / label ─────────────────────────────── */
+    .ue-eyebrow {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #5856d6; margin: 0 0 0.4rem;
+    }
+    [data-theme="night"] .ue-eyebrow { color: #a29bfe; }
+
+    /* ── Section heading ─────────────────────────────── */
+    .ue-section-title {
+      font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+      font-weight: 800; margin: 2.2rem 0 0.9rem;
+    }
+
+    /* ── Quote box ───────────────────────────────────── */
+    .ue-quote {
+      border-left: 4px solid #ff9500;
+      background: rgba(255,149,0,0.07);
+      border-radius: 0 10px 10px 0;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+    }
+    .ue-quote p { font-size: 1.05rem; font-style: italic; font-weight: 600;
+      color: var(--text-main); margin: 0 0 0.3rem; }
+    .ue-quote cite { font-size: 0.8rem; color: #64748b; font-style: normal; }
+    [data-theme="night"] .ue-quote { background: rgba(255,149,0,0.12); }
+
+    /* ── People grid ─────────────────────────────────── */
+    .ue-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.9rem; margin: 1rem 0 1.4rem; }
+    .ue-person {
+      background: var(--white,#fff);
+      border: 1px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 1rem 1.1rem;
+    }
+    [data-theme="night"] .ue-person { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.09); }
+    .ue-person-name { font-size: 0.88rem; font-weight: 700; margin: 0 0 0.15rem; }
+    .ue-person-years { font-size: 0.72rem; color: #64748b; margin: 0 0 0.4rem; }
+    .ue-person-role { font-size: 0.82rem; color: var(--text-main); line-height: 1.5; margin: 0; }
+
+    /* ── Formula card ────────────────────────────────── */
+    .ue-formula-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0 1.4rem; }
+    @media(max-width:540px){ .ue-formula-wrap { grid-template-columns: 1fr; } }
+    .ue-formula-box {
+      background: #0a0a1a;
+      border-radius: 12px;
+      padding: 1.2rem 1.4rem;
+      text-align: center;
+    }
+    .ue-formula-label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: #a29bfe; margin: 0 0 0.5rem; }
+    .ue-formula-eq { font-size: clamp(1.3rem, 3vw, 1.8rem); font-weight: 800; color: #fff; font-family: 'Georgia', serif; margin: 0 0 0.4rem; }
+    .ue-formula-desc { font-size: 0.78rem; color: rgba(255,255,255,0.55); line-height: 1.5; margin: 0; }
+
+    /* ── Redshift demo ───────────────────────────────── */
+    .ue-spectrum-wrap { margin: 1rem 0 1.4rem; }
+    .ue-spectrum-label { font-size: 0.78rem; color: #64748b; margin: 0 0 0.3rem; }
+    .ue-spectrum-bar {
+      height: 28px; border-radius: 6px;
+      background: linear-gradient(to right, #7400ff, #4400ff, #0000ff, #00b7ff, #00ffb7, #00ff00, #aaff00, #ffff00, #ffaa00, #ff5500, #ff0000);
+      position: relative; margin-bottom: 0.6rem;
+    }
+    .ue-spectrum-line {
+      position: absolute; top: -3px; bottom: -3px; width: 3px;
+      border-radius: 2px;
+      background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.6);
+      transition: left 0.4s ease;
+    }
+    .ue-spectrum-slider { width: 100%; margin: 0.4rem 0 0; }
+    .ue-spectrum-readout { font-size: 0.82rem; color: var(--text-main); margin: 0.4rem 0 0; }
+
+    /* ── Simulator ───────────────────────────────────── */
+    .ue-sim-wrap {
+      background: #060612;
+      border-radius: 16px;
+      padding: 1.2rem;
+      margin: 1rem 0 1.4rem;
+    }
+    #ue-canvas {
+      display: block;
+      width: 100%;
+      border-radius: 10px;
+      cursor: default;
+    }
+    .ue-sim-controls {
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.7rem 1.2rem; margin-top: 0.9rem;
+    }
+    .ue-sim-btn {
+      padding: 0.45rem 1.1rem;
+      border-radius: 8px; border: none; cursor: pointer;
+      font-size: 0.84rem; font-weight: 600;
+      background: #5856d6; color: #fff;
+      transition: background 0.15s;
+    }
+    .ue-sim-btn:hover { background: #4340c0; }
+    .ue-sim-btn.secondary { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
+    .ue-sim-btn.secondary:hover { background: rgba(255,255,255,0.14); }
+    .ue-sim-label { font-size: 0.78rem; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 0.4rem; }
+    .ue-sim-label input[type=range] { width: 110px; accent-color: #ff9500; }
+    .ue-sim-readout {
+      margin-top: 0.7rem;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.5rem;
+    }
+    .ue-sim-stat {
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px; padding: 0.5rem 0.75rem;
+    }
+    .ue-sim-stat-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); margin: 0 0 0.15rem; }
+    .ue-sim-stat-val { font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0; }
+
+    /* ── View toggle ─────────────────────────────────── */
+    .ue-view-toggle { display: flex; gap: 0.5rem; }
+    .ue-view-btn {
+      padding: 0.38rem 0.9rem;
+      border-radius: 7px; border: 1.5px solid rgba(255,255,255,0.15);
+      background: transparent; color: rgba(255,255,255,0.6);
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ue-view-btn.active {
+      background: #5856d6; border-color: #5856d6; color: #fff;
+    }
+
+    /* ── Timeline ────────────────────────────────────── */
+    .ue-timeline { list-style: none; padding: 0; margin: 0.8rem 0 1.4rem; position: relative; }
+    .ue-timeline::before {
+      content: ''; position: absolute; left: 10px; top: 6px; bottom: 6px;
+      width: 2px; background: var(--line,#d2d2d7); border-radius: 1px;
+    }
+    .ue-timeline li {
+      padding: 0 0 1.1rem 2.4rem; position: relative;
+    }
+    .ue-timeline li::before {
+      content: ''; position: absolute; left: 4px; top: 5px;
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2.5px solid #5856d6;
+      background: var(--bg-main,#fff);
+    }
+    .ue-timeline-year { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #5856d6; margin: 0 0 0.1rem; }
+    [data-theme="night"] .ue-timeline-year { color: #a29bfe; }
+    .ue-timeline-title { font-size: 0.92rem; font-weight: 700; margin: 0 0 0.15rem; }
+    .ue-timeline-body { font-size: 0.83rem; color: #64748b; margin: 0; line-height: 1.5; }
+    [data-theme="night"] .ue-timeline-body { color: rgba(245,245,247,0.55); }
+
+    /* ── Evidence grid ───────────────────────────────── */
+    .ue-evidence { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.9rem; margin: 0.8rem 0 1.4rem; }
+    .ue-evidence-item {
+      background: var(--white,#fff); border-radius: 12px;
+      border: 1px solid var(--line,#d2d2d7);
+      border-top: 4px solid var(--ev-color,#5856d6);
+      padding: 1rem 1.1rem;
+    }
+    [data-theme="night"] .ue-evidence-item { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.09); border-top-color: var(--ev-color,#5856d6); }
+    .ue-evidence-icon { font-size: 1.5rem; margin: 0 0 0.4rem; }
+    .ue-evidence-title { font-size: 0.88rem; font-weight: 700; margin: 0 0 0.25rem; }
+    .ue-evidence-body { font-size: 0.8rem; color: #64748b; line-height: 1.5; margin: 0; }
+    [data-theme="night"] .ue-evidence-body { color: rgba(245,245,247,0.55); }
+
+    /* ── Practice ────────────────────────────────────── */
+    .ue-practice { counter-reset: ue-q; list-style: none; padding: 0; margin: 0.8rem 0 0; }
+    .ue-practice li {
+      counter-increment: ue-q;
+      padding: 1rem 1.1rem 1rem 1.1rem;
+      border-radius: 10px; border: 1px solid var(--line,#d2d2d7);
+      margin-bottom: 0.7rem; font-size: 0.9rem;
+      background: var(--white,#fff);
+    }
+    [data-theme="night"] .ue-practice li { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+    .ue-practice li::before {
+      content: "Q" counter(ue-q) ".";
+      font-weight: 700; margin-right: 0.5rem; color: #5856d6;
+    }
+    .ue-practice-input {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.6rem; align-items: center;
+    }
+    .ue-practice-input input {
+      padding: 0.35rem 0.6rem; border-radius: 7px;
+      border: 1px solid var(--line,#d2d2d7);
+      background: var(--bg-main,#fff); color: var(--text-main);
+      font-size: 0.88rem; width: 120px;
+    }
+    .ue-check-btn {
+      padding: 0.35rem 0.85rem; border-radius: 7px; border: none;
+      background: #5856d6; color: #fff; font-size: 0.84rem;
+      font-weight: 600; cursor: pointer;
+    }
+    .ue-check-btn:hover { background: #4340c0; }
+    .ue-feedback { font-size: 0.82rem; font-weight: 600; margin-left: 0.4rem; }
+    .ue-feedback.correct { color: #34c759; }
+    .ue-feedback.wrong   { color: #ff3b30; }
+
+    /* ── Reflection box ──────────────────────────────── */
+    .ue-reflection {
+      border-left: 4px solid #34c759;
+      background: rgba(52,199,89,0.07);
+      border-radius: 0 12px 12px 0;
+      padding: 1.1rem 1.3rem;
+      margin: 1.4rem 0;
+    }
+    .ue-reflection h3 { font-size: 0.95rem; font-weight: 700; margin: 0 0 0.5rem; }
+    .ue-reflection p { font-size: 0.88rem; line-height: 1.65; color: var(--text-main); margin: 0 0 0.5rem; }
+    .ue-reflection p:last-child { margin: 0; }
+    [data-theme="night"] .ue-reflection { background: rgba(52,199,89,0.1); }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="section ue-page">
+
+    <!-- ── Hero ───────────────────────────────────────── -->
+    <header class="ue-hero">
+      <p class="ue-eyebrow">Space Science · Lesson 05</p>
+      <h1>The Expanding Universe</h1>
+      <div class="ue-hero-meta">
+        <span>Edwin Hubble · 1929</span>
+        <span class="dot"></span>
+        <span>Cosmology</span>
+        <span class="dot"></span>
+        <span>Redshift &amp; Hubble's Law</span>
+        <span class="dot"></span>
+        <span>K–12</span>
+      </div>
+      <p class="ue-lede">
+        For most of human history, people assumed the universe was infinite, eternal, and unchanging.
+        Then, in 1929, a quiet astronomer at a California mountain observatory changed everything.
+        Edwin Hubble showed that the universe is not static — it is expanding in every direction,
+        carrying galaxies away from each other like raisins in a rising loaf of bread.
+      </p>
+    </header>
+
+    <!-- ── The Big Question ──────────────────────────── -->
+    <div class="ue-quote">
+      <p>"The history of astronomy is a history of receding horizons."</p>
+      <cite>— Edwin Hubble</cite>
+    </div>
+
+    <!-- ── Edwin Hubble ──────────────────────────────── -->
+    <h2 class="ue-section-title">Edwin Hubble — The Man Who Expanded Our Universe</h2>
+    <div class="ue-card">
+      <p class="ue-eyebrow">Main Character</p>
+      <h3>Edwin Powell Hubble (1889 – 1953)</h3>
+      <p>
+        Edwin Hubble grew up in Missouri and was an excellent athlete — he once considered turning professional at boxing. His father pushed him to study law, and he earned a law degree at Oxford. But his love of the night sky won out. He returned to the United States, completed a PhD in astronomy, and was hired at the prestigious Mount Wilson Observatory in Pasadena, California.
+      </p>
+      <p>
+        Working with the 100-inch Hooker Telescope — the largest in the world at the time — Hubble tackled one of the biggest unsolved questions in astronomy: were the faint, fuzzy blobs called "nebulae" clouds of gas inside the Milky Way, or were they entire separate galaxies far beyond it?
+      </p>
+      <p>
+        In 1924, Hubble found a special type of pulsating star (a Cepheid variable) inside the Andromeda nebula and calculated its distance. His answer: roughly 900,000 light-years — far beyond the edge of our Milky Way. The Andromeda "nebula" was its own galaxy. The universe was <em>vastly</em> larger than anyone had imagined.
+      </p>
+      <p>
+        But Hubble wasn't finished. By 1929 he had measured the distances and recessional speeds of dozens of galaxies. The pattern that emerged became one of the most important laws in all of science: <strong>the farther a galaxy is from us, the faster it is moving away.</strong> The universe is not static — it is expanding.
+      </p>
+    </div>
+
+    <!-- ── Key Contributors ──────────────────────────── -->
+    <h2 class="ue-section-title">Others Who Made It Possible</h2>
+    <div class="ue-people">
+      <div class="ue-person">
+        <p class="ue-person-name">Henrietta Swan Leavitt</p>
+        <p class="ue-person-years">1868 – 1921 · USA</p>
+        <p class="ue-person-role">Working as a "human computer" at Harvard, Leavitt discovered that Cepheid variable stars have a precise relationship between their pulsation period and their true brightness. This gave astronomers a "standard candle" — a way to calculate the exact distance to any star or galaxy containing a Cepheid. Without her discovery, Hubble could not have measured galactic distances, and the expanding universe might have remained hidden for decades.</p>
+      </div>
+      <div class="ue-person">
+        <p class="ue-person-name">Vesto Slipher</p>
+        <p class="ue-person-years">1875 – 1969 · USA</p>
+        <p class="ue-person-role">Working at Lowell Observatory, Slipher spent years carefully measuring the spectra of spiral nebulae. By 1917, he had found that most of them showed a redshift — their light was stretched toward the red end of the spectrum, meaning they were racing away from Earth at enormous speeds. Hubble later used Slipher's velocity data as the foundation for Hubble's Law.</p>
+      </div>
+      <div class="ue-person">
+        <p class="ue-person-name">Georges Lemaître</p>
+        <p class="ue-person-years">1894 – 1966 · Belgium</p>
+        <p class="ue-person-role">A priest and physicist, Lemaître independently derived the mathematical relationship between galactic recession and distance — two years before Hubble published it. He also proposed that if the universe is expanding now, it must have begun as an impossibly dense, hot point — what he called the "Cosmic Egg." We now call this the Big Bang. Lemaître's theoretical work gave the expanding universe its physical explanation.</p>
+      </div>
+      <div class="ue-person">
+        <p class="ue-person-name">Milton Humason</p>
+        <p class="ue-person-years">1891 – 1972 · USA</p>
+        <p class="ue-person-role">Humason started his career at Mount Wilson as a mule-driver hauling equipment up the mountain. Through sheer talent and determination he became one of the finest observational astronomers of his era. As Hubble's key partner, Humason spent countless cold nights at the telescope measuring the spectra of faint, distant galaxies — providing the crucial velocity data that made Hubble's Law possible.</p>
+      </div>
+    </div>
+
+    <!-- ── The Science ───────────────────────────────── -->
+    <h2 class="ue-section-title">The Science: Redshift &amp; Hubble's Law</h2>
+
+    <div class="ue-card" style="--card-accent:#ff9500;">
+      <h3>What Is Redshift?</h3>
+      <p>
+        Sound waves compress when a source moves toward you (higher pitch) and stretch when it moves away (lower pitch). This is the <strong>Doppler effect</strong>. Light behaves the same way. When a galaxy moves away from us, its light waves are stretched — shifting toward the red end of the spectrum. Astronomers call this <strong>redshift</strong>.
+      </p>
+      <p>
+        The faster a galaxy recedes, the more its light is redshifted. By measuring the exact wavelength of known spectral lines (like hydrogen's distinctive emission lines) and comparing them to their laboratory values, astronomers can calculate precisely how fast a galaxy is moving away.
+      </p>
+    </div>
+
+    <!-- Redshift interactive demo -->
+    <div class="ue-card" style="--card-accent:#ff9500; padding-bottom: 1.2rem;">
+      <h3>Interactive: Drag to See Redshift</h3>
+      <p>Slide the galaxy away to watch its spectral line shift from blue/violet toward red.</p>
+      <div class="ue-spectrum-wrap">
+        <p class="ue-spectrum-label">Visible light spectrum (violet → red)</p>
+        <div class="ue-spectrum-bar" id="ue-spec-bar">
+          <div class="ue-spectrum-line" id="ue-spec-line" style="left:30%"></div>
+        </div>
+        <input type="range" class="ue-spectrum-slider" id="ue-spec-slider" min="0" max="100" value="0" />
+        <p class="ue-spectrum-readout" id="ue-spec-readout">Galaxy distance: 0 Mpc — no recession velocity, no redshift. Hydrogen-α line at 656 nm (red-orange region, normal).</p>
+      </div>
+    </div>
+
+    <div class="ue-formula-wrap">
+      <div class="ue-formula-box">
+        <p class="ue-formula-label">Hubble's Law</p>
+        <p class="ue-formula-eq">v = H₀ × d</p>
+        <p class="ue-formula-desc">
+          <strong style="color:#a29bfe">v</strong> = recession velocity (km/s)<br>
+          <strong style="color:#ffa94d">H₀</strong> = Hubble constant (~70 km/s per Mpc)<br>
+          <strong style="color:#74c0fc">d</strong> = distance to galaxy (Mpc)
+        </p>
+      </div>
+      <div class="ue-formula-box">
+        <p class="ue-formula-label">What it means</p>
+        <p class="ue-formula-eq" style="font-size:1.2rem; padding-top:0.3rem;">Every extra megaparsec of distance = +70 km/s faster</p>
+        <p class="ue-formula-desc">
+          A galaxy 100 Mpc away is receding at ~7,000 km/s.<br>
+          A galaxy 1,000 Mpc away recedes at ~70,000 km/s.<br>
+          The most distant galaxies recede near the speed of light.
+        </p>
+      </div>
+    </div>
+
+    <!-- ── Expanding Universe Simulator ─────────────── -->
+    <h2 class="ue-section-title">Interactive: Expanding Universe Simulator</h2>
+    <div class="ue-card" style="--card-accent:#5856d6; margin-bottom:0.5rem;">
+      <p>
+        Each dot is a galaxy. Watch them drift outward as the universe expands. The <strong>arrow length</strong> and <strong>color</strong> of each galaxy shows how fast it is moving — closer galaxies move slowly (blue/white), farther galaxies race away quickly (orange/red). This is Hubble's Law in action.
+      </p>
+      <p>
+        Switch to <em>Another Galaxy's View</em> to see the universe from a different vantage point — the expansion looks identical from anywhere, proving the universe has no center.
+      </p>
+    </div>
+    <div class="ue-sim-wrap">
+      <canvas id="ue-canvas" height="480"></canvas>
+      <div class="ue-sim-controls">
+        <button class="ue-sim-btn" id="ue-play-btn">⏸ Pause</button>
+        <button class="ue-sim-btn secondary" id="ue-reset-btn">↺ Reset</button>
+        <div class="ue-view-toggle">
+          <button class="ue-view-btn active" id="ue-view-earth">Our Galaxy</button>
+          <button class="ue-view-btn" id="ue-view-other">Another Galaxy's View</button>
+        </div>
+        <label class="ue-sim-label">
+          H₀ <input type="range" id="ue-h0-slider" min="30" max="120" value="70" />
+          <span id="ue-h0-val">70</span> km/s/Mpc
+        </label>
+        <label class="ue-sim-label">
+          Speed <input type="range" id="ue-speed-slider" min="1" max="8" value="3" />
+        </label>
+      </div>
+      <div class="ue-sim-readout">
+        <div class="ue-sim-stat"><p class="ue-sim-stat-label">Age (sim)</p><p class="ue-sim-stat-val" id="ue-age-val">0 Gyr</p></div>
+        <div class="ue-sim-stat"><p class="ue-sim-stat-label">Scale factor</p><p class="ue-sim-stat-val" id="ue-scale-val">1.00×</p></div>
+        <div class="ue-sim-stat"><p class="ue-sim-stat-label">Hubble constant</p><p class="ue-sim-stat-val" id="ue-h0-display">70 km/s/Mpc</p></div>
+        <div class="ue-sim-stat"><p class="ue-sim-stat-label">Farthest galaxy v</p><p class="ue-sim-stat-val" id="ue-far-v">—</p></div>
+      </div>
+    </div>
+
+    <!-- ── Timeline ───────────────────────────────────── -->
+    <h2 class="ue-section-title">The Long Road to Understanding Expansion</h2>
+    <ol class="ue-timeline">
+      <li>
+        <p class="ue-timeline-year">Ancient times – 1900s</p>
+        <p class="ue-timeline-title">The Static Universe Assumption</p>
+        <p class="ue-timeline-body">From Aristotle to Einstein, nearly every scientist assumed the universe was infinite, eternal, and unchanging. Even Einstein, when his equations of General Relativity predicted an expanding universe, added a "cosmological constant" to force the math to give a static answer — a decision he later called his "greatest blunder."</p>
+      </li>
+      <li>
+        <p class="ue-timeline-year">1908 – 1912</p>
+        <p class="ue-timeline-title">Henrietta Leavitt discovers the Cepheid distance ladder</p>
+        <p class="ue-timeline-body">Analyzing thousands of photographic plates at Harvard College Observatory, Leavitt identifies that Cepheid variable stars obey a precise period-luminosity relationship — giving astronomers the first reliable "ruler" for measuring cosmic distances.</p>
+      </li>
+      <li>
+        <p class="ue-timeline-year">1912 – 1917</p>
+        <p class="ue-timeline-title">Vesto Slipher measures the first galaxy redshifts</p>
+        <p class="ue-timeline-body">Spending long nights at the spectrograph, Slipher discovers that most spiral nebulae are hurtling away from Earth at hundreds to thousands of kilometers per second — far faster than any object in the Milky Way. The community is puzzled; no theory yet explains it.</p>
+      </li>
+      <li>
+        <p class="ue-timeline-year">1924</p>
+        <p class="ue-timeline-title">Hubble resolves the "Great Debate" — galaxies exist beyond the Milky Way</p>
+        <p class="ue-timeline-body">Using the 100-inch Hooker Telescope, Hubble identifies Cepheid variables in the Andromeda nebula and calculates its distance at ~900,000 light-years — proving it is a separate galaxy far beyond our own. The universe is suddenly revealed to be millions of times larger than previously thought.</p>
+      </li>
+      <li>
+        <p class="ue-timeline-year">1927</p>
+        <p class="ue-timeline-title">Georges Lemaître proposes an expanding universe and Hubble's Law — before Hubble</p>
+        <p class="ue-timeline-body">Publishing in a Belgian scientific journal, Lemaître derives the mathematical relationship between galactic velocity and distance and suggests the universe is expanding. The paper is largely ignored at the time; it was written in French and published in an obscure journal.</p>
+      </li>
+      <li>
+        <p class="ue-timeline-year">1929</p>
+        <p class="ue-timeline-title">Hubble publishes Hubble's Law</p>
+        <p class="ue-timeline-body">Using distances he calculated and velocities measured by Slipher (and later Humason), Hubble plots 46 galaxies and shows a clear linear relationship: velocity ∝ distance. The paper reaches a wide audience and transforms cosmology forever. The universe is expanding.</p>
+      </li>
+      <li>
+        <p class="ue-timeline-year">1931</p>
+        <p class="ue-timeline-title">Lemaître proposes the "Cosmic Egg" — the Big Bang</p>
+        <p class="ue-timeline-body">If the universe is expanding now, Lemaître reasons, it must have been smaller in the past — and extrapolating backward, it must have begun as a single, incredibly hot, dense point. Einstein, who meets Lemaître at a conference, reportedly says: "Your calculations are correct, but your physics is abominable." He later changes his mind.</p>
+      </li>
+      <li>
+        <p class="ue-timeline-year">1965</p>
+        <p class="ue-timeline-title">Cosmic Microwave Background radiation discovered</p>
+        <p class="ue-timeline-body">Arno Penzias and Robert Wilson accidentally detect a faint microwave signal coming equally from all directions in space. This is the afterglow of the Big Bang itself — light left over from 380,000 years after the universe began, now cooled to just 2.7 degrees above absolute zero. The Big Bang theory becomes the scientific consensus.</p>
+      </li>
+      <li>
+        <p class="ue-timeline-year">1998 – 1999</p>
+        <p class="ue-timeline-title">Expansion is accelerating — dark energy discovered</p>
+        <p class="ue-timeline-body">Two independent teams studying distant Type Ia supernovae (a different kind of standard candle) discover that the expansion of the universe is not slowing down due to gravity — it is speeding up. Something called <em>dark energy</em> is pushing the universe apart faster and faster. The discovery earns the Nobel Prize in Physics in 2011.</p>
+      </li>
+    </ol>
+
+    <!-- ── Evidence ────────────────────────────────────── -->
+    <h2 class="ue-section-title">Four Pillars of Evidence</h2>
+    <div class="ue-evidence">
+      <div class="ue-evidence-item" style="--ev-color:#5856d6;">
+        <div class="ue-evidence-icon">🔴</div>
+        <p class="ue-evidence-title">Galactic Redshift</p>
+        <p class="ue-evidence-body">Virtually every galaxy beyond our Local Group shows redshifted light. The farther away, the greater the shift. This is exactly what Hubble's Law predicts for an expanding universe.</p>
+      </div>
+      <div class="ue-evidence-item" style="--ev-color:#ff9500;">
+        <div class="ue-evidence-icon">📡</div>
+        <p class="ue-evidence-title">Cosmic Microwave Background</p>
+        <p class="ue-evidence-body">The universe is bathed in faint microwave radiation coming from all directions equally — the cooled afterglow of the Big Bang, just as Lemaître predicted. Its temperature variations map the seeds of every galaxy.</p>
+      </div>
+      <div class="ue-evidence-item" style="--ev-color:#34c759;">
+        <div class="ue-evidence-icon">⚗️</div>
+        <p class="ue-evidence-title">Big Bang Nucleosynthesis</p>
+        <p class="ue-evidence-body">The observed ratio of hydrogen to helium in the universe (about 75% / 25%) matches precisely what Big Bang theory predicts for the first few minutes of the universe. No static universe model can explain this.</p>
+      </div>
+      <div class="ue-evidence-item" style="--ev-color:#ff3b30;">
+        <div class="ue-evidence-icon">💥</div>
+        <p class="ue-evidence-title">Accelerating Expansion</p>
+        <p class="ue-evidence-body">Type Ia supernovae (used as "standard candles" like Cepheids) show that distant galaxies are moving away faster than expected, revealing that dark energy is accelerating the expansion of the universe.</p>
+      </div>
+    </div>
+
+    <!-- ── Reflection ──────────────────────────────────── -->
+    <div class="ue-reflection">
+      <h3>What the Expanding Universe Means for Us</h3>
+      <p>
+        The universe has no center — or rather, every point in space is equally the center. From any galaxy, all other galaxies appear to be rushing away. The expansion isn't galaxies flying through space like shrapnel from an explosion; it is space <em>itself</em> stretching. This is one of the hardest ideas in science to fully grasp, yet the mathematics and observations are unambiguous.
+      </p>
+      <p>
+        Consider what Hubble's discovery required: a woman working as a "computer" (Leavitt) whose career was limited by her gender, a dedicated but overlooked theorist (Lemaître) writing in the wrong language and the wrong journal, a mule-driver turned astronomer (Humason), and a lawyer-turned-stargazer (Hubble) who didn't give up on his real passion. Science is almost never just one person — it is a network of curiosity, across generations, cultures, and circumstances.
+      </p>
+      <p>
+        And yet the universe keeps expanding, indifferent to who gets the credit.
+      </p>
+    </div>
+
+    <!-- ── Practice ────────────────────────────────────── -->
+    <h2 class="ue-section-title">Practice Problems</h2>
+    <ol class="ue-practice">
+      <li>
+        A galaxy is 200 Mpc away. Using H₀ = 70 km/s/Mpc, what is its recession velocity?
+        <div class="ue-practice-input">
+          <input type="number" id="ue-q1" placeholder="km/s" />
+          <button class="ue-check-btn" onclick="ueCheck(1,14000,100)">Check</button>
+          <span class="ue-feedback" id="ue-f1"></span>
+        </div>
+      </li>
+      <li>
+        A galaxy is measured to be receding at 3,500 km/s. Using H₀ = 70 km/s/Mpc, how far away is it? (answer in Mpc)
+        <div class="ue-practice-input">
+          <input type="number" id="ue-q2" placeholder="Mpc" />
+          <button class="ue-check-btn" onclick="ueCheck(2,50,3)">Check</button>
+          <span class="ue-feedback" id="ue-f2"></span>
+        </div>
+      </li>
+      <li>
+        What does redshift tell us about a galaxy's motion? (enter 1 = moving away, 2 = moving toward us)
+        <div class="ue-practice-input">
+          <input type="number" id="ue-q3" placeholder="1 or 2" />
+          <button class="ue-check-btn" onclick="ueCheck(3,1,0)">Check</button>
+          <span class="ue-feedback" id="ue-f3"></span>
+        </div>
+      </li>
+      <li>
+        Henrietta Leavitt's discovery of Cepheid variables allowed astronomers to measure what? (enter 1 = temperature, 2 = distance, 3 = color)
+        <div class="ue-practice-input">
+          <input type="number" id="ue-q4" placeholder="1, 2, or 3" />
+          <button class="ue-check-btn" onclick="ueCheck(4,2,0)">Check</button>
+          <span class="ue-feedback" id="ue-f4"></span>
+        </div>
+      </li>
+      <li>
+        If a galaxy twice as far away recedes twice as fast, which law does this demonstrate? (enter 1 = Newton's Law, 2 = Hubble's Law, 3 = Kepler's Law)
+        <div class="ue-practice-input">
+          <input type="number" id="ue-q5" placeholder="1, 2, or 3" />
+          <button class="ue-check-btn" onclick="ueCheck(5,2,0)">Check</button>
+          <span class="ue-feedback" id="ue-f5"></span>
+        </div>
+      </li>
+      <li>
+        The Cosmic Microwave Background is the afterglow of what event? (enter 1 = a supernova, 2 = the formation of the Milky Way, 3 = the Big Bang)
+        <div class="ue-practice-input">
+          <input type="number" id="ue-q6" placeholder="1, 2, or 3" />
+          <button class="ue-check-btn" onclick="ueCheck(6,3,0)">Check</button>
+          <span class="ue-feedback" id="ue-f6"></span>
+        </div>
+      </li>
+    </ol>
+
+    <p style="margin-top:1.8rem;">
+      <a href="../steam-lessons.html" style="font-size:0.88rem; color:#5856d6; font-weight:600;">← Back to all STEAM Lessons</a>
+    </p>
+
+  </main>
+
+  <footer class="site-footer">
+    <p><a href="../index.html">Back to ClassroomOS Home</a></p>
+  </footer>
+
+  <script>
+    /* ── Redshift spectrum demo ───────────────────────── */
+    (function () {
+      var slider  = document.getElementById('ue-spec-slider');
+      var line    = document.getElementById('ue-spec-line');
+      var readout = document.getElementById('ue-spec-readout');
+
+      // Hydrogen-alpha line starts at ~30% (red end of spectrum band for 656 nm)
+      // As galaxy recedes, line moves further right (more red / infrared)
+      slider.addEventListener('input', function () {
+        var v = parseInt(this.value); // 0–100 = 0 to 100 Mpc
+        var dist = v * 10; // 0 – 1000 Mpc
+        var vel  = 70 * dist; // km/s using H0=70
+        // base position 30% (Hα at 656nm), shift right proportionally
+        var pos = 30 + v * 0.48; // up to 78%
+        pos = Math.min(pos, 92);
+        line.style.left = pos + '%';
+        var lambda = Math.round(656 * (1 + vel / 300000));
+        if (v === 0) {
+          readout.textContent = 'Galaxy distance: 0 Mpc — no recession velocity, no redshift. Hydrogen-α line at 656 nm (normal red-orange).';
+        } else {
+          readout.textContent = 'Distance: ' + dist + ' Mpc · Recession velocity: ' + vel.toLocaleString() + ' km/s · Hα line shifted to ~' + lambda + ' nm (redshifted).';
+        }
+      });
+    })();
+
+    /* ── Expanding Universe Simulator ────────────────── */
+    (function () {
+      var canvas   = document.getElementById('ue-canvas');
+      var ctx      = canvas.getContext('2d');
+      var playBtn  = document.getElementById('ue-play-btn');
+      var resetBtn = document.getElementById('ue-reset-btn');
+      var h0Slider = document.getElementById('ue-h0-slider');
+      var h0Val    = document.getElementById('ue-h0-val');
+      var h0Disp   = document.getElementById('ue-h0-display');
+      var speedSl  = document.getElementById('ue-speed-slider');
+      var ageVal   = document.getElementById('ue-age-val');
+      var scaleVal = document.getElementById('ue-scale-val');
+      var farVel   = document.getElementById('ue-far-v');
+      var viewEarth  = document.getElementById('ue-view-earth');
+      var viewOther  = document.getElementById('ue-view-other');
+
+      var W, H;
+      var running = true;
+      var scale   = 1.0;   // expansion scale factor
+      var age     = 0;     // simulated Gyr
+      var viewMode = 'earth'; // 'earth' | 'other'
+      var pivotIdx = 3;    // which galaxy to pivot on in "other" view
+
+      // Galaxy seed data — normalized positions (−1 to 1) and a color hue
+      var SEED_COUNT = 55;
+      var seeds = [];
+
+      function makeSeed(i) {
+        // Distribute in a rough ellipse/galaxy-cluster feel
+        var angle = Math.random() * Math.PI * 2;
+        var r     = 0.15 + Math.random() * 0.75;
+        // cluster a few near center
+        if (i < 6) r = 0.05 + Math.random() * 0.18;
+        return {
+          nx: Math.cos(angle) * r,  // normalized base coords
+          ny: Math.sin(angle) * r,
+          hue: Math.floor(Math.random() * 50),  // slight hue variation for galaxy colour
+          size: 1.8 + Math.random() * 2.5
+        };
+      }
+
+      function init() {
+        seeds = [];
+        for (var i = 0; i < SEED_COUNT; i++) seeds.push(makeSeed(i));
+        scale = 1.0;
+        age   = 0;
+        viewMode = 'earth';
+        viewEarth.classList.add('active');
+        viewOther.classList.remove('active');
+      }
+
+      function resize() {
+        var parent = canvas.parentElement;
+        W = parent.clientWidth - 24;
+        H = Math.min(480, Math.round(W * 0.56));
+        canvas.width  = W;
+        canvas.height = H;
+      }
+
+      function velColor(speed) {
+        // speed 0–1 (normalised fraction of max)
+        var r, g, b;
+        if (speed < 0.33) {
+          // white → yellow
+          var t = speed / 0.33;
+          r = 255; g = 255; b = Math.round(255 * (1 - t));
+        } else if (speed < 0.66) {
+          // yellow → orange
+          var t = (speed - 0.33) / 0.33;
+          r = 255; g = Math.round(255 * (1 - t * 0.5)); b = 0;
+        } else {
+          // orange → red
+          var t = (speed - 0.66) / 0.34;
+          r = 255; g = Math.round(128 * (1 - t)); b = 0;
+        }
+        return 'rgb(' + r + ',' + g + ',' + b + ')';
+      }
+
+      function drawFrame() {
+        ctx.clearRect(0, 0, W, H);
+
+        // Starfield background
+        ctx.fillStyle = '#060612';
+        ctx.fillRect(0, 0, W, H);
+
+        // faint star dots
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        for (var s = 0; s < 120; s++) {
+          var sx = ((seeds[s % SEED_COUNT].nx * 3.7 + 4) % 1) * W;
+          var sy = ((seeds[s % SEED_COUNT].ny * 3.1 + 3) % 1) * H;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        var H0 = parseInt(h0Slider.value);
+        var cx = W / 2;
+        var cy = H / 2;
+
+        // Build screen positions for each galaxy
+        var positions = seeds.map(function (g) {
+          return {
+            x: cx + g.nx * scale * W * 0.43,
+            y: cy + g.ny * scale * H * 0.43
+          };
+        });
+
+        // In "other" mode, subtract pivot galaxy position from all positions
+        var originX = cx, originY = cy;
+        if (viewMode === 'other') {
+          var px = positions[pivotIdx].x;
+          var py = positions[pivotIdx].y;
+          var dx = cx - px;
+          var dy = cy - py;
+          positions = positions.map(function (p) {
+            return { x: p.x + dx, y: p.y + dy };
+          });
+        }
+
+        // Max distance (in normalized units * scale)
+        var maxDist = 0;
+        positions.forEach(function (p, i) {
+          var d = Math.hypot(p.x - cx, p.y - cy);
+          if (d > maxDist) maxDist = d;
+        });
+
+        var maxVel = 0;
+        positions.forEach(function (p, i) {
+          var physDist = Math.hypot(seeds[i].nx * scale, seeds[i].ny * scale); // Mpc (arbitrary units)
+          var vel = H0 * physDist * 100;
+          if (vel > maxVel) maxVel = vel;
+        });
+
+        // Draw orbit rings (faint)
+        [0.25, 0.5, 0.75, 1.0].forEach(function (r) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * Math.min(W, H) * 0.43 * scale, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(88,86,214,0.08)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+
+        // Draw velocity arrows and galaxies
+        positions.forEach(function (p, i) {
+          var isOrigin = (viewMode === 'earth' && i === 0 && seeds[i].nx === seeds[0].nx)
+                       || (viewMode === 'other' && i === pivotIdx);
+
+          var screenDist = Math.hypot(p.x - cx, p.y - cy);
+          var physDist   = Math.hypot(seeds[i].nx * scale, seeds[i].ny * scale);
+          var vel        = H0 * physDist * 100;
+          var speedFrac  = maxVel > 0 ? vel / maxVel : 0;
+
+          if (screenDist > 2) {
+            // Velocity arrow
+            var norm = screenDist > 0 ? 1 / screenDist : 0;
+            var arrowLen = Math.min(screenDist * 0.32, 36) * speedFrac;
+            var ax = p.x + (p.x - cx) * norm * arrowLen;
+            var ay = p.y + (p.y - cy) * norm * arrowLen;
+            var col = velColor(speedFrac);
+
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(ax, ay);
+            ctx.strokeStyle = col;
+            ctx.lineWidth = 1.2;
+            ctx.globalAlpha = 0.65;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Arrowhead
+            var angle = Math.atan2(ay - p.y, ax - p.x);
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(ax - 6 * Math.cos(angle - 0.4), ay - 6 * Math.sin(angle - 0.4));
+            ctx.lineTo(ax - 6 * Math.cos(angle + 0.4), ay - 6 * Math.sin(angle + 0.4));
+            ctx.closePath();
+            ctx.fillStyle = col;
+            ctx.globalAlpha = 0.7;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+
+          // Galaxy dot
+          var sz = seeds[i].size;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, sz + 1.5, 0, Math.PI * 2);
+          var glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, sz + 1.5);
+          if (isOrigin) {
+            glow.addColorStop(0, 'rgba(100,210,255,1)');
+            glow.addColorStop(1, 'rgba(100,210,255,0)');
+          } else {
+            var rc = Math.round(240 + speedFrac * 15);
+            var gc2 = Math.round(200 - speedFrac * 100);
+            var bc  = Math.round(255 - speedFrac * 200);
+            glow.addColorStop(0, 'rgba(' + rc + ',' + gc2 + ',' + bc + ',1)');
+            glow.addColorStop(1, 'rgba(' + rc + ',' + gc2 + ',' + bc + ',0)');
+          }
+          ctx.fillStyle = glow;
+          ctx.fill();
+        });
+
+        // Label our galaxy
+        var ourIdx = viewMode === 'earth' ? 0 : pivotIdx;
+        var op = positions[ourIdx] || { x: cx, y: cy };
+        ctx.fillStyle = '#64d2ff';
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.fillText(viewMode === 'earth' ? '🌌 Our Galaxy' : '🌌 Pivot Galaxy', op.x + 8, op.y - 6);
+
+        // Readout
+        farVel.textContent = maxVel > 0 ? Math.round(maxVel).toLocaleString() + ' km/s' : '—';
+      }
+
+      var lastT = null;
+      function loop(ts) {
+        if (lastT === null) lastT = ts;
+        var dt = (ts - lastT) / 1000; // seconds
+        lastT = ts;
+        var spd = parseInt(speedSl.value) * 0.004;
+        if (running) {
+          scale += dt * spd * scale * 0.08;
+          age   += dt * spd * 0.12;
+          if (scale > 8) { scale = 8; running = false; playBtn.textContent = '▶ Play'; }
+        }
+        scaleVal.textContent = scale.toFixed(2) + '×';
+        ageVal.textContent   = age.toFixed(1) + ' Gyr';
+        h0Disp.textContent   = h0Slider.value + ' km/s/Mpc';
+        drawFrame();
+        requestAnimationFrame(loop);
+      }
+
+      // Controls
+      playBtn.addEventListener('click', function () {
+        running = !running;
+        playBtn.textContent = running ? '⏸ Pause' : '▶ Play';
+      });
+      resetBtn.addEventListener('click', function () {
+        init(); running = true; playBtn.textContent = '⏸ Pause'; lastT = null;
+      });
+      h0Slider.addEventListener('input', function () {
+        h0Val.textContent  = this.value;
+        h0Disp.textContent = this.value + ' km/s/Mpc';
+      });
+      viewEarth.addEventListener('click', function () {
+        viewMode = 'earth';
+        viewEarth.classList.add('active');
+        viewOther.classList.remove('active');
+      });
+      viewOther.addEventListener('click', function () {
+        viewMode = 'other';
+        pivotIdx = 7 + Math.floor(Math.random() * 10);
+        viewOther.classList.add('active');
+        viewEarth.classList.remove('active');
+      });
+
+      window.addEventListener('resize', function () { resize(); drawFrame(); });
+
+      init();
+      resize();
+      requestAnimationFrame(loop);
+    })();
+
+    /* ── Practice checker ─────────────────────────────── */
+    function ueCheck(num, correct, tol) {
+      var input = document.getElementById('ue-q' + num);
+      var fb    = document.getElementById('ue-f' + num);
+      var val   = parseFloat(input.value);
+      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'ue-feedback wrong'; return; }
+      if (tol === 0 ? val === correct : Math.abs(val - correct) <= tol) {
+        fb.textContent = '✓ Correct!';
+        fb.className   = 'ue-feedback correct';
+      } else {
+        fb.textContent = '✗ Try again.';
+        fb.className   = 'ue-feedback wrong';
+      }
+    }
+    window.ueCheck = ueCheck;
+  </script>
+</body>
+</html>
