@@ -1,0 +1,1123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Riemann Hypothesis · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Mathematics Lesson 05 — discover the hidden musical structure of prime numbers and explore the greatest unsolved problem in mathematics." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page ───────────────────────────────────────────── */
+    .rh-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ───────────────────────────────────────────── */
+    .rh-hero { padding: 0.4rem 0 1.4rem; }
+    .rh-hero h1 {
+      max-width: 28ch; margin-left: 0;
+      font-size: clamp(1.6rem, 3.8vw, 2.5rem);
+      letter-spacing: -0.03em; line-height: 1.15;
+    }
+    .rh-hero-meta {
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.75rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: #64748b;
+    }
+    .rh-hero-meta .dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle;
+    }
+    .rh-lede {
+      margin: 0.7rem 0 0; max-width: 68ch; color: #3f4f65;
+      font-size: 0.96rem; line-height: 1.65;
+    }
+    [data-theme="night"] .rh-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Stat overview grid ─────────────────────────────── */
+    .rh-stat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem; margin-bottom: 1rem;
+    }
+    @media (max-width: 600px) { .rh-stat-grid { grid-template-columns: 1fr; } }
+    .rh-stat-box {
+      background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-top: 3px solid var(--box-color, #7c3aed);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1rem 1.1rem;
+    }
+    [data-theme="night"] .rh-stat-box { background: var(--white, #2c2c2e); }
+    .rh-stat-num {
+      font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 900;
+      color: var(--box-color, #7c3aed); letter-spacing: -0.04em; line-height: 1;
+    }
+    .rh-stat-label { font-size: 0.8rem; font-weight: 700; margin: 0.3rem 0 0.2rem; }
+    .rh-stat-sub { font-size: 0.75rem; color: #64748b; line-height: 1.5; }
+
+    /* ── Standard card ──────────────────────────────────── */
+    .rh-card {
+      background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #7c3aed);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.25rem 1.5rem; margin-bottom: 1rem;
+    }
+    .rh-card h2 { margin: 0 0 0.6rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .rh-card h3 { margin: 1rem 0 0.35rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .rh-card p  { margin: 0 0 0.65rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.68; }
+    .rh-card p:last-child { margin-bottom: 0; }
+    .rh-card ul, .rh-card ol {
+      padding-left: 1.3rem; margin: 0 0 0.65rem;
+      color: #3f4f65; font-size: 0.88rem; line-height: 1.65;
+    }
+    .rh-card li { margin-bottom: 0.35rem; }
+    [data-theme="night"] .rh-card { background: var(--white, #2c2c2e); }
+    [data-theme="night"] .rh-card p,
+    [data-theme="night"] .rh-card ul,
+    [data-theme="night"] .rh-card ol { color: rgba(245,245,247,0.72); }
+
+    /* ── Callout boxes ──────────────────────────────────── */
+    .rh-callout {
+      border-radius: 12px; padding: 0.85rem 1rem; margin: 0.75rem 0;
+      display: flex; gap: 0.75rem; align-items: flex-start;
+      font-size: 0.87rem; line-height: 1.65;
+    }
+    .rh-callout.purple {
+      background: rgba(124,58,237,0.07);
+      border: 1.5px solid rgba(124,58,237,0.22);
+    }
+    .rh-callout.blue {
+      background: rgba(14,165,233,0.07);
+      border: 1.5px solid rgba(14,165,233,0.22);
+    }
+    .rh-callout.gold {
+      background: rgba(245,158,11,0.08);
+      border: 1.5px solid rgba(245,158,11,0.28);
+    }
+    .rh-callout.green {
+      background: rgba(16,185,129,0.07);
+      border: 1.5px solid rgba(16,185,129,0.22);
+    }
+    .rh-callout.red {
+      background: rgba(239,68,68,0.07);
+      border: 1.5px solid rgba(239,68,68,0.22);
+    }
+    .rh-callout-icon { font-size: 1.2rem; flex-shrink: 0; line-height: 1.4; }
+    .rh-callout-text { color: #3f4f65; }
+    [data-theme="night"] .rh-callout-text { color: rgba(245,245,247,0.75); }
+
+    /* ── Essential question banner ──────────────────────── */
+    .rh-eq-banner {
+      background: linear-gradient(135deg, rgba(124,58,237,0.09), rgba(14,165,233,0.09));
+      border: 1.5px solid rgba(124,58,237,0.22);
+      border-radius: 16px; padding: 1.2rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .rh-eq-kicker {
+      font-size: 0.74rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #7c3aed; margin-bottom: 0.4rem;
+    }
+    [data-theme="night"] .rh-eq-kicker { color: #a78bfa; }
+    .rh-eq-question {
+      font-size: clamp(1.05rem, 2.2vw, 1.3rem); font-weight: 800;
+      color: var(--text, #1d1d1f); line-height: 1.35; letter-spacing: -0.02em;
+      margin: 0;
+    }
+
+    /* ── Concept grid ───────────────────────────────────── */
+    .rh-concept-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem; margin: 0.85rem 0;
+    }
+    @media (max-width: 500px) { .rh-concept-grid { grid-template-columns: 1fr; } }
+    .rh-concept-tile {
+      background: rgba(0,0,0,0.03); border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 12px; padding: 0.85rem 1rem;
+    }
+    [data-theme="night"] .rh-concept-tile { background: rgba(255,255,255,0.04); }
+    .rh-concept-icon { font-size: 1.4rem; margin-bottom: 0.3rem; }
+    .rh-concept-name { font-weight: 800; font-size: 0.88rem; margin-bottom: 0.2rem; }
+    .rh-concept-desc { font-size: 0.79rem; color: #64748b; line-height: 1.55; }
+
+    /* ── Analogy cards ──────────────────────────────────── */
+    .rh-analogy-row {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem; margin: 0.85rem 0;
+    }
+    @media (max-width: 500px) { .rh-analogy-row { grid-template-columns: 1fr; } }
+    .rh-analogy-card {
+      border-radius: 12px; padding: 0.9rem 1rem;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--white, #fff);
+    }
+    [data-theme="night"] .rh-analogy-card { background: rgba(255,255,255,0.04); }
+    .rh-analogy-from {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #7c3aed; margin-bottom: 0.3rem;
+    }
+    [data-theme="night"] .rh-analogy-from { color: #a78bfa; }
+    .rh-analogy-arrow { font-size: 1rem; margin: 0.2rem 0; color: #94a3b8; }
+    .rh-analogy-to {
+      font-size: 0.88rem; font-weight: 700; color: var(--text, #1d1d1f);
+    }
+    .rh-analogy-note { font-size: 0.78rem; color: #64748b; margin-top: 0.25rem; line-height: 1.5; }
+
+    /* ── Complex plane explorer ─────────────────────────── */
+    .rh-explorer {
+      background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.25rem 1.5rem; margin-bottom: 1rem; overflow: hidden;
+    }
+    [data-theme="night"] .rh-explorer { background: var(--white, #2c2c2e); }
+    .rh-explorer-head { margin-bottom: 0.9rem; }
+    .rh-explorer-head h2 { margin: 0 0 0.35rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .rh-explorer-head p {
+      margin: 0; font-size: 0.86rem; color: #64748b; line-height: 1.55;
+    }
+    .rh-explorer-body {
+      display: grid; grid-template-columns: 1fr 260px;
+      gap: 1.25rem; align-items: start;
+    }
+    @media (max-width: 680px) {
+      .rh-explorer-body { grid-template-columns: 1fr; }
+    }
+    .rh-plane-wrap {
+      position: relative; border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--line, #d2d2d7);
+    }
+    #rh-plane {
+      display: block; width: 100%; height: auto;
+      max-height: 380px;
+    }
+    .rh-plane-caption {
+      font-size: 0.74rem; color: #64748b; text-align: center;
+      margin-top: 0.4rem; line-height: 1.5;
+    }
+    .rh-explorer-controls { display: flex; flex-direction: column; gap: 0.85rem; }
+    .rh-ctrl-label {
+      font-size: 0.76rem; font-weight: 800; letter-spacing: 0.05em;
+      text-transform: uppercase; color: #7c3aed; margin-bottom: 0.2rem;
+    }
+    [data-theme="night"] .rh-ctrl-label { color: #a78bfa; }
+    .rh-ctrl-val {
+      font-size: 1.2rem; font-weight: 900; color: var(--text, #1d1d1f);
+      letter-spacing: -0.03em; margin-bottom: 0.3rem;
+    }
+    .rh-range {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 6px; border-radius: 3px;
+      background: rgba(124,58,237,0.18); outline: none; cursor: pointer;
+    }
+    .rh-range::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #7c3aed; border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(124,58,237,0.4); cursor: pointer;
+    }
+    .rh-toggle-row {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    }
+    .rh-toggle-row input[type="checkbox"] {
+      width: 18px; height: 18px; accent-color: #ef4444; cursor: pointer;
+    }
+    .rh-observe-box {
+      background: rgba(124,58,237,0.06); border: 1.5px solid rgba(124,58,237,0.18);
+      border-radius: 10px; padding: 0.75rem 0.9rem;
+      font-size: 0.82rem; color: #3f4f65; line-height: 1.6;
+    }
+    [data-theme="night"] .rh-observe-box { color: rgba(245,245,247,0.75); background: rgba(124,58,237,0.1); }
+    .rh-observe-box strong { color: #7c3aed; }
+    [data-theme="night"] .rh-observe-box strong { color: #a78bfa; }
+
+    /* ── Wave section ───────────────────────────────────── */
+    .rh-wave-section {
+      background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid #0ea5e9;
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.25rem 1.5rem; margin-bottom: 1rem;
+    }
+    [data-theme="night"] .rh-wave-section { background: var(--white, #2c2c2e); }
+    .rh-wave-section h2 { margin: 0 0 0.35rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .rh-wave-section p { margin: 0 0 0.65rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.68; }
+    [data-theme="night"] .rh-wave-section p { color: rgba(245,245,247,0.72); }
+    .rh-wave-wrap {
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid var(--line, #d2d2d7); margin: 0.75rem 0;
+    }
+    #rh-wave { display: block; width: 100%; height: auto; }
+    .rh-wave-ctrl-row {
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      margin: 0.5rem 0;
+    }
+    .rh-wave-ctrl-row label { font-size: 0.84rem; font-weight: 700; color: #0ea5e9; }
+    .rh-wave-ctrl-row .rh-range { max-width: 200px; background: rgba(14,165,233,0.18); }
+    .rh-wave-ctrl-row .rh-range::-webkit-slider-thumb { background: #0ea5e9;
+      box-shadow: 0 2px 8px rgba(14,165,233,0.4); }
+    #rh-wave-count-val { font-weight: 900; color: #0ea5e9; margin-left: 0.3rem; }
+
+    /* ── Steps list ─────────────────────────────────────── */
+    .rh-steps { list-style: none; padding: 0; margin: 0.75rem 0; display: flex; flex-direction: column; gap: 0.7rem; }
+    .rh-steps li {
+      display: flex; gap: 0.85rem; align-items: flex-start;
+      font-size: 0.87rem; color: #3f4f65; line-height: 1.6;
+    }
+    [data-theme="night"] .rh-steps li { color: rgba(245,245,247,0.72); }
+    .rh-step-num {
+      flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+      background: #7c3aed; color: #fff;
+      font-size: 0.75rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Grade bands ────────────────────────────────────── */
+    .rh-grade-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem; margin-bottom: 1rem;
+    }
+    @media (max-width: 560px) { .rh-grade-grid { grid-template-columns: 1fr; } }
+    .rh-grade-card {
+      background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-top: 3px solid var(--grade-color, #7c3aed);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.1rem 1.25rem;
+    }
+    [data-theme="night"] .rh-grade-card { background: var(--white, #2c2c2e); }
+    .rh-grade-badge {
+      display: inline-block; font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: #fff; background: var(--grade-color, #7c3aed);
+      border-radius: 6px; padding: 0.2rem 0.55rem; margin-bottom: 0.6rem;
+    }
+    .rh-grade-card h3 { margin: 0 0 0.5rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .rh-grade-card p { margin: 0 0 0.55rem; font-size: 0.85rem; color: #3f4f65; line-height: 1.65; }
+    .rh-grade-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .rh-grade-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Activity steps ─────────────────────────────────── */
+    .rh-activity-steps {
+      list-style: none; padding: 0; margin: 0.8rem 0;
+      display: flex; flex-direction: column; gap: 0;
+    }
+    .rh-activity-steps li {
+      display: flex; gap: 0.85rem; align-items: flex-start;
+      font-size: 0.87rem; color: #3f4f65; line-height: 1.65;
+      padding: 0.65rem 0; border-bottom: 1px solid var(--line, #d2d2d7);
+    }
+    .rh-activity-steps li:last-child { border-bottom: none; }
+    [data-theme="night"] .rh-activity-steps li { color: rgba(245,245,247,0.72); border-bottom-color: rgba(255,255,255,0.07); }
+    .rh-activity-step-num {
+      flex-shrink: 0; font-size: 0.8rem; font-weight: 900;
+      color: #f59e0b; min-width: 24px;
+    }
+
+    /* ── Reflection questions ───────────────────────────── */
+    .rh-reflection-list { list-style: none; padding: 0; margin: 0.75rem 0; display: flex; flex-direction: column; gap: 0.6rem; }
+    .rh-reflection-list li {
+      display: flex; gap: 0.7rem; align-items: flex-start;
+      font-size: 0.87rem; color: #3f4f65; line-height: 1.65;
+      padding: 0.6rem 0.8rem;
+      background: rgba(124,58,237,0.04);
+      border-left: 3px solid rgba(124,58,237,0.3);
+      border-radius: 0 8px 8px 0;
+    }
+    [data-theme="night"] .rh-reflection-list li { color: rgba(245,245,247,0.72); }
+    .rh-q-num { flex-shrink: 0; font-weight: 900; color: #7c3aed; }
+    [data-theme="night"] .rh-q-num { color: #a78bfa; }
+
+    /* ── Teacher notes ──────────────────────────────────── */
+    .rh-teacher {
+      background: #1e1433; border: 1px solid rgba(124,58,237,0.3);
+      border-radius: var(--radius, 18px);
+      padding: 1.4rem 1.6rem; margin-bottom: 1rem;
+      color: rgba(245,235,255,0.85);
+    }
+    .rh-teacher-kicker {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #c4b5fd; margin-bottom: 0.5rem;
+    }
+    .rh-teacher h2 {
+      margin: 0 0 0.7rem; font-size: 1.15rem; letter-spacing: -0.02em;
+      color: #ede9fe;
+    }
+    .rh-teacher h3 {
+      margin: 1rem 0 0.35rem; font-size: 0.9rem; letter-spacing: -0.01em;
+      color: #c4b5fd; text-transform: uppercase; font-size: 0.75rem;
+      font-weight: 800; letter-spacing: 0.08em;
+    }
+    .rh-teacher p { margin: 0 0 0.6rem; font-size: 0.87rem; line-height: 1.68; }
+    .rh-teacher p:last-child { margin-bottom: 0; }
+    .rh-teacher ul {
+      padding-left: 1.25rem; margin: 0 0 0.65rem;
+      font-size: 0.87rem; line-height: 1.65;
+    }
+    .rh-teacher li { margin-bottom: 0.3rem; }
+    .rh-teacher-divider {
+      border: none; border-top: 1px solid rgba(124,58,237,0.25);
+      margin: 1rem 0;
+    }
+    .rh-teacher-connections {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem;
+      margin: 0.75rem 0;
+    }
+    @media (max-width: 500px) { .rh-teacher-connections { grid-template-columns: 1fr; } }
+    .rh-teacher-conn-box {
+      background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 10px; padding: 0.7rem 0.85rem;
+    }
+    .rh-teacher-conn-box strong { display: block; color: #c4b5fd; font-size: 0.78rem;
+      margin-bottom: 0.25rem; }
+    .rh-teacher-conn-box span { font-size: 0.8rem; line-height: 1.55; }
+
+    /* ── Advanced box ───────────────────────────────────── */
+    .rh-advanced-banner {
+      border-radius: 12px; padding: 0.75rem 1rem;
+      background: rgba(245,158,11,0.08); border: 1.5px solid rgba(245,158,11,0.3);
+      font-size: 0.8rem; font-weight: 700; color: #92400e;
+      display: flex; gap: 0.55rem; align-items: center; margin-bottom: 0.85rem;
+    }
+    [data-theme="night"] .rh-advanced-banner { color: #fcd34d; }
+
+    /* ── Formula display ────────────────────────────────── */
+    .rh-formula-row {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;
+      margin: 0.85rem 0;
+    }
+    @media (max-width: 480px) { .rh-formula-row { grid-template-columns: 1fr; } }
+    .rh-formula-box {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px; padding: 0.9rem 1rem; text-align: center;
+    }
+    [data-theme="night"] .rh-formula-box { background: rgba(255,255,255,0.04); }
+    .rh-formula-box .rh-f-label {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.07em;
+      text-transform: uppercase; color: #64748b; display: block; margin-bottom: 0.45rem;
+    }
+    .rh-formula-box .rh-f-eq {
+      font-size: 1.1rem; font-weight: 800; color: var(--text, #1d1d1f);
+      letter-spacing: -0.01em;
+    }
+    .rh-formula-box .rh-f-note {
+      font-size: 0.75rem; color: #64748b; margin-top: 0.3rem; display: block; line-height: 1.5;
+    }
+
+    /* ── Prize callout ──────────────────────────────────── */
+    .rh-prize-banner {
+      background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(124,58,237,0.08));
+      border: 1.5px solid rgba(245,158,11,0.35);
+      border-radius: 14px; padding: 1rem 1.2rem;
+      display: flex; gap: 1rem; align-items: flex-start;
+      margin: 0.85rem 0;
+    }
+    .rh-prize-amount {
+      font-size: 2rem; font-weight: 900; color: #f59e0b;
+      letter-spacing: -0.04em; line-height: 1; flex-shrink: 0;
+    }
+    .rh-prize-text { font-size: 0.87rem; color: #3f4f65; line-height: 1.65; }
+    [data-theme="night"] .rh-prize-text { color: rgba(245,245,247,0.72); }
+    .rh-prize-text strong { color: var(--text, #1d1d1f); }
+    [data-theme="night"] .rh-prize-text strong { color: rgba(245,245,247,0.9); }
+  </style>
+</head>
+<body class="rh-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav aria-label="Primary">
+        <a href="../index.html">Home</a>
+        <a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a>
+        <a href="../showcase.html">Showcase</a>
+        <a href="../about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- ── Hero ── -->
+    <section class="hero rh-hero">
+      <p class="eyebrow">Mathematics · Lesson 05</p>
+      <h1>Riemann Hypothesis: Hidden Patterns in Prime Numbers</h1>
+      <div class="rh-hero-meta">
+        <span>Grades 6–12</span>
+        <span class="dot"></span>
+        <span>Primes &amp; patterns</span>
+        <span class="dot"></span>
+        <span>Waves &amp; vibration</span>
+        <span class="dot"></span>
+        <span>Unsolved since 1859</span>
+      </div>
+      <p class="rh-lede">Prime numbers look random — 2, 3, 5, 7, 11, 13 — scattered without an obvious rule. But a 19th-century mathematician named Bernhard Riemann suspected something extraordinary: that underneath the chaos of primes, there is a hidden musical structure. His idea became the most famous unsolved problem in all of mathematics, and it is still waiting for someone like you to crack it.</p>
+    </section>
+
+    <!-- ── Overview stats ── -->
+    <div class="rh-stat-grid" role="list">
+      <div class="rh-stat-box" role="listitem" style="--box-color:#7c3aed;">
+        <div class="rh-stat-num">∞</div>
+        <div class="rh-stat-label">Prime numbers exist</div>
+        <div class="rh-stat-sub">They go on forever — but no simple formula predicts exactly where the next one falls.</div>
+      </div>
+      <div class="rh-stat-box" role="listitem" style="--box-color:#0ea5e9;">
+        <div class="rh-stat-num">165+</div>
+        <div class="rh-stat-label">Years unsolved</div>
+        <div class="rh-stat-sub">Riemann wrote it in 1859. Every mathematician since has tried — and failed — to prove or disprove it.</div>
+      </div>
+      <div class="rh-stat-box" role="listitem" style="--box-color:#f59e0b;">
+        <div class="rh-stat-num">$1M</div>
+        <div class="rh-stat-label">Prize money waiting</div>
+        <div class="rh-stat-sub">The Clay Mathematics Institute will award one million dollars to whoever solves it first.</div>
+      </div>
+    </div>
+
+    <!-- ── Lesson Overview ── -->
+    <section class="rh-card" style="--card-accent:#7c3aed;">
+      <h2>Lesson Overview</h2>
+      <p>In this lesson, you will meet the prime numbers — the "atoms" of arithmetic — and discover that their chaotic-looking pattern may not be random at all. You will explore a stunning idea: that the distribution of primes is controlled by invisible waves, and that those waves are governed by special points called <strong>zeros</strong> in a mathematical object called the Riemann zeta function.</p>
+      <p>Using an interactive complex plane visualizer, you will see exactly where those zeros live, why they all appear to line up on a single vertical line, and what it would mean if even one of them were found off that line. Along the way you will connect prime numbers to music, physics, and signal processing — and leave with a genuine feel for what makes this the most tantalizing open problem in mathematics.</p>
+      <p>No advanced math required. Curiosity is the only prerequisite.</p>
+    </section>
+
+    <!-- ── Essential Question ── -->
+    <div class="rh-eq-banner" role="region" aria-label="Essential question">
+      <p class="rh-eq-kicker">Essential Question</p>
+      <p class="rh-eq-question">If prime numbers appear random, could there be a hidden law — invisible to the eye but real as a musical note — that secretly governs exactly where they fall?</p>
+    </div>
+
+    <!-- ── Key Concepts ── -->
+    <section class="rh-card" style="--card-accent:#7c3aed;">
+      <h2>Key Concepts</h2>
+      <div class="rh-concept-grid">
+        <div class="rh-concept-tile">
+          <div class="rh-concept-icon">🔢</div>
+          <div class="rh-concept-name">Prime numbers</div>
+          <div class="rh-concept-desc">Whole numbers greater than 1 that can only be divided by 1 and themselves. The atoms from which all other numbers are built.</div>
+        </div>
+        <div class="rh-concept-tile">
+          <div class="rh-concept-icon">📈</div>
+          <div class="rh-concept-name">Prime counting function π(x)</div>
+          <div class="rh-concept-desc">Counts how many primes exist below a given number x. It grows — but with irregular jumps that no simple formula can perfectly capture.</div>
+        </div>
+        <div class="rh-concept-tile">
+          <div class="rh-concept-icon">🌊</div>
+          <div class="rh-concept-name">The zeta function ζ(s)</div>
+          <div class="rh-concept-desc">A mathematical tool Riemann discovered that encodes information about prime numbers in a surprising way. It takes complex number inputs.</div>
+        </div>
+        <div class="rh-concept-tile">
+          <div class="rh-concept-icon">🎯</div>
+          <div class="rh-concept-name">Non-trivial zeros</div>
+          <div class="rh-concept-desc">Special input values where ζ(s) = 0. These zeros act like tuning pegs — they control the accuracy of prime number predictions.</div>
+        </div>
+        <div class="rh-concept-tile">
+          <div class="rh-concept-icon">📐</div>
+          <div class="rh-concept-name">The complex plane</div>
+          <div class="rh-concept-desc">A 2D grid where one axis is "real" numbers and the other is "imaginary" numbers. The zeta function lives here — and so do the zeros.</div>
+        </div>
+        <div class="rh-concept-tile">
+          <div class="rh-concept-icon">⚖️</div>
+          <div class="rh-concept-name">The critical line</div>
+          <div class="rh-concept-desc">The vertical line at Re(s) = ½ in the complex plane. Every zero found so far lies exactly on this line. The Riemann Hypothesis says they all do.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Visual Intuition ── -->
+    <section class="rh-card" style="--card-accent:#7c3aed;">
+      <h2>Visual Intuition: Primes as Music</h2>
+      <p>Before we look at equations, let's build the right mental picture. This is the most important section of the lesson — get this image in your head, and everything else will follow.</p>
+
+      <h3>Imagine a universe of sound</h3>
+      <p>Picture a vast concert hall. In this hall, every integer — every whole number from 2 upward — is playing a note. But only the primes play a <em>pure</em> tone. The composite numbers (4, 6, 8, 9…) are combinations of prime notes — chords built from multiplying primes together.</p>
+
+      <div class="rh-callout purple">
+        <span class="rh-callout-icon">🎵</span>
+        <div class="rh-callout-text">
+          <strong>The big metaphor:</strong> Prime numbers are the fundamental notes of the number system. Every other number is a chord — a combination of those prime notes. The question Riemann asked was: <em>is there a hidden score driving where those notes appear?</em>
+        </div>
+      </div>
+
+      <h3>The imperfect conductor</h3>
+      <p>Mathematicians have a formula called <strong>Li(x)</strong> — the logarithmic integral — that does a decent job of estimating how many primes exist below any number x. Think of Li(x) as a conductor waving a baton, and the true prime count as the musicians actually playing. Most of the time they stay in sync. But sometimes the musicians rush ahead or fall behind — the true count deviates from the estimate.</p>
+      <p>Riemann asked: <em>where does that error come from?</em> His answer was shocking.</p>
+
+      <h3>The error is a sum of waves</h3>
+      <p>Riemann showed that the gap between Li(x) and the true prime count can be written as a <strong>sum of waves</strong>. Each wave has a specific frequency, amplitude, and phase. And every single wave is produced by one of the zeros of the zeta function. The zeros are not random points — they are the tuning forks of the number system, and together they compose the correction signal that makes the prime count exact.</p>
+
+      <div class="rh-callout blue">
+        <span class="rh-callout-icon">🌊</span>
+        <div class="rh-callout-text">
+          <strong>Think of it this way:</strong> Your phone's speaker plays music by adding up thousands of individual sound waves. Prime numbers work the same way — their distribution is the "music" produced by adding up all the zeta waves. Riemann's zeros are the frequencies in that hidden song.
+        </div>
+      </div>
+
+      <h3>Points of silence</h3>
+      <p>A zero of the zeta function is a value of s where ζ(s) = 0. Imagine a tuning fork that, at one particular frequency, goes completely silent — no vibration, no output. At those exact inputs, the zeta function produces nothing: zero. Those silent points are where the wave-correction information is stored. Pull on any one of those zeros and the whole prime distribution shifts.</p>
+
+      <div class="rh-callout gold">
+        <span class="rh-callout-icon">🔇</span>
+        <div class="rh-callout-text">
+          <strong>Zeros = points of silence.</strong> They are where the zeta function produces no output. But their <em>location</em> in the complex plane determines everything about how accurately we can predict prime numbers.
+        </div>
+      </div>
+
+      <h3>The perfect balance line</h3>
+      <p>Here is Riemann's hypothesis in plain words: <strong>all of the non-trivial zeros lie on a single vertical line</strong> — the line where the real part of s equals exactly ½. This is called the critical line. It runs straight down the middle of the "critical strip" between 0 and 1.</p>
+      <p>Why ½? Because it is the line of perfect symmetry. The critical strip is bounded by 0 on the left and 1 on the right. The midpoint — the balance point — is exactly ½. Riemann's hypothesis says the zeros do not scatter randomly through the strip. They are locked, as if by some deep law of symmetry, onto that single central line.</p>
+
+      <div class="rh-callout green">
+        <span class="rh-callout-icon">⚖️</span>
+        <div class="rh-callout-text">
+          <strong>The critical line is the balance point</strong> — like the center of a seesaw. Riemann's hypothesis says every zero in the strip balances perfectly on that midpoint. Move a zero off the line, and our ability to predict primes collapses.
+        </div>
+      </div>
+
+      <!-- Analogy cards -->
+      <div class="rh-analogy-row">
+        <div class="rh-analogy-card">
+          <div class="rh-analogy-from">In Music</div>
+          <div class="rh-analogy-arrow">→</div>
+          <div class="rh-analogy-to">Primes are notes</div>
+          <div class="rh-analogy-note">Each prime is a fundamental frequency. Composite numbers are chords. The distribution of primes is the melody.</div>
+        </div>
+        <div class="rh-analogy-card">
+          <div class="rh-analogy-from">In Physics</div>
+          <div class="rh-analogy-arrow">→</div>
+          <div class="rh-analogy-to">Zeros are resonant frequencies</div>
+          <div class="rh-analogy-note">Just as a guitar string resonates at specific frequencies, the zeta function resonates at the zeros. Those resonances control the prime distribution.</div>
+        </div>
+        <div class="rh-analogy-card">
+          <div class="rh-analogy-from">In Computing</div>
+          <div class="rh-analogy-arrow">→</div>
+          <div class="rh-analogy-to">Error correction signal</div>
+          <div class="rh-analogy-note">The sum of zero-waves is a correction signal, like noise-canceling headphones subtracting out error. The zeros define the signal.</div>
+        </div>
+        <div class="rh-analogy-card">
+          <div class="rh-analogy-from">In Balance</div>
+          <div class="rh-analogy-arrow">→</div>
+          <div class="rh-analogy-to">The critical line is a seesaw center</div>
+          <div class="rh-analogy-note">The strip from 0 to 1 is the seesaw. Every zero sits exactly in the middle, at ½. Riemann's hypothesis says none of them are lopsided.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Interactive Complex Plane ── -->
+    <section class="rh-explorer" aria-label="Complex plane visualizer">
+      <div class="rh-explorer-head">
+        <h2>Interactive Visualizer: The Complex Plane</h2>
+        <p>Use the controls on the right to explore the critical strip, the critical line, and the zeros. Move the slider to travel along the line. Toggle the switch to break Riemann's hypothesis and see what changes.</p>
+      </div>
+      <div class="rh-explorer-body">
+        <div>
+          <div class="rh-plane-wrap">
+            <canvas id="rh-plane" width="480" height="380" aria-label="Complex plane showing the critical strip and Riemann zeros"></canvas>
+          </div>
+          <p class="rh-plane-caption">The complex plane. Horizontal axis = real part Re(s). Vertical axis = imaginary part Im(s). Shaded band = critical strip (0 to 1). Cyan line = critical line at Re(s) = ½. Dark dots = known zeros.</p>
+        </div>
+        <div class="rh-explorer-controls">
+          <div>
+            <div class="rh-ctrl-label">Imaginary value t</div>
+            <div class="rh-ctrl-val" id="rh-t-display">s = ½ + 14.1i</div>
+            <input type="range" class="rh-range" id="rh-t-slider" min="0" max="52" value="14" step="0.1" aria-label="Imaginary part t" />
+          </div>
+          <label class="rh-toggle-row">
+            <input type="checkbox" id="rh-off-line" />
+            <span>Break hypothesis: move off Re(s) = ½</span>
+          </label>
+          <div class="rh-observe-box" id="rh-observe-text">
+            <strong>What to notice:</strong> The dark dots (zeros) are all lined up on the cyan critical line at Re(s) = ½. Move the slider upward — each time you hit a zero, the zeta function reaches exactly 0. Every known zero sits exactly on this line.
+          </div>
+          <div>
+            <div class="rh-ctrl-label">Currently at</div>
+            <div style="font-size:0.82rem;color:#64748b;line-height:1.55;" id="rh-nearby-zero">
+              Nearest zero: t ≈ 14.134 &nbsp;|&nbsp; Distance: near
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Wave Visualizer ── -->
+    <section class="rh-wave-section" aria-label="Wave composition visualizer">
+      <h2>Wave Layer: Zeros as Sound Waves</h2>
+      <p>Each zero of the zeta function contributes one wave to the prime-counting error. Here you can see those waves stacked on top of each other. Adding more waves makes the error signal more detailed — like a song that fills in note by note.</p>
+      <div class="rh-wave-ctrl-row">
+        <label for="rh-wave-slider">Zeros used:</label>
+        <input type="range" class="rh-range" id="rh-wave-slider" min="1" max="10" value="1" step="1" aria-label="Number of zeros to sum" />
+        <span id="rh-wave-count-val">1</span>
+      </div>
+      <div class="rh-wave-wrap">
+        <canvas id="rh-wave" width="640" height="160" aria-label="Wave composition from Riemann zeros"></canvas>
+      </div>
+      <div class="rh-callout blue" style="margin-top:0.65rem;">
+        <span class="rh-callout-icon">🎧</span>
+        <div class="rh-callout-text">
+          <strong>What you're seeing:</strong> Each colored wave has a frequency tied to one zero's imaginary value. The thick dark line is the running sum — the composite error signal. As you add more zeros, the composite signal gets sharper and more structured. This is exactly how prime counting works: the zeros combine their waves to "spell out" where the primes are.
+        </div>
+      </div>
+
+      <h3>Student Instructions</h3>
+      <ol class="rh-steps">
+        <li><span class="rh-step-num">1</span>Start the slider at <strong>1 zero</strong>. Notice the single smooth wave. This one zero gives you a rough correction to the prime estimate.</li>
+        <li><span class="rh-step-num">2</span>Slide to <strong>3 zeros</strong>. Three waves now overlap. The combined signal is already more jagged and detailed — closer to the real pattern.</li>
+        <li><span class="rh-step-num">3</span>Slide to <strong>10 zeros</strong>. Look at how many ripples appear in the composite. The more zeros you include, the more precise your prime predictions become.</li>
+        <li><span class="rh-step-num">4</span>Think about what happens as the number of zeros approaches infinity. The waves sum up to something exact — the true prime distribution. This is Riemann's core insight.</li>
+      </ol>
+    </section>
+
+    <!-- ── Hands-On Activity ── -->
+    <section class="rh-card" style="--card-accent:#f59e0b;">
+      <h2>Hands-On Activity: The Rope Wave Experiment</h2>
+      <p>No screens required. This physical activity builds the intuition for how multiple waves combine — which is the core idea behind how zeros control prime numbers.</p>
+
+      <div class="rh-callout gold">
+        <span class="rh-callout-icon">🧵</span>
+        <div class="rh-callout-text">
+          <strong>Materials:</strong> One long jump rope or piece of clothesline (at least 3 meters). Two people to hold the ends. A third person to observe and record.
+        </div>
+      </div>
+
+      <h3>Part 1 — One wave (one zero)</h3>
+      <ol class="rh-activity-steps">
+        <li><span class="rh-activity-step-num">01</span>Hold both ends of the rope taut, parallel to the floor. One person flicks their end gently to create a single traveling wave. This wave moves along the rope and back.</li>
+        <li><span class="rh-activity-step-num">02</span>Now try to create a <strong>standing wave</strong>: both people flick in rhythm. A smooth arc forms in the middle — one "hump." This represents a single zero contributing one wave to the prime error.</li>
+        <li><span class="rh-activity-step-num">03</span>Observe: the wave looks clean and simple. A single zero gives you a rough, smooth correction — like a first draft.</li>
+      </ol>
+
+      <h3>Part 2 — Two waves interfering</h3>
+      <ol class="rh-activity-steps">
+        <li><span class="rh-activity-step-num">01</span>One person flicks faster to create two humps in the rope (a second harmonic). At the same time, the other person maintains the original slow flick. This is tricky — it takes practice.</li>
+        <li><span class="rh-activity-step-num">02</span>Watch what happens to the rope's shape. The two waves <strong>interfere</strong> — sometimes they add together (constructive interference, bigger peaks), sometimes they cancel (destructive interference, flat spots).</li>
+        <li><span class="rh-activity-step-num">03</span>The observer sketches what the rope looks like at different moments.</li>
+      </ol>
+
+      <h3>The connection</h3>
+      <p>The rope is the prime counting error. Each wave added by a different person represents one more Riemann zero being included in the sum. Adding more waves makes the rope's shape more complex and detailed — just like including more zeros gives a more precise prime prediction. If you added infinitely many harmonics in exactly the right way, you would reconstruct the exact prime-counting function. Riemann's zeros are the exact frequencies that make that work.</p>
+
+      <div class="rh-callout purple">
+        <span class="rh-callout-icon">💬</span>
+        <div class="rh-callout-text">
+          <strong>Discussion prompt:</strong> What do you think would happen to the rope's pattern if one person secretly used the <em>wrong</em> frequency? Connect this to: what would happen to prime predictions if even one zero were off the critical line?
+        </div>
+      </div>
+
+      <h3>Drawing extension (no rope needed)</h3>
+      <p>On graph paper, draw a horizontal line as your baseline. Now draw a smooth sine wave across it — this is zero #1. On the same graph, draw a second sine wave with twice the frequency and half the height. Add them together by measuring the height of both waves at each x-value and drawing their sum. You have just done what Riemann described — and your combined wave is starting to look like prime counting errors in action.</p>
+    </section>
+
+    <!-- ── Grade Differentiation ── -->
+    <div class="rh-grade-grid" role="list">
+      <div class="rh-grade-card" role="listitem" style="--grade-color:#7c3aed;">
+        <span class="rh-grade-badge">Grades 6–8</span>
+        <h3>The Simple Version</h3>
+        <p>Prime numbers look random — 2, 3, 5, 7, 11… there's no obvious pattern. But mathematicians found that if you write a special math equation and look at where it equals zero, those zero-points predict where primes tend to cluster.</p>
+        <p>Think of it like this: imagine you're trying to predict where a bouncing ball will land. You start with a good guess, but you're always a little off. The zeros of the zeta function are like a set of correction dials — each one nudges your prediction closer to the truth.</p>
+        <p>The Riemann Hypothesis says all those correction dials are lined up in a perfectly straight row. No one has ever found one that isn't. But no one has proven they all have to be, either. That's why the problem is still open — and why it's worth a million dollars.</p>
+      </div>
+      <div class="rh-grade-card" role="listitem" style="--grade-color:#0ea5e9;">
+        <span class="rh-grade-badge">Grades 9–12</span>
+        <h3>The Deeper Version</h3>
+        <p>The Riemann zeta function is defined (for Re(s) > 1) as: ζ(s) = 1 + 1/2ˢ + 1/3ˢ + 1/4ˢ + … This series converges to a finite value. Riemann analytically continued it to the entire complex plane (except s = 1), revealing a rich structure.</p>
+        <p>The explicit formula for the prime counting function π(x) involves a sum over <em>every non-trivial zero</em> ρ of ζ(s): the error term is essentially Σ x^ρ / ρ, summed over all zeros ρ. Each zero contributes an oscillation of the form x^(σ+it), where σ = Re(ρ) and t = Im(ρ). If all zeros have σ = ½, the error term is bounded by O(√x · log²x) — the best possible. A single zero with σ > ½ would introduce error terms growing faster than √x, breaking prime number predictions.</p>
+        <p>The hypothesis connects to quantum mechanics: zeros of ζ(s) appear to behave statistically like eigenvalues of random Hermitian matrices — suggesting a physical system whose energy levels encode the zeros. No such physical system has been identified, but the connection is too precise to be coincidence.</p>
+      </div>
+    </div>
+
+    <!-- ── Advanced Exploration ── -->
+    <section class="rh-card" style="--card-accent:#f59e0b;">
+      <h2>Advanced Exploration</h2>
+      <div class="rh-advanced-banner">
+        <span>⭐</span>
+        <span>Grades 9–12 · For students who want to go further</span>
+      </div>
+
+      <h3>The explicit formula — primes from zeros</h3>
+      <p>Riemann's greatest insight was an exact formula connecting the zeros of ζ(s) to the distribution of primes. Informally: <strong>prime distribution = smooth estimate + correction from zeros</strong>. The correction is a sum of oscillating waves, one per zero. If the hypothesis is true, those waves have bounded amplitude — the correction stays small relative to x. If any zero lay off the line, one wave would grow faster, and our prime count error would spiral out of control for large x.</p>
+
+      <div class="rh-formula-row">
+        <div class="rh-formula-box">
+          <span class="rh-f-label">Zeta function (series form)</span>
+          <div class="rh-f-eq">ζ(s) = Σ 1/nˢ</div>
+          <span class="rh-f-note">Sum over all positive integers n, valid for Re(s) &gt; 1</span>
+        </div>
+        <div class="rh-formula-box">
+          <span class="rh-f-label">Error term in π(x)</span>
+          <div class="rh-f-eq">Error ~ Σ x<sup>ρ</sup>/ρ</div>
+          <span class="rh-f-note">Sum over non-trivial zeros ρ. Each zero contributes one oscillating wave.</span>
+        </div>
+      </div>
+
+      <h3>What would a proof look like?</h3>
+      <p>There are three main approaches researchers have pursued:</p>
+      <ul>
+        <li><strong>Analytic approach:</strong> Show that ζ(s) cannot equal zero for any s with Re(s) ≠ ½ using complex analysis. Partial results exist — the "zero-free region" near Re(s) = 1 is proven, but the center of the strip remains mysterious.</li>
+        <li><strong>Spectral approach (Hilbert–Pólya):</strong> Find a self-adjoint operator (like a quantum Hamiltonian) whose eigenvalues are the imaginary parts of the zeros. Self-adjoint operators always have real eigenvalues, which would force all zeros onto the critical line.</li>
+        <li><strong>Random matrix theory:</strong> The zeros' statistical spacing matches eigenvalue spacings of GUE (Gaussian Unitary Ensemble) random matrices with extraordinary precision. This suggests a deep physical connection — but translating the statistics into a proof has so far proved impossible.</li>
+      </ul>
+
+      <h3>The stakes for cryptography</h3>
+      <p>Modern public-key cryptography (RSA, elliptic curve) relies on the <strong>apparent difficulty</strong> of factoring large numbers into primes. A proof of the Riemann Hypothesis would not immediately break encryption — but it might lead to sharper prime-distribution results that affect the security analysis of cryptographic protocols. The math world watches any breakthrough here very closely.</p>
+
+      <div class="rh-prize-banner">
+        <div class="rh-prize-amount">$1M</div>
+        <div class="rh-prize-text">
+          <strong>The Millennium Prize.</strong> In 2000, the Clay Mathematics Institute named seven "Millennium Prize Problems" — the most important unsolved problems in mathematics. The Riemann Hypothesis is one of them. A complete proof earns one million US dollars. Only one Millennium Problem has ever been solved (the Poincaré Conjecture, by Grigori Perelman in 2003 — who famously declined the prize money). The Riemann Hypothesis remains wide open.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Reflection Questions ── -->
+    <section class="rh-card" style="--card-accent:#7c3aed;">
+      <h2>Reflection Questions</h2>
+      <p>Think carefully before answering. There are no single correct answers here — these questions are about building intuition and making connections.</p>
+      <ol class="rh-reflection-list">
+        <li><span class="rh-q-num">1.</span>Prime numbers seem random when you look at a list of them. But in this lesson we saw that their distribution is controlled by the zeros of the zeta function. Does this change your sense of what "random" means? Can something look random but still follow a hidden rule?</li>
+        <li><span class="rh-q-num">2.</span>We used the metaphor of primes as musical notes. In what ways does this metaphor help you understand the Riemann Hypothesis? In what ways might it be misleading or incomplete?</li>
+        <li><span class="rh-q-num">3.</span>Every zero of the zeta function found so far — more than 10 trillion of them — sits on the critical line Re(s) = ½. Scientists have verified this computationally. But mathematicians say this is not a proof. Why isn't checking 10 trillion examples good enough to prove a mathematical statement?</li>
+        <li><span class="rh-q-num">4.</span>In the rope wave experiment, we saw that two interfering waves can cancel each other out (destructive interference) or add up (constructive). How does this relate to the idea of zeros controlling the error in prime counting?</li>
+        <li><span class="rh-q-num">5.</span>The Riemann Hypothesis has been open for over 165 years and is still unsolved. Does that make you more or less interested in trying to work on it? What would it feel like to be the first person to prove or disprove it?</li>
+        <li><span class="rh-q-num">6.</span>(Advanced) If you could only use the first 3 zeros in Riemann's explicit formula, how good do you think your prime-count prediction would be? Would it get better or worse as x (the number you are counting up to) got larger?</li>
+      </ol>
+    </section>
+
+    <!-- ── Teacher Notes ── -->
+    <section class="rh-teacher" aria-label="Teacher notes">
+      <p class="rh-teacher-kicker">Teacher Notes — Not for Student View</p>
+      <h2>Facilitation Guide</h2>
+
+      <h3>What NOT to over-explain</h3>
+      <ul>
+        <li><strong>Don't dwell on complex numbers.</strong> Students do not need to understand i = √(−1) fully to grasp this lesson. The complex plane is just a 2D map — treat it that way. The key is that inputs to the zeta function are 2D coordinates, not just single numbers.</li>
+        <li><strong>Don't explain analytic continuation.</strong> The fact that the zeta function can be extended beyond Re(s) = 1 is deep and requires graduate-level analysis. Simply say: "Riemann found a way to stretch the function to cover the whole plane."</li>
+        <li><strong>Don't push for the exact formula for ζ(s).</strong> The series form is enough context. Focus on the behavior (where it equals zero) rather than the computation.</li>
+        <li><strong>Don't try to explain why ½ is special to younger students.</strong> The symmetry argument is intuitive enough. The actual reason (the functional equation of ζ(s)) is complex analysis. Stick to the "balance point" metaphor.</li>
+      </ul>
+
+      <hr class="rh-teacher-divider" />
+
+      <h3>Common misconceptions to address</h3>
+      <ul>
+        <li><strong>"We've almost proved it — we just need to check more zeros."</strong> This is a critical misconception. Mathematical proof is not statistical. Checking 10 trillion examples proves nothing about the infinite remaining cases. Use the analogy: checking that the sun rises every morning for 10,000 years does not prove it will rise tomorrow.</li>
+        <li><strong>"The zeros are somehow physically located in space."</strong> The complex plane is abstract — a mathematical coordinate system. The zeros are not physical points in the real world. Reinforce that the complex plane is a tool for tracking behavior of a function, not a map of physical space.</li>
+        <li><strong>"If the hypothesis is true, we can predict where the next prime is."</strong> The hypothesis helps bound the error in counting primes below x, but it does not give an efficient formula for the next individual prime. Primes remain locally unpredictable even if globally they follow the distribution.</li>
+        <li><strong>"The million-dollar prize means solving it would be easy to monetize."</strong> The Poincaré Conjecture winner (Perelman) declined the prize. The reward reflects the problem's importance, not a commercial application. Discuss the intrinsic value of mathematical truth.</li>
+      </ul>
+
+      <hr class="rh-teacher-divider" />
+
+      <h3>Cross-subject connections</h3>
+      <div class="rh-teacher-connections">
+        <div class="rh-teacher-conn-box">
+          <strong>Music &amp; Sound</strong>
+          <span>Fourier analysis: any signal can be decomposed into sine waves. The zeros of ζ(s) are the "frequencies" of the prime distribution signal. Connect to music class discussions of harmonics, overtones, and timbre.</span>
+        </div>
+        <div class="rh-teacher-conn-box">
+          <strong>Physics &amp; Waves</strong>
+          <span>Standing waves on strings, resonant frequencies, constructive and destructive interference. The rope activity directly parallels how superposition of waves builds complex signals. Quantum mechanics connection: GUE statistics.</span>
+        </div>
+        <div class="rh-teacher-conn-box">
+          <strong>Computer Science</strong>
+          <span>Cryptography and RSA encryption depend on the hardness of prime factorization. Discuss how prime distribution affects key-size security. Signal processing: Fourier transforms used in audio compression (MP3) use the same wave-stacking math.</span>
+        </div>
+      </div>
+
+      <hr class="rh-teacher-divider" />
+
+      <h3>Pacing suggestions</h3>
+      <ul>
+        <li><strong>Single period (50 min):</strong> Hero + Key Concepts + Visual Intuition (metaphors only) + Rope Wave Activity + 2–3 reflection questions. Skip the visualizer for in-class use; assign it as homework.</li>
+        <li><strong>Two periods:</strong> Day 1: Overview through Wave Visualizer with guided exploration. Day 2: Rope activity, grade-differentiated deep dive, full reflection discussion.</li>
+        <li><strong>Advanced class only:</strong> Include the Advanced Exploration section and assign a short research response on one of the three proof approaches (analytic, spectral, random matrix).</li>
+      </ul>
+
+      <hr class="rh-teacher-divider" />
+
+      <h3>Discussion facilitation</h3>
+      <p>The lesson's goal is a specific feeling: <em>"Wait — prime numbers might be structured like music."</em> Aim for that moment. If students are nodding at the wave diagram and the rope activity clicks, you have succeeded. Don't rush to equations. The conceptual connection is the pedagogical win here.</p>
+      <p>For the reflection question about "why 10 trillion examples aren't a proof," consider using the <strong>Fermat's Last Theorem</strong> comparison (many special cases were known for centuries before Wiles proved it in 1995) or the <strong>Goldbach Conjecture</strong> (verified for enormous numbers but still unproven).</p>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    /* ════════════════════════════════════════════════════
+       COMPLEX PLANE VISUALIZER
+    ════════════════════════════════════════════════════ */
+    (function () {
+      const canvas  = document.getElementById('rh-plane');
+      const ctx     = canvas.getContext('2d');
+      const slider  = document.getElementById('rh-t-slider');
+      const offBox  = document.getElementById('rh-off-line');
+      const tDisp   = document.getElementById('rh-t-display');
+      const nearEl  = document.getElementById('rh-nearby-zero');
+      const obsEl   = document.getElementById('rh-observe-text');
+
+      /* Known non-trivial zeros (imaginary parts) */
+      const zeros = [14.134, 21.022, 25.010, 30.424, 32.935, 37.586, 40.918, 43.327, 48.005, 49.773];
+      /* Deterministic off-line scatter offsets per zero */
+      const scatterRe = [0.14, -0.09, 0.18, -0.12, 0.10, -0.16, 0.08, 0.20, -0.07, 0.15];
+
+      /* Coordinate mapping ─ real axis: -0.6 to 1.6, imaginary: -3 to 55 */
+      const RE_MIN = -0.6, RE_MAX = 1.6, IM_MIN = -3, IM_MAX = 55;
+
+      function px(re) {
+        return ((re - RE_MIN) / (RE_MAX - RE_MIN)) * canvas.width;
+      }
+      function py(im) {
+        return canvas.height - ((im - IM_MIN) / (IM_MAX - IM_MIN)) * canvas.height;
+      }
+
+      function draw(t, offLine) {
+        const dark = document.documentElement.dataset.theme === 'night';
+        const W = canvas.width, H = canvas.height;
+
+        const BG        = dark ? '#1c1c1e' : '#f6f4fb';
+        const GRID      = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+        const AXIS_CLR  = dark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)';
+        const TXT_CLR   = dark ? 'rgba(255,255,255,0.45)' : '#8898aa';
+        const STRIP_CLR = dark ? 'rgba(124,58,237,0.11)' : 'rgba(124,58,237,0.07)';
+        const STRIP_BD  = dark ? 'rgba(124,58,237,0.3)' : 'rgba(124,58,237,0.3)';
+        const LINE_CLR  = '#0ea5e9';
+        const ZERO_CLR  = offLine ? '#ef4444' : (dark ? '#e8d8ff' : '#1d1d1f');
+        const ZERO_BD   = dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.9)';
+        const cursorRe  = offLine ? 0.75 : 0.5;
+
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = BG;
+        ctx.fillRect(0, 0, W, H);
+
+        /* Critical strip fill */
+        ctx.fillStyle = STRIP_CLR;
+        ctx.fillRect(px(0), 0, px(1) - px(0), H);
+
+        /* Grid — imaginary axis labels */
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = TXT_CLR;
+        for (let im = 0; im <= 50; im += 10) {
+          ctx.strokeStyle = GRID;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(0, py(im)); ctx.lineTo(W, py(im)); ctx.stroke();
+          ctx.textAlign = 'left';
+          ctx.fillText(im === 0 ? '0' : im + 'i', px(RE_MIN) + 3, py(im) - 3);
+        }
+
+        /* Grid — real axis labels */
+        [-0.5, 0, 0.5, 1, 1.5].forEach(re => {
+          ctx.strokeStyle = GRID;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(px(re), 0); ctx.lineTo(px(re), H); ctx.stroke();
+          ctx.fillStyle = TXT_CLR;
+          ctx.textAlign = 'center';
+          ctx.fillText(re.toFixed(1), px(re), H - 4);
+        });
+
+        /* Axes */
+        ctx.strokeStyle = AXIS_CLR;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(0, py(0)); ctx.lineTo(W, py(0)); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px(0), 0); ctx.lineTo(px(0), H); ctx.stroke();
+
+        /* Strip borders */
+        ctx.strokeStyle = STRIP_BD;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(px(0), 0); ctx.lineTo(px(0), H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px(1), 0); ctx.lineTo(px(1), H); ctx.stroke();
+        ctx.setLineDash([]);
+
+        /* Critical line */
+        ctx.strokeStyle = LINE_CLR;
+        ctx.lineWidth = offLine ? 1.5 : 2.5;
+        if (offLine) ctx.setLineDash([7, 5]);
+        ctx.beginPath(); ctx.moveTo(px(0.5), 0); ctx.lineTo(px(0.5), H); ctx.stroke();
+        ctx.setLineDash([]);
+
+        /* Off-line position */
+        if (offLine) {
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.moveTo(px(cursorRe), 0); ctx.lineTo(px(cursorRe), H); ctx.stroke();
+
+          /* Label */
+          ctx.fillStyle = '#ef4444';
+          ctx.font = '700 10px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Re(s) = 0.75', px(cursorRe), 13);
+        }
+
+        /* Critical line label */
+        ctx.fillStyle = LINE_CLR;
+        ctx.font = '700 10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Re(s) = ½', px(0.5), offLine ? 24 : 13);
+
+        /* Zeros */
+        zeros.forEach((z, i) => {
+          const zRe = offLine ? (0.5 + scatterRe[i]) : 0.5;
+          const xPos = px(zRe), yPos = py(z);
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, 5, 0, Math.PI * 2);
+          ctx.fillStyle = ZERO_CLR;
+          ctx.fill();
+          ctx.strokeStyle = ZERO_BD;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        });
+
+        /* Moving cursor */
+        ctx.beginPath();
+        ctx.arc(px(cursorRe), py(t), 8, 0, Math.PI * 2);
+        ctx.fillStyle = offLine ? '#ef4444' : LINE_CLR;
+        ctx.fill();
+        ctx.strokeStyle = dark ? 'rgba(255,255,255,0.7)' : '#fff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        /* Axis labels */
+        ctx.fillStyle = TXT_CLR;
+        ctx.font = '700 10px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('Im(s)', px(-0.1), 18);
+        ctx.textAlign = 'left';
+        ctx.fillText('Re(s) →', W - 5, py(0) - 6);
+
+        /* Strip label */
+        ctx.fillStyle = dark ? 'rgba(167,139,250,0.55)' : 'rgba(124,58,237,0.4)';
+        ctx.font = '600 9px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('critical strip', px(0.5), py(-1.5));
+      }
+
+      function nearestZero(t) {
+        let best = zeros[0], bestDist = Math.abs(t - zeros[0]);
+        zeros.forEach(z => { const d = Math.abs(t - z); if (d < bestDist) { bestDist = d; best = z; } });
+        return { z: best, dist: bestDist };
+      }
+
+      function update() {
+        const t      = parseFloat(slider.value);
+        const offLine = offBox.checked;
+        draw(t, offLine);
+
+        /* Update displays */
+        const reStr = offLine ? '0.75' : '½';
+        tDisp.textContent = `s = ${reStr} + ${t.toFixed(1)}i`;
+
+        const { z, dist } = nearestZero(t);
+        const proximity = dist < 0.5 ? 'very close!' : dist < 2 ? 'nearby' : 'far away';
+        nearEl.innerHTML = `Nearest zero: t ≈ ${z.toFixed(3)} &nbsp;|&nbsp; Distance: ${dist.toFixed(2)} &nbsp;(${proximity})`;
+
+        if (offLine) {
+          obsEl.innerHTML = '<strong style="color:#ef4444;">Hypothesis broken!</strong> The zeros have scattered off the critical line. In reality, if even one zero lay off this line, the error in our prime predictions would grow much faster — prime number theory would become far less precise. No such rogue zero has ever been found.';
+        } else {
+          obsEl.innerHTML = '<strong>What to notice:</strong> The dark dots (zeros) all sit on the cyan critical line at Re(s) = ½. Move the slider — each zero marks a point where ζ(s) = 0. Every known zero, more than 10 trillion verified, lies exactly here.';
+        }
+      }
+
+      slider.addEventListener('input', update);
+      offBox.addEventListener('change', update);
+
+      /* Redraw on theme change */
+      const obs = new MutationObserver(update);
+      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+      update();
+    })();
+
+    /* ════════════════════════════════════════════════════
+       WAVE COMPOSITION VISUALIZER
+    ════════════════════════════════════════════════════ */
+    (function () {
+      const canvas  = document.getElementById('rh-wave');
+      const ctx     = canvas.getContext('2d');
+      const slider  = document.getElementById('rh-wave-slider');
+      const countEl = document.getElementById('rh-wave-count-val');
+
+      /* First 10 zero imaginary values */
+      const zeros = [14.134, 21.022, 25.010, 30.424, 32.935, 37.586, 40.918, 43.327, 48.005, 49.773];
+      const colors = ['#7c3aed','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899'];
+
+      function drawWaves(n) {
+        const dark = document.documentElement.dataset.theme === 'night';
+        const W = canvas.width, H = canvas.height;
+        const MID = H / 2;
+        const AMP = H / 4;
+
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = dark ? '#1c1c1e' : '#f8f8ff';
+        ctx.fillRect(0, 0, W, H);
+
+        /* Baseline */
+        ctx.strokeStyle = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(0, MID); ctx.lineTo(W, MID); ctx.stroke();
+        ctx.setLineDash([]);
+
+        /* Individual waves */
+        for (let wi = 0; wi < n; wi++) {
+          const freq = zeros[wi] / 50;   /* scale frequency to canvas width */
+          const amp  = AMP / Math.sqrt(wi + 1);
+
+          ctx.strokeStyle = colors[wi] + '55';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          for (let x = 0; x <= W; x++) {
+            const y = MID - amp * Math.sin(freq * (x / W) * Math.PI * 2 * 3);
+            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+
+        /* Composite sum */
+        ctx.strokeStyle = dark ? 'rgba(245,245,247,0.9)' : '#1d1d1f';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let x = 0; x <= W; x++) {
+          let sumY = 0;
+          for (let wi = 0; wi < n; wi++) {
+            const freq = zeros[wi] / 50;
+            const amp  = AMP / Math.sqrt(wi + 1);
+            sumY += amp * Math.sin(freq * (x / W) * Math.PI * 2 * 3);
+          }
+          const y = MID - sumY;
+          if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        /* Legend */
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = dark ? 'rgba(255,255,255,0.55)' : '#8898aa';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${n} zero${n > 1 ? 's' : ''} combined`, 10, H - 8);
+
+        ctx.fillStyle = dark ? 'rgba(245,245,247,0.8)' : '#1d1d1f';
+        ctx.textAlign = 'right';
+        ctx.fillText('— composite signal', W - 10, H - 8);
+      }
+
+      function update() {
+        const n = parseInt(slider.value);
+        countEl.textContent = n;
+        drawWaves(n);
+      }
+
+      slider.addEventListener('input', update);
+
+      const obs = new MutationObserver(update);
+      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+      update();
+    })();
+  </script>
+</body>
+</html>
