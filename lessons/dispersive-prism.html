@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Newton's Dispersive Prism · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics lesson on Isaac Newton's 1666 prism experiment — how he proved white light is a mixture of all visible spectrum colours, and an interactive dispersive prism simulator." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── page shell ── */
+    body { padding-bottom: 4rem; }
+
+    .prism-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(16px) saturate(140%);
+      background: rgba(245, 245, 247, 0.88);
+      border-bottom: 1px solid rgba(210, 210, 215, 0.7);
+    }
+    [data-lighting="night"] .prism-topbar {
+      background: rgba(28, 28, 30, 0.88);
+      border-bottom-color: rgba(60, 60, 62, 0.7);
+    }
+    .prism-topbar-inner {
+      width: min(1160px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 52px;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 1rem;
+    }
+    .prism-topbar a {
+      color: var(--blue, #0071e3); text-decoration: none;
+      font-size: 0.82rem; font-weight: 700; letter-spacing: 0.01em;
+    }
+    .prism-topbar a:hover { text-decoration: underline; }
+    .prism-topbar-title { font-size: 0.9rem; font-weight: 800; color: var(--text, #1d1d1f); }
+
+    /* ── layout ── */
+    .prism-shell {
+      width: min(1160px, calc(100% - 2rem));
+      margin: 0 auto; padding: 2.2rem 0 2rem;
+      display: grid; gap: 1rem;
+    }
+
+    /* ── card ── */
+    .prism-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 26px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      overflow: hidden;
+    }
+    .prism-card-body { padding: 1.8rem 2rem; }
+    .prism-card-accent { border-left: 4px solid #ff9500; }
+
+    /* ── hero ── */
+    .prism-hero { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(260px,0.9fr); gap: 1rem; align-items: stretch; }
+    @media (max-width: 680px) { .prism-hero { grid-template-columns: 1fr; } }
+
+    .prism-eyebrow {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #ff9500; margin: 0 0 0.6rem;
+    }
+    .prism-h1 {
+      font-size: clamp(1.7rem, 4vw, 2.8rem); font-weight: 900;
+      line-height: 1.08; letter-spacing: -0.03em;
+      color: var(--text, #1d1d1f); margin: 0 0 0.9rem;
+    }
+    .prism-lead {
+      font-size: 0.96rem; line-height: 1.65;
+      color: #3f4f65; margin: 0 0 1.2rem;
+    }
+    [data-lighting="night"] .prism-lead { color: rgba(245,245,247,0.7); }
+    .prism-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .prism-badge {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+      padding: 0.25rem 0.65rem; border-radius: 999px;
+      border: 1px solid rgba(255, 149, 0, 0.35);
+      background: rgba(255, 149, 0, 0.08);
+      color: #c85a00;
+    }
+    [data-lighting="night"] .prism-badge { color: #ffb74d; border-color: rgba(255,183,77,0.4); background: rgba(255,149,0,0.14); }
+
+    /* ── spectrum key panel ── */
+    .prism-key-panel { padding: 1.6rem; display: flex; flex-direction: column; gap: 0.7rem; }
+    .prism-key-head {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted, #6e6e73); margin: 0;
+    }
+    .prism-spectrum-bar {
+      height: 18px; border-radius: 99px;
+      background: linear-gradient(to right, #7b00e0, #4455ff, #00b4ff, #00d97e, #ffe000, #ff7700, #ff1a00);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    .prism-color-list { display: grid; grid-template-columns: repeat(7,1fr); gap: 0.3rem; }
+    .prism-color-swatch { border-radius: 10px; padding: 0.5rem 0.3rem; text-align: center; }
+    .prism-color-swatch .swatch-dot { width: 14px; height: 14px; border-radius: 50%; margin: 0 auto 0.3rem; }
+    .prism-color-swatch .swatch-name { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.02em; }
+    .prism-color-swatch .swatch-nm { font-size: 0.6rem; color: var(--muted,#6e6e73); }
+
+    /* ── section headings ── */
+    .prism-h2 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text,#1d1d1f); margin: 0 0 0.7rem; }
+    .prism-p  { font-size: 0.9rem; line-height: 1.65; color: #3f4f65; margin: 0 0 0.75rem; }
+    .prism-p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .prism-p { color: rgba(245,245,247,0.72); }
+
+    /* ── two-col ── */
+    .prism-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .prism-two-col { grid-template-columns: 1fr; } }
+
+    /* ── timeline strip ── */
+    .prism-timeline { display: flex; flex-direction: column; gap: 0; }
+    .prism-tl-item {
+      display: flex; gap: 1rem; padding: 0.9rem 0;
+      border-bottom: 1px solid var(--line, #d2d2d7);
+    }
+    .prism-tl-item:last-child { border-bottom: none; }
+    .prism-tl-year {
+      width: 52px; flex-shrink: 0; font-size: 0.73rem; font-weight: 800;
+      color: #ff9500; padding-top: 2px;
+    }
+    .prism-tl-title { font-size: 0.87rem; font-weight: 700; color: var(--text,#1d1d1f); margin: 0 0 0.15rem; }
+    .prism-tl-desc  { font-size: 0.8rem; color: var(--muted,#6e6e73); margin: 0; line-height: 1.45; }
+
+    /* ── quote ── */
+    .prism-quote {
+      border-left: 3px solid #ff9500; margin: 0.9rem 0;
+      padding: 0.75rem 1.2rem;
+      background: rgba(255, 149, 0, 0.06);
+      border-radius: 0 10px 10px 0;
+    }
+    .prism-quote p { font-style: italic; font-size: 0.95rem; color: var(--text,#1d1d1f); margin: 0 0 0.4rem; line-height: 1.6; }
+    .prism-quote cite { font-size: 0.76rem; font-weight: 700; color: var(--muted,#6e6e73); font-style: normal; }
+
+    /* ── fact grid ── */
+    .prism-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 0.75rem; margin-top: 0.5rem; }
+    .prism-fact-item {
+      border-radius: 14px; border: 1px solid var(--line,#d2d2d7);
+      background: var(--surface-2, rgba(248,250,252,0.95));
+      padding: 1rem 1.1rem;
+    }
+    .prism-fact-icon { font-size: 1.5rem; margin-bottom: 0.4rem; display: block; }
+    .prism-fact-title { font-size: 0.86rem; font-weight: 700; color: var(--text,#1d1d1f); margin: 0 0 0.2rem; }
+    .prism-fact-desc  { font-size: 0.78rem; color: var(--muted,#6e6e73); line-height: 1.45; margin: 0; }
+
+    /* ── INTERACTIVE SIM ── */
+    #prism-sim-wrap {
+      position: relative; background: #0c0a14;
+      border-radius: 16px; overflow: hidden;
+      border: 1px solid rgba(100, 80, 180, 0.25);
+    }
+    #prism-canvas { display: block; width: 100%; height: auto; }
+    .prism-controls {
+      padding: 1rem 0 0.4rem;
+      display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: flex-end;
+    }
+    .prism-ctrl { display: flex; flex-direction: column; gap: 0.3rem; }
+    .prism-ctrl-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--muted,#6e6e73);
+    }
+    .prism-ctrl-val { color: #ff9500; }
+    input[type=range].prism-range {
+      -webkit-appearance: none; appearance: none;
+      width: 160px; height: 4px; border-radius: 99px;
+      background: rgba(255,149,0,0.2); outline: none;
+    }
+    input[type=range].prism-range::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 16px; height: 16px;
+      border-radius: 50%; background: #ff9500; cursor: pointer;
+      box-shadow: 0 0 6px rgba(255,149,0,0.55);
+    }
+    .prism-sim-note { font-size: 0.8rem; color: var(--muted,#6e6e73); margin: 0.4rem 0 0; font-style: italic; }
+
+    /* ── quiz ── */
+    .prism-quiz-q { font-size: 0.95rem; font-weight: 700; color: var(--text,#1d1d1f); margin: 0 0 0.65rem; }
+    .prism-quiz-opts { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.8rem; }
+    .prism-quiz-opt {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.55rem 0.85rem; border-radius: 10px;
+      border: 1px solid var(--line,#d2d2d7);
+      background: var(--surface-2, rgba(248,250,252,0.9));
+      cursor: pointer; font-size: 0.875rem; color: var(--text,#1d1d1f);
+      font-family: inherit; text-align: left; width: 100%;
+      transition: background 0.13s, border-color 0.13s;
+    }
+    .prism-quiz-opt:hover:not(:disabled) { background: #fff4e6; border-color: #ffb84d; }
+    .prism-quiz-opt.correct   { background: rgba(40,160,80,0.12); border-color: rgba(60,200,100,0.5); color: #1a7a3a; }
+    .prism-quiz-opt.incorrect { background: rgba(200,40,40,0.1);  border-color: rgba(220,80,80,0.45); color: #a02020; }
+    [data-lighting="night"] .prism-quiz-opt { background: rgba(44,44,46,0.8); }
+    [data-lighting="night"] .prism-quiz-opt.correct   { color: #70e09a; }
+    [data-lighting="night"] .prism-quiz-opt.incorrect { color: #f0a0a0; }
+    .prism-quiz-fb {
+      font-size: 0.82rem; line-height: 1.5; padding: 0.55rem 0.85rem;
+      border-radius: 9px; margin-top: 0.2rem; display: none;
+    }
+    .prism-quiz-fb.show { display: block; }
+    .prism-quiz-fb.good { background: rgba(40,160,80,0.1); color: #1a7a3a; border: 1px solid rgba(60,200,100,0.3); }
+    .prism-quiz-fb.bad  { background: rgba(200,40,40,0.08); color: #a02020; border: 1px solid rgba(220,80,80,0.3); }
+    [data-lighting="night"] .prism-quiz-fb.good { color: #70e09a; }
+    [data-lighting="night"] .prism-quiz-fb.bad  { color: #f0a0a0; }
+    .prism-divider { border: none; border-top: 1px solid var(--line,#d2d2d7); margin: 1.4rem 0; }
+
+    /* ── reflect ── */
+    .prism-reflect-label {
+      font-size: 0.76rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--muted,#6e6e73);
+      margin-bottom: 0.4rem; display: block;
+    }
+    .prism-reflect-ta {
+      width: 100%; box-sizing: border-box;
+      background: var(--surface-2, rgba(248,250,252,0.9));
+      border: 1px solid var(--line,#d2d2d7);
+      border-radius: 10px; padding: 0.75rem 1rem;
+      color: var(--text,#1d1d1f); font-size: 0.9rem;
+      font-family: inherit; line-height: 1.55;
+      resize: vertical; min-height: 86px; outline: none;
+      transition: border-color 0.15s;
+    }
+    .prism-reflect-ta:focus { border-color: #ff9500; }
+    .prism-reflect-ta::placeholder { color: var(--muted,#6e6e73); }
+  </style>
+</head>
+<body>
+
+  <!-- topbar -->
+  <nav class="prism-topbar" aria-label="Lesson navigation">
+    <div class="prism-topbar-inner">
+      <a href="../steam-lessons.html">← STEAM Lessons</a>
+      <span class="prism-topbar-title">Newton's Dispersive Prism</span>
+      <a href="../steam-lessons.html#module-physics">Physics</a>
+    </div>
+  </nav>
+
+  <main class="prism-shell">
+
+    <!-- ── HERO ── -->
+    <div class="prism-hero">
+
+      <!-- left: copy -->
+      <div class="prism-card prism-card-accent">
+        <div class="prism-card-body">
+          <p class="prism-eyebrow">Lesson 06 · Optics &amp; Light</p>
+          <h1 class="prism-h1">Newton's Dispersive Prism</h1>
+          <p class="prism-lead">
+            In 1666, a 23-year-old Isaac Newton bought a glass prism at a fair, darkened his room, let in a narrow beam of sunlight — and proved something nobody believed: white light isn't pure. It's every colour at once.
+          </p>
+          <div class="prism-badges">
+            <span class="prism-badge">📅 1666</span>
+            <span class="prism-badge">🔬 Optics</span>
+            <span class="prism-badge">🌈 Visible Spectrum</span>
+            <span class="prism-badge">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Isaac Newton</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- right: spectrum key -->
+      <div class="prism-card">
+        <div class="prism-key-panel">
+          <p class="prism-key-head">The Visible Spectrum</p>
+          <div class="prism-spectrum-bar" aria-label="Spectrum from violet to red"></div>
+          <div class="prism-color-list">
+            <div class="prism-color-swatch">
+              <div class="swatch-dot" style="background:#7b00e0"></div>
+              <div class="swatch-name" style="color:#7b00e0">Violet</div>
+              <div class="swatch-nm">380–450 nm</div>
+            </div>
+            <div class="prism-color-swatch">
+              <div class="swatch-dot" style="background:#4455ff"></div>
+              <div class="swatch-name" style="color:#4455ff">Indigo</div>
+              <div class="swatch-nm">450–485 nm</div>
+            </div>
+            <div class="prism-color-swatch">
+              <div class="swatch-dot" style="background:#00b4ff"></div>
+              <div class="swatch-name" style="color:#00b4ff">Blue</div>
+              <div class="swatch-nm">485–500 nm</div>
+            </div>
+            <div class="prism-color-swatch">
+              <div class="swatch-dot" style="background:#00d97e"></div>
+              <div class="swatch-name" style="color:#00c065">Green</div>
+              <div class="swatch-nm">500–565 nm</div>
+            </div>
+            <div class="prism-color-swatch">
+              <div class="swatch-dot" style="background:#ffe000"></div>
+              <div class="swatch-name" style="color:#c8a000">Yellow</div>
+              <div class="swatch-nm">565–590 nm</div>
+            </div>
+            <div class="prism-color-swatch">
+              <div class="swatch-dot" style="background:#ff7700"></div>
+              <div class="swatch-name" style="color:#cc5500">Orange</div>
+              <div class="swatch-nm">590–625 nm</div>
+            </div>
+            <div class="prism-color-swatch">
+              <div class="swatch-dot" style="background:#ff1a00"></div>
+              <div class="swatch-name" style="color:#cc1500">Red</div>
+              <div class="swatch-nm">625–750 nm</div>
+            </div>
+          </div>
+          <p style="font-size:0.76rem;color:var(--muted,#6e6e73);margin:0.2rem 0 0;line-height:1.45">Newton named seven colours to match the seven notes of the musical scale — though the spectrum is actually continuous.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── INTERACTIVE PRISM SIMULATOR ── -->
+    <div class="prism-card">
+      <div class="prism-card-body">
+        <h2 class="prism-h2">Interactive Prism Simulator</h2>
+        <p class="prism-p">Adjust the beam angle and prism rotation to see how different angles of incidence change the dispersion. The spectrum fans out as white light slows down inside the glass — each wavelength by a different amount.</p>
+
+        <div id="prism-sim-wrap">
+          <canvas id="prism-canvas" width="900" height="420"></canvas>
+        </div>
+
+        <div class="prism-controls">
+          <div class="prism-ctrl">
+            <label class="prism-ctrl-label" for="beam-angle">Beam Angle <span class="prism-ctrl-val" id="beam-angle-val">30°</span></label>
+            <input type="range" id="beam-angle" class="prism-range" min="10" max="70" value="30" />
+          </div>
+          <div class="prism-ctrl">
+            <label class="prism-ctrl-label" for="prism-rotation">Prism Rotation <span class="prism-ctrl-val" id="prism-rotation-val">0°</span></label>
+            <input type="range" id="prism-rotation" class="prism-range" min="-25" max="25" value="0" />
+          </div>
+          <div class="prism-ctrl">
+            <label class="prism-ctrl-label" for="beam-width">Beam Width <span class="prism-ctrl-val" id="beam-width-val">narrow</span></label>
+            <input type="range" id="beam-width" class="prism-range" min="1" max="3" step="1" value="1" />
+          </div>
+          <div class="prism-ctrl">
+            <label class="prism-ctrl-label" for="second-prism">Second Prism</label>
+            <input type="range" id="second-prism" class="prism-range" min="0" max="1" step="1" value="0" />
+            <span class="prism-ctrl-val" id="second-prism-val">off</span>
+          </div>
+        </div>
+        <p class="prism-sim-note">Toggle the second prism to recombine the spectrum back into white light — Newton's crucial proof that the prism doesn't add colour, it only separates it.</p>
+      </div>
+    </div>
+
+    <!-- ── WHAT NEWTON DISCOVERED ── -->
+    <div class="prism-two-col">
+
+      <div class="prism-card prism-card-accent">
+        <div class="prism-card-body">
+          <h2 class="prism-h2">What Newton Proved</h2>
+          <p class="prism-p">Before 1666, the accepted view — held since Aristotle — was that colour was a <strong>modification of white light</strong>. A prism was thought to "stain" pure white light with colour the way a dye stains cloth.</p>
+          <blockquote class="prism-quote">
+            <p>"The most surprising and wonderful composition was that of whiteness. I had never seen any author write of whiteness being a mixture of all colours."</p>
+            <cite>— Isaac Newton, <em>Opticks</em>, 1704</cite>
+          </blockquote>
+          <p class="prism-p">Newton's genius was his <strong>crucial experiment</strong> (<em>experimentum crucis</em>): he used a second prism, inverted, to recombine the dispersed spectrum back into white light. If the prism had been adding colour, a second prism couldn't remove it. Recombination proved the colours were already there — hidden inside white light all along.</p>
+        </div>
+      </div>
+
+      <div class="prism-card">
+        <div class="prism-card-body">
+          <h2 class="prism-h2">How Dispersion Works</h2>
+          <p class="prism-p">When light enters glass at an angle, it slows down. Different wavelengths slow by different amounts — this is called <strong>dispersion</strong>.</p>
+          <div class="prism-facts" style="grid-template-columns:1fr">
+            <div class="prism-fact-item">
+              <span class="prism-fact-icon">🟣</span>
+              <p class="prism-fact-title">Violet bends most</p>
+              <p class="prism-fact-desc">Shorter wavelengths interact more strongly with the glass — violet slows down the most and bends at the steepest angle.</p>
+            </div>
+            <div class="prism-fact-item">
+              <span class="prism-fact-icon">🔴</span>
+              <p class="prism-fact-title">Red bends least</p>
+              <p class="prism-fact-desc">Longer wavelengths pass through more easily — red light slows the least and exits closest to its original direction.</p>
+            </div>
+            <div class="prism-fact-item">
+              <span class="prism-fact-icon">📐</span>
+              <p class="prism-fact-title">Snell's Law</p>
+              <p class="prism-fact-desc">The bending is governed by n = c/v — the refractive index. For glass, n ≈ 1.52 for red and ≈ 1.54 for violet, causing the spread.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── NEWTON'S LIFE / CONTEXT ── -->
+    <div class="prism-card">
+      <div class="prism-card-body">
+        <h2 class="prism-h2">Newton's Annus Mirabilis — 1666</h2>
+        <p class="prism-p">The year 1666 is called Newton's <em>annus mirabilis</em> (year of wonders). Forced home from Cambridge by the Great Plague, Newton — aged 23 — made three of the most important discoveries in the history of science in a single year.</p>
+        <div class="prism-timeline">
+          <div class="prism-tl-item">
+            <span class="prism-tl-year">1643</span>
+            <div>
+              <p class="prism-tl-title">Born in Woolsthorpe, Lincolnshire</p>
+              <p class="prism-tl-desc">Born premature on Christmas Day. His father had died before his birth. He was small enough to fit in a quart pot, by family legend.</p>
+            </div>
+          </div>
+          <div class="prism-tl-item">
+            <span class="prism-tl-year">1661</span>
+            <div>
+              <p class="prism-tl-title">Enters Trinity College, Cambridge</p>
+              <p class="prism-tl-desc">Works as a subsizar — waiting on wealthier students — to pay his fees. Secretly reads Descartes, Kepler, and Galileo outside the official curriculum.</p>
+            </div>
+          </div>
+          <div class="prism-tl-item">
+            <span class="prism-tl-year">1665</span>
+            <div>
+              <p class="prism-tl-title">Great Plague closes Cambridge</p>
+              <p class="prism-tl-desc">Newton retreats to Woolsthorpe for 18 months. Freed from lectures, he begins his most productive period of thinking.</p>
+            </div>
+          </div>
+          <div class="prism-tl-item">
+            <span class="prism-tl-year">1666</span>
+            <div>
+              <p class="prism-tl-title">Annus Mirabilis — three discoveries</p>
+              <p class="prism-tl-desc">① Prism experiment proves white light is a spectrum mix. ② Develops calculus (independently from Leibniz). ③ Begins formulating universal gravitation after observing a falling apple.</p>
+            </div>
+          </div>
+          <div class="prism-tl-item">
+            <span class="prism-tl-year">1668</span>
+            <div>
+              <p class="prism-tl-title">Builds the first reflecting telescope</p>
+              <p class="prism-tl-desc">Using mirrors instead of lenses, Newton eliminates chromatic aberration — the rainbow fringing that plagues refracting telescopes because of dispersion.</p>
+            </div>
+          </div>
+          <div class="prism-tl-item">
+            <span class="prism-tl-year">1704</span>
+            <div>
+              <p class="prism-tl-title">Publishes <em>Opticks</em></p>
+              <p class="prism-tl-desc">His complete theory of light and colour, written in accessible English (not Latin). Describes the prism experiment, colour mixing, and the nature of the spectrum in full detail.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REAL-WORLD CONNECTIONS ── -->
+    <div class="prism-card">
+      <div class="prism-card-body">
+        <h2 class="prism-h2">Why This Matters Today</h2>
+        <p class="prism-p">Newton's prism experiment laid the foundation for the entire science of spectroscopy — one of the most powerful tools in modern science and technology.</p>
+        <div class="prism-facts">
+          <div class="prism-fact-item">
+            <span class="prism-fact-icon">🌈</span>
+            <p class="prism-fact-title">Rainbows</p>
+            <p class="prism-fact-desc">Raindrops act like tiny prisms — sunlight enters, reflects off the inside, and exits dispersed. Newton's theory explains exactly why red is at the top.</p>
+          </div>
+          <div class="prism-fact-item">
+            <span class="prism-fact-icon">⭐</span>
+            <p class="prism-fact-title">Stellar Spectroscopy</p>
+            <p class="prism-fact-desc">Spreading starlight into a spectrum reveals which elements are present. We know what stars are made of — from 100 trillion km away — because of Newton's prism.</p>
+          </div>
+          <div class="prism-fact-item">
+            <span class="prism-fact-icon">📷</span>
+            <p class="prism-fact-title">Camera Sensors &amp; Screens</p>
+            <p class="prism-fact-desc">RGB colour in every camera and screen is built on the understanding that white light (and white pixels) is a mixture of red, green, and blue.</p>
+          </div>
+          <div class="prism-fact-item">
+            <span class="prism-fact-icon">🔭</span>
+            <p class="prism-fact-title">Reflecting Telescopes</p>
+            <p class="prism-fact-desc">Newton invented the reflecting telescope to escape chromatic aberration. Every modern observatory telescope — including Hubble — uses mirrors for this reason.</p>
+          </div>
+          <div class="prism-fact-item">
+            <span class="prism-fact-icon">💊</span>
+            <p class="prism-fact-title">Medical Diagnostics</p>
+            <p class="prism-fact-desc">Spectroscopy identifies molecules by the light they absorb. MRI contrast agents, blood oxygen sensors, and lab tests all descend from Newton's experiment.</p>
+          </div>
+          <div class="prism-fact-item">
+            <span class="prism-fact-icon">🌌</span>
+            <p class="prism-fact-title">Hubble's Discovery</p>
+            <p class="prism-fact-desc">Edwin Hubble used spectroscopy to show galaxies are moving away from us — their light is red-shifted. This proved the universe is expanding.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CHECK YOUR UNDERSTANDING ── -->
+    <div class="prism-card">
+      <div class="prism-card-body">
+        <h2 class="prism-h2">Check Your Understanding</h2>
+        <p class="prism-p" style="margin-bottom:1.4rem">Answer each question, then read the explanation.</p>
+
+        <!-- Q1 -->
+        <p class="prism-quiz-q">1. Before Newton's experiment, what did scientists believe about white light and colour?</p>
+        <div class="prism-quiz-opts" id="q1-opts">
+          <button class="prism-quiz-opt" onclick="checkQ(1,'a')">A. White light was a mixture of all wavelengths of colour</button>
+          <button class="prism-quiz-opt" onclick="checkQ(1,'b')">B. A prism added colour to pure white light, like a dye</button>
+          <button class="prism-quiz-opt" onclick="checkQ(1,'c')">C. Colour existed only in the eye, not in light itself</button>
+          <button class="prism-quiz-opt" onclick="checkQ(1,'d')">D. Red light was the purest form of light</button>
+        </div>
+        <div class="prism-quiz-fb" id="q1-fb"></div>
+        <hr class="prism-divider" />
+
+        <!-- Q2 -->
+        <p class="prism-quiz-q">2. Why did Newton use a second, inverted prism in his experiment?</p>
+        <div class="prism-quiz-opts" id="q2-opts">
+          <button class="prism-quiz-opt" onclick="checkQ(2,'a')">A. To make the colours brighter and easier to see</button>
+          <button class="prism-quiz-opt" onclick="checkQ(2,'b')">B. To separate the spectrum into even more colours</button>
+          <button class="prism-quiz-opt" onclick="checkQ(2,'c')">C. To recombine the dispersed colours back into white light, proving the prism hadn't added the colour</button>
+          <button class="prism-quiz-opt" onclick="checkQ(2,'d')">D. To measure the exact speed of each wavelength</button>
+        </div>
+        <div class="prism-quiz-fb" id="q2-fb"></div>
+        <hr class="prism-divider" />
+
+        <!-- Q3 -->
+        <p class="prism-quiz-q">3. Which colour of light bends the most when passing through a prism, and why?</p>
+        <div class="prism-quiz-opts" id="q3-opts">
+          <button class="prism-quiz-opt" onclick="checkQ(3,'a')">A. Red — it has the longest wavelength and most energy</button>
+          <button class="prism-quiz-opt" onclick="checkQ(3,'b')">B. Green — it's in the middle of the spectrum</button>
+          <button class="prism-quiz-opt" onclick="checkQ(3,'c')">C. Violet — shorter wavelengths slow down more in glass and therefore refract at a steeper angle</button>
+          <button class="prism-quiz-opt" onclick="checkQ(3,'d')">D. All colours bend by exactly the same amount</button>
+        </div>
+        <div class="prism-quiz-fb" id="q3-fb"></div>
+        <hr class="prism-divider" />
+
+        <!-- Open reflection -->
+        <p class="prism-quiz-q">4. Personal Reflection (open-ended)</p>
+        <p class="prism-p" style="margin-bottom:0.7rem">Newton made his discovery during a pandemic lockdown, aged 23, with a prism bought at a fair. What does that tell you about where and how scientific breakthroughs happen? Can you think of another example?</p>
+        <label for="reflect-ta" class="prism-reflect-label">Your reflection</label>
+        <textarea id="reflect-ta" class="prism-reflect-ta" rows="4" placeholder="Write your thoughts here..."></textarea>
+        <p style="font-size:0.74rem;color:var(--muted,#6e6e73);margin:.4rem 0 0">Your writing stays on your device only — nothing is submitted or saved.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer style="text-align:center;padding:1.5rem 1rem 3rem;font-size:0.8rem;color:var(--muted,#6e6e73)">
+    <a href="../steam-lessons.html" style="color:var(--blue,#0071e3);text-decoration:none">← Back to STEAM Lessons</a>
+  </footer>
+
+  <script>
+    // ── Prism Simulator ──
+    (function () {
+      var canvas = document.getElementById('prism-canvas');
+      var ctx    = canvas.getContext('2d');
+      var W = canvas.width, H = canvas.height;
+
+      var beamAngleEl  = document.getElementById('beam-angle');
+      var prismRotEl   = document.getElementById('prism-rotation');
+      var beamWidthEl  = document.getElementById('beam-width');
+      var secondPrismEl= document.getElementById('second-prism');
+      var beamAngleVal = document.getElementById('beam-angle-val');
+      var prismRotVal  = document.getElementById('prism-rotation-val');
+      var beamWidthVal = document.getElementById('beam-width-val');
+      var secondPrismVal = document.getElementById('second-prism-val');
+
+      var SPECTRUM = [
+        { nm: 410, r: 123, g:  0, b: 224, label: 'Violet' },
+        { nm: 450, r:  68, g: 85, b: 255, label: 'Indigo' },
+        { nm: 480, r:   0, g:180, b: 255, label: 'Blue'   },
+        { nm: 530, r:   0, g:220, b: 120, label: 'Green'  },
+        { nm: 570, r: 220, g:210, b:   0, label: 'Yellow' },
+        { nm: 605, r: 255, g:120, b:   0, label: 'Orange' },
+        { nm: 660, r: 255, g: 26, b:   0, label: 'Red'    }
+      ];
+
+      function toRad(d) { return d * Math.PI / 180; }
+      function toDeg(r) { return r * 180 / Math.PI; }
+
+      // Base refractive index (simplified Cauchy for borosilicate)
+      function refractiveIndex(nm) {
+        // n ranges from ~1.54 (violet) to ~1.51 (red)
+        var t = (nm - 380) / (750 - 380); // 0=violet, 1=red
+        return 1.545 - t * 0.035;
+      }
+
+      // Snell's law refraction angle (returns null if TIR)
+      function snell(thetaI, n1, n2) {
+        var sinR = (n1 / n2) * Math.sin(thetaI);
+        if (Math.abs(sinR) > 1) return null;
+        return Math.asin(sinR);
+      }
+
+      // Draw a filled triangle prism given three points
+      function drawPrism(pts, alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        // glass fill
+        var grad = ctx.createLinearGradient(pts[0].x, pts[0].y, pts[2].x, pts[2].y);
+        grad.addColorStop(0,   'rgba(180,210,255,0.22)');
+        grad.addColorStop(0.5, 'rgba(210,235,255,0.28)');
+        grad.addColorStop(1,   'rgba(180,210,255,0.18)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        ctx.lineTo(pts[1].x, pts[1].y);
+        ctx.lineTo(pts[2].x, pts[2].y);
+        ctx.closePath();
+        ctx.fill();
+        // outline
+        ctx.strokeStyle = 'rgba(150,190,255,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+
+        // background
+        var bg = ctx.createLinearGradient(0, 0, W, H);
+        bg.addColorStop(0, '#0c0a14');
+        bg.addColorStop(1, '#10091c');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
+
+        var beamAngle  = parseInt(beamAngleEl.value);
+        var prismRot   = parseInt(prismRotEl.value);
+        var beamW      = parseInt(beamWidthEl.value);
+        var hasSecond  = parseInt(secondPrismEl.value) === 1;
+
+        beamAngleVal.textContent = beamAngle + '°';
+        prismRotVal.textContent  = (prismRot >= 0 ? '+' : '') + prismRot + '°';
+        beamWidthVal.textContent = beamW === 1 ? 'narrow' : beamW === 2 ? 'medium' : 'wide';
+        secondPrismVal.textContent = hasSecond ? 'on' : 'off';
+
+        var beamWidthPx = [2, 5, 10][beamW - 1];
+
+        // ── Prism geometry (equilateral, apex angle 60°) ──
+        var cx1 = W * 0.36, cy1 = H * 0.5;
+        var prismSize = H * 0.38;
+        var rotR = toRad(prismRot);
+
+        function rotPt(px, py, cx, cy, a) {
+          var dx = px - cx, dy = py - cy;
+          return { x: cx + dx * Math.cos(a) - dy * Math.sin(a),
+                   y: cy + dx * Math.sin(a) + dy * Math.cos(a) };
+        }
+
+        var apexBase = { x: cx1, y: cy1 - prismSize * 0.6 };
+        var botLeft  = { x: cx1 - prismSize * 0.5, y: cy1 + prismSize * 0.4 };
+        var botRight = { x: cx1 + prismSize * 0.5, y: cy1 + prismSize * 0.4 };
+        var p1 = [
+          rotPt(apexBase.x, apexBase.y, cx1, cy1, rotR),
+          rotPt(botLeft.x,  botLeft.y,  cx1, cy1, rotR),
+          rotPt(botRight.x, botRight.y, cx1, cy1, rotR)
+        ];
+
+        drawPrism(p1, 1);
+
+        // Left face normal (points outward left)
+        var leftFaceDx = p1[1].x - p1[0].x;
+        var leftFaceDy = p1[1].y - p1[0].y;
+        var leftFaceLen = Math.hypot(leftFaceDx, leftFaceDy);
+        // Inward normal of left face (pointing into prism, i.e. rightward)
+        var leftNormIn = { x: -leftFaceDy / leftFaceLen, y: leftFaceDx / leftFaceLen };
+        if (leftNormIn.x < 0) { leftNormIn.x = -leftNormIn.x; leftNormIn.y = -leftNormIn.y; }
+
+        // ── Incoming beam ──
+        var beamRad = toRad(beamAngle);
+        var beamDir = { x: Math.cos(beamRad), y: Math.sin(beamRad) };
+
+        // Intersection of beam with left face of prism
+        // left face: from p1[0] to p1[1]
+        function segIntersect(ox, oy, dx, dy, ax, ay, bx, by) {
+          var denom = dx * (by - ay) - dy * (bx - ax);
+          if (Math.abs(denom) < 1e-9) return null;
+          var t = ((ax - ox) * (by - ay) - (ay - oy) * (bx - ax)) / denom;
+          var u = ((ax - ox) * dy - (ay - oy) * dx) / denom;
+          if (u < 0 || u > 1 || t < 0) return null;
+          return { x: ox + t * dx, y: oy + t * dy, t: t };
+        }
+
+        // beam starts far left
+        var beamOriginY = cy1 - (prismSize * 0.05);
+        var bOx = 0, bOy = beamOriginY;
+
+        var hitLeft = segIntersect(bOx, bOy, beamDir.x, beamDir.y, p1[0].x, p1[0].y, p1[1].x, p1[1].y);
+        if (!hitLeft) {
+          hitLeft = { x: cx1 - prismSize * 0.2, y: cy1 };
+        }
+
+        // Draw incoming beam (white)
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(bOx, bOy);
+        ctx.lineTo(hitLeft.x, hitLeft.y);
+        ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+        ctx.lineWidth = beamWidthPx;
+        ctx.shadowColor = 'rgba(255,255,255,0.3)';
+        ctx.shadowBlur = 6;
+        ctx.stroke();
+        ctx.restore();
+
+        // label incoming
+        ctx.fillStyle = 'rgba(200,200,220,0.5)';
+        ctx.font = '500 11px Inter, sans-serif';
+        ctx.fillText('white light', 12, bOy - 10);
+
+        // ── Refraction on each wavelength ──
+        // Left face normal (pointing INTO the prism)
+        var angle_incidence = Math.acos(
+          Math.min(1, Math.max(-1,
+            beamDir.x * leftNormIn.x + beamDir.y * leftNormIn.y
+          ))
+        );
+
+        // Right face: from p1[0] to p1[2]
+        var rightFaceDx = p1[2].x - p1[0].x;
+        var rightFaceDy = p1[2].y - p1[0].y;
+        var rightFaceLen = Math.hypot(rightFaceDx, rightFaceDy);
+        // outward normal of right face (pointing right/up)
+        var rightNormOut = { x: rightFaceDy / rightFaceLen, y: -rightFaceDx / rightFaceLen };
+        if (rightNormOut.x < 0) { rightNormOut.x = -rightNormOut.x; rightNormOut.y = -rightNormOut.y; }
+
+        // Inward = opposite
+        var rightNormIn = { x: -rightNormOut.x, y: -rightNormOut.y };
+
+        // Second prism geometry (inverted, placed to the right)
+        var cx2 = W * 0.67, cy2 = H * 0.5;
+        var p2, p2ApexBottom, p2TopLeft, p2TopRight;
+        if (hasSecond) {
+          // inverted prism (apex at bottom)
+          p2ApexBottom = { x: cx2, y: cy2 + prismSize * 0.6 };
+          p2TopLeft    = { x: cx2 - prismSize * 0.5, y: cy2 - prismSize * 0.4 };
+          p2TopRight   = { x: cx2 + prismSize * 0.5, y: cy2 - prismSize * 0.4 };
+          p2 = [p2TopLeft, p2TopRight, p2ApexBottom];
+          drawPrism(p2, 0.85);
+
+          ctx.fillStyle = 'rgba(150,190,255,0.35)';
+          ctx.font = '500 11px Inter, sans-serif';
+          ctx.fillText('recombining prism', cx2 - 52, cy2 + prismSize * 0.6 + 20);
+        }
+
+        SPECTRUM.forEach(function (s, i) {
+          var n = refractiveIndex(s.nm);
+          var color = 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',0.88)';
+
+          // Refraction at left face (air → glass)
+          var thetaT = snell(angle_incidence, 1.0, n);
+          if (thetaT === null) return;
+
+          // Refracted direction inside prism
+          // Bend beamDir around leftNormIn by thetaT
+          var insideDir = refractDir(beamDir, leftNormIn, thetaT, n);
+
+          // Find exit point on right face
+          var hitRight = segIntersect(hitLeft.x, hitLeft.y, insideDir.x, insideDir.y, p1[0].x, p1[0].y, p1[2].x, p1[2].y);
+          if (!hitRight) {
+            // try bottom face
+            hitRight = segIntersect(hitLeft.x, hitLeft.y, insideDir.x, insideDir.y, p1[1].x, p1[1].y, p1[2].x, p1[2].y);
+          }
+          if (!hitRight) return;
+
+          // Draw ray inside prism (dim)
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(hitLeft.x, hitLeft.y);
+          ctx.lineTo(hitRight.x, hitRight.y);
+          ctx.strokeStyle = color;
+          ctx.globalAlpha = 0.35;
+          ctx.lineWidth = Math.max(1, beamWidthPx * 0.6);
+          ctx.stroke();
+          ctx.restore();
+
+          // Refraction at right face (glass → air)
+          // angle of incidence at right face
+          var dotRI = insideDir.x * rightNormIn.x + insideDir.y * rightNormIn.y;
+          var thetaI2 = Math.acos(Math.min(1, Math.max(-1, dotRI)));
+          var thetaT2 = snell(thetaI2, n, 1.0);
+          if (thetaT2 === null) return;
+
+          var exitDir = refractDir(insideDir, rightNormIn, thetaT2, 1.0 / n);
+
+          // Extend ray to second prism or edge
+          var rayEndX, rayEndY;
+          if (hasSecond) {
+            // find entry into second prism (left/top face)
+            var hitP2 = segIntersect(hitRight.x, hitRight.y, exitDir.x, exitDir.y, p2[0].x, p2[0].y, p2[1].x, p2[1].y);
+            if (!hitP2) hitP2 = segIntersect(hitRight.x, hitRight.y, exitDir.x, exitDir.y, p2[0].x, p2[0].y, p2[2].x, p2[2].y);
+
+            // draw ray from prism1 exit to prism2 entry
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(hitRight.x, hitRight.y);
+            var p2EntryX = hitP2 ? hitP2.x : hitRight.x + exitDir.x * W;
+            var p2EntryY = hitP2 ? hitP2.y : hitRight.y + exitDir.y * W;
+            ctx.lineTo(p2EntryX, p2EntryY);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = beamWidthPx;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 8;
+            ctx.stroke();
+            ctx.restore();
+
+            if (hitP2) {
+              // Approximate: recombination prism (inverted) re-refracts each ray
+              // For simplicity, show convergence toward a white output point
+              var convX = cx2 + prismSize * 0.72;
+              var convY = cy2;
+              ctx.save();
+              ctx.beginPath();
+              ctx.moveTo(hitP2.x, hitP2.y);
+              ctx.lineTo(convX + (i - 3) * 1.5, convY);
+              ctx.strokeStyle = color;
+              ctx.globalAlpha = 0.7;
+              ctx.lineWidth = beamWidthPx;
+              ctx.shadowColor = color;
+              ctx.shadowBlur = 6;
+              ctx.stroke();
+              ctx.restore();
+            }
+          } else {
+            // draw to right edge
+            var t_edge = (W - hitRight.x) / (exitDir.x || 0.001);
+            rayEndX = hitRight.x + exitDir.x * t_edge;
+            rayEndY = hitRight.y + exitDir.y * t_edge;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(hitRight.x, hitRight.y);
+            ctx.lineTo(rayEndX, rayEndY);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = beamWidthPx;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            // colour label at right edge
+            if (rayEndX > W - 80) {
+              ctx.fillStyle = color;
+              ctx.globalAlpha = 0.7;
+              ctx.font = '600 10px Inter, sans-serif';
+              ctx.fillText(s.label, W - 72, rayEndY + 4);
+            }
+            ctx.restore();
+          }
+        });
+
+        // White output label after second prism
+        if (hasSecond) {
+          var convX2 = cx2 + prismSize * 0.72;
+          var convY2 = cy2;
+          // glowing white dot
+          var wg = ctx.createRadialGradient(convX2 + 60, convY2, 2, convX2 + 60, convY2, 36);
+          wg.addColorStop(0, 'rgba(255,255,255,0.9)');
+          wg.addColorStop(1, 'transparent');
+          ctx.fillStyle = wg;
+          ctx.fillRect(convX2 + 20, convY2 - 40, 100, 80);
+          ctx.fillStyle = 'rgba(255,255,255,0.55)';
+          ctx.font = '600 11px Inter, sans-serif';
+          ctx.fillText('white light', convX2 + 68, convY2 + 4);
+        }
+
+        // prism label
+        ctx.fillStyle = 'rgba(150,190,255,0.4)';
+        ctx.font = '500 11px Inter, sans-serif';
+        ctx.fillText('glass prism', cx1 - 28, cy1 + prismSize * 0.55);
+      }
+
+      // Refract a direction vector through a surface with inward normal
+      function refractDir(d, nIn, thetaT, nRatio) {
+        // Use vector form of Snell's law
+        // Simplified: rotate d toward the normal by the difference in angles
+        // We'll use the standard formula: d_t = (n1/n2)*d + (n1/n2*cos(theta_i) - cos(theta_t))*n
+        var cosI = d.x * nIn.x + d.y * nIn.y;
+        if (cosI < 0) { nIn = { x: -nIn.x, y: -nIn.y }; cosI = -cosI; }
+        var n1n2 = (nRatio <= 1) ? (1 / refractiveIndex(530)) : refractiveIndex(530);
+        // just use the angle directly
+        var sinT = Math.sin(thetaT);
+        var cosT = Math.cos(thetaT);
+        // tangent direction (perpendicular to normal, in the plane)
+        var tang = { x: d.x - cosI * nIn.x, y: d.y - cosI * nIn.y };
+        var tangLen = Math.hypot(tang.x, tang.y);
+        if (tangLen < 1e-9) return { x: nIn.x, y: nIn.y };
+        tang.x /= tangLen; tang.y /= tangLen;
+        return { x: tang.x * sinT + nIn.x * cosT, y: tang.y * sinT + nIn.y * cosT };
+      }
+
+      [beamAngleEl, prismRotEl, beamWidthEl, secondPrismEl].forEach(function(el) {
+        el.addEventListener('input', draw);
+      });
+
+      draw();
+    })();
+
+    // ── Quiz Logic ──
+    var ANSWERS = {
+      1: {
+        correct: 'b',
+        feedback: {
+          b: 'Correct! The prevailing view since Aristotle was that a prism "stained" or modified pure white light, adding colour to it. Newton\'s experiment overturned 2,000 years of accepted wisdom.',
+          default: 'Not quite. The accepted view before Newton was that white light was pure, and prisms modified it by adding colour — like a dye staining cloth. Newton showed the opposite was true.'
+        }
+      },
+      2: {
+        correct: 'c',
+        feedback: {
+          c: 'Correct! This was Newton\'s experimentum crucis — his crucial experiment. If the prism added colour, a second prism could not remove it. But if it only separated colours already present in white light, a second inverted prism would recombine them. It did — and white light came out the other side.',
+          default: 'Not quite. The second prism was used to recombine the dispersed spectrum back into white light. This was Newton\'s proof that the colours were already inside the white light — the prism only separated them.'
+        }
+      },
+      3: {
+        correct: 'c',
+        feedback: {
+          c: 'Correct! Violet light has the shortest wavelength in the visible spectrum. Shorter wavelengths interact more strongly with the glass — the refractive index is higher for violet than red. This means violet slows down more, bends more (Snell\'s Law), and exits the prism at a steeper angle.',
+          default: 'Not quite. Violet light bends the most. Shorter wavelengths have a higher refractive index in glass — they slow down more and therefore refract at a steeper angle. Red light (longest visible wavelength) bends the least.'
+        }
+      }
+    };
+
+    function checkQ(qNum, choice) {
+      var opts = document.querySelectorAll('#q' + qNum + '-opts .prism-quiz-opt');
+      var fb   = document.getElementById('q' + qNum + '-fb');
+      var ans  = ANSWERS[qNum];
+      opts.forEach(function(btn) { btn.disabled = true; });
+      var letters = ['a','b','c','d'];
+      opts.forEach(function(btn, i) {
+        if (letters[i] === ans.correct) btn.classList.add('correct');
+        else if (letters[i] === choice && choice !== ans.correct) btn.classList.add('incorrect');
+      });
+      fb.textContent = ans.feedback[choice] || ans.feedback['default'];
+      fb.className = 'prism-quiz-fb show ' + (choice === ans.correct ? 'good' : 'bad');
+    }
+  </script>
+
+</body>
+</html>
