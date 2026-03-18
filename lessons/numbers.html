@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Story of Numbers · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Mathematics Lesson 01 — discover the history of numbers, integers, fractions, primes, factors, multiples, modular arithmetic, and why dividing by zero breaks everything." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    .num-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ── */
+    .num-hero { padding: 0.4rem 0 1.3rem; }
+    .num-hero h1 { max-width: 26ch; margin-left: 0; font-size: clamp(1.55rem,3.5vw,2.3rem); }
+    .num-hero-meta { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .num-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .num-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .num-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Card ── */
+    .num-card {
+      background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7);
+      border-left: 3.5px solid var(--card-accent,#ff9500);
+      border-radius: var(--radius,18px);
+      box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+    }
+    .num-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .num-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .num-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .num-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .num-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .num-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Timeline ── */
+    .num-timeline { list-style: none; padding: 0; margin: 0.8rem 0 0; display: flex; flex-direction: column; gap: 0; }
+    .num-timeline li { display: flex; gap: 0.9rem; align-items: flex-start;
+      font-size: 0.86rem; color: #3f4f65; line-height: 1.55;
+      padding: 0.7rem 0; border-bottom: 1px solid var(--line,#d2d2d7); }
+    .num-timeline li:last-child { border-bottom: none; }
+    [data-theme="night"] .num-timeline li { color: rgba(245,245,247,0.72); border-bottom-color: rgba(255,255,255,0.07); }
+    .num-tl-year { flex-shrink: 0; min-width: 80px; font-weight: 800; color: #ff9500; font-size: 0.82rem; }
+    .num-tl-icon { flex-shrink: 0; font-size: 1.1rem; }
+
+    /* ── Number type grid ── */
+    .num-type-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; margin: 0.9rem 0; }
+    .num-type-card {
+      background: rgba(0,0,0,0.03); border: 1.5px solid var(--line,#d2d2d7);
+      border-radius: 12px; padding: 0.85rem; cursor: pointer;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .num-type-card:hover { border-color: #ff9500; }
+    .num-type-card.active { border-color: #ff9500; background: rgba(255,149,0,0.07); }
+    [data-theme="night"] .num-type-card { background: rgba(255,255,255,0.04); }
+    [data-theme="night"] .num-type-card.active { background: rgba(255,149,0,0.10); }
+    .num-type-name { font-weight: 800; font-size: 0.88rem; margin-bottom: 0.18rem; }
+    .num-type-example { font-size: 1.1rem; font-weight: 900; color: #ff9500; margin-bottom: 0.15rem; }
+    .num-type-desc { font-size: 0.78rem; color: #64748b; line-height: 1.5; }
+    .num-type-detail {
+      background: rgba(255,149,0,0.06); border: 1.5px solid rgba(255,149,0,0.22);
+      border-radius: 12px; padding: 1rem 1.1rem; margin-top: 0.75rem;
+      font-size: 0.87rem; color: #3f4f65; line-height: 1.65; display: none;
+    }
+    .num-type-detail.visible { display: block; }
+    [data-theme="night"] .num-type-detail { background: rgba(255,149,0,0.08); color: rgba(245,245,247,0.75); }
+
+    /* ── Callout ── */
+    .num-callout {
+      border-radius: 12px; padding: 0.8rem 1rem; margin: 0.7rem 0;
+      display: flex; gap: 0.7rem; align-items: flex-start;
+    }
+    .num-callout.orange { background: rgba(255,149,0,0.08); border: 1.5px solid rgba(255,149,0,0.25); }
+    .num-callout.red    { background: rgba(255,59,48,0.07);  border: 1.5px solid rgba(255,59,48,0.22); }
+    .num-callout.blue   { background: rgba(0,122,255,0.07);  border: 1.5px solid rgba(0,122,255,0.2); }
+    .num-callout-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .num-callout-text { font-size: 0.86rem; line-height: 1.6; color: #3f4f65; }
+    [data-theme="night"] .num-callout-text { color: rgba(245,245,247,0.75); }
+
+    /* ── Prime grid ── */
+    .num-prime-grid { display: grid; grid-template-columns: repeat(10,1fr); gap: 4px; margin: 0.8rem 0; }
+    .num-prime-cell {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;
+      background: rgba(0,0,0,0.04); border: 1.5px solid transparent;
+      transition: transform 0.12s; user-select: none;
+    }
+    [data-theme="night"] .num-prime-cell { background: rgba(255,255,255,0.06); }
+    .num-prime-cell.is-prime { background: rgba(255,149,0,0.13); color: #ff9500; border-color: rgba(255,149,0,0.3); font-weight: 900; }
+    .num-prime-cell.is-one { color: #94a3b8; }
+    .num-prime-cell:hover { transform: scale(1.15); border-color: #ff9500; }
+    .num-prime-cell.selected { background: #ff9500 !important; color: #fff !important; border-color: #ff9500 !important; }
+    .num-prime-legend { display: flex; gap: 1.2rem; flex-wrap: wrap; margin-bottom: 0.5rem; font-size: 0.78rem; color: #64748b; }
+    .num-prime-legend-item { display: flex; align-items: center; gap: 0.4rem; }
+    .num-legend-swatch { width: 13px; height: 13px; border-radius: 4px; flex-shrink: 0; }
+    .num-prime-info {
+      min-height: 2.4rem; font-size: 0.84rem; color: #3f4f65; line-height: 1.55;
+      padding: 0.5rem 0.8rem; background: rgba(0,0,0,0.03);
+      border: 1px solid var(--line,#d2d2d7); border-radius: 10px; margin-top: 0.6rem;
+    }
+    [data-theme="night"] .num-prime-info { background: rgba(255,255,255,0.04); color: rgba(245,245,247,0.72); }
+
+    /* ── Factor finder ── */
+    .num-factor-row { display: flex; gap: 0.7rem; align-items: center; margin: 0.7rem 0 0.5rem; flex-wrap: wrap; }
+    .num-factor-input {
+      width: 90px; padding: 7px 10px; border: 1.5px solid var(--line,#d2d2d7);
+      border-radius: 10px; font-size: 1rem; font-weight: 800; font-family: inherit;
+      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none; text-align: center;
+    }
+    .num-factor-input:focus { border-color: #ff9500; }
+    .num-btn {
+      padding: 7px 16px; border-radius: 10px; border: none;
+      background: #ff9500; color: #fff; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+    }
+    .num-btn:hover { opacity: 0.85; }
+    .num-factor-result {
+      padding: 0.75rem 1rem; background: rgba(0,0,0,0.03);
+      border: 1px solid var(--line,#d2d2d7); border-radius: 12px;
+      font-size: 0.86rem; line-height: 1.7; min-height: 3rem;
+    }
+    [data-theme="night"] .num-factor-result { background: rgba(255,255,255,0.04); }
+    .num-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.45rem; }
+    .num-chip {
+      background: rgba(255,149,0,0.12); border: 1.5px solid rgba(255,149,0,0.3);
+      border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; font-weight: 700; color: #c27000;
+    }
+    [data-theme="night"] .num-chip { color: #ffb340; }
+    .num-chip.prime-chip { background: rgba(255,149,0,0.22); border-color: #ff9500; }
+
+    /* ── Clock ── */
+    .num-clock-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin: 0.9rem 0; }
+    .num-clock-controls { display: flex; gap: 0.5rem 1rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .num-clock-label { font-size: 0.82rem; font-weight: 700; color: #64748b; }
+    .num-clock-num {
+      width: 68px; padding: 6px 8px; border: 1.5px solid var(--line,#d2d2d7);
+      border-radius: 10px; font-size: 1rem; font-weight: 800; font-family: inherit;
+      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none; text-align: center;
+    }
+    .num-clock-num:focus { border-color: #ff9500; }
+    #num-clock-canvas { border-radius: 50%; display: block; }
+    .num-clock-equation { font-size: 1.05rem; font-weight: 800; text-align: center; }
+    .num-clock-equation span { color: #ff9500; }
+    .num-clock-explain { font-size: 0.82rem; color: #64748b; text-align: center; max-width: 42ch; line-height: 1.5; }
+
+    /* ── Divide by zero ── */
+    .num-zero-row { display: flex; align-items: center; gap: 0.8rem; margin: 0.7rem 0; flex-wrap: wrap; }
+    .num-zero-label { font-size: 0.82rem; font-weight: 700; color: #64748b; }
+    input[type="range"].num-zero-range {
+      flex: 1; min-width: 120px; -webkit-appearance: none; appearance: none;
+      height: 6px; border-radius: 3px; outline: none; cursor: pointer;
+    }
+    input[type="range"].num-zero-range::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: #ff3b30; cursor: pointer;
+    }
+    .num-zero-display {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem;
+      padding: 0.85rem 1rem; border-radius: 12px;
+      border: 1.5px solid rgba(255,59,48,0.25); background: rgba(255,59,48,0.05); margin-top: 0.5rem;
+    }
+    .num-zero-eq { font-size: 1.1rem; font-weight: 900; }
+    .num-zero-result { font-size: 1rem; font-weight: 800; color: #ff3b30; }
+    .num-zero-bar { width: 100%; height: 7px; border-radius: 4px; background: rgba(0,0,0,0.08); margin-top: 0.5rem; overflow: hidden; }
+    .num-zero-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#ff9500,#ff3b30); transition: width 0.1s; }
+    [data-theme="night"] .num-zero-bar { background: rgba(255,255,255,0.1); }
+
+    /* ── Practice ── */
+    .num-practice { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.75rem; }
+    .num-problem { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; }
+    [data-theme="night"] .num-problem { background: rgba(255,255,255,0.04); }
+    .num-problem p { margin: 0 0 0.5rem; font-size: 0.87rem; font-weight: 600; color: var(--text,#1d1d1f); }
+    .num-problem-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .num-ans {
+      width: 80px; padding: 6px 10px; border: 1.5px solid var(--line,#d2d2d7);
+      border-radius: 8px; font-size: 0.9rem; font-family: inherit;
+      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none; text-align: center;
+    }
+    .num-ans:focus { border-color: #ff9500; }
+    .num-check {
+      padding: 6px 14px; border-radius: 8px; border: none;
+      background: #ff9500; color: #fff; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+    }
+    .num-check:hover { opacity: 0.85; }
+    .num-fb { font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; display: none; }
+    .num-fb.ok  { background: rgba(52,199,89,0.15); color: #1a7a2e; display: inline-block; }
+    .num-fb.bad { background: rgba(255,59,48,0.12); color: #c0392b; display: inline-block; }
+    [data-theme="night"] .num-fb.ok  { color: #34c759; }
+    [data-theme="night"] .num-fb.bad { color: #ff6b6b; }
+    .num-hint { font-size: 0.77rem; color: #64748b; margin-top: 0.35rem; display: none; }
+    .num-hint.show { display: block; }
+
+    @media (max-width: 600px) {
+      .num-type-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="num-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero num-hero">
+      <p class="eyebrow">Mathematics · Lesson 01</p>
+      <h1>The Story of Numbers</h1>
+      <div class="num-hero-meta">
+        <span>History &amp; Origins</span>
+        <span class="dot"></span>
+        <span>Integers, Fractions &amp; Decimals</span>
+        <span class="dot"></span>
+        <span>Primes &amp; Factors</span>
+        <span class="dot"></span>
+        <span>Clock Math</span>
+        <span class="dot"></span>
+        <span>Why ÷ 0 Breaks Everything</span>
+      </div>
+      <p class="num-lede">Before algebra, geometry, or calculus — there were numbers. Humans have been counting, trading, and building with numbers for over 30,000 years. This lesson traces that story, introduces the different <em>kinds</em> of numbers, and shows why one forbidden operation would make all of mathematics collapse.</p>
+    </section>
+
+    <!-- ── 1. History ── -->
+    <section class="num-card" style="--card-accent:#ff9500;">
+      <h2>📜 Where Numbers Come From</h2>
+      <p>Numbers weren't invented all at once. They evolved over thousands of years, each civilisation adding another piece. Here are the biggest milestones:</p>
+
+      <ul class="num-timeline">
+        <li>
+          <span class="num-tl-year">~30,000 BC</span>
+          <span class="num-tl-icon">🦴</span>
+          <div><strong>Tally bones.</strong> The <em>Lebombo Bone</em> found in Swaziland has 29 notches carved into it — likely a counting tool or lunar calendar. Humans were tracking quantities before writing fully existed.</div>
+        </li>
+        <li>
+          <span class="num-tl-year">~3,000 BC</span>
+          <span class="num-tl-icon">📐</span>
+          <div><strong>Babylonian base-60.</strong> The Babylonians counted in groups of 60 — which is why we still have 60 seconds in a minute and 360° in a circle. They were also early pioneers of place-value notation.</div>
+        </li>
+        <li>
+          <span class="num-tl-year">~300 BC</span>
+          <span class="num-tl-icon">🏛️</span>
+          <div><strong>Greek number theory.</strong> Euclid proved there are infinitely many prime numbers. The Greeks had no symbol for zero — they considered it philosophically absurd to have a "number of nothing."</div>
+        </li>
+        <li>
+          <span class="num-tl-year">628 AD</span>
+          <span class="num-tl-icon">🔢</span>
+          <div><strong>Zero becomes a number.</strong> Indian mathematician <strong>Brahmagupta</strong> was the first to treat zero as a real number with arithmetic rules — including what happens when you add, subtract, and multiply with it. Revolutionary.</div>
+        </li>
+        <li>
+          <span class="num-tl-year">~1200 AD</span>
+          <span class="num-tl-icon">🌍</span>
+          <div><strong>Hindu-Arabic numerals reach Europe.</strong> Fibonacci's <em>Liber Abaci</em> introduced Europeans to the 0–9 system we use today. Before this, Europe used Roman numerals — try doing long division with IV, XII, and XLVIII.</div>
+        </li>
+        <li>
+          <span class="num-tl-year">Today</span>
+          <span class="num-tl-icon">💻</span>
+          <div><strong>Binary powers the world.</strong> Every computer runs on just two digits: 0 and 1. Every image, video, and message you send is ultimately a very long sequence of zeros and ones.</div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ── 2. Number Zoo ── -->
+    <section class="num-card" style="--card-accent:#ff9500;">
+      <h2>🔢 The Number Zoo</h2>
+      <p>Not all numbers are the same type. Mathematics organises them into families — and knowing which family a number belongs to tells you a lot about how it behaves. Click any card to learn more.</p>
+
+      <div class="num-type-grid">
+        <div class="num-type-card" onclick="selectType(this,'integer')">
+          <div class="num-type-name">Integers</div>
+          <div class="num-type-example">…−2, −1, 0, 1, 2…</div>
+          <div class="num-type-desc">Whole numbers — positive, negative, and zero. No decimals, no fractions.</div>
+        </div>
+        <div class="num-type-card" onclick="selectType(this,'fraction')">
+          <div class="num-type-name">Fractions</div>
+          <div class="num-type-example">½, ¾, 22/7</div>
+          <div class="num-type-desc">Parts of a whole: one integer divided by another (denominator ≠ 0).</div>
+        </div>
+        <div class="num-type-card" onclick="selectType(this,'decimal')">
+          <div class="num-type-name">Decimals</div>
+          <div class="num-type-example">0.5, 3.14, 0.333…</div>
+          <div class="num-type-desc">Fractions written in base-10 notation using a decimal point.</div>
+        </div>
+        <div class="num-type-card" onclick="selectType(this,'ratio')">
+          <div class="num-type-name">Ratios</div>
+          <div class="num-type-example">3:1, 16:9, 1:√2</div>
+          <div class="num-type-desc">A comparison between two quantities — how much of one relative to another.</div>
+        </div>
+      </div>
+
+      <div id="num-type-detail" class="num-type-detail">
+        Select a number type above to explore it.
+      </div>
+
+      <div class="num-callout blue" style="margin-top:0.9rem;">
+        <span class="num-callout-icon">💡</span>
+        <div class="num-callout-text">
+          These families nest inside each other. Every <strong>integer</strong> is also a <strong>fraction</strong> (5 = 5/1), and every terminating fraction is also a <strong>decimal</strong> (¼ = 0.25). Numbers are more related than they first appear.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 3. Primes ── -->
+    <section class="num-card" style="--card-accent:#ff9500;">
+      <h2>⭐ Prime Numbers</h2>
+      <p>A <strong>prime number</strong> is a whole number greater than 1 that can only be divided evenly by <strong>1 and itself</strong>. That makes primes the "atoms" of mathematics — every other whole number is built from primes multiplied together.</p>
+
+      <div class="num-callout orange">
+        <span class="num-callout-icon">⚗️</span>
+        <div class="num-callout-text">
+          <strong>Fundamental Theorem of Arithmetic:</strong> Every integer greater than 1 is either prime, or can be written as a <em>unique</em> product of primes. Example: <strong>60 = 2 × 2 × 3 × 5</strong>. There is only one way to do this factorisation. Primes are irreducible — the atoms of numbers.
+        </div>
+      </div>
+
+      <p>The grid below shows 1–100. <strong style="color:#ff9500;">Orange</strong> = prime. Click any number to inspect it.</p>
+
+      <div class="num-prime-legend">
+        <div class="num-prime-legend-item">
+          <div class="num-legend-swatch" style="background:rgba(255,149,0,0.15);border:1.5px solid rgba(255,149,0,0.4);"></div>
+          <span>Prime</span>
+        </div>
+        <div class="num-prime-legend-item">
+          <div class="num-legend-swatch" style="background:rgba(0,0,0,0.05);border:1.5px solid transparent;"></div>
+          <span>Composite</span>
+        </div>
+        <div class="num-prime-legend-item">
+          <div class="num-legend-swatch" style="background:rgba(0,0,0,0.04);"></div>
+          <span style="color:#94a3b8;">1 (neither)</span>
+        </div>
+      </div>
+
+      <div class="num-prime-grid" id="num-prime-grid"></div>
+      <div class="num-prime-info" id="num-prime-info">Click any number above to see its factors.</div>
+
+      <h3>Why Primes Actually Matter</h3>
+      <p>When you buy something online, your credit card is protected by a mathematical lock built on one fact: <strong>it is very hard to factor a huge number back into its primes.</strong> A 2048-bit encryption key uses a ~600-digit number — no computer on Earth can factor it in any reasonable time.</p>
+      <p>Primes appear in nature too. Cicadas emerge from the ground on prime-number-year cycles (13 years, 17 years) — prime cycles minimise overlap with predator population spikes. Nature discovered prime numbers before mathematicians did.</p>
+    </section>
+
+    <!-- ── 4. Factors & Multiples ── -->
+    <section class="num-card" style="--card-accent:#ff9500;">
+      <h2>✖️ Factors &amp; Multiples</h2>
+      <p>Two sides of the same coin. Understanding them makes fractions, algebra, and even music theory much easier.</p>
+
+      <div class="num-type-grid" style="margin:0.75rem 0;">
+        <div class="num-type-card" style="cursor:default;">
+          <div class="num-type-name">Factors</div>
+          <div class="num-type-example">Factors of 12: 1, 2, 3, 4, 6, 12</div>
+          <div class="num-type-desc">Numbers that divide <em>evenly into</em> a given number. The "ingredients" of a number.</div>
+        </div>
+        <div class="num-type-card" style="cursor:default;">
+          <div class="num-type-name">Multiples</div>
+          <div class="num-type-example">Multiples of 4: 4, 8, 12, 16, 20…</div>
+          <div class="num-type-desc">What you get by multiplying a number by 1, 2, 3… They go on forever.</div>
+        </div>
+      </div>
+
+      <h3>Factor Finder</h3>
+      <p>Enter any number (2–10,000) to see all its factors and its prime factorisation.</p>
+      <div class="num-factor-row">
+        <input type="number" class="num-factor-input" id="num-factor-in" value="36" min="2" max="10000" />
+        <button class="num-btn" onclick="findFactors()">Find Factors</button>
+      </div>
+      <div class="num-factor-result" id="num-factor-result"></div>
+
+      <div class="num-callout blue" style="margin-top:0.9rem;">
+        <span class="num-callout-icon">🎵</span>
+        <div class="num-callout-text">
+          <strong>Factors in music:</strong> A guitar string vibrates not just at its base frequency, but at all whole-number multiples of it (harmonics). That's why a piano and a guitar playing the same note sound different — it's which multiples dominate the sound.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 5. Modular arithmetic ── -->
+    <section class="num-card" style="--card-accent:#ff9500;">
+      <h2>🕐 Modular Arithmetic — Clock Math</h2>
+      <p>What time is it <strong>5 hours after 10 o'clock?</strong> Not 15:00 — it's <strong>3:00</strong>. That's modular arithmetic in action. Numbers "wrap around" when they reach a certain value called the <strong>modulus</strong>.</p>
+
+      <div class="num-callout orange">
+        <span class="num-callout-icon">🔢</span>
+        <div class="num-callout-text">
+          <strong>15 mod 12 = 3</strong> — divide 15 by 12, the <em>remainder</em> is 3.<br>
+          Written as: <strong>a mod n</strong> = the remainder when a is divided by n.
+        </div>
+      </div>
+
+      <h3>Interactive Clock Calculator</h3>
+      <p>Set a starting hour and add any number of hours. See where the hand lands.</p>
+
+      <div class="num-clock-wrap">
+        <div class="num-clock-controls">
+          <span class="num-clock-label">Start hour:</span>
+          <input type="number" class="num-clock-num" id="num-clock-start" value="10" min="1" max="12" oninput="updateClock()" />
+          <span class="num-clock-label">+ add hours:</span>
+          <input type="number" class="num-clock-num" id="num-clock-add" value="5" min="0" max="999" oninput="updateClock()" />
+        </div>
+        <canvas id="num-clock-canvas" width="200" height="200"></canvas>
+        <div class="num-clock-equation" id="num-clock-eq"></div>
+        <div class="num-clock-explain" id="num-clock-explain"></div>
+      </div>
+
+      <h3>Mod in the Real World</h3>
+      <div class="num-type-grid" style="margin:0.6rem 0;">
+        <div class="num-type-card" style="cursor:default;">
+          <div class="num-type-name">🔐 Cryptography</div>
+          <div class="num-type-desc">RSA encryption — the system behind HTTPS — is built almost entirely on modular arithmetic with huge primes.</div>
+        </div>
+        <div class="num-type-card" style="cursor:default;">
+          <div class="num-type-name">📅 Calendars</div>
+          <div class="num-type-desc">Day of the week is mod 7. "300 days from Tuesday?" — 300 mod 7 = 6, so 6 days after Tuesday = Monday.</div>
+        </div>
+        <div class="num-type-card" style="cursor:default;">
+          <div class="num-type-name">🎮 Game Loops</div>
+          <div class="num-type-desc">Animation frame index = current_frame mod total_frames. The animation wraps seamlessly without any if-statements.</div>
+        </div>
+        <div class="num-type-card" style="cursor:default;">
+          <div class="num-type-name">📦 Hash Tables</div>
+          <div class="num-type-desc">Computers store data using mod: slot = hash(item) mod table_size. Every dictionary in code uses this.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 6. Division by zero ── -->
+    <section class="num-card" style="--card-accent:#ff3b30;">
+      <h2>💥 Why It All Matters: Division by Zero</h2>
+      <p>Every rule in mathematics exists for a reason — and nowhere is this clearer than the rule you've probably heard since primary school: <strong>you cannot divide by zero.</strong></p>
+      <p>Division asks: <em>"How many times does this number fit into that one?"</em> So <strong>10 ÷ 2 = 5</strong> means "2 fits into 10 exactly 5 times." Now ask: <em>how many times does <strong>0</strong> fit into 10?</em> Zero fits in infinitely many times — and infinity isn't a number, it's a concept. The question has no meaningful answer.</p>
+
+      <h3>Watch What Happens</h3>
+      <p>Drag the divisor toward zero. Watch the result grow without bound.</p>
+
+      <div class="num-zero-row">
+        <span class="num-zero-label">Divisor:</span>
+        <input type="range" class="num-zero-range" id="num-zero-range" min="0.01" max="5" step="0.01" value="2" oninput="updateZero()" />
+        <strong id="num-zero-dval" style="min-width:42px;">2.00</strong>
+      </div>
+      <div class="num-zero-display">
+        <div class="num-zero-eq" id="num-zero-eq">10 ÷ 2.00</div>
+        <div class="num-zero-result" id="num-zero-res">= 5.00</div>
+        <div class="num-zero-bar" style="width:100%;">
+          <div class="num-zero-fill" id="num-zero-fill" style="width:10%;"></div>
+        </div>
+      </div>
+
+      <div class="num-callout red" style="margin-top:0.8rem;">
+        <span class="num-callout-icon">⚠️</span>
+        <div class="num-callout-text">
+          <strong>If division by zero were allowed, all of mathematics would collapse.</strong> Since 0 × a = 0 × b = 0 for any a and b, dividing both sides by zero would "prove" that a = b for <em>all</em> numbers. We could "prove" 1 = 2, or that 5 = 1,000,000. Every equation would be meaningless.
+        </div>
+      </div>
+      <div class="num-callout blue">
+        <span class="num-callout-icon">⚓</span>
+        <div class="num-callout-text">
+          <strong>Real-world cost:</strong> In 1997, the USS Yorktown — a US Navy cruiser — was dead in the water for nearly 3 hours because a crew member entered zero into a database field. A divide-by-zero error cascaded through the ship's software and crashed the entire propulsion control system.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 7. Practice ── -->
+    <section class="num-card" style="--card-accent:#ff9500;">
+      <h2>✏️ Practice Problems</h2>
+      <div class="num-practice">
+
+        <div class="num-problem">
+          <p>1. What is the smallest prime number?</p>
+          <div class="num-problem-row">
+            <input type="number" class="num-ans" id="q1" placeholder="?" />
+            <button class="num-check" onclick="chk('q1','2','f1','h1')">Check</button>
+            <span class="num-fb" id="f1"></span>
+          </div>
+          <p class="num-hint" id="h1">Hint: remember — 1 is <em>not</em> prime. The smallest prime is the first number divisible only by 1 and itself.</p>
+        </div>
+
+        <div class="num-problem">
+          <p>2. How many factors does 24 have? (count them all)</p>
+          <div class="num-problem-row">
+            <input type="number" class="num-ans" id="q2" placeholder="?" />
+            <button class="num-check" onclick="chk('q2','8','f2','h2')">Check</button>
+            <span class="num-fb" id="f2"></span>
+          </div>
+          <p class="num-hint" id="h2">Hint: factors of 24 are 1, 2, 3, 4, 6, 8, 12, 24 — count them.</p>
+        </div>
+
+        <div class="num-problem">
+          <p>3. What is 17 mod 5?</p>
+          <div class="num-problem-row">
+            <input type="number" class="num-ans" id="q3" placeholder="?" />
+            <button class="num-check" onclick="chk('q3','2','f3','h3')">Check</button>
+            <span class="num-fb" id="f3"></span>
+          </div>
+          <p class="num-hint" id="h3">Hint: 5 goes into 17 three times (= 15). What's left over?</p>
+        </div>
+
+        <div class="num-problem">
+          <p>4. Convert the fraction ¾ to a decimal.</p>
+          <div class="num-problem-row">
+            <input type="text" class="num-ans" id="q4" placeholder="0.??" style="width:100px;" />
+            <button class="num-check" onclick="chk('q4','0.75','f4','h4')">Check</button>
+            <span class="num-fb" id="f4"></span>
+          </div>
+          <p class="num-hint" id="h4">Hint: divide 3 by 4.</p>
+        </div>
+
+        <div class="num-problem">
+          <p>5. It is 9 o'clock. What time will it be in 50 hours? (give a number 1–12)</p>
+          <div class="num-problem-row">
+            <input type="number" class="num-ans" id="q5" placeholder="?" />
+            <button class="num-check" onclick="chk('q5','11','f5','h5')">Check</button>
+            <span class="num-fb" id="f5"></span>
+          </div>
+          <p class="num-hint" id="h5">Hint: (9 + 50) mod 12 = 59 mod 12. 12 × 4 = 48, so 59 − 48 = ?</p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    /* ── Number type details ── */
+    const typeInfo = {
+      integer: `<strong>Integers</strong> are the counting numbers, their negatives, and zero: …, −3, −2, −1, 0, 1, 2, 3, …<br><br>
+<strong>Positive integers</strong> (1, 2, 3, …) are the <em>natural numbers</em> — the first kind of numbers humans ever used.<br><br>
+<strong>Zero</strong> was a huge invention. The Babylonians had a placeholder for it around 300 BC, but Brahmagupta in 628 AD was the first to treat it as a true number you could do arithmetic with.<br><br>
+<strong>Negative integers</strong> were resisted for centuries — European mathematicians called them "absurd." Today they're everywhere: temperatures below freezing, bank overdrafts, floors below ground level.`,
+
+      fraction: `<strong>Fractions</strong> have the form a/b — <em>a</em> is the numerator (top), <em>b</em> is the denominator (bottom), and b must never be 0.<br><br>
+Ancient Egyptians used fractions extensively in construction. The precision of the pyramids required detailed fractional arithmetic performed on papyrus scrolls.<br><br>
+<strong>Equivalent fractions</strong> look different but are equal: ½ = 2/4 = 3/6. Simplifying means dividing both numbers by their greatest common factor.<br><br>
+<strong>Improper fractions</strong> (like 7/4) have a top number larger than the bottom — they equal more than 1 and can be written as mixed numbers (1¾).`,
+
+      decimal: `<strong>Decimals</strong> write fractions using base-10 place value. Digits after the point represent tenths, hundredths, thousandths, etc.<br><br>
+<strong>Terminating decimals</strong> end after a fixed number of digits: 0.25, 0.5, 0.125.<br><br>
+<strong>Repeating decimals</strong> go on forever with a pattern: 1/3 = 0.333… The bar notation 0.<span style="text-decoration:overline">3</span> means "3 repeats forever."<br><br>
+<strong>Non-repeating, non-terminating decimals</strong> (like π = 3.14159…) are called <em>irrational numbers</em> — they cannot be written as any fraction at all.`,
+
+      ratio: `<strong>Ratios</strong> compare two quantities. Written a:b or a/b, they express how much of one thing relative to another.<br><br>
+<strong>Screen ratios:</strong> A 16:9 screen is 16 units wide for every 9 units tall — standard for TVs, laptops, and YouTube.<br><br>
+<strong>Map scales:</strong> A 1:50,000 map means 1 cm on paper = 50,000 cm = 500 m in reality.<br><br>
+<strong>The Golden Ratio</strong> (≈ 1.618:1) appears in the spirals of a nautilus shell, the spacing of sunflower seeds, and architectural proportions that humans tend to find naturally pleasing.`
+    };
+
+    function selectType(el, type) {
+      document.querySelectorAll('.num-type-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      const d = document.getElementById('num-type-detail');
+      d.innerHTML = typeInfo[type];
+      d.classList.add('visible');
+    }
+
+    /* ── Prime helpers ── */
+    function isPrime(n) {
+      if (n < 2) return false;
+      if (n === 2) return true;
+      if (n % 2 === 0) return false;
+      for (let i = 3; i * i <= n; i += 2) if (n % i === 0) return false;
+      return true;
+    }
+    function getFactors(n) {
+      const f = [];
+      for (let i = 1; i <= n; i++) if (n % i === 0) f.push(i);
+      return f;
+    }
+    function primeFactors(n) {
+      const r = []; let d = 2;
+      while (d * d <= n) { while (n % d === 0) { r.push(d); n /= d; } d++; }
+      if (n > 1) r.push(n);
+      return r;
+    }
+
+    /* ── Build prime grid ── */
+    (function() {
+      const grid = document.getElementById('num-prime-grid');
+      for (let i = 1; i <= 100; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'num-prime-cell';
+        cell.textContent = i;
+        if (i === 1) cell.classList.add('is-one');
+        else if (isPrime(i)) cell.classList.add('is-prime');
+        cell.addEventListener('click', () => {
+          document.querySelectorAll('.num-prime-cell.selected').forEach(c => c.classList.remove('selected'));
+          cell.classList.add('selected');
+          const info = document.getElementById('num-prime-info');
+          if (i === 1) {
+            info.innerHTML = '<strong>1</strong> is special — neither prime nor composite. If 1 were prime, the Fundamental Theorem of Arithmetic would break (factorisation wouldn\'t be unique).';
+          } else if (isPrime(i)) {
+            info.innerHTML = `<strong>${i} is PRIME.</strong> Only divisible by 1 and ${i}. It's an atomic number — cannot be broken down further.`;
+          } else {
+            const pf = primeFactors(i);
+            info.innerHTML = `<strong>${i} is composite.</strong> Factors: ${getFactors(i).join(', ')}. Prime factorisation: <strong style="color:#ff9500;">${i} = ${pf.join(' × ')}</strong>.`;
+          }
+        });
+        grid.appendChild(cell);
+      }
+    })();
+
+    /* ── Factor finder ── */
+    function findFactors() {
+      const n = parseInt(document.getElementById('num-factor-in').value, 10);
+      const out = document.getElementById('num-factor-result');
+      if (isNaN(n) || n < 2 || n > 10000) {
+        out.innerHTML = '<span style="color:#ff3b30;">Enter a whole number between 2 and 10,000.</span>';
+        return;
+      }
+      const factors = getFactors(n);
+      const pf = primeFactors(n);
+      const prime = isPrime(n);
+      const chips = factors.map(f => {
+        const cls = isPrime(f) && f > 1 ? 'num-chip prime-chip' : 'num-chip';
+        return `<span class="${cls}">${f}${isPrime(f) && f > 1 ? ' ★' : ''}</span>`;
+      }).join('');
+      out.innerHTML = `<div style="margin-bottom:0.4rem;"><strong>${n}</strong> is <strong style="color:${prime ? '#ff9500' : 'inherit'}">${prime ? '⭐ PRIME' : 'composite'}</strong> — ${factors.length} factor${factors.length !== 1 ? 's' : ''}.</div>
+<div class="num-chips">${chips}</div>
+${!prime ? `<div style="margin-top:0.45rem;font-size:0.82rem;color:#64748b;">Prime factorisation: ${n} = ${pf.map(f=>`<strong style="color:#ff9500;">${f}</strong>`).join(' × ')}</div>` : ''}`;
+    }
+    findFactors();
+
+    /* ── Clock calculator ── */
+    function updateClock() {
+      const start  = Math.max(1, Math.min(12, parseInt(document.getElementById('num-clock-start').value) || 10));
+      const add    = Math.max(0, parseInt(document.getElementById('num-clock-add').value) || 0);
+      const total  = start + add;
+      let result   = total % 12;
+      if (result === 0) result = 12;
+
+      const canvas = document.getElementById('num-clock-canvas');
+      const ctx    = canvas.getContext('2d');
+      const W = 200, H = 200, cx = 100, cy = 100, r = 88;
+      const night  = document.documentElement.getAttribute('data-theme') === 'night';
+      const bg     = night ? '#2c2c2e' : '#ffffff';
+      const fg     = night ? 'rgba(245,245,247,0.9)' : '#1d1d1f';
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Face
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = bg; ctx.fill();
+      ctx.strokeStyle = '#ff9500'; ctx.lineWidth = 3; ctx.stroke();
+
+      // Hour labels
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '700 11px Inter,sans-serif'; ctx.fillStyle = fg;
+      for (let i = 1; i <= 12; i++) {
+        const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+        ctx.fillText(i, cx + (r - 16) * Math.cos(a), cy + (r - 16) * Math.sin(a));
+      }
+
+      // Hand (destination)
+      const handAngle = (result / 12) * Math.PI * 2 - Math.PI / 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + (r - 22) * Math.cos(handAngle), cy + (r - 22) * Math.sin(handAngle));
+      ctx.strokeStyle = '#ff9500'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+
+      // Centre dot
+      ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff9500'; ctx.fill();
+
+      // Starting hour dot
+      const sa = (start / 12) * Math.PI * 2 - Math.PI / 2;
+      ctx.beginPath(); ctx.arc(cx + (r - 22) * Math.cos(sa), cy + (r - 22) * Math.sin(sa), 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#64748b'; ctx.fill();
+
+      document.getElementById('num-clock-eq').innerHTML =
+        `(${start} + ${add}) mod 12 = <span>${result}</span>`;
+      document.getElementById('num-clock-explain').textContent =
+        `${start} + ${add} = ${total}. Dividing by 12 gives ${Math.floor(total / 12)} full rotation${Math.floor(total/12) !== 1 ? 's' : ''} remainder ${result}. The hand lands on ${result}.`;
+    }
+    updateClock();
+
+    /* ── Divide by zero demo ── */
+    function updateZero() {
+      const d = parseFloat(document.getElementById('num-zero-range').value);
+      const result = 10 / d;
+      document.getElementById('num-zero-dval').textContent = d.toFixed(2);
+      document.getElementById('num-zero-eq').textContent = `10 ÷ ${d.toFixed(2)}`;
+      document.getElementById('num-zero-res').textContent =
+        result > 99999 ? '→ ∞  (undefined)' : `= ${result.toFixed(2)}`;
+      document.getElementById('num-zero-fill').style.width =
+        Math.min((result / 1000) * 100, 100) + '%';
+      const pct = ((d - 0.01) / 4.99) * 100;
+      document.getElementById('num-zero-range').style.background =
+        `linear-gradient(90deg,#ff3b30 0%,#ff9500 ${pct}%,rgba(0,0,0,0.12) ${pct}%)`;
+    }
+    updateZero();
+
+    /* ── Practice checker ── */
+    function chk(qId, answer, fbId, hintId) {
+      const val = document.getElementById(qId).value.trim();
+      const fb   = document.getElementById(fbId);
+      const hint = document.getElementById(hintId);
+      if (val === String(answer)) {
+        fb.textContent = '✓ Correct!'; fb.className = 'num-fb ok';
+        hint.classList.remove('show');
+      } else {
+        fb.textContent = '✗ Try again'; fb.className = 'num-fb bad';
+        hint.classList.add('show');
+      }
+    }
+  </script>
+</body>
+</html>

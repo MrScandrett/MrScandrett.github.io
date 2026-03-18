@@ -4,438 +4,598 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plato's Allegory of the Cave · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="A Systems & Society lesson on Plato's Allegory of the Cave — perception vs. reality, the limits of knowledge, and how the allegory applies to modern systems." />
+  <meta
+    name="description"
+    content="A clearer, student-friendly lesson on Plato's Allegory of the Cave with a guided walkthrough, Christian reflection, and modern applications."
+  />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <style>
-    body {
-      margin: 0;
-      background:
-        radial-gradient(1100px 520px at 8% -10%, rgba(60, 20, 120, 0.18), transparent 55%),
-        radial-gradient(900px 400px at 100% 0%, rgba(180, 90, 30, 0.14), transparent 52%),
-        linear-gradient(180deg, #13111a 0%, #1c1824 55%, #0f0d14 100%);
-      color: #e8e2f8;
-      min-height: 100vh;
+    :root {
+      --cave-bg: #14100e;
+      --cave-panel: rgba(34, 26, 21, 0.94);
+      --cave-panel-2: rgba(28, 21, 17, 0.92);
+      --cave-line: rgba(214, 180, 120, 0.2);
+      --cave-ink: #f3ead8;
+      --cave-muted: #c8b79f;
+      --cave-dim: #9b886f;
+      --cave-accent: #e6a64d;
+      --cave-accent-2: #7fb0a3;
+      --cave-shadow: rgba(0, 0, 0, 0.35);
+      --cave-good: #6ec2a9;
+      --cave-warn: #f0b96b;
+      --cave-bad: #d78272;
     }
 
-    /* ── topbar ── */
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--cave-ink);
+      background:
+        radial-gradient(1000px 540px at 0% 0%, rgba(230, 166, 77, 0.14), transparent 55%),
+        radial-gradient(920px 420px at 100% 0%, rgba(127, 176, 163, 0.12), transparent 55%),
+        linear-gradient(180deg, #17110e 0%, #110d0b 45%, #090706 100%);
+    }
+
     .cave-topbar {
       position: sticky;
       top: 0;
-      z-index: 40;
-      backdrop-filter: blur(16px) saturate(140%);
-      background: rgba(18, 14, 28, 0.82);
-      border-bottom: 1px solid rgba(140, 100, 220, 0.22);
+      z-index: 50;
+      backdrop-filter: blur(16px) saturate(130%);
+      background: rgba(17, 13, 10, 0.84);
+      border-bottom: 1px solid rgba(230, 166, 77, 0.14);
     }
     .cave-topbar-inner {
-      width: min(1160px, calc(100% - 2rem));
+      width: min(1140px, calc(100% - 2rem));
       margin: 0 auto;
-      min-height: 52px;
+      min-height: 56px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
     }
     .cave-topbar a {
-      color: #b99fe8;
+      color: #f3d2a1;
       text-decoration: none;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       font-weight: 700;
       letter-spacing: 0.02em;
     }
-    .cave-topbar a:hover { color: #e0d0ff; }
+    .cave-topbar a:hover { color: #ffe7c5; }
     .cave-topbar-title {
-      font-size: 0.9rem;
+      color: #f7eddc;
+      font-size: 0.92rem;
       font-weight: 800;
-      color: #d8c8f8;
       letter-spacing: -0.01em;
+      text-align: center;
     }
 
-    /* ── shell ── */
     .cave-shell {
-      width: min(1160px, calc(100% - 2rem));
+      width: min(1140px, calc(100% - 2rem));
       margin: 0 auto;
-      padding: 2.4rem 0 4rem;
+      padding: 2rem 0 4rem;
       display: grid;
       gap: 1.2rem;
     }
 
-    /* ── cards ── */
     .cave-card {
       border-radius: 22px;
-      border: 1px solid rgba(140, 100, 220, 0.22);
-      background: linear-gradient(160deg, rgba(30, 22, 50, 0.96), rgba(22, 16, 40, 0.94));
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--cave-line);
+      background: linear-gradient(180deg, var(--cave-panel), var(--cave-panel-2));
+      box-shadow: 0 24px 54px var(--cave-shadow);
       overflow: hidden;
     }
-    .cave-card-body { padding: 2rem 2.2rem; }
+    .cave-card-body { padding: 2rem; }
 
-    /* ── hero ── */
     .cave-hero {
       display: grid;
       grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
       gap: 1.2rem;
       align-items: stretch;
     }
-    @media (max-width: 700px) {
+    @media (max-width: 760px) {
       .cave-hero { grid-template-columns: 1fr; }
+      .cave-card-body { padding: 1.35rem; }
     }
 
     .cave-eyebrow {
-      font-size: 0.72rem;
-      font-weight: 700;
+      margin: 0 0 0.7rem;
+      color: #efbb72;
+      font-size: 0.74rem;
+      font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #9b72e8;
-      margin: 0 0 0.65rem;
     }
     .cave-h1 {
-      font-size: clamp(1.8rem, 4vw, 2.9rem);
-      font-weight: 900;
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-      color: #f0ebff;
-      margin: 0 0 1rem;
+      margin: 0 0 0.9rem;
+      font-size: clamp(2rem, 4.3vw, 3.15rem);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      color: #fff5e6;
     }
     .cave-h1 em {
       font-style: normal;
-      color: #c89eff;
+      color: #ffd188;
     }
     .cave-lead {
+      margin: 0 0 1.25rem;
+      max-width: 58ch;
       font-size: 1rem;
-      line-height: 1.65;
-      color: #b8aed4;
-      margin: 0 0 1.4rem;
+      line-height: 1.7;
+      color: var(--cave-muted);
     }
-    .cave-meta-row {
+
+    .cave-tag-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.55rem;
+      margin-bottom: 1.2rem;
     }
-    .cave-badge {
+    .cave-tag {
       display: inline-flex;
       align-items: center;
-      gap: 0.3rem;
-      font-size: 0.73rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      padding: 0.28rem 0.72rem;
+      padding: 0.36rem 0.78rem;
       border-radius: 999px;
-      border: 1px solid rgba(160, 120, 240, 0.35);
-      background: rgba(100, 60, 200, 0.16);
-      color: #c8aaff;
+      border: 1px solid rgba(230, 166, 77, 0.24);
+      background: rgba(230, 166, 77, 0.08);
+      color: #f7d2a4;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
     }
 
-    /* ── timeline diagram ── */
-    .cave-timeline-panel {
-      padding: 1.8rem 1.6rem;
+    .cave-big-idea {
+      border-radius: 18px;
+      border: 1px solid rgba(230, 166, 77, 0.18);
+      background: linear-gradient(135deg, rgba(230, 166, 77, 0.14), rgba(127, 176, 163, 0.08));
+      padding: 1rem 1.1rem;
+    }
+    .cave-big-idea-label {
+      margin: 0 0 0.3rem;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #ffd188;
+    }
+    .cave-big-idea p {
+      margin: 0;
+      font-size: 0.96rem;
+      line-height: 1.65;
+      color: #f8efdf;
+    }
+
+    .cave-lesson-map {
       display: flex;
       flex-direction: column;
-      gap: 1.1rem;
+      gap: 1rem;
     }
-    .cave-tl-head {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #8868c8;
+    .cave-map-box {
+      border-radius: 18px;
+      border: 1px solid rgba(255, 244, 224, 0.08);
+      background: rgba(255, 247, 238, 0.03);
+      padding: 1.1rem 1.1rem 1rem;
+    }
+    .cave-map-title {
+      margin: 0 0 0.35rem;
+      color: #fff1db;
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+    .cave-map-copy {
       margin: 0;
+      color: var(--cave-muted);
+      font-size: 0.87rem;
+      line-height: 1.6;
     }
-    .cave-tl-item {
-      display: flex;
-      gap: 0.9rem;
-      align-items: flex-start;
+    .cave-map-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 0.7rem;
     }
-    .cave-tl-dot {
-      width: 10px;
-      height: 10px;
+    .cave-map-step {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 0.8rem;
+      align-items: start;
+    }
+    .cave-map-num {
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
-      flex-shrink: 0;
-      margin-top: 5px;
-    }
-    .dot-fire  { background: #ff8c42; box-shadow: 0 0 8px rgba(255,140,66,0.6); }
-    .dot-chain { background: #9b72e8; box-shadow: 0 0 8px rgba(155,114,232,0.5); }
-    .dot-light { background: #ffe066; box-shadow: 0 0 8px rgba(255,224,102,0.5); }
-    .dot-sun   { background: #60e0a0; box-shadow: 0 0 8px rgba(96,224,160,0.5); }
-    .cave-tl-label {
+      display: grid;
+      place-items: center;
+      background: rgba(230, 166, 77, 0.16);
+      border: 1px solid rgba(230, 166, 77, 0.2);
+      color: #ffd79e;
       font-size: 0.85rem;
-      font-weight: 700;
-      color: #d8d0f0;
-      margin: 0 0 0.18rem;
+      font-weight: 900;
     }
-    .cave-tl-desc {
+    .cave-map-step strong {
+      display: block;
+      margin-bottom: 0.14rem;
+      color: #f8efdf;
+      font-size: 0.88rem;
+    }
+    .cave-map-step span {
+      color: var(--cave-dim);
       font-size: 0.8rem;
-      color: #8880a8;
-      margin: 0;
-      line-height: 1.45;
+      line-height: 1.55;
     }
 
-    /* ── section headings ── */
     .cave-section-head {
-      font-size: 1.25rem;
+      margin: 0 0 0.45rem;
+      font-size: 1.35rem;
       font-weight: 800;
-      color: #e8e0ff;
       letter-spacing: -0.02em;
-      margin: 0 0 0.9rem;
+      color: #fff3df;
     }
     .cave-section-sub {
-      font-size: 0.9rem;
-      line-height: 1.6;
-      color: #9890b8;
-      margin: 0 0 1.4rem;
+      margin: 0 0 1.2rem;
+      max-width: 70ch;
+      color: var(--cave-muted);
+      font-size: 0.93rem;
+      line-height: 1.7;
     }
 
-    /* ── interactive cave simulator ── */
+    .cave-story-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 0.85rem;
+    }
+    .cave-story-card {
+      border-radius: 18px;
+      border: 1px solid rgba(255, 244, 224, 0.07);
+      background: rgba(255, 247, 238, 0.03);
+      padding: 1rem;
+    }
+    .cave-story-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      margin-bottom: 0.7rem;
+      background: rgba(127, 176, 163, 0.14);
+      border: 1px solid rgba(127, 176, 163, 0.22);
+      color: #bfe8dd;
+      font-size: 0.82rem;
+      font-weight: 900;
+    }
+    .cave-story-card h3 {
+      margin: 0 0 0.35rem;
+      color: #fff0d6;
+      font-size: 0.96rem;
+      font-weight: 800;
+    }
+    .cave-story-card p {
+      margin: 0;
+      color: var(--cave-muted);
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
+    .cave-sim-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem 1.4rem;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .cave-sim-groups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem 1.3rem;
+      align-items: flex-start;
+    }
+    .cave-sim-group {
+      display: grid;
+      gap: 0.45rem;
+    }
+    .cave-sim-label {
+      color: #efbb72;
+      font-size: 0.73rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .cave-btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    .cave-choice-btn {
+      border: 1px solid rgba(255, 233, 204, 0.12);
+      background: rgba(255, 247, 238, 0.03);
+      color: var(--cave-muted);
+      border-radius: 999px;
+      padding: 0.55rem 0.9rem;
+      font: inherit;
+      font-size: 0.83rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+    }
+    .cave-choice-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(230, 166, 77, 0.26);
+      color: #f9ead4;
+    }
+    .cave-choice-btn.active {
+      background: linear-gradient(135deg, rgba(230, 166, 77, 0.2), rgba(127, 176, 163, 0.14));
+      border-color: rgba(230, 166, 77, 0.34);
+      color: #fff4e6;
+    }
+
+    .cave-scene-copy {
+      min-width: 250px;
+      max-width: 360px;
+      border-radius: 18px;
+      border: 1px solid rgba(230, 166, 77, 0.12);
+      background: rgba(255, 247, 238, 0.03);
+      padding: 0.9rem 1rem;
+    }
+    .cave-scene-copy h3 {
+      margin: 0 0 0.18rem;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #fff2de;
+    }
+    .cave-scene-copy p {
+      margin: 0;
+      color: var(--cave-muted);
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
     #cave-canvas-wrap {
       position: relative;
-      border-radius: 14px;
+      border-radius: 18px;
       overflow: hidden;
-      background: #0a0810;
-      border: 1px solid rgba(100, 60, 180, 0.3);
+      background: #070605;
+      border: 1px solid rgba(230, 166, 77, 0.15);
+      box-shadow: inset 0 0 0 1px rgba(255, 247, 238, 0.03);
     }
     #cave-canvas {
       display: block;
       width: 100%;
       height: auto;
     }
-    .cave-controls {
-      padding: 1rem 0 0.2rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.2rem;
-      align-items: flex-end;
+
+    .cave-info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 1rem;
     }
-    .cave-ctrl-group { display: flex; flex-direction: column; gap: 0.3rem; }
-    .cave-ctrl-label {
-      font-size: 0.73rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
+    @media (max-width: 900px) {
+      .cave-info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 560px) {
+      .cave-info-grid { grid-template-columns: 1fr; }
+    }
+    .cave-info-card {
+      border-radius: 16px;
+      border: 1px solid rgba(255, 244, 224, 0.07);
+      background: rgba(255, 247, 238, 0.03);
+      padding: 0.95rem 1rem;
+    }
+    .cave-info-card span {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: #efbb72;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #8060c0;
     }
-    .cave-ctrl-val { color: #c8aaff; }
-    input[type=range].cave-range {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 160px;
-      height: 4px;
-      border-radius: 99px;
-      background: rgba(140, 100, 220, 0.3);
-      outline: none;
-    }
-    input[type=range].cave-range::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #a070f0;
-      cursor: pointer;
-      box-shadow: 0 0 6px rgba(160, 112, 240, 0.6);
-    }
-    .cave-sim-note {
-      font-size: 0.8rem;
-      color: #6a6090;
-      margin: 0.6rem 0 0;
-      font-style: italic;
-    }
-
-    /* ── quote blockquote ── */
-    .cave-quote {
-      border-left: 3px solid #8b60e8;
+    .cave-info-card p {
       margin: 0;
-      padding: 0.9rem 1.4rem;
-      background: rgba(80, 40, 160, 0.12);
-      border-radius: 0 12px 12px 0;
-    }
-    .cave-quote p {
-      font-size: 1.05rem;
-      font-style: italic;
-      color: #c8c0e8;
+      color: var(--cave-muted);
+      font-size: 0.84rem;
       line-height: 1.6;
-      margin: 0 0 0.5rem;
-    }
-    .cave-quote cite {
-      font-size: 0.78rem;
-      color: #7868a8;
-      font-style: normal;
-      font-weight: 700;
     }
 
-    /* ── two-col layout ── */
     .cave-two-col {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1.2rem;
     }
-    @media (max-width: 640px) {
+    @media (max-width: 760px) {
       .cave-two-col { grid-template-columns: 1fr; }
     }
 
-    /* ── modern connections grid ── */
-    .cave-connections-grid {
+    .cave-stack {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 0.9rem;
+      gap: 0.8rem;
     }
-    .cave-conn-item {
-      border-radius: 14px;
-      border: 1px solid rgba(120, 80, 200, 0.22);
-      background: rgba(40, 28, 70, 0.7);
-      padding: 1.1rem 1.3rem;
+    .cave-mini-card {
+      border-radius: 16px;
+      border: 1px solid rgba(255, 244, 224, 0.07);
+      background: rgba(255, 247, 238, 0.03);
+      padding: 1rem;
     }
-    .cave-conn-icon {
-      font-size: 1.6rem;
-      margin-bottom: 0.55rem;
-      display: block;
+    .cave-mini-card h3 {
+      margin: 0 0 0.28rem;
+      font-size: 0.94rem;
+      color: #fff0d6;
+      font-weight: 800;
     }
-    .cave-conn-title {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: #d0c4f4;
-      margin: 0 0 0.3rem;
-    }
-    .cave-conn-desc {
-      font-size: 0.8rem;
-      color: #8078a8;
-      line-height: 1.5;
+    .cave-mini-card p {
       margin: 0;
+      color: var(--cave-muted);
+      font-size: 0.84rem;
+      line-height: 1.62;
     }
 
-    /* ── reflection quiz ── */
-    .cave-quiz-q {
+    .cave-note {
+      border-radius: 16px;
+      border: 1px solid rgba(127, 176, 163, 0.2);
+      background: rgba(127, 176, 163, 0.08);
+      padding: 0.95rem 1rem;
+      color: #dff6ef;
+      font-size: 0.84rem;
+      line-height: 1.65;
+    }
+    .cave-note strong { color: #f5fffc; }
+
+    .cave-refs {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .cave-ref {
+      border-left: 3px solid rgba(230, 166, 77, 0.42);
+      padding-left: 0.85rem;
+    }
+    .cave-ref strong {
+      display: block;
+      margin-bottom: 0.12rem;
+      color: #fff1d8;
+      font-size: 0.88rem;
+    }
+    .cave-ref p {
+      margin: 0;
+      color: var(--cave-muted);
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+
+    .cave-connection-grid,
+    .cave-discuss-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.85rem;
+    }
+    .cave-connection,
+    .cave-discuss {
+      border-radius: 18px;
+      border: 1px solid rgba(255, 244, 224, 0.08);
+      background: rgba(255, 247, 238, 0.03);
+      padding: 1rem;
+    }
+    .cave-connection h3,
+    .cave-discuss h3 {
+      margin: 0 0 0.3rem;
+      color: #fff0d7;
       font-size: 0.95rem;
-      font-weight: 700;
-      color: #d4c8f0;
-      margin: 0 0 0.7rem;
+      font-weight: 800;
+    }
+    .cave-connection p,
+    .cave-discuss p {
+      margin: 0;
+      color: var(--cave-muted);
+      font-size: 0.83rem;
+      line-height: 1.6;
+    }
+
+    .cave-quiz-q {
+      margin: 0 0 0.65rem;
+      color: #fff0d7;
+      font-size: 0.96rem;
+      font-weight: 800;
     }
     .cave-quiz-options {
-      display: flex;
-      flex-direction: column;
+      display: grid;
       gap: 0.45rem;
-      margin-bottom: 0.9rem;
     }
     .cave-quiz-opt {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      padding: 0.6rem 0.9rem;
-      border-radius: 10px;
-      border: 1px solid rgba(120, 80, 200, 0.25);
-      background: rgba(40, 28, 68, 0.6);
-      cursor: pointer;
-      font-size: 0.875rem;
-      color: #c0b4e0;
-      transition: background 0.15s, border-color 0.15s;
-      text-align: left;
       width: 100%;
-      font-family: inherit;
+      text-align: left;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 244, 224, 0.09);
+      background: rgba(255, 247, 238, 0.03);
+      color: var(--cave-muted);
+      padding: 0.72rem 0.9rem;
+      font: inherit;
+      font-size: 0.87rem;
+      line-height: 1.5;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
     .cave-quiz-opt:hover:not(:disabled) {
-      background: rgba(80, 50, 160, 0.35);
-      border-color: rgba(160, 110, 240, 0.5);
+      background: rgba(230, 166, 77, 0.08);
+      border-color: rgba(230, 166, 77, 0.2);
+      color: #f6ead8;
     }
     .cave-quiz-opt.correct {
-      background: rgba(40, 160, 80, 0.22);
-      border-color: rgba(60, 200, 100, 0.5);
-      color: #88eeb8;
+      background: rgba(110, 194, 169, 0.13);
+      border-color: rgba(110, 194, 169, 0.4);
+      color: #dcfaf1;
     }
     .cave-quiz-opt.incorrect {
-      background: rgba(160, 40, 40, 0.22);
-      border-color: rgba(220, 80, 80, 0.45);
-      color: #f0a0a0;
+      background: rgba(215, 130, 114, 0.12);
+      border-color: rgba(215, 130, 114, 0.34);
+      color: #ffe2dc;
     }
     .cave-quiz-feedback {
-      font-size: 0.82rem;
-      line-height: 1.5;
-      padding: 0.6rem 0.9rem;
-      border-radius: 9px;
-      margin-top: 0.3rem;
       display: none;
+      margin-top: 0.5rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 12px;
+      font-size: 0.83rem;
+      line-height: 1.6;
     }
     .cave-quiz-feedback.show { display: block; }
-    .cave-quiz-feedback.good { background: rgba(40,160,80,0.15); color: #88eeb8; border: 1px solid rgba(60,200,100,0.3); }
-    .cave-quiz-feedback.bad  { background: rgba(160,40,40,0.15); color: #f0a0a0; border: 1px solid rgba(220,80,80,0.3); }
-    .cave-quiz-divider { border: none; border-top: 1px solid rgba(100, 70, 180, 0.2); margin: 1.4rem 0; }
-
-    /* ── reflection textarea ── */
-    .cave-reflect-label {
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      color: #7860b0;
-      margin-bottom: 0.4rem;
-      display: block;
+    .cave-quiz-feedback.good {
+      border: 1px solid rgba(110, 194, 169, 0.36);
+      background: rgba(110, 194, 169, 0.12);
+      color: #dffcf3;
     }
+    .cave-quiz-feedback.bad {
+      border: 1px solid rgba(215, 130, 114, 0.3);
+      background: rgba(215, 130, 114, 0.12);
+      color: #ffe5df;
+    }
+    .cave-quiz-divider {
+      border: none;
+      border-top: 1px solid rgba(255, 244, 224, 0.08);
+      margin: 1.2rem 0;
+    }
+
     .cave-reflect-textarea {
       width: 100%;
-      box-sizing: border-box;
-      background: rgba(20, 14, 38, 0.7);
-      border: 1px solid rgba(120, 80, 200, 0.28);
-      border-radius: 10px;
-      padding: 0.8rem 1rem;
-      color: #c8c0e8;
+      min-height: 118px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 244, 224, 0.12);
+      background: rgba(255, 247, 238, 0.04);
+      color: var(--cave-ink);
+      padding: 0.9rem 1rem;
+      font: inherit;
       font-size: 0.9rem;
-      font-family: inherit;
-      line-height: 1.55;
+      line-height: 1.6;
       resize: vertical;
-      min-height: 90px;
       outline: none;
-      transition: border-color 0.15s;
     }
     .cave-reflect-textarea:focus {
-      border-color: rgba(160, 110, 240, 0.6);
+      border-color: rgba(230, 166, 77, 0.34);
+      box-shadow: 0 0 0 3px rgba(230, 166, 77, 0.08);
     }
-    .cave-reflect-textarea::placeholder { color: #4a4068; }
-
-    /* ── timeline strip ── */
-    .cave-history-strip {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-      gap: 0.7rem;
-    }
-    .cave-hist-item {
-      border-radius: 12px;
-      border: 1px solid rgba(110, 72, 200, 0.22);
-      background: rgba(35, 24, 62, 0.8);
-      padding: 0.9rem 1.1rem;
-    }
-    .cave-hist-year {
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      color: #7860b0;
-      margin-bottom: 0.25rem;
-    }
-    .cave-hist-title {
-      font-size: 0.84rem;
-      font-weight: 700;
-      color: #d0c4f4;
-      margin: 0 0 0.2rem;
-    }
-    .cave-hist-note {
-      font-size: 0.76rem;
-      color: #6a6090;
-      line-height: 1.4;
-      margin: 0;
+    .cave-reflect-textarea::placeholder { color: #7f6d5a; }
+    .cave-reflect-note {
+      margin: 0.45rem 0 0;
+      color: var(--cave-dim);
+      font-size: 0.78rem;
     }
 
-    /* ── progress breadcrumb ── */
-    .cave-breadcrumb {
-      display: flex;
-      gap: 0.4rem;
-      align-items: center;
-      flex-wrap: wrap;
+    .cave-footer {
+      text-align: center;
+      padding: 1rem 1rem 3rem;
+      color: #8d785f;
+      font-size: 0.8rem;
     }
-    .cave-breadcrumb-item {
-      font-size: 0.72rem;
-      color: #6a5a90;
+    .cave-footer a {
+      color: #efbb72;
+      text-decoration: none;
     }
-    .cave-breadcrumb-sep { color: #3d3260; }
+    .cave-footer a:hover { color: #ffe7c5; }
   </style>
 </head>
 <body>
-
-  <!-- topbar -->
   <nav class="cave-topbar" aria-label="Lesson navigation">
     <div class="cave-topbar-inner">
       <a href="../steam-lessons.html">← STEAM Lessons</a>
@@ -445,569 +605,822 @@
   </nav>
 
   <main class="cave-shell">
-
-    <!-- ── HERO ── -->
-    <div class="cave-hero">
-
-      <!-- left: copy -->
-      <div class="cave-card">
+    <section class="cave-hero">
+      <article class="cave-card">
         <div class="cave-card-body">
-          <nav aria-label="breadcrumb" class="cave-breadcrumb" style="margin-bottom:1.1rem">
-            <span class="cave-breadcrumb-item">Systems &amp; Society</span>
-            <span class="cave-breadcrumb-sep">›</span>
-            <span class="cave-breadcrumb-item">Lesson 02</span>
-            <span class="cave-breadcrumb-sep">›</span>
-            <span class="cave-breadcrumb-item" style="color:#a080d8">Perception &amp; Reality</span>
-          </nav>
-          <p class="cave-eyebrow">Lesson 02 · Philosophy &amp; Critical Thinking</p>
-          <h1 class="cave-h1">Plato's <em>Allegory</em><br>of the Cave</h1>
+          <p class="cave-eyebrow">Systems &amp; Society · Lesson 02</p>
+          <h1 class="cave-h1">Plato's <em>Allegory</em> of the Cave</h1>
           <p class="cave-lead">
-            Written around 380 BCE in <em>The Republic</em>, Plato's Allegory of the Cave is one of the most influential thought experiments in Western philosophy. It asks a radical question: what if everything you think you know about reality is just a shadow of the truth?
+            This lesson is built around one simple question: if all you ever saw were shadows, how would you know there was more? Plato uses that image to teach students to question appearances, seek truth, and practice discernment.
           </p>
-          <div class="cave-meta-row">
-            <span class="cave-badge">📖 ~380 BCE</span>
-            <span class="cave-badge">🏛️ Ancient Greece</span>
-            <span class="cave-badge">🧠 Epistemology</span>
-            <span class="cave-badge">🌐 Systems Thinking</span>
+          <div class="cave-tag-row">
+            <span class="cave-tag">around 380 BCE</span>
+            <span class="cave-tag">grades 6-12</span>
+            <span class="cave-tag">perception vs. reality</span>
+            <span class="cave-tag">critical thinking</span>
+          </div>
+          <div class="cave-big-idea">
+            <p class="cave-big-idea-label">Big Idea</p>
+            <p>People often mistake a limited view for the whole truth. Wise learners slow down, ask questions, and stay humble enough to change when they see more clearly.</p>
           </div>
         </div>
-      </div>
+      </article>
 
-      <!-- right: story map -->
-      <div class="cave-card cave-timeline-panel">
-        <p class="cave-tl-head">The Allegory — At a Glance</p>
-        <div class="cave-tl-item">
-          <span class="cave-tl-dot dot-chain"></span>
-          <div>
-            <p class="cave-tl-label">The Prisoners</p>
-            <p class="cave-tl-desc">Chained since birth, facing a wall. They cannot turn their heads or move.</p>
+      <aside class="cave-card cave-lesson-map">
+        <div class="cave-card-body">
+          <div class="cave-map-box" style="margin-bottom: 0.95rem;">
+            <h2 class="cave-map-title">In One Sentence</h2>
+            <p class="cave-map-copy">The cave shows how easy it is to live by partial truth, and how hard but necessary it is to move toward what is real.</p>
           </div>
-        </div>
-        <div class="cave-tl-item">
-          <span class="cave-tl-dot dot-fire"></span>
-          <div>
-            <p class="cave-tl-label">The Fire &amp; Shadows</p>
-            <p class="cave-tl-desc">A fire behind them casts shadows of objects onto the wall. The prisoners believe these shadows are reality.</p>
-          </div>
-        </div>
-        <div class="cave-tl-item">
-          <span class="cave-tl-dot dot-light"></span>
-          <div>
-            <p class="cave-tl-label">The Escape</p>
-            <p class="cave-tl-desc">One prisoner is freed. Blinded by light at first, they slowly adjust and see the real world.</p>
-          </div>
-        </div>
-        <div class="cave-tl-item">
-          <span class="cave-tl-dot dot-sun"></span>
-          <div>
-            <p class="cave-tl-label">The Return</p>
-            <p class="cave-tl-desc">The freed prisoner returns to tell the others. They don't believe them — and resist the truth.</p>
-          </div>
-        </div>
-      </div>
 
-    </div>
+          <div class="cave-map-box">
+            <h2 class="cave-map-title">How To Read This Lesson</h2>
+            <div class="cave-map-list">
+              <div class="cave-map-step">
+                <div class="cave-map-num">1</div>
+                <div>
+                  <strong>Learn the story first</strong>
+                  <span>Understand the cave before jumping into philosophy words.</span>
+                </div>
+              </div>
+              <div class="cave-map-step">
+                <div class="cave-map-num">2</div>
+                <div>
+                  <strong>Follow the guided walkthrough</strong>
+                  <span>See what the prisoner sees, then compare it to what is actually there.</span>
+                </div>
+              </div>
+              <div class="cave-map-step">
+                <div class="cave-map-num">3</div>
+                <div>
+                  <strong>Connect it to your life</strong>
+                  <span>Think about media, peer pressure, rumors, and how Christians seek truth.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
 
-    <!-- ── INTERACTIVE CAVE SIMULATOR ── -->
-    <div class="cave-card">
+    <section class="cave-card">
       <div class="cave-card-body">
-        <h2 class="cave-section-head">Interactive Cave Simulator</h2>
+        <h2 class="cave-section-head">Story First: The Cave in Plain English</h2>
         <p class="cave-section-sub">
-          Drag the sliders to control the fire position and the object being cast as a shadow. Watch how the prisoners on the wall see only distorted silhouettes — never the true object.
+          Before students worry about vocabulary, they need the plot. Here is the allegory in a clear five-step sequence.
         </p>
+        <div class="cave-story-grid">
+          <article class="cave-story-card">
+            <div class="cave-story-num">1</div>
+            <h3>People are chained in a cave</h3>
+            <p>They have faced the wall their whole lives. They cannot turn around to see what is behind them.</p>
+          </article>
+          <article class="cave-story-card">
+            <div class="cave-story-num">2</div>
+            <h3>They watch shadows</h3>
+            <p>A fire behind them casts shadows on the wall. Because that is all they know, they treat the shadows as reality.</p>
+          </article>
+          <article class="cave-story-card">
+            <div class="cave-story-num">3</div>
+            <h3>One prisoner is freed</h3>
+            <p>At first, seeing the fire and the real objects hurts and confuses the prisoner. Truth is not immediately comfortable.</p>
+          </article>
+          <article class="cave-story-card">
+            <div class="cave-story-num">4</div>
+            <h3>The prisoner goes outside</h3>
+            <p>Eventually the prisoner sees the world beyond the cave and realizes the shadows were only partial copies.</p>
+          </article>
+          <article class="cave-story-card">
+            <div class="cave-story-num">5</div>
+            <h3>The prisoner returns</h3>
+            <p>The others resist the message because the familiar shadows feel safer than a bigger truth they do not understand yet.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cave-card">
+      <div class="cave-card-body">
+        <h2 class="cave-section-head">Guided Cave Walkthrough</h2>
+        <p class="cave-section-sub">
+          The old slider version looked active but did not really teach. This version walks students through the story on purpose. Use the scene buttons to move through the allegory and the object buttons to see how a real thing can become a misleading shadow.
+        </p>
+
+        <div class="cave-sim-top">
+          <div class="cave-sim-groups">
+            <div class="cave-sim-group">
+              <span class="cave-sim-label">Scene</span>
+              <div class="cave-btn-row" id="scene-buttons">
+                <button class="cave-choice-btn active" type="button" data-scene="0">1. Chained</button>
+                <button class="cave-choice-btn" type="button" data-scene="1">2. Shadows</button>
+                <button class="cave-choice-btn" type="button" data-scene="2">3. Turn Around</button>
+                <button class="cave-choice-btn" type="button" data-scene="3">4. Outside</button>
+                <button class="cave-choice-btn" type="button" data-scene="4">5. Return</button>
+              </div>
+            </div>
+
+            <div class="cave-sim-group">
+              <span class="cave-sim-label">Object Casting the Shadow</span>
+              <div class="cave-btn-row" id="object-buttons">
+                <button class="cave-choice-btn active" type="button" data-object="0">Person</button>
+                <button class="cave-choice-btn" type="button" data-object="1">Tree</button>
+                <button class="cave-choice-btn" type="button" data-object="2">Bird</button>
+                <button class="cave-choice-btn" type="button" data-object="3">Vase</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="cave-scene-copy">
+            <h3 id="scene-title">1. Chained by a Limited View</h3>
+            <p id="scene-sub">The prisoners think the wall is the whole world because they have never seen anything else.</p>
+          </div>
+        </div>
 
         <div id="cave-canvas-wrap">
-          <canvas id="cave-canvas" width="900" height="380"></canvas>
+          <canvas id="cave-canvas" width="940" height="420"></canvas>
         </div>
 
-        <div class="cave-controls">
-          <div class="cave-ctrl-group">
-            <label class="cave-ctrl-label" for="fire-x-slider">Fire Position <span class="cave-ctrl-val" id="fire-x-val">center</span></label>
-            <input type="range" id="fire-x-slider" class="cave-range" min="0" max="100" value="50" />
-          </div>
-          <div class="cave-ctrl-group">
-            <label class="cave-ctrl-label" for="object-slider">Object Shape</label>
-            <input type="range" id="object-slider" class="cave-range" min="0" max="3" step="1" value="0" />
-            <span class="cave-ctrl-val" id="object-val">Person</span>
-          </div>
-          <div class="cave-ctrl-group">
-            <label class="cave-ctrl-label" for="prisoners-freed">Prisoners Freed</label>
-            <input type="range" id="prisoners-freed" class="cave-range" min="0" max="3" step="1" value="0" />
-            <span class="cave-ctrl-val" id="freed-val">0 of 3</span>
-          </div>
+        <div class="cave-info-grid">
+          <article class="cave-info-card">
+            <span>What The Prisoner Sees</span>
+            <p id="scene-sees">Only moving shadows on the wall.</p>
+          </article>
+          <article class="cave-info-card">
+            <span>What Is Actually Real</span>
+            <p id="scene-reality">There is a fire and a real object behind the prisoners, but they cannot turn to see it.</p>
+          </article>
+          <article class="cave-info-card">
+            <span>Main Lesson</span>
+            <p id="scene-lesson">A small view can feel complete when it is all you have ever known.</p>
+          </article>
+          <article class="cave-info-card">
+            <span>Talk About It</span>
+            <p id="scene-question">What sources shape your picture of reality right now?</p>
+          </article>
         </div>
-        <p class="cave-sim-note">The prisoners on the left see only the shadows on the wall — never the fire, the object, or the world beyond.</p>
       </div>
-    </div>
+    </section>
 
-    <!-- ── PLATO'S MEANING ── -->
-    <div class="cave-two-col">
-
-      <div class="cave-card">
+    <section class="cave-two-col">
+      <article class="cave-card">
         <div class="cave-card-body">
-          <h2 class="cave-section-head">What Did Plato Mean?</h2>
+          <h2 class="cave-section-head">What Plato Is Saying</h2>
           <p class="cave-section-sub">
-            The cave is a metaphor for human experience. Plato believed the physical world we see is not "real" — it's a pale copy of a higher realm of perfect, eternal Forms or Ideas.
+            The allegory is about more than a cave. Plato is asking how human beings know what is true and why false or partial pictures can feel convincing.
           </p>
-          <blockquote class="cave-quote">
-            <p>"The eyes of the mind... are not the same as the eyes of the body."</p>
-            <cite>— Plato, The Republic (~380 BCE)</cite>
-          </blockquote>
-          <div style="margin-top:1.2rem; display:flex; flex-direction:column; gap:0.7rem">
-            <div style="display:flex; gap:0.75rem; align-items:flex-start">
-              <span style="font-size:1.2rem; flex-shrink:0; margin-top:2px">🔗</span>
-              <div>
-                <strong style="color:#c8b8f0;font-size:0.88rem">The Chains = Ignorance</strong>
-                <p style="color:#8880a8;font-size:0.8rem;margin:.2rem 0 0;line-height:1.45">Our habits, biases, and accepted beliefs keep us fixed — we don't even know we're constrained.</p>
-              </div>
+
+          <div class="cave-stack">
+            <div class="cave-mini-card">
+              <h3>The cave</h3>
+              <p>A limited world of assumptions. It stands for the way people can live inside a narrow picture of reality without noticing it.</p>
             </div>
-            <div style="display:flex; gap:0.75rem; align-items:flex-start">
-              <span style="font-size:1.2rem; flex-shrink:0; margin-top:2px">🔥</span>
-              <div>
-                <strong style="color:#c8b8f0;font-size:0.88rem">The Fire = The Physical World</strong>
-                <p style="color:#8880a8;font-size:0.8rem;margin:.2rem 0 0;line-height:1.45">Our senses give us data, but that data can deceive. The fire illuminates but also casts false forms.</p>
-              </div>
+            <div class="cave-mini-card">
+              <h3>The shadows</h3>
+              <p>Appearances, partial information, and copies. The shadows are not nothing, but they are not the whole truth either.</p>
             </div>
-            <div style="display:flex; gap:0.75rem; align-items:flex-start">
-              <span style="font-size:1.2rem; flex-shrink:0; margin-top:2px">☀️</span>
-              <div>
-                <strong style="color:#c8b8f0;font-size:0.88rem">The Sun = Truth / The Good</strong>
-                <p style="color:#8880a8;font-size:0.8rem;margin:.2rem 0 0;line-height:1.45">Outside the cave is the real world, lit by the Sun — representing pure reason, truth, and Plato's Form of the Good.</p>
-              </div>
+            <div class="cave-mini-card">
+              <h3>The painful turn</h3>
+              <p>Education and growth. Plato shows that learning can be uncomfortable because it forces old beliefs to be tested.</p>
             </div>
-            <div style="display:flex; gap:0.75rem; align-items:flex-start">
-              <span style="font-size:1.2rem; flex-shrink:0; margin-top:2px">🧭</span>
-              <div>
-                <strong style="color:#c8b8f0;font-size:0.88rem">The Philosopher = The Freed Prisoner</strong>
-                <p style="color:#8880a8;font-size:0.8rem;margin:.2rem 0 0;line-height:1.45">Philosophy is the painful process of adjusting your eyes — questioning assumptions, seeking truth even when it's uncomfortable.</p>
-              </div>
+            <div class="cave-mini-card">
+              <h3>The return to the cave</h3>
+              <p>People often resist correction. Comfort, pride, and fear can make a familiar falsehood feel safer than an unfamiliar truth.</p>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Plato's life / context -->
-      <div class="cave-card">
+          <div class="cave-note" style="margin-top: 1rem;">
+            <strong>Helpful nuance:</strong> the point is not "never trust your eyes." The point is "do not stop at first impressions." Wise students compare what they see with evidence, reason, and honest conversation.
+          </div>
+        </div>
+      </article>
+
+      <article class="cave-card">
         <div class="cave-card-body">
-          <h2 class="cave-section-head">Who Was Plato?</h2>
+          <h2 class="cave-section-head">Christian Reflection</h2>
           <p class="cave-section-sub">
-            Born around 428 BCE in Athens, Plato was a student of Socrates and the teacher of Aristotle — three generations that defined Western philosophy.
+            Plato is not Scripture, but Christians can still use this lesson to think carefully about truth, deception, and the renewal of the mind.
           </p>
-          <div class="cave-history-strip" style="grid-template-columns:1fr;gap:0.55rem">
-            <div class="cave-hist-item">
-              <p class="cave-hist-year">~428 BCE</p>
-              <p class="cave-hist-title">Born in Athens</p>
-              <p class="cave-hist-note">Into a wealthy, politically connected Athenian family during the Golden Age of Greece.</p>
+
+          <div class="cave-note">
+            <strong>Important distinction:</strong> Christians do not have to agree with every part of Plato's philosophy. The value here is that his story helps students practice discernment and ask whether what they see is the whole truth.
+          </div>
+
+          <div class="cave-refs">
+            <div class="cave-ref">
+              <strong>John 8:32</strong>
+              <p>Jesus connects truth with freedom, which fits the image of leaving the cave and no longer living by shadows alone.</p>
             </div>
-            <div class="cave-hist-item">
-              <p class="cave-hist-year">~399 BCE</p>
-              <p class="cave-hist-title">Socrates Is Executed</p>
-              <p class="cave-hist-note">Plato witnesses his teacher put to death for "corrupting youth" by questioning authority — a formative shock that shapes his philosophy.</p>
+            <div class="cave-ref">
+              <strong>Romans 12:2</strong>
+              <p>Christians are told not to be shaped uncritically by the world, but to be transformed by a renewed mind.</p>
             </div>
-            <div class="cave-hist-item">
-              <p class="cave-hist-year">~387 BCE</p>
-              <p class="cave-hist-title">Founds the Academy</p>
-              <p class="cave-hist-note">Establishes one of the first institutions of higher learning in the Western world — the original "university."</p>
-            </div>
-            <div class="cave-hist-item">
-              <p class="cave-hist-year">~380 BCE</p>
-              <p class="cave-hist-title">Writes <em>The Republic</em></p>
-              <p class="cave-hist-note">His most ambitious work — the Allegory of the Cave appears in Book VII, as a dialogue between Socrates and Glaucon.</p>
+            <div class="cave-ref">
+              <strong>1 Thessalonians 5:21</strong>
+              <p>Students should test what they hear and hold on to what is good instead of accepting every shadow at face value.</p>
             </div>
           </div>
         </div>
-      </div>
+      </article>
+    </section>
 
-    </div>
-
-    <!-- ── MODERN CONNECTIONS ── -->
-    <div class="cave-card">
+    <section class="cave-card">
       <div class="cave-card-body">
-        <h2 class="cave-section-head">Modern Connections</h2>
+        <h2 class="cave-section-head">Where Students See "Caves" Today</h2>
         <p class="cave-section-sub">
-          Plato wrote this 2,400 years ago — but the allegory maps directly onto how modern systems shape (and limit) what we see and know.
+          The lesson gets more influential when students can name modern caves around them. These examples are concrete enough for middle school, but still strong enough for older students.
         </p>
-        <div class="cave-connections-grid">
-          <div class="cave-conn-item">
-            <span class="cave-conn-icon">📱</span>
-            <p class="cave-conn-title">Social Media Feeds</p>
-            <p class="cave-conn-desc">Algorithms show you a curated "shadow wall" of content — selected to keep you engaged, not to show you reality.</p>
-          </div>
-          <div class="cave-conn-item">
-            <span class="cave-conn-icon">📺</span>
-            <p class="cave-conn-title">Filter Bubbles</p>
-            <p class="cave-conn-desc">Echo chambers create a cave effect — you only see information that confirms what you already believe.</p>
-          </div>
-          <div class="cave-conn-item">
-            <span class="cave-conn-icon">🎬</span>
-            <p class="cave-conn-title">The Matrix (1999)</p>
-            <p class="cave-conn-desc">Neo's journey from the simulated world to the real one is a direct cinematic retelling of the cave allegory.</p>
-          </div>
-          <div class="cave-conn-item">
-            <span class="cave-conn-icon">🤖</span>
-            <p class="cave-conn-title">AI Training Data</p>
-            <p class="cave-conn-desc">AI models only "see" their training data — a carefully constructed shadow world that may not reflect full reality.</p>
-          </div>
-          <div class="cave-conn-item">
-            <span class="cave-conn-icon">📰</span>
-            <p class="cave-conn-title">Propaganda &amp; Media Bias</p>
-            <p class="cave-conn-desc">State-controlled or partisan media curates shadows — what the public sees is shaped by who controls the fire.</p>
-          </div>
-          <div class="cave-conn-item">
-            <span class="cave-conn-icon">🧪</span>
-            <p class="cave-conn-title">Scientific Paradigm Shifts</p>
-            <p class="cave-conn-desc">Copernicus and Galileo were "freed prisoners" — they saw the real solar system while society clung to the shadows of geocentrism.</p>
-          </div>
+        <div class="cave-connection-grid">
+          <article class="cave-connection">
+            <h3>Social media feeds</h3>
+            <p>A feed shows selected clips, not the whole person or the whole story. A curated stream can feel like reality even when it is partial.</p>
+          </article>
+          <article class="cave-connection">
+            <h3>Rumors and gossip</h3>
+            <p>Hearing one side of a story is like seeing a shadow on the wall. You may know something happened, but not what actually happened.</p>
+          </article>
+          <article class="cave-connection">
+            <h3>Headlines without context</h3>
+            <p>A headline can shape your reaction before you understand the details. Students need to ask what is missing, not just what is loud.</p>
+          </article>
+          <article class="cave-connection">
+            <h3>Advertising</h3>
+            <p>Ads are designed to create desire and emotion. They often show a polished image instead of the full truth about a product or lifestyle.</p>
+          </article>
+          <article class="cave-connection">
+            <h3>Stereotypes</h3>
+            <p>Reducing people to one image or one label is a shadow-thinking habit. It mistakes a shallow picture for the whole person made in God's image.</p>
+          </article>
+          <article class="cave-connection">
+            <h3>AI answers</h3>
+            <p>AI can sound confident while still being incomplete or wrong. Students should treat AI as a tool to test, not a source to trust blindly.</p>
+          </article>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- ── REFLECTION QUIZ ── -->
-    <div class="cave-card">
+    <section class="cave-card">
+      <div class="cave-card-body">
+        <h2 class="cave-section-head">Class Discussion Prompts</h2>
+        <p class="cave-section-sub">
+          These prompts are built to move from understanding to application, which makes the lesson more memorable and more useful.
+        </p>
+        <div class="cave-discuss-grid">
+          <article class="cave-discuss">
+            <h3>Comfort vs. truth</h3>
+            <p>Why do people sometimes prefer a comfortable lie or a shallow answer over a harder truth?</p>
+          </article>
+          <article class="cave-discuss">
+            <h3>Correction and humility</h3>
+            <p>What should it look like to tell someone they may be seeing only a shadow without sounding proud or harsh?</p>
+          </article>
+          <article class="cave-discuss">
+            <h3>Christian discernment</h3>
+            <p>How can a Christian student test ideas, media, and group pressure in a way that is both thoughtful and faithful?</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cave-card">
       <div class="cave-card-body">
         <h2 class="cave-section-head">Check Your Understanding</h2>
-        <p class="cave-section-sub">Answer each question, then read the explanation below.</p>
+        <p class="cave-section-sub">Answer the questions, then read the explanation. The feedback is written to teach, not just score.</p>
 
-        <!-- Q1 -->
-        <p class="cave-quiz-q">1. In the allegory, what do the shadows on the wall represent?</p>
+        <p class="cave-quiz-q">1. Why do the prisoners trust the shadows?</p>
         <div class="cave-quiz-options" id="q1-opts">
-          <button class="cave-quiz-opt" onclick="checkQ(1,'a')">A. The eternal Forms — perfect, unchanging truths</button>
-          <button class="cave-quiz-opt" onclick="checkQ(1,'b')">B. The physical world as we perceive it through the senses</button>
-          <button class="cave-quiz-opt" onclick="checkQ(1,'c')">C. Mathematical proofs and logic</button>
-          <button class="cave-quiz-opt" onclick="checkQ(1,'d')">D. The philosopher's enlightened view of the world</button>
+          <button class="cave-quiz-opt" type="button" data-q="1" data-choice="a">A. Because the shadows are brighter than the sun</button>
+          <button class="cave-quiz-opt" type="button" data-q="1" data-choice="b">B. Because the shadows are all they have ever known</button>
+          <button class="cave-quiz-opt" type="button" data-q="1" data-choice="c">C. Because the prisoners enjoy pretending</button>
+          <button class="cave-quiz-opt" type="button" data-q="1" data-choice="d">D. Because Plato thinks shadows are evil</button>
         </div>
         <div class="cave-quiz-feedback" id="q1-fb"></div>
         <hr class="cave-quiz-divider" />
 
-        <!-- Q2 -->
-        <p class="cave-quiz-q">2. Why do the other prisoners refuse to believe the freed prisoner when they return?</p>
+        <p class="cave-quiz-q">2. What makes leaving the cave difficult?</p>
         <div class="cave-quiz-options" id="q2-opts">
-          <button class="cave-quiz-opt" onclick="checkQ(2,'a')">A. They are sleeping and cannot hear</button>
-          <button class="cave-quiz-opt" onclick="checkQ(2,'b')">B. The freed prisoner speaks a different language</button>
-          <button class="cave-quiz-opt" onclick="checkQ(2,'c')">C. The shadow world is all they have ever known — the new truth is threatening and disorienting</button>
-          <button class="cave-quiz-opt" onclick="checkQ(2,'d')">D. The freed prisoner describes the cave incorrectly</button>
+          <button class="cave-quiz-opt" type="button" data-q="2" data-choice="a">A. The prisoner immediately forgets how to think</button>
+          <button class="cave-quiz-opt" type="button" data-q="2" data-choice="b">B. Truth is uncomfortable at first, and old beliefs have to be challenged</button>
+          <button class="cave-quiz-opt" type="button" data-q="2" data-choice="c">C. The fire destroys the prisoner's eyesight forever</button>
+          <button class="cave-quiz-opt" type="button" data-q="2" data-choice="d">D. The other prisoners physically drag everyone back out of the cave</button>
         </div>
         <div class="cave-quiz-feedback" id="q2-fb"></div>
         <hr class="cave-quiz-divider" />
 
-        <!-- Q3 -->
-        <p class="cave-quiz-q">3. Which of these is the best modern equivalent of "the fire" in the allegory?</p>
+        <p class="cave-quiz-q">3. Which response best shows wise and Christian discernment?</p>
         <div class="cave-quiz-options" id="q3-opts">
-          <button class="cave-quiz-opt" onclick="checkQ(3,'a')">A. A social media algorithm that controls what you see</button>
-          <button class="cave-quiz-opt" onclick="checkQ(3,'b')">B. A scientist publishing peer-reviewed research</button>
-          <button class="cave-quiz-opt" onclick="checkQ(3,'c')">C. A student independently researching a topic</button>
-          <button class="cave-quiz-opt" onclick="checkQ(3,'d')">D. A democratic election</button>
+          <button class="cave-quiz-opt" type="button" data-q="3" data-choice="a">A. Believe the first thing that matches your opinion</button>
+          <button class="cave-quiz-opt" type="button" data-q="3" data-choice="b">B. Ignore all outside voices and trust only yourself</button>
+          <button class="cave-quiz-opt" type="button" data-q="3" data-choice="c">C. Test what you hear, compare sources, and stay humble enough to learn</button>
+          <button class="cave-quiz-opt" type="button" data-q="3" data-choice="d">D. Reject every hard idea because truth should always feel easy</button>
         </div>
         <div class="cave-quiz-feedback" id="q3-fb"></div>
         <hr class="cave-quiz-divider" />
 
-        <!-- Open Reflection -->
-        <p class="cave-quiz-q">4. Personal Reflection (open-ended)</p>
-        <p style="font-size:0.88rem;color:#8878b0;margin:0 0 0.7rem;line-height:1.55">
-          Describe one "cave" in your own life — a source of information, a belief, or a system — where you might only be seeing shadows. What would it mean to step outside of it?
+        <p class="cave-quiz-q">4. Reflection</p>
+        <p class="cave-section-sub" style="margin-bottom: 0.8rem;">
+          Name one possible cave in your life or in the culture around you. What shadows does it show? What is one step you could take to seek truth more carefully?
         </p>
-        <label for="reflect-box" class="cave-reflect-label">Your reflection</label>
-        <textarea id="reflect-box" class="cave-reflect-textarea" rows="4" placeholder="Write your thoughts here..."></textarea>
-        <p style="font-size:0.75rem;color:#4a4068;margin:.4rem 0 0">Your writing stays on your device only — nothing is submitted or saved.</p>
+        <textarea
+          id="reflect-box"
+          class="cave-reflect-textarea"
+          placeholder="Example: A possible cave is ... The shadows it shows are ... One step toward truth would be ..."
+        ></textarea>
+        <p class="cave-reflect-note">Your writing stays on this device only. Nothing is submitted or saved.</p>
       </div>
-    </div>
-
-    <!-- ── INFLUENCE TIMELINE ── -->
-    <div class="cave-card">
-      <div class="cave-card-body">
-        <h2 class="cave-section-head">2,400 Years of Influence</h2>
-        <p class="cave-section-sub">The allegory has inspired philosophers, scientists, artists, and filmmakers across every era.</p>
-        <div class="cave-history-strip">
-          <div class="cave-hist-item">
-            <p class="cave-hist-year">~380 BCE</p>
-            <p class="cave-hist-title">Plato writes it</p>
-            <p class="cave-hist-note">Book VII of <em>The Republic</em></p>
-          </div>
-          <div class="cave-hist-item">
-            <p class="cave-hist-year">~1225 CE</p>
-            <p class="cave-hist-title">Aquinas</p>
-            <p class="cave-hist-note">Reconciles Plato with Christian theology — the Sun as God</p>
-          </div>
-          <div class="cave-hist-item">
-            <p class="cave-hist-year">1543</p>
-            <p class="cave-hist-title">Copernicus</p>
-            <p class="cave-hist-note">Breaks from geocentric shadow — the heliocentric "real world"</p>
-          </div>
-          <div class="cave-hist-item">
-            <p class="cave-hist-year">1781</p>
-            <p class="cave-hist-title">Kant</p>
-            <p class="cave-hist-note">Echoes the cave in his idea that humans can only know appearances, not "things in themselves"</p>
-          </div>
-          <div class="cave-hist-item">
-            <p class="cave-hist-year">1900s</p>
-            <p class="cave-hist-title">Media Theory</p>
-            <p class="cave-hist-note">Marshall McLuhan: "the medium is the message" — the cave is the media system itself</p>
-          </div>
-          <div class="cave-hist-item">
-            <p class="cave-hist-year">1999</p>
-            <p class="cave-hist-title">The Matrix</p>
-            <p class="cave-hist-note">Neo takes the red pill and escapes the shadow world — the most famous pop culture retelling</p>
-          </div>
-          <div class="cave-hist-item">
-            <p class="cave-hist-year">2010s–now</p>
-            <p class="cave-hist-title">Filter Bubbles</p>
-            <p class="cave-hist-note">Eli Pariser coins "filter bubble" — algorithmic caves designed by tech platforms</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
+    </section>
   </main>
 
-  <footer style="text-align:center;padding:2rem 1rem 3rem;font-size:0.8rem;color:#4a4068">
-    <a href="../steam-lessons.html" style="color:#8060c0;text-decoration:none">← Back to STEAM Lessons</a>
+  <footer class="cave-footer">
+    <a href="../steam-lessons.html">← Back to STEAM Lessons</a>
   </footer>
 
   <script>
-    // ── Cave Simulator ──
     (function() {
-      var canvas = document.getElementById('cave-canvas');
-      var ctx = canvas.getContext('2d');
-      var W = canvas.width, H = canvas.height;
+      var canvas = document.getElementById("cave-canvas");
+      var ctx = canvas.getContext("2d");
+      var W = canvas.width;
+      var H = canvas.height;
 
-      var fireXSlider = document.getElementById('fire-x-slider');
-      var objectSlider = document.getElementById('object-slider');
-      var freedSlider = document.getElementById('prisoners-freed');
-      var fireXVal = document.getElementById('fire-x-val');
-      var objectVal = document.getElementById('object-val');
-      var freedVal = document.getElementById('freed-val');
+      var sceneButtons = document.querySelectorAll("#scene-buttons .cave-choice-btn");
+      var objectButtons = document.querySelectorAll("#object-buttons .cave-choice-btn");
 
-      var OBJECTS = ['Person', 'Tree', 'Bird', 'Star'];
+      var sceneTitle = document.getElementById("scene-title");
+      var sceneSub = document.getElementById("scene-sub");
+      var sceneSees = document.getElementById("scene-sees");
+      var sceneReality = document.getElementById("scene-reality");
+      var sceneLesson = document.getElementById("scene-lesson");
+      var sceneQuestion = document.getElementById("scene-question");
 
-      function lerp(a, b, t) { return a + (b - a) * t; }
-
-      function drawObject(cx, cy, type, alpha) {
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = '#e8d8a0';
-        ctx.fillStyle = '#e8d8a0';
-        ctx.lineWidth = 2.5;
-        ctx.translate(cx, cy);
-
-        if (type === 0) {
-          // person
-          ctx.beginPath(); ctx.arc(0, -28, 10, 0, Math.PI*2); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(0,-18); ctx.lineTo(0,10); ctx.moveTo(-12,0); ctx.lineTo(12,0); ctx.moveTo(0,10); ctx.lineTo(-10,28); ctx.moveTo(0,10); ctx.lineTo(10,28); ctx.stroke();
-        } else if (type === 1) {
-          // tree
-          ctx.beginPath(); ctx.moveTo(0,30); ctx.lineTo(0,-5); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(0,-5); ctx.lineTo(-18,20); ctx.lineTo(18,20); ctx.closePath(); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(0,-18); ctx.lineTo(-13,10); ctx.lineTo(13,10); ctx.closePath(); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(0,-30); ctx.lineTo(-9,2); ctx.lineTo(9,2); ctx.closePath(); ctx.fill();
-        } else if (type === 2) {
-          // bird
-          ctx.beginPath(); ctx.moveTo(-20,0); ctx.quadraticCurveTo(-10,-14,0,0); ctx.quadraticCurveTo(10,-14,20,0); ctx.stroke();
-          ctx.beginPath(); ctx.arc(0, 4, 3, 0, Math.PI*2); ctx.fill();
-        } else {
-          // star
-          for (var i = 0; i < 5; i++) {
-            var angle = (i * 4 * Math.PI / 5) - Math.PI/2;
-            var inner = (i * 4 * Math.PI / 5) + Math.PI*2/5 - Math.PI/2;
-            if (i === 0) ctx.moveTo(Math.cos(angle)*22, Math.sin(angle)*22);
-            else ctx.lineTo(Math.cos(angle)*22, Math.sin(angle)*22);
-            ctx.lineTo(Math.cos(inner)*9, Math.sin(inner)*9);
-          }
-          ctx.closePath(); ctx.fill();
+      var currentScene = 0;
+      var currentObject = 0;
+      var OBJECTS = ["Person", "Tree", "Bird", "Vase"];
+      var SCENES = [
+        {
+          title: "1. Chained by a Limited View",
+          sub: "The prisoners think the wall is the whole world because they have never seen anything else.",
+          sees: "Only moving shadows on the wall.",
+          reality: "There is a fire and a real object behind the prisoners, but they cannot turn to see it.",
+          lesson: "A small view can feel complete when it is all you have ever known.",
+          question: "What sources shape your picture of reality right now?"
+        },
+        {
+          title: "2. Shadows Can Look Real",
+          sub: "The shadow changes when the object changes, but the prisoner still sees only a flat copy.",
+          sees: "A dark outline that looks like the object itself.",
+          reality: "The real object has depth, detail, and a source of light that the wall hides.",
+          lesson: "Something can contain part of the truth and still leave out what matters most.",
+          question: "Where might you be reacting to a shadow instead of the full picture?"
+        },
+        {
+          title: "3. Turning Around Hurts",
+          sub: "A freed prisoner sees the fire for the first time. Truth is brighter and harder than the wall.",
+          sees: "Confusion, discomfort, and a world that does not fit the old story anymore.",
+          reality: "The prisoner begins linking shadow, object, and light together.",
+          lesson: "Learning often starts with discomfort because it forces old assumptions to be tested.",
+          question: "Why do people resist correction even when it could help them?"
+        },
+        {
+          title: "4. Outside the Cave",
+          sub: "Outside, the prisoner finally sees the fuller world and understands how small the cave really was.",
+          sees: "At first the light is painful, but then it becomes clear and beautiful.",
+          reality: "The sun makes real sight possible; the cave was never the whole story.",
+          lesson: "Truth can be demanding, but it leads to clarity and freedom.",
+          question: "What habits help a student move steadily toward truth?"
+        },
+        {
+          title: "5. Returning to Help",
+          sub: "The freed prisoner comes back, but the others trust familiar shadows more than uncomfortable truth.",
+          sees: "The returning prisoner looks strange and unreliable to those still facing the wall.",
+          reality: "People often reject truth when it threatens comfort, pride, or control.",
+          lesson: "Wisdom needs courage, patience, and humility when sharing truth with others.",
+          question: "How can you correct someone without sounding arrogant?"
         }
-        ctx.restore();
+      ];
+
+      function setActive(buttons, valueKey, activeValue) {
+        buttons.forEach(function(button) {
+          button.classList.toggle("active", button.getAttribute(valueKey) === String(activeValue));
+        });
       }
 
       function projectShadow(fireX, fireY, objX, objY, wallX) {
-        // project from fire through object onto wall (x = wallX)
         var dx = objX - fireX;
         var dy = objY - fireY;
-        if (Math.abs(dx) < 1) return { x: wallX, y: objY };
+        if (Math.abs(dx) < 1) {
+          return { x: wallX, y: objY };
+        }
         var t = (wallX - fireX) / dx;
-        return { x: wallX, y: fireY + dy * t };
+        return { x: wallX, y: fireY + (dy * t) };
       }
 
-      function draw() {
+      function drawLabel(text, x, y, color, align) {
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.font = "600 12px system-ui, sans-serif";
+        ctx.textAlign = align || "left";
+        ctx.fillText(text, x, y);
+        ctx.restore();
+      }
+
+      function drawObject(cx, cy, type, scale, alpha, fillColor) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(scale, scale);
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = fillColor;
+        ctx.fillStyle = fillColor;
+
+        if (type === 0) {
+          ctx.beginPath();
+          ctx.arc(0, -30, 10, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(0, -20);
+          ctx.lineTo(0, 8);
+          ctx.moveTo(-14, -2);
+          ctx.lineTo(14, -2);
+          ctx.moveTo(0, 8);
+          ctx.lineTo(-10, 28);
+          ctx.moveTo(0, 8);
+          ctx.lineTo(10, 28);
+          ctx.stroke();
+        } else if (type === 1) {
+          ctx.beginPath();
+          ctx.moveTo(0, 30);
+          ctx.lineTo(0, -8);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(0, -6);
+          ctx.lineTo(-22, 18);
+          ctx.lineTo(22, 18);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.moveTo(0, -24);
+          ctx.lineTo(-16, 2);
+          ctx.lineTo(16, 2);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.moveTo(0, -38);
+          ctx.lineTo(-12, -12);
+          ctx.lineTo(12, -12);
+          ctx.closePath();
+          ctx.fill();
+        } else if (type === 2) {
+          ctx.beginPath();
+          ctx.moveTo(-24, 0);
+          ctx.quadraticCurveTo(-10, -18, 0, -2);
+          ctx.quadraticCurveTo(10, -18, 24, 0);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(0, 4, 4, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(-12, 28);
+          ctx.quadraticCurveTo(-18, 10, -14, -4);
+          ctx.quadraticCurveTo(-10, -26, 0, -26);
+          ctx.quadraticCurveTo(10, -26, 14, -4);
+          ctx.quadraticCurveTo(18, 10, 12, 28);
+          ctx.closePath();
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(-14, -2);
+          ctx.quadraticCurveTo(0, 8, 14, -2);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function drawPrisoner(x, y, direction, options) {
+        var opts = options || {};
+        var isFreed = !!opts.isFreed;
+        var alpha = opts.alpha == null ? 1 : opts.alpha;
+        var color = isFreed ? "#f8e6c7" : "#7f6d5a";
+        var chainColor = "#5c4a38";
+        var dir = direction === "right" ? 1 : -1;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(dir, 1);
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+
+        if (isFreed) {
+          var glow = ctx.createRadialGradient(0, -8, 1, 0, -8, 34);
+          glow.addColorStop(0, "rgba(248, 230, 199, 0.28)");
+          glow.addColorStop(1, "transparent");
+          ctx.fillStyle = glow;
+          ctx.fillRect(-34, -44, 68, 68);
+          ctx.fillStyle = color;
+        }
+
+        ctx.beginPath();
+        ctx.arc(0, -16, 7, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(0, -9);
+        ctx.lineTo(0, 11);
+        if (isFreed) {
+          ctx.moveTo(-6, 0);
+          ctx.lineTo(12, -2);
+        } else {
+          ctx.moveTo(-2, 0);
+          ctx.lineTo(12, 0);
+        }
+        ctx.moveTo(0, 11);
+        ctx.lineTo(-7, 24);
+        ctx.moveTo(0, 11);
+        ctx.lineTo(7, 24);
+        ctx.stroke();
+
+        if (!isFreed && opts.showChains !== false) {
+          ctx.strokeStyle = chainColor;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(12, 0);
+          ctx.lineTo(26, 0);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function drawSpeech(text, x, y) {
+        ctx.save();
+        ctx.fillStyle = "rgba(255, 244, 224, 0.08)";
+        ctx.strokeStyle = "rgba(255, 209, 136, 0.28)";
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, x, y, 150, 42, 12);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + 24, y + 42);
+        ctx.lineTo(x + 18, y + 54);
+        ctx.lineTo(x + 38, y + 42);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#f6e9d3";
+        ctx.font = "600 12px system-ui, sans-serif";
+        ctx.fillText(text, x + 12, y + 25);
+        ctx.restore();
+      }
+
+      function roundRect(context, x, y, w, h, r) {
+        context.beginPath();
+        context.moveTo(x + r, y);
+        context.lineTo(x + w - r, y);
+        context.quadraticCurveTo(x + w, y, x + w, y + r);
+        context.lineTo(x + w, y + h - r);
+        context.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        context.lineTo(x + r, y + h);
+        context.quadraticCurveTo(x, y + h, x, y + h - r);
+        context.lineTo(x, y + r);
+        context.quadraticCurveTo(x, y, x + r, y);
+        context.closePath();
+      }
+
+      function drawScene() {
+        var scene = SCENES[currentScene];
+        var wallX = 114;
+        var floorY = 338;
+        var fireX = 430;
+        var fireY = 286;
+        var objX = 554;
+        var objY = 220;
+
+        sceneTitle.textContent = scene.title;
+        sceneSub.textContent = scene.sub;
+        sceneSees.textContent = scene.sees;
+        sceneReality.textContent = scene.reality;
+        sceneLesson.textContent = scene.lesson;
+        sceneQuestion.textContent = scene.question;
+
         ctx.clearRect(0, 0, W, H);
 
-        var fireT = parseInt(fireXSlider.value) / 100;
-        var objType = parseInt(objectSlider.value);
-        var freed = parseInt(freedSlider.value);
-
-        // labels
-        fireXVal.textContent = fireT < 0.35 ? 'left' : fireT > 0.65 ? 'right' : 'center';
-        objectVal.textContent = OBJECTS[objType];
-        freedVal.textContent = freed + ' of 3';
-
-        // cave background
-        var caveGrad = ctx.createLinearGradient(0, 0, W, 0);
-        caveGrad.addColorStop(0,   '#050310');
-        caveGrad.addColorStop(0.3, '#0c0820');
-        caveGrad.addColorStop(1,   '#120a1e');
-        ctx.fillStyle = caveGrad;
+        var bg = ctx.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#0e0a08");
+        bg.addColorStop(1, "#050403");
+        ctx.fillStyle = bg;
         ctx.fillRect(0, 0, W, H);
 
-        // shadow wall (left side)
-        var wallX = 80;
-        ctx.fillStyle = 'rgba(30, 20, 55, 0.9)';
-        ctx.fillRect(0, 0, wallX + 4, H);
-        ctx.fillStyle = '#2a1e4a';
-        ctx.fillRect(wallX, 0, 6, H);
+        var openingGlow = ctx.createRadialGradient(W - 56, 56, 8, W - 56, 56, currentScene >= 3 ? 240 : 110);
+        openingGlow.addColorStop(0, currentScene >= 3 ? "rgba(255, 235, 176, 0.6)" : "rgba(255, 216, 146, 0.14)");
+        openingGlow.addColorStop(1, "transparent");
+        ctx.fillStyle = openingGlow;
+        ctx.fillRect(0, 0, W, H);
 
-        // cave opening label
-        ctx.fillStyle = 'rgba(180, 150, 255, 0.18)';
-        ctx.font = '500 11px Inter, sans-serif';
-        ctx.fillText('WALL', 12, H - 16);
+        ctx.fillStyle = "rgba(34, 28, 23, 0.96)";
+        ctx.fillRect(0, 0, W, H);
 
-        // fire position
-        var fireX = lerp(W * 0.38, W * 0.72, fireT);
-        var fireY = H * 0.72;
+        ctx.fillStyle = "rgba(78, 60, 43, 0.96)";
+        ctx.fillRect(0, 0, wallX, H);
+        ctx.fillStyle = "rgba(118, 94, 70, 0.72)";
+        ctx.fillRect(wallX - 4, 0, 8, H);
 
-        // fire glow
-        var fireGlow = ctx.createRadialGradient(fireX, fireY, 4, fireX, fireY, 160);
-        fireGlow.addColorStop(0,   'rgba(255, 160, 30, 0.55)');
-        fireGlow.addColorStop(0.4, 'rgba(220, 90, 20, 0.18)');
-        fireGlow.addColorStop(1,   'transparent');
+        ctx.fillStyle = "#2f241d";
+        ctx.beginPath();
+        ctx.moveTo(0, floorY);
+        ctx.lineTo(W, floorY);
+        ctx.lineTo(W, H);
+        ctx.lineTo(0, H);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255, 247, 238, 0.03)";
+        ctx.beginPath();
+        ctx.moveTo(700, floorY);
+        ctx.lineTo(862, 92);
+        ctx.lineTo(W, 92);
+        ctx.lineTo(W, H);
+        ctx.lineTo(700, H);
+        ctx.closePath();
+        ctx.fill();
+
+        if (currentScene >= 3) {
+          ctx.fillStyle = "#f1c35b";
+          ctx.beginPath();
+          ctx.arc(852, 74, 28, 0, Math.PI * 2);
+          ctx.fill();
+
+          var sunGlow = ctx.createRadialGradient(852, 74, 4, 852, 74, 100);
+          sunGlow.addColorStop(0, "rgba(241, 195, 91, 0.4)");
+          sunGlow.addColorStop(1, "transparent");
+          ctx.fillStyle = sunGlow;
+          ctx.fillRect(752, 0, 188, 170);
+
+          ctx.fillStyle = "rgba(96, 124, 88, 0.7)";
+          ctx.fillRect(790, 238, 110, 8);
+          ctx.fillStyle = "rgba(74, 108, 69, 0.9)";
+          ctx.beginPath();
+          ctx.arc(840, 212, 22, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(836, 214, 8, 30);
+        }
+
+        var fireAlpha = currentScene === 0 ? 0.18 : currentScene === 3 ? 0.3 : 0.92;
+        var objectAlpha = currentScene === 0 ? 0.22 : currentScene === 3 ? 0.45 : 0.96;
+        var shadowAlpha = currentScene === 3 ? 0.28 : currentScene === 2 ? 0.64 : 0.8;
+
+        var fireGlow = ctx.createRadialGradient(fireX, fireY, 4, fireX, fireY, currentScene >= 2 ? 140 : 120);
+        fireGlow.addColorStop(0, "rgba(255, 176, 78, " + (0.48 * fireAlpha) + ")");
+        fireGlow.addColorStop(0.45, "rgba(190, 92, 22, " + (0.2 * fireAlpha) + ")");
+        fireGlow.addColorStop(1, "transparent");
         ctx.fillStyle = fireGlow;
         ctx.fillRect(0, 0, W, H);
 
-        // fire flame
         ctx.save();
         ctx.translate(fireX, fireY);
-        ctx.fillStyle = '#ff9a22';
+        ctx.globalAlpha = fireAlpha;
+        ctx.fillStyle = "#f29a2e";
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(-10, -25, -22, -10, 0, -38);
-        ctx.bezierCurveTo(22, -10, 10, -25, 0, 0);
+        ctx.bezierCurveTo(-14, -34, -24, -10, 0, -48);
+        ctx.bezierCurveTo(24, -10, 14, -34, 0, 0);
         ctx.fill();
-        ctx.fillStyle = '#ffcc44';
+
+        ctx.fillStyle = "#ffd27f";
         ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(-5, -14, -10, -6, 0, -22);
-        ctx.bezierCurveTo(10, -6, 5, -14, 0, 0);
+        ctx.moveTo(0, -4);
+        ctx.bezierCurveTo(-7, -18, -11, -6, 0, -28);
+        ctx.bezierCurveTo(11, -6, 7, -18, 0, -4);
         ctx.fill();
         ctx.restore();
 
-        // fire label
-        ctx.fillStyle = 'rgba(255,160,60,0.6)';
-        ctx.font = '600 11px Inter, sans-serif';
-        ctx.fillText('🔥 fire', fireX - 15, fireY + 22);
+        drawObject(objX, objY, currentObject, 1, objectAlpha, "#ead7ae");
 
-        // object in front of fire
-        var objX = lerp(fireX - 80, fireX + 80, 0.5);
-        var objY = fireY - 60;
-        drawObject(objX, objY, objType, 0.9);
-
-        // shadow projection on wall
         var shadowCenter = projectShadow(fireX, fireY, objX, objY, wallX);
         var shadowScale = Math.abs(objY - fireY) / Math.max(1, Math.abs(objX - fireX));
 
         ctx.save();
-        ctx.globalAlpha = 0.7;
-        ctx.strokeStyle = '#1a0f30';
-        ctx.fillStyle = '#1a0f30';
-        ctx.lineWidth = 4;
-        ctx.translate(shadowCenter.x - 12, shadowCenter.y);
-        ctx.scale(0.55, shadowScale * 0.9);
-        drawObject(0, 0, objType, 1);
+        ctx.translate(shadowCenter.x - 16, shadowCenter.y + 4);
+        ctx.scale(0.64, shadowScale * 0.96);
+        ctx.globalAlpha = shadowAlpha;
+        drawObject(0, 0, currentObject, 1, 1, "#130d0d");
         ctx.restore();
 
-        // shadow highlight on wall
-        var wallHighlight = ctx.createLinearGradient(wallX - 60, 0, wallX + 20, 0);
-        wallHighlight.addColorStop(0, 'rgba(100, 60, 200, 0.08)');
-        wallHighlight.addColorStop(1, 'transparent');
-        ctx.fillStyle = wallHighlight;
-        ctx.fillRect(0, 0, wallX + 30, H);
-
-        // prisoners
-        var prisonerPositions = [
-          { x: 36, y: H * 0.55 },
-          { x: 36, y: H * 0.35 },
-          { x: 36, y: H * 0.75 }
-        ];
-        for (var i = 0; i < prisonerPositions.length; i++) {
-          var px = prisonerPositions[i].x;
-          var py = prisonerPositions[i].y;
-          var isFreed = i < freed;
-
-          ctx.save();
-          if (isFreed) {
-            // freed prisoner — glowing, facing different direction
-            ctx.globalAlpha = 0.9;
-            ctx.translate(px + 10, py);
-            // glow
-            var freeGlow = ctx.createRadialGradient(0, 0, 2, 0, 0, 30);
-            freeGlow.addColorStop(0, 'rgba(200, 180, 255, 0.5)');
-            freeGlow.addColorStop(1, 'transparent');
-            ctx.fillStyle = freeGlow;
-            ctx.fillRect(-30, -30, 60, 60);
-            ctx.strokeStyle = '#d0c0f8';
-            ctx.fillStyle = '#d0c0f8';
-          } else {
-            ctx.globalAlpha = 0.75;
-            ctx.translate(px, py);
-            ctx.strokeStyle = '#5a4880';
-            ctx.fillStyle = '#5a4880';
-          }
-          ctx.lineWidth = 2;
-          // draw simple person
-          ctx.beginPath(); ctx.arc(0, -12, 6, 0, Math.PI*2); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(0,8);
-          if (!isFreed) { ctx.moveTo(-8,2); ctx.lineTo(8,2); } // arms facing wall
-          else          { ctx.moveTo(-6,2); ctx.lineTo(6,2); }
-          ctx.moveTo(0,8); ctx.lineTo(-5,20); ctx.moveTo(0,8); ctx.lineTo(5,20);
+        if (currentScene >= 1) {
+          ctx.strokeStyle = "rgba(255, 209, 136, 0.2)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(fireX, fireY - 18);
+          ctx.lineTo(objX, objY);
+          ctx.lineTo(wallX, shadowCenter.y);
           ctx.stroke();
-          ctx.restore();
         }
 
-        // prisoner label
-        ctx.fillStyle = 'rgba(140, 110, 220, 0.5)';
-        ctx.font = '500 10px Inter, sans-serif';
-        ctx.fillText('prisoners', 5, H - 28);
+        if (currentScene === 0 || currentScene === 1) {
+          drawPrisoner(52, 232, "left", { alpha: 0.92 });
+          drawPrisoner(52, 286, "left", { alpha: 0.92 });
+          drawPrisoner(52, 340, "left", { alpha: 0.92 });
+        } else if (currentScene === 2) {
+          drawPrisoner(52, 238, "left", { alpha: 0.92 });
+          drawPrisoner(52, 332, "left", { alpha: 0.92 });
+          drawPrisoner(190, 286, "right", { alpha: 1, isFreed: true, showChains: false });
+        } else if (currentScene === 3) {
+          drawPrisoner(52, 238, "left", { alpha: 0.88 });
+          drawPrisoner(52, 332, "left", { alpha: 0.88 });
+          drawPrisoner(754, 238, "right", { alpha: 1, isFreed: true, showChains: false });
+        } else {
+          drawPrisoner(52, 238, "left", { alpha: 0.88 });
+          drawPrisoner(52, 332, "left", { alpha: 0.88 });
+          drawPrisoner(204, 286, "left", { alpha: 1, isFreed: true, showChains: false });
+          drawSpeech("There is more than shadows.", 232, 120);
+        }
 
-        // exit glow (top right)
-        var exitGrad = ctx.createRadialGradient(W, 0, 10, W, 0, 200);
-        exitGrad.addColorStop(0, 'rgba(230, 220, 255, 0.22)');
-        exitGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = exitGrad;
-        ctx.fillRect(0, 0, W, H);
+        drawLabel("shadow wall", 18, H - 20, "rgba(248, 232, 204, 0.42)", "left");
+        drawLabel("fire", fireX - 12, fireY + 30, "rgba(255, 205, 136, 0.72)", "left");
+        drawLabel(OBJECTS[currentObject].toLowerCase(), objX - 12, objY + 54, "rgba(234, 215, 174, 0.74)", "left");
+        if (currentScene >= 3) {
+          drawLabel("outside world", 836, 120, "rgba(255, 235, 176, 0.82)", "center");
+        } else {
+          drawLabel("cave exit", 842, 120, "rgba(255, 221, 170, 0.32)", "center");
+        }
 
-        ctx.fillStyle = 'rgba(220, 210, 255, 0.4)';
-        ctx.font = '500 11px Inter, sans-serif';
-        ctx.fillText('↗ cave exit / sunlight', W - 148, 20);
+        if (currentScene === 2) {
+          drawLabel("first painful look", 246, 206, "rgba(248, 230, 199, 0.78)", "left");
+        }
       }
 
-      fireXSlider.addEventListener('input', draw);
-      objectSlider.addEventListener('input', draw);
-      freedSlider.addEventListener('input', draw);
-
-      draw();
-    })();
-
-    // ── Quiz Logic ──
-    var ANSWERS = {
-      1: { correct: 'b', feedback: { b: 'Correct! The shadows represent our everyday sensory experience — the physical world as we perceive it. Plato considered this a dim, distorted copy of true reality.', default: 'Not quite. The shadows on the wall represent our ordinary sensory experience of the physical world — not the Forms, not logic, and not enlightenment.' } },
-      2: { correct: 'c', feedback: { c: 'Correct! The other prisoners have known nothing but shadows their whole lives. The freed prisoner\'s claims feel absurd and threatening — which is why Plato says the philosopher is often ridiculed or even killed (as Socrates was).', default: 'Not quite. The other prisoners reject the truth because the shadow world is all they\'ve ever known. Change and new truth can feel threatening and disorienting.' } },
-      3: { correct: 'a', feedback: { a: 'Correct! The fire creates the shadows — it\'s the source of a partial, controlled illumination that the prisoners mistake for the whole picture. An algorithm curating your feed works the same way: it controls what "light" reaches you.', default: 'Not quite. The fire is the source that casts the shadows — it controls what the prisoners see. A social media algorithm curating your feed is the closest modern equivalent.' } }
-    };
-
-    function checkQ(qNum, choice) {
-      var opts = document.querySelectorAll('#q' + qNum + '-opts .cave-quiz-opt');
-      var fb = document.getElementById('q' + qNum + '-fb');
-      var ans = ANSWERS[qNum];
-
-      opts.forEach(function(btn) { btn.disabled = true; });
-
-      var letters = ['a','b','c','d'];
-      opts.forEach(function(btn, i) {
-        if (letters[i] === ans.correct) btn.classList.add('correct');
-        else if (letters[i] === choice && choice !== ans.correct) btn.classList.add('incorrect');
+      sceneButtons.forEach(function(button) {
+        button.addEventListener("click", function() {
+          currentScene = Number(button.getAttribute("data-scene"));
+          setActive(sceneButtons, "data-scene", currentScene);
+          drawScene();
+        });
       });
 
-      var fbText = ans.feedback[choice] || ans.feedback['default'];
-      fb.textContent = fbText;
-      fb.className = 'cave-quiz-feedback show ' + (choice === ans.correct ? 'good' : 'bad');
-    }
-  </script>
+      objectButtons.forEach(function(button) {
+        button.addEventListener("click", function() {
+          currentObject = Number(button.getAttribute("data-object"));
+          setActive(objectButtons, "data-object", currentObject);
+          drawScene();
+        });
+      });
 
+      drawScene();
+    })();
+
+    (function() {
+      var ANSWERS = {
+        1: {
+          correct: "b",
+          feedback: {
+            b: "Correct. The shadows feel true because the prisoners have never seen a larger reality. The lesson is about limited perspective, not simple foolishness.",
+            default: "Not quite. The prisoners trust the shadows because the shadows are all they have ever known. A narrow world can still feel normal and complete."
+          }
+        },
+        2: {
+          correct: "b",
+          feedback: {
+            b: "Correct. Plato shows that truth can be uncomfortable at first. Real learning often means admitting that your old picture was incomplete.",
+            default: "Not quite. Leaving the cave is difficult because truth is uncomfortable at first and the prisoner has to rethink what seemed obvious before."
+          }
+        },
+        3: {
+          correct: "c",
+          feedback: {
+            c: "Correct. That answer matches both careful thinking and Christian discernment: test what you hear, compare it with stronger truth, and stay teachable.",
+            default: "Not quite. Wise discernment does not mean believing the first loud answer or rejecting everything. It means testing ideas carefully and staying humble enough to learn."
+          }
+        }
+      };
+
+      function checkQ(qNum, choice) {
+        var options = document.querySelectorAll("#q" + qNum + "-opts .cave-quiz-opt");
+        var feedback = document.getElementById("q" + qNum + "-fb");
+        var answer = ANSWERS[qNum];
+
+        options.forEach(function(option, index) {
+          var letter = ["a", "b", "c", "d"][index];
+          option.disabled = true;
+          if (letter === answer.correct) {
+            option.classList.add("correct");
+          } else if (letter === choice && choice !== answer.correct) {
+            option.classList.add("incorrect");
+          }
+        });
+
+        feedback.textContent = answer.feedback[choice] || answer.feedback.default;
+        feedback.className = "cave-quiz-feedback show " + (choice === answer.correct ? "good" : "bad");
+      }
+
+      document.querySelectorAll(".cave-quiz-opt").forEach(function(button) {
+        button.addEventListener("click", function() {
+          checkQ(Number(button.getAttribute("data-q")), button.getAttribute("data-choice"));
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
