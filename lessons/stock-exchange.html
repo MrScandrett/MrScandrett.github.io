@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stock Exchange Simulator · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Systems &amp; Society Lesson 03 — learn how stocks, markets, and news events work by trading fictional companies in a live simulation." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    /* ── Page ─────────────────────────────────────── */
+    .sx-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────── */
+    .sx-hero { padding: 0.4rem 0 1.1rem; }
+    .sx-hero h1 { max-width: 28ch; margin-left: 0; font-size: clamp(1.55rem, 3.6vw, 2.3rem); letter-spacing: -0.03em; }
+    .sx-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.75rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .sx-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .sx-lede { margin: 0.65rem 0 0; max-width: 70ch; color: #3f4f65; font-size: 0.93rem; line-height: 1.65; }
+    [data-theme="night"] .sx-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Card (shared) ─────────────────────────────── */
+    .sx-card {
+      background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #10b981);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.15rem 1.4rem; margin-bottom: 1rem;
+    }
+    .sx-card h2 { margin: 0 0 0.55rem; font-size: 1.15rem; letter-spacing: -0.02em; }
+    .sx-card h3 { margin: 0.85rem 0 0.3rem; font-size: 0.95rem; letter-spacing: -0.01em; }
+    .sx-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.87rem; line-height: 1.65; }
+    .sx-card p:last-child { margin-bottom: 0; }
+    .sx-card ul { padding-left: 1.3rem; margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.87rem; line-height: 1.65; }
+    .sx-card li { margin-bottom: 0.3rem; }
+    [data-theme="night"] .sx-card { background: var(--white, #2c2c2e); }
+    [data-theme="night"] .sx-card p, [data-theme="night"] .sx-card ul { color: rgba(245,245,247,0.72); }
+
+    /* ── Callout ───────────────────────────────────── */
+    .sx-callout { border-radius: 11px; padding: 0.75rem 0.95rem; margin: 0.7rem 0; display: flex; gap: 0.7rem; align-items: flex-start; font-size: 0.85rem; line-height: 1.65; }
+    .sx-callout.green { background: rgba(16,185,129,0.07); border: 1.5px solid rgba(16,185,129,0.22); }
+    .sx-callout.gold  { background: rgba(245,158,11,0.08); border: 1.5px solid rgba(245,158,11,0.28); }
+    .sx-callout.blue  { background: rgba(14,165,233,0.07); border: 1.5px solid rgba(14,165,233,0.22); }
+    .sx-callout-icon { font-size: 1.15rem; flex-shrink: 0; line-height: 1.4; }
+    .sx-callout-text { color: #3f4f65; }
+    [data-theme="night"] .sx-callout-text { color: rgba(245,245,247,0.75); }
+
+    /* ── Simulator shell ───────────────────────────── */
+    .sx-sim {
+      background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      overflow: hidden; margin-bottom: 1rem;
+    }
+    [data-theme="night"] .sx-sim { background: #1c1c1e; }
+
+    /* ── Sim header bar ────────────────────────────── */
+    .sx-sim-header {
+      display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+      padding: 0.75rem 1.1rem;
+      background: rgba(0,0,0,0.03); border-bottom: 1px solid var(--line, #d2d2d7);
+    }
+    [data-theme="night"] .sx-sim-header { background: rgba(255,255,255,0.04); border-bottom-color: rgba(255,255,255,0.08); }
+    .sx-clock {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-weight: 600;
+      color: #3f4f65; letter-spacing: 0.02em; flex: 1; min-width: 160px;
+    }
+    [data-theme="night"] .sx-clock { color: rgba(245,245,247,0.65); }
+    .sx-clock strong { color: var(--text, #1d1d1f); }
+    [data-theme="night"] .sx-clock strong { color: rgba(245,245,247,0.9); }
+    .sx-market-badge {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; border-radius: 6px; padding: 0.2rem 0.55rem;
+    }
+    .sx-market-badge.open  { background: rgba(16,185,129,0.15); color: #059669; border: 1px solid rgba(16,185,129,0.3); }
+    .sx-market-badge.closed { background: rgba(100,116,139,0.1); color: #64748b; border: 1px solid rgba(100,116,139,0.2); }
+    [data-theme="night"] .sx-market-badge.open { color: #34d399; }
+    .sx-ctrl-group { display: flex; align-items: center; gap: 0.4rem; }
+    .sx-btn {
+      font-size: 0.8rem; font-weight: 700; border: none; border-radius: 8px;
+      padding: 0.35rem 0.8rem; cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+      display: inline-flex; align-items: center; gap: 0.3rem;
+    }
+    .sx-btn:active { transform: scale(0.97); }
+    .sx-btn.primary { background: #10b981; color: #fff; }
+    .sx-btn.primary:hover { opacity: 0.88; }
+    .sx-btn.amber   { background: rgba(245,158,11,0.15); color: #b45309; border: 1px solid rgba(245,158,11,0.3); }
+    .sx-btn.amber:hover { background: rgba(245,158,11,0.22); }
+    [data-theme="night"] .sx-btn.amber { color: #fcd34d; }
+    .sx-speed-group { display: flex; gap: 0.25rem; }
+    .sx-speed-btn {
+      font-size: 0.72rem; font-weight: 800; border: 1px solid var(--line, #d2d2d7);
+      border-radius: 6px; padding: 0.2rem 0.5rem; cursor: pointer;
+      background: transparent; color: #64748b; transition: all 0.15s;
+    }
+    .sx-speed-btn.active { background: var(--text, #1d1d1f); color: #fff; border-color: transparent; }
+    [data-theme="night"] .sx-speed-btn { color: rgba(245,245,247,0.55); border-color: rgba(255,255,255,0.1); }
+    [data-theme="night"] .sx-speed-btn.active { background: rgba(245,245,247,0.9); color: #1c1c1e; }
+    .sx-portfolio-value-inline {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; font-weight: 700;
+      margin-left: auto;
+    }
+
+    /* ── Stock cards row ───────────────────────────── */
+    .sx-stock-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; border-bottom: 1px solid var(--line, #d2d2d7);
+    }
+    @media (max-width: 650px) { .sx-stock-row { grid-template-columns: repeat(2, 1fr); } }
+    .sx-stock-card {
+      padding: 0.75rem 1rem; border-right: 1px solid var(--line, #d2d2d7);
+      cursor: pointer; transition: background 0.15s; position: relative;
+    }
+    .sx-stock-card:last-child { border-right: none; }
+    .sx-stock-card:hover { background: rgba(0,0,0,0.02); }
+    .sx-stock-card.selected { background: rgba(0,0,0,0.03); }
+    [data-theme="night"] .sx-stock-card:hover { background: rgba(255,255,255,0.04); }
+    [data-theme="night"] .sx-stock-card.selected { background: rgba(255,255,255,0.06); }
+    [data-theme="night"] .sx-stock-card { border-right-color: rgba(255,255,255,0.08); }
+    .sx-stock-ticker {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.06em; color: #64748b; margin-bottom: 0.12rem;
+    }
+    .sx-stock-name { font-size: 0.82rem; font-weight: 700; color: var(--text, #1d1d1f); }
+    [data-theme="night"] .sx-stock-name { color: rgba(245,245,247,0.9); }
+    .sx-stock-price {
+      font-family: 'IBM Plex Mono', monospace; font-size: 1rem; font-weight: 700;
+      color: var(--text, #1d1d1f); margin: 0.2rem 0 0.1rem; letter-spacing: -0.01em;
+    }
+    [data-theme="night"] .sx-stock-price { color: rgba(245,245,247,0.9); }
+    .sx-stock-change { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; font-weight: 600; }
+    .sx-up   { color: #10b981; }
+    .sx-down { color: #ef4444; }
+    .sx-flat { color: #94a3b8; }
+    .sx-sparkline-wrap { margin-top: 0.4rem; }
+    .sx-spark { display: block; }
+
+    /* ── Main body: chart | side ─────────────────── */
+    .sx-body {
+      display: grid; grid-template-columns: 1fr 280px;
+    }
+    @media (max-width: 700px) { .sx-body { grid-template-columns: 1fr; } }
+
+    /* ── Chart column ──────────────────────────────── */
+    .sx-chart-col {
+      border-right: 1px solid var(--line, #d2d2d7);
+      padding: 0.9rem 1.1rem;
+      display: flex; flex-direction: column; gap: 0.7rem;
+    }
+    [data-theme="night"] .sx-chart-col { border-right-color: rgba(255,255,255,0.08); }
+    .sx-selected-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    .sx-selected-company { font-weight: 800; font-size: 1rem; }
+    .sx-selected-sector { font-size: 0.75rem; color: #64748b; font-weight: 500; margin-top: 0.1rem; }
+    .sx-selected-tagline { font-size: 0.78rem; color: #94a3b8; margin-top: 0.1rem; }
+    .sx-selected-price-block { text-align: right; }
+    .sx-selected-price {
+      font-family: 'IBM Plex Mono', monospace; font-size: 1.45rem; font-weight: 700;
+      letter-spacing: -0.02em; color: var(--text, #1d1d1f);
+    }
+    [data-theme="night"] .sx-selected-price { color: rgba(245,245,247,0.9); }
+    .sx-selected-change { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-weight: 600; }
+    .sx-chart-wrap { border-radius: 10px; overflow: hidden; border: 1px solid var(--line, #d2d2d7); }
+    #sx-chart { display: block; width: 100%; height: auto; }
+    .sx-chart-caption { font-size: 0.72rem; color: #94a3b8; margin-top: 0.3rem; line-height: 1.5; }
+
+    /* Trade form */
+    .sx-trade-section { border-top: 1px solid var(--line, #d2d2d7); padding-top: 0.8rem; }
+    [data-theme="night"] .sx-trade-section { border-top-color: rgba(255,255,255,0.08); }
+    .sx-trade-label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #64748b; margin-bottom: 0.5rem; }
+    .sx-trade-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .sx-trade-input {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.9rem; font-weight: 600;
+      width: 90px; padding: 0.42rem 0.65rem; border-radius: 8px;
+      border: 1px solid var(--line, #d2d2d7); background: transparent;
+      color: var(--text, #1d1d1f); outline: none;
+    }
+    .sx-trade-input:focus { border-color: #10b981; }
+    [data-theme="night"] .sx-trade-input { color: rgba(245,245,247,0.9); border-color: rgba(255,255,255,0.15); }
+    .sx-trade-cost { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #64748b; }
+    .sx-buy-btn  { background: rgba(16,185,129,0.12); color: #059669; border: 1.5px solid rgba(16,185,129,0.35); font-size: 0.82rem; font-weight: 800; padding: 0.38rem 0.9rem; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+    .sx-buy-btn:hover { background: rgba(16,185,129,0.2); }
+    .sx-sell-btn { background: rgba(239,68,68,0.09); color: #dc2626; border: 1.5px solid rgba(239,68,68,0.3); font-size: 0.82rem; font-weight: 800; padding: 0.38rem 0.9rem; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+    .sx-sell-btn:hover { background: rgba(239,68,68,0.16); }
+    [data-theme="night"] .sx-buy-btn  { color: #34d399; }
+    [data-theme="night"] .sx-sell-btn { color: #f87171; }
+    .sx-trade-msg { font-size: 0.77rem; color: #94a3b8; margin-top: 0.3rem; min-height: 1.2em; }
+    .sx-trade-msg.ok  { color: #10b981; }
+    .sx-trade-msg.err { color: #ef4444; }
+
+    /* ── Side column ───────────────────────────────── */
+    .sx-side-col { display: flex; flex-direction: column; }
+
+    /* News feed */
+    .sx-news { flex: 1; border-bottom: 1px solid var(--line, #d2d2d7); }
+    [data-theme="night"] .sx-news { border-bottom-color: rgba(255,255,255,0.08); }
+    .sx-news-header {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #64748b; padding: 0.65rem 0.9rem 0.4rem;
+      border-bottom: 1px solid var(--line, #d2d2d7);
+    }
+    [data-theme="night"] .sx-news-header { border-bottom-color: rgba(255,255,255,0.08); }
+    .sx-news-list {
+      height: 220px; overflow-y: auto; padding: 0.4rem 0.9rem 0.6rem;
+      display: flex; flex-direction: column; gap: 0.45rem;
+      scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.15) transparent;
+    }
+    .sx-news-item { animation: sx-slide-in 0.35s ease; }
+    @keyframes sx-slide-in { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+    .sx-news-time { font-family: 'IBM Plex Mono', monospace; font-size: 0.67rem; color: #94a3b8; }
+    .sx-news-headline { font-size: 0.78rem; color: var(--text, #1d1d1f); line-height: 1.45; margin: 0.08rem 0; }
+    [data-theme="night"] .sx-news-headline { color: rgba(245,245,247,0.85); }
+    .sx-news-impact { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 700; }
+    .sx-news-why { font-size: 0.72rem; color: #94a3b8; line-height: 1.45; margin-top: 0.1rem; }
+
+    /* Portfolio */
+    .sx-portfolio { padding: 0.7rem 0.9rem; }
+    .sx-portfolio-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; margin-bottom: 0.55rem; }
+    .sx-portfolio-total { font-family: 'IBM Plex Mono', monospace; font-size: 1.25rem; font-weight: 700; color: var(--text, #1d1d1f); letter-spacing: -0.02em; }
+    [data-theme="night"] .sx-portfolio-total { color: rgba(245,245,247,0.9); }
+    .sx-portfolio-pl { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .sx-portfolio-cash { font-size: 0.78rem; color: #64748b; margin-bottom: 0.5rem; font-family: 'IBM Plex Mono', monospace; }
+    .sx-holdings { display: flex; flex-direction: column; gap: 0.3rem; }
+    .sx-holding-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.77rem; }
+    .sx-holding-name { font-weight: 700; color: var(--text, #1d1d1f); }
+    [data-theme="night"] .sx-holding-name { color: rgba(245,245,247,0.85); }
+    .sx-holding-detail { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: #64748b; }
+    .sx-no-holdings { font-size: 0.78rem; color: #94a3b8; font-style: italic; }
+
+    /* ── Explainer cards row ───────────────────────── */
+    .sx-concept-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
+    @media (max-width: 600px) { .sx-concept-row { grid-template-columns: 1fr; } }
+    .sx-concept-box {
+      background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px; box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1rem 1.1rem;
+    }
+    [data-theme="night"] .sx-concept-box { background: var(--white, #2c2c2e); }
+    .sx-concept-icon { font-size: 1.4rem; margin-bottom: 0.35rem; }
+    .sx-concept-name { font-weight: 800; font-size: 0.9rem; margin-bottom: 0.25rem; }
+    .sx-concept-desc { font-size: 0.8rem; color: #64748b; line-height: 1.55; }
+
+    /* ── Grade cards ───────────────────────────────── */
+    .sx-grade-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
+    @media (max-width: 560px) { .sx-grade-row { grid-template-columns: 1fr; } }
+    .sx-grade-card {
+      background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
+      border-top: 3px solid var(--gc, #10b981);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.05rem 1.2rem;
+    }
+    [data-theme="night"] .sx-grade-card { background: var(--white, #2c2c2e); }
+    .sx-grade-badge { display: inline-block; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; background: var(--gc, #10b981); border-radius: 6px; padding: 0.18rem 0.5rem; margin-bottom: 0.5rem; }
+    .sx-grade-card h3 { margin: 0 0 0.45rem; font-size: 0.95rem; }
+    .sx-grade-card p  { margin: 0 0 0.5rem; font-size: 0.84rem; color: #3f4f65; line-height: 1.65; }
+    .sx-grade-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .sx-grade-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Reflection ────────────────────────────────── */
+    .sx-reflect-list { list-style: none; padding: 0; margin: 0.7rem 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .sx-reflect-list li { display: flex; gap: 0.65rem; align-items: flex-start; font-size: 0.86rem; color: #3f4f65; line-height: 1.65; padding: 0.55rem 0.8rem; background: rgba(16,185,129,0.04); border-left: 3px solid rgba(16,185,129,0.3); border-radius: 0 8px 8px 0; }
+    [data-theme="night"] .sx-reflect-list li { color: rgba(245,245,247,0.72); }
+    .sx-q-num { flex-shrink: 0; font-weight: 900; color: #10b981; }
+
+    /* ── Teacher notes ─────────────────────────────── */
+    .sx-teacher {
+      background: #06150e; border: 1px solid rgba(16,185,129,0.25);
+      border-radius: var(--radius, 18px); padding: 1.3rem 1.5rem;
+      margin-bottom: 1rem; color: rgba(220,255,240,0.82);
+    }
+    .sx-teacher-kicker { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #6ee7b7; margin-bottom: 0.4rem; }
+    .sx-teacher h2  { margin: 0 0 0.6rem; font-size: 1.1rem; color: #d1fae5; letter-spacing: -0.02em; }
+    .sx-teacher h3  { margin: 0.9rem 0 0.3rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #6ee7b7; }
+    .sx-teacher p   { margin: 0 0 0.55rem; font-size: 0.85rem; line-height: 1.65; }
+    .sx-teacher p:last-child { margin-bottom: 0; }
+    .sx-teacher ul  { padding-left: 1.2rem; margin: 0 0 0.55rem; font-size: 0.85rem; line-height: 1.65; }
+    .sx-teacher li  { margin-bottom: 0.28rem; }
+    .sx-teacher hr  { border: none; border-top: 1px solid rgba(16,185,129,0.18); margin: 0.9rem 0; }
+    .sx-teacher-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin: 0.65rem 0; }
+    @media (max-width: 500px) { .sx-teacher-grid { grid-template-columns: 1fr; } }
+    .sx-teacher-box { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.18); border-radius: 9px; padding: 0.65rem 0.8rem; }
+    .sx-teacher-box strong { display: block; color: #6ee7b7; font-size: 0.78rem; margin-bottom: 0.22rem; }
+    .sx-teacher-box span { font-size: 0.79rem; line-height: 1.55; }
+
+    /* ── Flash animation ───────────────────────────── */
+    @keyframes sx-flash-green { 0%,100%{background:transparent} 30%{background:rgba(16,185,129,0.15)} }
+    @keyframes sx-flash-red   { 0%,100%{background:transparent} 30%{background:rgba(239,68,68,0.1)} }
+    .sx-flash-green { animation: sx-flash-green 0.6s ease; }
+    .sx-flash-red   { animation: sx-flash-red   0.6s ease; }
+
+    /* ── Reset button ──────────────────────────────── */
+    .sx-reset-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1.1rem; border-top: 1px solid var(--line, #d2d2d7); background: rgba(0,0,0,0.02); }
+    [data-theme="night"] .sx-reset-row { background: rgba(255,255,255,0.03); border-top-color: rgba(255,255,255,0.08); }
+    .sx-reset-btn { font-size: 0.75rem; font-weight: 700; border: 1px solid var(--line, #d2d2d7); border-radius: 7px; padding: 0.28rem 0.7rem; cursor: pointer; background: transparent; color: #64748b; transition: all 0.15s; }
+    .sx-reset-btn:hover { border-color: #ef4444; color: #ef4444; }
+    .sx-reset-note { font-size: 0.73rem; color: #94a3b8; }
+  </style>
+</head>
+<body class="sx-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav aria-label="Primary">
+        <a href="../index.html">Home</a>
+        <a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a>
+        <a href="../showcase.html">Showcase</a>
+        <a href="../about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- ── Hero ── -->
+    <section class="hero sx-hero">
+      <p class="eyebrow">Systems &amp; Society · Lesson 03</p>
+      <h1>Stock Exchange Simulator</h1>
+      <div class="sx-hero-meta">
+        <span>Grades 6–12</span>
+        <span class="dot"></span>
+        <span>$10,000 starting portfolio</span>
+        <span class="dot"></span>
+        <span>Live news events</span>
+        <span class="dot"></span>
+        <span>4 fictional companies</span>
+      </div>
+      <p class="sx-lede">A stock market is where buyers and sellers trade ownership shares in companies — and prices move every second based on news, earnings, and investor confidence. Open the market below, watch prices respond to live headlines, and try to grow your $10,000 portfolio.</p>
+    </section>
+
+    <!-- ── Quick overview ── -->
+    <section class="sx-card" style="--card-accent:#10b981;">
+      <h2>Before You Trade</h2>
+      <p>A <strong>stock</strong> is a small piece of ownership in a company. When a company does well — good news, strong sales, a new product — more people want to own it, so the price rises. When something goes wrong, people sell, and the price falls. You make money by buying low and selling high.</p>
+      <div class="sx-callout green">
+        <span class="sx-callout-icon">📋</span>
+        <div class="sx-callout-text">
+          <strong>Your mission:</strong> You have <strong>$10,000</strong> in virtual cash. Buy and sell shares of the four fictional companies below. Watch the news feed for events that hint at price movements. Try to end with more than you started.
+        </div>
+      </div>
+      <p style="margin:0;">The four companies are fictional but built to feel like real sectors you know: consumer tech, clean energy, retail, and pharmaceuticals.</p>
+    </section>
+
+    <!-- ══════════════════════════════════════════════
+         THE SIMULATOR
+    ═══════════════════════════════════════════════ -->
+    <div class="sx-sim" aria-label="Stock market simulator">
+
+      <!-- Header bar -->
+      <div class="sx-sim-header">
+        <div class="sx-clock">
+          <span id="sx-clock-day">Day 1 · Monday</span>
+          &nbsp;·&nbsp;
+          <strong id="sx-clock-time">9:00am</strong>
+        </div>
+        <span class="sx-market-badge closed" id="sx-market-badge">Market Closed</span>
+        <div class="sx-ctrl-group">
+          <button class="sx-btn primary" id="sx-toggle-btn" onclick="toggleMarket()">▶ Open Market</button>
+        </div>
+        <div class="sx-ctrl-group">
+          <span style="font-size:0.72rem;color:#94a3b8;font-weight:700;">SPEED</span>
+          <div class="sx-speed-group">
+            <button class="sx-speed-btn active" onclick="setSpeed(1,this)">1×</button>
+            <button class="sx-speed-btn" onclick="setSpeed(2,this)">2×</button>
+            <button class="sx-speed-btn" onclick="setSpeed(4,this)">4×</button>
+          </div>
+        </div>
+        <div class="sx-portfolio-value-inline sx-up" id="sx-header-value">$10,000.00</div>
+      </div>
+
+      <!-- Stock cards -->
+      <div class="sx-stock-row" role="list">
+        <div class="sx-stock-card selected" role="listitem" tabindex="0" id="sx-card-TSPK" onclick="selectTicker('TSPK')" onkeydown="if(event.key==='Enter')selectTicker('TSPK')" aria-label="TechSpark stock">
+          <div class="sx-stock-ticker">TSPK</div>
+          <div class="sx-stock-name">TechSpark</div>
+          <div class="sx-stock-price" id="sx-price-TSPK">$142.50</div>
+          <div class="sx-stock-change sx-flat" id="sx-change-TSPK">— 0.00%</div>
+          <div class="sx-sparkline-wrap">
+            <canvas class="sx-spark" id="sx-spark-TSPK" width="90" height="28" aria-hidden="true"></canvas>
+          </div>
+        </div>
+        <div class="sx-stock-card" role="listitem" tabindex="0" id="sx-card-GRLE" onclick="selectTicker('GRLE')" onkeydown="if(event.key==='Enter')selectTicker('GRLE')" aria-label="GreenLeaf Energy stock">
+          <div class="sx-stock-ticker">GRLE</div>
+          <div class="sx-stock-name">GreenLeaf Energy</div>
+          <div class="sx-stock-price" id="sx-price-GRLE">$67.80</div>
+          <div class="sx-stock-change sx-flat" id="sx-change-GRLE">— 0.00%</div>
+          <div class="sx-sparkline-wrap">
+            <canvas class="sx-spark" id="sx-spark-GRLE" width="90" height="28" aria-hidden="true"></canvas>
+          </div>
+        </div>
+        <div class="sx-stock-card" role="listitem" tabindex="0" id="sx-card-MGMT" onclick="selectTicker('MGMT')" onkeydown="if(event.key==='Enter')selectTicker('MGMT')" aria-label="MegaMart stock">
+          <div class="sx-stock-ticker">MGMT</div>
+          <div class="sx-stock-name">MegaMart</div>
+          <div class="sx-stock-price" id="sx-price-MGMT">$221.40</div>
+          <div class="sx-stock-change sx-flat" id="sx-change-MGMT">— 0.00%</div>
+          <div class="sx-sparkline-wrap">
+            <canvas class="sx-spark" id="sx-spark-MGMT" width="90" height="28" aria-hidden="true"></canvas>
+          </div>
+        </div>
+        <div class="sx-stock-card" role="listitem" tabindex="0" id="sx-card-BCHE" onclick="selectTicker('BCHE')" onkeydown="if(event.key==='Enter')selectTicker('BCHE')" aria-label="BioCore Health stock">
+          <div class="sx-stock-ticker">BCHE</div>
+          <div class="sx-stock-name">BioCore Health</div>
+          <div class="sx-stock-price" id="sx-price-BCHE">$54.30</div>
+          <div class="sx-stock-change sx-flat" id="sx-change-BCHE">— 0.00%</div>
+          <div class="sx-sparkline-wrap">
+            <canvas class="sx-spark" id="sx-spark-BCHE" width="90" height="28" aria-hidden="true"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main body -->
+      <div class="sx-body">
+
+        <!-- Chart + trade column -->
+        <div class="sx-chart-col">
+          <div class="sx-selected-header">
+            <div>
+              <div class="sx-selected-company" id="sx-sel-name">TechSpark <span style="font-size:0.75rem;font-weight:500;color:#94a3b8;">(TSPK)</span></div>
+              <div class="sx-selected-sector" id="sx-sel-sector">Consumer Tech</div>
+              <div class="sx-selected-tagline" id="sx-sel-tagline">Smartphones, laptops &amp; smart devices</div>
+            </div>
+            <div class="sx-selected-price-block">
+              <div class="sx-selected-price" id="sx-sel-price">$142.50</div>
+              <div class="sx-selected-change sx-flat" id="sx-sel-change">— 0.00%</div>
+            </div>
+          </div>
+          <div class="sx-chart-wrap">
+            <canvas id="sx-chart" width="520" height="160" aria-label="Price chart for selected company"></canvas>
+          </div>
+          <p class="sx-chart-caption">Click any company card above to view its chart. The dashed line marks the opening price. Green = above start · Red = below start.</p>
+
+          <!-- Trade form -->
+          <div class="sx-trade-section">
+            <div class="sx-trade-label">Trade <span id="sx-trade-ticker">TSPK</span></div>
+            <div class="sx-trade-row">
+              <input type="number" class="sx-trade-input" id="sx-shares-input" value="1" min="1" max="9999" aria-label="Number of shares" oninput="updateTradeCost()" />
+              <span class="sx-trade-cost" id="sx-trade-cost">est. $142.50</span>
+              <button class="sx-buy-btn" onclick="executeTrade('buy')">Buy</button>
+              <button class="sx-sell-btn" onclick="executeTrade('sell')">Sell</button>
+            </div>
+            <div class="sx-trade-msg" id="sx-trade-msg" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <!-- Side column: news + portfolio -->
+        <div class="sx-side-col">
+
+          <!-- News feed -->
+          <div class="sx-news">
+            <div class="sx-news-header">Market News</div>
+            <div class="sx-news-list" id="sx-news-list" aria-live="polite" aria-label="Market news feed">
+              <div class="sx-news-item">
+                <div class="sx-news-time">—</div>
+                <div class="sx-news-headline" style="color:#94a3b8;font-style:italic;">Open the market to start receiving news.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Portfolio -->
+          <div class="sx-portfolio">
+            <div class="sx-portfolio-label">Portfolio</div>
+            <div class="sx-portfolio-total" id="sx-port-total">$10,000.00</div>
+            <div class="sx-portfolio-pl sx-flat" id="sx-port-pl">+$0.00 (0.00%)</div>
+            <div class="sx-portfolio-cash" id="sx-port-cash">Cash: $10,000.00</div>
+            <div class="sx-holdings" id="sx-holdings">
+              <div class="sx-no-holdings">No positions yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset row -->
+      <div class="sx-reset-row">
+        <button class="sx-reset-btn" onclick="resetSimulation()">↺ Reset Market</button>
+        <span class="sx-reset-note">Resets prices, portfolio, and news to Day 1.</span>
+      </div>
+
+    </div><!-- /.sx-sim -->
+
+    <!-- ── How it works ── -->
+    <div class="sx-concept-row">
+      <div class="sx-concept-box">
+        <div class="sx-concept-icon">📈</div>
+        <div class="sx-concept-name">Supply &amp; Demand</div>
+        <div class="sx-concept-desc">When many investors want to buy a stock, the price rises. When many want to sell, it falls. Price is simply the last price buyer and seller agreed on.</div>
+      </div>
+      <div class="sx-concept-box">
+        <div class="sx-concept-icon">📰</div>
+        <div class="sx-concept-name">News &amp; Sentiment</div>
+        <div class="sx-concept-desc">Good news (strong earnings, a new product) attracts buyers and pushes prices up. Bad news (lawsuits, recalls, failures) causes fear — investors sell, prices drop.</div>
+      </div>
+      <div class="sx-concept-box">
+        <div class="sx-concept-icon">💼</div>
+        <div class="sx-concept-name">Portfolio &amp; Risk</div>
+        <div class="sx-concept-desc">Putting all your money in one stock is risky — if it falls, you lose everything. Spreading money across different sectors (diversification) reduces risk.</div>
+      </div>
+      <div class="sx-concept-box">
+        <div class="sx-concept-icon">⏱</div>
+        <div class="sx-concept-name">Market Hours</div>
+        <div class="sx-concept-desc">Real stock markets are only open on weekdays, 9:30am–4pm. Prices can't change outside those hours — which is why major news overnight causes big jumps at open.</div>
+      </div>
+      <div class="sx-concept-box">
+        <div class="sx-concept-icon">🏢</div>
+        <div class="sx-concept-name">What Is a Share?</div>
+        <div class="sx-concept-desc">A share is a tiny ownership stake in a company. If TechSpark has 10 million shares and you own 1,000, you own 0.01% of the company — and get 0.01% of any dividends paid.</div>
+      </div>
+      <div class="sx-concept-box">
+        <div class="sx-concept-icon">💹</div>
+        <div class="sx-concept-name">Bull vs. Bear</div>
+        <div class="sx-concept-desc">A <strong>bull market</strong> is when prices are generally rising — investors are confident. A <strong>bear market</strong> is a broad decline. The whole market can shift based on economic mood.</div>
+      </div>
+    </div>
+
+    <!-- ── Grade differentiation ── -->
+    <div class="sx-grade-row">
+      <div class="sx-grade-card" style="--gc:#10b981;">
+        <span class="sx-grade-badge">Grades 6–8</span>
+        <h3>The Simple Version</h3>
+        <p>Think of stocks like rare trading cards. If a new set comes out and everyone wants Card X, the price goes up. If the card gets banned from tournaments, nobody wants it and the price drops.</p>
+        <p>Companies are the same. When TechSpark launches a hit phone, everyone wants a piece — the stock goes up. When a recall hits, people worry the company will lose money — so they sell and the price falls.</p>
+        <p>Your job is to predict which companies will get good news and buy before prices rise. Then sell when prices are high. But be careful — news is unpredictable.</p>
+      </div>
+      <div class="sx-grade-card" style="--gc:#0ea5e9;">
+        <span class="sx-grade-badge">Grades 9–12</span>
+        <h3>The Deeper Version</h3>
+        <p>Stock prices reflect the market's collective expectation of a company's <strong>future cash flows</strong>, discounted to their present value. A good earnings report isn't surprising if the market already "priced it in" — the stock might not move at all.</p>
+        <p>Notice in the simulator how price changes are larger for BioCore (pharma) than MegaMart (retail). That's <strong>volatility</strong> — binary events like FDA approvals or trial failures can swing pharma stocks by 15–20%, while stable retailers rarely move more than 5–8%.</p>
+        <p>Watch for the market-wide news events too — a Federal Reserve interest rate decision affects every sector simultaneously because it changes the cost of borrowing for all companies, adjusting their expected future cash flows at once.</p>
+      </div>
+    </div>
+
+    <!-- ── Reflection ── -->
+    <section class="sx-card" style="--card-accent:#10b981;">
+      <h2>Reflection Questions</h2>
+      <ol class="sx-reflect-list">
+        <li><span class="sx-q-num">1.</span>When BioCore's drug failed FDA approval and the price dropped sharply, what do you think other investors were thinking? Why does fear spread through a market so quickly?</li>
+        <li><span class="sx-q-num">2.</span>You started with $10,000. Did you end up with more or less? What decisions led to that outcome — luck, strategy, or both?</li>
+        <li><span class="sx-q-num">3.</span>MegaMart is the most expensive stock per share ($221+) and GreenLeaf is cheaper ($67). Does buying a more expensive stock mean you're taking more risk? Why or why not?</li>
+        <li><span class="sx-q-num">4.</span>In a real stock market, millions of investors make decisions simultaneously. How does that "crowd wisdom" make markets more — or less — accurate at setting prices?</li>
+        <li><span class="sx-q-num">5.</span>(Advanced) In this simulation, you can see all the news before you trade. In real markets, some investors illegally trade using private information before it becomes public — called <em>insider trading</em>. Why do you think this is considered unfair and illegal?</li>
+      </ol>
+    </section>
+
+    <!-- ── Teacher Notes ── -->
+    <section class="sx-teacher" aria-label="Teacher notes">
+      <p class="sx-teacher-kicker">Teacher Notes — Not for Student View</p>
+      <h2>Facilitation Guide</h2>
+
+      <h3>Learning objectives</h3>
+      <ul>
+        <li>Students understand that stock prices reflect supply and demand driven by expectations, not just current company value.</li>
+        <li>Students can explain why news events cause price changes — and why different sectors react with different magnitudes.</li>
+        <li>Students experience the emotional reality of investing: the tension of watching losses and the temptation to sell during drops.</li>
+        <li>Students develop basic vocabulary: stock, share, portfolio, diversification, bull/bear market, volatility, dividend.</li>
+      </ul>
+
+      <hr />
+
+      <h3>What NOT to over-explain</h3>
+      <ul>
+        <li><strong>Don't explain order books or bid/ask spreads.</strong> This simulator uses a simplified "last price" model. The mechanics of limit orders, market orders, and spreads are for a more advanced finance course.</li>
+        <li><strong>Don't push the formulas.</strong> P/E ratios, discounted cash flow, CAPM — these are grade-appropriate for an advanced economics class, not this introductory simulation.</li>
+        <li><strong>Don't over-correct emotional responses.</strong> When a student is frustrated that their stock dropped, that's the lesson. Let them sit with it, then ask why it happened.</li>
+      </ul>
+
+      <hr />
+
+      <h3>Common misconceptions</h3>
+      <ul>
+        <li><strong>"A higher share price means a better company."</strong> Price per share is arbitrary — it reflects stock splits and history, not company quality. A $5 stock can be a better investment than a $500 stock. Focus on percentage change, not absolute price.</li>
+        <li><strong>"If I lose money I'm being robbed."</strong> In a market, your loss is someone else's gain (and vice versa). No money disappears — it changes hands. This is worth a brief discussion on market structure.</li>
+        <li><strong>"Good news always means the price goes up."</strong> If the market already expected good news, the price may have risen already. Stocks are forward-looking. Sometimes "good but not as good as expected" causes a drop.</li>
+      </ul>
+
+      <hr />
+
+      <h3>Cross-subject connections</h3>
+      <div class="sx-teacher-grid">
+        <div class="sx-teacher-box">
+          <strong>Math</strong>
+          <span>Percentage change, compound growth, fractions of ownership. Ask: if you own 50 shares of BioCore at $54.30, what is your position worth? What % of a $10,000 portfolio is that?</span>
+        </div>
+        <div class="sx-teacher-box">
+          <strong>Social Studies / Economics</strong>
+          <span>Capitalism, market economies, supply and demand curves. Connect to: the Great Depression (1929 crash), 2008 financial crisis, GameStop short squeeze (2021) as modern examples.</span>
+        </div>
+        <div class="sx-teacher-box">
+          <strong>Computer Science</strong>
+          <span>Discuss algorithmic trading: today ~70% of all stock trades are made by computer programs reacting to data in milliseconds. How does that change market dynamics? Is it fair?</span>
+        </div>
+      </div>
+
+      <hr />
+
+      <h3>Pacing suggestions</h3>
+      <ul>
+        <li><strong>Single period (50 min):</strong> 5 min intro, 25 min simulator (speed 2× or 4×), 10 min debrief using reflection questions, 10 min connecting to real markets.</li>
+        <li><strong>Two periods:</strong> Day 1: Intro + 20 min simulator at speed 1× (realistic feel). Day 2: Compare portfolios, discuss strategies, introduce advanced concepts (volatility, diversification).</li>
+        <li><strong>Assessment option:</strong> After the session, ask students to write a short explanation of one trade they made — why they made it, what happened, and what they'd do differently.</li>
+      </ul>
+
+      <hr />
+
+      <h3>Real-world company connections</h3>
+      <p>The fictional companies are loosely inspired by real sectors — not specific companies. <strong>TechSpark</strong> evokes Apple/Google. <strong>GreenLeaf Energy</strong> evokes Tesla or NextEra Energy. <strong>MegaMart</strong> evokes Amazon or Walmart. <strong>BioCore Health</strong> evokes Pfizer or Johnson &amp; Johnson. When drawing real-world parallels, stress that these are simplified analogies — real companies have far more complexity, competitive pressures, and financial structure.</p>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  /* ════════════════════════════════════════════════════
+     STOCK EXCHANGE SIMULATOR
+  ════════════════════════════════════════════════════ */
+  'use strict';
+
+  /* ── Company definitions ─────────────────────────── */
+  const COMPANY_DEFS = {
+    TSPK: { name: 'TechSpark',       sector: 'Consumer Tech',       tagline: 'Smartphones, laptops &amp; smart devices', start: 142.50, vol: 0.007, color: '#7c3aed' },
+    GRLE: { name: 'GreenLeaf Energy',sector: 'Clean Energy',         tagline: 'Electric vehicles &amp; solar panels',     start: 67.80,  vol: 0.011, color: '#10b981' },
+    MGMT: { name: 'MegaMart',        sector: 'Retail &amp; Logistics', tagline: 'Online store &amp; next-day delivery',   start: 221.40, vol: 0.005, color: '#f59e0b' },
+    BCHE: { name: 'BioCore Health',  sector: 'Pharmaceuticals',      tagline: 'Medicines, vaccines &amp; clinical trials',start: 54.30,  vol: 0.014, color: '#0ea5e9' },
+  };
+
+  /* ── News pool ───────────────────────────────────── */
+  const NEWS_POOL = [
+    /* TechSpark positive */
+    { h: 'TechSpark unveils its thinnest smartphone yet — pre-orders shatter records',                   t: 'TSPK', i:  0.07, w: 'Strong product launches attract buyers, boosting expected revenue.' },
+    { h: 'TechSpark reports 28% revenue growth in quarterly earnings call',                              t: 'TSPK', i:  0.09, w: 'Higher earnings mean the company is worth more to investors.' },
+    { h: 'TechSpark wins landmark AI patent — analysts raise price targets',                             t: 'TSPK', i:  0.05, w: 'Patents protect future revenue streams, making the stock more valuable.' },
+    { h: 'TechSpark announces $30B share buyback program — investors cheer',                             t: 'TSPK', i:  0.06, w: 'Buybacks reduce the number of shares, making each one worth more.' },
+    /* TechSpark negative */
+    { h: 'TechSpark supply chain disrupted — holiday deliveries at risk',                                t: 'TSPK', i: -0.06, w: 'Supply problems mean fewer products sold and lower revenue.' },
+    { h: 'Regulators open antitrust investigation into TechSpark',                                       t: 'TSPK', i: -0.08, w: 'Legal risk makes investors uncertain about the company\'s future.' },
+    { h: 'TechSpark flagship device earns poor safety review — recall possible',                         t: 'TSPK', i: -0.05, w: 'Recalls are expensive and damage consumer trust.' },
+    { h: 'Key TechSpark engineer departs to rival company',                                              t: 'TSPK', i: -0.04, w: 'Losing top talent can slow product development and innovation.' },
+    /* GreenLeaf positive */
+    { h: 'GreenLeaf Energy wins $12B government clean energy contract',                                  t: 'GRLE', i:  0.11, w: 'Government contracts guarantee revenue for years ahead.' },
+    { h: 'GreenLeaf battery achieves 40% efficiency breakthrough in lab',                                t: 'GRLE', i:  0.08, w: 'Better technology creates a competitive edge and future sales.' },
+    { h: 'New federal clean energy bill passes — GreenLeaf expansion fast-tracked',                      t: 'GRLE', i:  0.10, w: 'Favorable laws create business opportunities and reduce costs.' },
+    { h: 'GreenLeaf EV deliveries beat expectations by 18% this quarter',                                t: 'GRLE', i:  0.07, w: 'Beating delivery targets signals strong demand and execution.' },
+    /* GreenLeaf negative */
+    { h: 'GreenLeaf recalls 50,000 home batteries after fire risk discovered',                           t: 'GRLE', i: -0.12, w: 'Recalls are expensive and damage brand trust, scaring away customers.' },
+    { h: 'Falling oil prices reduce demand for GreenLeaf electric vehicles',                             t: 'GRLE', i: -0.07, w: 'Cheap oil makes gas cars more competitive, hurting EV sales.' },
+    { h: 'GreenLeaf delays new factory opening by 18 months — costs triple',                             t: 'GRLE', i: -0.09, w: 'Delays cost money and signal operational problems to investors.' },
+    { h: 'Rival launches competing EV at significantly lower price point',                               t: 'GRLE', i: -0.06, w: 'New competition threatens GreenLeaf\'s market share.' },
+    /* MegaMart positive */
+    { h: 'MegaMart same-day delivery expands to 400 new cities',                                        t: 'MGMT', i:  0.06, w: 'More delivery coverage means more potential customers and revenue.' },
+    { h: 'MegaMart reports record holiday sales — up 31% year over year',                               t: 'MGMT', i:  0.08, w: 'Record sales mean higher profits for the company.' },
+    { h: 'MegaMart acquires popular grocery chain, doubling food market share',                          t: 'MGMT', i:  0.07, w: 'Acquisitions expand the business into profitable new markets.' },
+    { h: 'MegaMart cloud division revenue surges 47% — analysts upgrade stock',                         t: 'MGMT', i:  0.09, w: 'A fast-growing division increases the company\'s overall value.' },
+    /* MegaMart negative */
+    { h: 'MegaMart faces antitrust investigation for market dominance',                                  t: 'MGMT', i: -0.06, w: 'Antitrust risk could force the company to change its business model.' },
+    { h: 'Major MegaMart data breach exposes 40 million customer records',                               t: 'MGMT', i: -0.09, w: 'Data breaches cost billions in fines and lose customer trust.' },
+    { h: 'MegaMart workers launch nationwide strike over wages',                                         t: 'MGMT', i: -0.05, w: 'Strikes disrupt operations and increase costs for the company.' },
+    { h: 'MegaMart warehouse automation project scrapped after $2B write-off',                           t: 'MGMT', i: -0.06, w: 'Writing off failed investments destroys shareholder value.' },
+    /* BioCore positive */
+    { h: 'BioCore\'s cancer drug gets fast-track FDA approval — a landmark moment',                     t: 'BCHE', i:  0.18, w: 'FDA approval allows BioCore to sell the drug, creating massive new revenue.' },
+    { h: 'BioCore announces breakthrough Alzheimer\'s treatment in Phase 3 trials',                     t: 'BCHE', i:  0.13, w: 'Promising trial results signal a future approved drug worth billions.' },
+    { h: 'BioCore wins government contract to supply the national flu vaccine',                          t: 'BCHE', i:  0.09, w: 'Government contracts guarantee large, reliable revenue.' },
+    { h: 'BioCore\'s rare disease drug earns orphan drug status and tax incentives',                    t: 'BCHE', i:  0.07, w: 'Tax breaks and market exclusivity improve future profitability.' },
+    /* BioCore negative */
+    { h: 'BioCore\'s best-selling drug linked to serious side effects in new study',                    t: 'BCHE', i: -0.14, w: 'Safety issues can pull a drug from the market, eliminating its revenue.' },
+    { h: 'BioCore faces $8B lawsuit over clinical trial misconduct',                                     t: 'BCHE', i: -0.11, w: 'Major lawsuits can cost more than years of company profits.' },
+    { h: 'BioCore\'s new drug fails Phase 3 trials — years of research wasted',                        t: 'BCHE', i: -0.16, w: 'Failed trials mean billions spent on R&D produce no revenue.' },
+    { h: 'BioCore loses patent protection on top drug — generics flood market',                         t: 'BCHE', i: -0.10, w: 'Without patent protection, cheap copies reduce the drug\'s price and BioCore\'s profit.' },
+    /* Market-wide */
+    { h: 'Federal Reserve raises interest rates — borrowing costs rise for all companies',               t: null,   i: -0.03, w: 'Higher rates make borrowing expensive, reducing business investment across all sectors.' },
+    { h: 'Inflation cools to a two-year low — markets rally broadly',                                   t: null,   i:  0.04, w: 'Low inflation means stable prices and confident consumers — good for all businesses.' },
+    { h: 'Major trade deal signed with key overseas partners — businesses gain market access',           t: null,   i:  0.05, w: 'New trade deals open doors to customers in other countries.' },
+    { h: 'Recession fears grow as jobs data disappoints — broad market sell-off',                       t: null,   i: -0.05, w: 'A potential recession means consumers spend less, hurting revenues across all sectors.' },
+    { h: 'Strong consumer confidence report signals a spending surge ahead',                             t: null,   i:  0.04, w: 'Confident consumers buy more — great for businesses in every sector.' },
+    { h: 'Geopolitical tensions escalate — investors flee to safer assets',                              t: null,   i: -0.04, w: 'Uncertainty causes investors to sell stocks and move into cash or bonds.' },
+  ];
+
+  /* ── Simulation state ────────────────────────────── */
+  const TICKERS = ['TSPK', 'GRLE', 'MGMT', 'BCHE'];
+  const HOURS   = ['9:00am','10:00am','11:00am','12:00pm','1:00pm','2:00pm','3:00pm','4:00pm'];
+  const DAYS    = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const START_CASH = 10000;
+
+  let state = {};
+
+  function buildState() {
+    const companies = {};
+    TICKERS.forEach(t => {
+      const d = COMPANY_DEFS[t];
+      const hist = [];
+      let p = d.start;
+      for (let i = 0; i < 16; i++) {
+        p = Math.max(1, p + (Math.random() - 0.5) * p * d.vol * 0.6 + (d.start - p) * 0.02);
+        hist.push(p);
+      }
+      hist.push(d.start);
+      companies[t] = { ...d, price: d.start, history: hist, holdings: 0, avgCost: 0 };
+    });
+    return {
+      companies,
+      cash: START_CASH,
+      day: 0,
+      hour: 0,
+      running: false,
+      speed: 1,
+      selected: 'TSPK',
+      tickInterval: null,
+      nextNewsIn: 3 + Math.floor(Math.random() * 3),
+      tickCount: 0,
+    };
+  }
+
+  state = buildState();
+
+  /* ── Market controls ─────────────────────────────── */
+  function toggleMarket() {
+    if (state.running) {
+      state.running = false;
+      clearInterval(state.tickInterval);
+      document.getElementById('sx-toggle-btn').textContent = '▶ Open Market';
+      document.getElementById('sx-toggle-btn').className = 'sx-btn primary';
+      document.getElementById('sx-market-badge').textContent = 'Market Paused';
+      document.getElementById('sx-market-badge').className = 'sx-market-badge closed';
+    } else {
+      state.running = true;
+      document.getElementById('sx-toggle-btn').textContent = '⏸ Pause';
+      document.getElementById('sx-toggle-btn').className = 'sx-btn amber';
+      document.getElementById('sx-market-badge').textContent = 'Market Open';
+      document.getElementById('sx-market-badge').className = 'sx-market-badge open';
+      scheduleInterval();
+    }
+  }
+
+  function scheduleInterval() {
+    clearInterval(state.tickInterval);
+    const ms = { 1: 2000, 2: 1000, 4: 500 }[state.speed] || 2000;
+    state.tickInterval = setInterval(tick, ms);
+  }
+
+  function setSpeed(s, btn) {
+    state.speed = s;
+    document.querySelectorAll('.sx-speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (state.running) scheduleInterval();
+  }
+
+  function resetSimulation() {
+    clearInterval(state.tickInterval);
+    state = buildState();
+    document.getElementById('sx-toggle-btn').textContent = '▶ Open Market';
+    document.getElementById('sx-toggle-btn').className = 'sx-btn primary';
+    document.getElementById('sx-market-badge').textContent = 'Market Closed';
+    document.getElementById('sx-market-badge').className = 'sx-market-badge closed';
+    document.getElementById('sx-news-list').innerHTML = '<div class="sx-news-item"><div class="sx-news-time">—</div><div class="sx-news-headline" style="color:#94a3b8;font-style:italic;">Open the market to start receiving news.</div></div>';
+    document.querySelectorAll('.sx-speed-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+    renderAll();
+  }
+
+  /* ── Simulation tick ─────────────────────────────── */
+  function tick() {
+    // Advance time
+    state.hour++;
+    if (state.hour >= HOURS.length) {
+      state.hour = 0;
+      state.day++;
+      if (state.day >= DAYS.length) state.day = 0;
+    }
+
+    // Update all stock prices (random walk + mean reversion)
+    TICKERS.forEach(t => {
+      const c = state.companies[t];
+      const drift = (c.start - c.price) * 0.008;
+      const noise = (Math.random() - 0.5) * c.price * c.vol;
+      c.price = Math.max(1, c.price + drift + noise);
+      c.history.push(c.price);
+      if (c.history.length > 90) c.history.shift();
+    });
+
+    // Possibly fire news event
+    state.tickCount++;
+    state.nextNewsIn--;
+    if (state.nextNewsIn <= 0) {
+      fireNews();
+      state.nextNewsIn = 2 + Math.floor(Math.random() * 4);
+    }
+
+    renderAll();
+  }
+
+  function fireNews() {
+    const event = NEWS_POOL[Math.floor(Math.random() * NEWS_POOL.length)];
+    const impact = event.i + (Math.random() - 0.5) * 0.02; // small randomization
+
+    if (event.t) {
+      const c = state.companies[event.t];
+      c.price = Math.max(1, c.price * (1 + impact));
+      c.history.push(c.price);
+      if (c.history.length > 90) c.history.shift();
+      flashCard(event.t, impact > 0);
+    } else {
+      // Market-wide
+      TICKERS.forEach(t => {
+        const c = state.companies[t];
+        c.price = Math.max(1, c.price * (1 + impact));
+        c.history.push(c.price);
+        if (c.history.length > 90) c.history.shift();
+      });
+    }
+
+    addNewsItem(event, impact);
+  }
+
+  function flashCard(ticker, isUp) {
+    const card = document.getElementById('sx-card-' + ticker);
+    if (!card) return;
+    card.classList.remove('sx-flash-green', 'sx-flash-red');
+    void card.offsetWidth; // reflow
+    card.classList.add(isUp ? 'sx-flash-green' : 'sx-flash-red');
+    setTimeout(() => card.classList.remove('sx-flash-green', 'sx-flash-red'), 700);
+  }
+
+  function addNewsItem(event, impact) {
+    const list = document.getElementById('sx-news-list');
+    const sign = impact >= 0 ? '+' : '';
+    const pct  = (impact * 100).toFixed(1);
+    const cls  = impact >= 0 ? 'sx-up' : 'sx-down';
+    const ticker = event.t ? event.t : 'ALL';
+    const timeStr = HOURS[state.hour] || '9:00am';
+
+    const div = document.createElement('div');
+    div.className = 'sx-news-item';
+    div.innerHTML = `
+      <div class="sx-news-time">${timeStr} · <span class="${cls}" style="font-weight:700;">${ticker}</span> <span class="${cls}">${sign}${pct}%</span></div>
+      <div class="sx-news-headline">${event.h}</div>
+      <div class="sx-news-why">${event.w}</div>`;
+    list.insertBefore(div, list.firstChild);
+
+    // Keep max 20 items
+    while (list.children.length > 20) list.removeChild(list.lastChild);
+  }
+
+  /* ── Trading ─────────────────────────────────────── */
+  function executeTrade(action) {
+    const ticker = state.selected;
+    const shares = parseInt(document.getElementById('sx-shares-input').value) || 0;
+    const c = state.companies[ticker];
+    const cost = shares * c.price;
+    const msg = document.getElementById('sx-trade-msg');
+
+    if (shares <= 0) { showMsg('Enter a valid number of shares.', 'err'); return; }
+
+    if (action === 'buy') {
+      if (cost > state.cash) { showMsg('Not enough cash. Try fewer shares.', 'err'); return; }
+      // Update avg cost
+      const prev = c.holdings * c.avgCost;
+      c.holdings += shares;
+      c.avgCost = (prev + cost) / c.holdings;
+      state.cash -= cost;
+      showMsg(`Bought ${shares} share${shares>1?'s':''} of ${ticker} at $${c.price.toFixed(2)}.`, 'ok');
+    } else {
+      if (shares > c.holdings) { showMsg(`You only own ${c.holdings} share${c.holdings!==1?'s':''}. Sell less.`, 'err'); return; }
+      c.holdings -= shares;
+      if (c.holdings === 0) c.avgCost = 0;
+      state.cash += cost;
+      showMsg(`Sold ${shares} share${shares>1?'s':''} of ${ticker} at $${c.price.toFixed(2)}.`, 'ok');
+    }
+    renderPortfolio();
+  }
+
+  function showMsg(txt, type) {
+    const el = document.getElementById('sx-trade-msg');
+    el.textContent = txt;
+    el.className = 'sx-trade-msg ' + type;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.textContent = ''; el.className = 'sx-trade-msg'; }, 4000);
+  }
+
+  function updateTradeCost() {
+    const shares = parseInt(document.getElementById('sx-shares-input').value) || 0;
+    const c = state.companies[state.selected];
+    const cost = shares * c.price;
+    document.getElementById('sx-trade-cost').textContent = 'est. $' + cost.toFixed(2);
+  }
+
+  /* ── Company selection ───────────────────────────── */
+  function selectTicker(t) {
+    state.selected = t;
+    TICKERS.forEach(tk => {
+      document.getElementById('sx-card-' + tk).classList.toggle('selected', tk === t);
+    });
+    const c = state.companies[t];
+    document.getElementById('sx-sel-name').innerHTML = c.name + ' <span style="font-size:0.75rem;font-weight:500;color:#94a3b8;">(' + t + ')</span>';
+    document.getElementById('sx-sel-sector').textContent = c.sector;
+    document.getElementById('sx-sel-tagline').innerHTML = c.tagline;
+    document.getElementById('sx-trade-ticker').textContent = t;
+    updateTradeCost();
+    drawChart(t);
+  }
+
+  /* ── Render all ──────────────────────────────────── */
+  function renderAll() {
+    const dark = document.documentElement.dataset.theme === 'night';
+
+    // Clock
+    document.getElementById('sx-clock-day').textContent  = 'Day ' + (state.day + 1) + ' · ' + DAYS[state.day];
+    document.getElementById('sx-clock-time').textContent = HOURS[state.hour];
+
+    // Stock cards + selected header
+    TICKERS.forEach(t => {
+      const c = state.companies[t];
+      const chg = (c.price - c.start) / c.start * 100;
+      const sign = chg >= 0 ? '+' : '';
+      const cls  = chg > 0.05 ? 'sx-up' : chg < -0.05 ? 'sx-down' : 'sx-flat';
+
+      document.getElementById('sx-price-' + t).textContent = '$' + c.price.toFixed(2);
+      const chgEl = document.getElementById('sx-change-' + t);
+      chgEl.textContent = sign + chg.toFixed(2) + '%';
+      chgEl.className = 'sx-stock-change ' + cls;
+
+      drawSparkline(t);
+    });
+
+    // Selected company header
+    const sc = state.companies[state.selected];
+    const schg = (sc.price - sc.start) / sc.start * 100;
+    const ssign = schg >= 0 ? '+' : '';
+    const scls = schg > 0.05 ? 'sx-up' : schg < -0.05 ? 'sx-down' : 'sx-flat';
+    document.getElementById('sx-sel-price').textContent = '$' + sc.price.toFixed(2);
+    const schgEl = document.getElementById('sx-sel-change');
+    schgEl.textContent = ssign + schg.toFixed(2) + '%';
+    schgEl.className = 'sx-selected-change ' + scls;
+
+    drawChart(state.selected);
+    renderPortfolio();
+    updateTradeCost();
+  }
+
+  function renderPortfolio() {
+    // Total value
+    let holdingsValue = 0;
+    TICKERS.forEach(t => {
+      holdingsValue += state.companies[t].holdings * state.companies[t].price;
+    });
+    const total = state.cash + holdingsValue;
+    const pl    = total - START_CASH;
+    const plPct = pl / START_CASH * 100;
+    const plSign = pl >= 0 ? '+' : '';
+    const plCls  = pl > 0.01 ? 'sx-up' : pl < -0.01 ? 'sx-down' : 'sx-flat';
+
+    document.getElementById('sx-port-total').textContent = '$' + total.toFixed(2);
+    const plEl = document.getElementById('sx-port-pl');
+    plEl.textContent = plSign + '$' + Math.abs(pl).toFixed(2) + ' (' + plSign + plPct.toFixed(2) + '%)';
+    plEl.className = 'sx-portfolio-pl ' + plCls;
+    document.getElementById('sx-port-cash').textContent = 'Cash: $' + state.cash.toFixed(2);
+
+    // Header value
+    const hvEl = document.getElementById('sx-header-value');
+    hvEl.textContent = '$' + total.toFixed(2);
+    hvEl.className = 'sx-portfolio-value-inline ' + plCls;
+
+    // Holdings rows
+    const holdEl = document.getElementById('sx-holdings');
+    const active = TICKERS.filter(t => state.companies[t].holdings > 0);
+    if (active.length === 0) {
+      holdEl.innerHTML = '<div class="sx-no-holdings">No positions yet.</div>';
+    } else {
+      holdEl.innerHTML = active.map(t => {
+        const c = state.companies[t];
+        const val = c.holdings * c.price;
+        const holdPl = (c.price - c.avgCost) * c.holdings;
+        const holdPlCls = holdPl > 0.01 ? 'sx-up' : holdPl < -0.01 ? 'sx-down' : 'sx-flat';
+        const holdSign = holdPl >= 0 ? '+' : '';
+        return `<div class="sx-holding-row">
+          <div>
+            <div class="sx-holding-name">${t}</div>
+            <div class="sx-holding-detail">${c.holdings} sh · avg $${c.avgCost.toFixed(2)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="sx-holding-detail" style="color:inherit;">$${val.toFixed(2)}</div>
+            <div class="sx-holding-detail ${holdPlCls}">${holdSign}$${Math.abs(holdPl).toFixed(2)}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  /* ── Chart drawing ───────────────────────────────── */
+  function drawChart(ticker) {
+    const canvas = document.getElementById('sx-chart');
+    const ctx = canvas.getContext('2d');
+    const c = state.companies[ticker];
+    const hist = c.history;
+    const W = canvas.width, H = canvas.height;
+    const PADR = 8, PADL = 48, PADT = 12, PADB = 18;
+    const dark = document.documentElement.dataset.theme === 'night';
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = dark ? '#1a1a1c' : '#f9f9fb';
+    ctx.fillRect(0, 0, W, H);
+
+    if (hist.length < 2) return;
+    const visible = hist.slice(-80);
+    const prices = visible;
+    const minP = Math.min(...prices) * 0.993;
+    const maxP = Math.max(...prices) * 1.007;
+    const rng  = maxP - minP || 1;
+
+    function fx(i) { return PADL + (i / (prices.length - 1)) * (W - PADL - PADR); }
+    function fy(p) { return PADT + (1 - (p - minP) / rng) * (H - PADT - PADB); }
+
+    // Grid lines
+    for (let g = 0; g < 4; g++) {
+      const p = minP + (g / 3) * rng;
+      const y = fy(p);
+      ctx.strokeStyle = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PADL, y); ctx.lineTo(W - PADR, y); ctx.stroke();
+      ctx.fillStyle = dark ? 'rgba(255,255,255,0.38)' : '#94a3b8';
+      ctx.font = '10px Inter, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('$' + p.toFixed(0), PADL - 4, y + 3.5);
+    }
+
+    // Start price dashed line
+    const startY = fy(c.start);
+    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(PADL, startY); ctx.lineTo(W - PADR, startY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Area fill
+    const isUp = c.price >= c.start;
+    const lineColor = isUp ? '#10b981' : '#ef4444';
+    ctx.globalAlpha = 0.07;
+    ctx.fillStyle = lineColor;
+    ctx.beginPath();
+    prices.forEach((p, i) => { if (i === 0) ctx.moveTo(fx(i), fy(p)); else ctx.lineTo(fx(i), fy(p)); });
+    ctx.lineTo(fx(prices.length - 1), H - PADB);
+    ctx.lineTo(fx(0), H - PADB);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Price line
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    prices.forEach((p, i) => { if (i === 0) ctx.moveTo(fx(i), fy(p)); else ctx.lineTo(fx(i), fy(p)); });
+    ctx.stroke();
+
+    // End dot
+    const ex = fx(prices.length - 1), ey = fy(prices[prices.length - 1]);
+    ctx.beginPath(); ctx.arc(ex, ey, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = lineColor; ctx.fill();
+    ctx.strokeStyle = dark ? '#1a1a1c' : '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  /* ── Sparkline drawing ───────────────────────────── */
+  function drawSparkline(ticker) {
+    const canvas = document.getElementById('sx-spark-' + ticker);
+    const ctx = canvas.getContext('2d');
+    const c = state.companies[ticker];
+    const hist = c.history.slice(-22);
+    const W = canvas.width, H = canvas.height;
+
+    ctx.clearRect(0, 0, W, H);
+    if (hist.length < 2) return;
+
+    const min = Math.min(...hist), max = Math.max(...hist);
+    const rng = max - min || 1;
+    const isUp = c.price >= c.start;
+    ctx.strokeStyle = isUp ? '#10b981' : '#ef4444';
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    hist.forEach((p, i) => {
+      const x = (i / (hist.length - 1)) * W;
+      const y = H - 2 - ((p - min) / rng) * (H - 4);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  /* ── Theme observer (redraw on dark mode toggle) ─── */
+  new MutationObserver(renderAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  /* ── Init ─────────────────────────────────────────── */
+  renderAll();
+  </script>
+</body>
+</html>
