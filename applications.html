@@ -259,7 +259,7 @@
 
   <section id="tinkercad-picker" class="class-picker hidden" hidden role="dialog" aria-modal="true" aria-labelledby="class-picker-title">
     <div class="class-picker-backdrop" data-close-picker="true"></div>
-    <div class="class-picker-panel">
+    <div class="class-picker-panel" tabindex="-1">
       <h2 id="class-picker-title">What class are you in?</h2>
       <p>Pick your class to open the correct Tinkercad join code. Then type your name on the next screen.</p>
 
@@ -285,20 +285,73 @@
     (function () {
       const openBtn = document.getElementById("open-tinkercad-picker");
       const picker = document.getElementById("tinkercad-picker");
+      const panel = picker && picker.querySelector(".class-picker-panel");
       const closeBtn = document.getElementById("close-tinkercad-picker");
+      const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+      let lastFocused = null;
 
       if (!openBtn || !picker || !closeBtn) return;
 
+      function focusableElements(root) {
+        return Array.from(root.querySelectorAll(focusableSelector)).filter((element) => {
+          if (element.disabled) return false;
+          if (element.getAttribute("aria-hidden") === "true") return false;
+          return element.offsetParent !== null || element === document.activeElement;
+        });
+      }
+
+      function moveFocusIntoPicker() {
+        const focusables = focusableElements(picker);
+        if (focusables.length > 0) {
+          focusables[0].focus();
+          return;
+        }
+        if (panel) panel.focus();
+      }
+
+      function trapFocus(event) {
+        if (event.key !== "Tab" || picker.classList.contains("hidden")) return;
+
+        const focusables = focusableElements(picker);
+        if (focusables.length === 0) {
+          event.preventDefault();
+          if (panel) panel.focus();
+          return;
+        }
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+
+        if (event.shiftKey) {
+          if (active === first || !picker.contains(active)) {
+            event.preventDefault();
+            last.focus();
+          }
+          return;
+        }
+
+        if (active === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+
       function openPicker() {
+        lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : openBtn;
         picker.hidden = false;
         picker.classList.remove("hidden");
-        closeBtn.focus();
+        requestAnimationFrame(moveFocusIntoPicker);
       }
 
       function closePicker() {
         picker.classList.add("hidden");
         picker.hidden = true;
-        openBtn.focus();
+        if (lastFocused && document.contains(lastFocused)) {
+          lastFocused.focus();
+        } else {
+          openBtn.focus();
+        }
       }
 
       openBtn.addEventListener("click", openPicker);
@@ -321,9 +374,15 @@
       });
 
       document.addEventListener("keydown", function (event) {
-        if (event.key === "Escape" && !picker.classList.contains("hidden")) {
+        if (picker.classList.contains("hidden")) return;
+
+        if (event.key === "Escape") {
+          event.preventDefault();
           closePicker();
+          return;
         }
+
+        trapFocus(event);
       });
     })();
   </script>

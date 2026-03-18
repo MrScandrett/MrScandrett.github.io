@@ -228,7 +228,7 @@
 
   <!-- Modal -->
   <div class="vl-modal-backdrop" id="vl-modal-backdrop" role="dialog" aria-modal="true" aria-label="Video player">
-    <div class="vl-modal">
+    <div class="vl-modal" tabindex="-1">
       <button class="vl-modal-close" id="vl-modal-close" aria-label="Close video">✕</button>
       <video id="vl-modal-video" controls></video>
       <div class="vl-modal-info">
@@ -303,10 +303,59 @@
 
     const grid = document.getElementById('vl-grid');
     const backdrop = document.getElementById('vl-modal-backdrop');
+    const modal = backdrop.querySelector('.vl-modal');
+    const closeButton = document.getElementById('vl-modal-close');
     const modalVideo = document.getElementById('vl-modal-video');
     const modalCategory = document.getElementById('vl-modal-category');
     const modalTitle = document.getElementById('vl-modal-title');
     const modalDesc = document.getElementById('vl-modal-desc');
+    const focusableSelector = 'button, [href], input, select, textarea, video[controls], [tabindex]:not([tabindex="-1"])';
+    let lastFocused = null;
+
+    function focusableElements(root) {
+      return Array.from(root.querySelectorAll(focusableSelector)).filter((element) => {
+        if (element.disabled) return false;
+        if (element.getAttribute('aria-hidden') === 'true') return false;
+        return element.offsetParent !== null || element === document.activeElement;
+      });
+    }
+
+    function moveFocusIntoModal() {
+      const focusables = focusableElements(backdrop);
+      if (focusables.length > 0) {
+        focusables[0].focus();
+        return;
+      }
+      modal.focus();
+    }
+
+    function trapModalFocus(event) {
+      if (event.key !== 'Tab' || !backdrop.classList.contains('open')) return;
+
+      const focusables = focusableElements(backdrop);
+      if (focusables.length === 0) {
+        event.preventDefault();
+        modal.focus();
+        return;
+      }
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey) {
+        if (active === first || !backdrop.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+
+      if (active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
 
     VIDEOS.forEach((v, index) => {
       const card = document.createElement('button');
@@ -356,11 +405,13 @@
       captureThumbnail(v.src, v.seekTo, img);
 
       card.addEventListener('click', () => {
+        lastFocused = card;
         modalVideo.src = v.src;
         modalCategory.textContent = v.category;
         modalTitle.textContent = v.title;
         modalDesc.textContent = v.desc;
         backdrop.classList.add('open');
+        window.setTimeout(moveFocusIntoModal, 0);
         const playPromise = modalVideo.play();
         if (playPromise && typeof playPromise.catch === 'function') {
           playPromise.catch(() => {});
@@ -372,11 +423,22 @@
       backdrop.classList.remove('open');
       modalVideo.pause();
       modalVideo.src = '';
+      if (lastFocused && document.contains(lastFocused)) {
+        lastFocused.focus();
+      }
     }
 
-    document.getElementById('vl-modal-close').addEventListener('click', closeModal);
+    closeButton.addEventListener('click', closeModal);
     backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+    document.addEventListener('keydown', e => {
+      if (!backdrop.classList.contains('open')) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeModal();
+        return;
+      }
+      trapModalFocus(e);
+    });
   </script>
 </body>
 </html>
