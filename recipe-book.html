@@ -132,6 +132,17 @@
       transform: translateY(-12px);
       z-index: 50;
     }
+    .book:focus-visible {
+      outline: 3px solid rgba(0,113,227,0.82);
+      outline-offset: 4px;
+      border-radius: 6px;
+    }
+    .book:focus-visible .book-spine {
+      box-shadow:
+        -3px 0 8px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.12),
+        0 0 0 2px rgba(255,255,255,0.12);
+    }
 
     .book-spine {
       width: 100%;
@@ -1500,31 +1511,112 @@
 
       /* ── Book interactions ─────────────────────── */
       var allBooks = Array.from(document.querySelectorAll('.book'));
+      var popupActionSelector = '.book-popup a, .book-popup button';
+
+      function popupActions(book) {
+        return Array.from(book.querySelectorAll(popupActionSelector));
+      }
+
+      function syncPopupState(book, expanded) {
+        var popup = book.querySelector('.book-popup');
+        book.classList.toggle('is-active', expanded);
+        book.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        if (popup) popup.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+        popupActions(book).forEach(function (action) {
+          action.tabIndex = expanded ? 0 : -1;
+        });
+        if (!expanded) {
+          book.style.removeProperty('--pop-shift');
+        }
+      }
+
+      function closeAllBooks(exceptBook) {
+        allBooks.forEach(function (book) {
+          if (book === exceptBook) return;
+          syncPopupState(book, false);
+        });
+      }
+
+      function openBook(book) {
+        closeAllBooks(book);
+        fixPopupShift(book);
+        syncPopupState(book, true);
+      }
 
       allBooks.forEach(function (book) {
+        var popup = book.querySelector('.book-popup');
+        var titleEl = book.querySelector('.book-popup-title') || book.querySelector('.book-spine-label');
+        var popupTitle = titleEl ? titleEl.textContent.trim() : 'Book details';
+
+        book.tabIndex = 0;
+        book.setAttribute('role', 'button');
+        book.setAttribute('aria-expanded', 'false');
+        book.setAttribute('aria-label', popupTitle);
+
+        if (popup) {
+          if (!popup.id) popup.id = 'book-popup-' + (allBooks.indexOf(book) + 1);
+          popup.setAttribute('aria-hidden', 'true');
+          book.setAttribute('aria-controls', popup.id);
+        }
+
+        popupActions(book).forEach(function (action) {
+          action.tabIndex = -1;
+        });
 
         /* Mouse hover */
         book.addEventListener('mouseenter', function () { fixPopupShift(book); });
         book.addEventListener('mouseleave', function () {
-          book.style.removeProperty('--pop-shift');
+          if (!book.classList.contains('is-active')) {
+            book.style.removeProperty('--pop-shift');
+          }
         });
 
-        /* Touch / click toggle */
-        book.addEventListener('click', function (e) {
-          var wasActive = book.classList.contains('is-active');
-          /* Close all others */
-          allBooks.forEach(function (b) { b.classList.remove('is-active'); });
-          if (!wasActive) {
-            book.classList.add('is-active');
-            fixPopupShift(book);
+        book.addEventListener('focusin', function () {
+          if (book.dataset.suppressFocusOpen === 'true') {
+            delete book.dataset.suppressFocusOpen;
+            return;
           }
+          openBook(book);
+        });
+
+        book.addEventListener('focusout', function (e) {
+          if (book.contains(e.relatedTarget)) return;
+          syncPopupState(book, false);
+        });
+
+        /* Touch / click open */
+        book.addEventListener('click', function (e) {
+          if (e.target.closest('.book-popup a, .book-popup button')) {
+            e.stopPropagation();
+            return;
+          }
+          openBook(book);
+          book.focus();
           e.stopPropagation();
+        });
+
+        book.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (e.target !== book) return;
+            e.preventDefault();
+            openBook(book);
+            var firstAction = popupActions(book)[0];
+            if (firstAction) firstAction.focus();
+            return;
+          }
+
+          if (e.key === 'Escape' && book.classList.contains('is-active')) {
+            e.preventDefault();
+            book.dataset.suppressFocusOpen = 'true';
+            syncPopupState(book, false);
+            book.focus();
+          }
         });
       });
 
       /* Tap outside closes active popup */
       document.addEventListener('click', function () {
-        allBooks.forEach(function (b) { b.classList.remove('is-active'); });
+        closeAllBooks();
       });
 
       /* ── Recipe filter ─────────────────────────── */
@@ -1538,6 +1630,7 @@
           var tags  = book.dataset.rtags.split(' ');
           var match = tag === 'all' || tags.indexOf(tag) !== -1;
           book.hidden = !match;
+          if (!match) syncPopupState(book, false);
           if (match) count++;
         });
         if (statsEl) {
