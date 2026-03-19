@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arecibo Message · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Space Science Lesson 05 — Decode the 1974 Arecibo Message. 1679 binary digits transmitted toward M13. Explore what humanity chose to say about itself to the cosmos." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <style>
+    body {
+      margin: 0;
+      color: #d9f0e8;
+      background:
+        radial-gradient(1100px 500px at 18% -8%, rgba(30, 200, 120, 0.13), transparent 55%),
+        radial-gradient(800px 420px at 88% 5%, rgba(160, 60, 220, 0.15), transparent 52%),
+        linear-gradient(180deg, #020c06 0%, #040a10 100%);
+      overflow-x: hidden;
+    }
+
+    .am-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(14px) saturate(150%);
+      background: rgba(2, 10, 6, 0.9);
+      border-bottom: 1px solid rgba(40, 200, 120, 0.16);
+    }
+    .am-topbar-inner {
+      width: min(1340px, calc(100% - 2rem));
+      margin: 0 auto;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .am-topbar a {
+      color: #6ee8b0;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .am-topbar a:hover { color: #fff; }
+    .am-topbar-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #d8f5ea;
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Hero ── */
+    .am-hero {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 2.2rem 1rem 1.4rem;
+      text-align: center;
+    }
+    .am-eyebrow {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #4de8a0;
+      margin: 0 0 0.6rem;
+    }
+    .am-hero h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.9rem, 4.5vw, 3rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      color: #fff;
+    }
+    .am-hero p {
+      margin: 0;
+      font-size: 0.96rem;
+      color: rgba(196, 240, 218, 0.72);
+      line-height: 1.65;
+    }
+
+    /* ── Main layout ── */
+    .am-wrap {
+      width: min(1340px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding-bottom: 3rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 1.1rem;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .am-wrap { grid-template-columns: 1fr; }
+    }
+
+    /* ── Cards ── */
+    .am-card {
+      border-radius: 20px;
+      border: 1px solid rgba(40, 200, 120, 0.16);
+      background: rgba(4, 14, 10, 0.72);
+      box-shadow: 0 18px 38px rgba(0,0,0,0.28);
+      backdrop-filter: blur(12px);
+    }
+    .am-card-head {
+      padding: 1rem 1.2rem 0.7rem;
+      border-bottom: 1px solid rgba(40, 200, 120, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .am-card-head h2 {
+      margin: 0;
+      font-size: 0.88rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #7ae8b8;
+    }
+    .am-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.22rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(30,200,100,0.12);
+      border: 1px solid rgba(30,200,100,0.28);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #5de8a8;
+    }
+
+    /* ── Decoder canvas ── */
+    .am-decoder-shell {
+      padding: 1.2rem;
+    }
+    .am-decoder-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .am-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.42rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid rgba(40,200,120,0.3);
+      background: rgba(20,100,60,0.25);
+      color: #8ef5c4;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      font-family: inherit;
+    }
+    .am-btn:hover {
+      background: rgba(30,180,100,0.35);
+      border-color: rgba(40,220,130,0.5);
+      color: #fff;
+    }
+    .am-btn.am-btn--active {
+      background: rgba(30,200,100,0.32);
+      border-color: #3de89a;
+      color: #fff;
+    }
+    .am-btn-group {
+      display: flex;
+      gap: 0.3rem;
+    }
+    .am-canvas-wrap {
+      display: flex;
+      justify-content: center;
+      background: rgba(0,0,0,0.5);
+      border-radius: 12px;
+      border: 1px solid rgba(40,200,120,0.1);
+      padding: 1rem;
+    }
+    #areciboCanvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border-radius: 4px;
+      cursor: crosshair;
+    }
+    .am-canvas-hint {
+      text-align: center;
+      font-size: 0.73rem;
+      color: rgba(160,220,190,0.5);
+      margin-top: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Section info bar ── */
+    .am-section-bar {
+      margin-top: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(40,200,120,0.14);
+      background: rgba(4,18,12,0.8);
+      padding: 0.8rem 1rem;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      transition: border-color 0.2s;
+    }
+    .am-section-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .am-section-name {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #c8f0dc;
+    }
+    .am-section-desc {
+      font-size: 0.8rem;
+      color: rgba(180,230,200,0.7);
+      margin-top: 0.18rem;
+    }
+
+    /* ── Binary primer ── */
+    .am-binary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-top: 0.8rem;
+    }
+    .am-binary-table th {
+      text-align: left;
+      padding: 0.35rem 0.7rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6de8b0;
+      border-bottom: 1px solid rgba(40,200,120,0.15);
+    }
+    .am-binary-table td {
+      padding: 0.32rem 0.7rem;
+      color: rgba(200,240,220,0.82);
+      border-bottom: 1px solid rgba(40,200,120,0.06);
+      font-family: 'SF Mono', 'Fira Mono', monospace;
+    }
+    .am-binary-table tr:last-child td { border-bottom: none; }
+    .am-binary-table td:first-child {
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+
+    /* ── Sidebar ── */
+    .am-sidebar { display: grid; gap: 0.9rem; }
+
+    .am-section-list { padding: 0.7rem 0; }
+    .am-section-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.65rem 1.1rem;
+      cursor: pointer;
+      border-radius: 0;
+      transition: background 0.14s;
+      border-left: 3px solid transparent;
+    }
+    .am-section-item:hover,
+    .am-section-item.am--selected {
+      background: rgba(30,160,90,0.1);
+    }
+    .am-section-item.am--selected {
+      border-left-color: var(--sc, #fff);
+    }
+    .am-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+    .am-section-item-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #cef0dc;
+      line-height: 1.3;
+    }
+    .am-section-item-sub {
+      font-size: 0.74rem;
+      color: rgba(170,220,195,0.6);
+      margin-top: 0.12rem;
+    }
+
+    .am-fact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      padding: 0.9rem 1rem;
+    }
+    .am-fact {
+      background: rgba(10,30,20,0.6);
+      border-radius: 10px;
+      border: 1px solid rgba(40,200,120,0.12);
+      padding: 0.6rem 0.75rem;
+    }
+    .am-fact-val {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #6ee8b0;
+      line-height: 1;
+    }
+    .am-fact-lbl {
+      font-size: 0.68rem;
+      color: rgba(160,220,190,0.6);
+      margin-top: 0.25rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .am-context-list {
+      list-style: none;
+      margin: 0;
+      padding: 0.5rem 0;
+    }
+    .am-context-list li {
+      padding: 0.55rem 1.1rem;
+      display: flex;
+      gap: 0.7rem;
+      align-items: flex-start;
+      font-size: 0.8rem;
+      color: rgba(190,235,210,0.78);
+      line-height: 1.5;
+      border-bottom: 1px solid rgba(40,200,120,0.07);
+    }
+    .am-context-list li:last-child { border-bottom: none; }
+    .am-context-list li span:first-child {
+      flex-shrink: 0;
+      font-size: 1rem;
+      margin-top: -1px;
+    }
+
+    /* ── Prime numbers card ── */
+    .am-prime-body {
+      padding: 0.9rem 1.1rem;
+      font-size: 0.82rem;
+      color: rgba(190,235,210,0.82);
+      line-height: 1.65;
+    }
+    .am-prime-body strong { color: #8ef5c4; }
+    .am-prime-eq {
+      display: block;
+      text-align: center;
+      font-size: 1.05rem;
+      font-family: 'SF Mono', monospace;
+      color: #fff;
+      font-weight: 800;
+      padding: 0.6rem 0;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Zoom label ── */
+    .am-zoom-row {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      font-size: 0.74rem;
+      color: rgba(160,220,190,0.55);
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="am-topbar" aria-label="Lesson navigation">
+    <div class="am-topbar-inner">
+      <a href="../steam-lessons.html">← STEAM Lessons</a>
+      <span class="am-topbar-title">Space Science · Lesson 05</span>
+      <a href="pale-blue-dot.html">Next: Pale Blue Dot →</a>
+    </div>
+  </nav>
+
+  <div class="am-hero">
+    <p class="am-eyebrow">Space Science · Lesson 05 · 1974</p>
+    <h1>The Arecibo Message</h1>
+    <p>On November 16, 1974, humanity aimed the world's largest radio telescope at a cluster of 300,000 stars and screamed into the void — in binary. Can you decode what we said?</p>
+  </div>
+
+  <div class="am-wrap">
+
+    <!-- ══ Left column: Interactive Decoder ══ -->
+    <div style="display:grid;gap:1rem;">
+
+      <!-- Decoder card -->
+      <div class="am-card">
+        <div class="am-card-head">
+          <h2>Message Decoder</h2>
+          <span class="am-badge">Interactive</span>
+        </div>
+        <div class="am-decoder-shell">
+          <div class="am-decoder-controls">
+            <div class="am-btn-group">
+              <button class="am-btn am-btn--active" id="btnColor" onclick="setMode('color')">Color Sections</button>
+              <button class="am-btn" id="btnBW" onclick="setMode('bw')">Binary (B&W)</button>
+              <button class="am-btn" id="btnAnim" onclick="animateDecode()">▶ Decode</button>
+            </div>
+            <div style="flex:1"></div>
+            <div class="am-zoom-row">
+              <button class="am-btn" onclick="setZoom(-1)">−</button>
+              <span id="zoomLabel">10×</span>
+              <button class="am-btn" onclick="setZoom(1)">+</button>
+            </div>
+          </div>
+
+          <div class="am-canvas-wrap">
+            <canvas id="areciboCanvas" width="230" height="730"></canvas>
+          </div>
+          <p class="am-canvas-hint">Click or hover any region to identify it</p>
+
+          <div class="am-section-bar" id="sectionBar">
+            <div class="am-section-dot" id="sectionDot" style="background:#555"></div>
+            <div>
+              <div class="am-section-name" id="sectionName">Hover over the message to explore</div>
+              <div class="am-section-desc" id="sectionDesc">Each colored section encodes a different fact about life on Earth.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Binary primer -->
+      <div class="am-card">
+        <div class="am-card-head">
+          <h2>Binary Primer</h2>
+          <span class="am-badge">How it works</span>
+        </div>
+        <div style="padding:0.8rem 1.1rem 1rem">
+          <p style="font-size:0.83rem;color:rgba(190,235,210,0.76);line-height:1.6;margin:0 0 0.6rem">
+            The message contains only <strong style="color:#8ef5c4">1679 bits</strong> — each either a 1 (transmitted pulse) or a 0 (silence). To read it, you must arrange those bits into a rectangle. Only one arrangement makes an image: <strong style="color:#8ef5c4">23 columns × 73 rows</strong>.
+          </p>
+          <table class="am-binary-table">
+            <thead>
+              <tr><th>Decimal</th><th>Binary</th><th>Decimal</th><th>Binary</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>1</td><td>6</td><td>110</td></tr>
+              <tr><td>2</td><td>10</td><td>7</td><td>111</td></tr>
+              <tr><td>3</td><td>11</td><td>8</td><td>1000</td></tr>
+              <tr><td>4</td><td>100</td><td>9</td><td>1001</td></tr>
+              <tr><td>5</td><td>101</td><td>10</td><td>1010</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /left col -->
+
+    <!-- ══ Right sidebar ══ -->
+    <div class="am-sidebar">
+
+      <!-- Section guide -->
+      <div class="am-card">
+        <div class="am-card-head">
+          <h2>Seven Sections</h2>
+        </div>
+        <div class="am-section-list" id="sectionList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Key facts -->
+      <div class="am-card">
+        <div class="am-card-head"><h2>Key Facts</h2></div>
+        <div class="am-fact-grid">
+          <div class="am-fact">
+            <div class="am-fact-val">1679</div>
+            <div class="am-fact-lbl">Bits transmitted</div>
+          </div>
+          <div class="am-fact">
+            <div class="am-fact-val">23×73</div>
+            <div class="am-fact-lbl">Grid dimensions</div>
+          </div>
+          <div class="am-fact">
+            <div class="am-fact-val">~3 min</div>
+            <div class="am-fact-lbl">Transmission time</div>
+          </div>
+          <div class="am-fact">
+            <div class="am-fact-val">M13</div>
+            <div class="am-fact-lbl">Target: 25,000 ly away</div>
+          </div>
+          <div class="am-fact">
+            <div class="am-fact-val">2.38 GHz</div>
+            <div class="am-fact-lbl">Radio frequency</div>
+          </div>
+          <div class="am-fact">
+            <div class="am-fact-val">~25,000 yr</div>
+            <div class="am-fact-lbl">Travel time (one way)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Why prime numbers -->
+      <div class="am-card">
+        <div class="am-card-head"><h2>Why Prime Numbers?</h2></div>
+        <div class="am-prime-body">
+          <strong>1679 = 23 × 73.</strong> Both 23 and 73 are prime, which means there are only two non-trivial ways to arrange 1679 bits into a rectangle:
+          <span class="am-prime-eq">23 × 73  or  73 × 23</span>
+          Drake and Sagan bet that any intelligent receiver would recognize this and try both orientations. Only <strong>23 × 73</strong> produces a meaningful image — proving the arrangement is intentional, not accidental.
+        </div>
+      </div>
+
+      <!-- Context -->
+      <div class="am-card">
+        <div class="am-card-head"><h2>The Story</h2></div>
+        <ul class="am-context-list">
+          <li><span>📡</span><span>Sent on <strong>November 16, 1974</strong> to celebrate the upgrade of the Arecibo Observatory in Puerto Rico — then the world's largest single-dish radio telescope (305 m diameter).</span></li>
+          <li><span>👨‍🔬</span><span>Designed by <strong>Frank Drake</strong> (creator of the Drake Equation) and <strong>Carl Sagan</strong> (Cosmos author), with help from other Cornell scientists.</span></li>
+          <li><span>🌌</span><span>Aimed at <strong>Messier 13</strong>, a globular cluster of ~300,000 stars in the constellation Hercules, about 25,000 light-years away.</span></li>
+          <li><span>💬</span><span>By the time any reply could arrive, Arecibo itself has already been decommissioned (2020). The message was more <em>symbolic</em> — proof that we could.</span></li>
+        </ul>
+      </div>
+
+    </div><!-- /sidebar -->
+  </div><!-- /am-wrap -->
+
+  <script>
+  (function () {
+
+    // ── Section definitions ──────────────────────────────────────────────
+    var SECTIONS = [
+      {
+        id: 0, name: "Numbers 1–10", rows: [0, 3],
+        color: "#ffffff",
+        desc: "Binary counting from 1 to 10, written right-to-left. A mathematical \"hello\" to prove we understand base-2 arithmetic."
+      },
+      {
+        id: 1, name: "Atomic Numbers", rows: [4, 8],
+        color: "#cc44ff",
+        desc: "The atomic numbers of the 5 elements in DNA: Hydrogen (1), Carbon (6), Nitrogen (7), Oxygen (8), Phosphorus (15)."
+      },
+      {
+        id: 2, name: "DNA Nucleotides", rows: [9, 29],
+        color: "#22dd44",
+        desc: "Chemical formulas for the four DNA nucleotides — deoxyadenosine, deoxycytidine, deoxyguanosine, thymidine — the building blocks of all life on Earth."
+      },
+      {
+        id: 3, name: "DNA Double Helix", rows: [30, 45],
+        color: "#22dd44",
+        colorCenter: "#ffffff",
+        desc: "The DNA double-helix structure (green, flanking a white center spine). The white center encodes ~4 billion — the approximate number of base pairs in human DNA."
+      },
+      {
+        id: 4, name: "Human Figure", rows: [46, 52],
+        color: "#dd2222",
+        colorAux: "#ffffff",
+        desc: "A pixelated human figure (red) flanked by the human population (~4.29 billion in 1974, white) and human height (~176 cm, in units of the signal wavelength)."
+      },
+      {
+        id: 5, name: "Solar System", rows: [53, 59],
+        color: "#ffdd00",
+        desc: "Our solar system's 9 planets (Sun + Mercury through Pluto, as known in 1974). Earth is shifted upward toward the human figure to indicate which planet we come from."
+      },
+      {
+        id: 6, name: "Arecibo Telescope", rows: [60, 72],
+        color: "#cc44ff",
+        desc: "A schematic of the Arecibo radio telescope (305 m diameter), the device used to send this very message. Its diameter is encoded below in wavelength units."
+      }
+    ];
+
+    // ── Pixel data (23×73 grid) ──────────────────────────────────────────
+    // Each row is a 23-char string. Character codes:
+    //   '0' = background (black)
+    //   '1' = lit pixel (color determined by section)
+    // This encodes a faithful visual reconstruction of the Arecibo message.
+
+    var ROWS = [
+      // Numbers 1–10 (rows 0–3, white)
+      "00000010101010000000000", // 0
+      "00000010101010000000000", // 1
+      "00010000010000001000010", // 2
+      "00110010100100010110010", // 3
+
+      // Atomic numbers H,C,N,O,P (rows 4–8, purple)
+      "00000000000000000000000", // 4
+      "10000110111010000001101", // 5
+      "00001000000100000010000", // 6
+      "10001110111110000011101", // 7
+      "00000000000000000000000", // 8
+
+      // Nucleotides (rows 9–29, green)
+      "11000000011000000000110", // 9
+      "10100000101000000001010", // 10
+      "10100001001000000001010", // 11
+      "11001111111000000001100", // 12
+      "00000000000000000000000", // 13
+      "11000110110000001101100", // 14
+      "10100001010000001010100", // 15
+      "11100001110000001010100", // 16
+      "10100001010000001101100", // 17
+      "10100110110000000000000", // 18
+      "00000000000000000000000", // 19
+      "11000000011000011000011", // 20
+      "10100000101000101000101", // 21
+      "10100001001001001001001", // 22
+      "11001111111001111111110", // 23
+      "00000000000000000000000", // 24
+      "11000110000001101100011", // 25
+      "10100001000001010100010", // 26
+      "11100001000001010100010", // 27
+      "10100001000001101100011", // 28
+      "10100110000000000000000", // 29
+
+      // DNA Helix (rows 30–45, green flanks / white center col 11)
+      "01110000000010000000111", // 30
+      "01010000000010000000101", // 31
+      "01110000000010000000111", // 32
+      "00010000000010000001000", // 33
+      "00111000000010000011100", // 34
+      "00001100000010000110000", // 35
+      "00000011000010001100000", // 36
+      "00000000110010110000000", // 37
+      "00000000001011000000000", // 38
+      "00000000110010110000000", // 39
+      "00000011000010001100000", // 40
+      "00001100000010000110000", // 41
+      "00111000000010000011100", // 42
+      "00010000000010000001000", // 43
+      "01110000000010000000111", // 44
+      "01010000000010000000101", // 45
+
+      // Human figure + population (rows 46–52)
+      "00001111100110001100000", // 46 — population (white), figure (red)
+      "00000010000110000010000", // 47
+      "00000010001111000010000", // 48
+      "00001011100110001101100", // 49
+      "00000010000110000010000", // 50
+      "00000010000110000010000", // 51
+      "00001110000110000111000", // 52
+
+      // Solar system (rows 53–59, yellow)
+      "00000000000000000000000", // 53
+      "10100010001100010001010", // 54 — planets
+      "00000000000000000000000", // 55
+      "00000000000100000000000", // 56 — Earth raised
+      "10100010000000010001010", // 57
+      "00000000000000000000000", // 58
+      "01000010000000010000010", // 59
+
+      // Arecibo telescope (rows 60–72, purple)
+      "00000000100000000000000", // 60
+      "00000001110000000000000", // 61
+      "00000011111000000000000", // 62
+      "00000110000110000000000", // 63
+      "00001100000011000000000", // 64
+      "00011000000001100000000", // 65
+      "00110000000000110000000", // 66
+      "01100000000000011000000", // 67
+      "11000000000000001100000", // 68
+      "10000000000000000100000", // 69
+      "11111111111111111111111", // 70 — dish rim
+      "00000000100000100000000", // 71
+      "00000000011111000000000"  // 72 — dish bottom
+    ];
+
+    var NCOLS = 23;
+    var NROWS = 73;
+
+    // Map each row to a section id
+    function sectionForRow(r) {
+      for (var i = 0; i < SECTIONS.length; i++) {
+        if (r >= SECTIONS[i].rows[0] && r <= SECTIONS[i].rows[1]) return i;
+      }
+      return -1;
+    }
+
+    // ── Canvas setup ─────────────────────────────────────────────────────
+    var canvas = document.getElementById("areciboCanvas");
+    var ctx = canvas.getContext("2d");
+    var CELL = 10; // pixels per cell at zoom 1× (canvas units)
+    var ZOOM_LEVELS = [6, 8, 10, 12, 14];
+    var zoomIdx = 2;
+
+    function applyZoom() {
+      CELL = ZOOM_LEVELS[zoomIdx];
+      canvas.width  = NCOLS * CELL;
+      canvas.height = NROWS * CELL;
+      document.getElementById("zoomLabel").textContent = ZOOM_LEVELS[zoomIdx] / 10 * 10 + "×";
+      draw();
+    }
+
+    window.setZoom = function(dir) {
+      zoomIdx = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, zoomIdx + dir));
+      applyZoom();
+    };
+
+    // Mode: 'color' | 'bw'
+    var mode = "color";
+    window.setMode = function(m) {
+      mode = m;
+      document.getElementById("btnColor").classList.toggle("am-btn--active", m === "color");
+      document.getElementById("btnBW").classList.toggle("am-btn--active", m === "bw");
+      if (animating) return;
+      draw();
+    };
+
+    function pixelColor(r, c, bit) {
+      if (!bit || bit === "0") return "#000";
+      if (mode === "bw") return "#fff";
+      var sid = sectionForRow(r);
+      if (sid < 0) return "#fff";
+      var sec = SECTIONS[sid];
+      // Special: helix center column is white
+      if (sid === 3 && c === 11) return "#ffffff";
+      // Special: human figure col range is red, surrounding white
+      if (sid === 4) {
+        if (c >= 5 && c <= 9) return "#dd2222";  // figure
+        return "#ffffff";  // population / height text
+      }
+      return sec.color;
+    }
+
+    function draw(revealUpTo) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      var limit = (revealUpTo !== undefined) ? revealUpTo : NROWS * NCOLS;
+      for (var r = 0; r < NROWS; r++) {
+        var rowStr = ROWS[r] || "";
+        for (var c = 0; c < NCOLS; c++) {
+          var idx = r * NCOLS + c;
+          if (idx >= limit) return;
+          var bit = rowStr[c];
+          if (bit === "1") {
+            ctx.fillStyle = pixelColor(r, c, bit);
+            ctx.fillRect(c * CELL, r * CELL, CELL - 1, CELL - 1);
+          }
+        }
+      }
+    }
+
+    // ── Animate decode ───────────────────────────────────────────────────
+    var animating = false;
+    var animFrame;
+    window.animateDecode = function() {
+      if (animating) return;
+      animating = true;
+      document.getElementById("btnAnim").textContent = "⏸ Decoding…";
+      var total = NROWS * NCOLS;
+      var current = 0;
+      var speed = 12; // bits per frame
+
+      function step() {
+        current += speed;
+        if (current >= total) { current = total; animating = false; document.getElementById("btnAnim").textContent = "▶ Decode"; }
+        draw(current);
+        if (animating) animFrame = requestAnimationFrame(step);
+      }
+      draw(0);
+      animFrame = requestAnimationFrame(step);
+    };
+
+    // ── Hover / click to identify section ────────────────────────────────
+    function getRC(e) {
+      var rect = canvas.getBoundingClientRect();
+      var scaleX = canvas.width  / rect.width;
+      var scaleY = canvas.height / rect.height;
+      var x = (e.clientX - rect.left)  * scaleX;
+      var y = (e.clientY - rect.top)   * scaleY;
+      return { r: Math.floor(y / CELL), c: Math.floor(x / CELL) };
+    }
+
+    function highlightSection(rc) {
+      var sid = sectionForRow(rc.r);
+      if (sid < 0) return;
+      var sec = SECTIONS[sid];
+      document.getElementById("sectionDot").style.background = sec.color;
+      document.getElementById("sectionName").textContent = sec.name;
+      document.getElementById("sectionDesc").textContent = sec.desc;
+      document.getElementById("sectionBar").style.borderColor = sec.color + "55";
+      // Sidebar highlight
+      document.querySelectorAll(".am-section-item").forEach(function(el) {
+        el.classList.toggle("am--selected", +el.dataset.sid === sid);
+        if (+el.dataset.sid === sid) el.style.setProperty("--sc", sec.color);
+      });
+    }
+
+    canvas.addEventListener("mousemove", function(e) { if (!animating) highlightSection(getRC(e)); });
+    canvas.addEventListener("click",     function(e) { highlightSection(getRC(e)); });
+
+    // ── Build sidebar section list ────────────────────────────────────────
+    var list = document.getElementById("sectionList");
+    SECTIONS.forEach(function(sec) {
+      var div = document.createElement("div");
+      div.className = "am-section-item";
+      div.dataset.sid = sec.id;
+      div.innerHTML =
+        '<div class="am-swatch" style="background:' + sec.color + '"></div>' +
+        '<div>' +
+          '<div class="am-section-item-name">' + sec.name + '</div>' +
+          '<div class="am-section-item-sub">Rows ' + (sec.rows[0]+1) + '–' + (sec.rows[1]+1) + '</div>' +
+        '</div>';
+      div.addEventListener("click", function() {
+        document.querySelectorAll(".am-section-item").forEach(function(el){ el.classList.remove("am--selected"); });
+        div.classList.add("am--selected");
+        div.style.setProperty("--sc", sec.color);
+        document.getElementById("sectionDot").style.background = sec.color;
+        document.getElementById("sectionName").textContent = sec.name;
+        document.getElementById("sectionDesc").textContent = sec.desc;
+        document.getElementById("sectionBar").style.borderColor = sec.color + "55";
+      });
+      list.appendChild(div);
+    });
+
+    // ── Init ─────────────────────────────────────────────────────────────
+    applyZoom();
+
+  })();
+  </script>
+
+</body>
+</html>
