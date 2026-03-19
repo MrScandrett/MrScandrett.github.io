@@ -52,7 +52,9 @@ const mathDetails = document.getElementById("p-math-details");
 const analystBlock = document.getElementById("p-analyst-block");
 const architectBlock = document.getElementById("p-architect-block");
 const modeGuidance = document.getElementById("p-mode-guidance");
+const liveStatus = document.getElementById("p-live-status");
 const eraNote = document.getElementById("p-era-note");
+const eraDetails = document.getElementById("p-era-details");
 const biasLabel = document.getElementById("p-bias-label");
 
 const consoleRoot = document.getElementById("perceptron-console");
@@ -113,7 +115,9 @@ const required = [
   analystBlock,
   architectBlock,
   modeGuidance,
+  liveStatus,
   eraNote,
+  eraDetails,
   biasLabel,
   consoleRoot,
   diagnostics,
@@ -179,6 +183,11 @@ const DATASETS = {
 };
 
 const MODE_META = {
+  starter: {
+    scoreLabel: "GUESS SCORE",
+    guidance:
+      "Starter mode: Choose AND, press Train Burst, and watch the line move only when a dot is wrong."
+  },
   explorer: {
     scoreLabel: "SCORE BEFORE DECISION",
     guidance:
@@ -216,7 +225,7 @@ const ERA_META = {
 const state = {
   datasetKey: "and",
   epochs: 0,
-  gradeMode: "explorer",
+  gradeMode: "starter",
   eraMode: "1958",
   showXorProof: false,
   highContrast: false,
@@ -275,6 +284,15 @@ function currentDataset() {
   return DATASETS[state.datasetKey] || DATASETS.and;
 }
 
+function datasetName(datasetKey) {
+  const dataset = DATASETS[datasetKey] || DATASETS.and;
+  return dataset.caseLabel.replace(": WORKING CASE", "").replace(": IMPOSSIBLE CASE (SINGLE LAYER)", "");
+}
+
+function setLiveStatus(message) {
+  liveStatus.textContent = message;
+}
+
 function updateControlClasses() {
   consoleRoot.classList.toggle("perceptron-high-contrast", state.highContrast);
   consoleRoot.classList.toggle("perceptron-dyslexic", state.dyslexicFont);
@@ -282,7 +300,7 @@ function updateControlClasses() {
   consoleRoot.dataset.era = state.eraMode;
 }
 
-function setGradeMode(mode) {
+function setGradeMode(mode, { announce = true } = {}) {
   if (!MODE_META[mode]) return;
   state.gradeMode = mode;
 
@@ -296,7 +314,7 @@ function setGradeMode(mode) {
   modeGuidance.textContent = meta.guidance;
   scoreLabel.textContent = meta.scoreLabel;
 
-  if (mode === "explorer") {
+  if (mode === "starter") {
     analystBlock.hidden = true;
     architectBlock.hidden = true;
     thresholdLabel.textContent = "LINE CUT POINT";
@@ -304,8 +322,26 @@ function setGradeMode(mode) {
     epochsLabel.textContent = "ROUNDS TRAINED";
     separableLabel.textContent = "ONE-LINE CHECK";
     train1Button.textContent = "TRAIN 1 STEP";
+    equationExplorer.textContent = "Starter view: you do not need the formula yet. Just watch the line move when a dot is wrong.";
     equationExplorer.hidden = false;
     mathDetails.open = false;
+    if (eraDetails) {
+      eraDetails.open = false;
+    }
+  } else if (mode === "explorer") {
+    analystBlock.hidden = true;
+    architectBlock.hidden = true;
+    thresholdLabel.textContent = "LINE CUT POINT";
+    biasLabel.textContent = "LINE STARTING PUSH";
+    epochsLabel.textContent = "ROUNDS TRAINED";
+    separableLabel.textContent = "ONE-LINE CHECK";
+    train1Button.textContent = "TRAIN 1 STEP";
+    equationExplorer.textContent = "Explorer view: no formula needed. Watch how the line moves when guesses are wrong.";
+    equationExplorer.hidden = false;
+    mathDetails.open = false;
+    if (eraDetails) {
+      eraDetails.open = false;
+    }
   } else {
     analystBlock.hidden = mode !== "analyst";
     architectBlock.hidden = mode !== "architect";
@@ -316,12 +352,19 @@ function setGradeMode(mode) {
     train1Button.textContent = "TRAIN 1 EPOCH";
     equationExplorer.hidden = true;
     mathDetails.open = true;
+    if (eraDetails) {
+      eraDetails.open = true;
+    }
   }
 
   updateControlClasses();
+
+  if (announce) {
+    setLiveStatus(meta.guidance);
+  }
 }
 
-function setEraMode(mode) {
+function setEraMode(mode, { announce = true } = {}) {
   if (!ERA_META[mode]) return;
   state.eraMode = mode;
 
@@ -340,9 +383,17 @@ function setEraMode(mode) {
   }
 
   updateControlClasses();
+
+  if (announce) {
+    setLiveStatus(
+      mode === "1958"
+        ? "1958 hardware mode is on. Training is slower and a little noisier."
+        : "2012 deep learning mode is on. Training feedback is faster and cleaner."
+    );
+  }
 }
 
-function setPreset(datasetKey) {
+function setPreset(datasetKey, { announce = true } = {}) {
   if (!DATASETS[datasetKey]) return;
   state.datasetKey = datasetKey;
   state.epochs = 0;
@@ -355,6 +406,14 @@ function setPreset(datasetKey) {
 
   if (datasetKey === "xor") {
     separableOutput.textContent = "NO - PROOF TOOL";
+  }
+
+  if (announce) {
+    const targetMessage =
+      datasetKey === "xor"
+        ? "XOR selected. Train it, then open the XOR proof tool to see why one line cannot solve it."
+        : `${datasetName(datasetKey)} selected. Reset and train the line to see whether one boundary can learn this rule.`;
+    setLiveStatus(targetMessage);
   }
 }
 
@@ -437,10 +496,14 @@ function drawGraph(params, evaluation) {
     const point = toCanvas({ x: row.x1, y: row.x2 }, w, h, pad);
     const isMis = row.error !== 0;
 
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
     ctx.fillStyle = isMis ? "#d32222" : row.y === 1 ? "#1b5fcb" : "#2f3b47";
-    ctx.fill();
+    if (row.y === 1) {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillRect(point.x - 6, point.y - 6, 12, 12);
+    }
 
     if (isMis) {
       ctx.strokeStyle = "rgba(211, 34, 34, 0.45)";
@@ -504,10 +567,14 @@ function drawXorProof() {
     const wrong = pred !== sample.y;
     if (wrong) mis += 1;
 
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
     ctx.fillStyle = wrong ? "#d32222" : sample.y === 1 ? "#1b5fcb" : "#2f3b47";
-    ctx.fill();
+    if (sample.y === 1) {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillRect(point.x - 6, point.y - 6, 12, 12);
+    }
   }
 
   xorProofText.textContent = `Current line misses ${mis} / 4 XOR points. A single line cannot reach 0 / 4.`;
@@ -615,6 +682,9 @@ async function trainEpochs(count) {
 
   const dataset = currentDataset();
   const era = ERA_META[state.eraMode];
+  setLiveStatus(
+    `Training ${datasetName(state.datasetKey)} for ${count} round${count === 1 ? "" : "s"}. Watch the line move when a point is wrong.`
+  );
 
   for (let epoch = 0; epoch < count; epoch += 1) {
     let params = readParams();
@@ -630,6 +700,9 @@ async function trainEpochs(count) {
       const error = sample.y - result.yHat;
 
       if (error !== 0) {
+        setLiveStatus(
+          `Point (${sample.x1}, ${sample.x2}) was wrong, so the line moved to learn from it.`
+        );
         const nextParams = {
           ...params,
           w1: params.w1 + params.lr * error * noisyX1,
@@ -639,6 +712,9 @@ async function trainEpochs(count) {
         await animateParamTransition(params, nextParams);
         params = nextParams;
       } else {
+        setLiveStatus(
+          `Point (${sample.x1}, ${sample.x2}) was already correct, so the line stayed where it was.`
+        );
         renderAll({ save: false });
         await wait(Math.floor(era.stepDelay * 0.5));
       }
@@ -654,13 +730,22 @@ async function trainEpochs(count) {
   state.activeSampleIndex = null;
   state.trainingBusy = false;
   renderAll();
+  const finalEvaluation = evaluateDataset(readParams());
+  setLiveStatus(
+    `Training finished. The line now gets ${finalEvaluation.correct} of ${finalEvaluation.total} points right for ${datasetName(
+      state.datasetKey
+    )}.`
+  );
 }
 
-function resetParameters() {
+function resetParameters({ announce = true } = {}) {
   writeParams(DEFAULT_PARAMS);
   state.epochs = 0;
   state.activeSampleIndex = null;
   renderAll();
+  if (announce) {
+    setLiveStatus("Weights reset. The line is starting over from its default position.");
+  }
 }
 
 function saveState() {
@@ -677,7 +762,8 @@ function saveState() {
     params: readParams(),
     xorAngle: Number(xorAngle.value),
     xorOffset: Number(xorOffset.value),
-    diagnosticsOpen: diagnostics.open
+    diagnosticsOpen: diagnostics.open,
+    eraDetailsOpen: eraDetails.open
   };
 
   try {
@@ -717,6 +803,7 @@ function loadState() {
     xorOffset.value = String(clamp(Number(saved.xorOffset), -1, 1));
 
     diagnostics.open = Boolean(saved.diagnosticsOpen);
+    eraDetails.open = Boolean(saved.eraDetailsOpen);
   } catch (_error) {
     // ignore invalid storage
   }
@@ -741,6 +828,11 @@ function syncRangeAndNumber(rangeInput, numberInput, min, max) {
 
 predictButton.addEventListener("click", () => {
   renderAll();
+  const params = readParams();
+  const result = predict(Number(x1Input.value), Number(x2Input.value), params);
+  setLiveStatus(
+    `For the point (${Number(x1Input.value).toFixed(1)}, ${Number(x2Input.value).toFixed(1)}), the perceptron predicts ${result.yHat}.`
+  );
 });
 
 train1Button.addEventListener("click", async () => {
@@ -758,13 +850,13 @@ resetButton.addEventListener("click", () => {
 for (const button of presetButtons) {
   button.addEventListener("click", () => {
     setPreset(button.dataset.preset || "and");
-    resetParameters();
+    resetParameters({ announce: false });
   });
 }
 
 for (const button of gradeButtons) {
   button.addEventListener("click", () => {
-    setGradeMode(button.dataset.gradeMode || "explorer");
+    setGradeMode(button.dataset.gradeMode || "starter");
     renderAll();
   });
 }
@@ -789,6 +881,11 @@ xorToggle.addEventListener("click", () => {
   xorPanel.hidden = !state.showXorProof;
   xorToggle.textContent = state.showXorProof ? "Hide XOR proof" : "Show why XOR fails";
   drawXorProof();
+  setLiveStatus(
+    state.showXorProof
+      ? "XOR proof tool opened. Try moving the line and see that one line still misses some points."
+      : "XOR proof tool hidden."
+  );
   saveState();
 });
 
@@ -820,15 +917,15 @@ printButton.addEventListener("click", () => {
 
 if (diagnostics && diagnosticsSummary) {
   diagnostics.addEventListener("toggle", () => {
-    diagnosticsSummary.textContent = diagnostics.open ? "CLOSE DIAGNOSTICS" : "OPEN DIAGNOSTICS";
+    diagnosticsSummary.textContent = diagnostics.open ? "CLOSE LAB LOG + DIAGNOSTICS" : "OPEN LAB LOG + DIAGNOSTICS";
     saveState();
   });
 }
 
 loadState();
-setGradeMode(state.gradeMode);
-setEraMode(state.eraMode);
-setPreset(state.datasetKey);
+setGradeMode(state.gradeMode, { announce: false });
+setEraMode(state.eraMode, { announce: false });
+setPreset(state.datasetKey, { announce: false });
 
 contrastToggle.checked = state.highContrast;
 dyslexiaToggle.checked = state.dyslexicFont;
@@ -838,8 +935,9 @@ xorPanel.hidden = !state.showXorProof;
 xorToggle.textContent = state.showXorProof ? "Hide XOR proof" : "Show why XOR fails";
 
 if (diagnosticsSummary) {
-  diagnosticsSummary.textContent = diagnostics.open ? "CLOSE DIAGNOSTICS" : "OPEN DIAGNOSTICS";
+  diagnosticsSummary.textContent = diagnostics.open ? "CLOSE LAB LOG + DIAGNOSTICS" : "OPEN LAB LOG + DIAGNOSTICS";
 }
 
 renderAll({ save: false });
+setLiveStatus("Starter mission: choose AND, click Reset, then click Train Burst (5).");
 saveState();
