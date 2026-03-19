@@ -68,6 +68,9 @@ const printButton = document.getElementById("p-print");
 const presetButtons = Array.from(document.querySelectorAll("button[data-preset]"));
 const gradeButtons = Array.from(document.querySelectorAll("button[data-grade-mode]"));
 const eraButtons = Array.from(document.querySelectorAll("button[data-era-mode]"));
+const compactPanelButtons = Array.from(document.querySelectorAll("button[data-compact-panel]"));
+const compactPanelPanels = Array.from(document.querySelectorAll("[data-compact-panel-group]"));
+const compactLayoutMedia = window.matchMedia("(max-width: 980px), (max-height: 820px)");
 
 const required = [
   x1Input,
@@ -126,7 +129,14 @@ const required = [
   printButton
 ];
 
-if (required.some((node) => !node) || presetButtons.length === 0 || gradeButtons.length === 0 || eraButtons.length === 0) {
+if (
+  required.some((node) => !node) ||
+  presetButtons.length === 0 ||
+  gradeButtons.length === 0 ||
+  eraButtons.length === 0 ||
+  compactPanelButtons.length === 0 ||
+  compactPanelPanels.length === 0
+) {
   throw new Error("Perceptron Lab v2 could not initialize. Missing required DOM nodes.");
 }
 
@@ -231,7 +241,8 @@ const state = {
   highContrast: false,
   dyslexicFont: false,
   activeSampleIndex: null,
-  trainingBusy: false
+  trainingBusy: false,
+  compactPanel: "play"
 };
 
 function clamp(value, min, max) {
@@ -298,6 +309,30 @@ function updateControlClasses() {
   consoleRoot.classList.toggle("perceptron-dyslexic", state.dyslexicFont);
   consoleRoot.dataset.gradeMode = state.gradeMode;
   consoleRoot.dataset.era = state.eraMode;
+}
+
+function applyCompactPanels() {
+  const isCompact = compactLayoutMedia.matches;
+
+  for (const button of compactPanelButtons) {
+    const active = button.dataset.compactPanel === state.compactPanel;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  }
+
+  for (const panel of compactPanelPanels) {
+    const active = panel.dataset.compactPanelGroup === state.compactPanel;
+    const visible = isCompact ? active : true;
+    panel.classList.toggle("is-active", visible);
+    panel.hidden = !visible;
+  }
+}
+
+function setCompactPanel(panelKey, { save = true } = {}) {
+  if (!compactPanelPanels.some((panel) => panel.dataset.compactPanelGroup === panelKey)) return;
+  state.compactPanel = panelKey;
+  applyCompactPanels();
+  if (save) saveState();
 }
 
 function setGradeMode(mode, { announce = true } = {}) {
@@ -757,6 +792,7 @@ function saveState() {
     showXorProof: state.showXorProof,
     highContrast: state.highContrast,
     dyslexicFont: state.dyslexicFont,
+    compactPanel: state.compactPanel,
     x1: Number(x1Input.value),
     x2: Number(x2Input.value),
     params: readParams(),
@@ -782,6 +818,9 @@ function loadState() {
     if (saved.datasetKey && DATASETS[saved.datasetKey]) state.datasetKey = saved.datasetKey;
     if (MODE_META[saved.gradeMode]) state.gradeMode = saved.gradeMode;
     if (ERA_META[saved.eraMode]) state.eraMode = saved.eraMode;
+    if (typeof saved.compactPanel === "string" && compactPanelPanels.some((panel) => panel.dataset.compactPanelGroup === saved.compactPanel)) {
+      state.compactPanel = saved.compactPanel;
+    }
 
     state.epochs = Number.isFinite(saved.epochs) ? saved.epochs : 0;
     state.showXorProof = Boolean(saved.showXorProof);
@@ -868,6 +907,12 @@ for (const button of eraButtons) {
   });
 }
 
+for (const button of compactPanelButtons) {
+  button.addEventListener("click", () => {
+    setCompactPanel(button.dataset.compactPanel || "play");
+  });
+}
+
 x1Input.addEventListener("input", () => renderAll());
 x2Input.addEventListener("input", () => renderAll());
 
@@ -880,6 +925,9 @@ xorToggle.addEventListener("click", () => {
   state.showXorProof = !state.showXorProof;
   xorPanel.hidden = !state.showXorProof;
   xorToggle.textContent = state.showXorProof ? "Hide XOR proof" : "Show why XOR fails";
+  if (state.showXorProof) {
+    setCompactPanel("learn", { save: false });
+  }
   drawXorProof();
   setLiveStatus(
     state.showXorProof
@@ -922,6 +970,16 @@ if (diagnostics && diagnosticsSummary) {
   });
 }
 
+const handleCompactLayoutChange = () => {
+  applyCompactPanels();
+};
+
+if (typeof compactLayoutMedia.addEventListener === "function") {
+  compactLayoutMedia.addEventListener("change", handleCompactLayoutChange);
+} else if (typeof compactLayoutMedia.addListener === "function") {
+  compactLayoutMedia.addListener(handleCompactLayoutChange);
+}
+
 loadState();
 setGradeMode(state.gradeMode, { announce: false });
 setEraMode(state.eraMode, { announce: false });
@@ -938,6 +996,7 @@ if (diagnosticsSummary) {
   diagnosticsSummary.textContent = diagnostics.open ? "CLOSE LAB LOG + DIAGNOSTICS" : "OPEN LAB LOG + DIAGNOSTICS";
 }
 
+applyCompactPanels();
 renderAll({ save: false });
 setLiveStatus("Starter mission: choose AND, click Reset, then click Train Burst (5).");
 saveState();
