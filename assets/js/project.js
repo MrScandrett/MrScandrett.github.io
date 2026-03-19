@@ -141,7 +141,7 @@ async function init() {
     document.title = `${project.title} · Mr. Scandrett's ClassroomOS`;
 
     const hero = document.createElement("section");
-    hero.className = "detail-hero";
+    hero.className = "detail-hero reveal";
 
     const heroImage = document.createElement("img");
     heroImage.src = project.hero || project.thumbnail;
@@ -153,7 +153,8 @@ async function init() {
     title.textContent = project.title;
 
     const subtitle = document.createElement("p");
-    subtitle.className = "result-count";
+    subtitle.className = "result-count reveal";
+    subtitle.style.setProperty("--i", "1");
     subtitle.textContent = `${project.student} • ${project.year} ${project.term}`;
 
     const heroMeta = document.createElement("div");
@@ -165,7 +166,8 @@ async function init() {
     if (project.jam) heroMeta.appendChild(createMetaPill("Game Jam"));
 
     const layout = document.createElement("section");
-    layout.className = "detail-layout";
+    layout.className = "detail-layout reveal";
+    layout.style.setProperty("--i", "2");
 
     const main = document.createElement("article");
     main.className = "detail-main";

@@ -25,6 +25,16 @@
     { id: "topaz", label: "Topaz", detail: "A warm orange gemstone wash." }
   ];
 
+  var CANVAS_OPTIONS = [
+    { id: "none",      label: "None",      detail: "Static background.",          icon: "◻" },
+    { id: "mesh",      label: "Mesh",      detail: "Drifting gradient blobs.",    icon: "◉" },
+    { id: "particles", label: "Particles", detail: "Connected floating dots.",    icon: "⁕" },
+    { id: "aurora",    label: "Aurora",    detail: "Flowing light bands.",        icon: "≋" }
+  ];
+
+  var STORAGE_CANVAS = "classroomos-canvas-bg";
+  var CANVAS_EVENT   = "classroomos:canvasbgchange";
+
   var STORAGE_MODE = "classroomos-lighting-mode";
   var STORAGE_PHASE = "classroomos-lighting-phase";
   var LIGHTING_EVENT = "classroomos:lightingchange";
@@ -253,6 +263,7 @@
   var settingsStatus = null;
   var autoInput = null;
   var themeGrid = null;
+  var canvasGrid = null;
 
   if (!isThemeIndependent) {
     settingsContainer = document.createElement(nav.querySelector("ul") ? "li" : "div");
@@ -276,6 +287,10 @@
           "<span>Follow local time</span>" +
         "</label>" +
         '<div class="nav-theme-grid" role="list"></div>' +
+        '<div class="nav-settings-divider"></div>' +
+        '<p class="nav-settings-eyebrow">Home Background</p>' +
+        '<p class="nav-settings-note">Animated canvas on the home page hero. Has no effect on other pages.</p>' +
+        '<div class="nav-canvas-grid" role="list"></div>' +
       "</div>";
 
     var navList = nav.querySelector("ul");
@@ -288,6 +303,7 @@
     settingsStatus = settingsContainer.querySelector(".nav-settings-status");
     autoInput = settingsContainer.querySelector(".nav-settings-auto-input");
     themeGrid = settingsContainer.querySelector(".nav-theme-grid");
+    canvasGrid = settingsContainer.querySelector(".nav-canvas-grid");
 
     THEME_OPTIONS.forEach(function (option) {
       var optionBtn = document.createElement("button");
@@ -308,6 +324,39 @@
       });
       themeGrid.appendChild(optionBtn);
     });
+
+    // Canvas background options
+    CANVAS_OPTIONS.forEach(function (opt) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "nav-theme-chip nav-canvas-chip";
+      btn.setAttribute("data-canvas-bg", opt.id);
+      btn.setAttribute("role", "listitem");
+      btn.setAttribute("aria-pressed", "false");
+      btn.innerHTML =
+        '<span class="nav-canvas-icon" aria-hidden="true">' + opt.icon + '</span>' +
+        '<span class="nav-theme-label">' +
+          "<strong>" + opt.label + "</strong>" +
+          "<small>" + opt.detail + "</small>" +
+        "</span>";
+      btn.addEventListener("click", function () {
+        try { localStorage.setItem(STORAGE_CANVAS, opt.id); } catch (e) {}
+        // Notify canvas-bg.js if loaded on this page
+        if (window.ClassroomOSCanvasBg) window.ClassroomOSCanvasBg.set(opt.id);
+        var ev;
+        if (typeof window.CustomEvent === "function") {
+          ev = new CustomEvent(CANVAS_EVENT, { detail: { bg: opt.id } });
+        } else {
+          ev = document.createEvent("CustomEvent");
+          ev.initCustomEvent(CANVAS_EVENT, false, false, { bg: opt.id });
+        }
+        window.dispatchEvent(ev);
+        syncCanvasUi();
+      });
+      canvasGrid.appendChild(btn);
+    });
+
+    syncCanvasUi();
   }
 
   function openSettings() {
@@ -356,6 +405,18 @@
       ? lighting.getCurrentTheme()
       : (typeof lighting.getCurrentPhase === "function" ? lighting.getCurrentPhase() : activeId);
     updateSettingsUi(mode, current || activeId);
+  }
+
+  function syncCanvasUi() {
+    if (!canvasGrid) return;
+    var stored;
+    try { stored = localStorage.getItem(STORAGE_CANVAS) || "particles"; } catch (e) { stored = "particles"; }
+    var chips = canvasGrid.querySelectorAll(".nav-canvas-chip");
+    chips.forEach(function (chip) {
+      var isActive = chip.getAttribute("data-canvas-bg") === stored;
+      chip.setAttribute("aria-pressed", isActive ? "true" : "false");
+      chip.classList.toggle("is-active", isActive);
+    });
   }
 
   function openNav() {

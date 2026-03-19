@@ -396,6 +396,9 @@ body {
   top: calc(100% + 0.72rem);
   right: 0;
   width: min(420px, calc(100vw - 2rem));
+  max-height: min(82vh, 680px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 1.05rem;
   border: 1px solid color-mix(in srgb, var(--line) 68%, rgba(255, 255, 255, 0.88));
   border-radius: 28px;
@@ -574,9 +577,10 @@ body {
   }
 
   .site-nav.is-open {
-    max-height: 960px;
+    max-height: min(1800px, 90vh);
     opacity: 1;
-    overflow: visible;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     margin-top: 0.7rem;
     padding: 0.55rem;
     border: 1px solid color-mix(in srgb, var(--line) 72%, rgba(255, 255, 255, 0.72));
@@ -1780,6 +1784,25 @@ h1 {
   text-align: left;
   font: inherit;
   cursor: pointer;
+}
+
+.app-link-diode {
+  background:
+    linear-gradient(180deg, rgba(4, 8, 20, 0.18) 0%, rgba(4, 8, 20, 0.62) 100%),
+    #0d1b2e;
+}
+
+.app-link-diode .tile-kicker,
+.app-link-diode strong,
+.app-link-diode small {
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.app-link-diode .app-tag {
+  background: rgba(0, 180, 255, 0.22);
+  color: #7dd6ff;
+  border-color: rgba(0, 180, 255, 0.28);
 }
 
 .app-link-scratch {
@@ -9464,4 +9487,82 @@ html[data-site-theme="diamond"] {
   background: rgba(16, 185, 129, 0.14);
   border: 1px solid rgba(16, 185, 129, 0.28);
   color: #6ee7b7;
+}
+
+/* ── Phase 4: Scroll reveal ───────────────────────────────────────
+   Add class="reveal" to animate an element in as it enters view.
+   Wrap siblings in class="reveal-group" for auto stagger.
+   ──────────────────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity  0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 60ms);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── Hero canvas background ───────────────────────────────────────
+   canvas-bg.js inserts #hero-canvas as the first child of .hero.
+   ──────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero > *:not(#hero-canvas) {
+  position: relative;
+  z-index: 1;
+}
+
+#hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Settings panel: Background section ──────────────────────────
+   Divider + canvas grid reuse existing nav-theme-chip styles.
+   ──────────────────────────────────────────────────────────────── */
+.nav-settings-divider {
+  height: 1px;
+  margin: 0.9rem 0 0.2rem;
+  background: var(--line, rgba(210,210,215,0.5));
+  opacity: 0.6;
+}
+
+.nav-canvas-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.68rem;
+}
+
+.nav-canvas-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.94rem;
+  height: 0.94rem;
+  margin-top: 0.1rem;
+  font-size: 0.82rem;
+  line-height: 1;
+  color: var(--theme-accent);
+  flex-shrink: 0;
 }

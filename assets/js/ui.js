@@ -41,7 +41,7 @@ export function projectUrl(projectId) {
 
 export function createProjectCard(project, options = {}) {
   const article = document.createElement("article");
-  article.className = "project-card";
+  article.className = "project-card reveal";
   article.dataset.id = project.id;
   article.dataset.category = project.category;
   article.dataset.difficulty = project.difficulty;

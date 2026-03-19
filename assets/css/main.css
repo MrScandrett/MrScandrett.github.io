@@ -28,6 +28,22 @@
   --gap-5: 2rem;
   --max: 1180px;
   --shadow: 0 12px 34px rgba(0, 0, 0, 0.08);
+
+  /* ── Phase 1: Shadow elevation scale ─────────────────────────── */
+  --shadow-0: none;
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-2: 0 12px 34px rgba(0, 0, 0, 0.08);   /* = legacy --shadow */
+  --shadow-3: 0 18px 36px rgba(0, 0, 0, 0.12);
+  --shadow-4: 0 28px 48px rgba(0, 0, 0, 0.18);
+
+  /* ── Phase 2: Easing tokens ───────────────────────────────────── */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);    /* standard, no overshoot */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* slight bounce */
+  --ease-sharp:  cubic-bezier(0.4, 0, 1, 1);       /* fast out */
+
+  /* ── Phase 3: Glow accent tokens ─────────────────────────────── */
+  --glow-sm: 0 0 8px var(--theme-accent-soft);
+  --glow-md: 0 0 20px var(--theme-accent-soft);
 }
 
 html[data-lighting="morning"],
@@ -52,6 +68,13 @@ html[data-lighting="dusk"] {
   --theme-accent-strong: #005ec3;
   --theme-accent-soft: rgba(0, 113, 227, 0.12);
   --shadow: 0 12px 34px rgba(0, 0, 0, 0.08);
+  --shadow-0: none;
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-2: 0 12px 34px rgba(0, 0, 0, 0.08);
+  --shadow-3: 0 18px 36px rgba(0, 0, 0, 0.12);
+  --shadow-4: 0 28px 48px rgba(0, 0, 0, 0.18);
+  --glow-sm: 0 0 8px var(--theme-accent-soft);
+  --glow-md: 0 0 20px var(--theme-accent-soft);
 }
 
 html[data-lighting="night"] {
@@ -74,6 +97,13 @@ html[data-lighting="night"] {
   --theme-accent-strong: #8ec0ff;
   --theme-accent-soft: rgba(105, 168, 255, 0.16);
   --shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+  --shadow-0: none;
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.22);
+  --shadow-2: 0 12px 34px rgba(0, 0, 0, 0.40);
+  --shadow-3: 0 18px 36px rgba(0, 0, 0, 0.52);
+  --shadow-4: 0 28px 48px rgba(0, 0, 0, 0.64);
+  --glow-sm: 0 0 10px var(--theme-accent-soft);
+  --glow-md: 0 0 24px var(--theme-accent-soft);
 }
 
 html[data-theme="sakura"] {
@@ -1564,4 +1594,30 @@ html[data-theme] .about-note {
 
 html[data-theme] .site-footer a {
   color: var(--theme-accent);
+}
+
+/* ── Phase 4: Scroll reveal ───────────────────────────────────────
+   Add class="reveal" to animate an element in as it enters view.
+   Wrap siblings in class="reveal-group" for auto stagger.
+   ──────────────────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity  0.6s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+    transform 0.6s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+  transition-delay: calc(var(--i, 0) * 60ms);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
