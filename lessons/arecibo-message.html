@@ -529,136 +529,70 @@
       {
         id: 0, name: "Numbers 1–10", rows: [0, 3],
         color: "#ffffff",
-        desc: "Binary counting from 1 to 10, written right-to-left. A mathematical \"hello\" to prove we understand base-2 arithmetic."
+        desc: "Binary counting from 1 to 10, written right-to-left (10 is leftmost, 1 is rightmost). A mathematical \"hello\" — proof that the senders understand base-2 arithmetic."
       },
       {
-        id: 1, name: "Atomic Numbers", rows: [4, 8],
+        id: 1, name: "Atomic Numbers", rows: [4, 7],
         color: "#cc44ff",
-        desc: "The atomic numbers of the 5 elements in DNA: Hydrogen (1), Carbon (6), Nitrogen (7), Oxygen (8), Phosphorus (15)."
+        desc: "The atomic numbers of the 5 elements that make up DNA, from left to right: Phosphorus (15), Oxygen (8), Nitrogen (7), Carbon (6), Hydrogen (1)."
       },
       {
-        id: 2, name: "DNA Nucleotides", rows: [9, 29],
+        id: 2, name: "DNA Nucleotides", rows: [8, 29],
         color: "#22dd44",
-        desc: "Chemical formulas for the four DNA nucleotides — deoxyadenosine, deoxycytidine, deoxyguanosine, thymidine — the building blocks of all life on Earth."
+        desc: "Chemical formulas for the sugars and bases in the four nucleotides of DNA — the building blocks of all life on Earth."
       },
       {
-        id: 3, name: "DNA Double Helix", rows: [30, 45],
-        color: "#22dd44",
-        colorCenter: "#ffffff",
-        desc: "The DNA double-helix structure (green, flanking a white center spine). The white center encodes ~4 billion — the approximate number of base pairs in human DNA."
+        id: 3, name: "DNA Double Helix", rows: [30, 44],
+        color: "#4488ff",
+        desc: "The DNA double-helix structure (blue strands). The white spine in the center encodes ~4 billion — the approximate number of base pairs in human DNA."
       },
       {
-        id: 4, name: "Human Figure", rows: [46, 52],
+        id: 4, name: "Human Figure", rows: [45, 52],
         color: "#dd2222",
-        colorAux: "#ffffff",
-        desc: "A pixelated human figure (red) flanked by the human population (~4.29 billion in 1974, white) and human height (~176 cm, in units of the signal wavelength)."
+        desc: "A pixelated human figure (red, center). To the left: Earth's population (~4.29 billion in 1974). To the right: human height encoded as 14 × the signal wavelength (14 × 12.6 cm ≈ 176 cm)."
       },
       {
         id: 5, name: "Solar System", rows: [53, 59],
         color: "#ffdd00",
-        desc: "Our solar system's 9 planets (Sun + Mercury through Pluto, as known in 1974). Earth is shifted upward toward the human figure to indicate which planet we come from."
+        desc: "Our solar system's 9 planets as known in 1974 — Sun (right) through Pluto (left). Earth (3rd from the Sun) is shifted upward toward the human figure to show which planet sent the message."
       },
       {
         id: 6, name: "Arecibo Telescope", rows: [60, 72],
         color: "#cc44ff",
-        desc: "A schematic of the Arecibo radio telescope (305 m diameter), the device used to send this very message. Its diameter is encoded below in wavelength units."
+        desc: "A schematic of the Arecibo Observatory dish (305 m across), which sent this message. The bottom row encodes its diameter: 2,430 wavelength units (2,430 × 12.6 cm ≈ 306 m)."
       }
     ];
 
-    // ── Pixel data (23×73 grid) ──────────────────────────────────────────
-    // Each row is a 23-char string. Character codes:
-    //   '0' = background (black)
-    //   '1' = lit pixel (color determined by section)
-    // This encodes a faithful visual reconstruction of the Arecibo message.
+    // ── Actual 1679-bit Arecibo message ──────────────────────────────────
+    // 21 groups of 80 bits = 1680 chars; trimmed to 1679 (= 23 × 73).
+    // Source: F. Drake & C. Sagan, Arecibo Observatory, Nov 16 1974.
+    var RAW = (
+      "00000010101010000000000001010000010100000001001000100010001001011001010101010101" +
+      "01010010010000000000000000000000000000000000000110000000000000000000110100000000" +
+      "00000000000110100000000000000000010101000000000000000000111110000000000000000000" +
+      "00000000000001100001110001100001100010000000000000110010000110100011000110000110" +
+      "10111110111110111110111110000000000000000000000000010000000000000000010000000000" +
+      "00000000000000000010000000000000000011111100000000000001111100000000000000000000" +
+      "00011000011000011100011000100000001000000000100001101000011000111001101011111011" +
+      "11101111101111100000000000000000000000000100000011000000000100000000000110000000" +
+      "00000000100000110000000000111111000001100000011111000000000011000000000000010000" +
+      "00001000000001000001000000110000000100000001100001100000010000000000110001000011" +
+      "00000000000000011001100000000000001100010000110000000001100001100000010000000100" +
+      "00001000000001000001000000011000000001000100000000110000000010001000000000100000" +
+      "00100000100000001000000010000000100000000000011000000000110000000011000000000100" +
+      "01110101100000000000100000001000000000000001000001111100000000000010000101110100" +
+      "10110110000001001110010011111110111000011100000110111000000000101000001110110010" +
+      "00000101000001111110010000001010000011000000100000110110000000000000000000000000" +
+      "00000000001110000010000000000000011101010001010101010100111000000000101010100000" +
+      "00000000000101000000000000001111100000000000000001111111110000000000001110000000" +
+      "11100000000011000000000001100000001101000000000101100000110011000000011001100001" +
+      "00010100000101000100001000100100010010001000000001000101000100000000000010000100" +
+      "00100000000000010000000001000000000000001001010000000000011110011111010011110001"
+    ).slice(0, 1679);
 
-    var ROWS = [
-      // Numbers 1–10 (rows 0–3, white)
-      "00000010101010000000000", // 0
-      "00000010101010000000000", // 1
-      "00010000010000001000010", // 2
-      "00110010100100010110010", // 3
-
-      // Atomic numbers H,C,N,O,P (rows 4–8, purple)
-      "00000000000000000000000", // 4
-      "10000110111010000001101", // 5
-      "00001000000100000010000", // 6
-      "10001110111110000011101", // 7
-      "00000000000000000000000", // 8
-
-      // Nucleotides (rows 9–29, green)
-      "11000000011000000000110", // 9
-      "10100000101000000001010", // 10
-      "10100001001000000001010", // 11
-      "11001111111000000001100", // 12
-      "00000000000000000000000", // 13
-      "11000110110000001101100", // 14
-      "10100001010000001010100", // 15
-      "11100001110000001010100", // 16
-      "10100001010000001101100", // 17
-      "10100110110000000000000", // 18
-      "00000000000000000000000", // 19
-      "11000000011000011000011", // 20
-      "10100000101000101000101", // 21
-      "10100001001001001001001", // 22
-      "11001111111001111111110", // 23
-      "00000000000000000000000", // 24
-      "11000110000001101100011", // 25
-      "10100001000001010100010", // 26
-      "11100001000001010100010", // 27
-      "10100001000001101100011", // 28
-      "10100110000000000000000", // 29
-
-      // DNA Helix (rows 30–45, green flanks / white center col 11)
-      "01110000000010000000111", // 30
-      "01010000000010000000101", // 31
-      "01110000000010000000111", // 32
-      "00010000000010000001000", // 33
-      "00111000000010000011100", // 34
-      "00001100000010000110000", // 35
-      "00000011000010001100000", // 36
-      "00000000110010110000000", // 37
-      "00000000001011000000000", // 38
-      "00000000110010110000000", // 39
-      "00000011000010001100000", // 40
-      "00001100000010000110000", // 41
-      "00111000000010000011100", // 42
-      "00010000000010000001000", // 43
-      "01110000000010000000111", // 44
-      "01010000000010000000101", // 45
-
-      // Human figure + population (rows 46–52)
-      "00001111100110001100000", // 46 — population (white), figure (red)
-      "00000010000110000010000", // 47
-      "00000010001111000010000", // 48
-      "00001011100110001101100", // 49
-      "00000010000110000010000", // 50
-      "00000010000110000010000", // 51
-      "00001110000110000111000", // 52
-
-      // Solar system (rows 53–59, yellow)
-      "00000000000000000000000", // 53
-      "10100010001100010001010", // 54 — planets
-      "00000000000000000000000", // 55
-      "00000000000100000000000", // 56 — Earth raised
-      "10100010000000010001010", // 57
-      "00000000000000000000000", // 58
-      "01000010000000010000010", // 59
-
-      // Arecibo telescope (rows 60–72, purple)
-      "00000000100000000000000", // 60
-      "00000001110000000000000", // 61
-      "00000011111000000000000", // 62
-      "00000110000110000000000", // 63
-      "00001100000011000000000", // 64
-      "00011000000001100000000", // 65
-      "00110000000000110000000", // 66
-      "01100000000000011000000", // 67
-      "11000000000000001100000", // 68
-      "10000000000000000100000", // 69
-      "11111111111111111111111", // 70 — dish rim
-      "00000000100000100000000", // 71
-      "00000000011111000000000"  // 72 — dish bottom
-    ];
+    // Split into 73 rows of 23 columns
+    var ROWS = [];
+    for (var _r = 0; _r < 73; _r++) ROWS.push(RAW.slice(_r * 23, _r * 23 + 23));
 
     var NCOLS = 23;
     var NROWS = 73;
@@ -702,18 +636,15 @@
     };
 
     function pixelColor(r, c, bit) {
-      if (!bit || bit === "0") return "#000";
+      if (!bit || bit === "0") return null;
       if (mode === "bw") return "#fff";
       var sid = sectionForRow(r);
       if (sid < 0) return "#fff";
       var sec = SECTIONS[sid];
-      // Special: helix center column is white
+      // Helix: center column (col 11) = white (encodes nucleotide count ~4 billion)
       if (sid === 3 && c === 11) return "#ffffff";
-      // Special: human figure col range is red, surrounding white
-      if (sid === 4) {
-        if (c >= 5 && c <= 9) return "#dd2222";  // figure
-        return "#ffffff";  // population / height text
-      }
+      // Human: central columns = red figure; flanking columns = white (population & height)
+      if (sid === 4) return (c >= 7 && c <= 13) ? "#dd2222" : "#ffffff";
       return sec.color;
     }
 
@@ -728,8 +659,9 @@
           var idx = r * NCOLS + c;
           if (idx >= limit) return;
           var bit = rowStr[c];
-          if (bit === "1") {
-            ctx.fillStyle = pixelColor(r, c, bit);
+          var col = pixelColor(r, c, bit);
+          if (col) {
+            ctx.fillStyle = col;
             ctx.fillRect(c * CELL, r * CELL, CELL - 1, CELL - 1);
           }
         }
