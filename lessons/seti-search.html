@@ -712,7 +712,7 @@
         <!-- Section guide -->
         <div class="am-card">
           <div class="am-card-head">
-            <h2>Seven Sections</h2>
+            <h2>Legend</h2>
           </div>
           <div class="am-section-list" id="sectionList">
             <!-- Populated by JS -->
@@ -1298,37 +1298,42 @@
       {
         id: 0, name: "Numbers 1–10", rows: [0, 3],
         color: "#ffffff",
-        desc: "Binary counting from 1 to 10, written right-to-left (10 is leftmost, 1 is rightmost). A mathematical \"hello\" — proof that the senders understand base-2 arithmetic."
+        desc: "Binary keys for reading the message, written right-to-left from 1 to 10."
       },
       {
         id: 1, name: "Atomic Numbers", rows: [4, 8],
         color: "#cc44ff",
-        desc: "The atomic numbers of the 5 elements that make up DNA, from left to right: Phosphorus (15), Oxygen (8), Nitrogen (7), Carbon (6), Hydrogen (1)."
+        desc: "Elements essential to life: H, C, N, O, and P."
       },
       {
-        id: 2, name: "DNA Nucleotides", rows: [9, 29],
+        id: 2, name: "Chemical Formulas", rows: [9, 29],
         color: "#22dd44",
-        desc: "Chemical formulas for the sugars and bases in the four nucleotides of DNA — the building blocks of all life on Earth."
+        desc: "The sugars and bases in DNA nucleotides."
       },
       {
         id: 3, name: "DNA Double Helix", rows: [30, 46],
-        color: "#4488ff",
-        desc: "The DNA double-helix structure (blue strands). The white spine in the center encodes ~4 billion — the approximate number of base pairs in human DNA."
+        color: "#00ffff",
+        desc: "The structure of our genetic code. The white center spine encodes the nucleotide count."
       },
       {
         id: 4, name: "Human Figure", rows: [47, 54],
         color: "#dd2222",
-        desc: "A pixelated human figure (red, center). To the left: Earth's population (~4.29 billion in 1974). To the right: human height encoded as 14 × the signal wavelength (14 × 12.6 cm ≈ 176 cm)."
+        desc: "Our physical form and symmetry. White bits encode population and height."
       },
       {
         id: 5, name: "Solar System", rows: [55, 59],
         color: "#ffdd00",
-        desc: "Our solar system's 9 planets as known in 1974 — Sun (right) through Pluto (left). Earth (3rd from the Sun) is shifted upward toward the human figure to show which planet sent the message."
+        desc: "Earth's position relative to the Sun, with Earth shifted upward toward the human."
       },
       {
         id: 6, name: "Arecibo Telescope", rows: [60, 72],
-        color: "#4488ff",
-        desc: "A schematic of the Arecibo Observatory dish (305 m across), which sent this message. The bottom rows encode its diameter: 2,430 wavelength units (2,430 × 12.6 cm ≈ 306 m)."
+        color: "#5555ff",
+        desc: "The hardware that sent the message. Bottom rows encode the dish diameter."
+      },
+      {
+        id: 7, name: "Measurements & Counts",
+        color: "#ffffff",
+        desc: "White bits representing height, population, and dimensions scattered through the image."
       }
     ];
 
@@ -1369,7 +1374,9 @@
     // Map each row to a section id
     function sectionForRow(r) {
       for (var i = 0; i < SECTIONS.length; i++) {
-        if (r >= SECTIONS[i].rows[0] && r <= SECTIONS[i].rows[1]) return i;
+        var rows = SECTIONS[i].rows;
+        if (!rows) continue;
+        if (r >= rows[0] && r <= rows[1]) return i;
       }
       return -1;
     }
@@ -1407,6 +1414,8 @@
     function pixelColor(r, c, bit) {
       if (!bit || bit === "0") return null;
       if (mode === "bw") return "#fff";
+      // Earth pixel shifted upward toward the human (Row 55, Column 12 in 1-based coords).
+      if (r === 54 && c === 11) return "#ffdd00";
       var sid = sectionForRow(r);
       if (sid < 0) return "#fff";
       var sec = SECTIONS[sid];
@@ -1415,7 +1424,7 @@
       // Human: center columns = red figure; flanking columns = white (population & height data)
       if (sid === 4) return (c >= 7 && c <= 15) ? "#dd2222" : "#ffffff";
       // Telescope: bottom 2 rows = white (diameter encoding); rest = blue
-      if (sid === 6) return (r >= 71) ? "#ffffff" : "#4488ff";
+      if (sid === 6) return (r >= 71) ? "#ffffff" : "#5555ff";
       return sec.color;
     }
 
@@ -1490,15 +1499,16 @@
 
     // ── Build sidebar section list ────────────────────────────────────────
     var list = document.getElementById("sectionList");
-    SECTIONS.forEach(function(sec) {
+    SECTIONS.forEach(function(sec, idx) {
       var div = document.createElement("div");
       div.className = "am-section-item";
-      div.dataset.sid = sec.id;
+      div.dataset.sid = idx;
+      var sub = sec.rows ? ("Rows " + (sec.rows[0] + 1) + "–" + (sec.rows[1] + 1)) : "Scattered";
       div.innerHTML =
         '<div class="am-swatch" style="background:' + sec.color + '"></div>' +
         '<div>' +
           '<div class="am-section-item-name">' + sec.name + '</div>' +
-          '<div class="am-section-item-sub">Rows ' + (sec.rows[0]+1) + '–' + (sec.rows[1]+1) + '</div>' +
+          '<div class="am-section-item-sub">' + sub + '</div>' +
         '</div>';
       div.addEventListener("click", function() {
         document.querySelectorAll(".am-section-item").forEach(function(el){ el.classList.remove("am--selected"); });
