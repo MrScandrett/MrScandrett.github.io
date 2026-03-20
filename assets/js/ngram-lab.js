@@ -37,6 +37,9 @@
 
   const gradeButtons = Array.from(document.querySelectorAll("button[data-grade-mode]"));
   const presetButtons = Array.from(document.querySelectorAll("button[data-preset]"));
+  const compactPanelButtons = Array.from(document.querySelectorAll("button[data-compact-panel]"));
+  const compactPanelPanels = Array.from(document.querySelectorAll("[data-compact-panel-group]"));
+  const compactLayoutMedia = window.matchMedia("(max-width: 980px), (max-height: 820px)");
 
   const required = [
     corpusEl,
@@ -72,7 +75,13 @@
     predictionHeadingEl
   ];
 
-  if (required.some((node) => !node) || gradeButtons.length === 0 || presetButtons.length === 0) {
+  if (
+    required.some((node) => !node) ||
+    gradeButtons.length === 0 ||
+    presetButtons.length === 0 ||
+    compactPanelButtons.length === 0 ||
+    compactPanelPanels.length === 0
+  ) {
     throw new Error("N-gram lab could not initialize. Missing required DOM nodes.");
   }
 
@@ -204,7 +213,8 @@
     gradeMode: "discover",
     highContrast: false,
     dyslexicFont: false,
-    renderVersion: 0
+    renderVersion: 0,
+    compactPanel: "play"
   };
 
   let model = null;
@@ -468,6 +478,29 @@
   function updateConsoleClasses() {
     consoleRoot.classList.toggle("ngram-high-contrast", state.highContrast);
     consoleRoot.classList.toggle("ngram-dyslexic", state.dyslexicFont);
+  }
+
+  function applyCompactPanels() {
+    const isCompact = compactLayoutMedia.matches;
+
+    for (const button of compactPanelButtons) {
+      const active = button.dataset.compactPanel === state.compactPanel;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    }
+
+    for (const panel of compactPanelPanels) {
+      const active = panel.dataset.compactPanelGroup === state.compactPanel;
+      const visible = isCompact ? active : true;
+      panel.classList.toggle("is-active", visible);
+      panel.hidden = !visible;
+    }
+  }
+
+  function setCompactPanel(panelKey) {
+    if (!compactPanelPanels.some((panel) => panel.dataset.compactPanelGroup === panelKey)) return;
+    state.compactPanel = panelKey;
+    applyCompactPanels();
   }
 
   function renderMetricCards(cards) {
@@ -742,7 +775,7 @@
     syncPresetButtons();
 
     if (options?.autoBuild) {
-      setStatus(`${preset.label} loaded. Teaching the robot now.`);
+      setStatus(`${preset.label} loading.`);
       buildModel({ announce: true });
       return;
     }
@@ -755,16 +788,17 @@
       status: "preset-loaded",
       preset: preset.label
     });
-    setStatus(`${preset.label} loaded. Click Teach the Robot to continue.`);
+    setStatus(`${preset.label} ready. Click Teach.`);
   }
 
   function buildModel(options) {
+    setCompactPanel("play");
     const corpusText = (corpusEl.value || "").trim();
     if (!corpusText) {
       model = null;
       showStaticOutput("Paste or load a story first.");
       updateSummaryCards("waiting");
-      setStatus("The robot needs a story before it can learn patterns.");
+      setStatus("Add a story so the robot can learn.");
       printMetrics({
         status: "error",
         reason: "missing-corpus"
@@ -778,7 +812,7 @@
       model = null;
       showStaticOutput("No usable words were found. Try a slightly larger story.");
       updateSummaryCards("waiting");
-      setStatus("The robot could not find valid tokens in that text.");
+      setStatus("That text did not give the robot enough words.");
       printMetrics({
         status: "error",
         reason: "no-valid-tokens"
@@ -815,18 +849,17 @@
 
     if (options?.announce !== false) {
       setStatus(
-        `Robot trained on ${model.totalTokens} tokens with ${model.vocab.size} unique words. Its best next guess is ${formatPredictionToken(
-          snapshot.topToken
-        )}.`
+        `Ready: ${model.totalTokens} tokens, ${model.vocab.size} words, top guess ${formatPredictionToken(snapshot.topToken)}.`
       );
     }
   }
 
   function generateText() {
+    setCompactPanel("play");
     if (!model) {
       showStaticOutput("Teach the robot before asking it to write.");
       updateSummaryCards("waiting");
-      setStatus("Click Teach the Robot first so it can build its word memory.");
+      setStatus("Click Teach so the robot can learn first.");
       return;
     }
 
@@ -856,11 +889,7 @@
       generationCoverage: `${(generated.coverage * 100).toFixed(1)}%`
     });
 
-    setStatus(
-      `Generated ${steps} tokens with ${nLabel(model.n).toLowerCase()} memory and ${randomnessLabel(
-        temperature
-      ).toLowerCase()} randomness.`
-    );
+    setStatus(`Generated ${steps} words with ${nLabel(model.n).toLowerCase()} memory and ${randomnessLabel(temperature).toLowerCase()} randomness.`);
   }
 
   function addPredictionToSeed(token) {
@@ -869,7 +898,7 @@
 
     if (token === "</s>") {
       seedEl.value = current && !/[.!?]$/.test(current) ? `${current}.` : current;
-      setStatus("Sentence end selected. Try generating again or start a fresh sentence.");
+      setStatus("Sentence end added. Generate again or start fresh.");
       refreshPredictions();
       return;
     }
@@ -883,11 +912,21 @@
     }
 
     refreshPredictions();
-    setStatus(`${formatPredictionToken(token)} added to the starter phrase. Generate again to keep going.`);
+    setStatus(`${formatPredictionToken(token)} added. Generate again to keep going.`);
     seedEl.focus();
   }
 
   buildEl.addEventListener("click", () => {
+    buildModel({ announce: true });
+  });
+
+  nEl.addEventListener("change", () => {
+    if (!(corpusEl.value || "").trim()) return;
+    buildModel({ announce: true });
+  });
+
+  smoothingEl.addEventListener("change", () => {
+    if (!(corpusEl.value || "").trim()) return;
     buildModel({ announce: true });
   });
 
@@ -902,7 +941,7 @@
   seedEl.addEventListener("input", () => {
     if (!model) return;
     refreshPredictions();
-    setStatus("Starter phrase updated. The next-word guesses have been refreshed.");
+    setStatus("Starter phrase updated.");
   });
 
   predictionsEl.addEventListener("click", (event) => {
@@ -923,6 +962,12 @@
     });
   }
 
+  for (const button of compactPanelButtons) {
+    button.addEventListener("click", () => {
+      setCompactPanel(button.dataset.compactPanel || "play");
+    });
+  }
+
   contrastToggle.addEventListener("change", () => {
     state.highContrast = contrastToggle.checked;
     updateConsoleClasses();
@@ -933,8 +978,19 @@
     updateConsoleClasses();
   });
 
+  const handleCompactLayoutChange = () => {
+    applyCompactPanels();
+  };
+
+  if (typeof compactLayoutMedia.addEventListener === "function") {
+    compactLayoutMedia.addEventListener("change", handleCompactLayoutChange);
+  } else if (typeof compactLayoutMedia.addListener === "function") {
+    compactLayoutMedia.addListener(handleCompactLayoutChange);
+  }
+
   applyMode(state.gradeMode);
   updateConsoleClasses();
+  applyCompactPanels();
   updateSummaryCards("waiting");
   printMetrics({
     status: "waiting"
