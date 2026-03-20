@@ -52,10 +52,27 @@
       overflow: hidden;
       background: #060308;
       aspect-ratio: 4/3;
+      border: 1px solid rgba(255,120,40,0.18);
       box-shadow: 0 0 60px rgba(200,60,10,0.12), inset 0 0 40px rgba(0,0,0,0.5);
     }
     #vol-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
     #vol-canvas:active { cursor: grabbing; }
+    .volcano-outer::before {
+      content: "";
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(80% 70% at 65% 15%, rgba(255,120,40,0.22), transparent 60%),
+        radial-gradient(60% 70% at 20% 80%, rgba(80,140,255,0.18), transparent 55%);
+      mix-blend-mode: screen;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .volcano-outer::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: radial-gradient(90% 70% at 50% 50%, transparent 60%, rgba(0,0,0,0.55) 100%);
+      pointer-events: none;
+    }
     .vol-overlay {
       position: absolute; top: 12px; left: 14px;
       display: flex; flex-direction: column; gap: 6px; pointer-events: none;
@@ -370,9 +387,13 @@
     const outer   = document.getElementById('vol-outer');
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.physicallyCorrectLights = true;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 1.05;
+    renderer.setClearColor(0x0b0606, 1);
 
     const scene  = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x180805, 0.018);
@@ -439,14 +460,22 @@
     const sunLight = new THREE.DirectionalLight(0xffd090, 1.2);
     sunLight.position.set(8, 14, 6);
     sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(1024, 1024);
+    sunLight.shadow.camera.near = 1;
+    sunLight.shadow.camera.far = 60;
+    sunLight.shadow.camera.left = -18;
+    sunLight.shadow.camera.right = 18;
+    sunLight.shadow.camera.top = 18;
+    sunLight.shadow.camera.bottom = -18;
+    sunLight.shadow.bias = -0.0004;
     scene.add(sunLight);
-    scene.add(new THREE.AmbientLight(0x301810, 0.9));
+    scene.add(new THREE.AmbientLight(0x2a150a, 0.85));
     const fillLight = new THREE.DirectionalLight(0x4060a0, 0.2);
     fillLight.position.set(-6, 2, -5);
     scene.add(fillLight);
 
     // Lava crater glow — PointLight
-    const lavaLight = new THREE.PointLight(0xff6010, 0, 12);
+    const lavaLight = new THREE.PointLight(0xff5a10, 0, 18, 2);
     lavaLight.position.set(0, 6, 0);
     scene.add(lavaLight);
 
@@ -475,6 +504,7 @@
         skyMat.color.setRGB(lerp(0.18, 0.04, f), lerp(0.07, 0.03, f), lerp(0.04, 0.02, f));
       }
       scene.fog.color.copy(skyMat.color);
+      scene.fog.density = lerp(0.012, 0.028, t);
     }
 
     /* ══════════════════════════════════════════
@@ -496,19 +526,28 @@
         case 'shield': {
           const k = Math.max(0, 1 - (r / R) * 1.05);
           h = 4.5 * Math.pow(k, 1.4) + noise * 0.25 + micro * 0.1;
+          const craterR = R * 0.05;
+          const crater = r < craterR ? -1.1 * Math.pow(1 - r / craterR, 2) : 0;
+          const rim = Math.exp(-Math.pow((r - craterR) / (R * 0.03), 2)) * 0.5;
+          h += crater + rim;
           break;
         }
         case 'strato': {
           const k = Math.max(0, 1 - r / R);
           h = 10 * Math.pow(k, 2.1) + noise * 0.38 + micro * 0.15;
+          const craterR = R * 0.08;
+          const crater = r < craterR ? -2.2 * Math.pow(1 - r / craterR, 2.2) : 0;
+          const rim = Math.exp(-Math.pow((r - craterR) / (R * 0.035), 2)) * 0.9;
+          h += crater + rim;
           break;
         }
         case 'caldera': {
           const k = Math.max(0, 1 - r / R);
           const cone = 9 * Math.pow(k, 2.3) + noise * 0.35;
           const cRim = R * 0.16;
-          const depression = r < cRim ? -3.5 * Math.pow(1 - r / cRim, 2) : 0;
-          h = cone + depression + micro * 0.12;
+          const depression = r < cRim ? -3.8 * Math.pow(1 - r / cRim, 2) : 0;
+          const rim = Math.exp(-Math.pow((r - cRim) / (R * 0.05), 2)) * 0.8;
+          h = cone + depression + rim + micro * 0.12;
           break;
         }
         case 'super': {
@@ -531,14 +570,19 @@
     function terrainColor(x, z, y, maxH, vtype, lavaIntensity) {
       const r = Math.sqrt(x * x + z * z);
       const R = TERRAIN_SIZE * 0.38;
-      const hFrac = y / maxH;
+      const hFrac = clamp(y / maxH, 0, 1);
 
       // Lava channels: radial slots flowing downhill
       const ang = Math.atan2(z, x);
       const channel = Math.abs(Math.sin(ang * 4) * 0.5 + Math.sin(ang * 9) * 0.25);
-      const isLava = channel < lavaIntensity * 0.28 && r < R * 0.85 && hFrac > 0.05;
+      const flow = Math.max(0.05, lavaIntensity);
+      const isLava = channel < flow * 0.32 && r < R * 0.85 && hFrac > 0.04;
       const heatFrac = isLava ? clamp(1.0 - r / (R * 0.7), 0, 1) * lavaIntensity : 0;
 
+      const craterHot = r < R * 0.07 && lavaIntensity > 0.15;
+      if (craterHot) {
+        return [1.0, 0.55, 0.12];
+      }
       if (isLava && lavaIntensity > 0.1) {
         // Hot lava — white-yellow → orange → dark red
         if (heatFrac > 0.7) return [1.0, 0.95, 0.6];
@@ -589,7 +633,7 @@
       // First pass — heights
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i), z = pos.getZ(i);
-        const h = Math.max(0, volcanoH(x, z, vtype));
+        const h = volcanoH(x, z, vtype);
         pos.setY(i, h);
         if (h > maxH) maxH = h;
       }
@@ -623,9 +667,45 @@
       ocean.position.y = -0.2;
     }
 
+    function terrainHeightAt(x, z) {
+      return volcanoH(x, z, state.vtype);
+    }
+
+    function slopeDir(x, z) {
+      const eps = 0.25;
+      const hL = terrainHeightAt(x - eps, z);
+      const hR = terrainHeightAt(x + eps, z);
+      const hD = terrainHeightAt(x, z - eps);
+      const hU = terrainHeightAt(x, z + eps);
+      const sx = hL - hR;
+      const sz = hD - hU;
+      const l = Math.hypot(sx, sz) || 1;
+      return { x: sx / l, z: sz / l };
+    }
+
     /* ══════════════════════════════════════════
        PARTICLE POOLS
     ══════════════════════════════════════════ */
+    function makeSpriteTexture(inner, outer) {
+      const size = 64;
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const g = c.getContext('2d');
+      const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      grad.addColorStop(0, inner);
+      grad.addColorStop(1, outer);
+      g.fillStyle = grad;
+      g.fillRect(0, 0, size, size);
+      const tex = new THREE.CanvasTexture(c);
+      tex.encoding = THREE.sRGBEncoding;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      return tex;
+    }
+
+    const smokeTex = makeSpriteTexture('rgba(255,255,255,0.9)', 'rgba(255,255,255,0)');
+    const emberTex = makeSpriteTexture('rgba(255,210,140,0.95)', 'rgba(255,80,20,0)');
+
     class ParticlePool {
       constructor(scene, maxN, mat) {
         this.max = maxN;
@@ -670,7 +750,7 @@
           this.age[i] += dt;
           if (this.age[i] >= this.life[i]) { this.alive[i] = 0; this.pos[i*3+1] = -9999; continue; }
           const t = this.age[i] / this.life[i];
-          onTick(i, t, this);
+          onTick(i, t, this, dt);
         }
         this.posAttr.needsUpdate = true;
         this.colAttr.needsUpdate = true;
@@ -680,85 +760,110 @@
 
     // ── ASH COLUMN ──
     const ashPool = new ParticlePool(scene, 1800, new THREE.PointsMaterial({
-      size: 0.5, vertexColors: true, transparent: true, opacity: 0.65,
-      depthWrite: false, sizeAttenuation: true
+      size: 0.6,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.75,
+      depthWrite: false,
+      sizeAttenuation: true,
+      map: smokeTex,
+      alphaTest: 0.05
     }));
 
     // ── LAVA BOMBS ──
     const bombPool = new ParticlePool(scene, 400, new THREE.PointsMaterial({
-      size: 0.35, vertexColors: true, transparent: true, opacity: 0.9,
-      depthWrite: false, sizeAttenuation: true,
-      blending: THREE.AdditiveBlending
+      size: 0.4,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+      sizeAttenuation: true,
+      blending: THREE.AdditiveBlending,
+      map: emberTex,
+      alphaTest: 0.05
     }));
 
     // ── PYROCLASTIC FLOW ──
     const pyroPool = new ParticlePool(scene, 800, new THREE.PointsMaterial({
-      size: 0.55, vertexColors: true, transparent: true, opacity: 0.75,
-      depthWrite: false, sizeAttenuation: true
+      size: 0.75,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+      depthWrite: false,
+      sizeAttenuation: true,
+      map: smokeTex,
+      alphaTest: 0.04
     }));
 
     // ── STEAM / GAS ──
     const steamPool = new ParticlePool(scene, 400, new THREE.PointsMaterial({
-      size: 0.45, vertexColors: true, transparent: true, opacity: 0.45,
-      depthWrite: false, sizeAttenuation: true
+      size: 0.7,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.5,
+      depthWrite: false,
+      sizeAttenuation: true,
+      map: smokeTex,
+      alphaTest: 0.04
     }));
 
     function spawnAsh(intensity, column) {
-      const n = Math.round(intensity * 3.5);
+      const n = Math.round(40 * intensity);
       for (let i = 0; i < n; i++) {
         const ang = Math.random() * Math.PI * 2;
-        const sp  = intensity * 0.8 * (0.3 + Math.random() * 0.7);
-        const spread = intensity * 0.06;
+        const columnBoost = column / 12;
+        const sp  = (1.2 + columnBoost * 0.8) * (0.5 + Math.random() * 0.7);
+        const spread = 0.4 + intensity * 0.6;
         ashPool.emit(
           (Math.random() - 0.5) * 0.8,
           craterPos.y,
           (Math.random() - 0.5) * 0.8,
-          Math.cos(ang) * spread, sp * 0.55 + 1.5, Math.sin(ang) * spread,
-          column * 0.28 + 2,
-          0.12 + Math.random() * 0.08, 0.1, 0.1 + Math.random() * 0.05,
-          0.3 + Math.random() * 0.3
+          Math.cos(ang) * spread, sp * 1.2 + 1.2, Math.sin(ang) * spread,
+          column * 0.12 + 2.5,
+          0.18 + Math.random() * 0.1, 0.16, 0.14 + Math.random() * 0.08,
+          0.4 + Math.random() * 0.45
         );
       }
     }
 
     function spawnBomb(intensity) {
-      if (Math.random() > intensity * 0.55 + 0.02) return;
+      if (Math.random() > intensity * 0.7 + 0.05) return;
       const ang = Math.random() * Math.PI * 2;
-      const spd = 4 + intensity * 3 + Math.random() * 2;
-      const elev = 0.5 + Math.random() * 0.4;
+      const spd = 6 + intensity * 5 + Math.random() * 3;
+      const elev = 0.4 + Math.random() * 0.5;
       bombPool.emit(
         0, craterPos.y, 0,
         Math.cos(ang) * spd * Math.cos(elev),
         spd * Math.sin(elev),
         Math.sin(ang) * spd * Math.cos(elev),
-        1.2 + Math.random() * 1.0,
+        1.4 + Math.random() * 1.2,
         1.0, 0.7 + Math.random() * 0.3, 0.1,
-        0.25 + Math.random() * 0.15
+        0.3 + Math.random() * 0.2
       );
     }
 
-    function spawnPyroclastic(pyro) {
-      if (pyro < 0.15 || Math.random() > pyro * 0.7) return;
+    function spawnPyroclastic(pyro, intensity) {
+      if (pyro < 0.12 || Math.random() > pyro * 0.8) return;
       const ang = Math.random() * Math.PI * 2;
-      const spd = 4 + pyro * 5;
+      const spd = 3 + pyro * 6 + intensity * 2;
       pyroPool.emit(
         (Math.random() - 0.5), craterPos.y * 0.7, (Math.random() - 0.5),
-        Math.cos(ang) * spd, -0.5 + Math.random(), Math.sin(ang) * spd,
-        3 + Math.random() * 2,
-        0.35 + pyro * 0.2, 0.15, 0.05,
-        0.4 + Math.random() * 0.25
+        Math.cos(ang) * spd, -0.8 + Math.random() * 0.6, Math.sin(ang) * spd,
+        3.5 + Math.random() * 2.5,
+        0.28 + pyro * 0.25, 0.12, 0.05,
+        0.55 + Math.random() * 0.35
       );
     }
 
     function spawnSteam(intensity) {
-      if (Math.random() > intensity * 0.4 + 0.1) return;
+      if (Math.random() > intensity * 0.45 + 0.12) return;
       const ang = Math.random() * Math.PI * 2;
       steamPool.emit(
         (Math.random() - 0.5) * 1.5, craterPos.y - 0.5, (Math.random() - 0.5) * 1.5,
-        Math.cos(ang) * 0.3, 0.6 + Math.random() * 0.5, Math.sin(ang) * 0.3,
-        4 + Math.random() * 2,
+        Math.cos(ang) * 0.4, 0.8 + Math.random() * 0.6, Math.sin(ang) * 0.4,
+        4.5 + Math.random() * 2.5,
         0.85, 0.88, 0.9,
-        0.35 + Math.random() * 0.2
+        0.45 + Math.random() * 0.25
       );
     }
 
@@ -768,6 +873,9 @@
     const state = { intensity:72, column:18, viscosity:50, pyro:40, vtype:'strato' };
     let rebuildTimer = 0;
     let activeEruption = 'vesuvius79';
+    let simTime = 0;
+    const wind = { x: 0, z: 0 };
+    let lavaBase = 0;
 
     function computeStats() {
       const i = state.intensity / 100;
@@ -902,10 +1010,11 @@
     });
 
     function updateLighting(t) {
-      lavaLight.intensity = t * t * 3.5;
-      lavaLight.color.setRGB(1.0, 0.35 + t * 0.2, 0.05);
-      rimLight.intensity = t * 0.6;
-      sunLight.intensity = lerp(1.2, 0.35, t * 0.7);
+      const flow = 1 - state.viscosity / 100;
+      lavaBase = t * (1.6 + flow * 3.2);
+      lavaLight.color.setRGB(1.0, 0.35 + t * 0.25, 0.05);
+      rimLight.intensity = t * 0.65;
+      sunLight.intensity = lerp(1.1, 0.35, t * 0.7);
     }
 
     /* ══════════════════════════════════════════
@@ -913,54 +1022,73 @@
     ══════════════════════════════════════════ */
     const GRAVITY = 4.5;
 
-    function tickAsh(i, t, pool) {
-      pool.vel[i*3]   += (Math.random()-0.5)*0.02;
-      pool.vel[i*3+2] += (Math.random()-0.5)*0.02;
-      pool.vel[i*3+1] -= GRAVITY * 0.04 * t; // slight drag
-      pool.pos[i*3]   += pool.vel[i*3] * 0.016;
-      pool.pos[i*3+1] += pool.vel[i*3+1] * 0.016;
-      pool.pos[i*3+2] += pool.vel[i*3+2] * 0.016;
-      const bright = Math.max(0, 1 - t);
-      pool.col[i*3] = lerp(0.12, 0.4, t);
-      pool.col[i*3+1] = lerp(0.10, 0.38, t);
-      pool.col[i*3+2] = lerp(0.10, 0.36, t);
-      pool.sz[i] = 0.3 + t * 0.8; // ash grows as it billows
+    function tickAsh(i, t, pool, dt) {
+      const drift = (1 - t) * 0.4;
+      pool.vel[i*3]   += (Math.random() - 0.5) * 0.08 * drift;
+      pool.vel[i*3+2] += (Math.random() - 0.5) * 0.08 * drift;
+      pool.vel[i*3]   += wind.x * 0.05;
+      pool.vel[i*3+2] += wind.z * 0.05;
+      pool.vel[i*3+1] -= GRAVITY * 0.35 * dt * (0.5 + t);
+      pool.pos[i*3]   += pool.vel[i*3] * dt;
+      pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
+      pool.pos[i*3+2] += pool.vel[i*3+2] * dt;
+      pool.col[i*3] = lerp(0.18, 0.48, t);
+      pool.col[i*3+1] = lerp(0.16, 0.44, t);
+      pool.col[i*3+2] = lerp(0.15, 0.42, t);
+      pool.sz[i] = 0.4 + t * 1.1; // ash grows as it billows
     }
 
-    function tickBomb(i, t, pool) {
-      pool.vel[i*3+1] -= GRAVITY * 0.016;
-      pool.pos[i*3]   += pool.vel[i*3] * 0.016;
-      pool.pos[i*3+1] += pool.vel[i*3+1] * 0.016;
-      pool.pos[i*3+2] += pool.vel[i*3+2] * 0.016;
-      // Cool from white-yellow to red to dark
+    function tickBomb(i, t, pool, dt) {
+      pool.vel[i*3+1] -= GRAVITY * 0.9 * dt;
+      pool.vel[i*3] *= 0.998;
+      pool.vel[i*3+2] *= 0.998;
+      pool.pos[i*3]   += pool.vel[i*3] * dt;
+      pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
+      pool.pos[i*3+2] += pool.vel[i*3+2] * dt;
       const heat = Math.max(0, 1 - t * 1.2);
       pool.col[i*3]   = 1.0;
-      pool.col[i*3+1] = heat * 0.7;
-      pool.col[i*3+2] = heat * heat * 0.15;
+      pool.col[i*3+1] = lerp(0.9, 0.2, t) * heat;
+      pool.col[i*3+2] = heat * heat * 0.18;
+      pool.sz[i] = lerp(0.35, 0.12, t);
     }
 
-    function tickPyro(i, t, pool) {
-      pool.vel[i*3+1] -= GRAVITY * 0.03 * t;
-      pool.vel[i*3]   *= 0.996;
-      pool.vel[i*3+2] *= 0.996;
-      pool.pos[i*3]   += pool.vel[i*3] * 0.016;
-      pool.pos[i*3+1] += pool.vel[i*3+1] * 0.016;
-      pool.pos[i*3+2] += pool.vel[i*3+2] * 0.016;
-      pool.col[i*3]   = lerp(0.8, 0.15, t);
-      pool.col[i*3+1] = lerp(0.3, 0.05, t);
-      pool.col[i*3+2] = lerp(0.05, 0.02, t);
-      pool.sz[i] = lerp(0.55, 0.15, t);
+    function tickPyro(i, t, pool, dt) {
+      pool.vel[i*3+1] -= GRAVITY * 0.6 * dt;
+      pool.vel[i*3]   *= 0.992;
+      pool.vel[i*3+2] *= 0.992;
+      pool.pos[i*3]   += pool.vel[i*3] * dt;
+      pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
+      pool.pos[i*3+2] += pool.vel[i*3+2] * dt;
+
+      const gx = pool.pos[i*3];
+      const gz = pool.pos[i*3+2];
+      const ground = terrainHeightAt(gx, gz) + 0.05;
+      if (pool.pos[i*3+1] < ground) {
+        pool.pos[i*3+1] = ground;
+        pool.vel[i*3+1] = Math.abs(pool.vel[i*3+1]) * 0.15;
+        const slope = slopeDir(gx, gz);
+        pool.vel[i*3] += slope.x * 0.6;
+        pool.vel[i*3+2] += slope.z * 0.6;
+      }
+
+      pool.col[i*3]   = lerp(0.7, 0.12, t);
+      pool.col[i*3+1] = lerp(0.25, 0.04, t);
+      pool.col[i*3+2] = lerp(0.06, 0.02, t);
+      pool.sz[i] = lerp(0.75, 0.2, t);
     }
 
-    function tickSteam(i, t, pool) {
-      pool.vel[i*3] += (Math.random()-0.5)*0.015;
-      pool.vel[i*3+2] += (Math.random()-0.5)*0.015;
-      pool.pos[i*3]   += pool.vel[i*3] * 0.016;
-      pool.pos[i*3+1] += pool.vel[i*3+1] * 0.016;
-      pool.pos[i*3+2] += pool.vel[i*3+2] * 0.016;
-      pool.sz[i] = 0.3 + t * 0.5;
-      const fade = Math.min(1, t * 3) * Math.max(0, 1 - t * 1.5);
-      pool.col[i*3] = pool.col[i*3+1] = pool.col[i*3+2] = 0.85 * fade + 0.6 * (1 - fade);
+    function tickSteam(i, t, pool, dt) {
+      pool.vel[i*3] += (Math.random() - 0.5) * 0.03;
+      pool.vel[i*3+2] += (Math.random() - 0.5) * 0.03;
+      pool.vel[i*3] += wind.x * 0.02;
+      pool.vel[i*3+2] += wind.z * 0.02;
+      pool.pos[i*3]   += pool.vel[i*3] * dt;
+      pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
+      pool.pos[i*3+2] += pool.vel[i*3+2] * dt;
+      pool.sz[i] = 0.45 + t * 0.7;
+      const fade = Math.min(1, t * 3) * Math.max(0, 1 - t * 1.4);
+      const c = 0.9 * fade + 0.65 * (1 - fade);
+      pool.col[i*3] = pool.col[i*3+1] = pool.col[i*3+2] = c;
     }
 
     /* ══════════════════════════════════════════
@@ -975,28 +1103,33 @@
 
       if (!isDrag) { camTheta += dt * 0.04; updateCam(); }
 
+      simTime += dt;
+      const i = state.intensity / 100;
+      const windStrength = lerp(0.05, 0.75, i) + state.column / 120;
+      wind.x = Math.sin(simTime * 0.35) * windStrength + 0.05;
+      wind.z = Math.cos(simTime * 0.28 + 1.4) * windStrength;
+
       spawnAcc += dt;
       const tickRate = 0.04;
       if (spawnAcc >= tickRate) {
         spawnAcc = 0;
-        const i = state.intensity / 100;
         const pi = state.pyro / 100;
 
         if (i > 0.02) {
-          spawnAsh(i * 12, state.column);
+          spawnAsh(i, state.column);
           spawnBomb(i);
           spawnSteam(i);
-          if (pi > 0.1) spawnPyroclastic(pi);
+          if (pi > 0.1) spawnPyroclastic(pi, i);
         }
       }
 
-      ashPool.update(0.016,  tickAsh);
-      bombPool.update(0.016, tickBomb);
-      pyroPool.update(0.016, tickPyro);
-      steamPool.update(0.016, tickSteam);
+      ashPool.update(dt,  tickAsh);
+      bombPool.update(dt, tickBomb);
+      pyroPool.update(dt, tickPyro);
+      steamPool.update(dt, tickSteam);
 
       // Pulse crater light
-      lavaLight.intensity = (state.intensity / 100) * (2.5 + Math.sin(ts * 0.003) * 0.8);
+      lavaLight.intensity = lavaBase * (0.8 + Math.sin(ts * 0.003) * 0.2);
 
       renderer.render(scene, camera);
     }
