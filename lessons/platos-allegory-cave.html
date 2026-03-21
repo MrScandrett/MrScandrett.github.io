@@ -281,6 +281,24 @@
     .cave-sim-group  { display: grid; gap: 0.45rem; }
     .cave-sim-label  { color: #efbb72; font-size: 0.73rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
     .cave-btn-row    { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .cave-pill-row   { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .cave-pill {
+      border: 1px solid rgba(255, 233, 204, 0.16);
+      background: rgba(255, 247, 238, 0.04);
+      color: #f1d7ae;
+      border-radius: 999px;
+      padding: 0.42rem 0.78rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .cave-sim-goal {
+      margin: 0;
+      color: var(--cave-muted);
+      font-size: 0.84rem;
+      line-height: 1.6;
+      max-width: 28ch;
+    }
     .cave-choice-btn {
       border: 1px solid rgba(255, 233, 204, 0.12);
       background: rgba(255, 247, 238, 0.03);
@@ -313,6 +331,42 @@
       background: #070605; border: 1px solid rgba(230, 166, 77, 0.15);
     }
     #cave-canvas { display: block; width: 100%; height: auto; }
+
+    .cave-caption {
+      margin: 0.9rem 0 0;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 214, 140, 0.18);
+      background: rgba(255, 233, 204, 0.06);
+      padding: 0.75rem 0.9rem;
+      font-size: 0.86rem;
+      color: #f5e2c2;
+      line-height: 1.6;
+    }
+
+    .cave-dialogue {
+      margin-top: 0.7rem;
+      border-radius: 16px;
+      border: 1px solid rgba(127, 176, 163, 0.22);
+      background: rgba(127, 176, 163, 0.08);
+      padding: 0.85rem 1rem;
+      display: none;
+    }
+    .cave-dialogue.is-active { display: block; }
+    .cave-dialogue-name {
+      display: block;
+      color: #bfe8dd;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .cave-dialogue-text {
+      margin: 0;
+      color: #e6f5ef;
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
 
     .cave-info-grid {
       display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.8rem; margin-top: 1rem;
@@ -614,34 +668,32 @@
     <!-- ── INTERACTIVE CAVE WALKTHROUGH ── -->
     <section class="cave-card">
       <div class="cave-card-body">
-        <h2 class="cave-section-head">Guided Cave Walkthrough</h2>
-        <p class="cave-section-sub">Step through the allegory scene by scene. Use the object buttons to see how a real thing becomes a misleading shadow on the wall.</p>
+        <h2 class="cave-section-head">Playable Cave Simulator</h2>
+        <p class="cave-section-sub">Play as the prisoner who chooses to turn around. Walk toward the light, listen to others, and notice the inner thoughts that surface along the way.</p>
 
         <div class="cave-sim-top">
           <div class="cave-sim-groups">
             <div class="cave-sim-group">
-              <span class="cave-sim-label">Scene</span>
-              <div class="cave-btn-row" id="scene-buttons">
-                <button class="cave-choice-btn active" type="button" data-scene="0">1. Chained</button>
-                <button class="cave-choice-btn" type="button" data-scene="1">2. Shadows</button>
-                <button class="cave-choice-btn" type="button" data-scene="2">3. Turn Around</button>
-                <button class="cave-choice-btn" type="button" data-scene="3">4. Outside</button>
-                <button class="cave-choice-btn" type="button" data-scene="4">5. Return</button>
+              <span class="cave-sim-label">Controls</span>
+              <div class="cave-pill-row">
+                <span class="cave-pill">WASD / Arrow keys</span>
+                <span class="cave-pill">Click characters to talk</span>
               </div>
             </div>
             <div class="cave-sim-group">
-              <span class="cave-sim-label">Object Casting the Shadow</span>
-              <div class="cave-btn-row" id="object-buttons">
-                <button class="cave-choice-btn active" type="button" data-object="0">Person</button>
-                <button class="cave-choice-btn" type="button" data-object="1">Tree</button>
-                <button class="cave-choice-btn" type="button" data-object="2">Bird</button>
-                <button class="cave-choice-btn" type="button" data-object="3">Vase</button>
+              <span class="cave-sim-label">Goal</span>
+              <p class="cave-sim-goal">Reach the light outside, then return to check on the prisoners.</p>
+            </div>
+            <div class="cave-sim-group">
+              <span class="cave-sim-label">Actions</span>
+              <div class="cave-btn-row">
+                <button class="cave-choice-btn" type="button" id="cave-reset">Reset position</button>
               </div>
             </div>
           </div>
           <div class="cave-scene-copy">
-            <h3 id="scene-title">1. Chained by a Limited View</h3>
-            <p id="scene-sub">The prisoners think the wall is the whole world because they have never seen anything else.</p>
+            <h3 id="scene-title">Leaving the Cave</h3>
+            <p id="scene-sub">Move toward the light and notice how your understanding shifts as you go.</p>
           </div>
         </div>
 
@@ -649,13 +701,20 @@
           <canvas id="cave-canvas" width="940" height="420"></canvas>
         </div>
 
+        <p class="cave-caption" id="cave-caption">I have always faced the wall. Turning around feels like tearing away a habit.</p>
+
+        <div class="cave-dialogue" id="cave-dialogue" aria-live="polite">
+          <span class="cave-dialogue-name" id="cave-dialogue-name">Prisoner</span>
+          <p class="cave-dialogue-text" id="cave-dialogue-text">“Why would you leave? The shadows are all we know.”</p>
+        </div>
+
         <div class="cave-info-grid">
           <article class="cave-info-card">
-            <span>What The Prisoner Sees</span>
+            <span>Where You Are</span>
             <p id="scene-sees">Only moving shadows on the wall.</p>
           </article>
           <article class="cave-info-card">
-            <span>What Is Actually Real</span>
+            <span>What You Realize</span>
             <p id="scene-reality">There is a fire and a real object behind the prisoners, but they cannot turn to see it.</p>
           </article>
           <article class="cave-info-card">
@@ -663,7 +722,7 @@
             <p id="scene-lesson">A small view can feel complete when it is all you have ever known.</p>
           </article>
           <article class="cave-info-card">
-            <span>Scripture Connection</span>
+            <span>Scripture Echo</span>
             <p id="scene-scripture">Proverbs 14:12 — "There is a way that appears to be right, but in the end it leads to death."</p>
           </article>
         </div>
@@ -955,237 +1014,388 @@
     /* ── Cave Scene Simulator ── */
     (function() {
       var canvas = document.getElementById("cave-canvas");
+      if (!canvas) return;
       var ctx    = canvas.getContext("2d");
       var W = canvas.width, H = canvas.height;
 
-      var sceneButtons  = document.querySelectorAll("#scene-buttons .cave-choice-btn");
-      var objectButtons = document.querySelectorAll("#object-buttons .cave-choice-btn");
+      var sceneTitle     = document.getElementById("scene-title");
+      var sceneSub       = document.getElementById("scene-sub");
+      var sceneSees      = document.getElementById("scene-sees");
+      var sceneReality   = document.getElementById("scene-reality");
+      var sceneLesson    = document.getElementById("scene-lesson");
+      var sceneScripture = document.getElementById("scene-scripture");
+      var captionEl      = document.getElementById("cave-caption");
+      var dialogueBox    = document.getElementById("cave-dialogue");
+      var dialogueName   = document.getElementById("cave-dialogue-name");
+      var dialogueText   = document.getElementById("cave-dialogue-text");
+      var resetBtn       = document.getElementById("cave-reset");
 
-      var sceneTitle    = document.getElementById("scene-title");
-      var sceneSub      = document.getElementById("scene-sub");
-      var sceneSees     = document.getElementById("scene-sees");
-      var sceneReality  = document.getElementById("scene-reality");
-      var sceneLesson   = document.getElementById("scene-lesson");
-      var sceneScripture= document.getElementById("scene-scripture");
+      var keys = {};
+      var player = { x: 160, y: 312, r: 12, speed: 2.1, facing: 1 };
+      var bounds = { minX: 70, maxX: W - 40, minY: 230, maxY: 360 };
+      var exitX = 560;
+      var hasSeenOutside = false;
+      var lastZoneKey = "";
+      var lastCaption = "";
 
-      var currentScene  = 0;
-      var currentObject = 0;
-      var OBJECTS = ["Person", "Tree", "Bird", "Vase"];
-
-      var SCENES = [
+      var zones = [
         {
-          title: "1. Chained by a Limited View",
-          sub: "The prisoners think the wall is the whole world because they have never seen anything else.",
-          sees: "Only moving shadows on the wall.",
-          reality: "There is a fire and a real object behind the prisoners, but they cannot turn to see it.",
-          lesson: "A small view can feel complete when it is all you have ever known.",
-          scripture: "Proverbs 14:12 — \"There is a way that appears to be right, but in the end it leads to death.\""
+          key: "wall",
+          minX: 0,
+          maxX: 220,
+          title: "Facing the Wall",
+          sub: "The shadows still feel like the whole story.",
+          sees: "Only the wall and its moving silhouettes.",
+          reality: "The fire and real objects are behind you.",
+          lesson: "A partial view can feel complete when it is all you have known.",
+          scripture: "Proverbs 14:12 — \"There is a way that appears to be right, but in the end it leads to death.\"",
+          caption: "I have always faced the wall. Turning around feels like tearing away a habit."
         },
         {
-          title: "2. Shadows Can Look Real",
-          sub: "The shadow changes when the object changes, but the prisoner still sees only a flat copy.",
-          sees: "A dark outline that looks like the object itself.",
-          reality: "The real object has depth, detail, and a source of light that the wall hides.",
-          lesson: "Something can contain part of the truth and still leave out what matters most.",
-          scripture: "2 Corinthians 4:4 — \"The god of this world has blinded the minds of the unbelievers.\""
+          key: "fire",
+          minX: 220,
+          maxX: 420,
+          title: "Firelight",
+          sub: "The fire is brighter than expected, and it stings.",
+          sees: "The source of the shadows and the hands that move them.",
+          reality: "The shadows were copies, not the full thing.",
+          lesson: "Real learning often starts with discomfort.",
+          scripture: "Romans 12:2 — \"Be transformed by the renewal of your mind.\"",
+          caption: "My eyes ache, but I finally see how the shadows were made."
         },
         {
-          title: "3. Turning Around Hurts",
-          sub: "A freed prisoner sees the fire for the first time. Truth is brighter and harder than the wall.",
-          sees: "Confusion, discomfort, and a world that does not fit the old story anymore.",
-          reality: "The prisoner begins linking shadow, object, and light together.",
-          lesson: "Learning often starts with discomfort because it forces old assumptions to be tested.",
-          scripture: "Romans 12:2 — \"Be transformed by the renewal of your mind.\""
+          key: "exit",
+          minX: 420,
+          maxX: exitX,
+          title: "Turning Toward the Exit",
+          sub: "The cave mouth pulls you toward a larger world.",
+          sees: "A seam of light at the edge of the cave.",
+          reality: "There is more beyond what the wall allowed.",
+          lesson: "Courage is choosing the unknown over the familiar.",
+          scripture: "John 8:32 — \"You will know the truth, and the truth will set you free.\"",
+          caption: "If the shadows were only echoes, what else have I missed?"
         },
         {
-          title: "4. Outside the Cave",
-          sub: "Outside, the prisoner finally sees the fuller world and understands how small the cave really was.",
-          sees: "At first the light is painful, but then it becomes clear and beautiful.",
-          reality: "The sun makes real sight possible; the cave was never the whole story.",
-          lesson: "Truth can be demanding, but it leads to clarity and freedom.",
-          scripture: "John 8:32 — \"You will know the truth, and the truth will set you free.\""
-        },
-        {
-          title: "5. Returning to Help",
-          sub: "The freed prisoner comes back, but the others trust familiar shadows more than uncomfortable truth.",
-          sees: "The returning prisoner looks strange and unreliable to those still facing the wall.",
-          reality: "People often reject truth when it threatens comfort, pride, or control.",
-          lesson: "Wisdom needs courage, patience, and humility when sharing truth with others.",
-          scripture: "1 Thess. 5:21 — \"Test everything; hold fast what is good.\""
+          key: "outside",
+          minX: exitX,
+          maxX: W,
+          title: "Outside the Cave",
+          sub: "Light reveals depth, color, and a bigger story.",
+          sees: "Shapes with depth, color, and purpose.",
+          reality: "The cave was never the whole story.",
+          lesson: "Truth can be demanding, but it leads to freedom.",
+          scripture: "John 1:5 — \"The light shines in the darkness, and the darkness has not overcome it.\"",
+          caption: "The light is painful, but everything finally makes sense."
         }
       ];
 
-      function setActive(buttons, key, val) {
-        buttons.forEach(function(b) { b.classList.toggle("active", b.getAttribute(key) === String(val)); });
+      var npcs = [
+        {
+          id: "prisoner-a",
+          name: "Chained Prisoner",
+          x: 120,
+          y: 304,
+          r: 16,
+          lines: [
+            "“Don't look back. The wall is all there is.”",
+            "“The shadows are clearer than anything else.”"
+          ],
+          thought: "Their fear sounds like my old voice."
+        },
+        {
+          id: "prisoner-b",
+          name: "Chained Prisoner",
+          x: 120,
+          y: 344,
+          r: 16,
+          lines: [
+            "“You're hurting yourself. Sit back down.”",
+            "“Why chase light when we already know the wall?”"
+          ],
+          thought: "They are safe, but not free."
+        },
+        {
+          id: "shadow-keeper",
+          name: "Shadow Keeper",
+          x: 320,
+          y: 258,
+          r: 16,
+          lines: [
+            "“The show keeps everyone calm. That's enough.”",
+            "“I move the figures. They move the minds.”"
+          ],
+          thought: "Control can feel like purpose, but it keeps people small."
+        },
+        {
+          id: "guide",
+          name: "Guide",
+          x: 500,
+          y: 280,
+          r: 16,
+          lines: [
+            "“Keep walking. It will hurt before it heals.”",
+            "“Truth is brighter than habit.”"
+          ],
+          thought: "Courage is contagious."
+        },
+        {
+          id: "traveler",
+          name: "Traveler",
+          x: 760,
+          y: 250,
+          r: 16,
+          lines: [
+            "“Out here, the world has depth and color.”",
+            "“Go back when you're ready. They need patience.”"
+          ],
+          thought: "The world is wider than fear."
+        }
+      ];
+
+      npcs.forEach(function(npc) { npc.lineIndex = -1; });
+
+      function clamp(val, min, max) {
+        return Math.max(min, Math.min(max, val));
       }
 
-      function projectShadow(fx, fy, ox, oy, wx) {
-        var dx = ox - fx, dy = oy - fy;
-        if (Math.abs(dx) < 1) return { x: wx, y: oy };
-        var t = (wx - fx) / dx;
-        return { x: wx, y: fy + dy * t };
+      function isTypingTarget(target) {
+        return target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
       }
 
-      function drawLabel(text, x, y, color, align) {
+      function zoneForX(x) {
+        for (var i = 0; i < zones.length; i++) {
+          if (x >= zones[i].minX && x < zones[i].maxX) return zones[i];
+        }
+        return zones[zones.length - 1];
+      }
+
+      function updateHUD(zone) {
+        if (!zone || zone.key === lastZoneKey) return;
+        lastZoneKey = zone.key;
+
+        var title = zone.title;
+        var sub = zone.sub;
+        var sees = zone.sees;
+        var reality = zone.reality;
+        var lesson = zone.lesson;
+        var scripture = zone.scripture;
+        var caption = zone.caption;
+
+        if (hasSeenOutside && zone.key === "wall") {
+          title = "Returning to the Cave";
+          sub = "The prisoners doubt what you saw outside.";
+          sees = "Familiar shadows and skeptical faces.";
+          reality = "Truth looks strange when eyes are trained only on shadows.";
+          lesson = "Wisdom needs patience and courage when sharing truth.";
+          scripture = "1 Thess. 5:21 — \"Test everything; hold fast what is good.\"";
+          caption = "I came back, but they call me confused. I must stay gentle.";
+        }
+
+        sceneTitle.textContent = title;
+        sceneSub.textContent = sub;
+        sceneSees.textContent = sees;
+        sceneReality.textContent = reality;
+        sceneLesson.textContent = lesson;
+        sceneScripture.textContent = scripture;
+        setCaption(caption);
+      }
+
+      function setCaption(text) {
+        if (!captionEl || text === lastCaption) return;
+        captionEl.textContent = text;
+        lastCaption = text;
+      }
+
+      function showDialogue(npc) {
+        if (!npc) return;
+        npc.lineIndex = (npc.lineIndex + 1) % npc.lines.length;
+        dialogueName.textContent = npc.name;
+        dialogueText.textContent = npc.lines[npc.lineIndex];
+        dialogueBox.classList.add("is-active");
+        if (npc.thought) setCaption(npc.thought);
+      }
+
+      function hideDialogue() {
+        dialogueBox.classList.remove("is-active");
+      }
+
+      function drawGlow(x, y, r, color) {
+        var g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, color);
+        g.addColorStop(1, "transparent");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawFigure(x, y, color, scale, facing) {
         ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(facing, 1);
+        ctx.lineWidth = 3 * scale;
+        ctx.strokeStyle = color;
         ctx.fillStyle = color;
-        ctx.font = "600 12px system-ui, sans-serif";
-        ctx.textAlign = align || "left";
-        ctx.fillText(text, x, y);
+        ctx.beginPath();
+        ctx.arc(0, -16 * scale, 6 * scale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, -10 * scale);
+        ctx.lineTo(0, 12 * scale);
+        ctx.moveTo(-6 * scale, 0);
+        ctx.lineTo(10 * scale, 0);
+        ctx.moveTo(0, 12 * scale);
+        ctx.lineTo(-8 * scale, 26 * scale);
+        ctx.moveTo(0, 12 * scale);
+        ctx.lineTo(8 * scale, 26 * scale);
+        ctx.stroke();
         ctx.restore();
-      }
-
-      function drawObject(cx, cy, type, scale, alpha, color) {
-        ctx.save();
-        ctx.translate(cx, cy); ctx.scale(scale, scale);
-        ctx.globalAlpha = alpha; ctx.lineWidth = 3;
-        ctx.strokeStyle = color; ctx.fillStyle = color;
-        if (type === 0) {
-          ctx.beginPath(); ctx.arc(0, -30, 10, 0, Math.PI * 2); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(0,8); ctx.moveTo(-14,-2); ctx.lineTo(14,-2); ctx.moveTo(0,8); ctx.lineTo(-10,28); ctx.moveTo(0,8); ctx.lineTo(10,28); ctx.stroke();
-        } else if (type === 1) {
-          ctx.beginPath(); ctx.moveTo(0,30); ctx.lineTo(0,-8); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(-22,18); ctx.lineTo(22,18); ctx.closePath(); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(0,-24); ctx.lineTo(-16,2); ctx.lineTo(16,2); ctx.closePath(); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(0,-38); ctx.lineTo(-12,-12); ctx.lineTo(12,-12); ctx.closePath(); ctx.fill();
-        } else if (type === 2) {
-          ctx.beginPath(); ctx.moveTo(-24,0); ctx.quadraticCurveTo(-10,-18,0,-2); ctx.quadraticCurveTo(10,-18,24,0); ctx.stroke();
-          ctx.beginPath(); ctx.arc(0,4,4,0,Math.PI*2); ctx.fill();
-        } else {
-          ctx.beginPath(); ctx.moveTo(-12,28); ctx.quadraticCurveTo(-18,10,-14,-4); ctx.quadraticCurveTo(-10,-26,0,-26); ctx.quadraticCurveTo(10,-26,14,-4); ctx.quadraticCurveTo(18,10,12,28); ctx.closePath(); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(-14,-2); ctx.quadraticCurveTo(0,8,14,-2); ctx.stroke();
-        }
-        ctx.restore();
-      }
-
-      function drawPrisoner(x, y, direction, opts) {
-        opts = opts || {};
-        var isFreed = !!opts.isFreed, alpha = opts.alpha == null ? 1 : opts.alpha;
-        var color = isFreed ? "#f8e6c7" : "#7f6d5a", chainColor = "#5c4a38";
-        var dir = direction === "right" ? 1 : -1;
-        ctx.save(); ctx.translate(x, y); ctx.scale(dir, 1); ctx.globalAlpha = alpha;
-        ctx.lineWidth = 3; ctx.strokeStyle = color; ctx.fillStyle = color;
-        if (isFreed) {
-          var glow = ctx.createRadialGradient(0,-8,1,0,-8,34);
-          glow.addColorStop(0,"rgba(248,230,199,0.28)"); glow.addColorStop(1,"transparent");
-          ctx.fillStyle = glow; ctx.fillRect(-34,-44,68,68); ctx.fillStyle = color;
-        }
-        ctx.beginPath(); ctx.arc(0,-16,7,0,Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(0,-9); ctx.lineTo(0,11);
-        if (isFreed) { ctx.moveTo(-6,0); ctx.lineTo(12,-2); } else { ctx.moveTo(-2,0); ctx.lineTo(12,0); }
-        ctx.moveTo(0,11); ctx.lineTo(-7,24); ctx.moveTo(0,11); ctx.lineTo(7,24); ctx.stroke();
-        if (!isFreed && opts.showChains !== false) {
-          ctx.strokeStyle = chainColor; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(26,0); ctx.stroke();
-        }
-        ctx.restore();
-      }
-
-      function drawSpeech(text, x, y) {
-        ctx.save();
-        ctx.fillStyle = "rgba(255,244,224,0.08)"; ctx.strokeStyle = "rgba(255,209,136,0.28)"; ctx.lineWidth = 1.5;
-        roundRect(x, y, 150, 42, 12); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x+24,y+42); ctx.lineTo(x+18,y+54); ctx.lineTo(x+38,y+42); ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = "#f6e9d3"; ctx.font = "600 12px system-ui, sans-serif"; ctx.fillText(text, x+12, y+25);
-        ctx.restore();
-      }
-
-      function roundRect(x, y, w, h, r) {
-        ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-        ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h);
-        ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
       }
 
       function drawScene() {
-        var s = SCENES[currentScene];
-        var wallX=114, floorY=338, fireX=430, fireY=286, objX=554, objY=220;
-        sceneTitle.textContent     = s.title;
-        sceneSub.textContent       = s.sub;
-        sceneSees.textContent      = s.sees;
-        sceneReality.textContent   = s.reality;
-        sceneLesson.textContent    = s.lesson;
-        sceneScripture.textContent = s.scripture;
+        ctx.clearRect(0, 0, W, H);
 
-        ctx.clearRect(0,0,W,H);
-        var bg = ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,"#0e0a08"); bg.addColorStop(1,"#050403");
-        ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+        var caveGradient = ctx.createLinearGradient(0, 0, 0, H);
+        caveGradient.addColorStop(0, "#14100e");
+        caveGradient.addColorStop(1, "#080605");
+        ctx.fillStyle = caveGradient;
+        ctx.fillRect(0, 0, exitX, H);
 
-        var og = ctx.createRadialGradient(W-56,56,8,W-56,56,currentScene>=3?240:110);
-        og.addColorStop(0,currentScene>=3?"rgba(255,235,176,0.6)":"rgba(255,216,146,0.14)"); og.addColorStop(1,"transparent");
-        ctx.fillStyle = og; ctx.fillRect(0,0,W,H);
-        ctx.fillStyle = "rgba(34,28,23,0.96)"; ctx.fillRect(0,0,W,H);
+        var outsideGradient = ctx.createLinearGradient(exitX, 0, W, 0);
+        outsideGradient.addColorStop(0, "#e6c07d");
+        outsideGradient.addColorStop(0.4, "#f1d7a6");
+        outsideGradient.addColorStop(1, "#fff1cf");
+        ctx.fillStyle = outsideGradient;
+        ctx.fillRect(exitX, 0, W - exitX, H);
 
-        ctx.fillStyle = "rgba(78,60,43,0.96)"; ctx.fillRect(0,0,wallX,H);
-        ctx.fillStyle = "rgba(118,94,70,0.72)"; ctx.fillRect(wallX-4,0,8,H);
-        ctx.fillStyle = "#2f241d"; ctx.beginPath(); ctx.moveTo(0,floorY); ctx.lineTo(W,floorY); ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = "rgba(255,247,238,0.03)"; ctx.beginPath(); ctx.moveTo(700,floorY); ctx.lineTo(862,92); ctx.lineTo(W,92); ctx.lineTo(W,H); ctx.lineTo(700,H); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "rgba(48, 36, 28, 0.9)";
+        ctx.fillRect(0, 0, 110, H);
+        ctx.fillStyle = "rgba(120, 96, 72, 0.6)";
+        ctx.fillRect(106, 0, 6, H);
 
-        if (currentScene >= 3) {
-          ctx.fillStyle = "#f1c35b"; ctx.beginPath(); ctx.arc(852,74,28,0,Math.PI*2); ctx.fill();
-          var sg = ctx.createRadialGradient(852,74,4,852,74,100); sg.addColorStop(0,"rgba(241,195,91,0.4)"); sg.addColorStop(1,"transparent");
-          ctx.fillStyle = sg; ctx.fillRect(752,0,188,170);
-          ctx.fillStyle = "rgba(96,124,88,0.7)"; ctx.fillRect(790,238,110,8);
-          ctx.fillStyle = "rgba(74,108,69,0.9)"; ctx.beginPath(); ctx.arc(840,212,22,0,Math.PI*2); ctx.fill(); ctx.fillRect(836,214,8,30);
-        }
+        ctx.fillStyle = "#2b221b";
+        ctx.beginPath();
+        ctx.moveTo(0, 320);
+        ctx.lineTo(exitX, 320);
+        ctx.lineTo(exitX, H);
+        ctx.lineTo(0, H);
+        ctx.closePath();
+        ctx.fill();
 
-        var fa = currentScene===0?0.18:currentScene===3?0.3:0.92;
-        var oa = currentScene===0?0.22:currentScene===3?0.45:0.96;
-        var sha= currentScene===3?0.28:currentScene===2?0.64:0.8;
+        ctx.fillStyle = "#caa86e";
+        ctx.beginPath();
+        ctx.arc(760, 90, 26, 0, Math.PI * 2);
+        ctx.fill();
+        drawGlow(760, 90, 90, "rgba(255, 227, 160, 0.35)");
 
-        var fg = ctx.createRadialGradient(fireX,fireY,4,fireX,fireY,currentScene>=2?140:120);
-        fg.addColorStop(0,"rgba(255,176,78,"+(0.48*fa)+")"); fg.addColorStop(0.45,"rgba(190,92,22,"+(0.2*fa)+")"); fg.addColorStop(1,"transparent");
-        ctx.fillStyle = fg; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle = "rgba(94, 122, 88, 0.9)";
+        ctx.beginPath();
+        ctx.moveTo(exitX, 280);
+        ctx.lineTo(900, 280);
+        ctx.lineTo(900, 340);
+        ctx.lineTo(exitX, 340);
+        ctx.closePath();
+        ctx.fill();
 
-        ctx.save(); ctx.translate(fireX,fireY); ctx.globalAlpha=fa;
-        ctx.fillStyle="#f29a2e"; ctx.beginPath(); ctx.moveTo(0,0); ctx.bezierCurveTo(-14,-34,-24,-10,0,-48); ctx.bezierCurveTo(24,-10,14,-34,0,0); ctx.fill();
-        ctx.fillStyle="#ffd27f"; ctx.beginPath(); ctx.moveTo(0,-4); ctx.bezierCurveTo(-7,-18,-11,-6,0,-28); ctx.bezierCurveTo(11,-6,7,-18,0,-4); ctx.fill();
-        ctx.restore();
+        ctx.fillStyle = "#f0a13b";
+        ctx.beginPath();
+        ctx.moveTo(320, 260);
+        ctx.bezierCurveTo(300, 220, 340, 220, 320, 190);
+        ctx.bezierCurveTo(350, 220, 340, 260, 320, 260);
+        ctx.fill();
+        drawGlow(320, 230, 80, "rgba(255, 170, 80, 0.3)");
 
-        drawObject(objX,objY,currentObject,1,oa,"#ead7ae");
-        var sc = projectShadow(fireX,fireY,objX,objY,wallX);
-        var ss = Math.abs(objY-fireY)/Math.max(1,Math.abs(objX-fireX));
-        ctx.save(); ctx.translate(sc.x-16,sc.y+4); ctx.scale(0.64,ss*0.96); ctx.globalAlpha=sha;
-        drawObject(0,0,currentObject,1,1,"#130d0d"); ctx.restore();
+        ctx.fillStyle = "rgba(10, 8, 7, 0.6)";
+        ctx.fillRect(40, 220, 60, 120);
 
-        if (currentScene >= 1) {
-          ctx.strokeStyle="rgba(255,209,136,0.2)"; ctx.lineWidth=1.5;
-          ctx.beginPath(); ctx.moveTo(fireX,fireY-18); ctx.lineTo(objX,objY); ctx.lineTo(wallX,sc.y); ctx.stroke();
-        }
+        npcs.forEach(function(npc) {
+          var color = "#d7c1a2";
+          var facing = npc.x < player.x ? 1 : -1;
+          if (npc.id === "shadow-keeper") color = "#d5a26a";
+          if (npc.id === "traveler") color = "#f7e7c5";
+          drawFigure(npc.x, npc.y, color, 1, facing);
+        });
 
-        if (currentScene===0||currentScene===1) {
-          drawPrisoner(52,232,"left",{alpha:0.92}); drawPrisoner(52,286,"left",{alpha:0.92}); drawPrisoner(52,340,"left",{alpha:0.92});
-        } else if (currentScene===2) {
-          drawPrisoner(52,238,"left",{alpha:0.92}); drawPrisoner(52,332,"left",{alpha:0.92});
-          drawPrisoner(190,286,"right",{alpha:1,isFreed:true,showChains:false});
-        } else if (currentScene===3) {
-          drawPrisoner(52,238,"left",{alpha:0.88}); drawPrisoner(52,332,"left",{alpha:0.88});
-          drawPrisoner(754,238,"right",{alpha:1,isFreed:true,showChains:false});
-        } else {
-          drawPrisoner(52,238,"left",{alpha:0.88}); drawPrisoner(52,332,"left",{alpha:0.88});
-          drawPrisoner(204,286,"left",{alpha:1,isFreed:true,showChains:false});
-          drawSpeech("There is more than shadows.", 232, 120);
-        }
+        drawFigure(player.x, player.y, "#f8e6c7", 1.1, player.facing);
 
-        drawLabel("shadow wall",18,H-20,"rgba(248,232,204,0.42)","left");
-        drawLabel("fire",fireX-12,fireY+30,"rgba(255,205,136,0.72)","left");
-        drawLabel(OBJECTS[currentObject].toLowerCase(),objX-12,objY+54,"rgba(234,215,174,0.74)","left");
-        drawLabel(currentScene>=3?"outside world":"cave exit",842,120,currentScene>=3?"rgba(255,235,176,0.82)":"rgba(255,221,170,0.32)","center");
-        if (currentScene===2) drawLabel("first painful look",246,206,"rgba(248,230,199,0.78)","left");
+        ctx.fillStyle = "rgba(255, 238, 200, 0.65)";
+        ctx.font = "600 12px system-ui, sans-serif";
+        ctx.fillText("exit", exitX + 12, 140);
       }
 
-      sceneButtons.forEach(function(b) {
-        b.addEventListener("click", function() {
-          currentScene = Number(b.getAttribute("data-scene"));
-          setActive(sceneButtons,"data-scene",currentScene); drawScene();
-        });
+      function update() {
+        var dx = 0;
+        var dy = 0;
+        if (keys.ArrowLeft || keys.a || keys.A) dx -= 1;
+        if (keys.ArrowRight || keys.d || keys.D) dx += 1;
+        if (keys.ArrowUp || keys.w || keys.W) dy -= 1;
+        if (keys.ArrowDown || keys.s || keys.S) dy += 1;
+
+        if (dx || dy) {
+          var len = Math.sqrt(dx * dx + dy * dy) || 1;
+          dx = dx / len;
+          dy = dy / len;
+          player.x = clamp(player.x + dx * player.speed, bounds.minX, bounds.maxX);
+          player.y = clamp(player.y + dy * player.speed, bounds.minY, bounds.maxY);
+          if (dx) player.facing = dx > 0 ? 1 : -1;
+        }
+
+        if (player.x >= exitX + 12) hasSeenOutside = true;
+
+        var zone = zoneForX(player.x);
+        updateHUD(zone);
+        drawScene();
+        requestAnimationFrame(update);
+      }
+
+      function resetPlayer() {
+        player.x = 160;
+        player.y = 312;
+        player.facing = 1;
+        hasSeenOutside = false;
+        hideDialogue();
+        lastZoneKey = "";
+      }
+
+      window.addEventListener("keydown", function(e) {
+        if (isTypingTarget(e.target)) return;
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.key) !== -1) {
+          e.preventDefault();
+        }
+        keys[e.key] = true;
       });
-      objectButtons.forEach(function(b) {
-        b.addEventListener("click", function() {
-          currentObject = Number(b.getAttribute("data-object"));
-          setActive(objectButtons,"data-object",currentObject); drawScene();
-        });
+      window.addEventListener("keyup", function(e) {
+        keys[e.key] = false;
       });
-      drawScene();
+
+      canvas.addEventListener("click", function(e) {
+        var rect = canvas.getBoundingClientRect();
+        var scaleX = canvas.width / rect.width;
+        var scaleY = canvas.height / rect.height;
+        var mx = (e.clientX - rect.left) * scaleX;
+        var my = (e.clientY - rect.top) * scaleY;
+        var clicked = null;
+        for (var i = 0; i < npcs.length; i++) {
+          var npc = npcs[i];
+          var dx = mx - npc.x;
+          var dy = my - npc.y;
+          if (Math.sqrt(dx * dx + dy * dy) <= npc.r + 8) {
+            clicked = npc;
+            break;
+          }
+        }
+        if (clicked) showDialogue(clicked);
+        else hideDialogue();
+      });
+
+      if (resetBtn) {
+        resetBtn.addEventListener("click", function() {
+          resetPlayer();
+        });
+      }
+
+      resetPlayer();
+      update();
     })();
 
     /* ── Discussion Tabs ── */
