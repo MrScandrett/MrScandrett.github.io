@@ -527,537 +527,509 @@
     .cave-footer { text-align: center; padding: 1rem 1rem 3rem; color: #8d785f; font-size: 0.8rem; }
     .cave-footer a { color: #efbb72; text-decoration: none; }
     .cave-footer a:hover { color: #ffe7c5; }
+
+    /* ═══ SINGLE-VIEWPORT OVERHAUL ═══════════════════════════ */
+
+    .ll-viewport {
+      --ll-panel-bg:      rgba(20, 15, 12, 0.97);
+      --ll-panel-border:  rgba(214, 180, 120, 0.15);
+      --ll-tab-color:     rgba(200, 183, 159, 0.55);
+      --ll-tab-active-bg: rgba(230, 166, 77, 0.15);
+      --ll-tab-active:    #efbb72;
+      --ll-toggle-bg:     rgba(20, 15, 12, 0.97);
+      --ll-panel-w:       340px;
+    }
+
+    /* Sim area: flex column so canvas fills height */
+    .cave-sim-area {
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(600px 400px at 30% 20%, rgba(230,166,77,0.06), transparent),
+        linear-gradient(180deg, #17110e, #0a0807);
+    }
+
+    /* Compact header replacing the big hero */
+    .cave-sim-header {
+      flex-shrink: 0;
+      padding: 0.45rem 1rem 0.35rem;
+      text-align: center;
+      border-bottom: 1px solid rgba(214,180,120,0.1);
+    }
+    .cave-sim-header h1 {
+      margin: 0; font-size: 0.95rem; font-weight: 800;
+      color: #fff5e6; letter-spacing: -0.02em;
+    }
+    .cave-sim-header p {
+      margin: 0.1rem 0 0; font-size: 0.74rem; color: var(--cave-dim);
+    }
+
+    /* Canvas fills remaining viewport height */
+    .cave-sim-area #cave-canvas-wrap {
+      flex: 1;
+      min-height: 200px;
+      height: auto;
+      border-radius: 0;
+      border: none;
+      border-bottom: 1px solid rgba(230,166,77,0.1);
+    }
+
+    /* Caption + dialogue flush at bottom of canvas */
+    .cave-sim-area .cave-caption {
+      flex-shrink: 0; margin: 0; border-radius: 0;
+      padding: 0.4rem 0.8rem; border: none;
+      border-bottom: 1px solid rgba(255,214,140,0.1);
+      font-size: 0.8rem;
+    }
+    .cave-sim-area .cave-dialogue {
+      flex-shrink: 0; margin: 0; border-radius: 0;
+      border: none; border-bottom: 1px solid rgba(127,176,163,0.15);
+      padding: 0.45rem 0.8rem;
+    }
+
+    /* Zone info readouts — compact strip */
+    .cave-sim-area .cave-info-grid {
+      flex-shrink: 0; margin: 0;
+      padding: 0.35rem 0.5rem; gap: 0.4rem;
+    }
+    @media (max-width: 680px) {
+      .cave-sim-area .cave-info-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .cave-sim-area .cave-info-card { padding: 0.55rem 0.65rem; border-radius: 10px; }
+    .cave-sim-area .cave-info-card span { font-size: 0.6rem; margin-bottom: 0.15rem; }
+    .cave-sim-area .cave-info-card p { font-size: 0.75rem; line-height: 1.45; }
+
+    /* Panel content: force single-column grids */
+    .ll-panel-body .cave-story-grid,
+    .ll-panel-body .cave-vocab-grid,
+    .ll-panel-body .cave-connection-grid,
+    .ll-panel-body .cave-discuss-grid { grid-template-columns: 1fr; gap: 0.55rem; }
+    .ll-panel-body .cave-two-col { grid-template-columns: 1fr; gap: 0.7rem; }
+    .ll-panel-body .cave-hero { grid-template-columns: 1fr; }
+    .ll-panel-body .cave-info-grid { grid-template-columns: 1fr; }
+
+    /* Compact cards inside panel */
+    .ll-panel-body .cave-card { border-radius: 14px; box-shadow: none; margin-bottom: 0.6rem; }
+    .ll-panel-body .cave-card-body { padding: 0.8rem 0.85rem; }
+    .ll-panel-body .cave-section-head { font-size: 1rem; margin-bottom: 0.25rem; }
+    .ll-panel-body .cave-section-sub { font-size: 0.8rem; margin-bottom: 0.7rem; }
+    .ll-panel-body .cave-closing { border-radius: 14px; padding: 0.9rem; }
+    .ll-panel-body .cave-closing h2 { font-size: 0.95rem; }
+    .ll-panel-body .cave-closing p { font-size: 0.8rem; }
+    .ll-panel-body .cave-mini-card { padding: 0.7rem; }
+    .ll-panel-body .cave-note { padding: 0.7rem 0.8rem; }
+
+    /* Explore button (inline play) */
+    .cave-explore-btn {
+      border: 1px solid rgba(230,166,77,0.35);
+      background: rgba(230,166,77,0.15);
+      color: #fff3de; border-radius: 10px;
+      padding: 0.5rem 0.8rem; font: inherit;
+      font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; width: 100%;
+      margin-bottom: 0.45rem;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .cave-explore-btn:hover { background: rgba(230,166,77,0.25); border-color: rgba(230,166,77,0.5); }
+    .cave-explore-btn.active { background: rgba(230,166,77,0.35); border-color: rgba(230,166,77,0.6); color: #fff; }
+    .cave-explore-btn.active::after { content: " (Press Esc to stop)"; font-weight: 400; opacity: 0.65; }
+
+    #cave-canvas:focus { outline: 2px solid var(--cave-accent); outline-offset: -2px; }
+
+    /* Panel action row */
+    .cave-action-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0.35rem; margin-bottom: 0.45rem;
+    }
+    .cave-action-btn {
+      border: 1px solid rgba(255,233,204,0.12);
+      background: rgba(255,247,238,0.03);
+      color: var(--cave-muted); border-radius: 10px;
+      padding: 0.45rem 0.5rem; font: inherit;
+      font-size: 0.72rem; font-weight: 700;
+      cursor: pointer; text-align: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .cave-action-btn:hover { border-color: rgba(230,166,77,0.3); color: #f9ead4; }
+
+    /* Key reference in controls panel */
+    .cave-ctrl-keys {
+      display: flex; flex-wrap: wrap; gap: 0.35rem;
+      margin-bottom: 0.5rem;
+    }
+    .cave-ctrl-key {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      padding: 0.25rem 0.5rem; border-radius: 7px;
+      border: 1px solid rgba(214,180,120,0.15);
+      background: rgba(255,247,238,0.03);
+      color: var(--cave-muted); font-size: 0.7rem; font-weight: 600;
+    }
+    .cave-ctrl-key kbd { font-family: inherit; font-weight: 800; color: #f1d7ae; }
+
+    /* Lesson pane section dividers */
+    .cave-lesson-divider {
+      border: none; border-top: 1px solid rgba(214,180,120,0.1);
+      margin: 0.9rem 0;
+    }
+
+    /* Scene readout in controls pane */
+    .cave-scene-readout { margin-bottom: 0.6rem; }
+    .cave-scene-readout h3 { margin: 0 0 0.15rem; font-size: 0.9rem; font-weight: 800; color: #fff2de; }
+    .cave-scene-readout p { margin: 0; color: var(--cave-muted); font-size: 0.78rem; line-height: 1.5; }
   </style>
 </head>
 <body>
-  <div class="ll-viewport">
-    <nav class="cave-topbar ll-topbar" aria-label="Lesson navigation">
-      <div class="cave-topbar-inner">
-        <a href="../steam-lessons.html">← STEAM Lessons</a>
-        <span class="cave-topbar-title">Plato's Allegory of the Cave</span>
-        <a href="../steam-lessons.html#module-systems">Systems &amp; Society</a>
+<div class="ll-viewport ll-dark">
+
+  <nav class="cave-topbar ll-topbar" aria-label="Lesson navigation">
+    <div class="cave-topbar-inner">
+      <a href="../steam-lessons.html">← STEAM Lessons</a>
+      <span class="cave-topbar-title">Plato's Allegory of the Cave</span>
+      <a href="../steam-lessons.html#module-systems">Systems &amp; Society</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage">
+
+    <!-- ══ SIM: 3D Cave canvas fills viewport ══ -->
+    <div class="ll-sim cave-sim-area">
+
+      <div class="cave-sim-header">
+        <h1>Plato's Allegory of the Cave</h1>
+        <p>Walk through the cave as the freed prisoner. Discover what the shadows hide.</p>
       </div>
-    </nav>
 
-    <div class="ll-stage">
-      <div class="ll-sim">
-        <main class="cave-shell grade-all" id="main-shell">
-
-    <!-- ── HERO ── -->
-    <section class="cave-hero">
-      <article class="cave-card">
-        <div class="cave-card-body">
-          <p class="cave-eyebrow">Systems &amp; Society · Lesson 02</p>
-          <h1 class="cave-h1">Plato's <em>Allegory</em> of the Cave</h1>
-          <p class="cave-lead">
-            One simple question drives this lesson: if all you ever saw were shadows, how would you know there was more? Plato uses that image to teach us to question appearances, seek truth, and practice discernment — skills the Bible calls us to as well.
-          </p>
-          <div class="cave-tag-row">
-            <span class="cave-tag">around 380 BCE</span>
-            <span class="cave-tag">K–12</span>
-            <span class="cave-tag">perception vs. reality</span>
-            <span class="cave-tag">discernment</span>
+      <div id="cave-sim-slot">
+        <div id="cave-sim-stage">
+          <div id="cave-canvas-wrap">
+            <canvas id="cave-canvas" width="940" height="420" tabindex="0"></canvas>
           </div>
-          <div class="cave-big-idea">
+
+          <p class="cave-caption" id="cave-caption">I have always faced the wall. Turning around feels like tearing away a habit.</p>
+
+          <div class="cave-dialogue" id="cave-dialogue" aria-live="polite">
+            <span class="cave-dialogue-name" id="cave-dialogue-name">Prisoner</span>
+            <p class="cave-dialogue-text" id="cave-dialogue-text">"Why would you leave? The shadows are all we know."</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cave-info-grid">
+        <article class="cave-info-card">
+          <span>Where You Are</span>
+          <p id="scene-sees">Only moving shadows on the wall.</p>
+        </article>
+        <article class="cave-info-card">
+          <span>What You Realize</span>
+          <p id="scene-reality">There is a fire and a real object behind the prisoners, but they cannot turn to see it.</p>
+        </article>
+        <article class="cave-info-card">
+          <span>Main Lesson</span>
+          <p id="scene-lesson">A small view can feel complete when it is all you have ever known.</p>
+        </article>
+        <article class="cave-info-card">
+          <span>Scripture Echo</span>
+          <p id="scene-scripture">Proverbs 14:12 — "There is a way that appears to be right, but in the end it leads to death."</p>
+        </article>
+      </div>
+
+    </div><!-- .ll-sim -->
+
+    <!-- ══ PANEL: 3-tab sidebar ══ -->
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="cave-controls">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cave-lesson">Lesson</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cave-activity">Activity</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+
+      <div class="ll-panel-body">
+
+        <!-- ── CONTROLS PANE ── -->
+        <div class="ll-pane ll-active" id="cave-controls">
+
+          <div class="cave-scene-readout">
+            <h3 id="scene-title">Facing the Wall</h3>
+            <p id="scene-sub">The shadows still feel like the whole story.</p>
+          </div>
+          <hr class="ll-hr">
+
+          <button class="cave-explore-btn" type="button" id="cave-explore">Start Exploring</button>
+
+          <div class="cave-action-row">
+            <button class="cave-action-btn" type="button" id="cave-play" aria-haspopup="dialog">Full Screen</button>
+            <button class="cave-action-btn" type="button" id="cave-reset">Reset</button>
+          </div>
+          <hr class="ll-hr">
+
+          <span class="ll-label">Controls</span>
+          <div class="cave-ctrl-keys">
+            <span class="cave-ctrl-key"><kbd>W A S D</kbd> Move</span>
+            <span class="cave-ctrl-key"><kbd>Click</kbd> Talk to characters</span>
+          </div>
+          <p style="margin:0 0 0.5rem; font-size:0.72rem; color:var(--cave-dim); line-height:1.5;">Reach the light outside, then return to check on the prisoners.</p>
+          <hr class="ll-hr">
+
+          <span class="ll-label">Grade Band</span>
+          <div class="cave-grade-bar" style="border:none; background:none; padding:0; border-radius:0; margin-bottom:0.4rem;">
+            <div class="cave-grade-btns">
+              <button class="cave-grade-btn active" data-band="all">All</button>
+              <button class="cave-grade-btn" data-band="k2">K–2</button>
+              <button class="cave-grade-btn" data-band="35">3–5</button>
+              <button class="cave-grade-btn" data-band="68">6–8</button>
+              <button class="cave-grade-btn" data-band="912">9–12</button>
+            </div>
+          </div>
+
+        </div><!-- #cave-controls -->
+
+        <!-- ── LESSON PANE ── -->
+        <div class="ll-pane" id="cave-lesson">
+          <div id="main-shell" class="grade-all">
+
+          <!-- Big Idea -->
+          <div class="cave-big-idea" style="margin-bottom:0.9rem">
             <p class="cave-big-idea-label">Big Idea</p>
             <p>People often mistake a limited view for the whole truth. Wise learners slow down, ask questions, and stay humble enough to change when they see more clearly.</p>
           </div>
-        </div>
-      </article>
 
-      <aside class="cave-card cave-lesson-map">
-        <div class="cave-card-body">
-          <div class="cave-map-box" style="margin-bottom:0.95rem">
-            <h2 class="cave-map-title">In One Sentence</h2>
-            <p class="cave-map-copy">The cave shows how easy it is to live by partial truth, and how hard — but necessary — it is to move toward what is real.</p>
-          </div>
-          <div class="cave-map-box">
-            <h2 class="cave-map-title">How To Use This Lesson</h2>
-            <div class="cave-map-list">
-              <div class="cave-map-step">
-                <div class="cave-map-num">1</div>
-                <div>
-                  <strong>Pick your grade band</strong>
-                  <span>Use the selector below to show content matched to your students.</span>
-                </div>
-              </div>
-              <div class="cave-map-step">
-                <div class="cave-map-num">2</div>
-                <div>
-                  <strong>Learn the story first</strong>
-                  <span>Understand the cave before jumping into bigger ideas.</span>
-                </div>
-              </div>
-              <div class="cave-map-step">
-                <div class="cave-map-num">3</div>
-                <div>
-                  <strong>Connect it to life</strong>
-                  <span>Discussion, reflection, and real-world examples tie it together.</span>
-                </div>
-              </div>
+          <!-- The Story -->
+          <h2 class="cave-section-head">The Cave in Plain English</h2>
+          <p class="cave-section-sub">Understand the story before any deeper meaning.</p>
+
+          <div data-grade="k2" style="margin-bottom:0.8rem">
+            <div class="cave-note">
+              <strong>Simple Version (K–2):</strong> Imagine people sitting in a dark room facing a wall. They can't turn around. A light behind them makes shadows on the wall. They think the shadows ARE real things. Then one person goes outside and sees the real world — trees, colors, sky. When they go back, nobody believes them. <strong>What if our picture of the world is missing something important?</strong>
             </div>
           </div>
-        </div>
-      </aside>
-    </section>
 
-    <!-- ── GRADE SELECTOR ── -->
-    <div class="cave-grade-bar">
-      <span class="cave-grade-label">Grade Band</span>
-      <div class="cave-grade-btns">
-        <button class="cave-grade-btn active" data-band="all">All Grades</button>
-        <button class="cave-grade-btn" data-band="k2">K–2</button>
-        <button class="cave-grade-btn" data-band="35">3–5</button>
-        <button class="cave-grade-btn" data-band="68">6–8</button>
-        <button class="cave-grade-btn" data-band="912">9–12</button>
-      </div>
-      <p class="cave-grade-hint">Selecting a grade band shows content written for that level.</p>
-    </div>
+          <div class="cave-story-grid">
+            <article class="cave-story-card">
+              <div class="cave-story-num">1</div>
+              <h3>People are chained in a cave</h3>
+              <p>They have faced the wall their whole lives. They cannot turn around.</p>
+            </article>
+            <article class="cave-story-card">
+              <div class="cave-story-num">2</div>
+              <h3>They watch shadows</h3>
+              <p>A fire casts shadows on the wall. They treat the shadows as reality.</p>
+            </article>
+            <article class="cave-story-card">
+              <div class="cave-story-num">3</div>
+              <h3>One prisoner is freed</h3>
+              <p>Seeing real objects hurts and confuses the prisoner. Truth is not immediately comfortable.</p>
+            </article>
+            <article class="cave-story-card">
+              <div class="cave-story-num">4</div>
+              <h3>The prisoner goes outside</h3>
+              <p>The world beyond the cave reveals the shadows were only partial copies.</p>
+            </article>
+            <article class="cave-story-card">
+              <div class="cave-story-num">5</div>
+              <h3>The prisoner returns</h3>
+              <p>The others resist — familiar shadows feel safer than a bigger truth.</p>
+            </article>
+          </div>
 
-    <!-- ── STORY FIRST ── -->
-    <section class="cave-card">
-      <div class="cave-card-body">
-        <h2 class="cave-section-head">The Cave in Plain English</h2>
-        <p class="cave-section-sub">Start here. Understand the story before any vocabulary or deeper meaning.</p>
+          <hr class="cave-lesson-divider">
 
-        <!-- K-2 simplified -->
-        <div data-grade="k2" style="margin-bottom:1.2rem">
-          <div class="cave-note">
-            <strong>Simple Version (K–2):</strong> Imagine people who have been sitting in a dark room their whole lives, facing a wall. They can't turn around. Behind them is a light, and it makes shadows on the wall. They think the shadows ARE real things — because shadows are all they've ever seen. Then one person gets to go outside and sees the real world for the first time. The sun hurts their eyes at first. But slowly they see trees, colors, and sky. When they go back to tell the others, nobody believes them. The end of the story asks: <strong>what if our whole picture of the world is missing something important?</strong>
-          </div>
-        </div>
-
-        <div class="cave-story-grid">
-          <article class="cave-story-card">
-            <div class="cave-story-num">1</div>
-            <h3>People are chained in a cave</h3>
-            <p>They have faced the wall their whole lives. They cannot turn around to see what is behind them.</p>
-          </article>
-          <article class="cave-story-card">
-            <div class="cave-story-num">2</div>
-            <h3>They watch shadows</h3>
-            <p>A fire behind them casts shadows on the wall. Because that is all they know, they treat the shadows as reality.</p>
-          </article>
-          <article class="cave-story-card">
-            <div class="cave-story-num">3</div>
-            <h3>One prisoner is freed</h3>
-            <p>At first, seeing the fire and the real objects hurts and confuses the prisoner. Truth is not immediately comfortable.</p>
-          </article>
-          <article class="cave-story-card">
-            <div class="cave-story-num">4</div>
-            <h3>The prisoner goes outside</h3>
-            <p>Eventually the prisoner sees the world beyond the cave and realizes the shadows were only partial copies.</p>
-          </article>
-          <article class="cave-story-card">
-            <div class="cave-story-num">5</div>
-            <h3>The prisoner returns</h3>
-            <p>The others resist the message because the familiar shadows feel safer than a bigger truth they do not yet understand.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── VOCABULARY HELPER (K-5) ── -->
-    <section class="cave-card" data-grade="k2" style="display:none">
-      <div class="cave-card-body">
-        <h2 class="cave-section-head">Word Helper</h2>
-        <p class="cave-section-sub">Here are some important words from today's lesson explained in simple language.</p>
-        <div class="cave-vocab-grid">
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">Allegory</p>
-            <p class="cave-vocab-def">A story that means something bigger than the story itself — like a parable.</p>
-          </div>
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">Shadow</p>
-            <p class="cave-vocab-def">In this story, a shadow means something that looks real but is only a copy of the truth.</p>
-          </div>
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">Prisoner</p>
-            <p class="cave-vocab-def">Someone who is stuck and cannot move freely. In the story, the prisoners are stuck facing the wall.</p>
-          </div>
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">Truth</p>
-            <p class="cave-vocab-def">What is actually real and right — not just what looks real at first glance.</p>
-          </div>
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">Discernment</p>
-            <p class="cave-vocab-def">The ability to tell what is true from what is false. The Bible says God can help us with this.</p>
-          </div>
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">Philosopher</p>
-            <p class="cave-vocab-def">Someone who thinks very deeply about big questions like "What is real?" and "What is good?"</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="cave-card" data-grade="35" style="display:none">
-      <div class="cave-card-body">
-        <h2 class="cave-section-head">Key Words to Know</h2>
-        <div class="cave-vocab-grid">
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">Allegory</p>
-            <p class="cave-vocab-def">A story where every detail stands for something bigger — like Plato's cave standing for human knowledge.</p>
-          </div>
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">Perception</p>
-            <p class="cave-vocab-def">What your senses tell you — what you see, hear, feel. Plato argues our perceptions can mislead us.</p>
-          </div>
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">Philosopher</p>
-            <p class="cave-vocab-def">Someone who pursues wisdom through deep thinking and questioning assumptions.</p>
-          </div>
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">Discernment</p>
-            <p class="cave-vocab-def">Judging carefully between what is true and what is false. A key Christian virtue (1 Thess. 5:21).</p>
-          </div>
-          <div class="cave-vocab-item">
-            <p class="cave-vocab-word">The Forms</p>
-            <p class="cave-vocab-def">Plato's word for perfect, eternal truths that exist beyond the physical world — like a perfect idea of "justice" or "beauty."</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── INTERACTIVE CAVE WALKTHROUGH ── -->
-    <section class="cave-card">
-      <div class="cave-card-body">
-        <h2 class="cave-section-head">Playable Cave Simulator</h2>
-        <p class="cave-section-sub">Play as the prisoner who chooses to turn around. Walk toward the light, listen to others, and notice the inner thoughts that surface along the way.</p>
-
-        <div class="cave-sim-top">
-          <div class="cave-sim-groups">
-            <div class="cave-sim-group">
-              <span class="cave-sim-label">Controls</span>
-              <div class="cave-pill-row">
-                <span class="cave-pill">WASD / Arrow keys</span>
-                <span class="cave-pill">Click characters to talk</span>
-              </div>
+          <!-- Vocabulary K-2 -->
+          <section data-grade="k2" style="display:none">
+            <h2 class="cave-section-head">Word Helper</h2>
+            <div class="cave-vocab-grid">
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Allegory</p><p class="cave-vocab-def">A story that means something bigger — like a parable.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Shadow</p><p class="cave-vocab-def">Something that looks real but is only a copy of the truth.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Prisoner</p><p class="cave-vocab-def">Someone stuck and unable to move freely.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Truth</p><p class="cave-vocab-def">What is actually real — not just what looks real at first.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Discernment</p><p class="cave-vocab-def">Telling what is true from what is false. The Bible says God helps us with this.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Philosopher</p><p class="cave-vocab-def">Someone who thinks deeply about big questions like "What is real?"</p></div>
             </div>
-            <div class="cave-sim-group">
-              <span class="cave-sim-label">Goal</span>
-              <p class="cave-sim-goal">Reach the light outside, then return to check on the prisoners.</p>
+            <hr class="cave-lesson-divider">
+          </section>
+
+          <!-- Vocabulary 3-5 -->
+          <section data-grade="35" style="display:none">
+            <h2 class="cave-section-head">Key Words to Know</h2>
+            <div class="cave-vocab-grid">
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Allegory</p><p class="cave-vocab-def">A story where every detail stands for something bigger.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Perception</p><p class="cave-vocab-def">What your senses tell you. Plato argues our perceptions can mislead us.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Philosopher</p><p class="cave-vocab-def">Someone who pursues wisdom through deep thinking.</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">Discernment</p><p class="cave-vocab-def">Judging carefully between true and false. A key Christian virtue (1 Thess. 5:21).</p></div>
+              <div class="cave-vocab-item"><p class="cave-vocab-word">The Forms</p><p class="cave-vocab-def">Plato's word for perfect, eternal truths beyond the physical world.</p></div>
             </div>
-            <div class="cave-sim-group">
-              <span class="cave-sim-label">Actions</span>
-              <div class="cave-btn-row">
-                <button class="cave-choice-btn" type="button" id="cave-reset">Reset position</button>
-                <button class="cave-choice-btn cave-play-btn" type="button" id="cave-play" aria-haspopup="dialog">Play full screen</button>
-              </div>
-            </div>
-          </div>
-          <div class="cave-scene-copy">
-            <h3 id="scene-title">Leaving the Cave</h3>
-            <p id="scene-sub">Move toward the light and notice how your understanding shifts as you go.</p>
-          </div>
-        </div>
+            <hr class="cave-lesson-divider">
+          </section>
 
-        <div id="cave-sim-slot">
-          <div id="cave-sim-stage">
-            <div id="cave-canvas-wrap">
-              <canvas id="cave-canvas" width="940" height="420"></canvas>
-            </div>
-
-            <p class="cave-caption" id="cave-caption">I have always faced the wall. Turning around feels like tearing away a habit.</p>
-
-            <div class="cave-dialogue" id="cave-dialogue" aria-live="polite">
-              <span class="cave-dialogue-name" id="cave-dialogue-name">Prisoner</span>
-              <p class="cave-dialogue-text" id="cave-dialogue-text">“Why would you leave? The shadows are all we know.”</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="cave-info-grid">
-          <article class="cave-info-card">
-            <span>Where You Are</span>
-            <p id="scene-sees">Only moving shadows on the wall.</p>
-          </article>
-          <article class="cave-info-card">
-            <span>What You Realize</span>
-            <p id="scene-reality">There is a fire and a real object behind the prisoners, but they cannot turn to see it.</p>
-          </article>
-          <article class="cave-info-card">
-            <span>Main Lesson</span>
-            <p id="scene-lesson">A small view can feel complete when it is all you have ever known.</p>
-          </article>
-          <article class="cave-info-card">
-            <span>Scripture Echo</span>
-            <p id="scene-scripture">Proverbs 14:12 — "There is a way that appears to be right, but in the end it leads to death."</p>
-          </article>
-        </div>
-
-        <div class="cave-sim-overlay" id="cave-sim-overlay" aria-hidden="true" role="dialog" aria-modal="true">
-          <div class="cave-sim-overlay-inner">
-            <div class="cave-sim-overlay-top">
-              <span>Playable Cave Simulator</span>
-              <button class="cave-sim-overlay-close" type="button" id="cave-sim-close">Exit</button>
-            </div>
-            <div class="cave-sim-overlay-body" id="cave-sim-overlay-body"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── WHAT PLATO IS SAYING + CHRISTIAN REFLECTION ── -->
-    <section class="cave-two-col">
-      <article class="cave-card">
-        <div class="cave-card-body">
+          <!-- What Plato Is Saying -->
           <h2 class="cave-section-head">What Plato Is Saying</h2>
-          <p class="cave-section-sub">The allegory is about how human beings know what is true — and why false or partial pictures can feel completely convincing.</p>
-          <div class="cave-stack">
-            <div class="cave-mini-card">
-              <h3>The cave = a world of assumptions</h3>
-              <p>It stands for the way people can live inside a narrow picture of reality without noticing it. The cave is not a lie — it just isn't the full story.</p>
-            </div>
-            <div class="cave-mini-card">
-              <h3>The shadows = appearances and half-truths</h3>
-              <p>The shadows are not nothing, but they are not the whole truth either. Something can be partly right and still dangerously incomplete.</p>
-            </div>
-            <div class="cave-mini-card">
-              <h3>The painful turn = education and growth</h3>
-              <p>Plato shows that learning is uncomfortable because it forces old beliefs to be tested. Truth rarely feels easy at first.</p>
-            </div>
-            <div class="cave-mini-card">
-              <h3>The return = the cost of truth-telling</h3>
-              <p>People often resist correction. Comfort, pride, and familiarity can make a false picture feel safer than an unfamiliar truth.</p>
-            </div>
+          <div class="cave-stack" style="gap:0.5rem; margin-bottom:0.8rem">
+            <div class="cave-mini-card"><h3>The cave = a world of assumptions</h3><p>People can live inside a narrow picture of reality without noticing. Not a lie — just not the full story.</p></div>
+            <div class="cave-mini-card"><h3>The shadows = appearances</h3><p>The shadows are not nothing, but not the whole truth. Something can be partly right and dangerously incomplete.</p></div>
+            <div class="cave-mini-card"><h3>The painful turn = growth</h3><p>Learning is uncomfortable because it forces old beliefs to be tested. Truth rarely feels easy at first.</p></div>
+            <div class="cave-mini-card"><h3>The return = truth-telling's cost</h3><p>Comfort, pride, and familiarity can make a false picture feel safer than an unfamiliar truth.</p></div>
           </div>
-          <div class="cave-note" style="margin-top:1rem">
-            <strong>Helpful nuance:</strong> The point is not "never trust your eyes." The point is "do not stop at first impressions." Wise students compare what they see with evidence, reason, and — for Christians — Scripture.
-          </div>
-        </div>
-      </article>
+          <div class="cave-note"><strong>Nuance:</strong> The point is not "never trust your eyes" — it's "do not stop at first impressions."</div>
 
-      <article class="cave-card">
-        <div class="cave-card-body">
+          <hr class="cave-lesson-divider">
+
+          <!-- Faith Perspective -->
           <h2 class="cave-section-head">A Faith Perspective</h2>
-          <p class="cave-section-sub">Plato wrote from human reason alone — but his questions connect naturally to things Christians already care about.</p>
+          <div class="cave-stack" style="gap:0.5rem; margin-bottom:0.8rem">
+            <div class="cave-mini-card"><h3>Light came into the world</h3><p>John 3:19 — "Light has come into the world, and people loved darkness rather than light." The prisoners prefer their cave for the same reason.</p></div>
+            <div class="cave-mini-card"><h3>Truth is worth chasing</h3><p>Proverbs 2:3–5 — "call out for insight and raise your voice for understanding." Active, not passive.</p></div>
+            <div class="cave-mini-card"><h3>Not every picture is complete</h3><p>1 Thessalonians 5:21 — "test everything; hold fast what is good." Compare what you see with what is actually true.</p></div>
+            <div class="cave-mini-card"><h3>Learning takes humility</h3><p>Even a confident person can be looking at a shadow. That's a reason to stay curious and teachable.</p></div>
+          </div>
+          <div class="cave-note"><strong>A good rule:</strong> Plato is a useful thinking partner, not a theologian. Use his story to sharpen your questions.</div>
 
-          <div class="cave-stack">
-            <div class="cave-mini-card">
-              <h3>Truth is worth chasing</h3>
-              <p>Plato insisted that people have a responsibility to seek reality rather than settle for comfortable shadows. Christians share that instinct — Proverbs 2:3–5 calls us to "call out for insight and raise your voice for understanding." The posture is the same: active, not passive.</p>
+          <hr class="cave-lesson-divider">
+
+          <!-- Modern Connections -->
+          <h2 class="cave-section-head">Where Students See "Caves" Today</h2>
+          <div class="cave-connection-grid" style="margin-bottom:0.8rem">
+            <article class="cave-connection"><h3>📱 Social media feeds</h3><p>A curated stream can feel like reality even when it is partial.</p></article>
+            <article class="cave-connection"><h3>💬 Rumors and gossip</h3><p>Hearing one side of a story is like seeing a shadow on the wall.</p></article>
+            <article class="cave-connection"><h3>📰 Headlines without context</h3><p>A headline shapes your reaction before you understand the details.</p></article>
+            <article class="cave-connection"><h3>📺 Advertising</h3><p>Ads show a polished image — not the full truth.</p></article>
+            <article class="cave-connection"><h3>🤔 Stereotypes</h3><p>Reducing people to one label is shadow-thinking (Genesis 1:27).</p></article>
+            <article class="cave-connection"><h3>🤖 AI answers</h3><p>AI can sound confident while being incomplete. Test, don't trust blindly.</p></article>
+          </div>
+
+          <hr class="cave-lesson-divider">
+
+          <!-- Closing Devotional -->
+          <div class="cave-closing">
+            <span class="cave-closing-icon">✝</span>
+            <h2>Closing Thought</h2>
+            <p>In 1604, the engraver Jan Saenredam placed John 3:19 above his depiction of Plato's cave: <em>"Light has come into the world, and people loved darkness rather than light."</em> He saw what Plato could not name.</p>
+            <p>Plato believed the hardest thing a person could do was turn around. Christians believe the light outside the cave is not impersonal truth but a <strong>Person who came looking for us</strong>.</p>
+            <p><strong>What am I willing to turn around from?</strong></p>
+          </div>
+
+          </div><!-- #main-shell -->
+        </div><!-- #cave-lesson -->
+
+        <!-- ── ACTIVITY PANE ── -->
+        <div class="ll-pane" id="cave-activity">
+
+          <!-- Discussion Questions -->
+          <h2 class="cave-section-head">Discussion Questions</h2>
+          <p class="cave-section-sub">Select the grade level that fits your class.</p>
+
+          <div class="cave-disc-tab-bar">
+            <button class="cave-disc-tab active" data-panel="disc-all">All</button>
+            <button class="cave-disc-tab" data-panel="disc-k2">K–2</button>
+            <button class="cave-disc-tab" data-panel="disc-35">3–5</button>
+            <button class="cave-disc-tab" data-panel="disc-68">6–8</button>
+            <button class="cave-disc-tab" data-panel="disc-912">9–12</button>
+          </div>
+
+          <div class="cave-disc-panel active" id="disc-all">
+            <div class="cave-discuss-grid">
+              <article class="cave-discuss"><h3>Comfort vs. truth</h3><p>Why do people sometimes prefer a comfortable lie over a harder truth?</p></article>
+              <article class="cave-discuss"><h3>Correction and humility</h3><p>How do you tell someone they may be seeing only a shadow — without sounding proud?</p></article>
+              <article class="cave-discuss"><h3>Christian discernment</h3><p>How can a Christian student test ideas, media, and peer pressure thoughtfully?</p></article>
             </div>
-            <div class="cave-mini-card">
-              <h3>Not every picture is complete</h3>
-              <p>1 Thessalonians 5:21 says "test everything; hold fast what is good." That is exactly the freed prisoner's approach — compare what you see with what is actually true, rather than trusting the first version you heard.</p>
+          </div>
+          <div class="cave-disc-panel" id="disc-k2">
+            <div class="cave-discuss-grid">
+              <article class="cave-discuss"><h3>What is a shadow?</h3><p>Can you think of a time something looked one way but turned out different?</p></article>
+              <article class="cave-discuss"><h3>Who do you trust?</h3><p>If someone told you something surprising, who would you ask to find out if it was true?</p></article>
+              <article class="cave-discuss"><h3>The light outside</h3><p>Can you think of a time learning something new felt uncomfortable at first?</p></article>
             </div>
-            <div class="cave-mini-card">
-              <h3>Learning takes humility</h3>
-              <p>The most important thing the cave teaches is that even a confident, comfortable person can be looking at a shadow. That is not a cause for anxiety — it is a reason to stay curious, teachable, and grounded in what you know to be true.</p>
+          </div>
+          <div class="cave-disc-panel" id="disc-35">
+            <div class="cave-discuss-grid">
+              <article class="cave-discuss"><h3>Rumors as shadows</h3><p>Have you ever believed a rumor that turned out wrong? How is it like a cave shadow?</p></article>
+              <article class="cave-discuss"><h3>Why resist truth?</h3><p>Why didn't the prisoners believe the freed one?</p></article>
+              <article class="cave-discuss"><h3>1 Thessalonians 5:21</h3><p>"Test everything; hold fast to what is good." What does that look like?</p></article>
+            </div>
+          </div>
+          <div class="cave-disc-panel" id="disc-68">
+            <div class="cave-discuss-grid">
+              <article class="cave-discuss"><h3>Social media as a cave</h3><p>How could a social media feed act like Plato's fire — showing curated shadows?</p></article>
+              <article class="cave-discuss"><h3>Romans 12:2</h3><p>"Do not be conformed to this world." What forces shape your thinking without you realizing?</p></article>
+              <article class="cave-discuss"><h3>The cost of honesty</h3><p>Is there a situation where telling the truth might come with a cost?</p></article>
+              <article class="cave-discuss"><h3>Seeking truth</h3><p>What habits help a person move toward truth rather than away from it?</p></article>
+            </div>
+          </div>
+          <div class="cave-disc-panel" id="disc-912">
+            <div class="cave-discuss-grid">
+              <article class="cave-discuss"><h3>The limits of perspective</h3><p>Where in your life are you most likely working from an incomplete picture?</p></article>
+              <article class="cave-discuss"><h3>Epistemic humility</h3><p>Which beliefs might be "shadows" — things that feel true but might be incomplete?</p></article>
+              <article class="cave-discuss"><h3>The philosopher-king problem</h3><p>Plato says only freed-prisoners should lead. What problems do you see with that?</p></article>
+              <article class="cave-discuss"><h3>Truth and courage</h3><p>What does the freed prisoner's rejection say about the social cost of uncomfortable truths?</p></article>
             </div>
           </div>
 
-          <div class="cave-note" style="margin-top:1rem">
-            <strong>A good rule:</strong> Plato is a useful thinking partner, not a theologian. Use his story to sharpen your questions. Then bring those questions somewhere solid.
+          <hr class="cave-lesson-divider">
+
+          <!-- Quiz -->
+          <h2 class="cave-section-head">Check Your Understanding</h2>
+
+          <p class="cave-quiz-q">1. Why do the prisoners trust the shadows?</p>
+          <div class="cave-quiz-options" id="q1-opts">
+            <button class="cave-quiz-opt" type="button" data-q="1" data-choice="a">A. The shadows are brighter than the sun</button>
+            <button class="cave-quiz-opt" type="button" data-q="1" data-choice="b">B. The shadows are all they have ever known</button>
+            <button class="cave-quiz-opt" type="button" data-q="1" data-choice="c">C. The prisoners enjoy pretending</button>
+            <button class="cave-quiz-opt" type="button" data-q="1" data-choice="d">D. Plato thinks shadows are evil</button>
           </div>
-        </div>
-      </article>
-    </section>
+          <div class="cave-quiz-feedback" id="q1-fb"></div>
+          <hr class="cave-quiz-divider" />
 
-    <!-- ── GRADE-BANDED DISCUSSION ── -->
-    <section class="cave-card">
-      <div class="cave-card-body">
-        <h2 class="cave-section-head">Discussion Questions</h2>
-        <p class="cave-section-sub">Questions are organized by grade band. Select the level that fits your class.</p>
-
-        <div class="cave-disc-tab-bar">
-          <button class="cave-disc-tab active" data-panel="disc-all">All Grades</button>
-          <button class="cave-disc-tab" data-panel="disc-k2">K–2</button>
-          <button class="cave-disc-tab" data-panel="disc-35">3–5</button>
-          <button class="cave-disc-tab" data-panel="disc-68">6–8</button>
-          <button class="cave-disc-tab" data-panel="disc-912">9–12</button>
-        </div>
-
-        <div class="cave-disc-panel active" id="disc-all">
-          <div class="cave-discuss-grid">
-            <article class="cave-discuss">
-              <h3>Comfort vs. truth</h3>
-              <p>Why do people sometimes prefer a comfortable lie or a shallow answer over a harder truth?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>Correction and humility</h3>
-              <p>What should it look like to tell someone they may be seeing only a shadow — without sounding proud or harsh?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>Christian discernment</h3>
-              <p>How can a Christian student test ideas, media, and peer pressure in a way that is both thoughtful and faithful?</p>
-            </article>
+          <p class="cave-quiz-q">2. What makes leaving the cave difficult?</p>
+          <div class="cave-quiz-options" id="q2-opts">
+            <button class="cave-quiz-opt" type="button" data-q="2" data-choice="a">A. The prisoner forgets how to think</button>
+            <button class="cave-quiz-opt" type="button" data-q="2" data-choice="b">B. Truth is uncomfortable; old beliefs must be challenged</button>
+            <button class="cave-quiz-opt" type="button" data-q="2" data-choice="c">C. The fire destroys the prisoner's eyesight</button>
+            <button class="cave-quiz-opt" type="button" data-q="2" data-choice="d">D. The other prisoners drag everyone back</button>
           </div>
-        </div>
+          <div class="cave-quiz-feedback" id="q2-fb"></div>
+          <hr class="cave-quiz-divider" />
 
-        <div class="cave-disc-panel" id="disc-k2">
-          <div class="cave-discuss-grid">
-            <article class="cave-discuss">
-              <h3>What is a shadow?</h3>
-              <p>Can you think of a time something looked one way but turned out to be different? How did you find out the truth?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>Who do you trust?</h3>
-              <p>If someone told you something new and surprising, who would you ask to find out if it was really true?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>The light outside</h3>
-              <p>The prisoner's eyes hurt when they first stepped into sunlight. Can you think of a time learning something new felt uncomfortable at first?</p>
-            </article>
+          <p class="cave-quiz-q">3. Which response best shows discernment?</p>
+          <div class="cave-quiz-options" id="q3-opts">
+            <button class="cave-quiz-opt" type="button" data-q="3" data-choice="a">A. Believe the first thing matching your opinion</button>
+            <button class="cave-quiz-opt" type="button" data-q="3" data-choice="b">B. Ignore all outside voices and trust only yourself</button>
+            <button class="cave-quiz-opt" type="button" data-q="3" data-choice="c">C. Test what you hear, compare sources, stay humble</button>
+            <button class="cave-quiz-opt" type="button" data-q="3" data-choice="d">D. Reject hard ideas because truth should feel easy</button>
           </div>
-        </div>
+          <div class="cave-quiz-feedback" id="q3-fb"></div>
+          <hr class="cave-quiz-divider" />
 
-        <div class="cave-disc-panel" id="disc-35">
-          <div class="cave-discuss-grid">
-            <article class="cave-discuss">
-              <h3>Rumors as shadows</h3>
-              <p>Have you ever believed a rumor that turned out to be wrong? How is a rumor like a shadow on a cave wall?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>Why resist the truth?</h3>
-              <p>Why do you think the other prisoners didn't believe the freed prisoner? Have you ever not believed someone who was trying to help you?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>1 Thessalonians 5:21</h3>
-              <p>"Test everything; hold fast to what is good." What does it look like to "test" an idea before you believe it?</p>
-            </article>
-          </div>
-        </div>
+          <p class="cave-quiz-q">4. Reflection</p>
+          <p style="margin:0 0 0.6rem; font-size:0.82rem; color:var(--cave-muted); line-height:1.5;">Name one "cave" in your life or culture. What shadows does it show? What is one step toward truth?</p>
+          <textarea id="reflect-box" class="cave-reflect-textarea" placeholder="Example: A possible cave is ... The shadows it shows are ... One step toward truth would be ..."></textarea>
+          <p class="cave-reflect-note">Your writing stays on this device only. Nothing is submitted.</p>
 
-        <div class="cave-disc-panel" id="disc-68">
-          <div class="cave-discuss-grid">
-            <article class="cave-discuss">
-              <h3>Social media as a cave</h3>
-              <p>In what ways could a social media feed act like the fire in Plato's cave — showing you a curated set of shadows instead of the full picture?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>Romans 12:2</h3>
-              <p>"Do not be conformed to this world." What forces in your life or culture are most likely to shape your thinking without you realizing it?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>The cost of honesty</h3>
-              <p>The freed prisoner faced rejection when they returned. Is there a situation in your life where telling the truth might come with a cost?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>What does "seeking truth" actually look like?</h3>
-              <p>What habits or practices — spiritual, intellectual, relational — help a person move toward truth rather than away from it?</p>
-            </article>
-          </div>
-        </div>
+        </div><!-- #cave-activity -->
 
-        <div class="cave-disc-panel" id="disc-912">
-          <div class="cave-discuss-grid">
-            <article class="cave-discuss">
-              <h3>The limits of perspective</h3>
-              <p>Plato argues that even intelligent, sincere people can be deeply wrong about reality if their information is limited. Where in your own life are you most likely to be working from an incomplete picture?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>Epistemic humility</h3>
-              <p>Which of your current beliefs might be "shadows" — things that feel obviously true but might be incomplete? How would you even know, and what would it take to find out?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>The philosopher-king problem</h3>
-              <p>Plato concludes that only freed-prisoners (philosophers) should lead society — they've seen reality. What problems do you see with that? Who decides who has actually "seen" more?</p>
-            </article>
-            <article class="cave-discuss">
-              <h3>Truth and courage</h3>
-              <p>The freed prisoner returns to the cave and is rejected. What does that say about the social cost of telling uncomfortable truths? When is it worth that cost — and how do you do it well?</p>
-            </article>
-          </div>
-        </div>
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+  <!-- Fullscreen overlay (fixed positioning, works outside layout flow) -->
+  <div class="cave-sim-overlay" id="cave-sim-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="cave-sim-overlay-inner">
+      <div class="cave-sim-overlay-top">
+        <span>Playable Cave Simulator</span>
+        <button class="cave-sim-overlay-close" type="button" id="cave-sim-close">Exit</button>
       </div>
-    </section>
-
-    <!-- ── MODERN CONNECTIONS ── -->
-    <section class="cave-card">
-      <div class="cave-card-body">
-        <h2 class="cave-section-head">Where Students See "Caves" Today</h2>
-        <p class="cave-section-sub">The lesson becomes powerful when students can name modern caves around them. These examples work across grade levels, just at different depths.</p>
-        <div class="cave-connection-grid">
-          <article class="cave-connection">
-            <h3>📱 Social media feeds</h3>
-            <p>A feed shows selected clips, not the whole person or the whole story. A curated stream can feel like reality even when it is partial.</p>
-          </article>
-          <article class="cave-connection">
-            <h3>💬 Rumors and gossip</h3>
-            <p>Hearing one side of a story is like seeing a shadow on the wall. You may know something happened, but not what actually happened.</p>
-          </article>
-          <article class="cave-connection">
-            <h3>📰 Headlines without context</h3>
-            <p>A headline can shape your reaction before you understand the details. Students need to ask what is missing, not just what is loud.</p>
-          </article>
-          <article class="cave-connection">
-            <h3>📺 Advertising</h3>
-            <p>Ads show a polished image — not the full truth about a product or a lifestyle. Wanting something does not make the image real.</p>
-          </article>
-          <article class="cave-connection">
-            <h3>🤔 Stereotypes</h3>
-            <p>Reducing people to one label is shadow-thinking. It mistakes a shallow picture for the whole person — who is made in God's image (Genesis 1:27).</p>
-          </article>
-          <article class="cave-connection">
-            <h3>🤖 AI answers</h3>
-            <p>AI can sound confident while still being incomplete or wrong. Students should treat AI as a tool to test, not an authority to trust blindly.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── CHECK YOUR UNDERSTANDING ── -->
-    <section class="cave-card">
-      <div class="cave-card-body">
-        <h2 class="cave-section-head">Check Your Understanding</h2>
-        <p class="cave-section-sub">Answer the questions, then read the explanation. The feedback is written to teach, not just score.</p>
-
-        <p class="cave-quiz-q">1. Why do the prisoners trust the shadows?</p>
-        <div class="cave-quiz-options" id="q1-opts">
-          <button class="cave-quiz-opt" type="button" data-q="1" data-choice="a">A. Because the shadows are brighter than the sun</button>
-          <button class="cave-quiz-opt" type="button" data-q="1" data-choice="b">B. Because the shadows are all they have ever known</button>
-          <button class="cave-quiz-opt" type="button" data-q="1" data-choice="c">C. Because the prisoners enjoy pretending</button>
-          <button class="cave-quiz-opt" type="button" data-q="1" data-choice="d">D. Because Plato thinks shadows are evil</button>
-        </div>
-        <div class="cave-quiz-feedback" id="q1-fb"></div>
-        <hr class="cave-quiz-divider" />
-
-        <p class="cave-quiz-q">2. What makes leaving the cave difficult?</p>
-        <div class="cave-quiz-options" id="q2-opts">
-          <button class="cave-quiz-opt" type="button" data-q="2" data-choice="a">A. The prisoner immediately forgets how to think</button>
-          <button class="cave-quiz-opt" type="button" data-q="2" data-choice="b">B. Truth is uncomfortable at first, and old beliefs have to be challenged</button>
-          <button class="cave-quiz-opt" type="button" data-q="2" data-choice="c">C. The fire destroys the prisoner's eyesight forever</button>
-          <button class="cave-quiz-opt" type="button" data-q="2" data-choice="d">D. The other prisoners physically drag everyone back</button>
-        </div>
-        <div class="cave-quiz-feedback" id="q2-fb"></div>
-        <hr class="cave-quiz-divider" />
-
-        <p class="cave-quiz-q">3. Which response best shows wise, discerning thinking?</p>
-        <div class="cave-quiz-options" id="q3-opts">
-          <button class="cave-quiz-opt" type="button" data-q="3" data-choice="a">A. Believe the first thing that matches your opinion</button>
-          <button class="cave-quiz-opt" type="button" data-q="3" data-choice="b">B. Ignore all outside voices and trust only yourself</button>
-          <button class="cave-quiz-opt" type="button" data-q="3" data-choice="c">C. Test what you hear, compare sources, and stay humble enough to learn</button>
-          <button class="cave-quiz-opt" type="button" data-q="3" data-choice="d">D. Reject every hard idea because truth should always feel easy</button>
-        </div>
-        <div class="cave-quiz-feedback" id="q3-fb"></div>
-        <hr class="cave-quiz-divider" />
-
-        <p class="cave-quiz-q">4. Reflection</p>
-        <p class="cave-section-sub" style="margin-bottom:0.8rem">Name one possible "cave" in your life or the culture around you. What shadows does it show? What is one step you could take to seek truth more carefully?</p>
-        <textarea id="reflect-box" class="cave-reflect-textarea" placeholder="Example: A possible cave is ... The shadows it shows are ... One step toward truth would be ..."></textarea>
-        <p class="cave-reflect-note">Your writing stays on this device only. Nothing is submitted or saved.</p>
-      </div>
-    </section>
-
-    <!-- ── CLOSING DEVOTIONAL ── -->
-    <div class="cave-closing">
-      <span class="cave-closing-icon">✝</span>
-      <h2>Closing Thought</h2>
-      <p>Plato wrote the allegory of the cave because he believed most people spend their lives looking at shadows and calling it the full truth. He thought the hardest — and most important — thing a person could do was turn around.</p>
-      <p>Christians have an advantage Plato didn't: we believe the light outside the cave is not an impersonal philosophical truth but a <strong>Person who came looking for us</strong>. The gospel is the story of someone who left the light, entered the darkness, and said, <em>"Follow me."</em></p>
-      <p>The question the cave leaves us with is not just academic. It is personal: <strong>What am I willing to turn around from?</strong></p>
-    </div>
-
-        </main>
-
-        <footer class="cave-footer">
-          <a href="../steam-lessons.html">← Back to STEAM Lessons</a>
-        </footer>
-      </div>
+      <div class="cave-sim-overlay-body" id="cave-sim-overlay-body"></div>
     </div>
   </div>
+
+</div><!-- .ll-viewport -->
 
   <script src="../assets/js/lesson-layout.js"></script>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -1071,7 +1043,7 @@
           btns.forEach(function(b) { b.classList.remove("active"); });
           btn.classList.add("active");
           var band = btn.getAttribute("data-band");
-          shell.className = "cave-shell grade-" + band;
+          shell.className = "grade-" + band;
           // grade-gated standalone sections use inline display:none;
           // remove that so the grade CSS classes can control them
           document.querySelectorAll("[data-grade]").forEach(function(el) {
@@ -1439,6 +1411,107 @@
       hillB.position = new BABYLON.Vector3(16, 0.6, -4);
       hillB.material = outsideMat;
 
+      /* ── Parapet / shadow-caster walkway (from the 1604 Saenredam engraving) ── */
+      var parapetMat = new BABYLON.StandardMaterial("parapet-mat", scene);
+      parapetMat.diffuseColor = new BABYLON.Color3(0.14, 0.11, 0.09);
+      parapetMat.specularColor = new BABYLON.Color3(0.02, 0.02, 0.02);
+
+      var parapetFloor = BABYLON.MeshBuilder.CreateBox("parapet-floor", { width: 1.6, height: 0.25, depth: 8.4 }, scene);
+      parapetFloor.position = new BABYLON.Vector3(-2.8, 1.1, 0);
+      parapetFloor.material = parapetMat;
+
+      var parapetWall = BABYLON.MeshBuilder.CreateBox("parapet-wall", { width: 0.2, height: 1.6, depth: 8.4 }, scene);
+      parapetWall.position = new BABYLON.Vector3(-3.6, 0.55, 0);
+      parapetWall.material = parapetMat;
+
+      /* Shadow-caster figures on the walkway (holding objects above the parapet) */
+      var puppetMat = new BABYLON.StandardMaterial("puppet-mat", scene);
+      puppetMat.diffuseColor = new BABYLON.Color3(0.25, 0.18, 0.12);
+      puppetMat.specularColor = new BABYLON.Color3(0.03, 0.03, 0.03);
+
+      var puppetPositions = [
+        { x: -2.8, z: -2.4, rodH: 1.8, shape: "horse" },
+        { x: -2.8, z: 0.0,  rodH: 2.0, shape: "vase" },
+        { x: -2.8, z: 2.4,  rodH: 1.7, shape: "man" }
+      ];
+
+      puppetPositions.forEach(function(pp, idx) {
+        /* rod / stick */
+        var rod = BABYLON.MeshBuilder.CreateCylinder("rod-" + idx, { height: pp.rodH, diameter: 0.06 }, scene);
+        rod.position = new BABYLON.Vector3(pp.x, 1.1 + pp.rodH / 2, pp.z);
+        rod.material = puppetMat;
+
+        /* object silhouette atop the rod */
+        var obj;
+        if (pp.shape === "horse") {
+          obj = BABYLON.MeshBuilder.CreateBox("puppet-obj-" + idx, { width: 0.7, height: 0.5, depth: 0.3 }, scene);
+        } else if (pp.shape === "vase") {
+          obj = BABYLON.MeshBuilder.CreateCylinder("puppet-obj-" + idx, { height: 0.6, diameterTop: 0.25, diameterBottom: 0.4 }, scene);
+        } else {
+          obj = BABYLON.MeshBuilder.CreateCylinder("puppet-obj-" + idx, { height: 0.65, diameter: 0.3 }, scene);
+          var pHead = BABYLON.MeshBuilder.CreateSphere("puppet-head-" + idx, { diameter: 0.22 }, scene);
+          pHead.position = new BABYLON.Vector3(pp.x, 1.1 + pp.rodH + 0.42, pp.z);
+          pHead.material = puppetMat;
+        }
+        obj.position = new BABYLON.Vector3(pp.x, 1.1 + pp.rodH + 0.05, pp.z);
+        obj.material = puppetMat;
+      });
+
+      /* ── Shadow silhouettes on the back wall ── */
+      var shadowSilMat = new BABYLON.StandardMaterial("shadow-sil", scene);
+      shadowSilMat.diffuseColor = new BABYLON.Color3(0, 0, 0);
+      shadowSilMat.emissiveColor = new BABYLON.Color3(0.015, 0.012, 0.008);
+      shadowSilMat.alpha = 0.55;
+      shadowSilMat.backFaceCulling = false;
+
+      var shadowShapes = [];
+      var shadowX = -9.18;  /* just in front of shadow wall */
+      [
+        { y: 2.0, z: -2.2, w: 0.9, h: 0.65 },
+        { y: 2.1, z:  0.0, w: 0.5, h: 0.85 },
+        { y: 1.9, z:  2.2, w: 0.75, h: 0.7 }
+      ].forEach(function(ss, idx) {
+        var sil = BABYLON.MeshBuilder.CreatePlane("shadow-sil-" + idx, { width: ss.w, height: ss.h }, scene);
+        sil.position = new BABYLON.Vector3(shadowX, ss.y, ss.z);
+        sil.rotation.y = Math.PI / 2;
+        sil.material = shadowSilMat;
+        shadowShapes.push(sil);
+      });
+
+      /* ── Cave arch / mouth frame ── */
+      var archMat = new BABYLON.StandardMaterial("arch-mat", scene);
+      archMat.diffuseColor = new BABYLON.Color3(0.16, 0.12, 0.1);
+      archMat.specularColor = new BABYLON.Color3(0.03, 0.03, 0.03);
+
+      /* left pillar */
+      var archL = BABYLON.MeshBuilder.CreateBox("arch-l", { width: 1.2, height: 5.6, depth: 1.0 }, scene);
+      archL.position = new BABYLON.Vector3(6, 2.8, -4.4);
+      archL.material = archMat;
+      /* right pillar */
+      var archR = BABYLON.MeshBuilder.CreateBox("arch-r", { width: 1.2, height: 5.6, depth: 1.0 }, scene);
+      archR.position = new BABYLON.Vector3(6, 2.8, 4.4);
+      archR.material = archMat;
+      /* arch lintel */
+      var archTop = BABYLON.MeshBuilder.CreateBox("arch-top", { width: 1.2, height: 1.4, depth: 9.8 }, scene);
+      archTop.position = new BABYLON.Vector3(6, 4.9, 0);
+      archTop.material = archMat;
+
+      /* ── Extra chained prisoners (crowd feel from the engraving) ── */
+      var crowdColors = ["#c4ad8e", "#b8a08a", "#d1bc9e", "#a99678"];
+      var crowdPositions = [
+        { x: -9.5, z: -3.0 }, { x: -9.5, z: 3.0 },
+        { x: -10.2, z: -0.7 }, { x: -10.2, z: 0.7 },
+        { x: -8.6, z: -2.6 }, { x: -8.6, z: 2.6 }
+      ];
+      crowdPositions.forEach(function(cp, idx) {
+        var c = createCharacter("crowd-" + idx, crowdColors[idx % crowdColors.length], 0.85);
+        c.root.position = new BABYLON.Vector3(cp.x, 0, cp.z);
+        c.body.isPickable = false;
+        c.head.isPickable = false;
+        /* face the wall (looking left / negative X) */
+        c.root.rotation.y = -Math.PI / 2;
+      });
+
       function createCharacter(id, color, scale) {
         var root = new BABYLON.TransformNode(id, scene);
         var body = BABYLON.MeshBuilder.CreateCylinder(id + "-body", { height: 1.4 * scale, diameter: 0.6 * scale }, scene);
@@ -1505,8 +1578,12 @@
       }
 
       window.addEventListener("keydown", function(e) {
-        if (e.key === "Escape" && overlay && overlay.classList.contains("is-active")) {
-          closeOverlay();
+        if (e.key === "Escape") {
+          if (overlay && overlay.classList.contains("is-active")) {
+            closeOverlay();
+          } else {
+            stopInlinePlay();
+          }
           return;
         }
         if (isTypingTarget(e.target)) return;
@@ -1544,9 +1621,40 @@
         }
       });
 
+      /* ── Inline play (Start Exploring) ── */
+      var exploreBtn = document.getElementById("cave-explore");
+
+      function startInlinePlay() {
+        if (isPlaying) return;
+        isPlaying = true;
+        keys = {};
+        if (exploreBtn) exploreBtn.classList.add("active");
+        canvas.focus();
+      }
+
+      function stopInlinePlay() {
+        if (!isPlaying) return;
+        /* don't stop if we're in fullscreen overlay — let closeOverlay handle that */
+        if (overlay && overlay.classList.contains("is-active")) return;
+        isPlaying = false;
+        keys = {};
+        if (exploreBtn) exploreBtn.classList.remove("active");
+      }
+
+      if (exploreBtn) {
+        exploreBtn.addEventListener("click", function() {
+          if (isPlaying && !(overlay && overlay.classList.contains("is-active"))) {
+            stopInlinePlay();
+          } else {
+            startInlinePlay();
+          }
+        });
+      }
+
       if (resetBtn) {
         resetBtn.addEventListener("click", function() {
           resetPlayer();
+          stopInlinePlay();
         });
       }
 
@@ -1581,6 +1689,14 @@
         fireLight.intensity = 1.05 + Math.sin(t * 3.5) * 0.18 + Math.sin(t * 7.2) * 0.08;
         fire.material.emissiveColor = new BABYLON.Color3(1, 0.5 + Math.abs(Math.sin(t * 2)) * 0.2, 0.18);
         fire.scaling.y = 1 + Math.sin(t * 4) * 0.1;
+
+        /* Animate shadow silhouettes — flicker and sway with the fire */
+        shadowShapes.forEach(function(sil, idx) {
+          var phase = idx * 2.1;
+          sil.scaling.y = 1 + Math.sin(t * 1.8 + phase) * 0.12;
+          sil.scaling.x = 1 + Math.sin(t * 1.2 + phase + 1.3) * 0.08;
+          sil.material.alpha = 0.45 + Math.sin(t * 3 + phase) * 0.12;
+        });
 
         updateCamera();
       }
