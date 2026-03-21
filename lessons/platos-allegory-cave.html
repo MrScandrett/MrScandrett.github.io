@@ -315,6 +315,11 @@
       border-color: rgba(230, 166, 77, 0.34);
       color: #fff4e6;
     }
+    .cave-choice-btn.cave-play-btn {
+      background: rgba(230, 166, 77, 0.2);
+      border-color: rgba(230, 166, 77, 0.5);
+      color: #fff3de;
+    }
 
     .cave-scene-copy {
       min-width: 250px; max-width: 360px;
@@ -368,6 +373,54 @@
       font-size: 0.86rem;
       line-height: 1.6;
     }
+
+    .cave-sim-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(7, 6, 6, 0.94);
+      z-index: 999;
+      padding: 1.2rem;
+    }
+    .cave-sim-overlay.is-active { display: flex; }
+    .cave-sim-overlay-inner {
+      width: min(1200px, 100%);
+      height: min(96vh, 860px);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .cave-sim-overlay-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      color: #f7e6cb;
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+    .cave-sim-overlay-close {
+      border: 1px solid rgba(255, 244, 224, 0.18);
+      background: rgba(255, 244, 224, 0.08);
+      color: #fff1d8;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+    }
+    .cave-sim-overlay-body {
+      flex: 1;
+      display: grid;
+      gap: 0.75rem;
+    }
+    body.cave-sim-open { overflow: hidden; }
+    body.cave-sim-open #cave-canvas-wrap { height: clamp(220px, 60vh, 640px); }
 
     .cave-info-grid {
       display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.8rem; margin-top: 1rem;
@@ -689,6 +742,7 @@
               <span class="cave-sim-label">Actions</span>
               <div class="cave-btn-row">
                 <button class="cave-choice-btn" type="button" id="cave-reset">Reset position</button>
+                <button class="cave-choice-btn cave-play-btn" type="button" id="cave-play" aria-haspopup="dialog">Play full screen</button>
               </div>
             </div>
           </div>
@@ -698,15 +752,19 @@
           </div>
         </div>
 
-        <div id="cave-canvas-wrap">
-          <canvas id="cave-canvas" width="940" height="420"></canvas>
-        </div>
+        <div id="cave-sim-slot">
+          <div id="cave-sim-stage">
+            <div id="cave-canvas-wrap">
+              <canvas id="cave-canvas" width="940" height="420"></canvas>
+            </div>
 
-        <p class="cave-caption" id="cave-caption">I have always faced the wall. Turning around feels like tearing away a habit.</p>
+            <p class="cave-caption" id="cave-caption">I have always faced the wall. Turning around feels like tearing away a habit.</p>
 
-        <div class="cave-dialogue" id="cave-dialogue" aria-live="polite">
-          <span class="cave-dialogue-name" id="cave-dialogue-name">Prisoner</span>
-          <p class="cave-dialogue-text" id="cave-dialogue-text">“Why would you leave? The shadows are all we know.”</p>
+            <div class="cave-dialogue" id="cave-dialogue" aria-live="polite">
+              <span class="cave-dialogue-name" id="cave-dialogue-name">Prisoner</span>
+              <p class="cave-dialogue-text" id="cave-dialogue-text">“Why would you leave? The shadows are all we know.”</p>
+            </div>
+          </div>
         </div>
 
         <div class="cave-info-grid">
@@ -726,6 +784,16 @@
             <span>Scripture Echo</span>
             <p id="scene-scripture">Proverbs 14:12 — "There is a way that appears to be right, but in the end it leads to death."</p>
           </article>
+        </div>
+
+        <div class="cave-sim-overlay" id="cave-sim-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+          <div class="cave-sim-overlay-inner">
+            <div class="cave-sim-overlay-top">
+              <span>Playable Cave Simulator</span>
+              <button class="cave-sim-overlay-close" type="button" id="cave-sim-close">Exit</button>
+            </div>
+            <div class="cave-sim-overlay-body" id="cave-sim-overlay-body"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -1029,11 +1097,20 @@
       var dialogueName   = document.getElementById("cave-dialogue-name");
       var dialogueText   = document.getElementById("cave-dialogue-text");
       var resetBtn       = document.getElementById("cave-reset");
+      var playBtn        = document.getElementById("cave-play");
+      var overlay        = document.getElementById("cave-sim-overlay");
+      var overlayBody    = document.getElementById("cave-sim-overlay-body");
+      var overlayClose   = document.getElementById("cave-sim-close");
+      var simStage       = document.getElementById("cave-sim-stage");
+      var simSlot        = document.getElementById("cave-sim-slot");
 
       var keys = {};
       var hasSeenOutside = false;
       var lastZoneKey = "";
       var lastCaption = "";
+      var isPlaying = false;
+      var engine = null;
+      var scene = null;
 
       var world = { minX: -12, maxX: 18, minZ: -4.4, maxZ: 4.4, exitX: 6 };
 
@@ -1218,8 +1295,52 @@
         dialogueBox.classList.remove("is-active");
       }
 
-      var engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
-      var scene = new BABYLON.Scene(engine);
+      function openOverlay() {
+        if (!overlay || !overlayBody || !simStage) return;
+        if (isPlaying) return;
+        overlayBody.appendChild(simStage);
+        overlay.classList.add("is-active");
+        overlay.setAttribute("aria-hidden", "false");
+        document.body.classList.add("cave-sim-open");
+        keys = {};
+        isPlaying = true;
+        if (overlayClose) overlayClose.focus();
+        if (engine) {
+          setTimeout(function() { engine.resize(); }, 60);
+        }
+      }
+
+      function closeOverlay() {
+        if (!overlay || !simSlot || !simStage) return;
+        overlay.classList.remove("is-active");
+        overlay.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("cave-sim-open");
+        simSlot.appendChild(simStage);
+        keys = {};
+        isPlaying = false;
+        if (engine) {
+          setTimeout(function() { engine.resize(); }, 60);
+        }
+      }
+
+      if (playBtn) {
+        playBtn.addEventListener("click", function() {
+          openOverlay();
+        });
+      }
+      if (overlayClose) {
+        overlayClose.addEventListener("click", function() {
+          closeOverlay();
+        });
+      }
+      if (overlay) {
+        overlay.addEventListener("click", function(e) {
+          if (e.target === overlay) closeOverlay();
+        });
+      }
+
+      engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+      scene = new BABYLON.Scene(engine);
       scene.clearColor = new BABYLON.Color4(0.04, 0.03, 0.03, 1);
       scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
       scene.fogDensity = 0.03;
@@ -1384,7 +1505,12 @@
       }
 
       window.addEventListener("keydown", function(e) {
+        if (e.key === "Escape" && overlay && overlay.classList.contains("is-active")) {
+          closeOverlay();
+          return;
+        }
         if (isTypingTarget(e.target)) return;
+        if (!isPlaying) return;
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.key) !== -1) {
           e.preventDefault();
         }
@@ -1395,6 +1521,10 @@
       });
 
       scene.onPointerObservable.add(function(pointerInfo) {
+        if (!isPlaying) {
+          canvas.style.cursor = "default";
+          return;
+        }
         if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE) {
           var hoverPick = scene.pick(scene.pointerX, scene.pointerY, function(mesh) {
             return mesh && mesh.metadata && mesh.metadata.npcId;
@@ -1421,6 +1551,10 @@
       }
 
       function updateFrame() {
+        if (!isPlaying) {
+          updateCamera();
+          return;
+        }
         var dt = engine.getDeltaTime() / 16.6667;
         var dx = 0;
         var dz = 0;
