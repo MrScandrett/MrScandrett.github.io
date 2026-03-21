@@ -1,0 +1,610 @@
+/*
+ * lesson-layout.css — Single-Viewport Master Layout System
+ * ClassroomOS · Mr. Scandrett's STEAM Lessons
+ *
+ * Apply this AFTER classroom-home.css in every lesson <head>.
+ * Enforces: single-view fit, internal scroll panels, tabbed GUI,
+ * real-time parameter sidebar, responsive across all devices.
+ *
+ * Usage:
+ *   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+ *   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+ *
+ * HTML skeleton:
+ *   <div class="ll-viewport [ll-dark]">
+ *     <nav class="ll-topbar">...</nav>
+ *     <div class="ll-stage">
+ *       <div class="ll-sim">
+ *         <!-- hero, canvas, educational content (scrolls) -->
+ *       </div>
+ *       <aside class="ll-panel" aria-hidden="false">
+ *         <div class="ll-panel-head">
+ *           <div class="ll-tabs">
+ *             <button class="ll-tab" aria-selected="true"  data-pane="pane-params">Parameters</button>
+ *             <button class="ll-tab" aria-selected="false" data-pane="pane-guide">Guide</button>
+ *           </div>
+ *           <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+ *         </div>
+ *         <div class="ll-panel-body">
+ *           <div class="ll-pane ll-active" id="pane-params">...</div>
+ *           <div class="ll-pane"           id="pane-guide">...</div>
+ *         </div>
+ *       </aside>
+ *       <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+ *     </div>
+ *   </div>
+ *
+ * Dark-theme variant: add class="ll-viewport ll-dark" and set CSS vars.
+ * Per-lesson overrides: --ll-panel-w, --ll-panel-bg, --ll-accent, etc.
+ */
+
+/* ═══════════════════════════════════════════════════════════
+   0. Custom properties
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --ll-panel-w:        320px;
+  --ll-panel-bg:       rgba(250, 250, 252, 0.98);
+  --ll-panel-border:   rgba(0, 0, 0, 0.09);
+  --ll-tab-color:      #64748b;
+  --ll-tab-active-bg:  rgba(0, 122, 255, 0.10);
+  --ll-tab-active:     #007aff;
+  --ll-toggle-bg:      rgba(250, 250, 252, 0.97);
+  --ll-handle-h:       48px;
+  --ll-drawer-h:       44vh;
+  --ll-radius:         10px;
+}
+
+/* Dark variant — set on .ll-viewport or inherited from body/html */
+.ll-dark,
+[data-lighting="night"] .ll-panel,
+body.ll-dark-body .ll-panel {
+  --ll-panel-bg:      rgba(20, 20, 24, 0.97);
+  --ll-panel-border:  rgba(255, 255, 255, 0.09);
+  --ll-tab-color:     rgba(220, 220, 230, 0.5);
+  --ll-tab-active-bg: rgba(100, 160, 255, 0.14);
+  --ll-tab-active:    #7eb8ff;
+  --ll-toggle-bg:     rgba(20, 20, 24, 0.97);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   1. Viewport lock — contains everything in 100dvh
+   ═══════════════════════════════════════════════════════════ */
+
+/* Lock scroll on html/body when viewport layout is active */
+html:has(.ll-viewport) {
+  height: 100%;
+  overflow: hidden;
+}
+html:has(.ll-viewport) body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.ll-viewport {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;           /* dynamic viewport height (handles mobile chrome) */
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   2. Topbar — flex-shrinks to its own height
+   ═══════════════════════════════════════════════════════════ */
+
+.ll-topbar {
+  flex-shrink: 0;
+  position: relative;       /* override sticky; we don't need it inside flex */
+  top: auto;
+  z-index: 30;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   3. Stage — fills remaining height, holds sim + panel
+   ═══════════════════════════════════════════════════════════ */
+
+.ll-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;            /* critical: allows flex children to shrink */
+  overflow: hidden;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   4. Sim — primary scrollable content area
+   ═══════════════════════════════════════════════════════════ */
+
+.ll-sim {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   5. Panel — right-side parameter/info sidebar
+   ═══════════════════════════════════════════════════════════ */
+
+.ll-panel {
+  width: var(--ll-panel-w);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ll-panel-bg);
+  border-left: 1px solid var(--ll-panel-border);
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+  transition:
+    width     0.26s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.26s ease;
+}
+
+.ll-panel[aria-hidden="true"] {
+  width: 0;
+  border-left-width: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* ── Panel head (tab bar + close button) ────────────────── */
+
+.ll-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 0 8px;
+  flex-shrink: 0;
+  min-height: var(--ll-handle-h);
+  border-bottom: 1px solid var(--ll-panel-border);
+}
+
+/* ── Tab bar ────────────────────────────────────────────── */
+
+.ll-tabs {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;      /* breathing room above border */
+}
+.ll-tabs::-webkit-scrollbar { display: none; }
+
+.ll-tab {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  color: var(--ll-tab-color);
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.ll-tab:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text, #1d1d1f);
+}
+.ll-dark .ll-tab:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+.ll-tab[aria-selected="true"] {
+  background: var(--ll-tab-active-bg);
+  color: var(--ll-tab-active);
+}
+
+/* ── Close / collapse button ────────────────────────────── */
+
+.ll-panel-close {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ll-tab-color);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.26s;
+  line-height: 1;
+  font-family: inherit;
+}
+.ll-panel-close:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: var(--text, #1d1d1f);
+}
+.ll-dark .ll-panel-close {
+  background: rgba(255, 255, 255, 0.08);
+}
+.ll-dark .ll-panel-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* ── Panel body — scrollable content ───────────────────── */
+
+.ll-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.75rem 0.9rem 2rem;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Panes ──────────────────────────────────────────────── */
+
+.ll-pane {
+  display: none;
+}
+.ll-pane[aria-hidden="false"],
+.ll-pane.ll-active {
+  display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   6. Open button — floating pill that re-opens closed panel
+   ═══════════════════════════════════════════════════════════ */
+
+.ll-open-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  display: none;              /* shown only when panel is closed */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 22px;
+  height: 52px;
+  border: 1px solid var(--ll-panel-border);
+  border-right: none;
+  border-radius: 9px 0 0 9px;
+  background: var(--ll-toggle-bg);
+  cursor: pointer;
+  transition: background 0.15s;
+  padding: 0;
+  font-family: inherit;
+}
+.ll-open-btn:hover {
+  background: var(--ll-tab-active-bg);
+}
+
+/* Show when panel is hidden */
+.ll-stage:has(.ll-panel[aria-hidden="true"]) .ll-open-btn {
+  display: flex;
+}
+
+.ll-open-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ll-tab-color);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   7. Panel content components
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Section label ──────────────────────────────────────── */
+
+.ll-label {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ll-tab-color);
+  opacity: 0.75;
+  margin: 0.9rem 0 0.4rem;
+}
+.ll-label:first-child { margin-top: 0; }
+
+/* ── Divider ────────────────────────────────────────────── */
+
+.ll-hr {
+  border: none;
+  border-top: 1px solid var(--ll-panel-border);
+  margin: 0.65rem 0;
+}
+
+/* ── Preset chips ───────────────────────────────────────── */
+
+.ll-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 0.75rem;
+}
+
+.ll-preset {
+  border: 1px solid var(--ll-panel-border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  background: transparent;
+  color: var(--ll-tab-color);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.ll-preset:hover,
+.ll-preset.ll-active {
+  background: var(--ll-tab-active-bg);
+  color: var(--ll-tab-active);
+  border-color: var(--ll-tab-active);
+}
+
+/* ── Readout grid ───────────────────────────────────────── */
+
+.ll-readouts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-bottom: 0.75rem;
+}
+
+.ll-readout {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--ll-panel-border);
+  border-radius: var(--ll-radius);
+  padding: 7px 9px;
+}
+.ll-dark .ll-readout {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ll-readout-lbl {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ll-tab-color);
+  margin-bottom: 2px;
+}
+
+.ll-readout-val {
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--text, #1d1d1f);
+  line-height: 1.1;
+}
+.ll-dark .ll-readout-val {
+  color: rgba(230, 240, 255, 0.92);
+}
+
+/* ── Inline value span (inside param labels) ────────────── */
+
+.ll-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--ll-tab-active);
+}
+
+/* ── Info card ──────────────────────────────────────────── */
+
+.ll-info {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--ll-panel-border);
+  border-radius: var(--ll-radius);
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--text, #1d1d1f);
+}
+.ll-dark .ll-info {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(230, 235, 245, 0.82);
+}
+.ll-info strong {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ll-tab-color);
+  margin-bottom: 3px;
+}
+
+/* ── Param row (slider group) ───────────────────────────── */
+
+.ll-param {
+  margin-bottom: 0.8rem;
+}
+.ll-param:last-child {
+  margin-bottom: 0;
+}
+
+.ll-param-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.75rem;
+  color: var(--ll-tab-color);
+  margin-bottom: 5px;
+}
+.ll-dark .ll-param-label {
+  color: rgba(200, 215, 240, 0.75);
+}
+
+.ll-param-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.58rem;
+  color: var(--ll-tab-color);
+  opacity: 0.5;
+  margin-top: 3px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   8. Hero compression — keeps hero compact inside ll-sim
+   ═══════════════════════════════════════════════════════════ */
+
+.ll-sim .ll-hero {
+  padding: 1rem 1.2rem 0.6rem;
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.ll-sim .ll-hero h1 {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  margin: 0 0 0.3rem;
+}
+.ll-sim .ll-hero p {
+  font-size: 0.83rem;
+  margin: 0;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   9. Responsive — Tablet overlay (680–960px)
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 960px) and (min-width: 681px) {
+  .ll-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    height: auto;
+    box-shadow: -6px 0 28px rgba(0, 0, 0, 0.18);
+    z-index: 30;
+  }
+
+  .ll-panel[aria-hidden="true"] {
+    width: var(--ll-panel-w);  /* maintain width so transition works */
+    transform: translateX(100%);
+    pointer-events: none;
+  }
+
+  .ll-panel[aria-hidden="false"] {
+    transform: translateX(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   10. Responsive — Mobile bottom drawer (<= 680px)
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 680px) {
+  .ll-stage {
+    flex-direction: column;
+  }
+
+  .ll-sim {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .ll-panel {
+    width: 100% !important;
+    height: var(--ll-drawer-h);
+    flex-shrink: 0;
+    border-left: none;
+    border-top: 1px solid var(--ll-panel-border);
+    transition: height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+
+  /* Collapsed drawer shows only the handle */
+  .ll-panel[aria-hidden="true"] {
+    height: var(--ll-handle-h);
+    pointer-events: auto;       /* head must still be tappable */
+  }
+
+  /* Drawer handle is tappable to expand */
+  .ll-panel-head {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    border-bottom: 1px solid var(--ll-panel-border);
+  }
+
+  /* Rotate the close/expand icon when collapsed */
+  .ll-panel-close {
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .ll-panel[aria-hidden="true"] .ll-panel-close {
+    transform: rotate(180deg);  /* ↕ arrow flips to indicate direction */
+  }
+
+  /* Desktop toggle not needed on mobile */
+  .ll-open-btn {
+    display: none !important;
+  }
+}
+
+/* Landscape phone: slightly taller drawer */
+@media (max-width: 680px) and (orientation: landscape) {
+  .ll-panel { --ll-drawer-h: 55vh; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   11. Scrollbar styling inside ll panels and sim
+   ═══════════════════════════════════════════════════════════ */
+
+.ll-panel-body,
+.ll-sim {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.25) transparent;
+}
+.ll-panel-body::-webkit-scrollbar,
+.ll-sim::-webkit-scrollbar {
+  width: 4px;
+}
+.ll-panel-body::-webkit-scrollbar-thumb,
+.ll-sim::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.25);
+  border-radius: 99px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   12. Accessibility — focus styles
+   ═══════════════════════════════════════════════════════════ */
+
+.ll-tab:focus-visible,
+.ll-panel-close:focus-visible,
+.ll-preset:focus-visible,
+.ll-open-btn:focus-visible {
+  outline: 2px solid var(--ll-tab-active);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   13. Reduced motion
+   ═══════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .ll-panel,
+  .ll-panel-close {
+    transition: none;
+  }
+}

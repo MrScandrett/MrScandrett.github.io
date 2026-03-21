@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     /* ── Page ─────────────────────────────────────────── */
     .sol-page { padding-bottom: 3.5rem; }
@@ -185,12 +186,20 @@
       .sol-conseq { grid-template-columns: 1fr; }
       .sol-scale-label { width: 100px; font-size: 0.72rem; }
     }
+
+    /* ── Layout overrides ─────────────────────────────── */
+    .ll-viewport {
+      --ll-tab-active: #ff9500;
+      --ll-tab-active-bg: rgba(255,149,0,0.10);
+    }
+    #sol-canvas { max-height: calc(100dvh - 140px); }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="site-header">
+  <header class="site-header ll-topbar">
     <div class="nav-wrap">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
@@ -208,6 +217,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+  <div class="ll-sim">
   <main id="main-content" class="sol-page">
 
     <!-- ── Hero ── -->
@@ -355,20 +366,7 @@
     <!-- ── Interactive Simulator ── -->
     <section class="sol-sim">
       <h2>Light-Travel Simulator</h2>
-      <p class="sol-sim-sub">Choose a destination and watch a photon race across the solar system in scaled time.</p>
-      <div class="sol-sim-controls">
-        <div class="sol-sim-field">
-          <label for="sol-dest">Destination</label>
-          <select class="sol-sim-select" id="sol-dest">
-            <option value="moon">Moon (1.28 s)</option>
-            <option value="sun" selected>Sun (8 min 20 s)</option>
-            <option value="mars">Mars — closest (3 min)</option>
-            <option value="jupiter">Jupiter (35 min)</option>
-            <option value="pluto">Pluto (5.5 hours)</option>
-          </select>
-        </div>
-        <button class="sol-sim-btn" id="sol-launch-btn">Launch photon ›</button>
-      </div>
+      <p class="sol-sim-sub">Choose a destination in the Controls panel and watch a photon race across the solar system in scaled time.</p>
       <canvas id="sol-canvas" height="80" aria-label="Light travel animation"></canvas>
       <div class="sol-sim-result" id="sol-sim-result">Press Launch to begin.</div>
     </section>
@@ -512,10 +510,86 @@
     </section>
 
   </main>
+  </div><!-- /.ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="sol-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="sol-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="sol-params">
+        <span class="ll-label">Destination</span>
+        <div class="sol-sim-field" style="margin-bottom:0.75rem;">
+          <select class="sol-sim-select" id="sol-dest" style="width:100%;">
+            <option value="moon">Moon (1.28 s)</option>
+            <option value="sun" selected>Sun (8 min 20 s)</option>
+            <option value="mars">Mars — closest (3 min)</option>
+            <option value="jupiter">Jupiter (35 min)</option>
+            <option value="pluto">Pluto (5.5 hours)</option>
+          </select>
+        </div>
+        <button class="sol-sim-btn" id="sol-launch-btn" style="width:100%;margin-bottom:1rem;">Launch photon ›</button>
+        <hr class="ll-hr">
+        <span class="ll-label">Key Facts</span>
+        <div class="ll-readouts">
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Speed</span>
+            <span class="ll-readout-val" style="font-size:0.82rem;">299,792,458 m/s</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">In km/s</span>
+            <span class="ll-readout-val">300,000</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Earth laps/sec</span>
+            <span class="ll-readout-val">7.5×</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">E–Moon</span>
+            <span class="ll-readout-val">1.28 s</span>
+          </div>
+        </div>
+      </div>
+      <div class="ll-pane" id="sol-guide">
+        <div class="ll-info">
+          <strong>What is c?</strong>
+          The speed of light in a vacuum — exactly 299,792,458 m/s, a defined constant since 1983.
+        </div>
+        <div class="ll-info">
+          <strong>E = mc²</strong>
+          A tiny mass converts to an enormous amount of energy because c² is 9 × 10¹⁶.
+        </div>
+        <div class="ll-info">
+          <strong>Time dilation</strong>
+          Moving clocks run slow. GPS satellites must correct for this every day.
+        </div>
+        <div class="ll-info">
+          <strong>Telescopes are time machines</strong>
+          Light from distant galaxies left millions of years ago — we see the past.
+        </div>
+        <div class="ll-info">
+          <strong>Internet latency floor</strong>
+          Light in fibre travels at ~2/3 c. NY→London takes at minimum ~27 ms.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+  </button>
+  </div><!-- /.ll-stage -->
 
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
   </footer>
+</div><!-- /.ll-viewport -->
 
   <script src="../assets/js/nav-mobile.js"></script>
   <script>
@@ -683,5 +757,6 @@
 
   })();
   </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

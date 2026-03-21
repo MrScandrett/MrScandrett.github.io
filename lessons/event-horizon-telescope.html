@@ -6,6 +6,7 @@
   <title>Event Horizon Telescope · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Space Science Lesson 03 - explore how the Event Horizon Telescope used eight synchronized observatories to act like an Earth-size telescope, leading to the 2019 image of M87* and the 2022 image of Sagittarius A*." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     body {
       margin: 0;
@@ -463,11 +464,24 @@
       pointer-events: none;
       text-anchor: middle;
     }
+
+    /* ── ll-viewport overrides ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(2, 4, 15, 0.97);
+      --ll-panel-border:  rgba(108, 130, 255, 0.18);
+      --ll-tab-color:     rgba(166, 190, 240, 0.56);
+      --ll-tab-active-bg: rgba(100, 130, 255, 0.14);
+      --ll-tab-active:    #9db7ff;
+      --ll-toggle-bg:     rgba(2, 4, 15, 0.97);
+    }
+    .eht-wrap { display: block; padding: 0 1rem 0.5rem; max-width: 1380px; margin: 0 auto; }
+    .eht-stage-shell { max-height: calc(100dvh - 140px); }
   </style>
 </head>
 <body>
+<div class="ll-viewport ll-dark">
   <a class="skip-link" href="#main-content">Skip to content</a>
-  <nav class="eht-topbar" aria-label="Page navigation">
+  <nav class="eht-topbar ll-topbar" aria-label="Page navigation">
     <div class="eht-topbar-inner">
       <a href="../steam-lessons.html#module-space">Back to Space Science</a>
       <span class="eht-topbar-title">Event Horizon Telescope</span>
@@ -475,13 +489,16 @@
     </div>
   </nav>
 
-  <header class="eht-hero">
-    <h1>Event Horizon Telescope</h1>
-    <p>The Event Horizon Telescope is an international collaboration that linked radio observatories across Earth, produced the 2019 image of M87*, and later revealed Sagittarius A* in 2022. This lesson models the big idea: more synchronized stations, longer baselines, sharper detail.</p>
-  </header>
+  <div class="ll-stage">
+    <div class="ll-sim">
 
-  <main id="main-content" class="eht-wrap">
-    <section class="eht-stage-shell" aria-labelledby="eht-stage-title">
+      <header class="eht-hero ll-hero">
+        <h1>Event Horizon Telescope</h1>
+        <p>The Event Horizon Telescope is an international collaboration that linked radio observatories across Earth, produced the 2019 image of M87*, and later revealed Sagittarius A* in 2022. This lesson models the big idea: more synchronized stations, longer baselines, sharper detail.</p>
+      </header>
+
+      <main id="main-content" class="eht-wrap">
+        <section class="eht-stage-shell" aria-labelledby="eht-stage-title">
       <div class="eht-stage-grid">
         <div class="eht-map-panel">
           <div class="eht-map-head">
@@ -533,82 +550,90 @@
       </div>
     </section>
 
-    <aside class="eht-panel">
-      <section class="eht-card">
-        <p class="eht-kicker">Controls</p>
-        <h3>Build the array</h3>
-        <div class="eht-control-row">
-          <button type="button" id="selectAllButton">Select all</button>
-          <button type="button" id="clearButton">Clear</button>
-          <button type="button" class="eht-sync-button is-on" id="syncButton">Clock sync ON</button>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="eht-params">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="eht-guide">About</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="eht-params">
+          <span class="ll-label">Build the Array</span>
+          <div class="eht-control-row">
+            <button type="button" id="selectAllButton">Select all</button>
+            <button type="button" id="clearButton">Clear</button>
+            <button type="button" class="eht-sync-button is-on" id="syncButton">Clock sync ON</button>
+          </div>
+
+          <div class="eht-readout-grid" style="margin-top:0.85rem;">
+            <div class="eht-readout-card">
+              <span>Active Stations</span>
+              <strong id="activeCount">8 of 8</strong>
+            </div>
+            <div class="eht-readout-card">
+              <span>Longest Baseline</span>
+              <strong id="baselineValue">13,000 km</strong>
+            </div>
+            <div class="eht-readout-card">
+              <span>Image Quality</span>
+              <strong id="qualityValue">Ring emerging</strong>
+            </div>
+            <div class="eht-readout-card">
+              <span>Sync Status</span>
+              <strong id="syncValue">Correlated</strong>
+            </div>
+          </div>
+
+          <div class="eht-alert safe" id="alertBar" style="margin-top:0.85rem;">
+            With all eight synchronized stations, the array reaches Earth-size class resolution and the ring structure becomes much clearer.
+          </div>
+
+          <hr class="ll-hr" />
+          <span class="ll-label">Participating Telescopes</span>
+          <p style="font-size:0.75rem;color:rgba(166,190,240,0.56);margin:0 0 0.5rem;">Click a station to toggle it</p>
+          <div class="eht-station-list" id="stationList"></div>
         </div>
 
-        <div class="eht-readout-grid">
-          <div class="eht-readout-card">
-            <span>Active Stations</span>
-            <strong id="activeCount">8 of 8</strong>
+        <div class="ll-pane" id="eht-guide">
+          <div class="ll-info">
+            <strong>Very-long-baseline interferometry</strong>
+            The EHT did not build a literal giant dish. It combined observations from telescopes spread across Earth so the array behaved like a much larger instrument.
           </div>
-          <div class="eht-readout-card">
-            <span>Longest Baseline</span>
-            <strong id="baselineValue">13,000 km</strong>
+          <div class="ll-info">
+            <strong>Atomic clocks and correlation</strong>
+            Each site timestamped its data extremely precisely. Later, correlators aligned those recordings so the wave patterns could be combined instead of becoming meaningless noise.
           </div>
-          <div class="eht-readout-card">
-            <span>Image Quality</span>
-            <strong id="qualityValue">Ring emerging</strong>
+          <div class="ll-info">
+            <strong>What the image shows</strong>
+            The famous ring is glowing material around the black hole. The darker center is the shadow region connected to the event horizon, where gravity bends light and traps anything crossing the boundary.
           </div>
-          <div class="eht-readout-card">
-            <span>Sync Status</span>
-            <strong id="syncValue">Correlated</strong>
+          <div class="ll-info">
+            <strong>Why the first image mattered</strong>
+            The first EHT image gave direct visual evidence of black hole-scale structure and showed that a global collaboration could use Earth itself as a telescope platform.
+          </div>
+          <div class="ll-info">
+            <strong>Three ideas to keep in mind</strong>
+            One dish is not enough to resolve a black hole shadow from Earth. Large separations create long baselines, which improve angular resolution. Without synchronized clocks, the recordings cannot be aligned and combined.
           </div>
         </div>
 
-        <div class="eht-alert safe" id="alertBar">
-          With all eight synchronized stations, the array reaches Earth-size class resolution and the ring structure becomes much clearer.
-        </div>
-      </section>
-
-      <section class="eht-card">
-        <p class="eht-kicker">Participating Telescopes</p>
-        <h3>Click a station to toggle it</h3>
-        <div class="eht-station-list" id="stationList"></div>
-      </section>
-
-      <section class="eht-card">
-        <p class="eht-kicker">Why It Worked</p>
-        <h3>Three ideas to keep in mind</h3>
-        <ul>
-          <li>One dish is not enough to resolve a black hole shadow from Earth.</li>
-          <li>Large separations create long baselines, which improve angular resolution.</li>
-          <li>Without synchronized clocks, the recordings cannot be aligned and combined.</li>
-        </ul>
-      </section>
+      </div>
     </aside>
-  </main>
 
-  <section class="eht-info">
-    <div class="eht-info-grid">
-      <article class="eht-info-card">
-        <p class="eht-kicker">Concept 01</p>
-        <h4>Very-long-baseline interferometry</h4>
-        <p>The EHT did not build a literal giant dish. It combined observations from telescopes spread across Earth so the array behaved like a much larger instrument.</p>
-      </article>
-      <article class="eht-info-card">
-        <p class="eht-kicker">Concept 02</p>
-        <h4>Atomic clocks and correlation</h4>
-        <p>Each site timestamped its data extremely precisely. Later, correlators aligned those recordings so the wave patterns could be combined instead of becoming meaningless noise.</p>
-      </article>
-      <article class="eht-info-card">
-        <p class="eht-kicker">Concept 03</p>
-        <h4>What the image shows</h4>
-        <p>The famous ring is glowing material around the black hole. The darker center is the shadow region connected to the event horizon, where gravity bends light and traps anything crossing the boundary.</p>
-      </article>
-      <article class="eht-info-card">
-        <p class="eht-kicker">Concept 04</p>
-        <h4>Why the first image mattered</h4>
-        <p>The first EHT image gave direct visual evidence of black hole-scale structure and showed that a global collaboration could use Earth itself as a telescope platform.</p>
-      </article>
-    </div>
-  </section>
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
 
   <script>
     const stations = [
@@ -1026,5 +1051,7 @@
     renderAll();
     resizeCanvas();
   </script>
+
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

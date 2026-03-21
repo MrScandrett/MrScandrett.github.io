@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     /* ── Page ─────────────────────────────────────────── */
     .ue-page { padding-bottom: 3.5rem; }
@@ -251,12 +252,16 @@
     .ue-reflection p { font-size: 0.88rem; line-height: 1.65; color: var(--text-main); margin: 0 0 0.5rem; }
     .ue-reflection p:last-child { margin: 0; }
     [data-theme="night"] .ue-reflection { background: rgba(52,199,89,0.1); }
+
+    /* ── ll-viewport overrides (light theme — use defaults) ── */
+    .ue-sim-wrap { max-height: calc(100dvh - 200px); }
   </style>
 </head>
 <body>
+<div class="ll-viewport">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="site-header">
+  <header class="site-header ll-topbar">
     <div class="nav-wrap">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
@@ -274,6 +279,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+    <div class="ll-sim">
   <main id="main-content" class="section ue-page">
 
     <!-- ── Hero ───────────────────────────────────────── -->
@@ -577,10 +584,96 @@
     </p>
 
   </main>
+    </div><!-- .ll-sim -->
 
-  <footer class="site-footer">
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="ue-params">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="ue-guide">About</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="ue-params">
+          <span class="ll-label">Simulator</span>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+            <button class="ue-sim-btn" id="ue-play-btn-panel">⏸ Pause</button>
+            <button class="ue-sim-btn secondary" id="ue-reset-btn-panel">↺ Reset</button>
+          </div>
+          <div class="ue-view-toggle" style="margin-bottom:0.75rem;">
+            <button class="ue-view-btn active" id="ue-view-earth-panel">Our Galaxy</button>
+            <button class="ue-view-btn" id="ue-view-other-panel">Another Galaxy</button>
+          </div>
+          <span class="ll-label">Hubble Constant (H₀)</span>
+          <div class="ll-param">
+            <div class="ll-param-label">
+              <span>H₀</span>
+              <span class="ll-val" id="ue-h0-val-panel">70</span> km/s/Mpc
+            </div>
+            <input type="range" id="ue-h0-slider-panel" min="30" max="120" value="70" style="width:100%;accent-color:#5856d6;" />
+            <div class="ll-param-ends"><span>30</span><span>120</span></div>
+          </div>
+          <span class="ll-label">Simulation Speed</span>
+          <div class="ll-param">
+            <input type="range" id="ue-speed-slider-panel" min="1" max="8" value="3" style="width:100%;accent-color:#ff9500;" />
+          </div>
+          <hr class="ll-hr" />
+          <span class="ll-label">Readouts</span>
+          <div class="ll-readouts">
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Age (sim)</span>
+              <span class="ll-readout-val" id="ue-age-val-panel">0 Gyr</span>
+            </div>
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Scale factor</span>
+              <span class="ll-readout-val" id="ue-scale-val-panel">1.00×</span>
+            </div>
+          </div>
+          <hr class="ll-hr" />
+          <span class="ll-label">Hubble's Law</span>
+          <div class="ll-info">v = H₀ × d &nbsp;·&nbsp; Every extra megaparsec = +H₀ km/s faster recession.</div>
+        </div>
+
+        <div class="ll-pane" id="ue-guide">
+          <div class="ll-info">
+            <strong>Edwin Hubble (1929)</strong>
+            Plotted 46 galaxies and found a clear linear relationship between distance and recession speed — Hubble's Law. The universe is expanding.
+          </div>
+          <div class="ll-info">
+            <strong>Henrietta Swan Leavitt</strong>
+            Discovered the Cepheid period-luminosity relationship, giving astronomers a "standard candle" to measure cosmic distances.
+          </div>
+          <div class="ll-info">
+            <strong>Georges Lemaître</strong>
+            Proposed the expanding universe and the Big Bang ("Cosmic Egg") — two years before Hubble's famous paper.
+          </div>
+          <div class="ll-info">
+            <strong>Redshift</strong>
+            When a galaxy recedes, its light waves stretch toward the red end of the spectrum. The greater the redshift, the faster the recession.
+          </div>
+          <div class="ll-info">
+            <strong>Dark Energy (1998)</strong>
+            Observations of distant supernovae revealed the expansion is accelerating, driven by an unknown "dark energy." Nobel Prize in Physics 2011.
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+  </div><!-- .ll-stage -->
+
+  <footer class="site-footer" style="display:none;">
     <p><a href="../index.html">Back to ClassroomOS Home</a></p>
   </footer>
+
+</div><!-- .ll-viewport -->
 
   <script>
     /* ── Redshift spectrum demo ───────────────────────── */
@@ -885,5 +978,47 @@
     }
     window.ueCheck = ueCheck;
   </script>
+  <script>
+  // Wire panel controls to simulator
+  (function () {
+    var playPanel    = document.getElementById('ue-play-btn-panel');
+    var resetPanel   = document.getElementById('ue-reset-btn-panel');
+    var earthPanel   = document.getElementById('ue-view-earth-panel');
+    var otherPanel   = document.getElementById('ue-view-other-panel');
+    var h0Panel      = document.getElementById('ue-h0-slider-panel');
+    var h0ValPanel   = document.getElementById('ue-h0-val-panel');
+    var speedPanel   = document.getElementById('ue-speed-slider-panel');
+    var agePanel     = document.getElementById('ue-age-val-panel');
+    var scalePanel   = document.getElementById('ue-scale-val-panel');
+
+    var playBtn      = document.getElementById('ue-play-btn');
+    var resetBtn     = document.getElementById('ue-reset-btn');
+    var viewEarth    = document.getElementById('ue-view-earth');
+    var viewOther    = document.getElementById('ue-view-other');
+    var h0Slider     = document.getElementById('ue-h0-slider');
+    var h0Val        = document.getElementById('ue-h0-val');
+    var speedSl      = document.getElementById('ue-speed-slider');
+    var ageVal       = document.getElementById('ue-age-val');
+    var scaleVal     = document.getElementById('ue-scale-val');
+
+    if (playPanel && playBtn) playPanel.addEventListener('click', function () { playBtn.click(); playPanel.textContent = playBtn.textContent; });
+    if (resetPanel && resetBtn) resetPanel.addEventListener('click', function () { resetBtn.click(); });
+    if (earthPanel && viewEarth) earthPanel.addEventListener('click', function () { viewEarth.click(); earthPanel.classList.add('active'); if(otherPanel) otherPanel.classList.remove('active'); });
+    if (otherPanel && viewOther) otherPanel.addEventListener('click', function () { viewOther.click(); otherPanel.classList.add('active'); if(earthPanel) earthPanel.classList.remove('active'); });
+    if (h0Panel && h0Slider) h0Panel.addEventListener('input', function () { h0Slider.value = this.value; h0Slider.dispatchEvent(new Event('input')); if(h0ValPanel) h0ValPanel.textContent = this.value; });
+    if (speedPanel && speedSl) speedPanel.addEventListener('input', function () { speedSl.value = this.value; });
+
+    // Mirror readout values from sim elements to panel
+    if (ageVal && agePanel) {
+      var obs = new MutationObserver(function () { agePanel.textContent = ageVal.textContent; });
+      obs.observe(ageVal, { childList: true, characterData: true, subtree: true });
+    }
+    if (scaleVal && scalePanel) {
+      var obs2 = new MutationObserver(function () { scalePanel.textContent = scaleVal.textContent; });
+      obs2.observe(scaleVal, { childList: true, characterData: true, subtree: true });
+    }
+  })();
+  </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

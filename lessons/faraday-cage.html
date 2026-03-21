@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     .fc-page {
       padding-bottom: 3.5rem;
@@ -725,12 +726,22 @@
         gap: 0.2rem;
       }
     }
+
+    /* ── Layout overrides ─────────────────────────────── */
+    .ll-viewport {
+      --ll-tab-active: #ff9500;
+      --ll-tab-active-bg: rgba(255,149,0,0.10);
+    }
+    /* Override the 2-col demo layout — fc-meter moves to panel */
+    .fc-demo-layout { display: block; }
+    .fc-stage { max-height: calc(100dvh - 140px); }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="site-header">
+  <header class="site-header ll-topbar">
     <div class="nav-wrap">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
@@ -748,6 +759,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+  <div class="ll-sim">
   <main id="main-content" class="fc-page">
     <section class="hero fc-hero">
       <p class="eyebrow">Physics · Lesson 02</p>
@@ -781,31 +794,7 @@
       <h2>Field Probe Demo</h2>
       <p class="fc-demo-sub">This is a teaching model, not a full Maxwell-equation solver. Use it to see the one big classroom idea: closed cage inside means zero field.</p>
 
-      <div class="fc-demo-controls">
-        <div class="fc-field">
-          <label for="fc-strength">External charge / zap strength</label>
-          <div class="fc-range-row">
-            <input id="fc-strength" type="range" min="0" max="100" value="72" />
-            <span class="fc-range-value" id="fc-strength-value">72%</span>
-          </div>
-        </div>
-
-        <div class="fc-chip-wrap">
-          <div class="fc-chip-group-label">Probe location</div>
-          <div class="fc-chip-group" role="group" aria-label="Probe location">
-            <button class="fc-chip is-active" type="button" data-probe="inside">Probe inside</button>
-            <button class="fc-chip" type="button" data-probe="outside">Probe outside</button>
-          </div>
-        </div>
-
-        <div class="fc-chip-wrap">
-          <div class="fc-chip-group-label">Cage integrity</div>
-          <div class="fc-chip-group" role="group" aria-label="Cage integrity">
-            <button class="fc-chip is-active" type="button" data-integrity="closed">Closed cage</button>
-            <button class="fc-chip" type="button" data-integrity="open">Open gap</button>
-          </div>
-        </div>
-      </div>
+      <!-- Controls moved to ll-panel -->
 
       <div class="fc-demo-layout">
         <div class="fc-stage" id="fc-stage" data-probe="inside" data-integrity="closed">
@@ -824,28 +813,6 @@
               <span>Inside cage</span>
             </div>
           </div>
-        </div>
-
-        <div class="fc-meter" aria-live="polite">
-          <div class="fc-meter-value" id="fc-meter-value">0 V/m</div>
-          <div class="fc-meter-caption" id="fc-meter-caption">Probe is inside a closed conductor, so the electric field reads zero.</div>
-
-          <dl class="fc-meter-stats">
-            <div>
-              <dt>Shielding</dt>
-              <dd id="fc-shielding">100%</dd>
-            </div>
-            <div>
-              <dt>Charge path</dt>
-              <dd id="fc-path">Outside surface</dd>
-            </div>
-            <div>
-              <dt>Why</dt>
-              <dd id="fc-why">Charges rearrange until the interior field cancels.</dd>
-            </div>
-          </dl>
-
-          <p class="fc-meter-note">Elevator cars, cars, airplanes, microwave door screens, and shielded rooms all use this same shielding idea, although none of them are perfect at every frequency.</p>
         </div>
       </div>
     </section>
@@ -983,10 +950,86 @@
       </div>
     </section>
   </main>
+  </div><!-- /.ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="fc-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="fc-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="fc-params">
+        <span class="ll-label">Zap Strength</span>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>External charge</span>
+            <span class="ll-val" id="fc-strength-value">72%</span>
+          </div>
+          <input id="fc-strength" type="range" min="0" max="100" value="72" style="width:100%;accent-color:#ff9500;" />
+          <div class="ll-param-ends"><span>0%</span><span>100%</span></div>
+        </div>
+        <hr class="ll-hr">
+        <span class="ll-label">Probe Location</span>
+        <div class="ll-presets" role="group" aria-label="Probe location">
+          <button class="ll-preset ll-active" data-probe="inside">Probe inside</button>
+          <button class="ll-preset" data-probe="outside">Probe outside</button>
+        </div>
+        <span class="ll-label">Cage Integrity</span>
+        <div class="ll-presets" role="group" aria-label="Cage integrity">
+          <button class="ll-preset ll-active" data-integrity="closed">Closed cage</button>
+          <button class="ll-preset" data-integrity="open">Open gap</button>
+        </div>
+        <hr class="ll-hr">
+        <span class="ll-label">Field Meter</span>
+        <div class="fc-meter" aria-live="polite" style="background:none;border:none;padding:0;gap:0.5rem;">
+          <div class="fc-meter-value" id="fc-meter-value" style="margin-bottom:0.35rem;">0 V/m</div>
+          <div class="fc-meter-caption" id="fc-meter-caption" style="font-size:0.78rem;">Probe is inside a closed conductor, so the electric field reads zero.</div>
+          <dl class="fc-meter-stats" style="margin-top:0.5rem;">
+            <div><dt>Shielding</dt><dd id="fc-shielding">100%</dd></div>
+            <div><dt>Charge path</dt><dd id="fc-path">Outside surface</dd></div>
+            <div><dt>Why</dt><dd id="fc-why">Charges rearrange until the interior field cancels.</dd></div>
+          </dl>
+        </div>
+      </div>
+      <div class="ll-pane" id="fc-guide">
+        <div class="ll-info">
+          <strong>Core principle</strong>
+          For a closed conductor in electrostatic equilibrium, the electric field inside is zero. E<sub>inside</sub> = 0.
+        </div>
+        <div class="ll-info">
+          <strong>Everyday examples</strong>
+          Cars, airplanes, elevator cars, and microwave door screens all use this shielding principle.
+        </div>
+        <div class="ll-info">
+          <strong>Mesh still works</strong>
+          Holes can be present if they are small compared to the wavelength being blocked — that's why microwave doors use a conductive screen.
+        </div>
+        <div class="ll-info">
+          <strong>Not lead shielding</strong>
+          Lead shields ionizing radiation (X-rays, gamma). A Faraday cage handles electric fields and radio-frequency waves.
+        </div>
+        <div class="ll-info">
+          <strong>History</strong>
+          Michael Faraday demonstrated this in 1836 using a room covered in conductive foil charged from outside.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+  </button>
+  </div><!-- /.ll-stage -->
 
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
   </footer>
+</div><!-- /.ll-viewport -->
 
   <script src="../assets/js/nav-mobile.js"></script>
   <script>
@@ -1064,21 +1107,23 @@
         why.textContent = 'Faraday cages protect the enclosed interior, not the outside air.';
       }
 
-      document.querySelectorAll('.fc-chip[data-probe]').forEach((button) => {
+      document.querySelectorAll('[data-probe]').forEach((button) => {
         button.addEventListener('click', function () {
           probe = button.dataset.probe;
-          document.querySelectorAll('.fc-chip[data-probe]').forEach((chip) => {
+          document.querySelectorAll('[data-probe]').forEach((chip) => {
             chip.classList.toggle('is-active', chip === button);
+            chip.classList.toggle('ll-active', chip === button);
           });
           updateDemo();
         });
       });
 
-      document.querySelectorAll('.fc-chip[data-integrity]').forEach((button) => {
+      document.querySelectorAll('[data-integrity]').forEach((button) => {
         button.addEventListener('click', function () {
           integrity = button.dataset.integrity;
-          document.querySelectorAll('.fc-chip[data-integrity]').forEach((chip) => {
+          document.querySelectorAll('[data-integrity]').forEach((chip) => {
             chip.classList.toggle('is-active', chip === button);
+            chip.classList.toggle('ll-active', chip === button);
           });
           updateDemo();
         });
@@ -1119,5 +1164,6 @@
       });
     }());
   </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

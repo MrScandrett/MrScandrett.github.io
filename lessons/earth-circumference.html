@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     /* ── Page ─────────────────────────────────────────── */
     .ec-page { padding-bottom: 3.5rem; }
@@ -232,12 +233,20 @@
       .ec-sim-controls{ grid-template-columns: 1fr; }
       .ec-readout     { grid-template-columns: repeat(2,1fr); }
     }
+
+    /* ── Layout overrides ─────────────────────────────── */
+    .ll-viewport {
+      --ll-tab-active: #34c759;
+      --ll-tab-active-bg: rgba(52,199,89,0.10);
+    }
+    #ec-canvas { max-height: calc(100dvh - 140px); }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="site-header">
+  <header class="site-header ll-topbar">
     <div class="nav-wrap">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
@@ -255,6 +264,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+  <div class="ll-sim">
   <main id="main-content" class="ec-page">
 
     <!-- ── Hero ── -->
@@ -334,33 +345,11 @@
     <!-- ── Interactive Simulator ── -->
     <section class="ec-sim">
       <h2>Replicate Eratosthenes' Experiment</h2>
-      <p class="ec-sim-sub">Adjust the shadow angle and distance between cities to see how the circumference calculation changes. Try the presets to compare different historical measurements.</p>
-
-      <div class="ec-preset-row" id="ec-presets">
-        <button class="ec-preset-btn active" data-angle="7.2" data-dist="800">Eratosthenes (240 BC)</button>
-        <button class="ec-preset-btn" data-angle="7.5" data-dist="800">Poseidonius (100 BC)</button>
-        <button class="ec-preset-btn" data-angle="0.52" data-dist="111">Al-Biruni method (1030 AD)</button>
-        <button class="ec-preset-btn" data-angle="1.0" data-dist="110.6">Picard (1669)</button>
-      </div>
-
-      <div class="ec-sim-controls">
-        <div class="ec-slider-group">
-          <label class="ec-slider-label" for="ec-angle-slider">
-            Shadow angle <span id="ec-angle-val">7.2°</span>
-          </label>
-          <input type="range" class="ec-slider" id="ec-angle-slider" min="0.3" max="20" step="0.1" value="7.2" />
-        </div>
-        <div class="ec-slider-group">
-          <label class="ec-slider-label" for="ec-dist-slider">
-            Distance between cities <span id="ec-dist-val">800 km</span>
-          </label>
-          <input type="range" class="ec-slider" id="ec-dist-slider" min="50" max="3000" step="10" value="800" />
-        </div>
-      </div>
+      <p class="ec-sim-sub">Adjust the shadow angle and distance in the Controls panel to see how the circumference calculation changes.</p>
 
       <canvas id="ec-canvas" height="260" aria-label="Eratosthenes experiment diagram"></canvas>
 
-      <div class="ec-readout">
+      <div class="ec-readout" style="margin-top:0.8rem;">
         <div class="ec-readout-cell">
           <span class="ec-readout-label">Shadow Angle</span>
           <span class="ec-readout-val" id="ec-r-angle">7.2</span>
@@ -369,15 +358,6 @@
         <div class="ec-readout-cell">
           <span class="ec-readout-label">Arc Distance</span>
           <span class="ec-readout-val" id="ec-r-dist">800</span>
-          <span class="ec-readout-unit">km</span>
-        </div>
-        <div class="ec-readout-cell">
-          <span class="ec-readout-label">Fraction of Circle</span>
-          <span class="ec-readout-val" id="ec-r-frac">1/50</span>
-        </div>
-        <div class="ec-readout-cell highlight">
-          <span class="ec-readout-label">Calculated Circumference</span>
-          <span class="ec-readout-val" id="ec-r-circ">40,000</span>
           <span class="ec-readout-unit">km</span>
         </div>
       </div>
@@ -605,10 +585,91 @@
     </section>
 
   </main>
+  </div><!-- /.ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="ec-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="ec-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="ec-params">
+        <span class="ll-label">Historical Presets</span>
+        <div class="ll-presets" id="ec-presets">
+          <button class="ll-preset ll-active ec-preset-btn" data-angle="7.2" data-dist="800">Eratosthenes 240 BC</button>
+          <button class="ll-preset ec-preset-btn" data-angle="7.5" data-dist="800">Poseidonius 100 BC</button>
+          <button class="ll-preset ec-preset-btn" data-angle="0.52" data-dist="111">Al-Biruni 1030 AD</button>
+          <button class="ll-preset ec-preset-btn" data-angle="1.0" data-dist="110.6">Picard 1669</button>
+        </div>
+        <hr class="ll-hr">
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>Shadow angle</span>
+            <span class="ll-val" id="ec-angle-val">7.2°</span>
+          </div>
+          <input type="range" class="ec-slider" id="ec-angle-slider" min="0.3" max="20" step="0.1" value="7.2" style="width:100%;accent-color:#34c759;" />
+          <div class="ll-param-ends"><span>0.3°</span><span>20°</span></div>
+        </div>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>City distance</span>
+            <span class="ll-val" id="ec-dist-val">800 km</span>
+          </div>
+          <input type="range" class="ec-slider" id="ec-dist-slider" min="50" max="3000" step="10" value="800" style="width:100%;accent-color:#34c759;" />
+          <div class="ll-param-ends"><span>50 km</span><span>3,000 km</span></div>
+        </div>
+        <hr class="ll-hr">
+        <span class="ll-label">Live Readout</span>
+        <div class="ll-readouts">
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Circumference</span>
+            <span class="ll-readout-val" id="ec-r-circ">40,000</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Fraction</span>
+            <span class="ll-readout-val" id="ec-r-frac">1/50</span>
+          </div>
+        </div>
+      </div>
+      <div class="ll-pane" id="ec-guide">
+        <div class="ll-info">
+          <strong>Eratosthenes' method</strong>
+          C = (360° ÷ shadow angle) × distance. A 7.2° angle and 800 km gives 40,000 km.
+        </div>
+        <div class="ll-info">
+          <strong>Modern value</strong>
+          40,075 km (equatorial). Eratosthenes was within 0.2%.
+        </div>
+        <div class="ll-info">
+          <strong>The metre's origin</strong>
+          1 metre was defined as 1/10,000,000 of the distance from equator to pole — a direct legacy of measuring Earth's size.
+        </div>
+        <div class="ll-info">
+          <strong>Columbus's error</strong>
+          He used Poseidonius's lower estimate (~29,000 km) and badly underestimated how far away Asia was.
+        </div>
+        <div class="ll-info">
+          <strong>Al-Biruni's trick</strong>
+          He needed only a mountain — no second city. He measured the dip angle of the horizon from the summit and used trigonometry.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+  </button>
+  </div><!-- /.ll-stage -->
 
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
   </footer>
+</div><!-- /.ll-viewport -->
 
   <script src="../assets/js/nav-mobile.js"></script>
   <script>
@@ -949,5 +1010,6 @@
 
   })();
   </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

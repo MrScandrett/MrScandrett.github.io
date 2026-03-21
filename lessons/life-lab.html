@@ -10,11 +10,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/life-lab.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #ff6b35; --ll-tab-active: #ff6b35; --ll-tab-active-bg: rgba(255,107,53,0.10); }
+  </style>
 </head>
 <body class="life-lab-page mode-beginner">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="topbar">
+<div class="ll-viewport">
+  <header class="topbar ll-topbar">
     <div class="topbar-inner">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav aria-label="Primary">
@@ -26,378 +31,446 @@
     </div>
   </header>
 
-  <div class="ll-app" id="main-content">
-    <canvas id="ambient-life" aria-hidden="true"></canvas>
+  <div class="ll-stage">
+    <div class="ll-sim" id="main-content">
+      <canvas id="ambient-life" aria-hidden="true"></canvas>
 
-    <header class="ll-hero">
-      <p class="ll-eyebrow">Cellular Automata · Lesson 09</p>
-      <h1>Life Lab: The Game of Life</h1>
-      <p class="hero-copy">
-        Explore cellular automata through challenge levels, famous patterns, and the story of how Conway's idea changed
-        mathematics, computer science, and AI research.
-      </p>
-      <a href="#simulator" class="primary-btn">Start Simulation</a>
-    </header>
+      <div class="ll-hero">
+        <p class="ll-eyebrow">Cellular Automata · Lesson 09</p>
+        <h1>Life Lab: The Game of Life</h1>
+        <p>
+          Explore cellular automata through challenge levels, famous patterns, and the story of how Conway's idea changed
+          mathematics, computer science, and AI research.
+        </p>
+      </div>
 
-    <main>
-      <section id="simulator" class="panel simulator-panel studio-card">
-        <div class="panel-head">
-          <h2>Simulation Studio</h2>
-          <p class="sub">Pick a level, place cells, then run evolution.</p>
+      <div class="ll-app">
+        <main>
+          <section id="simulator" class="panel simulator-panel studio-card">
+            <div class="panel-head">
+              <h2>Simulation Studio</h2>
+              <p class="sub">Pick a level, place cells, then run evolution.</p>
+            </div>
+
+            <div class="stats-row">
+              <p>Generation: <strong id="generationCount">0</strong></p>
+              <p>Live Cells: <strong id="liveCount">0</strong></p>
+              <p id="levelSummary">Beginner: 20 x 20, slower pace for first-time learners.</p>
+            </div>
+
+            <div id="canvasWrap" class="canvas-wrap" style="max-height:60vh;overflow:hidden;">
+              <canvas id="lifeCanvas" width="720" height="720" aria-label="Game of Life grid"></canvas>
+              <div id="voxelViewport" class="voxel-viewport hidden" aria-label="3D voxel simulation"></div>
+            </div>
+
+            <p id="hintText" class="hint">Tip: Click or drag on the grid to toggle cells before pressing Start.</p>
+          </section>
+
+          <section class="panel learning-console">
+            <div class="panel-head">
+              <h2>Learning Console</h2>
+              <p>Read fast, run a task, and collect evidence.</p>
+            </div>
+            <div class="learning-toolbar">
+              <div class="mode-toggle" role="group" aria-label="Learning mode">
+                <button id="beginnerModeBtn" class="mode-btn is-active" type="button">Beginner View</button>
+                <button id="advancedModeBtn" class="mode-btn" type="button">Advanced View</button>
+              </div>
+              <button id="worksheetBtn" class="worksheet-btn" type="button">Worksheet Mode</button>
+            </div>
+            <p class="mode-note">
+              Beginner keeps it short. Advanced reveals deeper terms like universality, information flow, and proof prompts.
+            </p>
+          </section>
+
+          <section class="panel learning-section">
+            <div class="panel-head">
+              <h2>History in 3 Moves</h2>
+              <p>Each card: one idea, three bullets, one action.</p>
+            </div>
+            <div class="learning-cards">
+              <article class="learning-card">
+                <h3>1940s–1950s: Cellular Automata</h3>
+                <p>Local rules became a new way to study complex systems.</p>
+                <ul>
+                  <li>Ulam and von Neumann studied grid-based updates.</li>
+                  <li>Each <span class="inline-term">cell</span> reads nearby neighbors only.</li>
+                  <li>Big idea: local decisions create global behavior.</li>
+                </ul>
+                <ul class="advanced-only">
+                  <li>Advanced lens: this is a discrete dynamical system.</li>
+                  <li>Challenge: define state space and transition function.</li>
+                </ul>
+                <div class="task-box">
+                  <strong>Do this now:</strong>
+                  <p>Draw a 3×3 neighborhood and label neighbor counts from 0 to 8.</p>
+                </div>
+              </article>
+
+              <article class="learning-card">
+                <h3>1970: Conway + Gardner</h3>
+                <p>One rule set produced endless patterns and public excitement.</p>
+                <ul>
+                  <li>Birth on exactly 3 neighbors (B3).</li>
+                  <li>Survive on 2 or 3 neighbors (S23).</li>
+                  <li>Martin Gardner popularized it in Scientific American.</li>
+                </ul>
+                <ul class="advanced-only">
+                  <li>Glider gun patterns show information-like streams.</li>
+                  <li>Challenge: explain why simple rules can be computationally universal.</li>
+                </ul>
+                <div class="task-box">
+                  <strong>Do this now:</strong>
+                  <p>Predict whether a cell lives or dies for neighbor counts 1, 2, 3, 4.</p>
+                </div>
+              </article>
+
+              <article class="learning-card">
+                <h3>1970s–Today: Pattern Discovery</h3>
+                <p>Communities mapped still lifes, oscillators, spaceships, and more.</p>
+                <ul>
+                  <li>Still life: does not change generation to generation.</li>
+                  <li>Oscillator: repeats after a fixed period.</li>
+                  <li>Spaceship: pattern moves across the grid.</li>
+                </ul>
+                <ul class="advanced-only">
+                  <li>Measure period and velocity to classify patterns.</li>
+                  <li>Challenge: prove a structure is stable under B3/S23.</li>
+                </ul>
+                <div class="task-box">
+                  <strong>Do this now:</strong>
+                  <p>Find one oscillator in the simulator and record its period.</p>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel learning-section">
+            <div class="panel-head">
+              <h2>Pattern Snapshots</h2>
+              <p>Visual memory tools for fast recognition.</p>
+            </div>
+            <div class="visual-grid">
+              <article class="visual-card">
+                <h3>3×3 Neighbors</h3>
+                <svg class="mini-diagram" viewBox="0 0 72 72" aria-label="3 by 3 neighborhood">
+                  <rect x="2" y="2" width="20" height="20" />
+                  <rect x="26" y="2" width="20" height="20" />
+                  <rect x="50" y="2" width="20" height="20" />
+                  <rect x="2" y="26" width="20" height="20" />
+                  <rect class="cell-center" x="26" y="26" width="20" height="20" />
+                  <rect x="50" y="26" width="20" height="20" />
+                  <rect x="2" y="50" width="20" height="20" />
+                  <rect x="26" y="50" width="20" height="20" />
+                  <rect x="50" y="50" width="20" height="20" />
+                </svg>
+                <p>Center cell reads 8 neighbors.</p>
+              </article>
+
+              <article class="visual-card">
+                <h3>Block (Still Life)</h3>
+                <svg class="mini-diagram" viewBox="0 0 72 72" aria-label="Block still life">
+                  <rect class="grid-off" x="2" y="2" width="68" height="68" />
+                  <rect class="cell-on" x="22" y="22" width="14" height="14" />
+                  <rect class="cell-on" x="38" y="22" width="14" height="14" />
+                  <rect class="cell-on" x="22" y="38" width="14" height="14" />
+                  <rect class="cell-on" x="38" y="38" width="14" height="14" />
+                </svg>
+                <p>No changes each generation.</p>
+              </article>
+
+              <article class="visual-card">
+                <h3>Blinker (2 Frames)</h3>
+                <svg class="mini-diagram wide" viewBox="0 0 156 72" aria-label="Blinker oscillator frames">
+                  <rect class="grid-off" x="2" y="2" width="68" height="68" />
+                  <rect class="cell-on" x="30" y="22" width="14" height="14" />
+                  <rect class="cell-on" x="30" y="38" width="14" height="14" />
+                  <rect class="cell-on" x="30" y="54" width="14" height="14" />
+                  <rect class="grid-off" x="86" y="2" width="68" height="68" />
+                  <rect class="cell-on" x="102" y="34" width="14" height="14" />
+                  <rect class="cell-on" x="118" y="34" width="14" height="14" />
+                  <rect class="cell-on" x="134" y="34" width="14" height="14" />
+                </svg>
+                <p>Period 2 oscillator.</p>
+              </article>
+
+              <article class="visual-card">
+                <h3>Glider (4 Frames)</h3>
+                <svg class="mini-diagram wide" viewBox="0 0 244 72" aria-label="Glider frames">
+                  <rect class="grid-off" x="2" y="2" width="56" height="56" />
+                  <rect class="cell-on" x="30" y="14" width="10" height="10" />
+                  <rect class="cell-on" x="42" y="26" width="10" height="10" />
+                  <rect class="cell-on" x="18" y="38" width="10" height="10" />
+                  <rect class="cell-on" x="30" y="38" width="10" height="10" />
+                  <rect class="cell-on" x="42" y="38" width="10" height="10" />
+                  <rect class="grid-off" x="64" y="2" width="56" height="56" />
+                  <rect class="cell-on" x="76" y="26" width="10" height="10" />
+                  <rect class="cell-on" x="88" y="38" width="10" height="10" />
+                  <rect class="cell-on" x="100" y="14" width="10" height="10" />
+                  <rect class="cell-on" x="100" y="26" width="10" height="10" />
+                  <rect class="cell-on" x="100" y="38" width="10" height="10" />
+                  <rect class="grid-off" x="126" y="2" width="56" height="56" />
+                  <rect class="cell-on" x="138" y="14" width="10" height="10" />
+                  <rect class="cell-on" x="138" y="38" width="10" height="10" />
+                  <rect class="cell-on" x="150" y="26" width="10" height="10" />
+                  <rect class="cell-on" x="150" y="38" width="10" height="10" />
+                  <rect class="cell-on" x="162" y="26" width="10" height="10" />
+                  <rect class="grid-off" x="188" y="2" width="56" height="56" />
+                  <rect class="cell-on" x="200" y="38" width="10" height="10" />
+                  <rect class="cell-on" x="212" y="14" width="10" height="10" />
+                  <rect class="cell-on" x="212" y="38" width="10" height="10" />
+                  <rect class="cell-on" x="224" y="26" width="10" height="10" />
+                  <rect class="cell-on" x="224" y="38" width="10" height="10" />
+                </svg>
+                <p>Moves diagonally over time.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel learning-section">
+            <div class="panel-head">
+              <h2>Future + Project Paths</h2>
+              <p>Turn concepts into artifacts you can submit.</p>
+            </div>
+            <div class="project-grid">
+              <article class="project-card">
+                <h3>Path A (Grades 6–8): Pattern Zoo</h3>
+                <p>Collect, label, and explain behavior patterns.</p>
+                <ul>
+                  <li>Collect 10 patterns from simulation runs.</li>
+                  <li>Sort into still life, oscillator, spaceship.</li>
+                  <li>Artifact: screenshot board + one sentence per pattern.</li>
+                </ul>
+                <div class="task-box">
+                  <strong>Do this now:</strong>
+                  <p>Capture one still life and one oscillator screenshot.</p>
+                </div>
+              </article>
+
+              <article class="project-card">
+                <h3>Path B (Grades 8–10): Rule Designer</h3>
+                <p>Compare rule sets and report what changes.</p>
+                <ul>
+                  <li>Test Classic Life and HighLife for 100 generations.</li>
+                  <li>Track population trend and dominant patterns.</li>
+                  <li>Artifact: table + short explanation of differences.</li>
+                </ul>
+                <ul class="advanced-only">
+                  <li>Challenge: design a rule with long-lived turbulence.</li>
+                </ul>
+                <div class="task-box">
+                  <strong>Do this now:</strong>
+                  <p>Predict which rule produces more moving structures, then test it.</p>
+                </div>
+              </article>
+
+              <article class="project-card">
+                <h3>Path C (Grades 10–12): Model the World</h3>
+                <p>Map automata language onto a real system.</p>
+                <ul>
+                  <li>Choose traffic, disease spread, or ecosystem change.</li>
+                  <li>Define states, neighbors, and update rules.</li>
+                  <li>Artifact: two screenshots + 5-sentence reflection.</li>
+                </ul>
+                <ul class="advanced-only">
+                  <li>Challenge: justify boundary conditions and sampling limits.</li>
+                </ul>
+                <div class="task-box">
+                  <strong>Do this now:</strong>
+                  <p>Write what a cell and neighbor represent in your model.</p>
+                </div>
+              </article>
+            </div>
+
+            <article class="rubric-card">
+              <h3>Completion Rubric</h3>
+              <ul>
+                <li>Completed five task boxes.</li>
+                <li>Submitted two screenshots with labels.</li>
+                <li>Included one period measurement.</li>
+                <li>Wrote a five-sentence reflection.</li>
+                <li>Explained one real-world mapping.</li>
+              </ul>
+              <p class="bonus-line">Bonus: discover or design a novel pattern.</p>
+            </article>
+          </section>
+
+          <section class="panel learning-section glossary-section">
+            <div class="panel-head">
+              <h2>Tap a Vocabulary Word</h2>
+              <p>Use this mini glossary while you run experiments.</p>
+            </div>
+            <div class="glossary-cloud">
+              <button class="term-chip" type="button" data-definition="A single square that is either alive or dead in one generation.">cell</button>
+              <button class="term-chip" type="button" data-definition="Any adjacent square used when counting around a cell.">neighbor</button>
+              <button class="term-chip" type="button" data-definition="One complete update step across the full grid.">generation</button>
+              <button class="term-chip" type="button" data-definition="A pattern that never changes once formed.">still life</button>
+              <button class="term-chip" type="button" data-definition="A pattern that repeats after a fixed number of generations.">oscillator</button>
+              <button class="term-chip" type="button" data-definition="A pattern that shifts position across the grid over time.">spaceship</button>
+              <button class="term-chip" type="button" data-definition="The smallest common spaceship that moves diagonally.">glider</button>
+              <button class="term-chip" type="button" data-definition="A structure that repeatedly emits gliders.">glider gun</button>
+              <button class="term-chip advanced-only" type="button" data-definition="Complex large-scale behavior produced by simple local rules.">emergence</button>
+              <button class="term-chip advanced-only" type="button" data-definition="Birth/survival notation such as B3/S23.">rule set</button>
+            </div>
+            <div id="glossaryDefinition" class="glossary-definition">
+              Select a term to see a one-line definition.
+            </div>
+          </section>
+
+          <footer>
+            <p>← <a href="../steam-lessons.html">Back to STEAM Lessons</a> &nbsp;·&nbsp; Challenge: design your own rule set and explain what emerges.</p>
+          </footer>
+        </main>
+      </div>
+    </div><!-- /.ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="life-params">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="life-guide">Guide</button>
         </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
 
-        <div class="controls-grid">
-          <div class="control-pair">
-            <label for="modeSelect">Simulation Mode</label>
-            <select id="modeSelect">
+        <div class="ll-pane ll-active" id="life-params">
+          <span class="ll-label">Simulation Mode</span>
+          <div class="ll-param">
+            <select id="modeSelect" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
               <option value="2d">2D Classic Grid</option>
               <option value="3d">3D Voxel World</option>
             </select>
           </div>
 
-          <div class="control-pair">
-            <label for="levelSelect">Level</label>
-            <select id="levelSelect">
+          <span class="ll-label">Level</span>
+          <div class="ll-param">
+            <select id="levelSelect" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
               <option value="beginner">Beginner</option>
               <option value="intermediate">Intermediate</option>
               <option value="advanced">Advanced</option>
             </select>
           </div>
 
-          <div id="rule2dWrap" class="control-pair">
-            <label for="ruleSelect">Rule Set</label>
-            <select id="ruleSelect">
-              <option value="B3/S23">Classic Life (B3/S23)</option>
-              <option value="B36/S23">HighLife (B36/S23)</option>
-              <option value="B2/S">Seeds (B2/S)</option>
-            </select>
-          </div>
-
-          <div id="rule3dWrap" class="control-pair hidden">
-            <label for="voxelRuleSelect">3D Rule Set</label>
-            <select id="voxelRuleSelect">
-              <option value="B6/S567">3D Life (B6/S567)</option>
-              <option value="B5/S56">Clouds (B5/S56)</option>
-              <option value="B7/S56">Dense Crystal (B7/S56)</option>
-            </select>
-          </div>
-
-          <div id="patternWrap" class="control-pair">
-            <label for="patternSelect">Pattern</label>
-            <select id="patternSelect">
-              <option value="none">None (draw by clicking)</option>
-              <option value="glider">Glider</option>
-              <option value="lwss">Lightweight Spaceship</option>
-              <option value="pulsar">Pulsar</option>
-              <option value="gosper">Gosper Glider Gun</option>
-            </select>
-          </div>
-
-          <div id="seedWrap" class="control-pair hidden">
-            <label for="seedSelect">Voxel Seed</label>
-            <select id="seedSelect">
-              <option value="random">Random Cloud</option>
-              <option value="cluster">Center Cluster</option>
-              <option value="cross">3D Cross</option>
-              <option value="shell">Hollow Cube Shell</option>
-            </select>
-          </div>
-
-          <div class="control-pair">
-            <label for="liveColorInput">Live Cell Color</label>
-            <input id="liveColorInput" type="color" value="#ff6b35" />
-          </div>
-        </div>
-
-        <div class="speed-row">
-          <label for="speedRange">Speed</label>
-          <div class="speed-inline">
-            <input id="speedRange" type="range" min="1" max="20" value="8" />
-            <span class="speed-readout"><span id="speedValue">8</span> gen/sec</span>
-          </div>
-        </div>
-
-        <div class="button-row">
-          <button id="startPauseBtn">Start</button>
-          <button id="stepBtn">Step</button>
-          <button id="randomBtn">Randomize</button>
-          <button id="clearBtn">Clear</button>
-          <button id="applyPatternBtn">Place Pattern</button>
-        </div>
-
-        <div class="stats-row">
-          <p>Generation: <strong id="generationCount">0</strong></p>
-          <p>Live Cells: <strong id="liveCount">0</strong></p>
-          <p id="levelSummary">Beginner: 20 x 20, slower pace for first-time learners.</p>
-        </div>
-
-        <div id="canvasWrap" class="canvas-wrap">
-          <canvas id="lifeCanvas" width="720" height="720" aria-label="Game of Life grid"></canvas>
-          <div id="voxelViewport" class="voxel-viewport hidden" aria-label="3D voxel simulation"></div>
-        </div>
-
-        <p id="hintText" class="hint">Tip: Click or drag on the grid to toggle cells before pressing Start.</p>
-      </section>
-
-      <section class="panel learning-console">
-        <div class="panel-head">
-          <h2>Learning Console</h2>
-          <p>Read fast, run a task, and collect evidence.</p>
-        </div>
-        <div class="learning-toolbar">
-          <div class="mode-toggle" role="group" aria-label="Learning mode">
-            <button id="beginnerModeBtn" class="mode-btn is-active" type="button">Beginner View</button>
-            <button id="advancedModeBtn" class="mode-btn" type="button">Advanced View</button>
-          </div>
-          <button id="worksheetBtn" class="worksheet-btn" type="button">Worksheet Mode</button>
-        </div>
-        <p class="mode-note">
-          Beginner keeps it short. Advanced reveals deeper terms like universality, information flow, and proof prompts.
-        </p>
-      </section>
-
-      <section class="panel learning-section">
-        <div class="panel-head">
-          <h2>History in 3 Moves</h2>
-          <p>Each card: one idea, three bullets, one action.</p>
-        </div>
-        <div class="learning-cards">
-          <article class="learning-card">
-            <h3>1940s–1950s: Cellular Automata</h3>
-            <p>Local rules became a new way to study complex systems.</p>
-            <ul>
-              <li>Ulam and von Neumann studied grid-based updates.</li>
-              <li>Each <span class="inline-term">cell</span> reads nearby neighbors only.</li>
-              <li>Big idea: local decisions create global behavior.</li>
-            </ul>
-            <ul class="advanced-only">
-              <li>Advanced lens: this is a discrete dynamical system.</li>
-              <li>Challenge: define state space and transition function.</li>
-            </ul>
-            <div class="task-box">
-              <strong>Do this now:</strong>
-              <p>Draw a 3×3 neighborhood and label neighbor counts from 0 to 8.</p>
+          <div id="rule2dWrap">
+            <span class="ll-label">Rule Set</span>
+            <div class="ll-param">
+              <select id="ruleSelect" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
+                <option value="B3/S23">Classic Life (B3/S23)</option>
+                <option value="B36/S23">HighLife (B36/S23)</option>
+                <option value="B2/S">Seeds (B2/S)</option>
+              </select>
             </div>
-          </article>
+          </div>
 
-          <article class="learning-card">
-            <h3>1970: Conway + Gardner</h3>
-            <p>One rule set produced endless patterns and public excitement.</p>
-            <ul>
-              <li>Birth on exactly 3 neighbors (B3).</li>
-              <li>Survive on 2 or 3 neighbors (S23).</li>
-              <li>Martin Gardner popularized it in Scientific American.</li>
-            </ul>
-            <ul class="advanced-only">
-              <li>Glider gun patterns show information-like streams.</li>
-              <li>Challenge: explain why simple rules can be computationally universal.</li>
-            </ul>
-            <div class="task-box">
-              <strong>Do this now:</strong>
-              <p>Predict whether a cell lives or dies for neighbor counts 1, 2, 3, 4.</p>
+          <div id="rule3dWrap" class="hidden">
+            <span class="ll-label">3D Rule Set</span>
+            <div class="ll-param">
+              <select id="voxelRuleSelect" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
+                <option value="B6/S567">3D Life (B6/S567)</option>
+                <option value="B5/S56">Clouds (B5/S56)</option>
+                <option value="B7/S56">Dense Crystal (B7/S56)</option>
+              </select>
             </div>
-          </article>
+          </div>
 
-          <article class="learning-card">
-            <h3>1970s–Today: Pattern Discovery</h3>
-            <p>Communities mapped still lifes, oscillators, spaceships, and more.</p>
-            <ul>
-              <li>Still life: does not change generation to generation.</li>
-              <li>Oscillator: repeats after a fixed period.</li>
-              <li>Spaceship: pattern moves across the grid.</li>
-            </ul>
-            <ul class="advanced-only">
-              <li>Measure period and velocity to classify patterns.</li>
-              <li>Challenge: prove a structure is stable under B3/S23.</li>
-            </ul>
-            <div class="task-box">
-              <strong>Do this now:</strong>
-              <p>Find one oscillator in the simulator and record its period.</p>
+          <hr class="ll-hr" />
+
+          <span class="ll-label">Pattern Presets</span>
+          <div class="ll-presets" id="patternWrap">
+            <button class="ll-preset" data-preset="none" type="button">Draw</button>
+            <button class="ll-preset" data-preset="glider" type="button">Glider</button>
+            <button class="ll-preset" data-preset="lwss" type="button">LWSS</button>
+            <button class="ll-preset" data-preset="pulsar" type="button">Pulsar</button>
+            <button class="ll-preset" data-preset="gosper" type="button">Glider Gun</button>
+          </div>
+
+          <div id="seedWrap" class="hidden">
+            <span class="ll-label">Voxel Seed</span>
+            <div class="ll-param">
+              <select id="seedSelect" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
+                <option value="random">Random Cloud</option>
+                <option value="cluster">Center Cluster</option>
+                <option value="cross">3D Cross</option>
+                <option value="shell">Hollow Cube Shell</option>
+              </select>
             </div>
-          </article>
-        </div>
-      </section>
+          </div>
 
-      <section class="panel learning-section">
-        <div class="panel-head">
-          <h2>Pattern Snapshots</h2>
-          <p>Visual memory tools for fast recognition.</p>
-        </div>
-        <div class="visual-grid">
-          <article class="visual-card">
-            <h3>3×3 Neighbors</h3>
-            <svg class="mini-diagram" viewBox="0 0 72 72" aria-label="3 by 3 neighborhood">
-              <rect x="2" y="2" width="20" height="20" />
-              <rect x="26" y="2" width="20" height="20" />
-              <rect x="50" y="2" width="20" height="20" />
-              <rect x="2" y="26" width="20" height="20" />
-              <rect class="cell-center" x="26" y="26" width="20" height="20" />
-              <rect x="50" y="26" width="20" height="20" />
-              <rect x="2" y="50" width="20" height="20" />
-              <rect x="26" y="50" width="20" height="20" />
-              <rect x="50" y="50" width="20" height="20" />
-            </svg>
-            <p>Center cell reads 8 neighbors.</p>
-          </article>
+          <hr class="ll-hr" />
 
-          <article class="visual-card">
-            <h3>Block (Still Life)</h3>
-            <svg class="mini-diagram" viewBox="0 0 72 72" aria-label="Block still life">
-              <rect class="grid-off" x="2" y="2" width="68" height="68" />
-              <rect class="cell-on" x="22" y="22" width="14" height="14" />
-              <rect class="cell-on" x="38" y="22" width="14" height="14" />
-              <rect class="cell-on" x="22" y="38" width="14" height="14" />
-              <rect class="cell-on" x="38" y="38" width="14" height="14" />
-            </svg>
-            <p>No changes each generation.</p>
-          </article>
+          <span class="ll-label">Live Cell Color</span>
+          <div class="ll-param">
+            <input id="liveColorInput" type="color" value="#ff6b35" style="width:100%;height:36px;border-radius:8px;border:1px solid var(--ll-panel-border);cursor:pointer;" />
+          </div>
 
-          <article class="visual-card">
-            <h3>Blinker (2 Frames)</h3>
-            <svg class="mini-diagram wide" viewBox="0 0 156 72" aria-label="Blinker oscillator frames">
-              <rect class="grid-off" x="2" y="2" width="68" height="68" />
-              <rect class="cell-on" x="30" y="22" width="14" height="14" />
-              <rect class="cell-on" x="30" y="38" width="14" height="14" />
-              <rect class="cell-on" x="30" y="54" width="14" height="14" />
-              <rect class="grid-off" x="86" y="2" width="68" height="68" />
-              <rect class="cell-on" x="102" y="34" width="14" height="14" />
-              <rect class="cell-on" x="118" y="34" width="14" height="14" />
-              <rect class="cell-on" x="134" y="34" width="14" height="14" />
-            </svg>
-            <p>Period 2 oscillator.</p>
-          </article>
+          <span class="ll-label">Speed — <span class="ll-val" id="speedValue">8</span> gen/sec</span>
+          <div class="ll-param">
+            <input id="speedRange" type="range" min="1" max="20" value="8" style="width:100%;" />
+            <div class="ll-param-ends"><span>1</span><span>20</span></div>
+          </div>
 
-          <article class="visual-card">
-            <h3>Glider (4 Frames)</h3>
-            <svg class="mini-diagram wide" viewBox="0 0 244 72" aria-label="Glider frames">
-              <rect class="grid-off" x="2" y="2" width="56" height="56" />
-              <rect class="cell-on" x="30" y="14" width="10" height="10" />
-              <rect class="cell-on" x="42" y="26" width="10" height="10" />
-              <rect class="cell-on" x="18" y="38" width="10" height="10" />
-              <rect class="cell-on" x="30" y="38" width="10" height="10" />
-              <rect class="cell-on" x="42" y="38" width="10" height="10" />
-              <rect class="grid-off" x="64" y="2" width="56" height="56" />
-              <rect class="cell-on" x="76" y="26" width="10" height="10" />
-              <rect class="cell-on" x="88" y="38" width="10" height="10" />
-              <rect class="cell-on" x="100" y="14" width="10" height="10" />
-              <rect class="cell-on" x="100" y="26" width="10" height="10" />
-              <rect class="cell-on" x="100" y="38" width="10" height="10" />
-              <rect class="grid-off" x="126" y="2" width="56" height="56" />
-              <rect class="cell-on" x="138" y="14" width="10" height="10" />
-              <rect class="cell-on" x="138" y="38" width="10" height="10" />
-              <rect class="cell-on" x="150" y="26" width="10" height="10" />
-              <rect class="cell-on" x="150" y="38" width="10" height="10" />
-              <rect class="cell-on" x="162" y="26" width="10" height="10" />
-              <rect class="grid-off" x="188" y="2" width="56" height="56" />
-              <rect class="cell-on" x="200" y="38" width="10" height="10" />
-              <rect class="cell-on" x="212" y="14" width="10" height="10" />
-              <rect class="cell-on" x="212" y="38" width="10" height="10" />
-              <rect class="cell-on" x="224" y="26" width="10" height="10" />
-              <rect class="cell-on" x="224" y="38" width="10" height="10" />
-            </svg>
-            <p>Moves diagonally over time.</p>
-          </article>
-        </div>
-      </section>
+          <hr class="ll-hr" />
 
-      <section class="panel learning-section">
-        <div class="panel-head">
-          <h2>Future + Project Paths</h2>
-          <p>Turn concepts into artifacts you can submit.</p>
-        </div>
-        <div class="project-grid">
-          <article class="project-card">
-            <h3>Path A (Grades 6–8): Pattern Zoo</h3>
-            <p>Collect, label, and explain behavior patterns.</p>
-            <ul>
-              <li>Collect 10 patterns from simulation runs.</li>
-              <li>Sort into still life, oscillator, spaceship.</li>
-              <li>Artifact: screenshot board + one sentence per pattern.</li>
-            </ul>
-            <div class="task-box">
-              <strong>Do this now:</strong>
-              <p>Capture one still life and one oscillator screenshot.</p>
+          <span class="ll-label">Actions</span>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:0.5rem;">
+            <button id="startPauseBtn" style="flex:1;min-width:70px;padding:6px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;">Start</button>
+            <button id="stepBtn" style="flex:1;min-width:70px;padding:6px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;">Step</button>
+            <button id="randomBtn" style="flex:1;min-width:70px;padding:6px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;">Random</button>
+            <button id="clearBtn" style="flex:1;min-width:70px;padding:6px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;">Clear</button>
+            <button id="applyPatternBtn" style="flex:1 0 100%;padding:6px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);font:inherit;cursor:pointer;">Place Pattern</button>
+          </div>
+
+          <div class="ll-readouts">
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Generation</span>
+              <span class="ll-readout-val" id="generationCount2">0</span>
             </div>
-          </article>
-
-          <article class="project-card">
-            <h3>Path B (Grades 8–10): Rule Designer</h3>
-            <p>Compare rule sets and report what changes.</p>
-            <ul>
-              <li>Test Classic Life and HighLife for 100 generations.</li>
-              <li>Track population trend and dominant patterns.</li>
-              <li>Artifact: table + short explanation of differences.</li>
-            </ul>
-            <ul class="advanced-only">
-              <li>Challenge: design a rule with long-lived turbulence.</li>
-            </ul>
-            <div class="task-box">
-              <strong>Do this now:</strong>
-              <p>Predict which rule produces more moving structures, then test it.</p>
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Live Cells</span>
+              <span class="ll-readout-val" id="liveCount2">0</span>
             </div>
-          </article>
+          </div>
+        </div><!-- /#life-params -->
 
-          <article class="project-card">
-            <h3>Path C (Grades 10–12): Model the World</h3>
-            <p>Map automata language onto a real system.</p>
-            <ul>
-              <li>Choose traffic, disease spread, or ecosystem change.</li>
-              <li>Define states, neighbors, and update rules.</li>
-              <li>Artifact: two screenshots + 5-sentence reflection.</li>
-            </ul>
-            <ul class="advanced-only">
-              <li>Challenge: justify boundary conditions and sampling limits.</li>
-            </ul>
-            <div class="task-box">
-              <strong>Do this now:</strong>
-              <p>Write what a cell and neighbor represent in your model.</p>
-            </div>
-          </article>
-        </div>
+        <div class="ll-pane" id="life-guide">
+          <div class="ll-info">
+            <strong>Conway's Game of Life</strong>
+            A 2D grid where each cell is alive or dead. Each generation applies four rules based on neighbor counts.
+          </div>
+          <div class="ll-info">
+            <strong>The Four Rules</strong>
+            1. Live cell + &lt;2 neighbors → dies (underpopulation).<br/>
+            2. Live cell + 2–3 neighbors → survives.<br/>
+            3. Live cell + &gt;3 neighbors → dies (overpopulation).<br/>
+            4. Dead cell + exactly 3 neighbors → born.
+          </div>
+          <div class="ll-info">
+            <strong>Classic Life (B3/S23)</strong>
+            Birth on 3 neighbors. Survive on 2 or 3. The original Conway rule set.
+          </div>
+          <div class="ll-info">
+            <strong>Pattern Types</strong>
+            Still life: stable. Oscillator: repeats in a fixed period. Spaceship: moves across the grid over time.
+          </div>
+          <div class="ll-info">
+            <strong>Why It Matters</strong>
+            Cellular automata show how simple local rules produce global complexity — a foundational insight for AI, biology modeling, and complexity science.
+          </div>
+        </div><!-- /#life-guide -->
 
-        <article class="rubric-card">
-          <h3>Completion Rubric</h3>
-          <ul>
-            <li>Completed five task boxes.</li>
-            <li>Submitted two screenshots with labels.</li>
-            <li>Included one period measurement.</li>
-            <li>Wrote a five-sentence reflection.</li>
-            <li>Explained one real-world mapping.</li>
-          </ul>
-          <p class="bonus-line">Bonus: discover or design a novel pattern.</p>
-        </article>
-      </section>
+      </div>
+    </aside>
 
-      <section class="panel learning-section glossary-section">
-        <div class="panel-head">
-          <h2>Tap a Vocabulary Word</h2>
-          <p>Use this mini glossary while you run experiments.</p>
-        </div>
-        <div class="glossary-cloud">
-          <button class="term-chip" type="button" data-definition="A single square that is either alive or dead in one generation.">cell</button>
-          <button class="term-chip" type="button" data-definition="Any adjacent square used when counting around a cell.">neighbor</button>
-          <button class="term-chip" type="button" data-definition="One complete update step across the full grid.">generation</button>
-          <button class="term-chip" type="button" data-definition="A pattern that never changes once formed.">still life</button>
-          <button class="term-chip" type="button" data-definition="A pattern that repeats after a fixed number of generations.">oscillator</button>
-          <button class="term-chip" type="button" data-definition="A pattern that shifts position across the grid over time.">spaceship</button>
-          <button class="term-chip" type="button" data-definition="The smallest common spaceship that moves diagonally.">glider</button>
-          <button class="term-chip" type="button" data-definition="A structure that repeatedly emits gliders.">glider gun</button>
-          <button class="term-chip advanced-only" type="button" data-definition="Complex large-scale behavior produced by simple local rules.">emergence</button>
-          <button class="term-chip advanced-only" type="button" data-definition="Birth/survival notation such as B3/S23.">rule set</button>
-        </div>
-        <div id="glossaryDefinition" class="glossary-definition">
-          Select a term to see a one-line definition.
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <p>← <a href="../steam-lessons.html">Back to STEAM Lessons</a> &nbsp;·&nbsp; Challenge: design your own rule set and explain what emerges.</p>
-    </footer>
-  </div><!-- /.ll-app -->
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
 
   <script src="../assets/js/nav-mobile.js"></script>
   <script type="module" src="../assets/js/life-lab.js"></script>
   <script type="module" src="../assets/js/life-lab-ambient.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

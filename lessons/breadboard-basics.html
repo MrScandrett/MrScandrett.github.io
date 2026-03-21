@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     /* ── Page wrapper ──────────────────────────────────── */
     .bb-page { padding-bottom: 3.5rem; }
@@ -475,12 +476,21 @@
     @media (max-width: 480px) {
       .bb-card, .bb-explorer, .bb-challenges, .bb-quiz { padding: 1rem 1rem; }
     }
+
+    /* ── Layout overrides ─────────────────────────────── */
+    .ll-viewport {
+      --ll-tab-active: #007aff;
+      --ll-tab-active-bg: rgba(0,122,255,0.10);
+    }
+    #bb-explorer-canvas,
+    #bb-chal-canvas { max-height: calc(100dvh - 140px); }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="site-header">
+  <header class="site-header ll-topbar">
     <div class="nav-wrap">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
@@ -498,6 +508,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+  <div class="ll-sim">
   <main id="main-content" class="bb-page">
 
     <!-- ── Hero ─────────────────────────────────────────── -->
@@ -664,50 +676,13 @@
     <!-- ── Circuit Challenges ───────────────────────────── -->
     <section class="bb-challenges" id="bb-challenges-section">
       <h2>Circuit Challenges</h2>
-      <p class="bb-challenges-desc">Build a working LED circuit step by step. Select a component from the palette, then click the source hole — the board will show you where valid connections can go.</p>
+      <p class="bb-challenges-desc">Build a working LED circuit step by step. Select a component from the Controls panel, then click the source hole on the board.</p>
 
-      <!-- Step indicators -->
-      <div class="bb-steps" id="bb-steps">
-        <div class="bb-step-pip is-active" id="pip-1">Step 1: Power up the rails</div>
-        <div class="bb-step-pip" id="pip-2">Step 2: Add a resistor</div>
-        <div class="bb-step-pip" id="pip-3">Step 3: Light the LED</div>
-        <div class="bb-step-pip" id="pip-4">Step 4: Close the loop</div>
+      <div class="bb-chal-canvas-wrap" style="overflow-x:auto;">
+        <canvas id="bb-chal-canvas" width="360" height="420"></canvas>
       </div>
 
-      <div class="bb-challenge-area">
-        <div class="bb-challenge-info">
-          <p class="bb-challenge-goal" id="chal-goal">Challenge 1 of 4</p>
-          <p class="bb-challenge-title" id="chal-title">Power Up the Rails</p>
-          <p class="bb-challenge-instruction" id="chal-instruction">
-            Connect the battery to the breadboard. Select <strong>Red Wire</strong> from the palette, then click the battery <strong>+ terminal</strong> (top-left), then click the <strong>+ power rail</strong>. Then select <strong>Black Wire</strong> and connect the battery <strong>− terminal</strong> to the <strong>− power rail</strong>.
-          </p>
-
-          <!-- Component palette -->
-          <div class="bb-palette" id="bb-palette">
-            <button class="bb-palette-btn" data-tool="wire-red">🔴 Red Wire</button>
-            <button class="bb-palette-btn" data-tool="wire-black">⚫ Black Wire</button>
-            <button class="bb-palette-btn" data-tool="resistor" disabled>🟡 Resistor</button>
-            <button class="bb-palette-btn" data-tool="led" disabled>💡 LED</button>
-          </div>
-
-          <div class="bb-chal-feedback" id="bb-chal-feedback"></div>
-          <button class="bb-next-btn" id="bb-next-btn">Next Step →</button>
-          <br>
-          <button class="bb-reset-btn" id="bb-reset-btn">↺ Reset Challenge</button>
-        </div>
-
-        <div>
-          <div class="bb-chal-canvas-wrap">
-            <canvas id="bb-chal-canvas" width="360" height="420"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hint panel -->
-      <div class="bb-callout" id="bb-chal-hint" style="margin-top:0.85rem;">
-        <strong>Hint</strong>
-        <span id="bb-hint-text">A complete circuit needs a path from + to − through every component. Start by giving the board power from the battery.</span>
-      </div>
+      <div class="bb-chal-feedback" id="bb-chal-feedback" style="margin-top:0.65rem;"></div>
     </section>
 
     <!-- ── Pro Tips ─────────────────────────────────────── -->
@@ -798,10 +773,85 @@
     </section>
 
   </main>
+  </div><!-- /.ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="bb-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="bb-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="bb-params">
+        <span class="ll-label">Challenge Progress</span>
+        <div class="bb-steps" id="bb-steps" style="flex-direction:column;gap:0.35rem;margin-bottom:0.75rem;">
+          <div class="bb-step-pip is-active" id="pip-1">Step 1: Power up the rails</div>
+          <div class="bb-step-pip" id="pip-2">Step 2: Add a resistor</div>
+          <div class="bb-step-pip" id="pip-3">Step 3: Light the LED</div>
+          <div class="bb-step-pip" id="pip-4">Step 4: Close the loop</div>
+        </div>
+        <hr class="ll-hr">
+        <span class="ll-label">Component Palette</span>
+        <div class="bb-palette" id="bb-palette" style="margin-bottom:0.5rem;">
+          <button class="bb-palette-btn" data-tool="wire-red">🔴 Red Wire</button>
+          <button class="bb-palette-btn" data-tool="wire-black">⚫ Black Wire</button>
+          <button class="bb-palette-btn" data-tool="resistor" disabled>🟡 Resistor</button>
+          <button class="bb-palette-btn" data-tool="led" disabled>💡 LED</button>
+        </div>
+        <hr class="ll-hr">
+        <span class="ll-label">Challenge</span>
+        <p class="bb-challenge-goal" id="chal-goal" style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;margin:0 0 0.2rem;">Challenge 1 of 4</p>
+        <p class="bb-challenge-title" id="chal-title" style="font-size:0.92rem;font-weight:700;margin:0 0 0.4rem;">Power Up the Rails</p>
+        <p class="bb-challenge-instruction" id="chal-instruction" style="font-size:0.8rem;color:#64748b;margin:0 0 0.6rem;line-height:1.55;">
+          Connect the battery to the breadboard. Select <strong>Red Wire</strong> from the palette, then click the battery <strong>+ terminal</strong> (top-left), then click the <strong>+ power rail</strong>. Then select <strong>Black Wire</strong> and connect the battery <strong>− terminal</strong> to the <strong>− power rail</strong>.
+        </p>
+        <button class="bb-next-btn" id="bb-next-btn">Next Step →</button>
+        <br>
+        <button class="bb-reset-btn" id="bb-reset-btn" style="margin-top:0.4rem;">↺ Reset Challenge</button>
+        <hr class="ll-hr">
+        <div class="bb-callout" id="bb-chal-hint" style="margin-top:0;">
+          <strong>Hint</strong>
+          <span id="bb-hint-text">A complete circuit needs a path from + to − through every component. Start by giving the board power from the battery.</span>
+        </div>
+      </div>
+      <div class="ll-pane" id="bb-guide">
+        <div class="ll-info">
+          <strong>Connection rule</strong>
+          Tie-point strips run vertically. All 5 holes in the same column and same half (a–e or f–j) share one node.
+        </div>
+        <div class="ll-info">
+          <strong>Power rails</strong>
+          Run horizontally across the full board. Every hole in the + row connects to every other hole in that row.
+        </div>
+        <div class="ll-info">
+          <strong>Center gap</strong>
+          No connections cross the center gap. ICs straddle it so each pin stays isolated.
+        </div>
+        <div class="ll-info">
+          <strong>LED polarity</strong>
+          Long lead (anode) toward positive. Always use a resistor in series or the LED burns out instantly.
+        </div>
+        <div class="ll-info">
+          <strong>Wire colors</strong>
+          Red = power (+). Black = ground (−). Other colors = signals. Keep wires short and flat.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+  </button>
+  </div><!-- /.ll-stage -->
 
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
   </footer>
+</div><!-- /.ll-viewport -->
 
   <script src="../assets/js/nav-mobile.js"></script>
   <script>
@@ -1733,5 +1783,6 @@
 
   })();
   </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

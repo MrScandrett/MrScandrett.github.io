@@ -9,7 +9,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #007aff; --ll-tab-active: #007aff; --ll-tab-active-bg: rgba(0,122,255,0.12); }
+    /* Keep the gc-layout block display:block so canvas fills full sim width */
+    .gc-layout { display: block !important; }
+    .gc-sidebar-in-page { display: none !important; }
+    .gc-canvas-wrap { max-height: calc(100dvh - 120px); aspect-ratio: 4/3; }
     /* ── Page ─────────────────────────────────────────────── */
     .gc-page { padding-bottom: 3.5rem; }
 
@@ -514,7 +520,8 @@
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="site-header">
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
     <div class="nav-wrap">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
@@ -532,6 +539,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+  <div class="ll-sim">
   <main id="main-content" class="gc-page">
 
     <!-- ── Hero ──────────────────────────────────────────── -->
@@ -828,8 +837,8 @@
           </div>
         </div>
 
-        <!-- Sidebar -->
-        <div class="gc-sidebar">
+        <!-- Sidebar — hidden in layout mode; controls moved to ll-panel -->
+        <div class="gc-sidebar gc-sidebar-in-page">
 
           <!-- Input -->
           <div>
@@ -1024,6 +1033,91 @@
     </section>
 
   </main>
+  </div><!-- /ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="gc-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="gc-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="gc-params">
+        <span class="ll-label">Add Equation</span>
+        <div style="display:flex;gap:0.4rem;align-items:center;margin-bottom:0.3rem;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;font-weight:600;color:var(--ll-tab-color);white-space:nowrap;">y =</span>
+          <input class="gc-eq-input" id="gc-panel-eq-input" type="text" placeholder="2x+1 or x^2"
+            autocomplete="off" spellcheck="false"
+            style="flex:1;font-family:'JetBrains Mono',monospace;font-size:0.82rem;padding:0.35rem 0.5rem;border-radius:7px;border:1.5px solid var(--ll-panel-border);background:transparent;color:inherit;outline:none;" />
+        </div>
+        <button id="gc-panel-add-btn"
+          style="width:100%;padding:0.38rem 0.7rem;border-radius:7px;font-size:0.82rem;font-weight:700;border:none;background:#007aff;color:#fff;cursor:pointer;font-family:inherit;margin-bottom:0.5rem;">Plot &#x2192;</button>
+        <hr class="ll-hr" />
+        <span class="ll-label">Quick Presets</span>
+        <div class="ll-presets">
+          <button class="ll-preset" data-preset="y=x"       data-values='{"eq":"x"}'>y = x</button>
+          <button class="ll-preset" data-preset="y=2x+1"    data-values='{"eq":"2*x+1"}'>y = 2x+1</button>
+          <button class="ll-preset" data-preset="y=x2"      data-values='{"eq":"x^2"}'>y = x²</button>
+          <button class="ll-preset" data-preset="y=x2-4"    data-values='{"eq":"x^2-4"}'>y = x²−4</button>
+          <button class="ll-preset" data-preset="y=x3-3x"   data-values='{"eq":"x^3-3*x"}'>y = x³−3x</button>
+          <button class="ll-preset" data-preset="y=sinx"    data-values='{"eq":"sin(x)"}'>y = sin(x)</button>
+          <button class="ll-preset" data-preset="y=cosx"    data-values='{"eq":"cos(x)"}'>y = cos(x)</button>
+          <button class="ll-preset" data-preset="y=absx"    data-values='{"eq":"abs(x)"}'>y = |x|</button>
+          <button class="ll-preset" data-preset="y=sqrtx"   data-values='{"eq":"sqrt(x)"}'>y = √x</button>
+          <button class="ll-preset" data-preset="y=1/x"     data-values='{"eq":"1/x"}'>y = 1/x</button>
+          <button class="ll-preset" data-preset="y=2x"      data-values='{"eq":"2^x"}'>y = 2ˣ</button>
+        </div>
+        <hr class="ll-hr" />
+        <span class="ll-label">Plotted Functions</span>
+        <div id="gc-panel-fn-list" style="display:flex;flex-direction:column;gap:0.3rem;font-size:0.78rem;">
+          <span style="color:var(--ll-tab-color);opacity:0.7;">None yet — add one above.</span>
+        </div>
+        <button id="gc-panel-clear-btn"
+          style="margin-top:0.5rem;padding:0.32rem 0.7rem;border-radius:7px;font-size:0.78rem;font-weight:600;border:1.5px solid var(--ll-panel-border);background:transparent;color:var(--ll-tab-color);cursor:pointer;font-family:inherit;">Clear all</button>
+      </div>
+      <div class="ll-pane" id="gc-guide">
+        <span class="ll-label">Equation Syntax</span>
+        <div class="ll-info">
+          <strong>Basic operators</strong>
+          + − * / ^ &nbsp; Use <code style="font-family:monospace;color:#007aff;">*</code> for multiply, <code style="font-family:monospace;color:#007aff;">^</code> for exponent.
+        </div>
+        <div class="ll-info">
+          <strong>Functions</strong>
+          <code style="font-family:monospace;color:#007aff;">sin(x)</code> <code style="font-family:monospace;color:#007aff;">cos(x)</code> <code style="font-family:monospace;color:#007aff;">sqrt(x)</code> <code style="font-family:monospace;color:#007aff;">abs(x)</code> <code style="font-family:monospace;color:#007aff;">ln(x)</code> <code style="font-family:monospace;color:#007aff;">log(x)</code>
+        </div>
+        <div class="ll-info">
+          <strong>Constants</strong>
+          <code style="font-family:monospace;color:#007aff;">pi</code> and <code style="font-family:monospace;color:#007aff;">e</code> &nbsp; e.g. <code style="font-family:monospace;color:#007aff;">sin(2*pi*x)</code>
+        </div>
+        <span class="ll-label">Graph Vocabulary</span>
+        <div class="ll-info">
+          <strong>Slope (m)</strong>
+          In y = mx + b, m controls steepness. Positive rises left-to-right.
+        </div>
+        <div class="ll-info">
+          <strong>y-intercept (b)</strong>
+          Where the line crosses the y-axis (x = 0).
+        </div>
+        <div class="ll-info">
+          <strong>Vertex</strong>
+          Turning point of a parabola at x = −b/(2a).
+        </div>
+        <div class="ll-info">
+          <strong>Period</strong>
+          Horizontal repeat length. For sin(x), period = 2π ≈ 6.28.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+  </button>
+
+  </div><!-- /ll-stage -->
+</div><!-- /ll-viewport -->
 
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
@@ -1774,5 +1868,80 @@
 
   })();
   </script>
+  <script>
+  /* ── Panel controls bridge to graphing calculator ── */
+  (function () {
+    /* Panel "Plot" button triggers in-page add button */
+    var panelInput  = document.getElementById('gc-panel-eq-input');
+    var panelAddBtn = document.getElementById('gc-panel-add-btn');
+    var inPageInput = document.getElementById('gc-eq-input');
+    var inPageBtn   = document.getElementById('gc-add-btn');
+    var panelFnList = document.getElementById('gc-panel-fn-list');
+    var inPageFnList = document.getElementById('gc-fn-list');
+
+    if (panelAddBtn && inPageBtn && panelInput && inPageInput) {
+      panelAddBtn.addEventListener('click', function () {
+        inPageInput.value = panelInput.value;
+        inPageBtn.click();
+        panelInput.value = '';
+        syncFnList();
+      });
+      panelInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') panelAddBtn.click();
+      });
+    }
+
+    /* Panel clear button */
+    var panelClearBtn  = document.getElementById('gc-panel-clear-btn');
+    var inPageClearBtn = document.getElementById('gc-clear-btn');
+    if (panelClearBtn && inPageClearBtn) {
+      panelClearBtn.addEventListener('click', function () {
+        inPageClearBtn.click();
+        syncFnList();
+      });
+    }
+
+    /* Panel preset chips → fire ll:preset and also plot via in-page */
+    document.addEventListener('ll:preset', function (e) {
+      var vals = e.detail && e.detail.values;
+      if (vals && vals.eq && inPageInput && inPageBtn) {
+        inPageInput.value = vals.eq;
+        inPageBtn.click();
+        setTimeout(syncFnList, 50);
+      }
+    });
+
+    /* Sync fn list display from in-page to panel */
+    function syncFnList() {
+      if (!panelFnList || !inPageFnList) return;
+      panelFnList.innerHTML = inPageFnList.innerHTML;
+      /* forward remove-button clicks back to in-page list */
+      panelFnList.querySelectorAll('.gc-fn-remove').forEach(function (btn, idx) {
+        btn.addEventListener('click', function () {
+          var inPageBtns = inPageFnList.querySelectorAll('.gc-fn-remove');
+          if (inPageBtns[idx]) inPageBtns[idx].click();
+          setTimeout(syncFnList, 50);
+        });
+      });
+    }
+
+    /* Watch in-page fn-list for mutations and keep panel in sync */
+    if (inPageFnList && panelFnList) {
+      var mo = new MutationObserver(function () { syncFnList(); });
+      mo.observe(inPageFnList, { childList: true, subtree: true, characterData: true });
+    }
+
+    /* In-page mission buttons also update panel fn list */
+    document.querySelectorAll('.gc-mission-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { setTimeout(syncFnList, 100); });
+    });
+
+    /* In-page preset buttons */
+    document.querySelectorAll('#gc-presets .gc-preset-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { setTimeout(syncFnList, 100); });
+    });
+  })();
+  </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

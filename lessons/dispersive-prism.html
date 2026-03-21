@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     /* ── page shell ── */
     body { padding-bottom: 4rem; }
@@ -286,12 +287,29 @@
     }
     .prism-reflect-ta:focus { border-color: #ff9500; }
     .prism-reflect-ta::placeholder { color: var(--muted,#6e6e73); }
+
+    /* ── ll-viewport theme ── */
+    .ll-viewport {
+      --ll-panel-w:       300px;
+      --ll-tab-active:    #ff9500;
+      --ll-tab-active-bg: rgba(255, 149, 0, 0.12);
+    }
+    [data-lighting="night"] .ll-viewport {
+      --ll-panel-bg:      rgba(28, 28, 30, 0.97);
+      --ll-panel-border:  rgba(255, 149, 0, 0.15);
+      --ll-tab-color:     rgba(245, 245, 247, 0.45);
+      --ll-toggle-bg:     rgba(28, 28, 30, 0.97);
+    }
+    /* Remove bottom padding */
+    body { padding-bottom: 0; }
   </style>
 </head>
 <body>
 
+<div class="ll-viewport">
+
   <!-- topbar -->
-  <nav class="prism-topbar" aria-label="Lesson navigation">
+  <nav class="prism-topbar ll-topbar" aria-label="Lesson navigation">
     <div class="prism-topbar-inner">
       <a href="../steam-lessons.html">← STEAM Lessons</a>
       <span class="prism-topbar-title">Newton's Dispersive Prism</span>
@@ -299,7 +317,10 @@
     </div>
   </nav>
 
-  <main class="prism-shell">
+  <div class="ll-stage">
+
+    <div class="ll-sim">
+      <main class="prism-shell">
 
     <!-- ── HERO ── -->
     <div class="prism-hero" id="overview">
@@ -403,30 +424,7 @@
           <p class="prism-sim-note">This simulator needs JavaScript to run.</p>
         </noscript>
 
-        <div class="prism-controls">
-          <div class="prism-ctrl">
-            <label class="prism-ctrl-label" for="beam-angle">Beam Angle <span class="prism-ctrl-val" id="beam-angle-val">30°</span></label>
-            <input type="range" id="beam-angle" class="prism-range" min="10" max="70" value="30" />
-          </div>
-          <div class="prism-ctrl">
-            <label class="prism-ctrl-label" for="prism-rotation">Prism Rotation <span class="prism-ctrl-val" id="prism-rotation-val">0°</span></label>
-            <input type="range" id="prism-rotation" class="prism-range" min="-25" max="25" value="0" />
-          </div>
-          <div class="prism-ctrl">
-            <label class="prism-ctrl-label" for="beam-width">Beam Width <span class="prism-ctrl-val" id="beam-width-val">narrow</span></label>
-            <input type="range" id="beam-width" class="prism-range" min="1" max="3" step="1" value="1" />
-          </div>
-          <div class="prism-ctrl">
-            <label class="prism-ctrl-label" for="second-prism">Second Prism</label>
-            <input type="range" id="second-prism" class="prism-range" min="0" max="1" step="1" value="0" />
-            <span class="prism-ctrl-val" id="second-prism-val">off</span>
-          </div>
-          <div class="prism-ctrl">
-            <span class="prism-ctrl-label">Defaults</span>
-            <button type="button" class="prism-reset" id="prism-reset">Reset</button>
-          </div>
-        </div>
-        <p class="prism-sim-note">Toggle the second prism to recombine the spectrum back into white light — Newton's crucial proof that the prism doesn't add colour, it only separates it.</p>
+        <p class="prism-sim-note">Toggle the second prism to recombine the spectrum back into white light — Newton's crucial proof that the prism doesn't add colour, it only separates it. Use the Parameters panel to adjust the simulation.</p>
       </div>
     </div>
 
@@ -611,11 +609,91 @@
       </div>
     </div>
 
-  </main>
+      </main>
 
-  <footer style="text-align:center;padding:1.5rem 1rem 3rem;font-size:0.8rem;color:var(--muted,#6e6e73)">
-    <a href="../steam-lessons.html" style="color:var(--blue,#0071e3);text-decoration:none">← Back to STEAM Lessons</a>
-  </footer>
+      <footer style="text-align:center;padding:1.5rem 1rem 2rem;font-size:0.8rem;color:var(--muted,#6e6e73)">
+        <a href="../steam-lessons.html" style="color:var(--blue,#0071e3);text-decoration:none">← Back to STEAM Lessons</a>
+      </footer>
+
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="prism-pane-params">Parameters</button>
+          <button class="ll-tab" aria-selected="false" data-pane="prism-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="prism-pane-params">
+          <span class="ll-label">Presets</span>
+          <div class="ll-presets">
+            <button class="ll-preset" data-preset="white">&#x2600;&#xFE0F; White Light</button>
+            <button class="ll-preset" data-preset="red">&#x1F534; Red Laser</button>
+            <button class="ll-preset" data-preset="violet">&#x1F7E3; Violet</button>
+            <button class="ll-preset" data-preset="narrow">&#x1F4D0; Narrow Beam</button>
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Beam &amp; Prism</span>
+          <div class="ll-param">
+            <div class="ll-param-label">
+              <span>Beam Angle</span>
+              <span class="ll-val" id="beam-angle-val">30°</span>
+            </div>
+            <input type="range" id="beam-angle" class="prism-range" min="10" max="70" value="30" style="width:100%" />
+            <div class="ll-param-ends"><span>10°</span><span>70°</span></div>
+          </div>
+          <div class="ll-param">
+            <div class="ll-param-label">
+              <span>Prism Rotation</span>
+              <span class="ll-val" id="prism-rotation-val">0°</span>
+            </div>
+            <input type="range" id="prism-rotation" class="prism-range" min="-25" max="25" value="0" style="width:100%" />
+            <div class="ll-param-ends"><span>&#x2212;25°</span><span>+25°</span></div>
+          </div>
+          <div class="ll-param">
+            <div class="ll-param-label">
+              <span>Beam Width</span>
+              <span class="ll-val" id="beam-width-val">narrow</span>
+            </div>
+            <input type="range" id="beam-width" class="prism-range" min="1" max="3" step="1" value="1" style="width:100%" />
+            <div class="ll-param-ends"><span>narrow</span><span>wide</span></div>
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Second Prism</span>
+          <div class="ll-param">
+            <div class="ll-param-label">
+              <span>Recombining Prism</span>
+              <span class="ll-val" id="second-prism-val">off</span>
+            </div>
+            <input type="range" id="second-prism" class="prism-range" min="0" max="1" step="1" value="0" style="width:100%" />
+            <div class="ll-param-ends"><span>off</span><span>on</span></div>
+          </div>
+          <hr class="ll-hr">
+          <button type="button" class="prism-reset" id="prism-reset" style="width:100%">Reset to Defaults</button>
+        </div>
+
+        <div class="ll-pane" id="prism-pane-guide">
+          <div class="ll-info"><strong>Newton's Discovery (1666)</strong>Newton used a prism to prove that white light is composed of all visible colours, not that the prism adds colour.</div>
+          <div class="ll-info"><strong>Dispersion</strong>Different wavelengths refract at different angles. Violet light bends most (~60.9°), red least (~60.1°) in glass.</div>
+          <div class="ll-info"><strong>Snell's Law</strong>n&#x2081; sin &#x03B8;&#x2081; = n&#x2082; sin &#x03B8;&#x2082;. The refractive index n varies with wavelength — this causes the spectrum to spread.</div>
+          <div class="ll-info"><strong>Second Prism</strong>Enable the recombining prism to reproduce Newton's <em>experimentum crucis</em> — dispersed colours converge back to white light.</div>
+        </div>
+
+      </div>
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
 
   <script>
     // ── Prism Simulator ──
@@ -1046,7 +1124,27 @@
       fb.textContent = ans.feedback[choice] || ans.feedback['default'];
       fb.className = 'prism-quiz-fb show ' + (choice === ans.correct ? 'good' : 'bad');
     }
+
+    // ── Preset handler for ll-panel preset chips ──
+    document.addEventListener('ll:preset', function(e) {
+      var presets = {
+        white:  { 'beam-angle': 30, 'prism-rotation':  0, 'beam-width': 2, 'second-prism': 0 },
+        red:    { 'beam-angle': 45, 'prism-rotation': 10, 'beam-width': 1, 'second-prism': 0 },
+        violet: { 'beam-angle': 15, 'prism-rotation': -8, 'beam-width': 1, 'second-prism': 0 },
+        narrow: { 'beam-angle': 30, 'prism-rotation':  0, 'beam-width': 1, 'second-prism': 1 }
+      };
+      var p = presets[e.detail.name];
+      if (!p) return;
+      ['beam-angle', 'prism-rotation', 'beam-width', 'second-prism'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && p[id] !== undefined) {
+          el.value = p[id];
+          el.dispatchEvent(new Event('input'));
+        }
+      });
+    });
   </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 
 </body>
 </html>

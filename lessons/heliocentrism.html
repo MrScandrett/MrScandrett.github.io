@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     /* ── Page ─────────────────────────────────────────── */
     .hs-page { padding-bottom: 3.5rem; }
@@ -209,12 +210,16 @@
       .hs-bio      { flex-direction: column; align-items: center; text-align: center; }
       .hs-evidence { grid-template-columns: 1fr; }
     }
+
+    /* ── ll-viewport overrides (light theme — use defaults) ── */
+    #hs-canvas { max-height: calc(100dvh - 200px); }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="site-header">
+  <header class="site-header ll-topbar">
     <div class="nav-wrap">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
@@ -232,6 +237,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+    <div class="ll-sim">
   <main id="main-content" class="hs-page">
 
     <!-- ── Hero ── -->
@@ -553,10 +560,84 @@
     </section>
 
   </main>
+    </div><!-- .ll-sim -->
 
-  <footer class="site-footer">
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="hs-params">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="hs-guide">About</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="hs-params">
+          <span class="ll-label">View Mode</span>
+          <div class="hs-mode-toggle" role="group" aria-label="View mode" style="margin-bottom:0.75rem;">
+            <button class="hs-mode-btn active" id="hs-helio-btn-panel">☀️ Heliocentric</button>
+            <button class="hs-mode-btn" id="hs-geo-btn-panel">🌍 Geocentric</button>
+          </div>
+          <span class="ll-label">Simulation Speed</span>
+          <div class="hs-sim-controls" style="margin-bottom:0.75rem;">
+            <span class="hs-ctrl-label">Speed</span>
+            <input type="range" class="hs-speed-slider" id="hs-speed-panel" min="0.2" max="4" step="0.1" value="1" />
+            <button class="hs-play-btn" id="hs-play-btn-panel">⏸ Pause</button>
+          </div>
+          <hr class="ll-hr" />
+          <span class="ll-label">Kepler's Laws</span>
+          <div class="ll-info">
+            <strong>1st Law — Ellipses</strong>
+            Planets orbit the Sun in ellipses, with the Sun at one focus.
+          </div>
+          <div class="ll-info">
+            <strong>2nd Law — Equal Areas</strong>
+            A line from Sun to planet sweeps equal areas in equal times. Planets move faster when closer.
+          </div>
+          <div class="ll-info">
+            <strong>3rd Law — T² ∝ a³</strong>
+            The square of the orbital period equals the cube of the average distance from the Sun.
+          </div>
+        </div>
+
+        <div class="ll-pane" id="hs-guide">
+          <div class="ll-info">
+            <strong>Aristarchus of Samos (~270 BC)</strong>
+            Proposed the heliocentric model ~1,800 years before Copernicus. Used geometry from lunar eclipses to deduce the Sun is larger than Earth, reasoning that smaller objects orbit larger ones.
+          </div>
+          <div class="ll-info">
+            <strong>Nicolaus Copernicus (1543)</strong>
+            Revived heliocentrism in <em>De revolutionibus</em>. Delayed publication until his deathbed fearing the reaction.
+          </div>
+          <div class="ll-info">
+            <strong>Galileo Galilei (1609–1633)</strong>
+            Observed Jupiter's moons, Venus phases, and sunspots with a telescope — providing direct observational proof. Tried by the Inquisition; spent the rest of his life under house arrest.
+          </div>
+          <div class="ll-info">
+            <strong>Johannes Kepler (1609–1619)</strong>
+            Derived three mathematical laws of planetary motion from Tycho Brahe's data. Proved orbits are ellipses, not circles.
+          </div>
+          <div class="ll-info">
+            <strong>Isaac Newton (1687)</strong>
+            His law of universal gravitation explained <em>why</em> planets orbit the Sun. Kepler's laws follow directly from Newton's mathematics.
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+  </div><!-- .ll-stage -->
+
+  <footer class="site-footer" style="display:none;">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
   </footer>
+
+</div><!-- .ll-viewport -->
 
   <script src="../assets/js/nav-mobile.js"></script>
   <script>
@@ -815,5 +896,23 @@
 
   })();
   </script>
+  <script>
+  // Wire panel controls to simulator
+  (function () {
+    var helioPanelBtn = document.getElementById('hs-helio-btn-panel');
+    var geoPanelBtn   = document.getElementById('hs-geo-btn-panel');
+    var playPanelBtn  = document.getElementById('hs-play-btn-panel');
+    var speedPanelEl  = document.getElementById('hs-speed-panel');
+    var helioBtn      = document.getElementById('hs-helio-btn');
+    var geoBtn        = document.getElementById('hs-geo-btn');
+    var playBtn       = document.getElementById('hs-play-btn');
+    var speedEl       = document.getElementById('hs-speed');
+    if (helioPanelBtn && helioBtn) helioPanelBtn.addEventListener('click', function () { helioBtn.click(); helioPanelBtn.classList.add('active'); if(geoPanelBtn) geoPanelBtn.classList.remove('active'); });
+    if (geoPanelBtn && geoBtn) geoPanelBtn.addEventListener('click', function () { geoBtn.click(); geoPanelBtn.classList.add('active'); if(helioPanelBtn) helioPanelBtn.classList.remove('active'); });
+    if (playPanelBtn && playBtn) playPanelBtn.addEventListener('click', function () { playBtn.click(); playPanelBtn.textContent = playBtn.textContent; });
+    if (speedPanelEl && speedEl) speedPanelEl.addEventListener('input', function () { speedEl.value = this.value; });
+  })();
+  </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

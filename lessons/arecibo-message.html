@@ -6,6 +6,7 @@
   <title>Arecibo Message · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Space Science Lesson 05 — Decode the 1974 Arecibo Message. 1679 binary digits transmitted toward M13. Explore what humanity chose to say about itself to the cosmos." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     body {
       margin: 0;
@@ -52,7 +53,7 @@
     .am-hero {
       max-width: 760px;
       margin: 0 auto;
-      padding: 2.2rem 1rem 1.4rem;
+      padding: 0.8rem 1rem 0.7rem;
       text-align: center;
     }
     .am-eyebrow {
@@ -80,13 +81,10 @@
 
     /* ── Main layout ── */
     .am-wrap {
+      display: block;
       width: min(1340px, calc(100% - 2rem));
       margin: 0 auto;
-      padding-bottom: 3rem;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 340px;
-      gap: 1.1rem;
-      align-items: start;
+      padding-bottom: 0.5rem;
     }
     @media (max-width: 960px) {
       .am-wrap { grid-template-columns: 1fr; }
@@ -367,11 +365,23 @@
       font-size: 0.74rem;
       color: rgba(160,220,190,0.55);
     }
+
+    /* ── ll-viewport theme for this lesson ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(4, 14, 10, 0.97);
+      --ll-panel-border:  rgba(40, 200, 120, 0.18);
+      --ll-tab-color:     rgba(100, 220, 160, 0.5);
+      --ll-tab-active-bg: rgba(40, 200, 120, 0.16);
+      --ll-tab-active:    #4de8a0;
+      --ll-toggle-bg:     rgba(4, 14, 10, 0.97);
+    }
   </style>
 </head>
 <body>
 
-  <nav class="am-topbar" aria-label="Lesson navigation">
+<div class="ll-viewport ll-dark">
+
+  <nav class="am-topbar ll-topbar" aria-label="Lesson navigation">
     <div class="am-topbar-inner">
       <a href="../steam-lessons.html">← STEAM Lessons</a>
       <span class="am-topbar-title">Space Science · Lesson 05</span>
@@ -379,147 +389,180 @@
     </div>
   </nav>
 
-  <div class="am-hero">
-    <p class="am-eyebrow">Space Science · Lesson 05 · 1974</p>
-    <h1>The Arecibo Message</h1>
-    <p>On November 16, 1974, humanity aimed the world's largest radio telescope at a cluster of 300,000 stars and screamed into the void — in binary. Can you decode what we said?</p>
-  </div>
+  <div class="ll-stage">
 
-  <div class="am-wrap">
+    <div class="ll-sim">
+      <header class="am-hero">
+        <p class="am-eyebrow">Space Science · Lesson 05 · 1974</p>
+        <h1>The Arecibo Message</h1>
+        <p>On November 16, 1974, humanity aimed the world's largest radio telescope at a cluster of 300,000 stars and screamed into the void — in binary. Can you decode what we said?</p>
+      </header>
 
-    <!-- ══ Left column: Interactive Decoder ══ -->
-    <div style="display:grid;gap:1rem;">
+      <div class="am-wrap">
 
-      <!-- Decoder card -->
-      <div class="am-card">
-        <div class="am-card-head">
-          <h2>Message Decoder</h2>
-          <span class="am-badge">Interactive</span>
-        </div>
-        <div class="am-decoder-shell">
-          <div class="am-decoder-controls">
-            <div class="am-btn-group">
-              <button class="am-btn am-btn--active" id="btnColor" onclick="setMode('color')">Color Sections</button>
-              <button class="am-btn" id="btnBW" onclick="setMode('bw')">Binary (B&W)</button>
-              <button class="am-btn" id="btnAnim" onclick="animateDecode()">▶ Decode</button>
+        <!-- ══ Interactive Decoder ══ -->
+        <div style="display:grid;gap:1rem;">
+
+          <!-- Decoder card -->
+          <div class="am-card">
+            <div class="am-card-head">
+              <h2>Message Decoder</h2>
+              <span class="am-badge">Interactive</span>
             </div>
-            <div style="flex:1"></div>
-            <div class="am-zoom-row">
-              <button class="am-btn" onclick="setZoom(-1)">−</button>
-              <span id="zoomLabel">10×</span>
-              <button class="am-btn" onclick="setZoom(1)">+</button>
+            <div class="am-decoder-shell">
+              <div class="am-decoder-controls">
+                <div class="am-btn-group">
+                  <button class="am-btn am-btn--active" id="btnColor" onclick="setMode('color')">Color Sections</button>
+                  <button class="am-btn" id="btnBW" onclick="setMode('bw')">Binary (B&W)</button>
+                  <button class="am-btn" id="btnAnim" onclick="animateDecode()">▶ Decode</button>
+                </div>
+                <div style="flex:1"></div>
+                <div class="am-zoom-row">
+                  <button class="am-btn" onclick="setZoom(-1)">−</button>
+                  <span id="zoomLabel">10×</span>
+                  <button class="am-btn" onclick="setZoom(1)">+</button>
+                </div>
+              </div>
+
+              <div class="am-canvas-wrap">
+                <canvas id="areciboCanvas" width="230" height="730"></canvas>
+              </div>
+              <p class="am-canvas-hint">Click or hover any region to identify it</p>
+
+              <div class="am-section-bar" id="sectionBar">
+                <div class="am-section-dot" id="sectionDot" style="background:#555"></div>
+                <div>
+                  <div class="am-section-name" id="sectionName">Hover over the message to explore</div>
+                  <div class="am-section-desc" id="sectionDesc">Each colored section encodes a different fact about life on Earth.</div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="am-canvas-wrap">
-            <canvas id="areciboCanvas" width="230" height="730"></canvas>
-          </div>
-          <p class="am-canvas-hint">Click or hover any region to identify it</p>
-
-          <div class="am-section-bar" id="sectionBar">
-            <div class="am-section-dot" id="sectionDot" style="background:#555"></div>
-            <div>
-              <div class="am-section-name" id="sectionName">Hover over the message to explore</div>
-              <div class="am-section-desc" id="sectionDesc">Each colored section encodes a different fact about life on Earth.</div>
+          <!-- Binary primer -->
+          <div class="am-card">
+            <div class="am-card-head">
+              <h2>Binary Primer</h2>
+              <span class="am-badge">How it works</span>
+            </div>
+            <div style="padding:0.8rem 1.1rem 1rem">
+              <p style="font-size:0.83rem;color:rgba(190,235,210,0.76);line-height:1.6;margin:0 0 0.6rem">
+                The message contains only <strong style="color:#8ef5c4">1679 bits</strong> — each either a 1 (transmitted pulse) or a 0 (silence). To read it, you must arrange those bits into a rectangle. Only one arrangement makes an image: <strong style="color:#8ef5c4">23 columns × 73 rows</strong>.
+              </p>
+              <table class="am-binary-table">
+                <thead>
+                  <tr><th>Decimal</th><th>Binary</th><th>Decimal</th><th>Binary</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>1</td><td>6</td><td>110</td></tr>
+                  <tr><td>2</td><td>10</td><td>7</td><td>111</td></tr>
+                  <tr><td>3</td><td>11</td><td>8</td><td>1000</td></tr>
+                  <tr><td>4</td><td>100</td><td>9</td><td>1001</td></tr>
+                  <tr><td>5</td><td>101</td><td>10</td><td>1010</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
+
+        </div><!-- /decoder col -->
+
+      </div><!-- .am-wrap -->
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="am-pane-controls">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="am-pane-info">About</button>
         </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
       </div>
+      <div class="ll-panel-body">
 
-      <!-- Binary primer -->
-      <div class="am-card">
-        <div class="am-card-head">
-          <h2>Binary Primer</h2>
-          <span class="am-badge">How it works</span>
-        </div>
-        <div style="padding:0.8rem 1.1rem 1rem">
-          <p style="font-size:0.83rem;color:rgba(190,235,210,0.76);line-height:1.6;margin:0 0 0.6rem">
-            The message contains only <strong style="color:#8ef5c4">1679 bits</strong> — each either a 1 (transmitted pulse) or a 0 (silence). To read it, you must arrange those bits into a rectangle. Only one arrangement makes an image: <strong style="color:#8ef5c4">23 columns × 73 rows</strong>.
-          </p>
-          <table class="am-binary-table">
-            <thead>
-              <tr><th>Decimal</th><th>Binary</th><th>Decimal</th><th>Binary</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>1</td><td>1</td><td>6</td><td>110</td></tr>
-              <tr><td>2</td><td>10</td><td>7</td><td>111</td></tr>
-              <tr><td>3</td><td>11</td><td>8</td><td>1000</td></tr>
-              <tr><td>4</td><td>100</td><td>9</td><td>1001</td></tr>
-              <tr><td>5</td><td>101</td><td>10</td><td>1010</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        <!-- Controls pane: interactive/navigational cards -->
+        <div class="ll-pane ll-active" id="am-pane-controls">
 
-    </div><!-- /left col -->
-
-    <!-- ══ Right sidebar ══ -->
-    <div class="am-sidebar">
-
-      <!-- Section guide -->
-      <div class="am-card">
-        <div class="am-card-head">
-          <h2>Seven Sections</h2>
-        </div>
-        <div class="am-section-list" id="sectionList">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-
-      <!-- Key facts -->
-      <div class="am-card">
-        <div class="am-card-head"><h2>Key Facts</h2></div>
-        <div class="am-fact-grid">
-          <div class="am-fact">
-            <div class="am-fact-val">1679</div>
-            <div class="am-fact-lbl">Bits transmitted</div>
+          <!-- Section guide -->
+          <div class="am-card">
+            <div class="am-card-head">
+              <h2>Seven Sections</h2>
+            </div>
+            <div class="am-section-list" id="sectionList">
+              <!-- Populated by JS -->
+            </div>
           </div>
-          <div class="am-fact">
-            <div class="am-fact-val">23×73</div>
-            <div class="am-fact-lbl">Grid dimensions</div>
-          </div>
-          <div class="am-fact">
-            <div class="am-fact-val">~3 min</div>
-            <div class="am-fact-lbl">Transmission time</div>
-          </div>
-          <div class="am-fact">
-            <div class="am-fact-val">M13</div>
-            <div class="am-fact-lbl">Target: 25,000 ly away</div>
-          </div>
-          <div class="am-fact">
-            <div class="am-fact-val">2.38 GHz</div>
-            <div class="am-fact-lbl">Radio frequency</div>
-          </div>
-          <div class="am-fact">
-            <div class="am-fact-val">~25,000 yr</div>
-            <div class="am-fact-lbl">Travel time (one way)</div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Why prime numbers -->
-      <div class="am-card">
-        <div class="am-card-head"><h2>Why Prime Numbers?</h2></div>
-        <div class="am-prime-body">
-          <strong>1679 = 23 × 73.</strong> Both 23 and 73 are prime, which means there are only two non-trivial ways to arrange 1679 bits into a rectangle:
-          <span class="am-prime-eq">23 × 73  or  73 × 23</span>
-          Drake and Sagan bet that any intelligent receiver would recognize this and try both orientations. Only <strong>23 × 73</strong> produces a meaningful image — proving the arrangement is intentional, not accidental.
-        </div>
-      </div>
+          <!-- Key facts -->
+          <div class="am-card" style="margin-top:0.9rem;">
+            <div class="am-card-head"><h2>Key Facts</h2></div>
+            <div class="am-fact-grid">
+              <div class="am-fact">
+                <div class="am-fact-val">1679</div>
+                <div class="am-fact-lbl">Bits transmitted</div>
+              </div>
+              <div class="am-fact">
+                <div class="am-fact-val">23×73</div>
+                <div class="am-fact-lbl">Grid dimensions</div>
+              </div>
+              <div class="am-fact">
+                <div class="am-fact-val">~3 min</div>
+                <div class="am-fact-lbl">Transmission time</div>
+              </div>
+              <div class="am-fact">
+                <div class="am-fact-val">M13</div>
+                <div class="am-fact-lbl">Target: 25,000 ly away</div>
+              </div>
+              <div class="am-fact">
+                <div class="am-fact-val">2.38 GHz</div>
+                <div class="am-fact-lbl">Radio frequency</div>
+              </div>
+              <div class="am-fact">
+                <div class="am-fact-val">~25,000 yr</div>
+                <div class="am-fact-lbl">Travel time (one way)</div>
+              </div>
+            </div>
+          </div>
 
-      <!-- Context -->
-      <div class="am-card">
-        <div class="am-card-head"><h2>The Story</h2></div>
-        <ul class="am-context-list">
-          <li><span>📡</span><span>Sent on <strong>November 16, 1974</strong> to celebrate the upgrade of the Arecibo Observatory in Puerto Rico — then the world's largest single-dish radio telescope (305 m diameter).</span></li>
-          <li><span>👨‍🔬</span><span>Designed by <strong>Frank Drake</strong> (creator of the Drake Equation) and <strong>Carl Sagan</strong> (Cosmos author), with help from other Cornell scientists.</span></li>
-          <li><span>🌌</span><span>Aimed at <strong>Messier 13</strong>, a globular cluster of ~300,000 stars in the constellation Hercules, about 25,000 light-years away.</span></li>
-          <li><span>💬</span><span>By the time any reply could arrive, Arecibo itself has already been decommissioned (2020). The message was more <em>symbolic</em> — proof that we could.</span></li>
-        </ul>
-      </div>
+        </div><!-- #am-pane-controls -->
 
-    </div><!-- /sidebar -->
-  </div><!-- /am-wrap -->
+        <!-- About pane: informational/context cards -->
+        <div class="ll-pane" id="am-pane-info">
+
+          <!-- Why prime numbers -->
+          <div class="am-card">
+            <div class="am-card-head"><h2>Why Prime Numbers?</h2></div>
+            <div class="am-prime-body">
+              <strong>1679 = 23 × 73.</strong> Both 23 and 73 are prime, which means there are only two non-trivial ways to arrange 1679 bits into a rectangle:
+              <span class="am-prime-eq">23 × 73  or  73 × 23</span>
+              Drake and Sagan bet that any intelligent receiver would recognize this and try both orientations. Only <strong>23 × 73</strong> produces a meaningful image — proving the arrangement is intentional, not accidental.
+            </div>
+          </div>
+
+          <!-- Context -->
+          <div class="am-card" style="margin-top:0.9rem;">
+            <div class="am-card-head"><h2>The Story</h2></div>
+            <ul class="am-context-list">
+              <li><span>📡</span><span>Sent on <strong>November 16, 1974</strong> to celebrate the upgrade of the Arecibo Observatory in Puerto Rico — then the world's largest single-dish radio telescope (305 m diameter).</span></li>
+              <li><span>👨‍🔬</span><span>Designed by <strong>Frank Drake</strong> (creator of the Drake Equation) and <strong>Carl Sagan</strong> (Cosmos author), with help from other Cornell scientists.</span></li>
+              <li><span>🌌</span><span>Aimed at <strong>Messier 13</strong>, a globular cluster of ~300,000 stars in the constellation Hercules, about 25,000 light-years away.</span></li>
+              <li><span>💬</span><span>By the time any reply could arrive, Arecibo itself has already been decommissioned (2020). The message was more <em>symbolic</em> — proof that we could.</span></li>
+            </ul>
+          </div>
+
+        </div><!-- #am-pane-info -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
 
   <script>
   (function () {
@@ -748,6 +791,7 @@
 
   })();
   </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 
 </body>
 </html>

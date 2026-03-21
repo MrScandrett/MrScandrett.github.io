@@ -6,7 +6,14 @@
   <title>Robotics Troubleshooter Rule Lab · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Robotics rule engine lab with forward chaining, confidence factors, and explainable reasoning." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
+    .ll-viewport {
+      --ll-accent: #3357e5;
+      --ll-tab-active: #3357e5;
+      --ll-tab-active-bg: rgba(51, 87, 229, 0.10);
+    }
+
     /* ── Mode tabs ─────────────────────────────────────────────── */
     .eg-mode-tabs {
       display: flex;
@@ -301,320 +308,408 @@
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
-      <nav aria-label="Primary">
-        <a href="../index.html">Home</a>
-        <a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a>
-        <a href="../showcase.html">Showcase</a>
-        <a href="../about.html">About</a>
-      </nav>
-    </div>
-  </header>
-
-  <main id="main-content">
-    <section class="hero">
-      <p class="eyebrow">AI Origins · Lesson 11</p>
-      <h1>Robot Repair Clinic</h1>
-      <p>Five broken robots need a diagnosis. Use IF-THEN rules to find each fault — the fewer clues you need, the better your reasoning.</p>
-    </section>
-
-    <!-- Mode tabs -->
-    <div class="eg-mode-tabs" role="tablist" aria-label="Choose activity">
-      <button class="eg-mode-tab is-active" id="eg-tab-game" role="tab" aria-selected="true"  aria-controls="eg-game-panel">🎮 Robot Clinic Game</button>
-      <button class="eg-mode-tab"            id="eg-tab-lab"  role="tab" aria-selected="false" aria-controls="expert-live-panel">🔬 Rule Engine Lab</button>
-    </div>
-
-    <!-- ═══ GAME PANEL ════════════════════════════════════════════════ -->
-    <div id="eg-game-panel" role="tabpanel" aria-labelledby="eg-tab-game">
-
-      <section class="section">
-        <article class="card eg-clinic-card">
-
-          <!-- Header bar -->
-          <div class="eg-hud">
-            <span id="eg-round" class="eg-hud-item">Round 1 / 5</span>
-            <span id="eg-score" class="eg-hud-item eg-hud-score">Score: 0</span>
-            <span id="eg-insp-left" class="eg-hud-item eg-hud-insp">4 inspects left</span>
-          </div>
-
-          <div class="eg-layout">
-
-            <!-- Left col: patient + inspect -->
-            <div class="eg-left">
-              <div class="eg-patient-card">
-                <h2 class="eg-patient-name" id="eg-patient-name">🤖 Loading…</h2>
-                <p class="eg-patient-flavour" id="eg-patient-flavour"></p>
-              </div>
-
-              <div class="eg-inspect-block">
-                <p class="eg-inspect-label">Inspect an area <span class="eg-inspect-note">(each costs 1 token)</span></p>
-                <div class="eg-area-btns" id="eg-area-btns" role="group" aria-label="Inspection areas"></div>
-              </div>
-
-              <div class="eg-clues-block">
-                <p class="eg-clues-label">Clues found so far</p>
-                <ul class="eg-clues-list" id="eg-revealed"></ul>
-              </div>
-            </div>
-
-            <!-- Right col: AI analysis + diagnosis -->
-            <div class="eg-right">
-              <div class="eg-analysis-block">
-                <p class="eg-analysis-label">AI Rule Engine — live analysis</p>
-                <div class="eg-analysis-bars" id="eg-analysis">
-                  <p class="eg-analysis-empty">Inspect the robot to gather evidence. The AI will update here.</p>
-                </div>
-                <p class="eg-analysis-note">The engine fires IF-THEN rules as each clue arrives.</p>
-              </div>
-
-              <div class="eg-diag-block">
-                <p class="eg-diag-label">Your diagnosis</p>
-                <div class="eg-diag-btns" id="eg-diag-btns" role="group" aria-label="Diagnosis options"></div>
-              </div>
-
-              <div class="eg-result-banner" id="eg-result" hidden></div>
-
-              <button type="button" class="eg-next-btn" id="eg-next" hidden>Next Patient →</button>
-            </div>
-
-          </div>
-        </article>
-      </section>
-
-      <!-- Final screen (hidden until end) -->
-      <section class="section" id="eg-final" hidden>
-        <div class="section-head">
-          <h2>Clinic Complete</h2>
-        </div>
-        <article class="card eg-final-card">
-          <div id="eg-final-score"></div>
-          <button type="button" class="eg-play-again-btn" id="eg-play-again">↺ Play Again</button>
-        </article>
-      </section>
-
-    </div><!-- /eg-game-panel -->
-
-    <!-- ═══ LAB PANEL (existing) ══════════════════════════════════════ -->
-    <div id="expert-live-panel" role="tabpanel" aria-labelledby="eg-tab-lab" hidden>
-    <section class="section" id="expert-live">
-      <div class="section-head">
-        <h2>Live Rule Engine Lab</h2>
-        <p>Pick evidence you observe, run the rules, and inspect how the lab combines evidence into best guesses.</p>
-        <p class="expert-identity"><strong>This lab simulates how early AI systems reasoned using explicit IF-THEN rules.</strong></p>
-        <p class="expert-identity-sub">You'll encode observations as facts, fire rules, and inspect explanations.</p>
-        <div class="expert-pipeline" aria-label="Symbolic AI pipeline">
-          <span>Observe</span>
-          <span aria-hidden="true">&rarr;</span>
-          <span>Encode as Facts</span>
-          <span aria-hidden="true">&rarr;</span>
-          <span>Fire Rules</span>
-          <span aria-hidden="true">&rarr;</span>
-          <span>Produce Explanations</span>
-        </div>
+  <div class="ll-viewport">
+    <header class="topbar ll-topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav aria-label="Primary">
+          <a href="../index.html">Home</a>
+          <a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a>
+          <a href="../showcase.html">Showcase</a>
+          <a href="../about.html">About</a>
+        </nav>
       </div>
+    </header>
 
-      <article class="card expert-lab" id="expert-lab" data-mode="easy">
-        <section class="expert-mode-toggle" aria-label="Experience level">
-          <h3>Lab Mode</h3>
-          <div class="expert-actions" role="group" aria-label="Choose mode">
-            <button type="button" id="expert-mode-easy" class="is-active" aria-pressed="true">Observation Mode (K-5)</button>
-            <button type="button" id="expert-mode-advanced" aria-pressed="false">Knowledge Engineer Mode (6-12)</button>
-          </div>
-          <p class="expert-note" id="expert-mode-note">Easy mode shows core evidence cards and simple explanations.</p>
-        </section>
-
-        <div class="expert-workspace">
-          <section class="expert-panel expert-panel-evidence">
-            <h3>Evidence You Observe <small title="Formerly: Known Facts">(Known Facts)</small></h3>
-            <p class="expert-note">Act like a systems engineer: only encode facts you can justify, then set confidence.</p>
-            <div class="expert-facts" id="expert-facts"></div>
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content">
+          <section class="hero">
+            <p class="eyebrow">AI Origins · Lesson 11</p>
+            <h1>Robot Repair Clinic</h1>
+            <p>Five broken robots need a diagnosis. Use IF-THEN rules to find each fault — the fewer clues you need, the better your reasoning.</p>
           </section>
 
-          <div class="expert-side">
-            <section class="expert-panel expert-purpose-block">
-              <h3>Why This Lab Exists</h3>
-              <p class="expert-note">In the 1970s, AI researchers believed intelligence could be written down as rules. This lab lets you experience that approach: transparent reasoning with traceable explanations.</p>
-            </section>
+          <!-- Mode tabs -->
+          <div class="eg-mode-tabs" role="tablist" aria-label="Choose activity">
+            <button class="eg-mode-tab is-active" id="eg-tab-game" role="tab" aria-selected="true"  aria-controls="eg-game-panel">🎮 Robot Clinic Game</button>
+            <button class="eg-mode-tab"            id="eg-tab-lab"  role="tab" aria-selected="false" aria-controls="expert-live-panel">🔬 Rule Engine Lab</button>
+          </div>
 
-            <section class="expert-panel expert-panel-engine">
-              <h3>Engine Controls</h3>
-              <div class="expert-actions">
-                <button type="button" id="expert-run">Run the Rules</button>
-                <button type="button" id="expert-clear-facts">Reset Evidence</button>
-              </div>
-              <p id="expert-running-status" class="expert-status" aria-live="polite"></p>
+          <!-- ═══ GAME PANEL ════════════════════════════════════════════════ -->
+          <div id="eg-game-panel" role="tabpanel" aria-labelledby="eg-tab-game">
 
-              <div class="expert-engine-advanced" data-expert-advanced="true">
-                <label class="expert-field" for="expert-conflict">
-                  <span>Conflict Resolution <small title="How disagreement is resolved">(Policy)</small></span>
-                  <select id="expert-conflict">
-                    <option value="mycin">Combine evidence (MYCIN-style)</option>
-                    <option value="max">Use strongest rule only</option>
-                    <option value="latest">Newest rule wins</option>
-                  </select>
-                </label>
-                <p id="expert-conflict-help" class="expert-note">Combine evidence from multiple rules into one confidence score.</p>
+            <section class="section">
+              <article class="card eg-clinic-card">
 
-                <label class="expert-field" for="expert-max-passes">
-                  <span>Max Forward Passes</span>
-                  <input id="expert-max-passes" type="number" min="1" max="20" step="1" value="8" />
-                </label>
+                <!-- Header bar -->
+                <div class="eg-hud">
+                  <span id="eg-round" class="eg-hud-item">Round 1 / 5</span>
+                  <span id="eg-score" class="eg-hud-item eg-hud-score">Score: 0</span>
+                  <span id="eg-insp-left" class="eg-hud-item eg-hud-insp">4 inspects left</span>
+                </div>
 
-                <ul class="expert-metrics">
-                  <li>Rules in Knowledge Base: <strong id="expert-metric-rules">0</strong> (human-authored)</li>
-                  <li>Rules fired: <strong id="expert-metric-fired">0</strong></li>
-                  <li>Passes used: <strong id="expert-metric-passes">0</strong></li>
-                  <li>Conclusions produced: <strong id="expert-metric-conclusions">0</strong></li>
-                </ul>
+                <div class="eg-layout">
 
-                <h4 class="expert-subhead">Rules (Advanced) <small title="Formerly: Rule Base (JSON)">(Rule Base JSON)</small></h4>
-                <details id="expert-rules-details">
-                  <summary>Show Rules (Advanced)</summary>
-                  <label class="sr-only" for="expert-rules-editor">Rule JSON editor</label>
-                  <textarea id="expert-rules-editor" spellcheck="false"></textarea>
-                  <div class="expert-actions">
-                    <button type="button" id="expert-load-defaults">Load Robotics Rules (12-15)</button>
+                  <!-- Left col: patient + inspect -->
+                  <div class="eg-left">
+                    <div class="eg-patient-card">
+                      <h2 class="eg-patient-name" id="eg-patient-name">🤖 Loading…</h2>
+                      <p class="eg-patient-flavour" id="eg-patient-flavour"></p>
+                    </div>
+
+                    <div class="eg-inspect-block">
+                      <p class="eg-inspect-label">Inspect an area <span class="eg-inspect-note">(each costs 1 token)</span></p>
+                      <div class="eg-area-btns" id="eg-area-btns" role="group" aria-label="Inspection areas"></div>
+                    </div>
+
+                    <div class="eg-clues-block">
+                      <p class="eg-clues-label">Clues found so far</p>
+                      <ul class="eg-clues-list" id="eg-revealed"></ul>
+                    </div>
                   </div>
-                </details>
-                <p id="expert-rules-status" class="expert-status" aria-live="polite"></p>
-              </div>
+
+                  <!-- Right col: AI analysis + diagnosis -->
+                  <div class="eg-right">
+                    <div class="eg-analysis-block">
+                      <p class="eg-analysis-label">AI Rule Engine — live analysis</p>
+                      <div class="eg-analysis-bars" id="eg-analysis">
+                        <p class="eg-analysis-empty">Inspect the robot to gather evidence. The AI will update here.</p>
+                      </div>
+                      <p class="eg-analysis-note">The engine fires IF-THEN rules as each clue arrives.</p>
+                    </div>
+
+                    <div class="eg-diag-block">
+                      <p class="eg-diag-label">Your diagnosis</p>
+                      <div class="eg-diag-btns" id="eg-diag-btns" role="group" aria-label="Diagnosis options"></div>
+                    </div>
+
+                    <div class="eg-result-banner" id="eg-result" hidden></div>
+
+                    <button type="button" class="eg-next-btn" id="eg-next" hidden>Next Patient →</button>
+                  </div>
+
+                </div>
+              </article>
             </section>
 
-            <section class="expert-output">
-              <div class="expert-output-block">
-                <h3>Best Guesses (Confidence) <small title="Formerly: Conclusions (Confidence)">(Conclusions)</small></h3>
-                <div class="expert-table-wrap">
-                  <table class="expert-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Guess</th>
-                        <th scope="col">Confidence</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Why?</th>
-                      </tr>
-                    </thead>
-                    <tbody id="expert-conclusions"></tbody>
-                  </table>
-                </div>
+            <!-- Final screen (hidden until end) -->
+            <section class="section" id="eg-final" hidden>
+              <div class="section-head">
+                <h2>Clinic Complete</h2>
               </div>
-
-              <div class="expert-output-block">
-                <h3>Why It Thinks That <small title="Formerly: Explanation Trail">(Explanation Trail)</small></h3>
-                <div id="expert-why" class="expert-why" aria-live="polite">
-                  <p class="expert-note">Run the rules and choose "Why?" on a result to see a compact explanation.</p>
-                </div>
-                <details data-expert-advanced="true">
-                  <summary>Detailed Rule Trail (Advanced)</summary>
-                  <ol id="expert-trace" class="expert-trace"></ol>
-                </details>
-              </div>
+              <article class="card eg-final-card">
+                <div id="eg-final-score"></div>
+                <button type="button" class="eg-play-again-btn" id="eg-play-again">↺ Play Again</button>
+              </article>
             </section>
+
+          </div><!-- /eg-game-panel -->
+
+          <!-- ═══ LAB PANEL (existing) ══════════════════════════════════════ -->
+          <div id="expert-live-panel" role="tabpanel" aria-labelledby="eg-tab-lab" hidden>
+          <section class="section" id="expert-live">
+            <div class="section-head">
+              <h2>Live Rule Engine Lab</h2>
+              <p>Pick evidence you observe, run the rules, and inspect how the lab combines evidence into best guesses.</p>
+              <p class="expert-identity"><strong>This lab simulates how early AI systems reasoned using explicit IF-THEN rules.</strong></p>
+              <p class="expert-identity-sub">You'll encode observations as facts, fire rules, and inspect explanations.</p>
+              <div class="expert-pipeline" aria-label="Symbolic AI pipeline">
+                <span>Observe</span>
+                <span aria-hidden="true">&rarr;</span>
+                <span>Encode as Facts</span>
+                <span aria-hidden="true">&rarr;</span>
+                <span>Fire Rules</span>
+                <span aria-hidden="true">&rarr;</span>
+                <span>Produce Explanations</span>
+              </div>
+            </div>
+
+            <article class="card expert-lab" id="expert-lab" data-mode="easy">
+              <section class="expert-mode-toggle" aria-label="Experience level">
+                <h3>Lab Mode</h3>
+                <div class="expert-actions" role="group" aria-label="Choose mode">
+                  <button type="button" id="expert-mode-easy" class="is-active" aria-pressed="true">Observation Mode (K-5)</button>
+                  <button type="button" id="expert-mode-advanced" aria-pressed="false">Knowledge Engineer Mode (6-12)</button>
+                </div>
+                <p class="expert-note" id="expert-mode-note">Easy mode shows core evidence cards and simple explanations.</p>
+              </section>
+
+              <div class="expert-workspace">
+                <section class="expert-panel expert-panel-evidence">
+                  <h3>Evidence You Observe <small title="Formerly: Known Facts">(Known Facts)</small></h3>
+                  <p class="expert-note">Act like a systems engineer: only encode facts you can justify, then set confidence.</p>
+                  <div class="expert-facts" id="expert-facts"></div>
+                </section>
+
+                <div class="expert-side">
+                  <section class="expert-panel expert-purpose-block">
+                    <h3>Why This Lab Exists</h3>
+                    <p class="expert-note">In the 1970s, AI researchers believed intelligence could be written down as rules. This lab lets you experience that approach: transparent reasoning with traceable explanations.</p>
+                  </section>
+
+                  <section class="expert-panel expert-panel-engine">
+                    <h3>Engine Controls</h3>
+                    <div class="expert-actions">
+                      <button type="button" id="expert-run">Run the Rules</button>
+                      <button type="button" id="expert-clear-facts">Reset Evidence</button>
+                    </div>
+                    <p id="expert-running-status" class="expert-status" aria-live="polite"></p>
+
+                    <div class="expert-engine-advanced" data-expert-advanced="true">
+                      <label class="expert-field" for="expert-conflict">
+                        <span>Conflict Resolution <small title="How disagreement is resolved">(Policy)</small></span>
+                        <select id="expert-conflict">
+                          <option value="mycin">Combine evidence (MYCIN-style)</option>
+                          <option value="max">Use strongest rule only</option>
+                          <option value="latest">Newest rule wins</option>
+                        </select>
+                      </label>
+                      <p id="expert-conflict-help" class="expert-note">Combine evidence from multiple rules into one confidence score.</p>
+
+                      <label class="expert-field" for="expert-max-passes">
+                        <span>Max Forward Passes</span>
+                        <input id="expert-max-passes" type="number" min="1" max="20" step="1" value="8" />
+                      </label>
+
+                      <ul class="expert-metrics">
+                        <li>Rules in Knowledge Base: <strong id="expert-metric-rules">0</strong> (human-authored)</li>
+                        <li>Rules fired: <strong id="expert-metric-fired">0</strong></li>
+                        <li>Passes used: <strong id="expert-metric-passes">0</strong></li>
+                        <li>Conclusions produced: <strong id="expert-metric-conclusions">0</strong></li>
+                      </ul>
+
+                      <h4 class="expert-subhead">Rules (Advanced) <small title="Formerly: Rule Base (JSON)">(Rule Base JSON)</small></h4>
+                      <details id="expert-rules-details">
+                        <summary>Show Rules (Advanced)</summary>
+                        <label class="sr-only" for="expert-rules-editor">Rule JSON editor</label>
+                        <textarea id="expert-rules-editor" spellcheck="false"></textarea>
+                        <div class="expert-actions">
+                          <button type="button" id="expert-load-defaults">Load Robotics Rules (12-15)</button>
+                        </div>
+                      </details>
+                      <p id="expert-rules-status" class="expert-status" aria-live="polite"></p>
+                    </div>
+                  </section>
+
+                  <section class="expert-output">
+                    <div class="expert-output-block">
+                      <h3>Best Guesses (Confidence) <small title="Formerly: Conclusions (Confidence)">(Conclusions)</small></h3>
+                      <div class="expert-table-wrap">
+                        <table class="expert-table">
+                          <thead>
+                            <tr>
+                              <th scope="col">Guess</th>
+                              <th scope="col">Confidence</th>
+                              <th scope="col">Status</th>
+                              <th scope="col">Why?</th>
+                            </tr>
+                          </thead>
+                          <tbody id="expert-conclusions"></tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div class="expert-output-block">
+                      <h3>Why It Thinks That <small title="Formerly: Explanation Trail">(Explanation Trail)</small></h3>
+                      <div id="expert-why" class="expert-why" aria-live="polite">
+                        <p class="expert-note">Run the rules and choose "Why?" on a result to see a compact explanation.</p>
+                      </div>
+                      <details data-expert-advanced="true">
+                        <summary>Detailed Rule Trail (Advanced)</summary>
+                        <ol id="expert-trace" class="expert-trace"></ol>
+                      </details>
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          </div><!-- /expert-live-panel -->
+
+          <section class="section">
+            <div class="section-head">
+              <h2>What This Trains</h2>
+            </div>
+            <div class="columns">
+              <article class="card">
+                <h3>System Mechanics</h3>
+                <ul class="rhythm">
+                  <li><span>Symbolic Logic</span><strong>Knowledge encoded as explicit IF-THEN rules</strong></li>
+                  <li><span>State Machines</span><strong>Facts update in deterministic forward passes</strong></li>
+                  <li><span>Weighted Inference</span><strong>Confidence factors model uncertainty beyond true/false</strong></li>
+                  <li><span>Explainability</span><strong>Every troubleshooting guess can be traced to fired rules</strong></li>
+                </ul>
+              </article>
+
+              <article class="card">
+                <h3>Conceptual Questions</h3>
+                <ul class="rhythm">
+                  <li><span>Trust</span><strong>Who authored the rules and where can bias hide?</strong></li>
+                  <li><span>Conflict</span><strong>What should happen when rules disagree?</strong></li>
+                  <li><span>Limits</span><strong>When does explicit logic stop scaling well?</strong></li>
+                  <li><span>Bridge</span><strong>How does this compare to neural-network learning?</strong></li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="section" id="mycin-history">
+            <div class="section-head">
+              <h2>Historical Context</h2>
+              <p>This lab represents the Symbolic AI / Expert Systems era (1970s–1980s).</p>
+            </div>
+            <div class="columns history-columns">
+              <article class="card history-card">
+                <h3>Expert Systems Era</h3>
+                <ul class="rhythm">
+                  <li><span>Approach</span><strong>Human knowledge formalized as transparent rules</strong></li>
+                  <li><span>MYCIN-style</span><strong>Certainty-factor methods showed how rule confidence can combine</strong></li>
+                  <li><span>Strength</span><strong>Auditable reasoning path for each recommendation</strong></li>
+                  <li><span>Weakness</span><strong>Rule authoring burden and brittle domain transfer</strong></li>
+                </ul>
+              </article>
+
+              <article class="card timeline-card">
+                <h3>AI Timeline Placement</h3>
+                <ol class="ai-timeline">
+                  <li>
+                    <time datetime="1958">1958</time>
+                    <div><strong>Perceptron era begins neural-symbolic split</strong></div>
+                  </li>
+                  <li>
+                    <time datetime="1966">1966</time>
+                    <div><strong>ELIZA popularizes scripted language interaction</strong></div>
+                  </li>
+                  <li class="timeline-eliza">
+                    <time datetime="1970">1970s</time>
+                    <div><strong>Expert systems (including MYCIN-style ideas) scale symbolic AI</strong></div>
+                  </li>
+                  <li>
+                    <time datetime="2012">2012</time>
+                    <div><strong>Deep learning re-centers data-driven representation learning</strong></div>
+                  </li>
+                </ol>
+              </article>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <h2>Lesson Outputs</h2>
+              <p>Each team should publish a short reflection and demo link at the end of class.</p>
+            </div>
+            <div class="tile-grid">
+              <a class="tile tile-hero" href="#expert-live">
+                <span class="tile-kicker">Starter Kit</span>
+                <strong>Robotics Troubleshooter live starter workspace</strong>
+                <small>Use the built-in forward-chaining lab on this page</small>
+              </a>
+
+              <a class="tile" href="#" aria-disabled="true">
+                <span class="tile-kicker">Extension</span>
+                <strong>Add conflict policies that vary by conclusion type</strong>
+                <small>Optional challenge for advanced students</small>
+              </a>
+
+              <a class="tile" href="../steam-lessons.html">
+                <span class="tile-kicker">Navigate</span>
+                <strong>Back to STEAM Lessons</strong>
+                <small>Return to the full ClassroomOS lesson shelf</small>
+              </a>
+            </div>
+          </section>
+        </main>
+
+        <footer class="site-footer">
+          <p><a href="../steam-lessons.html">Back to STEAM Lessons</a></p>
+        </footer>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="es-params">Controls</button>
+            <button class="ll-tab" aria-selected="false" data-pane="es-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="es-params">
+            <span class="ll-label">Activity Mode</span>
+            <div class="ll-presets">
+              <button class="ll-preset ll-active" data-preset="game" onclick="document.getElementById('eg-tab-game').click()">🎮 Game</button>
+              <button class="ll-preset" data-preset="lab" onclick="document.getElementById('eg-tab-lab').click()">🔬 Lab</button>
+            </div>
+
+            <span class="ll-label">Knowledge Base Toggles</span>
+            <div class="ll-info">
+              <strong>Conflict Policy</strong>
+              Switch between MYCIN-style combined evidence, strongest rule only, or newest rule wins in the Lab panel.
+            </div>
+            <div class="ll-info">
+              <strong>Forward Passes</strong>
+              Controls how many inference cycles the engine runs. More passes can chain deeper conclusions.
+            </div>
+            <div class="ll-info">
+              <strong>Rule JSON</strong>
+              In Knowledge Engineer mode, edit or replace the rule base directly to test custom logic.
+            </div>
+
+            <span class="ll-label">Scoring</span>
+            <div class="ll-readouts">
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Game</span>
+                <span class="ll-readout-val" id="panel-score">—</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Round</span>
+                <span class="ll-readout-val" id="panel-round">1/5</span>
+              </div>
+            </div>
+          </div>
+          <div class="ll-pane" id="es-guide">
+            <span class="ll-label">What is an Expert System?</span>
+            <div class="ll-info">
+              <strong>Definition</strong>
+              A program that encodes human expertise as IF-THEN rules and uses them to reach conclusions from observed facts.
+            </div>
+            <div class="ll-info">
+              <strong>Forward Chaining</strong>
+              Start with known facts and fire matching rules to derive new facts — the engine keeps running until no new conclusions emerge.
+            </div>
+            <div class="ll-info">
+              <strong>Confidence Factors</strong>
+              Rules carry a weight (0–1). MYCIN-style combination merges multiple partial-confidence results into one score.
+            </div>
+            <div class="ll-info">
+              <strong>Explainability</strong>
+              Every conclusion traces back to which rules fired and which facts matched — this is symbolic AI's greatest strength.
+            </div>
+            <div class="ll-info">
+              <strong>Key Limit</strong>
+              Rules must be authored by a human expert. The system cannot learn from data — it only knows what was written in.
+            </div>
+            <hr class="ll-hr" />
+            <span class="ll-label">AI Timeline</span>
+            <div class="ll-info">
+              <strong>1970s–1980s</strong>
+              Expert systems scale symbolic AI. MYCIN-style certainty factors allow uncertainty beyond pure true/false.
+            </div>
+            <div class="ll-info">
+              <strong>2012–present</strong>
+              Deep learning replaces most expert systems for complex tasks — but explainability of symbolic methods remains valued.
+            </div>
           </div>
         </div>
-      </article>
-    </section>
+      </aside>
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
+    </div>
+  </div>
 
-    </div><!-- /expert-live-panel -->
-
-    <section class="section">
-      <div class="section-head">
-        <h2>What This Trains</h2>
-      </div>
-      <div class="columns">
-        <article class="card">
-          <h3>System Mechanics</h3>
-          <ul class="rhythm">
-            <li><span>Symbolic Logic</span><strong>Knowledge encoded as explicit IF-THEN rules</strong></li>
-            <li><span>State Machines</span><strong>Facts update in deterministic forward passes</strong></li>
-            <li><span>Weighted Inference</span><strong>Confidence factors model uncertainty beyond true/false</strong></li>
-            <li><span>Explainability</span><strong>Every troubleshooting guess can be traced to fired rules</strong></li>
-          </ul>
-        </article>
-
-        <article class="card">
-          <h3>Conceptual Questions</h3>
-          <ul class="rhythm">
-            <li><span>Trust</span><strong>Who authored the rules and where can bias hide?</strong></li>
-            <li><span>Conflict</span><strong>What should happen when rules disagree?</strong></li>
-            <li><span>Limits</span><strong>When does explicit logic stop scaling well?</strong></li>
-            <li><span>Bridge</span><strong>How does this compare to neural-network learning?</strong></li>
-          </ul>
-        </article>
-      </div>
-    </section>
-
-    <section class="section" id="mycin-history">
-      <div class="section-head">
-        <h2>Historical Context</h2>
-        <p>This lab represents the Symbolic AI / Expert Systems era (1970s–1980s).</p>
-      </div>
-      <div class="columns history-columns">
-        <article class="card history-card">
-          <h3>Expert Systems Era</h3>
-          <ul class="rhythm">
-            <li><span>Approach</span><strong>Human knowledge formalized as transparent rules</strong></li>
-            <li><span>MYCIN-style</span><strong>Certainty-factor methods showed how rule confidence can combine</strong></li>
-            <li><span>Strength</span><strong>Auditable reasoning path for each recommendation</strong></li>
-            <li><span>Weakness</span><strong>Rule authoring burden and brittle domain transfer</strong></li>
-          </ul>
-        </article>
-
-        <article class="card timeline-card">
-          <h3>AI Timeline Placement</h3>
-          <ol class="ai-timeline">
-            <li>
-              <time datetime="1958">1958</time>
-              <div><strong>Perceptron era begins neural-symbolic split</strong></div>
-            </li>
-            <li>
-              <time datetime="1966">1966</time>
-              <div><strong>ELIZA popularizes scripted language interaction</strong></div>
-            </li>
-            <li class="timeline-eliza">
-              <time datetime="1970">1970s</time>
-              <div><strong>Expert systems (including MYCIN-style ideas) scale symbolic AI</strong></div>
-            </li>
-            <li>
-              <time datetime="2012">2012</time>
-              <div><strong>Deep learning re-centers data-driven representation learning</strong></div>
-            </li>
-          </ol>
-        </article>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <h2>Lesson Outputs</h2>
-        <p>Each team should publish a short reflection and demo link at the end of class.</p>
-      </div>
-      <div class="tile-grid">
-        <a class="tile tile-hero" href="#expert-live">
-          <span class="tile-kicker">Starter Kit</span>
-          <strong>Robotics Troubleshooter live starter workspace</strong>
-          <small>Use the built-in forward-chaining lab on this page</small>
-        </a>
-
-        <a class="tile" href="#" aria-disabled="true">
-          <span class="tile-kicker">Extension</span>
-          <strong>Add conflict policies that vary by conclusion type</strong>
-          <small>Optional challenge for advanced students</small>
-        </a>
-
-        <a class="tile" href="../steam-lessons.html">
-          <span class="tile-kicker">Navigate</span>
-          <strong>Back to STEAM Lessons</strong>
-          <small>Return to the full ClassroomOS lesson shelf</small>
-        </a>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <p><a href="../steam-lessons.html">Back to STEAM Lessons</a></p>
-  </footer>
   <script type="module" src="../assets/js/expert-system-lab.js"></script>
   <script src="../assets/js/expert-game.js"></script>
   <script src="../assets/js/nav-mobile.js"></script>
@@ -641,5 +736,6 @@
       });
     })();
   </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

@@ -9,7 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #34c759; --ll-tab-active: #34c759; --ll-tab-active-bg: rgba(52,199,89,0.12); }
     /* ── Page ─────────────────────────────────────────── */
     .py-page { padding-bottom: 3.5rem; }
 
@@ -232,7 +234,8 @@
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="site-header">
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
     <div class="nav-wrap">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
@@ -250,6 +253,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+  <div class="ll-sim">
   <main id="main-content" class="py-page">
 
     <!-- ── Hero ── -->
@@ -529,6 +534,95 @@
     </section>
 
   </main>
+  </div><!-- /ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="py-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="py-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="py-params">
+        <span class="ll-label">Triangle Explorer</span>
+        <div class="ll-param">
+          <div class="ll-param-label" style="color:#ff3b30;">
+            <span>Leg <strong>a</strong></span>
+            <span class="ll-val" id="py-panel-a">3</span>
+          </div>
+          <input type="range" id="py-panel-slider-a" min="1" max="20" value="3"
+            style="width:100%;accent-color:#ff3b30;" aria-label="Side a length" />
+          <div class="ll-param-ends"><span>1</span><span>20</span></div>
+        </div>
+        <div class="ll-param">
+          <div class="ll-param-label" style="color:#ff9500;">
+            <span>Leg <strong>b</strong></span>
+            <span class="ll-val" id="py-panel-b">4</span>
+          </div>
+          <input type="range" id="py-panel-slider-b" min="1" max="20" value="4"
+            style="width:100%;accent-color:#ff9500;" aria-label="Side b length" />
+          <div class="ll-param-ends"><span>1</span><span>20</span></div>
+        </div>
+        <hr class="ll-hr" />
+        <div class="ll-readouts">
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">a²</span>
+            <span class="ll-readout-val" id="py-panel-a2" style="color:#ff3b30;">9</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">b²</span>
+            <span class="ll-readout-val" id="py-panel-b2" style="color:#ff9500;">16</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">c² = a²+b²</span>
+            <span class="ll-readout-val" id="py-panel-c2" style="color:#007aff;">25</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Hypotenuse c</span>
+            <span class="ll-readout-val" id="py-panel-c" style="color:#007aff;">5</span>
+          </div>
+        </div>
+      </div>
+      <div class="ll-pane" id="py-guide">
+        <span class="ll-label">The Theorem</span>
+        <div class="ll-info">
+          <strong>a² + b² = c²</strong>
+          In any right triangle, the square of the hypotenuse equals the sum of the squares of the two legs.
+        </div>
+        <span class="ll-label">Solving for c</span>
+        <div class="ll-info">
+          <strong>Find hypotenuse</strong>
+          c = √(a² + b²)
+        </div>
+        <div class="ll-info">
+          <strong>Find a missing leg</strong>
+          a = √(c² − b²)
+        </div>
+        <span class="ll-label">Famous Triples</span>
+        <div class="ll-info">
+          <strong>3 · 4 · 5</strong>
+          3² + 4² = 9 + 16 = 25 = 5². Used by Egyptian builders for perfect right angles.
+        </div>
+        <div class="ll-info">
+          <strong>5 · 12 · 13</strong>
+          5² + 12² = 25 + 144 = 169 = 13²
+        </div>
+        <div class="ll-info">
+          <strong>8 · 15 · 17</strong>
+          8² + 15² = 64 + 225 = 289 = 17²
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+  </button>
+
+  </div><!-- /ll-stage -->
+</div><!-- /ll-viewport -->
 
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
@@ -840,5 +934,43 @@
 
   })();
   </script>
+  <script>
+  /* ── Panel sliders sync with in-page explorer ── */
+  (function () {
+    const sliderA = document.getElementById('slider-a');
+    const sliderB = document.getElementById('slider-b');
+    const panelA  = document.getElementById('py-panel-slider-a');
+    const panelB  = document.getElementById('py-panel-slider-b');
+    if (!sliderA || !sliderB || !panelA || !panelB) return;
+
+    function updatePanelReadouts() {
+      const a = parseFloat(sliderA.value), b = parseFloat(sliderB.value);
+      const c = Math.sqrt(a * a + b * b);
+      document.getElementById('py-panel-a').textContent  = a;
+      document.getElementById('py-panel-b').textContent  = b;
+      document.getElementById('py-panel-a2').textContent = a * a;
+      document.getElementById('py-panel-b2').textContent = b * b;
+      document.getElementById('py-panel-c2').textContent = a * a + b * b;
+      document.getElementById('py-panel-c').textContent  = Math.round(c * 10) / 10;
+      panelA.value = a;
+      panelB.value = b;
+    }
+
+    panelA.addEventListener('input', function () {
+      sliderA.value = panelA.value;
+      sliderA.dispatchEvent(new Event('input'));
+      updatePanelReadouts();
+    });
+    panelB.addEventListener('input', function () {
+      sliderB.value = panelB.value;
+      sliderB.dispatchEvent(new Event('input'));
+      updatePanelReadouts();
+    });
+    sliderA.addEventListener('input', updatePanelReadouts);
+    sliderB.addEventListener('input', updatePanelReadouts);
+    updatePanelReadouts();
+  })();
+  </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

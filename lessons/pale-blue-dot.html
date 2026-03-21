@@ -6,6 +6,7 @@
   <title>Pale Blue Dot — Scale of the Universe · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Zoom from Earth's surface to the edge of the observable universe. Earth is a pale blue dot suspended on a sunbeam." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     body { background: #000; color: #e0e8ff; margin: 0; overflow-x: hidden; }
 
@@ -204,11 +205,23 @@
       color: #4060a0;
       margin: 0;
     }
+
+    /* ── ll-viewport overrides ── */
+    .ll-viewport {
+      --ll-panel-bg:     rgba(2, 4, 18, 0.97);
+      --ll-panel-border: rgba(80, 100, 200, 0.22);
+      --ll-tab-color:    rgba(120, 160, 230, 0.65);
+      --ll-tab-active-bg: rgba(60, 100, 255, 0.14);
+      --ll-tab-active:   #7eb8ff;
+      --ll-toggle-bg:    rgba(2, 4, 18, 0.97);
+    }
+    .pbd-canvas-wrap { max-height: calc(100dvh - 140px); }
   </style>
 </head>
 <body>
+<div class="ll-viewport ll-dark">
 
-  <nav class="pbd-topbar" aria-label="Page navigation">
+  <nav class="pbd-topbar ll-topbar" aria-label="Page navigation">
     <div class="pbd-topbar-inner">
       <a href="../steam-lessons.html">← Space Science</a>
       <span class="pbd-topbar-title">Pale Blue Dot — Scale of the Universe</span>
@@ -216,70 +229,111 @@
     </div>
   </nav>
 
-  <div class="pbd-hero">
-    <h1>Pale Blue Dot</h1>
-    <p>Drag the slider — or scroll on the canvas — to zoom from Earth's surface to the edge of the observable universe. Watch Earth shrink to a mote of dust on a sunbeam.</p>
-  </div>
+  <div class="ll-stage">
+    <div class="ll-sim">
 
-  <div class="pbd-canvas-wrap" id="pbd-wrap">
-    <canvas id="pbd-canvas"></canvas>
-  </div>
+      <div class="pbd-hero ll-hero">
+        <h1>Pale Blue Dot</h1>
+        <p>Drag the slider — or scroll on the canvas — to zoom from Earth's surface to the edge of the observable universe. Watch Earth shrink to a mote of dust on a sunbeam.</p>
+      </div>
 
-  <div class="pbd-controls">
-    <div class="pbd-slider-wrap">
-      <span class="pbd-slider-label-left">Earth surface</span>
-      <input type="range" id="pbd-slider" min="0" max="100" value="0" step="0.1" aria-label="Zoom level" />
-      <span class="pbd-slider-label-right">Observable Universe</span>
-    </div>
-  </div>
+      <div class="pbd-canvas-wrap" id="pbd-wrap">
+        <canvas id="pbd-canvas"></canvas>
+      </div>
 
-  <div class="pbd-readout">
-    <span class="pbd-scale-label">Viewing width</span>
-    <span class="pbd-scale-value" id="pbd-scale-value">—</span>
-    <span class="pbd-milestone" id="pbd-milestone"></span>
-  </div>
+      <div class="pbd-readout">
+        <span class="pbd-scale-label">Viewing width</span>
+        <span class="pbd-scale-value" id="pbd-scale-value">—</span>
+        <span class="pbd-milestone" id="pbd-milestone"></span>
+      </div>
 
-  <div class="pbd-quote" id="pbd-quote">
-    <blockquote>
-      "Look again at that dot. That's here. That's home. That's us. On it everyone you love, everyone you know, everyone you ever heard of, every human being who ever was, lived out their lives… on a mote of dust suspended in a sunbeam."
-    </blockquote>
-    <cite>— Carl Sagan, Pale Blue Dot (1994)</cite>
-  </div>
+      <div class="pbd-quote" id="pbd-quote">
+        <blockquote>
+          "Look again at that dot. That's here. That's home. That's us. On it everyone you love, everyone you know, everyone you ever heard of, every human being who ever was, lived out their lives… on a mote of dust suspended in a sunbeam."
+        </blockquote>
+        <cite>— Carl Sagan, Pale Blue Dot (1994)</cite>
+      </div>
 
-  <div class="pbd-legend">
-    <div class="pbd-legend-item">
-      <p class="pbd-legend-name">🌍 Earth</p>
-      <p class="pbd-legend-dist">Diameter: 12,742 km</p>
-    </div>
-    <div class="pbd-legend-item">
-      <p class="pbd-legend-name">🌙 Moon Orbit</p>
-      <p class="pbd-legend-dist">384,400 km from Earth</p>
-    </div>
-    <div class="pbd-legend-item">
-      <p class="pbd-legend-name">☀️ Sun</p>
-      <p class="pbd-legend-dist">1 AU · 149,600,000 km</p>
-    </div>
-    <div class="pbd-legend-item">
-      <p class="pbd-legend-name">📸 Voyager 1 Photo</p>
-      <p class="pbd-legend-dist">~6 billion km · 40 AU</p>
-    </div>
-    <div class="pbd-legend-item">
-      <p class="pbd-legend-name">⭐ Proxima Centauri</p>
-      <p class="pbd-legend-dist">4.24 light-years</p>
-    </div>
-    <div class="pbd-legend-item">
-      <p class="pbd-legend-name">🌌 Milky Way</p>
-      <p class="pbd-legend-dist">~100,000 light-years wide</p>
-    </div>
-    <div class="pbd-legend-item">
-      <p class="pbd-legend-name">🌀 Andromeda Galaxy</p>
-      <p class="pbd-legend-dist">2.537 million light-years</p>
-    </div>
-    <div class="pbd-legend-item">
-      <p class="pbd-legend-name">🔭 Observable Universe</p>
-      <p class="pbd-legend-dist">~93 billion light-years wide</p>
-    </div>
-  </div>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="pbd-params">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pbd-guide">About</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="pbd-params">
+          <span class="ll-label">Zoom Level</span>
+          <div class="pbd-slider-wrap" style="flex-direction:column;gap:0.5rem;">
+            <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#4060a0;">
+              <span>Earth surface</span><span>Observable Universe</span>
+            </div>
+            <input type="range" id="pbd-slider" min="0" max="100" value="0" step="0.1" aria-label="Zoom level" style="width:100%;" />
+          </div>
+          <hr class="ll-hr" />
+          <span class="ll-label">Current Scale</span>
+          <div class="ll-readouts">
+            <div class="ll-readout" style="grid-column:1/-1;">
+              <span class="ll-readout-lbl">Viewing Width</span>
+              <span class="ll-readout-val" id="pbd-scale-value-panel">—</span>
+            </div>
+          </div>
+          <div style="font-size:0.75rem;color:rgba(120,160,230,0.65);text-align:center;margin-top:0.5rem;" id="pbd-milestone-panel"></div>
+          <hr class="ll-hr" />
+          <span class="ll-label">Tip</span>
+          <div class="ll-info">Scroll on the canvas to zoom. Drag the slider to any scale level.</div>
+        </div>
+
+        <div class="ll-pane" id="pbd-guide">
+          <div class="ll-info">
+            <strong>Earth</strong>
+            Diameter: 12,742 km
+          </div>
+          <div class="ll-info">
+            <strong>Moon Orbit</strong>
+            384,400 km from Earth
+          </div>
+          <div class="ll-info">
+            <strong>Sun</strong>
+            1 AU · 149,600,000 km
+          </div>
+          <div class="ll-info">
+            <strong>Voyager 1 Photo</strong>
+            ~6 billion km · 40 AU
+          </div>
+          <div class="ll-info">
+            <strong>Proxima Centauri</strong>
+            4.24 light-years
+          </div>
+          <div class="ll-info">
+            <strong>Milky Way</strong>
+            ~100,000 light-years wide
+          </div>
+          <div class="ll-info">
+            <strong>Andromeda Galaxy</strong>
+            2.537 million light-years
+          </div>
+          <div class="ll-info">
+            <strong>Observable Universe</strong>
+            ~93 billion light-years wide
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
 
   <script>
   (function () {
@@ -524,6 +578,10 @@
       scaleValueEl.textContent = formatDistance(viewM) + ' across';
       const ms = MILESTONES.find(m => s >= m.from && s <= m.to);
       milestoneEl.textContent = ms ? ms.label : '';
+      const panelScale = document.getElementById('pbd-scale-value-panel');
+      if (panelScale) panelScale.textContent = formatDistance(viewM) + ' across';
+      const panelMs = document.getElementById('pbd-milestone-panel');
+      if (panelMs) panelMs.textContent = ms ? ms.label : '';
 
       // ── Sagan quote ──
       const showQuote = s >= 40 && s <= 58;
@@ -550,5 +608,6 @@
   })();
   </script>
 
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

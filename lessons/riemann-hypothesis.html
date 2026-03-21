@@ -9,7 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #7c3aed; --ll-tab-active: #7c3aed; --ll-tab-active-bg: rgba(124,58,237,0.12); }
     /* ── Page ───────────────────────────────────────────── */
     .rh-page { padding-bottom: 3.5rem; }
 
@@ -426,7 +428,8 @@
 <body class="rh-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="topbar">
+<div class="ll-viewport">
+  <header class="topbar ll-topbar">
     <div class="topbar-inner">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav aria-label="Primary">
@@ -438,6 +441,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+  <div class="ll-sim">
   <main id="main-content">
 
     <!-- ── Hero ── -->
@@ -842,6 +847,83 @@
     </section>
 
   </main>
+  </div><!-- /ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="rh-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="rh-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="rh-params">
+        <span class="ll-label">Complex Plane Visualizer</span>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>Imaginary value <strong>t</strong></span>
+            <span class="ll-val" id="rh-panel-t-display">14.1</span>
+          </div>
+          <input type="range" id="rh-panel-t-slider" min="0" max="52" value="14" step="0.1"
+            style="width:100%;accent-color:#7c3aed;" aria-label="Imaginary part t" />
+          <div class="ll-param-ends"><span>0</span><span>52</span></div>
+        </div>
+        <div class="ll-param">
+          <label class="ll-param-label" style="cursor:pointer;">
+            <span>Break hypothesis (off-line)</span>
+            <input type="checkbox" id="rh-panel-off-line" style="accent-color:#ef4444;" />
+          </label>
+        </div>
+        <hr class="ll-hr" />
+        <span class="ll-label">Wave Visualizer</span>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>Zeros used</span>
+            <span class="ll-val" id="rh-panel-wave-val">3</span>
+          </div>
+          <input type="range" id="rh-panel-wave-slider" min="1" max="10" value="3"
+            style="width:100%;accent-color:#0ea5e9;" aria-label="Number of zeros" />
+          <div class="ll-param-ends"><span>1</span><span>10</span></div>
+        </div>
+      </div>
+      <div class="ll-pane" id="rh-guide">
+        <span class="ll-label">Key Concepts</span>
+        <div class="ll-info">
+          <strong>The Riemann Hypothesis</strong>
+          All non-trivial zeros of the zeta function ζ(s) lie on the critical line Re(s) = ½.
+        </div>
+        <div class="ll-info">
+          <strong>Zeta Function</strong>
+          ζ(s) = 1 + 1/2ˢ + 1/3ˢ + 1/4ˢ + … encodes prime distribution information.
+        </div>
+        <div class="ll-info">
+          <strong>Non-trivial Zeros</strong>
+          Points where ζ(s) = 0. They control the accuracy of prime-counting predictions. Over 10 trillion verified zeros — all on Re(s) = ½.
+        </div>
+        <div class="ll-info">
+          <strong>Critical Line</strong>
+          The vertical line Re(s) = ½ in the complex plane. The hypothesis says all zeros lie exactly here.
+        </div>
+        <span class="ll-label">Prize</span>
+        <div class="ll-info">
+          <strong>$1,000,000 Millennium Prize</strong>
+          Unsolved since 1859. The Clay Mathematics Institute offers $1M for a proof or disproof.
+        </div>
+        <span class="ll-label">First 5 Zeros (Im part)</span>
+        <div class="ll-info">
+          14.135 · 21.022 · 25.011 · 30.424 · 32.935
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+  </button>
+
+  </div><!-- /ll-stage -->
+</div><!-- /ll-viewport -->
 
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
@@ -1119,5 +1201,56 @@
       update();
     })();
   </script>
+  <script>
+  /* ── Panel controls sync with in-page visualizers ── */
+  (function () {
+    /* Complex plane panel slider */
+    var panelT  = document.getElementById('rh-panel-t-slider');
+    var inPageT = document.getElementById('rh-t-slider');
+    var panelOff  = document.getElementById('rh-panel-off-line');
+    var inPageOff = document.getElementById('rh-off-line');
+    var panelTDisp = document.getElementById('rh-panel-t-display');
+
+    if (panelT && inPageT) {
+      panelT.addEventListener('input', function () {
+        inPageT.value = panelT.value;
+        inPageT.dispatchEvent(new Event('input'));
+        panelTDisp.textContent = parseFloat(panelT.value).toFixed(1);
+      });
+      inPageT.addEventListener('input', function () {
+        panelT.value = inPageT.value;
+        panelTDisp.textContent = parseFloat(inPageT.value).toFixed(1);
+      });
+    }
+
+    if (panelOff && inPageOff) {
+      panelOff.addEventListener('change', function () {
+        inPageOff.checked = panelOff.checked;
+        inPageOff.dispatchEvent(new Event('change'));
+      });
+      inPageOff.addEventListener('change', function () {
+        panelOff.checked = inPageOff.checked;
+      });
+    }
+
+    /* Wave panel slider */
+    var panelWave  = document.getElementById('rh-panel-wave-slider');
+    var inPageWave = document.getElementById('rh-wave-slider');
+    var panelWaveVal = document.getElementById('rh-panel-wave-val');
+
+    if (panelWave && inPageWave) {
+      panelWave.addEventListener('input', function () {
+        inPageWave.value = panelWave.value;
+        inPageWave.dispatchEvent(new Event('input'));
+        panelWaveVal.textContent = panelWave.value;
+      });
+      inPageWave.addEventListener('input', function () {
+        panelWave.value = inPageWave.value;
+        panelWaveVal.textContent = inPageWave.value;
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

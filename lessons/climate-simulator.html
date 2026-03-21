@@ -6,6 +6,7 @@
   <title>Climate Modeling Simulator · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Manipulate CO₂, solar output, ice coverage, and deforestation to model climate change on a live 3D Earth with animated particle effects." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     body { background: #000813; color: #c8d8ff; margin: 0; overflow-x: hidden; }
 
@@ -192,13 +193,40 @@
     @keyframes heatRing  { 0%,100%{opacity:.08;r:8} 50%{opacity:.45;r:22} }
     @keyframes leafSway  { 0%,100%{transform:rotate(-8deg) scale(1)} 50%{transform:rotate(8deg) scale(1.05)} }
     @keyframes wavePulse { 0%{opacity:.6;transform:scaleX(1)} 50%{opacity:.2;transform:scaleX(1.3)} 100%{opacity:.6;transform:scaleX(1)} }
+
+    /* ── Lesson-specific ll-viewport theming ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(0, 8, 20, 0.97);
+      --ll-panel-border:  rgba(60, 120, 220, 0.22);
+      --ll-tab-color:     rgba(160, 190, 255, 0.55);
+      --ll-tab-active-bg: rgba(60, 120, 255, 0.18);
+      --ll-tab-active:    #a8c8ff;
+      --ll-toggle-bg:     rgba(0, 8, 20, 0.97);
+    }
+    /* Constrain globe to viewport height */
+    .globe-outer {
+      max-height: calc(100dvh - 140px);
+    }
+    /* Remove the old 2-column grid wrapper; globe goes full-width in ll-sim */
+    .cs-wrap {
+      display: block;
+      padding: 0 1.2rem 0.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    /* Compact hero inside the new layout */
+    .cs-hero {
+      padding: 0.8rem 1.5rem 0.6rem;
+    }
   </style>
 </head>
 <body>
+<div class="ll-viewport ll-dark">
+
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <!-- Topbar -->
-  <nav class="cs-topbar">
+  <nav class="cs-topbar ll-topbar">
     <div class="cs-topbar-inner">
       <a href="../steam-lessons.html">← Earth Science</a>
       <span class="cs-topbar-title">Climate Modeling Simulator</span>
@@ -206,18 +234,21 @@
     </div>
   </nav>
 
-  <main id="main-content">
-    <!-- Hero -->
-    <header class="cs-hero">
-      <h1>🌍 Climate Modeling Simulator</h1>
-      <p>Adjust CO₂, solar irradiance, ice coverage, deforestation, and methane to model Earth's climate system. Watch particle-animated weather patterns, carbon cycles, and temperature shifts respond in real-time on a 3D globe.</p>
-    </header>
+  <div class="ll-stage">
 
-    <!-- App -->
-    <div class="cs-wrap">
+    <div class="ll-sim">
+      <main id="main-content">
+        <!-- Hero -->
+        <header class="cs-hero">
+          <h1>🌍 Climate Modeling Simulator</h1>
+          <p>Adjust CO₂, solar irradiance, ice coverage, deforestation, and methane to model Earth's climate system. Watch particle-animated weather patterns, carbon cycles, and temperature shifts respond in real-time on a 3D globe.</p>
+        </header>
 
-    <!-- Globe -->
-    <div class="globe-outer" id="globe-outer">
+        <!-- App -->
+        <div class="cs-wrap">
+
+        <!-- Globe -->
+        <div class="globe-outer" id="globe-outer">
       <canvas id="earth-canvas"></canvas>
       <svg id="particle-svg" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -236,114 +267,138 @@
       <div class="drag-hint">Drag to rotate · Scroll to zoom</div>
     </div>
 
-    <!-- Controls -->
-    <div class="ctrl-panel">
+        </div><!-- .cs-wrap -->
+      </main>
+    </div><!-- .ll-sim -->
 
-      <!-- Mode -->
-      <div class="mode-tabs" id="mode-tabs">
-        <button class="mode-tab active" data-mode="weather">🌪️ Weather</button>
-        <button class="mode-tab" data-mode="carbon">♻️ Carbon</button>
-        <button class="mode-tab" data-mode="temperature">🌡️ Heat Map</button>
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="cs-pane-params">Parameters</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cs-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
       </div>
+      <div class="ll-panel-body">
 
-      <!-- Parameters -->
-      <div class="ctrl-card">
-        <h3>Parameters</h3>
+        <div class="ll-pane ll-active" id="cs-pane-params">
+          <!-- Mode -->
+          <div class="ctrl-panel">
 
-        <div class="param-row">
-          <div class="param-label">CO₂ Concentration <strong id="v-co2">415 ppm</strong></div>
-          <input type="range" id="s-co2" min="280" max="700" value="415" step="5" />
-          <div class="range-ends"><span>280 pre-industrial</span><span>700 crisis</span></div>
-        </div>
+            <div class="mode-tabs" id="mode-tabs">
+              <button class="mode-tab active" data-mode="weather">🌪️ Weather</button>
+              <button class="mode-tab" data-mode="carbon">♻️ Carbon</button>
+              <button class="mode-tab" data-mode="temperature">🌡️ Heat Map</button>
+            </div>
 
-        <div class="param-row">
-          <div class="param-label">Solar Irradiance <strong id="v-solar">100%</strong></div>
-          <input type="range" id="s-solar" min="95" max="105" value="100" step="0.1" />
-          <div class="range-ends"><span>95% dim</span><span>105% bright</span></div>
-        </div>
+            <!-- Parameters -->
+            <div class="ctrl-card">
+              <h3>Parameters</h3>
 
-        <div class="param-row">
-          <div class="param-label">Ice / Albedo Cover <strong id="v-ice">60%</strong></div>
-          <input type="range" id="s-ice" min="0" max="100" value="60" step="1" />
-          <div class="range-ends"><span>0% none</span><span>100% max</span></div>
-        </div>
+              <div class="param-row">
+                <div class="param-label">CO₂ Concentration <strong id="v-co2">415 ppm</strong></div>
+                <input type="range" id="s-co2" min="280" max="700" value="415" step="5" />
+                <div class="range-ends"><span>280 pre-industrial</span><span>700 crisis</span></div>
+              </div>
 
-        <div class="param-row">
-          <div class="param-label">Deforestation <strong id="v-deforest">30%</strong></div>
-          <input type="range" id="s-deforest" min="0" max="100" value="30" step="1" />
-          <div class="range-ends"><span>0% pristine</span><span>100% barren</span></div>
-        </div>
+              <div class="param-row">
+                <div class="param-label">Solar Irradiance <strong id="v-solar">100%</strong></div>
+                <input type="range" id="s-solar" min="95" max="105" value="100" step="0.1" />
+                <div class="range-ends"><span>95% dim</span><span>105% bright</span></div>
+              </div>
 
-        <div class="param-row">
-          <div class="param-label">Methane CH₄ <strong id="v-ch4">1 900 ppb</strong></div>
-          <input type="range" id="s-ch4" min="700" max="4000" value="1900" step="50" />
-          <div class="range-ends"><span>700 ppb natural</span><span>4 000 ppb extreme</span></div>
-        </div>
+              <div class="param-row">
+                <div class="param-label">Ice / Albedo Cover <strong id="v-ice">60%</strong></div>
+                <input type="range" id="s-ice" min="0" max="100" value="60" step="1" />
+                <div class="range-ends"><span>0% none</span><span>100% max</span></div>
+              </div>
 
-        <div class="param-row">
-          <div class="param-label">Ocean Heat Absorption <strong id="v-ocean">70%</strong></div>
-          <input type="range" id="s-ocean" min="0" max="100" value="70" step="1" />
-          <div class="range-ends"><span>0% none</span><span>100% max</span></div>
-        </div>
-      </div>
+              <div class="param-row">
+                <div class="param-label">Deforestation <strong id="v-deforest">30%</strong></div>
+                <input type="range" id="s-deforest" min="0" max="100" value="30" step="1" />
+                <div class="range-ends"><span>0% pristine</span><span>100% barren</span></div>
+              </div>
 
-      <!-- Readouts -->
-      <div class="ctrl-card">
-        <h3>Climate Projections</h3>
-        <div class="readout-grid">
-          <div class="readout-card">
-            <span class="readout-lbl">Temp Anomaly</span>
-            <span class="readout-val neutral" id="out-temp">+1.2°C</span>
+              <div class="param-row">
+                <div class="param-label">Methane CH₄ <strong id="v-ch4">1 900 ppb</strong></div>
+                <input type="range" id="s-ch4" min="700" max="4000" value="1900" step="50" />
+                <div class="range-ends"><span>700 ppb natural</span><span>4 000 ppb extreme</span></div>
+              </div>
+
+              <div class="param-row">
+                <div class="param-label">Ocean Heat Absorption <strong id="v-ocean">70%</strong></div>
+                <input type="range" id="s-ocean" min="0" max="100" value="70" step="1" />
+                <div class="range-ends"><span>0% none</span><span>100% max</span></div>
+              </div>
+            </div>
+
+            <!-- Readouts -->
+            <div class="ctrl-card">
+              <h3>Climate Projections</h3>
+              <div class="readout-grid">
+                <div class="readout-card">
+                  <span class="readout-lbl">Temp Anomaly</span>
+                  <span class="readout-val neutral" id="out-temp">+1.2°C</span>
+                </div>
+                <div class="readout-card">
+                  <span class="readout-lbl">Sea Level</span>
+                  <span class="readout-val blue" id="out-sea">+0.28 m</span>
+                </div>
+                <div class="readout-card">
+                  <span class="readout-lbl">Ocean pH</span>
+                  <span class="readout-val neutral" id="out-ph">8.07</span>
+                </div>
+                <div class="readout-card">
+                  <span class="readout-lbl">Storm Index</span>
+                  <span class="readout-val neutral" id="out-storm">1.2×</span>
+                </div>
+                <div class="readout-card">
+                  <span class="readout-lbl">Radiative Forcing</span>
+                  <span class="readout-val warm" id="out-forcing">+2.1 W/m²</span>
+                </div>
+                <div class="readout-card">
+                  <span class="readout-lbl">Polar Ice Left</span>
+                  <span class="readout-val blue" id="out-icecover">58%</span>
+                </div>
+              </div>
+              <div class="alert-bar safe" id="alert-bar" style="margin-top:10px">
+                Climate within manageable bounds — act now to prevent escalation.
+              </div>
+            </div>
+
+          </div><!-- .ctrl-panel -->
+        </div><!-- #cs-pane-params -->
+
+        <div class="ll-pane" id="cs-pane-guide">
+          <div class="ctrl-card" style="margin-bottom:1rem">
+            <h3>About This Model</h3>
+            <div class="info-grid" style="margin-top:0.7rem">
+              <div class="info-card">
+                <h4>🌿 Carbon Cycle</h4>
+                <p>CO₂ and CH₄ trap outgoing infrared radiation. The model uses the IPCC radiative forcing formula: <em>ΔF = 5.35 × ln(C/C₀)</em> for CO₂, scaled by the methane forcing contribution. Forests remove ~2.6 Gt CO₂/yr — deforestation reduces this sink.</p>
+              </div>
+              <div class="info-card">
+                <h4>☀️ Energy Balance</h4>
+                <p>Earth's temperature is set by the balance of incoming solar energy and outgoing thermal radiation. Ice and snow reflect sunlight (high albedo). As ice melts, the darker ocean absorbs more heat — a positive feedback loop that amplifies warming.</p>
+              </div>
+              <div class="info-card">
+                <h4>🌊 Ocean Systems</h4>
+                <p>Oceans absorb ~90% of excess heat and ~30% of CO₂ emissions, slowing surface warming but causing acidification. As pH drops below 8.0, coral reefs and shellfish are threatened. Warmer seas fuel more intense hurricanes and alter global currents.</p>
+              </div>
+            </div>
           </div>
-          <div class="readout-card">
-            <span class="readout-lbl">Sea Level</span>
-            <span class="readout-val blue" id="out-sea">+0.28 m</span>
-          </div>
-          <div class="readout-card">
-            <span class="readout-lbl">Ocean pH</span>
-            <span class="readout-val neutral" id="out-ph">8.07</span>
-          </div>
-          <div class="readout-card">
-            <span class="readout-lbl">Storm Index</span>
-            <span class="readout-val neutral" id="out-storm">1.2×</span>
-          </div>
-          <div class="readout-card">
-            <span class="readout-lbl">Radiative Forcing</span>
-            <span class="readout-val warm" id="out-forcing">+2.1 W/m²</span>
-          </div>
-          <div class="readout-card">
-            <span class="readout-lbl">Polar Ice Left</span>
-            <span class="readout-val blue" id="out-icecover">58%</span>
-          </div>
-        </div>
-        <div class="alert-bar safe" id="alert-bar" style="margin-top:10px">
-          Climate within manageable bounds — act now to prevent escalation.
-        </div>
-      </div>
+        </div><!-- #cs-pane-guide -->
 
-    </div><!-- .ctrl-panel -->
-  </div><!-- .cs-wrap -->
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
 
-  <!-- Info -->
-  <section class="cs-info">
-    <div class="ctrl-card" style="margin-bottom:1rem">
-      <h3>About This Model</h3>
-      <div class="info-grid" style="margin-top:0.7rem">
-        <div class="info-card">
-          <h4>🌿 Carbon Cycle</h4>
-          <p>CO₂ and CH₄ trap outgoing infrared radiation. The model uses the IPCC radiative forcing formula: <em>ΔF = 5.35 × ln(C/C₀)</em> for CO₂, scaled by the methane forcing contribution. Forests remove ~2.6 Gt CO₂/yr — deforestation reduces this sink.</p>
-        </div>
-        <div class="info-card">
-          <h4>☀️ Energy Balance</h4>
-          <p>Earth's temperature is set by the balance of incoming solar energy and outgoing thermal radiation. Ice and snow reflect sunlight (high albedo). As ice melts, the darker ocean absorbs more heat — a positive feedback loop that amplifies warming.</p>
-        </div>
-        <div class="info-card">
-          <h4>🌊 Ocean Systems</h4>
-          <p>Oceans absorb ~90% of excess heat and ~30% of CO₂ emissions, slowing surface warming but causing acidification. As pH drops below 8.0, coral reefs and shellfish are threatened. Warmer seas fuel more intense hurricanes and alter global currents.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
 
   <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
@@ -1120,7 +1175,8 @@
 
   })();
   </script>
-  </main>
+  <script src="../assets/js/lesson-layout.js"></script>
 
+</div><!-- .ll-viewport -->
 </body>
 </html>

@@ -6,6 +6,7 @@
   <title>Volcano Simulator · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Simulate famous volcanic eruptions in 3D — lava flows, ash columns, pyroclastic surges and more." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     body { background: #060308; color: #e0d0c0; margin: 0; overflow-x: hidden; }
 
@@ -210,11 +211,37 @@
     }
     .vei-seg.active { opacity: 1; }
     .vei-labels { display: flex; justify-content: space-between; font-size: 0.6rem; color: rgba(180,130,80,0.4); }
+
+    /* ── Lesson-specific ll-viewport theming ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(10, 4, 2, 0.97);
+      --ll-panel-border:  rgba(200, 80, 20, 0.22);
+      --ll-tab-color:     rgba(200, 150, 100, 0.55);
+      --ll-tab-active-bg: rgba(200, 80, 20, 0.2);
+      --ll-tab-active:    #f0a060;
+      --ll-toggle-bg:     rgba(10, 4, 2, 0.97);
+    }
+    /* Constrain canvas to viewport height */
+    .volcano-outer {
+      max-height: calc(100dvh - 140px);
+    }
+    /* Remove old 2-column grid; canvas goes full-width */
+    .vs-wrap {
+      display: block;
+      padding: 0 1.1rem 0.5rem;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+    /* Compact hero */
+    .vs-hero {
+      padding: 0.8rem 1.5rem 0.5rem;
+    }
   </style>
 </head>
 <body>
+<div class="ll-viewport ll-dark">
 
-  <nav class="vs-topbar">
+  <nav class="vs-topbar ll-topbar">
     <div class="vs-topbar-inner">
       <a href="../steam-lessons.html">← Earth Science</a>
       <span class="vs-topbar-title">🌋 Volcano Simulator</span>
@@ -222,23 +249,40 @@
     </div>
   </nav>
 
-  <header class="vs-hero">
-    <h1>🌋 Volcano Simulator</h1>
-    <p>Explore real volcano types and replay history's most notorious eruptions — from Pompeii to Yellowstone. Watch lava flows, ash columns, and pyroclastic surges unfold in 3D.</p>
-  </header>
+  <div class="ll-stage">
 
-  <div class="vs-wrap">
+    <div class="ll-sim">
+      <header class="vs-hero">
+        <h1>🌋 Volcano Simulator</h1>
+        <p>Explore real volcano types and replay history's most notorious eruptions — from Pompeii to Yellowstone. Watch lava flows, ash columns, and pyroclastic surges unfold in 3D.</p>
+      </header>
 
-    <!-- 3D Canvas -->
-    <div class="volcano-outer" id="vol-outer">
-      <canvas id="vol-canvas"></canvas>
-      <div class="vol-overlay">
-        <span class="vol-badge" id="vol-name-badge">🌋 Mt Vesuvius — 79 AD</span>
-        <span class="vei-badge" id="vei-badge">VEI 5 · Stratovolcano</span>
+      <div class="vs-wrap">
+
+        <!-- 3D Canvas -->
+        <div class="volcano-outer" id="vol-outer">
+          <canvas id="vol-canvas"></canvas>
+          <div class="vol-overlay">
+            <span class="vol-badge" id="vol-name-badge">🌋 Mt Vesuvius — 79 AD</span>
+            <span class="vei-badge" id="vei-badge">VEI 5 · Stratovolcano</span>
+          </div>
+          <div class="drag-hint">Drag to orbit · Scroll to zoom</div>
+        </div>
+
       </div>
-      <div class="drag-hint">Drag to orbit · Scroll to zoom</div>
-    </div>
+    </div><!-- .ll-sim -->
 
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="vs-pane-params">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="vs-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="vs-pane-params">
     <!-- Controls -->
     <div class="vs-panel">
 
@@ -308,29 +352,41 @@
         Pyroclastic surges reaching 300 °C buried Pompeii and Herculaneum under 4–6 m of ash and pumice. 16,000–20,000 people perished. The eruption lasted 18 hours and ejected 3 km³ of material.
       </div>
 
-    </div>
-  </div>
+    </div><!-- .vs-panel -->
+        </div><!-- #vs-pane-params -->
 
-  <!-- Info -->
-  <section class="vs-info">
-    <div class="vs-card" style="margin-bottom:1rem">
-      <h3>Volcanology Essentials</h3>
-      <div class="info-row">
-        <div class="info-card">
-          <h4>🔥 Magma Types</h4>
-          <p><strong>Basaltic</strong> magma (Hawaii) has low silica and is runny — it erupts effusively, creating broad shield volcanoes and flowing lava rivers. <strong>Rhyolitic</strong> magma (Yellowstone) has high silica, is incredibly viscous, and traps gas — leading to explosive, catastrophic eruptions.</p>
-        </div>
-        <div class="info-card">
-          <h4>📊 VEI Scale</h4>
-          <p>The <em>Volcanic Explosivity Index</em> measures eruption magnitude on a 0–8 logarithmic scale. Each step is 10× more powerful. VEI 8 "supereruptions" are rare but can lower global temperatures for years by injecting sulfur dioxide into the stratosphere.</p>
-        </div>
-        <div class="info-card">
-          <h4>💨 Pyroclastic Flows</h4>
-          <p>The most lethal volcanic hazard — dense, fast-moving avalanches of hot gas, ash, and rock fragments travelling at 100–700 km/h at 300–800 °C. No natural shelter can protect against a direct flow. They were responsible for most deaths at Vesuvius and St. Helens.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+        <div class="ll-pane" id="vs-pane-guide">
+          <div class="vs-card" style="margin-bottom:1rem">
+            <h3>Volcanology Essentials</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>🔥 Magma Types</h4>
+                <p><strong>Basaltic</strong> magma (Hawaii) has low silica and is runny — it erupts effusively, creating broad shield volcanoes and flowing lava rivers. <strong>Rhyolitic</strong> magma (Yellowstone) has high silica, is incredibly viscous, and traps gas — leading to explosive, catastrophic eruptions.</p>
+              </div>
+              <div class="info-card">
+                <h4>📊 VEI Scale</h4>
+                <p>The <em>Volcanic Explosivity Index</em> measures eruption magnitude on a 0–8 logarithmic scale. Each step is 10× more powerful. VEI 8 "supereruptions" are rare but can lower global temperatures for years by injecting sulfur dioxide into the stratosphere.</p>
+              </div>
+              <div class="info-card">
+                <h4>💨 Pyroclastic Flows</h4>
+                <p>The most lethal volcanic hazard — dense, fast-moving avalanches of hot gas, ash, and rock fragments travelling at 100–700 km/h at 300–800 °C. No natural shelter can protect against a direct flow. They were responsible for most deaths at Vesuvius and St. Helens.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #vs-pane-guide -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script>
@@ -1142,6 +1198,7 @@
 
   })();
   </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 
 </body>
 </html>

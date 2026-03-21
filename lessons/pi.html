@@ -9,7 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #af52de; --ll-tab-active: #af52de; --ll-tab-active-bg: rgba(175,82,222,0.12); }
     /* ── Page ─────────────────────────────────────────── */
     .pi-page { padding-bottom: 3.5rem; }
 
@@ -223,7 +225,8 @@
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="site-header">
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
     <div class="nav-wrap">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
@@ -241,6 +244,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+  <div class="ll-sim">
   <main id="main-content" class="pi-page">
 
     <!-- ── Hero ── -->
@@ -498,6 +503,86 @@
     </section>
 
   </main>
+  </div><!-- /ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="pi-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="pi-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="pi-params">
+        <span class="ll-label">Circle Explorer</span>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>Radius <strong>r</strong></span>
+            <span class="ll-val" id="pi-panel-r">5</span>
+          </div>
+          <input type="range" id="pi-panel-slider" min="1" max="20" value="5"
+            style="width:100%;accent-color:#af52de;" aria-label="Circle radius" />
+          <div class="ll-param-ends"><span>1</span><span>20</span></div>
+        </div>
+        <hr class="ll-hr" />
+        <div class="ll-readouts">
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Diameter</span>
+            <span class="ll-readout-val" id="pi-panel-diam" style="color:#ff9500;">10</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Circumference</span>
+            <span class="ll-readout-val" id="pi-panel-circ" style="color:#34c759;">31.42</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Area</span>
+            <span class="ll-readout-val" id="pi-panel-area" style="color:#ff3b30;">78.54</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">C ÷ d</span>
+            <span class="ll-readout-val" id="pi-panel-ratio" style="color:#af52de;">3.14159</span>
+          </div>
+        </div>
+      </div>
+      <div class="ll-pane" id="pi-guide">
+        <span class="ll-label">What is Pi?</span>
+        <div class="ll-info">
+          <strong>Definition</strong>
+          π = circumference ÷ diameter, always. For any circle, this ratio is the same irrational number: 3.14159…
+        </div>
+        <span class="ll-label">Formulas</span>
+        <div class="ll-info">
+          <strong>Circumference</strong>
+          C = 2πr &nbsp; or &nbsp; C = πd
+        </div>
+        <div class="ll-info">
+          <strong>Area</strong>
+          A = πr²
+        </div>
+        <span class="ll-label">Key Facts</span>
+        <div class="ll-info">
+          <strong>Irrational Number</strong>
+          π cannot be expressed as a simple fraction. Its digits go on forever without repeating.
+        </div>
+        <div class="ll-info">
+          <strong>History</strong>
+          Calculated to 105 trillion digits in 2024 using cloud computing. Still no pattern found.
+        </div>
+        <div class="ll-info">
+          <strong>Pi Day</strong>
+          March 14 (3/14) is celebrated as Pi Day worldwide, including at NASA.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+  </button>
+
+  </div><!-- /ll-stage -->
+</div><!-- /ll-viewport -->
 
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
@@ -643,5 +728,42 @@
 
   })();
   </script>
+  <script>
+  /* ── Panel slider syncs with in-page explorer ── */
+  (function () {
+    const panelSlider = document.getElementById('pi-panel-slider');
+    const inPageSlider = document.getElementById('pi-slider');
+    if (!panelSlider || !inPageSlider) return;
+
+    function syncFromPanel() {
+      inPageSlider.value = panelSlider.value;
+      inPageSlider.dispatchEvent(new Event('input'));
+      /* update panel readouts */
+      const r = parseFloat(panelSlider.value);
+      const PI = Math.PI, d = r * 2, C = 2 * PI * r, A = PI * r * r;
+      document.getElementById('pi-panel-r').textContent    = r;
+      document.getElementById('pi-panel-diam').textContent = d;
+      document.getElementById('pi-panel-circ').textContent = C.toFixed(2);
+      document.getElementById('pi-panel-area').textContent = A.toFixed(2);
+      document.getElementById('pi-panel-ratio').textContent = (C / d).toFixed(5);
+    }
+
+    function syncFromPage() {
+      panelSlider.value = inPageSlider.value;
+      const r = parseFloat(inPageSlider.value);
+      const PI = Math.PI, d = r * 2, C = 2 * PI * r, A = PI * r * r;
+      document.getElementById('pi-panel-r').textContent    = r;
+      document.getElementById('pi-panel-diam').textContent = d;
+      document.getElementById('pi-panel-circ').textContent = C.toFixed(2);
+      document.getElementById('pi-panel-area').textContent = A.toFixed(2);
+      document.getElementById('pi-panel-ratio').textContent = (C / d).toFixed(5);
+    }
+
+    panelSlider.addEventListener('input', syncFromPanel);
+    inPageSlider.addEventListener('input', syncFromPage);
+    syncFromPage();
+  })();
+  </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

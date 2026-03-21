@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     /* ── Page ─────────────────────────────────────────── */
     .ap-page { padding-bottom: 3.5rem; }
@@ -263,12 +264,20 @@
       .ap-ship-row { flex-direction: column; }
       .ap-result-row { grid-template-columns: repeat(3,1fr); }
     }
+
+    /* ── Layout overrides ─────────────────────────────── */
+    .ll-viewport {
+      --ll-tab-active: #5ac8fa;
+      --ll-tab-active-bg: rgba(90,200,250,0.12);
+    }
+    #ap-tank-canvas { max-height: calc(100dvh - 140px); }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="site-header">
+  <header class="site-header ll-topbar">
     <div class="nav-wrap">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
@@ -286,6 +295,8 @@
     </div>
   </header>
 
+  <div class="ll-stage">
+  <div class="ll-sim">
   <main id="main-content" class="ap-page">
 
     <!-- ── Hero ── -->
@@ -426,17 +437,7 @@
     <!-- ── Sink or Float Machine ── -->
     <section class="ap-machine">
       <h2>Sink or Float Machine</h2>
-      <p class="ap-machine-sub">Select an object (or set a custom density), then drop it into the tank. Watch it sink or float and see the forces at work.</p>
-
-      <div class="ap-obj-grid" id="ap-obj-grid" role="group" aria-label="Choose an object to drop">
-        <!-- Filled by JS -->
-      </div>
-
-      <div class="ap-custom-row">
-        <label for="ap-density-slider">Custom density</label>
-        <input type="range" id="ap-density-slider" min="0.1" max="5.0" step="0.05" value="1.0" />
-        <span class="ap-custom-density-val" id="ap-custom-val">1.00 g/cm³</span>
-      </div>
+      <p class="ap-machine-sub">Select an object in the Controls panel, then drop it into the tank.</p>
 
       <canvas id="ap-tank-canvas" height="220" aria-label="Water tank simulation showing sink or float"></canvas>
 
@@ -454,11 +455,6 @@
           <span class="ap-result-label">Result</span>
           <span id="ap-r-verdict"></span>
         </div>
-      </div>
-
-      <div class="ap-machine-btns">
-        <button class="ap-btn" id="ap-drop-btn">Drop it in ›</button>
-        <button class="ap-btn secondary" id="ap-reset-btn">Reset tank</button>
       </div>
     </section>
 
@@ -594,10 +590,83 @@
     </section>
 
   </main>
+  </div><!-- /.ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="ap-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="ap-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="ap-params">
+        <span class="ll-label">Choose an Object</span>
+        <div class="ap-obj-grid" id="ap-obj-grid" role="group" aria-label="Choose an object to drop" style="margin-bottom:0.75rem;"></div>
+        <hr class="ll-hr">
+        <span class="ll-label">Custom Density</span>
+        <div class="ll-param" style="margin-bottom:0.75rem;">
+          <div class="ll-param-label">
+            <span>Density</span>
+            <span class="ll-val" id="ap-custom-val">1.00 g/cm³</span>
+          </div>
+          <input type="range" id="ap-density-slider" min="0.1" max="5.0" step="0.05" value="1.0" style="width:100%;accent-color:#5ac8fa;" />
+          <div class="ll-param-ends"><span>0.1</span><span>5.0 g/cm³</span></div>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+          <button class="ap-btn" id="ap-drop-btn" style="flex:1;">Drop it in ›</button>
+          <button class="ap-btn secondary" id="ap-reset-btn" style="flex:1;">Reset</button>
+        </div>
+        <hr class="ll-hr">
+        <span class="ll-label">Results</span>
+        <div class="ll-readouts">
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Water density</span>
+            <span class="ll-readout-val">1.0 g/cm³</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Rule</span>
+            <span class="ll-readout-val" style="font-size:0.7rem;">ρ&lt;1 → floats</span>
+          </div>
+        </div>
+      </div>
+      <div class="ll-pane" id="ap-guide">
+        <div class="ll-info">
+          <strong>Archimedes' Principle</strong>
+          An object in a fluid experiences an upward buoyant force equal to the weight of fluid it displaces.
+        </div>
+        <div class="ll-info">
+          <strong>The density rule</strong>
+          If object density &lt; fluid density → floats. If greater → sinks. Water = 1.0 g/cm³.
+        </div>
+        <div class="ll-info">
+          <strong>Why ships float</strong>
+          A hollow steel hull traps air, making the average density of the whole ship less than 1.0 g/cm³.
+        </div>
+        <div class="ll-info">
+          <strong>Submarines</strong>
+          Fill ballast tanks with water to sink. Push water out with compressed air to rise. On-demand buoyancy control.
+        </div>
+        <div class="ll-info">
+          <strong>Dead Sea</strong>
+          Salt water at ~1.24 g/cm³ — a human body (≈1.0 g/cm³) floats effortlessly.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+  </button>
+  </div><!-- /.ll-stage -->
 
   <footer class="site-footer">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
   </footer>
+</div><!-- /.ll-viewport -->
 
   <script src="../assets/js/nav-mobile.js"></script>
   <script>
@@ -914,5 +983,6 @@
 
   })();
   </script>
+  <script src="../assets/js/lesson-layout.js"></script>
 </body>
 </html>

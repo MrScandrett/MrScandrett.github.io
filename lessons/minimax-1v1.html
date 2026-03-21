@@ -9,7 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #134c97; --ll-tab-active: #1c6ed7; --ll-tab-active-bg: rgba(28,110,215,0.10); }
+
     .minimax-page {
       max-width: 1180px;
       margin: 0 auto;
@@ -21,20 +24,6 @@
       display: grid;
       gap: 1rem;
       background: linear-gradient(180deg, #f8fbff 0%, #f4f8ff 100%);
-    }
-
-    .minimax-dashboard {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-      align-items: start;
-    }
-
-    .minimax-main,
-    .minimax-side {
-      display: grid;
-      gap: 1rem;
-      min-width: 0;
     }
 
     .minimax-card {
@@ -733,12 +722,6 @@
       margin-bottom: 0;
     }
 
-    .minimax-score-strip {
-      display: grid;
-      gap: 0.72rem;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
     .minimax-score-card {
       border: 1px solid #dce5f2;
       border-radius: 12px;
@@ -768,6 +751,12 @@
       font-size: 0.9rem;
     }
 
+    .minimax-score-strip-cards {
+      display: grid;
+      gap: 0.72rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .minimax-steps {
       margin: 0;
       padding-left: 1.1rem;
@@ -782,10 +771,6 @@
     }
 
     @media (max-width: 899px) {
-      .minimax-dashboard {
-        grid-template-columns: 1fr;
-      }
-
       .jvn-layout {
         grid-template-columns: 1fr;
       }
@@ -799,7 +784,7 @@
       }
 
       .minimax-metric-tiles,
-      .minimax-score-strip {
+      .minimax-score-strip-cards {
         grid-template-columns: 1fr;
       }
 
@@ -812,7 +797,8 @@
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="topbar">
+<div class="ll-viewport">
+  <header class="topbar ll-topbar">
     <div class="topbar-inner">
       <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav aria-label="Primary">
@@ -824,97 +810,23 @@
     </div>
   </header>
 
-  <main id="main-content" class="minimax-page">
-    <section class="hero">
-      <p class="eyebrow">AI Origins · Lesson 02</p>
-      <h1>1v1 Game AI: Minimax</h1>
-      <p>Live adversarial search lab: play Tic-Tac-Toe while the engine reveals maximizing/minimizing logic, terminal scoring, and game-tree decisions.</p>
-    </section>
+  <div class="ll-stage">
+    <div class="ll-sim" id="main-content">
+      <div class="minimax-page">
 
-    <section class="section">
-      <div class="jvn-layout">
-        <article class="card jvn-bio">
-          <p class="jvn-kicker">Biography Spotlight</p>
-          <h2 class="jvn-title">The Architect of the Modern Mind</h2>
-          <p>John von Neumann (1903–1957) was a Hungarian-American mathematician and polymath whose theoretical frameworks provide the literal blueprint for every AI you interact with today.</p>
-          <p>While he is famously known for the Von Neumann Architecture, the standard design of modern computers that separates processing from memory, his legacy in AI and robotics also comes from his obsession with self-replicating automata.</p>
-          <p>In 1928, he formalized the Minimax Theorem in game theory, showing how rational players choose the best strategy under opposition. That logic is still at the core of adversarial AI decision-making.</p>
-          <p class="jvn-transition">Now test that exact theory in action: <a href="#minimax-live">play this Tic-Tac-Toe lab using minimax ideas developed by JVN in 1928.</a></p>
-        </article>
+        <div class="ll-hero">
+          <p class="eyebrow">AI Origins · Lesson 02</p>
+          <h1>1v1 Game AI: Minimax</h1>
+          <p>Live adversarial search lab: play Tic-Tac-Toe while the engine reveals maximizing/minimizing logic, terminal scoring, and game-tree decisions.</p>
+        </div>
 
-        <aside class="card jvn-facts" aria-label="John von Neumann quick facts">
-          <figure class="jvn-portrait">
-            <img src="../assets/thumbs/john-von-neumann-bio.png" alt="John von Neumann seated in front of a chalkboard covered in equations." loading="lazy" decoding="async" />
-            <figcaption>John von Neumann in New Mexico, often pictured in settings that reflected his mathematical work.</figcaption>
-          </figure>
-          <h3>Quick Facts</h3>
-          <ul>
-            <li><span>Born</span><strong>1903, Budapest</strong></li>
-            <li><span>Died</span><strong>1957, Washington, D.C.</strong></li>
-            <li><span>Known for</span><strong>Architecture, Game Theory, Automata</strong></li>
-            <li><span>AI link</span><strong>Formal strategy + machine self-replication models</strong></li>
-          </ul>
-        </aside>
-      </div>
-    </section>
-
-    <section class="section" aria-labelledby="minimax-explainer-title">
-      <div class="section-head">
-        <h2 id="minimax-explainer-title">What Minimax Actually Is</h2>
-        <p>Minimax is the decision rule behind many two-player game AIs: it looks ahead through possible moves, scores the endings, and then chooses the move that leads to the best worst-case outcome.</p>
-      </div>
-
-      <div class="minimax-explainer-grid">
-        <article class="card minimax-explain">
-          <p>In a game like Tic-Tac-Toe, Minimax assumes that both players are trying to play as intelligently as possible. Instead of asking, “What move looks good right now?” the AI asks, “If I make this move, what will my opponent do next, and what happens after that?”</p>
-          <p>The algorithm explores the game tree one turn at a time until it reaches terminal states such as a win, loss, or draw. Those endings are given scores, and the scores are then passed back up the tree to evaluate earlier choices.</p>
-          <div class="minimax-score-strip" aria-label="Minimax scoring examples">
-            <div class="minimax-score-card">
-              <span>For X</span>
-              <strong>+1</strong>
-              <p>X can force a win.</p>
-            </div>
-            <div class="minimax-score-card">
-              <span>For Draw</span>
-              <strong>0</strong>
-              <p>Neither side can force victory.</p>
-            </div>
-            <div class="minimax-score-card">
-              <span>For O</span>
-              <strong>-1</strong>
-              <p>O can force a win.</p>
-            </div>
+        <section class="section" id="minimax-live">
+          <div class="section-head">
+            <h2>Live Minimax Engine Lab</h2>
+            <p>Play as X (maximizer). The AI plays O (minimizer) and returns best score + best move each turn using the minimax framework tied to von Neumann's 1928 theorem.</p>
           </div>
-          <p>When it is the maximizing player’s turn, the algorithm chooses the highest score available. When it is the minimizing player’s turn, it chooses the lowest. That back-and-forth is why it is called <em>Mini</em>max: one player maximizes the score, while the other minimizes it.</p>
-        </article>
 
-        <aside class="card jvn-facts" aria-label="How Minimax works step by step">
-          <h3>How The Search Works</h3>
-          <ol class="minimax-steps">
-            <li><strong>Generate moves.</strong> The AI lists every legal move from the current board.</li>
-            <li><strong>Look ahead.</strong> For each move, it simulates what the opponent could do next.</li>
-            <li><strong>Score endings.</strong> Wins, losses, and draws are turned into numbers.</li>
-            <li><strong>Back up values.</strong> Scores travel upward through the game tree.</li>
-            <li><strong>Choose rationally.</strong> Max picks the highest value; Min picks the lowest.</li>
-          </ol>
-          <ul>
-            <li><span>In this lab</span><strong>X = maximizer, O = minimizer</strong></li>
-            <li><span>Main idea</span><strong>Plan for the best move assuming your opponent also plays well</strong></li>
-            <li><span>Why it matters</span><strong>It turns turn-based strategy into a clear search problem</strong></li>
-          </ul>
-        </aside>
-      </div>
-    </section>
-
-    <section class="section" id="minimax-live">
-      <div class="section-head">
-        <h2>Live Minimax Engine Lab</h2>
-        <p>Play as X (maximizer). The AI plays O (minimizer) and returns best score + best move each turn using the minimax framework tied to von Neumann's 1928 theorem.</p>
-      </div>
-
-      <article class="card minimax-lab minimax-lab-ui" id="minimax-lab">
-        <div class="minimax-dashboard">
-          <section class="minimax-main">
+          <article class="card minimax-lab minimax-lab-ui" id="minimax-lab">
             <article class="minimax-card minimax-card-board">
               <header class="minimax-card-head">
                 <h3>Tic-Tac-Toe Board</h3>
@@ -932,159 +844,284 @@
                 <button id="mm-reset" class="minimax-btn minimax-btn-secondary" type="button">Reset Game</button>
               </div>
             </article>
-          </section>
 
-          <aside class="minimax-side">
-            <article class="minimax-card">
-              <header class="minimax-card-head">
-                <h3>Lab Controls</h3>
-              </header>
-
-              <div class="minimax-control-grid">
-                <label class="minimax-field" for="mm-depth">
-                  <span>Search Depth</span>
-                  <select id="mm-depth">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9" selected>9 (full tree)</option>
-                  </select>
-                </label>
+            <details id="mm-tree-panel" class="minimax-card minimax-collapsible" hidden>
+              <summary>
+                <span>Game Tree Snapshot</span>
+                <span class="minimax-summary-meta">Partial tree</span>
+              </summary>
+              <div class="minimax-collapsible-body">
+                <p class="minimax-note">Blue nodes maximize, red nodes minimize, gold nodes are terminal outcomes.</p>
+                <div id="mm-tree" class="minimax-tree" aria-live="polite"></div>
               </div>
+            </details>
 
-              <div class="minimax-toggles">
-                <label><input id="mm-fast-wins" type="checkbox" /> Prefer Faster Wins</label>
-                <label><input id="mm-tree-toggle" type="checkbox" /> Show Partial Game Tree</label>
+            <details class="minimax-card minimax-collapsible minimax-debug">
+              <summary>
+                <span>Debug Console</span>
+                <span class="minimax-summary-meta">Engine events</span>
+              </summary>
+              <div class="minimax-collapsible-body">
+                <div class="minimax-debug-controls">
+                  <label><input id="mm-debug-toggle" type="checkbox" /> Enable debug logging</label>
+                  <button id="mm-debug-clear" class="minimax-btn minimax-btn-secondary" type="button">Clear Debug Log</button>
+                </div>
+                <pre id="mm-debug-log" class="minimax-debug-log"></pre>
               </div>
+            </details>
+          </article>
+        </section>
+
+        <section class="section">
+          <div class="jvn-layout">
+            <article class="card jvn-bio">
+              <p class="jvn-kicker">Biography Spotlight</p>
+              <h2 class="jvn-title">The Architect of the Modern Mind</h2>
+              <p>John von Neumann (1903–1957) was a Hungarian-American mathematician and polymath whose theoretical frameworks provide the literal blueprint for every AI you interact with today.</p>
+              <p>While he is famously known for the Von Neumann Architecture, the standard design of modern computers that separates processing from memory, his legacy in AI and robotics also comes from his obsession with self-replicating automata.</p>
+              <p>In 1928, he formalized the Minimax Theorem in game theory, showing how rational players choose the best strategy under opposition. That logic is still at the core of adversarial AI decision-making.</p>
+              <p class="jvn-transition">Now test that exact theory in action: <a href="#minimax-live">play this Tic-Tac-Toe lab using minimax ideas developed by JVN in 1928.</a></p>
             </article>
 
-            <article class="minimax-card">
-              <header class="minimax-card-head">
-                <h3>Search Metrics</h3>
-              </header>
-              <div class="minimax-metric-tiles">
-                <article class="minimax-metric">
-                  <p id="mm-metric-depth" class="minimax-metric-value">0</p>
-                  <p class="minimax-metric-label">Depth</p>
-                </article>
-                <article class="minimax-metric">
-                  <p id="mm-metric-nodes" class="minimax-metric-value">0</p>
-                  <p class="minimax-metric-label">Nodes</p>
-                </article>
-                <article class="minimax-metric">
-                  <p id="mm-metric-branching" class="minimax-metric-value">0.00</p>
-                  <p class="minimax-metric-label">Branching</p>
-                </article>
-              </div>
-            </article>
-
-            <article class="minimax-card">
-              <header class="minimax-card-head">
-                <h3>Terminal Scoring</h3>
-              </header>
-              <ul class="minimax-score-strip" aria-label="Terminal scoring">
-                <li><span class="minimax-role-max">Win</span><strong>+1</strong></li>
-                <li><span class="minimax-role-min">Loss</span><strong>-1</strong></li>
-                <li><span class="minimax-terminal">Draw</span><strong>0</strong></li>
+            <aside class="card jvn-facts" aria-label="John von Neumann quick facts">
+              <figure class="jvn-portrait">
+                <img src="../assets/thumbs/john-von-neumann-bio.png" alt="John von Neumann seated in front of a chalkboard covered in equations." loading="lazy" decoding="async" />
+                <figcaption>John von Neumann in New Mexico, often pictured in settings that reflected his mathematical work.</figcaption>
+              </figure>
+              <h3>Quick Facts</h3>
+              <ul>
+                <li><span>Born</span><strong>1903, Budapest</strong></li>
+                <li><span>Died</span><strong>1957, Washington, D.C.</strong></li>
+                <li><span>Known for</span><strong>Architecture, Game Theory, Automata</strong></li>
+                <li><span>AI link</span><strong>Formal strategy + machine self-replication models</strong></li>
               </ul>
-              <p class="minimax-note">Evaluated board states from the latest AI search:</p>
-              <div id="mm-eval-log" class="minimax-log" aria-live="polite"></div>
-              <button id="mm-log-expand" class="minimax-btn minimax-btn-secondary minimax-log-toggle" type="button" aria-expanded="false">Show more</button>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="minimax-explainer-title">
+          <div class="section-head">
+            <h2 id="minimax-explainer-title">What Minimax Actually Is</h2>
+            <p>Minimax is the decision rule behind many two-player game AIs: it looks ahead through possible moves, scores the endings, and then chooses the move that leads to the best worst-case outcome.</p>
+          </div>
+
+          <div class="minimax-explainer-grid">
+            <article class="card minimax-explain">
+              <p>In a game like Tic-Tac-Toe, Minimax assumes that both players are trying to play as intelligently as possible. Instead of asking, "What move looks good right now?" the AI asks, "If I make this move, what will my opponent do next, and what happens after that?"</p>
+              <p>The algorithm explores the game tree one turn at a time until it reaches terminal states such as a win, loss, or draw. Those endings are given scores, and the scores are then passed back up the tree to evaluate earlier choices.</p>
+              <div class="minimax-score-strip-cards" aria-label="Minimax scoring examples">
+                <div class="minimax-score-card">
+                  <span>For X</span>
+                  <strong>+1</strong>
+                  <p>X can force a win.</p>
+                </div>
+                <div class="minimax-score-card">
+                  <span>For Draw</span>
+                  <strong>0</strong>
+                  <p>Neither side can force victory.</p>
+                </div>
+                <div class="minimax-score-card">
+                  <span>For O</span>
+                  <strong>-1</strong>
+                  <p>O can force a win.</p>
+                </div>
+              </div>
+              <p>When it is the maximizing player's turn, the algorithm chooses the highest score available. When it is the minimizing player's turn, it chooses the lowest. That back-and-forth is why it is called <em>Mini</em>max: one player maximizes the score, while the other minimizes it.</p>
             </article>
-          </aside>
+
+            <aside class="card jvn-facts" aria-label="How Minimax works step by step">
+              <h3>How The Search Works</h3>
+              <ol class="minimax-steps">
+                <li><strong>Generate moves.</strong> The AI lists every legal move from the current board.</li>
+                <li><strong>Look ahead.</strong> For each move, it simulates what the opponent could do next.</li>
+                <li><strong>Score endings.</strong> Wins, losses, and draws are turned into numbers.</li>
+                <li><strong>Back up values.</strong> Scores travel upward through the game tree.</li>
+                <li><strong>Choose rationally.</strong> Max picks the highest value; Min picks the lowest.</li>
+              </ol>
+              <ul>
+                <li><span>In this lab</span><strong>X = maximizer, O = minimizer</strong></li>
+                <li><span>Main idea</span><strong>Plan for the best move assuming your opponent also plays well</strong></li>
+                <li><span>Why it matters</span><strong>It turns turn-based strategy into a clear search problem</strong></li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Other von Neumann Projects</h2>
+          </div>
+          <article class="card">
+            <ul class="rhythm">
+              <li><span>Universal Constructor</span><strong>A theoretical machine that can build any machine, including a copy of itself, from symbolic instructions.</strong></li>
+              <li><span>Kinematic Self-Replicating Robots</span><strong>Mechanical self-replication models that inspired later ideas in robotics, autonomous manufacturing, and artificial life.</strong></li>
+              <li><span>Stochastic Computing</span><strong>Probabilistic methods for computation under uncertainty, foundational for noisy real-world AI and robust system design.</strong></li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>What You Are Experimenting With</h2>
+          </div>
+          <article class="card">
+            <ul class="rhythm">
+              <li><span>Alternating Turns</span><strong>Observe maximizing (X) and minimizing (O) behavior in real time.</strong></li>
+              <li><span>Game Tree Reasoning</span><strong>Trace score propagation from terminal nodes back to current move choice.</strong></li>
+              <li><span>Search Constraints</span><strong>Adjust depth and compare node count + branching factor growth.</strong></li>
+              <li><span>Heuristic Bias</span><strong>Toggle depth preference to compare equal-score move ordering.</strong></li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Reflection + Publish</h2>
+            <p>Capture what the engine chose and why, then publish a short reflection with your demo link.</p>
+          </div>
+          <div class="tile-grid">
+            <a class="tile tile-hero" href="#" aria-disabled="true">
+              <span class="tile-kicker">Reflection</span>
+              <strong>Publish a minimax explanation</strong>
+              <small>Include one board state, chosen move, returned score, and metric snapshot.</small>
+            </a>
+
+            <a class="tile" href="#" aria-disabled="true">
+              <span class="tile-kicker">Extension</span>
+              <strong>Add depth-based scoring to prefer faster wins</strong>
+              <small>Optional challenge for advanced students</small>
+            </a>
+
+            <a class="tile" href="../steam-lessons.html">
+              <span class="tile-kicker">Navigate</span>
+              <strong>Back to STEAM Lessons</strong>
+              <small>Return to the full ClassroomOS lesson shelf</small>
+            </a>
+          </div>
+        </section>
+
+      </div><!-- /.minimax-page -->
+    </div><!-- /.ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="mm-params">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="mm-guide">Guide</button>
         </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
 
-        <details id="mm-tree-panel" class="minimax-card minimax-collapsible" hidden>
-          <summary>
-            <span>Game Tree Snapshot</span>
-            <span class="minimax-summary-meta">Partial tree</span>
-          </summary>
-          <div class="minimax-collapsible-body">
-            <p class="minimax-note">Blue nodes maximize, red nodes minimize, gold nodes are terminal outcomes.</p>
-            <div id="mm-tree" class="minimax-tree" aria-live="polite"></div>
+        <div class="ll-pane ll-active" id="mm-params">
+          <span class="ll-label">Search Depth</span>
+          <div class="ll-param">
+            <label class="minimax-field" for="mm-depth" style="font-size:0.75rem;color:var(--ll-tab-color);">
+              <select id="mm-depth" style="width:100%;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--ll-panel-border);">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9" selected>9 (full tree)</option>
+              </select>
+            </label>
           </div>
-        </details>
 
-        <details class="minimax-card minimax-collapsible minimax-debug">
-          <summary>
-            <span>Debug Console</span>
-            <span class="minimax-summary-meta">Engine events</span>
-          </summary>
-          <div class="minimax-collapsible-body">
-            <div class="minimax-debug-controls">
-              <label><input id="mm-debug-toggle" type="checkbox" /> Enable debug logging</label>
-              <button id="mm-debug-clear" class="minimax-btn minimax-btn-secondary" type="button">Clear Debug Log</button>
+          <span class="ll-label">Options</span>
+          <div class="ll-param">
+            <div class="minimax-toggles">
+              <label><input id="mm-fast-wins" type="checkbox" /> Prefer Faster Wins</label>
+              <label><input id="mm-tree-toggle" type="checkbox" /> Show Partial Game Tree</label>
             </div>
-            <pre id="mm-debug-log" class="minimax-debug-log"></pre>
           </div>
-        </details>
-      </article>
-    </section>
 
-    <section class="section">
-      <div class="section-head">
-        <h2>Other von Neumann Projects</h2>
+          <hr class="ll-hr" />
+
+          <span class="ll-label">Search Metrics</span>
+          <div class="ll-readouts">
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Depth</span>
+              <span class="ll-readout-val" id="mm-metric-depth">0</span>
+            </div>
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Nodes</span>
+              <span class="ll-readout-val" id="mm-metric-nodes">0</span>
+            </div>
+          </div>
+          <div class="ll-readouts">
+            <div class="ll-readout" style="grid-column:1/-1;">
+              <span class="ll-readout-lbl">Branching Factor</span>
+              <span class="ll-readout-val" id="mm-metric-branching">0.00</span>
+            </div>
+          </div>
+
+          <hr class="ll-hr" />
+
+          <span class="ll-label">Terminal Scoring</span>
+          <div class="ll-readouts">
+            <div class="ll-readout">
+              <span class="ll-readout-lbl" style="color:#1f6feb;">Win (X)</span>
+              <span class="ll-readout-val">+1</span>
+            </div>
+            <div class="ll-readout">
+              <span class="ll-readout-lbl" style="color:#c0392b;">Loss (O)</span>
+              <span class="ll-readout-val">-1</span>
+            </div>
+          </div>
+          <div class="ll-readouts">
+            <div class="ll-readout" style="grid-column:1/-1;">
+              <span class="ll-readout-lbl" style="color:#9f7a08;">Draw</span>
+              <span class="ll-readout-val">0</span>
+            </div>
+          </div>
+
+          <span class="ll-label" style="margin-top:0.6rem;">Eval Log</span>
+          <div id="mm-eval-log" class="minimax-log" aria-live="polite"></div>
+          <button id="mm-log-expand" class="minimax-btn minimax-btn-secondary minimax-log-toggle" type="button" aria-expanded="false" style="font-size:0.72rem;padding:4px 10px;margin-top:4px;">Show more</button>
+        </div><!-- /#mm-params -->
+
+        <div class="ll-pane" id="mm-guide">
+          <div class="ll-info">
+            <strong>What is Minimax?</strong>
+            A search algorithm for two-player zero-sum games. One player maximizes the score; the other minimizes it. The AI looks ahead and picks the move leading to the best worst-case outcome.
+          </div>
+          <div class="ll-info">
+            <strong>Scoring Terminal States</strong>
+            +1 = X wins, -1 = O wins, 0 = draw. These values propagate up the game tree to guide every move decision.
+          </div>
+          <div class="ll-info">
+            <strong>Search Depth</strong>
+            Depth 9 = full Tic-Tac-Toe game tree (never loses). Lower depths may miss winning moves — try depth 1 to see how the AI degrades.
+          </div>
+          <div class="ll-info">
+            <strong>Branching Factor</strong>
+            Average legal moves per position. Tic-Tac-Toe starts at 9 and shrinks. In chess (~35) or Go (~200), this explodes — making raw minimax impractical.
+          </div>
+          <div class="ll-info">
+            <strong>Von Neumann Connection</strong>
+            John von Neumann formalized the Minimax Theorem in 1928, proving that rational players always have an optimal strategy in finite two-player games.
+          </div>
+        </div><!-- /#mm-guide -->
+
       </div>
-      <article class="card">
-        <ul class="rhythm">
-          <li><span>Universal Constructor</span><strong>A theoretical machine that can build any machine, including a copy of itself, from symbolic instructions.</strong></li>
-          <li><span>Kinematic Self-Replicating Robots</span><strong>Mechanical self-replication models that inspired later ideas in robotics, autonomous manufacturing, and artificial life.</strong></li>
-          <li><span>Stochastic Computing</span><strong>Probabilistic methods for computation under uncertainty, foundational for noisy real-world AI and robust system design.</strong></li>
-        </ul>
-      </article>
-    </section>
+    </aside>
 
-    <section class="section">
-      <div class="section-head">
-        <h2>What You Are Experimenting With</h2>
-      </div>
-      <article class="card">
-        <ul class="rhythm">
-          <li><span>Alternating Turns</span><strong>Observe maximizing (X) and minimizing (O) behavior in real time.</strong></li>
-          <li><span>Game Tree Reasoning</span><strong>Trace score propagation from terminal nodes back to current move choice.</strong></li>
-          <li><span>Search Constraints</span><strong>Adjust depth and compare node count + branching factor growth.</strong></li>
-          <li><span>Heuristic Bias</span><strong>Toggle depth preference to compare equal-score move ordering.</strong></li>
-        </ul>
-      </article>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <h2>Reflection + Publish</h2>
-        <p>Capture what the engine chose and why, then publish a short reflection with your demo link.</p>
-      </div>
-      <div class="tile-grid">
-        <a class="tile tile-hero" href="#" aria-disabled="true">
-          <span class="tile-kicker">Reflection</span>
-          <strong>Publish a minimax explanation</strong>
-          <small>Include one board state, chosen move, returned score, and metric snapshot.</small>
-        </a>
-
-        <a class="tile" href="#" aria-disabled="true">
-          <span class="tile-kicker">Extension</span>
-          <strong>Add depth-based scoring to prefer faster wins</strong>
-          <small>Optional challenge for advanced students</small>
-        </a>
-
-        <a class="tile" href="../steam-lessons.html">
-          <span class="tile-kicker">Navigate</span>
-          <strong>Back to STEAM Lessons</strong>
-          <small>Return to the full ClassroomOS lesson shelf</small>
-        </a>
-      </div>
-    </section>
-  </main>
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
 
   <footer class="site-footer">
     <p><a href="../steam-lessons.html">Back to STEAM Lessons</a></p>
   </footer>
   <script type="module" src="../assets/js/minimax-lab.js"></script>
   <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
 
   <!-- SVG filter: chalk roughness applied to .is-max and .is-min cells -->
   <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
