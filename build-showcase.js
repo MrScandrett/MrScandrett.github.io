@@ -145,6 +145,15 @@ function rewriteCssPaths(css) {
   });
 }
 
+const SKIP_DIR_NAMES = new Set([
+  ".git", "node_modules",
+  // macOS/Windows system folders
+  ".Spotlight-V100", ".fseventsd", ".Trashes", "$RECYCLE.BIN",
+  "System Volume Information",
+  // Consolidated alias folders (individual student folders already cover these)
+  "pivotstickfigure",
+]);
+
 function listSubdirs(dirPath) {
   const out = [];
   const stack = [dirPath];
@@ -155,7 +164,7 @@ function listSubdirs(dirPath) {
 
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      if (entry.name === ".git" || entry.name === "node_modules") continue;
+      if (SKIP_DIR_NAMES.has(entry.name)) continue;
       const full = path.join(current, entry.name);
       out.push(full);
       stack.push(full);
@@ -236,7 +245,7 @@ function findScratchSources(rootDir) {
     for (const entry of entries) {
       const full = path.join(current, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name === ".git" || entry.name === "node_modules") continue;
+        if (SKIP_DIR_NAMES.has(entry.name)) continue;
         stack.push(full);
         continue;
       }
@@ -267,7 +276,7 @@ function findModelSources(rootDir, ignoreDirectories = []) {
     for (const entry of entries) {
       const full = path.join(current, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name === ".git" || entry.name === "node_modules") continue;
+        if (SKIP_DIR_NAMES.has(entry.name)) continue;
         if (isInsideAnyDir(full, ignoreDirectories)) continue;
         stack.push(full);
         continue;
@@ -328,7 +337,7 @@ function findPivotSources(rootDir, ignoreDirectories = []) {
     for (const entry of entries) {
       const full = path.join(current, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name === ".git" || entry.name === "node_modules") continue;
+        if (SKIP_DIR_NAMES.has(entry.name)) continue;
         if (isInsideAnyDir(full, ignoreDirectories)) continue;
         stack.push(full);
         continue;
