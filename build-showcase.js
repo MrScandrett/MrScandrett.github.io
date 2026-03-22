@@ -11,6 +11,7 @@ const ROOT = process.cwd();
 const STUDENT_PROJECTS_DIR = path.join(ROOT, "student-projects");
 const APPS_DIR = path.join(ROOT, "apps");
 const MANIFEST_PATH = path.join(APPS_DIR, "manifest.json");
+const SHOWCASE_THUMBS_DIR = path.join(ROOT, "assets", "thumbs", "showcase");
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg"]);
 const MODEL_EXTENSIONS = new Set([".stl", ".obj"]);
@@ -459,6 +460,22 @@ function toPosixPath(p) {
   return p.split(path.sep).join("/");
 }
 
+async function findShowcaseThumb(slug, student) {
+  // Look in assets/thumbs/showcase/ for a file whose name contains the slug or student name.
+  if (!exists(SHOWCASE_THUMBS_DIR)) return null;
+  const candidates = await fs.readdir(SHOWCASE_THUMBS_DIR);
+  const normalize = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const slugN = normalize(slug);
+  const studentN = normalize(student);
+  for (const file of candidates) {
+    const fileN = normalize(path.basename(file, path.extname(file)));
+    if (fileN.includes(slugN) || (studentN.length > 2 && fileN.includes(studentN))) {
+      return `./assets/thumbs/showcase/${file}`;
+    }
+  }
+  return null;
+}
+
 async function chooseThumbnail(projectOutputDir, convertedWebps) {
   const assetsDir = path.join(projectOutputDir, "assets");
   if (!exists(assetsDir)) return null;
@@ -551,12 +568,16 @@ async function processProject(source, slug) {
   const assetsDir = path.join(outputDir, "assets");
   const convertedWebps = await optimizeImagesToWebp(assetsDir);
   const thumbnailRel = await chooseThumbnail(outputDir, convertedWebps);
+  // Fall back to dedicated showcase thumbs folder if no thumb found inside the app
+  const thumbnail = thumbnailRel
+    ? `./apps/${thumbnailRel}`
+    : await findShowcaseThumb(slug, student);
 
   return {
     name: projectTitle,
     slug,
     url: `./apps/${slug}/`,
-    thumbnail: thumbnailRel ? `./apps/${thumbnailRel}` : null,
+    thumbnail,
     student,
     category: "Web",
     tech: ["HTML", "CSS", "JavaScript"],
@@ -675,7 +696,7 @@ async function processScratchProject(source, slug) {
     name: title,
     slug,
     url: `./apps/${slug}/`,
-    thumbnail: null,
+    thumbnail: await findShowcaseThumb(slug, source.student),
     student: source.student,
     category: "Scratch",
     tech: ["Scratch"],
@@ -858,10 +879,16 @@ async function processPivotProject(source, slug) {
   if (hasPreview) {
     thumbnail = `./apps/${slug}/assets/media/${encodeURIComponent(previewOutName)}`;
   } else {
-    const thumbSvg = buildPivotThumbSvg({ title, student: studentLabel });
-    await ensureDir(path.join(outputDir, "assets"));
-    await fs.writeFile(path.join(outputDir, "assets", "thumb.svg"), thumbSvg, "utf8");
-    thumbnail = `./apps/${slug}/assets/thumb.svg`;
+    // Check showcase thumbs folder first (named screenshots take priority over auto-generated SVG)
+    const showcaseThumb = await findShowcaseThumb(slug, studentLabel);
+    if (showcaseThumb) {
+      thumbnail = showcaseThumb;
+    } else {
+      const thumbSvg = buildPivotThumbSvg({ title, student: studentLabel });
+      await ensureDir(path.join(outputDir, "assets"));
+      await fs.writeFile(path.join(outputDir, "assets", "thumb.svg"), thumbSvg, "utf8");
+      thumbnail = `./apps/${slug}/assets/thumb.svg`;
+    }
   }
 
   return {
@@ -1304,11 +1331,13 @@ async function processModelProject(source, slug) {
   await ensureDir(path.join(outputDir, "assets"));
   await fs.writeFile(path.join(outputDir, "assets", "thumb.svg"), thumbSvg, "utf8");
 
+  // Prefer a real screenshot from showcase thumbs folder over the auto-generated SVG
+  const showcaseThumb = await findShowcaseThumb(slug, studentLabel);
   return {
     name: `${title} (3D Model)`,
     slug,
     url: `./apps/${slug}/`,
-    thumbnail: `./apps/${slug}/assets/thumb.svg`,
+    thumbnail: showcaseThumb || `./apps/${slug}/assets/thumb.svg`,
     student: studentLabel,
     category: "3D",
     program: gradeLabel || "3D Lab",

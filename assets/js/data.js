@@ -1,6 +1,6 @@
 let cache = null;
 let loadingPromise = null;
-const PLACEHOLDER_THUMB = "./assets/thumbs/student-showcase-thumb.png";
+const PLACEHOLDER_THUMB = "./assets/thumbs/showcase/student-showcase-thumb.png";
 
 function resolveThumbPath(value) {
   const raw = String(value || "").trim();
