@@ -53,16 +53,7 @@ const diffSettings = {
 };
 
 const keys = {};
-addEventListener('keydown', e=>{
-  const key = e.key.toLowerCase();
-  keys[key] = true;
-  if (e.code === 'Space') {
-    e.preventDefault();
-  }
-  if (!running && (e.code === 'Space' || key === 'w' || key === 'arrowup')) {
-    start();
-  }
-});
+addEventListener('keydown', e=>{ keys[e.key.toLowerCase()]=true; if(e.code==='Space') e.preventDefault(); });
 addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 
 // touch controls already wired to keys in index.html
@@ -523,35 +514,6 @@ function drawJumpStripes(){
 canvas.addEventListener('mousedown', ()=>{ if(!running) start(); });
 canvas.addEventListener('touchstart', ()=>{ if(!running) start(); });
 
-function bindTouchKey(buttonId, keyName) {
-  const btn = document.getElementById(buttonId);
-  if (!btn) return;
-
-  const press = (event) => {
-    event.preventDefault();
-    keys[keyName] = true;
-    if (!running && keyName === ' ') start();
-  };
-
-  const release = (event) => {
-    event.preventDefault();
-    keys[keyName] = false;
-  };
-
-  btn.addEventListener('pointerdown', press);
-  btn.addEventListener('pointerup', release);
-  btn.addEventListener('pointerleave', release);
-  btn.addEventListener('pointercancel', release);
-  btn.addEventListener('touchstart', press, { passive: false });
-  btn.addEventListener('touchend', release, { passive: false });
-  btn.addEventListener('mousedown', press);
-  btn.addEventListener('mouseup', release);
-}
-
-bindTouchKey('left', 'arrowleft');
-bindTouchKey('right', 'arrowright');
-bindTouchKey('jump', ' ');
-
 // difficulty controls binding
 Array.from(document.querySelectorAll('.diff')).forEach(btn=>{ btn.addEventListener('click', e=>{ const id = e.target.id; const d = id.replace('diff-',''); setDifficulty(d); Array.from(document.querySelectorAll('.diff')).forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); }); });
 
@@ -603,13 +565,41 @@ function equipSkin(skin){ localStorage.setItem('lb_equipped', skin); applySkin(s
 function applySkin(skin){ const mapping = {gold:'#ffd700', white:'#ffffff', black:'#000000', green:'#2ecc71', camo:'#6b8e23'}; player.color = mapping[skin] || '#2ecc71'; player.skin = (skin === 'camo') ? 'camo' : 'solid'; localStorage.setItem('lb_equipped', skin); }
 
 requestAnimationFrame(loop);
+const levelSelect = document.getElementById("level"); const gameContainer = document.getElementById("game-container"); // Change background when level is selected levelSelect.addEventListener("change", () => { const level = levelSelect.value; // Remove old level classes gameContainer.classList.remove("plains", "forest", "mountain"); // Add new level class gameContainer.classList.add(level); }); // --- Your existing jumper game code goes below --- // Example placeholder: const canvas = document.getElementById("gameCanvas"); const ctx = canvas.getContext("2d"); // Example game loop function gameLoop() { ctx.clearRect(0, 0, canvas.width, canvas.height); // Your jumper game logic here... requestAnimationFrame(gameLoop); } gameLoop();
 const levelSelect = document.getElementById("level");
 const gameContainer = document.getElementById("game-container");
 
-if (levelSelect && gameContainer) {
-  levelSelect.addEventListener("change", () => {
+levelSelect.addEventListener("change", () => {
     const level = levelSelect.value;
+
+    console.log("Level changed to:", level); // Debug
+
+    // Remove all level classes
     gameContainer.className = "";
     gameContainer.classList.add(level);
-  });
+});
+
+// --- Your existing game code ---
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Your jumper game logic...
+
+    requestAnimationFrame(gameLoop);
 }
+
+gameLoop();
+const canvas = document.getElementById("game"); // ✅ This matches your HTML
+const ctx = canvas.getContext("2d");
+
+const levelSelect = document.getElementById("level");
+const gameContainer = document.getElementById("game-container");
+
+levelSelect.addEventListener("change", () => {
+  const level = levelSelect.value;
+  gameContainer.className = ""; // remove all classes
+  gameContainer.classList.add(level); // add selected level
+});
