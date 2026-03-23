@@ -56,7 +56,29 @@ const keys = {};
 addEventListener('keydown', e=>{ keys[e.key.toLowerCase()]=true; if(e.code==='Space') e.preventDefault(); });
 addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 
-// touch controls already wired to keys in index.html
+function bindHoldButton(id, key) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  const down = (e) => {
+    if (e) e.preventDefault();
+    keys[key] = true;
+    if (!running) start();
+  };
+  const up = (e) => {
+    if (e) e.preventDefault();
+    keys[key] = false;
+  };
+  btn.addEventListener('touchstart', down, { passive: false });
+  btn.addEventListener('touchend', up);
+  btn.addEventListener('touchcancel', up);
+  btn.addEventListener('mousedown', down);
+  btn.addEventListener('mouseup', up);
+  btn.addEventListener('mouseleave', up);
+}
+
+bindHoldButton('left', 'arrowleft');
+bindHoldButton('right', 'arrowright');
+bindHoldButton('jump', ' ');
 
 function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
