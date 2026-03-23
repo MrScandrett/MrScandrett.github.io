@@ -781,7 +781,7 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
   </footer>
 
   <!-- ══════════════════════════════════════════════════
-       BINAURAL CANVAS SIMULATION
+       BINAURAL CANVAS SIMULATION — Web Audio API
   ══════════════════════════════════════════════════ -->
   <script>
   (function () {
@@ -789,212 +789,193 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
     var ctx    = canvas.getContext('2d');
     var W = canvas.width, H = canvas.height;
     var cx = W / 2, cy = H / 2;
-    var R = Math.min(W, H) * 0.38;   // orbit radius for sound source
+    var R     = Math.min(W, H) * 0.38;
     var headR = Math.min(W, H) * 0.12;
 
-    var angle    = 45 * Math.PI / 180;  // radians, 0=right, CW
+    var angle     = 45 * Math.PI / 180;
     var revolving = false;
     var revolveId = null;
+
+    /* ── Web Audio nodes ── */
     var audioCtx  = null;
     var oscNode   = null;
-    var pannerL   = null;
-    var pannerR   = null;
-    var gainL     = null;
-    var gainR     = null;
+    var delayL    = null, delayR = null;
+    var gainL     = null, gainR  = null;
+    var analyserL = null, analyserR = null;
     var merger    = null;
+    var meterRafId = null;
 
     var barL = document.querySelector('#vr-bar-left  .vr-ear-bar');
     var barR = document.querySelector('#vr-bar-right .vr-ear-bar');
-    var slider   = document.getElementById('vr-angle-slider');
-    var sliderVal= document.getElementById('vr-angle-val');
+    var slider    = document.getElementById('vr-angle-slider');
+    var sliderVal = document.getElementById('vr-angle-val');
 
-    /* ── draw ── */
+    /* ── canvas draw ── */
     function draw() {
       ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(111,76,255,0.08)'; ctx.lineWidth = 1;
+      for (var x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+      for (var y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
-      // room grid
-      ctx.strokeStyle = 'rgba(111,76,255,0.08)';
-      ctx.lineWidth = 1;
-      var step = 40;
-      for (var x = 0; x < W; x += step) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-      for (var y = 0; y < H; y += step) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(111,76,255,0.25)'; ctx.lineWidth = 1.5;
+      ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
 
-      // orbit ring
-      ctx.beginPath();
-      ctx.arc(cx, cy, R, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(111,76,255,0.25)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([6, 4]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // angle arc from 0
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
+      ctx.beginPath(); ctx.moveTo(cx, cy);
       ctx.arc(cx, cy, R * 0.32, -Math.PI/2, angle - Math.PI/2, false);
-      ctx.strokeStyle = 'rgba(0,212,255,0.4)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      ctx.strokeStyle = 'rgba(0,212,255,0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
 
-      // head body
-      var grad = ctx.createRadialGradient(cx - headR*0.25, cy - headR*0.25, headR*0.05, cx, cy, headR);
-      grad.addColorStop(0, 'rgba(160,140,255,0.9)');
-      grad.addColorStop(1, 'rgba(60,20,120,0.85)');
-      ctx.beginPath();
-      ctx.arc(cx, cy, headR, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(111,76,255,0.5)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      var grad = ctx.createRadialGradient(cx-headR*0.25, cy-headR*0.25, headR*0.05, cx, cy, headR);
+      grad.addColorStop(0, 'rgba(160,140,255,0.9)'); grad.addColorStop(1, 'rgba(60,20,120,0.85)');
+      ctx.beginPath(); ctx.arc(cx, cy, headR, 0, Math.PI*2);
+      ctx.fillStyle = grad; ctx.fill();
+      ctx.strokeStyle = 'rgba(111,76,255,0.5)'; ctx.lineWidth = 2; ctx.stroke();
 
-      // nose marker (points "up" = 0 deg = north on canvas)
-      ctx.beginPath();
-      ctx.arc(cx, cy - headR - 4, 4, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(200,184,255,0.9)';
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy - headR - 4, 4, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(200,184,255,0.9)'; ctx.fill();
 
-      // ears
       function ear(ex, ey) {
-        ctx.beginPath();
-        ctx.ellipse(ex, ey, 7, 11, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(140,110,255,0.75)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(200,184,255,0.6)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(ex, ey, 7, 11, 0, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(140,110,255,0.75)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(200,184,255,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
       }
-      ear(cx - headR, cy);
-      ear(cx + headR, cy);
-
-      // "L" / "R" labels on ears
-      ctx.fillStyle = 'rgba(200,184,255,0.9)';
-      ctx.font = 'bold 10px system-ui';
+      ear(cx - headR, cy); ear(cx + headR, cy);
+      ctx.fillStyle = 'rgba(200,184,255,0.9)'; ctx.font = 'bold 10px system-ui';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('L', cx - headR, cy);
-      ctx.fillText('R', cx + headR, cy);
+      ctx.fillText('L', cx - headR, cy); ctx.fillText('R', cx + headR, cy);
 
-      // sound source
       var sx = cx + R * Math.sin(angle);
       var sy = cy - R * Math.cos(angle);
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(sx, sy);
+      ctx.strokeStyle = 'rgba(0,212,255,0.35)'; ctx.lineWidth = 1.5;
+      ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
 
-      // line from head to source
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(sx, sy);
-      ctx.strokeStyle = 'rgba(0,212,255,0.35)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4,4]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // source dot glow
       var grd = ctx.createRadialGradient(sx, sy, 0, sx, sy, 22);
-      grd.addColorStop(0, 'rgba(0,212,255,0.35)');
-      grd.addColorStop(1, 'rgba(0,212,255,0)');
-      ctx.beginPath(); ctx.arc(sx, sy, 22, 0, Math.PI*2);
-      ctx.fillStyle = grd; ctx.fill();
-
+      grd.addColorStop(0, 'rgba(0,212,255,0.35)'); grd.addColorStop(1, 'rgba(0,212,255,0)');
+      ctx.beginPath(); ctx.arc(sx, sy, 22, 0, Math.PI*2); ctx.fillStyle = grd; ctx.fill();
       ctx.beginPath(); ctx.arc(sx, sy, 10, 0, Math.PI*2);
       ctx.fillStyle = '#00d4ff'; ctx.fill();
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#0a0820'; ctx.font = 'bold 11px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('♪', sx, sy);
 
-      // speaker icon inside dot
-      ctx.fillStyle = '#0a0820';
-      ctx.font = 'bold 11px system-ui';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('♪', sx, sy);
-
-      // angle label
       var deg = Math.round(angle * 180 / Math.PI);
-      ctx.fillStyle = 'rgba(180,160,255,0.8)';
-      ctx.font = '700 11px system-ui';
+      ctx.fillStyle = 'rgba(180,160,255,0.8)'; ctx.font = '700 11px system-ui';
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
       ctx.fillText(deg + '°', cx, cy + headR + 14);
     }
 
+    /* ── ILD math ── */
     function getILD() {
-      // angle: 0=front, π/2=right, π=back, 3π/2=left
-      // Right ear louder when source is right (angle near π/2)
-      var sinA = Math.sin(angle);  // +1 = fully right, -1 = fully left
-      var rightGain = 0.5 + sinA * 0.5;  // 0..1
-      var leftGain  = 1 - rightGain;
-      // slight rear attenuation
-      var cosA = Math.cos(angle);
-      var rearAtten = 0.85 + 0.15 * cosA;  // 0.7..1
-      return { L: Math.min(leftGain * rearAtten, 1), R: Math.min(rightGain * rearAtten, 1) };
+      var sinA = Math.sin(angle);
+      var rGain = 0.5 + sinA * 0.5;
+      var lGain = 1 - rGain;
+      var rearAtten = 0.85 + 0.15 * Math.cos(angle);
+      return { L: Math.min(lGain * rearAtten, 1), R: Math.min(rGain * rearAtten, 1) };
     }
 
-    function updateMeters() {
-      var ild = getILD();
-      barL.style.height = (ild.L * 100).toFixed(1) + '%';
-      barR.style.height = (ild.R * 100).toFixed(1) + '%';
+    /* ── Analyser RMS → bar height ── */
+    var bufL = null, bufR = null;
+    function rmsFromAnalyser(analyser, buf) {
+      analyser.getByteTimeDomainData(buf);
+      var sum = 0;
+      for (var i = 0; i < buf.length; i++) {
+        var v = (buf[i] - 128) / 128;
+        sum += v * v;
+      }
+      return Math.sqrt(sum / buf.length);
     }
+
+    function meterLoop() {
+      if (!analyserL || !analyserR || !audioCtx || audioCtx.state !== 'running') {
+        meterRafId = requestAnimationFrame(meterLoop);
+        return;
+      }
+      var rmsL = rmsFromAnalyser(analyserL, bufL);
+      var rmsR = rmsFromAnalyser(analyserR, bufR);
+      // Scale: rms of a full-volume sine ≈ 0.707 → map to 100%
+      var hL = Math.min(rmsL / 0.707 * 100, 100).toFixed(1);
+      var hR = Math.min(rmsR / 0.707 * 100, 100).toFixed(1);
+      barL.style.height = hL + '%';
+      barR.style.height = hR + '%';
+      meterRafId = requestAnimationFrame(meterLoop);
+    }
+
+    /* ── Audio graph ─────────────────────────────────────
+       osc → delayL → gainL → analyserL ─→ merger ch0 → destination
+           → delayR → gainR → analyserR ─→ merger ch1
+    ───────────────────────────────────────────────────── */
+    function buildAudio() {
+      audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+      oscNode   = audioCtx.createOscillator();
+      oscNode.type = 'sine';
+      oscNode.frequency.value = 440;
+
+      delayL = audioCtx.createDelay(0.002);
+      delayR = audioCtx.createDelay(0.002);
+      gainL  = audioCtx.createGain();
+      gainR  = audioCtx.createGain();
+
+      analyserL = audioCtx.createAnalyser(); analyserL.fftSize = 256;
+      analyserR = audioCtx.createAnalyser(); analyserR.fftSize = 256;
+      bufL = new Uint8Array(analyserL.fftSize);
+      bufR = new Uint8Array(analyserR.fftSize);
+
+      merger = audioCtx.createChannelMerger(2);
+
+      oscNode.connect(delayL); oscNode.connect(delayR);
+      delayL.connect(gainL);   delayR.connect(gainR);
+      gainL.connect(analyserL); gainR.connect(analyserR);
+      analyserL.connect(merger, 0, 0);
+      analyserR.connect(merger, 0, 1);
+      merger.connect(audioCtx.destination);
+
+      oscNode.start();
+      applyILD();
+      meterLoop();
+    }
+
+    function applyILD() {
+      if (!gainL) return;
+      var ild = getILD();
+      gainL.gain.setTargetAtTime(ild.L, audioCtx.currentTime, 0.04);
+      gainR.gain.setTargetAtTime(ild.R, audioCtx.currentTime, 0.04);
+      // ITD: leading ear gets 0 delay; lagging ear delayed up to 0.65 ms
+      var sinA    = Math.sin(angle);
+      var maxDelay = 0.00065;
+      delayL.delayTime.setTargetAtTime(sinA > 0 ? sinA * maxDelay : 0, audioCtx.currentTime, 0.02);
+      delayR.delayTime.setTargetAtTime(sinA < 0 ? -sinA * maxDelay : 0, audioCtx.currentTime, 0.02);
+    }
+
+    function startAudio() {
+      if (!audioCtx) { buildAudio(); }
+      else if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+    }
+    function stopAudio() { if (audioCtx) { audioCtx.suspend(); } }
 
     function setAngle(rad) {
-      angle = ((rad % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      angle = ((rad % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
       var deg = Math.round(angle * 180 / Math.PI);
       slider.value = deg;
       sliderVal.textContent = deg + '°';
       draw();
-      updateMeters();
-      if (gainL && gainR) {
+      applyILD();
+      // Fallback static meters when audio not running
+      if (!analyserL) {
         var ild = getILD();
-        gainL.gain.setTargetAtTime(ild.L, audioCtx.currentTime, 0.05);
-        gainR.gain.setTargetAtTime(ild.R, audioCtx.currentTime, 0.05);
-        // ITD: delay right or left by up to ~0.65 ms based on sin(angle)
-        var maxDelay = 0.00065;
-        var sinA = Math.sin(angle);
-        if (pannerL && pannerR) {
-          pannerL.delayTime && (pannerL.delayTime.setTargetAtTime(sinA > 0 ? sinA * maxDelay : 0, audioCtx.currentTime, 0.02));
-          pannerR.delayTime && (pannerR.delayTime.setTargetAtTime(sinA < 0 ? -sinA * maxDelay : 0, audioCtx.currentTime, 0.02));
-        }
+        barL.style.height = (ild.L * 100).toFixed(1) + '%';
+        barR.style.height = (ild.R * 100).toFixed(1) + '%';
       }
     }
 
-    function startAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        oscNode  = audioCtx.createOscillator();
-        oscNode.type = 'sine';
-        oscNode.frequency.value = 440;
-
-        var splitter = audioCtx.createChannelSplitter(2);
-        merger       = audioCtx.createChannelMerger(2);
-
-        gainL = audioCtx.createGain();
-        gainR = audioCtx.createGain();
-        pannerL = audioCtx.createDelay(0.002);
-        pannerR = audioCtx.createDelay(0.002);
-
-        oscNode.connect(pannerL);
-        oscNode.connect(pannerR);
-        pannerL.connect(gainL);
-        pannerR.connect(gainR);
-        gainL.connect(merger, 0, 0);
-        gainR.connect(merger, 0, 1);
-        merger.connect(audioCtx.destination);
-
-        oscNode.start();
-        setAngle(angle);
-      } else if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
-
-    function stopAudio() {
-      if (audioCtx) { audioCtx.suspend(); }
-    }
-
-    document.getElementById('vr-btn-play').addEventListener('click', function() {
-      startAudio();
-    });
+    document.getElementById('vr-btn-play').addEventListener('click', function() { startAudio(); });
 
     document.getElementById('vr-btn-stop').addEventListener('click', function() {
       stopAudio();
       revolving = false;
       if (revolveId) { cancelAnimationFrame(revolveId); revolveId = null; }
       document.getElementById('vr-btn-revolve').classList.remove('active');
+      barL.style.height = '0%'; barR.style.height = '0%';
     });
 
     document.getElementById('vr-btn-revolve').addEventListener('click', function() {
@@ -1005,7 +986,7 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
         var lastT = null;
         function tick(t) {
           if (!revolving) return;
-          if (lastT !== null) { setAngle(angle + (t - lastT) * 0.001); }
+          if (lastT !== null) setAngle(angle + (t - lastT) * 0.001);
           lastT = t;
           revolveId = requestAnimationFrame(tick);
         }
@@ -1019,33 +1000,32 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
       setAngle(parseFloat(this.value) * Math.PI / 180);
     });
 
-    // Drag on canvas
     var dragging = false;
-    canvas.addEventListener('mousedown', function(e) { dragging = true; });
-    window.addEventListener('mouseup',   function()  { dragging = false; });
+    canvas.addEventListener('mousedown', function() { dragging = true; });
+    window.addEventListener('mouseup',   function() { dragging = false; });
     canvas.addEventListener('mousemove', function(e) {
       if (!dragging) return;
       var rect = canvas.getBoundingClientRect();
-      var mx = (e.clientX - rect.left) * (W / rect.width)  - cx;
-      var my = (e.clientY - rect.top)  * (H / rect.height) - cy;
-      setAngle(Math.atan2(mx, -my));
+      setAngle(Math.atan2((e.clientX - rect.left) * (W/rect.width) - cx,
+                          -((e.clientY - rect.top) * (H/rect.height) - cy)));
     });
     canvas.addEventListener('touchmove', function(e) {
       e.preventDefault();
-      var t    = e.touches[0];
-      var rect = canvas.getBoundingClientRect();
-      var mx = (t.clientX - rect.left) * (W / rect.width)  - cx;
-      var my = (t.clientY - rect.top)  * (H / rect.height) - cy;
-      setAngle(Math.atan2(mx, -my));
+      var t = e.touches[0], rect = canvas.getBoundingClientRect();
+      setAngle(Math.atan2((t.clientX - rect.left) * (W/rect.width) - cx,
+                          -((t.clientY - rect.top) * (H/rect.height) - cy)));
     }, { passive: false });
 
     draw();
-    updateMeters();
+    // Initial static meters
+    var ild0 = getILD();
+    barL.style.height = (ild0.L * 100).toFixed(1) + '%';
+    barR.style.height = (ild0.R * 100).toFixed(1) + '%';
   })();
   </script>
 
   <!-- ══════════════════════════════════════════════════
-       STEREOSCOPIC RENDERER
+       STEREOSCOPIC RENDERER — dual-camera + anaglyph
   ══════════════════════════════════════════════════ -->
   <script>
   (function () {
@@ -1056,102 +1036,110 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
     var rCtx   = rightC.getContext('2d');
     var mCtx   = mergeC.getContext('2d');
 
-    var W = leftC.width, H = leftC.height;
-    var MW = mergeC.width;
+    var W  = leftC.width,   H  = leftC.height;
+    var MW = mergeC.width,  MH = mergeC.height;
 
-    var iod = 63;   // inter-ocular distance in mm → pixels scaled
+    // Offscreen compositing canvases — created once, reused every frame
+    var anaL = document.createElement('canvas'); anaL.width = MW; anaL.height = MH;
+    var anaR = document.createElement('canvas'); anaR.width = MW; anaR.height = MH;
+    var ctxAL = anaL.getContext('2d');
+    var ctxAR = anaR.getContext('2d');
+
+    var iod = 63;
     var t   = 0;
 
-    var iodSlider = document.getElementById('vr-iod-slider');
-    var iodVal    = document.getElementById('vr-iod-val');
-
-    iodSlider.addEventListener('input', function() {
+    document.getElementById('vr-iod-slider').addEventListener('input', function() {
       iod = parseFloat(this.value);
-      iodVal.textContent = iod + ' mm';
+      document.getElementById('vr-iod-val').textContent = iod + ' mm';
     });
 
-    // Simple 3D boxes projected to 2D with eye offset
     var objects = [
-      { x: 0,    y: 0,   z: 4,   size: 0.6, color: '#6f4cff', label: 'Near cube' },
-      { x: 1.2,  y: 0.3, z: 7,   size: 0.5, color: '#00d4ff', label: 'Mid cube' },
-      { x: -1.5, y:-0.4, z: 10,  size: 0.7, color: '#ff79c6', label: 'Far cube' },
-      { x: 0.5,  y: 1.0, z: 5.5, size: 0.4, color: '#50fa7b', label: 'Float cube' },
+      { x: 0,    y: 0,    z: 4,   sz: 0.6, color: '#6f4cff' },
+      { x: 1.2,  y: 0.3,  z: 7,   sz: 0.5, color: '#00d4ff' },
+      { x: -1.5, y:-0.4,  z: 10,  sz: 0.7, color: '#ff79c6' },
+      { x: 0.5,  y: 1.0,  z: 5.5, sz: 0.4, color: '#50fa7b' },
+      { x:-0.8,  y: 0.6,  z: 8.5, sz: 0.45, color: '#ffb86c' },
     ];
 
-    function project(obj, eyeOffsetX, fov) {
-      var f   = fov;  // focal length ~ px
-      var ex  = eyeOffsetX * 0.01;   // scale mm to world units
-      var px  = ((obj.x - ex) / obj.z) * f + W / 2;
-      var py  = (obj.y          / obj.z) * f + H / 2;
-      var ps  = (obj.size       / obj.z) * f;
-      return { px: px, py: py, ps: ps };
+    function project(obj, eyeX, cw, ch) {
+      var fov = Math.min(cw, ch) * 0.8;
+      var ex  = eyeX * 0.012;
+      return {
+        px: ((obj.x - ex) / obj.z) * fov + cw / 2,
+        py: (obj.y         / obj.z) * fov + ch / 2,
+        ps: (obj.sz        / obj.z) * fov
+      };
     }
 
-    function drawEye(ctx, eyeOffset, bgColor) {
-      var fov = Math.min(W, H) * 0.8;
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, W, H);
-
-      // grid floor
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-      ctx.lineWidth = 1;
+    function drawEye(c, eyeX, cw, ch) {
+      c.fillStyle = '#0a0820';
+      c.fillRect(0, 0, cw, ch);
+      c.strokeStyle = 'rgba(255,255,255,0.04)'; c.lineWidth = 1;
       for (var i = 0; i <= 8; i++) {
-        ctx.beginPath(); ctx.moveTo(i * W/8, 0); ctx.lineTo(i * W/8, H); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i * H/8); ctx.lineTo(W, i * H/8); ctx.stroke();
+        c.beginPath(); c.moveTo(i*cw/8, 0); c.lineTo(i*cw/8, ch); c.stroke();
+        c.beginPath(); c.moveTo(0, i*ch/8); c.lineTo(cw, i*ch/8); c.stroke();
       }
-
-      // sort back-to-front
-      var sorted = objects.slice().sort(function(a, b) { return b.z - a.z; });
-
+      var sorted = objects.slice().sort(function(a,b){ return b.z - a.z; });
       sorted.forEach(function(obj) {
-        var p = project(obj, eyeOffset, fov);
-        // shadow
-        ctx.beginPath();
-        ctx.ellipse(p.px, H * 0.78, p.ps * 0.8, p.ps * 0.18, 0, 0, Math.PI*2);
-        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
-        // face
-        ctx.beginPath();
-        ctx.rect(p.px - p.ps/2, p.py - p.ps/2, p.ps, p.ps);
-        ctx.fillStyle = obj.color; ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5; ctx.stroke();
-        // highlight
-        ctx.beginPath();
-        ctx.rect(p.px - p.ps/2 + 2, p.py - p.ps/2 + 2, p.ps * 0.35, p.ps * 0.35);
-        ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fill();
+        var p = project(obj, eyeX, cw, ch);
+        c.beginPath(); c.ellipse(p.px, ch*0.8, p.ps*0.8, p.ps*0.18, 0, 0, Math.PI*2);
+        c.fillStyle = 'rgba(0,0,0,0.28)'; c.fill();
+        c.beginPath(); c.rect(p.px-p.ps/2, p.py-p.ps/2, p.ps, p.ps);
+        c.fillStyle = obj.color; c.fill();
+        c.strokeStyle = 'rgba(255,255,255,0.22)'; c.lineWidth = 1.5; c.stroke();
+        c.beginPath(); c.rect(p.px-p.ps/2+2, p.py-p.ps/2+2, p.ps*0.35, p.ps*0.35);
+        c.fillStyle = 'rgba(255,255,255,0.22)'; c.fill();
       });
+    }
+
+    /* ── True red/cyan anaglyph composite ────────────────
+       1. Draw left eye (scaled to MW×MH) → multiply with #ff0000 → keeps only R
+       2. Draw right eye (scaled to MW×MH) → multiply with #00ffff → keeps only G+B
+       3. Merge with 'screen' blend = R(left) + GB(right)
+    ─────────────────────────────────────────────────── */
+    function drawAnaglyph(halfIPD) {
+      // Left eye → red channel
+      ctxAL.drawImage(leftC, 0, 0, MW, MH);
+      ctxAL.globalCompositeOperation = 'multiply';
+      ctxAL.fillStyle = '#ff0000';
+      ctxAL.fillRect(0, 0, MW, MH);
+      ctxAL.globalCompositeOperation = 'source-over';
+
+      // Right eye → cyan channel
+      ctxAR.drawImage(rightC, 0, 0, MW, MH);
+      ctxAR.globalCompositeOperation = 'multiply';
+      ctxAR.fillStyle = '#00ffff';
+      ctxAR.fillRect(0, 0, MW, MH);
+      ctxAR.globalCompositeOperation = 'source-over';
+
+      // Final composite: red layer + cyan layer via 'screen'
+      mCtx.fillStyle = '#000';
+      mCtx.fillRect(0, 0, MW, MH);
+      mCtx.drawImage(anaL, 0, 0);
+      mCtx.globalCompositeOperation = 'screen';
+      mCtx.drawImage(anaR, 0, 0);
+      mCtx.globalCompositeOperation = 'source-over';
+
+      // IPD callout overlay
+      mCtx.fillStyle = 'rgba(0,0,0,0.42)';
+      mCtx.fillRect(0, MH - 22, MW, 22);
+      mCtx.fillStyle = 'rgba(200,184,255,0.75)';
+      mCtx.font = '700 10px system-ui';
+      mCtx.textAlign = 'center'; mCtx.textBaseline = 'middle';
+      mCtx.fillText('IPD ' + (halfIPD*2).toFixed(0) + ' mm — parallax disparity visible in overlapping edges', MW/2, MH-11);
     }
 
     function frame() {
       t += 0.008;
-      // gently float objects
-      objects[0].x = Math.sin(t * 0.7)  * 0.3;
-      objects[1].x = 1.2 + Math.cos(t)  * 0.2;
-      objects[3].y = 0.8 + Math.sin(t * 1.3) * 0.3;
+      objects[0].x =  Math.sin(t * 0.7)  * 0.35;
+      objects[1].x =  1.2 + Math.cos(t)  * 0.22;
+      objects[3].y =  0.8 + Math.sin(t * 1.3) * 0.3;
+      objects[4].x = -0.8 + Math.sin(t * 0.9) * 0.18;
 
       var halfIPD = iod / 2;
-      drawEye(lCtx, -halfIPD, '#0a0820');
-      drawEye(rCtx,  halfIPD, '#0a0820');
-
-      // merged: left eye red channel, right eye cyan channel
-      mCtx.clearRect(0, 0, MW, H);
-      mCtx.globalCompositeOperation = 'source-over';
-
-      // Draw left eye to temp canvas, extract red
-      var tmp = document.createElement('canvas');
-      tmp.width = W; tmp.height = H;
-      var tCtx = tmp.getContext('2d');
-      drawEye(tCtx, -halfIPD, '#000');
-
-      // Left half — left eye
-      mCtx.drawImage(leftC,  0, 0, W, H, 0,  0, MW/2, H);
-      // Right half — right eye
-      mCtx.drawImage(rightC, 0, 0, W, H, MW/2, 0, MW/2, H);
-
-      // divider line
-      mCtx.beginPath();
-      mCtx.moveTo(MW/2, 0); mCtx.lineTo(MW/2, H);
-      mCtx.strokeStyle = 'rgba(111,76,255,0.4)'; mCtx.lineWidth = 2; mCtx.stroke();
-
+      drawEye(lCtx, -halfIPD, W, H);
+      drawEye(rCtx,  halfIPD, W, H);
+      drawAnaglyph(halfIPD);
       requestAnimationFrame(frame);
     }
 
@@ -1160,9 +1148,10 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
   </script>
 
   <!-- ══════════════════════════════════════════════════
-       CODE TABS
+       CODE TABS + COPY BUTTON + FLIP CARDS
   ══════════════════════════════════════════════════ -->
   <script>
+  /* ── Code tab switching ── */
   document.querySelectorAll('.vr-code-tab').forEach(function(tab) {
     tab.addEventListener('click', function() {
       var key = this.dataset.tab;
@@ -1171,6 +1160,35 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
       this.classList.add('active');
       document.getElementById('tab-' + key).classList.add('active');
     });
+  });
+
+  /* ── Copy Code button ── */
+  document.getElementById('vr-copy-btn').addEventListener('click', function() {
+    var active = document.querySelector('.vr-code-panel.active');
+    if (!active) return;
+    var text = active.querySelector('pre').innerText || active.querySelector('pre').textContent;
+    var btn  = this;
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = '✓ Copied';
+      btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+    }).catch(function() {
+      // Fallback for restricted contexts
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = '✓ Copied'; btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+    });
+  });
+
+  /* ── Flip cards ── */
+  document.querySelectorAll('.vr-flip-card').forEach(function(card) {
+    function toggle() { card.classList.toggle('flipped'); }
+    card.addEventListener('click', toggle);
+    card.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
   });
   </script>
 
