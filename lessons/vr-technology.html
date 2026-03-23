@@ -1193,36 +1193,75 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
   </script>
 
   <!-- ══════════════════════════════════════════════════
-       QUIZ
+       QUIZ — instant feedback + correct reveal + rationale
   ══════════════════════════════════════════════════ -->
   <script>
   var ANSWERS = { q1: 'a', q2: 'c', q3: 'b', q4: 'b' };
-  var EXPLAIN = {
-    q1: 'Correct — ITD (Interaural Time Difference) is the tiny delay between when sound reaches each ear.',
-    q2: 'Correct — 90 Hz is the accepted VR minimum. Below this, most users experience motion sickness.',
-    q3: 'Correct — OpenXR is the Khronos standard that unifies VR/AR hardware under one API.',
-    q4: 'Correct — The average adult IPD is about 63 mm, ranging from 54–74 mm across the population.'
-  };
-  var WRONG = {
-    q1: 'Not quite — ITD stands for Interaural Time Difference, the time delay between ears.',
-    q2: 'Not quite — 90 Hz is the standard minimum. Lower rates cause visible judder and nausea.',
-    q3: 'Not quite — OpenXR is the cross-platform VR API. DirectX and Vulkan are graphics APIs.',
-    q4: 'Not quite — 63 mm is the average IPD. 25 mm would be impossibly narrow; 120 mm far too wide.'
+
+  /* Per-answer rationale: wrong[value] explains why that choice is wrong;
+     correct is a single string shown when the right answer is chosen.       */
+  var RATIONALE = {
+    q1: {
+      correct: '✓ Correct — ITD (Interaural Time Difference) is the microsecond timing gap between when sound arrives at each ear. Your brainstem measures this with extraordinary precision to locate sound.',
+      a: null,  // correct choice — no wrong rationale needed
+      b: '✗ "Inter-Temporal Distance" is not a real term. The correct answer is <strong>Interaural Time Difference</strong> — the arrival-time gap between left and right ears.',
+      c: '✗ "Internal Tone Detection" is not an audio term. <strong>ITD = Interaural Time Difference</strong>, the fractional-millisecond delay that tells your brain which side a sound came from.'
+    },
+    q2: {
+      correct: '✓ Correct — 90 Hz is the accepted industry minimum. At 60 Hz most users experience perceptible judder and nausea; below that, cybersickness is almost guaranteed.',
+      a: '✗ 30 Hz is standard cinema frame rate — far too slow for VR. At 30 Hz the motion blur and judder cause severe cybersickness within seconds. The threshold is <strong>90 Hz</strong>.',
+      b: '✗ 60 Hz works for flat-screen games but is insufficient for VR. The mismatched motion cues trigger cybersickness in most users. VR requires at least <strong>90 Hz</strong>.',
+      c: null
+    },
+    q3: {
+      correct: '✓ Correct — OpenXR is the Khronos Group open standard. One codebase runs on Meta Quest, PlayStation VR2, SteamVR, and Windows Mixed Reality without platform-specific rewrites.',
+      a: '✗ DirectX 12 is Microsoft\'s graphics API — it handles GPU rendering but is not a cross-platform VR standard. <strong>OpenXR</strong> is the unified VR/AR runtime API.',
+      b: null,
+      c: '✗ Vulkan is a low-level graphics API (like DirectX 12) — it renders frames, but doesn\'t define controller input, tracking, or headset sessions. That\'s <strong>OpenXR\'s</strong> job.'
+    },
+    q4: {
+      correct: '✓ Correct — The adult population average IPD is ~63 mm, ranging roughly 54–74 mm. Most VR headsets offer a physical IPD adjustment knob to match each user.',
+      a: '✗ 25 mm would be anatomically impossible — eyes that close would give extreme cross-eyed convergence. Average human IPD is <strong>63 mm</strong>.',
+      b: null,
+      c: '✗ 120 mm would be wider than a human face. At that IPD, the divergence cues would be painful and the brain could not fuse the images. The real average is <strong>63 mm</strong>.'
+    }
   };
 
   document.querySelectorAll('.vr-quiz-block').forEach(function(block) {
-    var id = block.id;
+    var id   = block.id;
     var opts = block.querySelectorAll('.vr-quiz-opt');
     var fb   = block.querySelector('.vr-quiz-feedback');
+
     opts.forEach(function(opt) {
       opt.addEventListener('click', function() {
         if (block.dataset.answered) return;
         block.dataset.answered = '1';
-        var val = opt.querySelector('input').value;
+
+        var val     = opt.querySelector('input').value;
         var correct = val === ANSWERS[id];
+
+        // Highlight chosen option
         opt.classList.add(correct ? 'correct' : 'wrong');
-        fb.textContent = correct ? '✓ ' + EXPLAIN[id] : '✗ ' + WRONG[id];
-        fb.style.color = correct ? '#1a5c2a' : '#6b1515';
+
+        // If wrong, also highlight the correct answer in green
+        if (!correct) {
+          opts.forEach(function(o) {
+            if (o.querySelector('input').value === ANSWERS[id]) {
+              o.classList.add('correct');
+            }
+          });
+        }
+
+        // Inject rationale div below the feedback placeholder
+        var rat = document.createElement('div');
+        rat.className = 'vr-quiz-rationale ' + (correct ? 'correct' : 'incorrect');
+        rat.innerHTML = correct
+          ? RATIONALE[id].correct
+          : (RATIONALE[id][val] || ('✗ The correct answer is highlighted above.'));
+        fb.parentNode.insertBefore(rat, fb.nextSibling);
+
+        // Hide the old plain feedback element
+        fb.style.display = 'none';
       });
     });
   });
