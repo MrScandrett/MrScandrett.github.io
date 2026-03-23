@@ -295,8 +295,9 @@
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 1rem;
       margin-top: 1rem;
+      --vr-flip-card-height: 184px;
     }
-    .vr-flip-card { perspective: 900px; height: 184px; cursor: pointer; }
+    .vr-flip-card { perspective: 900px; height: var(--vr-flip-card-height); cursor: pointer; }
     .vr-flip-inner {
       position: relative; width: 100%; height: 100%;
       transform-style: preserve-3d;
@@ -329,6 +330,48 @@
     }
     .vr-flip-back h3 { margin: 0; font-size: 0.88rem; font-weight: 800; color: #2f1e88; }
     .vr-flip-back p  { margin: 0; font-size: 0.79rem; line-height: 1.52; color: #3a3a4a; }
+
+    /* ── flashcard overflow fixes (choose one mode on .vr-flip-grid) ── */
+    .vr-flip-card,
+    .vr-flip-inner,
+    .vr-flip-front,
+    .vr-flip-back { box-sizing: border-box; }
+
+    /* Mode A: Fixed height + internal scroll */
+    .vr-flip-grid.vr-flip-grid--fixed .vr-flip-card {
+      height: var(--vr-flip-card-height);
+      min-height: var(--vr-flip-card-height);
+      overflow: hidden;
+    }
+    .vr-flip-grid.vr-flip-grid--fixed .vr-flip-inner { height: 100%; overflow: hidden; }
+    .vr-flip-grid.vr-flip-grid--fixed .vr-flip-back {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    /* Mode B: Responsive expansion (cards grow when flipped) */
+    .vr-flip-grid.vr-flip-grid--expand .vr-flip-card {
+      height: auto;
+      min-height: var(--vr-flip-card-height);
+      overflow: visible;
+    }
+    .vr-flip-grid.vr-flip-grid--expand .vr-flip-inner {
+      height: auto;
+      min-height: var(--vr-flip-card-height);
+    }
+    .vr-flip-grid.vr-flip-grid--expand .vr-flip-front,
+    .vr-flip-grid.vr-flip-grid--expand .vr-flip-back { min-height: var(--vr-flip-card-height); }
+    .vr-flip-grid.vr-flip-grid--expand .vr-flip-card.flipped .vr-flip-back {
+      position: relative;
+      inset: auto;
+      height: auto;
+      overflow: visible;
+    }
+    .vr-flip-grid.vr-flip-grid--expand .vr-flip-card.flipped .vr-flip-front {
+      position: absolute;
+      inset: 0;
+    }
 
     /* ── copy code button ── */
     .vr-code-tab-bar { position: relative; }
@@ -392,7 +435,7 @@
       <h2>Tricking Your Brain into Believing a Fake World</h2>
       <p>Virtual Reality is a technology that replaces your real sensory environment with a computer-generated one so convincingly that your brain treats it as real. Every VR experience rests on three illusions working simultaneously:</p>
 
-      <div class="vr-flip-grid" id="vr-flip-grid">
+      <div class="vr-flip-grid vr-flip-grid--fixed" id="vr-flip-grid">
 
         <div class="vr-flip-card" tabindex="0" aria-label="Stereoscopic Vision — click to flip">
           <div class="vr-flip-inner">
