@@ -1,0 +1,1194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3D Printing — Settings, Rules &amp; Perfect Prints · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Fabrication Lesson 03 — master layer height, infill, supports, bed adhesion, temperature, speed, and materials for perfect FDM prints every time." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    body {
+      margin: 0;
+      color: #182631;
+      background:
+        radial-gradient(1100px 520px at 10% -10%, rgba(255,107,53,0.12), transparent 58%),
+        radial-gradient(920px 460px at 100% 0%,   rgba(255,196,0,0.09),  transparent 54%),
+        linear-gradient(180deg, #fff8f4 0%, #fef3ea 100%);
+    }
+
+    /* ── topbar ── */
+    .p3d-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px) saturate(140%);
+      background: rgba(255,248,244,0.9);
+      border-bottom: 1px solid rgba(255,107,53,0.14);
+    }
+    .p3d-topbar-inner, .p3d-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+    .p3d-topbar-inner {
+      min-height: 54px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .p3d-topbar a { color: #c43d00; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
+    .p3d-topbar a:hover { color: #8a2900; }
+    .p3d-topbar-title { font-size: 0.92rem; font-weight: 800; color: #1c0a00; }
+
+    .p3d-shell { padding: 2rem 0 3rem; display: grid; gap: 1.2rem; }
+
+    /* ── cards ── */
+    .p3d-card {
+      border-radius: 26px;
+      border: 1px solid rgba(255,107,53,0.13);
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,248,244,0.96));
+      box-shadow: 0 18px 40px rgba(28,10,0,0.07);
+      padding: 2rem 2.2rem;
+    }
+    .p3d-card h2 { margin: 0 0 0.6rem; font-size: 1.2rem; font-weight: 800; color: #1c0a00; }
+    .p3d-card p  { margin: 0 0 0.7rem; line-height: 1.65; color: #3a2a1a; }
+    .p3d-card p:last-child { margin-bottom: 0; }
+
+    /* ── hero ── */
+    .p3d-hero {
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid rgba(255,107,53,0.25);
+      background:
+        radial-gradient(ellipse at 18% 38%, rgba(255,107,53,0.85), transparent 52%),
+        radial-gradient(ellipse at 82% 65%, rgba(255,196,0,0.60), transparent 50%),
+        linear-gradient(135deg, #1c0a00 0%, #2a1500 100%);
+      color: #fff;
+      padding: 2.4rem 2.4rem 2rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.4rem;
+      align-items: center;
+    }
+    @media (max-width: 620px) { .p3d-hero { grid-template-columns: 1fr; } }
+    .p3d-hero-kicker { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,200,160,0.88); margin-bottom: 0.5rem; }
+    .p3d-hero-title  { font-size: clamp(1.5rem,3.5vw,2.2rem); font-weight: 900; margin: 0 0 0.6rem; line-height: 1.1; }
+    .p3d-hero-sub    { font-size: 0.95rem; color: rgba(255,235,210,0.82); margin: 0; max-width: 52ch; line-height: 1.55; }
+    .p3d-hero-badges { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
+    .p3d-hero-badges span {
+      padding: 0.28rem 0.72rem; border-radius: 999px;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,235,210,0.18);
+      color: #fff3e8; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap;
+    }
+
+    /* ── section label ── */
+    .p3d-label {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #c43d00; margin: 0 0 0.8rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .p3d-label::after { content: ""; flex: 1; height: 1px; background: rgba(255,107,53,0.18); }
+
+    /* ── concept grid ── */
+    .p3d-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem; margin-top: 1rem;
+    }
+    .p3d-block {
+      border-radius: 16px;
+      border: 1px solid rgba(255,107,53,0.13);
+      background: rgba(255,107,53,0.04);
+      padding: 1.1rem 1.2rem;
+    }
+    .p3d-block h3 { margin: 0 0 0.4rem; font-size: 0.95rem; font-weight: 800; color: #8a2900; }
+    .p3d-block p  { margin: 0; font-size: 0.86rem; line-height: 1.55; color: #3a2a1a; }
+    .p3d-icon     { font-size: 1.4rem; margin-bottom: 0.4rem; display: block; }
+
+    /* ── callout ── */
+    .p3d-callout {
+      border-radius: 14px; border-left: 4px solid #ff6b35;
+      background: rgba(255,107,53,0.07);
+      padding: 0.9rem 1.1rem; margin: 1rem 0;
+      font-size: 0.88rem; color: #8a2900; line-height: 1.55;
+    }
+    .p3d-callout.tip    { border-left-color: #34c759; background: rgba(52,199,89,0.06);  color: #0d3318; }
+    .p3d-callout.warn   { border-left-color: #ff9500; background: rgba(255,149,0,0.07);  color: #5a3300; }
+    .p3d-callout.danger { border-left-color: #ff3b30; background: rgba(255,59,48,0.07);  color: #6b0f0a; }
+    .p3d-callout strong { color: inherit; font-weight: 800; }
+
+    /* ══════════════════════════════════════════
+       SLICER SETTINGS SIMULATOR
+    ══════════════════════════════════════════ */
+    .p3d-sim {
+      border-radius: 26px;
+      background: #1a0e00;
+      border: 1px solid rgba(255,107,53,0.28);
+      padding: 2rem 2.2rem;
+      color: #fff;
+    }
+    .p3d-sim h2 { color: #ffb88c; margin: 0 0 0.3rem; font-size: 1.15rem; font-weight: 800; }
+    .p3d-sim > p { color: rgba(255,235,210,0.78); font-size: 0.88rem; margin: 0 0 1.4rem; line-height: 1.55; }
+
+    .p3d-sim-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 1.4rem;
+      align-items: start;
+    }
+    @media (max-width: 680px) { .p3d-sim-layout { grid-template-columns: 1fr; } }
+
+    /* controls panel */
+    .p3d-controls { display: flex; flex-direction: column; gap: 1.1rem; }
+    .p3d-control-row { display: flex; flex-direction: column; gap: 0.3rem; }
+    .p3d-control-row label {
+      font-size: 0.78rem; font-weight: 700; color: rgba(255,200,160,0.85);
+      display: flex; justify-content: space-between;
+    }
+    .p3d-control-row label span { color: #ffb88c; font-weight: 800; }
+    .p3d-control-row input[type=range] { width: 100%; accent-color: #ff6b35; cursor: pointer; }
+    .p3d-control-row select {
+      width: 100%; padding: 0.38rem 0.6rem; border-radius: 8px;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,107,53,0.28);
+      color: #ffb88c; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      appearance: none;
+    }
+    .p3d-control-row select option { background: #2a1500; color: #ffb88c; }
+
+    /* preview canvas */
+    .p3d-preview-wrap {
+      border-radius: 18px;
+      border: 1px solid rgba(255,107,53,0.22);
+      background: #0e0700;
+      overflow: hidden;
+    }
+    #p3d-canvas { display: block; width: 100%; }
+
+    /* stats panel */
+    .p3d-stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 1rem;
+    }
+    .p3d-stat {
+      border-radius: 12px; border: 1px solid rgba(255,107,53,0.18);
+      background: rgba(255,255,255,0.04);
+      padding: 0.7rem 0.9rem;
+    }
+    .p3d-stat-label { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,200,160,0.6); margin-bottom: 0.2rem; }
+    .p3d-stat-val   { font-size: 1.05rem; font-weight: 800; color: #ffb88c; }
+    .p3d-stat-unit  { font-size: 0.72rem; color: rgba(255,200,160,0.55); margin-left: 0.2rem; }
+
+    /* quality badge */
+    .p3d-quality-bar {
+      display: flex; align-items: center; gap: 0.8rem; margin-top: 1rem;
+    }
+    .p3d-quality-label { font-size: 0.78rem; font-weight: 700; color: rgba(255,200,160,0.7); white-space: nowrap; }
+    .p3d-quality-track {
+      flex: 1; height: 10px; border-radius: 999px;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,107,53,0.18); overflow: hidden;
+    }
+    #p3d-quality-fill {
+      height: 100%; border-radius: 999px; transition: width 0.3s, background 0.3s;
+    }
+    #p3d-quality-text { font-size: 0.78rem; font-weight: 800; min-width: 7ch; color: #ffb88c; }
+
+    /* warnings */
+    #p3d-warnings { margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; min-height: 1.2rem; }
+    .p3d-warn-chip {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.76rem; font-weight: 700;
+      padding: 0.3rem 0.7rem; border-radius: 999px;
+      background: rgba(255,149,0,0.15); border: 1px solid rgba(255,149,0,0.3); color: #ffc060;
+    }
+    .p3d-warn-chip.danger { background: rgba(255,59,48,0.15); border-color: rgba(255,59,48,0.3); color: #ff8a80; }
+    .p3d-warn-chip.ok     { background: rgba(52,199,89,0.12); border-color: rgba(52,199,89,0.3);  color: #6edd9e; }
+
+    /* ══════════════════════════════════════════
+       SCENARIO CARDS
+    ══════════════════════════════════════════ */
+    .p3d-scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem; margin-top: 1rem;
+    }
+    .p3d-scenario {
+      border-radius: 18px;
+      border: 1px solid rgba(255,107,53,0.15);
+      background: rgba(255,107,53,0.04);
+      padding: 1.2rem 1.3rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .p3d-scenario:hover { background: rgba(255,107,53,0.09); border-color: rgba(255,107,53,0.3); box-shadow: 0 4px 18px rgba(255,107,53,0.1); }
+    .p3d-scenario.active { background: rgba(255,107,53,0.14); border-color: rgba(255,107,53,0.45); box-shadow: 0 6px 22px rgba(255,107,53,0.15); }
+    .p3d-scenario-icon  { font-size: 1.6rem; margin-bottom: 0.4rem; display: block; }
+    .p3d-scenario h3    { margin: 0 0 0.35rem; font-size: 0.95rem; font-weight: 800; color: #8a2900; }
+    .p3d-scenario p     { margin: 0; font-size: 0.83rem; line-height: 1.5; color: #5a3a1a; }
+
+    .p3d-scenario-detail {
+      border-radius: 18px;
+      border: 1px solid rgba(255,107,53,0.22);
+      background: #fff8f4;
+      padding: 1.4rem 1.6rem;
+      margin-top: 1rem;
+      display: none;
+    }
+    .p3d-scenario-detail.active { display: block; }
+    .p3d-scenario-detail h4 { margin: 0 0 0.8rem; font-size: 1rem; font-weight: 800; color: #8a2900; }
+    .p3d-setting-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .p3d-setting-table th {
+      text-align: left; padding: 0.5rem 0.7rem;
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #c43d00; border-bottom: 2px solid rgba(255,107,53,0.2);
+    }
+    .p3d-setting-table td { padding: 0.5rem 0.7rem; border-bottom: 1px solid rgba(255,107,53,0.09); color: #3a2a1a; vertical-align: top; }
+    .p3d-setting-table tr:last-child td { border-bottom: none; }
+    .p3d-setting-table td:first-child { font-weight: 700; color: #8a2900; white-space: nowrap; }
+    .p3d-setting-val { font-weight: 800; color: #c43d00; }
+
+    /* ── rules list ── */
+    .p3d-rules { list-style: none; padding: 0; margin: 0.8rem 0 0; display: flex; flex-direction: column; gap: 0.55rem; }
+    .p3d-rules li {
+      display: flex; gap: 0.6rem; align-items: flex-start;
+      font-size: 0.88rem; line-height: 1.5; color: #3a2a1a;
+    }
+    .p3d-rules li::before {
+      content: attr(data-icon);
+      font-size: 1.1rem; flex-shrink: 0; margin-top: -0.05em;
+    }
+    .p3d-rules li strong { color: #8a2900; }
+
+    /* ── material table ── */
+    .p3d-mat-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin-top: 0.8rem; }
+    .p3d-mat-table th {
+      text-align: left; padding: 0.55rem 0.7rem;
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #c43d00; border-bottom: 2px solid rgba(255,107,53,0.2); background: rgba(255,107,53,0.04);
+    }
+    .p3d-mat-table td { padding: 0.5rem 0.7rem; border-bottom: 1px solid rgba(255,107,53,0.09); color: #3a2a1a; vertical-align: middle; }
+    .p3d-mat-table tr:last-child td { border-bottom: none; }
+    .p3d-mat-table tr:hover td { background: rgba(255,107,53,0.04); }
+    .p3d-mat-chip {
+      display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px;
+      font-size: 0.7rem; font-weight: 700;
+    }
+    .p3d-mat-chip.easy   { background: rgba(52,199,89,0.12);  border: 1px solid rgba(52,199,89,0.25);  color: #1a5c2a; }
+    .p3d-mat-chip.medium { background: rgba(255,149,0,0.12);  border: 1px solid rgba(255,149,0,0.25);  color: #5a3300; }
+    .p3d-mat-chip.hard   { background: rgba(255,59,48,0.10);  border: 1px solid rgba(255,59,48,0.25);  color: #6b0f0a; }
+
+    /* ── quiz ── */
+    .p3d-quiz-block { margin: 0.8rem 0; }
+    .p3d-quiz-q  { font-size: 0.9rem; font-weight: 700; color: #1c0a00; margin-bottom: 0.5rem; }
+    .p3d-quiz-options { display: flex; flex-direction: column; gap: 0.38rem; }
+    .p3d-quiz-opt {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.52rem 0.8rem; border-radius: 10px;
+      border: 1px solid rgba(255,107,53,0.18); background: rgba(255,107,53,0.04);
+      cursor: pointer; font-size: 0.86rem; transition: background 0.12s, border-color 0.12s;
+    }
+    .p3d-quiz-opt:hover   { background: rgba(255,107,53,0.1); border-color: rgba(255,107,53,0.3); }
+    .p3d-quiz-opt.correct { background: rgba(52,199,89,0.12);  border-color: #34c759; color: #1a5c2a; }
+    .p3d-quiz-opt.wrong   { background: rgba(255,59,48,0.09);  border-color: #ff3b30; color: #6b1515; }
+    .p3d-quiz-opt input   { accent-color: #ff6b35; }
+    .p3d-quiz-feedback    { margin-top: 0.5rem; font-size: 0.82rem; min-height: 1.2em; }
+  </style>
+</head>
+<body>
+
+  <div class="p3d-topbar">
+    <div class="p3d-topbar-inner">
+      <a href="../steam-lessons.html">← STEAM Lessons</a>
+      <span class="p3d-topbar-title">Fabrication · Lesson 03</span>
+      <a href="../steam-lessons.html#module-fabrication">Fabrication</a>
+    </div>
+  </div>
+
+  <main class="p3d-shell">
+
+    <!-- ══ HERO ══ -->
+    <div class="p3d-hero">
+      <div>
+        <p class="p3d-hero-kicker">Fabrication · Lesson 03 · FDM &amp; Slicer Mastery</p>
+        <h1 class="p3d-hero-title">3D Printing<br>Settings, Rules &amp; Perfect Prints</h1>
+        <p class="p3d-hero-sub">Understand every slicer setting, why it matters, and how to choose the right combination for your scenario — from quick prototypes to strong functional parts to ultra-fine display models.</p>
+      </div>
+      <div class="p3d-hero-badges">
+        <span>Layer Height</span>
+        <span>Infill</span>
+        <span>Supports</span>
+        <span>Temperature</span>
+        <span>Materials</span>
+      </div>
+    </div>
+
+    <!-- ══ HOW FDM WORKS ══ -->
+    <div class="p3d-card">
+      <p class="p3d-label">01 — How FDM 3D Printing Works</p>
+      <h2>Plastic, Heat &amp; Layers</h2>
+      <p>FDM (Fused Deposition Modelling) is the most common type of desktop 3D printing. A spool of plastic filament is fed through a heated nozzle called a <strong>hotend</strong>, which melts it and deposits it in precise paths on a build platform. The platform lowers by one layer height after each pass, and the process repeats until a full 3D object has been built up, one thin slice at a time.</p>
+      <p>A <strong>slicer</strong> is the software (Cura, PrusaSlicer, Bambu Studio, OrcaSlicer) that converts your 3D model file (STL/3MF) into the G-code instructions the printer follows. Every setting below lives inside the slicer — understanding them is what separates a print that works from one that fails.</p>
+
+      <div class="p3d-grid">
+        <div class="p3d-block">
+          <span class="p3d-icon">🌡️</span>
+          <h3>Hotend &amp; Nozzle</h3>
+          <p>The heated nozzle melts filament at 180–300 °C depending on material. Standard nozzles are 0.4 mm brass. Hardened steel nozzles are needed for abrasive filaments like carbon-fibre or glow-in-the-dark.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🛏️</span>
+          <h3>Heated Bed</h3>
+          <p>The build surface is usually heated (50–110 °C) to prevent warping — when the first layer cools too fast it contracts and peels up. PEI spring-steel sheets, glass, and textured plates are common bed surfaces.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">⚙️</span>
+          <h3>Extruder</h3>
+          <p>The extruder motor feeds filament into the hotend. A <em>direct drive</em> extruder sits on the printhead (better for flexible filaments). A <em>Bowden</em> extruder sits remotely with a tube (lighter, faster, but worse retraction).</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">💨</span>
+          <h3>Part Cooling Fan</h3>
+          <p>Plastic must solidify quickly after extrusion to hold fine details and prevent drooping on overhangs. High cooling = sharper details, better overhangs. Too much cooling = layer adhesion problems with some materials (ABS, ASA).</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">📐</span>
+          <h3>Build Volume</h3>
+          <p>The maximum size a printer can produce, measured in X × Y × Z. A typical desktop printer is 220×220×250 mm. Parts bigger than the build volume must be split and joined with adhesive, screws, or snap-fits.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🧊</span>
+          <h3>G-Code</h3>
+          <p>The raw instruction language sent to the printer: coordinates, speeds, temperatures, fan speeds, retractions. You rarely write it by hand — the slicer generates it — but reading G-code can help debug failed prints.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SLICER SIMULATOR ══ -->
+    <div class="p3d-sim">
+      <p class="p3d-label" style="color:#ffb88c">02 — Interactive Slicer Simulator</p>
+      <h2>Adjust Settings — See the Effect Live</h2>
+      <p>Move the sliders to change key settings. The cross-section preview updates in real time to show layer count, infill pattern, wall count, and supports. The quality score and warnings update as you go.</p>
+
+      <div class="p3d-sim-layout">
+        <!-- Controls -->
+        <div class="p3d-controls">
+
+          <div class="p3d-control-row">
+            <label>Layer Height <span id="lh-val">0.20 mm</span></label>
+            <input type="range" id="lh-slider" min="0.05" max="0.40" step="0.05" value="0.20" />
+          </div>
+
+          <div class="p3d-control-row">
+            <label>Infill Density <span id="inf-val">20%</span></label>
+            <input type="range" id="inf-slider" min="0" max="100" step="5" value="20" />
+          </div>
+
+          <div class="p3d-control-row">
+            <label>Wall Count <span id="walls-val">3</span></label>
+            <input type="range" id="walls-slider" min="1" max="8" step="1" value="3" />
+          </div>
+
+          <div class="p3d-control-row">
+            <label>Print Speed <span id="spd-val">50 mm/s</span></label>
+            <input type="range" id="spd-slider" min="10" max="300" step="10" value="50" />
+          </div>
+
+          <div class="p3d-control-row">
+            <label>Nozzle Temp <span id="tmp-val">210 °C</span></label>
+            <input type="range" id="tmp-slider" min="170" max="310" step="5" value="210" />
+          </div>
+
+          <div class="p3d-control-row">
+            <label>Supports</label>
+            <select id="sup-select">
+              <option value="none">None</option>
+              <option value="normal">Normal (touching buildplate)</option>
+              <option value="everywhere">Everywhere</option>
+              <option value="tree">Tree supports</option>
+            </select>
+          </div>
+
+          <div class="p3d-control-row">
+            <label>Material</label>
+            <select id="mat-select">
+              <option value="pla">PLA</option>
+              <option value="petg">PETG</option>
+              <option value="abs">ABS</option>
+              <option value="tpu">TPU (Flexible)</option>
+              <option value="asa">ASA</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- Preview + stats -->
+        <div>
+          <div class="p3d-preview-wrap">
+            <canvas id="p3d-canvas" width="500" height="320"></canvas>
+          </div>
+
+          <div class="p3d-stats">
+            <div class="p3d-stat">
+              <div class="p3d-stat-label">Est. Print Time</div>
+              <div class="p3d-stat-val" id="stat-time">—<span class="p3d-stat-unit">min</span></div>
+            </div>
+            <div class="p3d-stat">
+              <div class="p3d-stat-label">Layer Count</div>
+              <div class="p3d-stat-val" id="stat-layers">—</div>
+            </div>
+            <div class="p3d-stat">
+              <div class="p3d-stat-label">Filament Use</div>
+              <div class="p3d-stat-val" id="stat-filament">—<span class="p3d-stat-unit">g</span></div>
+            </div>
+            <div class="p3d-stat">
+              <div class="p3d-stat-label">Wall Thickness</div>
+              <div class="p3d-stat-val" id="stat-walls">—<span class="p3d-stat-unit">mm</span></div>
+            </div>
+          </div>
+
+          <div class="p3d-quality-bar">
+            <span class="p3d-quality-label">Print Quality</span>
+            <div class="p3d-quality-track"><div id="p3d-quality-fill"></div></div>
+            <span id="p3d-quality-text"></span>
+          </div>
+
+          <div id="p3d-warnings"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS DEEP DIVE ══ -->
+    <div class="p3d-card">
+      <p class="p3d-label">03 — Settings Deep Dive</p>
+      <h2>What Every Setting Actually Does</h2>
+
+      <div class="p3d-grid">
+        <div class="p3d-block">
+          <span class="p3d-icon">📏</span>
+          <h3>Layer Height</h3>
+          <p>Controls how thick each slice is. <strong>Thinner layers</strong> (0.05–0.12 mm) = smoother surfaces, finer details, longer print time. <strong>Thicker layers</strong> (0.24–0.40 mm) = faster prints, stronger Z-adhesion, visible ridges. For most prints, <strong>0.2 mm</strong> is the best balance. A rule of thumb: layer height should be no more than 75% of the nozzle diameter.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🕸️</span>
+          <h3>Infill Density &amp; Pattern</h3>
+          <p>Infill is the internal structure that fills the model. <strong>0%</strong> = hollow (vases, decorative). <strong>10–20%</strong> = light prints, enough for most decorative parts. <strong>40–60%</strong> = functional parts with moderate load. <strong>80–100%</strong> = maximum strength but wastes filament — walls often contribute more strength than infill beyond 60%. Common patterns: <em>Grid</em>, <em>Gyroid</em> (isotropic strength), <em>Lightning</em> (minimal but fast).</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🧱</span>
+          <h3>Wall Count (Perimeters)</h3>
+          <p>The number of shells that form the outer surface of the print. <strong>2 walls</strong> = fast, thin, fragile. <strong>3–4 walls</strong> = standard for functional parts. <strong>5+ walls</strong> = very strong, less infill needed, excellent for mechanical parts. Wall thickness = wall count × nozzle diameter (0.4 mm nozzle × 3 walls = 1.2 mm shell).</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🌡️</span>
+          <h3>Print Temperature</h3>
+          <p>Higher temperature = better layer adhesion, less risk of clogs, slightly more stringing. Lower temperature = less stringing, better detail on bridges but possible delamination. Always stay within the filament manufacturer's range. <strong>PLA:</strong> 195–220 °C. <strong>PETG:</strong> 230–250 °C. <strong>ABS:</strong> 230–250 °C. <strong>TPU:</strong> 220–240 °C.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">⚡</span>
+          <h3>Print Speed</h3>
+          <p>How fast the printhead moves in mm/s. Faster = shorter print time but more vibration artefacts, reduced layer adhesion, and possible missed steps on overhangs. Slower = higher quality. Outer walls are usually printed slower than infill (e.g., infill 80 mm/s, outer walls 40 mm/s). Modern machines with input shaping (Klipper, Bambu) can handle 200–600 mm/s reliably.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🏔️</span>
+          <h3>Supports</h3>
+          <p>3D printers can't print in mid-air — overhangs beyond ~45° need supports beneath them. <em>Normal supports</em> grow from the build plate up. <em>Everywhere supports</em> also grow from the model. <em>Tree supports</em> branch from below and use less material. Supports must be removed after printing, so minimise them by rotating the model so overhangs face down or eliminating them through design.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🏠</span>
+          <h3>Bed Adhesion</h3>
+          <p><em>Skirt:</em> a ring around the print to prime the nozzle — no adhesion. <em>Brim:</em> extra lines attached to the first layer edge — great for tall narrow parts. <em>Raft:</em> a full base platform the print sits on — used for very warpy materials (ABS, ASA) or complex first-layer geometries. Most PLA prints need only a skirt or no adhesion aid.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🔙</span>
+          <h3>Retraction</h3>
+          <p>When the nozzle travels over empty space, it pulls the filament back slightly to prevent stringing. <strong>Direct drive:</strong> 0.5–2 mm retraction. <strong>Bowden:</strong> 4–7 mm. Too much retraction can grind or jam the filament; too little leaves threads between parts. Higher temperature = worse stringing = needs more retraction.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🛌</span>
+          <h3>Bed Temperature</h3>
+          <p>Keeps the first layer warm to prevent warping. <strong>PLA:</strong> 55–65 °C. <strong>PETG:</strong> 70–85 °C. <strong>ABS/ASA:</strong> 90–110 °C (needs enclosure). <strong>TPU:</strong> 40–60 °C. No heated bed = PLA only and small prints. Mismatched bed temp is the #1 cause of prints popping off mid-print.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ THE RULES ══ -->
+    <div class="p3d-card">
+      <p class="p3d-label">04 — The Rules for a Perfect Print</p>
+      <h2>12 Golden Rules Every Maker Follows</h2>
+
+      <ul class="p3d-rules">
+        <li data-icon="🔢"><div><strong>Rule 1 — First layer = everything.</strong> A bad first layer causes the print to fail. Level the bed carefully, set Z-offset so the nozzle is close enough to squish the filament slightly, and use a clean surface. If the first layer looks perfect, 80% of failure risks are eliminated.</div></li>
+        <li data-icon="🔄"><div><strong>Rule 2 — Dry your filament.</strong> Wet filament pops, bubbles, and strings. Store filament in sealed containers with silica gel. PETG, Nylon, and TPU are especially hygroscopic. If filament has been out over 24 h in a humid climate, dry it at 45–65 °C for 4–8 hours before use.</div></li>
+        <li data-icon="📐"><div><strong>Rule 3 — Orient for strength.</strong> FDM parts are weakest in the Z direction (layer lines can delaminate). Orient your model so the direction of load aligns with the XY layer plane, not against layer lines. A rod printed standing up breaks far more easily than one printed lying flat.</div></li>
+        <li data-icon="🔄"><div><strong>Rule 4 — Rotate to eliminate supports.</strong> Before adding supports, rotate the model. Often a simple 90° rotation converts a complex overhang into a flat surface needing no supports, saving time and improving surface quality.</div></li>
+        <li data-icon="🧪"><div><strong>Rule 5 — Calibrate before you create.</strong> Run a temperature tower, retraction test, and flow calibration on a new spool of filament before committing to a long print. 20 minutes of calibration saves hours of wasted prints.</div></li>
+        <li data-icon="🏗️"><div><strong>Rule 6 — Walls &gt; infill for strength.</strong> Adding extra walls is almost always more effective at increasing part strength than increasing infill density. 5 walls at 20% infill beats 3 walls at 80% infill for most loads.</div></li>
+        <li data-icon="🌬️"><div><strong>Rule 7 — Bridging test before long bridges.</strong> Bridging is printing horizontally between two points with nothing underneath. FDM can bridge up to ~60–80 mm cleanly with good cooling. Beyond that, use supports or redesign the part with a small arch.</div></li>
+        <li data-icon="🌡️"><div><strong>Rule 8 — One variable at a time.</strong> When troubleshooting, change only one setting per test. If you change temperature, speed, and retraction simultaneously, you can't know which fix worked.</div></li>
+        <li data-icon="🔍"><div><strong>Rule 9 — Check the first 3 layers live.</strong> Stay at the printer for the first 3 layers. If you see lifting, stringing, or the nozzle digging into the bed, stop and fix it now. Don't walk away and hope it self-corrects — it won't.</div></li>
+        <li data-icon="📦"><div><strong>Rule 10 — Design for printing.</strong> Minimum wall thickness of 1.2 mm (3× 0.4 mm nozzle). Holes smaller than 2 mm may need drilling post-print. Add 0.2 mm tolerance to mating parts. Chamfer or fillet edges to reduce stress concentration.</div></li>
+        <li data-icon="🛠️"><div><strong>Rule 11 — Post-process when it matters.</strong> Sanding, priming, and painting dramatically improve display prints. Annealing PLA at 65–70 °C increases heat resistance. Acetone vapour smooths ABS to a glossy finish. XTC-3D epoxy coating strengthens and waterproofs.</div></li>
+        <li data-icon="💾"><div><strong>Rule 12 — Save your slicer profiles.</strong> Every material, printer, and use-case warrants a saved profile. Label them clearly (e.g., "PLA Draft 0.3 mm Bambu P1S" or "PETG Functional 0.2 mm Fine"). Don't rely on memory — slicer settings are too nuanced to recreate from scratch.</div></li>
+      </ul>
+    </div>
+
+    <!-- ══ SCENARIO CHOOSER ══ -->
+    <div class="p3d-card">
+      <p class="p3d-label">05 — Print Scenario Guide</p>
+      <h2>What Settings Fit Your Situation?</h2>
+      <p>Click a scenario to see the recommended settings table and reasoning.</p>
+
+      <div class="p3d-scenario-grid">
+        <div class="p3d-scenario" data-scenario="prototype">
+          <span class="p3d-scenario-icon">🚀</span>
+          <h3>Quick Prototype</h3>
+          <p>Fast concept model — appearance doesn't matter, just verifying fit and shape.</p>
+        </div>
+        <div class="p3d-scenario" data-scenario="display">
+          <span class="p3d-scenario-icon">🏆</span>
+          <h3>Display / Figurine</h3>
+          <p>Needs smooth surfaces and fine detail — will be painted or displayed.</p>
+        </div>
+        <div class="p3d-scenario" data-scenario="functional">
+          <span class="p3d-scenario-icon">🔩</span>
+          <h3>Functional / Mechanical Part</h3>
+          <p>Must withstand stress, load, or repeated use — strength is paramount.</p>
+        </div>
+        <div class="p3d-scenario" data-scenario="flexible">
+          <span class="p3d-scenario-icon">🧤</span>
+          <h3>Flexible / Wearable</h3>
+          <p>Needs to bend, stretch, or be worn — requires flexible filament (TPU).</p>
+        </div>
+        <div class="p3d-scenario" data-scenario="outdoor">
+          <span class="p3d-scenario-icon">☀️</span>
+          <h3>Outdoor / UV-Exposed</h3>
+          <p>Must resist sunlight, heat, and rain — material choice is critical.</p>
+        </div>
+        <div class="p3d-scenario" data-scenario="vase">
+          <span class="p3d-scenario-icon">🏺</span>
+          <h3>Vase / Hollow Container</h3>
+          <p>Aesthetic hollow object — Vase Mode (spiralise) gives single-wall beauty prints.</p>
+        </div>
+      </div>
+
+      <div class="p3d-scenario-detail" id="detail-prototype">
+        <h4>🚀 Quick Prototype Settings</h4>
+        <table class="p3d-setting-table">
+          <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+          <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.30–0.40 mm</span></td><td>Maximum speed; surface quality doesn't matter yet</td></tr>
+          <tr><td>Infill</td><td><span class="p3d-setting-val">10–15%</span></td><td>Just enough to hold the shell together; saves time</td></tr>
+          <tr><td>Walls</td><td><span class="p3d-setting-val">2</span></td><td>Minimum walls — fit testing only</td></tr>
+          <tr><td>Print Speed</td><td><span class="p3d-setting-val">80–150 mm/s</span></td><td>Fast; banding and artefacts acceptable</td></tr>
+          <tr><td>Supports</td><td><span class="p3d-setting-val">None or minimal</span></td><td>Speed — accept some overhang sag for prototyping</td></tr>
+          <tr><td>Material</td><td><span class="p3d-setting-val">PLA</span></td><td>Easiest, no enclosure, fast cool-down</td></tr>
+          <tr><td>Top/Bottom Layers</td><td><span class="p3d-setting-val">2</span></td><td>Reduces time; appearance unimportant</td></tr>
+        </table>
+        <div class="p3d-callout tip" style="margin-top:0.8rem"><strong>Tip:</strong> Use the "Draft" preset in most slicers — it sets all these values automatically. Expect print time 3–5× faster than a fine quality print.</div>
+      </div>
+
+      <div class="p3d-scenario-detail" id="detail-display">
+        <h4>🏆 Display / Figurine Settings</h4>
+        <table class="p3d-setting-table">
+          <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+          <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.08–0.12 mm</span></td><td>Ultra-fine layers = near-smooth surface; less sanding</td></tr>
+          <tr><td>Infill</td><td><span class="p3d-setting-val">15%</span></td><td>Display parts aren't load-bearing; save weight &amp; time</td></tr>
+          <tr><td>Walls</td><td><span class="p3d-setting-val">4–5</span></td><td>Thick shell hides infill pattern from showing on surface</td></tr>
+          <tr><td>Print Speed</td><td><span class="p3d-setting-val">30–50 mm/s</span></td><td>Slow = minimal vibration artefacts on outer walls</td></tr>
+          <tr><td>Cooling</td><td><span class="p3d-setting-val">100%</span></td><td>Maximum cooling snaps layers sharp for detail</td></tr>
+          <tr><td>Supports</td><td><span class="p3d-setting-val">Tree (everywhere)</span></td><td>Tree supports leave smaller marks on the surface</td></tr>
+          <tr><td>Material</td><td><span class="p3d-setting-val">PLA or Silk PLA</span></td><td>Easy to sand, prime, and paint; Silk PLA has sheen</td></tr>
+        </table>
+        <div class="p3d-callout tip" style="margin-top:0.8rem"><strong>Tip:</strong> After printing, sand through 120→220→400 grit, prime with filler spray, then paint. A 0.1 mm layer print with 400-grit sanding looks injection-moulded.</div>
+      </div>
+
+      <div class="p3d-scenario-detail" id="detail-functional">
+        <h4>🔩 Functional / Mechanical Part Settings</h4>
+        <table class="p3d-setting-table">
+          <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+          <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.20 mm</span></td><td>Good layer adhesion without excessive print time</td></tr>
+          <tr><td>Infill</td><td><span class="p3d-setting-val">40–60%</span></td><td>Enough internal material to resist compression</td></tr>
+          <tr><td>Walls</td><td><span class="p3d-setting-val">5–8</span></td><td>Walls carry most of the load — more = much stronger</td></tr>
+          <tr><td>Infill Pattern</td><td><span class="p3d-setting-val">Gyroid or Cubic</span></td><td>Isotropic strength — resists load from all directions</td></tr>
+          <tr><td>Print Speed</td><td><span class="p3d-setting-val">40–60 mm/s</span></td><td>Moderate speed maintains good layer-to-layer bonding</td></tr>
+          <tr><td>Top/Bottom Layers</td><td><span class="p3d-setting-val">5–6</span></td><td>Thick top/bottom caps prevent flexing under load</td></tr>
+          <tr><td>Material</td><td><span class="p3d-setting-val">PETG or ABS</span></td><td>Better heat resistance and impact strength than PLA</td></tr>
+        </table>
+        <div class="p3d-callout warn" style="margin-top:0.8rem"><strong>Remember:</strong> FDM parts are weakest along Z (layer lines). For critical mechanical parts, consider annealing or alternative manufacturing if Z-strength is essential.</div>
+      </div>
+
+      <div class="p3d-scenario-detail" id="detail-flexible">
+        <h4>🧤 Flexible / Wearable Settings</h4>
+        <table class="p3d-setting-table">
+          <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+          <tr><td>Material</td><td><span class="p3d-setting-val">TPU 95A or 87A</span></td><td>Shore A = hardness; lower = softer/more stretchy</td></tr>
+          <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.20–0.28 mm</span></td><td>Thicker layers bond better in flexible materials</td></tr>
+          <tr><td>Infill</td><td><span class="p3d-setting-val">20–35%</span></td><td>Too much infill makes the part stiff; tune to flex level wanted</td></tr>
+          <tr><td>Print Speed</td><td><span class="p3d-setting-val">20–35 mm/s</span></td><td>TPU jams easily if printed fast — go slow</td></tr>
+          <tr><td>Retraction</td><td><span class="p3d-setting-val">0–2 mm</span></td><td>Minimal or none — TPU buckling in Bowden = clog</td></tr>
+          <tr><td>Walls</td><td><span class="p3d-setting-val">3–4</span></td><td>Enough shell to maintain shape while still flexing</td></tr>
+          <tr><td>Cooling</td><td><span class="p3d-setting-val">50–70%</span></td><td>Too much cooling can cause TPU to delaminate</td></tr>
+        </table>
+        <div class="p3d-callout danger" style="margin-top:0.8rem"><strong>Warning:</strong> TPU in a Bowden extruder is very difficult — the tube lets the filament buckle. Direct drive extruder is strongly recommended for TPU.</div>
+      </div>
+
+      <div class="p3d-scenario-detail" id="detail-outdoor">
+        <h4>☀️ Outdoor / UV-Exposed Settings</h4>
+        <table class="p3d-setting-table">
+          <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+          <tr><td>Material</td><td><span class="p3d-setting-val">ASA or PETG</span></td><td>ASA = UV stable, weather resistant. PETG = good moisture resistance. PLA degrades outdoors in months.</td></tr>
+          <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.20 mm</span></td><td>Standard balance; outdoor parts usually need strength over beauty</td></tr>
+          <tr><td>Infill</td><td><span class="p3d-setting-val">30–50%</span></td><td>Outdoor parts may carry load or face wind/impact</td></tr>
+          <tr><td>Walls</td><td><span class="p3d-setting-val">4–5</span></td><td>Thicker walls = less moisture ingress, better UV shielding</td></tr>
+          <tr><td>Bed Temp</td><td><span class="p3d-setting-val">90–110 °C</span></td><td>ASA needs high bed temp + enclosure to prevent warping</td></tr>
+          <tr><td>Enclosure</td><td><span class="p3d-setting-val">Required for ASA</span></td><td>ASA warps aggressively in open-air with temperature draft</td></tr>
+          <tr><td>Post-Process</td><td><span class="p3d-setting-val">UV-resistant clear coat</span></td><td>Even ASA benefits from a UV-stabilised top coat for long-term use</td></tr>
+        </table>
+        <div class="p3d-callout warn" style="margin-top:0.8rem"><strong>Note:</strong> PLA has a glass transition of ~60 °C. A car dashboard in summer can reach 80–90 °C — PLA parts inside cars will warp. Use PETG, ABS, or ASA for anything inside a vehicle.</div>
+      </div>
+
+      <div class="p3d-scenario-detail" id="detail-vase">
+        <h4>🏺 Vase / Hollow Container Settings</h4>
+        <table class="p3d-setting-table">
+          <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+          <tr><td>Mode</td><td><span class="p3d-setting-val">Spiralise / Vase Mode</span></td><td>Prints in one continuous spiral — no seam, minimal stringing, beautiful</td></tr>
+          <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.15–0.25 mm</span></td><td>Thinner = smoother; the spiral amplifies any layer-line texture</td></tr>
+          <tr><td>Wall Width</td><td><span class="p3d-setting-val">0.6–1.2 mm</span></td><td>Wider than normal for strength (single wall = no infill to reinforce it)</td></tr>
+          <tr><td>Bottom Layers</td><td><span class="p3d-setting-val">3–5 solid layers</span></td><td>Solid base before the spiral begins, so it can hold contents</td></tr>
+          <tr><td>Speed</td><td><span class="p3d-setting-val">40–60 mm/s</span></td><td>Even spiral extrusion; no speed variation artifacts</td></tr>
+          <tr><td>Material</td><td><span class="p3d-setting-val">PLA or Silk PLA</span></td><td>Silk PLA in Vase Mode looks spectacular — catches light beautifully</td></tr>
+          <tr><td>Supports</td><td><span class="p3d-setting-val">None</span></td><td>Vase mode prints the whole outer contour — no need for supports</td></tr>
+        </table>
+        <div class="p3d-callout tip" style="margin-top:0.8rem"><strong>Tip:</strong> Vase mode can only print models with a single closed outer contour — no holes in the walls. It's the easiest way to get print-show quality with minimal effort and is a great first print for beginners.</div>
+      </div>
+    </div>
+
+    <!-- ══ MATERIALS ══ -->
+    <div class="p3d-card">
+      <p class="p3d-label">06 — Materials Reference</p>
+      <h2>Choosing the Right Filament</h2>
+      <p>The material is the most important decision — it determines strength, flexibility, heat resistance, ease of printing, and whether you need an enclosure. Start with PLA; graduate to PETG for functional parts.</p>
+
+      <table class="p3d-mat-table">
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th>Nozzle °C</th>
+            <th>Bed °C</th>
+            <th>Enclosure</th>
+            <th>Strengths</th>
+            <th>Weaknesses</th>
+            <th>Difficulty</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>PLA</strong></td>
+            <td>195–220</td>
+            <td>55–65</td>
+            <td>No</td>
+            <td>Easy, sharp details, biodegradable, low warp, cheap</td>
+            <td>Brittle at impact, low heat resistance (~60 °C), UV-degrades</td>
+            <td><span class="p3d-mat-chip easy">Beginner</span></td>
+          </tr>
+          <tr>
+            <td><strong>PETG</strong></td>
+            <td>230–250</td>
+            <td>70–85</td>
+            <td>No</td>
+            <td>Strong, flexible, food-safe grades, good layer adhesion</td>
+            <td>Strings badly, absorbs moisture, slightly tricky bed adhesion</td>
+            <td><span class="p3d-mat-chip medium">Intermediate</span></td>
+          </tr>
+          <tr>
+            <td><strong>ABS</strong></td>
+            <td>230–250</td>
+            <td>100–110</td>
+            <td>Yes</td>
+            <td>Tough, acetone-smoothable, heat resistant (~100 °C), widely used industrially</td>
+            <td>Warps aggressively, fumes require ventilation, hard to print</td>
+            <td><span class="p3d-mat-chip hard">Advanced</span></td>
+          </tr>
+          <tr>
+            <td><strong>ASA</strong></td>
+            <td>240–260</td>
+            <td>90–110</td>
+            <td>Yes</td>
+            <td>UV stable, weather resistant, similar toughness to ABS</td>
+            <td>Warps, requires enclosure, fumes, more expensive than ABS</td>
+            <td><span class="p3d-mat-chip hard">Advanced</span></td>
+          </tr>
+          <tr>
+            <td><strong>TPU</strong></td>
+            <td>220–240</td>
+            <td>40–60</td>
+            <td>No</td>
+            <td>Flexible, durable, impact-resistant, wearable</td>
+            <td>Slow print speed needed, Bowden extruder problems, strings</td>
+            <td><span class="p3d-mat-chip medium">Intermediate</span></td>
+          </tr>
+          <tr>
+            <td><strong>Nylon (PA)</strong></td>
+            <td>250–270</td>
+            <td>70–90</td>
+            <td>Recommended</td>
+            <td>High strength, fatigue-resistant, slightly flexible</td>
+            <td>Highly hygroscopic (must be dry), warps, expensive</td>
+            <td><span class="p3d-mat-chip hard">Advanced</span></td>
+          </tr>
+          <tr>
+            <td><strong>Resin (MSLA)</strong></td>
+            <td>N/A</td>
+            <td>N/A</td>
+            <td>Ventilation</td>
+            <td>Incredible detail (0.01 mm), smooth surfaces, rigid</td>
+            <td>Toxic uncured, brittle, small build volume, post-wash needed</td>
+            <td><span class="p3d-mat-chip hard">Advanced</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ TROUBLESHOOTING ══ -->
+    <div class="p3d-card">
+      <p class="p3d-label">07 — Troubleshooting Common Failures</p>
+      <h2>What Went Wrong &amp; How to Fix It</h2>
+
+      <div class="p3d-grid">
+        <div class="p3d-block">
+          <span class="p3d-icon">🍝</span>
+          <h3>Spaghetti / Knocking</h3>
+          <p><strong>Cause:</strong> Print detached from bed mid-print. The nozzle knocks over the loose print and drags filament everywhere.<br><strong>Fix:</strong> Better bed adhesion (brim, higher bed temp, glue stick), level the bed, reduce speed on first layer.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🧵</span>
+          <h3>Stringing / Cobwebs</h3>
+          <p><strong>Cause:</strong> Molten plastic oozes from the nozzle during travel moves.<br><strong>Fix:</strong> Increase retraction distance/speed, reduce nozzle temperature by 5 °C, enable "combing" (travel inside model), dry filament.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🏔️</span>
+          <h3>Warping / Lifting Corners</h3>
+          <p><strong>Cause:</strong> Thermal contraction peels the print off the bed during cooling.<br><strong>Fix:</strong> Higher bed temperature, add brim, use an enclosure, apply adhesive (glue stick, hairspray, Magigoo), avoid draughts.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🕳️</span>
+          <h3>Under-Extrusion / Gaps</h3>
+          <p><strong>Cause:</strong> Not enough filament reaching the nozzle. Partial clog, feeder slipping, or flow rate too low.<br><strong>Fix:</strong> Increase flow rate by 5–10%, clean/replace nozzle, check feeder gear tension, increase temperature slightly.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🍄</span>
+          <h3>Blobs / Zits on Surface</h3>
+          <p><strong>Cause:</strong> Extra material oozes at the start/end of perimeters or during coast.<br><strong>Fix:</strong> Enable "seam hiding", tune retraction, lower pressure advance (Klipper) or linear advance (Marlin), reduce temperature.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">📦</span>
+          <h3>Poor Top Surface / Pillowing</h3>
+          <p><strong>Cause:</strong> Not enough top layers or infill to bridge across, causing the top to sag into the infill gaps.<br><strong>Fix:</strong> Add more top layers (4–6 min), increase infill density, or use a top surface pattern like ironing.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🌊</span>
+          <h3>Layer Lines / Banding</h3>
+          <p><strong>Cause:</strong> Vibration in the printer frame, inconsistent extrusion, or Z-wobble from a bent lead screw.<br><strong>Fix:</strong> Tighten belts, enable input shaping (Klipper), reduce speed, check/replace lead screw or Z-axis coupling.</p>
+        </div>
+        <div class="p3d-block">
+          <span class="p3d-icon">🧱</span>
+          <h3>Layer Delamination / Splitting</h3>
+          <p><strong>Cause:</strong> Layers not bonding — temperature too low, speed too high, excessive cooling for the material.<br><strong>Fix:</strong> Raise nozzle temperature by 5–10 °C, reduce part cooling fan speed, reduce print speed, dry filament.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ QUIZ ══ -->
+    <div class="p3d-card">
+      <p class="p3d-label">08 — Check Your Understanding</p>
+      <h2>Quick Quiz</h2>
+
+      <div class="p3d-quiz-block" id="pq1">
+        <p class="p3d-quiz-q">1. What is the maximum recommended layer height for a 0.4 mm nozzle?</p>
+        <div class="p3d-quiz-options">
+          <label class="p3d-quiz-opt"><input type="radio" name="pq1" value="a"> 0.10 mm</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq1" value="b"> 0.30 mm</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq1" value="c"> 0.60 mm</label>
+        </div>
+        <p class="p3d-quiz-feedback"></p>
+      </div>
+
+      <div class="p3d-quiz-block" id="pq2">
+        <p class="p3d-quiz-q">2. Which method is generally MORE effective at increasing part strength?</p>
+        <div class="p3d-quiz-options">
+          <label class="p3d-quiz-opt"><input type="radio" name="pq2" value="a"> Increasing infill from 20% to 80%</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq2" value="b"> Adding extra wall layers</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq2" value="c"> Slowing down the print speed</label>
+        </div>
+        <p class="p3d-quiz-feedback"></p>
+      </div>
+
+      <div class="p3d-quiz-block" id="pq3">
+        <p class="p3d-quiz-q">3. Why does FDM print TPU slowly (20–35 mm/s)?</p>
+        <div class="p3d-quiz-options">
+          <label class="p3d-quiz-opt"><input type="radio" name="pq3" value="a"> TPU melts at a lower temperature</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq3" value="b"> TPU's flexibility causes it to buckle and jam in the feed path at high speed</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq3" value="c"> Fast speeds cause TPU to warp off the bed</label>
+        </div>
+        <p class="p3d-quiz-feedback"></p>
+      </div>
+
+      <div class="p3d-quiz-block" id="pq4">
+        <p class="p3d-quiz-q">4. What causes stringing between printed parts?</p>
+        <div class="p3d-quiz-options">
+          <label class="p3d-quiz-opt"><input type="radio" name="pq4" value="a"> Bed temperature too high</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq4" value="b"> Molten plastic oozing from the nozzle during travel moves</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq4" value="c"> Print speed too slow</label>
+        </div>
+        <p class="p3d-quiz-feedback"></p>
+      </div>
+
+      <div class="p3d-quiz-block" id="pq5">
+        <p class="p3d-quiz-q">5. Which material should you use for an outdoor part that must resist UV and rain?</p>
+        <div class="p3d-quiz-options">
+          <label class="p3d-quiz-opt"><input type="radio" name="pq5" value="a"> PLA</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq5" value="b"> TPU</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq5" value="c"> ASA</label>
+        </div>
+        <p class="p3d-quiz-feedback"></p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer style="text-align:center; padding:2rem 1rem; color:#6b7280; font-size:0.8rem;">
+    <a href="../steam-lessons.html" style="color:#c43d00; text-decoration:none; font-weight:700;">← Back to STEAM Lessons</a>
+  </footer>
+
+  <!-- ══════════════════════════════════════════════════
+       SLICER SIMULATOR LOGIC
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var canvas  = document.getElementById('p3d-canvas');
+    var ctx     = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+
+    // gather controls
+    var lhSlider    = document.getElementById('lh-slider');
+    var infSlider   = document.getElementById('inf-slider');
+    var wallsSlider = document.getElementById('walls-slider');
+    var spdSlider   = document.getElementById('spd-slider');
+    var tmpSlider   = document.getElementById('tmp-slider');
+    var supSelect   = document.getElementById('sup-select');
+    var matSelect   = document.getElementById('mat-select');
+
+    var matProfiles = {
+      pla:  { name:'PLA',  tmpRange:[195,220], bedRange:[55,65],  enclosure:false, stringy:false },
+      petg: { name:'PETG', tmpRange:[230,250], bedRange:[70,85],  enclosure:false, stringy:true  },
+      abs:  { name:'ABS',  tmpRange:[230,250], bedRange:[100,110],enclosure:true,  stringy:false },
+      tpu:  { name:'TPU',  tmpRange:[220,240], bedRange:[40,60],  enclosure:false, stringy:true, slowOnly:true },
+      asa:  { name:'ASA',  tmpRange:[240,260], bedRange:[90,110], enclosure:true,  stringy:false },
+    };
+
+    function getSettings() {
+      return {
+        lh:    parseFloat(lhSlider.value),
+        inf:   parseInt(infSlider.value),
+        walls: parseInt(wallsSlider.value),
+        spd:   parseInt(spdSlider.value),
+        tmp:   parseInt(tmpSlider.value),
+        sup:   supSelect.value,
+        mat:   matSelect.value,
+      };
+    }
+
+    function updateLabels(s) {
+      document.getElementById('lh-val').textContent    = s.lh.toFixed(2) + ' mm';
+      document.getElementById('inf-val').textContent   = s.inf + '%';
+      document.getElementById('walls-val').textContent = s.walls;
+      document.getElementById('spd-val').textContent   = s.spd + ' mm/s';
+      document.getElementById('tmp-val').textContent   = s.tmp + ' °C';
+    }
+
+    function calcStats(s) {
+      var modelH   = 60;   // mm (representative object ~60 mm tall)
+      var modelVol = 100;  // cm³ representative volume
+      var layers   = Math.round(modelH / s.lh);
+      var wallMm   = (s.walls * 0.4).toFixed(1);
+
+      // filament estimate: shell + infill contribution
+      var shellFrac = Math.min(s.walls * 0.4 * 2 / 40, 0.8);  // rough shell proportion
+      var fillFrac  = (1 - shellFrac) * (s.inf / 100);
+      var filament  = Math.round((shellFrac + fillFrac) * modelVol * 1.25 * 10) / 10;
+
+      // time: base time inversely proportional to speed, proportional to layers and infill
+      var baseTime = (layers * (50 + s.inf * 0.8)) / (s.spd * 0.7);
+      if (s.sup !== 'none') baseTime *= 1.3;
+      var timeMin  = Math.round(baseTime * 0.4);
+
+      return { layers: layers, wallMm: wallMm, filament: filament, time: timeMin };
+    }
+
+    function calcQuality(s) {
+      var score = 100;
+      // layer height penalty (coarser = lower quality)
+      score -= (s.lh - 0.05) / 0.35 * 35;
+      // speed penalty
+      score -= Math.max(0, (s.spd - 60) / 240) * 25;
+      // walls bonus
+      score += Math.min(s.walls - 2, 4) * 3;
+      // infill bonus (modest)
+      score += Math.min(s.inf / 100, 0.6) * 8;
+      score = Math.max(0, Math.min(100, Math.round(score)));
+      return score;
+    }
+
+    function calcWarnings(s) {
+      var warns = [];
+      var mat   = matProfiles[s.mat];
+      // temperature
+      if (s.tmp < mat.tmpRange[0]) warns.push({ text: '⚠ Temp too low for ' + mat.name + ' (min ' + mat.tmpRange[0] + ' °C)', cls: 'danger' });
+      if (s.tmp > mat.tmpRange[1]) warns.push({ text: '⚠ Temp too high — may degrade ' + mat.name, cls: 'danger' });
+      // speed
+      if (s.mat === 'tpu' && s.spd > 35) warns.push({ text: '⚠ TPU needs ≤35 mm/s or it may jam', cls: 'danger' });
+      // enclosure
+      if (mat.enclosure) warns.push({ text: '🏠 ' + mat.name + ' requires an enclosure to prevent warping', cls: '' });
+      // stringing
+      if (mat.stringy && s.tmp > mat.tmpRange[1] - 5) warns.push({ text: '🧵 PETG strings at high temp — consider reducing by 5 °C', cls: '' });
+      // layer height vs nozzle
+      if (s.lh > 0.3) warns.push({ text: '⚠ Layer height >0.30 mm may cause gaps on fine features', cls: '' });
+      if (s.lh > 0.35) warns.push({ text: '⚠ Layer height >75% of 0.4 mm nozzle — poor adhesion risk', cls: 'danger' });
+      // infill too low
+      if (s.inf === 0 && s.walls < 4) warns.push({ text: '⚠ Zero infill with <4 walls — top surface will sag', cls: 'danger' });
+      // all good
+      if (warns.length === 0) warns.push({ text: '✓ Settings look solid for ' + mat.name, cls: 'ok' });
+      return warns;
+    }
+
+    function updateStats(s) {
+      var st = calcStats(s);
+      document.getElementById('stat-time').innerHTML     = st.time + '<span class="p3d-stat-unit"> min</span>';
+      document.getElementById('stat-layers').textContent = st.layers;
+      document.getElementById('stat-filament').innerHTML = st.filament + '<span class="p3d-stat-unit"> g</span>';
+      document.getElementById('stat-walls').innerHTML    = st.wallMm + '<span class="p3d-stat-unit"> mm</span>';
+    }
+
+    function updateQuality(s) {
+      var q    = calcQuality(s);
+      var fill = document.getElementById('p3d-quality-fill');
+      var text = document.getElementById('p3d-quality-text');
+      var col  = q >= 75 ? '#34c759' : q >= 50 ? '#ff9500' : '#ff3b30';
+      var label = q >= 80 ? 'Excellent' : q >= 65 ? 'Good' : q >= 45 ? 'Draft' : 'Rough';
+      fill.style.width      = q + '%';
+      fill.style.background = col;
+      text.textContent      = label + ' (' + q + '%)';
+      text.style.color      = col;
+    }
+
+    function updateWarnings(s) {
+      var box   = document.getElementById('p3d-warnings');
+      var warns = calcWarnings(s);
+      box.innerHTML = warns.map(function(w) {
+        return '<span class="p3d-warn-chip ' + (w.cls || '') + '">' + w.text + '</span>';
+      }).join('');
+    }
+
+    /* ── Canvas Renderer ── */
+    function drawSim(s) {
+      ctx.clearRect(0, 0, W, H);
+
+      // background
+      ctx.fillStyle = '#0e0700';
+      ctx.fillRect(0, 0, W, H);
+
+      var PAD = 30;
+      var modelW = W * 0.55;
+      var modelH = H - PAD * 2;
+      var modelX = PAD;
+      var modelY = PAD;
+
+      // ── calculate layer count visible in preview
+      var previewModelMM = 60;
+      var layers = Math.round(previewModelMM / s.lh);
+      var layerPx = modelH / layers;
+
+      // draw layers
+      for (var i = 0; i < layers; i++) {
+        var y = modelY + modelH - (i + 1) * layerPx;
+        var h = Math.max(layerPx - 0.5, 0.5);
+
+        // walls
+        for (var w = 0; w < s.walls; w++) {
+          var wallX = modelX + w * 4;
+          var wCol = i % 2 === 0 ? 'rgba(255,107,53,0.9)' : 'rgba(220,80,30,0.85)';
+          ctx.fillStyle = wCol;
+          ctx.fillRect(wallX, y, 4, h);
+          // right wall
+          ctx.fillRect(modelX + modelW - 4 - w * 4, y, 4, h);
+        }
+
+        // infill (only if density > 0)
+        if (s.inf > 0) {
+          var infStart = modelX + s.walls * 4 + 2;
+          var infEnd   = modelX + modelW - s.walls * 4 - 2;
+          var infW     = infEnd - infStart;
+
+          if (s.inf >= 100) {
+            // solid
+            ctx.fillStyle = 'rgba(255,149,0,0.65)';
+            ctx.fillRect(infStart, y, infW, h);
+          } else {
+            // grid/gyroid representation — vertical lines
+            var spacing = Math.max(2, Math.round((100 / s.inf) * 2));
+            ctx.fillStyle = 'rgba(255,149,0,0.5)';
+            // alternating horizontal/vertical by layer
+            if (i % 2 === 0) {
+              for (var xi = infStart; xi < infEnd; xi += spacing) {
+                ctx.fillRect(xi, y, 1.5, h);
+              }
+            } else {
+              // horizontal stripe per layer (shows as dot when thin)
+              ctx.fillStyle = 'rgba(255,196,0,0.35)';
+              ctx.fillRect(infStart, y, infW, Math.max(h * 0.4, 0.5));
+            }
+          }
+        }
+      }
+
+      // model outline
+      ctx.strokeStyle = 'rgba(255,107,53,0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(modelX, modelY, modelW, modelH);
+
+      // supports
+      if (s.sup !== 'none') {
+        var supX = modelX + modelW + 20;
+        var supW = W - supX - PAD;
+        // draw support column (simplified)
+        ctx.fillStyle = 'rgba(0,200,255,0.08)';
+        ctx.fillRect(supX, modelY + modelH * 0.35, supW, modelH * 0.65);
+        // support lines
+        ctx.strokeStyle = 'rgba(0,200,255,0.35)';
+        ctx.lineWidth = 1;
+        var supSpacing = s.sup === 'tree' ? 8 : 5;
+        for (var sy = modelY + modelH * 0.35; sy < modelY + modelH; sy += supSpacing) {
+          ctx.beginPath();
+          ctx.moveTo(supX, sy);
+          ctx.lineTo(supX + supW, sy);
+          ctx.stroke();
+        }
+        if (s.sup === 'tree') {
+          // tree trunk
+          ctx.strokeStyle = 'rgba(0,200,255,0.55)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(supX + supW / 2, modelY + modelH);
+          ctx.lineTo(supX + supW / 2, modelY + modelH * 0.55);
+          ctx.lineTo(supX + supW * 0.2, modelY + modelH * 0.35);
+          ctx.moveTo(supX + supW / 2, modelY + modelH * 0.55);
+          ctx.lineTo(supX + supW * 0.8, modelY + modelH * 0.35);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(0,200,255,0.6)';
+          ctx.font = '700 9px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText('TREE', supX + supW / 2, modelY + modelH * 0.28);
+        } else {
+          ctx.fillStyle = 'rgba(0,200,255,0.5)';
+          ctx.font = '700 9px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText('SUPPORT', supX + supW / 2, modelY + modelH * 0.3);
+        }
+      }
+
+      // annotations
+      ctx.fillStyle = 'rgba(255,200,160,0.7)';
+      ctx.font = '700 10px system-ui';
+      ctx.textAlign = 'left';
+      ctx.fillText('Layer: ' + s.lh.toFixed(2) + ' mm', modelX, PAD - 10);
+      ctx.textAlign = 'right';
+      ctx.fillText(layers + ' layers', modelX + modelW, PAD - 10);
+
+      // layer callout line
+      if (layers <= 200) {
+        var arrowY = modelY + modelH - layerPx / 2;
+        ctx.strokeStyle = 'rgba(255,200,160,0.4)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3,3]);
+        ctx.beginPath();
+        ctx.moveTo(modelX + modelW, arrowY);
+        ctx.lineTo(modelX + modelW + (s.sup !== 'none' ? 18 : 14), arrowY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    function refresh() {
+      var s = getSettings();
+      updateLabels(s);
+      updateStats(s);
+      updateQuality(s);
+      updateWarnings(s);
+      drawSim(s);
+    }
+
+    [lhSlider, infSlider, wallsSlider, spdSlider, tmpSlider].forEach(function(el) {
+      el.addEventListener('input', refresh);
+    });
+    [supSelect, matSelect].forEach(function(el) {
+      el.addEventListener('change', refresh);
+    });
+
+    refresh();
+  })();
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       SCENARIO CHOOSER
+  ══════════════════════════════════════════════════ -->
+  <script>
+  document.querySelectorAll('.p3d-scenario').forEach(function(card) {
+    card.addEventListener('click', function() {
+      var key = this.dataset.scenario;
+      // toggle active on card
+      var wasActive = this.classList.contains('active');
+      document.querySelectorAll('.p3d-scenario').forEach(function(c) { c.classList.remove('active'); });
+      document.querySelectorAll('.p3d-scenario-detail').forEach(function(d) { d.classList.remove('active'); });
+      if (!wasActive) {
+        this.classList.add('active');
+        var detail = document.getElementById('detail-' + key);
+        if (detail) {
+          detail.classList.add('active');
+          detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    });
+  });
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       QUIZ
+  ══════════════════════════════════════════════════ -->
+  <script>
+  var PQ_ANS = { pq1: 'b', pq2: 'b', pq3: 'b', pq4: 'b', pq5: 'c' };
+  var PQ_OK  = {
+    pq1: '✓ Correct — 75% of 0.4 mm nozzle = 0.30 mm max layer height for reliable adhesion.',
+    pq2: '✓ Correct — extra walls almost always increase strength more efficiently than high infill.',
+    pq3: '✓ Correct — TPU\'s flexibility lets it buckle in the feed path, causing jams at high speed.',
+    pq4: '✓ Correct — stringing happens when molten plastic oozes during travel moves. Retraction and lower temperature fix it.',
+    pq5: '✓ Correct — ASA is UV-stabilised and weather-resistant. PLA degrades outdoors in months.',
+  };
+  var PQ_WRONG = {
+    pq1: '✗ Not quite — the rule is max layer height = 75% of nozzle diameter. For a 0.4 mm nozzle that\'s 0.30 mm.',
+    pq2: '✗ Not quite — walls carry the most load in FDM. Adding walls is more effective than packing in infill.',
+    pq3: '✗ Not quite — TPU jams because its flexibility lets it buckle in the extruder path at high speed, not because of melting temperature.',
+    pq4: '✗ Not quite — stringing is caused by plastic oozing during travel. Fix: increase retraction, lower temperature, dry filament.',
+    pq5: '✗ Not quite — PLA breaks down in UV and heat outdoors. ASA is specifically formulated for outdoor UV resistance.',
+  };
+
+  document.querySelectorAll('.p3d-quiz-block').forEach(function(block) {
+    var id  = block.id;
+    var fb  = block.querySelector('.p3d-quiz-feedback');
+    block.querySelectorAll('.p3d-quiz-opt').forEach(function(opt) {
+      opt.addEventListener('click', function() {
+        if (block.dataset.answered) return;
+        block.dataset.answered = '1';
+        var val     = opt.querySelector('input').value;
+        var correct = val === PQ_ANS[id];
+        opt.classList.add(correct ? 'correct' : 'wrong');
+        fb.textContent  = correct ? PQ_OK[id] : PQ_WRONG[id];
+        fb.style.color  = correct ? '#1a5c2a' : '#6b1515';
+      });
+    });
+  });
+  </script>
+
+</body>
+</html>
