@@ -100,6 +100,45 @@
     .p3d-block p  { margin: 0; font-size: 0.86rem; line-height: 1.55; color: #3a2a1a; }
     .p3d-icon     { font-size: 1.4rem; margin-bottom: 0.4rem; display: block; }
 
+    /* ── vocab flip cards ── */
+    .p3d-flip-grid { --p3d-flip-height: 210px; }
+    .p3d-flip-card { perspective: 900px; height: var(--p3d-flip-height); cursor: pointer; }
+    .p3d-flip-inner {
+      position: relative; width: 100%; height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.52s cubic-bezier(0.4,0.2,0.2,1);
+      border-radius: 16px;
+    }
+    .p3d-flip-card.flipped .p3d-flip-inner { transform: rotateY(180deg); }
+    .p3d-flip-front, .p3d-flip-back {
+      position: absolute; inset: 0; border-radius: 16px;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid rgba(255,107,53,0.16);
+      box-sizing: border-box;
+    }
+    .p3d-flip-front {
+      background: rgba(255,107,53,0.06);
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      text-align: center; gap: 0.4rem;
+    }
+    .p3d-flip-icon { font-size: 1.7rem; line-height: 1; }
+    .p3d-flip-front h3 { margin: 0; font-size: 0.95rem; font-weight: 800; color: #8a2900; }
+    .p3d-flip-hint {
+      font-size: 0.66rem; color: rgba(255,107,53,0.55);
+      font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    }
+    .p3d-flip-back {
+      background: linear-gradient(145deg, rgba(255,107,53,0.12), rgba(255,196,0,0.08));
+      transform: rotateY(180deg);
+      display: flex; flex-direction: column; justify-content: center; gap: 0.3rem;
+      overflow-y: auto;
+    }
+    .p3d-flip-back h3 { margin: 0; font-size: 0.9rem; font-weight: 800; color: #8a2900; }
+    .p3d-flip-back p  { margin: 0; font-size: 0.82rem; line-height: 1.52; color: #3a2a1a; }
+    .p3d-flip-card:focus-visible .p3d-flip-inner { box-shadow: 0 0 0 3px rgba(255,107,53,0.35); }
+
     /* ── callout ── */
     .p3d-callout {
       border-radius: 14px; border-left: 4px solid #ff6b35;
@@ -467,36 +506,84 @@
       <p>FDM (Fused Deposition Modelling) is the most common type of desktop 3D printing. A spool of plastic filament is fed through a heated nozzle called a <strong>hotend</strong>, which melts it and deposits it in precise paths on a build platform. The platform lowers by one layer height after each pass, and the process repeats until a full 3D object has been built up, one thin slice at a time.</p>
       <p>A <strong>slicer</strong> is the software (Cura, PrusaSlicer, Bambu Studio, OrcaSlicer) that converts your 3D model file (STL/3MF) into the G-code instructions the printer follows. Every setting below lives inside the slicer — understanding them is what separates a print that works from one that fails.</p>
 
-      <div class="p3d-grid">
-        <div class="p3d-block">
-          <span class="p3d-icon">🌡️</span>
-          <h3>Hotend &amp; Nozzle</h3>
-          <p>The heated nozzle melts filament at 180–300 °C depending on material. Standard nozzles are 0.4 mm brass. Hardened steel nozzles are needed for abrasive filaments like carbon-fibre or glow-in-the-dark.</p>
+      <div class="p3d-grid p3d-flip-grid" id="p3d-vocab-grid">
+        <div class="p3d-flip-card" tabindex="0" aria-label="Hotend &amp; Nozzle — click to reveal">
+          <div class="p3d-flip-inner">
+            <div class="p3d-flip-front">
+              <span class="p3d-flip-icon">🌡️</span>
+              <h3>Hotend &amp; Nozzle</h3>
+              <span class="p3d-flip-hint">tap to reveal</span>
+            </div>
+            <div class="p3d-flip-back">
+              <h3>Hotend &amp; Nozzle</h3>
+              <p>The heated nozzle melts filament at 180–300 °C depending on material. Standard nozzles are 0.4 mm brass. Hardened steel nozzles are needed for abrasive filaments like carbon-fibre or glow-in-the-dark.</p>
+            </div>
+          </div>
         </div>
-        <div class="p3d-block">
-          <span class="p3d-icon">🛏️</span>
-          <h3>Heated Bed</h3>
-          <p>The build surface is usually heated (50–110 °C) to prevent warping — when the first layer cools too fast it contracts and peels up. PEI spring-steel sheets, glass, and textured plates are common bed surfaces.</p>
+        <div class="p3d-flip-card" tabindex="0" aria-label="Heated Bed — click to reveal">
+          <div class="p3d-flip-inner">
+            <div class="p3d-flip-front">
+              <span class="p3d-flip-icon">🛏️</span>
+              <h3>Heated Bed</h3>
+              <span class="p3d-flip-hint">tap to reveal</span>
+            </div>
+            <div class="p3d-flip-back">
+              <h3>Heated Bed</h3>
+              <p>The build surface is usually heated (50–110 °C) to prevent warping — when the first layer cools too fast it contracts and peels up. PEI spring-steel sheets, glass, and textured plates are common bed surfaces.</p>
+            </div>
+          </div>
         </div>
-        <div class="p3d-block">
-          <span class="p3d-icon">⚙️</span>
-          <h3>Extruder</h3>
-          <p>The extruder motor feeds filament into the hotend. A <em>direct drive</em> extruder sits on the printhead (better for flexible filaments). A <em>Bowden</em> extruder sits remotely with a tube (lighter, faster, but worse retraction).</p>
+        <div class="p3d-flip-card" tabindex="0" aria-label="Extruder — click to reveal">
+          <div class="p3d-flip-inner">
+            <div class="p3d-flip-front">
+              <span class="p3d-flip-icon">⚙️</span>
+              <h3>Extruder</h3>
+              <span class="p3d-flip-hint">tap to reveal</span>
+            </div>
+            <div class="p3d-flip-back">
+              <h3>Extruder</h3>
+              <p>The extruder motor feeds filament into the hotend. A <em>direct drive</em> extruder sits on the printhead (better for flexible filaments). A <em>Bowden</em> extruder sits remotely with a tube (lighter, faster, but worse retraction).</p>
+            </div>
+          </div>
         </div>
-        <div class="p3d-block">
-          <span class="p3d-icon">💨</span>
-          <h3>Part Cooling Fan</h3>
-          <p>Plastic must solidify quickly after extrusion to hold fine details and prevent drooping on overhangs. High cooling = sharper details, better overhangs. Too much cooling = layer adhesion problems with some materials (ABS, ASA).</p>
+        <div class="p3d-flip-card" tabindex="0" aria-label="Part Cooling Fan — click to reveal">
+          <div class="p3d-flip-inner">
+            <div class="p3d-flip-front">
+              <span class="p3d-flip-icon">💨</span>
+              <h3>Part Cooling Fan</h3>
+              <span class="p3d-flip-hint">tap to reveal</span>
+            </div>
+            <div class="p3d-flip-back">
+              <h3>Part Cooling Fan</h3>
+              <p>Plastic must solidify quickly after extrusion to hold fine details and prevent drooping on overhangs. High cooling = sharper details, better overhangs. Too much cooling = layer adhesion problems with some materials (ABS, ASA).</p>
+            </div>
+          </div>
         </div>
-        <div class="p3d-block">
-          <span class="p3d-icon">📐</span>
-          <h3>Build Volume</h3>
-          <p>The maximum size a printer can produce, measured in X × Y × Z. A typical desktop printer is 220×220×250 mm. Parts bigger than the build volume must be split and joined with adhesive, screws, or snap-fits.</p>
+        <div class="p3d-flip-card" tabindex="0" aria-label="Build Volume — click to reveal">
+          <div class="p3d-flip-inner">
+            <div class="p3d-flip-front">
+              <span class="p3d-flip-icon">📐</span>
+              <h3>Build Volume</h3>
+              <span class="p3d-flip-hint">tap to reveal</span>
+            </div>
+            <div class="p3d-flip-back">
+              <h3>Build Volume</h3>
+              <p>The maximum size a printer can produce, measured in X × Y × Z. A typical desktop printer is 220×220×250 mm. Parts bigger than the build volume must be split and joined with adhesive, screws, or snap-fits.</p>
+            </div>
+          </div>
         </div>
-        <div class="p3d-block">
-          <span class="p3d-icon">🧊</span>
-          <h3>G-Code</h3>
-          <p>The raw instruction language sent to the printer: coordinates, speeds, temperatures, fan speeds, retractions. You rarely write it by hand — the slicer generates it — but reading G-code can help debug failed prints.</p>
+        <div class="p3d-flip-card" tabindex="0" aria-label="G-Code — click to reveal">
+          <div class="p3d-flip-inner">
+            <div class="p3d-flip-front">
+              <span class="p3d-flip-icon">🧊</span>
+              <h3>G-Code</h3>
+              <span class="p3d-flip-hint">tap to reveal</span>
+            </div>
+            <div class="p3d-flip-back">
+              <h3>G-Code</h3>
+              <p>The raw instruction language sent to the printer: coordinates, speeds, temperatures, fan speeds, retractions. You rarely write it by hand — the slicer generates it — but reading G-code can help debug failed prints.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1459,6 +1546,21 @@
     });
 
     refresh();
+  })();
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       VOCAB FLIP CARDS
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    document.querySelectorAll('.p3d-flip-card').forEach(function(card) {
+      function toggle() { card.classList.toggle('flipped'); }
+      card.addEventListener('click', toggle);
+      card.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+      });
+    });
   })();
   </script>
 
