@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Virtual Reality — How It Works &amp; How to Build It · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Fabrication Lesson 02 — explore stereoscopic vision, binaural audio, and how VR headsets trick your brain, then implement VR in your own games." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── page chrome ── */
+    body {
+      margin: 0;
+      color: #182631;
+      background:
+        radial-gradient(1100px 520px at 10% -10%, rgba(111, 76, 255, 0.14), transparent 58%),
+        radial-gradient(920px 460px at 100% 0%,   rgba(0, 212, 255, 0.10), transparent 54%),
+        linear-gradient(180deg, #f4f2ff 0%, #eef3f6 100%);
+    }
+
+    .vr-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px) saturate(140%);
+      background: rgba(244, 242, 255, 0.88);
+      border-bottom: 1px solid rgba(111, 76, 255, 0.14);
+    }
+    .vr-topbar-inner, .vr-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+    .vr-topbar-inner {
+      min-height: 54px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .vr-topbar a { color: #5534c8; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
+    .vr-topbar a:hover { color: #2f1e88; }
+    .vr-topbar-title { font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; text-align: center; color: #1a0533; }
+
+    .vr-shell { padding: 2rem 0 3rem; display: grid; gap: 1.2rem; }
+
+    /* ── shared card ── */
+    .vr-card {
+      border-radius: 26px;
+      border: 1px solid rgba(111, 76, 255, 0.14);
+      background: linear-gradient(180deg, rgba(255,255,255,0.97), rgba(244,242,255,0.96));
+      box-shadow: 0 18px 40px rgba(15,23,42,0.08);
+      padding: 2rem 2.2rem;
+    }
+    .vr-card h2 { margin: 0 0 0.6rem; font-size: 1.2rem; font-weight: 800; color: #1a0533; }
+    .vr-card p  { margin: 0 0 0.7rem; line-height: 1.65; color: #3a3a4a; }
+    .vr-card p:last-child { margin-bottom: 0; }
+
+    /* ── hero ── */
+    .vr-hero-card {
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid rgba(111, 76, 255, 0.22);
+      background:
+        radial-gradient(ellipse at 18% 35%, rgba(111, 76, 255, 0.82), transparent 54%),
+        radial-gradient(ellipse at 82% 68%, rgba(0, 212, 255, 0.6), transparent 52%),
+        linear-gradient(135deg, #1a0533 0%, #0d1b3e 100%);
+      color: #fff;
+      padding: 2.4rem 2.4rem 2rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.4rem;
+      align-items: center;
+    }
+    @media (max-width: 640px) { .vr-hero-card { grid-template-columns: 1fr; } }
+    .vr-hero-kicker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(180,160,255,0.88); margin-bottom: 0.5rem;
+    }
+    .vr-hero-title { font-size: clamp(1.5rem,3.5vw,2.2rem); font-weight: 900; margin: 0 0 0.6rem; line-height: 1.1; }
+    .vr-hero-sub   { font-size: 0.95rem; color: rgba(210,230,255,0.82); margin: 0; max-width: 52ch; line-height: 1.55; }
+    .vr-hero-badge {
+      display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .vr-hero-badge span {
+      padding: 0.28rem 0.72rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(210,230,255,0.18);
+      color: #e8f0ff;
+      white-space: nowrap;
+    }
+
+    /* ── section headings ── */
+    .vr-section-label {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #6f4cff; margin: 0 0 0.8rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .vr-section-label::after { content: ""; flex: 1; height: 1px; background: rgba(111,76,255,0.18); }
+
+    /* ── concept grid ── */
+    .vr-concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .vr-concept-block {
+      border-radius: 16px;
+      border: 1px solid rgba(111,76,255,0.13);
+      background: rgba(111,76,255,0.04);
+      padding: 1.1rem 1.2rem;
+    }
+    .vr-concept-block h3 { margin: 0 0 0.4rem; font-size: 0.95rem; font-weight: 800; color: #2f1e88; }
+    .vr-concept-block p  { margin: 0; font-size: 0.86rem; line-height: 1.55; color: #3a3a4a; }
+    .vr-concept-icon     { font-size: 1.5rem; margin-bottom: 0.4rem; display: block; }
+
+    /* ══════════════════════════════════════════
+       BINAURAL SIMULATOR
+    ══════════════════════════════════════════ */
+    .vr-sim-card {
+      border-radius: 26px;
+      border: 1px solid rgba(0,212,255,0.22);
+      background: linear-gradient(160deg, #0d1b3e 0%, #1a0533 100%);
+      padding: 2rem 2.2rem;
+      color: #fff;
+    }
+    .vr-sim-card h2 { color: #c8b8ff; margin: 0 0 0.3rem; font-size: 1.15rem; font-weight: 800; }
+    .vr-sim-card p  { color: rgba(210,230,255,0.8); font-size: 0.88rem; margin: 0 0 1.4rem; line-height: 1.55; }
+
+    /* head */
+    .vr-sim-scene {
+      position: relative;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto 1.4rem;
+      aspect-ratio: 1 / 1;
+      user-select: none;
+    }
+    #vr-room-canvas {
+      width: 100%; height: 100%;
+      border-radius: 20px;
+      border: 1px solid rgba(111,76,255,0.3);
+      background: #0a0820;
+      display: block;
+      cursor: grab;
+    }
+    #vr-room-canvas:active { cursor: grabbing; }
+
+    .vr-sim-controls {
+      display: flex; flex-wrap: wrap; gap: 0.7rem; justify-content: center; margin-bottom: 1rem;
+    }
+    .vr-sim-btn {
+      padding: 0.5rem 1.1rem; border-radius: 999px;
+      border: 1px solid rgba(111,76,255,0.4);
+      background: rgba(111,76,255,0.18);
+      color: #c8b8ff; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .vr-sim-btn:hover  { background: rgba(111,76,255,0.32); border-color: rgba(111,76,255,0.6); }
+    .vr-sim-btn.active { background: rgba(111,76,255,0.55); border-color: #6f4cff; color: #fff; }
+
+    .vr-sim-label {
+      text-align: center; font-size: 0.78rem; color: rgba(180,160,255,0.72);
+      font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    }
+
+    /* angle slider */
+    .vr-angle-row {
+      display: flex; align-items: center; gap: 0.8rem; margin: 1rem 0 0.4rem;
+    }
+    .vr-angle-row label { font-size: 0.8rem; color: rgba(180,160,255,0.8); white-space: nowrap; }
+    #vr-angle-slider {
+      flex: 1; accent-color: #6f4cff; cursor: pointer;
+    }
+    #vr-angle-val { font-size: 0.8rem; color: #c8b8ff; min-width: 3.5ch; text-align: right; }
+
+    /* ear meter */
+    .vr-ear-meters {
+      display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;
+    }
+    .vr-ear-meter { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+    .vr-ear-meter-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(180,160,255,0.72); }
+    .vr-ear-bar-wrap {
+      width: 38px; height: 110px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(111,76,255,0.2);
+      display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden;
+    }
+    .vr-ear-bar { width: 100%; transition: height 0.1s linear; border-radius: 6px 6px 0 0; }
+    #vr-bar-left  .vr-ear-bar { background: linear-gradient(180deg, #00d4ff, #6f4cff); }
+    #vr-bar-right .vr-ear-bar { background: linear-gradient(180deg, #ff6bdf, #6f4cff); }
+
+    /* ══════════════════════════════════════════
+       STEREOSCOPIC VISUALISER
+    ══════════════════════════════════════════ */
+    .vr-stereo-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin: 1.2rem 0;
+    }
+    .vr-stereo-eye {
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      position: relative;
+    }
+    .vr-stereo-eye canvas { width: 100%; height: 100%; display: block; }
+    .vr-stereo-eye-label {
+      position: absolute; bottom: 0.5rem; left: 50%; transform: translateX(-50%);
+      font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      background: rgba(0,0,0,0.55); color: #c8b8ff; padding: 0.18rem 0.5rem; border-radius: 999px;
+    }
+    .vr-stereo-merged {
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      position: relative;
+      margin-top: 0.6rem;
+    }
+    .vr-stereo-merged canvas { width: 100%; height: 100%; display: block; }
+    .vr-stereo-merged-label {
+      position: absolute; top: 0.5rem; left: 50%; transform: translateX(-50%);
+      font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      background: rgba(0,0,0,0.55); color: #00d4ff; padding: 0.18rem 0.5rem; border-radius: 999px;
+    }
+    #vr-iod-row { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.8rem; }
+    #vr-iod-row label { font-size: 0.8rem; color: #3a3a4a; white-space: nowrap; }
+    #vr-iod-slider { flex: 1; accent-color: #6f4cff; cursor: pointer; }
+    #vr-iod-val { font-size: 0.8rem; color: #2f1e88; min-width: 3.5ch; text-align: right; }
+
+    /* ── code blocks ── */
+    .vr-code-card {
+      border-radius: 26px;
+      background: #0d1117;
+      border: 1px solid rgba(111,76,255,0.22);
+      overflow: hidden;
+    }
+    .vr-code-tab-bar {
+      display: flex; gap: 0; border-bottom: 1px solid rgba(111,76,255,0.18);
+      background: rgba(255,255,255,0.03);
+    }
+    .vr-code-tab {
+      padding: 0.6rem 1.1rem; font-size: 0.78rem; font-weight: 700; color: rgba(180,160,255,0.55);
+      cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s;
+      background: none; border-top: none; border-left: none; border-right: none;
+    }
+    .vr-code-tab.active { color: #c8b8ff; border-bottom-color: #6f4cff; }
+    .vr-code-panel { display: none; padding: 1.4rem 1.6rem; overflow-x: auto; }
+    .vr-code-panel.active { display: block; }
+    .vr-code-panel pre {
+      margin: 0; font-size: 0.8rem; line-height: 1.7;
+      font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+      color: #e2deff;
+      white-space: pre;
+    }
+    .c-k  { color: #ff79c6; } /* keyword */
+    .c-fn { color: #50fa7b; } /* function */
+    .c-s  { color: #f1fa8c; } /* string */
+    .c-c  { color: #6272a4; } /* comment */
+    .c-n  { color: #bd93f9; } /* number */
+    .c-p  { color: #8be9fd; } /* property */
+    .c-t  { color: #ffb86c; } /* type */
+
+    /* ── callout ── */
+    .vr-callout {
+      border-radius: 14px;
+      border-left: 4px solid #6f4cff;
+      background: rgba(111,76,255,0.07);
+      padding: 0.9rem 1.1rem;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+      color: #2f1e88;
+      line-height: 1.55;
+    }
+    .vr-callout strong { color: #1a0533; }
+
+    /* ── quiz ── */
+    .vr-quiz-block { margin: 0.6rem 0; }
+    .vr-quiz-q { font-size: 0.9rem; font-weight: 700; color: #1a0533; margin-bottom: 0.5rem; }
+    .vr-quiz-options { display: flex; flex-direction: column; gap: 0.38rem; }
+    .vr-quiz-opt {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.52rem 0.8rem; border-radius: 10px;
+      border: 1px solid rgba(111,76,255,0.18);
+      background: rgba(111,76,255,0.04);
+      cursor: pointer; font-size: 0.86rem; transition: background 0.12s, border-color 0.12s;
+    }
+    .vr-quiz-opt:hover { background: rgba(111,76,255,0.1); border-color: rgba(111,76,255,0.3); }
+    .vr-quiz-opt.correct { background: rgba(52,199,89,0.12); border-color: #34c759; color: #1a5c2a; }
+    .vr-quiz-opt.wrong   { background: rgba(255,59,48,0.09); border-color: #ff3b30; color: #6b1515; }
+    .vr-quiz-opt input   { accent-color: #6f4cff; }
+    .vr-quiz-feedback    { margin-top: 0.5rem; font-size: 0.82rem; min-height: 1.2em; color: #2f1e88; }
+  </style>
+</head>
+<body>
+
+  <!-- ── top bar ── -->
+  <div class="vr-topbar">
+    <div class="vr-topbar-inner">
+      <a href="../steam-lessons.html">← STEAM Lessons</a>
+      <span class="vr-topbar-title">Fabrication · Lesson 02</span>
+      <a href="../steam-lessons.html#module-fabrication">Fabrication</a>
+    </div>
+  </div>
+
+  <main class="vr-shell">
+
+    <!-- ══ HERO ══ -->
+    <div class="vr-hero-card">
+      <div>
+        <p class="vr-hero-kicker">Fabrication · Lesson 02 · Immersive Technology</p>
+        <h1 class="vr-hero-title">Virtual Reality<br>How It Works &amp; How to Build It</h1>
+        <p class="vr-hero-sub">Explore the neuroscience behind VR headsets, interact with a live binaural spatial audio simulator, see how stereoscopic rendering tricks your eyes, then write real code to add VR to your own games.</p>
+      </div>
+      <div class="vr-hero-badge">
+        <span>Binaural Audio</span>
+        <span>Stereoscopic Vision</span>
+        <span>Head Tracking</span>
+        <span>Game Dev</span>
+      </div>
+    </div>
+
+    <!-- ══ WHAT IS VR ══ -->
+    <div class="vr-card">
+      <p class="vr-section-label">01 — What is Virtual Reality?</p>
+      <h2>Tricking Your Brain into Believing a Fake World</h2>
+      <p>Virtual Reality is a technology that replaces your real sensory environment with a computer-generated one so convincingly that your brain treats it as real. Every VR experience rests on three illusions working simultaneously:</p>
+
+      <div class="vr-concept-grid">
+        <div class="vr-concept-block">
+          <span class="vr-concept-icon">👁️</span>
+          <h3>Stereoscopic Vision</h3>
+          <p>Your eyes sit about 63 mm apart (the <em>interpupillary distance</em>). Each eye sees a slightly different angle of the world. Your brain fuses the two images and extracts depth from the difference — called <strong>binocular disparity</strong>. VR headsets render two slightly offset images, one per eye, to recreate this effect.</p>
+        </div>
+        <div class="vr-concept-block">
+          <span class="vr-concept-icon">🔊</span>
+          <h3>Binaural Audio</h3>
+          <p>Sound reaches each ear at a fractionally different time and volume depending on where the source sits in 3D space. Your brain uses these <strong>Interaural Time Differences (ITD)</strong> and <strong>Interaural Level Differences (ILD)</strong> — plus subtle resonance changes from your ear shape — to locate sound with millimetre precision.</p>
+        </div>
+        <div class="vr-concept-block">
+          <span class="vr-concept-icon">🧠</span>
+          <h3>Presence &amp; Immersion</h3>
+          <p><em>Presence</em> is the feeling that you are truly <em>inside</em> the virtual world, not just watching it. It requires low latency (under ~20 ms from head movement to display update), a wide field of view (&gt;90°), and coherent audio-visual coupling. When these align, your brain's <strong>parietal cortex</strong> treats the virtual space as physical reality.</p>
+        </div>
+        <div class="vr-concept-block">
+          <span class="vr-concept-icon">📡</span>
+          <h3>Head Tracking (6DoF)</h3>
+          <p>Modern headsets track <strong>6 Degrees of Freedom</strong>: three rotational (pitch, yaw, roll) and three translational (forward/back, left/right, up/down). IMUs (accelerometers + gyroscopes) handle rotation at 1000+ Hz. Positional tracking uses inside-out cameras or external beacons to track movement through a room.</p>
+        </div>
+        <div class="vr-concept-block">
+          <span class="vr-concept-icon">🖥️</span>
+          <h3>Displays &amp; Refresh Rate</h3>
+          <p>VR displays must refresh at ≥90 Hz (ideally 120 Hz) to prevent motion sickness. Each frame must be rendered twice (once per eye) in under 11 ms. The lenses correct the fisheye distortion of wide-angle screens, and the GPU must pre-distort the image so the lens undistorts it back to correct geometry.</p>
+        </div>
+        <div class="vr-concept-block">
+          <span class="vr-concept-icon">🌀</span>
+          <h3>Motion Sickness &amp; Latency</h3>
+          <p>When visual motion doesn't match vestibular (inner-ear) signals, the brain suspects poisoning — an evolutionary response. This causes <em>cybersickness</em>. The fix: keep motion-to-photon latency below 20 ms, avoid artificial locomotion where possible, and ensure consistent frame rates without stuttering.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ BINAURAL SIMULATOR ══ -->
+    <div class="vr-sim-card">
+      <p class="vr-section-label" style="color:#00d4ff">02 — Binaural Audio Simulator</p>
+      <h2>Move the Sound Source — Hear the Difference</h2>
+      <p>Drag the sound source dot around the head below (or use the angle slider), then click <strong>Play Tone</strong> to hear binaural panning in real time. Watch the ear-level meters show how the signal shifts between left and right. This is exactly what a VR headset does with every sound in its world.</p>
+
+      <div class="vr-sim-scene">
+        <canvas id="vr-room-canvas" width="520" height="520" aria-label="Binaural simulation: drag the sound source around the head"></canvas>
+      </div>
+
+      <div class="vr-angle-row">
+        <label for="vr-angle-slider">Source angle</label>
+        <input type="range" id="vr-angle-slider" min="0" max="359" value="45" step="1" />
+        <span id="vr-angle-val">45°</span>
+      </div>
+
+      <div class="vr-sim-controls">
+        <button class="vr-sim-btn" id="vr-btn-play">▶ Play Tone</button>
+        <button class="vr-sim-btn" id="vr-btn-revolve">↻ Auto-Revolve</button>
+        <button class="vr-sim-btn" id="vr-btn-stop">■ Stop</button>
+      </div>
+
+      <div class="vr-ear-meters">
+        <div class="vr-ear-meter">
+          <span class="vr-ear-meter-label">Left Ear</span>
+          <div class="vr-ear-bar-wrap" id="vr-bar-left">
+            <div class="vr-ear-bar" style="height:50%"></div>
+          </div>
+        </div>
+        <div class="vr-ear-meter">
+          <span class="vr-ear-meter-label">Right Ear</span>
+          <div class="vr-ear-bar-wrap" id="vr-bar-right">
+            <div class="vr-ear-bar" style="height:50%"></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="vr-sim-label" style="margin-top:1rem">Use headphones for the clearest binaural effect</p>
+    </div>
+
+    <!-- ══ STEREOSCOPIC VISUALISER ══ -->
+    <div class="vr-card">
+      <p class="vr-section-label">03 — Stereoscopic Rendering</p>
+      <h2>How VR Headsets Render Depth</h2>
+      <p>Below is a live stereoscopic renderer. Two virtual cameras are placed 63 mm apart (default human IPD). Each renders the same 3D scene from its slightly different vantage point. The merged view at the bottom simulates what a VR lens system combines into perceived depth — notice how the parallax shift between left and right eyes creates the illusion of objects floating at different distances.</p>
+
+      <div class="vr-stereo-wrap">
+        <div class="vr-stereo-eye">
+          <canvas id="vr-left-eye" width="400" height="225"></canvas>
+          <span class="vr-stereo-eye-label">Left Eye</span>
+        </div>
+        <div class="vr-stereo-eye">
+          <canvas id="vr-right-eye" width="400" height="225"></canvas>
+          <span class="vr-stereo-eye-label">Right Eye</span>
+        </div>
+      </div>
+
+      <div class="vr-stereo-merged">
+        <canvas id="vr-merged-eye" width="800" height="225"></canvas>
+        <span class="vr-stereo-merged-label">Merged Stereo View (what the brain sees)</span>
+      </div>
+
+      <div id="vr-iod-row">
+        <label for="vr-iod-slider">IPD (inter-pupillary distance)</label>
+        <input type="range" id="vr-iod-slider" min="10" max="120" value="63" step="1" />
+        <span id="vr-iod-val">63 mm</span>
+      </div>
+
+      <div class="vr-callout">
+        <strong>What to notice:</strong> as you increase IPD, the left and right images diverge further. Very high IPD creates uncomfortable depth cues — this is why real headsets have an IPD adjustment knob (usually 58–72 mm range). Mismatched IPD is one of the leading causes of VR eye strain.
+      </div>
+    </div>
+
+    <!-- ══ HOW TO IMPLEMENT VR IN GAMES ══ -->
+    <div class="vr-card">
+      <p class="vr-section-label">04 — Implementing VR in Your Own Game</p>
+      <h2>From Flat Screen to Virtual World</h2>
+      <p>Every major game engine supports VR through the <strong>OpenXR</strong> standard — a unified API so the same code runs on Meta Quest, PlayStation VR2, SteamVR (Valve Index, HTC Vive), and Windows Mixed Reality. Below are real code patterns for three popular engines used by students. Use headphones while developing to test binaural audio.</p>
+    </div>
+
+    <!-- ══ CODE TABS ══ -->
+    <div class="vr-code-card">
+      <div class="vr-code-tab-bar">
+        <button class="vr-code-tab active" data-tab="unity">Unity (C#)</button>
+        <button class="vr-code-tab" data-tab="godot">Godot 4 (GDScript)</button>
+        <button class="vr-code-tab" data-tab="js">Three.js / WebXR</button>
+      </div>
+
+      <!-- UNITY -->
+      <div class="vr-code-panel active" id="tab-unity">
+        <pre><span class="c-c">// Unity — Add VR in 4 steps
+// 1. Window → Package Manager → Install "XR Plugin Management" + "OpenXR Plugin"
+// 2. Edit → Project Settings → XR Plug-in Management → enable OpenXR
+// 3. Add an XR Origin (Action-Based) to your scene from the XR menu
+// 4. Attach this script to any AudioSource for binaural positioning</span>
+
+<span class="c-k">using</span> UnityEngine;
+<span class="c-k">using</span> UnityEngine.XR;
+
+<span class="c-k">public class</span> <span class="c-t">VRSetup</span> : MonoBehaviour
+{
+    <span class="c-c">// Attach to XR Camera Offset — keeps the player grounded</span>
+    <span class="c-k">void</span> <span class="c-fn">Start</span>()
+    {
+        XRSettings.eyeTextureResolutionScale = <span class="c-n">1.4f</span>;   <span class="c-c">// super-sample for clarity</span>
+        Application.targetFrameRate = <span class="c-n">90</span>;             <span class="c-c">// lock to 90 Hz</span>
+    }
+}
+
+<span class="c-c">// Binaural audio — Unity uses HRTF (Head-Related Transfer Function) automatically
+// when Spatialize is enabled on an AudioSource</span>
+<span class="c-k">public class</span> <span class="c-t">BinauralSound</span> : MonoBehaviour
+{
+    <span class="c-k">void</span> <span class="c-fn">Start</span>()
+    {
+        <span class="c-t">AudioSource</span> src = GetComponent&lt;<span class="c-t">AudioSource</span>&gt;();
+        src.<span class="c-p">spatialize</span>         = <span class="c-k">true</span>;   <span class="c-c">// enable HRTF binaural</span>
+        src.<span class="c-p">spatialBlend</span>      = <span class="c-n">1.0f</span>;  <span class="c-c">// 1 = fully 3D</span>
+        src.<span class="c-p">rolloffMode</span>       = AudioRolloffMode.Logarithmic;
+        src.<span class="c-p">maxDistance</span>       = <span class="c-n">20f</span>;
+        src.<span class="c-p">dopplerLevel</span>      = <span class="c-n">1f</span>;   <span class="c-c">// Doppler shift when moving</span>
+        src.<span class="c-fn">Play</span>();
+    }
+}
+
+<span class="c-c">// Head tracking is handled automatically by XR Origin.
+// To read the headset pose manually:</span>
+<span class="c-k">void</span> <span class="c-fn">Update</span>()
+{
+    <span class="c-t">InputDevice</span> head = InputDevices.<span class="c-fn">GetDeviceAtXRNode</span>(XRNode.Head);
+    head.<span class="c-fn">TryGetFeatureValue</span>(<span class="c-t">CommonUsages</span>.deviceRotation, <span class="c-k">out</span> <span class="c-t">Quaternion</span> rot);
+    head.<span class="c-fn">TryGetFeatureValue</span>(<span class="c-t">CommonUsages</span>.devicePosition,  <span class="c-k">out</span> <span class="c-t">Vector3</span>    pos);
+    <span class="c-c">// rot and pos now give you the exact head orientation in world space</span>
+}</pre>
+      </div>
+
+      <!-- GODOT -->
+      <div class="vr-code-panel" id="tab-godot">
+        <pre><span class="c-c"># Godot 4 — OpenXR VR setup
+# 1. Project → Project Settings → XR → Enable OpenXR
+# 2. Add XROrigin3D → XRCamera3D → XRController3D (left + right) to your scene
+# 3. Attach this script to XROrigin3D</span>
+
+<span class="c-k">extends</span> <span class="c-t">XROrigin3D</span>
+
+<span class="c-k">func</span> <span class="c-fn">_ready</span>() <span class="c-k">-></span> <span class="c-k">void</span>:
+    <span class="c-k">var</span> interface: <span class="c-t">XRInterface</span> = XRServer.<span class="c-fn">find_interface</span>(<span class="c-s">"OpenXR"</span>)
+    <span class="c-k">if</span> interface <span class="c-k">and</span> interface.<span class="c-fn">is_initialized</span>():
+        <span class="c-fn">print</span>(<span class="c-s">"OpenXR initialised"</span>)
+        get_viewport().<span class="c-p">use_xr</span> = <span class="c-k">true</span>
+    <span class="c-k">else</span>:
+        <span class="c-fn">push_warning</span>(<span class="c-s">"OpenXR not available — running flat"</span>)
+
+<span class="c-c"># Binaural audio — attach to any AudioStreamPlayer3D in the scene</span>
+<span class="c-k">extends</span> <span class="c-t">AudioStreamPlayer3D</span>
+
+<span class="c-k">func</span> <span class="c-fn">_ready</span>():
+    <span class="c-c"># Godot uses its built-in HRTF when the listener is an XRCamera3D</span>
+    attenuation_model = <span class="c-t">AudioStreamPlayer3D</span>.ATTENUATION_INVERSE_DISTANCE
+    unit_size        = <span class="c-n">1.0</span>
+    max_distance     = <span class="c-n">20.0</span>
+    doppler_tracking = <span class="c-t">AudioStreamPlayer3D</span>.DOPPLER_TRACKING_PHYSICS_STEP
+    play()
+
+<span class="c-c"># Read head pose manually if needed</span>
+<span class="c-k">func</span> <span class="c-fn">_process</span>(_delta):
+    <span class="c-k">var</span> camera: <span class="c-t">XRCamera3D</span> = $XRCamera3D
+    <span class="c-k">var</span> head_pos: <span class="c-t">Vector3</span>    = camera.global_position
+    <span class="c-k">var</span> head_rot: <span class="c-t">Quaternion</span> = camera.global_transform.basis.<span class="c-fn">get_rotation_quaternion</span>()
+    <span class="c-c"># head_pos and head_rot update every frame from the headset IMU</span></pre>
+      </div>
+
+      <!-- THREE.JS / WEBXR -->
+      <div class="vr-code-panel" id="tab-js">
+        <pre><span class="c-c">// Three.js + WebXR — VR in the browser (no install needed for users!)
+// Requires HTTPS. Works on Meta Quest Browser, Chrome with WebXR flag.</span>
+
+<span class="c-k">import</span> * <span class="c-k">as</span> THREE <span class="c-k">from</span> <span class="c-s">'three'</span>;
+<span class="c-k">import</span> { VRButton } <span class="c-k">from</span> <span class="c-s">'three/addons/webxr/VRButton.js'</span>;
+<span class="c-k">import</span> { XRControllerModelFactory } <span class="c-k">from</span> <span class="c-s">'three/addons/webxr/XRControllerModelFactory.js'</span>;
+
+<span class="c-c">// ── 1. Renderer ──────────────────────────────────</span>
+<span class="c-k">const</span> renderer = <span class="c-k">new</span> THREE.<span class="c-fn">WebGLRenderer</span>({ antialias: <span class="c-k">true</span> });
+renderer.xr.enabled = <span class="c-k">true</span>;   <span class="c-c">// turn on WebXR</span>
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.<span class="c-fn">appendChild</span>(renderer.domElement);
+
+<span class="c-c">// ── 2. VR Button ─────────────────────────────────</span>
+document.body.<span class="c-fn">appendChild</span>(<span class="c-fn">VRButton</span>.<span class="c-fn">createButton</span>(renderer));
+
+<span class="c-c">// ── 3. Scene ──────────────────────────────────────</span>
+<span class="c-k">const</span> scene  = <span class="c-k">new</span> THREE.<span class="c-fn">Scene</span>();
+<span class="c-k">const</span> camera = <span class="c-k">new</span> THREE.<span class="c-fn">PerspectiveCamera</span>(<span class="c-n">70</span>, window.innerWidth / window.innerHeight, <span class="c-n">0.01</span>, <span class="c-n">100</span>);
+
+<span class="c-c">// ── 4. Binaural Audio (Web Audio API HRTF) ────────</span>
+<span class="c-k">const</span> listener = <span class="c-k">new</span> THREE.<span class="c-fn">AudioListener</span>();
+camera.<span class="c-fn">add</span>(listener);                     <span class="c-c">// attach to camera = headset ears</span>
+
+<span class="c-k">const</span> sound = <span class="c-k">new</span> THREE.<span class="c-fn">PositionalAudio</span>(listener);
+<span class="c-k">const</span> loader = <span class="c-k">new</span> THREE.<span class="c-fn">AudioLoader</span>();
+loader.<span class="c-fn">load</span>(<span class="c-s">'sounds/ambient.mp3'</span>, <span class="c-k">function</span>(buffer) {
+    sound.<span class="c-fn">setBuffer</span>(buffer);
+    sound.<span class="c-fn">setRefDistance</span>(<span class="c-n">1</span>);     <span class="c-c">// full volume within 1 m</span>
+    sound.<span class="c-fn">setRolloffFactor</span>(<span class="c-n">2</span>);
+    sound.<span class="c-fn">setLoop</span>(<span class="c-k">true</span>);
+    sound.<span class="c-fn">play</span>();
+});
+
+<span class="c-c">// Attach the sound to any mesh — it will spatialise automatically</span>
+<span class="c-k">const</span> sphere = <span class="c-k">new</span> THREE.<span class="c-fn">Mesh</span>(
+    <span class="c-k">new</span> THREE.<span class="c-fn">SphereGeometry</span>(<span class="c-n">0.1</span>),
+    <span class="c-k">new</span> THREE.<span class="c-fn">MeshStandardMaterial</span>({ color: <span class="c-n">0x6f4cff</span> })
+);
+sphere.<span class="c-fn">add</span>(sound);          <span class="c-c">// sound follows the mesh in 3D space</span>
+scene.<span class="c-fn">add</span>(sphere);
+
+<span class="c-c">// ── 5. Render loop ────────────────────────────────</span>
+renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</span>(time) {
+    sphere.position.x = Math.<span class="c-fn">sin</span>(time * <span class="c-n">0.001</span>) * <span class="c-n">2</span>;   <span class="c-c">// orbit the player</span>
+    renderer.<span class="c-fn">render</span>(scene, camera);
+});</pre>
+      </div>
+    </div>
+
+    <!-- ══ KEY CONCEPTS RECAP ══ -->
+    <div class="vr-card">
+      <p class="vr-section-label">05 — Key Concepts Recap</p>
+      <h2>The Science Behind VR</h2>
+
+      <div class="vr-callout">
+        <strong>HRTF — Head-Related Transfer Function</strong><br>
+        A mathematical model of how your ear shape, head, and shoulders filter sound differently depending on direction. All modern VR engines (Unity, Godot, Three.js, Unreal) use HRTF lookup tables to pan audio binaurally. The brain learns to decode these filters from childhood — which is why binaural audio sounds uncannily real when done correctly.
+      </div>
+
+      <div class="vr-callout" style="border-left-color:#00d4ff; background:rgba(0,212,255,0.06); color:#0a3040;">
+        <strong>Lens Distortion Pre-Correction</strong><br>
+        Wide-angle fresnel lenses in VR headsets introduce barrel distortion. The GPU renders a pincushion-distorted frame that the lens then stretches back to a natural-looking image. If you ever see a raw VR frame buffer, it looks like a warped fishbowl — this is intentional and corrects to straight lines through the optic.
+      </div>
+
+      <div class="vr-callout" style="border-left-color:#34c759; background:rgba(52,199,89,0.06); color:#0d3318;">
+        <strong>Reprojection &amp; ATW</strong><br>
+        Asynchronous TimeWarp (Meta) and Reprojection (SteamVR) are techniques that take the last rendered frame and warp it to match the headset's latest position — inserting a "fake" frame if the GPU misses its deadline. This keeps the experience smooth even if frame rate dips, at the cost of slight blur around edges of moving objects.
+      </div>
+    </div>
+
+    <!-- ══ CHECK YOUR UNDERSTANDING ══ -->
+    <div class="vr-card">
+      <p class="vr-section-label">06 — Check Your Understanding</p>
+      <h2>Quick Quiz</h2>
+
+      <div class="vr-quiz-block" id="q1">
+        <p class="vr-quiz-q">1. What does ITD stand for in binaural audio?</p>
+        <div class="vr-quiz-options">
+          <label class="vr-quiz-opt"><input type="radio" name="q1" value="a"> Interaural Time Difference</label>
+          <label class="vr-quiz-opt"><input type="radio" name="q1" value="b"> Inter-Temporal Distance</label>
+          <label class="vr-quiz-opt"><input type="radio" name="q1" value="c"> Internal Tone Detection</label>
+        </div>
+        <p class="vr-quiz-feedback"></p>
+      </div>
+
+      <div class="vr-quiz-block" id="q2">
+        <p class="vr-quiz-q">2. What refresh rate is considered the minimum for comfortable VR?</p>
+        <div class="vr-quiz-options">
+          <label class="vr-quiz-opt"><input type="radio" name="q2" value="a"> 30 Hz</label>
+          <label class="vr-quiz-opt"><input type="radio" name="q2" value="b"> 60 Hz</label>
+          <label class="vr-quiz-opt"><input type="radio" name="q2" value="c"> 90 Hz</label>
+        </div>
+        <p class="vr-quiz-feedback"></p>
+      </div>
+
+      <div class="vr-quiz-block" id="q3">
+        <p class="vr-quiz-q">3. Which open standard lets the same VR code run on Meta Quest, PlayStation VR2, and SteamVR?</p>
+        <div class="vr-quiz-options">
+          <label class="vr-quiz-opt"><input type="radio" name="q3" value="a"> DirectX 12</label>
+          <label class="vr-quiz-opt"><input type="radio" name="q3" value="b"> OpenXR</label>
+          <label class="vr-quiz-opt"><input type="radio" name="q3" value="c"> Vulkan</label>
+        </div>
+        <p class="vr-quiz-feedback"></p>
+      </div>
+
+      <div class="vr-quiz-block" id="q4">
+        <p class="vr-quiz-q">4. What is the average human IPD (inter-pupillary distance)?</p>
+        <div class="vr-quiz-options">
+          <label class="vr-quiz-opt"><input type="radio" name="q4" value="a"> 25 mm</label>
+          <label class="vr-quiz-opt"><input type="radio" name="q4" value="b"> 63 mm</label>
+          <label class="vr-quiz-opt"><input type="radio" name="q4" value="c"> 120 mm</label>
+        </div>
+        <p class="vr-quiz-feedback"></p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer style="text-align:center; padding:2rem 1rem; color:#6b7280; font-size:0.8rem;">
+    <a href="../steam-lessons.html" style="color:#6f4cff; text-decoration:none; font-weight:700;">← Back to STEAM Lessons</a>
+  </footer>
+
+  <!-- ══════════════════════════════════════════════════
+       BINAURAL CANVAS SIMULATION
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var canvas = document.getElementById('vr-room-canvas');
+    var ctx    = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    var cx = W / 2, cy = H / 2;
+    var R = Math.min(W, H) * 0.38;   // orbit radius for sound source
+    var headR = Math.min(W, H) * 0.12;
+
+    var angle    = 45 * Math.PI / 180;  // radians, 0=right, CW
+    var revolving = false;
+    var revolveId = null;
+    var audioCtx  = null;
+    var oscNode   = null;
+    var pannerL   = null;
+    var pannerR   = null;
+    var gainL     = null;
+    var gainR     = null;
+    var merger    = null;
+
+    var barL = document.querySelector('#vr-bar-left  .vr-ear-bar');
+    var barR = document.querySelector('#vr-bar-right .vr-ear-bar');
+    var slider   = document.getElementById('vr-angle-slider');
+    var sliderVal= document.getElementById('vr-angle-val');
+
+    /* ── draw ── */
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      // room grid
+      ctx.strokeStyle = 'rgba(111,76,255,0.08)';
+      ctx.lineWidth = 1;
+      var step = 40;
+      for (var x = 0; x < W; x += step) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+      for (var y = 0; y < H; y += step) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+      // orbit ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(111,76,255,0.25)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // angle arc from 0
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R * 0.32, -Math.PI/2, angle - Math.PI/2, false);
+      ctx.strokeStyle = 'rgba(0,212,255,0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // head body
+      var grad = ctx.createRadialGradient(cx - headR*0.25, cy - headR*0.25, headR*0.05, cx, cy, headR);
+      grad.addColorStop(0, 'rgba(160,140,255,0.9)');
+      grad.addColorStop(1, 'rgba(60,20,120,0.85)');
+      ctx.beginPath();
+      ctx.arc(cx, cy, headR, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(111,76,255,0.5)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // nose marker (points "up" = 0 deg = north on canvas)
+      ctx.beginPath();
+      ctx.arc(cx, cy - headR - 4, 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(200,184,255,0.9)';
+      ctx.fill();
+
+      // ears
+      function ear(ex, ey) {
+        ctx.beginPath();
+        ctx.ellipse(ex, ey, 7, 11, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(140,110,255,0.75)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(200,184,255,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      ear(cx - headR, cy);
+      ear(cx + headR, cy);
+
+      // "L" / "R" labels on ears
+      ctx.fillStyle = 'rgba(200,184,255,0.9)';
+      ctx.font = 'bold 10px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('L', cx - headR, cy);
+      ctx.fillText('R', cx + headR, cy);
+
+      // sound source
+      var sx = cx + R * Math.sin(angle);
+      var sy = cy - R * Math.cos(angle);
+
+      // line from head to source
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(sx, sy);
+      ctx.strokeStyle = 'rgba(0,212,255,0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // source dot glow
+      var grd = ctx.createRadialGradient(sx, sy, 0, sx, sy, 22);
+      grd.addColorStop(0, 'rgba(0,212,255,0.35)');
+      grd.addColorStop(1, 'rgba(0,212,255,0)');
+      ctx.beginPath(); ctx.arc(sx, sy, 22, 0, Math.PI*2);
+      ctx.fillStyle = grd; ctx.fill();
+
+      ctx.beginPath(); ctx.arc(sx, sy, 10, 0, Math.PI*2);
+      ctx.fillStyle = '#00d4ff'; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+
+      // speaker icon inside dot
+      ctx.fillStyle = '#0a0820';
+      ctx.font = 'bold 11px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('♪', sx, sy);
+
+      // angle label
+      var deg = Math.round(angle * 180 / Math.PI);
+      ctx.fillStyle = 'rgba(180,160,255,0.8)';
+      ctx.font = '700 11px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(deg + '°', cx, cy + headR + 14);
+    }
+
+    function getILD() {
+      // angle: 0=front, π/2=right, π=back, 3π/2=left
+      // Right ear louder when source is right (angle near π/2)
+      var sinA = Math.sin(angle);  // +1 = fully right, -1 = fully left
+      var rightGain = 0.5 + sinA * 0.5;  // 0..1
+      var leftGain  = 1 - rightGain;
+      // slight rear attenuation
+      var cosA = Math.cos(angle);
+      var rearAtten = 0.85 + 0.15 * cosA;  // 0.7..1
+      return { L: Math.min(leftGain * rearAtten, 1), R: Math.min(rightGain * rearAtten, 1) };
+    }
+
+    function updateMeters() {
+      var ild = getILD();
+      barL.style.height = (ild.L * 100).toFixed(1) + '%';
+      barR.style.height = (ild.R * 100).toFixed(1) + '%';
+    }
+
+    function setAngle(rad) {
+      angle = ((rad % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      var deg = Math.round(angle * 180 / Math.PI);
+      slider.value = deg;
+      sliderVal.textContent = deg + '°';
+      draw();
+      updateMeters();
+      if (gainL && gainR) {
+        var ild = getILD();
+        gainL.gain.setTargetAtTime(ild.L, audioCtx.currentTime, 0.05);
+        gainR.gain.setTargetAtTime(ild.R, audioCtx.currentTime, 0.05);
+        // ITD: delay right or left by up to ~0.65 ms based on sin(angle)
+        var maxDelay = 0.00065;
+        var sinA = Math.sin(angle);
+        if (pannerL && pannerR) {
+          pannerL.delayTime && (pannerL.delayTime.setTargetAtTime(sinA > 0 ? sinA * maxDelay : 0, audioCtx.currentTime, 0.02));
+          pannerR.delayTime && (pannerR.delayTime.setTargetAtTime(sinA < 0 ? -sinA * maxDelay : 0, audioCtx.currentTime, 0.02));
+        }
+      }
+    }
+
+    function startAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        oscNode  = audioCtx.createOscillator();
+        oscNode.type = 'sine';
+        oscNode.frequency.value = 440;
+
+        var splitter = audioCtx.createChannelSplitter(2);
+        merger       = audioCtx.createChannelMerger(2);
+
+        gainL = audioCtx.createGain();
+        gainR = audioCtx.createGain();
+        pannerL = audioCtx.createDelay(0.002);
+        pannerR = audioCtx.createDelay(0.002);
+
+        oscNode.connect(pannerL);
+        oscNode.connect(pannerR);
+        pannerL.connect(gainL);
+        pannerR.connect(gainR);
+        gainL.connect(merger, 0, 0);
+        gainR.connect(merger, 0, 1);
+        merger.connect(audioCtx.destination);
+
+        oscNode.start();
+        setAngle(angle);
+      } else if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function stopAudio() {
+      if (audioCtx) { audioCtx.suspend(); }
+    }
+
+    document.getElementById('vr-btn-play').addEventListener('click', function() {
+      startAudio();
+    });
+
+    document.getElementById('vr-btn-stop').addEventListener('click', function() {
+      stopAudio();
+      revolving = false;
+      if (revolveId) { cancelAnimationFrame(revolveId); revolveId = null; }
+      document.getElementById('vr-btn-revolve').classList.remove('active');
+    });
+
+    document.getElementById('vr-btn-revolve').addEventListener('click', function() {
+      revolving = !revolving;
+      this.classList.toggle('active', revolving);
+      if (revolving) {
+        startAudio();
+        var lastT = null;
+        function tick(t) {
+          if (!revolving) return;
+          if (lastT !== null) { setAngle(angle + (t - lastT) * 0.001); }
+          lastT = t;
+          revolveId = requestAnimationFrame(tick);
+        }
+        revolveId = requestAnimationFrame(tick);
+      } else {
+        if (revolveId) { cancelAnimationFrame(revolveId); revolveId = null; }
+      }
+    });
+
+    slider.addEventListener('input', function() {
+      setAngle(parseFloat(this.value) * Math.PI / 180);
+    });
+
+    // Drag on canvas
+    var dragging = false;
+    canvas.addEventListener('mousedown', function(e) { dragging = true; });
+    window.addEventListener('mouseup',   function()  { dragging = false; });
+    canvas.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      var rect = canvas.getBoundingClientRect();
+      var mx = (e.clientX - rect.left) * (W / rect.width)  - cx;
+      var my = (e.clientY - rect.top)  * (H / rect.height) - cy;
+      setAngle(Math.atan2(mx, -my));
+    });
+    canvas.addEventListener('touchmove', function(e) {
+      e.preventDefault();
+      var t    = e.touches[0];
+      var rect = canvas.getBoundingClientRect();
+      var mx = (t.clientX - rect.left) * (W / rect.width)  - cx;
+      var my = (t.clientY - rect.top)  * (H / rect.height) - cy;
+      setAngle(Math.atan2(mx, -my));
+    }, { passive: false });
+
+    draw();
+    updateMeters();
+  })();
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       STEREOSCOPIC RENDERER
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var leftC  = document.getElementById('vr-left-eye');
+    var rightC = document.getElementById('vr-right-eye');
+    var mergeC = document.getElementById('vr-merged-eye');
+    var lCtx   = leftC.getContext('2d');
+    var rCtx   = rightC.getContext('2d');
+    var mCtx   = mergeC.getContext('2d');
+
+    var W = leftC.width, H = leftC.height;
+    var MW = mergeC.width;
+
+    var iod = 63;   // inter-ocular distance in mm → pixels scaled
+    var t   = 0;
+
+    var iodSlider = document.getElementById('vr-iod-slider');
+    var iodVal    = document.getElementById('vr-iod-val');
+
+    iodSlider.addEventListener('input', function() {
+      iod = parseFloat(this.value);
+      iodVal.textContent = iod + ' mm';
+    });
+
+    // Simple 3D boxes projected to 2D with eye offset
+    var objects = [
+      { x: 0,    y: 0,   z: 4,   size: 0.6, color: '#6f4cff', label: 'Near cube' },
+      { x: 1.2,  y: 0.3, z: 7,   size: 0.5, color: '#00d4ff', label: 'Mid cube' },
+      { x: -1.5, y:-0.4, z: 10,  size: 0.7, color: '#ff79c6', label: 'Far cube' },
+      { x: 0.5,  y: 1.0, z: 5.5, size: 0.4, color: '#50fa7b', label: 'Float cube' },
+    ];
+
+    function project(obj, eyeOffsetX, fov) {
+      var f   = fov;  // focal length ~ px
+      var ex  = eyeOffsetX * 0.01;   // scale mm to world units
+      var px  = ((obj.x - ex) / obj.z) * f + W / 2;
+      var py  = (obj.y          / obj.z) * f + H / 2;
+      var ps  = (obj.size       / obj.z) * f;
+      return { px: px, py: py, ps: ps };
+    }
+
+    function drawEye(ctx, eyeOffset, bgColor) {
+      var fov = Math.min(W, H) * 0.8;
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, W, H);
+
+      // grid floor
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (var i = 0; i <= 8; i++) {
+        ctx.beginPath(); ctx.moveTo(i * W/8, 0); ctx.lineTo(i * W/8, H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i * H/8); ctx.lineTo(W, i * H/8); ctx.stroke();
+      }
+
+      // sort back-to-front
+      var sorted = objects.slice().sort(function(a, b) { return b.z - a.z; });
+
+      sorted.forEach(function(obj) {
+        var p = project(obj, eyeOffset, fov);
+        // shadow
+        ctx.beginPath();
+        ctx.ellipse(p.px, H * 0.78, p.ps * 0.8, p.ps * 0.18, 0, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
+        // face
+        ctx.beginPath();
+        ctx.rect(p.px - p.ps/2, p.py - p.ps/2, p.ps, p.ps);
+        ctx.fillStyle = obj.color; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5; ctx.stroke();
+        // highlight
+        ctx.beginPath();
+        ctx.rect(p.px - p.ps/2 + 2, p.py - p.ps/2 + 2, p.ps * 0.35, p.ps * 0.35);
+        ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fill();
+      });
+    }
+
+    function frame() {
+      t += 0.008;
+      // gently float objects
+      objects[0].x = Math.sin(t * 0.7)  * 0.3;
+      objects[1].x = 1.2 + Math.cos(t)  * 0.2;
+      objects[3].y = 0.8 + Math.sin(t * 1.3) * 0.3;
+
+      var halfIPD = iod / 2;
+      drawEye(lCtx, -halfIPD, '#0a0820');
+      drawEye(rCtx,  halfIPD, '#0a0820');
+
+      // merged: left eye red channel, right eye cyan channel
+      mCtx.clearRect(0, 0, MW, H);
+      mCtx.globalCompositeOperation = 'source-over';
+
+      // Draw left eye to temp canvas, extract red
+      var tmp = document.createElement('canvas');
+      tmp.width = W; tmp.height = H;
+      var tCtx = tmp.getContext('2d');
+      drawEye(tCtx, -halfIPD, '#000');
+
+      // Left half — left eye
+      mCtx.drawImage(leftC,  0, 0, W, H, 0,  0, MW/2, H);
+      // Right half — right eye
+      mCtx.drawImage(rightC, 0, 0, W, H, MW/2, 0, MW/2, H);
+
+      // divider line
+      mCtx.beginPath();
+      mCtx.moveTo(MW/2, 0); mCtx.lineTo(MW/2, H);
+      mCtx.strokeStyle = 'rgba(111,76,255,0.4)'; mCtx.lineWidth = 2; mCtx.stroke();
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  })();
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       CODE TABS
+  ══════════════════════════════════════════════════ -->
+  <script>
+  document.querySelectorAll('.vr-code-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var key = this.dataset.tab;
+      document.querySelectorAll('.vr-code-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.vr-code-panel').forEach(function(p) { p.classList.remove('active'); });
+      this.classList.add('active');
+      document.getElementById('tab-' + key).classList.add('active');
+    });
+  });
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       QUIZ
+  ══════════════════════════════════════════════════ -->
+  <script>
+  var ANSWERS = { q1: 'a', q2: 'c', q3: 'b', q4: 'b' };
+  var EXPLAIN = {
+    q1: 'Correct — ITD (Interaural Time Difference) is the tiny delay between when sound reaches each ear.',
+    q2: 'Correct — 90 Hz is the accepted VR minimum. Below this, most users experience motion sickness.',
+    q3: 'Correct — OpenXR is the Khronos standard that unifies VR/AR hardware under one API.',
+    q4: 'Correct — The average adult IPD is about 63 mm, ranging from 54–74 mm across the population.'
+  };
+  var WRONG = {
+    q1: 'Not quite — ITD stands for Interaural Time Difference, the time delay between ears.',
+    q2: 'Not quite — 90 Hz is the standard minimum. Lower rates cause visible judder and nausea.',
+    q3: 'Not quite — OpenXR is the cross-platform VR API. DirectX and Vulkan are graphics APIs.',
+    q4: 'Not quite — 63 mm is the average IPD. 25 mm would be impossibly narrow; 120 mm far too wide.'
+  };
+
+  document.querySelectorAll('.vr-quiz-block').forEach(function(block) {
+    var id = block.id;
+    var opts = block.querySelectorAll('.vr-quiz-opt');
+    var fb   = block.querySelector('.vr-quiz-feedback');
+    opts.forEach(function(opt) {
+      opt.addEventListener('click', function() {
+        if (block.dataset.answered) return;
+        block.dataset.answered = '1';
+        var val = opt.querySelector('input').value;
+        var correct = val === ANSWERS[id];
+        opt.classList.add(correct ? 'correct' : 'wrong');
+        fb.textContent = correct ? '✓ ' + EXPLAIN[id] : '✗ ' + WRONG[id];
+        fb.style.color = correct ? '#1a5c2a' : '#6b1515';
+      });
+    });
+  });
+  </script>
+
+</body>
+</html>
