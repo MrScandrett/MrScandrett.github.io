@@ -6,6 +6,19 @@ let audioCtx = null;
 let master   = null;
 let analyser = null;
 
+// ───── Modular Patchbay ─────
+const modular = {
+  wave: 'sine',
+  freq: 220,
+  vca: 0.6,
+  osc: null,
+  vcaNode: null,
+  output: null,
+  isPlaying: false,
+  connections: new Map(),
+  pendingOutput: null,
+};
+
 // ───── MIDI ─────
 let midiAccess   = null;
 let currentInput = null;
@@ -60,6 +73,17 @@ const els = {
   scaleLock:    document.getElementById('scaleLock'),
   overlayNames: document.getElementById('overlayNames'),
   oscCanvas:    document.getElementById('oscCanvas'),
+  modularPlay:  document.getElementById('modularPlay'),
+  modularStop:  document.getElementById('modularStop'),
+  modularFreq:  document.getElementById('modularFreq'),
+  modularFreqVal: document.getElementById('modularFreqVal'),
+  modularVca:   document.getElementById('modularVca'),
+  modularVcaVal: document.getElementById('modularVcaVal'),
+  modularStatus: document.getElementById('modularStatus'),
+  modularRack:  document.getElementById('modularRack'),
+  patchSvg:     document.getElementById('patchSvg'),
+  waveButtons:  document.querySelectorAll('.ml-waveform-btn'),
+  patchJacks:   document.querySelectorAll('.ml-jack'),
   adsrA:        document.getElementById('adsrA'),
   adsrD:        document.getElementById('adsrD'),
   adsrS:        document.getElementById('adsrS'),
@@ -592,6 +616,214 @@ function readAdsr() {
   els.adsrRVal.textContent = fmtMs(Number(els.adsrR.value));
 }
 
+// ───── Modular Patchbay ─────
+function ensureModularNodes() {
+  if (!audioCtx) return;
+  if (!modular.vcaNode) {
+    modular.vcaNode = audioCtx.createGain();
+    modular.vcaNode.gain.value = modular.vca;
+  }
+  if (!modular.output) {
+    modular.output = audioCtx.createGain();
+    modular.output.gain.value = 0.8;
+    modular.output.connect(master);
+  }
+}
+
+function createModularOsc() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  osc.type = modular.wave;
+  osc.frequency.value = modular.freq;
+  modular.osc = osc;
+}
+
+function setWaveform(wave) {
+  modular.wave = wave;
+  if (modular.osc) modular.osc.type = wave;
+  if (els.waveButtons.length) {
+    els.waveButtons.forEach((btn) => {
+      const active = btn.dataset.waveform === wave;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+}
+
+function setModularFreq(value) {
+  modular.freq = Number(value);
+  if (els.modularFreqVal) els.modularFreqVal.textContent = `${modular.freq} Hz`;
+  if (modular.osc && audioCtx) {
+    modular.osc.frequency.setValueAtTime(modular.freq, audioCtx.currentTime);
+  }
+}
+
+function setModularVca(value) {
+  modular.vca = Number(value) / 100;
+  if (els.modularVcaVal) els.modularVcaVal.textContent = `${value}%`;
+  if (modular.vcaNode && audioCtx) {
+    modular.vcaNode.gain.setValueAtTime(modular.vca, audioCtx.currentTime);
+  }
+}
+
+function patchSummary() {
+  const vcaIn = modular.connections.get('vca-in');
+  const outIn = modular.connections.get('out-in');
+
+  if (!vcaIn && !outIn) return 'no cables';
+  if (vcaIn === 'osc-out' && outIn === 'vca-out') return 'Osc → VCA → Output';
+  if (outIn === 'osc-out') return 'Osc → Output';
+  if (vcaIn === 'osc-out' && !outIn) return 'Osc → VCA (not routed)';
+  if (!vcaIn && outIn === 'vca-out') return 'VCA → Output (no source)';
+  if (vcaIn === 'osc-out' && outIn === 'osc-out') return 'Osc → VCA + Output';
+  return 'Custom patch';
+}
+
+function updateModularStatus() {
+  if (!els.modularStatus) return;
+  const patchText = patchSummary();
+  const outputText = modular.isPlaying ? 'Output: playing' : 'Output: silent';
+  els.modularStatus.textContent = `Patch: ${patchText} · ${outputText}`;
+}
+
+function updateModularButtons() {
+  if (!els.modularPlay || !els.modularStop) return;
+  els.modularPlay.classList.toggle('btn-active', modular.isPlaying);
+  els.modularStop.disabled = !modular.isPlaying;
+}
+
+function applyPatch() {
+  updateModularStatus();
+  if (!audioCtx) return;
+  ensureModularNodes();
+
+  if (modular.osc) {
+    try { modular.osc.disconnect(); } catch (_err) {}
+  }
+  if (modular.vcaNode) {
+    try { modular.vcaNode.disconnect(); } catch (_err) {}
+  }
+
+  const oscToVca = modular.connections.get('vca-in') === 'osc-out';
+  const outSource = modular.connections.get('out-in');
+
+  if (oscToVca && modular.osc) modular.osc.connect(modular.vcaNode);
+  if (outSource === 'osc-out' && modular.osc) modular.osc.connect(modular.output);
+  if (outSource === 'vca-out') modular.vcaNode.connect(modular.output);
+}
+
+function jackCenter(el, rackRect) {
+  const rect = el.getBoundingClientRect();
+  return {
+    x: rect.left + rect.width / 2 - rackRect.left,
+    y: rect.top + rect.height / 2 - rackRect.top,
+  };
+}
+
+function drawPatchCables() {
+  if (!els.patchSvg || !els.modularRack) return;
+  const svg = els.patchSvg;
+  const rackRect = els.modularRack.getBoundingClientRect();
+  const width = rackRect.width;
+  const height = rackRect.height;
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+  svg.innerHTML = '';
+
+  for (const [inputId, outputId] of modular.connections.entries()) {
+    const inputEl = els.modularRack.querySelector(`[data-jack="${inputId}"]`);
+    const outputEl = els.modularRack.querySelector(`[data-jack="${outputId}"]`);
+    if (!inputEl || !outputEl) continue;
+
+    const start = jackCenter(outputEl, rackRect);
+    const end = jackCenter(inputEl, rackRect);
+    const distance = Math.max(40, Math.abs(end.x - start.x) * 0.5);
+    const direction = end.x >= start.x ? 1 : -1;
+    const c1x = start.x + distance * direction;
+    const c2x = end.x - distance * direction;
+    const d = `M ${start.x} ${start.y} C ${c1x} ${start.y}, ${c2x} ${end.y}, ${end.x} ${end.y}`;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+  }
+}
+
+function updateJackStates() {
+  if (!els.patchJacks.length) return;
+  const outputsInUse = new Set(modular.connections.values());
+  els.patchJacks.forEach((jack) => {
+    const id = jack.dataset.jack;
+    const isInput = jack.dataset.type === 'input';
+    const connected = isInput ? modular.connections.has(id) : outputsInUse.has(id);
+    jack.classList.toggle('is-connected', connected);
+    jack.classList.toggle('is-source', modular.pendingOutput === id);
+    jack.setAttribute('aria-pressed', (isInput ? connected : modular.pendingOutput === id) ? 'true' : 'false');
+  });
+}
+
+function handleJackClick(jack) {
+  const type = jack.dataset.type;
+  const id = jack.dataset.jack;
+  if (type === 'output') {
+    modular.pendingOutput = modular.pendingOutput === id ? null : id;
+    updateJackStates();
+    return;
+  }
+
+  if (modular.pendingOutput) {
+    modular.connections.set(id, modular.pendingOutput);
+    modular.pendingOutput = null;
+  } else if (modular.connections.has(id)) {
+    modular.connections.delete(id);
+  }
+
+  updateJackStates();
+  drawPatchCables();
+  applyPatch();
+}
+
+async function startModularTone() {
+  await enableAudio();
+  if (!audioCtx) return;
+  if (modular.isPlaying) return;
+  ensureModularNodes();
+  createModularOsc();
+  applyPatch();
+  modular.osc.start();
+  modular.isPlaying = true;
+  updateModularButtons();
+  updateModularStatus();
+}
+
+function stopModularTone() {
+  if (!modular.isPlaying) return;
+  modular.isPlaying = false;
+  if (modular.osc) {
+    try { modular.osc.stop(); } catch (_err) {}
+    try { modular.osc.disconnect(); } catch (_err) {}
+  }
+  modular.osc = null;
+  updateModularButtons();
+  updateModularStatus();
+}
+
+function initModularPatchbay() {
+  if (!els.modularStatus) return;
+  modular.connections.set('vca-in', 'osc-out');
+  modular.connections.set('out-in', 'vca-out');
+
+  setWaveform(modular.wave);
+  if (els.modularFreq) setModularFreq(els.modularFreq.value);
+  if (els.modularVca) setModularVca(els.modularVca.value);
+
+  updateJackStates();
+  drawPatchCables();
+  updateModularButtons();
+  updateModularStatus();
+}
+
 // ───── Oscilloscope ─────
 (function startOscilloscope() {
   const canvas = els.oscCanvas;
@@ -755,6 +987,25 @@ els.adsrD.addEventListener('input', readAdsr);
 els.adsrS.addEventListener('input', readAdsr);
 els.adsrR.addEventListener('input', readAdsr);
 
+if (els.modularPlay) els.modularPlay.addEventListener('click', startModularTone);
+if (els.modularStop) els.modularStop.addEventListener('click', stopModularTone);
+if (els.modularFreq) els.modularFreq.addEventListener('input', (e) => setModularFreq(e.target.value));
+if (els.modularVca) els.modularVca.addEventListener('input', (e) => setModularVca(e.target.value));
+
+if (els.waveButtons.length) {
+  els.waveButtons.forEach((btn) => {
+    btn.addEventListener('click', () => setWaveform(btn.dataset.waveform));
+  });
+}
+
+if (els.patchJacks.length) {
+  els.patchJacks.forEach((jack) => {
+    jack.addEventListener('click', () => handleJackClick(jack));
+  });
+}
+
+window.addEventListener('resize', drawPatchCables);
+
 els.seqPlay.addEventListener('click', () => { seqPlaying ? seqStop() : seqStart(); });
 els.seqClear.addEventListener('click', seqClearAll);
 
@@ -785,5 +1036,6 @@ for (const pad of document.querySelectorAll('[data-drum]')) {
 buildPianoRoll();
 wirePianoRollPointer();
 buildSeqGrid();
+initModularPatchbay();
 readAdsr();   // set initial display values from slider defaults
 setStatus();
