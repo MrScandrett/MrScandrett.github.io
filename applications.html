@@ -2948,6 +2948,7 @@
       const guidedTitle = document.getElementById("guided-title");
       const guidedSummary = document.getElementById("guided-summary");
       const guidedBadge = document.getElementById("guided-badge");
+      const guidedPathSummary = document.getElementById("guided-path-summary");
       const projectCards = Array.from(document.querySelectorAll(".app-project-card"));
       const libraryButton = document.getElementById("toggle-library");
       const libraryStatus = document.getElementById("library-status");
@@ -2956,6 +2957,7 @@
       const libraryMatchCount = document.getElementById("library-match-count");
       const libraryEmpty = document.getElementById("library-empty");
       const libraryFilterButtons = Array.from(document.querySelectorAll("[data-library-filter]"));
+      const libraryGradeButtons = Array.from(document.querySelectorAll("[data-library-grade-mode]"));
       const libraryTiles = Array.from(document.querySelectorAll(".library-section .app-link"));
       const launcherClusters = Array.from(document.querySelectorAll("#app-launcher .applications-cluster"));
       const libraryFilterMeta = {
@@ -2968,28 +2970,139 @@
         assets: "Free Assets"
       };
 
-      libraryTiles.forEach((tile) => {
+      function formatGrades(grades) {
+        return grades.map((grade) => levelMeta[grade] || grade).join(", ");
+      }
+
+      function getTileKey(tile) {
+        return Array.from(tile.classList)
+          .find((className) => className.startsWith("app-link-") && !["app-link-button", "app-link-feature"].includes(className))
+          ?.replace("app-link-", "") || "";
+      }
+
+      function getLibraryGroup(tile) {
         const cluster = tile.closest(".applications-cluster");
         const section = tile.closest(".library-section");
-        let group = "all";
 
-        if (cluster) {
-          group = cluster.id.replace("app-", "");
-        } else if (section?.id === "free-assets") {
-          group = "assets";
-        } else if (section?.id) {
-          group = section.id;
-        }
+        if (cluster) return cluster.id.replace("app-", "");
+        if (section?.id === "free-assets") return "assets";
+        return section?.id || "all";
+      }
 
-        tile.dataset.libraryGroup = group;
-        tile.dataset.librarySearch = tile.textContent.toLowerCase().replace(/\s+/g, " ").trim();
-      });
+      function getMergedTileMeta(tile) {
+        const key = getTileKey(tile);
+        const group = getLibraryGroup(tile);
+        return {
+          key,
+          group,
+          ...(libraryGroupDefaults[group] || {}),
+          ...(libraryToolMeta[key] || {})
+        };
+      }
+
+      function createSignalRow(meta) {
+        const signals = [];
+        if (meta.startHere) signals.push(`<span class="app-signal app-signal--start">Start Here</span>`);
+        if (meta.review) signals.push(`<span class="app-signal app-signal--safe">${meta.review}</span>`);
+        if (meta.access) signals.push(`<span class="app-signal app-signal--access">${meta.access}</span>`);
+        if (meta.license) signals.push(`<span class="app-signal app-signal--license">${meta.license}</span>`);
+        if (meta.difficulty) signals.push(`<span class="app-signal app-signal--difficulty">${meta.difficulty}</span>`);
+        return signals.length ? `<div class="app-signal-row">${signals.join("")}</div>` : "";
+      }
+
+      function createFactList(meta) {
+        const facts = [];
+        if (meta.bestFor) facts.push(`<p class="app-fact"><strong>Best for:</strong> ${meta.bestFor}</p>`);
+        if (meta.time) facts.push(`<p class="app-fact"><strong>Time:</strong> ${meta.time}</p>`);
+        if (meta.grades?.length) facts.push(`<p class="app-fact"><strong>Grades:</strong> ${formatGrades(meta.grades)}</p>`);
+        return facts.length ? `<div class="app-fact-list">${facts.join("")}</div>` : "";
+      }
+
+      function decorateLibraryTiles() {
+        libraryTiles.forEach((tile) => {
+          const meta = getMergedTileMeta(tile);
+          const key = meta.key;
+          tile.dataset.libraryGroup = meta.group;
+          tile.dataset.libraryKey = key;
+          tile.dataset.grade = (meta.grades || []).join(",");
+          tile.dataset.librarySearch = [
+            tile.textContent,
+            meta.bestFor || "",
+            meta.review || "",
+            meta.access || "",
+            formatGrades(meta.grades || [])
+          ].join(" ").toLowerCase().replace(/\s+/g, " ").trim();
+
+          const copy = tile.querySelector(".app-copy");
+          if (copy && !copy.querySelector(".app-link-details")) {
+            copy.insertAdjacentHTML("beforeend", `
+              <div class="app-link-details">
+                ${createSignalRow(meta)}
+                ${createFactList(meta)}
+              </div>
+            `);
+          }
+
+          const title = tile.querySelector("strong")?.textContent?.trim() || "tool";
+          const gradeText = meta.grades?.length ? ` Recommended grades ${formatGrades(meta.grades)}.` : "";
+          const bestForText = meta.bestFor ? ` Best for ${meta.bestFor}.` : "";
+          tile.setAttribute("aria-label", `Open ${title}.${bestForText}${gradeText}`);
+        });
+      }
+
+      function decorateProjectCards() {
+        projectCards.forEach((card) => {
+          const title = card.querySelector("strong")?.textContent?.trim() || "";
+          const meta = projectMeta[title];
+          if (!meta) return;
+
+          card.dataset.grade = (card.dataset.projectLevels || "").split(",").join(",");
+
+          if (!card.querySelector(".app-card-details")) {
+            card.insertAdjacentHTML("beforeend", `
+              <div class="app-card-details">
+                ${createSignalRow(meta)}
+                ${createFactList({
+                  ...meta,
+                  grades: (card.dataset.projectLevels || "").split(",").filter(Boolean)
+                })}
+              </div>
+            `);
+          }
+        });
+      }
+
+      function decorateActionLabels() {
+        document.querySelectorAll(".app-launch-link, .app-secondary-link").forEach((link) => {
+          const cardTitle = link.closest("article, .app-atlas-panel")?.querySelector("strong, h3")?.textContent?.trim();
+          const linkText = link.textContent.trim();
+          if (!link.getAttribute("aria-label")) {
+            link.setAttribute("aria-label", cardTitle ? `${linkText} for ${cardTitle}` : linkText);
+          }
+        });
+      }
+
+      function renderPathSummary() {
+        if (!guidedPathSummary) return;
+
+        const cards = guidedPaths[state.mission][state.level];
+        guidedPathSummary.innerHTML = `
+          <strong>Current Path</strong>
+          <p>${missionMeta[state.mission].label} for ${levelMeta[state.level]}. Start with ${cards[0].title}, move to ${cards[1].title}, then use ${cards[2].title} to extend or study the idea.</p>
+          <div class="app-signal-row">
+            <span class="app-signal app-signal--start">Stay On Path</span>
+            <span class="app-signal app-signal--difficulty">${levelMeta[state.level]}</span>
+            <span class="app-signal app-signal--safe">Student Mode Focus</span>
+          </div>
+        `;
+      }
 
       function renderRecommendations() {
         const cards = guidedPaths[state.mission][state.level];
         guidedTitle.textContent = missionMeta[state.mission].label;
         guidedSummary.textContent = "These are the best next steps for this mission and level. Start with one, then open the full library only if you need more options.";
         guidedBadge.textContent = `Mission: ${missionMeta[state.mission].label} · Level: ${levelMeta[state.level]}`;
+        renderPathSummary();
 
         recommendGrid.innerHTML = cards.map((card) => `
           <article class="app-recommend-card">
@@ -2997,7 +3110,7 @@
             <strong>${card.title}</strong>
             <small>${card.desc}</small>
             <div class="app-recommend-actions">
-              <a class="app-launch-link" href="${card.url}" target="_blank" rel="noreferrer">Open ${card.title}</a>
+              <a class="app-launch-link" href="${card.url}" target="_blank" rel="noreferrer" aria-label="Open ${card.title} for ${missionMeta[state.mission].label}">Open ${card.title}</a>
             </div>
           </article>
         `).join("");
@@ -3010,6 +3123,7 @@
           const missionMatch = missions.includes(state.mission);
           const levelMatch = levels.includes(state.level);
           card.hidden = !(missionMatch && levelMatch);
+          card.dataset.gradeHidden = String(!levelMatch);
         });
       }
 
@@ -3019,9 +3133,12 @@
 
         libraryTiles.forEach((tile) => {
           const groupMatch = state.libraryFilter === "all" || tile.dataset.libraryGroup === state.libraryFilter;
+          const tileGrades = (tile.dataset.grade || "").split(",").filter(Boolean);
+          const gradeMatch = state.libraryGradeMode === "all" || tileGrades.length === 0 || tileGrades.includes(state.level);
           const textMatch = !query || tile.dataset.librarySearch.includes(query);
-          const visible = groupMatch && textMatch;
+          const visible = groupMatch && gradeMatch && textMatch;
           tile.hidden = !visible;
+          tile.dataset.gradeHidden = String(!gradeMatch);
           if (visible) matches += 1;
         });
 
@@ -3046,11 +3163,18 @@
 
         libraryFilterButtons.forEach((button) => {
           button.classList.toggle("is-active", button.dataset.libraryFilter === state.libraryFilter);
+          button.setAttribute("aria-pressed", String(button.dataset.libraryFilter === state.libraryFilter));
+        });
+
+        libraryGradeButtons.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.libraryGradeMode === state.libraryGradeMode);
+          button.setAttribute("aria-pressed", String(button.dataset.libraryGradeMode === state.libraryGradeMode));
         });
 
         if (libraryMatchCount) {
           const label = libraryFilterMeta[state.libraryFilter] || libraryFilterMeta.all;
-          libraryMatchCount.textContent = `Showing ${matches} tools in ${label}`;
+          const gradeScope = state.libraryGradeMode === "all" ? "all grades" : levelMeta[state.level];
+          libraryMatchCount.textContent = `Showing ${matches} tools for ${gradeScope} in ${label}`;
         }
 
         if (libraryEmpty) {
@@ -3066,6 +3190,7 @@
           section.hidden = !showLibrary || !hasMatches;
         });
         libraryButton.setAttribute("aria-expanded", String(showLibrary));
+        libraryButton.setAttribute("aria-pressed", String(showLibrary));
         libraryButton.textContent = showLibrary ? "Hide Full Library" : "Open Full Library";
         libraryButton.classList.toggle("is-active", showLibrary);
         libraryStatus.textContent = showLibrary
@@ -3076,12 +3201,15 @@
       function renderControls() {
         missionButtons.forEach((button) => {
           button.classList.toggle("is-active", button.dataset.mission === state.mission);
+          button.setAttribute("aria-pressed", String(button.dataset.mission === state.mission));
         });
         levelButtons.forEach((button) => {
           button.classList.toggle("is-active", button.dataset.level === state.level);
+          button.setAttribute("aria-pressed", String(button.dataset.level === state.level));
         });
         modeButtons.forEach((button) => {
           button.classList.toggle("is-active", button.dataset.appModeBtn === state.mode);
+          button.setAttribute("aria-pressed", String(button.dataset.appModeBtn === state.mode));
         });
       }
 
@@ -3094,6 +3222,7 @@
       function setMissionLevel(nextMission, nextLevel, options = {}) {
         if (nextMission) state.mission = nextMission;
         if (nextLevel) state.level = nextLevel;
+        if (state.mode === "student") state.libraryOpen = false;
         renderAll();
         if (options.scroll) {
           scrollToGuided();
@@ -3111,6 +3240,7 @@
       missionButtons.forEach((button) => {
         button.addEventListener("click", function () {
           state.mission = button.dataset.mission;
+          if (state.mode === "student") state.libraryOpen = false;
           renderAll();
         });
       });
@@ -3146,6 +3276,7 @@
       if (clearLibrarySearchButton) {
         clearLibrarySearchButton.addEventListener("click", function () {
           state.libraryFilter = "all";
+          state.libraryGradeMode = "current";
           if (librarySearch) librarySearch.value = "";
           renderAll();
         });
@@ -3154,6 +3285,13 @@
       libraryFilterButtons.forEach((button) => {
         button.addEventListener("click", function () {
           state.libraryFilter = button.dataset.libraryFilter || "all";
+          renderAll();
+        });
+      });
+
+      libraryGradeButtons.forEach((button) => {
+        button.addEventListener("click", function () {
+          state.libraryGradeMode = button.dataset.libraryGradeMode || "current";
           renderAll();
         });
       });
@@ -3168,6 +3306,9 @@
         }
       };
 
+      decorateLibraryTiles();
+      decorateProjectCards();
+      decorateActionLabels();
       renderAll();
     })();
   </script>
