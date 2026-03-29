@@ -7,6 +7,286 @@
   <meta name="description" content="Launch classroom apps like Scratch, Tinkercad, Clever, and Code.org." />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <script src="assets/js/theme-lighting.js"></script>
+  <style>
+    .app-system {
+      display: grid;
+      gap: 1.35rem;
+      margin-top: 1rem;
+    }
+
+    .app-system-shell {
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(25, 49, 77, 0.12);
+      border-radius: 28px;
+      box-shadow: 0 18px 46px rgba(15, 23, 42, 0.08);
+      padding: clamp(1rem, 2vw, 1.45rem);
+    }
+
+    .app-system-topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.85rem;
+    }
+
+    .app-mode-toggle,
+    .app-level-row,
+    .app-quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .app-mode-btn,
+    .app-level-btn,
+    .app-quick-link,
+    .app-library-btn,
+    .app-mission-card {
+      border: 1px solid rgba(25, 49, 77, 0.14);
+      background: rgba(255, 255, 255, 0.82);
+      color: #19314d;
+      border-radius: 20px;
+      font: inherit;
+      text-decoration: none;
+      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .app-mode-btn,
+    .app-level-btn,
+    .app-quick-link,
+    .app-library-btn {
+      min-height: 2.6rem;
+      padding: 0.58rem 0.95rem;
+      cursor: pointer;
+    }
+
+    .app-mode-btn.is-active,
+    .app-level-btn.is-active,
+    .app-library-btn.is-active {
+      background: linear-gradient(180deg, rgba(0, 113, 227, 0.16), rgba(0, 113, 227, 0.08));
+      border-color: rgba(0, 113, 227, 0.34);
+      box-shadow: 0 10px 24px rgba(0, 113, 227, 0.12);
+    }
+
+    .app-mission-grid,
+    .app-project-grid,
+    .app-recommend-grid {
+      display: grid;
+      gap: 0.95rem;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .app-mission-card {
+      display: grid;
+      gap: 0.35rem;
+      text-align: left;
+      padding: 1rem;
+      cursor: pointer;
+      min-height: 158px;
+    }
+
+    .app-mission-card:hover,
+    .app-mode-btn:hover,
+    .app-level-btn:hover,
+    .app-library-btn:hover,
+    .app-quick-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+      border-color: rgba(25, 49, 77, 0.22);
+    }
+
+    .app-mission-card.is-active {
+      background: linear-gradient(180deg, rgba(25, 49, 77, 0.1), rgba(0, 113, 227, 0.08));
+      border-color: rgba(0, 113, 227, 0.35);
+      box-shadow: 0 16px 30px rgba(0, 113, 227, 0.12);
+    }
+
+    .app-mission-emoji {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    .app-mission-card strong,
+    .app-recommend-card strong,
+    .app-project-card strong {
+      color: #10253d;
+      font-size: 1rem;
+    }
+
+    .app-mission-card small,
+    .app-recommend-card small,
+    .app-project-card small,
+    .app-system-copy p,
+    .app-ai-guardrails p,
+    .app-library-copy p {
+      color: #607286;
+      line-height: 1.6;
+    }
+
+    .app-system-copy h2,
+    .app-projects-head h2,
+    .app-library-copy h2 {
+      margin: 0;
+      color: #10253d;
+    }
+
+    .app-system-copy p,
+    .app-projects-head p,
+    .app-library-copy p {
+      margin: 0.35rem 0 0;
+    }
+
+    .app-system-copy {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .app-recommend-panel {
+      display: grid;
+      gap: 0.95rem;
+      background: linear-gradient(180deg, rgba(245, 248, 252, 0.92), rgba(255, 255, 255, 0.88));
+      border: 1px solid rgba(25, 49, 77, 0.1);
+      border-radius: 24px;
+      padding: 1rem;
+    }
+
+    .app-recommend-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .app-recommend-head h3,
+    .app-ai-guardrails h3 {
+      margin: 0;
+      color: #10253d;
+    }
+
+    .app-recommend-card,
+    .app-project-card {
+      display: grid;
+      gap: 0.45rem;
+      padding: 1rem;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(25, 49, 77, 0.1);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .app-recommend-kicker,
+    .app-project-kicker {
+      color: #4f6c89;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .app-recommend-actions,
+    .app-project-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 0.25rem;
+    }
+
+    .app-launch-link,
+    .app-secondary-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.4rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .app-launch-link {
+      background: #0071e3;
+      color: #fff;
+    }
+
+    .app-secondary-link {
+      background: rgba(25, 49, 77, 0.07);
+      color: #19314d;
+    }
+
+    .app-ai-guardrails {
+      display: grid;
+      gap: 0.7rem;
+      border-radius: 24px;
+      padding: 1rem;
+      background: linear-gradient(180deg, rgba(121, 82, 179, 0.08), rgba(121, 82, 179, 0.03));
+      border: 1px solid rgba(121, 82, 179, 0.14);
+    }
+
+    .app-guard-grid {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .app-guard-card {
+      border-radius: 20px;
+      padding: 0.9rem;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(121, 82, 179, 0.12);
+    }
+
+    .app-guard-card strong {
+      display: block;
+      color: #10253d;
+      margin-bottom: 0.35rem;
+    }
+
+    .app-guard-card ul {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: #607286;
+      line-height: 1.6;
+    }
+
+    .app-projects-head,
+    .app-library-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .app-project-card[hidden] {
+      display: none !important;
+    }
+
+    .app-library-shell {
+      display: grid;
+      gap: 1rem;
+    }
+
+    body[data-app-mode="student"] .library-section[hidden] {
+      display: none !important;
+    }
+
+    .app-library-status {
+      color: #607286;
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 760px) {
+      .app-system-topbar,
+      .app-projects-head,
+      .app-library-head,
+      .app-recommend-head {
+        align-items: stretch;
+      }
+    }
+  </style>
 </head>
 <body class="applications-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -34,11 +314,11 @@
       <div class="applications-hero-copy">
         <p class="eyebrow">Launch Deck</p>
         <h1 class="reveal">Classroom Applications</h1>
-        <p class="applications-hero-lead reveal" style="--i:1">Open the tools you need for coding, design, publishing, and research. Start with the build tools, then jump to free assets when your project needs art, sound, or 3D models.</p>
+        <p class="applications-hero-lead reveal" style="--i:1">Choose a mission, pick your level, and jump into the right tool without getting buried under the full library. The whole catalog is still here when you want to explore more.</p>
         <div class="applications-hero-actions">
-          <a class="applications-chip" href="#app-launcher">Open Build Tools</a>
-          <a class="applications-chip applications-chip--secondary" href="#games">Open Games</a>
-          <a class="applications-chip applications-chip--secondary" href="#free-assets">Browse Free Assets</a>
+          <a class="applications-chip" href="#guided-studio">Choose A Mission</a>
+          <a class="applications-chip applications-chip--secondary" href="#build-today">Build Something</a>
+          <a class="applications-chip applications-chip--secondary" href="#full-library">Explore Full Library</a>
         </div>
       </div>
 
@@ -61,10 +341,200 @@
       </div>
     </section>
 
-    <section class="section" id="app-launcher">
+    <section class="section app-system" id="guided-studio">
+      <div class="app-system-shell">
+        <div class="app-system-topbar">
+          <div class="app-system-copy">
+            <p class="eyebrow">Learning Studio</p>
+            <h2>What Do You Want To Build Today?</h2>
+            <p>Pick a mission first, then choose your level. We’ll surface just a few strong starting tools instead of the whole library at once.</p>
+          </div>
+          <div class="app-mode-toggle" aria-label="Page mode">
+            <button class="app-mode-btn is-active" type="button" data-app-mode-btn="student">Student Mode</button>
+            <button class="app-mode-btn" type="button" data-app-mode-btn="teacher">Teacher Mode</button>
+          </div>
+        </div>
+
+        <div class="app-quick-links" aria-label="Quick links">
+          <a class="app-quick-link" href="#guided-studio">Missions</a>
+          <a class="app-quick-link" href="#build-today">Projects</a>
+          <a class="app-quick-link" href="#full-library">Library</a>
+        </div>
+
+        <div class="app-mission-grid" aria-label="Mission selector">
+          <button class="app-mission-card is-active" type="button" data-mission="game">
+            <span class="app-mission-emoji">🎮</span>
+            <strong>Make A Game</strong>
+            <small>Stories, coding puzzles, mechanics, and playable worlds.</small>
+          </button>
+          <button class="app-mission-card" type="button" data-mission="robot">
+            <span class="app-mission-emoji">🤖</span>
+            <strong>Build A Robot</strong>
+            <small>Circuits, Arduino, simulation, CAD, and fabrication.</small>
+          </button>
+          <button class="app-mission-card" type="button" data-mission="art">
+            <span class="app-mission-emoji">🎨</span>
+            <strong>Design Art / Media</strong>
+            <small>Graphics, music, video, XR, and visual storytelling.</small>
+          </button>
+          <button class="app-mission-card" type="button" data-mission="web">
+            <span class="app-mission-emoji">🌐</span>
+            <strong>Build A Website</strong>
+            <small>Web apps, no-code publishing, UI design, and portfolios.</small>
+          </button>
+          <button class="app-mission-card" type="button" data-mission="learn">
+            <span class="app-mission-emoji">🧠</span>
+            <strong>Learn &amp; Practice</strong>
+            <small>Math, reading, science, reference tools, and guided practice.</small>
+          </button>
+        </div>
+
+        <div class="app-level-row" aria-label="Level selector">
+          <button class="app-level-btn" type="button" data-level="k2">🟢 K-2</button>
+          <button class="app-level-btn" type="button" data-level="35">🔵 3-5</button>
+          <button class="app-level-btn is-active" type="button" data-level="68">🟡 6-8</button>
+          <button class="app-level-btn" type="button" data-level="912">🔴 9-12</button>
+        </div>
+
+        <div class="app-recommend-panel">
+          <div class="app-recommend-head">
+            <div>
+              <h3 id="guided-title">Start Here</h3>
+              <p id="guided-summary" class="app-library-status">A few strong first steps for this mission and level.</p>
+            </div>
+            <span id="guided-badge" class="app-library-status">Mission: Game · Level: 6-8</span>
+          </div>
+          <div id="guided-recommend-grid" class="app-recommend-grid"></div>
+        </div>
+
+        <div class="app-ai-guardrails">
+          <h3>Use AI Well</h3>
+          <p>AI belongs in the workflow, but not in place of thinking. Use it to accelerate ideas, debugging, and explanation, not to skip the learning.</p>
+          <div class="app-guard-grid">
+            <div class="app-guard-card">
+              <strong>Use AI for</strong>
+              <ul>
+                <li>brainstorming ideas</li>
+                <li>explaining a concept another way</li>
+                <li>debugging and improving your own work</li>
+              </ul>
+            </div>
+            <div class="app-guard-card">
+              <strong>Do not use AI for</strong>
+              <ul>
+                <li>copying full projects you do not understand</li>
+                <li>skipping the design, math, or writing process</li>
+                <li>turning in work you cannot explain</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section app-system" id="build-today">
+      <div class="app-system-shell">
+        <div class="app-projects-head">
+          <div class="app-system-copy">
+            <p class="eyebrow">Build Today</p>
+            <h2>Project-Based Entry</h2>
+            <p>These are fast launches into something concrete. Projects update as you switch missions so the page feels like a studio, not just a directory.</p>
+          </div>
+        </div>
+
+        <div class="app-project-grid">
+          <article class="app-project-card" data-project-missions="game" data-project-levels="k2,35">
+            <span class="app-project-kicker">Starter Game</span>
+            <strong>Animate A Playable Character</strong>
+            <small>Use Scratch or ScratchJr to make a character move, react, and tell a short interactive story.</small>
+            <div class="app-project-actions">
+              <a class="app-launch-link" href="https://scratch.mit.edu/" target="_blank" rel="noreferrer">Open Scratch</a>
+            </div>
+          </article>
+          <article class="app-project-card" data-project-missions="game" data-project-levels="68,912">
+            <span class="app-project-kicker">Level Up</span>
+            <strong>Prototype A Platformer Loop</strong>
+            <small>Build the first playable mechanics, then study other browser games to compare feel, pacing, and controls.</small>
+            <div class="app-project-actions">
+              <a class="app-launch-link" href="https://studio.code.org/" target="_blank" rel="noreferrer">Open Code.org</a>
+              <a class="app-secondary-link" href="https://itch.io/games/platform-web" target="_blank" rel="noreferrer">Study Examples</a>
+            </div>
+          </article>
+          <article class="app-project-card" data-project-missions="robot" data-project-levels="35,68,912">
+            <span class="app-project-kicker">Physical Computing</span>
+            <strong>Build A Blinking Robot Brain</strong>
+            <small>Wire a simple circuit or virtual microcontroller project and test it before you ever touch hardware.</small>
+            <div class="app-project-actions">
+              <a class="app-launch-link" href="https://wokwi.com/" target="_blank" rel="noreferrer">Open Wokwi</a>
+            </div>
+          </article>
+          <article class="app-project-card" data-project-missions="art" data-project-levels="k2,35,68">
+            <span class="app-project-kicker">Creative Media</span>
+            <strong>Make A Poster Or Album Cover</strong>
+            <small>Combine typography, shape, and imagery into a polished visual using beginner-friendly design tools.</small>
+            <div class="app-project-actions">
+              <a class="app-launch-link" href="https://www.canva.com/" target="_blank" rel="noreferrer">Open Canva</a>
+            </div>
+          </article>
+          <article class="app-project-card" data-project-missions="art" data-project-levels="35,68,912">
+            <span class="app-project-kicker">Sound + Motion</span>
+            <strong>Create A Music Loop Or Short Video</strong>
+            <small>Build a short media piece with sound, visuals, and export-ready edits.</small>
+            <div class="app-project-actions">
+              <a class="app-launch-link" href="https://musiclab.chromeexperiments.com/" target="_blank" rel="noreferrer">Open Music Lab</a>
+              <a class="app-secondary-link" href="https://clipchamp.com/" target="_blank" rel="noreferrer">Edit Video</a>
+            </div>
+          </article>
+          <article class="app-project-card" data-project-missions="web" data-project-levels="35,68,912">
+            <span class="app-project-kicker">Web Publishing</span>
+            <strong>Launch A Class Portfolio Site</strong>
+            <small>Publish a simple site first, then iterate into richer web app and interface design later.</small>
+            <div class="app-project-actions">
+              <a class="app-launch-link" href="https://sites.google.com/" target="_blank" rel="noreferrer">Open Google Sites</a>
+              <a class="app-secondary-link" href="https://www.figma.com/" target="_blank" rel="noreferrer">Design In Figma</a>
+            </div>
+          </article>
+          <article class="app-project-card" data-project-missions="learn" data-project-levels="k2,35">
+            <span class="app-project-kicker">Practice Session</span>
+            <strong>Warm Up With Math Or Reading Games</strong>
+            <small>Use a short practice loop to build fluency before moving into bigger projects.</small>
+            <div class="app-project-actions">
+              <a class="app-launch-link" href="https://www.roomrecess.com/" target="_blank" rel="noreferrer">Open RoomRecess</a>
+            </div>
+          </article>
+          <article class="app-project-card" data-project-missions="learn" data-project-levels="68,912">
+            <span class="app-project-kicker">Research Sprint</span>
+            <strong>Compare Sources And Build An Evidence Story</strong>
+            <small>Move from encyclopedia to paper to dataset so students can see the difference between summary, evidence, and new knowledge.</small>
+            <div class="app-project-actions">
+              <a class="app-launch-link" href="https://www.britannica.com/" target="_blank" rel="noreferrer">Start With Britannica</a>
+              <a class="app-secondary-link" href="https://ourworldindata.org/" target="_blank" rel="noreferrer">Use Data</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section app-system" id="full-library">
+      <div class="app-system-shell app-library-shell">
+        <div class="app-library-head">
+          <div class="app-library-copy">
+            <p class="eyebrow">Explore More</p>
+            <h2>Full Library</h2>
+            <p>Teacher Mode opens the whole tool ecosystem. Student Mode keeps this collapsed until you intentionally expand it.</p>
+          </div>
+          <div class="app-level-row">
+            <button id="toggle-library" class="app-library-btn" type="button" aria-expanded="false">Open Full Library</button>
+          </div>
+        </div>
+        <p id="library-status" class="app-library-status">Student Mode is on. The full library is hidden until you open it.</p>
+      </div>
+    </section>
+
+    <section class="section library-section" id="app-launcher">
       <div class="section-head">
-        <h2>Build + Learn</h2>
-        <p>Pick the tool that matches today's mission. Start with the classroom launch lane, then jump into immersive media, engineering, or publishing tools.</p>
+        <h2>Build + Learn Library</h2>
+        <p>The complete tool ecosystem lives here. Use it when you want more than the guided mission path.</p>
       </div>
 
       <div class="applications-stack">
@@ -240,6 +710,54 @@
                 <span class="tile-kicker">Applied Science</span>
                 <strong>NASA</strong>
                 <small>Explore real missions, datasets, imagery, and science resources to study applied science, engineering, and systems thinking.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-ncbi" href="https://www.ncbi.nlm.nih.gov/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Science</span>
+                  <span class="app-tag app-tag--soft">Biology + medicine</span>
+                </div>
+                <span class="tile-kicker">Research Database</span>
+                <strong>NCBI</strong>
+                <small>Search biology, genetics, and medical research resources, including papers and databases used in real scientific study.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-arxiv" href="https://arxiv.org/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Research</span>
+                  <span class="app-tag app-tag--soft">AI + physics + math</span>
+                </div>
+                <span class="tile-kicker">Cutting-Edge Papers</span>
+                <strong>arXiv</strong>
+                <small>Read current research preprints in areas like AI, physics, and math to study how new knowledge is created and shared.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-ourworldindata" href="https://ourworldindata.org/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Data</span>
+                  <span class="app-tag app-tag--soft">Global trends</span>
+                </div>
+                <span class="tile-kicker">Interactive Datasets</span>
+                <strong>Our World in Data</strong>
+                <small>Explore clean, interactive global datasets and visualizations to study trends, evidence, and real-world data stories.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-gapminder" href="https://www.gapminder.org/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Data</span>
+                  <span class="app-tag app-tag--soft">Animated statistics</span>
+                </div>
+                <span class="tile-kicker">Data Visualization</span>
+                <strong>Gapminder</strong>
+                <small>Explore animated statistical models and global development data to see patterns, change over time, and evidence-based stories.</small>
               </div>
             </a>
 
@@ -1030,7 +1548,7 @@
       </div>
     </section>
 
-    <section class="section" id="games">
+    <section class="section library-section" id="games">
       <div class="section-head">
         <h2>Games</h2>
         <p>Open game-design spaces and sandbox sites that students can study, build in, or experiment with during class.</p>
@@ -1303,7 +1821,7 @@
       </div>
     </section>
 
-    <section class="section" id="free-assets">
+    <section class="section library-section" id="free-assets">
       <div class="section-head">
         <h2>Free Assets</h2>
         <p>Royalty-free art, audio, and 3D models for games, animations, and digital builds.</p>
@@ -1505,6 +2023,248 @@
     <p>All links open external sites in a new tab.</p>
   </footer>
 
+  <script>
+    (function () {
+      const state = {
+        mode: "student",
+        mission: "game",
+        level: "68",
+        libraryOpen: false
+      };
+
+      const missionMeta = {
+        game: { label: "Make A Game" },
+        robot: { label: "Build A Robot" },
+        art: { label: "Design Art / Media" },
+        web: { label: "Build A Website" },
+        learn: { label: "Learn & Practice" }
+      };
+
+      const levelMeta = {
+        k2: "K-2",
+        35: "3-5",
+        68: "6-8",
+        912: "9-12"
+      };
+
+      const guidedPaths = {
+        game: {
+          k2: [
+            { kicker: "Start", title: "ScratchJr", desc: "Snap together simple stories and movement blocks to learn sequencing through play.", url: "https://codejr.org/scratchjr/index.html" },
+            { kicker: "Practice", title: "Blockly Games", desc: "Solve coding puzzles that teach logic, loops, and problem solving.", url: "https://blockly.games/" },
+            { kicker: "Explore", title: "PBS Kids Games", desc: "Build confidence with playful early-learning games and interactions.", url: "https://pbskids.org/games" }
+          ],
+          35: [
+            { kicker: "Start", title: "Scratch", desc: "Build your first playable game with sprites, loops, and events.", url: "https://scratch.mit.edu/" },
+            { kicker: "Build", title: "Bloxels", desc: "Design characters and worlds in a game-first builder.", url: "https://play.bloxels.com/" },
+            { kicker: "Practice", title: "Blockly Games", desc: "Reinforce coding logic with fast challenge loops.", url: "https://blockly.games/" }
+          ],
+          68: [
+            { kicker: "Start", title: "Scratch", desc: "Prototype mechanics, scoring, and interaction fast.", url: "https://scratch.mit.edu/" },
+            { kicker: "Level Up", title: "Code.org Game Lab", desc: "Move into more structured game systems and code-driven design.", url: "https://studio.code.org/" },
+            { kicker: "Study", title: "itch.io Browser Games", desc: "Analyze mechanics and storytelling in live browser games.", url: "https://itch.io/games/platform-web" }
+          ],
+          912: [
+            { kicker: "Prototype", title: "Replit", desc: "Start coding game ideas quickly in the browser.", url: "https://replit.com/" },
+            { kicker: "Study Code", title: "GitHub Open Source Games", desc: "Read real game repositories and remix working systems.", url: "https://github.com/bobeff/open-source-games" },
+            { kicker: "Publish", title: "itch.io", desc: "Ship prototypes and playable builds to a real audience.", url: "https://itch.io/" }
+          ]
+        },
+        robot: {
+          k2: [
+            { kicker: "Explore", title: "ScratchJr", desc: "Practice sequencing and commands as a first robotics mindset.", url: "https://codejr.org/scratchjr/index.html" },
+            { kicker: "Play", title: "Toy Theater", desc: "Use logic and patterns to build computational thinking.", url: "https://toytheater.com/" },
+            { kicker: "Practice", title: "PBS Kids Games", desc: "Warm up with younger-friendly problem solving and science play.", url: "https://pbskids.org/games" }
+          ],
+          35: [
+            { kicker: "Start", title: "VEXcode VR", desc: "Program a virtual robot and see your code drive movement.", url: "https://vr.vex.com/" },
+            { kicker: "Build", title: "Wokwi", desc: "Prototype circuits and code without hardware.", url: "https://wokwi.com/" },
+            { kicker: "Guide", title: "Arduino Project Hub", desc: "Browse approachable hardware projects and ideas.", url: "https://projecthub.arduino.cc/" }
+          ],
+          68: [
+            { kicker: "Start", title: "Wokwi", desc: "Simulate Arduino-style builds with live code and parts.", url: "https://wokwi.com/" },
+            { kicker: "Learn", title: "SparkFun Learn", desc: "Study sensors, circuits, and physical computing concepts.", url: "https://learn.sparkfun.com/" },
+            { kicker: "Advance", title: "VEXcode VR", desc: "Move from simple logic to robot strategy and control.", url: "https://vr.vex.com/" }
+          ],
+          912: [
+            { kicker: "Design", title: "Onshape", desc: "Model parts and systems in browser-based CAD.", url: "https://www.onshape.com/en/" },
+            { kicker: "Simulate", title: "Gazebo", desc: "Test robots and systems in realistic simulation.", url: "https://gazebosim.org/home" },
+            { kicker: "Fabricate", title: "Cura", desc: "Prepare your parts for real 3D printing workflows.", url: "https://ultimaker.com/software/ultimaker-cura/" }
+          ]
+        },
+        art: {
+          k2: [
+            { kicker: "Create", title: "Canva", desc: "Make posters, cards, and simple visuals with drag-and-drop tools.", url: "https://www.canva.com/" },
+            { kicker: "Play", title: "Chrome Music Lab", desc: "Explore music, rhythm, and sound through playful visuals.", url: "https://musiclab.chromeexperiments.com/" },
+            { kicker: "Draw", title: "PBS Kids Games", desc: "Use creative early-learning activities and art play.", url: "https://pbskids.org/games" }
+          ],
+          35: [
+            { kicker: "Create", title: "Canva", desc: "Design classroom-ready visuals fast.", url: "https://www.canva.com/" },
+            { kicker: "Pixel Art", title: "Piskel", desc: "Make characters and sprites for games.", url: "https://www.piskelapp.com/" },
+            { kicker: "Sound", title: "Chrome Music Lab", desc: "Add music and audio experimentation into projects.", url: "https://musiclab.chromeexperiments.com/" }
+          ],
+          68: [
+            { kicker: "Design", title: "Pixlr", desc: "Edit graphics and visuals in the browser.", url: "https://pixlr.com/" },
+            { kicker: "Media", title: "Kapwing", desc: "Create short-form media, captions, and edits.", url: "https://www.kapwing.com/" },
+            { kicker: "Creative Code", title: "Processing", desc: "Move from static visuals into interactive art.", url: "https://processing.org/" }
+          ],
+          912: [
+            { kicker: "Interface", title: "Figma", desc: "Design high-fidelity interfaces and prototype user flows.", url: "https://www.figma.com/" },
+            { kicker: "Portfolio", title: "ArtStation", desc: "Publish polished work in a professional format.", url: "https://www.artstation.com/" },
+            { kicker: "XR", title: "PlayCanvas", desc: "Build interactive 3D and immersive media experiences.", url: "https://playcanvas.com/" }
+          ]
+        },
+        web: {
+          k2: [
+            { kicker: "Create", title: "Canva", desc: "Start with visual storytelling and shareable pages.", url: "https://www.canva.com/" },
+            { kicker: "Publish", title: "Google Sites", desc: "Make a simple page without worrying about code.", url: "https://sites.google.com/" },
+            { kicker: "Play", title: "Scratch", desc: "Build interactive stories that feel like web experiences.", url: "https://scratch.mit.edu/" }
+          ],
+          35: [
+            { kicker: "Start", title: "Google Sites", desc: "Publish a class website or portfolio quickly.", url: "https://sites.google.com/" },
+            { kicker: "Design", title: "Canva", desc: "Build the visuals and slide-style assets first.", url: "https://www.canva.com/" },
+            { kicker: "Explore", title: "Glitch", desc: "See how editable web projects work in the browser.", url: "https://glitch.com/" }
+          ],
+          68: [
+            { kicker: "Start", title: "Glitch", desc: "Edit and remix live web apps in the browser.", url: "https://glitch.com/" },
+            { kicker: "Publish", title: "Google Sites", desc: "Ship portfolio-style pages and class sites.", url: "https://sites.google.com/" },
+            { kicker: "Plan", title: "Figma", desc: "Design layout and flow before coding.", url: "https://www.figma.com/" }
+          ],
+          912: [
+            { kicker: "Prototype", title: "Figma", desc: "Map the interface before implementation.", url: "https://www.figma.com/" },
+            { kicker: "Build", title: "Glitch", desc: "Launch working web apps and iterate fast.", url: "https://glitch.com/" },
+            { kicker: "Publish", title: "GitHub", desc: "Track versions and deploy real web projects.", url: "https://github.com/" }
+          ]
+        },
+        learn: {
+          k2: [
+            { kicker: "Practice", title: "PBS Kids Games", desc: "Build early literacy, science, and SEL through play.", url: "https://pbskids.org/games" },
+            { kicker: "Practice", title: "RoomRecess", desc: "Reinforce core classroom skills with teacher-built games.", url: "https://www.roomrecess.com/" },
+            { kicker: "Explore", title: "Toy Theater", desc: "Use visual math and logic tools to strengthen concepts.", url: "https://toytheater.com/" }
+          ],
+          35: [
+            { kicker: "Learn", title: "Khan Academy", desc: "Get direct practice and instruction across core subjects.", url: "https://www.khanacademy.org/" },
+            { kicker: "Math", title: "Desmos", desc: "See math relationships visually with sliders and graphs.", url: "https://www.desmos.com/calculator" },
+            { kicker: "Games", title: "Funbrain", desc: "Use academic games to build fluency.", url: "https://www.funbrain.com/" }
+          ],
+          68: [
+            { kicker: "Learn", title: "Khan Academy", desc: "Strengthen core content and skill practice.", url: "https://www.khanacademy.org/" },
+            { kicker: "Research", title: "Britannica", desc: "Start with verified overview knowledge.", url: "https://www.britannica.com/" },
+            { kicker: "Simulate", title: "PhET Simulations", desc: "Turn abstract science and math ideas into interactive models.", url: "https://phet.colorado.edu/" }
+          ],
+          912: [
+            { kicker: "Reference", title: "Britannica", desc: "Start with curated background knowledge.", url: "https://www.britannica.com/" },
+            { kicker: "Evidence", title: "Our World in Data", desc: "Back ideas with interactive datasets and charts.", url: "https://ourworldindata.org/" },
+            { kicker: "Current Research", title: "arXiv", desc: "See how new knowledge is actually shared.", url: "https://arxiv.org/" }
+          ]
+        }
+      };
+
+      const missionButtons = Array.from(document.querySelectorAll("[data-mission]"));
+      const levelButtons = Array.from(document.querySelectorAll("[data-level]"));
+      const modeButtons = Array.from(document.querySelectorAll("[data-app-mode-btn]"));
+      const librarySections = Array.from(document.querySelectorAll(".library-section"));
+      const recommendGrid = document.getElementById("guided-recommend-grid");
+      const guidedTitle = document.getElementById("guided-title");
+      const guidedSummary = document.getElementById("guided-summary");
+      const guidedBadge = document.getElementById("guided-badge");
+      const projectCards = Array.from(document.querySelectorAll(".app-project-card"));
+      const libraryButton = document.getElementById("toggle-library");
+      const libraryStatus = document.getElementById("library-status");
+
+      function renderRecommendations() {
+        const cards = guidedPaths[state.mission][state.level];
+        guidedTitle.textContent = missionMeta[state.mission].label;
+        guidedSummary.textContent = "These are the best next steps for this mission and level. Start with one, then open the full library only if you need more options.";
+        guidedBadge.textContent = `Mission: ${missionMeta[state.mission].label} · Level: ${levelMeta[state.level]}`;
+
+        recommendGrid.innerHTML = cards.map((card) => `
+          <article class="app-recommend-card">
+            <span class="app-recommend-kicker">${card.kicker}</span>
+            <strong>${card.title}</strong>
+            <small>${card.desc}</small>
+            <div class="app-recommend-actions">
+              <a class="app-launch-link" href="${card.url}" target="_blank" rel="noreferrer">Open ${card.title}</a>
+            </div>
+          </article>
+        `).join("");
+      }
+
+      function renderProjects() {
+        projectCards.forEach((card) => {
+          const missions = (card.dataset.projectMissions || "").split(",");
+          const levels = (card.dataset.projectLevels || "").split(",");
+          const missionMatch = missions.includes(state.mission);
+          const levelMatch = levels.includes(state.level);
+          card.hidden = !(missionMatch && levelMatch);
+        });
+      }
+
+      function renderLibrary() {
+        document.body.setAttribute("data-app-mode", state.mode);
+        const showLibrary = state.mode === "teacher" ? true : state.libraryOpen;
+        librarySections.forEach((section) => {
+          section.hidden = !showLibrary;
+        });
+        libraryButton.setAttribute("aria-expanded", String(showLibrary));
+        libraryButton.textContent = showLibrary ? "Hide Full Library" : "Open Full Library";
+        libraryButton.classList.toggle("is-active", showLibrary);
+        libraryStatus.textContent = showLibrary
+          ? "The full library is open. Scroll for the complete tool ecosystem."
+          : "Student Mode is on. The full library is hidden until you open it.";
+      }
+
+      function renderControls() {
+        missionButtons.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.mission === state.mission);
+        });
+        levelButtons.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.level === state.level);
+        });
+        modeButtons.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.appModeBtn === state.mode);
+        });
+      }
+
+      function renderAll() {
+        renderControls();
+        renderRecommendations();
+        renderProjects();
+        renderLibrary();
+      }
+
+      missionButtons.forEach((button) => {
+        button.addEventListener("click", function () {
+          state.mission = button.dataset.mission;
+          renderAll();
+        });
+      });
+
+      levelButtons.forEach((button) => {
+        button.addEventListener("click", function () {
+          state.level = button.dataset.level;
+          renderAll();
+        });
+      });
+
+      modeButtons.forEach((button) => {
+        button.addEventListener("click", function () {
+          state.mode = button.dataset.appModeBtn;
+          if (state.mode === "teacher") state.libraryOpen = true;
+          renderAll();
+        });
+      });
+
+      if (libraryButton) {
+        libraryButton.addEventListener("click", function () {
+          state.libraryOpen = !state.libraryOpen;
+          renderLibrary();
+        });
+      }
+
+      renderAll();
+    })();
+  </script>
   <script>
     (function () {
       const openBtn = document.getElementById("open-tinkercad-picker");
