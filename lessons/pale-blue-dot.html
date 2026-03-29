@@ -73,6 +73,35 @@
       cursor: ns-resize;
     }
     #pbd-canvas { display: block; width: 100%; }
+    .pbd-planet-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .pbd-planet-model {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 0;
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-50%, -50%);
+      transform-origin: center;
+      transition: opacity 0.28s ease;
+      will-change: transform, width, height, opacity;
+      filter: drop-shadow(0 0 16px rgba(80, 130, 255, 0.28));
+    }
+    .pbd-planet-model.is-visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    .pbd-planet-model canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
 
     /* ── Slider ── */
     .pbd-controls {
@@ -239,6 +268,7 @@
 
       <div class="pbd-canvas-wrap" id="pbd-wrap">
         <canvas id="pbd-canvas"></canvas>
+        <div class="pbd-planet-layer" id="pbd-planet-layer" aria-hidden="true"></div>
       </div>
 
       <div class="pbd-readout">
@@ -343,6 +373,7 @@
     const milestoneEl = document.getElementById('pbd-milestone');
     const quoteEl = document.getElementById('pbd-quote');
     const wrap = document.getElementById('pbd-wrap');
+    const modelLayer = document.getElementById('pbd-planet-layer');
 
     // ── Scale map: slider 0→100 maps logarithmically to meters across viewport ──
     // 0   = 10 m  (human scale)
@@ -372,16 +403,35 @@
     const EARTH_R  = 6.371e6;
     const SUN_R    = 6.957e8;
     const MOON_R   = 1.737e6;
+    const VENUS_R  = 6.052e6;
+    const JUPITER_R = 6.9911e7;
+    const SATURN_R = 5.8232e7;
+    const URANUS_R = 2.5362e7;
+    const NEPTUNE_R = 2.4622e7;
     const AU       = 1.496e11;
     const LY       = 9.461e15;
+
+    const MODEL_CONFIGS = {
+      Earth:   { path: '../assets/models/earth.glb',        spin: 0.0048, minPx: 34, maxPx: 220, showAbovePx: 18, hideAbovePx: 250, fit: 1.8 },
+      Moon:    { path: '../assets/models/the_moon.glb',     spin: 0.0026, minPx: 28, maxPx: 150, showAbovePx: 14, hideAbovePx: 170, fit: 1.75 },
+      Venus:   { path: '../assets/models/venus.glb',        spin: 0.0038, minPx: 32, maxPx: 180, showAbovePx: 14, hideAbovePx: 220, fit: 1.8 },
+      Sun:     { path: '../assets/models/sun.glb',          spin: 0.0022, minPx: 40, maxPx: 230, showAbovePx: 20, hideAbovePx: 260, fit: 1.85 },
+      Jupiter: { path: '../assets/models/jupiter.glb',      spin: 0.0035, minPx: 38, maxPx: 210, showAbovePx: 16, hideAbovePx: 240, fit: 1.8 },
+      Saturn:  { path: '../assets/models/saturno_v1.1.glb', spin: 0.0024, minPx: 60, maxPx: 280, showAbovePx: 20, hideAbovePx: 280, fit: 2.1, displayScale: 1.85, tiltX: 0.35, tiltZ: -0.18 },
+      Uranus:  { path: '../assets/models/uranus.glb',       spin: 0.0031, minPx: 34, maxPx: 180, showAbovePx: 14, hideAbovePx: 220, fit: 1.8 },
+      Neptune: { path: '../assets/models/neptune.glb',      spin: 0.0032, minPx: 34, maxPx: 180, showAbovePx: 14, hideAbovePx: 220, fit: 1.8 }
+    };
 
     const OBJECTS = [
       { name: 'Earth',            dist: 0,           r: EARTH_R,      color: '#3a7bd5', dot: true  },
       { name: 'Moon',             dist: 3.844e8,      r: MOON_R,       color: '#c0c0c0'             },
+      { name: 'Venus',            dist: 1.08e11,      r: VENUS_R,      color: '#e8b067'             },
       { name: 'Sun',              dist: AU,           r: SUN_R,        color: '#ffe566'             },
       { name: 'Mars',             dist: 2.28e11,      r: 3.39e6,       color: '#d45030'             },
-      { name: 'Jupiter',          dist: 7.79e11,      r: 6.99e7,       color: '#c89060'             },
-      { name: 'Saturn',           dist: 1.43e12,      r: 5.82e7,       color: '#e8d090'             },
+      { name: 'Jupiter',          dist: 7.79e11,      r: JUPITER_R,    color: '#c89060'             },
+      { name: 'Saturn',           dist: 1.43e12,      r: SATURN_R,     color: '#e8d090'             },
+      { name: 'Uranus',           dist: 2.87e12,      r: URANUS_R,     color: '#8bcde6'             },
+      { name: 'Neptune',          dist: 4.50e12,      r: NEPTUNE_R,    color: '#5a78ff'             },
       { name: 'Voyager 1',        dist: 2.3e13,       r: 0,            color: '#80a0ff', voyager: true },
       { name: 'Proxima Centauri', dist: 4.01e16,      r: 1.07e8,       color: '#ff8060'             },
       { name: 'Milky Way center', dist: 2.5e20,       r: 5e19,         color: '#d0b080', galaxy: true },
@@ -413,6 +463,166 @@
       });
     }
 
+    let modelSystem = null;
+
+    function createPbdModelSystem(THREE, GLTFLoader) {
+      if (!modelLayer) return null;
+
+      const loader = new GLTFLoader();
+      const viewers = new Map();
+      const tempBox = new THREE.Box3();
+      const tempSize = new THREE.Vector3();
+      const tempCenter = new THREE.Vector3();
+
+      function configureMaterials(root) {
+        root.traverse(node => {
+          if (!node.isMesh) return;
+          node.castShadow = false;
+          node.receiveShadow = false;
+          const materials = Array.isArray(node.material) ? node.material : [node.material];
+          materials.forEach(material => {
+            if (!material) return;
+            if (material.map) material.map.colorSpace = THREE.SRGBColorSpace;
+            material.needsUpdate = true;
+          });
+        });
+      }
+
+      function normalizeModel(holder, cfg) {
+        tempBox.setFromObject(holder);
+        tempBox.getSize(tempSize);
+        tempBox.getCenter(tempCenter);
+        const maxDim = Math.max(tempSize.x, tempSize.y, tempSize.z) || 1;
+        const fit = cfg.fit || 1.8;
+        holder.position.sub(tempCenter);
+        holder.scale.setScalar(fit / maxDim);
+        tempBox.setFromObject(holder);
+        tempBox.getCenter(tempCenter);
+        holder.position.sub(tempCenter);
+      }
+
+      function createViewer(name, cfg) {
+        const host = document.createElement('div');
+        host.className = 'pbd-planet-model';
+        host.dataset.name = name;
+        modelLayer.appendChild(host);
+
+        const renderer = new THREE.WebGLRenderer({
+          alpha: true,
+          antialias: true,
+          powerPreference: 'low-power'
+        });
+        renderer.setClearColor(0x000000, 0);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        host.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 20);
+        camera.position.set(0, 0, 4.2);
+
+        const ambient = new THREE.AmbientLight(0xffffff, 1.75);
+        const hemi = new THREE.HemisphereLight(0xbfd8ff, 0x0c1327, 1.1);
+        const key = new THREE.DirectionalLight(0xffffff, 1.8);
+        const rim = new THREE.DirectionalLight(0x7aa8ff, 0.55);
+        key.position.set(2.5, 2, 4);
+        rim.position.set(-3, 1.5, -2.5);
+
+        scene.add(ambient, hemi, key, rim);
+
+        const pose = new THREE.Group();
+        pose.rotation.x = cfg.tiltX || 0.18;
+        pose.rotation.z = cfg.tiltZ || -0.08;
+        const spinGroup = new THREE.Group();
+        pose.add(spinGroup);
+        scene.add(pose);
+
+        const viewer = {
+          host,
+          renderer,
+          scene,
+          camera,
+          pose,
+          spinGroup,
+          spin: cfg.spin || 0.003,
+          size: 0,
+          ready: false,
+          visible: false,
+          failed: false
+        };
+
+        loader.load(cfg.path, gltf => {
+          const root = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+          if (!root) return;
+          configureMaterials(root);
+          root.updateMatrixWorld(true);
+          spinGroup.add(root);
+          normalizeModel(spinGroup, cfg);
+          viewer.ready = true;
+        }, undefined, err => {
+          viewer.failed = true;
+          host.remove();
+          console.warn('Pale Blue Dot model failed to load:', name, err);
+        });
+
+        viewers.set(name, viewer);
+      }
+
+      Object.keys(MODEL_CONFIGS).forEach(name => createViewer(name, MODEL_CONFIGS[name]));
+
+      return {
+        isReady(name) {
+          const viewer = viewers.get(name);
+          return !!(viewer && viewer.ready && !viewer.failed);
+        },
+        resize() {
+          viewers.forEach(viewer => {
+            viewer.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            if (viewer.size > 0) viewer.renderer.setSize(viewer.size, viewer.size, false);
+          });
+        },
+        sync(layouts) {
+          const active = new Set();
+          layouts.forEach(layout => {
+            const viewer = viewers.get(layout.name);
+            if (!viewer || !viewer.ready || viewer.failed) return;
+            active.add(layout.name);
+            if (viewer.size !== layout.size) {
+              viewer.size = layout.size;
+              viewer.renderer.setSize(layout.size, layout.size, false);
+            }
+            viewer.host.style.width = layout.size + 'px';
+            viewer.host.style.height = layout.size + 'px';
+            viewer.host.style.left = layout.x + 'px';
+            viewer.host.style.top = layout.y + 'px';
+            viewer.host.classList.add('is-visible');
+            viewer.visible = true;
+          });
+
+          viewers.forEach((viewer, name) => {
+            if (active.has(name)) return;
+            viewer.visible = false;
+            viewer.host.classList.remove('is-visible');
+          });
+        },
+        render() {
+          viewers.forEach(viewer => {
+            if (!viewer.visible || !viewer.ready || viewer.failed) return;
+            viewer.spinGroup.rotation.y += viewer.spin;
+            viewer.renderer.render(viewer.scene, viewer.camera);
+          });
+        }
+      };
+    }
+
+    window.__attachPbdModelSystem = function (THREE, GLTFLoader) {
+      modelSystem = createPbdModelSystem(THREE, GLTFLoader);
+      if (modelSystem) {
+        modelSystem.resize();
+        draw();
+      }
+    };
+
     let W, H;
     function resize() {
       W = wrap.clientWidth;
@@ -420,6 +630,7 @@
       H = Math.max(H, 320);
       canvas.width  = W;
       canvas.height = H;
+      if (modelSystem) modelSystem.resize();
       draw();
     }
 
@@ -451,6 +662,7 @@
 
       function xFor(distM) { return W / 2 + (distM * scale); }
       function rFor(radiusM) { return Math.max(radiusM * scale, 1.5); }
+      const modelLayouts = [];
 
       // ── Sunbeam (visible when Voyager-scale, slider ~40–55) ──
       const sunbeamAlpha = Math.max(0, Math.min(1,
@@ -492,6 +704,25 @@
         if (cx < -200 || cx > W + 200) return;
 
         const cr = rFor(obj.r);
+        const modelCfg = MODEL_CONFIGS[obj.name];
+        const modelReady = !!(modelSystem && modelSystem.isReady && modelSystem.isReady(obj.name));
+        const modelDiameter = modelCfg
+          ? Math.min(modelCfg.maxPx, Math.max(modelCfg.minPx, cr * 2 * (modelCfg.displayScale || 1)))
+          : 0;
+        const showModel = !!(modelReady && modelCfg &&
+          cr * 2 >= modelCfg.showAbovePx &&
+          cr * 2 <= modelCfg.hideAbovePx &&
+          cx >= -modelDiameter &&
+          cx <= W + modelDiameter);
+
+        if (showModel) {
+          modelLayouts.push({
+            name: obj.name,
+            x: cx,
+            y: H / 2,
+            size: Math.round(modelDiameter)
+          });
+        }
 
         // Glow
         if (cr > 3) {
@@ -506,7 +737,7 @@
         }
 
         // Body
-        if (obj.r > 0) {
+        if (obj.r > 0 && !showModel) {
           ctx.beginPath();
           ctx.arc(cx, H/2, Math.max(cr, 1.5), 0, Math.PI * 2);
           ctx.fillStyle = obj.color;
@@ -556,6 +787,8 @@
         }
       });
 
+      if (modelSystem) modelSystem.sync(modelLayouts);
+
       // ── Scale bar ──
       const barM   = viewM / 8;
       const barPx  = barM * scale;
@@ -592,7 +825,11 @@
     slider.addEventListener('input', draw);
 
     let animId;
-    function animate() { draw(); animId = requestAnimationFrame(animate); }
+    function animate() {
+      draw();
+      if (modelSystem) modelSystem.render();
+      animId = requestAnimationFrame(animate);
+    }
 
     // Scroll to zoom
     wrap.addEventListener('wheel', e => {
@@ -606,6 +843,24 @@
     // Defer first resize until after layout is computed, then start animation loop
     requestAnimationFrame(() => { resize(); animate(); });
   })();
+  </script>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    if (window.__attachPbdModelSystem) {
+      window.__attachPbdModelSystem(THREE, GLTFLoader);
+    }
   </script>
 
   <script src="../assets/js/lesson-layout.js"></script>
