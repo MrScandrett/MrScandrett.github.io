@@ -79,25 +79,7 @@
       pointer-events: none;
       z-index: 2;
     }
-    .pbd-planet-model {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 0;
-      height: 0;
-      opacity: 0;
-      visibility: hidden;
-      transform: translate(-50%, -50%);
-      transform-origin: center;
-      transition: opacity 0.28s ease;
-      will-change: transform, width, height, opacity;
-      filter: drop-shadow(0 0 16px rgba(80, 130, 255, 0.28));
-    }
-    .pbd-planet-model.is-visible {
-      opacity: 1;
-      visibility: visible;
-    }
-    .pbd-planet-model canvas {
+    .pbd-planet-layer canvas {
       display: block;
       width: 100%;
       height: 100%;
@@ -468,11 +450,41 @@
     function createPbdModelSystem(THREE, GLTFLoader) {
       if (!modelLayer) return null;
 
+      const probeCanvas = document.createElement('canvas');
+      const probeOptions = { alpha: true, antialias: true, powerPreference: 'low-power' };
+      const probeContext = probeCanvas.getContext('webgl2', probeOptions) || probeCanvas.getContext('webgl', probeOptions);
+      if (!probeContext) {
+        console.warn('Pale Blue Dot 3D overlay skipped: WebGL unavailable.');
+        return null;
+      }
+
+      let renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({
+          alpha: true,
+          antialias: true,
+          powerPreference: 'low-power'
+        });
+      } catch (err) {
+        console.warn('Pale Blue Dot 3D overlay unavailable:', err);
+        return null;
+      }
+
+      renderer.setClearColor(0x000000, 0);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.autoClear = false;
+      modelLayer.innerHTML = '';
+      modelLayer.appendChild(renderer.domElement);
+
       const loader = new GLTFLoader();
       const viewers = new Map();
+      const activeLayouts = new Map();
       const tempBox = new THREE.Box3();
       const tempSize = new THREE.Vector3();
       const tempCenter = new THREE.Vector3();
+      let layerW = 0;
+      let layerH = 0;
 
       function configureMaterials(root) {
         root.traverse(node => {
@@ -502,21 +514,6 @@
       }
 
       function createViewer(name, cfg) {
-        const host = document.createElement('div');
-        host.className = 'pbd-planet-model';
-        host.dataset.name = name;
-        modelLayer.appendChild(host);
-
-        const renderer = new THREE.WebGLRenderer({
-          alpha: true,
-          antialias: true,
-          powerPreference: 'low-power'
-        });
-        renderer.setClearColor(0x000000, 0);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        host.appendChild(renderer.domElement);
-
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 20);
         camera.position.set(0, 0, 4.2);
@@ -538,16 +535,12 @@
         scene.add(pose);
 
         const viewer = {
-          host,
-          renderer,
           scene,
           camera,
           pose,
           spinGroup,
           spin: cfg.spin || 0.003,
-          size: 0,
           ready: false,
-          visible: false,
           failed: false
         };
 
@@ -561,7 +554,6 @@
           viewer.ready = true;
         }, undefined, err => {
           viewer.failed = true;
-          host.remove();
           console.warn('Pale Blue Dot model failed to load:', name, err);
         });
 
@@ -575,42 +567,39 @@
           const viewer = viewers.get(name);
           return !!(viewer && viewer.ready && !viewer.failed);
         },
-        resize() {
-          viewers.forEach(viewer => {
-            viewer.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-            if (viewer.size > 0) viewer.renderer.setSize(viewer.size, viewer.size, false);
-          });
+        resize(width, height) {
+          layerW = width;
+          layerH = height;
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          renderer.setSize(layerW, layerH, false);
         },
         sync(layouts) {
-          const active = new Set();
+          activeLayouts.clear();
           layouts.forEach(layout => {
             const viewer = viewers.get(layout.name);
             if (!viewer || !viewer.ready || viewer.failed) return;
-            active.add(layout.name);
-            if (viewer.size !== layout.size) {
-              viewer.size = layout.size;
-              viewer.renderer.setSize(layout.size, layout.size, false);
-            }
-            viewer.host.style.width = layout.size + 'px';
-            viewer.host.style.height = layout.size + 'px';
-            viewer.host.style.left = layout.x + 'px';
-            viewer.host.style.top = layout.y + 'px';
-            viewer.host.classList.add('is-visible');
-            viewer.visible = true;
-          });
-
-          viewers.forEach((viewer, name) => {
-            if (active.has(name)) return;
-            viewer.visible = false;
-            viewer.host.classList.remove('is-visible');
+            activeLayouts.set(layout.name, layout);
           });
         },
         render() {
-          viewers.forEach(viewer => {
-            if (!viewer.visible || !viewer.ready || viewer.failed) return;
+          if (!layerW || !layerH) return;
+          renderer.clear();
+          renderer.setScissorTest(true);
+
+          activeLayouts.forEach((layout, name) => {
+            const viewer = viewers.get(name);
+            if (!viewer || !viewer.ready || viewer.failed) return;
             viewer.spinGroup.rotation.y += viewer.spin;
-            viewer.renderer.render(viewer.scene, viewer.camera);
+            const size = Math.max(1, Math.round(layout.size));
+            const left = Math.round(layout.x - size / 2);
+            const bottom = Math.round(layerH - (layout.y + size / 2));
+            renderer.setViewport(left, bottom, size, size);
+            renderer.setScissor(left, bottom, size, size);
+            renderer.clearDepth();
+            renderer.render(viewer.scene, viewer.camera);
           });
+
+          renderer.setScissorTest(false);
         }
       };
     }
@@ -618,7 +607,7 @@
     window.__attachPbdModelSystem = function (THREE, GLTFLoader) {
       modelSystem = createPbdModelSystem(THREE, GLTFLoader);
       if (modelSystem) {
-        modelSystem.resize();
+        modelSystem.resize(W || wrap.clientWidth, H || Math.max(Math.round(wrap.clientWidth * 0.52), 320));
         draw();
       }
     };
@@ -630,7 +619,7 @@
       H = Math.max(H, 320);
       canvas.width  = W;
       canvas.height = H;
-      if (modelSystem) modelSystem.resize();
+      if (modelSystem) modelSystem.resize(W, H);
       draw();
     }
 
@@ -712,8 +701,8 @@
         const showModel = !!(modelReady && modelCfg &&
           cr * 2 >= modelCfg.showAbovePx &&
           cr * 2 <= modelCfg.hideAbovePx &&
-          cx >= -modelDiameter &&
-          cx <= W + modelDiameter);
+          cx >= modelDiameter / 2 &&
+          cx <= W - modelDiameter / 2);
 
         if (showModel) {
           modelLayouts.push({
