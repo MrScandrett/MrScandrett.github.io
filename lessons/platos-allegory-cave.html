@@ -741,11 +741,13 @@
               interaction-prompt="auto"
               shadow-intensity="1"
               environment-image="neutral"
-              exposure="1"
-              camera-orbit="0deg 78deg 115%"
-              field-of-view="35deg"
-              min-camera-orbit="auto 35deg auto"
-              max-camera-orbit="auto 110deg auto">
+              exposure="1.35"
+              camera-orbit="35deg 72deg 145%"
+              camera-target="0m 0.8m 0m"
+              field-of-view="32deg"
+              rotation-per-second="12deg"
+              min-camera-orbit="auto 40deg auto"
+              max-camera-orbit="auto 100deg auto">
               <div class="cave-model-fallback">
                 Your browser can't display the interactive model.
                 <a href="../assets/models/allegory_of_the_cave.glb">Download the GLB file instead</a>.
@@ -1102,8 +1104,13 @@
       var playBtn = document.getElementById("cave-play");
       var rotateBtn = document.getElementById("cave-explore");
       var wrap = document.getElementById("cave-canvas-wrap");
-      var defaultOrbit = "0deg 78deg 115%";
-      var defaultFov = "35deg";
+      var defaultOrbit = "35deg 72deg 145%";
+      var defaultTarget = "0m 0.8m 0m";
+      var defaultFov = "32deg";
+      var heroRotateDelayMs = 1800;
+      var heroRotateTimer = null;
+      var userInterruptedHeroRotate = false;
+      var prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       function setCaption(text) {
         if (captionEl) captionEl.textContent = text;
@@ -1121,27 +1128,58 @@
         rotateBtn.textContent = isAutoRotating ? "Stop Auto-Rotate" : "Start Auto-Rotate";
       }
 
+      function cancelHeroRotate() {
+        if (heroRotateTimer) {
+          clearTimeout(heroRotateTimer);
+          heroRotateTimer = null;
+        }
+      }
+
+      function markUserInteraction() {
+        userInterruptedHeroRotate = true;
+        cancelHeroRotate();
+      }
+
+      function startAutoRotate() {
+        viewer.setAttribute("auto-rotate", "");
+        syncRotateButton();
+      }
+
+      function scheduleHeroRotate() {
+        cancelHeroRotate();
+        if (prefersReducedMotion || userInterruptedHeroRotate) return;
+        heroRotateTimer = window.setTimeout(function() {
+          startAutoRotate();
+          setCaption("The model is slowly rotating so you can track the shadow wall, the fire, the prisoners, and the cave opening in one sweep.");
+          setTip("The viewer begins on a teaching angle, then slowly rotates. Drag at any time to pause and inspect details yourself.");
+          heroRotateTimer = null;
+        }, heroRotateDelayMs);
+      }
+
       function resetView() {
+        cancelHeroRotate();
         viewer.removeAttribute("auto-rotate");
         viewer.setAttribute("camera-orbit", defaultOrbit);
+        viewer.setAttribute("camera-target", defaultTarget);
         viewer.setAttribute("field-of-view", defaultFov);
         if (typeof viewer.jumpCameraToGoal === "function") {
           viewer.jumpCameraToGoal();
         }
         syncRotateButton();
-        setCaption("Rotate the model to compare the shadow wall, the fire, the prisoners, and the bright exit beyond the cave.");
-        setTip("Drag to rotate. Scroll or pinch to zoom. Use Reset View to return to the starting camera angle.");
+        setCaption("The opening view is set to show the shadow wall, prisoners, fire, and cave mouth together as a single map of the allegory.");
+        setTip("Reset View returns to the teaching angle. Drag to rotate, then scroll or pinch to zoom.");
       }
 
       if (rotateBtn) {
         rotateBtn.addEventListener("click", function() {
+          markUserInteraction();
           if (viewer.hasAttribute("auto-rotate")) {
             viewer.removeAttribute("auto-rotate");
             setCaption("Auto-rotate stopped. Drag the model to inspect specific parts of the cave.");
             setTip("Manual inspection is active. Drag to rotate and zoom in on any part of the scene.");
           } else {
-            viewer.setAttribute("auto-rotate", "");
-            setCaption("Auto-rotate is on so the cave turns slowly for a guided overview.");
+            startAutoRotate();
+            setCaption("Auto-rotate is on so the cave turns slowly from the teaching angle for a guided overview.");
             setTip("Auto-rotate is running. You can still drag the model at any time to take control.");
           }
           syncRotateButton();
@@ -1154,6 +1192,7 @@
 
       if (playBtn) {
         playBtn.addEventListener("click", function() {
+          markUserInteraction();
           if (!wrap) return;
           if (document.fullscreenElement === wrap) {
             document.exitFullscreen();
@@ -1165,16 +1204,23 @@
         });
       }
 
+      ["pointerdown", "touchstart", "wheel", "keydown"].forEach(function(eventName) {
+        viewer.addEventListener(eventName, markUserInteraction, { passive: true });
+      });
+
       viewer.addEventListener("load", function() {
-        setTip("The model is ready. Start with the wall of shadows, then rotate toward the fire and the cave opening.");
+        resetView();
+        scheduleHeroRotate();
       });
 
       viewer.addEventListener("error", function() {
+        cancelHeroRotate();
         setCaption("The interactive model could not be loaded here. Use the download link inside the viewer as a fallback.");
         setTip("If the model does not appear, download the GLB file from the viewer fallback link.");
       });
 
-      setTip("Drag to rotate. Scroll or pinch to zoom. Use Reset View to return to the starting camera angle.");
+      setCaption("The opening view is tuned to make the cave read as a philosophical diagram, not just a dark 3D object.");
+      setTip("The model will hold on a clear starting angle, then begin a slow guided rotation unless you interact first.");
       syncRotateButton();
     })();
 
