@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pledge of Allegiance · ClassroomOS</title>
     <link rel="stylesheet" href="../assets/css/style.css" />
+    <script type="module" src="../assets/js/vendor/model-viewer.min.js"></script>
   <style>
     .flag-stage {
       background: linear-gradient(to bottom, #2e6ea6 0%, #4d94d4 25%, #80bce8 65%, #b8d8f0 100%);
@@ -35,64 +36,34 @@
 
       <section class="terminal eliza-app">
         <div class="flag-stage" aria-label="Animated American flag">
-          <svg id="flagSvg" class="flag-svg" viewBox="0 0 1400 820" role="img" aria-labelledby="flagTitle flagDesc">
-            <title id="flagTitle">American flag waving on a flagpole</title>
-            <desc id="flagDesc">An animated American flag with adjustable wind strength for classroom recitation.</desc>
-            <defs>
-              <filter id="flagWave" x="-12%" y="-18%" width="124%" height="136%" color-interpolation-filters="sRGB">
-                <feTurbulence id="flagNoise" type="fractalNoise" baseFrequency="0.010 0.028" numOctaves="2" seed="7" result="noise" />
-                <feDisplacementMap id="flagDisplacement" in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G" />
-              </filter>
-              <clipPath id="flagClip">
-                <rect x="198" y="148" width="988" height="520" />
-              </clipPath>
-              <linearGradient id="fabricShade" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3" />
-                <stop offset="38%" stop-color="#ffffff" stop-opacity="0.08" />
-                <stop offset="65%" stop-color="#0f1b31" stop-opacity="0.08" />
-                <stop offset="100%" stop-color="#0f1b31" stop-opacity="0.22" />
-              </linearGradient>
-              <linearGradient id="poleMetal" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#70839b" />
-                <stop offset="48%" stop-color="#dbe5f1" />
-                <stop offset="100%" stop-color="#7a8da2" />
-              </linearGradient>
-              <linearGradient id="ropeColor" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#f6efe3" />
-                <stop offset="100%" stop-color="#ccb992" />
-              </linearGradient>
-              <radialGradient id="sunGlow" cx="78%" cy="20%" r="38%">
-                <stop offset="0%" stop-color="#fff6d8" stop-opacity="0.9" />
-                <stop offset="40%" stop-color="#fff0be" stop-opacity="0.3" />
-                <stop offset="100%" stop-color="#fff0be" stop-opacity="0" />
-              </radialGradient>
-            </defs>
-
-            <circle cx="1110" cy="150" r="160" fill="url(#sunGlow)" />
-
-            <g aria-hidden="true">
-              <rect x="122" y="82" width="20" height="636" rx="10" fill="url(#poleMetal)" />
-              <rect x="118" y="712" width="28" height="64" rx="10" fill="#6a7a90" opacity="0.9" />
-              <circle cx="132" cy="74" r="25" fill="#d6a83f" />
-              <circle cx="132" cy="74" r="15" fill="#f5dc82" opacity="0.72" />
-              <line x1="155" y1="166" x2="155" y2="614" stroke="url(#ropeColor)" stroke-width="5" stroke-linecap="round" />
-              <line x1="155" y1="166" x2="198" y2="176" stroke="url(#ropeColor)" stroke-width="4" stroke-linecap="round" />
-              <line x1="155" y1="614" x2="198" y2="640" stroke="url(#ropeColor)" stroke-width="4" stroke-linecap="round" />
-            </g>
-
-            <g id="flagMotionGroup" filter="url(#flagWave)">
-              <g id="flagArtwork" clip-path="url(#flagClip)"></g>
-              <rect x="198" y="148" width="988" height="520" fill="url(#fabricShade)" />
-              <rect x="198" y="148" width="988" height="520" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2.5" />
-            </g>
-
-            <g aria-hidden="true">
-              <circle class="grommet" cx="198" cy="206" r="12" />
-              <circle class="grommet" cx="198" cy="610" r="12" />
-            </g>
-          </svg>
+          <model-viewer
+            id="flagModel"
+            class="flag-model-viewer"
+            src="../assets/models/moving_american_flag.glb"
+            alt="Animated 3D model of an American flag waving on a flagpole."
+            autoplay
+            animation-name="Flag Moving"
+            scale="1.7 1.7 1.7"
+            camera-controls
+            touch-action="pan-y"
+            interaction-prompt="auto"
+            shadow-intensity="1"
+            environment-image="neutral"
+            exposure="1.2"
+            camera-orbit="30deg 84deg 84%"
+            camera-target="0m 0.1m 0m"
+            field-of-view="22deg"
+            min-camera-orbit="auto 45deg auto"
+            max-camera-orbit="auto 100deg auto"
+            min-field-of-view="18deg"
+            max-field-of-view="38deg">
+            <div class="flag-model-fallback">
+              Your browser can't display the interactive flag model.
+              <a href="../assets/models/moving_american_flag.glb">Download the GLB file instead</a>.
+            </div>
+          </model-viewer>
         </div>
-        <p class="flag-spec-note">Flag geometry now follows the 50-star proportions used in Executive Order 10834.</p>
+        <p class="flag-spec-note">This simulator now uses an animated 3D flag model. Use drag, scroll, or pinch to inspect the waving flag up close.</p>
 
         <div class="pledge-panel">
           <h2 class="pledge-title">Pledge of Allegiance</h2>
@@ -160,7 +131,7 @@
           <li>Use Fullscreen for whole-class recitation.</li>
           <li>Set Wind to calm, medium, or strong based on classroom tone.</li>
           <li>Optional: students take turns leading the pledge.</li>
-          <li>Engineering extension: tune the SVG displacement filter to compare calm and stormy motion.</li>
+          <li>Engineering extension: compare how animation speed changes the feeling of wind and fabric motion.</li>
         </ul>
       </section>
 
@@ -168,128 +139,16 @@
     </main>
 
     <script>
-      const SVG_NS = 'http://www.w3.org/2000/svg';
-      const flagArtwork = document.getElementById('flagArtwork');
-      const flagNoise = document.getElementById('flagNoise');
-      const flagDisplacement = document.getElementById('flagDisplacement');
-      const flagMotionGroup = document.getElementById('flagMotionGroup');
-
-      const FLAG = {
-        x: 198,
-        y: 148,
-        width: 988,
-        height: 520,
-      };
-      const FLAG_SPEC = {
-        hoist: FLAG.height,
-        fly: FLAG.height * 1.9,
-        unionHoist: FLAG.height * (7 / 13),
-        unionFly: FLAG.height * 0.76,
-        stripe: FLAG.height / 13,
-        starDiameter: FLAG.height * 0.0616,
-      };
-      FLAG.width = FLAG_SPEC.fly;
-      FLAG.cantonWidth = FLAG_SPEC.unionFly;
-      FLAG.cantonHeight = FLAG_SPEC.unionHoist;
-      FLAG.rowOffset = FLAG.cantonHeight / 10;
-      FLAG.columnOffset = FLAG.cantonWidth / 12;
-
-      function svgNode(tag, attrs = {}) {
-        const node = document.createElementNS(SVG_NS, tag);
-        Object.entries(attrs).forEach(([key, value]) => {
-          node.setAttribute(key, value);
-          if (key === 'href') {
-            node.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', value);
-          }
-        });
-        return node;
-      }
-
-      function buildStarPath(cx, cy, outerRadius, innerRadius) {
-        const points = [];
-        for (let i = 0; i < 10; i++) {
-          const radius = i % 2 === 0 ? outerRadius : innerRadius;
-          const angle = (-Math.PI / 2) + (i * Math.PI / 5);
-          const x = cx + (Math.cos(angle) * radius);
-          const y = cy + (Math.sin(angle) * radius);
-          points.push(`${i === 0 ? 'M' : 'L'}${x.toFixed(3)} ${y.toFixed(3)}`);
-        }
-        return `${points.join(' ')} Z`;
-      }
-
-      function buildFlagArtwork() {
-        flagArtwork.textContent = '';
-
-        const stripeHeight = FLAG_SPEC.stripe;
-        for (let i = 0; i < 13; i++) {
-          flagArtwork.appendChild(svgNode('rect', {
-            x: FLAG.x,
-            y: FLAG.y + (i * stripeHeight),
-            width: FLAG.width,
-            height: stripeHeight + 0.5,
-            fill: i % 2 === 0 ? '#b31942' : '#ffffff',
-          }));
-        }
-
-        flagArtwork.appendChild(svgNode('rect', {
-          x: FLAG.x,
-          y: FLAG.y,
-          width: FLAG.cantonWidth,
-          height: FLAG.cantonHeight,
-          fill: '#0a3161',
-        }));
-
-        const starsGroup = svgNode('g', {
-          fill: '#ffffff',
-        });
-
-        const starOuterRadius = FLAG_SPEC.starDiameter / 2;
-        const starInnerRadius = starOuterRadius * 0.38196601125;
-        const rowPattern = [6, 5, 6, 5, 6, 5, 6, 5, 6];
-
-        for (let row = 0; row < 9; row++) {
-          const starCount = rowPattern[row];
-          const startX = starCount === 6 ? FLAG.columnOffset : FLAG.columnOffset * 2;
-          const cy = FLAG.y + (FLAG.rowOffset * (row + 1));
-          for (let col = 0; col < starCount; col++) {
-            const cx = FLAG.x + startX + (col * 2 * FLAG.columnOffset);
-            starsGroup.appendChild(svgNode('path', {
-              d: buildStarPath(cx, cy, starOuterRadius, starInnerRadius),
-            }));
-          }
-        }
-
-        flagArtwork.appendChild(starsGroup);
-      }
-
-      buildFlagArtwork();
-
       const WIND = {
-        calm:   { amp: 7,  drift: 1.1, speed: 0.65, freqX: 0.0088, freqY: 0.022 },
-        medium: { amp: 11, drift: 2.0, speed: 0.9,  freqX: 0.0104, freqY: 0.027 },
-        strong: { amp: 15, drift: 3.0, speed: 1.22, freqX: 0.0122, freqY: 0.032 },
+        calm:   { timeScale: 0.72, orbit: '32deg 86deg 88%' },
+        medium: { timeScale: 1.0, orbit: '30deg 84deg 84%' },
+        strong: { timeScale: 1.32, orbit: '28deg 80deg 80%' },
       };
       let wind = WIND.calm;
 
-      function animateFlag(time) {
-        const t = time * 0.001;
-        const driftX = Math.sin(t * wind.speed * 0.7) * wind.drift;
-        const driftY = Math.cos(t * wind.speed * 0.32) * 0.85;
-        const baseX = wind.freqX + (Math.sin(t * 0.28) * 0.00055);
-        const baseY = wind.freqY + (Math.cos(t * 0.24) * 0.0011);
-        const scale = wind.amp + (Math.sin(t * wind.speed * 1.15) * wind.amp * 0.08);
-
-        flagNoise.setAttribute('baseFrequency', `${baseX.toFixed(4)} ${baseY.toFixed(4)}`);
-        flagDisplacement.setAttribute('scale', scale.toFixed(2));
-        flagMotionGroup.setAttribute('transform', `translate(${driftX.toFixed(2)} ${driftY.toFixed(2)})`);
-
-        requestAnimationFrame(animateFlag);
-      }
-
-      requestAnimationFrame(animateFlag);
-
       /* ── UI controls ─────────────────────────────────────────── */
       const stage = document.querySelector('.flag-stage');
+      const flagModel     = document.getElementById('flagModel');
       const audio         = document.getElementById('patrioticAudio');
       const btnPlay       = document.getElementById('btnPlay');
       const btnPause      = document.getElementById('btnPause');
@@ -300,6 +159,15 @@
       const volumeControl = document.getElementById('volumeControl');
       const volumeValue   = document.getElementById('volumeValue');
       const musicButtons  = [btnPlay, btnPause, btnRestart, btnMute];
+
+      function applyWindPreset() {
+        if (!flagModel) return;
+        flagModel.timeScale = wind.timeScale;
+        flagModel.setAttribute('camera-orbit', wind.orbit);
+        if (typeof flagModel.play === 'function') flagModel.play();
+      }
+
+      flagModel?.addEventListener('load', applyWindPreset);
 
       function setAudioAvailability(available, message) {
         musicButtons.forEach((button) => {
@@ -351,6 +219,7 @@
 
       document.getElementById('windMode')?.addEventListener('change', (e) => {
         wind = WIND[e.target.value] || WIND.calm;
+        applyWindPreset();
       });
 
       volumeControl?.addEventListener('input', (e) => {
@@ -361,6 +230,7 @@
       });
 
       window.addEventListener('load', () => {
+        applyWindPreset();
         if (!audio?.currentSrc) {
           setAudioAvailability(false, 'Backing track unavailable. Add a new file to assets/audio if you want music here.');
           return;
