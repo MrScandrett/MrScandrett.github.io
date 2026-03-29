@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Huygens' Principle · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 11 — Huygens' Principle: every point on a wavefront acts as a new source of secondary waves. The key to understanding diffraction and refraction." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .hp-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+    .hp-hero { padding: 0.4rem 0 1.3rem; }
+    .hp-hero h1 { max-width: 30ch; margin-left: 0; font-size: clamp(1.55rem,3.5vw,2.3rem); }
+    .hp-meta { display:flex;flex-wrap:wrap;gap:0.4rem 0.7rem;margin:0.5rem 0 0;font-size:0.82rem;color:#64748b; }
+    .hp-meta .dot { width:3px;height:3px;border-radius:50%;background:currentColor;opacity:0.4;display:inline-block;vertical-align:middle; }
+    .hp-lede { margin:0.65rem 0 0;max-width:68ch;color:#3f4f65;font-size:0.96rem;line-height:1.62; }
+    [data-theme="night"] .hp-lede { color:rgba(245,245,247,0.7); }
+    .hp-card { background:var(--white,#fff);border:1px solid var(--line,#d2d2d7);border-left:3.5px solid var(--card-accent,#007aff);border-radius:var(--radius,18px);box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,0.08));padding:1.2rem 1.4rem;margin-bottom:1rem; }
+    .hp-card h2 { margin:0 0 0.55rem;font-size:1.2rem; }
+    .hp-card h3 { margin:0.85rem 0 0.3rem;font-size:1rem; }
+    .hp-card p  { margin:0 0 0.6rem;color:#3f4f65;font-size:0.88rem;line-height:1.65; }
+    .hp-card p:last-child { margin-bottom:0; }
+    [data-theme="night"] .hp-card { background:#2c2c2e; }
+    [data-theme="night"] .hp-card p { color:rgba(245,245,247,0.72); }
+    .hp-callout { border-radius:12px;padding:0.85rem 1rem;margin:0.8rem 0;font-size:0.84rem;line-height:1.6; }
+    .hp-callout.blue { background:rgba(0,122,255,0.1);border-left:3px solid #007aff; }
+    .hp-canvas-wrap { border:1px solid var(--line,#d2d2d7);border-radius:14px;overflow:hidden;margin:0.8rem 0;background:#0a0a1a; }
+    #hp-canvas { width:100%;height:280px;display:block; }
+    .hp-btn-row { display:flex;gap:0.5rem;margin:0.5rem 0;flex-wrap:wrap; }
+    .hp-btn { background:#007aff;color:#fff;border:none;border-radius:9px;padding:0.4rem 0.9rem;font-size:0.84rem;font-weight:600;cursor:pointer; }
+    .hp-btn:hover { background:#0060df; }
+    .hp-btn.secondary { background:#e5e5ea;color:#1d1d1f; }
+    .hp-btn.secondary:hover { background:#d1d1d6; }
+    .hp-apps { display:grid;grid-template-columns:repeat(2,1fr);gap:0.7rem;margin:0.8rem 0; }
+    .hp-app  { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.8rem; }
+    .hp-app-icon { font-size:1.5rem;margin-bottom:0.3rem; }
+    .hp-app strong { display:block;font-size:0.84rem;margin-bottom:0.2rem; }
+    .hp-app small  { font-size:0.77rem;color:#64748b;line-height:1.5;display:block; }
+    .hp-practice .hp-problem { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.7rem; }
+    .hp-problem p { margin-bottom:0.5rem;font-size:0.88rem;color:#3f4f65;line-height:1.6; }
+    [data-theme="night"] .hp-problem p { color:rgba(245,245,247,0.72); }
+    .hp-problem-row { display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap; }
+    .hp-ans-input { border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.35rem 0.6rem;font-size:0.88rem;width:140px;background:var(--white,#fff);color:var(--text,#1d1d1f); }
+    .hp-check-btn { background:#007aff;color:#fff;border:none;border-radius:8px;padding:0.35rem 0.8rem;font-size:0.84rem;font-weight:600;cursor:pointer; }
+    .hp-check-btn:hover { background:#0060df; }
+    .hp-feedback { font-size:0.82rem;font-weight:600; }
+    .hp-feedback.ok { color:#34c759; }
+    .hp-feedback.err { color:#ff3b30; }
+    .hp-hint { font-size:0.78rem;color:#64748b;margin-top:0.4rem;display:none; }
+    .diff-easy { background:rgba(52,199,89,0.15);color:#248a3d;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .diff-mid  { background:rgba(255,149,0,0.15);color:#c07000;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .diff-hard { background:rgba(255,59,48,0.12);color:#c0392b;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="hp-page">
+
+        <section class="hero hp-hero">
+          <p class="eyebrow">Physics · Lesson 11</p>
+          <h1>Huygens' Principle</h1>
+          <div class="hp-meta">
+            <span>Wave Mechanics</span><span class="dot"></span>
+            <span>Diffraction</span><span class="dot"></span>
+            <span>Refraction</span><span class="dot"></span>
+            <span>Wavefront Construction</span>
+          </div>
+          <p class="hp-lede">In 1678, Christiaan Huygens proposed that every point on a wavefront can be thought of as a tiny new source of spherical waves. The new wavefront is the surface tangent to all those secondary waves — a deceptively simple idea that explains how light bends, spreads, and forms images.</p>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#ffcc00;">
+          <h2>Christiaan Huygens (1629–1695)</h2>
+          <p><strong>Christiaan Huygens</strong> was a Dutch mathematician, physicist, and astronomer. He invented the pendulum clock, discovered Saturn's rings and its moon Titan, and formulated the wave theory of light. His wave construction method — now called Huygens' Principle — predated Maxwell's equations by two centuries yet correctly predicted reflection, refraction, and diffraction.</p>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#007aff;">
+          <h2>The Principle</h2>
+          <p>Every point on an existing wavefront acts as a <strong>secondary point source</strong> of new spherical (or circular in 2D) waves with the same frequency and speed as the original wave. The new wavefront at any later time is the envelope — the common tangent — of all these secondary wavelets.</p>
+          <div class="hp-callout blue">
+            <strong>Why it matters:</strong> This construction explains why waves bend around obstacles (diffraction), change direction at boundaries (refraction), and why two wavefronts can reinforce or cancel each other (interference). All of modern optics rests on this foundation.
+          </div>
+          <h3>Three phenomena explained</h3>
+          <p><strong>Reflection:</strong> Secondary wavelets from the wavefront striking a surface reconstruct a wavefront that leaves at the same angle it arrived. Angle of incidence = angle of reflection.</p>
+          <p><strong>Refraction:</strong> In a slower medium, each secondary wavelet is smaller. The envelope tilts, bending the wavefront toward the normal — exactly what Snell's Law predicts.</p>
+          <p><strong>Diffraction:</strong> When a wavefront passes through a narrow gap, only the wavelets from within the gap contribute. They spread outward in a fan — the wave bends around the edge.</p>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#5856d6;">
+          <h2>Simulator — Wavefront Construction</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Watch secondary wavelets emanate from the wavefront and combine into the next wavefront. Click the canvas to add a slit barrier. Use panel controls to adjust wavelength and speed.</p>
+          <div class="hp-canvas-wrap">
+            <canvas id="hp-canvas" aria-label="Huygens principle wavefront simulation"></canvas>
+          </div>
+          <div class="hp-btn-row">
+            <button class="hp-btn" onclick="hpSetMode('plane')">Plane Wave</button>
+            <button class="hp-btn" onclick="hpSetMode('slit')">Single Slit</button>
+            <button class="hp-btn" onclick="hpSetMode('double')">Double Slit</button>
+            <button class="hp-btn secondary" onclick="hpReset()">Reset</button>
+          </div>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="hp-apps">
+            <div class="hp-app"><div class="hp-app-icon">📡</div><strong>Radio Antennae</strong><small>Radio waves bend around hills and buildings — diffraction explained by Huygens' Principle. Your phone still receives signal even without line-of-sight.</small></div>
+            <div class="hp-app"><div class="hp-app-icon">🔬</div><strong>Electron Microscopes</strong><small>Electrons behave as waves. Understanding diffraction through Huygens' Principle is essential to interpreting electron diffraction patterns in crystallography.</small></div>
+            <div class="hp-app"><div class="hp-app-icon">🌊</div><strong>Harbor Design</strong><small>Engineers use wave diffraction models (based on Huygens) to design harbor entrances that calm waves inside while allowing ships to pass.</small></div>
+            <div class="hp-app"><div class="hp-app-icon">🎵</div><strong>Sound in Rooms</strong><small>Sound diffracts through doorways. Huygens' construction explains why you hear a conversation around a corner even when you cannot see the speaker.</small></div>
+          </div>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#ff9500;">
+          <h2>Practice Problems</h2>
+          <div class="hp-practice">
+
+            <div class="hp-problem">
+              <p><span class="diff-easy">Easy</span>1. According to Huygens' Principle, what does every point on a wavefront become?</p>
+              <div class="hp-problem-row">
+                <select class="hp-ans-input" id="hpans-1">
+                  <option value="">Choose…</option>
+                  <option value="source">A new point source of waves</option>
+                  <option value="mirror">A mirror that reflects waves</option>
+                  <option value="absorber">A wave absorber</option>
+                </select>
+                <button class="hp-check-btn" onclick="hpCheckText(1,'source')">Check</button>
+                <span class="hp-feedback" id="hpfb-1"></span>
+              </div>
+              <div class="hp-hint" id="hphint-1">Hint: Each point on the wavefront emits a secondary spherical wave.</div>
+            </div>
+
+            <div class="hp-problem">
+              <p><span class="diff-easy">Easy</span>2. When light passes from air into glass (where it is slower), the wavefront bends toward the normal. This is called…</p>
+              <div class="hp-problem-row">
+                <select class="hp-ans-input" id="hpans-2">
+                  <option value="">Choose…</option>
+                  <option value="refraction">Refraction</option>
+                  <option value="reflection">Reflection</option>
+                  <option value="diffraction">Diffraction</option>
+                </select>
+                <button class="hp-check-btn" onclick="hpCheckText(2,'refraction')">Check</button>
+                <span class="hp-feedback" id="hpfb-2"></span>
+              </div>
+              <div class="hp-hint" id="hphint-2">Hint: Bending at a boundary due to speed change = refraction.</div>
+            </div>
+
+            <div class="hp-problem">
+              <p><span class="diff-mid">Medium</span>3. A wave passes through a slit that is much narrower than its wavelength. The wave will…</p>
+              <div class="hp-problem-row">
+                <select class="hp-ans-input" id="hpans-3" style="width:180px;">
+                  <option value="">Choose…</option>
+                  <option value="spread">Spread out in all directions (diffract strongly)</option>
+                  <option value="straight">Continue in a straight line</option>
+                  <option value="stop">Be blocked completely</option>
+                </select>
+                <button class="hp-check-btn" onclick="hpCheckText(3,'spread')">Check</button>
+                <span class="hp-feedback" id="hpfb-3"></span>
+              </div>
+              <div class="hp-hint" id="hphint-3">Hint: When slit width ≪ wavelength, the single emerging wavelet spreads as a nearly complete semicircle.</div>
+            </div>
+
+            <div class="hp-problem">
+              <p><span class="diff-hard">Challenge</span>4. In Huygens' construction for refraction, the secondary wavelets in the second medium are smaller because the wave is slower. If light travels at 2×10⁸ m/s in glass instead of 3×10⁸ m/s in air, what is the refractive index n = c/v?</p>
+              <div class="hp-problem-row">
+                <input type="number" class="hp-ans-input" id="hpans-4" step="0.01" placeholder="n" style="width:90px;" />
+                <button class="hp-check-btn" onclick="hpCheck(4,1.5,0.05)">Check</button>
+                <span class="hp-feedback" id="hpfb-4"></span>
+              </div>
+              <div class="hp-hint" id="hphint-4">Hint: n = 3×10⁸ / 2×10⁸ = 1.5</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="hp-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="hp-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="hp-pane-sim">
+          <span class="ll-label">Wave Speed</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Speed <span id="hp-spd-val">3</span></label>
+            <input type="range" class="nl-slider" id="hp-spd" min="1" max="8" value="3" style="width:100%;" />
+          </div>
+          <span class="ll-label">Wavelength</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">λ <span id="hp-wl-val">30 px</span></label>
+            <input type="range" class="nl-slider" id="hp-wl" min="15" max="60" value="30" style="width:100%;" />
+          </div>
+          <span class="ll-label">Show Wavelets</span>
+          <div>
+            <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+              <input type="checkbox" id="hp-show-wavelets" checked style="width:16px;height:16px;" />
+              Show secondary wavelets
+            </label>
+          </div>
+        </div>
+        <div class="ll-pane" id="hp-pane-guide">
+          <div class="ll-info"><strong>Huygens' Principle</strong>Every wavefront point is a secondary source of spherical waves. The next wavefront is their common tangent.</div>
+          <div class="ll-info"><strong>Plane wave</strong>All sources on a flat wavefront produce wavelets that reconstruct a flat wavefront — straight-line propagation.</div>
+          <div class="ll-info"><strong>Single slit</strong>Only sources within the gap contribute. A narrow gap diffracts waves strongly.</div>
+          <div class="ll-info"><strong>Double slit</strong>Two sets of wavelets interfere — producing bright and dark fringes (interference pattern).</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  const canvas = document.getElementById('hp-canvas');
+  const ctx    = canvas.getContext('2d');
+  let mode = 'plane', t = 0, raf = null;
+
+  function getSpd() { return parseInt(document.getElementById('hp-spd').value); }
+  function getWL()  { return parseInt(document.getElementById('hp-wl').value); }
+  function showW()  { return document.getElementById('hp-show-wavelets').checked; }
+
+  const SLIT_W = 18, SLIT_Y_FRAC = 0.5;
+  const D_SLIT1 = 0.35, D_SLIT2 = 0.65;
+
+  function draw() {
+    const W = canvas.offsetWidth || 600;
+    canvas.width = W; canvas.height = 280;
+    const H = 280;
+    const wl = getWL();
+    const spd = getSpd();
+    const wallX = W * 0.42;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(0, 0, W, H);
+
+    if (mode === 'plane') {
+      // Plane wavefronts before wall
+      for (let x = W * 0.05; x < wallX; x += wl) {
+        const offset = (t * spd) % wl;
+        const lx = x - offset;
+        if (lx < W * 0.05 || lx > wallX) continue;
+        ctx.strokeStyle = 'rgba(0,150,255,0.55)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, H); ctx.stroke();
+      }
+      // Plane wavefronts after wall
+      for (let x = wallX; x < W * 0.98; x += wl) {
+        const offset = (t * spd) % wl;
+        const lx = x - offset + wl;
+        if (lx < wallX || lx > W) continue;
+        ctx.strokeStyle = 'rgba(0,200,255,0.45)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, H); ctx.stroke();
+      }
+      // Secondary wavelet points
+      if (showW()) {
+        for (let y = 20; y < H; y += 28) {
+          const r = ((t * spd) % wl) * 0.7;
+          ctx.beginPath(); ctx.arc(wallX, y, r, -Math.PI/2, Math.PI/2);
+          ctx.strokeStyle = 'rgba(100,200,255,0.25)'; ctx.lineWidth = 1; ctx.stroke();
+        }
+      }
+    } else {
+      // Barrier
+      const slitY1 = mode === 'double' ? H * D_SLIT1 : H * SLIT_Y_FRAC;
+      const slitY2 = mode === 'double' ? H * D_SLIT2 : H * SLIT_Y_FRAC;
+      const halfSlit = SLIT_W;
+
+      ctx.fillStyle = 'rgba(180,180,200,0.9)';
+      if (mode === 'slit') {
+        ctx.fillRect(wallX - 3, 0, 6, slitY1 - halfSlit);
+        ctx.fillRect(wallX - 3, slitY1 + halfSlit, 6, H - slitY1 - halfSlit);
+      } else {
+        ctx.fillRect(wallX - 3, 0, 6, slitY1 - halfSlit);
+        ctx.fillRect(wallX - 3, slitY1 + halfSlit, 6, slitY2 - halfSlit - slitY1 - halfSlit);
+        ctx.fillRect(wallX - 3, slitY2 + halfSlit, 6, H - slitY2 - halfSlit);
+      }
+
+      // Incoming plane waves
+      for (let x = W * 0.05; x < wallX - 3; x += wl) {
+        const offset = (t * spd) % wl;
+        const lx = x - offset;
+        if (lx < W * 0.05) continue;
+        ctx.strokeStyle = 'rgba(0,150,255,0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, H); ctx.stroke();
+      }
+
+      // Wavelets from slit(s)
+      const slits = mode === 'slit' ? [slitY1] : [slitY1, slitY2];
+      slits.forEach(sy => {
+        for (let r = 0; r < W * 0.6; r += wl) {
+          const phase = (t * spd) % wl;
+          const rad = r + phase;
+          if (rad <= 0) continue;
+          const alpha = Math.max(0, 0.5 - rad / (W * 0.7));
+          ctx.beginPath(); ctx.arc(wallX, sy, rad, -Math.PI/2, Math.PI/2);
+          ctx.strokeStyle = `rgba(0,200,255,${alpha.toFixed(2)})`;
+          ctx.lineWidth = 1.5; ctx.stroke();
+          if (showW() && rad < 40) {
+            ctx.beginPath(); ctx.arc(wallX + 10, sy, rad * 0.3, 0, Math.PI*2);
+            ctx.strokeStyle = 'rgba(100,200,255,0.15)'; ctx.lineWidth = 1; ctx.stroke();
+          }
+        }
+      });
+    }
+
+    // Direction label
+    ctx.font = '11px Inter,sans-serif';
+    ctx.fillStyle = 'rgba(150,200,255,0.7)';
+    ctx.textAlign = 'left';
+    ctx.fillText('→ propagation', 8, 16);
+
+    t++;
+  }
+
+  function loop() { draw(); raf = requestAnimationFrame(loop); }
+
+  window.hpSetMode = function(m) { mode = m; t = 0; };
+  window.hpReset   = function()  { mode = 'plane'; t = 0; };
+
+  document.getElementById('hp-spd').addEventListener('input', e => {
+    document.getElementById('hp-spd-val').textContent = e.target.value;
+  });
+  document.getElementById('hp-wl').addEventListener('input', e => {
+    document.getElementById('hp-wl-val').textContent = e.target.value + ' px';
+  });
+
+  window.addEventListener('resize', draw);
+  loop();
+
+  window.hpCheck = function(n,ans,tol) {
+    const val = parseFloat(document.getElementById('hpans-'+n).value);
+    const fb  = document.getElementById('hpfb-'+n);
+    const hint = document.getElementById('hphint-'+n);
+    if (isNaN(val)) { fb.textContent='Enter a number.'; fb.className='hp-feedback err'; return; }
+    if (Math.abs(val-ans)<=tol) { fb.textContent='✓ Correct!'; fb.className='hp-feedback ok'; }
+    else { fb.textContent='✗ Try again.'; fb.className='hp-feedback err'; hint.style.display='block'; }
+  };
+  window.hpCheckText = function(n,ans) {
+    const el = document.getElementById('hpans-'+n);
+    const fb = document.getElementById('hpfb-'+n);
+    const hint = document.getElementById('hphint-'+n);
+    if (el.value===ans) { fb.textContent='✓ Correct!'; fb.className='hp-feedback ok'; }
+    else { fb.textContent='✗ Try again.'; fb.className='hp-feedback err'; hint.style.display='block'; }
+  };
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

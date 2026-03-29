@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Falling Coil · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 09 — explore electromagnetic induction through the falling coil demonstration: motion creates electricity, and that electricity pushes back." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .fc-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .fc-hero { padding: 0.4rem 0 1.3rem; }
+    .fc-hero h1 { max-width: 30ch; margin-left: 0; font-size: clamp(1.55rem,3.5vw,2.3rem); }
+    .fc-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .fc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .fc-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .fc-lede { color: rgba(245,245,247,0.7); }
+
+    .fc-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#5856d6); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .fc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; }
+    .fc-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .fc-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .fc-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .fc-card { background: #2c2c2e; }
+    [data-theme="night"] .fc-card p { color: rgba(245,245,247,0.72); }
+
+    .fc-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .fc-callout.purple { background: rgba(88,86,214,0.1); border-left: 3px solid #5856d6; }
+    .fc-callout.orange { background: rgba(255,149,0,0.1);   border-left: 3px solid #ff9500; }
+
+    .fc-steps { counter-reset: fc-step; margin: 0.8rem 0; padding: 0; list-style: none; }
+    .fc-steps li { counter-increment: fc-step; display: flex; gap: 0.75rem; margin-bottom: 0.7rem; font-size: 0.87rem; line-height: 1.6; color: #3f4f65; }
+    [data-theme="night"] .fc-steps li { color: rgba(245,245,247,0.72); }
+    .fc-steps li::before { content: counter(fc-step); background: #5856d6; color: #fff; font-size: 0.72rem; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.1rem; }
+
+    .fc-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-theme="night"] .fc-canvas-wrap { background: #1c1c1e; }
+    #fc-canvas { width: 100%; height: 300px; display: block; }
+
+    .fc-meters { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 0.6rem 0; }
+    .fc-meter { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .fc-meter { background: rgba(255,255,255,0.06); }
+    .fc-meter-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .fc-meter-val   { font-size: 1.05rem; font-weight: 700; color: #5856d6; }
+
+    .fc-btn-row { display: flex; gap: 0.5rem; margin: 0.6rem 0; flex-wrap: wrap; }
+    .fc-btn { background: #5856d6; color: #fff; border: none; border-radius: 9px; padding: 0.45rem 1rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .fc-btn:hover { background: #4340c4; }
+    .fc-btn.secondary { background: #e5e5ea; color: #1d1d1f; }
+    .fc-btn.secondary:hover { background: #d1d1d6; }
+
+    .fc-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .fc-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .fc-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .fc-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .fc-app small  { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    .fc-practice .fc-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .fc-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: #3f4f65; line-height: 1.6; }
+    [data-theme="night"] .fc-problem p { color: rgba(245,245,247,0.72); }
+    .fc-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .fc-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 110px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .fc-check-btn { background: #5856d6; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .fc-check-btn:hover { background: #4340c4; }
+    .fc-feedback { font-size: 0.82rem; font-weight: 600; }
+    .fc-feedback.ok  { color: #34c759; }
+    .fc-feedback.err { color: #ff3b30; }
+    .fc-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="fc-page">
+
+        <section class="hero fc-hero">
+          <p class="eyebrow">Physics · Lesson 09</p>
+          <h1>The Falling Coil</h1>
+          <div class="fc-meta">
+            <span>Electromagnetism</span><span class="dot"></span>
+            <span>Induction</span><span class="dot"></span>
+            <span>Lenz's Law</span><span class="dot"></span>
+            <span>Motion → Current</span>
+          </div>
+          <p class="fc-lede">Drop a conducting coil through a magnetic field and something remarkable happens — the changing flux induces a current, and that current creates a magnetic field that opposes the motion. Motion becomes electricity, and electricity pushes back.</p>
+        </section>
+
+        <section class="fc-card" style="--card-accent:#ffcc00;">
+          <h2>The Big Idea</h2>
+          <p>When a coil of wire moves through a magnetic field (or a magnet moves through a coil), the number of magnetic field lines passing through the coil changes. That change is called a change in <strong>magnetic flux</strong>. According to Faraday's Law, any change in flux induces a voltage — and if the circuit is closed, that voltage drives a current.</p>
+          <div class="fc-callout purple">
+            <strong>Lenz's Law:</strong> The induced current always flows in the direction that opposes the change causing it. If the coil falls toward a magnet, the induced current creates a magnetic field that pushes the coil away — slowing its fall. Nature resists change.
+          </div>
+          <h3>What Happens Step by Step</h3>
+          <ol class="fc-steps">
+            <li>The coil enters the magnetic field. Flux through the coil increases.</li>
+            <li>By Faraday's Law, a voltage is induced in the coil.</li>
+            <li>Current flows through the coil in a direction that creates an opposing field (Lenz's Law).</li>
+            <li>The opposing field exerts an upward force on the falling coil, braking its descent.</li>
+            <li>As the coil exits the field, flux decreases, the current reverses, and a braking force appears again.</li>
+          </ol>
+        </section>
+
+        <section class="fc-card" style="--card-accent:#5856d6;">
+          <h2>Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Press Drop to release the coil. Adjust the magnetic field strength and number of coil turns in the panel.</p>
+          <div class="fc-canvas-wrap">
+            <canvas id="fc-canvas" aria-label="Coil falling through a magnetic field simulation"></canvas>
+          </div>
+          <div class="fc-meters">
+            <div class="fc-meter"><span class="fc-meter-label">Coil Velocity</span><span class="fc-meter-val" id="fc-vel">0.00 m/s</span></div>
+            <div class="fc-meter"><span class="fc-meter-label">Induced Current</span><span class="fc-meter-val" id="fc-cur">0.00 A</span></div>
+          </div>
+          <div class="fc-btn-row">
+            <button class="fc-btn" id="fc-drop-btn" onclick="fcDrop()">Drop Coil</button>
+            <button class="fc-btn secondary" onclick="fcReset()">Reset</button>
+          </div>
+        </section>
+
+        <section class="fc-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="fc-apps">
+            <div class="fc-app"><div class="fc-app-icon">💡</div><strong>Electric Generators</strong><small>Turbines spin coils inside magnets. Changing flux continuously induces current — producing the AC electricity in your home.</small></div>
+            <div class="fc-app"><div class="fc-app-icon">🚂</div><strong>Magnetic Brakes</strong><small>Eddy current brakes on trains use the same principle — induced currents oppose motion and slow the vehicle without physical contact.</small></div>
+            <div class="fc-app"><div class="fc-app-icon">📱</div><strong>Wireless Charging</strong><small>A changing current in the charger pad creates a changing field, which induces current in the phone's coil to charge its battery.</small></div>
+            <div class="fc-app"><div class="fc-app-icon">🔊</div><strong>Microphones</strong><small>Sound vibrates a membrane attached to a coil. The coil moves in a magnetic field, inducing a current that mirrors the sound wave.</small></div>
+          </div>
+        </section>
+
+        <section class="fc-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Think about the direction of forces and the relationship between flux change and induced effects.</p>
+          <div class="fc-practice">
+
+            <div class="fc-problem">
+              <p><span class="diff-easy">Easy</span>1. A coil falls toward the north pole of a magnet. The flux through the coil is increasing. Does the induced current create a north or south pole facing the magnet (to oppose the approach)?</p>
+              <div class="fc-problem-row">
+                <select class="fc-ans-input" id="fcans-1" style="width:130px;">
+                  <option value="">Choose…</option>
+                  <option value="north">North pole</option>
+                  <option value="south">South pole</option>
+                </select>
+                <button class="fc-check-btn" onclick="fcCheckText(1,'north')">Check</button>
+                <span class="fc-feedback" id="fcfb-1"></span>
+              </div>
+              <div class="fc-hint" id="fchint-1">Hint: By Lenz's Law, the induced field opposes the approach. Like poles repel — so the coil must present a north pole toward the magnet's north pole.</div>
+            </div>
+
+            <div class="fc-problem">
+              <p><span class="diff-easy">Easy</span>2. If the coil moves faster through the field, the induced current will be…</p>
+              <div class="fc-problem-row">
+                <select class="fc-ans-input" id="fcans-2" style="width:130px;">
+                  <option value="">Choose…</option>
+                  <option value="larger">Larger</option>
+                  <option value="smaller">Smaller</option>
+                  <option value="same">The same</option>
+                </select>
+                <button class="fc-check-btn" onclick="fcCheckText(2,'larger')">Check</button>
+                <span class="fc-feedback" id="fcfb-2"></span>
+              </div>
+              <div class="fc-hint" id="fchint-2">Hint: Faster motion → faster change in flux → larger induced EMF → larger current.</div>
+            </div>
+
+            <div class="fc-problem">
+              <p><span class="diff-mid">Medium</span>3. Doubling the number of turns in the coil while keeping everything else the same will…</p>
+              <div class="fc-problem-row">
+                <select class="fc-ans-input" id="fcans-3" style="width:160px;">
+                  <option value="">Choose…</option>
+                  <option value="double">Double the induced EMF</option>
+                  <option value="halve">Halve the induced EMF</option>
+                  <option value="nochange">Have no effect</option>
+                  <option value="quadruple">Quadruple the EMF</option>
+                </select>
+                <button class="fc-check-btn" onclick="fcCheckText(3,'double')">Check</button>
+                <span class="fc-feedback" id="fcfb-3"></span>
+              </div>
+              <div class="fc-hint" id="fchint-3">Hint: EMF = N × (dΦ/dt). Doubling N doubles the EMF.</div>
+            </div>
+
+            <div class="fc-problem">
+              <p><span class="diff-hard">Challenge</span>4. A coil with 50 turns experiences a flux change of 0.04 Wb in 0.1 s. What is the induced EMF? (EMF = N × ΔΦ/Δt)</p>
+              <div class="fc-problem-row">
+                <input type="number" class="fc-ans-input" id="fcans-4" step="0.1" placeholder="V" />
+                <button class="fc-check-btn" onclick="fcCheck(4,20,0.5)">Check</button>
+                <span class="fc-feedback" id="fcfb-4"></span>
+              </div>
+              <div class="fc-hint" id="fchint-4">Hint: EMF = 50 × 0.04 / 0.1 = 20 V</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="fc-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="fc-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="fc-pane-sim">
+          <span class="ll-label">Magnetic Field Strength</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">B <span id="fc-b-val">1.0 T</span></label>
+            <input type="range" class="nl-slider" id="fc-b-slider" min="1" max="10" value="5" style="width:100%;" />
+          </div>
+          <span class="ll-label">Coil Turns</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">N <span id="fc-n-val">10</span></label>
+            <input type="range" class="nl-slider" id="fc-n-slider" min="1" max="50" value="10" style="width:100%;" />
+          </div>
+          <span class="ll-label">Coil Resistance</span>
+          <div>
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">R <span id="fc-r-val">1.0 Ω</span></label>
+            <input type="range" class="nl-slider" id="fc-r-slider" min="1" max="20" value="5" style="width:100%;" />
+          </div>
+        </div>
+        <div class="ll-pane" id="fc-pane-guide">
+          <div class="ll-info"><strong>Faraday's Law</strong>EMF = −N × dΦ/dt. Change in flux induces voltage.</div>
+          <div class="ll-info"><strong>Lenz's Law</strong>The induced current opposes the change that caused it.</div>
+          <div class="ll-info"><strong>More turns</strong>More turns = larger induced EMF for the same flux change.</div>
+          <div class="ll-info"><strong>Faster fall</strong>Faster motion = faster flux change = larger current = stronger braking force.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  const canvas = document.getElementById('fc-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  let coilY = 0, coilVel = 0, running = false, raf = null;
+  const COIL_H = 30, MAGNET_TOP_FRAC = 0.45, MAGNET_H_FRAC = 0.22;
+  const COIL_AREA = 0.01; // m²
+  const g = 9.8;
+  const coilMass = 0.05; // kg
+
+  function getB() { return parseInt(document.getElementById('fc-b-slider').value) * 0.2; }
+  function getN() { return parseInt(document.getElementById('fc-n-slider').value); }
+  function getR() { return parseInt(document.getElementById('fc-r-slider').value) * 0.5; }
+
+  function draw(emf, current, brakeF) {
+    const W = canvas.offsetWidth || 500;
+    canvas.width = W; canvas.height = 300;
+    const H = 300;
+    const magnetTop = H * MAGNET_TOP_FRAC;
+    const magnetH   = H * MAGNET_H_FRAC;
+    const magnetW   = W * 0.35;
+    const magnetX   = (W - magnetW) / 2;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Magnet body
+    const mgGrad = ctx.createLinearGradient(magnetX, magnetTop, magnetX + magnetW, magnetTop);
+    mgGrad.addColorStop(0, '#ff3b30');
+    mgGrad.addColorStop(0.5, '#c0392b');
+    mgGrad.addColorStop(1, '#007aff');
+    ctx.fillStyle = mgGrad;
+    ctx.beginPath();
+    ctx.roundRect(magnetX, magnetTop, magnetW, magnetH, 8);
+    ctx.fill();
+
+    // Magnet labels
+    ctx.font = 'bold 13px Inter,sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', magnetX + magnetW * 0.18, magnetTop + magnetH / 2);
+    ctx.fillText('S', magnetX + magnetW * 0.82, magnetTop + magnetH / 2);
+    ctx.textBaseline = 'alphabetic';
+
+    // Field lines
+    ctx.strokeStyle = 'rgba(88,86,214,0.25)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 5; i++) {
+      const lx = magnetX + magnetW * 0.1 + i * magnetW * 0.2;
+      ctx.setLineDash([3,4]);
+      ctx.beginPath();
+      ctx.moveTo(lx, magnetTop - 50);
+      ctx.lineTo(lx, magnetTop + magnetH + 50);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Coil
+    const coilW = magnetW * 1.1;
+    const coilX = (W - coilW) / 2;
+    const cy    = coilY;
+
+    // Current glow if current flows
+    if (Math.abs(current) > 0.01) {
+      ctx.strokeStyle = current > 0 ? 'rgba(52,199,89,0.5)' : 'rgba(255,59,48,0.5)';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.roundRect(coilX - 3, cy - 3, coilW + 6, COIL_H + 6, 8);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = '#5856d6';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(coilX, cy, coilW, COIL_H, 6);
+    ctx.stroke();
+
+    // Current direction arrows on coil
+    if (Math.abs(current) > 0.01) {
+      const arrowCol = current > 0 ? '#34c759' : '#ff3b30';
+      ctx.strokeStyle = arrowCol; ctx.fillStyle = arrowCol; ctx.lineWidth = 2;
+      drawCoilArrow(ctx, coilX + coilW * 0.5, cy, current > 0);
+    }
+
+    // Brake force arrow
+    if (brakeF > 0.001) {
+      const arrowLen = Math.min(40, brakeF * 200);
+      ctx.strokeStyle = '#ff9500'; ctx.fillStyle = '#ff9500'; ctx.lineWidth = 2.5;
+      drawArrowV(ctx, W * 0.82, cy + COIL_H/2, -arrowLen);
+      ctx.font = '11px Inter,sans-serif';
+      ctx.fillStyle = '#ff9500';
+      ctx.textAlign = 'left';
+      ctx.fillText('Brake', W * 0.82 + 8, cy + COIL_H/2 + 4);
+    }
+
+    // Velocity label
+    ctx.font = '600 12px Inter,sans-serif';
+    ctx.fillStyle = '#5856d6';
+    ctx.textAlign = 'left';
+    ctx.fillText('v = ' + coilVel.toFixed(2) + ' m/s', 12, 20);
+    ctx.fillText('I = ' + current.toFixed(2) + ' A', 12, 36);
+
+    document.getElementById('fc-vel').textContent = coilVel.toFixed(2) + ' m/s';
+    document.getElementById('fc-cur').textContent = current.toFixed(2) + ' A';
+  }
+
+  function drawCoilArrow(ctx, x, y, cw) {
+    const dir = cw ? 1 : -1;
+    ctx.beginPath();
+    ctx.moveTo(x, y + 2);
+    ctx.lineTo(x + dir * 12, y + 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + dir * 12, y + 2);
+    ctx.lineTo(x + dir * 7, y - 3);
+    ctx.lineTo(x + dir * 7, y + 7);
+    ctx.closePath(); ctx.fill();
+  }
+
+  function drawArrowV(ctx, x, y, len) {
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + len); ctx.stroke();
+    const dir = len < 0 ? -1 : 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y + len);
+    ctx.lineTo(x - 6, y + len - dir * 10);
+    ctx.lineTo(x + 6, y + len - dir * 10);
+    ctx.closePath(); ctx.fill();
+  }
+
+  function calcInFieldFraction(canvasH) {
+    const magnetTop = canvasH * MAGNET_TOP_FRAC;
+    const magnetBot = magnetTop + canvasH * MAGNET_H_FRAC;
+    const coilTop   = coilY;
+    const coilBot   = coilY + COIL_H;
+    // fraction of coil overlap with magnet field region
+    const overlapTop = Math.max(coilTop, magnetTop);
+    const overlapBot = Math.min(coilBot, magnetBot);
+    return Math.max(0, (overlapBot - overlapTop) / COIL_H);
+  }
+
+  let prevFrac = 0;
+  let lastTime = null;
+
+  function step(ts) {
+    if (!lastTime) lastTime = ts;
+    const dt = Math.min((ts - lastTime) / 1000, 0.03);
+    lastTime = ts;
+
+    const H = 300;
+    const frac = calcInFieldFraction(H);
+
+    // Rate of flux change ∝ velocity × overlap entering/leaving
+    const entering = frac > prevFrac;
+    const leaving  = frac < prevFrac && frac > 0;
+    const dFlux_dt = getB() * COIL_AREA * coilVel * (entering ? 1 : (leaving ? -1 : 0)) * Math.abs(frac - prevFrac) / (dt || 0.016) * 0.01;
+    const emf     = getN() * Math.abs(dFlux_dt);
+    const current = emf / getR();
+
+    // Braking force from Lenz's law (opposes velocity)
+    const brakeF = getN() * getB() * COIL_AREA * current * (frac > 0 ? 1 : 0);
+
+    // Net acceleration
+    const netAcc = g - (brakeF / coilMass) * (coilVel > 0 ? 1 : -1);
+    coilVel += netAcc * dt;
+    coilY   += coilVel * dt * 200; // scale px/s
+
+    prevFrac = frac;
+
+    if (coilY > H + 20) {
+      running = false;
+      document.getElementById('fc-drop-btn').disabled = false;
+    }
+
+    draw(emf, current, brakeF);
+
+    if (running) raf = requestAnimationFrame(step);
+  }
+
+  window.fcDrop = function () {
+    fcReset();
+    running = true;
+    lastTime = null;
+    document.getElementById('fc-drop-btn').disabled = true;
+    raf = requestAnimationFrame(step);
+  };
+
+  window.fcReset = function () {
+    running = false;
+    if (raf) cancelAnimationFrame(raf);
+    coilY = 10; coilVel = 0; prevFrac = 0; lastTime = null;
+    document.getElementById('fc-drop-btn').disabled = false;
+    draw(0, 0, 0);
+  };
+
+  document.getElementById('fc-b-slider').addEventListener('input', e => {
+    document.getElementById('fc-b-val').textContent = (parseInt(e.target.value)*0.2).toFixed(1) + ' T';
+  });
+  document.getElementById('fc-n-slider').addEventListener('input', e => {
+    document.getElementById('fc-n-val').textContent = e.target.value;
+  });
+  document.getElementById('fc-r-slider').addEventListener('input', e => {
+    document.getElementById('fc-r-val').textContent = (parseInt(e.target.value)*0.5).toFixed(1) + ' Ω';
+  });
+
+  window.addEventListener('resize', () => { if (!running) fcReset(); });
+  fcReset();
+
+  // Practice
+  window.fcCheck = function(n, ans, tol) {
+    const val = parseFloat(document.getElementById('fcans-'+n).value);
+    const fb  = document.getElementById('fcfb-'+n);
+    const hint = document.getElementById('fchint-'+n);
+    if (isNaN(val)) { fb.textContent='Enter a number.'; fb.className='fc-feedback err'; return; }
+    if (Math.abs(val-ans) <= tol) { fb.textContent='✓ Correct!'; fb.className='fc-feedback ok'; }
+    else { fb.textContent='✗ Try again.'; fb.className='fc-feedback err'; hint.style.display='block'; }
+  };
+  window.fcCheckText = function(n, ans) {
+    const el = document.getElementById('fcans-'+n);
+    const fb = document.getElementById('fcfb-'+n);
+    const hint = document.getElementById('fchint-'+n);
+    if (el.value === ans) { fb.textContent='✓ Correct!'; fb.className='fc-feedback ok'; }
+    else { fb.textContent='✗ Try again.'; fb.className='fc-feedback err'; hint.style.display='block'; }
+  };
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

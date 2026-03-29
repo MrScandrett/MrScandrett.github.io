@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Point Wave · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 12 — Point Wave: a wave spreading outward from a single source point in concentric rings. Explore amplitude, frequency, and the inverse-square relationship." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .pw-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+    .pw-hero { padding: 0.4rem 0 1.3rem; }
+    .pw-hero h1 { max-width: 30ch; margin-left: 0; font-size: clamp(1.55rem,3.5vw,2.3rem); }
+    .pw-meta { display:flex;flex-wrap:wrap;gap:0.4rem 0.7rem;margin:0.5rem 0 0;font-size:0.82rem;color:#64748b; }
+    .pw-meta .dot { width:3px;height:3px;border-radius:50%;background:currentColor;opacity:0.4;display:inline-block;vertical-align:middle; }
+    .pw-lede { margin:0.65rem 0 0;max-width:68ch;color:#3f4f65;font-size:0.96rem;line-height:1.62; }
+    [data-theme="night"] .pw-lede { color:rgba(245,245,247,0.7); }
+    .pw-card { background:var(--white,#fff);border:1px solid var(--line,#d2d2d7);border-left:3.5px solid var(--card-accent,#30d158);border-radius:var(--radius,18px);box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,0.08));padding:1.2rem 1.4rem;margin-bottom:1rem; }
+    .pw-card h2 { margin:0 0 0.55rem;font-size:1.2rem; }
+    .pw-card h3 { margin:0.85rem 0 0.3rem;font-size:1rem; }
+    .pw-card p  { margin:0 0 0.6rem;color:#3f4f65;font-size:0.88rem;line-height:1.65; }
+    .pw-card p:last-child { margin-bottom:0; }
+    [data-theme="night"] .pw-card { background:#2c2c2e; }
+    [data-theme="night"] .pw-card p { color:rgba(245,245,247,0.72); }
+    .pw-callout { border-radius:12px;padding:0.85rem 1rem;margin:0.8rem 0;font-size:0.84rem;line-height:1.6; }
+    .pw-callout.green { background:rgba(48,209,88,0.1);border-left:3px solid #30d158; }
+    .pw-canvas-wrap { border:1px solid var(--line,#d2d2d7);border-radius:14px;overflow:hidden;margin:0.8rem 0;background:#050510;cursor:crosshair; }
+    #pw-canvas { width:100%;height:280px;display:block; }
+    .pw-readouts { display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.6rem 0; }
+    .pw-readout { background:rgba(0,0,0,0.04);border:1px solid var(--line,#d2d2d7);border-radius:10px;padding:0.55rem 0.7rem;text-align:center; }
+    [data-theme="night"] .pw-readout { background:rgba(255,255,255,0.06); }
+    .pw-readout-label { font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;display:block;margin-bottom:0.2rem; }
+    .pw-readout-val { font-size:1rem;font-weight:700;color:#30d158; }
+    .pw-apps { display:grid;grid-template-columns:repeat(2,1fr);gap:0.7rem;margin:0.8rem 0; }
+    .pw-app  { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.8rem; }
+    .pw-app-icon { font-size:1.5rem;margin-bottom:0.3rem; }
+    .pw-app strong { display:block;font-size:0.84rem;margin-bottom:0.2rem; }
+    .pw-app small  { font-size:0.77rem;color:#64748b;line-height:1.5;display:block; }
+    .pw-practice .pw-problem { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.7rem; }
+    .pw-problem p { margin-bottom:0.5rem;font-size:0.88rem;color:#3f4f65;line-height:1.6; }
+    [data-theme="night"] .pw-problem p { color:rgba(245,245,247,0.72); }
+    .pw-problem-row { display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap; }
+    .pw-ans-input { border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.35rem 0.6rem;font-size:0.88rem;width:120px;background:var(--white,#fff);color:var(--text,#1d1d1f); }
+    .pw-check-btn { background:#30d158;color:#fff;border:none;border-radius:8px;padding:0.35rem 0.8rem;font-size:0.84rem;font-weight:600;cursor:pointer; }
+    .pw-check-btn:hover { background:#25a244; }
+    .pw-feedback { font-size:0.82rem;font-weight:600; }
+    .pw-feedback.ok { color:#34c759; }
+    .pw-feedback.err { color:#ff3b30; }
+    .pw-hint { font-size:0.78rem;color:#64748b;margin-top:0.4rem;display:none; }
+    .diff-easy { background:rgba(52,199,89,0.15);color:#248a3d;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .diff-mid  { background:rgba(255,149,0,0.15);color:#c07000;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .diff-hard { background:rgba(255,59,48,0.12);color:#c0392b;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="pw-page">
+
+        <section class="hero pw-hero">
+          <p class="eyebrow">Physics · Lesson 12</p>
+          <h1>Point Wave</h1>
+          <div class="pw-meta">
+            <span>Wave Mechanics</span><span class="dot"></span>
+            <span>Point Source</span><span class="dot"></span>
+            <span>Circular Wavefronts</span><span class="dot"></span>
+            <span>Amplitude &amp; Distance</span>
+          </div>
+          <p class="pw-lede">Drop a pebble in still water and you have the perfect image of a point wave. A single source sends ripples outward in concentric rings. As they spread, the energy is shared over a growing circumference — so amplitude falls with distance.</p>
+        </section>
+
+        <section class="pw-card" style="--card-accent:#ffcc00;">
+          <h2>What is a Point Wave?</h2>
+          <p>A <strong>point wave</strong> (or point source wave) originates from a single location and spreads outward equally in all directions. In two dimensions (like water) the wavefronts are circles. In three dimensions (like sound or light) they are spheres.</p>
+          <p>The key properties of any wave apply: <strong>wavelength</strong> (λ) is the distance between crests; <strong>frequency</strong> (f) is how many crests pass per second; <strong>wave speed</strong> is v = fλ; and <strong>amplitude</strong> is the height of each crest.</p>
+          <div class="pw-callout green">
+            <strong>Amplitude vs. distance:</strong> In 2D, energy spreads over a circle of circumference 2πr, so amplitude decreases as 1/√r. In 3D it spreads over a sphere of area 4πr², so amplitude decreases as 1/r (and intensity as 1/r²). This is the <em>inverse-square law</em> for intensity.
+          </div>
+          <h3>Interference between two point sources</h3>
+          <p>When two point sources emit waves of the same frequency, their circular wavefronts overlap and interfere. Where crest meets crest — constructive interference — you get a larger amplitude. Where crest meets trough — destructive interference — they cancel out. This is the basis of the famous double-slit experiment.</p>
+        </section>
+
+        <section class="pw-card" style="--card-accent:#30d158;">
+          <h2>Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Click anywhere on the canvas to add a wave source (up to 3). Watch the circular wavefronts spread and interfere. Use the panel to adjust frequency and speed.</p>
+          <div class="pw-canvas-wrap">
+            <canvas id="pw-canvas" aria-label="Point wave simulation with circular spreading wavefronts"></canvas>
+          </div>
+          <div class="pw-readouts">
+            <div class="pw-readout"><span class="pw-readout-label">Sources</span><span class="pw-readout-val" id="pw-r-src">1</span></div>
+            <div class="pw-readout"><span class="pw-readout-label">Frequency</span><span class="pw-readout-val" id="pw-r-freq">1.0 Hz</span></div>
+            <div class="pw-readout"><span class="pw-readout-label">Wavelength</span><span class="pw-readout-val" id="pw-r-wl">—</span></div>
+          </div>
+          <p style="font-size:0.78rem;color:#64748b;margin:0;">Click canvas to add source. Click existing source to remove it.</p>
+        </section>
+
+        <section class="pw-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="pw-apps">
+            <div class="pw-app"><div class="pw-app-icon">💧</div><strong>Water Ripples</strong><small>A stone dropped in a pond creates a classic point-wave pattern — circular wavefronts expanding outward with decreasing amplitude.</small></div>
+            <div class="pw-app"><div class="pw-app-icon">🔊</div><strong>Sound from a Speaker</strong><small>A small loudspeaker approximates a point source. Sound pressure waves spread outward, weakening with distance — why you must stand closer to hear quiet music.</small></div>
+            <div class="pw-app"><div class="pw-app-icon">📡</div><strong>Radio Transmitters</strong><small>An omnidirectional antenna radiates electromagnetic point waves. Signal strength falls as 1/r² — doubling distance quarters the received power.</small></div>
+            <div class="pw-app"><div class="pw-app-icon">🌟</div><strong>Stars</strong><small>Light from a star spreads as a spherical point wave. This is why stars appear dimmer with distance — intensity follows the inverse-square law.</small></div>
+          </div>
+        </section>
+
+        <section class="pw-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <div class="pw-practice">
+
+            <div class="pw-problem">
+              <p><span class="diff-easy">Easy</span>1. A wave has frequency 5 Hz and speed 20 m/s. What is its wavelength? (λ = v/f)</p>
+              <div class="pw-problem-row">
+                <input type="number" class="pw-ans-input" id="pwans-1" step="0.1" placeholder="m" />
+                <button class="pw-check-btn" onclick="pwCheck(1,4,0.1)">Check</button>
+                <span class="pw-feedback" id="pwfb-1"></span>
+              </div>
+              <div class="pw-hint" id="pwhint-1">Hint: λ = 20/5 = 4 m</div>
+            </div>
+
+            <div class="pw-problem">
+              <p><span class="diff-easy">Easy</span>2. In a point-source wave in 3D, if the distance from the source doubles, the intensity becomes…</p>
+              <div class="pw-problem-row">
+                <select class="pw-ans-input" id="pwans-2">
+                  <option value="">Choose…</option>
+                  <option value="quarter">One quarter</option>
+                  <option value="half">One half</option>
+                  <option value="double">Double</option>
+                  <option value="same">The same</option>
+                </select>
+                <button class="pw-check-btn" onclick="pwCheckText(2,'quarter')">Check</button>
+                <span class="pw-feedback" id="pwfb-2"></span>
+              </div>
+              <div class="pw-hint" id="pwhint-2">Hint: Intensity ∝ 1/r². Double r → 1/4 intensity.</div>
+            </div>
+
+            <div class="pw-problem">
+              <p><span class="diff-mid">Medium</span>3. Two point sources 0.4 m apart emit waves of wavelength 0.2 m in phase. At a point equidistant from both sources, the waves will…</p>
+              <div class="pw-problem-row">
+                <select class="pw-ans-input" id="pwans-3" style="width:160px;">
+                  <option value="">Choose…</option>
+                  <option value="constructive">Interfere constructively</option>
+                  <option value="destructive">Interfere destructively</option>
+                  <option value="nointerfer">Not interfere at all</option>
+                </select>
+                <button class="pw-check-btn" onclick="pwCheckText(3,'constructive')">Check</button>
+                <span class="pw-feedback" id="pwfb-3"></span>
+              </div>
+              <div class="pw-hint" id="pwhint-3">Hint: Same source, same distance → zero path difference → constructive interference.</div>
+            </div>
+
+            <div class="pw-problem">
+              <p><span class="diff-hard">Challenge</span>4. A point source of sound has intensity 16 W/m² at 2 m distance. What is the intensity at 8 m? (I ∝ 1/r²)</p>
+              <div class="pw-problem-row">
+                <input type="number" class="pw-ans-input" id="pwans-4" step="0.1" placeholder="W/m²" />
+                <button class="pw-check-btn" onclick="pwCheck(4,1,0.05)">Check</button>
+                <span class="pw-feedback" id="pwfb-4"></span>
+              </div>
+              <div class="pw-hint" id="pwhint-4">Hint: r ratio = 4 → intensity ratio = 1/16 → 16/16 = 1 W/m²</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="pw-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pw-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pw-pane-sim">
+          <span class="ll-label">Frequency</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">f <span id="pw-f-val">2.0</span></label>
+            <input type="range" class="nl-slider" id="pw-f-slider" min="1" max="10" value="4" style="width:100%;" />
+          </div>
+          <span class="ll-label">Wave Speed</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">v <span id="pw-v-val">3</span></label>
+            <input type="range" class="nl-slider" id="pw-v-slider" min="1" max="10" value="3" style="width:100%;" />
+          </div>
+          <span class="ll-label">Amplitude Decay</span>
+          <div>
+            <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+              <input type="checkbox" id="pw-decay" checked style="width:16px;height:16px;" />
+              Show 1/√r amplitude decay
+            </label>
+          </div>
+        </div>
+        <div class="ll-pane" id="pw-pane-guide">
+          <div class="ll-info"><strong>Point source</strong>One location emits waves spreading as circles (2D) or spheres (3D).</div>
+          <div class="ll-info"><strong>v = fλ</strong>Wave speed equals frequency times wavelength.</div>
+          <div class="ll-info"><strong>Inverse-square (3D)</strong>Intensity ∝ 1/r². Double distance → quarter intensity.</div>
+          <div class="ll-info"><strong>Interference</strong>Two in-phase point sources create a standing interference pattern of bright and dark bands.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  const canvas = document.getElementById('pw-canvas');
+  const ctx    = canvas.getContext('2d');
+  let t = 0, sources = [];
+
+  function getF() { return parseInt(document.getElementById('pw-f-slider').value) * 0.5; }
+  function getV() { return parseInt(document.getElementById('pw-v-slider').value); }
+  function decay(){ return document.getElementById('pw-decay').checked; }
+
+  function draw() {
+    const W = canvas.offsetWidth || 600;
+    canvas.width = W; canvas.height = 280;
+    const H = 280;
+    const f = getF(), v = getV();
+    const wl = v / f * 18; // pixels per wavelength (scaled)
+
+    if (sources.length === 0) {
+      sources = [{ x: W/2, y: H/2 }];
+    }
+
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0, 0, W, H);
+
+    // For each pixel, sum wave contributions
+    const imgData = ctx.getImageData(0, 0, W, H);
+    const d = imgData.data;
+    for (let px = 0; px < W; px += 2) {
+      for (let py = 0; py < H; py += 2) {
+        let amp = 0;
+        sources.forEach(src => {
+          const dx = px - src.x, dy = py - src.y;
+          const r = Math.sqrt(dx*dx + dy*dy) || 0.1;
+          const phase = (2 * Math.PI * r / wl) - t * f * 0.12;
+          const a = decay() ? Math.sin(phase) / Math.sqrt(r / 30 + 1) : Math.sin(phase) * 0.7;
+          amp += a;
+        });
+        const intensity = Math.max(0, Math.min(255, 128 + amp * 80));
+        const i = (py * W + px) * 4;
+        d[i]   = 0;
+        d[i+1] = Math.round(intensity * 0.78);
+        d[i+2] = Math.round(intensity);
+        d[i+3] = 255;
+        // fill 2x2 block
+        const i2 = ((py+1) * W + px) * 4;
+        const i3 = (py * W + (px+1)) * 4;
+        const i4 = ((py+1) * W + (px+1)) * 4;
+        [i2,i3,i4].forEach(ii => { d[ii]=0;d[ii+1]=d[i+1];d[ii+2]=d[i+2];d[ii+3]=255; });
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    // Source dots
+    sources.forEach((src, idx) => {
+      ctx.beginPath(); ctx.arc(src.x, src.y, 7, 0, Math.PI*2);
+      ctx.fillStyle = '#30d158'; ctx.fill();
+      ctx.font = 'bold 10px Inter,sans-serif';
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(idx+1, src.x, src.y);
+    });
+    ctx.textBaseline = 'alphabetic';
+
+    document.getElementById('pw-r-src').textContent  = sources.length;
+    document.getElementById('pw-r-freq').textContent = f.toFixed(1) + ' Hz';
+    document.getElementById('pw-r-wl').textContent   = (wl/18).toFixed(1) + ' m';
+
+    t++;
+    requestAnimationFrame(draw);
+  }
+
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top)  * (canvas.height / rect.height);
+    // Check if clicking existing source to remove
+    for (let i = 0; i < sources.length; i++) {
+      const dx = x - sources[i].x, dy = y - sources[i].y;
+      if (Math.sqrt(dx*dx+dy*dy) < 15) { sources.splice(i, 1); return; }
+    }
+    if (sources.length < 3) sources.push({x, y});
+  });
+
+  document.getElementById('pw-f-slider').addEventListener('input', e => {
+    document.getElementById('pw-f-val').textContent = (parseInt(e.target.value)*0.5).toFixed(1);
+  });
+  document.getElementById('pw-v-slider').addEventListener('input', e => {
+    document.getElementById('pw-v-val').textContent = e.target.value;
+  });
+
+  window.addEventListener('resize', () => { sources = []; });
+  draw();
+
+  window.pwCheck = function(n,ans,tol) {
+    const val = parseFloat(document.getElementById('pwans-'+n).value);
+    const fb  = document.getElementById('pwfb-'+n);
+    const hint = document.getElementById('pwhint-'+n);
+    if (isNaN(val)) { fb.textContent='Enter a number.'; fb.className='pw-feedback err'; return; }
+    if (Math.abs(val-ans)<=tol) { fb.textContent='✓ Correct!'; fb.className='pw-feedback ok'; }
+    else { fb.textContent='✗ Try again.'; fb.className='pw-feedback err'; hint.style.display='block'; }
+  };
+  window.pwCheckText = function(n,ans) {
+    const el = document.getElementById('pwans-'+n);
+    const fb = document.getElementById('pwfb-'+n);
+    const hint = document.getElementById('pwhint-'+n);
+    if (el.value===ans) { fb.textContent='✓ Correct!'; fb.className='pw-feedback ok'; }
+    else { fb.textContent='✗ Try again.'; fb.className='pw-feedback err'; hint.style.display='block'; }
+  };
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

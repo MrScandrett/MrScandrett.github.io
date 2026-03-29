@@ -1,0 +1,1550 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>XR: Extended Reality — OpenXR &amp; WebXR · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Fabrication Lesson 04 — explore the Reality-Virtuality spectrum, understand OpenXR's unified runtime architecture, and write browser-native XR with the WebXR Device API." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── page chrome ── */
+    body {
+      margin: 0;
+      color: #071a14;
+      background:
+        radial-gradient(1100px 520px at 10% -10%, rgba(0,200,160,0.12), transparent 58%),
+        radial-gradient(920px 460px at 100% 0%,   rgba(124,92,255,0.09), transparent 54%),
+        linear-gradient(180deg, #f0fdf8 0%, #edf2f0 100%);
+    }
+
+    .xr-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px) saturate(140%);
+      background: rgba(240,253,248,0.9);
+      border-bottom: 1px solid rgba(0,200,160,0.18);
+    }
+    .xr-topbar-inner, .xr-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+    .xr-topbar-inner {
+      min-height: 54px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .xr-topbar a { color: #007a60; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
+    .xr-topbar a:hover { color: #005540; }
+    .xr-topbar-title { font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; text-align: center; color: #00120e; }
+
+    .xr-shell { padding: 2rem 0 3rem; display: grid; gap: 1.2rem; }
+
+    /* ── shared card ── */
+    .xr-card {
+      border-radius: 26px;
+      border: 1px solid rgba(0,200,160,0.16);
+      background: linear-gradient(180deg, rgba(255,255,255,0.97), rgba(240,253,248,0.96));
+      box-shadow: 0 18px 40px rgba(7,26,20,0.07);
+      padding: 2rem 2.2rem;
+    }
+    .xr-card h2 { margin: 0 0 0.6rem; font-size: 1.2rem; font-weight: 800; color: #00120e; }
+    .xr-card p  { margin: 0 0 0.7rem; line-height: 1.65; color: #2a3d38; }
+    .xr-card p:last-child { margin-bottom: 0; }
+
+    /* ── hero ── */
+    .xr-hero-card {
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid rgba(0,200,160,0.28);
+      background:
+        radial-gradient(ellipse at 18% 35%, rgba(0,200,160,0.85), transparent 54%),
+        radial-gradient(ellipse at 82% 68%, rgba(124,92,255,0.65), transparent 52%),
+        linear-gradient(135deg, #00120e 0%, #0d1230 100%);
+      color: #fff;
+      padding: 2.4rem 2.4rem 2rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.4rem;
+      align-items: center;
+    }
+    @media (max-width: 640px) { .xr-hero-card { grid-template-columns: 1fr; } }
+    .xr-hero-kicker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(150,255,230,0.88); margin-bottom: 0.5rem;
+    }
+    .xr-hero-title { font-size: clamp(1.5rem,3.5vw,2.2rem); font-weight: 900; margin: 0 0 0.6rem; line-height: 1.1; }
+    .xr-hero-sub   { font-size: 0.95rem; color: rgba(210,245,240,0.82); margin: 0; max-width: 52ch; line-height: 1.55; }
+    .xr-hero-badge {
+      display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .xr-hero-badge span {
+      padding: 0.28rem 0.72rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(210,245,240,0.18);
+      color: #e0fff8;
+      white-space: nowrap;
+    }
+
+    /* ── section labels ── */
+    .xr-section-label {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #00c8a0; margin: 0 0 0.8rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .xr-section-label::after { content: ""; flex: 1; height: 1px; background: rgba(0,200,160,0.2); }
+
+    /* ── concept grid ── */
+    .xr-concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .xr-concept-block {
+      border-radius: 16px;
+      border: 1px solid rgba(0,200,160,0.15);
+      background: rgba(0,200,160,0.05);
+      padding: 1.1rem 1.2rem;
+    }
+    .xr-concept-block h3 { margin: 0 0 0.4rem; font-size: 0.95rem; font-weight: 800; color: #005540; }
+    .xr-concept-block p  { margin: 0; font-size: 0.86rem; line-height: 1.55; color: #2a3d38; }
+    .xr-concept-icon     { font-size: 1.5rem; margin-bottom: 0.4rem; display: block; }
+
+    /* ── flip cards ── */
+    .xr-flip-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+      --xr-flip-card-height: 200px;
+    }
+    .xr-flip-card { perspective: 900px; height: var(--xr-flip-card-height); cursor: pointer; }
+    .xr-flip-inner {
+      position: relative; width: 100%; height: 100%;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      transition: transform 0.52s cubic-bezier(0.4,0.2,0.2,1);
+      border-radius: 16px;
+    }
+    .xr-flip-card.flipped .xr-flip-inner { transform: rotateY(180deg); }
+    .xr-flip-front, .xr-flip-back {
+      position: absolute; inset: 0; border-radius: 16px;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      padding: 1.2rem;
+      border: 1px solid rgba(0,200,160,0.18);
+      box-sizing: border-box;
+    }
+    .xr-flip-front {
+      background: rgba(0,200,160,0.06);
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      text-align: center; gap: 0.45rem;
+    }
+    .xr-flip-icon { font-size: 2rem; line-height: 1; }
+    .xr-flip-front h3 { margin: 0; font-size: 0.95rem; font-weight: 800; color: #005540; }
+    .xr-flip-hint {
+      font-size: 0.66rem; color: rgba(0,200,160,0.6);
+      font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    }
+    .xr-flip-back {
+      background: linear-gradient(145deg, rgba(0,200,160,0.1), rgba(124,92,255,0.07));
+      transform: rotateY(180deg);
+      display: flex; flex-direction: column; justify-content: flex-start; gap: 0.3rem;
+    }
+    .xr-flip-back h3 { margin: 0; font-size: 0.88rem; font-weight: 800; color: #005540; }
+    .xr-flip-back p  { margin: 0; font-size: 0.79rem; line-height: 1.52; color: #2a3d38; }
+    .xr-flip-back-content { display: flex; flex-direction: column; gap: 0.3rem; }
+
+    .xr-flip-card, .xr-flip-inner, .xr-flip-front, .xr-flip-back { box-sizing: border-box; }
+    .xr-flip-grid.xr-flip-grid--fixed .xr-flip-card {
+      height: var(--xr-flip-card-height);
+      min-height: var(--xr-flip-card-height);
+      overflow: hidden;
+    }
+    .xr-flip-grid.xr-flip-grid--fixed .xr-flip-inner { height: 100%; }
+    .xr-flip-grid.xr-flip-grid--fixed .xr-flip-back { justify-content: flex-start; }
+    .xr-flip-grid.xr-flip-grid--fixed .xr-flip-back-content {
+      max-height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    /* ══════════════════════════════════════════
+       SPECTRUM VISUALISER (dark sim card)
+    ══════════════════════════════════════════ */
+    .xr-sim-card {
+      border-radius: 26px;
+      border: 1px solid rgba(0,200,160,0.22);
+      background: linear-gradient(160deg, #00120e 0%, #0d1230 100%);
+      padding: 2rem 2.2rem;
+      color: #fff;
+    }
+    .xr-sim-card h2 { color: #a0ffe8; margin: 0 0 0.3rem; font-size: 1.15rem; font-weight: 800; }
+    .xr-sim-card p  { color: rgba(210,245,240,0.78); font-size: 0.88rem; margin: 0 0 1.2rem; line-height: 1.55; }
+
+    .xr-spectrum-scene {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto 1rem;
+    }
+    #xr-spectrum-canvas {
+      width: 100%; height: auto;
+      border-radius: 14px;
+      border: 1px solid rgba(0,200,160,0.25);
+      display: block;
+    }
+    .xr-slider-row {
+      display: flex; align-items: center; gap: 0.8rem; margin: 0 0 0.8rem;
+    }
+    .xr-slider-row label { font-size: 0.8rem; color: rgba(150,255,230,0.8); white-space: nowrap; }
+    #xr-spectrum-slider { flex: 1; accent-color: #00c8a0; cursor: pointer; }
+
+    .xr-zone-info {
+      border-radius: 12px;
+      background: rgba(0,200,160,0.1);
+      border: 1px solid rgba(0,200,160,0.2);
+      padding: 0.9rem 1.1rem;
+      margin-top: 0.4rem;
+    }
+    .xr-zone-info h3 { margin: 0 0 0.3rem; font-size: 0.9rem; font-weight: 800; color: #a0ffe8; }
+    .xr-zone-info p  { margin: 0; font-size: 0.84rem; color: rgba(210,245,240,0.8); line-height: 1.5; }
+
+    .xr-sim-controls {
+      display: flex; flex-wrap: wrap; gap: 0.7rem; justify-content: flex-start; margin-bottom: 0.8rem;
+    }
+    .xr-sim-btn {
+      padding: 0.5rem 1.1rem; border-radius: 999px;
+      border: 1px solid rgba(0,200,160,0.4);
+      background: rgba(0,200,160,0.14);
+      color: #a0ffe8; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .xr-sim-btn:hover  { background: rgba(0,200,160,0.28); border-color: rgba(0,200,160,0.6); }
+    .xr-sim-btn.active { background: rgba(0,200,160,0.48); border-color: #00c8a0; color: #fff; }
+
+    /* ══════════════════════════════════════════
+       ARCHITECTURE DIAGRAM
+    ══════════════════════════════════════════ */
+    .xr-arch-card {
+      border-radius: 26px;
+      border: 1px solid rgba(124,92,255,0.2);
+      background: linear-gradient(160deg, #0a0618 0%, #0d1230 100%);
+      padding: 2rem 2.2rem;
+      color: #fff;
+    }
+    .xr-arch-card h2 { color: #c8b8ff; margin: 0 0 0.3rem; font-size: 1.15rem; font-weight: 800; }
+    .xr-arch-card p  { color: rgba(210,220,255,0.78); font-size: 0.88rem; margin: 0 0 1.2rem; line-height: 1.55; }
+
+    .xr-arch-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.4rem;
+      align-items: start;
+    }
+    @media (max-width: 700px) { .xr-arch-layout { grid-template-columns: 1fr; } }
+
+    .xr-arch-scene { width: 100%; }
+    #xr-arch-canvas { width: 100%; height: auto; display: block; border-radius: 12px; }
+
+    .xr-arch-detail {
+      border-radius: 14px;
+      background: rgba(124,92,255,0.1);
+      border: 1px solid rgba(124,92,255,0.2);
+      padding: 1rem 1.2rem;
+      min-height: 160px;
+    }
+    .xr-arch-detail h3 { margin: 0 0 0.5rem; font-size: 0.9rem; font-weight: 800; color: #c8b8ff; }
+    .xr-arch-detail p  { margin: 0; font-size: 0.84rem; color: rgba(210,220,255,0.8); line-height: 1.55; }
+    .xr-arch-detail-hint { font-size: 0.78rem; color: rgba(180,160,255,0.5); font-style: italic; }
+
+    .xr-arch-controls {
+      display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.2rem;
+    }
+    .xr-arch-mode-btn {
+      padding: 0.48rem 1rem; border-radius: 999px;
+      border: 1px solid rgba(124,92,255,0.38);
+      background: rgba(124,92,255,0.12);
+      color: rgba(180,160,255,0.75); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .xr-arch-mode-btn:hover  { background: rgba(124,92,255,0.26); color: #c8b8ff; }
+    .xr-arch-mode-btn.active { background: rgba(124,92,255,0.48); border-color: #7c5cff; color: #fff; }
+
+    /* ══════════════════════════════════════════
+       FEATURE DETECTOR
+    ══════════════════════════════════════════ */
+    .xr-detector-card {
+      border-radius: 26px;
+      border: 1px solid rgba(0,200,160,0.22);
+      background: linear-gradient(160deg, #001510 0%, #061228 100%);
+      padding: 2rem 2.2rem;
+      color: #fff;
+    }
+    .xr-detector-card h2 { color: #a0ffe8; margin: 0 0 0.3rem; font-size: 1.15rem; font-weight: 800; }
+    .xr-detector-card p  { color: rgba(210,245,240,0.78); font-size: 0.88rem; margin: 0 0 1.2rem; line-height: 1.55; }
+
+    .xr-detector-grid { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1.2rem; }
+    .xr-feature-row {
+      display: flex; align-items: flex-start; gap: 0.9rem;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      background: rgba(0,200,160,0.07);
+      border: 1px solid rgba(0,200,160,0.14);
+    }
+    .xr-feature-pill {
+      flex-shrink: 0;
+      padding: 0.22rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      white-space: nowrap;
+      background: rgba(100,100,120,0.25);
+      border: 1px solid rgba(150,150,180,0.25);
+      color: rgba(200,210,230,0.7);
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      min-width: 7rem; text-align: center;
+    }
+    .xr-feature-pill.yes {
+      background: rgba(52,199,89,0.18);
+      border-color: rgba(52,199,89,0.4);
+      color: #34c759;
+    }
+    .xr-feature-pill.no {
+      background: rgba(255,59,48,0.14);
+      border-color: rgba(255,59,48,0.35);
+      color: #ff6b60;
+    }
+    .xr-feature-info { flex: 1; min-width: 0; }
+    .xr-feature-label { font-size: 0.88rem; font-weight: 700; color: #a0ffe8; margin-bottom: 0.2rem; font-family: "SF Mono", ui-monospace, monospace; }
+    .xr-feature-desc  { font-size: 0.8rem; color: rgba(180,230,220,0.7); line-height: 1.45; }
+
+    .xr-det-explain {
+      border-radius: 12px;
+      background: rgba(0,200,160,0.1);
+      border: 1px solid rgba(0,200,160,0.2);
+      padding: 0.9rem 1.1rem;
+      font-size: 0.86rem;
+      color: rgba(210,245,240,0.85);
+      line-height: 1.55;
+      margin-bottom: 1rem;
+    }
+    .xr-det-explain strong { color: #a0ffe8; }
+    .xr-det-recheck {
+      padding: 0.5rem 1.2rem; border-radius: 999px;
+      border: 1px solid rgba(0,200,160,0.4);
+      background: rgba(0,200,160,0.14);
+      color: #a0ffe8; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .xr-det-recheck:hover { background: rgba(0,200,160,0.28); }
+
+    /* ── code card ── */
+    .xr-code-card {
+      border-radius: 26px;
+      background: #0d1117;
+      border: 1px solid rgba(0,200,160,0.2);
+      overflow: hidden;
+    }
+    .xr-code-tab-bar {
+      position: relative;
+      display: flex; gap: 0; border-bottom: 1px solid rgba(0,200,160,0.15);
+      background: rgba(255,255,255,0.02);
+    }
+    .xr-code-tab {
+      padding: 0.6rem 1.1rem; font-size: 0.78rem; font-weight: 700; color: rgba(150,255,230,0.45);
+      cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s;
+      background: none; border-top: none; border-left: none; border-right: none;
+    }
+    .xr-code-tab.active { color: #a0ffe8; border-bottom-color: #00c8a0; }
+    .xr-code-panel { display: none; padding: 1.4rem 1.6rem; overflow-x: auto; }
+    .xr-code-panel.active { display: block; }
+    .xr-code-panel pre {
+      margin: 0; font-size: 0.8rem; line-height: 1.7;
+      font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+      color: #d0ffe8;
+      white-space: pre;
+    }
+    .c-k  { color: #ff79c6; }
+    .c-fn { color: #50fa7b; }
+    .c-s  { color: #f1fa8c; }
+    .c-c  { color: #6272a4; }
+    .c-n  { color: #bd93f9; }
+    .c-p  { color: #8be9fd; }
+    .c-t  { color: #ffb86c; }
+
+    .xr-copy-btn {
+      position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%);
+      padding: 0.28rem 0.72rem; border-radius: 8px;
+      border: 1px solid rgba(0,200,160,0.28);
+      background: rgba(0,200,160,0.1);
+      color: rgba(150,255,230,0.7); font-size: 0.71rem; font-weight: 700;
+      cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+      font-family: inherit; letter-spacing: 0.03em;
+    }
+    .xr-copy-btn:hover  { background: rgba(0,200,160,0.22); color: #a0ffe8; border-color: rgba(0,200,160,0.5); }
+    .xr-copy-btn.copied { background: rgba(52,199,89,0.18); border-color: #34c759; color: #34c759; }
+
+    /* ── callouts ── */
+    .xr-callout {
+      border-radius: 14px;
+      border-left: 4px solid #00c8a0;
+      background: rgba(0,200,160,0.07);
+      padding: 0.9rem 1.1rem;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+      color: #005540;
+      line-height: 1.55;
+    }
+    .xr-callout strong { color: #00120e; }
+    .xr-callout:last-child { margin-bottom: 0; }
+
+    /* ── quiz ── */
+    .xr-quiz-block { margin: 0.6rem 0; }
+    .xr-quiz-q { font-size: 0.9rem; font-weight: 700; color: #00120e; margin-bottom: 0.5rem; }
+    .xr-quiz-options { display: flex; flex-direction: column; gap: 0.38rem; }
+    .xr-quiz-opt {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.52rem 0.8rem; border-radius: 10px;
+      border: 1px solid rgba(0,200,160,0.18);
+      background: rgba(0,200,160,0.04);
+      cursor: pointer; font-size: 0.86rem; transition: background 0.12s, border-color 0.12s;
+    }
+    .xr-quiz-opt:hover { background: rgba(0,200,160,0.1); border-color: rgba(0,200,160,0.3); }
+    .xr-quiz-opt.correct { background: rgba(52,199,89,0.12); border-color: #34c759; color: #1a5c2a; }
+    .xr-quiz-opt.wrong   { background: rgba(255,59,48,0.09); border-color: #ff3b30; color: #6b1515; }
+    .xr-quiz-opt input   { accent-color: #00c8a0; }
+    .xr-quiz-feedback    { margin-top: 0.5rem; font-size: 0.82rem; min-height: 1.2em; color: #005540; }
+
+    .xr-quiz-rationale {
+      margin-top: 0.45rem; padding: 0.5rem 0.8rem;
+      border-radius: 9px; font-size: 0.82rem; line-height: 1.5;
+      animation: xr-rationale-in 0.22s ease;
+    }
+    .xr-quiz-rationale.correct   { background: rgba(52,199,89,0.1);  color: #1a5c2a; border-left: 3px solid #34c759; }
+    .xr-quiz-rationale.incorrect { background: rgba(255,59,48,0.08); color: #6b1515; border-left: 3px solid #ff3b30; }
+    @keyframes xr-rationale-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+  </style>
+</head>
+<body>
+
+  <!-- ── top bar ── -->
+  <div class="xr-topbar">
+    <div class="xr-topbar-inner">
+      <a href="../steam-lessons.html">← STEAM Lessons</a>
+      <span class="xr-topbar-title">Fabrication · Lesson 04</span>
+      <a href="../steam-lessons.html#module-fabrication">Fabrication</a>
+    </div>
+  </div>
+
+  <main class="xr-shell">
+
+    <!-- ══ HERO ══ -->
+    <div class="xr-hero-card">
+      <div>
+        <p class="xr-hero-kicker">Fabrication · Lesson 04 · Extended Reality</p>
+        <h1 class="xr-hero-title">XR: Extended Reality<br>OpenXR &amp; WebXR</h1>
+        <p class="xr-hero-sub">Explore the Reality-Virtuality spectrum from AR to full VR, understand how OpenXR unifies headset hardware under one standard API, and write browser-native XR applications with the WebXR Device API.</p>
+      </div>
+      <div class="xr-hero-badge">
+        <span>OpenXR</span>
+        <span>WebXR</span>
+        <span>AR · VR · MR</span>
+        <span>Khronos Group</span>
+        <span>XR Sessions</span>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 00: XR SPECTRUM FLIP CARDS ══ -->
+    <div class="xr-card">
+      <p class="xr-section-label">00 — The XR Spectrum</p>
+      <h2>Beyond VR — The Reality-Virtuality Continuum</h2>
+      <p>In 1994, researcher Paul Milgram introduced the <strong>Reality-Virtuality Continuum</strong> — a spectrum stretching from the unmodified real world on one end to a fully computer-generated environment on the other. <strong>Extended Reality (XR)</strong> is the umbrella term for every point on this spectrum.</p>
+      <p>This single concept unifies technologies that are often treated as separate: AR glasses, smartphone overlays, passthrough MR headsets, and fully immersive VR are all points along the same line. Click each card to learn where it sits.</p>
+
+      <div class="xr-flip-grid xr-flip-grid--fixed" id="xr-flip-grid">
+
+        <div class="xr-flip-card" tabindex="0" aria-label="Reality — click to flip">
+          <div class="xr-flip-inner">
+            <div class="xr-flip-front">
+              <span class="xr-flip-icon">🌍</span>
+              <h3>Reality</h3>
+              <span class="xr-flip-hint">tap to reveal</span>
+            </div>
+            <div class="xr-flip-back">
+              <div class="xr-flip-back-content">
+                <h3>Reality</h3>
+                <p>The unmodified physical world. No digital overlays, no computer-generated content — just your senses perceiving the environment directly. This is the left anchor of Milgram's continuum (position 0).</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="xr-flip-card" tabindex="0" aria-label="Augmented Reality — click to flip">
+          <div class="xr-flip-inner">
+            <div class="xr-flip-front">
+              <span class="xr-flip-icon">📱</span>
+              <h3>Augmented Reality (AR)</h3>
+              <span class="xr-flip-hint">tap to reveal</span>
+            </div>
+            <div class="xr-flip-back">
+              <div class="xr-flip-back-content">
+                <h3>Augmented Reality (AR)</h3>
+                <p>The real world is primary; digital content is <em>overlaid</em> on top. Examples: Pokémon GO on a phone, AR navigation arrows, QR code popups. The user always sees the real environment — digital elements are additions, not replacements.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="xr-flip-card" tabindex="0" aria-label="Mixed Reality — click to flip">
+          <div class="xr-flip-inner">
+            <div class="xr-flip-front">
+              <span class="xr-flip-icon">🥽</span>
+              <h3>Mixed Reality (MR)</h3>
+              <span class="xr-flip-hint">tap to reveal</span>
+            </div>
+            <div class="xr-flip-back">
+              <div class="xr-flip-back-content">
+                <h3>Mixed Reality (MR)</h3>
+                <p>Digital objects are <strong>anchored to real-world surfaces</strong> and interact with them. A virtual ball rolls off a real table. Uses spatial mapping to understand room geometry. Examples: HoloLens, Meta Quest 3 passthrough MR apps.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="xr-flip-card" tabindex="0" aria-label="Virtual Reality — click to flip">
+          <div class="xr-flip-inner">
+            <div class="xr-flip-front">
+              <span class="xr-flip-icon">🖥️</span>
+              <h3>Virtual Reality (VR)</h3>
+              <span class="xr-flip-hint">tap to reveal</span>
+            </div>
+            <div class="xr-flip-back">
+              <div class="xr-flip-back-content">
+                <h3>Virtual Reality (VR)</h3>
+                <p>Full replacement of reality. The headset shows <em>only</em> computer-generated imagery; the real world is completely blocked out. Requires 6DoF tracking (3 rotational + 3 translational axes) for convincing presence. Examples: Meta Quest, PlayStation VR2, Valve Index.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ SECTION 01: SPECTRUM VISUALISER ══ -->
+    <div class="xr-sim-card">
+      <p class="xr-section-label" style="color:#00c8a0">01 — Milgram's Continuum</p>
+      <h2>Drag to Explore the Reality-Virtuality Spectrum</h2>
+      <p>Move the slider to slide along Milgram's continuum. The canvas shows how much of the view is real-world vs. virtual. Each coloured zone on the spectrum strip lights up as you enter it, and the description below updates to explain that zone.</p>
+
+      <div class="xr-spectrum-scene">
+        <canvas id="xr-spectrum-canvas" width="800" height="240" aria-label="Reality-Virtuality spectrum visualiser"></canvas>
+      </div>
+
+      <div class="xr-slider-row">
+        <label for="xr-spectrum-slider">← Reality &nbsp; Virtual →</label>
+        <input type="range" id="xr-spectrum-slider" min="0" max="100" value="50" step="1" />
+      </div>
+
+      <div class="xr-zone-info" id="xr-zone-info">
+        <h3 id="xr-zone-name">Mixed Reality</h3>
+        <p id="xr-zone-desc">Digital and physical objects coexist and interact. Virtual objects are anchored to real surfaces and respond to real-world geometry. Examples: HoloLens spatial mapping, Meta Quest 3 passthrough MR apps.</p>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 02: OPENXR DEEP DIVE ══ -->
+    <div class="xr-card">
+      <p class="xr-section-label">02 — OpenXR Architecture</p>
+      <h2>One API, Every Headset — How Khronos Unified XR</h2>
+      <p>Before 2019, every XR platform had a completely different API. SteamVR had its own SDK, Oculus had its own SDK, Windows Mixed Reality had its own SDK. A developer who wanted their game on three platforms needed to write and maintain three completely separate rendering and input backends — a massive engineering burden.</p>
+      <p><strong>OpenXR</strong> is a royalty-free, open standard published by the <strong>Khronos Group</strong> (the same organisation behind OpenGL, Vulkan, WebGL, and OpenCL). Released in version 1.0 in July 2019, it defines a single C API that applications call. Each platform vendor then ships an <em>OpenXR Runtime</em> that implements that standard for their specific hardware.</p>
+      <p>The result: the same application code compiles and runs on Meta Quest, SteamVR (Valve Index, HTC Vive), PlayStation VR2, Windows Mixed Reality, Varjo, Pico, and more — with no code changes.</p>
+
+      <div class="xr-concept-grid">
+        <div class="xr-concept-block">
+          <span class="xr-concept-icon">🔗</span>
+          <h3>XrInstance</h3>
+          <p>The root OpenXR object. Created once at startup, it initialises the OpenXR loader and establishes a connection to the runtime. Think of it like a Vulkan instance — it's the entry point that everything else hangs off.</p>
+        </div>
+        <div class="xr-concept-block">
+          <span class="xr-concept-icon">▶</span>
+          <h3>XrSession</h3>
+          <p>Represents an active XR experience. It manages the render loop, frame timing, headset lifecycle events (entering/leaving standby), and the list of enabled XR features. You wait for frames, begin them, render, then end them — all through the session.</p>
+        </div>
+        <div class="xr-concept-block">
+          <span class="xr-concept-icon">📐</span>
+          <h3>XrSpace</h3>
+          <p>A coordinate system used to express positions and orientations. <code>STAGE</code> space has its origin at the floor of the play area. <code>LOCAL</code> is seated/standing-scale around the headset's starting position. <code>VIEW</code> follows the headset itself. All tracking results are expressed relative to a space.</p>
+        </div>
+      </div>
+
+      <div class="xr-callout" style="margin-top:1.2rem">
+        <strong>Supported platforms (via OpenXR runtime):</strong> Meta Quest (2/3/Pro), SteamVR (Valve Index, HTC Vive, Cosmos), PlayStation VR2 (PC tethered), Windows Mixed Reality, Varjo headsets, Pico 4, Magic Leap 2, and Apple visionOS (via third-party OpenXR runtime bridge). The same OpenXR application binary runs on all of them.
+      </div>
+    </div>
+
+    <!-- ══ SECTION 03: ARCHITECTURE DIAGRAM ══ -->
+    <div class="xr-arch-card">
+      <p class="xr-section-label" style="color:#c8b8ff; border-color:rgba(124,92,255,0.2)">03 — OpenXR Layer Stack</p>
+      <h2>How Your Code Reaches the Hardware</h2>
+      <p>Click each layer in the diagram to learn what it does. The toggle below switches between the <em>unified</em> OpenXR architecture and the <em>fragmented</em> pre-OpenXR world — showing exactly what problem OpenXR solves.</p>
+
+      <div class="xr-arch-layout">
+        <div class="xr-arch-scene">
+          <canvas id="xr-arch-canvas" width="300" height="340" aria-label="OpenXR layer stack diagram"></canvas>
+        </div>
+        <div class="xr-arch-detail" id="xr-arch-detail">
+          <p class="xr-arch-detail-hint">Click a layer in the diagram to see its details.</p>
+        </div>
+      </div>
+
+      <div class="xr-arch-controls">
+        <button class="xr-arch-mode-btn active" id="xr-arch-btn-with">With OpenXR (unified)</button>
+        <button class="xr-arch-mode-btn" id="xr-arch-btn-without">Without OpenXR (fragmented)</button>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 04: WEBXR DEVICE API ══ -->
+    <div class="xr-card">
+      <p class="xr-section-label">04 — WebXR Device API</p>
+      <h2>XR in the Browser — No Install Required</h2>
+      <p>The <strong>WebXR Device API</strong> is a W3C specification that brings XR sessions directly to the web browser. Users on a compatible device can enter a full VR or AR experience by clicking a button on a webpage — no app download, no SDK, no install. It ships in Chrome 79+, Microsoft Edge, and the Meta Quest Browser.</p>
+      <p>WebXR defines two <strong>immersive session modes</strong> and one non-immersive mode:</p>
+      <ul style="color:#2a3d38; font-size:0.9rem; line-height:1.7; padding-left:1.4rem; margin:0 0 0.8rem;">
+        <li><strong>immersive-vr</strong> — full headset VR; real world is replaced entirely by the rendered scene.</li>
+        <li><strong>immersive-ar</strong> — passthrough AR; the rendered scene blends over the camera feed.</li>
+        <li><strong>inline</strong> — non-immersive, displayed inside the web page; used for 360° viewers and gyroscope-driven experiences without a headset.</li>
+      </ul>
+      <p>Every XR session uses a <strong>reference space</strong> — the coordinate system that defines where "world centre" is:</p>
+      <ul style="color:#2a3d38; font-size:0.9rem; line-height:1.7; padding-left:1.4rem; margin:0 0 0.8rem;">
+        <li><code>viewer</code> — origin stays glued to the headset; everything moves with you.</li>
+        <li><code>local</code> — origin at the headset's starting position; for seated/standing experiences.</li>
+        <li><code>local-floor</code> — like local, but the origin is at the estimated floor level.</li>
+        <li><code>bounded-floor</code> — room-scale with a defined physical boundary polygon.</li>
+        <li><code>unbounded</code> — for large walking-scale experiences with no boundary.</li>
+      </ul>
+
+      <div class="xr-callout" style="border-left-color:#7c5cff; background:rgba(124,92,255,0.07); color:#2a1a5e;">
+        <strong>WebXR and OpenXR are complementary, not competing.</strong> On desktop Chrome, when you enter an <code>immersive-vr</code> session, the browser internally talks to the system's OpenXR runtime to reach the headset. WebXR is the <em>browser-layer</em> API; OpenXR is the <em>system-layer</em> API underneath it. On native apps (Unity, Godot, Unreal) you call OpenXR directly — the browser layer does not exist.
+      </div>
+    </div>
+
+    <!-- ══ SECTION 05: WEBXR FEATURE DETECTOR ══ -->
+    <div class="xr-detector-card">
+      <p class="xr-section-label" style="color:#00c8a0; border-color:rgba(0,200,160,0.2)">05 — WebXR Feature Detector</p>
+      <h2>What XR Can Your Browser Do Right Now?</h2>
+      <p>This tool uses the real <code>navigator.xr</code> API to probe your browser's XR capabilities — no headset required to run the check. The results update live as soon as the page loads.</p>
+
+      <div class="xr-detector-grid" id="xr-detector-grid">
+        <div class="xr-feature-row">
+          <span class="xr-feature-pill" id="xr-pill-api">Checking…</span>
+          <div class="xr-feature-info">
+            <div class="xr-feature-label">navigator.xr available</div>
+            <div class="xr-feature-desc">The WebXR Device API is present in this browser. Required for all XR sessions.</div>
+          </div>
+        </div>
+        <div class="xr-feature-row">
+          <span class="xr-feature-pill" id="xr-pill-vr">Checking…</span>
+          <div class="xr-feature-info">
+            <div class="xr-feature-label">immersive-vr supported</div>
+            <div class="xr-feature-desc">Full VR sessions available. Entering this session on a desktop browser typically requires a connected OpenXR-compatible headset.</div>
+          </div>
+        </div>
+        <div class="xr-feature-row">
+          <span class="xr-feature-pill" id="xr-pill-ar">Checking…</span>
+          <div class="xr-feature-info">
+            <div class="xr-feature-label">immersive-ar supported</div>
+            <div class="xr-feature-desc">AR passthrough sessions available. Requires a device with camera-based passthrough (Quest 3, HoloLens, phone with ARCore/ARKit).</div>
+          </div>
+        </div>
+        <div class="xr-feature-row">
+          <span class="xr-feature-pill" id="xr-pill-inline">Checking…</span>
+          <div class="xr-feature-info">
+            <div class="xr-feature-label">inline session supported</div>
+            <div class="xr-feature-desc">Non-immersive inline sessions available. Used for on-page 360° viewers and device-orientation experiences without a headset.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="xr-det-explain" id="xr-det-explain">Checking your browser's XR capabilities…</div>
+      <button class="xr-det-recheck" id="xr-det-recheck">↻ Re-check</button>
+    </div>
+
+    <!-- ══ SECTION 06: CODE EXAMPLES ══ -->
+    <div class="xr-card">
+      <p class="xr-section-label">06 — Write Your First XR App</p>
+      <h2>Code Examples</h2>
+      <p>Four ready-to-run patterns covering the full XR development stack — from a browser-native WebXR session to a low-level OpenXR C++ frame loop.</p>
+    </div>
+
+    <div class="xr-code-card">
+      <div class="xr-code-tab-bar">
+        <button class="xr-code-tab active" data-tab="webxr">WebXR (JS)</button>
+        <button class="xr-code-tab" data-tab="openxr">OpenXR (C++)</button>
+        <button class="xr-code-tab" data-tab="threejs">Three.js + WebXR</button>
+        <button class="xr-code-tab" data-tab="hittest">Hit Testing (AR)</button>
+        <button class="xr-copy-btn" id="xr-copy-btn">Copy</button>
+      </div>
+
+      <!-- WebXR JS -->
+      <div class="xr-code-panel active" id="tab-webxr">
+        <pre><span class="c-c">// WebXR Device API — check support, start immersive-vr, run XR frame loop</span>
+
+<span class="c-c">// 1. Check that the WebXR API exists</span>
+<span class="c-k">if</span> (!navigator.xr) {
+  console.<span class="c-fn">log</span>(<span class="c-s">'WebXR not supported in this browser'</span>);
+}
+
+<span class="c-c">// 2. Check if immersive-vr is available (async)</span>
+<span class="c-k">const</span> supported = <span class="c-k">await</span> navigator.xr.<span class="c-fn">isSessionSupported</span>(<span class="c-s">'immersive-vr'</span>);
+<span class="c-k">if</span> (!supported) { console.<span class="c-fn">log</span>(<span class="c-s">'No VR headset detected'</span>); <span class="c-k">return</span>; }
+
+<span class="c-c">// 3. Request a session (must come from a user gesture — e.g. button click)</span>
+<span class="c-k">const</span> session = <span class="c-k">await</span> navigator.xr.<span class="c-fn">requestSession</span>(<span class="c-s">'immersive-vr'</span>, {
+  requiredFeatures: [<span class="c-s">'local-floor'</span>],
+  optionalFeatures: [<span class="c-s">'bounded-floor'</span>, <span class="c-s">'hand-tracking'</span>]
+});
+
+<span class="c-c">// 4. Set up a WebGL context that is XR-compatible</span>
+<span class="c-k">const</span> gl = canvas.<span class="c-fn">getContext</span>(<span class="c-s">'webgl'</span>, { xrCompatible: <span class="c-k">true</span> });
+<span class="c-k">await</span> session.<span class="c-fn">updateRenderState</span>({
+  baseLayer: <span class="c-k">new</span> <span class="c-t">XRWebGLLayer</span>(session, gl)
+});
+
+<span class="c-c">// 5. Request a reference space (coordinate system)</span>
+<span class="c-k">const</span> refSpace = <span class="c-k">await</span> session.<span class="c-fn">requestReferenceSpace</span>(<span class="c-s">'local-floor'</span>);
+
+<span class="c-c">// 6. XR animation loop — called once per frame by the XR runtime</span>
+<span class="c-k">function</span> <span class="c-fn">onXRFrame</span>(time, frame) {
+  session.<span class="c-fn">requestAnimationFrame</span>(onXRFrame);       <span class="c-c">// schedule the next frame</span>
+  <span class="c-k">const</span> pose = frame.<span class="c-fn">getViewerPose</span>(refSpace);
+  <span class="c-k">if</span> (!pose) <span class="c-k">return</span>;
+
+  gl.<span class="c-fn">bindFramebuffer</span>(gl.FRAMEBUFFER,
+    session.renderState.baseLayer.framebuffer);
+
+  <span class="c-k">for</span> (<span class="c-k">const</span> view <span class="c-k">of</span> pose.views) {             <span class="c-c">// one view per eye</span>
+    <span class="c-k">const</span> vp = session.renderState.baseLayer.<span class="c-fn">getViewport</span>(view);
+    gl.<span class="c-fn">viewport</span>(vp.x, vp.y, vp.width, vp.height);
+    <span class="c-c">// view.projectionMatrix  — camera lens matrix</span>
+    <span class="c-c">// view.transform.matrix  — eye world transform</span>
+    <span class="c-fn">drawScene</span>(view.projectionMatrix, view.transform.matrix);
+  }
+}
+session.<span class="c-fn">requestAnimationFrame</span>(onXRFrame);
+
+<span class="c-c">// 7. End the session cleanly</span>
+document.<span class="c-fn">getElementById</span>(<span class="c-s">'exit-xr'</span>).<span class="c-fn">addEventListener</span>(<span class="c-s">'click'</span>, () => session.<span class="c-fn">end</span>());</pre>
+      </div>
+
+      <!-- OpenXR C++ -->
+      <div class="xr-code-panel" id="tab-openxr">
+        <pre><span class="c-c">// OpenXR C++ — create instance, get system, create session, run frame loop</span>
+<span class="c-k">#include</span> <span class="c-s">&lt;openxr/openxr.h&gt;</span>
+
+<span class="c-c">// 1. Create an XrInstance — connects the app to the OpenXR loader/runtime</span>
+<span class="c-t">XrInstanceCreateInfo</span> instanceCI = { <span class="c-t">XR_TYPE_INSTANCE_CREATE_INFO</span> };
+<span class="c-fn">strncpy</span>(instanceCI.applicationInfo.applicationName,
+        <span class="c-s">"MyXRApp"</span>, <span class="c-t">XR_MAX_APPLICATION_NAME_SIZE</span>);
+instanceCI.applicationInfo.apiVersion = <span class="c-t">XR_CURRENT_API_VERSION</span>;
+
+<span class="c-k">const char</span>* extensions[] = { <span class="c-t">XR_KHR_VULKAN_ENABLE_EXTENSION_NAME</span> };
+instanceCI.enabledExtensionCount = <span class="c-n">1</span>;
+instanceCI.enabledExtensionNames = extensions;
+
+<span class="c-t">XrInstance</span> instance;
+<span class="c-fn">xrCreateInstance</span>(&amp;instanceCI, &amp;instance);    <span class="c-c">// connects to the runtime</span>
+
+<span class="c-c">// 2. Get the XrSystemId for the head-mounted display</span>
+<span class="c-t">XrSystemGetInfo</span> systemGI = { <span class="c-t">XR_TYPE_SYSTEM_GET_INFO</span> };
+systemGI.formFactor = <span class="c-t">XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY</span>;
+<span class="c-t">XrSystemId</span> systemId;
+<span class="c-fn">xrGetSystem</span>(instance, &amp;systemGI, &amp;systemId);
+
+<span class="c-c">// 3. Create an XrSession — the active XR experience</span>
+<span class="c-t">XrSessionCreateInfo</span> sessionCI = { <span class="c-t">XR_TYPE_SESSION_CREATE_INFO</span> };
+sessionCI.systemId = systemId;
+<span class="c-c">// ... attach your graphics binding (Vulkan/D3D12/OpenGL) here ...</span>
+
+<span class="c-t">XrSession</span> session;
+<span class="c-fn">xrCreateSession</span>(instance, &amp;sessionCI, &amp;session);
+
+<span class="c-c">// 4. The frame loop</span>
+<span class="c-t">XrFrameWaitInfo</span>  frameWI    = { <span class="c-t">XR_TYPE_FRAME_WAIT_INFO</span> };
+<span class="c-t">XrFrameState</span>     frameState = { <span class="c-t">XR_TYPE_FRAME_STATE</span> };
+
+<span class="c-k">while</span> (running) {
+  <span class="c-fn">xrWaitFrame</span>(session, &amp;frameWI, &amp;frameState);    <span class="c-c">// block until frame is due</span>
+  <span class="c-fn">xrBeginFrame</span>(session, <span class="c-k">nullptr</span>);
+
+  <span class="c-c">// ... locate views, render each eye to XrSwapchain images ...</span>
+
+  <span class="c-t">XrFrameEndInfo</span> frameEI = { <span class="c-t">XR_TYPE_FRAME_END_INFO</span> };
+  frameEI.displayTime           = frameState.predictedDisplayTime;
+  frameEI.environmentBlendMode  = <span class="c-t">XR_ENVIRONMENT_BLEND_MODE_OPAQUE</span>;
+  frameEI.layerCount            = layerCount;
+  frameEI.layers                = layers;
+  <span class="c-fn">xrEndFrame</span>(session, &amp;frameEI);                  <span class="c-c">// submit to the runtime</span>
+}</pre>
+      </div>
+
+      <!-- Three.js + WebXR -->
+      <div class="xr-code-panel" id="tab-threejs">
+        <pre><span class="c-c">// Three.js + WebXR — full setup with VRButton helper</span>
+
+<span class="c-k">import</span> * <span class="c-k">as</span> THREE <span class="c-k">from</span> <span class="c-s">'three'</span>;
+<span class="c-k">import</span> { <span class="c-t">VRButton</span> } <span class="c-k">from</span> <span class="c-s">'three/addons/webxr/VRButton.js'</span>;
+
+<span class="c-c">// 1. Renderer with XR enabled</span>
+<span class="c-k">const</span> renderer = <span class="c-k">new</span> THREE.<span class="c-fn">WebGLRenderer</span>({ antialias: <span class="c-k">true</span> });
+renderer.xr.enabled = <span class="c-k">true</span>;               <span class="c-c">// activate WebXR support</span>
+renderer.<span class="c-fn">setPixelRatio</span>(window.devicePixelRatio);
+renderer.<span class="c-fn">setSize</span>(window.innerWidth, window.innerHeight);
+document.body.<span class="c-fn">appendChild</span>(renderer.domElement);
+
+<span class="c-c">// 2. VRButton handles the full session lifecycle for you</span>
+document.body.<span class="c-fn">appendChild</span>(<span class="c-t">VRButton</span>.<span class="c-fn">createButton</span>(renderer));
+
+<span class="c-c">// 3. Scene</span>
+<span class="c-k">const</span> scene  = <span class="c-k">new</span> THREE.<span class="c-fn">Scene</span>();
+<span class="c-k">const</span> camera = <span class="c-k">new</span> THREE.<span class="c-fn">PerspectiveCamera</span>(<span class="c-n">70</span>,
+  window.innerWidth / window.innerHeight, <span class="c-n">0.1</span>, <span class="c-n">100</span>);
+
+<span class="c-c">// 4. Environment</span>
+<span class="c-k">const</span> floor = <span class="c-k">new</span> THREE.<span class="c-fn">Mesh</span>(
+  <span class="c-k">new</span> THREE.<span class="c-fn">PlaneGeometry</span>(<span class="c-n">10</span>, <span class="c-n">10</span>),
+  <span class="c-k">new</span> THREE.<span class="c-fn">MeshStandardMaterial</span>({ color: <span class="c-n">0x222222</span> })
+);
+floor.rotation.x = -Math.PI / <span class="c-n">2</span>;
+scene.<span class="c-fn">add</span>(floor);
+
+<span class="c-k">const</span> box = <span class="c-k">new</span> THREE.<span class="c-fn">Mesh</span>(
+  <span class="c-k">new</span> THREE.<span class="c-fn">BoxGeometry</span>(<span class="c-n">0.5</span>, <span class="c-n">0.5</span>, <span class="c-n">0.5</span>),
+  <span class="c-k">new</span> THREE.<span class="c-fn">MeshStandardMaterial</span>({ color: <span class="c-n">0x00c8a0</span> })
+);
+box.position.<span class="c-fn">set</span>(<span class="c-n">0</span>, <span class="c-n">1</span>, -<span class="c-n">2</span>);
+scene.<span class="c-fn">add</span>(box);
+scene.<span class="c-fn">add</span>(<span class="c-k">new</span> THREE.<span class="c-fn">HemisphereLight</span>(<span class="c-n">0xffffff</span>, <span class="c-n">0x444444</span>, <span class="c-n">1</span>));
+
+<span class="c-c">// 5. setAnimationLoop handles both flat and XR frames automatically</span>
+renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</span>(time) {
+  box.rotation.y = time * <span class="c-n">0.001</span>;
+  renderer.<span class="c-fn">render</span>(scene, camera);
+});</pre>
+      </div>
+
+      <!-- Hit Testing AR -->
+      <div class="xr-code-panel" id="tab-hittest">
+        <pre><span class="c-c">// WebXR Hit Testing — place objects on real-world surfaces (immersive-ar)</span>
+
+<span class="c-c">// Request an AR session with hit-test feature enabled</span>
+<span class="c-k">const</span> session = <span class="c-k">await</span> navigator.xr.<span class="c-fn">requestSession</span>(<span class="c-s">'immersive-ar'</span>, {
+  requiredFeatures: [<span class="c-s">'local'</span>, <span class="c-s">'hit-test'</span>]
+});
+
+<span class="c-k">const</span> refSpace    = <span class="c-k">await</span> session.<span class="c-fn">requestReferenceSpace</span>(<span class="c-s">'local'</span>);
+<span class="c-k">const</span> viewerSpace = <span class="c-k">await</span> session.<span class="c-fn">requestReferenceSpace</span>(<span class="c-s">'viewer'</span>);
+
+<span class="c-c">// Create a hit test source — tests along the viewer's forward ray</span>
+<span class="c-k">const</span> hitTestSource = <span class="c-k">await</span> session.<span class="c-fn">requestHitTestSource</span>({
+  space: viewerSpace
+});
+
+<span class="c-c">// In the XR frame loop:</span>
+<span class="c-k">function</span> <span class="c-fn">onXRFrame</span>(time, frame) {
+  session.<span class="c-fn">requestAnimationFrame</span>(onXRFrame);
+
+  <span class="c-k">const</span> hits = frame.<span class="c-fn">getHitTestResults</span>(hitTestSource);
+
+  <span class="c-k">if</span> (hits.length > <span class="c-n">0</span>) {
+    <span class="c-k">const</span> pose = hits[<span class="c-n">0</span>].<span class="c-fn">getPose</span>(refSpace);
+    <span class="c-k">if</span> (pose) {
+      <span class="c-c">// pose.transform.matrix is where the real surface is in world space</span>
+      reticle.matrix.<span class="c-fn">fromArray</span>(pose.transform.matrix);
+      reticle.visible = <span class="c-k">true</span>;
+    }
+  } <span class="c-k">else</span> {
+    reticle.visible = <span class="c-k">false</span>;   <span class="c-c">// no surface under the cursor</span>
+  }
+}
+
+<span class="c-c">// On tap: permanently place a 3D object at the reticle's pose</span>
+session.<span class="c-fn">addEventListener</span>(<span class="c-s">'select'</span>, <span class="c-k">function</span>() {
+  <span class="c-k">if</span> (reticle.visible) {
+    <span class="c-fn">placeObjectAt</span>(reticle.matrix);   <span class="c-c">// your own function to spawn a mesh</span>
+  }
+});
+
+<span class="c-c">// Clean up the hit test source when done</span>
+session.<span class="c-fn">addEventListener</span>(<span class="c-s">'end'</span>, () => hitTestSource.<span class="c-fn">cancel</span>());</pre>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 07: KEY CONCEPTS RECAP ══ -->
+    <div class="xr-card">
+      <p class="xr-section-label">07 — Key Concepts Recap</p>
+      <h2>The Concepts Behind XR</h2>
+
+      <div class="xr-callout">
+        <strong>XR Reference Spaces — choosing the right one</strong><br>
+        <code>viewer</code> — origin glued to the headset, everything moves with you. Good for on-screen HUDs.<br>
+        <code>local</code> — origin at your starting head position; for seated or standing experiences.<br>
+        <code>local-floor</code> — like local, but origin is on the floor below you. Most common for room-scale VR.<br>
+        <code>bounded-floor</code> — room-scale with a defined physical boundary polygon from the Guardian/Chaperone system.<br>
+        <code>unbounded</code> — for large walking-scale experiences; positional drift is expected over long distances.
+      </div>
+
+      <div class="xr-callout" style="border-left-color:#7c5cff; background:rgba(124,92,255,0.07); color:#2a1a5e;">
+        <strong>WebXR vs. OpenXR — the two-layer model</strong><br>
+        WebXR is a <em>browser-layer API</em> defined by the W3C. It lets JavaScript request and run XR sessions inside a webpage. OpenXR is a <em>system-layer API</em> defined by the Khronos Group. It lets native C/C++ applications (and engines like Unity, Godot, Unreal) talk directly to headset hardware via the platform's runtime. On a PC running Chrome, an immersive-vr WebXR session goes: <code>JavaScript → Chrome WebXR implementation → System OpenXR Runtime → Hardware</code>.
+      </div>
+
+      <div class="xr-callout" style="border-left-color:#ff6b9d; background:rgba(255,107,157,0.07); color:#5a1030;">
+        <strong>WebXR Session Lifecycle</strong><br>
+        <strong>1. Check:</strong> <code>navigator.xr.isSessionSupported(mode)</code> — async, no user gesture needed.<br>
+        <strong>2. Request:</strong> <code>navigator.xr.requestSession(mode, options)</code> — must be called inside a user gesture (button click) or the browser blocks it.<br>
+        <strong>3. Configure:</strong> call <code>session.updateRenderState()</code> with your WebGL layer and <code>session.requestReferenceSpace()</code>.<br>
+        <strong>4. Run:</strong> start the loop with <code>session.requestAnimationFrame()</code>.<br>
+        <strong>5. End:</strong> call <code>session.end()</code> to exit cleanly, or listen for the session's own <code>'end'</code> event (fired when the user removes the headset).
+      </div>
+    </div>
+
+    <!-- ══ SECTION 08: QUIZ ══ -->
+    <div class="xr-card">
+      <p class="xr-section-label">08 — Check Your Understanding</p>
+      <h2>Quick Quiz</h2>
+
+      <div class="xr-quiz-block" id="xrq1">
+        <p class="xr-quiz-q">1. Which organisation publishes the OpenXR standard?</p>
+        <div class="xr-quiz-options">
+          <label class="xr-quiz-opt"><input type="radio" name="xrq1" value="a"> IEEE</label>
+          <label class="xr-quiz-opt"><input type="radio" name="xrq1" value="b"> W3C</label>
+          <label class="xr-quiz-opt"><input type="radio" name="xrq1" value="c"> Khronos Group</label>
+        </div>
+        <p class="xr-quiz-feedback"></p>
+      </div>
+
+      <div class="xr-quiz-block" id="xrq2">
+        <p class="xr-quiz-q">2. Which WebXR session mode lets you place virtual objects over the real-world camera feed (passthrough AR)?</p>
+        <div class="xr-quiz-options">
+          <label class="xr-quiz-opt"><input type="radio" name="xrq2" value="a"> <code>immersive-vr</code></label>
+          <label class="xr-quiz-opt"><input type="radio" name="xrq2" value="b"> <code>inline</code></label>
+          <label class="xr-quiz-opt"><input type="radio" name="xrq2" value="c"> <code>immersive-ar</code></label>
+        </div>
+        <p class="xr-quiz-feedback"></p>
+      </div>
+
+      <div class="xr-quiz-block" id="xrq3">
+        <p class="xr-quiz-q">3. A seated VR experience that doesn't need to track the room boundary should use which reference space?</p>
+        <div class="xr-quiz-options">
+          <label class="xr-quiz-opt"><input type="radio" name="xrq3" value="a"> <code>bounded-floor</code></label>
+          <label class="xr-quiz-opt"><input type="radio" name="xrq3" value="b"> <code>local</code></label>
+          <label class="xr-quiz-opt"><input type="radio" name="xrq3" value="c"> <code>unbounded</code></label>
+        </div>
+        <p class="xr-quiz-feedback"></p>
+      </div>
+
+      <div class="xr-quiz-block" id="xrq4">
+        <p class="xr-quiz-q">4. In Paul Milgram's Reality-Virtuality Continuum, where does Mixed Reality (MR) sit?</p>
+        <div class="xr-quiz-options">
+          <label class="xr-quiz-opt"><input type="radio" name="xrq4" value="a"> At the far virtual end, identical to full VR</label>
+          <label class="xr-quiz-opt"><input type="radio" name="xrq4" value="b"> Entirely in the real world with no digital content</label>
+          <label class="xr-quiz-opt"><input type="radio" name="xrq4" value="c"> Between pure Reality and full Virtual Reality, where digital and real coexist and interact</label>
+        </div>
+        <p class="xr-quiz-feedback"></p>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer style="text-align:center; padding:2rem 1rem; color:#6b7280; font-size:0.8rem;">
+    <a href="../steam-lessons.html" style="color:#007a60; text-decoration:none; font-weight:700;">← Back to STEAM Lessons</a>
+  </footer>
+
+  <!-- ══════════════════════════════════════════════════
+       SPECTRUM VISUALISER CANVAS
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var canvas = document.getElementById('xr-spectrum-canvas');
+    var ctx    = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+
+    var STRIP_H   = 28;
+    var STRIP_Y   = H - STRIP_H - 10;
+    var SCENE_H   = STRIP_Y - 10;
+    var BLEND_W   = 24;
+
+    var ZONES = [
+      { label: 'Reality',            pos: 0,   color: '#22c55e',
+        desc: 'The unmodified physical world. No digital overlays, no computer-generated content — just your senses perceiving the environment directly. This is the left anchor of Milgram\'s continuum.' },
+      { label: 'Augmented Reality',  pos: 28,  color: '#00c8a0',
+        desc: 'Real world primary. Digital content overlaid — arrows, labels, 3D models placed on surfaces. Phone AR (Pokémon GO), HoloLens annotations, AR glasses. The real world is always visible.' },
+      { label: 'Mixed Reality',      pos: 55,  color: '#7c5cff',
+        desc: 'Digital and physical objects coexist and interact. Virtual objects are anchored to real surfaces and respond to them. Examples: HoloLens spatial mapping, Meta Quest 3 passthrough MR apps.' },
+      { label: 'Virtual Reality',    pos: 85,  color: '#ff6b9d',
+        desc: 'Full replacement of reality. The headset shows only computer-generated imagery. Real world blocked out. Requires 6DoF tracking for convincing presence. Examples: Meta Quest, PSVR2, Valve Index.' },
+      { label: 'Pure Virtuality',    pos: 100, color: '#ff3b30',
+        desc: 'Theoretical far endpoint — full sensory replacement including touch, smell, and taste. Current VR covers vision and audio; haptic suits approximate touch.' }
+    ];
+
+    var slider     = document.getElementById('xr-spectrum-slider');
+    var zoneName   = document.getElementById('xr-zone-name');
+    var zoneDesc   = document.getElementById('xr-zone-desc');
+
+    function getNearestZone(val) {
+      var best = ZONES[0], bestDist = Math.abs(val - ZONES[0].pos);
+      for (var i = 1; i < ZONES.length; i++) {
+        var d = Math.abs(val - ZONES[i].pos);
+        if (d < bestDist) { bestDist = d; best = ZONES[i]; }
+      }
+      return best;
+    }
+
+    function drawReal(x0, x1) {
+      if (x1 <= x0) return;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x0, 0, x1 - x0, SCENE_H); ctx.clip();
+      // sky
+      var skyGrad = ctx.createLinearGradient(0,0,0,SCENE_H*0.6);
+      skyGrad.addColorStop(0, '#87ceeb'); skyGrad.addColorStop(1, '#c8eeff');
+      ctx.fillStyle = skyGrad; ctx.fillRect(x0, 0, x1-x0, SCENE_H*0.6);
+      // ground
+      var groundGrad = ctx.createLinearGradient(0,SCENE_H*0.6,0,SCENE_H);
+      groundGrad.addColorStop(0,'#7ec850'); groundGrad.addColorStop(1,'#5aa830');
+      ctx.fillStyle = groundGrad; ctx.fillRect(x0, SCENE_H*0.6, x1-x0, SCENE_H*0.4);
+      // sun
+      ctx.beginPath(); ctx.arc(x0 + (x1-x0)*0.8, SCENE_H*0.15, 18, 0, Math.PI*2);
+      ctx.fillStyle = '#ffe55a'; ctx.fill();
+      // trees
+      var treeX = [x0+(x1-x0)*0.15, x0+(x1-x0)*0.45, x0+(x1-x0)*0.72];
+      treeX.forEach(function(tx) {
+        ctx.fillStyle = '#5a3820'; ctx.fillRect(tx-5, SCENE_H*0.55, 10, SCENE_H*0.12);
+        ctx.beginPath(); ctx.arc(tx, SCENE_H*0.48, 22, 0, Math.PI*2);
+        ctx.fillStyle = '#3a8e28'; ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    function drawVirtual(x0, x1) {
+      if (x1 <= x0) return;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x0, 0, x1-x0, SCENE_H); ctx.clip();
+      // dark bg
+      var bgGrad = ctx.createLinearGradient(0,0,0,SCENE_H);
+      bgGrad.addColorStop(0,'#00120e'); bgGrad.addColorStop(1,'#0d1230');
+      ctx.fillStyle = bgGrad; ctx.fillRect(x0, 0, x1-x0, SCENE_H);
+      // grid floor
+      ctx.strokeStyle = 'rgba(0,200,160,0.25)'; ctx.lineWidth = 0.8;
+      for (var gx = x0; gx < x1; gx += 30) {
+        ctx.beginPath(); ctx.moveTo(gx, SCENE_H*0.55); ctx.lineTo((x0+x1)/2, SCENE_H); ctx.stroke();
+      }
+      for (var row = 0; row < 4; row++) {
+        var t = row / 4;
+        var gy = SCENE_H * (0.55 + t*0.45);
+        var wx = (x1-x0)*(0.1 + t*0.4);
+        ctx.beginPath(); ctx.moveTo((x0+x1)/2 - wx, gy); ctx.lineTo((x0+x1)/2 + wx, gy); ctx.stroke();
+      }
+      // shapes
+      var cx = (x0+x1)/2;
+      // sphere
+      var sg = ctx.createRadialGradient(cx-15, SCENE_H*0.25, 4, cx-10, SCENE_H*0.3, 30);
+      sg.addColorStop(0,'rgba(150,255,230,0.9)'); sg.addColorStop(1,'rgba(0,200,160,0.2)');
+      ctx.beginPath(); ctx.arc(cx-10, SCENE_H*0.32, 26, 0, Math.PI*2);
+      ctx.fillStyle = sg; ctx.fill();
+      // triangle
+      ctx.beginPath();
+      ctx.moveTo(cx+50, SCENE_H*0.15); ctx.lineTo(cx+78, SCENE_H*0.48); ctx.lineTo(cx+22, SCENE_H*0.48);
+      ctx.closePath(); ctx.fillStyle = 'rgba(124,92,255,0.7)'; ctx.fill();
+      // floating dots
+      for (var i=0; i<8; i++) {
+        ctx.beginPath();
+        ctx.arc(x0+10+(i*(x1-x0-20)/7), SCENE_H*0.1+Math.sin(i*1.2)*20, 3, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,107,157,0.7)'; ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawBlend(splitX) {
+      if (splitX <= 0 || splitX >= W) return;
+      var bx0 = Math.max(0, splitX - BLEND_W/2);
+      var bx1 = Math.min(W, splitX + BLEND_W/2);
+      var g = ctx.createLinearGradient(bx0, 0, bx1, 0);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(0.5,'rgba(0,0,0,0.08)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(bx0, 0, bx1-bx0, SCENE_H);
+    }
+
+    function drawStrip(val) {
+      var stripGrad = ctx.createLinearGradient(0, 0, W, 0);
+      stripGrad.addColorStop(0,    '#22c55e');
+      stripGrad.addColorStop(0.28, '#00c8a0');
+      stripGrad.addColorStop(0.55, '#7c5cff');
+      stripGrad.addColorStop(0.85, '#ff6b9d');
+      stripGrad.addColorStop(1,    '#ff3b30');
+      ctx.fillStyle = stripGrad;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(0, STRIP_Y, W, STRIP_H, 6)
+                    : ctx.rect(0, STRIP_Y, W, STRIP_H);
+      ctx.fill();
+
+      // tick marks and labels
+      ctx.font = 'bold 9px system-ui';
+      ctx.textBaseline = 'bottom';
+      ZONES.forEach(function(z) {
+        var tx = z.pos / 100 * W;
+        var isActive = (getNearestZone(val).label === z.label);
+        ctx.fillStyle = isActive ? '#fff' : 'rgba(255,255,255,0.55)';
+        ctx.fillRect(tx - 1, STRIP_Y - 4, 2, 4);
+        ctx.textAlign = (z.pos === 0) ? 'left' : (z.pos === 100) ? 'right' : 'center';
+        ctx.fillText(z.label, tx, STRIP_Y - 6);
+        if (isActive) {
+          ctx.beginPath(); ctx.arc(tx, STRIP_Y + STRIP_H/2, 7, 0, Math.PI*2);
+          ctx.fillStyle = '#fff'; ctx.fill();
+        }
+      });
+
+      // slider handle on strip
+      var hx = val / 100 * W;
+      ctx.beginPath(); ctx.arc(hx, STRIP_Y + STRIP_H/2, 10, 0, Math.PI*2);
+      ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.strokeStyle = 'rgba(0,200,160,0.8)'; ctx.lineWidth = 2; ctx.stroke();
+    }
+
+    function draw(val) {
+      ctx.clearRect(0, 0, W, H);
+      var splitX = val / 100 * W;
+      drawReal(0, Math.min(W, splitX + BLEND_W/2));
+      drawVirtual(Math.max(0, splitX - BLEND_W/2), W);
+      drawBlend(splitX);
+      // divider line
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.moveTo(splitX, 0); ctx.lineTo(splitX, SCENE_H);
+      ctx.stroke(); ctx.setLineDash([]);
+      drawStrip(val);
+    }
+
+    function updateZone(val) {
+      var z = getNearestZone(val);
+      zoneName.textContent = z.label;
+      zoneDesc.textContent = z.desc;
+    }
+
+    slider.addEventListener('input', function() {
+      var v = parseInt(this.value, 10);
+      draw(v); updateZone(v);
+    });
+
+    draw(50); updateZone(50);
+  })();
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       OPENXR ARCHITECTURE DIAGRAM CANVAS
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var canvas     = document.getElementById('xr-arch-canvas');
+    var ctx        = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    var detail     = document.getElementById('xr-arch-detail');
+    var btnWith    = document.getElementById('xr-arch-btn-with');
+    var btnWithout = document.getElementById('xr-arch-btn-without');
+
+    var mode        = 'with';
+    var activeLayer = null;
+    var dashOffset  = 0;
+    var rafId       = null;
+
+    var LAYERS = [
+      { id: 'app',     label: 'Application',       color: '#00c8a0', y: 20,
+        detail: '<h3>Application</h3><p>Your game, simulation, or browser tab. Calls the OpenXR API using Khronos-defined function signatures (<code>xrCreateInstance</code>, <code>xrWaitFrame</code>, etc.). The same source code compiles and runs on every OpenXR-compatible platform with no changes.</p>' },
+      { id: 'api',     label: 'OpenXR API',         color: '#7c5cff', y: 110,
+        detail: '<h3>OpenXR API</h3><p>The standard interface defined by Khronos. Key calls: <code>xrCreateInstance()</code>, <code>xrGetSystem()</code>, <code>xrCreateSession()</code>, <code>xrWaitFrame()</code>, <code>xrLocateViews()</code>, <code>xrEndFrame()</code>. This layer is <em>identical</em> on every platform — it is the contract between app and runtime.</p>' },
+      { id: 'runtime', label: 'OpenXR Runtime',     color: '#ff6b9d', y: 200,
+        detail: '<h3>OpenXR Runtime</h3><p>Vendor-supplied software that implements the OpenXR standard for specific hardware. Meta ships the Quest runtime. Valve ships the SteamVR runtime. Microsoft ships the Windows MR runtime. Each is different internally — but all expose the same OpenXR function table upward to your app.</p>' },
+      { id: 'hw',      label: 'Hardware',            color: '#ffb347', y: 290,
+        detail: '<h3>Hardware</h3><p>The physical device: HMD display panels, Fresnel lenses, inertial measurement unit (IMU) for rotation, inside-out tracking cameras for position, hand controllers, and haptic motors. The runtime translates OpenXR calls into device-specific commands here.</p>' }
+    ];
+
+    var WITHOUT_STACKS = [
+      { label: 'SteamVR SDK', color: '#6272a4' },
+      { label: 'Oculus SDK',  color: '#7c5cff' },
+      { label: 'WMR SDK',     color: '#ff6b9d' },
+      { label: 'Other SDK',   color: '#444' }
+    ];
+
+    function hitTest(mx, my) {
+      var layerW = W - 20;
+      var lx = 10;
+      for (var i = 0; i < LAYERS.length; i++) {
+        var l = LAYERS[i];
+        if (mx >= lx && mx <= lx + layerW && my >= l.y && my <= l.y + 70) return l;
+      }
+      return null;
+    }
+
+    function drawLayerBlock(lx, ly, lw, lh, label, color, isActive) {
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(lx, ly, lw, lh, 8);
+      else ctx.rect(lx, ly, lw, lh);
+      ctx.fillStyle = isActive
+        ? color + 'aa'
+        : 'rgba(255,255,255,0.06)';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isActive ? 2.5 : 1.5;
+      ctx.stroke();
+      ctx.fillStyle = isActive ? '#fff' : 'rgba(255,255,255,0.8)';
+      ctx.font = (isActive ? 'bold ' : '') + '12px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, lx + lw/2, ly + lh/2);
+    }
+
+    function drawArrow(x, y1, y2, down) {
+      var mid = (y1 + y2) / 2;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 4]);
+      ctx.lineDashOffset = down ? -dashOffset : dashOffset;
+      ctx.beginPath();
+      ctx.moveTo(x, y1); ctx.lineTo(x, y2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineDashOffset = 0;
+      // arrowhead
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath();
+      if (down) {
+        ctx.moveTo(x, y2); ctx.lineTo(x-5, y2-8); ctx.lineTo(x+5, y2-8);
+      } else {
+        ctx.moveTo(x, y1); ctx.lineTo(x-5, y1+8); ctx.lineTo(x+5, y1+8);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    function drawWith() {
+      ctx.clearRect(0, 0, W, H);
+      var lw = W - 20, lx = 10, lh = 70;
+      LAYERS.forEach(function(l) {
+        var isActive = (activeLayer && activeLayer.id === l.id);
+        drawLayerBlock(lx, l.y, lw, lh, l.label, l.color, isActive);
+      });
+      // arrows between layers
+      var axLeft  = W * 0.3;
+      var axRight = W * 0.7;
+      for (var i = 0; i < LAYERS.length - 1; i++) {
+        var y1 = LAYERS[i].y + lh;
+        var y2 = LAYERS[i+1].y;
+        drawArrow(axLeft,  y1, y2, true);   // call going down
+        drawArrow(axRight, y2, y1, false);  // data coming back up
+      }
+      // labels for arrows
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '9px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('call ↓', axLeft,  LAYERS[0].y + lh + 17);
+      ctx.fillText('data ↑', axRight, LAYERS[0].y + lh + 17);
+    }
+
+    function drawWithout() {
+      ctx.clearRect(0, 0, W, H);
+      var nStacks = WITHOUT_STACKS.length;
+      var sW = Math.floor((W - (nStacks+1)*6) / nStacks);
+      var sH = 60; var topY = 10;
+      // shared app row
+      ctx.fillStyle = 'rgba(0,200,160,0.15)';
+      ctx.strokeStyle = '#00c8a0'; ctx.lineWidth = 1.5;
+      if (ctx.roundRect) ctx.roundRect(6, topY, W-12, sH, 6);
+      else ctx.rect(6, topY, W-12, sH);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.font = '11px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Application', W/2, topY + sH/2);
+
+      // individual SDK stacks
+      WITHOUT_STACKS.forEach(function(s, i) {
+        var sx = 6 + i*(sW+6);
+        var sy1 = topY + sH + 30; // SDK block
+        var sy2 = sy1 + sH + 20;  // hardware block
+        drawLayerBlock(sx, sy1, sW, sH, s.label, s.color, false);
+        drawLayerBlock(sx, sy2, sW, sH, 'HW', '#ffb347', false);
+        // connector from app to SDK
+        ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(sx + sW/2, topY + sH);
+        ctx.lineTo(sx + sW/2, sy1);
+        ctx.stroke();
+        // connector from SDK to HW
+        ctx.beginPath();
+        ctx.moveTo(sx + sW/2, sy1 + sH);
+        ctx.lineTo(sx + sW/2, sy2);
+        ctx.stroke();
+      });
+
+      // X overlay
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,59,48,0.55)'; ctx.lineWidth = 2.5;
+      ctx.setLineDash([8,6]);
+      var bx0 = 6, bx1 = W-6, by0 = topY + sH + 10, by1 = H - 10;
+      ctx.beginPath(); ctx.moveTo(bx0, by0); ctx.lineTo(bx1, by1); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx1, by0); ctx.lineTo(bx0, by1); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      ctx.fillStyle = 'rgba(255,59,48,0.7)'; ctx.font = 'bold 10px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('4 separate code paths!', W/2, H/2 + 30);
+    }
+
+    function draw() {
+      if (mode === 'with') drawWith(); else drawWithout();
+    }
+
+    function animate() {
+      dashOffset = (dashOffset + 0.4) % 18;
+      draw();
+      rafId = requestAnimationFrame(animate);
+    }
+
+    canvas.addEventListener('click', function(e) {
+      if (mode !== 'with') return;
+      var rect = canvas.getBoundingClientRect();
+      var scaleX = W / rect.width, scaleY = H / rect.height;
+      var mx = (e.clientX - rect.left) * scaleX;
+      var my = (e.clientY - rect.top)  * scaleY;
+      var hit = hitTest(mx, my);
+      if (hit) {
+        activeLayer = (activeLayer && activeLayer.id === hit.id) ? null : hit;
+        detail.innerHTML = activeLayer ? activeLayer.detail : '<p class="xr-arch-detail-hint">Click a layer in the diagram to see its details.</p>';
+      }
+    });
+
+    btnWith.addEventListener('click', function() {
+      mode = 'with'; activeLayer = null;
+      detail.innerHTML = '<p class="xr-arch-detail-hint">Click a layer in the diagram to see its details.</p>';
+      btnWith.classList.add('active'); btnWithout.classList.remove('active');
+    });
+    btnWithout.addEventListener('click', function() {
+      mode = 'without'; activeLayer = null;
+      detail.innerHTML = '<p class="xr-arch-detail-hint">Click a layer to see its details (unified mode only).</p>';
+      btnWithout.classList.add('active'); btnWith.classList.remove('active');
+    });
+
+    animate();
+  })();
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       WEBXR FEATURE DETECTOR
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var pillApi    = document.getElementById('xr-pill-api');
+    var pillVR     = document.getElementById('xr-pill-vr');
+    var pillAR     = document.getElementById('xr-pill-ar');
+    var pillInline = document.getElementById('xr-pill-inline');
+    var explain    = document.getElementById('xr-det-explain');
+    var recheck    = document.getElementById('xr-det-recheck');
+
+    function setPill(el, state) {
+      el.className = 'xr-feature-pill ' + state;
+      if (state === 'yes')  el.textContent = '✓ Supported';
+      else if (state === 'no') el.textContent = '✗ Not Supported';
+      else el.textContent = 'Checking…';
+    }
+
+    function setAllChecking() {
+      [pillApi, pillVR, pillAR, pillInline].forEach(function(p) { setPill(p, 'checking'); });
+      explain.innerHTML = 'Checking your browser\'s XR capabilities…';
+    }
+
+    function updateExplain(hasApi, hasVR, hasAR, hasInline) {
+      var msg;
+      if (!hasApi) {
+        msg = '<strong>WebXR API not available.</strong> Use Chrome 79+, Microsoft Edge, or the Meta Quest Browser. On older browsers, install the <em>Immersive Web Emulator</em> Chrome extension to simulate XR sessions.';
+      } else if (!hasVR && !hasAR && !hasInline) {
+        msg = '<strong>WebXR API present, but no XR sessions detected.</strong> Connect an OpenXR-compatible headset, or install the <em>Immersive Web Emulator</em> Chrome extension to emulate VR/AR sessions in the browser.';
+      } else if (hasVR && hasAR) {
+        msg = '<strong>Full XR support detected!</strong> Both immersive-vr and immersive-ar sessions are available. Your device (or connected headset) supports the full XR spectrum.';
+      } else if (hasVR) {
+        msg = '<strong>Full VR support detected!</strong> You can enter immersive-vr sessions. Connect a WebXR-compatible headset and call <code>navigator.xr.requestSession(\'immersive-vr\')</code> from a button click.';
+      } else if (hasAR) {
+        msg = '<strong>AR passthrough support detected!</strong> immersive-ar sessions are available. This typically means you\'re on a phone with ARCore/ARKit or a passthrough headset.';
+      } else if (hasInline) {
+        msg = '<strong>Inline sessions only.</strong> No headset detected, but you can build 360° viewers and gyroscope-driven experiences that work without entering a headset. A connected OpenXR headset would unlock immersive-vr.';
+      } else {
+        msg = 'WebXR API present but no sessions supported. Try using HTTPS — some browsers block XR on unencrypted pages.';
+      }
+      explain.innerHTML = msg;
+    }
+
+    function runChecks() {
+      setAllChecking();
+      var results = { api: false, vr: false, ar: false, inline: false };
+
+      // Check 1: is navigator.xr present?
+      results.api = (typeof navigator !== 'undefined' && typeof navigator.xr !== 'undefined');
+      setPill(pillApi, results.api ? 'yes' : 'no');
+
+      if (!results.api) {
+        setPill(pillVR, 'no'); setPill(pillAR, 'no'); setPill(pillInline, 'no');
+        updateExplain(false, false, false, false);
+        return;
+      }
+
+      // Check 2-4: isSessionSupported
+      var checks = [
+        { mode: 'immersive-vr', pill: pillVR,     key: 'vr'     },
+        { mode: 'immersive-ar', pill: pillAR,     key: 'ar'     },
+        { mode: 'inline',       pill: pillInline, key: 'inline' }
+      ];
+
+      var pending = checks.length;
+      checks.forEach(function(c) {
+        navigator.xr.isSessionSupported(c.mode).then(function(ok) {
+          results[c.key] = ok;
+          setPill(c.pill, ok ? 'yes' : 'no');
+          pending--;
+          if (pending === 0) {
+            updateExplain(results.api, results.vr, results.ar, results.inline);
+          }
+        }).catch(function() {
+          setPill(c.pill, 'no');
+          pending--;
+          if (pending === 0) {
+            updateExplain(results.api, results.vr, results.ar, results.inline);
+          }
+        });
+      });
+    }
+
+    recheck.addEventListener('click', runChecks);
+    runChecks();
+  })();
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       CODE TABS + COPY BUTTON
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var tabs   = document.querySelectorAll('.xr-code-tab');
+    var panels = document.querySelectorAll('.xr-code-panel');
+    var copyBtn = document.getElementById('xr-copy-btn');
+
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        panels.forEach(function(p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        var target = document.getElementById('tab-' + tab.dataset.tab);
+        if (target) target.classList.add('active');
+      });
+    });
+
+    copyBtn.addEventListener('click', function() {
+      var active = document.querySelector('.xr-code-panel.active pre');
+      if (!active) return;
+      var text = active.textContent || active.innerText;
+      navigator.clipboard.writeText(text).then(function() {
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+        setTimeout(function() { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1800);
+      }).catch(function() {
+        copyBtn.textContent = 'Copy';
+      });
+    });
+  })();
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       FLIP CARDS
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var cards = document.querySelectorAll('.xr-flip-card');
+    cards.forEach(function(card) {
+      function toggle() { card.classList.toggle('flipped'); }
+      card.addEventListener('click', toggle);
+      card.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+      });
+    });
+  })();
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       QUIZ
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var ANSWERS = {
+      xrq1: { correct: 'c',
+        rationale: {
+          a: 'IEEE focuses on electrical engineering and networking standards (like Wi-Fi and Ethernet) — not XR APIs.',
+          b: 'The W3C publishes the WebXR Device API (the browser standard), but OpenXR is a separate system-level standard published by Khronos.',
+          c: 'Correct! The Khronos Group — the same organisation behind OpenGL, Vulkan, WebGL, and OpenCL — published OpenXR 1.0 in July 2019.'
+        }
+      },
+      xrq2: { correct: 'c',
+        rationale: {
+          a: 'immersive-vr replaces the real world entirely with a rendered scene — the opposite of passthrough AR.',
+          b: 'inline sessions are non-immersive and run inside a web page — no headset passthrough involved.',
+          c: 'Correct! immersive-ar blends the rendered scene over the real-world camera feed (passthrough). Requires a device with camera-based passthrough (Quest 3, HoloLens, phone AR).'
+        }
+      },
+      xrq3: { correct: 'b',
+        rationale: {
+          a: 'bounded-floor is for room-scale experiences with a defined physical Guardian/Chaperone boundary — overkill for a seated experience.',
+          b: 'Correct! local space has its origin at the headset\'s starting position and doesn\'t require floor or boundary tracking — perfect for seated or stationary VR.',
+          c: 'unbounded is designed for large walking-scale experiences where positional drift over distance is acceptable — not suited for a seated setup.'
+        }
+      },
+      xrq4: { correct: 'c',
+        rationale: {
+          a: 'Pure Virtual Reality (full VR) sits at the far right end of the continuum — not Mixed Reality.',
+          b: 'Pure Reality (no digital content whatsoever) sits at the far left end of the continuum — not Mixed Reality.',
+          c: 'Correct! Mixed Reality sits in the middle of Milgram\'s continuum, where digital and physical content coexist and interact. Virtual objects are anchored to real surfaces.'
+        }
+      }
+    };
+
+    Object.keys(ANSWERS).forEach(function(qid) {
+      var block   = document.getElementById(qid);
+      var opts    = block.querySelectorAll('.xr-quiz-opt');
+      var feedback = block.querySelector('.xr-quiz-feedback');
+      var answered = false;
+
+      opts.forEach(function(opt) {
+        opt.addEventListener('click', function() {
+          if (answered) return;
+          answered = true;
+          var val = opt.querySelector('input').value;
+          var data = ANSWERS[qid];
+          var isCorrect = (val === data.correct);
+
+          opts.forEach(function(o) {
+            o.style.pointerEvents = 'none';
+            if (o.querySelector('input').value === data.correct) o.classList.add('correct');
+          });
+          if (!isCorrect) opt.classList.add('wrong');
+
+          var rat = document.createElement('p');
+          rat.className = 'xr-quiz-rationale ' + (isCorrect ? 'correct' : 'incorrect');
+          rat.textContent = (isCorrect ? '✓ ' : '✗ ') + data.rationale[val];
+          feedback.appendChild(rat);
+        });
+      });
+    });
+  })();
+  </script>
+
+</body>
+</html>

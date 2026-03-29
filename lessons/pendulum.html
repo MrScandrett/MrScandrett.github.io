@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Pendulum · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 13 — The Pendulum: periodic motion, energy exchange between potential and kinetic, and how Galileo used it to measure time." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .pd-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+    .pd-hero { padding: 0.4rem 0 1.3rem; }
+    .pd-hero h1 { max-width: 30ch; margin-left: 0; font-size: clamp(1.55rem,3.5vw,2.3rem); }
+    .pd-meta { display:flex;flex-wrap:wrap;gap:0.4rem 0.7rem;margin:0.5rem 0 0;font-size:0.82rem;color:#64748b; }
+    .pd-meta .dot { width:3px;height:3px;border-radius:50%;background:currentColor;opacity:0.4;display:inline-block;vertical-align:middle; }
+    .pd-lede { margin:0.65rem 0 0;max-width:68ch;color:#3f4f65;font-size:0.96rem;line-height:1.62; }
+    [data-theme="night"] .pd-lede { color:rgba(245,245,247,0.7); }
+    .pd-card { background:var(--white,#fff);border:1px solid var(--line,#d2d2d7);border-left:3.5px solid var(--card-accent,#ff9f0a);border-radius:var(--radius,18px);box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,0.08));padding:1.2rem 1.4rem;margin-bottom:1rem; }
+    .pd-card h2 { margin:0 0 0.55rem;font-size:1.2rem; }
+    .pd-card h3 { margin:0.85rem 0 0.3rem;font-size:1rem; }
+    .pd-card p  { margin:0 0 0.6rem;color:#3f4f65;font-size:0.88rem;line-height:1.65; }
+    .pd-card p:last-child { margin-bottom:0; }
+    [data-theme="night"] .pd-card { background:#2c2c2e; }
+    [data-theme="night"] .pd-card p { color:rgba(245,245,247,0.72); }
+    .pd-formula-box { background:linear-gradient(135deg,rgba(255,149,0,0.09),rgba(255,149,0,0.03));border:1px solid rgba(255,149,0,0.3);border-radius:14px;padding:1.1rem 1.3rem;margin:0.8rem 0;text-align:center; }
+    .pd-formula-sym { font-size:clamp(1.3rem,3.5vw,1.9rem);font-weight:800;color:#ff9f0a;display:block;margin-bottom:0.5rem; }
+    .pd-formula-vars { display:flex;flex-wrap:wrap;gap:0.3rem 1.2rem;justify-content:center;font-size:0.82rem;color:#3f4f65; }
+    [data-theme="night"] .pd-formula-vars { color:rgba(245,245,247,0.7); }
+    .pd-callout { border-radius:12px;padding:0.85rem 1rem;margin:0.8rem 0;font-size:0.84rem;line-height:1.6; }
+    .pd-callout.orange { background:rgba(255,149,0,0.1);border-left:3px solid #ff9500; }
+    .pd-canvas-wrap { border:1px solid var(--line,#d2d2d7);border-radius:14px;overflow:hidden;margin:0.8rem 0;background:#f7f8fa; }
+    [data-theme="night"] .pd-canvas-wrap { background:#1c1c1e; }
+    #pd-canvas { width:100%;height:260px;display:block; }
+    .pd-energy-bar { display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.6rem 0; }
+    .pd-energy { border:1px solid var(--line,#d2d2d7);border-radius:10px;overflow:hidden;position:relative;height:36px; }
+    .pd-energy-fill { height:100%;transition:width 0.05s; }
+    .pd-energy-label { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.4); }
+    .pd-readouts { display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.6rem 0; }
+    .pd-readout { background:rgba(0,0,0,0.04);border:1px solid var(--line,#d2d2d7);border-radius:10px;padding:0.55rem 0.7rem;text-align:center; }
+    [data-theme="night"] .pd-readout { background:rgba(255,255,255,0.06); }
+    .pd-readout-label { font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;display:block;margin-bottom:0.2rem; }
+    .pd-readout-val { font-size:1rem;font-weight:700;color:#ff9f0a; }
+    .pd-apps { display:grid;grid-template-columns:repeat(2,1fr);gap:0.7rem;margin:0.8rem 0; }
+    .pd-app  { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.8rem; }
+    .pd-app-icon { font-size:1.5rem;margin-bottom:0.3rem; }
+    .pd-app strong { display:block;font-size:0.84rem;margin-bottom:0.2rem; }
+    .pd-app small  { font-size:0.77rem;color:#64748b;line-height:1.5;display:block; }
+    .pd-practice .pd-problem { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.7rem; }
+    .pd-problem p { margin-bottom:0.5rem;font-size:0.88rem;color:#3f4f65;line-height:1.6; }
+    [data-theme="night"] .pd-problem p { color:rgba(245,245,247,0.72); }
+    .pd-problem-row { display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap; }
+    .pd-ans-input { border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.35rem 0.6rem;font-size:0.88rem;width:100px;background:var(--white,#fff);color:var(--text,#1d1d1f); }
+    .pd-check-btn { background:#ff9f0a;color:#fff;border:none;border-radius:8px;padding:0.35rem 0.8rem;font-size:0.84rem;font-weight:600;cursor:pointer; }
+    .pd-check-btn:hover { background:#e08800; }
+    .pd-feedback { font-size:0.82rem;font-weight:600; }
+    .pd-feedback.ok { color:#34c759; }
+    .pd-feedback.err { color:#ff3b30; }
+    .pd-hint { font-size:0.78rem;color:#64748b;margin-top:0.4rem;display:none; }
+    .diff-easy { background:rgba(52,199,89,0.15);color:#248a3d;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .diff-mid  { background:rgba(255,149,0,0.15);color:#c07000;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .diff-hard { background:rgba(255,59,48,0.12);color:#c0392b;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="pd-page">
+
+        <section class="hero pd-hero">
+          <p class="eyebrow">Physics · Lesson 13</p>
+          <h1>The Pendulum</h1>
+          <div class="pd-meta">
+            <span>Periodic Motion</span><span class="dot"></span>
+            <span>Potential ↔ Kinetic Energy</span><span class="dot"></span>
+            <span>Simple Harmonic Motion</span>
+          </div>
+          <p class="pd-lede">A weight on a string, swinging back and forth under gravity. The pendulum is one of the oldest mechanical timekeepers and one of the most elegant demonstrations of energy conservation — potential and kinetic energy trading back and forth with each swing.</p>
+        </section>
+
+        <section class="pd-card" style="--card-accent:#ffcc00;">
+          <h2>Galileo and the Pendulum</h2>
+          <p><strong>Galileo Galilei (1564–1642)</strong> reportedly observed a chandelier swinging in the Cathedral of Pisa and noticed something remarkable: regardless of how wide the swing, it seemed to take the same time to complete each oscillation. He tested this using his own pulse as a timer. This property — constant period for small angles — led to the development of pendulum clocks, which were the world's most accurate timekeepers for nearly 300 years.</p>
+        </section>
+
+        <section class="pd-card" style="--card-accent:#ff9f0a;">
+          <h2>The Period Formula</h2>
+          <p>For small angles, the period T of a simple pendulum depends only on its <strong>length</strong> and gravitational acceleration — not on the mass of the bob or the amplitude:</p>
+          <div class="pd-formula-box" role="img" aria-label="T equals 2 pi times square root of L over g">
+            <span class="pd-formula-sym">T = 2π √(L / g)</span>
+            <div class="pd-formula-vars">
+              <div><strong>T</strong> = period (seconds per full swing)</div>
+              <div><strong>L</strong> = length of the pendulum (metres)</div>
+              <div><strong>g</strong> = gravitational acceleration (9.81 m/s² on Earth)</div>
+            </div>
+          </div>
+          <div class="pd-callout orange">
+            <strong>Key insight:</strong> Mass does not appear in the formula. A heavier bob swings at exactly the same rate as a lighter one of the same length. This surprised many people in Galileo's time.
+          </div>
+          <h3>Energy Exchange</h3>
+          <p>At the <strong>highest points</strong> of the swing, the bob momentarily stops — all energy is gravitational potential energy (PE = mgh). At the <strong>lowest point</strong> (the center), the bob moves fastest — all energy is kinetic (KE = ½mv²). Throughout the swing, the total energy is conserved: PE + KE = constant.</p>
+        </section>
+
+        <section class="pd-card" style="--card-accent:#5856d6;">
+          <h2>Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Drag the bob to set the starting angle, then release. Use the panel to change pendulum length and gravity.</p>
+          <div class="pd-canvas-wrap">
+            <canvas id="pd-canvas" aria-label="Pendulum simulation with energy bars"></canvas>
+          </div>
+          <div class="pd-energy-bar">
+            <div class="pd-energy" style="background:#e5e5ea;">
+              <div class="pd-energy-fill" id="pd-pe-fill" style="background:#ff9f0a;width:50%;"></div>
+              <div class="pd-energy-label">PE <span id="pd-pe-pct">50%</span></div>
+            </div>
+            <div class="pd-energy" style="background:#e5e5ea;">
+              <div class="pd-energy-fill" id="pd-ke-fill" style="background:#5856d6;width:50%;"></div>
+              <div class="pd-energy-label">KE <span id="pd-ke-pct">50%</span></div>
+            </div>
+          </div>
+          <div class="pd-readouts">
+            <div class="pd-readout"><span class="pd-readout-label">Period T</span><span class="pd-readout-val" id="pd-r-period">—</span></div>
+            <div class="pd-readout"><span class="pd-readout-label">Angle</span><span class="pd-readout-val" id="pd-r-angle">0°</span></div>
+            <div class="pd-readout"><span class="pd-readout-label">Speed</span><span class="pd-readout-val" id="pd-r-speed">0.00 m/s</span></div>
+          </div>
+        </section>
+
+        <section class="pd-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="pd-apps">
+            <div class="pd-app"><div class="pd-app-icon">🕰️</div><strong>Pendulum Clocks</strong><small>Invented by Christiaan Huygens in 1656. Each swing of a calibrated pendulum moves the clock mechanism by one precise increment.</small></div>
+            <div class="pd-app"><div class="pd-app-icon">🌍</div><strong>Measuring g</strong><small>Scientists measured gravitational acceleration at different latitudes by timing pendulums. Faster period = stronger gravity = slightly flattened Earth.</small></div>
+            <div class="pd-app"><div class="pd-app-icon">🏗️</div><strong>Tuned Mass Dampers</strong><small>Skyscrapers like Taipei 101 use giant suspended pendulums to counteract wind oscillations and prevent swaying in typhoons.</small></div>
+            <div class="pd-app"><div class="pd-app-icon">🔬</div><strong>Seismometers</strong><small>Pendulums detect ground motion. When the Earth shakes, the bob lags behind the frame, recording the motion of earthquakes.</small></div>
+          </div>
+        </section>
+
+        <section class="pd-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Use T = 2π√(L/g). g = 9.81 m/s². Round to 2 decimal places.</p>
+          <div class="pd-practice">
+
+            <div class="pd-problem">
+              <p><span class="diff-easy">Easy</span>1. A pendulum has length 1 m on Earth. What is its period? (2π√(1/9.81))</p>
+              <div class="pd-problem-row">
+                <input type="number" class="pd-ans-input" id="pdans-1" step="0.01" placeholder="s" />
+                <button class="pd-check-btn" onclick="pdCheck(1,2.01,0.05)">Check</button>
+                <span class="pd-feedback" id="pdfb-1"></span>
+              </div>
+              <div class="pd-hint" id="pdhint-1">Hint: T = 2π√(1/9.81) = 2π × 0.319 ≈ 2.01 s</div>
+            </div>
+
+            <div class="pd-problem">
+              <p><span class="diff-easy">Easy</span>2. If you double the length of a pendulum, what happens to its period?</p>
+              <div class="pd-problem-row">
+                <select class="pd-ans-input" id="pdans-2" style="width:160px;">
+                  <option value="">Choose…</option>
+                  <option value="doubles">It doubles</option>
+                  <option value="sqr2">It multiplies by √2 ≈ 1.41</option>
+                  <option value="same">It stays the same</option>
+                  <option value="halves">It halves</option>
+                </select>
+                <button class="pd-check-btn" onclick="pdCheckText(2,'sqr2')">Check</button>
+                <span class="pd-feedback" id="pdfb-2"></span>
+              </div>
+              <div class="pd-hint" id="pdhint-2">Hint: T ∝ √L. Double L → √(2L) = √2 × √L → period × √2.</div>
+            </div>
+
+            <div class="pd-problem">
+              <p><span class="diff-mid">Medium</span>3. A pendulum on the Moon (g = 1.62 m/s²) has length 0.5 m. What is its period?</p>
+              <div class="pd-problem-row">
+                <input type="number" class="pd-ans-input" id="pdans-3" step="0.01" placeholder="s" />
+                <button class="pd-check-btn" onclick="pdCheck(3,3.49,0.1)">Check</button>
+                <span class="pd-feedback" id="pdfb-3"></span>
+              </div>
+              <div class="pd-hint" id="pdhint-3">Hint: T = 2π√(0.5/1.62) = 2π√0.309 ≈ 3.49 s</div>
+            </div>
+
+            <div class="pd-problem">
+              <p><span class="diff-hard">Challenge</span>4. A grandfather clock pendulum has a period of exactly 2 s. What must its length be? (L = g(T/2π)²)</p>
+              <div class="pd-problem-row">
+                <input type="number" class="pd-ans-input" id="pdans-4" step="0.001" placeholder="m" />
+                <button class="pd-check-btn" onclick="pdCheck(4,0.993,0.01)">Check</button>
+                <span class="pd-feedback" id="pdfb-4"></span>
+              </div>
+              <div class="pd-hint" id="pdhint-4">Hint: L = 9.81 × (2/2π)² = 9.81 × 0.1013 ≈ 0.993 m</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="pd-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pd-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pd-pane-sim">
+          <span class="ll-label">Pendulum Length</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">L <span id="pd-l-val">1.0 m</span></label>
+            <input type="range" class="nl-slider" id="pd-l-slider" min="10" max="200" value="100" style="width:100%;" />
+          </div>
+          <span class="ll-label">Gravity</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">g <span id="pd-g-val">9.81 m/s²</span></label>
+            <input type="range" class="nl-slider" id="pd-g-slider" min="1" max="30" value="10" style="width:100%;" />
+          </div>
+          <span class="ll-label">Damping</span>
+          <div>
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Drag <span id="pd-d-val">0%</span></label>
+            <input type="range" class="nl-slider" id="pd-d-slider" min="0" max="10" value="0" style="width:100%;" />
+          </div>
+        </div>
+        <div class="ll-pane" id="pd-pane-guide">
+          <div class="ll-info"><strong>T = 2π√(L/g)</strong>Period depends only on length and gravity — not mass or amplitude (for small angles).</div>
+          <div class="ll-info"><strong>Energy exchange</strong>At peak: all PE. At bottom: all KE. Total always conserved.</div>
+          <div class="ll-info"><strong>Longer = slower</strong>Quadruple the length to double the period.</div>
+          <div class="ll-info"><strong>Stronger g = faster</strong>On the Moon (weaker g), the same pendulum swings slower.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  const canvas = document.getElementById('pd-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  let angle = Math.PI / 4, omega = 0, dragging = false;
+  const gSIM = 9.81;
+
+  function getL()  { return parseInt(document.getElementById('pd-l-slider').value) / 100; }
+  function getG()  { return parseInt(document.getElementById('pd-g-slider').value) * 0.98; }
+  function getDamp(){ return parseInt(document.getElementById('pd-d-slider').value) * 0.001; }
+
+  function draw() {
+    const W = canvas.offsetWidth || 600;
+    canvas.width = W; canvas.height = 260;
+    const H = 260;
+    const PIVOT_X = W / 2, PIVOT_Y = 28;
+    const L_px = Math.min(H - 60, getL() * 120);
+
+    const bx = PIVOT_X + Math.sin(angle) * L_px;
+    const by = PIVOT_Y + Math.cos(angle) * L_px;
+
+    // Trail
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('color-scheme') === 'dark' ? '#1c1c1e' : '#f7f8fa';
+    ctx.fillRect(0, 0, W, H);
+
+    // Ceiling
+    ctx.fillStyle = 'rgba(100,116,139,0.3)';
+    ctx.fillRect(PIVOT_X - 30, 0, 60, 12);
+    ctx.fillStyle = 'rgba(100,116,139,0.6)';
+    ctx.beginPath(); ctx.arc(PIVOT_X, PIVOT_Y, 5, 0, Math.PI*2); ctx.fill();
+
+    // Rod
+    ctx.strokeStyle = 'rgba(100,116,139,0.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(PIVOT_X, PIVOT_Y); ctx.lineTo(bx, by); ctx.stroke();
+
+    // Energy color
+    const L = getL(), g = getG();
+    const h = L - L * Math.cos(angle);
+    const PE = g * h; // per unit mass
+    const KE = 0.5 * omega * omega * L * L;
+    const totalE = PE + KE;
+    const kePct = totalE > 0 ? KE / totalE : 0;
+    const pePct = 1 - kePct;
+
+    // Bob
+    const bobColor = `hsl(${Math.round(kePct * 240)}, 80%, 55%)`;
+    ctx.beginPath(); ctx.arc(bx, by, 18, 0, Math.PI*2);
+    ctx.fillStyle = bobColor; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2; ctx.stroke();
+
+    // Velocity arrow
+    const vScale = omega * L * 60;
+    const vx = Math.cos(angle) * vScale, vy = -Math.sin(angle) * vScale;
+    if (Math.abs(vScale) > 3) {
+      ctx.strokeStyle = '#5856d6'; ctx.lineWidth = 2; ctx.fillStyle = '#5856d6';
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx+vx, by+vy); ctx.stroke();
+    }
+
+    // Energy bars
+    document.getElementById('pd-pe-fill').style.width = Math.round(pePct*100) + '%';
+    document.getElementById('pd-ke-fill').style.width = Math.round(kePct*100) + '%';
+    document.getElementById('pd-pe-pct').textContent = Math.round(pePct*100) + '%';
+    document.getElementById('pd-ke-pct').textContent = Math.round(kePct*100) + '%';
+
+    // Readouts
+    const T_calc = 2 * Math.PI * Math.sqrt(L / g);
+    document.getElementById('pd-r-period').textContent = T_calc.toFixed(2) + ' s';
+    document.getElementById('pd-r-angle').textContent  = Math.round(angle * 180 / Math.PI) + '°';
+    document.getElementById('pd-r-speed').textContent  = Math.abs(omega * L).toFixed(2) + ' m/s';
+  }
+
+  let last = null;
+  function loop(ts) {
+    if (!last) last = ts;
+    const dt = Math.min((ts - last) / 1000, 0.03);
+    last = ts;
+
+    if (!dragging) {
+      const g = getG(), L = getL();
+      // θ'' = -(g/L) sin θ
+      const alpha = -(g / L) * Math.sin(angle);
+      omega += alpha * dt;
+      omega -= getDamp() * omega;
+      angle += omega * dt;
+    }
+
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // Drag support
+  function bobPos() {
+    const W = canvas.offsetWidth || 600;
+    const PIVOT_X = W/2, PIVOT_Y = 28;
+    const L_px = Math.min(200, getL()*120);
+    return { x: PIVOT_X + Math.sin(angle)*L_px, y: PIVOT_Y + Math.cos(angle)*L_px };
+  }
+
+  function pointerAngle(e) {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    const x = (cx - rect.left) * (canvas.width / rect.width);
+    const y = (cy - rect.top)  * (canvas.height / rect.height);
+    const PIVOT_X = canvas.width/2, PIVOT_Y = 28;
+    return Math.atan2(x - PIVOT_X, y - PIVOT_Y);
+  }
+
+  canvas.addEventListener('mousedown', e => { dragging = true; omega = 0; angle = pointerAngle(e); });
+  canvas.addEventListener('touchstart', e => { dragging = true; omega = 0; angle = pointerAngle(e); }, {passive:true});
+  canvas.addEventListener('mousemove', e => { if (dragging) angle = pointerAngle(e); });
+  canvas.addEventListener('touchmove', e => { if (dragging) angle = pointerAngle(e); }, {passive:true});
+  canvas.addEventListener('mouseup',  () => { dragging = false; });
+  canvas.addEventListener('touchend', () => { dragging = false; });
+
+  document.getElementById('pd-l-slider').addEventListener('input', e => {
+    document.getElementById('pd-l-val').textContent = (parseInt(e.target.value)/100).toFixed(2) + ' m';
+  });
+  document.getElementById('pd-g-slider').addEventListener('input', e => {
+    document.getElementById('pd-g-val').textContent = (parseInt(e.target.value)*0.98).toFixed(2) + ' m/s²';
+  });
+  document.getElementById('pd-d-slider').addEventListener('input', e => {
+    document.getElementById('pd-d-val').textContent = e.target.value + '%';
+  });
+
+  requestAnimationFrame(loop);
+
+  window.pdCheck = function(n,ans,tol) {
+    const val = parseFloat(document.getElementById('pdans-'+n).value);
+    const fb  = document.getElementById('pdfb-'+n);
+    const hint = document.getElementById('pdhint-'+n);
+    if (isNaN(val)) { fb.textContent='Enter a number.'; fb.className='pd-feedback err'; return; }
+    if (Math.abs(val-ans)<=tol) { fb.textContent='✓ Correct!'; fb.className='pd-feedback ok'; }
+    else { fb.textContent='✗ Try again.'; fb.className='pd-feedback err'; hint.style.display='block'; }
+  };
+  window.pdCheckText = function(n,ans) {
+    const el = document.getElementById('pdans-'+n);
+    const fb = document.getElementById('pdfb-'+n);
+    const hint = document.getElementById('pdhint-'+n);
+    if (el.value===ans) { fb.textContent='✓ Correct!'; fb.className='pd-feedback ok'; }
+    else { fb.textContent='✗ Try again.'; fb.className='pd-feedback err'; hint.style.display='block'; }
+  };
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

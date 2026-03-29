@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Coulomb's Law · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 08 — explore Coulomb's Law and the electric force between charged objects with an interactive simulation." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#ff9f0a); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .cl-formula-box { background: linear-gradient(135deg,rgba(255,149,0,0.08),rgba(255,149,0,0.03)); border: 1px solid rgba(255,149,0,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .cl-formula-sym { font-size: clamp(1.5rem,4vw,2.2rem); font-weight: 800; letter-spacing: -0.02em; color: #ff9f0a; display: block; margin-bottom: 0.5rem; }
+    .cl-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .cl-formula-vars { color: rgba(245,245,247,0.7); }
+
+    .cl-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 0.8rem 0; }
+    .cl-compare-card { border-radius: 12px; padding: 0.9rem 1rem; border: 1px solid var(--line,#d2d2d7); }
+    .cl-compare-card.attract { background: rgba(52,199,89,0.07); border-color: rgba(52,199,89,0.3); }
+    .cl-compare-card.repel  { background: rgba(255,59,48,0.07);  border-color: rgba(255,59,48,0.3);  }
+    .cl-compare-card strong { display: block; font-size: 0.9rem; margin-bottom: 0.3rem; }
+    .cl-compare-card small  { font-size: 0.78rem; color: #3f4f65; line-height: 1.5; }
+    [data-theme="night"] .cl-compare-card small { color: rgba(245,245,247,0.68); }
+
+    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-theme="night"] .cl-canvas-wrap { background: #1c1c1e; }
+    #cl-canvas { width: 100%; height: 220px; display: block; cursor: crosshair; }
+
+    .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .cl-readout { background: rgba(255,255,255,0.06); }
+    .cl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .cl-readout-val   { font-size: 1rem; font-weight: 700; color: #ff9f0a; }
+
+    .cl-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .cl-callout.orange { background: rgba(255,149,0,0.1); border-left: 3px solid #ff9500; }
+
+    .cl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .cl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .cl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .cl-app small   { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
+    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 90px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .cl-check-btn { background: #ff9f0a; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .cl-check-btn:hover { background: #e68a00; }
+    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .cl-feedback.ok  { color: #34c759; }
+    .cl-feedback.err { color: #ff3b30; }
+    .cl-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <!-- Hero -->
+        <section class="hero cl-hero">
+          <p class="eyebrow">Physics · Lesson 08</p>
+          <h1>Coulomb's Law</h1>
+          <div class="cl-hero-meta">
+            <span>Electrostatics</span><span class="dot"></span>
+            <span>Electric Force</span><span class="dot"></span>
+            <span>Inverse-Square Law</span><span class="dot"></span>
+            <span>Attraction &amp; Repulsion</span>
+          </div>
+          <p class="cl-lede">In 1785, Charles-Augustin de Coulomb measured the force between two charged objects and found it follows the same inverse-square pattern as gravity — but with two important differences: it can push as well as pull, and it is enormously stronger.</p>
+        </section>
+
+        <!-- Who Was Coulomb? -->
+        <section class="cl-card" style="--card-accent:#ffcc00;">
+          <h2>Who Was Charles Coulomb?</h2>
+          <p><strong>Charles-Augustin de Coulomb (1736–1806)</strong> was a French physicist and military engineer. Using a torsion balance — a thin wire that twists when a force is applied — he measured the tiny forces between charged spheres with remarkable precision. From those experiments he wrote down the law that now bears his name. The unit of electric charge, the <strong>coulomb (C)</strong>, is named in his honor.</p>
+        </section>
+
+        <!-- The Law -->
+        <section class="cl-card" style="--card-accent:#ff9f0a;">
+          <h2>The Law</h2>
+          <p>The electric force between two point charges depends on the size of each charge and the distance between them:</p>
+
+          <div class="cl-formula-box" role="img" aria-label="F equals k times q1 times q2 divided by r squared">
+            <span class="cl-formula-sym">F = k · q₁q₂ / r²</span>
+            <div class="cl-formula-vars">
+              <div><strong>F</strong> = electric force (Newtons, N)</div>
+              <div><strong>k</strong> = Coulomb's constant ≈ 8.99 × 10⁹ N·m²/C²</div>
+              <div><strong>q₁, q₂</strong> = charges (Coulombs, C)</div>
+              <div><strong>r</strong> = distance between charges (metres, m)</div>
+            </div>
+          </div>
+
+          <div class="cl-compare">
+            <div class="cl-compare-card attract">
+              <strong>✅ Opposite charges attract</strong>
+              <small>One positive (+) and one negative (−) charge pull toward each other. The force points from each charge toward the other.</small>
+            </div>
+            <div class="cl-compare-card repel">
+              <strong>🚫 Like charges repel</strong>
+              <small>Two positive or two negative charges push away from each other. The force points outward from each charge.</small>
+            </div>
+          </div>
+
+          <div class="cl-callout orange">
+            <strong>Compare with gravity:</strong> Both gravity and Coulomb's law are inverse-square laws — double the distance and the force drops to one quarter. But Coulomb force can be millions of times stronger than gravity, and it has both attractive and repulsive versions. Gravity only attracts.
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Interactive Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Drag the charges to change the distance. Use the panel controls to adjust charge magnitudes and signs.</p>
+          <div class="cl-canvas-wrap">
+            <canvas id="cl-canvas" aria-label="Coulomb's law simulator showing two charges and the force between them"></canvas>
+          </div>
+          <div class="cl-readouts">
+            <div class="cl-readout"><span class="cl-readout-label">q₁</span><span class="cl-readout-val" id="cl-r-q1">+2 μC</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Distance</span><span class="cl-readout-val" id="cl-r-dist">0.20 m</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Force</span><span class="cl-readout-val" id="cl-r-force">0.90 N</span></div>
+          </div>
+        </section>
+
+        <!-- Real-World Applications -->
+        <section class="cl-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="cl-apps">
+            <div class="cl-app">
+              <div class="cl-app-icon">⚡</div>
+              <strong>Lightning</strong>
+              <small>Charge separation in storm clouds builds until the electric force is strong enough to drive a spark through the air — a lightning bolt.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🖨️</div>
+              <strong>Laser Printers</strong>
+              <small>A charged drum attracts toner particles to the right spots using Coulomb forces, then transfers them to paper to form the image.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🧲</div>
+              <strong>Atomic Bonding</strong>
+              <small>Coulomb attraction between protons and electrons holds atoms together. Chemistry is fundamentally Coulomb's law at atomic scale.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🩺</div>
+              <strong>Electrostatic Filters</strong>
+              <small>Air purifiers and surgical masks use electrostatic charge to attract and trap microscopic particles that would otherwise pass through.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cl-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Use F = kq₁q₂/r². k = 9 × 10⁹ N·m²/C². Give answers to 2 significant figures.</p>
+          <div class="cl-practice">
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>1. Two charges of +1 μC and −1 μC are 0.1 m apart. Is the force attractive or repulsive?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="clans-1" style="width:130px;">
+                  <option value="">Choose…</option>
+                  <option value="attractive">Attractive</option>
+                  <option value="repulsive">Repulsive</option>
+                </select>
+                <button class="cl-check-btn" onclick="clCheckText(1,'attractive')">Check</button>
+                <span class="cl-feedback" id="clfb-1"></span>
+              </div>
+              <div class="cl-hint" id="clhint-1">Hint: Opposite signs (+/−) always attract.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>2. Two identical +2 μC charges are 0.3 m apart. What is the force? (Round to 1 decimal.) [F = 9×10⁹ × (2×10⁻⁶)² / 0.09]</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="clans-2" step="0.1" placeholder="N" />
+                <button class="cl-check-btn" onclick="clCheck(2, 0.4, 0.05)">Check</button>
+                <span class="cl-feedback" id="clfb-2"></span>
+              </div>
+              <div class="cl-hint" id="clhint-2">Hint: F = 9×10⁹ × 4×10⁻¹² / 0.09 = 0.4 N</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>3. If the distance between two charges doubles, by what factor does the force change?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="clans-3" style="width:130px;">
+                  <option value="">Choose…</option>
+                  <option value="halves">Halves (÷ 2)</option>
+                  <option value="quarters">Quarters (÷ 4)</option>
+                  <option value="doubles">Doubles (× 2)</option>
+                  <option value="quadruples">Quadruples (× 4)</option>
+                </select>
+                <button class="cl-check-btn" onclick="clCheckText(3,'quarters')">Check</button>
+                <span class="cl-feedback" id="clfb-3"></span>
+              </div>
+              <div class="cl-hint" id="clhint-3">Hint: Inverse-square law: (2r)² = 4r², so force becomes F/4.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>4. A +3 μC charge and a +5 μC charge are 0.2 m apart. Calculate the force (in N, 1 decimal).</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="clans-4" step="0.1" placeholder="N" />
+                <button class="cl-check-btn" onclick="clCheck(4, 3.4, 0.1)">Check</button>
+                <span class="cl-feedback" id="clfb-4"></span>
+              </div>
+              <div class="cl-hint" id="clhint-4">Hint: F = 9×10⁹ × 3×10⁻⁶ × 5×10⁻⁶ / 0.04 = 3.375 ≈ 3.4 N</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-hard">Challenge</span>5. Two charges exert a 10 N force on each other at 0.1 m. What distance would reduce the force to 2.5 N?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="clans-5" step="0.01" placeholder="m" />
+                <button class="cl-check-btn" onclick="clCheck(5, 0.2, 0.01)">Check</button>
+                <span class="cl-feedback" id="clfb-5"></span>
+              </div>
+              <div class="cl-hint" id="clhint-5">Hint: Force quartered → distance doubled → 0.2 m</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="cl-pane-sim">Simulator</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cl-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="cl-pane-sim">
+          <span class="ll-label">Charge 1 (left)</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">q₁ magnitude <span id="cl-q1-val">2 μC</span></label>
+            <input type="range" class="nl-slider" id="cl-q1" min="1" max="10" value="2" style="width:100%;" />
+          </div>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;">Sign</label><br>
+            <button class="ll-preset" id="cl-q1-pos" onclick="clSetSign(1,1)" style="margin-right:0.3rem;">+ Positive</button>
+            <button class="ll-preset" id="cl-q1-neg" onclick="clSetSign(1,-1)">− Negative</button>
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Charge 2 (right)</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">q₂ magnitude <span id="cl-q2-val">2 μC</span></label>
+            <input type="range" class="nl-slider" id="cl-q2" min="1" max="10" value="2" style="width:100%;" />
+          </div>
+          <div>
+            <label style="font-size:0.8rem;">Sign</label><br>
+            <button class="ll-preset" id="cl-q2-pos" onclick="clSetSign(2,1)" style="margin-right:0.3rem;">+ Positive</button>
+            <button class="ll-preset" id="cl-q2-neg" onclick="clSetSign(2,-1)">− Negative</button>
+          </div>
+        </div>
+
+        <div class="ll-pane" id="cl-pane-guide">
+          <div class="ll-info"><strong>Coulomb's Law</strong>F = kq₁q₂/r². The force is proportional to the product of charges and inversely proportional to the square of the distance.</div>
+          <div class="ll-info"><strong>Opposite charges</strong>Attract — the force pulls them together.</div>
+          <div class="ll-info"><strong>Like charges</strong>Repel — the force pushes them apart.</div>
+          <div class="ll-info"><strong>Inverse-square</strong>Double the distance → force drops to one quarter.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  const K = 9e9;
+  let q1mag = 2, q1sign = 1;
+  let q2mag = 2, q2sign = -1;
+  let chargeX1 = 0.3, chargeX2 = 0.7; // fractional positions
+  let dragging = null, dragOffX = 0;
+
+  const canvas = document.getElementById('cl-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  function getQ1() { return q1sign * q1mag * 1e-6; }
+  function getQ2() { return q2sign * q2mag * 1e-6; }
+  function distMeters(W) { return Math.abs(chargeX2 - chargeX1) * W * 0.01; } // 1px = 0.01m at W=100
+
+  function calcForce(W) {
+    const r = distMeters(W);
+    if (r < 0.01) return 0;
+    return K * Math.abs(getQ1()) * Math.abs(getQ2()) / (r * r);
+  }
+
+  function colorFor(sign) { return sign > 0 ? '#ff3b30' : '#007aff'; }
+
+  function draw() {
+    const W = canvas.offsetWidth || 600;
+    canvas.width = W; canvas.height = 220;
+    const H = 220;
+    const CY = H / 2;
+    const R = 22;
+    const x1 = chargeX1 * W;
+    const x2 = chargeX2 * W;
+    const force = calcForce(W);
+    const attract = (getQ1() * getQ2()) < 0;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Distance line
+    ctx.setLineDash([4,4]);
+    ctx.strokeStyle = 'rgba(100,116,139,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x1, CY); ctx.lineTo(x2, CY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Distance label
+    const r = distMeters(W);
+    ctx.font = '11px Inter,sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'center';
+    ctx.fillText('r = ' + r.toFixed(2) + ' m', (x1+x2)/2, CY - 12);
+
+    // Force arrows
+    const maxArrow = 60;
+    const scale = Math.min(maxArrow, force * 200);
+    const arrowColor = attract ? '#34c759' : '#ff3b30';
+    ctx.strokeStyle = arrowColor;
+    ctx.fillStyle   = arrowColor;
+    ctx.lineWidth = 2.5;
+
+    if (attract) {
+      // arrows pointing inward
+      drawArrow(ctx, x1 - R - 5, CY, x1 - R - 5 + scale, CY); // left charge: rightward
+      drawArrow(ctx, x2 + R + 5, CY, x2 + R + 5 - scale, CY); // right charge: leftward
+    } else {
+      // arrows pointing outward
+      drawArrow(ctx, x1 + R + 5, CY, x1 + R + 5 - scale, CY);
+      drawArrow(ctx, x2 - R - 5, CY, x2 - R - 5 + scale, CY);
+    }
+
+    // Charge circles
+    [[x1, q1sign, q1mag], [x2, q2sign, q2mag]].forEach(([cx, sign, mag]) => {
+      ctx.beginPath();
+      ctx.arc(cx, CY, R, 0, Math.PI*2);
+      ctx.fillStyle = colorFor(sign);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.font = 'bold 14px Inter,sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText((sign > 0 ? '+' : '−') + mag + 'μ', cx, CY);
+    });
+    ctx.textBaseline = 'alphabetic';
+
+    // Force readout label
+    ctx.font = '600 12px Inter,sans-serif';
+    ctx.fillStyle = arrowColor;
+    ctx.textAlign = 'center';
+    ctx.fillText('F = ' + force.toFixed(2) + ' N (' + (attract ? 'attractive' : 'repulsive') + ')', W/2, H - 16);
+
+    // Update display readouts
+    document.getElementById('cl-r-q1').textContent   = (q1sign>0?'+':'-') + q1mag + ' μC';
+    document.getElementById('cl-r-dist').textContent = r.toFixed(2) + ' m';
+    document.getElementById('cl-r-force').textContent = force.toFixed(2) + ' N';
+  }
+
+  function drawArrow(ctx, x1, y1, x2, y2) {
+    const dx = x2-x1, dy = y2-y1;
+    const len = Math.sqrt(dx*dx+dy*dy);
+    if (len < 4) return;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const angle = Math.atan2(dy,dx);
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-10*Math.cos(angle-0.4), y2-10*Math.sin(angle-0.4));
+    ctx.lineTo(x2-10*Math.cos(angle+0.4), y2-10*Math.sin(angle+0.4));
+    ctx.closePath(); ctx.fill();
+  }
+
+  function pointerX(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    return (clientX - rect.left) / rect.width;
+  }
+
+  function hitTest(px, W) {
+    const x1n = chargeX1, x2n = chargeX2;
+    const r = 22/W;
+    const pxn = px;
+    if (Math.abs(pxn - x1n) < r + 0.02) return 1;
+    if (Math.abs(pxn - x2n) < r + 0.02) return 2;
+    return 0;
+  }
+
+  canvas.addEventListener('mousedown', e => {
+    const px = pointerX(e);
+    dragging = hitTest(px, canvas.offsetWidth);
+  });
+  canvas.addEventListener('touchstart', e => {
+    const px = pointerX(e);
+    dragging = hitTest(px, canvas.offsetWidth);
+  }, {passive:true});
+  function onMove(e) {
+    if (!dragging) return;
+    const px = pointerX(e);
+    const other = dragging === 1 ? chargeX2 : chargeX1;
+    const minGap = 44/canvas.offsetWidth;
+    if (dragging === 1) chargeX1 = Math.max(0.05, Math.min(chargeX2 - minGap, px));
+    else                chargeX2 = Math.min(0.95, Math.max(chargeX1 + minGap, px));
+    draw();
+  }
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('touchmove', onMove, {passive:true});
+  canvas.addEventListener('mouseup',   () => { dragging = null; });
+  canvas.addEventListener('touchend',  () => { dragging = null; });
+
+  // Sliders
+  document.getElementById('cl-q1').addEventListener('input', e => {
+    q1mag = parseInt(e.target.value);
+    document.getElementById('cl-q1-val').textContent = q1mag + ' μC';
+    draw();
+  });
+  document.getElementById('cl-q2').addEventListener('input', e => {
+    q2mag = parseInt(e.target.value);
+    document.getElementById('cl-q2-val').textContent = q2mag + ' μC';
+    draw();
+  });
+
+  window.clSetSign = function(which, sign) {
+    if (which === 1) q1sign = sign;
+    else             q2sign = sign;
+    draw();
+  };
+
+  window.addEventListener('resize', draw);
+  draw();
+
+  // Practice
+  window.clCheck = function(n, ans, tol) {
+    const val = parseFloat(document.getElementById('clans-'+n).value);
+    const fb  = document.getElementById('clfb-'+n);
+    const hint = document.getElementById('clhint-'+n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className='cl-feedback err'; return; }
+    if (Math.abs(val - ans) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'cl-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+  window.clCheckText = function(n, ans) {
+    const el = document.getElementById('clans-'+n);
+    const fb = document.getElementById('clfb-'+n);
+    const hint = document.getElementById('clhint-'+n);
+    if (el.value === ans) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'cl-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
