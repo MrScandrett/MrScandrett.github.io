@@ -2666,7 +2666,8 @@
         mission: "game",
         level: "68",
         libraryOpen: false,
-        libraryFilter: "all"
+        libraryFilter: "all",
+        libraryGradeMode: "current"
       };
 
       const missionMeta = {
@@ -2682,6 +2683,148 @@
         35: "3-5",
         68: "6-8",
         912: "9-12"
+      };
+
+      const libraryGroupDefaults = {
+        start: {
+          grades: ["35", "68", "912"],
+          bestFor: "fast classroom starts",
+          time: "15-30 min",
+          review: "Teacher Review",
+          access: "Account Varies",
+          difficulty: "Starter"
+        },
+        ai: {
+          grades: ["68", "912"],
+          bestFor: "tutoring, drafting, and research",
+          time: "10-25 min",
+          review: "Teacher Review",
+          access: "Account Likely",
+          difficulty: "Medium"
+        },
+        immersive: {
+          grades: ["68", "912"],
+          bestFor: "XR, creative coding, and media experiments",
+          time: "30-60 min",
+          review: "Teacher Review",
+          access: "Account Varies",
+          difficulty: "Advanced"
+        },
+        engineering: {
+          grades: ["35", "68", "912"],
+          bestFor: "circuits, CAD, and simulation",
+          time: "25-60 min",
+          review: "Teacher Review",
+          access: "Account Varies",
+          difficulty: "Medium"
+        },
+        games: {
+          grades: ["k2", "35", "68", "912"],
+          bestFor: "design patterns, puzzles, and play",
+          time: "15-45 min",
+          review: "Teacher Review",
+          access: "No Login Often",
+          difficulty: "Starter"
+        },
+        assets: {
+          grades: ["35", "68", "912"],
+          bestFor: "finding art, sound, and edit tools",
+          time: "10-20 min",
+          review: "Teacher Review",
+          access: "No Login Often",
+          difficulty: "Starter",
+          license: "Free Assets"
+        }
+      };
+
+      const libraryToolMeta = {
+        scratch: { grades: ["35", "68"], bestFor: "first games and animation logic", time: "20-45 min", review: "Classroom Pick", access: "No Login to Explore", difficulty: "Starter", startHere: true },
+        tinkercad: { grades: ["35", "68", "912"], bestFor: "CAD and fabrication basics", time: "30-45 min", review: "Classroom Pick", access: "Class Code", difficulty: "Starter", startHere: true },
+        clever: { grades: ["k2", "35", "68", "912"], bestFor: "school login and district apps", time: "5 min", review: "District Tool", access: "School Login", difficulty: "Starter" },
+        codeorg: { grades: ["35", "68", "912"], bestFor: "structured coding lessons and labs", time: "20-45 min", review: "Classroom Pick", access: "No Login to Start", difficulty: "Starter", startHere: true },
+        khan: { grades: ["35", "68", "912"], bestFor: "practice and direct instruction", time: "15-30 min", review: "Classroom Pick", access: "Account Helps", difficulty: "Starter" },
+        britannica: { grades: ["68", "912"], bestFor: "verified background research", time: "15-25 min", review: "Teacher Review", access: "No Login Often", difficulty: "Starter" },
+        sep: { grades: ["912"], bestFor: "deep reading and argument analysis", time: "20-40 min", review: "Teacher Review", access: "No Login", difficulty: "Advanced" },
+        mathworld: { grades: ["912"], bestFor: "advanced math reference", time: "15-30 min", review: "Teacher Review", access: "No Login", difficulty: "Advanced" },
+        scholarpedia: { grades: ["912"], bestFor: "expert reference reading", time: "15-30 min", review: "Teacher Review", access: "No Login", difficulty: "Advanced" },
+        loc: { grades: ["68", "912"], bestFor: "primary-source research", time: "20-40 min", review: "Teacher Review", access: "No Login", difficulty: "Medium" },
+        gutenberg: { grades: ["68", "912"], bestFor: "public-domain reading", time: "15-30 min", review: "Teacher Review", access: "No Login", difficulty: "Starter", license: "Public Domain" },
+        openlibrary: { grades: ["68", "912"], bestFor: "book discovery and borrowing", time: "15-30 min", review: "Teacher Review", access: "Account Optional", difficulty: "Starter" },
+        hathitrust: { grades: ["912"], bestFor: "academic archive reading", time: "20-40 min", review: "Teacher Review", access: "No Login", difficulty: "Advanced" },
+        nasa: { grades: ["35", "68", "912"], bestFor: "science missions and media", time: "15-30 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        ncbi: { grades: ["912"], bestFor: "biomedical databases and papers", time: "20-45 min", review: "Teacher Review", access: "No Login", difficulty: "Advanced" },
+        arxiv: { grades: ["912"], bestFor: "current research preprints", time: "20-45 min", review: "Teacher Review", access: "No Login", difficulty: "Advanced", license: "Open Access" },
+        ourworldindata: { grades: ["68", "912"], bestFor: "evidence and chart-backed claims", time: "15-30 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        gapminder: { grades: ["68", "912"], bestFor: "pattern spotting in data", time: "15-25 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        googleartsculture: { grades: ["35", "68", "912"], bestFor: "visual inspiration and cultural context", time: "15-25 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        github: { grades: ["68", "912"], bestFor: "publishing and version history", time: "20-45 min", review: "Teacher Review", access: "Account Likely", difficulty: "Medium" },
+        canva: { grades: ["k2", "35", "68", "912"], bestFor: "posters, slides, and visuals", time: "15-40 min", review: "Classroom Pick", access: "Account Likely", difficulty: "Starter" },
+        googledocs: { grades: ["35", "68", "912"], bestFor: "writing and collaboration", time: "15-45 min", review: "Classroom Pick", access: "Account Likely", difficulty: "Starter" },
+        googlesheets: { grades: ["68", "912"], bestFor: "data and calculations", time: "20-45 min", review: "Teacher Review", access: "Account Likely", difficulty: "Medium" },
+        googleslides: { grades: ["35", "68", "912"], bestFor: "presentations and project sharing", time: "20-45 min", review: "Classroom Pick", access: "Account Likely", difficulty: "Starter" },
+        googledrive: { grades: ["35", "68", "912"], bestFor: "file storage and sharing", time: "10-20 min", review: "Classroom Pick", access: "Account Likely", difficulty: "Starter" },
+        googleforms: { grades: ["35", "68", "912"], bestFor: "quizzes and data collection", time: "15-30 min", review: "Teacher Review", access: "Account Likely", difficulty: "Starter" },
+        sites: { grades: ["35", "68", "912"], bestFor: "simple web publishing", time: "20-45 min", review: "Classroom Pick", access: "Account Likely", difficulty: "Starter", startHere: true },
+        figma: { grades: ["68", "912"], bestFor: "UI planning and prototypes", time: "25-45 min", review: "Teacher Review", access: "Account Likely", difficulty: "Medium" },
+        replit: { grades: ["68", "912"], bestFor: "browser coding and quick prototypes", time: "20-45 min", review: "Teacher Review", access: "Account Likely", difficulty: "Medium" },
+        glitch: { grades: ["35", "68", "912"], bestFor: "remixing live web apps", time: "20-40 min", review: "Teacher Review", access: "Account Likely", difficulty: "Medium" },
+        desmos: { grades: ["35", "68", "912"], bestFor: "visual math modeling", time: "15-30 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        phet: { grades: ["35", "68", "912"], bestFor: "interactive science models", time: "15-30 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        geogebra: { grades: ["35", "68", "912"], bestFor: "dynamic math exploration", time: "15-30 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        wolframalpha: { grades: ["68", "912"], bestFor: "computed answers and checks", time: "10-20 min", review: "Teacher Review", access: "No Login", difficulty: "Medium" },
+        chatgpt: { grades: ["68", "912"], bestFor: "brainstorming, tutoring, and drafting", time: "10-20 min", review: "Teacher Review", access: "Account Likely", difficulty: "Medium" },
+        sora: { grades: ["912"], bestFor: "video ideation and media experiments", time: "10-20 min", review: "Teacher Review", access: "Account Likely", difficulty: "Advanced" },
+        codex: { grades: ["912"], bestFor: "coding support and planning", time: "10-30 min", review: "Teacher Review", access: "Account Likely", difficulty: "Advanced" },
+        wokwi: { grades: ["35", "68", "912"], bestFor: "virtual circuits and Arduino testing", time: "20-45 min", review: "Classroom Pick", access: "No Login to Explore", difficulty: "Starter", startHere: true },
+        vexvr: { grades: ["35", "68", "912"], bestFor: "robot logic in simulation", time: "20-40 min", review: "Classroom Pick", access: "No Login Often", difficulty: "Starter" },
+        onshape: { grades: ["68", "912"], bestFor: "browser CAD and mechanical design", time: "30-60 min", review: "Teacher Review", access: "Account Likely", difficulty: "Advanced" },
+        gazebo: { grades: ["912"], bestFor: "realistic robotics simulation", time: "30-60 min", review: "Teacher Review", access: "No Login", difficulty: "Advanced" },
+        sparkfunlearn: { grades: ["68", "912"], bestFor: "electronics walkthroughs", time: "20-40 min", review: "Teacher Review", access: "No Login", difficulty: "Medium" },
+        adafruitlearn: { grades: ["68", "912"], bestFor: "maker projects and parts guides", time: "20-40 min", review: "Teacher Review", access: "No Login", difficulty: "Medium" },
+        cura: { grades: ["68", "912"], bestFor: "3D print prep", time: "20-40 min", review: "Teacher Review", access: "Software Download", difficulty: "Medium" },
+        prusaslicer: { grades: ["68", "912"], bestFor: "3D print slicing workflows", time: "20-40 min", review: "Teacher Review", access: "Software Download", difficulty: "Medium" },
+        stlviewer: { grades: ["35", "68", "912"], bestFor: "checking STL scale and shape", time: "10-15 min", review: "Teacher Review", access: "No Login", difficulty: "Starter" },
+        bloxels: { grades: ["35", "68"], bestFor: "pixel platformer design", time: "20-45 min", review: "Classroom Pick", access: "Account Likely", difficulty: "Starter" },
+        blocklygames: { grades: ["k2", "35", "68"], bestFor: "coding logic through play", time: "15-25 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        lightbot: { grades: ["k2", "35", "68"], bestFor: "sequencing and procedures", time: "15-25 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        scratchjr: { grades: ["k2", "35"], bestFor: "first sequencing and story logic", time: "15-25 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter", startHere: true },
+        freeciv: { grades: ["68", "912"], bestFor: "systems thinking and strategy", time: "30-60 min", review: "Teacher Review", access: "No Login", difficulty: "Advanced", license: "Open Source" },
+        oregontrail: { grades: ["35", "68"], bestFor: "historical decision making", time: "20-30 min", review: "Teacher Review", access: "No Login", difficulty: "Starter" },
+        timeguessr: { grades: ["68", "912"], bestFor: "inference from visual clues", time: "10-20 min", review: "Teacher Review", access: "No Login", difficulty: "Starter" },
+        roomrecess: { grades: ["k2", "35"], bestFor: "core classroom fluency", time: "10-20 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        toytheater: { grades: ["k2", "35"], bestFor: "logic and early math play", time: "10-20 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        funbrain: { grades: ["k2", "35"], bestFor: "math and reading games", time: "10-20 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        pbskids: { grades: ["k2", "35"], bestFor: "early literacy, science, and SEL", time: "10-20 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter", startHere: true },
+        climatekids: { grades: ["k2", "35"], bestFor: "kid-friendly Earth science", time: "10-20 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        infinitemac: { grades: ["68", "912"], bestFor: "computing history and interface study", time: "15-30 min", review: "Teacher Review", access: "No Login", difficulty: "Medium" },
+        pcjs: { grades: ["68", "912"], bestFor: "DOS and early PC history", time: "15-30 min", review: "Teacher Review", access: "No Login", difficulty: "Medium" },
+        windows93: { grades: ["68", "912"], bestFor: "creative interface exploration", time: "15-25 min", review: "Teacher Review", access: "No Login", difficulty: "Medium" },
+        v86: { grades: ["68", "912"], bestFor: "OS emulation and virtualization", time: "20-35 min", review: "Teacher Review", access: "No Login", difficulty: "Advanced", license: "Open Source" },
+        emulatorjs: { grades: ["68", "912"], bestFor: "retro system emulation", time: "15-30 min", review: "Teacher Review", access: "No Login", difficulty: "Medium", license: "Open Source" },
+        jslinux: { grades: ["68", "912"], bestFor: "terminal-first Linux exploration", time: "15-25 min", review: "Teacher Review", access: "No Login", difficulty: "Advanced", license: "Open Source" },
+        opengameart: { grades: ["35", "68", "912"], bestFor: "sprites, music, and community assets", time: "10-20 min", review: "Teacher Review", access: "No Login", difficulty: "Starter", license: "Free Assets" },
+        kenney: { grades: ["35", "68", "912"], bestFor: "starter packs and UI kits", time: "10-20 min", review: "Teacher Review", access: "No Login", difficulty: "Starter", license: "Free Assets" },
+        itch: { grades: ["35", "68", "912"], bestFor: "indie-made asset hunting", time: "10-20 min", review: "Teacher Review", access: "No Login", difficulty: "Starter", license: "Free Assets" },
+        polypizza: { grades: ["35", "68", "912"], bestFor: "low-poly scene building", time: "10-20 min", review: "Teacher Review", access: "No Login", difficulty: "Starter", license: "Free Assets" },
+        freesound: { grades: ["35", "68", "912"], bestFor: "sound effects and ambience", time: "10-20 min", review: "Teacher Review", access: "Account Optional", difficulty: "Starter", license: "Creative Commons" },
+        photopea: { grades: ["68", "912"], bestFor: "image editing and PSD cleanup", time: "15-30 min", review: "Teacher Review", access: "No Login", difficulty: "Medium" },
+        tinypng: { grades: ["35", "68", "912"], bestFor: "compressing images for the web", time: "5-10 min", review: "Teacher Review", access: "No Login", difficulty: "Starter" },
+        pixlr: { grades: ["35", "68", "912"], bestFor: "quick image edits and posters", time: "15-30 min", review: "Teacher Review", access: "Account Optional", difficulty: "Starter" },
+        piskel: { grades: ["35", "68", "912"], bestFor: "pixel art and sprite animation", time: "15-30 min", review: "Classroom Pick", access: "No Login", difficulty: "Starter" },
+        clipchamp: { grades: ["35", "68", "912"], bestFor: "video editing and captions", time: "20-45 min", review: "Teacher Review", access: "Account Likely", difficulty: "Starter" },
+        kapwing: { grades: ["68", "912"], bestFor: "captioned media and short videos", time: "20-45 min", review: "Teacher Review", access: "Account Likely", difficulty: "Medium" },
+        obs: { grades: ["68", "912"], bestFor: "screen recording and demos", time: "20-45 min", review: "Teacher Review", access: "Software Download", difficulty: "Medium", license: "Open Source" }
+      };
+
+      const projectMeta = {
+        "Animate A Playable Character": { bestFor: "first interactions and story logic", time: "20-30 min", difficulty: "Starter", review: "Classroom Pick", access: "No Login to Explore", startHere: true },
+        "Prototype A Platformer Loop": { bestFor: "mechanics, pacing, and playtesting", time: "30-45 min", difficulty: "Medium", review: "Teacher Review", access: "No Login to Start" },
+        "Build A Blinking Robot Brain": { bestFor: "input/output and circuit logic", time: "25-40 min", difficulty: "Starter", review: "Classroom Pick", access: "No Login to Explore", startHere: true },
+        "Make A Poster Or Album Cover": { bestFor: "layout, color, and typography", time: "20-35 min", difficulty: "Starter", review: "Classroom Pick", access: "Account Likely" },
+        "Create A Music Loop Or Short Video": { bestFor: "sound, rhythm, and short-form media", time: "20-40 min", difficulty: "Starter", review: "Teacher Review", access: "Account Varies" },
+        "Launch A Class Portfolio Site": { bestFor: "sharing finished work online", time: "25-45 min", difficulty: "Starter", review: "Classroom Pick", access: "Account Likely", startHere: true },
+        "Warm Up With Math Or Reading Games": { bestFor: "quick fluency practice", time: "10-15 min", difficulty: "Starter", review: "Classroom Pick", access: "No Login", startHere: true },
+        "Compare Sources And Build An Evidence Story": { bestFor: "research progression from overview to evidence", time: "25-40 min", difficulty: "Medium", review: "Teacher Review", access: "No Login" }
       };
 
       const guidedPaths = {
