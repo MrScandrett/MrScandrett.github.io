@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3D Motion · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 17 — explore 3D kinematics, projectile motion, and vector decomposition with an interactive 3D trajectory simulator." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#5856d6); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .cl-formula-box { background: linear-gradient(135deg,rgba(88,86,214,0.09),rgba(88,86,214,0.03)); border: 1px solid rgba(88,86,214,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .cl-formula-sym { font-size: clamp(1.2rem,3vw,1.9rem); font-weight: 800; letter-spacing: -0.02em; color: #5856d6; display: block; margin-bottom: 0.5rem; }
+    .cl-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .cl-formula-vars { color: rgba(245,245,247,0.7); }
+
+    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-theme="night"] .cl-canvas-wrap { background: #1c1c1e; }
+    #tdm-canvas { width: 100%; height: 280px; display: block; }
+
+    .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .cl-readout { background: rgba(255,255,255,0.06); }
+    .cl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .cl-readout-val   { font-size: 1rem; font-weight: 700; color: #5856d6; }
+
+    .cl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .cl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .cl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .cl-app small   { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
+    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 90px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .cl-check-btn { background: #5856d6; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .cl-check-btn:hover { background: #4240c0; }
+    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .cl-feedback.ok  { color: #34c759; }
+    .cl-feedback.err { color: #ff3b30; }
+    .cl-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <!-- Hero -->
+        <section class="hero cl-hero">
+          <p class="eyebrow">Physics · Lesson 17</p>
+          <h1>3D Motion</h1>
+          <div class="cl-hero-meta">
+            <span>Kinematics</span><span class="dot"></span>
+            <span>Vector Decomposition</span><span class="dot"></span>
+            <span>Projectile Motion</span><span class="dot"></span>
+            <span>Trajectories</span>
+          </div>
+          <p class="cl-lede">In the real world, motion happens in three dimensions simultaneously. A basketball arcs through the air while spinning; a satellite orbits while drifting; a billiard ball bounces off walls while rolling. Understanding position, velocity, and acceleration as 3D vectors is the foundation of mechanics, aerospace, and robotics.</p>
+        </section>
+
+        <!-- Bio -->
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Who Was Isaac Newton?</h2>
+          <p><strong>Isaac Newton (1643–1727)</strong> published <em>Principia Mathematica</em> in 1687, establishing that the same laws of motion work in all directions simultaneously. His three laws of motion and the universal law of gravitation — combined with the calculus he invented to describe them — form the bedrock of classical mechanics. For the first time, motion of planets, cannonballs, and falling apples could all be described by a single unified framework.</p>
+        </section>
+
+        <!-- Core Concepts -->
+        <section class="cl-card" style="--card-accent:#ff9f0a;">
+          <h2>Core Concepts</h2>
+          <h3>Position, Velocity, and Acceleration as Vectors</h3>
+          <div class="cl-formula-box" role="img" aria-label="Position vector r equals x, y, z">
+            <span class="cl-formula-sym">r = (x, y, z) &nbsp;|&nbsp; v = dr/dt &nbsp;|&nbsp; a = dv/dt</span>
+            <div class="cl-formula-vars">
+              <div><strong>r</strong> = position vector (m)</div>
+              <div><strong>v</strong> = velocity vector (m/s)</div>
+              <div><strong>a</strong> = acceleration vector (m/s²)</div>
+            </div>
+          </div>
+          <h3>Projectile Motion Equations</h3>
+          <p>In projectile motion (no air resistance), gravity acts only in the vertical (z) direction. Horizontal components are constant.</p>
+          <div class="cl-formula-box" role="img" aria-label="Projectile equations of motion">
+            <span class="cl-formula-sym">z(t) = z₀ + vz·t − ½g·t²</span>
+            <div class="cl-formula-vars">
+              <div><strong>x(t)</strong> = x₀ + vx·t (constant)</div>
+              <div><strong>y(t)</strong> = y₀ + vy·t (constant)</div>
+              <div><strong>z(t)</strong> = vertical, affected by gravity g = 9.8 m/s²</div>
+            </div>
+          </div>
+          <h3>Range Equation</h3>
+          <div class="cl-formula-box" role="img" aria-label="Range equals v-naught squared times sine of 2 theta divided by g">
+            <span class="cl-formula-sym">R = v₀² · sin(2θ) / g</span>
+            <div class="cl-formula-vars">
+              <div><strong>R</strong> = horizontal range (m)</div>
+              <div><strong>v₀</strong> = initial speed (m/s)</div>
+              <div><strong>θ</strong> = launch angle above horizontal</div>
+              <div><strong>Maximum range</strong> at θ = 45°</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Interactive Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Set speed, launch angle, and azimuth in the panel, then press Launch. The isometric view shows the 3D trajectory as a dotted arc.</p>
+          <div class="cl-canvas-wrap">
+            <canvas id="tdm-canvas" aria-label="3D motion simulator showing a projectile trajectory in isometric view"></canvas>
+          </div>
+          <div class="cl-readouts">
+            <div class="cl-readout"><span class="cl-readout-label">Height (z)</span><span class="cl-readout-val" id="tdm-r-z">0.0 m</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Range (x)</span><span class="cl-readout-val" id="tdm-r-x">0.0 m</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Time</span><span class="cl-readout-val" id="tdm-r-t">0.00 s</span></div>
+          </div>
+        </section>
+
+        <!-- Applications -->
+        <section class="cl-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="cl-apps">
+            <div class="cl-app">
+              <div class="cl-app-icon">🚀</div>
+              <strong>Ballistics &amp; Aerospace</strong>
+              <small>Artillery trajectories and rocket launch windows require precise 3D vector calculations accounting for Earth's rotation.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">⚾</div>
+              <strong>Sports Science</strong>
+              <small>Trajectory analysis in baseball, golf, and soccer uses 3D kinematics to optimize swing angles and predict ball paths.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🤖</div>
+              <strong>Robotics</strong>
+              <small>Robot arm motion planning requires solving 3D position and velocity vectors to move end-effectors accurately through space.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🛸</div>
+              <strong>Spacecraft Navigation</strong>
+              <small>Orbital mechanics and gravitational slingshots rely on 3D trajectory calculations to navigate between planets.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cl-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Apply kinematic equations in 3D. Use g = 9.8 m/s².</p>
+          <div class="cl-practice">
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>1. In projectile motion (no air resistance), gravity acts in which direction?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="tdmans-1" style="width:160px;">
+                  <option value="">Choose…</option>
+                  <option value="x">x-direction (horizontal)</option>
+                  <option value="y">y-direction (horizontal)</option>
+                  <option value="z">z-direction (vertical)</option>
+                </select>
+                <button class="cl-check-btn" onclick="tdmCheckText(1,'z')">Check</button>
+                <span class="cl-feedback" id="tdmfb-1"></span>
+              </div>
+              <div class="cl-hint" id="tdmhint-1">Hint: Gravity always points downward — the vertical (z) direction.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>2. For projectile motion with no air resistance, the horizontal velocity component is:</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="tdmans-2" style="width:130px;">
+                  <option value="">Choose…</option>
+                  <option value="constant">Constant</option>
+                  <option value="increasing">Increasing</option>
+                  <option value="decreasing">Decreasing</option>
+                </select>
+                <button class="cl-check-btn" onclick="tdmCheckText(2,'constant')">Check</button>
+                <span class="cl-feedback" id="tdmfb-2"></span>
+              </div>
+              <div class="cl-hint" id="tdmhint-2">Hint: No horizontal force acts (no air resistance), so horizontal velocity stays constant.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>3. A ball is launched at 20 m/s at 45° above horizontal. What is the initial vertical velocity component in m/s? (1 decimal)</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="tdmans-3" step="0.1" placeholder="m/s" />
+                <button class="cl-check-btn" onclick="tdmCheck(3, 14.1, 0.2)">Check</button>
+                <span class="cl-feedback" id="tdmfb-3"></span>
+              </div>
+              <div class="cl-hint" id="tdmhint-3">Hint: vz = v₀ × sin(45°) = 20 × 0.707 ≈ 14.1 m/s</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>4. At what launch angle (degrees) is the horizontal range maximised (no air resistance)?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="tdmans-4" placeholder="°" />
+                <button class="cl-check-btn" onclick="tdmCheck(4, 45, 0.5)">Check</button>
+                <span class="cl-feedback" id="tdmfb-4"></span>
+              </div>
+              <div class="cl-hint" id="tdmhint-4">Hint: R = v₀²·sin(2θ)/g — maximised when sin(2θ)=1, i.e. 2θ=90°, θ=45°.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-hard">Challenge</span>5. A projectile is launched at 30 m/s at 30°. What is the maximum height in metres? (1 decimal) [h = (v₀sinθ)²/2g]</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="tdmans-5" step="0.1" placeholder="m" />
+                <button class="cl-check-btn" onclick="tdmCheck(5, 11.5, 0.3)">Check</button>
+                <span class="cl-feedback" id="tdmfb-5"></span>
+              </div>
+              <div class="cl-hint" id="tdmhint-5">Hint: vz = 30×sin(30°) = 15 m/s. h = 15²/(2×9.8) = 225/19.6 ≈ 11.5 m</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="tdm-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="tdm-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="tdm-pane-sim">
+          <span class="ll-label">Initial Speed</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">v₀ <span id="tdm-speed-val">25 m/s</span></label>
+            <input type="range" class="nl-slider" id="tdm-speed" min="10" max="50" value="25" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Launch Angle (vertical)</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">θ <span id="tdm-theta-val">45°</span></label>
+            <input type="range" class="nl-slider" id="tdm-theta" min="0" max="90" value="45" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Azimuth (horizontal direction)</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">φ <span id="tdm-phi-val">30°</span></label>
+            <input type="range" class="nl-slider" id="tdm-phi" min="0" max="360" value="30" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <div style="display:flex;gap:0.5rem;">
+            <button class="ll-preset" onclick="tdmLaunch()" style="flex:1;">Launch</button>
+            <button class="ll-preset" onclick="tdmReset()" style="flex:1;">Reset</button>
+          </div>
+        </div>
+
+        <div class="ll-pane" id="tdm-pane-guide">
+          <div class="ll-info"><strong>3D Position</strong>r = (x, y, z) — three independent components updated each instant.</div>
+          <div class="ll-info"><strong>Projectile Motion</strong>Only gravity acts (vertically). x and y motion are constant velocity; z decelerates and reverses.</div>
+          <div class="ll-info"><strong>Range Formula</strong>R = v₀²·sin(2θ)/g — maximised at θ = 45°.</div>
+          <div class="ll-info"><strong>Max Height</strong>h = (v₀·sinθ)²/(2g) — depends only on vertical launch speed.</div>
+          <div class="ll-info"><strong>Vector Decomposition</strong>vx = v₀·cosθ·cosφ, vy = v₀·cosθ·sinφ, vz = v₀·sinθ</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  const g = 9.8;
+  let speed = 25, theta = 45, phi = 30;
+  let animId = null;
+  let trajectory = [];
+  let animT = 0;
+  let animDuration = 0;
+  let ballPos = null;
+  let landingPos = null;
+  let running = false;
+
+  const canvas = document.getElementById('tdm-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function toRad(d) { return d * Math.PI / 180; }
+
+  // Isometric projection: 3D (wx, wy, wz) -> 2D screen (sx, sy)
+  function iso(wx, wy, wz, origin, scale) {
+    const ix = (wx - wy) * Math.cos(Math.PI / 6);
+    const iy = (wx + wy) * Math.sin(Math.PI / 6) - wz;
+    return {
+      sx: origin.x + ix * scale,
+      sy: origin.y + iy * scale
+    };
+  }
+
+  function buildTrajectory() {
+    const tRad = toRad(theta);
+    const pRad = toRad(phi);
+    const vx = speed * Math.cos(tRad) * Math.cos(pRad);
+    const vy = speed * Math.cos(tRad) * Math.sin(pRad);
+    const vz = speed * Math.sin(tRad);
+    const tFlight = (2 * vz) / g;
+    animDuration = tFlight;
+    trajectory = [];
+    const steps = 80;
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * tFlight;
+      trajectory.push({
+        x: vx * t,
+        y: vy * t,
+        z: vz * t - 0.5 * g * t * t,
+        t: t
+      });
+    }
+    const last = trajectory[trajectory.length - 1];
+    landingPos = { x: last.x, y: last.y, z: 0 };
+    return { vx, vy, vz, tFlight };
+  }
+
+  function draw(highlightIdx) {
+    const W = canvas.offsetWidth || 600;
+    canvas.width = W;
+    canvas.height = 280;
+    const H = 280;
+    ctx.clearRect(0, 0, W, H);
+
+    if (trajectory.length === 0) {
+      buildTrajectory();
+    }
+
+    const traj = trajectory;
+    const maxRange = Math.max(...traj.map(p => Math.sqrt(p.x * p.x + p.y * p.y)));
+    const maxH = Math.max(...traj.map(p => p.z), 1);
+    const scale = Math.min((W * 0.32) / (maxRange + 1), (H * 0.4) / (maxH + 1));
+    const origin = { x: W * 0.18, y: H * 0.82 };
+
+    // Draw ground grid
+    ctx.strokeStyle = 'rgba(100,116,139,0.2)';
+    ctx.lineWidth = 1;
+    const gridN = 5;
+    const gridSize = (maxRange * 1.1) / gridN;
+    for (let i = 0; i <= gridN; i++) {
+      for (let j = 0; j <= gridN; j++) {
+        const wx = i * gridSize;
+        const wy0 = 0, wy1 = gridN * gridSize;
+        const p0 = iso(wx, wy0, 0, origin, scale);
+        const p1 = iso(wx, wy1, 0, origin, scale);
+        ctx.beginPath(); ctx.moveTo(p0.sx, p0.sy); ctx.lineTo(p1.sx, p1.sy); ctx.stroke();
+        const wx0 = 0, wx1 = gridN * gridSize;
+        const wy = j * gridSize;
+        const q0 = iso(wx0, wy, 0, origin, scale);
+        const q1 = iso(wx1, wy, 0, origin, scale);
+        ctx.beginPath(); ctx.moveTo(q0.sx, q0.sy); ctx.lineTo(q1.sx, q1.sy); ctx.stroke();
+      }
+    }
+
+    // Draw trajectory as dotted arc
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(88,86,214,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    traj.forEach((p, i) => {
+      const pt = iso(p.x, p.y, p.z, origin, scale);
+      if (i === 0) ctx.moveTo(pt.sx, pt.sy);
+      else ctx.lineTo(pt.sx, pt.sy);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw axes labels
+    ctx.font = '11px Inter,sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'center';
+    const axLen = gridSize * 1.4;
+    const xEnd = iso(axLen, 0, 0, origin, scale);
+    const yEnd = iso(0, axLen, 0, origin, scale);
+    const zEnd = iso(0, 0, maxH * 0.6, origin, scale);
+    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(xEnd.sx, xEnd.sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(yEnd.sx, yEnd.sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(zEnd.sx, zEnd.sy); ctx.stroke();
+    ctx.fillStyle = '#5856d6';
+    ctx.fillText('X', xEnd.sx + 8, xEnd.sy + 4);
+    ctx.fillText('Y', yEnd.sx - 10, yEnd.sy + 4);
+    ctx.fillText('Z', zEnd.sx, zEnd.sy - 6);
+
+    // Landing marker
+    if (landingPos) {
+      const lp = iso(landingPos.x, landingPos.y, 0, origin, scale);
+      ctx.strokeStyle = '#ff3b30';
+      ctx.lineWidth = 2;
+      const r = 7;
+      ctx.beginPath(); ctx.moveTo(lp.sx - r, lp.sy); ctx.lineTo(lp.sx + r, lp.sy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(lp.sx, lp.sy - r); ctx.lineTo(lp.sx, lp.sy + r); ctx.stroke();
+      ctx.fillStyle = '#ff3b30';
+      ctx.font = '10px Inter,sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Land', lp.sx + 8, lp.sy + 4);
+    }
+
+    // Animate ball
+    if (highlightIdx !== undefined && highlightIdx < traj.length) {
+      const p = traj[highlightIdx];
+      const bp = iso(p.x, p.y, p.z, origin, scale);
+      // Velocity arrow
+      const tRad = toRad(theta);
+      const pRad = toRad(phi);
+      const t = p.t;
+      const vx = speed * Math.cos(tRad) * Math.cos(pRad);
+      const vy = speed * Math.cos(tRad) * Math.sin(pRad);
+      const vz = speed * Math.sin(tRad) - g * t;
+      const vnext = iso(p.x + vx * 0.3, p.y + vy * 0.3, p.z + vz * 0.3, origin, scale);
+      ctx.strokeStyle = '#ffd60a';
+      ctx.fillStyle = '#ffd60a';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(bp.sx, bp.sy); ctx.lineTo(vnext.sx, vnext.sy); ctx.stroke();
+      const ang = Math.atan2(vnext.sy - bp.sy, vnext.sx - bp.sx);
+      ctx.beginPath();
+      ctx.moveTo(vnext.sx, vnext.sy);
+      ctx.lineTo(vnext.sx - 7 * Math.cos(ang - 0.4), vnext.sy - 7 * Math.sin(ang - 0.4));
+      ctx.lineTo(vnext.sx - 7 * Math.cos(ang + 0.4), vnext.sy - 7 * Math.sin(ang + 0.4));
+      ctx.closePath(); ctx.fill();
+
+      // Ball
+      ctx.beginPath();
+      ctx.arc(bp.sx, bp.sy, 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#5856d6';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Update readouts
+      document.getElementById('tdm-r-z').textContent = Math.max(0, p.z).toFixed(1) + ' m';
+      document.getElementById('tdm-r-x').textContent = Math.sqrt(p.x * p.x + p.y * p.y).toFixed(1) + ' m';
+      document.getElementById('tdm-r-t').textContent = p.t.toFixed(2) + ' s';
+    } else {
+      // Static ball at origin
+      const p0 = iso(0, 0, 0, origin, scale);
+      ctx.beginPath();
+      ctx.arc(p0.sx, p0.sy, 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#5856d6';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // Range label
+    const tRad2 = toRad(theta);
+    const range = (speed * speed * Math.sin(2 * tRad2)) / g;
+    ctx.fillStyle = '#64748b';
+    ctx.font = '10px Inter,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Range ≈ ' + range.toFixed(1) + ' m  |  Max H ≈ ' + maxH.toFixed(1) + ' m', W / 2, H - 8);
+  }
+
+  window.tdmLaunch = function () {
+    if (animId) { cancelAnimationFrame(animId); animId = null; }
+    buildTrajectory();
+    running = true;
+    let startTime = null;
+    function step(ts) {
+      if (!startTime) startTime = ts;
+      const elapsed = (ts - startTime) / 1000;
+      const progress = Math.min(elapsed / animDuration, 1);
+      const idx = Math.floor(progress * (trajectory.length - 1));
+      draw(idx);
+      if (progress < 1) {
+        animId = requestAnimationFrame(step);
+      } else {
+        running = false;
+        draw(trajectory.length - 1);
+      }
+    }
+    animId = requestAnimationFrame(step);
+  };
+
+  window.tdmReset = function () {
+    if (animId) { cancelAnimationFrame(animId); animId = null; }
+    running = false;
+    trajectory = [];
+    document.getElementById('tdm-r-z').textContent = '0.0 m';
+    document.getElementById('tdm-r-x').textContent = '0.0 m';
+    document.getElementById('tdm-r-t').textContent = '0.00 s';
+    draw();
+  };
+
+  // Sliders
+  document.getElementById('tdm-speed').addEventListener('input', e => {
+    speed = parseInt(e.target.value);
+    document.getElementById('tdm-speed-val').textContent = speed + ' m/s';
+    trajectory = [];
+    draw();
+  });
+  document.getElementById('tdm-theta').addEventListener('input', e => {
+    theta = parseInt(e.target.value);
+    document.getElementById('tdm-theta-val').textContent = theta + '°';
+    trajectory = [];
+    draw();
+  });
+  document.getElementById('tdm-phi').addEventListener('input', e => {
+    phi = parseInt(e.target.value);
+    document.getElementById('tdm-phi-val').textContent = phi + '°';
+    trajectory = [];
+    draw();
+  });
+
+  window.addEventListener('resize', () => { trajectory = []; draw(); });
+  draw();
+
+  // Practice
+  window.tdmCheck = function (n, ans, tol) {
+    const val = parseFloat(document.getElementById('tdmans-' + n).value);
+    const fb = document.getElementById('tdmfb-' + n);
+    const hint = document.getElementById('tdmhint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'cl-feedback err'; return; }
+    if (Math.abs(val - ans) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'cl-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+  window.tdmCheckText = function (n, ans) {
+    const el = document.getElementById('tdmans-' + n);
+    const fb = document.getElementById('tdmfb-' + n);
+    const hint = document.getElementById('tdmhint-' + n);
+    if (el.value === ans) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'cl-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

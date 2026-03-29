@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Optics — Mirrors, Lenses &amp; Light · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 16 — explore reflection, refraction, Snell's Law, and lens equations with an interactive optics simulator." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#ffd60a); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .cl-formula-box { background: linear-gradient(135deg,rgba(255,214,10,0.10),rgba(255,214,10,0.03)); border: 1px solid rgba(255,214,10,0.35); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .cl-formula-sym { font-size: clamp(1.3rem,3.5vw,2rem); font-weight: 800; letter-spacing: -0.02em; color: #ffd60a; display: block; margin-bottom: 0.5rem; }
+    .cl-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .cl-formula-vars { color: rgba(245,245,247,0.7); }
+
+    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-theme="night"] .cl-canvas-wrap { background: #1c1c1e; }
+    #opt-canvas { width: 100%; height: 260px; display: block; }
+
+    .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .cl-readout { background: rgba(255,255,255,0.06); }
+    .cl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .cl-readout-val   { font-size: 1rem; font-weight: 700; color: #ffd60a; }
+
+    .cl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .cl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .cl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .cl-app small   { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
+    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 90px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .cl-check-btn { background: #ffd60a; color: #1d1d1f; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .cl-check-btn:hover { background: #e6c000; }
+    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .cl-feedback.ok  { color: #34c759; }
+    .cl-feedback.err { color: #ff3b30; }
+    .cl-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <!-- Hero -->
+        <section class="hero cl-hero">
+          <p class="eyebrow">Physics · Lesson 16</p>
+          <h1>Optics — Mirrors, Lenses &amp; Light</h1>
+          <div class="cl-hero-meta">
+            <span>Reflection</span><span class="dot"></span>
+            <span>Refraction</span><span class="dot"></span>
+            <span>Snell's Law</span><span class="dot"></span>
+            <span>Lens Equation</span>
+          </div>
+          <p class="cl-lede">Light travels in straight lines until it hits something. A mirror reflects it by equal angles; a lens refracts it by Snell's law. These two principles — reflection and refraction — underlie cameras, telescopes, glasses, microscopes, fiber optics, and the human eye.</p>
+        </section>
+
+        <!-- Bio -->
+        <section class="cl-card" style="--card-accent:#ffd60a;">
+          <h2>Who Was Ibn al-Haytham?</h2>
+          <p><strong>Ibn al-Haytham (965–1040)</strong> was an Arab mathematician and physicist who wrote <em>Book of Optics</em> (Kitab al-Manazir), establishing the first rigorous theory of vision, reflection, and refraction. He used controlled experiments and geometry to prove that light enters the eye from external objects — overturning Greek theories that the eye emits rays. Often called the <strong>"father of optics,"</strong> his work influenced European science for centuries.</p>
+        </section>
+
+        <!-- Core Concepts -->
+        <section class="cl-card" style="--card-accent:#ff9f0a;">
+          <h2>Core Concepts</h2>
+          <h3>Law of Reflection</h3>
+          <p>When light hits a mirror, the angle of incidence equals the angle of reflection — both measured from the normal (perpendicular) to the surface.</p>
+          <div class="cl-formula-box" role="img" aria-label="Theta i equals theta r">
+            <span class="cl-formula-sym">θᵢ = θᵣ</span>
+            <div class="cl-formula-vars">
+              <div><strong>θᵢ</strong> = angle of incidence (from normal)</div>
+              <div><strong>θᵣ</strong> = angle of reflection (from normal)</div>
+            </div>
+          </div>
+          <h3>Snell's Law (Refraction)</h3>
+          <p>When light crosses from one medium to another it bends. The amount of bending depends on the refractive indices of both media.</p>
+          <div class="cl-formula-box" role="img" aria-label="n1 sin theta1 equals n2 sin theta2">
+            <span class="cl-formula-sym">n₁ · sin θ₁ = n₂ · sin θ₂</span>
+            <div class="cl-formula-vars">
+              <div><strong>n</strong> = refractive index (n = c/v)</div>
+              <div><strong>θ₁</strong> = angle in medium 1</div>
+              <div><strong>θ₂</strong> = angle in medium 2</div>
+            </div>
+          </div>
+          <h3>Thin Lens Equation</h3>
+          <div class="cl-formula-box" role="img" aria-label="One over f equals one over d-o plus one over d-i">
+            <span class="cl-formula-sym">1/f = 1/dₒ + 1/dᵢ</span>
+            <div class="cl-formula-vars">
+              <div><strong>f</strong> = focal length (m)</div>
+              <div><strong>dₒ</strong> = object distance (m)</div>
+              <div><strong>dᵢ</strong> = image distance (m)</div>
+            </div>
+          </div>
+          <p style="margin-top:0.4rem;"><strong>Convex lens</strong> converges light to a focal point. <strong>Concave lens</strong> diverges light. <strong>Total internal reflection</strong> occurs when θ exceeds the critical angle — the principle behind fiber optics.</p>
+        </section>
+
+        <!-- Simulator -->
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Interactive Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Use the panel controls to switch mode and adjust the angle of incidence. The yellow ray is incident; orange is reflected or refracted.</p>
+          <div class="cl-canvas-wrap">
+            <canvas id="opt-canvas" aria-label="Optics simulator showing light ray reflection and refraction"></canvas>
+          </div>
+          <div class="cl-readouts">
+            <div class="cl-readout"><span class="cl-readout-label">Mode</span><span class="cl-readout-val" id="opt-r-mode">Mirror</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Angle In</span><span class="cl-readout-val" id="opt-r-in">40°</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Angle Out</span><span class="cl-readout-val" id="opt-r-out">40°</span></div>
+          </div>
+        </section>
+
+        <!-- Applications -->
+        <section class="cl-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="cl-apps">
+            <div class="cl-app">
+              <div class="cl-app-icon">👓</div>
+              <strong>Eyeglasses &amp; Contact Lenses</strong>
+              <small>Corrective lenses refract light to compensate for the eye's own focal length being too long or too short.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🔭</div>
+              <strong>Telescopes &amp; Microscopes</strong>
+              <small>Series of lenses or mirrors gather and magnify light, allowing us to see distant stars or microscopic cells.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">💡</div>
+              <strong>Fiber Optic Cables</strong>
+              <small>Total internal reflection traps light inside glass fibers, carrying internet data at nearly the speed of light.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">📷</div>
+              <strong>Camera Lenses</strong>
+              <small>Compound lens systems focus and correct light onto digital sensors, controlling depth of field and zoom.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cl-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Apply the law of reflection, Snell's law, and the lens equation.</p>
+          <div class="cl-practice">
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>1. A light ray hits a flat mirror at 30° from the normal. At what angle (in degrees) does it reflect?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="optans-1" placeholder="°" />
+                <button class="cl-check-btn" onclick="optCheck(1, 30, 0.5)">Check</button>
+                <span class="cl-feedback" id="optfb-1"></span>
+              </div>
+              <div class="cl-hint" id="opthint-1">Hint: Law of reflection — angle of incidence = angle of reflection.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>2. Which type of lens converges parallel rays to a focal point?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="optans-2" style="width:130px;">
+                  <option value="">Choose…</option>
+                  <option value="concave">Concave</option>
+                  <option value="convex">Convex</option>
+                  <option value="flat">Flat</option>
+                </select>
+                <button class="cl-check-btn" onclick="optCheckText(2,'convex')">Check</button>
+                <span class="cl-feedback" id="optfb-2"></span>
+              </div>
+              <div class="cl-hint" id="opthint-2">Hint: Convex = thicker in the middle = converging.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>3. Light travels from glass (n₁=1.5) into air (n₂=1.0) at θ₁=30°. Use Snell's law to find θ₂ in degrees (1 decimal).</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="optans-3" step="0.1" placeholder="°" />
+                <button class="cl-check-btn" onclick="optCheck(3, 48.6, 0.5)">Check</button>
+                <span class="cl-feedback" id="optfb-3"></span>
+              </div>
+              <div class="cl-hint" id="opthint-3">Hint: sin θ₂ = 1.5×sin(30°)/1.0 = 0.75. θ₂ = arcsin(0.75) ≈ 48.6°</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>4. A convex lens has f=10 cm. An object is dₒ=30 cm away. Find the image distance dᵢ in cm.</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="optans-4" placeholder="cm" />
+                <button class="cl-check-btn" onclick="optCheck(4, 15, 0.5)">Check</button>
+                <span class="cl-feedback" id="optfb-4"></span>
+              </div>
+              <div class="cl-hint" id="opthint-4">Hint: 1/10 = 1/30 + 1/dᵢ → 1/dᵢ = 1/10 − 1/30 = 2/30 → dᵢ = 15 cm</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-hard">Challenge</span>5. Find the critical angle θc for total internal reflection in glass (n=1.5) going into air (n=1.0). Give your answer in degrees (1 decimal). [sin θc = 1/1.5]</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="optans-5" step="0.1" placeholder="°" />
+                <button class="cl-check-btn" onclick="optCheck(5, 41.8, 0.5)">Check</button>
+                <span class="cl-feedback" id="optfb-5"></span>
+              </div>
+              <div class="cl-hint" id="opthint-5">Hint: sin θc = n_air/n_glass = 1/1.5 ≈ 0.667. θc = arcsin(0.667) ≈ 41.8°</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="opt-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="opt-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="opt-pane-sim">
+          <span class="ll-label">Mode</span>
+          <div style="margin-bottom:0.9rem;">
+            <button class="ll-preset" id="opt-btn-mirror" onclick="optSetMode('mirror')" style="margin-right:0.3rem;margin-bottom:0.3rem;">Flat Mirror</button>
+            <button class="ll-preset" id="opt-btn-convex" onclick="optSetMode('convex')" style="margin-right:0.3rem;margin-bottom:0.3rem;">Convex Lens</button>
+            <button class="ll-preset" id="opt-btn-concave" onclick="optSetMode('concave')" style="margin-bottom:0.3rem;">Concave Lens</button>
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Incident Angle</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Angle <span id="opt-angle-val">40°</span></label>
+            <input type="range" class="nl-slider" id="opt-angle" min="0" max="80" value="40" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Refraction</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">n₂ (medium) <span id="opt-n2-val">1.5</span></label>
+            <input type="range" class="nl-slider" id="opt-n2" min="10" max="25" value="15" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Object Distance (lens mode)</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">dₒ <span id="opt-do-val">30 cm</span></label>
+            <input type="range" class="nl-slider" id="opt-do" min="12" max="80" value="30" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <div style="margin-bottom:0.5rem;">
+            <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+              <input type="checkbox" id="opt-show-normal" checked /> Show normal line
+            </label>
+          </div>
+        </div>
+
+        <div class="ll-pane" id="opt-pane-guide">
+          <div class="ll-info"><strong>Reflection</strong>θᵢ = θᵣ — angle of incidence equals angle of reflection, both from the normal.</div>
+          <div class="ll-info"><strong>Snell's Law</strong>n₁·sin θ₁ = n₂·sin θ₂ — light bends when crossing media boundaries.</div>
+          <div class="ll-info"><strong>Lens Equation</strong>1/f = 1/dₒ + 1/dᵢ — relates focal length, object distance, and image distance.</div>
+          <div class="ll-info"><strong>Total Internal Reflection</strong>When θ exceeds the critical angle, all light is reflected back inside the denser medium.</div>
+          <div class="ll-info"><strong>Convex vs Concave</strong>Convex lens converges light; concave lens diverges it.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  let optMode = 'mirror';
+  let incidentAngle = 40; // degrees from normal
+  let n2 = 1.5;
+  let objDist = 30; // cm
+  let showNormal = true;
+  const focalLen = 20; // cm, fixed focal length for lens
+
+  const canvas = document.getElementById('opt-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function toRad(d) { return d * Math.PI / 180; }
+  function toDeg(r) { return r * 180 / Math.PI; }
+
+  function draw() {
+    const W = canvas.offsetWidth || 600;
+    canvas.width = W;
+    canvas.height = 260;
+    const H = 260;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const CX = W / 2;
+    const CY = H / 2;
+    const rayLen = Math.min(W * 0.38, 160);
+
+    if (optMode === 'mirror') {
+      // Draw mirror (vertical line at center)
+      ctx.strokeStyle = '#adb5bd';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(CX, CY - 90);
+      ctx.lineTo(CX, CY + 90);
+      ctx.stroke();
+
+      // Mirror hatching
+      ctx.strokeStyle = '#ced4da';
+      ctx.lineWidth = 1.5;
+      for (let y = CY - 80; y < CY + 90; y += 16) {
+        ctx.beginPath();
+        ctx.moveTo(CX, y);
+        ctx.lineTo(CX + 12, y + 12);
+        ctx.stroke();
+      }
+
+      // Normal line (dashed)
+      if (showNormal) {
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = 'rgba(100,116,139,0.5)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(CX - rayLen, CY);
+        ctx.lineTo(CX + 40, CY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#64748b';
+        ctx.font = '10px Inter,sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Normal', CX + 6, CY - 5);
+      }
+
+      // Incident ray (yellow) — comes from top-left
+      const ang = toRad(incidentAngle);
+      const ix = CX - rayLen * Math.sin(ang);
+      const iy = CY - rayLen * Math.cos(ang);
+      drawRay(ctx, ix, iy, CX, CY, '#ffd60a', 2.5);
+
+      // Angle label for incident
+      ctx.fillStyle = '#ffd60a';
+      ctx.font = '11px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(incidentAngle + '°', CX - 28, CY - 16);
+
+      // Reflected ray (orange) — symmetric, goes top-right (but to the left side since mirror reflects back)
+      const rx = CX - rayLen * Math.sin(ang);
+      const ry = CY + rayLen * Math.cos(ang);
+      drawRay(ctx, CX, CY, rx, ry, '#ff9f0a', 2.5);
+
+      ctx.fillStyle = '#ff9f0a';
+      ctx.fillText(incidentAngle + '°', CX - 28, CY + 20);
+
+      // Update readouts
+      document.getElementById('opt-r-mode').textContent = 'Mirror';
+      document.getElementById('opt-r-in').textContent = incidentAngle + '°';
+      document.getElementById('opt-r-out').textContent = incidentAngle + '°';
+
+    } else {
+      // Lens mode
+      // Draw lens symbol
+      ctx.strokeStyle = '#32ade6';
+      ctx.lineWidth = 3;
+      const lensH = 80;
+
+      if (optMode === 'convex') {
+        // Convex: two arcs bowing outward
+        drawLens(ctx, CX, CY, lensH, true);
+      } else {
+        // Concave: two arcs bowing inward
+        drawLens(ctx, CX, CY, lensH, false);
+      }
+
+      // Optical axis
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(100,116,139,0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(CX - rayLen - 20, CY);
+      ctx.lineTo(CX + rayLen + 20, CY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Normal line
+      if (showNormal) {
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = 'rgba(100,116,139,0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(CX, CY - 100);
+        ctx.lineTo(CX, CY + 100);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Focal point
+      const fScale = (focalLen / 100) * W * 0.3;
+      ctx.fillStyle = '#ffd60a';
+      ctx.beginPath();
+      ctx.arc(CX + fScale, CY, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = '10px Inter,sans-serif';
+      ctx.fillStyle = '#ffd60a';
+      ctx.textAlign = 'center';
+      ctx.fillText('F', CX + fScale, CY + 16);
+
+      // Object arrow
+      const doScale = (objDist / 100) * W * 0.3;
+      const objH = 40;
+      ctx.strokeStyle = '#34c759';
+      ctx.fillStyle = '#34c759';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(CX - doScale, CY);
+      ctx.lineTo(CX - doScale, CY - objH);
+      ctx.stroke();
+      // arrowhead
+      ctx.beginPath();
+      ctx.moveTo(CX - doScale, CY - objH);
+      ctx.lineTo(CX - doScale - 5, CY - objH + 8);
+      ctx.lineTo(CX - doScale + 5, CY - objH + 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.font = '10px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Object', CX - doScale, CY + 14);
+
+      // Compute image distance using thin lens equation
+      const f = focalLen;
+      const dO = objDist;
+      let dI = null;
+      let imageReal = false;
+      if (optMode === 'convex') {
+        if (dO !== f) {
+          dI = (f * dO) / (dO - f);
+          imageReal = dI > 0;
+        }
+      } else {
+        // concave: f is negative
+        const fNeg = -f;
+        dI = (fNeg * dO) / (dO - fNeg);
+        imageReal = dI > 0;
+      }
+
+      // Incident ray (top ray, parallel to axis)
+      const rayY = CY - objH;
+      drawRay(ctx, CX - doScale, rayY, CX, rayY, '#ffd60a', 2);
+
+      if (dI !== null) {
+        const diScale = (Math.abs(dI) / 100) * W * 0.3;
+        const diX = CX + (dI > 0 ? diScale : -diScale);
+
+        if (optMode === 'convex') {
+          // Ray goes through focal point after lens
+          drawRay(ctx, CX, rayY, diX, CY, '#ff9f0a', 2);
+        } else {
+          // Diverging: ray appears to come from focal point on same side
+          const fxNeg = CX - fScale;
+          const extX = CX + 60;
+          const slope = (CY - rayY) / (diX - CX);
+          drawRay(ctx, CX, rayY, extX, rayY + slope * (extX - CX), '#ff9f0a', 2);
+        }
+
+        // Image arrow
+        const imgH = imageReal ? -objH * (Math.abs(dI) / dO) : objH * 0.6;
+        const imgColor = imageReal ? '#ff9f0a' : 'rgba(255,159,10,0.5)';
+        ctx.strokeStyle = imgColor;
+        ctx.fillStyle = imgColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(diX, CY);
+        ctx.lineTo(diX, CY + imgH);
+        ctx.stroke();
+        ctx.beginPath();
+        const tipY = CY + imgH;
+        ctx.moveTo(diX, tipY);
+        ctx.lineTo(diX - 5, tipY - (imgH > 0 ? 8 : -8));
+        ctx.lineTo(diX + 5, tipY - (imgH > 0 ? 8 : -8));
+        ctx.closePath();
+        ctx.fill();
+        ctx.font = '10px Inter,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(imageReal ? 'Real Image' : 'Virtual Image', diX, CY + 18);
+
+        document.getElementById('opt-r-out').textContent = Math.abs(dI).toFixed(1) + ' cm';
+      } else {
+        document.getElementById('opt-r-out').textContent = '∞';
+      }
+
+      const modeLabel = optMode === 'convex' ? 'Convex Lens' : 'Concave Lens';
+      document.getElementById('opt-r-mode').textContent = modeLabel;
+      document.getElementById('opt-r-in').textContent = objDist + ' cm';
+    }
+  }
+
+  function drawRay(ctx, x1, y1, x2, y2, color, lw) {
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = lw;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    // arrowhead at end
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 5) return;
+    const angle = Math.atan2(dy, dx);
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 9 * Math.cos(angle - 0.4), y2 - 9 * Math.sin(angle - 0.4));
+    ctx.lineTo(x2 - 9 * Math.cos(angle + 0.4), y2 - 9 * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawLens(ctx, cx, cy, h, convex) {
+    ctx.strokeStyle = '#32ade6';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    if (convex) {
+      // Left arc bows left
+      ctx.moveTo(cx, cy - h);
+      ctx.quadraticCurveTo(cx - 22, cy, cx, cy + h);
+      // Right arc bows right
+      ctx.moveTo(cx, cy - h);
+      ctx.quadraticCurveTo(cx + 22, cy, cx, cy + h);
+    } else {
+      // Left arc bows right (inward)
+      ctx.moveTo(cx, cy - h);
+      ctx.quadraticCurveTo(cx + 18, cy, cx, cy + h);
+      // Right arc bows left (inward)
+      ctx.moveTo(cx, cy - h);
+      ctx.quadraticCurveTo(cx - 18, cy, cx, cy + h);
+    }
+    ctx.stroke();
+  }
+
+  // Controls
+  document.getElementById('opt-angle').addEventListener('input', e => {
+    incidentAngle = parseInt(e.target.value);
+    document.getElementById('opt-angle-val').textContent = incidentAngle + '°';
+    draw();
+  });
+  document.getElementById('opt-n2').addEventListener('input', e => {
+    n2 = parseInt(e.target.value) / 10;
+    document.getElementById('opt-n2-val').textContent = n2.toFixed(1);
+    draw();
+  });
+  document.getElementById('opt-do').addEventListener('input', e => {
+    objDist = parseInt(e.target.value);
+    document.getElementById('opt-do-val').textContent = objDist + ' cm';
+    draw();
+  });
+  document.getElementById('opt-show-normal').addEventListener('change', e => {
+    showNormal = e.target.checked;
+    draw();
+  });
+
+  window.optSetMode = function(mode) {
+    optMode = mode;
+    draw();
+  };
+
+  window.addEventListener('resize', draw);
+  draw();
+
+  // Practice
+  window.optCheck = function(n, ans, tol) {
+    const val = parseFloat(document.getElementById('optans-' + n).value);
+    const fb = document.getElementById('optfb-' + n);
+    const hint = document.getElementById('opthint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'cl-feedback err'; return; }
+    if (Math.abs(val - ans) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'cl-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+  window.optCheckText = function(n, ans) {
+    const el = document.getElementById('optans-' + n);
+    const fb = document.getElementById('optfb-' + n);
+    const hint = document.getElementById('opthint-' + n);
+    if (el.value === ans) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'cl-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

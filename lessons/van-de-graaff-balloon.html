@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Van de Graaff Balloon · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 14 — explore electrostatics with a charged balloon near a Van de Graaff generator. Coulomb's law, triboelectric effect, and induced charge." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .vgb-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .vgb-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .vgb-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .vgb-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .vgb-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .vgb-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .vgb-lede { color: rgba(245,245,247,0.7); }
+
+    .vgb-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#ff9f0a); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .vgb-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .vgb-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .vgb-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .vgb-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .vgb-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .vgb-card p { color: rgba(245,245,247,0.72); }
+
+    .vgb-formula-box { background: linear-gradient(135deg,rgba(255,159,10,0.09),rgba(255,159,10,0.03)); border: 1px solid rgba(255,159,10,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .vgb-formula-sym { font-size: clamp(1.4rem,4vw,2rem); font-weight: 800; letter-spacing: -0.02em; color: #ff9f0a; display: block; margin-bottom: 0.5rem; }
+    .vgb-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .vgb-formula-vars { color: rgba(245,245,247,0.7); }
+
+    .vgb-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .vgb-callout.orange { background: rgba(255,159,10,0.1); border-left: 3px solid #ff9f0a; }
+    .vgb-callout.blue   { background: rgba(0,122,255,0.1);   border-left: 3px solid #007aff; }
+
+    .vgb-charge-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; margin: 0.8rem 0; }
+    .vgb-charge-card { border-radius: 12px; padding: 0.8rem 0.9rem; border: 1px solid var(--line,#d2d2d7); text-align: center; }
+    .vgb-charge-card.pos { background: rgba(255,59,48,0.07); border-color: rgba(255,59,48,0.3); }
+    .vgb-charge-card.neu { background: rgba(100,116,139,0.07); border-color: rgba(100,116,139,0.3); }
+    .vgb-charge-card.neg { background: rgba(0,122,255,0.07); border-color: rgba(0,122,255,0.3); }
+    .vgb-charge-card strong { display: block; font-size: 0.85rem; margin-bottom: 0.25rem; }
+    .vgb-charge-card small { font-size: 0.77rem; color: #64748b; line-height: 1.45; display: block; }
+
+    .vgb-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-theme="night"] .vgb-canvas-wrap { background: #1c1c1e; }
+    #vgb-canvas { width: 100%; height: 260px; display: block; }
+
+    .vgb-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .vgb-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .vgb-readout { background: rgba(255,255,255,0.06); }
+    .vgb-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .vgb-readout-val   { font-size: 1rem; font-weight: 700; color: #ff9f0a; }
+
+    .vgb-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .vgb-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .vgb-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .vgb-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .vgb-app small   { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    .vgb-practice .vgb-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .vgb-practice .vgb-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: #3f4f65; line-height: 1.6; }
+    [data-theme="night"] .vgb-problem p { color: rgba(245,245,247,0.72); }
+    .vgb-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .vgb-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 90px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .vgb-check-btn { background: #ff9f0a; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .vgb-check-btn:hover { background: #e68a00; }
+    .vgb-feedback { font-size: 0.82rem; font-weight: 600; }
+    .vgb-feedback.ok  { color: #34c759; }
+    .vgb-feedback.err { color: #ff3b30; }
+    .vgb-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="vgb-page">
+
+        <!-- Hero -->
+        <section class="hero vgb-hero">
+          <p class="eyebrow">Physics · Lesson 14</p>
+          <h1>Van de Graaff Balloon</h1>
+          <div class="vgb-hero-meta">
+            <span>Electrostatics</span><span class="dot"></span>
+            <span>Coulomb's Law</span><span class="dot"></span>
+            <span>Triboelectric Effect</span><span class="dot"></span>
+            <span>Induced Charge</span>
+          </div>
+          <p class="vgb-lede">A small balloon rubbed against hair or wool acquires a static charge, then leaps toward — or flies away from — a Van de Graaff generator's dome. No wires, no magnets, just the invisible electric force described by Coulomb's law, visible at human scale.</p>
+        </section>
+
+        <!-- Bio -->
+        <section class="vgb-card" style="--card-accent:#ffcc00;">
+          <h2>Who Was Robert J. Van de Graaff?</h2>
+          <p><strong>Robert J. Van de Graaff (1901–1967)</strong> was an American physicist who built the first Van de Graaff generator in 1929 at Princeton. Using a silk ribbon and a tin can, he could accumulate millions of volts of static electricity. The machine became essential for nuclear physics experiments — accelerating particles into atomic nuclei — and is still used as a teaching tool in science classrooms worldwide.</p>
+        </section>
+
+        <!-- Core Concept -->
+        <section class="vgb-card" style="--card-accent:#ff9f0a;">
+          <h2>The Core Concept</h2>
+          <p>When a balloon is rubbed against hair or wool, electrons transfer between the two materials by the <strong>triboelectric effect</strong>. The balloon gains extra electrons (becomes negative) or loses them (becomes positive). The Van de Graaff dome is always positively charged.</p>
+
+          <div class="vgb-formula-box" role="img" aria-label="F equals k times Q times q divided by r squared">
+            <span class="vgb-formula-sym">F = k · Qq / r²</span>
+            <div class="vgb-formula-vars">
+              <div><strong>F</strong> = electric force (Newtons)</div>
+              <div><strong>k</strong> = 9 × 10⁹ N·m²/C²</div>
+              <div><strong>Q, q</strong> = charges (Coulombs)</div>
+              <div><strong>r</strong> = distance between centres (metres)</div>
+            </div>
+          </div>
+
+          <h3>Three Scenarios</h3>
+          <div class="vgb-charge-grid">
+            <div class="vgb-charge-card pos">
+              <strong>+ Balloon</strong>
+              <small>Dome is +, balloon is +. Like charges repel — balloon flies away.</small>
+            </div>
+            <div class="vgb-charge-card neu">
+              <strong>Neutral</strong>
+              <small>Dome polarizes the balloon — near side goes negative. Weak attraction.</small>
+            </div>
+            <div class="vgb-charge-card neg">
+              <strong>− Balloon</strong>
+              <small>Dome is +, balloon is −. Opposite charges attract — balloon swings toward dome.</small>
+            </div>
+          </div>
+
+          <div class="vgb-callout orange">
+            <strong>Induced charge (induction):</strong> A charged object can attract a completely neutral object by pushing charges within it to one side, creating an induced dipole. The near side becomes oppositely charged, giving a net attractive force even with no net charge on the neutral object.
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="vgb-card" style="--card-accent:#5856d6;">
+          <h2>Interactive Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">The dome is always positively charged. Set the balloon charge using the panel controls. Watch the string deflect and the force arrow change direction.</p>
+          <div class="vgb-canvas-wrap">
+            <canvas id="vgb-canvas" aria-label="Van de Graaff balloon simulator showing dome and balloon with force arrows"></canvas>
+          </div>
+          <div class="vgb-readouts">
+            <div class="vgb-readout"><span class="vgb-readout-label">Dome Charge</span><span class="vgb-readout-val" id="vgb-r-dome">+5 μC</span></div>
+            <div class="vgb-readout"><span class="vgb-readout-label">Balloon Charge</span><span class="vgb-readout-val" id="vgb-r-ball">−2 μC</span></div>
+            <div class="vgb-readout"><span class="vgb-readout-label">Force</span><span class="vgb-readout-val" id="vgb-r-force">Attract</span></div>
+          </div>
+        </section>
+
+        <!-- Applications -->
+        <section class="vgb-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="vgb-apps">
+            <div class="vgb-app">
+              <div class="vgb-app-icon">🔬</div>
+              <strong>Classroom Demos</strong>
+              <small>Van de Graaff generators make electrostatics visible — hair stands on end, sparks jump, balloons fly. Abstract concepts become tangible.</small>
+            </div>
+            <div class="vgb-app">
+              <div class="vgb-app-icon">🎨</div>
+              <strong>Paint Spraying</strong>
+              <small>Charged paint droplets repel each other → uniform, fine coating. Used in car manufacturing for a perfect finish with minimal waste.</small>
+            </div>
+            <div class="vgb-app">
+              <div class="vgb-app-icon">💨</div>
+              <strong>Air Filtration</strong>
+              <small>Electrostatic precipitators use charged plates to attract and trap dust, smoke, and pollen — cleaning industrial exhaust and indoor air.</small>
+            </div>
+            <div class="vgb-app">
+              <div class="vgb-app-icon">🖨️</div>
+              <strong>Xerography</strong>
+              <small>Photocopiers use a charged drum to attract toner particles to the right spots, then transfer and fuse them onto paper. Pure Coulomb force at work.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="vgb-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Use F = kQq/r². k = 9 × 10⁹ N·m²/C².</p>
+          <div class="vgb-practice">
+
+            <div class="vgb-problem">
+              <p><span class="diff-easy">Easy</span>1. A positively charged balloon will be attracted to a negatively charged dome. True or False?</p>
+              <div class="vgb-problem-row">
+                <select class="vgb-ans-input" id="vgbans-1" style="width:120px;">
+                  <option value="">Choose…</option>
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </select>
+                <button class="vgb-check-btn" onclick="vgbCheckText(1,'true')">Check</button>
+                <span class="vgb-feedback" id="vgbfb-1"></span>
+              </div>
+              <div class="vgb-hint" id="vgbhint-1">Hint: Opposite charges attract — positive and negative pull toward each other.</div>
+            </div>
+
+            <div class="vgb-problem">
+              <p><span class="diff-easy">Easy</span>2. Two identically charged objects will do what when placed near each other?</p>
+              <div class="vgb-problem-row">
+                <select class="vgb-ans-input" id="vgbans-2" style="width:140px;">
+                  <option value="">Choose…</option>
+                  <option value="attract">Attract</option>
+                  <option value="repel">Repel</option>
+                  <option value="neither">Neither</option>
+                </select>
+                <button class="vgb-check-btn" onclick="vgbCheckText(2,'repel')">Check</button>
+                <span class="vgb-feedback" id="vgbfb-2"></span>
+              </div>
+              <div class="vgb-hint" id="vgbhint-2">Hint: Like charges (both + or both −) always repel each other.</div>
+            </div>
+
+            <div class="vgb-problem">
+              <p><span class="diff-mid">Medium</span>3. A neutral balloon near a positive dome becomes polarized — its near side goes negative. This process is called:</p>
+              <div class="vgb-problem-row">
+                <select class="vgb-ans-input" id="vgbans-3" style="width:200px;">
+                  <option value="">Choose…</option>
+                  <option value="conduction">Conduction</option>
+                  <option value="induction">Induction</option>
+                  <option value="triboelectric">Triboelectric effect</option>
+                </select>
+                <button class="vgb-check-btn" onclick="vgbCheckText(3,'induction')">Check</button>
+                <span class="vgb-feedback" id="vgbfb-3"></span>
+              </div>
+              <div class="vgb-hint" id="vgbhint-3">Hint: Induction = charge redistribution caused by a nearby charged object, without direct contact.</div>
+            </div>
+
+            <div class="vgb-problem">
+              <p><span class="diff-mid">Medium</span>4. The dome has Q = +5 μC and the balloon has q = −2 μC at r = 0.3 m. Calculate F = kQq/r² (give the magnitude in N, 2 sig figs).</p>
+              <div class="vgb-problem-row">
+                <input type="number" class="vgb-ans-input" id="vgbans-4" step="0.1" placeholder="N" />
+                <button class="vgb-check-btn" onclick="vgbCheck(4, 1.0, 0.1)">Check</button>
+                <span class="vgb-feedback" id="vgbfb-4"></span>
+              </div>
+              <div class="vgb-hint" id="vgbhint-4">Hint: F = 9×10⁹ × 5×10⁻⁶ × 2×10⁻⁶ / 0.09 = 90×10⁻³ / 0.09 = 1.0 N</div>
+            </div>
+
+            <div class="vgb-problem">
+              <p><span class="diff-hard">Challenge</span>5. The electric field E at distance r from a sphere of charge Q is E = kQ/r². If a 1 μC charge sits 0.5 m from the dome (Q = +10 μC), what force does it feel? [0.36 N]</p>
+              <div class="vgb-problem-row">
+                <input type="number" class="vgb-ans-input" id="vgbans-5" step="0.01" placeholder="N" />
+                <button class="vgb-check-btn" onclick="vgbCheck(5, 0.36, 0.02)">Check</button>
+                <span class="vgb-feedback" id="vgbfb-5"></span>
+              </div>
+              <div class="vgb-hint" id="vgbhint-5">Hint: E = 9×10⁹ × 10⁻⁵ / 0.25 = 360,000 V/m; F = qE = 10⁻⁶ × 360,000 = 0.36 N</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="vgb-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="vgb-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="vgb-pane-sim">
+          <span class="ll-label">Balloon Charge</span>
+          <div style="margin-bottom:0.7rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <button class="ll-preset" id="vgb-btn-pos" onclick="vgbSetBalloon(1)">+ Positive</button>
+            <button class="ll-preset" id="vgb-btn-neu" onclick="vgbSetBalloon(0)">Neutral</button>
+            <button class="ll-preset" id="vgb-btn-neg" onclick="vgbSetBalloon(-1)">− Negative</button>
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Dome Charge Magnitude</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Q <span id="vgb-dome-val">5 μC</span></label>
+            <input type="range" class="nl-slider" id="vgb-dome-slider" min="1" max="10" value="5" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <button class="ll-preset" onclick="vgbTouchDome()" style="width:100%;margin-bottom:0.5rem;">Touch Dome (transfer charge)</button>
+          <button class="ll-preset" onclick="vgbReset()" style="width:100%;">Reset</button>
+        </div>
+
+        <div class="ll-pane" id="vgb-pane-guide">
+          <div class="ll-info"><strong>Coulomb's Law</strong>F = kQq/r². The force between two charges depends on their magnitudes and the inverse square of their separation.</div>
+          <div class="ll-info"><strong>Like charges repel</strong>Both + or both − → force pushes them apart.</div>
+          <div class="ll-info"><strong>Opposite charges attract</strong>One + and one − → force pulls them together.</div>
+          <div class="ll-info"><strong>Induction</strong>A charged object attracts a neutral one by polarizing its charges. No contact required.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  const canvas = document.getElementById('vgb-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  // State
+  let balloonCharge = -1; // -1 negative, 0 neutral, 1 positive
+  let domeQ = 5;          // μC (always positive)
+  let balloonAngle = 0;   // current string angle (radians from vertical)
+  let targetAngle  = 0;
+  let raf = null;
+  let fieldParticles = [];
+
+  const MAX_ANGLE = 0.55; // radians
+
+  function balloonQ() {
+    if (balloonCharge === 0) return 0;
+    return balloonCharge * 2; // μC
+  }
+
+  function calcTargetAngle() {
+    const bq = balloonQ();
+    const dq = domeQ;
+    if (bq === 0) {
+      // induced dipole — very slight attraction
+      return -0.08;
+    }
+    const force = 9e9 * Math.abs(dq * 1e-6) * Math.abs(bq * 1e-6) / (0.3 * 0.3);
+    const norm = Math.min(force / 2.5, 1.0);
+    if (bq > 0) {
+      // same sign as dome (+) → repel → angle away from dome (positive angle)
+      return norm * MAX_ANGLE;
+    } else {
+      // opposite → attract → angle toward dome (negative angle)
+      return -norm * MAX_ANGLE;
+    }
+  }
+
+  function initFieldParticles(W) {
+    fieldParticles = [];
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2;
+      fieldParticles.push({ angle, r: 0, speed: 0.012 + Math.random() * 0.008 });
+    }
+  }
+
+  function draw() {
+    const W = canvas.offsetWidth || 600;
+    canvas.width = W;
+    canvas.height = 260;
+    const H = 260;
+    ctx.clearRect(0, 0, W, H);
+
+    // Lerp angle
+    balloonAngle += (targetAngle - balloonAngle) * 0.06;
+
+    // Dome
+    const domeX = W * 0.22;
+    const domeY = H * 0.52;
+    const domeR = 42;
+
+    // Field lines radiating from dome
+    ctx.strokeStyle = 'rgba(255,59,48,0.18)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(domeX + Math.cos(a) * domeR, domeY + Math.sin(a) * domeR);
+      ctx.lineTo(domeX + Math.cos(a) * (domeR + 55), domeY + Math.sin(a) * (domeR + 55));
+      ctx.stroke();
+    }
+
+    // Dome stand
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillRect(domeX - 6, domeY + domeR, 12, H - domeY - domeR - 10);
+    ctx.beginPath();
+    ctx.arc(domeX, domeY, domeR, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff3b30';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Dome label
+    ctx.font = 'bold 14px Inter,sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('+' + domeQ + 'μC', domeX, domeY);
+    ctx.textBaseline = 'alphabetic';
+
+    // + symbols floating around dome
+    ctx.font = 'bold 11px Inter,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    fieldParticles.forEach(p => {
+      p.r = domeR + 8 + Math.sin(p.angle * 3 + Date.now() * 0.001) * 6;
+      const px = domeX + Math.cos(p.angle) * p.r;
+      const py = domeY + Math.sin(p.angle) * p.r;
+      ctx.textAlign = 'center';
+      ctx.fillText('+', px, py);
+      p.angle += p.speed;
+    });
+
+    // String attachment point
+    const stringX = W * 0.68;
+    const stringY = H * 0.12;
+    const stringLen = H * 0.44;
+
+    const bx = stringX + Math.sin(balloonAngle) * stringLen;
+    const by = stringY + Math.cos(balloonAngle) * stringLen;
+    const balloonR = 22;
+
+    // String
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(stringX, stringY);
+    ctx.lineTo(bx, by);
+    ctx.stroke();
+
+    // String attachment marker
+    ctx.beginPath();
+    ctx.arc(stringX, stringY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#64748b';
+    ctx.fill();
+
+    // Force arrow
+    const bq = balloonQ();
+    if (Math.abs(bq) > 0 || balloonCharge === 0) {
+      const arrowLen = 30;
+      let arrowDir = balloonCharge === 0 ? -1 : (bq > 0 ? 1 : -1); // 1 = away from dome, -1 = toward
+      const arrowX1 = bx + Math.sign(arrowDir) * (balloonR + 5);
+      const arrowX2 = arrowX1 + arrowDir * arrowLen;
+      const arrowColor = arrowDir > 0 ? '#ff3b30' : '#34c759';
+      ctx.strokeStyle = arrowColor;
+      ctx.fillStyle   = arrowColor;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(arrowX1, by); ctx.lineTo(arrowX2, by); ctx.stroke();
+      // arrowhead
+      ctx.beginPath();
+      ctx.moveTo(arrowX2, by);
+      ctx.lineTo(arrowX2 - arrowDir * 10, by - 5);
+      ctx.lineTo(arrowX2 - arrowDir * 10, by + 5);
+      ctx.closePath(); ctx.fill();
+      ctx.font = '9px Inter,sans-serif';
+      ctx.fillStyle = arrowColor;
+      ctx.textAlign = 'center';
+      ctx.fillText(arrowDir > 0 ? 'Repel' : 'Attract', arrowX1 + arrowDir * arrowLen / 2, by - 8);
+    }
+
+    // Balloon body
+    const balloonColor = balloonCharge > 0 ? '#ff3b30' : (balloonCharge < 0 ? '#007aff' : '#94a3b8');
+    ctx.beginPath();
+    ctx.arc(bx, by, balloonR, 0, Math.PI * 2);
+    ctx.fillStyle = balloonColor;
+    ctx.globalAlpha = 0.85;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Balloon charge label
+    ctx.font = 'bold 11px Inter,sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const bLabel = balloonCharge > 0 ? '+2μC' : (balloonCharge < 0 ? '−2μC' : 'neutral');
+    ctx.fillText(bLabel, bx, by);
+    ctx.textBaseline = 'alphabetic';
+
+    // Balloon knot
+    ctx.beginPath();
+    ctx.arc(bx, by + balloonR + 2, 3, 0, Math.PI * 2);
+    ctx.fillStyle = balloonColor;
+    ctx.fill();
+
+    // Charge symbols on balloon (+ or - dots)
+    if (balloonCharge !== 0) {
+      ctx.font = '9px Inter,sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.textAlign = 'center';
+      const sym = balloonCharge > 0 ? '+' : '−';
+      [[-8,-10],[8,-10],[0,4],[-10,2],[10,2]].forEach(([dx,dy]) => {
+        ctx.fillText(sym, bx + dx, by + dy);
+      });
+    }
+
+    // Update readouts
+    const forceDir = balloonCharge === 0 ? 'Attract*' : (bq * domeQ < 0 ? 'Attract' : 'Repel');
+    const bqLabel  = balloonCharge === 0 ? '0 (neutral)' : (balloonCharge > 0 ? '+2 μC' : '−2 μC');
+    document.getElementById('vgb-r-dome').textContent  = '+' + domeQ + ' μC';
+    document.getElementById('vgb-r-ball').textContent  = bqLabel;
+    document.getElementById('vgb-r-force').textContent = forceDir;
+    document.getElementById('vgb-r-force').style.color = forceDir.startsWith('Repel') ? '#ff3b30' : '#34c759';
+
+    targetAngle = calcTargetAngle();
+    raf = requestAnimationFrame(draw);
+  }
+
+  document.getElementById('vgb-dome-slider').addEventListener('input', e => {
+    domeQ = parseInt(e.target.value);
+    document.getElementById('vgb-dome-val').textContent = domeQ + ' μC';
+  });
+
+  window.vgbSetBalloon = function (charge) {
+    balloonCharge = charge;
+  };
+
+  window.vgbTouchDome = function () {
+    // Contact with positive dome → balloon becomes positive → repels
+    balloonCharge = 1;
+  };
+
+  window.vgbReset = function () {
+    balloonCharge = -1;
+    domeQ = 5;
+    document.getElementById('vgb-dome-slider').value = 5;
+    document.getElementById('vgb-dome-val').textContent = '5 μC';
+    balloonAngle = 0;
+  };
+
+  window.addEventListener('resize', () => {
+    initFieldParticles(canvas.offsetWidth || 600);
+  });
+
+  initFieldParticles(canvas.offsetWidth || 600);
+  draw();
+
+  // Practice
+  window.vgbCheck = function (n, ans, tol) {
+    const val  = parseFloat(document.getElementById('vgbans-' + n).value);
+    const fb   = document.getElementById('vgbfb-' + n);
+    const hint = document.getElementById('vgbhint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'vgb-feedback err'; return; }
+    if (Math.abs(val - ans) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'vgb-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'vgb-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+  window.vgbCheckText = function (n, ans) {
+    const el   = document.getElementById('vgbans-' + n);
+    const fb   = document.getElementById('vgbfb-' + n);
+    const hint = document.getElementById('vgbhint-' + n);
+    if (el.value === ans) {
+      fb.textContent = '✓ Correct!'; fb.className = 'vgb-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'vgb-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

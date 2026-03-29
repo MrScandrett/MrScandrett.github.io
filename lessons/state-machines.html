@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>State Machines · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Computer Science Lesson 14 — explore finite state machines with interactive demos: traffic lights, vending machines, and door locks. Learn automata theory fundamentals." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#34c759); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .cl-formula-box { background: linear-gradient(135deg,rgba(52,199,89,0.09),rgba(52,199,89,0.03)); border: 1px solid rgba(52,199,89,0.28); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; }
+    .cl-formula-sym { font-size: clamp(1.1rem,3vw,1.4rem); font-weight: 800; letter-spacing: -0.02em; color: #34c759; display: block; margin-bottom: 0.4rem; }
+    .cl-formula-vars { font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .cl-formula-vars { color: rgba(245,245,247,0.7); }
+
+    /* Traffic light example */
+    .cl-flow { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0.8rem 0; }
+    .cl-flow-state { background: rgba(52,199,89,0.1); border: 1.5px solid rgba(52,199,89,0.35); border-radius: 10px; padding: 0.45rem 0.85rem; font-size: 0.84rem; font-weight: 700; color: var(--text,#1d1d1f); }
+    .cl-flow-arrow { font-size: 1.1rem; color: #64748b; }
+
+    /* Bio */
+    .cl-bio { display: flex; gap: 1rem; align-items: flex-start; }
+    .cl-bio-portrait { width: 68px; height: 68px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg,#34c759,#007aff); display: flex; align-items: center; justify-content: center; font-size: 1.9rem; line-height: 1; }
+    .cl-bio-text { flex: 1; font-size: 0.87rem; color: #3f4f65; line-height: 1.62; }
+    [data-theme="night"] .cl-bio-text { color: rgba(245,245,247,0.72); }
+    .cl-bio-text strong { color: var(--text,#1d1d1f); }
+
+    /* Canvas */
+    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-theme="night"] .cl-canvas-wrap { background: #1c1c1e; }
+    #sm-canvas { width: 100%; height: 220px; display: block; }
+
+    /* Log */
+    .sm-log { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.6rem 0.8rem; font-size: 0.78rem; font-family: 'SF Mono',monospace,sans-serif; max-height: 80px; overflow-y: auto; color: #3f4f65; margin-top: 0.5rem; }
+    [data-theme="night"] .sm-log { background: rgba(255,255,255,0.05); color: rgba(245,245,247,0.7); }
+
+    /* Readouts */
+    .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .cl-readout { background: rgba(255,255,255,0.06); }
+    .cl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .cl-readout-val   { font-size: 0.9rem; font-weight: 700; color: #34c759; }
+
+    /* Apps */
+    .cl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .cl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .cl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .cl-app small   { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    /* Practice */
+    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
+    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 90px; background: var(--white,#fff); color: var(--text,#1d1d1f); font-family: inherit; }
+    .cl-check-btn { background: #34c759; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .cl-check-btn:hover { opacity: 0.85; }
+    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .cl-feedback.ok  { color: #34c759; }
+    .cl-feedback.err { color: #ff3b30; }
+    .cl-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    [data-theme="night"] .diff-easy { color: #34c759; }
+    [data-theme="night"] .diff-mid  { color: #ff9500; }
+    [data-theme="night"] .diff-hard { color: #ff6b6b; }
+
+    @media (max-width: 600px) {
+      .cl-apps { grid-template-columns: 1fr; }
+      .cl-bio  { flex-direction: column; align-items: center; text-align: center; }
+      .cl-flow { justify-content: center; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <!-- Hero -->
+        <section class="hero cl-hero">
+          <p class="eyebrow">Computer Science · Lesson 14</p>
+          <h1>State Machines</h1>
+          <div class="cl-hero-meta">
+            <span>Automata Theory</span><span class="dot"></span>
+            <span>Finite States</span><span class="dot"></span>
+            <span>Transitions</span><span class="dot"></span>
+            <span>Turing</span><span class="dot"></span>
+            <span>Mealy / Moore</span>
+          </div>
+          <p class="cl-lede">A state machine is one of computing's most powerful ideas: a system is always in exactly one "state," and events cause it to move to a new state. Traffic lights, vending machines, video game characters, and TCP/IP connections all work this way.</p>
+        </section>
+
+        <!-- Bio card -->
+        <section class="cl-card" style="--card-accent:#34c759;">
+          <h2>Turing, Mealy, and Moore</h2>
+          <div class="cl-bio">
+            <div class="cl-bio-portrait" aria-hidden="true">🤖</div>
+            <p class="cl-bio-text">
+              <strong>Alan Turing (1912–1954)</strong> laid the theoretical foundation for all computing with his 1936 paper "On Computable Numbers," introducing the abstract <em>Turing machine</em> — essentially a state machine with infinite memory. In 1955–56, two engineers independently extended his ideas for practical circuits. <strong>George Mealy</strong> described machines whose outputs depend on both the current state and the current input. <strong>Edward Moore</strong> described machines whose outputs depend only on the current state. These three models — Turing, Mealy, and Moore — underpin every digital device built since: from traffic controllers and elevator logic to compilers, CPUs, and network protocols.
+            </p>
+          </div>
+        </section>
+
+        <!-- Core concept -->
+        <section class="cl-card" style="--card-accent:#34c759;">
+          <h2>What Is a State Machine?</h2>
+          <p>A <strong>finite state machine (FSM)</strong> has four key ingredients:</p>
+
+          <div class="cl-formula-box" role="img" aria-label="State machine definition">
+            <span class="cl-formula-sym">FSM = (States, Inputs, Transitions, Start State)</span>
+            <div class="cl-formula-vars">
+              <strong>States</strong> — a finite set of distinct configurations the system can be in<br>
+              <strong>Inputs / Events</strong> — things that can happen (button press, timer, signal)<br>
+              <strong>Transitions</strong> — rules: given current state + input → move to next state<br>
+              <strong>Start state</strong> — where the machine begins
+            </div>
+          </div>
+
+          <p>The critical rule: the system is always in <em>exactly one</em> state at a time. An event fires, a transition runs, and the system moves to the next state — never in two places at once.</p>
+
+          <h3>Traffic Light Example</h3>
+          <p>A traffic light cycles through three states, with each state transitioning to the next on a timer event:</p>
+          <div class="cl-flow" aria-label="Traffic light state flow">
+            <span class="cl-flow-state" style="background:rgba(255,59,48,0.12);border-color:rgba(255,59,48,0.4);">🔴 RED</span>
+            <span class="cl-flow-arrow">→ timer →</span>
+            <span class="cl-flow-state" style="background:rgba(52,199,89,0.12);border-color:rgba(52,199,89,0.4);">🟢 GREEN</span>
+            <span class="cl-flow-arrow">→ timer →</span>
+            <span class="cl-flow-state" style="background:rgba(255,214,10,0.15);border-color:rgba(255,149,0,0.4);">🟡 YELLOW</span>
+            <span class="cl-flow-arrow">→ timer →</span>
+            <span class="cl-flow-state" style="background:rgba(255,59,48,0.12);border-color:rgba(255,59,48,0.4);">🔴 RED</span>
+          </div>
+          <p>Only three states. Only one active at a time. The transitions are completely deterministic — given the current state and the event, the next state is always exactly predictable.</p>
+        </section>
+
+        <!-- Simulator -->
+        <section class="cl-card" style="--card-accent:#34c759;">
+          <h2>State Machine Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Choose a demo from the panel. Interact with the action buttons to fire events and watch state transitions happen in real time.</p>
+          <div class="cl-canvas-wrap">
+            <canvas id="sm-canvas" aria-label="State machine simulator canvas"></canvas>
+          </div>
+          <div class="cl-readouts">
+            <div class="cl-readout"><span class="cl-readout-label">Current State</span><span class="cl-readout-val" id="sm-r-state">RED</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Last Event</span><span class="cl-readout-val" id="sm-r-event">—</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Steps</span><span class="cl-readout-val" id="sm-r-steps">0</span></div>
+          </div>
+          <div class="sm-log" id="sm-log" aria-live="polite" aria-label="State transition history">Transition log will appear here…</div>
+        </section>
+
+        <!-- Real-World Applications -->
+        <section class="cl-card" style="--card-accent:#007aff;">
+          <h2>Real-World Applications</h2>
+          <div class="cl-apps">
+            <div class="cl-app">
+              <div class="cl-app-icon">🚦</div>
+              <strong>Traffic Control Systems</strong>
+              <small>Every intersection controller is a state machine. States encode which direction has the green light; timers and sensor inputs drive transitions to keep traffic flowing safely.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">📱</div>
+              <strong>UI Navigation Flows</strong>
+              <small>Modern app routers are state machines. Each screen is a state; user actions (tap, swipe, back button) are events that fire transitions between views.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🌐</div>
+              <strong>TCP/IP Protocol</strong>
+              <small>A TCP connection moves through states: CLOSED → SYN_SENT → ESTABLISHED → FIN_WAIT → TIME_WAIT → CLOSED. Every packet received is an event that may trigger a state change.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🎮</div>
+              <strong>Game Character AI</strong>
+              <small>Enemy characters use FSMs to manage behaviour: Idle → Patrol → Chase → Attack → Flee. The player's proximity and health level trigger transitions between states.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Practice Problems</h2>
+          <div class="cl-practice">
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>1. A finite state machine can be in multiple states at the same time. True or False?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="smans-1" style="width:120px;">
+                  <option value="">Choose…</option>
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </select>
+                <button class="cl-check-btn" onclick="smCheckText(1,'false')">Check</button>
+                <span class="cl-feedback" id="smfb-1"></span>
+              </div>
+              <div class="cl-hint" id="smhint-1">Hint: "Finite" state machine means the system is in exactly one state at any moment. (Non-deterministic FSMs can be in multiple states, but a standard FSM cannot.)</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>2. In the traffic light state machine described in the lesson, how many distinct states are there?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="smans-2" placeholder="?" />
+                <button class="cl-check-btn" onclick="smCheck(2, 3, 0)">Check</button>
+                <span class="cl-feedback" id="smfb-2"></span>
+              </div>
+              <div class="cl-hint" id="smhint-2">Hint: RED, GREEN, YELLOW — three states, cycling in order.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>3. A vending machine has states: Idle → Coin Inserted → Dispensing → Idle. What event moves the machine from "Coin Inserted" to "Dispensing"?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="smans-3" style="width:160px;">
+                  <option value="">Choose…</option>
+                  <option value="insert">Insert coin</option>
+                  <option value="select">Select product</option>
+                  <option value="collect">Collect item</option>
+                  <option value="reset">Power reset</option>
+                </select>
+                <button class="cl-check-btn" onclick="smCheckText(3,'select')">Check</button>
+                <span class="cl-feedback" id="smfb-3"></span>
+              </div>
+              <div class="cl-hint" id="smhint-3">Hint: Once money is in, the user presses a product button — that "select product" event triggers the dispense transition.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>4. What is the minimum number of transitions needed for a 3-state machine to visit all states in a loop and return to the start?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="smans-4" placeholder="?" />
+                <button class="cl-check-btn" onclick="smCheck(4, 3, 0)">Check</button>
+                <span class="cl-feedback" id="smfb-4"></span>
+              </div>
+              <div class="cl-hint" id="smhint-4">Hint: A → B → C → A requires exactly 3 transitions (one per hop in the loop).</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-hard">Challenge</span>5. A combination door lock needs a 3-digit code (digits 0–9). To model this minimally, how many states does the FSM need? (Count: Start, after digit 1, after digit 2, after digit 3/Unlocked, plus one Error/Reset state)</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="smans-5" placeholder="?" />
+                <button class="cl-check-btn" onclick="smCheck(5, 5, 0)">Check</button>
+                <span class="cl-feedback" id="smfb-5"></span>
+              </div>
+              <div class="cl-hint" id="smhint-5">Hint: Start → Digit1Entered → Digit2Entered → Unlocked → (back to Start) plus an Error state = 5 states minimum.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="sm-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="sm-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="sm-pane-sim">
+          <span class="ll-label">Demo</span>
+          <div style="display:flex;flex-direction:column;gap:0.35rem;margin-bottom:0.9rem;">
+            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+              <input type="radio" name="sm-demo" value="traffic" checked onchange="smSetDemo('traffic')" /> Traffic Light
+            </label>
+            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+              <input type="radio" name="sm-demo" value="vending" onchange="smSetDemo('vending')" /> Vending Machine
+            </label>
+            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+              <input type="radio" name="sm-demo" value="lock" onchange="smSetDemo('lock')" /> Door Lock
+            </label>
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label" id="sm-action-label">Actions</span>
+          <div id="sm-action-btns" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.9rem;margin-top:0.4rem;">
+            <!-- populated by JS -->
+          </div>
+          <hr class="ll-hr">
+          <button class="ll-preset" onclick="smReset()" style="width:100%;">Reset</button>
+        </div>
+
+        <div class="ll-pane" id="sm-pane-guide">
+          <div class="ll-info"><strong>State</strong>A distinct configuration the system can be in. The machine is always in exactly one state.</div>
+          <div class="ll-info"><strong>Event / Input</strong>Something that happens — a button press, timer, or signal — that can cause a transition.</div>
+          <div class="ll-info"><strong>Transition</strong>The rule: current state + event → next state. Deterministic: same state + same event always gives same result.</div>
+          <div class="ll-info"><strong>Why it matters</strong>FSMs are provably correct, easy to test, and the foundation for parsers, protocols, CPUs, and game AI.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  /* ── State Machine Simulator ──────────────────────── */
+  const canvas  = document.getElementById('sm-canvas');
+  const ctx     = canvas.getContext('2d');
+  const rState  = document.getElementById('sm-r-state');
+  const rEvent  = document.getElementById('sm-r-event');
+  const rSteps  = document.getElementById('sm-r-steps');
+  const logEl   = document.getElementById('sm-log');
+  const actionBtns = document.getElementById('sm-action-btns');
+
+  let demo = 'traffic', stepCount = 0, autoRaf = null;
+
+  /* ── Machine Definitions ── */
+  const MACHINES = {
+    traffic: {
+      states: ['RED', 'GREEN', 'YELLOW'],
+      start: 'RED',
+      colors: { RED: '#ff3b30', GREEN: '#34c759', YELLOW: '#ffcc00' },
+      transitions: {
+        RED:    { timer: 'GREEN'  },
+        GREEN:  { timer: 'YELLOW' },
+        YELLOW: { timer: 'RED'    }
+      },
+      actions: [{ label: 'Next →', event: 'timer' }],
+      auto: true, autoDelay: 1400
+    },
+    vending: {
+      states: ['Idle', 'HasMoney', 'Dispensing'],
+      start: 'Idle',
+      colors: { Idle: '#5856d6', HasMoney: '#ff9500', Dispensing: '#34c759' },
+      transitions: {
+        Idle:       { coin: 'HasMoney'   },
+        HasMoney:   { select: 'Dispensing', refund: 'Idle' },
+        Dispensing: { collect: 'Idle'    }
+      },
+      actions: [
+        { label: '🪙 Insert Coin',    event: 'coin'    },
+        { label: '🎰 Select Product', event: 'select'  },
+        { label: '↩ Refund',          event: 'refund'  },
+        { label: '📦 Collect Item',   event: 'collect' }
+      ],
+      auto: false
+    },
+    lock: {
+      states: ['Locked', 'Digit1', 'Digit2', 'Unlocked', 'Error'],
+      start: 'Locked',
+      colors: { Locked: '#ff3b30', Digit1: '#ff9500', Digit2: '#ffcc00', Unlocked: '#34c759', Error: '#8e8e93' },
+      transitions: {
+        Locked:   { correct: 'Digit1',   wrong: 'Error'    },
+        Digit1:   { correct: 'Digit2',   wrong: 'Error'    },
+        Digit2:   { correct: 'Unlocked', wrong: 'Error'    },
+        Unlocked: { lock: 'Locked'                         },
+        Error:    { reset: 'Locked'                        }
+      },
+      actions: [
+        { label: '✓ Correct Digit', event: 'correct' },
+        { label: '✗ Wrong Digit',   event: 'wrong'   },
+        { label: '🔒 Lock',         event: 'lock'    },
+        { label: '↺ Reset',         event: 'reset'   }
+      ],
+      auto: false
+    }
+  };
+
+  let currentState = 'RED';
+
+  function getMachine() { return MACHINES[demo]; }
+
+  function addLog(from, event, to) {
+    const line = document.createElement('div');
+    line.textContent = `${from} —[${event}]→ ${to}`;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function fire(event) {
+    const m = getMachine();
+    const trans = m.transitions[currentState];
+    if (!trans || !trans[event]) return; // invalid event in this state
+    const from = currentState;
+    currentState = trans[event];
+    stepCount++;
+    rState.textContent = currentState;
+    rEvent.textContent = event;
+    rSteps.textContent = stepCount;
+    addLog(from, event, currentState);
+    draw();
+  }
+
+  /* ── Canvas drawing ── */
+  function resize() {
+    canvas.width  = canvas.offsetWidth  || 560;
+    canvas.height = canvas.offsetHeight || 220;
+  }
+
+  function draw() {
+    resize();
+    const m = getMachine();
+    const W = canvas.width, H = canvas.height;
+    const isDark = document.documentElement.getAttribute('data-theme') === 'night';
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = isDark ? '#1c1c1e' : '#f7f8fa';
+    ctx.fillRect(0, 0, W, H);
+
+    const states = m.states;
+    const n = states.length;
+    const cx = W / 2, cy = H / 2;
+    const radius = Math.min(W, H) * 0.32;
+    const nodeR = Math.min(34, W / (n * 2.2));
+
+    // compute node positions on a circle
+    const pos = states.map((s, i) => {
+      const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+      return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle), name: s };
+    });
+
+    // draw transition arrows
+    ctx.save();
+    states.forEach((s, si) => {
+      const trans = m.transitions[s] || {};
+      Object.entries(trans).forEach(([evt, target]) => {
+        const ti = states.indexOf(target);
+        if (ti < 0) return;
+        const from = pos[si], to = pos[ti];
+        const isSelf = si === ti;
+        const dx = to.x - from.x, dy = to.y - from.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const nx = dx/dist, ny = dy/dist;
+
+        ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(100,116,139,0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.fillStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(100,116,139,0.35)';
+
+        if (isSelf) {
+          // self-loop
+          const lx = from.x, ly = from.y - nodeR - 10;
+          ctx.beginPath();
+          ctx.arc(lx, ly - 10, 12, 0.3, Math.PI * 2 - 0.3);
+          ctx.stroke();
+        } else {
+          const sx = from.x + nx * (nodeR + 2);
+          const sy = from.y + ny * (nodeR + 2);
+          const ex = to.x - nx * (nodeR + 8);
+          const ey = to.y - ny * (nodeR + 8);
+          ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+          const angle = Math.atan2(ey - sy, ex - sx);
+          ctx.beginPath();
+          ctx.moveTo(ex, ey);
+          ctx.lineTo(ex - 9*Math.cos(angle-0.4), ey - 9*Math.sin(angle-0.4));
+          ctx.lineTo(ex - 9*Math.cos(angle+0.4), ey - 9*Math.sin(angle+0.4));
+          ctx.closePath(); ctx.fill();
+
+          // event label along arrow
+          ctx.fillStyle = isDark ? 'rgba(255,255,255,0.45)' : '#64748b';
+          ctx.font = '10px Inter,sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(evt, (sx+ex)/2 - ny*10, (sy+ey)/2 + nx*10);
+        }
+      });
+    });
+    ctx.restore();
+
+    // draw state nodes
+    pos.forEach(({ x, y, name }) => {
+      const isActive = name === currentState;
+      const color = m.colors[name] || '#5856d6';
+
+      ctx.beginPath();
+      ctx.arc(x, y, nodeR, 0, Math.PI * 2);
+      if (isActive) {
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 18;
+      } else {
+        ctx.fillStyle = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+        ctx.shadowBlur = 0;
+      }
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isActive ? 2.5 : 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = isActive ? '#fff' : (isDark ? 'rgba(255,255,255,0.6)' : '#3f4f65');
+      ctx.font = `${isActive ? '700' : '600'} ${Math.min(11, nodeR * 0.38)}px Inter,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // wrap long names
+      const words = name.split(/(?=[A-Z])/);
+      if (words.length > 1 && name.length > 7) {
+        ctx.fillText(words.slice(0, Math.ceil(words.length/2)).join(''), x, y - 5);
+        ctx.fillText(words.slice(Math.ceil(words.length/2)).join(''), x, y + 6);
+      } else {
+        ctx.fillText(name, x, y);
+      }
+      ctx.textBaseline = 'alphabetic';
+    });
+
+    // current state label centre
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.55)' : '#64748b';
+    ctx.font = '600 11px Inter,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Current: ' + currentState, W/2, H - 10);
+  }
+
+  /* ── Auto-advance for traffic light ── */
+  function stopAuto() {
+    if (autoRaf) { clearTimeout(autoRaf); autoRaf = null; }
+  }
+  function startAuto() {
+    stopAuto();
+    const m = getMachine();
+    if (!m.auto) return;
+    function step() {
+      fire('timer');
+      autoRaf = setTimeout(step, m.autoDelay);
+    }
+    autoRaf = setTimeout(step, m.autoDelay);
+  }
+
+  /* ── Build action buttons ── */
+  function buildActions() {
+    const m = getMachine();
+    actionBtns.innerHTML = '';
+    m.actions.forEach(({ label, event }) => {
+      const btn = document.createElement('button');
+      btn.className = 'll-preset';
+      btn.textContent = label;
+      btn.onclick = () => fire(event);
+      actionBtns.appendChild(btn);
+    });
+  }
+
+  /* ── Public API ── */
+  window.smSetDemo = function(name) {
+    stopAuto();
+    demo = name;
+    currentState = MACHINES[name].start;
+    stepCount = 0;
+    logEl.innerHTML = 'Transition log will appear here…';
+    rState.textContent = currentState;
+    rEvent.textContent = '—';
+    rSteps.textContent = '0';
+    buildActions();
+    draw();
+    if (MACHINES[name].auto) startAuto();
+  };
+
+  window.smReset = function() {
+    smSetDemo(demo);
+  };
+
+  // Init
+  currentState = MACHINES.traffic.start;
+  buildActions();
+  resize();
+  draw();
+  startAuto();
+  window.addEventListener('resize', draw);
+
+  /* ── Practice checkers ────────────────────────────── */
+  window.smCheck = function(n, correct, tol) {
+    const input = document.getElementById('smans-' + n);
+    const fb    = document.getElementById('smfb-' + n);
+    const hint  = document.getElementById('smhint-' + n);
+    const val   = parseFloat(input.value);
+    fb.className = 'cl-feedback';
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('err'); return; }
+    if (Math.abs(val - correct) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.classList.add('ok');
+      hint.style.display = 'none'; input.style.borderColor = '#34c759';
+    } else {
+      fb.textContent = '✗ Try again'; fb.classList.add('err');
+      hint.style.display = 'block'; input.style.borderColor = '#ff3b30';
+    }
+  };
+
+  window.smCheckText = function(n, correct) {
+    const input = document.getElementById('smans-' + n);
+    const fb    = document.getElementById('smfb-' + n);
+    const hint  = document.getElementById('smhint-' + n);
+    fb.className = 'cl-feedback';
+    if (!input.value) { fb.textContent = 'Make a selection.'; fb.classList.add('err'); return; }
+    if (input.value === correct) {
+      fb.textContent = '✓ Correct!'; fb.classList.add('ok');
+      hint.style.display = 'none'; input.style.borderColor = '#34c759';
+    } else {
+      fb.textContent = '✗ Try again'; fb.classList.add('err');
+      hint.style.display = 'block'; input.style.borderColor = '#ff3b30';
+    }
+  };
+
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

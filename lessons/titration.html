@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Titration · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Chemistry Lesson 03 — explore acid-base titration: how chemists determine the exact concentration of an unknown solution by finding the equivalence point." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#ff375f); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .cl-formula-box { background: linear-gradient(135deg,rgba(255,55,95,0.1),rgba(255,55,95,0.04)); border: 1px solid rgba(255,55,95,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .cl-formula-sym { font-size: clamp(1.4rem,3.5vw,2rem); font-weight: 800; letter-spacing: -0.02em; color: #ff375f; display: block; margin-bottom: 0.5rem; }
+    .cl-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .cl-formula-vars { color: rgba(245,245,247,0.7); }
+
+    .cl-bio { display: flex; gap: 1rem; align-items: flex-start; }
+    .cl-bio-portrait { width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, #ff375f 0%, #ff9f0a 100%); display: flex; align-items: center; justify-content: center; font-size: 2rem; line-height: 1; }
+    .cl-bio-text { flex: 1; font-size: 0.87rem; color: #3f4f65; line-height: 1.62; }
+    [data-theme="night"] .cl-bio-text { color: rgba(245,245,247,0.72); }
+    .cl-bio-text strong { color: var(--text,#1d1d1f); }
+
+    /* Simulator layout: burette left, graph right */
+    .ti-sim-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; align-items: start; }
+    @media (max-width: 500px) { .ti-sim-layout { grid-template-columns: 1fr; } }
+
+    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-theme="night"] .cl-canvas-wrap { background: #1c1c1e; }
+    #ti-canvas { width: 100%; height: 280px; display: block; }
+
+    .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .cl-readout { background: rgba(255,255,255,0.06); }
+    .cl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .cl-readout-val   { font-size: 1rem; font-weight: 700; color: #ff375f; }
+
+    .cl-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; color: #3f4f65; }
+    .cl-callout.red { background: rgba(255,55,95,0.08); border-left: 3px solid #ff375f; }
+    [data-theme="night"] .cl-callout.red { color: rgba(245,245,247,0.72); }
+    .cl-callout strong { color: var(--text,#1d1d1f); }
+
+    .cl-concept-list { margin: 0.6rem 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.45rem; }
+    .cl-concept-list li { font-size: 0.86rem; color: #3f4f65; line-height: 1.55; padding-left: 1.2rem; position: relative; }
+    .cl-concept-list li::before { content: "▸"; position: absolute; left: 0; color: #ff375f; font-size: 0.75rem; top: 0.05rem; }
+    [data-theme="night"] .cl-concept-list li { color: rgba(245,245,247,0.72); }
+
+    .cl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .cl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .cl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .cl-app small   { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
+    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 90px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .cl-check-btn { background: #ff375f; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .cl-check-btn:hover { background: #d42a4c; }
+    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .cl-feedback.ok  { color: #34c759; }
+    .cl-feedback.err { color: #ff3b30; }
+    .cl-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <!-- Hero -->
+        <section class="hero cl-hero">
+          <p class="eyebrow">Chemistry · Lesson 03</p>
+          <h1>Titration</h1>
+          <div class="cl-hero-meta">
+            <span>Analytical Chemistry</span><span class="dot"></span>
+            <span>Acid-Base Reactions</span><span class="dot"></span>
+            <span>Equivalence Point</span><span class="dot"></span>
+            <span>Molarity</span>
+          </div>
+          <p class="cl-lede">Titration is chemistry's most precise measurement technique. By slowly adding a solution of known concentration to one of unknown concentration, and watching for the exact moment the reaction completes — the equivalence point — chemists can determine the exact composition of any acid or base solution.</p>
+        </section>
+
+        <!-- Bio -->
+        <section class="cl-card" style="--card-accent:#ff375f;">
+          <h2>A Brief History</h2>
+          <div class="cl-bio">
+            <div class="cl-bio-portrait" aria-hidden="true">⚗️</div>
+            <div class="cl-bio-text">
+              <strong>Gay-Lussac (1778–1850)</strong> formalized volumetric analysis — what we now call titration — in the early 1800s. The word "titration" itself comes from French <em>titre</em>, meaning "standard" or "grade." Gay-Lussac also discovered the law of combining gas volumes. Indicator-based titration, using substances like phenolphthalein to signal the equivalence point by changing color, was developed and refined throughout the 19th century by analytical chemists seeking ever-greater precision in quantitative analysis.
+            </div>
+          </div>
+        </section>
+
+        <!-- Core Concept -->
+        <section class="cl-card" style="--card-accent:#ff375f;">
+          <h2>Core Concept: The Equivalence Point</h2>
+          <p>In an acid-base titration, a base (titrant) of known concentration is slowly added to an acid (analyte) of unknown concentration. The equivalence point is reached when moles of acid exactly equal moles of base:</p>
+
+          <div class="cl-formula-box" role="img" aria-label="M1 V1 equals M2 V2 at the equivalence point">
+            <span class="cl-formula-sym">M<sub>1</sub>V<sub>1</sub> = M<sub>2</sub>V<sub>2</sub></span>
+            <div class="cl-formula-vars">
+              <div><strong>M₁</strong> = molarity of acid (mol/L)</div>
+              <div><strong>V₁</strong> = volume of acid (L or mL)</div>
+              <div><strong>M₂</strong> = molarity of base (mol/L)</div>
+              <div><strong>V₂</strong> = volume of base added at equivalence point (L or mL)</div>
+            </div>
+          </div>
+
+          <ul class="cl-concept-list">
+            <li><strong>Reaction:</strong> HCl (acid) + NaOH (base) → NaCl + H₂O — a simple 1:1 neutralization</li>
+            <li><strong>Indicator:</strong> phenolphthalein is colorless in acid (pH &lt; 8.2) and turns pink in base (pH &gt; 8.2)</li>
+            <li><strong>pH curve:</strong> starts low (acidic), rises slowly, then jumps sharply at the equivalence point</li>
+            <li><strong>Before equivalence:</strong> excess acid in solution — pH remains low</li>
+            <li><strong>After equivalence:</strong> excess base added — pH rises above 7, indicator turns deep pink</li>
+          </ul>
+
+          <div class="cl-callout red">
+            <strong>Key insight:</strong> The equivalence point is a chemical reality — it occurs when moles of acid = moles of base. The <em>end point</em> is what we observe — the indicator color change. In a well-conducted titration, the two coincide very closely.
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Interactive Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Add NaOH drop by drop and watch the pH rise. The flask solution changes color as you approach and pass the equivalence point.</p>
+          <div class="cl-canvas-wrap">
+            <canvas id="ti-canvas" aria-label="Titration simulator showing a burette, flask with color-changing solution, and a real-time pH curve graph"></canvas>
+          </div>
+          <div class="cl-readouts">
+            <div class="cl-readout"><span class="cl-readout-label">NaOH Added</span><span class="cl-readout-val" id="ti-r-vol">0.0 mL</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">pH</span><span class="cl-readout-val" id="ti-r-ph">—</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Status</span><span class="cl-readout-val" id="ti-r-status">Pre-Eq.</span></div>
+          </div>
+        </section>
+
+        <!-- Applications -->
+        <section class="cl-card" style="--card-accent:#ff9f0a;">
+          <h2>Real-World Applications</h2>
+          <div class="cl-apps">
+            <div class="cl-app">
+              <div class="cl-app-icon">💧</div>
+              <strong>Water Quality Testing</strong>
+              <small>Environmental agencies use acid-base titration to measure the alkalinity and acidity of drinking water, rivers, and lakes to detect pollution.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🍷</div>
+              <strong>Food Industry</strong>
+              <small>Winemakers and juice producers use titration to measure the titratable acidity of their products — a key quality control parameter that affects taste and preservation.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">💊</div>
+              <strong>Pharmaceutical Manufacturing</strong>
+              <small>Drug manufacturers titrate active ingredients to verify that tablets and injections contain exactly the right concentration of the active compound.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🌧️</div>
+              <strong>Environmental Monitoring</strong>
+              <small>Acid rain monitoring uses titration to measure the sulfuric and nitric acid content of rainfall samples, tracking the impact of industrial emissions.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cl-card" style="--card-accent:#34c759;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Use M₁V₁ = M₂V₂ at the equivalence point. Keep units consistent (both mL or both L).</p>
+          <div class="cl-practice">
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>1. At the equivalence point in a titration, moles of acid equal moles of base. True or False?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="tians-1" style="width:110px;">
+                  <option value="">Choose…</option>
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </select>
+                <button class="cl-check-btn" onclick="tiCheckText(1,'true')">Check</button>
+                <span class="cl-feedback" id="tifb-1"></span>
+              </div>
+              <div class="cl-hint" id="tihint-1">Hint: The equivalence point is defined as the point where the moles of titrant added exactly equal the moles of analyte present.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>2. Phenolphthalein indicator is colorless in acid. What color does it turn in base?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="tians-2" style="width:130px;">
+                  <option value="">Choose…</option>
+                  <option value="yellow">Yellow</option>
+                  <option value="blue">Blue</option>
+                  <option value="pink">Pink</option>
+                </select>
+                <button class="cl-check-btn" onclick="tiCheckText(2,'pink')">Check</button>
+                <span class="cl-feedback" id="tifb-2"></span>
+              </div>
+              <div class="cl-hint" id="tihint-2">Hint: Phenolphthalein undergoes a structural change above pH 8.2, causing it to absorb visible light and appear pink/magenta.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>3. 25 mL of 0.1 M HCl is titrated with 0.1 M NaOH. How many mL of NaOH is needed to reach the equivalence point?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="tians-3" step="1" placeholder="mL" />
+                <button class="cl-check-btn" onclick="tiCheck(3, 25, 0.5)">Check</button>
+                <span class="cl-feedback" id="tifb-3"></span>
+              </div>
+              <div class="cl-hint" id="tihint-3">Hint: M₁V₁ = M₂V₂ → 0.1 × 25 = 0.1 × V₂ → V₂ = 25 mL. Same molarity means same volume.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>4. 20 mL of 0.5 M HCl needs to be neutralized with 0.25 M NaOH. How many mL of NaOH is required?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="tians-4" step="1" placeholder="mL" />
+                <button class="cl-check-btn" onclick="tiCheck(4, 40, 0.5)">Check</button>
+                <span class="cl-feedback" id="tifb-4"></span>
+              </div>
+              <div class="cl-hint" id="tihint-4">Hint: M₁V₁ = M₂V₂ → 0.5 × 20 = 0.25 × V₂ → V₂ = 10 / 0.25 = 40 mL.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-hard">Challenge</span>5. A student titrates 25 mL of an unknown acid with 0.2 M NaOH. It takes 31.5 mL of NaOH to reach the equivalence point. What is the molarity of the acid (to 3 decimal places)?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="tians-5" step="0.001" placeholder="M" />
+                <button class="cl-check-btn" onclick="tiCheck(5, 0.252, 0.002)">Check</button>
+                <span class="cl-feedback" id="tifb-5"></span>
+              </div>
+              <div class="cl-hint" id="tihint-5">Hint: M₁ × 25 = 0.2 × 31.5 → M₁ = 6.3 / 25 = 0.252 M.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="ti-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="ti-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="ti-pane-sim">
+          <span class="ll-label">HCl Concentration</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">M(HCl) <span id="ti-hcl-val">0.10 M</span></label>
+            <input type="range" class="nl-slider" id="ti-hcl" min="1" max="10" value="1" style="width:100%;" />
+          </div>
+          <span class="ll-label">NaOH Concentration</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">M(NaOH) <span id="ti-naoh-val">0.10 M</span></label>
+            <input type="range" class="nl-slider" id="ti-naoh" min="1" max="10" value="1" style="width:100%;" />
+          </div>
+          <span class="ll-label">Starting HCl Volume</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Volume <span id="ti-vol-val">25 mL</span></label>
+            <input type="range" class="nl-slider" id="ti-vol" min="10" max="50" value="25" step="5" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <button class="ll-preset" onclick="tiAddDrop()" style="width:100%;margin-bottom:0.5rem;">Add Drop (~0.05 mL)</button>
+          <button class="ll-preset" onclick="tiAdd1mL()" style="width:100%;margin-bottom:0.5rem;">Add 1 mL</button>
+          <button class="ll-preset" onclick="tiReset()" style="width:100%;">Reset</button>
+        </div>
+
+        <div class="ll-pane" id="ti-pane-guide">
+          <div class="ll-info"><strong>Equivalence Point</strong>The point where moles acid = moles base. The pH jumps sharply here. For HCl + NaOH, it occurs at pH 7.</div>
+          <div class="ll-info"><strong>M₁V₁ = M₂V₂</strong>At the equivalence point: molarity × volume of acid = molarity × volume of base.</div>
+          <div class="ll-info"><strong>Phenolphthalein</strong>Colorless below pH 8.2, pink above it. The first permanent pink color = end point.</div>
+          <div class="ll-info"><strong>pH Curve</strong>Starts acidic (low pH), rises slowly, then jumps 6+ pH units near the equivalence point — this is the "jump region."</div>
+          <div class="ll-info"><strong>Strong acid + base</strong>HCl + NaOH → NaCl + H₂O. The salt NaCl is neutral, so equivalence pH = 7.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+
+  /* ── State ── */
+  var mHCl   = 0.10;   // mol/L
+  var mNaOH  = 0.10;   // mol/L
+  var vHCl   = 25.0;   // mL
+  var vNaOH  = 0.0;    // mL added so far
+  var phHistory = [];   // [{x: volAdded, y: pH}]
+
+  /* ── pH calculation for strong acid / strong base ── */
+  function calcPH(vAcid_mL, mAcid, vBase_mL, mBase) {
+    var molesAcid = mAcid * (vAcid_mL / 1000);
+    var molesBase = mBase * (vBase_mL / 1000);
+    var totalVol  = (vAcid_mL + vBase_mL) / 1000; // L
+    if (totalVol <= 0) return 7;
+    var diff = molesAcid - molesBase;
+    if (Math.abs(diff) < 1e-10) return 7.0; // equivalence
+    if (diff > 0) {
+      // excess acid
+      var cH = diff / totalVol;
+      return -Math.log10(cH);
+    } else {
+      // excess base
+      var cOH = (-diff) / totalVol;
+      var pOH = -Math.log10(cOH);
+      return 14 - pOH;
+    }
+  }
+
+  function equivalenceVol() {
+    return (mHCl * vHCl) / mNaOH; // mL
+  }
+
+  /* ── Flask color ── */
+  function flaskColor(pH) {
+    if (pH < 7.5) return 'rgba(255,255,200,0.85)';   // colorless/yellow-tinted (HCl solution)
+    if (pH < 8.2) return 'rgba(255,230,230,0.85)';   // very pale pink
+    if (pH < 9.5) return 'rgba(255,140,180,0.85)';   // pink
+    return 'rgba(210,50,120,0.85)';                   // deep pink/magenta
+  }
+
+  /* ── Canvas ── */
+  var canvas = document.getElementById('ti-canvas');
+  var ctx    = canvas.getContext('2d');
+
+  function drawBurette(W, H, fillFrac) {
+    // burette body: left third of canvas
+    var bx = W * 0.16;
+    var bTop = H * 0.04;
+    var bBot = H * 0.55;
+    var bW   = W * 0.06;
+    var bH   = bBot - bTop;
+
+    // Glass body
+    ctx.strokeStyle = '#aac';
+    ctx.lineWidth   = 1.5;
+    ctx.fillStyle   = 'rgba(200,220,255,0.15)';
+    ctx.beginPath();
+    ctx.roundRect(bx - bW/2, bTop, bW, bH, 3);
+    ctx.fill();
+    ctx.stroke();
+
+    // Liquid inside burette (NaOH = pale blue)
+    var liquidH = bH * fillFrac;
+    ctx.fillStyle = 'rgba(140,200,255,0.55)';
+    ctx.beginPath();
+    ctx.roundRect(bx - bW/2 + 1.5, bTop + (bH - liquidH), bW - 3, liquidH, 2);
+    ctx.fill();
+
+    // Graduations
+    ctx.strokeStyle = 'rgba(80,100,140,0.4)';
+    ctx.lineWidth   = 0.8;
+    for (var i = 0; i <= 10; i++) {
+      var gy = bTop + (bH / 10) * i;
+      ctx.beginPath();
+      ctx.moveTo(bx - bW/2 - 3, gy);
+      ctx.lineTo(bx - bW/2, gy);
+      ctx.stroke();
+    }
+
+    // Stopcock
+    ctx.fillStyle   = '#8899bb';
+    ctx.strokeStyle = '#667799';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.ellipse(bx, bBot + 4, bW * 0.7, 5, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+
+    // Tip / drip line
+    ctx.strokeStyle = 'rgba(140,200,255,0.6)';
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(bx, bBot + 9);
+    ctx.lineTo(bx, bBot + 18);
+    ctx.stroke();
+
+    // Drop
+    ctx.fillStyle = 'rgba(100,180,255,0.7)';
+    ctx.beginPath();
+    ctx.arc(bx, bBot + 22, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Label
+    ctx.font      = '600 9px Inter,sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'center';
+    ctx.fillText('NaOH', bx, bTop - 4);
+  }
+
+  function drawFlask(W, H, pH, volAdded) {
+    // Erlenmeyer flask: center of canvas
+    var fx  = W * 0.44;
+    var fTopY = H * 0.35;
+    var fMidY = H * 0.52;
+    var fBotY = H * 0.92;
+    var neckW = W * 0.06;
+    var bodyW = W * 0.28;
+
+    // Flask outline path
+    ctx.beginPath();
+    ctx.moveTo(fx - neckW/2, fTopY);
+    ctx.lineTo(fx - neckW/2, fMidY);
+    ctx.bezierCurveTo(fx - neckW/2 - bodyW*0.3, fMidY + (fBotY-fMidY)*0.3,
+                      fx - bodyW/2,              fMidY + (fBotY-fMidY)*0.6,
+                      fx - bodyW/2,              fBotY);
+    ctx.lineTo(fx + bodyW/2, fBotY);
+    ctx.bezierCurveTo(fx + bodyW/2,              fMidY + (fBotY-fMidY)*0.6,
+                      fx + neckW/2 + bodyW*0.3,  fMidY + (fBotY-fMidY)*0.3,
+                      fx + neckW/2,              fMidY);
+    ctx.lineTo(fx + neckW/2, fTopY);
+    ctx.closePath();
+
+    // Fill with solution color
+    var col = flaskColor(pH);
+    ctx.fillStyle = col;
+    ctx.fill();
+    // Glass outline
+    ctx.strokeStyle = 'rgba(100,130,180,0.5)';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    // Liquid surface line inside flask
+    var surfY = fMidY + (fBotY - fMidY) * 0.25;
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(fx - bodyW * 0.3, surfY);
+    ctx.lineTo(fx + bodyW * 0.3, surfY);
+    ctx.stroke();
+
+    // Flask label
+    ctx.font      = '700 9px Inter,sans-serif';
+    ctx.fillStyle = 'rgba(60,60,80,0.7)';
+    ctx.textAlign = 'center';
+    ctx.fillText('HCl + indicator', fx, fBotY + 12);
+  }
+
+  function drawPHCurve(W, H) {
+    var gx = W * 0.62;
+    var gy = H * 0.06;
+    var gw = W * 0.34;
+    var gh = H * 0.80;
+
+    // Graph background
+    ctx.fillStyle = 'rgba(248,249,252,0.9)';
+    ctx.strokeStyle = 'rgba(180,190,210,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(gx, gy, gw, gh, 6);
+    ctx.fill(); ctx.stroke();
+
+    // Grid lines (pH 2, 4, 7, 10, 12)
+    var phs = [2, 4, 7, 10, 12];
+    ctx.strokeStyle = 'rgba(180,190,210,0.35)';
+    ctx.lineWidth   = 0.7;
+    ctx.font        = '9px Inter,sans-serif';
+    ctx.fillStyle   = '#94a3b8';
+    ctx.textAlign   = 'right';
+    for (var i = 0; i < phs.length; i++) {
+      var py = gy + gh - (phs[i] / 14) * gh;
+      ctx.beginPath(); ctx.moveTo(gx, py); ctx.lineTo(gx + gw, py); ctx.stroke();
+      ctx.fillText(phs[i], gx - 3, py + 3);
+    }
+
+    // Equivalence point vertical line
+    var eqV  = equivalenceVol();
+    var maxV = eqV * 2.2;
+    if (maxV < 5) maxV = 5;
+    var eqX = gx + (eqV / maxV) * gw;
+    ctx.strokeStyle = 'rgba(255,55,95,0.3)';
+    ctx.lineWidth   = 1;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(eqX, gy); ctx.lineTo(eqX, gy + gh); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Axes labels
+    ctx.font      = '600 8px Inter,sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.textAlign = 'center';
+    ctx.fillText('pH', gx + gw / 2, gy - 2);
+    ctx.fillText('Eq.pt', eqX, gy + gh + 10);
+
+    // pH curve line
+    if (phHistory.length > 1) {
+      ctx.beginPath();
+      ctx.strokeStyle = '#ff375f';
+      ctx.lineWidth   = 2;
+      for (var j = 0; j < phHistory.length; j++) {
+        var pt = phHistory[j];
+        var px2 = gx + (pt.v / maxV) * gw;
+        var py2 = gy + gh - (pt.ph / 14) * gh;
+        if (j === 0) ctx.moveTo(px2, py2);
+        else         ctx.lineTo(px2, py2);
+      }
+      ctx.stroke();
+
+      // Current point dot
+      var last = phHistory[phHistory.length - 1];
+      var lx   = gx + (last.v / maxV) * gw;
+      var ly   = gy + gh - (last.ph / 14) * gh;
+      ctx.beginPath();
+      ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff375f';
+      ctx.fill();
+    }
+  }
+
+  function draw() {
+    var W = canvas.offsetWidth || 480;
+    var H = 280;
+    canvas.width  = W;
+    canvas.height = H;
+
+    ctx.fillStyle = '#f7f8fa';
+    ctx.fillRect(0, 0, W, H);
+
+    var ph    = calcPH(vHCl, mHCl, vNaOH, mNaOH);
+    var eqV   = equivalenceVol();
+    // burette fill: starts full (50 mL), depletes as we add
+    var buretteFill = Math.max(0, 1 - vNaOH / 50);
+
+    drawBurette(W, H, buretteFill);
+    drawFlask(W, H, ph, vNaOH);
+    drawPHCurve(W, H);
+
+    // Update readouts
+    var phStr    = isFinite(ph) ? ph.toFixed(2) : '7.00';
+    var statusStr = vNaOH < eqV * 0.99 ? 'Pre-Eq.'
+                  : vNaOH < eqV * 1.01 ? 'Equiv. Pt!'
+                  : 'Post-Eq.';
+    document.getElementById('ti-r-vol').textContent    = vNaOH.toFixed(2) + ' mL';
+    document.getElementById('ti-r-ph').textContent     = phStr;
+    document.getElementById('ti-r-status').textContent = statusStr;
+  }
+
+  function addVolume(mL) {
+    vNaOH += mL;
+    var ph = calcPH(vHCl, mHCl, vNaOH, mNaOH);
+    phHistory.push({ v: vNaOH, ph: isFinite(ph) ? ph : 7 });
+    draw();
+  }
+
+  /* ── Public controls ── */
+  window.tiAddDrop = function() { addVolume(0.05); };
+  window.tiAdd1mL  = function() { addVolume(1.0);  };
+  window.tiReset   = function() {
+    vNaOH = 0; phHistory = [];
+    draw();
+  };
+
+  /* ── Sliders ── */
+  document.getElementById('ti-hcl').addEventListener('input', function() {
+    mHCl = parseInt(this.value) * 0.10;
+    document.getElementById('ti-hcl-val').textContent = mHCl.toFixed(2) + ' M';
+    tiReset();
+  });
+  document.getElementById('ti-naoh').addEventListener('input', function() {
+    mNaOH = parseInt(this.value) * 0.10;
+    document.getElementById('ti-naoh-val').textContent = mNaOH.toFixed(2) + ' M';
+    tiReset();
+  });
+  document.getElementById('ti-vol').addEventListener('input', function() {
+    vHCl = parseInt(this.value);
+    document.getElementById('ti-vol-val').textContent = vHCl + ' mL';
+    tiReset();
+  });
+
+  /* ── Initial draw ── */
+  draw();
+  // Seed with first point (pH at zero addition)
+  var ph0 = calcPH(vHCl, mHCl, 0, mNaOH);
+  phHistory.push({ v: 0, ph: isFinite(ph0) ? ph0 : 1 });
+  draw();
+
+  /* ── Practice helpers ── */
+  window.tiCheck = function(n, correct, tol) {
+    var val  = parseFloat(document.getElementById('tians-' + n).value);
+    var fb   = document.getElementById('tifb-' + n);
+    var hint = document.getElementById('tihint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'cl-feedback err'; return; }
+    if (Math.abs(val - correct) <= tol) {
+      fb.textContent = 'Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
+    } else {
+      fb.textContent = 'Not quite. Try again.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
+    }
+  };
+  window.tiCheckText = function(n, correct) {
+    var el   = document.getElementById('tians-' + n);
+    var val  = el.value.toLowerCase().trim();
+    var fb   = document.getElementById('tifb-' + n);
+    var hint = document.getElementById('tihint-' + n);
+    if (!val) { fb.textContent = 'Make a selection.'; fb.className = 'cl-feedback err'; return; }
+    if (val === correct) {
+      fb.textContent = 'Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
+    } else {
+      fb.textContent = 'Not quite. Try again.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
+    }
+  };
+
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

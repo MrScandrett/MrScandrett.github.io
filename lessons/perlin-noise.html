@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Perlin Noise · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Computer Science Lesson 16 — explore Perlin noise: the smooth procedural randomness behind terrain, clouds, fire, and virtually every game engine and VFX pipeline on the planet." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#30d158); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .cl-formula-box { background: linear-gradient(135deg,rgba(48,209,88,0.1),rgba(48,209,88,0.04)); border: 1px solid rgba(48,209,88,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .cl-formula-sym { font-size: clamp(1.1rem,3vw,1.6rem); font-weight: 800; letter-spacing: -0.02em; color: #30d158; display: block; margin-bottom: 0.5rem; }
+    .cl-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .cl-formula-vars { color: rgba(245,245,247,0.7); }
+
+    .cl-bio { display: flex; gap: 1rem; align-items: flex-start; }
+    .cl-bio-portrait { width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, #30d158 0%, #007aff 100%); display: flex; align-items: center; justify-content: center; font-size: 2rem; line-height: 1; }
+    .cl-bio-text { flex: 1; font-size: 0.87rem; color: #3f4f65; line-height: 1.62; }
+    [data-theme="night"] .cl-bio-text { color: rgba(245,245,247,0.72); }
+    .cl-bio-text strong { color: var(--text,#1d1d1f); }
+
+    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-theme="night"] .cl-canvas-wrap { background: #1c1c1e; }
+    #pn-canvas { width: 100%; height: 250px; display: block; }
+
+    .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .cl-readout { background: rgba(255,255,255,0.06); }
+    .cl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .cl-readout-val   { font-size: 1rem; font-weight: 700; color: #30d158; }
+
+    .cl-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .cl-callout.green { background: rgba(48,209,88,0.09); border-left: 3px solid #30d158; color: #3f4f65; }
+    [data-theme="night"] .cl-callout.green { color: rgba(245,245,247,0.72); }
+    .cl-callout strong { color: var(--text,#1d1d1f); }
+
+    .cl-concept-list { margin: 0.6rem 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.45rem; }
+    .cl-concept-list li { font-size: 0.86rem; color: #3f4f65; line-height: 1.55; padding-left: 1.2rem; position: relative; }
+    .cl-concept-list li::before { content: "▸"; position: absolute; left: 0; color: #30d158; font-size: 0.75rem; top: 0.05rem; }
+    [data-theme="night"] .cl-concept-list li { color: rgba(245,245,247,0.72); }
+
+    .cl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .cl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .cl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .cl-app small   { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
+    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 90px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .cl-check-btn { background: #30d158; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .cl-check-btn:hover { background: #25a244; }
+    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .cl-feedback.ok  { color: #34c759; }
+    .cl-feedback.err { color: #ff3b30; }
+    .cl-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <!-- Hero -->
+        <section class="hero cl-hero">
+          <p class="eyebrow">Computer Science · Lesson 16</p>
+          <h1>Perlin Noise</h1>
+          <div class="cl-hero-meta">
+            <span>Procedural Generation</span><span class="dot"></span>
+            <span>Smooth Randomness</span><span class="dot"></span>
+            <span>Octaves &amp; Fractals</span><span class="dot"></span>
+            <span>Game Engines &amp; VFX</span>
+          </div>
+          <p class="cl-lede">In 1983, Ken Perlin was frustrated by the artificial look of early computer graphics. He invented a smooth, controllable randomness — Perlin noise — that creates terrain, clouds, fire, and wood grain. It's in every major game engine and VFX pipeline in the world.</p>
+        </section>
+
+        <!-- Bio -->
+        <section class="cl-card" style="--card-accent:#30d158;">
+          <h2>Who Was Ken Perlin?</h2>
+          <div class="cl-bio">
+            <div class="cl-bio-portrait" aria-hidden="true">🎨</div>
+            <div class="cl-bio-text">
+              <strong>Ken Perlin (1958–present)</strong> is a professor of computer science at NYU. While working as a technical director on the groundbreaking 1982 film <em>Tron</em>, he developed the gradient noise algorithm that now bears his name. The algorithm gave computer-generated surfaces a natural, organic texture that was impossible to achieve with plain random noise. In <strong>1997</strong>, the Academy of Motion Picture Arts and Sciences awarded Perlin a Technical Achievement Award (an Oscar) for his invention.
+            </div>
+          </div>
+        </section>
+
+        <!-- Core Concept -->
+        <section class="cl-card" style="--card-accent:#30d158;">
+          <h2>Core Concept</h2>
+          <p>Regular randomness (white noise) generates completely uncorrelated values — every pixel is independent, like TV static. <strong>Perlin noise</strong> generates smooth gradient noise where nearby points have similar values, producing the flowing, organic patterns found in nature.</p>
+
+          <div class="cl-formula-box" role="img" aria-label="Result equals the sum of amplitude times noise of x times frequency, across all octaves">
+            <span class="cl-formula-sym">result = &Sigma; amplitude &times; noise(x &times; frequency)</span>
+            <div class="cl-formula-vars">
+              <div><strong>octave</strong> = one layer of noise at a given frequency and amplitude</div>
+              <div><strong>frequency</strong> = doubles each octave (2&times;, 4&times;, 8&times; …) → finer detail</div>
+              <div><strong>amplitude</strong> = halves each octave (&frac12;, &frac14;, &frac18; …) → less influence</div>
+              <div><strong>persistence</strong> = how quickly amplitude decreases (typically 0.5)</div>
+            </div>
+          </div>
+
+          <ul class="cl-concept-list">
+            <li><strong>White noise:</strong> completely uncorrelated — looks like TV static, no natural feel</li>
+            <li><strong>Perlin noise:</strong> smooth gradient noise — nearby points share similar values</li>
+            <li><strong>Octaves:</strong> stacking multiple frequencies adds detail, like zooming in on a coastline</li>
+            <li><strong>Fractal detail:</strong> each octave doubles frequency and halves amplitude, creating self-similar structure</li>
+            <li><strong>3D noise:</strong> adding a Z (time) axis lets the pattern animate smoothly</li>
+          </ul>
+
+          <div class="cl-callout green">
+            <strong>Key insight:</strong> With 1 octave, terrain looks smooth and rolling. Adding more octaves adds jagged ridges and fine detail — the same way Earth's terrain has both mountain ranges and rocky outcrops at different scales.
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Interactive Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Watch Perlin noise evolve in real time. Adjust scale, octaves, and speed in the side panel.</p>
+          <div class="cl-canvas-wrap">
+            <canvas id="pn-canvas" aria-label="Animated 2D Perlin noise heightmap showing procedural terrain or grayscale texture"></canvas>
+          </div>
+          <div class="cl-readouts">
+            <div class="cl-readout"><span class="cl-readout-label">Scale</span><span class="cl-readout-val" id="pn-r-scale">0.004</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Octaves</span><span class="cl-readout-val" id="pn-r-oct">4</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Mode</span><span class="cl-readout-val" id="pn-r-mode">Terrain</span></div>
+          </div>
+        </section>
+
+        <!-- Applications -->
+        <section class="cl-card" style="--card-accent:#ff9f0a;">
+          <h2>Real-World Applications</h2>
+          <div class="cl-apps">
+            <div class="cl-app">
+              <div class="cl-app-icon">🏔️</div>
+              <strong>Procedural Terrain</strong>
+              <small>Minecraft, No Man's Sky, and virtually every open-world game use layered Perlin noise to generate infinite, believable landscapes without hand-crafting every hill.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">☁️</div>
+              <strong>Cloud &amp; Smoke Simulation</strong>
+              <small>VFX artists use 3D Perlin noise to drive volume shaders for clouds, smoke, explosions, and fog — giving them natural, turbulent motion over time.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🪵</div>
+              <strong>Texture Synthesis</strong>
+              <small>Wood grain, marble veins, and water caustics are all procedurally generated with Perlin noise, allowing infinite variation without storing large texture files.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🔥</div>
+              <strong>Organic Animation</strong>
+              <small>Fire flicker, flowing hair, and swaying fabric use Perlin noise to offset particle positions smoothly over time, avoiding the mechanical look of simple sine waves.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cl-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Test your understanding of Perlin noise and procedural generation.</p>
+          <div class="cl-practice">
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>1. Perlin noise produces completely random values with no relationship between neighboring points. True or False?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="pnans-1" style="width:110px;">
+                  <option value="">Choose…</option>
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </select>
+                <button class="cl-check-btn" onclick="pnCheckText(1,'false')">Check</button>
+                <span class="cl-feedback" id="pnfb-1"></span>
+              </div>
+              <div class="cl-hint" id="pnhint-1">Hint: Perlin noise is <em>smooth</em> gradient noise — neighboring points share similar values.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>2. What does adding more "octaves" to Perlin noise do?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="pnans-2" style="width:190px;">
+                  <option value="">Choose…</option>
+                  <option value="smoother">Makes it smoother</option>
+                  <option value="detail">Adds more fine detail</option>
+                  <option value="random">Makes it random</option>
+                </select>
+                <button class="cl-check-btn" onclick="pnCheckText(2,'detail')">Check</button>
+                <span class="cl-feedback" id="pnfb-2"></span>
+              </div>
+              <div class="cl-hint" id="pnhint-2">Hint: Each octave adds a higher-frequency, lower-amplitude layer of detail on top of the existing noise.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>3. Each octave doubles frequency and halves amplitude. If octave 1 has amplitude 1.0, what is the <em>total</em> amplitude of 3 octaves added together?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="pnans-3" step="0.01" placeholder="value" />
+                <button class="cl-check-btn" onclick="pnCheck(3, 1.75, 0.01)">Check</button>
+                <span class="cl-feedback" id="pnfb-3"></span>
+              </div>
+              <div class="cl-hint" id="pnhint-3">Hint: 1.0 + 0.5 + 0.25 = 1.75</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>4. At what scale does Perlin noise look most like natural terrain — with rolling hills, valleys, and coastlines?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="pnans-4" style="width:200px;">
+                  <option value="">Choose…</option>
+                  <option value="high">Very high frequency</option>
+                  <option value="medium">Medium frequency</option>
+                  <option value="low">Very low frequency</option>
+                </select>
+                <button class="cl-check-btn" onclick="pnCheckText(4,'medium')">Check</button>
+                <span class="cl-feedback" id="pnfb-4"></span>
+              </div>
+              <div class="cl-hint" id="pnhint-4">Hint: Very high frequency looks like static; very low frequency is too smooth. Medium frequency with several octaves layered on top produces natural terrain.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-hard">Challenge</span>5. Perlin noise relies on smooth gradient vectors at grid points. The mathematical property that ensures the noise function has no sharp jumps or corners is called:</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="pnans-5" style="width:190px;">
+                  <option value="">Choose…</option>
+                  <option value="continuity">Continuity</option>
+                  <option value="differentiability">Differentiability</option>
+                  <option value="periodicity">Periodicity</option>
+                  <option value="stochasticity">Stochasticity</option>
+                </select>
+                <button class="cl-check-btn" onclick="pnCheckText(5,'differentiability')">Check</button>
+                <span class="cl-feedback" id="pnfb-5"></span>
+              </div>
+              <div class="cl-hint" id="pnhint-5">Hint: A function is <em>differentiable</em> when it has a well-defined gradient everywhere — no kinks or corners. Perlin's use of smooth gradient interpolation ensures this, which is why the output looks organic rather than angular.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="pn-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pn-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="pn-pane-sim">
+          <span class="ll-label">Noise Scale</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Scale <span id="pn-scale-val">0.004</span></label>
+            <input type="range" class="nl-slider" id="pn-scale" min="1" max="20" value="8" style="width:100%;" />
+          </div>
+          <span class="ll-label">Octaves</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Octaves <span id="pn-oct-val">4</span></label>
+            <input type="range" class="nl-slider" id="pn-oct" min="1" max="6" value="4" step="1" style="width:100%;" />
+          </div>
+          <span class="ll-label">Animation Speed</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Speed <span id="pn-speed-val">1.0×</span></label>
+            <input type="range" class="nl-slider" id="pn-speed" min="0" max="20" value="5" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Color Mode</span>
+          <div style="margin-bottom:0.9rem;">
+            <button class="ll-preset" id="pn-btn-terrain" onclick="pnSetMode('terrain')" style="margin-right:0.3rem;">Terrain</button>
+            <button class="ll-preset" id="pn-btn-gray" onclick="pnSetMode('gray')">Grayscale</button>
+          </div>
+          <button class="ll-preset" onclick="pnRegenerate()" style="width:100%;margin-top:0.3rem;">Regenerate</button>
+        </div>
+
+        <div class="ll-pane" id="pn-pane-guide">
+          <div class="ll-info"><strong>Perlin Noise</strong>Smooth gradient noise where nearby points have similar values — unlike random (white) noise, which looks like static.</div>
+          <div class="ll-info"><strong>Octaves</strong>Layers of noise at increasing frequency and decreasing amplitude. More octaves = more fine detail.</div>
+          <div class="ll-info"><strong>Formula</strong>result = &Sigma;(amplitude &times; noise(x &times; freq)). Each octave: freq &times;2, amplitude &times; &frac12;.</div>
+          <div class="ll-info"><strong>Terrain Mode</strong>Blue = water, green = land, grey/white = mountains and snow. Thresholds based on noise value.</div>
+          <div class="ll-info"><strong>Animation</strong>The Z axis of 3D noise advances over time, causing the pattern to evolve smoothly.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  /* ── Smooth noise implementation ── */
+  // Permutation table
+  var perm = new Uint8Array(512);
+  var gradX = [], gradY = [], gradZ = [];
+
+  function buildPerm() {
+    var p = new Uint8Array(256);
+    for (var i = 0; i < 256; i++) p[i] = i;
+    for (var i = 255; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = p[i]; p[i] = p[j]; p[j] = tmp;
+    }
+    for (var i = 0; i < 512; i++) perm[i] = p[i & 255];
+    // precompute gradient vectors
+    gradX = []; gradY = []; gradZ = [];
+    for (var i = 0; i < 256; i++) {
+      var ang = (perm[i] / 256) * Math.PI * 2;
+      var angZ = (perm[(i + 128) & 255] / 256) * Math.PI * 2;
+      gradX.push(Math.cos(ang));
+      gradY.push(Math.sin(ang));
+      gradZ.push(Math.cos(angZ));
+    }
+  }
+  buildPerm();
+
+  function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function lerp(a, b, t) { return a + t * (b - a); }
+
+  function grad3(hash, x, y, z) {
+    var gx = gradX[hash & 255];
+    var gy = gradY[hash & 255];
+    var gz = gradZ[hash & 255];
+    return gx * x + gy * y + gz * z;
+  }
+
+  function noise3(x, y, z) {
+    var X = Math.floor(x) & 255;
+    var Y = Math.floor(y) & 255;
+    var Z = Math.floor(z) & 255;
+    x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
+    var u = fade(x), v = fade(y), w = fade(z);
+    var A  = perm[X] + Y,   AA = perm[A] + Z, AB = perm[A+1] + Z;
+    var B  = perm[X+1] + Y, BA = perm[B] + Z, BB = perm[B+1] + Z;
+    return lerp(
+      lerp(lerp(grad3(perm[AA],   x,   y,   z), grad3(perm[BA],   x-1, y,   z), u),
+           lerp(grad3(perm[AB],   x,   y-1, z), grad3(perm[BB],   x-1, y-1, z), u), v),
+      lerp(lerp(grad3(perm[AA+1], x,   y,   z-1), grad3(perm[BA+1], x-1, y,   z-1), u),
+           lerp(grad3(perm[AB+1], x,   y-1, z-1), grad3(perm[BB+1], x-1, y-1, z-1), u), v),
+      w
+    );
+  }
+
+  function fbm(x, y, z, octaves) {
+    var val = 0, amp = 1, freq = 1, maxVal = 0;
+    for (var i = 0; i < octaves; i++) {
+      val += amp * noise3(x * freq, y * freq, z * freq);
+      maxVal += amp;
+      amp *= 0.5;
+      freq *= 2;
+    }
+    return val / maxVal; // normalize to roughly -1..1
+  }
+
+  /* ── State ── */
+  var scale = 0.004;
+  var octaves = 4;
+  var speed = 1.0;
+  var colorMode = 'terrain';
+  var timeZ = 0;
+  var raf = null;
+
+  /* ── Canvas ── */
+  var canvas = document.getElementById('pn-canvas');
+  var ctx = canvas.getContext('2d');
+
+  /* ── Terrain color mapping ── */
+  function terrainColor(n) {
+    // n in -1..1, map to 0..1
+    var v = (n + 1) * 0.5;
+    if (v < 0.35) return [30, 100, 200];      // deep water
+    if (v < 0.42) return [60, 140, 220];      // shallow water
+    if (v < 0.47) return [220, 210, 150];     // sand/beach
+    if (v < 0.62) return [80, 160, 60];       // lowland grass
+    if (v < 0.72) return [50, 120, 40];       // forest
+    if (v < 0.82) return [100, 90, 70];       // rock/mountain
+    if (v < 0.91) return [160, 150, 140];     // high rock
+    return [240, 245, 255];                   // snow
+  }
+
+  function renderFrame() {
+    var W = canvas.offsetWidth || 400;
+    var H = 250;
+    canvas.width = W;
+    canvas.height = H;
+
+    var imgData = ctx.createImageData(W, H);
+    var data = imgData.data;
+
+    for (var py = 0; py < H; py++) {
+      for (var px = 0; px < W; px++) {
+        var nx = px * scale * 100;
+        var ny = py * scale * 100;
+        var nz = timeZ;
+        var n = fbm(nx, ny, nz, octaves);
+        var idx = (py * W + px) * 4;
+
+        if (colorMode === 'terrain') {
+          var c = terrainColor(n);
+          data[idx]   = c[0];
+          data[idx+1] = c[1];
+          data[idx+2] = c[2];
+          data[idx+3] = 255;
+        } else {
+          var v = Math.round(((n + 1) * 0.5) * 255);
+          data[idx] = data[idx+1] = data[idx+2] = v;
+          data[idx+3] = 255;
+        }
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  var lastTime = 0;
+  function loop(ts) {
+    var dt = (ts - lastTime) / 1000;
+    lastTime = ts;
+    if (dt > 0.1) dt = 0.1;
+    timeZ += dt * speed * 0.12;
+    renderFrame();
+    // Update readouts
+    document.getElementById('pn-r-scale').textContent = scale.toFixed(4);
+    document.getElementById('pn-r-oct').textContent   = octaves;
+    document.getElementById('pn-r-mode').textContent  = colorMode === 'terrain' ? 'Terrain' : 'Grayscale';
+    raf = requestAnimationFrame(loop);
+  }
+  raf = requestAnimationFrame(function(ts) { lastTime = ts; raf = requestAnimationFrame(loop); });
+
+  /* ── Slider bindings ── */
+  document.getElementById('pn-scale').addEventListener('input', function() {
+    var v = parseInt(this.value);
+    scale = v * 0.0005;
+    document.getElementById('pn-scale-val').textContent = scale.toFixed(4);
+  });
+  document.getElementById('pn-oct').addEventListener('input', function() {
+    octaves = parseInt(this.value);
+    document.getElementById('pn-oct-val').textContent = octaves;
+  });
+  document.getElementById('pn-speed').addEventListener('input', function() {
+    speed = parseInt(this.value) / 5;
+    document.getElementById('pn-speed-val').textContent = speed.toFixed(1) + '×';
+  });
+
+  /* ── Mode & Regenerate ── */
+  window.pnSetMode = function(mode) {
+    colorMode = mode;
+    document.getElementById('pn-btn-terrain').style.fontWeight = mode === 'terrain' ? '700' : '400';
+    document.getElementById('pn-btn-gray').style.fontWeight    = mode === 'gray'    ? '700' : '400';
+  };
+  window.pnRegenerate = function() {
+    buildPerm();
+    timeZ = 0;
+  };
+
+  /* ── Practice helpers ── */
+  window.pnCheck = function(n, correct, tol) {
+    var val = parseFloat(document.getElementById('pnans-' + n).value);
+    var fb  = document.getElementById('pnfb-' + n);
+    var hint = document.getElementById('pnhint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'cl-feedback err'; return; }
+    if (Math.abs(val - correct) <= tol) {
+      fb.textContent = 'Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
+    } else {
+      fb.textContent = 'Not quite. Try again.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
+    }
+  };
+  window.pnCheckText = function(n, correct) {
+    var el  = document.getElementById('pnans-' + n);
+    var val = el.value.toLowerCase().trim();
+    var fb  = document.getElementById('pnfb-' + n);
+    var hint = document.getElementById('pnhint-' + n);
+    if (!val) { fb.textContent = 'Make a selection.'; fb.className = 'cl-feedback err'; return; }
+    if (val === correct) {
+      fb.textContent = 'Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
+    } else {
+      fb.textContent = 'Not quite. Try again.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
+    }
+  };
+
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

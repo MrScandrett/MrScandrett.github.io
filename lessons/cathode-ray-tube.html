@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cathode Ray Tube · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 18 — explore the cathode ray tube, electron acceleration, and beam deflection with an interactive CRT simulator." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#32ade6); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .cl-formula-box { background: linear-gradient(135deg,rgba(50,173,230,0.09),rgba(50,173,230,0.03)); border: 1px solid rgba(50,173,230,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .cl-formula-sym { font-size: clamp(1.2rem,3vw,1.9rem); font-weight: 800; letter-spacing: -0.02em; color: #32ade6; display: block; margin-bottom: 0.5rem; }
+    .cl-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .cl-formula-vars { color: rgba(245,245,247,0.7); }
+
+    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #0d1117; }
+    #crt-canvas { width: 100%; height: 260px; display: block; }
+
+    .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .cl-readout { background: rgba(255,255,255,0.06); }
+    .cl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .cl-readout-val   { font-size: 1rem; font-weight: 700; color: #32ade6; }
+
+    .cl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .cl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .cl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .cl-app small   { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
+    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 90px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .cl-check-btn { background: #32ade6; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .cl-check-btn:hover { background: #1a9cd0; }
+    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .cl-feedback.ok  { color: #34c759; }
+    .cl-feedback.err { color: #ff3b30; }
+    .cl-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <!-- Hero -->
+        <section class="hero cl-hero">
+          <p class="eyebrow">Physics · Lesson 18</p>
+          <h1>Cathode Ray Tube</h1>
+          <div class="cl-hero-meta">
+            <span>Electromagnetism</span><span class="dot"></span>
+            <span>Thermionic Emission</span><span class="dot"></span>
+            <span>Electron Beam</span><span class="dot"></span>
+            <span>Deflection</span>
+          </div>
+          <p class="cl-lede">Heat a metal filament in a vacuum, and electrons boil off. Accelerate them with an electric field, focus them into a beam, and steer them with electric or magnetic fields. This is the cathode ray tube — the technology behind every oscilloscope, radar display, and television screen before flat panels.</p>
+        </section>
+
+        <!-- Bio -->
+        <section class="cl-card" style="--card-accent:#32ade6;">
+          <h2>Who Was J.J. Thomson?</h2>
+          <p><strong>J.J. Thomson (1856–1940)</strong> discovered the electron in 1897 using a cathode ray tube, measuring the electron's charge-to-mass ratio (e/m) by balancing electric and magnetic deflection forces. He showed that cathode rays were streams of particles far smaller than atoms — the first subatomic particle ever identified. He was awarded the <strong>Nobel Prize in Physics in 1906</strong>. His discovery launched atomic physics and fundamentally changed our picture of matter.</p>
+        </section>
+
+        <!-- Core Concepts -->
+        <section class="cl-card" style="--card-accent:#ff9f0a;">
+          <h2>Core Concepts</h2>
+          <h3>Thermionic Emission &amp; Acceleration</h3>
+          <p>A heated cathode emits electrons. An anode at higher potential V accelerates them. All the electrical potential energy converts to kinetic energy:</p>
+          <div class="cl-formula-box" role="img" aria-label="Half m v squared equals e V">
+            <span class="cl-formula-sym">½mv² = eV &nbsp;→&nbsp; v = √(2eV/m)</span>
+            <div class="cl-formula-vars">
+              <div><strong>e</strong> = electron charge = 1.6×10⁻¹⁹ C</div>
+              <div><strong>m</strong> = electron mass = 9.1×10⁻³¹ kg</div>
+              <div><strong>V</strong> = accelerating voltage (volts)</div>
+            </div>
+          </div>
+          <h3>Electric Deflection</h3>
+          <p>Deflection plates create a transverse electric field E. The beam is deflected by force F = eE as it passes between the plates.</p>
+          <div class="cl-formula-box" role="img" aria-label="Deflection y equals e E L squared over 4 m V">
+            <span class="cl-formula-sym">y = eEL² / (4mV)</span>
+            <div class="cl-formula-vars">
+              <div><strong>E</strong> = electric field between plates (V/m)</div>
+              <div><strong>L</strong> = length of deflection plates (m)</div>
+              <div><strong>y</strong> = vertical deflection at end of plates</div>
+            </div>
+          </div>
+          <h3>Magnetic Deflection</h3>
+          <div class="cl-formula-box" role="img" aria-label="Force equals e v B">
+            <span class="cl-formula-sym">F = evB</span>
+            <div class="cl-formula-vars">
+              <div><strong>B</strong> = magnetic flux density (Tesla)</div>
+              <div><strong>v</strong> = electron speed (m/s)</div>
+              <div>Magnetic force is always perpendicular to velocity → circular arc</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Interactive Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Adjust voltage and deflection in the panel. Switch between Static Dot and Oscilloscope modes.</p>
+          <div class="cl-canvas-wrap">
+            <canvas id="crt-canvas" aria-label="Cathode ray tube simulator showing electron beam and deflection"></canvas>
+          </div>
+          <div class="cl-readouts">
+            <div class="cl-readout"><span class="cl-readout-label">Beam Voltage</span><span class="cl-readout-val" id="crt-r-v">5 kV</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Deflection V</span><span class="cl-readout-val" id="crt-r-dv">0 V</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Screen Pos</span><span class="cl-readout-val" id="crt-r-pos">Centre</span></div>
+          </div>
+        </section>
+
+        <!-- Applications -->
+        <section class="cl-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="cl-apps">
+            <div class="cl-app">
+              <div class="cl-app-icon">📡</div>
+              <strong>Oscilloscopes</strong>
+              <small>A CRT oscilloscope deflects the beam vertically by the signal voltage and sweeps it horizontally at a set rate to display waveforms.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🎯</div>
+              <strong>Radar Displays</strong>
+              <small>Early radar systems used rotating CRT beams to paint returning echoes on a phosphor screen, showing aircraft positions.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">📺</div>
+              <strong>Cathode Ray Televisions</strong>
+              <small>The beam scanned each line left-to-right, top-to-bottom 25–30 times per second, painting a full picture on the phosphor screen.</small>
+            </div>
+            <div class="cl-app">
+              <div class="cl-app-icon">🔬</div>
+              <strong>Electron Microscopes</strong>
+              <small>A focused electron beam at nanometre scale reveals atomic-level structures impossible to see with visible light.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cl-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Use e = 1.6×10⁻¹⁹ C, m = 9.1×10⁻³¹ kg.</p>
+          <div class="cl-practice">
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>1. Electrons in a CRT are emitted from the cathode. True or False?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="crtans-1" style="width:110px;">
+                  <option value="">Choose…</option>
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </select>
+                <button class="cl-check-btn" onclick="crtCheckText(1,'true')">Check</button>
+                <span class="cl-feedback" id="crtfb-1"></span>
+              </div>
+              <div class="cl-hint" id="crthint-1">Hint: The cathode is the heated negative electrode that emits electrons by thermionic emission.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-easy">Easy</span>2. What happens to an electron beam passing through an electric field perpendicular to its motion?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="crtans-2" style="width:130px;">
+                  <option value="">Choose…</option>
+                  <option value="speeds-up">Speeds up</option>
+                  <option value="deflects">Deflects</option>
+                  <option value="slows-down">Slows down</option>
+                </select>
+                <button class="cl-check-btn" onclick="crtCheckText(2,'deflects')">Check</button>
+                <span class="cl-feedback" id="crtfb-2"></span>
+              </div>
+              <div class="cl-hint" id="crthint-2">Hint: A perpendicular force changes direction, not speed — the beam curves (deflects).</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>3. An electron is accelerated through 1000 V. What is its speed in m/s? Use ½mv²=eV. Give answer to 2 significant figures (×10⁷).</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="crtans-3" step="0.1" placeholder="×10⁷ m/s" />
+                <button class="cl-check-btn" onclick="crtCheck(3, 1.87, 0.1)">Check</button>
+                <span class="cl-feedback" id="crtfb-3"></span>
+              </div>
+              <div class="cl-hint" id="crthint-3">Hint: v = √(2×1.6e-19×1000 / 9.1e-31) ≈ 1.87×10⁷ m/s. Enter 1.87.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>4. In magnetic deflection, F = evB. If B=0.01 T, v=2×10⁷ m/s, e=1.6×10⁻¹⁹ C, what is the force in ×10⁻¹⁴ N?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="crtans-4" step="0.1" placeholder="×10⁻¹⁴ N" />
+                <button class="cl-check-btn" onclick="crtCheck(4, 3.2, 0.1)">Check</button>
+                <span class="cl-feedback" id="crtfb-4"></span>
+              </div>
+              <div class="cl-hint" id="crthint-4">Hint: F = 1.6e-19 × 2e7 × 0.01 = 3.2×10⁻¹⁴ N. Enter 3.2.</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-hard">Challenge</span>5. Thomson balanced E=10⁴ V/m and B=0.01 T so the beam went straight (eE = evB). What is the electron speed in ×10⁶ m/s?</p>
+              <div class="cl-problem-row">
+                <input type="number" class="cl-ans-input" id="crtans-5" placeholder="×10⁶ m/s" />
+                <button class="cl-check-btn" onclick="crtCheck(5, 1, 0.05)">Check</button>
+                <span class="cl-feedback" id="crtfb-5"></span>
+              </div>
+              <div class="cl-hint" id="crthint-5">Hint: eE = evB → v = E/B = 10⁴/0.01 = 10⁶ m/s. Enter 1.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="crt-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="crt-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="crt-pane-sim">
+          <span class="ll-label">Accelerating Voltage</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">V <span id="crt-v-val">5 kV</span></label>
+            <input type="range" class="nl-slider" id="crt-v" min="1" max="30" value="5" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Vertical Deflection Voltage</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">V_def <span id="crt-dv-val">0 V</span></label>
+            <input type="range" class="nl-slider" id="crt-dv" min="-50" max="50" value="0" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Oscilloscope Frequency</span>
+          <div style="margin-bottom:0.7rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Hz <span id="crt-freq-val">2 Hz</span></label>
+            <input type="range" class="nl-slider" id="crt-freq" min="1" max="8" value="2" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Mode</span>
+          <div style="margin-bottom:0.7rem;">
+            <button class="ll-preset" id="crt-btn-static" onclick="crtSetMode('static')" style="margin-right:0.3rem;">Static Dot</button>
+            <button class="ll-preset" id="crt-btn-scope" onclick="crtSetMode('scope')">Oscilloscope</button>
+          </div>
+          <hr class="ll-hr">
+          <div>
+            <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+              <input type="checkbox" id="crt-show-labels" checked /> Show labels
+            </label>
+          </div>
+        </div>
+
+        <div class="ll-pane" id="crt-pane-guide">
+          <div class="ll-info"><strong>Thermionic Emission</strong>Heating a metal cathode gives electrons enough energy to escape — they "boil off" the surface.</div>
+          <div class="ll-info"><strong>Acceleration</strong>½mv² = eV. Higher voltage → faster electrons → harder to deflect.</div>
+          <div class="ll-info"><strong>Electric Deflection</strong>F = eE perpendicular to beam → parabolic path between plates.</div>
+          <div class="ll-info"><strong>Magnetic Deflection</strong>F = evB — always perpendicular to velocity → circular arc (right-hand rule).</div>
+          <div class="ll-info"><strong>Thomson's Method</strong>Balance E and B forces (eE = evB) to find beam speed: v = E/B.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  let accelV = 5;      // kV
+  let deflV = 0;       // V deflection
+  let freqHz = 2;      // oscilloscope frequency
+  let crtMode = 'static';
+  let showLabels = true;
+  let animId = null;
+  let phaseT = 0;
+  // Particle trail for static mode
+  let particles = [];
+
+  const canvas = document.getElementById('crt-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function getBeamSpeed() {
+    // v = sqrt(2eV/m), V in volts
+    const e = 1.6e-19, m = 9.1e-31;
+    return Math.sqrt(2 * e * accelV * 1000 / m);
+  }
+
+  function draw(ts) {
+    const W = canvas.offsetWidth || 600;
+    canvas.width = W;
+    canvas.height = 260;
+    const H = 260;
+    ctx.clearRect(0, 0, W, H);
+
+    // Dark background
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, 0, W, H);
+
+    const CY = H / 2;
+
+    // Layout regions (as fractions of W)
+    const cathodeX = W * 0.06;
+    const anodeX   = W * 0.20;
+    const defL     = W * 0.35; // start of deflection plates
+    const defR     = W * 0.55; // end of deflection plates
+    const screenX  = W * 0.88;
+    const plateGap = 44; // px half-gap
+
+    // --- Draw tube outline ---
+    ctx.strokeStyle = 'rgba(50,173,230,0.18)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();
+    ctx.moveTo(cathodeX - 10, CY - 36);
+    ctx.lineTo(screenX - 8, CY - 36);
+    ctx.lineTo(screenX - 8, CY + 36);
+    ctx.lineTo(cathodeX - 10, CY + 36);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // --- Cathode (left, glowing) ---
+    const grad = ctx.createRadialGradient(cathodeX, CY, 2, cathodeX, CY, 18);
+    grad.addColorStop(0, 'rgba(255,160,50,0.9)');
+    grad.addColorStop(0.5, 'rgba(255,100,20,0.5)');
+    grad.addColorStop(1, 'rgba(255,60,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cathodeX, CY, 18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff9f0a';
+    ctx.beginPath();
+    ctx.arc(cathodeX, CY, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // --- Anode grid lines ---
+    ctx.strokeStyle = '#32ade6';
+    ctx.lineWidth = 2;
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(anodeX, CY + i * 8);
+      ctx.lineTo(anodeX + 6, CY + i * 8);
+      ctx.stroke();
+    }
+
+    // --- Deflection plates ---
+    const plateLabelY = CY - plateGap - 14;
+    // Top plate
+    ctx.fillStyle = deflV > 0 ? 'rgba(255,59,48,0.7)' : deflV < 0 ? 'rgba(50,173,230,0.7)' : 'rgba(100,116,139,0.5)';
+    ctx.fillRect(defL, CY - plateGap - 10, defR - defL, 8);
+    // Bottom plate
+    ctx.fillStyle = deflV < 0 ? 'rgba(255,59,48,0.7)' : deflV > 0 ? 'rgba(50,173,230,0.7)' : 'rgba(100,116,139,0.5)';
+    ctx.fillRect(defL, CY + plateGap + 2, defR - defL, 8);
+
+    if (showLabels) {
+      ctx.font = '10px Inter,sans-serif';
+      ctx.fillStyle = '#64748b';
+      ctx.textAlign = 'center';
+      ctx.fillText('Deflection', (defL + defR) / 2, CY - plateGap - 20);
+      ctx.fillText('Plates', (defL + defR) / 2, CY - plateGap - 9);
+      ctx.fillText('Cathode', cathodeX, CY + 34);
+      ctx.fillText('Anode', anodeX + 3, CY + 34);
+      ctx.fillText('Screen', screenX, CY + 34);
+    }
+
+    // --- Phosphor screen ---
+    ctx.strokeStyle = '#32ade6';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(screenX, CY - 50);
+    ctx.lineTo(screenX, CY + 50);
+    ctx.stroke();
+
+    // --- Compute deflection ---
+    // Normalise: deflV ±50V maps to ±(plateGap-12)px on screen
+    const maxDefl = plateGap - 8;
+    let beamDeflect = 0; // pixels from centre at screen
+    if (crtMode === 'static') {
+      beamDeflect = (deflV / 50) * maxDefl;
+    } else {
+      // Oscilloscope: sinusoidal deflection
+      beamDeflect = Math.sin(phaseT * freqHz * 2 * Math.PI) * maxDefl;
+    }
+
+    // --- Draw electron beam ---
+    // Beam enters from cathode, travels horizontally to deflection zone, then curves
+    const beamStartX = cathodeX + 14;
+    const beamMidX   = (defL + defR) / 2;
+    const beamEndX   = screenX - 2;
+    const hitY       = CY + beamDeflect;
+
+    if (crtMode === 'static') {
+      // Draw beam as glowing line segments
+      // Cathode → anode section
+      drawBeamSegment(ctx, beamStartX, CY, anodeX + 8, CY, '#39d0f0');
+      // Anode → deflection plates entry (straight)
+      drawBeamSegment(ctx, anodeX + 8, CY, defL, CY, '#39d0f0');
+      // Through deflection plates (curved - use quadratic bezier)
+      ctx.strokeStyle = '#39d0f0';
+      ctx.shadowColor = '#39d0f0';
+      ctx.shadowBlur = 6;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(defL, CY);
+      ctx.quadraticCurveTo(beamMidX, CY + beamDeflect * 0.4, defR, CY + beamDeflect * 0.75);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      // Deflection exit → screen
+      drawBeamSegment(ctx, defR, CY + beamDeflect * 0.75, beamEndX, hitY, '#39d0f0');
+
+      // Phosphor glow dot on screen
+      const dotGrad = ctx.createRadialGradient(screenX, hitY, 1, screenX, hitY, 14);
+      dotGrad.addColorStop(0, 'rgba(57,208,240,1)');
+      dotGrad.addColorStop(0.3, 'rgba(57,208,240,0.6)');
+      dotGrad.addColorStop(1, 'rgba(57,208,240,0)');
+      ctx.fillStyle = dotGrad;
+      ctx.beginPath();
+      ctx.arc(screenX, hitY, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Update readouts
+      const posLabel = Math.abs(beamDeflect) < 2 ? 'Centre' : (beamDeflect < 0 ? 'Up ' + Math.abs(beamDeflect).toFixed(0) + 'px' : 'Down ' + beamDeflect.toFixed(0) + 'px');
+      document.getElementById('crt-r-pos').textContent = posLabel;
+
+    } else {
+      // Oscilloscope mode: draw waveform trace on screen region
+      // Draw beam path as solid line (faded)
+      drawBeamSegment(ctx, beamStartX, CY, defL, CY, '#39d0f0');
+
+      // Draw waveform on screen portion
+      const traceStartX = defR + 10;
+      const traceEndX = screenX - 2;
+      const traceSteps = 80;
+      ctx.strokeStyle = '#39d0f0';
+      ctx.shadowColor = '#39d0f0';
+      ctx.shadowBlur = 5;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i = 0; i <= traceSteps; i++) {
+        const tx = traceStartX + (i / traceSteps) * (traceEndX - traceStartX);
+        const tFrac = i / traceSteps;
+        const ty = CY + Math.sin((tFrac * 2 + phaseT * 0.5) * freqHz * Math.PI) * maxDefl;
+        if (i === 0) ctx.moveTo(tx, ty);
+        else ctx.lineTo(tx, ty);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Current dot
+      const curY = CY + Math.sin(phaseT * freqHz * 2 * Math.PI) * maxDefl;
+      const dotG = ctx.createRadialGradient(screenX - 3, curY, 1, screenX - 3, curY, 10);
+      dotG.addColorStop(0, 'rgba(57,208,240,1)');
+      dotG.addColorStop(1, 'rgba(57,208,240,0)');
+      ctx.fillStyle = dotG;
+      ctx.beginPath();
+      ctx.arc(screenX - 3, curY, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      document.getElementById('crt-r-pos').textContent = '~' + freqHz + ' Hz';
+    }
+
+    // Update other readouts
+    document.getElementById('crt-r-v').textContent = accelV + ' kV';
+    document.getElementById('crt-r-dv').textContent = (crtMode === 'scope' ? '±' + 50 : deflV) + ' V';
+
+    // Animate particles from cathode
+    updateParticles(ctx, cathodeX, anodeX, CY, W, H);
+  }
+
+  function drawBeamSegment(ctx, x1, y1, x2, y2, color) {
+    ctx.strokeStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 5;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  function updateParticles(ctx, cathodeX, anodeX, CY, W, H) {
+    // Spawn new electron particles
+    if (Math.random() < 0.4) {
+      particles.push({ x: cathodeX + 8, y: CY + (Math.random() - 0.5) * 8, vx: 2 + Math.random() * 2, alpha: 1 });
+    }
+    // Update and draw
+    particles = particles.filter(p => p.x < anodeX + 10 && p.alpha > 0.05);
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.alpha *= 0.88;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(57,208,240,${p.alpha})`;
+      ctx.fill();
+    });
+  }
+
+  function animate(ts) {
+    phaseT = (ts || 0) / 1000;
+    draw(ts);
+    animId = requestAnimationFrame(animate);
+  }
+
+  // Controls
+  document.getElementById('crt-v').addEventListener('input', e => {
+    accelV = parseInt(e.target.value);
+    document.getElementById('crt-v-val').textContent = accelV + ' kV';
+  });
+  document.getElementById('crt-dv').addEventListener('input', e => {
+    deflV = parseInt(e.target.value);
+    document.getElementById('crt-dv-val').textContent = deflV + ' V';
+  });
+  document.getElementById('crt-freq').addEventListener('input', e => {
+    freqHz = parseInt(e.target.value);
+    document.getElementById('crt-freq-val').textContent = freqHz + ' Hz';
+  });
+  document.getElementById('crt-show-labels').addEventListener('change', e => {
+    showLabels = e.target.checked;
+  });
+
+  window.crtSetMode = function (mode) {
+    crtMode = mode;
+  };
+
+  window.addEventListener('resize', () => { particles = []; });
+  animId = requestAnimationFrame(animate);
+
+  // Practice
+  window.crtCheck = function (n, ans, tol) {
+    const val = parseFloat(document.getElementById('crtans-' + n).value);
+    const fb = document.getElementById('crtfb-' + n);
+    const hint = document.getElementById('crthint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'cl-feedback err'; return; }
+    if (Math.abs(val - ans) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'cl-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+  window.crtCheckText = function (n, ans) {
+    const el = document.getElementById('crtans-' + n);
+    const fb = document.getElementById('crtfb-' + n);
+    const hint = document.getElementById('crthint-' + n);
+    if (el.value === ans) {
+      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'cl-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

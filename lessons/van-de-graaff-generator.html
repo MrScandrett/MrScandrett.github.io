@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Van de Graaff Generator · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 15 — explore how a Van de Graaff generator builds up charge on a metal dome using a spinning belt, ionizes air, and produces spectacular sparks." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .vgg-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .vgg-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .vgg-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .vgg-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .vgg-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .vgg-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .vgg-lede { color: rgba(245,245,247,0.7); }
+
+    .vgg-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#ff3b30); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .vgg-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .vgg-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .vgg-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .vgg-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .vgg-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .vgg-card p { color: rgba(245,245,247,0.72); }
+
+    .vgg-formula-box { background: linear-gradient(135deg,rgba(255,59,48,0.09),rgba(255,59,48,0.03)); border: 1px solid rgba(255,59,48,0.25); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .vgg-formula-sym { font-size: clamp(1.4rem,4vw,2rem); font-weight: 800; letter-spacing: -0.02em; color: #ff3b30; display: block; margin-bottom: 0.5rem; }
+    .vgg-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .vgg-formula-vars { color: rgba(245,245,247,0.7); }
+
+    .vgg-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .vgg-callout.red    { background: rgba(255,59,48,0.09);  border-left: 3px solid #ff3b30; }
+    .vgg-callout.orange { background: rgba(255,149,0,0.10);  border-left: 3px solid #ff9500; }
+    .vgg-callout.blue   { background: rgba(0,122,255,0.09);  border-left: 3px solid #007aff; }
+
+    .vgg-steps { list-style: none; padding: 0; margin: 0.7rem 0; }
+    .vgg-steps li { display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.55rem; font-size: 0.87rem; color: #3f4f65; line-height: 1.55; }
+    .vgg-steps li .vgg-step-num { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: #ff3b30; color: #fff; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    [data-theme="night"] .vgg-steps li { color: rgba(245,245,247,0.72); }
+
+    .vgg-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-theme="night"] .vgg-canvas-wrap { background: #1c1c1e; }
+    #vgg-canvas { width: 100%; height: 300px; display: block; }
+
+    .vgg-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .vgg-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .vgg-readout { background: rgba(255,255,255,0.06); }
+    .vgg-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .vgg-readout-val   { font-size: 1rem; font-weight: 700; color: #ff3b30; }
+
+    .vgg-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .vgg-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .vgg-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .vgg-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .vgg-app small   { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    .vgg-practice .vgg-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .vgg-practice .vgg-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: #3f4f65; line-height: 1.6; }
+    [data-theme="night"] .vgg-problem p { color: rgba(245,245,247,0.72); }
+    .vgg-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .vgg-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 130px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .vgg-check-btn { background: #ff3b30; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .vgg-check-btn:hover { background: #d42b21; }
+    .vgg-feedback { font-size: 0.82rem; font-weight: 600; }
+    .vgg-feedback.ok  { color: #34c759; }
+    .vgg-feedback.err { color: #ff3b30; }
+    .vgg-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="vgg-page">
+
+        <!-- Hero -->
+        <section class="hero vgg-hero">
+          <p class="eyebrow">Physics · Lesson 15</p>
+          <h1>Van de Graaff Generator</h1>
+          <div class="vgg-hero-meta">
+            <span>Electrostatics</span><span class="dot"></span>
+            <span>Charge Accumulation</span><span class="dot"></span>
+            <span>Electric Breakdown</span><span class="dot"></span>
+            <span>Faraday's Theorem</span>
+          </div>
+          <p class="vgg-lede">A rubber belt spins between two rollers, picking up charge by the triboelectric effect and carrying it to a metal dome. Charge accumulates until the electric field is strong enough to ionize air — a spark jumps, hair stands up, and students learn why thunderclouds have lightning.</p>
+        </section>
+
+        <!-- Bio -->
+        <section class="vgg-card" style="--card-accent:#ffcc00;">
+          <h2>Who Was Robert J. Van de Graaff?</h2>
+          <p><strong>Robert J. Van de Graaff (1901–1967)</strong> built his first generator in 1929 at Princeton using a silk ribbon and a tin can. By 1931 he had a 1.5-million-volt machine. His generators were used to accelerate particles into atomic nuclei for early nuclear physics experiments, effectively launching particle accelerator technology. Today, scaled-down versions are in every physics classroom, producing 100,000–400,000 volts — spectacular but safe.</p>
+        </section>
+
+        <!-- Core Concept -->
+        <section class="vgg-card" style="--card-accent:#ff3b30;">
+          <h2>How It Works</h2>
+          <p>The generator has four key components working together in a continuous cycle:</p>
+
+          <ul class="vgg-steps">
+            <li><span class="vgg-step-num">1</span>The <strong>bottom roller</strong> strips electrons from the belt by the triboelectric effect, leaving the belt positively charged.</li>
+            <li><span class="vgg-step-num">2</span>The moving <strong>belt</strong> carries positive charge up through the hollow column to the top.</li>
+            <li><span class="vgg-step-num">3</span>A <strong>metal comb</strong> at the top collects the charge and deposits it onto the inside of the dome.</li>
+            <li><span class="vgg-step-num">4</span>By <strong>Faraday's theorem</strong>, charge on the inside of a conductor redistributes immediately to the outer surface — the dome accumulates more and more charge each cycle.</li>
+          </ul>
+
+          <h3>Key Equations</h3>
+          <div class="vgg-formula-box" role="img" aria-label="V equals kQ divided by r, and E equals V divided by r">
+            <span class="vgg-formula-sym">V = kQ / r &nbsp;&nbsp;&nbsp; E = V / r</span>
+            <div class="vgg-formula-vars">
+              <div><strong>V</strong> = voltage on sphere (Volts)</div>
+              <div><strong>k</strong> = 9 × 10⁹ N·m²/C²</div>
+              <div><strong>Q</strong> = charge on dome (Coulombs)</div>
+              <div><strong>r</strong> = sphere radius (metres)</div>
+              <div><strong>E</strong> = electric field at surface (V/m)</div>
+            </div>
+          </div>
+
+          <div class="vgg-callout red">
+            <strong>Breakdown voltage:</strong> Air ionizes at approximately 3 × 10⁶ V/m (3 MV/m). When the electric field at the dome surface reaches this value, a spark jumps. For a 0.1 m sphere, this means V<sub>max</sub> = E × r = 3×10⁶ × 0.1 = 300,000 V.
+          </div>
+
+          <div class="vgg-callout orange">
+            <strong>Maximum charge Q<sub>max</sub>:</strong> Combining E = kQ/r² and E<sub>max</sub> = 3×10⁶ V/m gives Q<sub>max</sub> = E<sub>max</sub> × r² / k. A larger sphere holds exponentially more charge before sparking — doubling r quadruples Q<sub>max</sub>.
+          </div>
+
+          <div class="vgg-callout blue">
+            <strong>Faraday cage:</strong> Charge always distributes to the exterior of a conductor. Inside a closed conducting shell, the electric field is zero. This is why you are safe inside a metal car or cage during a thunderstorm.
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="vgg-card" style="--card-accent:#5856d6;">
+          <h2>Interactive Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Watch the belt carry charge up to the dome. Voltage builds until breakdown — then a spark discharges the dome. Use the panel controls to change belt speed, sphere radius, and ground rod.</p>
+          <div class="vgg-canvas-wrap">
+            <canvas id="vgg-canvas" aria-label="Van de Graaff generator cross-section showing belt, charge accumulation, and spark discharge"></canvas>
+          </div>
+          <div class="vgg-readouts">
+            <div class="vgg-readout"><span class="vgg-readout-label">Dome Voltage</span><span class="vgg-readout-val" id="vgg-r-v">0 kV</span></div>
+            <div class="vgg-readout"><span class="vgg-readout-label">Dome Charge</span><span class="vgg-readout-val" id="vgg-r-q">0 μC</span></div>
+            <div class="vgg-readout"><span class="vgg-readout-label">Belt Speed</span><span class="vgg-readout-val" id="vgg-r-spd">5</span></div>
+          </div>
+        </section>
+
+        <!-- Applications -->
+        <section class="vgg-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="vgg-apps">
+            <div class="vgg-app">
+              <div class="vgg-app-icon">⚛️</div>
+              <strong>Particle Accelerators</strong>
+              <small>Van de Graaff generators were the first particle accelerators — accelerating protons and alpha particles into target nuclei to probe atomic structure.</small>
+            </div>
+            <div class="vgg-app">
+              <div class="vgg-app-icon">🔬</div>
+              <strong>Classroom Demos</strong>
+              <small>Makes electrostatics visible and tangible — hair standing on end, sparks jumping centimetres, and repelled balloons. Abstract physics becomes thrilling.</small>
+            </div>
+            <div class="vgg-app">
+              <div class="vgg-app-icon">🏛️</div>
+              <strong>Science Museums</strong>
+              <small>Large Van de Graaff generators at science museums (like MIT's 2.5 MV machine) produce dramatic lightning bolt demonstrations for the public.</small>
+            </div>
+            <div class="vgg-app">
+              <div class="vgg-app-icon">☢️</div>
+              <strong>X-Ray Generation</strong>
+              <small>High-voltage electron beams generated by electrostatic accelerators can produce X-rays for medical imaging and materials analysis.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="vgg-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Use V = kQ/r and E = V/r. k = 9 × 10⁹ N·m²/C². Air breakdown field = 3 × 10⁶ V/m.</p>
+          <div class="vgg-practice">
+
+            <div class="vgg-problem">
+              <p><span class="diff-easy">Easy</span>1. Charge accumulates on the inside of the Van de Graaff dome. True or False?</p>
+              <div class="vgg-problem-row">
+                <select class="vgg-ans-input" id="vggans-1" style="width:120px;">
+                  <option value="">Choose…</option>
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </select>
+                <button class="vgg-check-btn" onclick="vggCheckText(1,'false')">Check</button>
+                <span class="vgg-feedback" id="vggfb-1"></span>
+              </div>
+              <div class="vgg-hint" id="vgghint-1">Hint: By Faraday's theorem, charge on a conductor moves to the outer surface. The inside of the dome has zero net charge.</div>
+            </div>
+
+            <div class="vgg-problem">
+              <p><span class="diff-easy">Easy</span>2. What carries charge up to the dome inside a Van de Graaff generator?</p>
+              <div class="vgg-problem-row">
+                <select class="vgg-ans-input" id="vggans-2" style="width:160px;">
+                  <option value="">Choose…</option>
+                  <option value="wire">Wire</option>
+                  <option value="belt">Belt</option>
+                  <option value="magnetic">Magnetic field</option>
+                </select>
+                <button class="vgg-check-btn" onclick="vggCheckText(2,'belt')">Check</button>
+                <span class="vgg-feedback" id="vggfb-2"></span>
+              </div>
+              <div class="vgg-hint" id="vgghint-2">Hint: A rubber belt spins between two rollers, picking up charge at the bottom and depositing it at the dome.</div>
+            </div>
+
+            <div class="vgg-problem">
+              <p><span class="diff-mid">Medium</span>3. A Van de Graaff sphere has radius r = 0.15 m and holds charge Q = 2 μC. Calculate V = kQ/r (in V).</p>
+              <div class="vgg-problem-row">
+                <input type="number" class="vgg-ans-input" id="vggans-3" step="1000" placeholder="V" />
+                <button class="vgg-check-btn" onclick="vggCheck(3, 120000, 5000)">Check</button>
+                <span class="vgg-feedback" id="vggfb-3"></span>
+              </div>
+              <div class="vgg-hint" id="vgghint-3">Hint: V = 9×10⁹ × 2×10⁻⁶ / 0.15 = 18,000 / 0.15 = 120,000 V</div>
+            </div>
+
+            <div class="vgg-problem">
+              <p><span class="diff-mid">Medium</span>4. Air breaks down at E = 3 × 10⁶ V/m. For a sphere of radius r = 0.1 m, what is the maximum voltage before sparking? V = E × r (in V).</p>
+              <div class="vgg-problem-row">
+                <input type="number" class="vgg-ans-input" id="vggans-4" step="10000" placeholder="V" />
+                <button class="vgg-check-btn" onclick="vggCheck(4, 300000, 10000)">Check</button>
+                <span class="vgg-feedback" id="vggfb-4"></span>
+              </div>
+              <div class="vgg-hint" id="vgghint-4">Hint: V = E × r = 3×10⁶ × 0.1 = 300,000 V</div>
+            </div>
+
+            <div class="vgg-problem">
+              <p><span class="diff-hard">Challenge</span>5. Q<sub>max</sub> = E<sub>max</sub> × r² / k. For r = 0.2 m, how many μC can the sphere hold before breakdown? (Round to nearest μC.)</p>
+              <div class="vgg-problem-row">
+                <input type="number" class="vgg-ans-input" id="vggans-5" step="1" placeholder="μC" />
+                <button class="vgg-check-btn" onclick="vggCheck(5, 13, 2)">Check</button>
+                <span class="vgg-feedback" id="vggfb-5"></span>
+              </div>
+              <div class="vgg-hint" id="vgghint-5">Hint: Q = 3×10⁶ × (0.2)² / 9×10⁹ = 3×10⁶ × 0.04 / 9×10⁹ = 120,000 / 9×10⁹ ≈ 13.3 μC</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="vgg-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="vgg-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="vgg-pane-sim">
+          <span class="ll-label">Belt Speed</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Speed <span id="vgg-spd-val">5</span></label>
+            <input type="range" class="nl-slider" id="vgg-spd-slider" min="1" max="10" value="5" style="width:100%;" />
+          </div>
+          <span class="ll-label">Sphere Radius</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">r <span id="vgg-r-val">10 cm</span></label>
+            <input type="range" class="nl-slider" id="vgg-r-slider" min="5" max="30" value="10" step="1" style="width:100%;" />
+          </div>
+          <span class="ll-label">Ground Rod</span>
+          <div style="margin-bottom:0.9rem;">
+            <button class="ll-preset" id="vgg-gnd-btn" onclick="vggToggleGround()" style="width:100%;margin-top:0.3rem;">Enable Ground Rod</button>
+          </div>
+          <hr class="ll-hr">
+          <button class="ll-preset" onclick="vggDischarge()" style="width:100%;margin-bottom:0.5rem;">Discharge (Spark!)</button>
+          <button class="ll-preset" onclick="vggReset()" style="width:100%;">Reset</button>
+        </div>
+
+        <div class="ll-pane" id="vgg-pane-guide">
+          <div class="ll-info"><strong>Voltage Formula</strong>V = kQ/r. A larger sphere (bigger r) holds more charge at the same voltage.</div>
+          <div class="ll-info"><strong>Breakdown</strong>Air ionizes at 3 MV/m. V<sub>max</sub> = 3×10⁶ × r.</div>
+          <div class="ll-info"><strong>Faraday's Theorem</strong>Charge on a conductor moves to the outer surface. Inside the dome, E = 0.</div>
+          <div class="ll-info"><strong>Q<sub>max</sub> scales as r²</strong>Double the sphere radius → quadruple the maximum stored charge.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  const canvas = document.getElementById('vgg-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  const K      = 9e9;
+  const E_BREAK = 3e6; // V/m, air breakdown
+
+  // State
+  let charge    = 0;     // Coulombs on dome
+  let sparking  = false;
+  let sparkTimer = 0;
+  let sparkX1 = 0, sparkY1 = 0, sparkX2 = 0, sparkY2 = 0;
+  let groundEnabled = false;
+  let beltPhase = 0;
+  let chargeParticles = []; // belt charge markers
+
+  function getSpeed()  { return parseInt(document.getElementById('vgg-spd-slider').value); }
+  function getRadius() { return parseInt(document.getElementById('vgg-r-slider').value) / 100; } // metres
+
+  function maxCharge() {
+    const r = getRadius();
+    return E_BREAK * r * r / K; // Q_max in Coulombs
+  }
+
+  function domeVoltage() {
+    return K * charge / getRadius();
+  }
+
+  function initChargeParticles() {
+    chargeParticles = [];
+    for (let i = 0; i < 8; i++) {
+      chargeParticles.push({ t: i / 8 }); // t: 0=bottom, 1=top, wraps
+    }
+  }
+
+  function draw() {
+    const W = canvas.offsetWidth || 600;
+    canvas.width  = W;
+    canvas.height = 300;
+    const H = 300;
+    ctx.clearRect(0, 0, W, H);
+
+    const spd    = getSpeed();
+    const r      = getRadius();
+    const Qmax   = maxCharge();
+    const Vmax   = K * Qmax / r;
+
+    // Charge accumulation
+    if (!sparking) {
+      charge += spd * 0.00000008;
+      if (charge >= Qmax || (groundEnabled && charge > Qmax * 0.3)) {
+        vggDischarge();
+      }
+    } else {
+      sparkTimer--;
+      if (sparkTimer <= 0) {
+        sparking = false;
+        charge = 0;
+      }
+    }
+
+    const V = domeVoltage();
+    const chargeRatio = Math.min(charge / Qmax, 1);
+
+    // Belt advance
+    beltPhase += spd * 0.012;
+    if (beltPhase > 1) beltPhase -= 1;
+    chargeParticles.forEach(p => {
+      p.t += spd * 0.0015;
+      if (p.t > 1) p.t -= 1;
+    });
+
+    // Layout
+    const CX   = W * 0.42;  // generator centre x
+    const topY = H * 0.12;  // top of column / dome centre
+    const botY = H * 0.88;  // bottom of column
+    const colW = 22;
+    const domeR = Math.max(24, Math.min(52, r * 220)); // visual dome radius
+
+    // Column (insulating cylinder)
+    const grad = ctx.createLinearGradient(CX - colW, 0, CX + colW, 0);
+    grad.addColorStop(0,   'rgba(200,220,255,0.5)');
+    grad.addColorStop(0.5, 'rgba(230,240,255,0.85)');
+    grad.addColorStop(1,   'rgba(200,220,255,0.5)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(CX - colW, topY + domeR, colW * 2, botY - topY - domeR, 6);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(88,86,214,0.25)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Base
+    ctx.fillStyle = '#94a3b8';
+    ctx.beginPath();
+    ctx.roundRect(CX - 30, botY, 60, 18, 5);
+    ctx.fill();
+
+    // Bottom roller
+    ctx.beginPath();
+    ctx.ellipse(CX, botY, 14, 8, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#64748b';
+    ctx.fill();
+
+    // Belt (two lines)
+    ctx.strokeStyle = 'rgba(180,140,80,0.7)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(CX - 8, topY + domeR);
+    ctx.lineTo(CX - 8, botY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(CX + 8, topY + domeR);
+    ctx.lineTo(CX + 8, botY);
+    ctx.stroke();
+
+    // Charge markers on belt (moving upward)
+    chargeParticles.forEach(p => {
+      // t=0 is bottom, t=1 is top (going up on left side)
+      const belty = botY - p.t * (botY - topY - domeR);
+      ctx.beginPath();
+      ctx.arc(CX - 8, belty, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff9500';
+      ctx.fill();
+      ctx.font = 'bold 7px Inter,sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('+', CX - 8, belty);
+      ctx.textBaseline = 'alphabetic';
+    });
+
+    // Dome
+    const domeFill = ctx.createRadialGradient(CX - domeR * 0.3, topY - domeR * 0.3, domeR * 0.1, CX, topY, domeR);
+    const hue = Math.round(chargeRatio * 30); // orange shift as charge builds
+    domeFill.addColorStop(0, `hsl(${40 + hue}, 80%, 75%)`);
+    domeFill.addColorStop(1, `hsl(${10 + hue}, 90%, 45%)`);
+    ctx.beginPath();
+    ctx.arc(CX, topY, domeR, 0, Math.PI * 2);
+    ctx.fillStyle = sparking ? '#ffcc00' : domeFill;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Charge symbols on dome
+    if (!sparking) {
+      const numSymbols = Math.max(2, Math.round(chargeRatio * 10));
+      ctx.font = 'bold 9px Inter,sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i < numSymbols; i++) {
+        const a = (i / numSymbols) * Math.PI * 2;
+        const px = CX + Math.cos(a) * (domeR - 10);
+        const py = topY + Math.sin(a) * (domeR - 10);
+        ctx.fillText('+', px, py);
+      }
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    // Voltage label on dome
+    ctx.font = 'bold 11px Inter,sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText((V / 1000).toFixed(0) + ' kV', CX, topY);
+    ctx.textBaseline = 'alphabetic';
+
+    // Ground rod (optional)
+    const groundX = CX + domeR + 50;
+    if (groundEnabled) {
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(groundX, topY + 20);
+      ctx.lineTo(groundX, botY);
+      ctx.stroke();
+      ctx.fillStyle = '#64748b';
+      ctx.font = '9px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('GND', groundX, topY + 14);
+    }
+
+    // Spark
+    if (sparking) {
+      ctx.shadowColor = '#ffcc00';
+      ctx.shadowBlur  = 18;
+      ctx.strokeStyle = '#ffcc00';
+      ctx.lineWidth   = 3;
+      ctx.beginPath();
+      // jagged lightning bolt
+      const dx = sparkX2 - sparkX1;
+      const dy = sparkY2 - sparkY1;
+      const steps = 8;
+      let px = sparkX1, py = sparkY1;
+      ctx.moveTo(px, py);
+      for (let i = 1; i <= steps; i++) {
+        const nx = sparkX1 + (dx * i / steps) + (Math.random() - 0.5) * 18;
+        const ny = sparkY1 + (dy * i / steps) + (Math.random() - 0.5) * 18;
+        ctx.lineTo(nx, ny);
+      }
+      ctx.lineTo(sparkX2, sparkY2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Flash
+      if (sparkTimer > 12) {
+        ctx.fillStyle = 'rgba(255,220,80,0.12)';
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
+
+    // Voltage charge bar (right side)
+    const barX = CX + domeR + (groundEnabled ? 90 : 30);
+    const barH = H * 0.6;
+    const barY = H * 0.2;
+    const barW = 14;
+    ctx.strokeStyle = 'rgba(100,116,139,0.3)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX, barY, barW, barH);
+    const fillH = barH * chargeRatio;
+    const barGrad = ctx.createLinearGradient(0, barY + barH, 0, barY);
+    barGrad.addColorStop(0, '#34c759');
+    barGrad.addColorStop(0.7, '#ff9500');
+    barGrad.addColorStop(1,   '#ff3b30');
+    ctx.fillStyle = barGrad;
+    ctx.fillRect(barX, barY + barH - fillH, barW, fillH);
+    ctx.font = '9px Inter,sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'center';
+    ctx.fillText('V', barX + barW / 2, barY - 4);
+    ctx.fillText('max', barX + barW / 2, barY + barH + 12);
+
+    // Update readouts
+    document.getElementById('vgg-r-v').textContent   = (V / 1000).toFixed(1) + ' kV';
+    document.getElementById('vgg-r-q').textContent   = (charge * 1e6).toFixed(2) + ' μC';
+    document.getElementById('vgg-r-spd').textContent = spd;
+
+    requestAnimationFrame(draw);
+  }
+
+  document.getElementById('vgg-spd-slider').addEventListener('input', e => {
+    document.getElementById('vgg-spd-val').textContent = e.target.value;
+  });
+  document.getElementById('vgg-r-slider').addEventListener('input', e => {
+    document.getElementById('vgg-r-val').textContent = e.target.value + ' cm';
+  });
+
+  window.vggToggleGround = function () {
+    groundEnabled = !groundEnabled;
+    const btn = document.getElementById('vgg-gnd-btn');
+    btn.textContent = groundEnabled ? 'Disable Ground Rod' : 'Enable Ground Rod';
+  };
+
+  window.vggDischarge = function () {
+    if (charge < 1e-7) return;
+    sparking   = true;
+    sparkTimer = 28;
+    const W = canvas.offsetWidth || 600;
+    const r = getRadius();
+    const domeR = Math.max(24, Math.min(52, r * 220));
+    const CX = W * 0.42;
+    const topY = 300 * 0.12;
+    // Spark from dome surface to either ground rod or thin air
+    sparkX1 = CX + domeR;
+    sparkY1 = topY;
+    if (groundEnabled) {
+      sparkX2 = CX + domeR + 50;
+      sparkY2 = topY + 20;
+    } else {
+      sparkX2 = CX + domeR + 65 + Math.random() * 30;
+      sparkY2 = topY + (Math.random() - 0.5) * 50;
+    }
+  };
+
+  window.vggReset = function () {
+    charge        = 0;
+    sparking      = false;
+    sparkTimer    = 0;
+    groundEnabled = false;
+    document.getElementById('vgg-gnd-btn').textContent = 'Enable Ground Rod';
+    document.getElementById('vgg-spd-slider').value = 5;
+    document.getElementById('vgg-spd-val').textContent = '5';
+    document.getElementById('vgg-r-slider').value = 10;
+    document.getElementById('vgg-r-val').textContent = '10 cm';
+    initChargeParticles();
+  };
+
+  window.addEventListener('resize', () => {
+    initChargeParticles();
+  });
+
+  initChargeParticles();
+  draw();
+
+  // Practice
+  window.vggCheck = function (n, ans, tol) {
+    const val  = parseFloat(document.getElementById('vggans-' + n).value);
+    const fb   = document.getElementById('vggfb-' + n);
+    const hint = document.getElementById('vgghint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'vgg-feedback err'; return; }
+    if (Math.abs(val - ans) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'vgg-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'vgg-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+  window.vggCheckText = function (n, ans) {
+    const el   = document.getElementById('vggans-' + n);
+    const fb   = document.getElementById('vggfb-' + n);
+    const hint = document.getElementById('vgghint-' + n);
+    if (el.value === ans) {
+      fb.textContent = '✓ Correct!'; fb.className = 'vgg-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'vgg-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+})();
+</script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
