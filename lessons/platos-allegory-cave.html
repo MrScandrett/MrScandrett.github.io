@@ -6,7 +6,7 @@
   <title>Plato's Allegory of the Cave · Mr. Scandrett's ClassroomOS</title>
   <meta
     name="description"
-    content="A K–12 lesson on Plato's Allegory of the Cave — guided walkthrough, interactive simulator, grade-level discussion, and a reflection on truth and discernment."
+    content="A K–12 lesson on Plato's Allegory of the Cave — accessible 3D model viewer, grade-level discussion, and a reflection on truth and discernment."
   />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
@@ -1066,21 +1066,10 @@
 
   </div><!-- .ll-stage -->
 
-  <!-- Fullscreen overlay (fixed positioning, works outside layout flow) -->
-  <div class="cave-sim-overlay" id="cave-sim-overlay" aria-hidden="true" role="dialog" aria-modal="true">
-    <div class="cave-sim-overlay-inner">
-      <div class="cave-sim-overlay-top">
-        <span>Playable Cave Simulator</span>
-        <button class="cave-sim-overlay-close" type="button" id="cave-sim-close">Exit</button>
-      </div>
-      <div class="cave-sim-overlay-body" id="cave-sim-overlay-body"></div>
-    </div>
-  </div>
-
 </div><!-- .ll-viewport -->
 
+  <script type="module" src="https://unpkg.com/@google/model-viewer@4.1.0/dist/model-viewer.min.js"></script>
   <script src="../assets/js/lesson-layout.js"></script>
-  <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <script>
     /* ── Grade Band Selector ── */
     (function() {
@@ -1101,672 +1090,92 @@
       });
     })();
 
-    /* ── Cave Scene Simulator ── */
+    /* ── Cave Model Viewer ── */
     (function() {
-      var canvas = document.getElementById("cave-canvas");
-      if (!canvas || !window.BABYLON) return;
+      var viewer = document.getElementById("cave-model");
+      if (!viewer) return;
 
-      var sceneTitle     = document.getElementById("scene-title");
-      var sceneSub       = document.getElementById("scene-sub");
-      var sceneSees      = document.getElementById("scene-sees");
-      var sceneReality   = document.getElementById("scene-reality");
-      var sceneLesson    = document.getElementById("scene-lesson");
-      var sceneScripture = document.getElementById("scene-scripture");
-      var captionEl      = document.getElementById("cave-caption");
-      var dialogueBox    = document.getElementById("cave-dialogue");
-      var dialogueName   = document.getElementById("cave-dialogue-name");
-      var dialogueText   = document.getElementById("cave-dialogue-text");
-      var resetBtn       = document.getElementById("cave-reset");
-      var playBtn        = document.getElementById("cave-play");
-      var overlay        = document.getElementById("cave-sim-overlay");
-      var overlayBody    = document.getElementById("cave-sim-overlay-body");
-      var overlayClose   = document.getElementById("cave-sim-close");
-      var simStage       = document.getElementById("cave-sim-stage");
-      var simSlot        = document.getElementById("cave-sim-slot");
-
-      var keys = {};
-      var hasSeenOutside = false;
-      var lastZoneKey = "";
-      var lastCaption = "";
-      var isPlaying = false;
-      var engine = null;
-      var scene = null;
-
-      var world = { minX: -12, maxX: 18, minZ: -4.4, maxZ: 4.4, exitX: 6 };
-
-      var zones = [
-        {
-          key: "wall",
-          minX: world.minX,
-          maxX: -4,
-          title: "Facing the Wall",
-          sub: "The shadows still feel like the whole story.",
-          sees: "Only the wall and its moving silhouettes.",
-          reality: "The fire and real objects are behind you.",
-          lesson: "A partial view can feel complete when it is all you have known.",
-          scripture: "Proverbs 14:12 — \"There is a way that appears to be right, but in the end it leads to death.\"",
-          caption: "I have always faced the wall. Turning around feels like tearing away a habit."
-        },
-        {
-          key: "fire",
-          minX: -4,
-          maxX: 1,
-          title: "Firelight",
-          sub: "The fire is brighter than expected, and it stings.",
-          sees: "The source of the shadows and the hands that move them.",
-          reality: "The shadows were copies, not the full thing.",
-          lesson: "Real learning often starts with discomfort.",
-          scripture: "Romans 12:2 — \"Be transformed by the renewal of your mind.\"",
-          caption: "My eyes ache, but I finally see how the shadows were made."
-        },
-        {
-          key: "exit",
-          minX: 1,
-          maxX: world.exitX,
-          title: "Turning Toward the Exit",
-          sub: "The cave mouth pulls you toward a larger world.",
-          sees: "A seam of light at the edge of the cave.",
-          reality: "There is more beyond what the wall allowed.",
-          lesson: "Courage is choosing the unknown over the familiar.",
-          scripture: "John 8:32 — \"You will know the truth, and the truth will set you free.\"",
-          caption: "If the shadows were only echoes, what else have I missed?"
-        },
-        {
-          key: "outside",
-          minX: world.exitX,
-          maxX: world.maxX + 2,
-          title: "Outside the Cave",
-          sub: "Light reveals depth, color, and a bigger story.",
-          sees: "Shapes with depth, color, and purpose.",
-          reality: "The cave was never the whole story.",
-          lesson: "Truth can be demanding, but it leads to freedom.",
-          scripture: "John 1:5 — \"The light shines in the darkness, and the darkness has not overcome it.\"",
-          caption: "The light is painful, but everything finally makes sense."
-        }
-      ];
-
-      var npcs = [
-        {
-          id: "prisoner-a",
-          name: "Chained Prisoner",
-          x: -9.3,
-          z: -1.4,
-          color: "#d7c1a2",
-          lines: [
-            "“Don't look back. The wall is all there is.”",
-            "“The shadows are clearer than anything else.”"
-          ],
-          thought: "Their fear sounds like my old voice."
-        },
-        {
-          id: "prisoner-b",
-          name: "Chained Prisoner",
-          x: -9.3,
-          z: 1.4,
-          color: "#d7c1a2",
-          lines: [
-            "“You're hurting yourself. Sit back down.”",
-            "“Why chase light when we already know the wall?”"
-          ],
-          thought: "They are safe, but not free."
-        },
-        {
-          id: "shadow-keeper",
-          name: "Shadow Keeper",
-          x: -1.2,
-          z: 2,
-          color: "#d5a26a",
-          lines: [
-            "“The show keeps everyone calm. That's enough.”",
-            "“I move the figures. They move the minds.”"
-          ],
-          thought: "Control can feel like purpose, but it keeps people small."
-        },
-        {
-          id: "guide",
-          name: "Guide",
-          x: 3.4,
-          z: -1.2,
-          color: "#cfe7e0",
-          lines: [
-            "“Keep walking. It will hurt before it heals.”",
-            "“Truth is brighter than habit.”"
-          ],
-          thought: "Courage is contagious."
-        },
-        {
-          id: "traveler",
-          name: "Traveler",
-          x: 11.2,
-          z: -1,
-          color: "#f7e7c5",
-          lines: [
-            "“Out here, the world has depth and color.”",
-            "“Go back when you're ready. They need patience.”"
-          ],
-          thought: "The world is wider than fear."
-        }
-      ];
-
-      npcs.forEach(function(npc) { npc.lineIndex = -1; });
-
-      function clamp(val, min, max) {
-        return Math.max(min, Math.min(max, val));
-      }
-
-      function isTypingTarget(target) {
-        return target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
-      }
-
-      function zoneForX(x) {
-        for (var i = 0; i < zones.length; i++) {
-          if (x >= zones[i].minX && x < zones[i].maxX) return zones[i];
-        }
-        return zones[zones.length - 1];
-      }
-
-      function updateHUD(zone) {
-        if (!zone || zone.key === lastZoneKey) return;
-        lastZoneKey = zone.key;
-
-        var title = zone.title;
-        var sub = zone.sub;
-        var sees = zone.sees;
-        var reality = zone.reality;
-        var lesson = zone.lesson;
-        var scripture = zone.scripture;
-        var caption = zone.caption;
-
-        if (hasSeenOutside && zone.key === "wall") {
-          title = "Returning to the Cave";
-          sub = "The prisoners doubt what you saw outside.";
-          sees = "Familiar shadows and skeptical faces.";
-          reality = "Truth looks strange when eyes are trained only on shadows.";
-          lesson = "Wisdom needs patience and courage when sharing truth.";
-          scripture = "1 Thess. 5:21 — \"Test everything; hold fast what is good.\"";
-          caption = "I came back, but they call me confused. I must stay gentle.";
-        }
-
-        if (sceneTitle) sceneTitle.textContent = title;
-        if (sceneSub) sceneSub.textContent = sub;
-        if (sceneSees) sceneSees.textContent = sees;
-        if (sceneReality) sceneReality.textContent = reality;
-        if (sceneLesson) sceneLesson.textContent = lesson;
-        if (sceneScripture) sceneScripture.textContent = scripture;
-        setCaption(caption);
-      }
+      var captionEl = document.getElementById("cave-caption");
+      var dialogueBox = document.getElementById("cave-dialogue");
+      var dialogueText = document.getElementById("cave-dialogue-text");
+      var resetBtn = document.getElementById("cave-reset");
+      var playBtn = document.getElementById("cave-play");
+      var rotateBtn = document.getElementById("cave-explore");
+      var wrap = document.getElementById("cave-canvas-wrap");
+      var defaultOrbit = "0deg 78deg 115%";
+      var defaultFov = "35deg";
 
       function setCaption(text) {
-        if (!captionEl || text === lastCaption) return;
-        captionEl.textContent = text;
-        lastCaption = text;
+        if (captionEl) captionEl.textContent = text;
       }
 
-      function showDialogue(npc) {
-        if (!npc) return;
-        npc.lineIndex = (npc.lineIndex + 1) % npc.lines.length;
-        dialogueName.textContent = npc.name;
-        dialogueText.textContent = npc.lines[npc.lineIndex];
-        dialogueBox.classList.add("is-active");
-        if (npc.thought) setCaption(npc.thought);
+      function setTip(text) {
+        if (dialogueBox) dialogueBox.classList.add("is-active");
+        if (dialogueText) dialogueText.textContent = text;
       }
 
-      function hideDialogue() {
-        dialogueBox.classList.remove("is-active");
+      function syncRotateButton() {
+        if (!rotateBtn) return;
+        var isAutoRotating = viewer.hasAttribute("auto-rotate");
+        rotateBtn.classList.toggle("active", isAutoRotating);
+        rotateBtn.textContent = isAutoRotating ? "Stop Auto-Rotate" : "Start Auto-Rotate";
       }
 
-      function openOverlay() {
-        if (!overlay || !overlayBody || !simStage) return;
-        if (isPlaying) return;
-        overlayBody.appendChild(simStage);
-        overlay.classList.add("is-active");
-        overlay.setAttribute("aria-hidden", "false");
-        document.body.classList.add("cave-sim-open");
-        keys = {};
-        isPlaying = true;
-        if (overlayClose) overlayClose.focus();
-        if (engine) {
-          setTimeout(function() { engine.resize(); }, 60);
+      function resetView() {
+        viewer.removeAttribute("auto-rotate");
+        viewer.setAttribute("camera-orbit", defaultOrbit);
+        viewer.setAttribute("field-of-view", defaultFov);
+        if (typeof viewer.jumpCameraToGoal === "function") {
+          viewer.jumpCameraToGoal();
         }
+        syncRotateButton();
+        setCaption("Rotate the model to compare the shadow wall, the fire, the prisoners, and the bright exit beyond the cave.");
+        setTip("Drag to rotate. Scroll or pinch to zoom. Use Reset View to return to the starting camera angle.");
       }
 
-      function closeOverlay() {
-        if (!overlay || !simSlot || !simStage) return;
-        overlay.classList.remove("is-active");
-        overlay.setAttribute("aria-hidden", "true");
-        document.body.classList.remove("cave-sim-open");
-        simSlot.appendChild(simStage);
-        keys = {};
-        isPlaying = false;
-        if (engine) {
-          setTimeout(function() { engine.resize(); }, 60);
-        }
-      }
-
-      if (playBtn) {
-        playBtn.addEventListener("click", function() {
-          openOverlay();
-        });
-      }
-      if (overlayClose) {
-        overlayClose.addEventListener("click", function() {
-          closeOverlay();
-        });
-      }
-      if (overlay) {
-        overlay.addEventListener("click", function(e) {
-          if (e.target === overlay) closeOverlay();
-        });
-      }
-
-      engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
-      scene = new BABYLON.Scene(engine);
-      scene.clearColor = new BABYLON.Color4(0.04, 0.03, 0.03, 1);
-      scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
-      scene.fogDensity = 0.03;
-      scene.fogColor = new BABYLON.Color3(0.06, 0.05, 0.05);
-
-      var hemi = new BABYLON.HemisphericLight("cave-hemi", new BABYLON.Vector3(0, 1, 0), scene);
-      hemi.intensity = 0.35;
-      hemi.groundColor = new BABYLON.Color3(0.12, 0.09, 0.08);
-
-      var fireLight = new BABYLON.PointLight("cave-fire", new BABYLON.Vector3(-1.4, 1.4, 0.6), scene);
-      fireLight.diffuse = new BABYLON.Color3(1, 0.6, 0.25);
-      fireLight.intensity = 1.15;
-      fireLight.range = 12;
-
-      var sunLight = new BABYLON.DirectionalLight("cave-sun", new BABYLON.Vector3(-0.5, -0.7, 0.1), scene);
-      sunLight.position = new BABYLON.Vector3(18, 10, 0);
-      sunLight.diffuse = new BABYLON.Color3(1, 0.95, 0.85);
-      sunLight.intensity = 0.85;
-
-      var caveWallMat = new BABYLON.StandardMaterial("cave-wall", scene);
-      caveWallMat.diffuseColor = new BABYLON.Color3(0.19, 0.14, 0.11);
-      caveWallMat.specularColor = new BABYLON.Color3(0.04, 0.04, 0.04);
-
-      var caveFloorMat = new BABYLON.StandardMaterial("cave-floor", scene);
-      caveFloorMat.diffuseColor = new BABYLON.Color3(0.16, 0.12, 0.1);
-      caveFloorMat.specularColor = new BABYLON.Color3(0.03, 0.03, 0.03);
-
-      var outsideMat = new BABYLON.StandardMaterial("outside-floor", scene);
-      outsideMat.diffuseColor = new BABYLON.Color3(0.6, 0.5, 0.34);
-      outsideMat.emissiveColor = new BABYLON.Color3(0.12, 0.09, 0.06);
-
-      var shadowWallMat = new BABYLON.StandardMaterial("shadow-wall", scene);
-      shadowWallMat.diffuseColor = new BABYLON.Color3(0.07, 0.06, 0.05);
-      shadowWallMat.emissiveColor = new BABYLON.Color3(0.02, 0.015, 0.01);
-      shadowWallMat.specularColor = new BABYLON.Color3(0, 0, 0);
-      shadowWallMat.backFaceCulling = false;
-
-      var fireMat = new BABYLON.StandardMaterial("fire-mat", scene);
-      fireMat.diffuseColor = new BABYLON.Color3(1, 0.55, 0.2);
-      fireMat.emissiveColor = new BABYLON.Color3(1, 0.5, 0.2);
-
-      var sunMat = new BABYLON.StandardMaterial("sun-mat", scene);
-      sunMat.emissiveColor = new BABYLON.Color3(1, 0.9, 0.7);
-      sunMat.disableLighting = true;
-
-      var shadowDiscMat = new BABYLON.StandardMaterial("shadow-disc", scene);
-      shadowDiscMat.diffuseColor = new BABYLON.Color3(0, 0, 0);
-      shadowDiscMat.alpha = 0.25;
-
-      var caveGround = BABYLON.MeshBuilder.CreateGround("cave-ground", { width: 18, height: 10 }, scene);
-      caveGround.position.x = -3;
-      caveGround.material = caveFloorMat;
-
-      var outsideGround = BABYLON.MeshBuilder.CreateGround("outside-ground", { width: 12, height: 12 }, scene);
-      outsideGround.position.x = 12;
-      outsideGround.material = outsideMat;
-
-      var leftWall = BABYLON.MeshBuilder.CreateBox("wall-left", { width: 18, height: 5.6, depth: 0.6 }, scene);
-      leftWall.position = new BABYLON.Vector3(-3, 2.8, -5.3);
-      leftWall.material = caveWallMat;
-
-      var rightWall = BABYLON.MeshBuilder.CreateBox("wall-right", { width: 18, height: 5.6, depth: 0.6 }, scene);
-      rightWall.position = new BABYLON.Vector3(-3, 2.8, 5.3);
-      rightWall.material = caveWallMat;
-
-      var backWall = BABYLON.MeshBuilder.CreateBox("wall-back", { width: 0.6, height: 5.6, depth: 10.8 }, scene);
-      backWall.position = new BABYLON.Vector3(-12, 2.8, 0);
-      backWall.material = caveWallMat;
-
-      var ceiling = BABYLON.MeshBuilder.CreateBox("cave-ceiling", { width: 18, height: 0.6, depth: 10.8 }, scene);
-      ceiling.position = new BABYLON.Vector3(-3, 5.6, 0);
-      ceiling.material = caveWallMat;
-
-      var shadowWall = BABYLON.MeshBuilder.CreatePlane("shadow-wall", { width: 9.2, height: 3.8 }, scene);
-      shadowWall.position = new BABYLON.Vector3(-9.2, 2, 0);
-      shadowWall.rotation.y = Math.PI / 2;
-      shadowWall.material = shadowWallMat;
-
-      var fireBase = BABYLON.MeshBuilder.CreateCylinder("fire-base", { height: 0.2, diameter: 1.2 }, scene);
-      fireBase.position = new BABYLON.Vector3(-1.4, 0.1, 0.6);
-      fireBase.material = caveWallMat;
-
-      var fire = BABYLON.MeshBuilder.CreateSphere("fire", { diameter: 0.7 }, scene);
-      fire.position = new BABYLON.Vector3(-1.4, 0.7, 0.6);
-      fire.material = fireMat;
-
-      var sun = BABYLON.MeshBuilder.CreateSphere("sun", { diameter: 2.2 }, scene);
-      sun.position = new BABYLON.Vector3(18, 8.5, -2);
-      sun.material = sunMat;
-
-      var hillA = BABYLON.MeshBuilder.CreateBox("hill-a", { width: 5, height: 1.6, depth: 2.6 }, scene);
-      hillA.position = new BABYLON.Vector3(14, 0.8, 4);
-      hillA.material = outsideMat;
-
-      var hillB = BABYLON.MeshBuilder.CreateBox("hill-b", { width: 4, height: 1.2, depth: 2.2 }, scene);
-      hillB.position = new BABYLON.Vector3(16, 0.6, -4);
-      hillB.material = outsideMat;
-
-      /* ── Parapet / shadow-caster walkway (from the 1604 Saenredam engraving) ── */
-      var parapetMat = new BABYLON.StandardMaterial("parapet-mat", scene);
-      parapetMat.diffuseColor = new BABYLON.Color3(0.14, 0.11, 0.09);
-      parapetMat.specularColor = new BABYLON.Color3(0.02, 0.02, 0.02);
-
-      var parapetFloor = BABYLON.MeshBuilder.CreateBox("parapet-floor", { width: 1.6, height: 0.25, depth: 8.4 }, scene);
-      parapetFloor.position = new BABYLON.Vector3(-2.8, 1.1, 0);
-      parapetFloor.material = parapetMat;
-
-      var parapetWall = BABYLON.MeshBuilder.CreateBox("parapet-wall", { width: 0.2, height: 1.6, depth: 8.4 }, scene);
-      parapetWall.position = new BABYLON.Vector3(-3.6, 0.55, 0);
-      parapetWall.material = parapetMat;
-
-      /* Shadow-caster figures on the walkway (holding objects above the parapet) */
-      var puppetMat = new BABYLON.StandardMaterial("puppet-mat", scene);
-      puppetMat.diffuseColor = new BABYLON.Color3(0.25, 0.18, 0.12);
-      puppetMat.specularColor = new BABYLON.Color3(0.03, 0.03, 0.03);
-
-      var puppetPositions = [
-        { x: -2.8, z: -2.4, rodH: 1.8, shape: "horse" },
-        { x: -2.8, z: 0.0,  rodH: 2.0, shape: "vase" },
-        { x: -2.8, z: 2.4,  rodH: 1.7, shape: "man" }
-      ];
-
-      puppetPositions.forEach(function(pp, idx) {
-        /* rod / stick */
-        var rod = BABYLON.MeshBuilder.CreateCylinder("rod-" + idx, { height: pp.rodH, diameter: 0.06 }, scene);
-        rod.position = new BABYLON.Vector3(pp.x, 1.1 + pp.rodH / 2, pp.z);
-        rod.material = puppetMat;
-
-        /* object silhouette atop the rod */
-        var obj;
-        if (pp.shape === "horse") {
-          obj = BABYLON.MeshBuilder.CreateBox("puppet-obj-" + idx, { width: 0.7, height: 0.5, depth: 0.3 }, scene);
-        } else if (pp.shape === "vase") {
-          obj = BABYLON.MeshBuilder.CreateCylinder("puppet-obj-" + idx, { height: 0.6, diameterTop: 0.25, diameterBottom: 0.4 }, scene);
-        } else {
-          obj = BABYLON.MeshBuilder.CreateCylinder("puppet-obj-" + idx, { height: 0.65, diameter: 0.3 }, scene);
-          var pHead = BABYLON.MeshBuilder.CreateSphere("puppet-head-" + idx, { diameter: 0.22 }, scene);
-          pHead.position = new BABYLON.Vector3(pp.x, 1.1 + pp.rodH + 0.42, pp.z);
-          pHead.material = puppetMat;
-        }
-        obj.position = new BABYLON.Vector3(pp.x, 1.1 + pp.rodH + 0.05, pp.z);
-        obj.material = puppetMat;
-      });
-
-      /* ── Shadow silhouettes on the back wall ── */
-      var shadowSilMat = new BABYLON.StandardMaterial("shadow-sil", scene);
-      shadowSilMat.diffuseColor = new BABYLON.Color3(0, 0, 0);
-      shadowSilMat.emissiveColor = new BABYLON.Color3(0.015, 0.012, 0.008);
-      shadowSilMat.alpha = 0.55;
-      shadowSilMat.backFaceCulling = false;
-
-      var shadowShapes = [];
-      var shadowX = -9.18;  /* just in front of shadow wall */
-      [
-        { y: 2.0, z: -2.2, w: 0.9, h: 0.65 },
-        { y: 2.1, z:  0.0, w: 0.5, h: 0.85 },
-        { y: 1.9, z:  2.2, w: 0.75, h: 0.7 }
-      ].forEach(function(ss, idx) {
-        var sil = BABYLON.MeshBuilder.CreatePlane("shadow-sil-" + idx, { width: ss.w, height: ss.h }, scene);
-        sil.position = new BABYLON.Vector3(shadowX, ss.y, ss.z);
-        sil.rotation.y = Math.PI / 2;
-        sil.material = shadowSilMat;
-        shadowShapes.push(sil);
-      });
-
-      /* ── Cave arch / mouth frame ── */
-      var archMat = new BABYLON.StandardMaterial("arch-mat", scene);
-      archMat.diffuseColor = new BABYLON.Color3(0.16, 0.12, 0.1);
-      archMat.specularColor = new BABYLON.Color3(0.03, 0.03, 0.03);
-
-      /* left pillar */
-      var archL = BABYLON.MeshBuilder.CreateBox("arch-l", { width: 1.2, height: 5.6, depth: 1.0 }, scene);
-      archL.position = new BABYLON.Vector3(6, 2.8, -4.4);
-      archL.material = archMat;
-      /* right pillar */
-      var archR = BABYLON.MeshBuilder.CreateBox("arch-r", { width: 1.2, height: 5.6, depth: 1.0 }, scene);
-      archR.position = new BABYLON.Vector3(6, 2.8, 4.4);
-      archR.material = archMat;
-      /* arch lintel */
-      var archTop = BABYLON.MeshBuilder.CreateBox("arch-top", { width: 1.2, height: 1.4, depth: 9.8 }, scene);
-      archTop.position = new BABYLON.Vector3(6, 4.9, 0);
-      archTop.material = archMat;
-
-      /* ── Extra chained prisoners (crowd feel from the engraving) ── */
-      var crowdColors = ["#c4ad8e", "#b8a08a", "#d1bc9e", "#a99678"];
-      var crowdPositions = [
-        { x: -9.5, z: -3.0 }, { x: -9.5, z: 3.0 },
-        { x: -10.2, z: -0.7 }, { x: -10.2, z: 0.7 },
-        { x: -8.6, z: -2.6 }, { x: -8.6, z: 2.6 }
-      ];
-      crowdPositions.forEach(function(cp, idx) {
-        var c = createCharacter("crowd-" + idx, crowdColors[idx % crowdColors.length], 0.85);
-        c.root.position = new BABYLON.Vector3(cp.x, 0, cp.z);
-        c.body.isPickable = false;
-        c.head.isPickable = false;
-        /* face the wall (looking left / negative X) */
-        c.root.rotation.y = -Math.PI / 2;
-      });
-
-      function createCharacter(id, color, scale) {
-        var root = new BABYLON.TransformNode(id, scene);
-        var body = BABYLON.MeshBuilder.CreateCylinder(id + "-body", { height: 1.4 * scale, diameter: 0.6 * scale }, scene);
-        body.position.y = 0.7 * scale;
-        var head = BABYLON.MeshBuilder.CreateSphere(id + "-head", { diameter: 0.52 * scale }, scene);
-        head.position.y = 1.45 * scale;
-        var mat = new BABYLON.StandardMaterial(id + "-mat", scene);
-        mat.diffuseColor = BABYLON.Color3.FromHexString(color);
-        mat.specularColor = new BABYLON.Color3(0.05, 0.05, 0.05);
-        body.material = mat;
-        head.material = mat;
-        body.parent = root;
-        head.parent = root;
-
-        var shadowDisc = BABYLON.MeshBuilder.CreateDisc(id + "-shadow", { radius: 0.48 * scale, tessellation: 24 }, scene);
-        shadowDisc.rotation.x = Math.PI / 2;
-        shadowDisc.position.y = 0.02;
-        shadowDisc.material = shadowDiscMat;
-        shadowDisc.parent = root;
-
-        return { root: root, body: body, head: head };
-      }
-
-      var npcLookup = {};
-      npcs.forEach(function(npc) {
-        var char = createCharacter(npc.id, npc.color, 1);
-        char.root.position = new BABYLON.Vector3(npc.x, 0, npc.z);
-        char.body.isPickable = true;
-        char.head.isPickable = true;
-        char.body.metadata = { npcId: npc.id };
-        char.head.metadata = { npcId: npc.id };
-        npc.root = char.root;
-        npcLookup[npc.id] = npc;
-      });
-
-      var playerChar = createCharacter("player", "#f8e6c7", 1.1);
-      playerChar.body.isPickable = false;
-      playerChar.head.isPickable = false;
-      var player = { root: playerChar.root, speed: 0.08 };
-
-      var camera = new BABYLON.FreeCamera("cave-camera", new BABYLON.Vector3(-14, 6.2, 9), scene);
-      camera.minZ = 0.1;
-      camera.maxZ = 100;
-      camera.fov = 0.9;
-
-      var cameraOffset = new BABYLON.Vector3(-7, 5.2, 8.5);
-      var cameraLookOffset = new BABYLON.Vector3(4, 1.4, 0);
-
-      function updateCamera() {
-        var desired = player.root.position.add(cameraOffset);
-        camera.position = BABYLON.Vector3.Lerp(camera.position, desired, 0.08);
-        camera.setTarget(player.root.position.add(cameraLookOffset));
-      }
-
-      function resetPlayer() {
-        player.root.position.x = -8;
-        player.root.position.y = 0;
-        player.root.position.z = 0;
-        player.root.rotation.y = 0;
-        hasSeenOutside = false;
-        hideDialogue();
-        lastZoneKey = "";
-        updateHUD(zoneForX(player.root.position.x));
-      }
-
-      window.addEventListener("keydown", function(e) {
-        if (e.key === "Escape") {
-          if (overlay && overlay.classList.contains("is-active")) {
-            closeOverlay();
+      if (rotateBtn) {
+        rotateBtn.addEventListener("click", function() {
+          if (viewer.hasAttribute("auto-rotate")) {
+            viewer.removeAttribute("auto-rotate");
+            setCaption("Auto-rotate stopped. Drag the model to inspect specific parts of the cave.");
+            setTip("Manual inspection is active. Drag to rotate and zoom in on any part of the scene.");
           } else {
-            stopInlinePlay();
+            viewer.setAttribute("auto-rotate", "");
+            setCaption("Auto-rotate is on so the cave turns slowly for a guided overview.");
+            setTip("Auto-rotate is running. You can still drag the model at any time to take control.");
           }
-          return;
-        }
-        if (isTypingTarget(e.target)) return;
-        if (!isPlaying) return;
-        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.key) !== -1) {
-          e.preventDefault();
-        }
-        keys[e.key] = true;
-      });
-      window.addEventListener("keyup", function(e) {
-        keys[e.key] = false;
-      });
-
-      scene.onPointerObservable.add(function(pointerInfo) {
-        if (!isPlaying) {
-          canvas.style.cursor = "default";
-          return;
-        }
-        if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE) {
-          var hoverPick = scene.pick(scene.pointerX, scene.pointerY, function(mesh) {
-            return mesh && mesh.metadata && mesh.metadata.npcId;
-          });
-          canvas.style.cursor = hoverPick && hoverPick.hit ? "pointer" : "default";
-        }
-        if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
-          var pick = scene.pick(scene.pointerX, scene.pointerY, function(mesh) {
-            return mesh && mesh.metadata && mesh.metadata.npcId;
-          });
-          if (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata) {
-            var npc = npcLookup[pick.pickedMesh.metadata.npcId];
-            if (npc) showDialogue(npc);
-          } else {
-            hideDialogue();
-          }
-        }
-      });
-
-      /* ── Inline play (Start Exploring) ── */
-      var exploreBtn = document.getElementById("cave-explore");
-
-      function startInlinePlay() {
-        if (isPlaying) return;
-        isPlaying = true;
-        keys = {};
-        if (exploreBtn) exploreBtn.classList.add("active");
-        canvas.focus();
-      }
-
-      function stopInlinePlay() {
-        if (!isPlaying) return;
-        /* don't stop if we're in fullscreen overlay — let closeOverlay handle that */
-        if (overlay && overlay.classList.contains("is-active")) return;
-        isPlaying = false;
-        keys = {};
-        if (exploreBtn) exploreBtn.classList.remove("active");
-      }
-
-      if (exploreBtn) {
-        exploreBtn.addEventListener("click", function() {
-          if (isPlaying && !(overlay && overlay.classList.contains("is-active"))) {
-            stopInlinePlay();
-          } else {
-            startInlinePlay();
-          }
+          syncRotateButton();
         });
       }
 
       if (resetBtn) {
-        resetBtn.addEventListener("click", function() {
-          resetPlayer();
-          stopInlinePlay();
+        resetBtn.addEventListener("click", resetView);
+      }
+
+      if (playBtn) {
+        playBtn.addEventListener("click", function() {
+          if (!wrap) return;
+          if (document.fullscreenElement === wrap) {
+            document.exitFullscreen();
+            return;
+          }
+          if (typeof wrap.requestFullscreen === "function") {
+            wrap.requestFullscreen();
+          }
         });
       }
 
-      function updateFrame() {
-        if (!isPlaying) {
-          updateCamera();
-          return;
-        }
-        var dt = engine.getDeltaTime() / 16.6667;
-        var dx = 0;
-        var dz = 0;
-        if (keys.ArrowLeft || keys.a || keys.A) dx -= 1;
-        if (keys.ArrowRight || keys.d || keys.D) dx += 1;
-        if (keys.ArrowUp || keys.w || keys.W) dz -= 1;
-        if (keys.ArrowDown || keys.s || keys.S) dz += 1;
-
-        if (dx || dz) {
-          var len = Math.sqrt(dx * dx + dz * dz) || 1;
-          dx = dx / len;
-          dz = dz / len;
-          player.root.position.x = clamp(player.root.position.x + dx * player.speed * dt, world.minX, world.maxX);
-          player.root.position.z = clamp(player.root.position.z + dz * player.speed * dt, world.minZ, world.maxZ);
-          player.root.rotation.y = Math.atan2(dx, dz);
-        }
-
-        if (player.root.position.x >= world.exitX + 0.6) hasSeenOutside = true;
-
-        var zone = zoneForX(player.root.position.x);
-        updateHUD(zone);
-
-        var t = performance.now() * 0.002;
-        fireLight.intensity = 1.05 + Math.sin(t * 3.5) * 0.18 + Math.sin(t * 7.2) * 0.08;
-        fire.material.emissiveColor = new BABYLON.Color3(1, 0.5 + Math.abs(Math.sin(t * 2)) * 0.2, 0.18);
-        fire.scaling.y = 1 + Math.sin(t * 4) * 0.1;
-
-        /* Animate shadow silhouettes — flicker and sway with the fire */
-        shadowShapes.forEach(function(sil, idx) {
-          var phase = idx * 2.1;
-          sil.scaling.y = 1 + Math.sin(t * 1.8 + phase) * 0.12;
-          sil.scaling.x = 1 + Math.sin(t * 1.2 + phase + 1.3) * 0.08;
-          sil.material.alpha = 0.45 + Math.sin(t * 3 + phase) * 0.12;
-        });
-
-        updateCamera();
-      }
-
-      resetPlayer();
-      updateCamera();
-
-      engine.runRenderLoop(function() {
-        updateFrame();
-        scene.render();
+      viewer.addEventListener("load", function() {
+        setTip("The model is ready. Start with the wall of shadows, then rotate toward the fire and the cave opening.");
       });
 
-      window.addEventListener("resize", function() {
-        engine.resize();
+      viewer.addEventListener("error", function() {
+        setCaption("The interactive model could not be loaded here. Use the download link inside the viewer as a fallback.");
+        setTip("If the model does not appear, download the GLB file from the viewer fallback link.");
       });
 
-      if (window.ResizeObserver) {
-        var resizeObserver = new ResizeObserver(function() {
-          engine.resize();
-        });
-        resizeObserver.observe(canvas);
-      }
+      setTip("Drag to rotate. Scroll or pinch to zoom. Use Reset View to return to the starting camera angle.");
+      syncRotateButton();
     })();
 
     /* ── Discussion Tabs ── */
