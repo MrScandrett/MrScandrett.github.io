@@ -190,7 +190,7 @@
     .app-recommend-kicker,
     .app-project-kicker {
       color: #4f6c89;
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -414,7 +414,7 @@
       min-height: 1.7rem;
       padding: 0.2rem 0.56rem;
       border-radius: 999px;
-      font-size: 0.72rem;
+      font-size: 0.78rem;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -559,9 +559,13 @@
     }
 
     .app-atlas-copy h2,
+    .app-atlas-copy-heading,
     .app-atlas-panel h3 {
       margin: 0;
       color: #10253d;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
     }
 
     .app-atlas-copy p,
@@ -653,7 +657,7 @@
 
     .atlas-node-circle {
       cursor: pointer;
-      transition: transform 180ms ease, filter 180ms ease;
+      transition: transform 180ms ease, filter 180ms ease, fill-opacity 200ms ease, stroke-opacity 200ms ease;
     }
 
     .atlas-node-group.is-active .atlas-node-circle,
@@ -662,13 +666,23 @@
       filter: drop-shadow(0 20px 36px rgba(15, 23, 42, 0.2));
     }
 
+    /* Hover isolate: when atlas has a hovered node, dim all non-hovered nodes */
+    #app-atlas-svg.has-hover .atlas-node-group:not(.is-hover) .atlas-node-circle {
+      fill-opacity: 0.07;
+      stroke-opacity: 0.2;
+    }
+    #app-atlas-svg.has-hover .atlas-node-group:not(.is-hover) .atlas-node-label,
+    #app-atlas-svg.has-hover .atlas-node-group:not(.is-hover) .atlas-node-kicker {
+      opacity: 0.3;
+    }
+
     .atlas-node-hit {
       fill: transparent;
       cursor: pointer;
     }
 
     .atlas-node-kicker {
-      font-size: 11px;
+      font-size: 13px;
       line-height: 1;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -782,7 +796,7 @@
   </header>
 
   <main id="main-content">
-    <section class="hero applications-hero">
+    <section class="hero applications-hero" aria-label="Quick Start">
       <div class="applications-hero-copy">
         <p class="eyebrow">Quick Start</p>
         <h1 class="reveal">Classroom Applications</h1>
@@ -796,7 +810,7 @@
 
     </section>
 
-    <section class="section app-system" id="knowledge-atlas">
+    <section class="section app-system" id="knowledge-atlas" aria-label="Knowledge Atlas">
       <div class="app-atlas-shell">
         <div class="app-atlas-head">
           <div class="app-system-copy">
@@ -812,13 +826,21 @@
           </div>
         </div>
 
-        <div class="app-atlas-body">
+        <div class="app-atlas-toolbar" style="display:flex;justify-content:flex-end;padding:0 1.2rem 0.5rem;gap:0.5rem;">
+          <button id="atlas-view-map" class="app-browser-chip is-active" type="button" aria-pressed="true">Map View</button>
+          <button id="atlas-view-list" class="app-browser-chip" type="button" aria-pressed="false">List View</button>
+        </div>
+
+        <div id="atlas-list-view" hidden style="padding:0 1.2rem 1.2rem;display:grid;gap:0.6rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));">
+        </div>
+
+        <div class="app-atlas-body" id="atlas-map-view">
           <div class="app-atlas-map" id="app-atlas-stage">
             <canvas class="app-atlas-canvas" id="app-atlas-canvas" aria-hidden="true"></canvas>
             <svg class="app-atlas-svg" id="app-atlas-svg" aria-label="Interactive knowledge map"></svg>
             <div class="app-atlas-copy">
               <div class="app-atlas-copy-card">
-                <h2>Browse The Map</h2>
+                <p class="app-atlas-copy-heading">Browse The Map</p>
                 <p>Start with a topic bubble if you want a guided path. Pick a quick link bubble if you want to open a specific tool right away.</p>
                 <p class="app-atlas-hint">The map spaces itself automatically so the labels stay readable as the layout shifts.</p>
               </div>
@@ -868,7 +890,7 @@
       </div>
     </section>
 
-    <section class="section app-system" id="guided-studio">
+    <section class="section app-system" id="guided-studio" aria-label="Guided Launcher">
       <div class="app-system-shell">
         <div class="app-system-topbar">
           <div class="app-system-copy">
@@ -960,7 +982,7 @@
       </div>
     </section>
 
-    <section class="section app-system" id="build-today">
+    <section class="section app-system" id="build-today" aria-label="Build Today — Projects">
       <div class="app-system-shell">
         <div class="app-projects-head">
           <div class="app-system-copy">
@@ -1043,7 +1065,7 @@
       </div>
     </section>
 
-    <section class="section app-system" id="full-library">
+    <section class="section app-system" id="full-library" aria-label="Full Library">
       <div class="app-system-shell app-library-shell">
         <div class="app-library-head">
           <div class="app-library-copy">
@@ -3190,7 +3212,6 @@
           section.hidden = !showLibrary || !hasMatches;
         });
         libraryButton.setAttribute("aria-expanded", String(showLibrary));
-        libraryButton.setAttribute("aria-pressed", String(showLibrary));
         libraryButton.textContent = showLibrary ? "Hide Full Library" : "Open Full Library";
         libraryButton.classList.toggle("is-active", showLibrary);
         libraryStatus.textContent = showLibrary
@@ -3404,10 +3425,10 @@
       const portalY = height * (isNarrow ? 0.69 : 0.56);
 
       const simulation = d3.forceSimulation(nodes)
-        .force("x", d3.forceX((node) => node.kind === "world" ? worldX : portalX).strength(0.14))
-        .force("y", d3.forceY((node) => node.kind === "world" ? worldY : portalY).strength(0.14))
-        .force("charge", d3.forceManyBody().strength(-8))
-        .force("collision", d3.forceCollide((node) => node.radius + 14).iterations(3))
+        .force("x", d3.forceX((node) => node.kind === "world" ? worldX : portalX).strength(0.18))
+        .force("y", d3.forceY((node) => node.kind === "world" ? worldY : portalY).strength(0.18))
+        .force("charge", d3.forceManyBody().strength(-60))
+        .force("collision", d3.forceCollide((node) => node.radius + 22).iterations(6))
         .stop();
 
       for (let tick = 0; tick < 240; tick += 1) simulation.tick();
@@ -3433,7 +3454,8 @@
       const merged = entered.merge(selection)
         .attr("class", (node) => `atlas-node-group${node.id === activeAtlasId ? " is-active" : ""}`)
         .attr("transform", (node) => `translate(${node.x},${node.y})`)
-        .attr("aria-label", (node) => node.label);
+        .attr("aria-label", (node) => node.label)
+        .attr("aria-pressed", (node) => String(node.id === activeAtlasId));
 
       merged.select(".atlas-node-circle")
         .attr("r", (node) => node.radius)
@@ -3469,7 +3491,13 @@
         .on("mouseenter", function (_event, node) {
           activeAtlasId = node.id;
           updateAtlasPanel(node);
+          d3.select(svg).classed("has-hover", true);
+          d3.selectAll(".atlas-node-group").classed("is-hover", (n) => n.id === node.id);
           renderAtlas();
+        })
+        .on("mouseleave", function () {
+          d3.select(svg).classed("has-hover", false);
+          d3.selectAll(".atlas-node-group").classed("is-hover", false);
         })
         .on("focus", function (_event, node) {
           activeAtlasId = node.id;
@@ -3614,6 +3642,55 @@
     if (stage && svg && explorer) {
       renderAtlas();
       window.addEventListener("resize", renderAtlas);
+    }
+
+    // Atlas List View toggle
+    const atlasViewMap  = document.getElementById("atlas-view-map");
+    const atlasViewList = document.getElementById("atlas-view-list");
+    const atlasMapView  = document.getElementById("atlas-map-view");
+    const atlasListView = document.getElementById("atlas-list-view");
+
+    if (atlasViewMap && atlasViewList && atlasMapView && atlasListView) {
+      // Populate list view once
+      atlasListView.innerHTML = atlasNodes.map((node) => `
+        <button class="app-atlas-list-item" type="button"
+          style="display:grid;gap:0.3rem;text-align:left;padding:0.85rem 1rem;border-radius:18px;
+                 border:1px solid rgba(25,49,77,0.12);background:rgba(255,255,255,0.88);
+                 cursor:pointer;font:inherit;transition:box-shadow 140ms ease;"
+          data-atlas-id="${node.id}">
+          <span style="display:flex;align-items:center;gap:0.5rem;">
+            <span style="width:10px;height:10px;border-radius:50%;background:${node.color};flex-shrink:0;"></span>
+            <strong style="color:#10253d;font-size:0.95rem;">${node.label}</strong>
+            <span style="margin-left:auto;font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                         letter-spacing:0.06em;color:#64748b;">${node.kind === "world" ? "Topic" : "Quick Link"}</span>
+          </span>
+          <span style="font-size:0.84rem;color:#607286;line-height:1.5;">${node.desc}</span>
+        </button>
+      `).join("");
+
+      atlasListView.querySelectorAll(".app-atlas-list-item").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const node = atlasNodes.find((n) => n.id === btn.dataset.atlasId);
+          if (!node || !explorer) return;
+          activeAtlasId = node.id;
+          explorer.setMissionLevel(node.mission, node.level, { scroll: true });
+          if (node.kind === "portal") window.open(node.url, "_blank", "noopener");
+          updateAtlasPanel(node);
+        });
+      });
+
+      function setAtlasView(view) {
+        const isMap = view === "map";
+        atlasMapView.hidden  = !isMap;
+        atlasListView.hidden =  isMap;
+        atlasViewMap.classList.toggle("is-active",  isMap);
+        atlasViewList.classList.toggle("is-active", !isMap);
+        atlasViewMap.setAttribute("aria-pressed",  String(isMap));
+        atlasViewList.setAttribute("aria-pressed", String(!isMap));
+      }
+
+      atlasViewMap.addEventListener("click",  () => setAtlasView("map"));
+      atlasViewList.addEventListener("click", () => setAtlasView("list"));
     }
   </script>
   <script>
