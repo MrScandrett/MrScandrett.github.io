@@ -336,7 +336,37 @@
       background: #070605; border: 1px solid rgba(230, 166, 77, 0.15);
       height: clamp(240px, 45vh, 440px);
     }
-    #cave-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    #cave-model {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(560px 320px at 50% 24%, rgba(230, 166, 77, 0.1), transparent 58%),
+        linear-gradient(180deg, #15100d 0%, #080605 100%);
+      --poster-color: transparent;
+      --progress-bar-color: #efbb72;
+      --progress-mask: #3b2a1c;
+    }
+    #cave-canvas-wrap:fullscreen {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+    }
+    #cave-canvas-wrap:fullscreen #cave-model {
+      height: 100vh;
+    }
+    .cave-model-fallback {
+      padding: 1rem;
+      color: #f5e2c2;
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+    .cave-model-fallback a {
+      color: #ffd188;
+    }
+    .cave-model-fallback a:hover {
+      color: #ffe7c5;
+    }
 
     .cave-caption {
       margin: 0.9rem 0 0;
@@ -632,9 +662,8 @@
     }
     .cave-explore-btn:hover { background: rgba(230,166,77,0.25); border-color: rgba(230,166,77,0.5); }
     .cave-explore-btn.active { background: rgba(230,166,77,0.35); border-color: rgba(230,166,77,0.6); color: #fff; }
-    .cave-explore-btn.active::after { content: " (Press Esc to stop)"; font-weight: 400; opacity: 0.65; }
 
-    #cave-canvas:focus { outline: 2px solid var(--cave-accent); outline-offset: -2px; }
+    #cave-model:focus { outline: 2px solid var(--cave-accent); outline-offset: -2px; }
 
     /* Panel action row */
     .cave-action-row {
@@ -691,41 +720,59 @@
 
   <div class="ll-stage">
 
-    <!-- ══ SIM: 3D Cave canvas fills viewport ══ -->
+    <!-- ══ SIM: 3D cave model viewer fills viewport ══ -->
     <div class="ll-sim cave-sim-area">
 
       <div class="cave-sim-header">
         <h1>Plato's Allegory of the Cave</h1>
-        <p>Walk through the cave as the freed prisoner. Discover what the shadows hide.</p>
+        <p>Explore the cave with a simple 3D model viewer. Rotate, zoom, and inspect the scene from any angle.</p>
       </div>
 
       <div id="cave-sim-slot">
         <div id="cave-sim-stage">
           <div id="cave-canvas-wrap">
-            <canvas id="cave-canvas" width="940" height="420" tabindex="0"></canvas>
+            <model-viewer
+              id="cave-model"
+              src="../assets/models/allegory_of_the_cave.glb"
+              alt="3D model of Plato's Allegory of the Cave showing chained prisoners, the shadow wall, the fire, and the cave opening to the outside."
+              camera-controls
+              touch-action="pan-y"
+              interaction-prompt="auto"
+              shadow-intensity="1"
+              environment-image="neutral"
+              exposure="1"
+              camera-orbit="0deg 78deg 115%"
+              field-of-view="35deg"
+              min-camera-orbit="auto 35deg auto"
+              max-camera-orbit="auto 110deg auto">
+              <div class="cave-model-fallback">
+                Your browser can't display the interactive model.
+                <a href="../assets/models/allegory_of_the_cave.glb">Download the GLB file instead</a>.
+              </div>
+            </model-viewer>
           </div>
 
-          <p class="cave-caption" id="cave-caption">I have always faced the wall. Turning around feels like tearing away a habit.</p>
+          <p class="cave-caption" id="cave-caption">Rotate the model to compare the shadow wall, the fire, the prisoners, and the bright exit beyond the cave.</p>
 
           <div class="cave-dialogue" id="cave-dialogue" aria-live="polite">
-            <span class="cave-dialogue-name" id="cave-dialogue-name">Prisoner</span>
-            <p class="cave-dialogue-text" id="cave-dialogue-text">"Why would you leave? The shadows are all we know."</p>
+            <span class="cave-dialogue-name" id="cave-dialogue-name">Model Viewer Tips</span>
+            <p class="cave-dialogue-text" id="cave-dialogue-text">Drag to rotate. Scroll or pinch to zoom. Use Reset View to return to the starting camera angle.</p>
           </div>
         </div>
       </div>
 
       <div class="cave-info-grid">
         <article class="cave-info-card">
-          <span>Where You Are</span>
-          <p id="scene-sees">Only moving shadows on the wall.</p>
+          <span>What To Find</span>
+          <p id="scene-sees">Locate the shadow wall first, then rotate toward the fire and the chained prisoners.</p>
         </article>
         <article class="cave-info-card">
-          <span>What You Realize</span>
-          <p id="scene-reality">There is a fire and a real object behind the prisoners, but they cannot turn to see it.</p>
+          <span>What To Notice</span>
+          <p id="scene-reality">The prisoners see appearances first, while the viewer can inspect the full layout at once.</p>
         </article>
         <article class="cave-info-card">
           <span>Main Lesson</span>
-          <p id="scene-lesson">A small view can feel complete when it is all you have ever known.</p>
+          <p id="scene-lesson">A limited point of view can feel complete when it is all you have ever known.</p>
         </article>
         <article class="cave-info-card">
           <span>Scripture Echo</span>
@@ -752,25 +799,26 @@
         <div class="ll-pane ll-active" id="cave-controls">
 
           <div class="cave-scene-readout">
-            <h3 id="scene-title">Facing the Wall</h3>
-            <p id="scene-sub">The shadows still feel like the whole story.</p>
+            <h3 id="scene-title">3D Cave Model</h3>
+            <p id="scene-sub">A simpler, touch-friendly viewer for inspecting the Allegory of the Cave scene.</p>
           </div>
           <hr class="ll-hr">
 
-          <button class="cave-explore-btn" type="button" id="cave-explore">Start Exploring</button>
+          <button class="cave-explore-btn" type="button" id="cave-explore">Start Auto-Rotate</button>
 
           <div class="cave-action-row">
-            <button class="cave-action-btn" type="button" id="cave-play" aria-haspopup="dialog">Full Screen</button>
-            <button class="cave-action-btn" type="button" id="cave-reset">Reset</button>
+            <button class="cave-action-btn" type="button" id="cave-play">Full Screen</button>
+            <button class="cave-action-btn" type="button" id="cave-reset">Reset View</button>
           </div>
           <hr class="ll-hr">
 
-          <span class="ll-label">Controls</span>
+          <span class="ll-label">Viewer Controls</span>
           <div class="cave-ctrl-keys">
-            <span class="cave-ctrl-key"><kbd>W A S D</kbd> Move</span>
-            <span class="cave-ctrl-key"><kbd>Click</kbd> Talk to characters</span>
+            <span class="cave-ctrl-key"><kbd>Drag</kbd> Rotate</span>
+            <span class="cave-ctrl-key"><kbd>Scroll</kbd> Zoom</span>
+            <span class="cave-ctrl-key"><kbd>Pinch</kbd> Zoom</span>
           </div>
-          <p style="margin:0 0 0.5rem; font-size:0.72rem; color:var(--cave-dim); line-height:1.5;">Reach the light outside, then return to check on the prisoners.</p>
+          <p style="margin:0 0 0.5rem; font-size:0.72rem; color:var(--cave-dim); line-height:1.5;">Start at the wall of shadows, then rotate toward the fire and the opening to compare appearance and reality.</p>
           <hr class="ll-hr">
 
           <span class="ll-label">Grade Band</span>
