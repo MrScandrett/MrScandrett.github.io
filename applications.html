@@ -300,19 +300,28 @@
       padding: 1.2rem 1.2rem 0;
     }
 
-    .app-atlas-stage {
+    .app-atlas-body {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.7fr);
+      padding: 0 1.2rem 1.2rem;
+      align-items: stretch;
+    }
+
+    .app-atlas-map {
       position: relative;
-      min-height: 520px;
+      min-height: 560px;
       overflow: hidden;
       border-radius: 26px;
-      margin: 0 1.2rem 1.2rem;
       background:
         radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.84), rgba(240, 247, 255, 0.25) 35%, rgba(212, 229, 250, 0.18) 60%, rgba(225, 238, 255, 0.2) 100%),
         linear-gradient(180deg, rgba(233, 242, 253, 0.88), rgba(247, 250, 255, 0.98));
       border: 1px solid rgba(25, 49, 77, 0.08);
     }
 
-    .app-atlas-canvas {
+    .app-atlas-canvas,
+    .app-atlas-svg,
+    .app-atlas-copy {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -320,27 +329,16 @@
       display: block;
     }
 
-    .app-atlas-overlay {
-      position: relative;
+    .app-atlas-svg {
       z-index: 2;
-      min-height: 520px;
-      pointer-events: none;
     }
 
     .app-atlas-copy {
-      position: absolute;
-      top: 1.15rem;
-      left: 1.15rem;
-      width: min(26rem, calc(100% - 2.3rem));
+      z-index: 3;
       display: grid;
-      gap: 0.6rem;
-      padding: 1rem 1.05rem;
-      border-radius: 22px;
-      background: rgba(255, 255, 255, 0.78);
-      border: 1px solid rgba(25, 49, 77, 0.08);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
-      pointer-events: auto;
+      align-content: start;
+      padding: 1.15rem;
+      pointer-events: none;
     }
 
     .app-atlas-copy h2,
@@ -362,11 +360,8 @@
       font-size: 0.92rem;
     }
 
+    .app-atlas-copy-card,
     .app-atlas-panel {
-      position: absolute;
-      right: 1.15rem;
-      bottom: 1.15rem;
-      width: min(20rem, calc(100% - 2.3rem));
       display: grid;
       gap: 0.7rem;
       padding: 1rem 1.05rem;
@@ -375,6 +370,23 @@
       border: 1px solid rgba(25, 49, 77, 0.08);
       backdrop-filter: blur(10px);
       box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    .app-atlas-copy-card {
+      width: min(28rem, calc(100% - 1.5rem));
+      pointer-events: auto;
+    }
+
+    .app-atlas-sidebar {
+      display: grid;
+      gap: 0.9rem;
+      align-content: start;
+    }
+
+    .app-atlas-panel {
+      position: relative;
+      width: auto;
+      min-height: 18rem;
       pointer-events: auto;
     }
 
@@ -417,68 +429,66 @@
       box-shadow: 0 0 0 6px color-mix(in srgb, var(--atlas-chip, #5fa8ff) 18%, transparent);
     }
 
-    .app-atlas-nodes {
-      position: absolute;
-      inset: 0;
-      z-index: 2;
+    .app-atlas-svg text {
       pointer-events: none;
+      user-select: none;
     }
 
-    .atlas-node {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: var(--node-size, 7.5rem);
-      height: var(--node-size, 7.5rem);
-      border: 0;
-      border-radius: 999px;
-      padding: 0.85rem;
-      display: grid;
-      align-content: center;
-      justify-items: center;
-      gap: 0.25rem;
-      text-align: center;
-      color: #0f2842;
-      background:
-        radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.82) 42%, color-mix(in srgb, var(--node-color, #7ec8ff) 25%, white) 100%);
-      box-shadow:
-        0 18px 32px rgba(15, 23, 42, 0.1),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.85);
-      transform: translate3d(calc(-50% + var(--node-x, 0px)), calc(-50% + var(--node-y, 0px)), 0) scale(var(--node-scale, 1));
-      transition: transform 220ms ease, box-shadow 220ms ease, background 220ms ease;
+    .atlas-node-circle {
       cursor: pointer;
-      pointer-events: auto;
-      backdrop-filter: blur(10px);
+      transition: transform 180ms ease, filter 180ms ease;
     }
 
-    .atlas-node:hover,
-    .atlas-node:focus-visible,
-    .atlas-node.is-active {
-      transform: translate3d(calc(-50% + var(--node-x, 0px)), calc(-50% + var(--node-y, 0px) - 6px), 0) scale(calc(var(--node-scale, 1) + 0.04));
-      box-shadow:
-        0 22px 40px rgba(15, 23, 42, 0.14),
-        0 0 0 6px color-mix(in srgb, var(--node-color, #7ec8ff) 18%, transparent);
-      outline: none;
+    .atlas-node-group.is-active .atlas-node-circle,
+    .atlas-node-group:hover .atlas-node-circle,
+    .atlas-node-group:focus-visible .atlas-node-circle {
+      filter: drop-shadow(0 20px 36px rgba(15, 23, 42, 0.2));
     }
 
-    .atlas-node span,
-    .atlas-node strong {
-      display: block;
-      pointer-events: none;
+    .atlas-node-hit {
+      fill: transparent;
+      cursor: pointer;
     }
 
-    .atlas-node span {
-      font-size: 0.72rem;
-      line-height: 1.2;
-      letter-spacing: 0.08em;
+    .atlas-node-kicker {
+      font-size: 11px;
+      line-height: 1;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #4f6c89;
+      fill: #4f6c89;
       font-weight: 700;
+      text-anchor: middle;
     }
 
-    .atlas-node strong {
-      font-size: 0.92rem;
+    .atlas-node-label {
+      font-size: 14px;
       line-height: 1.2;
+      fill: #10253d;
+      font-weight: 700;
+      text-anchor: middle;
+    }
+
+    .app-atlas-notes {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .app-atlas-note {
+      padding: 0.85rem 0.9rem;
+      border-radius: 18px;
+      background: rgba(247, 250, 255, 0.92);
+      border: 1px solid rgba(25, 49, 77, 0.08);
+    }
+
+    .app-atlas-note strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #10253d;
+    }
+
+    .app-atlas-note small {
+      color: #607286;
+      line-height: 1.55;
     }
 
     @media (max-width: 760px) {
@@ -489,29 +499,20 @@
         align-items: stretch;
       }
 
-      .app-atlas-stage,
-      .app-atlas-overlay {
-        min-height: 660px;
+      .app-atlas-body {
+        grid-template-columns: 1fr;
       }
 
-      .app-atlas-copy,
-      .app-atlas-panel {
-        position: relative;
-        top: auto;
-        left: auto;
-        right: auto;
-        bottom: auto;
-        width: auto;
-        margin: 1rem;
+      .app-atlas-map {
+        min-height: 520px;
       }
 
-      .app-atlas-panel {
-        margin-top: 0;
+      .app-atlas-copy {
+        padding: 0.9rem;
       }
 
-      .atlas-node {
-        width: var(--node-size-mobile, 6.5rem);
-        height: var(--node-size-mobile, 6.5rem);
+      .app-atlas-copy-card {
+        width: calc(100% - 1rem);
       }
     }
   </style>
@@ -568,27 +569,41 @@
           </div>
         </div>
 
-        <div class="app-atlas-stage" id="app-atlas-stage">
-          <canvas class="app-atlas-canvas" id="app-atlas-canvas" aria-hidden="true"></canvas>
-          <div class="app-atlas-overlay">
+        <div class="app-atlas-body">
+          <div class="app-atlas-map" id="app-atlas-stage">
+            <canvas class="app-atlas-canvas" id="app-atlas-canvas" aria-hidden="true"></canvas>
+            <svg class="app-atlas-svg" id="app-atlas-svg" aria-label="Interactive knowledge map"></svg>
             <div class="app-atlas-copy">
-              <h2>Open Something Interesting</h2>
-              <p>Start with a world bubble if you want guidance. Pick a portal bubble if you already know what you want to explore.</p>
-              <p class="app-atlas-hint">The map moves a little with your pointer, and the highlighted bubble tells you where it leads.</p>
+              <div class="app-atlas-copy-card">
+                <h2>Open Something Interesting</h2>
+                <p>Start with a world bubble if you want a path. Pick a portal bubble if you want a direct jump into a tool or archive.</p>
+                <p class="app-atlas-hint">The map lays itself out automatically, so bubbles stay readable instead of crashing into each other.</p>
+              </div>
             </div>
+          </div>
 
-            <div class="app-atlas-nodes" id="app-atlas-nodes" aria-label="Interactive knowledge map"></div>
-
+          <aside class="app-atlas-sidebar">
             <article class="app-atlas-panel" id="app-atlas-panel">
               <h3 id="app-atlas-title">Games World</h3>
               <p id="app-atlas-desc">Build playful systems, study mechanics, and move from simple interactions into real projects.</p>
-              <small id="app-atlas-kind">This bubble will update the guided launcher below.</small>
+              <small id="app-atlas-kind">This world will update the guided launcher below.</small>
               <div class="app-atlas-panel-actions">
                 <a class="app-launch-link" id="app-atlas-primary" href="#guided-studio">Go There</a>
                 <a class="app-secondary-link" id="app-atlas-secondary" href="#guided-studio">See Guided Path</a>
               </div>
             </article>
-          </div>
+
+            <div class="app-atlas-notes" aria-label="Atlas notes">
+              <div class="app-atlas-note">
+                <strong>World bubbles</strong>
+                <small>These retune the guided launcher so the rest of the page becomes simpler.</small>
+              </div>
+              <div class="app-atlas-note">
+                <strong>Portal bubbles</strong>
+                <small>These open straight into a tool, archive, or internet knowledge plane in a new tab.</small>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </section>
@@ -2500,29 +2515,6 @@
       const projectCards = Array.from(document.querySelectorAll(".app-project-card"));
       const libraryButton = document.getElementById("toggle-library");
       const libraryStatus = document.getElementById("library-status");
-      const atlasStage = document.getElementById("app-atlas-stage");
-      const atlasNodesRoot = document.getElementById("app-atlas-nodes");
-      const atlasPanel = document.getElementById("app-atlas-panel");
-      const atlasTitle = document.getElementById("app-atlas-title");
-      const atlasDesc = document.getElementById("app-atlas-desc");
-      const atlasKind = document.getElementById("app-atlas-kind");
-      const atlasPrimary = document.getElementById("app-atlas-primary");
-      const atlasSecondary = document.getElementById("app-atlas-secondary");
-
-      const atlasNodes = [
-        { id: "world-game", kind: "world", label: "Games World", shortLabel: "Games", desc: "Stories, mechanics, playful systems, and browser worlds you can study or build.", color: "#4f8cff", x: 18, y: 31, size: "8.8rem", sizeMobile: "7rem", mission: "game", level: "68" },
-        { id: "world-robot", kind: "world", label: "Machines World", shortLabel: "Machines", desc: "Robots, circuits, fabrication, and systems that move from idea to prototype.", color: "#36b37e", x: 34, y: 68, size: "8rem", sizeMobile: "6.7rem", mission: "robot", level: "68" },
-        { id: "world-art", kind: "world", label: "Expression World", shortLabel: "Expression", desc: "Design, sound, video, XR, and visual experimentation for creative projects.", color: "#f59e0b", x: 52, y: 24, size: "8.6rem", sizeMobile: "6.8rem", mission: "art", level: "35" },
-        { id: "world-web", kind: "world", label: "Web World", shortLabel: "Web", desc: "Sites, apps, portfolios, and the tools that turn ideas into something shareable.", color: "#06b6d4", x: 68, y: 58, size: "8.2rem", sizeMobile: "6.7rem", mission: "web", level: "68" },
-        { id: "world-learn", kind: "world", label: "Knowledge World", shortLabel: "Knowledge", desc: "Reference, data, simulations, and research tools that help questions go deeper.", color: "#8b5cf6", x: 82, y: 28, size: "8.9rem", sizeMobile: "7rem", mission: "learn", level: "68" },
-        { id: "portal-scratch", kind: "portal", label: "Scratch", shortLabel: "Scratch", desc: "Start simple, make something move, and learn what interaction feels like.", color: "#ff8a3d", x: 24, y: 52, size: "6.3rem", sizeMobile: "5.8rem", url: "https://scratch.mit.edu/", mission: "game", level: "35" },
-        { id: "portal-wokwi", kind: "portal", label: "Wokwi", shortLabel: "Wokwi", desc: "Prototype circuits, code, and physical computing ideas without needing hardware first.", color: "#34d399", x: 46, y: 76, size: "6.5rem", sizeMobile: "5.9rem", url: "https://wokwi.com/", mission: "robot", level: "68" },
-        { id: "portal-arts", kind: "portal", label: "Google Arts & Culture", shortLabel: "Arts", desc: "Drift through museums, objects, and visual history when you want inspiration.", color: "#f97316", x: 58, y: 43, size: "6.6rem", sizeMobile: "5.9rem", url: "https://artsandculture.google.com/", mission: "art", level: "35" },
-        { id: "portal-britannica", kind: "portal", label: "Britannica", shortLabel: "Britannica", desc: "Start with a curated overview, then branch into deeper sources and evidence.", color: "#7c3aed", x: 79, y: 70, size: "6.6rem", sizeMobile: "6rem", url: "https://www.britannica.com/", mission: "learn", level: "68" },
-        { id: "portal-emulator", kind: "portal", label: "EmulatorJS", shortLabel: "EmulatorJS", desc: "Explore classic systems and console history through embedded emulation.", color: "#3b82f6", x: 89, y: 49, size: "6.1rem", sizeMobile: "5.6rem", url: "https://emulatorjs.org/", mission: "game", level: "912" }
-      ];
-
-      let activeAtlasNodeId = atlasNodes[0].id;
 
       function renderRecommendations() {
         const cards = guidedPaths[state.mission][state.level];
@@ -2593,129 +2585,6 @@
         }
       }
 
-      function setAtlasPanelLinks(node) {
-        const recommendedLevel = node.level || state.level;
-        const recommended = node.mission ? guidedPaths[node.mission][recommendedLevel][0] : null;
-
-        if (node.kind === "world") {
-          atlasPrimary.textContent = "Open Guided Path";
-          atlasPrimary.href = "#guided-studio";
-          atlasPrimary.target = "_self";
-          atlasPrimary.onclick = function (event) {
-            event.preventDefault();
-            setMissionLevel(node.mission, node.level, { scroll: true });
-          };
-
-          atlasSecondary.textContent = recommended ? `Open ${recommended.title}` : "See Guided Path";
-          atlasSecondary.href = recommended ? recommended.url : "#guided-studio";
-          atlasSecondary.target = recommended ? "_blank" : "_self";
-          atlasSecondary.rel = recommended ? "noreferrer" : "";
-          atlasSecondary.onclick = null;
-        } else {
-          atlasPrimary.textContent = `Open ${node.label}`;
-          atlasPrimary.href = node.url;
-          atlasPrimary.target = "_blank";
-          atlasPrimary.rel = "noreferrer";
-          atlasPrimary.onclick = null;
-
-          atlasSecondary.textContent = "Use This As My Path";
-          atlasSecondary.href = "#guided-studio";
-          atlasSecondary.target = "_self";
-          atlasSecondary.rel = "";
-          atlasSecondary.onclick = function (event) {
-            event.preventDefault();
-            setMissionLevel(node.mission, node.level, { scroll: true });
-          };
-        }
-      }
-
-      function renderAtlasPanel(node) {
-        if (!atlasPanel) return;
-        atlasPanel.hidden = false;
-        atlasTitle.textContent = node.label;
-        atlasDesc.textContent = node.desc;
-        atlasKind.textContent = node.kind === "world"
-          ? `This world will retune the guided launcher to ${missionMeta[node.mission].label.toLowerCase()} for ${levelMeta[node.level]}.`
-          : `This portal opens directly in a new tab and can also steer the guided launcher toward ${missionMeta[node.mission].label.toLowerCase()}.`;
-        setAtlasPanelLinks(node);
-      }
-
-      function renderAtlasNodes() {
-        if (!atlasNodesRoot) return;
-
-        atlasNodesRoot.innerHTML = atlasNodes.map((node) => `
-          <button
-            class="atlas-node${node.id === activeAtlasNodeId ? " is-active" : ""}"
-            type="button"
-            data-atlas-node="${node.id}"
-            aria-label="${node.label}"
-            style="left:${node.x}%; top:${node.y}%; --node-color:${node.color}; --node-size:${node.size}; --node-size-mobile:${node.sizeMobile};"
-          >
-            <span>${node.kind === "world" ? "World" : "Portal"}</span>
-            <strong>${node.shortLabel}</strong>
-          </button>
-        `).join("");
-
-        Array.from(atlasNodesRoot.querySelectorAll("[data-atlas-node]")).forEach((button) => {
-          const node = atlasNodes.find((entry) => entry.id === button.dataset.atlasNode);
-          if (!node) return;
-
-          button.addEventListener("pointerenter", function () {
-            activeAtlasNodeId = node.id;
-            renderAtlasPanel(node);
-            renderAtlasNodes();
-          });
-
-          button.addEventListener("focus", function () {
-            activeAtlasNodeId = node.id;
-            renderAtlasPanel(node);
-            renderAtlasNodes();
-          });
-
-          button.addEventListener("click", function () {
-            activeAtlasNodeId = node.id;
-            renderAtlasPanel(node);
-            renderAtlasNodes();
-
-            if (node.mission && node.level) {
-              setMissionLevel(node.mission, node.level);
-            }
-
-            if (node.kind === "world") {
-              scrollToGuided();
-              return;
-            }
-
-            window.open(node.url, "_blank", "noopener");
-          });
-        });
-      }
-
-      function bindAtlasMotion() {
-        if (!atlasStage || !atlasNodesRoot) return;
-
-        atlasStage.addEventListener("pointermove", function (event) {
-          const rect = atlasStage.getBoundingClientRect();
-          const offsetX = ((event.clientX - rect.left) / rect.width) - 0.5;
-          const offsetY = ((event.clientY - rect.top) / rect.height) - 0.5;
-
-          Array.from(atlasNodesRoot.children).forEach((node, index) => {
-            const drift = 8 + (index % 4) * 2;
-            node.style.setProperty("--node-x", `${offsetX * drift * 2}px`);
-            node.style.setProperty("--node-y", `${offsetY * drift * 2}px`);
-            node.style.setProperty("--node-scale", `${1 + Math.abs(offsetX * 0.015) + Math.abs(offsetY * 0.015)}`);
-          });
-        });
-
-        atlasStage.addEventListener("pointerleave", function () {
-          Array.from(atlasNodesRoot.children).forEach((node) => {
-            node.style.setProperty("--node-x", "0px");
-            node.style.setProperty("--node-y", "0px");
-            node.style.setProperty("--node-scale", "1");
-          });
-        });
-      }
-
       function renderAll() {
         renderControls();
         renderRecommendations();
@@ -2752,14 +2621,10 @@
         });
       }
 
-      if (atlasNodesRoot) {
-        renderAtlasPanel(atlasNodes[0]);
-        renderAtlasNodes();
-        bindAtlasMotion();
-      }
-
       window.applicationsExplorer = {
-        atlasNodes,
+        missionMeta,
+        levelMeta,
+        guidedPaths,
         setMissionLevel,
         getState: function () {
           return { ...state };
@@ -2770,10 +2635,192 @@
     })();
   </script>
   <script type="module">
+    import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
     import * as THREE from "https://unpkg.com/three@0.161.0/build/three.module.js";
 
+    const explorer = window.applicationsExplorer;
     const stage = document.getElementById("app-atlas-stage");
     const canvas = document.getElementById("app-atlas-canvas");
+    const svg = document.getElementById("app-atlas-svg");
+    const atlasTitle = document.getElementById("app-atlas-title");
+    const atlasDesc = document.getElementById("app-atlas-desc");
+    const atlasKind = document.getElementById("app-atlas-kind");
+    const atlasPrimary = document.getElementById("app-atlas-primary");
+    const atlasSecondary = document.getElementById("app-atlas-secondary");
+
+    const atlasNodes = [
+      { id: "world-game", kind: "world", label: "Games World", shortLabel: "Games", desc: "Stories, mechanics, playful systems, and browser worlds you can study or build.", color: "#4f8cff", radius: 88, mission: "game", level: "68" },
+      { id: "world-robot", kind: "world", label: "Machines World", shortLabel: "Machines", desc: "Robots, circuits, fabrication, and systems that move from idea to prototype.", color: "#36b37e", radius: 82, mission: "robot", level: "68" },
+      { id: "world-art", kind: "world", label: "Expression World", shortLabel: "Expression", desc: "Design, sound, video, XR, and visual experimentation for creative projects.", color: "#f59e0b", radius: 86, mission: "art", level: "35" },
+      { id: "world-web", kind: "world", label: "Web World", shortLabel: "Web", desc: "Sites, apps, portfolios, and the tools that turn ideas into something shareable.", color: "#06b6d4", radius: 84, mission: "web", level: "68" },
+      { id: "world-learn", kind: "world", label: "Knowledge World", shortLabel: "Knowledge", desc: "Reference, data, simulations, and research tools that help questions go deeper.", color: "#8b5cf6", radius: 90, mission: "learn", level: "68" },
+      { id: "portal-scratch", kind: "portal", label: "Scratch", shortLabel: "Scratch", desc: "Start simple, make something move, and learn what interaction feels like.", color: "#ff8a3d", radius: 60, url: "https://scratch.mit.edu/", mission: "game", level: "35" },
+      { id: "portal-wokwi", kind: "portal", label: "Wokwi", shortLabel: "Wokwi", desc: "Prototype circuits, code, and physical computing ideas without needing hardware first.", color: "#34d399", radius: 61, url: "https://wokwi.com/", mission: "robot", level: "68" },
+      { id: "portal-arts", kind: "portal", label: "Google Arts & Culture", shortLabel: "Arts", desc: "Drift through museums, objects, and visual history when you want inspiration.", color: "#f97316", radius: 62, url: "https://artsandculture.google.com/", mission: "art", level: "35" },
+      { id: "portal-britannica", kind: "portal", label: "Britannica", shortLabel: "Britannica", desc: "Start with a curated overview, then branch into deeper sources and evidence.", color: "#7c3aed", radius: 62, url: "https://www.britannica.com/", mission: "learn", level: "68" },
+      { id: "portal-emulator", kind: "portal", label: "EmulatorJS", shortLabel: "EmulatorJS", desc: "Explore classic systems and console history through embedded emulation.", color: "#3b82f6", radius: 58, url: "https://emulatorjs.org/", mission: "game", level: "912" }
+    ];
+
+    let activeAtlasId = atlasNodes[0].id;
+
+    function updateAtlasPanel(node) {
+      if (!node || !explorer) return;
+
+      atlasTitle.textContent = node.label;
+      atlasDesc.textContent = node.desc;
+
+      const recommended = explorer.guidedPaths[node.mission]?.[node.level]?.[0];
+      if (node.kind === "world") {
+        atlasKind.textContent = `This world retunes the guided launcher to ${explorer.missionMeta[node.mission].label.toLowerCase()} for ${explorer.levelMeta[node.level]}.`;
+        atlasPrimary.textContent = "Open Guided Path";
+        atlasPrimary.href = "#guided-studio";
+        atlasPrimary.target = "_self";
+        atlasPrimary.rel = "";
+        atlasPrimary.onclick = function (event) {
+          event.preventDefault();
+          explorer.setMissionLevel(node.mission, node.level, { scroll: true });
+        };
+
+        atlasSecondary.textContent = recommended ? `Open ${recommended.title}` : "See Guided Path";
+        atlasSecondary.href = recommended ? recommended.url : "#guided-studio";
+        atlasSecondary.target = recommended ? "_blank" : "_self";
+        atlasSecondary.rel = recommended ? "noreferrer" : "";
+        atlasSecondary.onclick = null;
+      } else {
+        atlasKind.textContent = `This portal opens directly in a new tab and can also steer the guided launcher toward ${explorer.missionMeta[node.mission].label.toLowerCase()}.`;
+        atlasPrimary.textContent = `Open ${node.label}`;
+        atlasPrimary.href = node.url;
+        atlasPrimary.target = "_blank";
+        atlasPrimary.rel = "noreferrer";
+        atlasPrimary.onclick = null;
+
+        atlasSecondary.textContent = "Use This As My Path";
+        atlasSecondary.href = "#guided-studio";
+        atlasSecondary.target = "_self";
+        atlasSecondary.rel = "";
+        atlasSecondary.onclick = function (event) {
+          event.preventDefault();
+          explorer.setMissionLevel(node.mission, node.level, { scroll: true });
+        };
+      }
+    }
+
+    function renderAtlas() {
+      if (!stage || !svg || !explorer) return;
+
+      const width = stage.clientWidth;
+      const height = stage.clientHeight;
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+      const isNarrow = width < 720;
+      const nodes = atlasNodes.map((node, index) => ({
+        ...node,
+        radius: isNarrow ? Math.round(node.radius * 0.84) : node.radius,
+        x: width * (0.24 + (index % 4) * 0.16),
+        y: height * (0.28 + Math.floor(index / 4) * 0.24)
+      }));
+
+      const worldX = width * (isNarrow ? 0.5 : 0.42);
+      const worldY = height * (isNarrow ? 0.34 : 0.42);
+      const portalX = width * (isNarrow ? 0.5 : 0.6);
+      const portalY = height * (isNarrow ? 0.69 : 0.56);
+
+      const simulation = d3.forceSimulation(nodes)
+        .force("x", d3.forceX((node) => node.kind === "world" ? worldX : portalX).strength(0.14))
+        .force("y", d3.forceY((node) => node.kind === "world" ? worldY : portalY).strength(0.14))
+        .force("charge", d3.forceManyBody().strength(-8))
+        .force("collision", d3.forceCollide((node) => node.radius + 14).iterations(3))
+        .stop();
+
+      for (let tick = 0; tick < 240; tick += 1) simulation.tick();
+      simulation.stop();
+
+      const selection = d3.select(svg)
+        .selectAll("g.atlas-node-group")
+        .data(nodes, (node) => node.id);
+
+      selection.exit().remove();
+
+      const entered = selection.enter()
+        .append("g")
+        .attr("class", "atlas-node-group")
+        .attr("tabindex", 0)
+        .attr("role", "button");
+
+      entered.append("circle").attr("class", "atlas-node-circle");
+      entered.append("circle").attr("class", "atlas-node-hit");
+      entered.append("text").attr("class", "atlas-node-kicker");
+      entered.append("text").attr("class", "atlas-node-label");
+
+      const merged = entered.merge(selection)
+        .attr("class", (node) => `atlas-node-group${node.id === activeAtlasId ? " is-active" : ""}`)
+        .attr("transform", (node) => `translate(${node.x},${node.y})`)
+        .attr("aria-label", (node) => node.label);
+
+      merged.select(".atlas-node-circle")
+        .attr("r", (node) => node.radius)
+        .attr("fill", (node) => node.color)
+        .attr("fill-opacity", 0.22)
+        .attr("stroke", (node) => node.color)
+        .attr("stroke-opacity", 0.58)
+        .attr("stroke-width", 1.6);
+
+      merged.select(".atlas-node-hit")
+        .attr("r", (node) => node.radius + 8);
+
+      merged.select(".atlas-node-kicker")
+        .attr("y", -10)
+        .text((node) => node.kind === "world" ? "World" : "Portal");
+
+      merged.select(".atlas-node-label")
+        .attr("y", 14)
+        .each(function (node) {
+          const text = d3.select(this);
+          const words = node.shortLabel.split(" ");
+          text.selectAll("tspan").remove();
+          if (words.length > 1 && node.shortLabel.length > 10) {
+            const breakIndex = Math.ceil(words.length / 2);
+            text.append("tspan").attr("x", 0).attr("dy", -4).text(words.slice(0, breakIndex).join(" "));
+            text.append("tspan").attr("x", 0).attr("dy", 16).text(words.slice(breakIndex).join(" "));
+          } else {
+            text.append("tspan").attr("x", 0).text(node.shortLabel);
+          }
+        });
+
+      merged
+        .on("mouseenter", function (_event, node) {
+          activeAtlasId = node.id;
+          updateAtlasPanel(node);
+          renderAtlas();
+        })
+        .on("focus", function (_event, node) {
+          activeAtlasId = node.id;
+          updateAtlasPanel(node);
+          renderAtlas();
+        })
+        .on("click", function (_event, node) {
+          activeAtlasId = node.id;
+          updateAtlasPanel(node);
+          explorer.setMissionLevel(node.mission, node.level);
+          renderAtlas();
+          if (node.kind === "portal") {
+            window.open(node.url, "_blank", "noopener");
+          }
+        })
+        .on("keydown", function (event, node) {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          activeAtlasId = node.id;
+          updateAtlasPanel(node);
+          explorer.setMissionLevel(node.mission, node.level);
+          renderAtlas();
+          if (node.kind === "portal") {
+            window.open(node.url, "_blank", "noopener");
+          }
+        });
+
+      updateAtlasPanel(nodes.find((node) => node.id === activeAtlasId) || nodes[0]);
+    }
 
     if (stage && canvas) {
       const renderer = new THREE.WebGLRenderer({
@@ -2874,6 +2921,11 @@
       window.addEventListener("resize", resize);
       resize();
       requestAnimationFrame(tick);
+    }
+
+    if (stage && svg && explorer) {
+      renderAtlas();
+      window.addEventListener("resize", renderAtlas);
     }
   </script>
   <script>
