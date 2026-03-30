@@ -180,7 +180,37 @@
   /* ──────────────────────────────────────────────────────────
      Panel open / close
   ────────────────────────────────────────────────────────── */
+  function getPanelOpenButton(panel) {
+    var stage = panel && panel.closest('.ll-stage');
+    return stage ? stage.querySelector('.ll-open-btn') : null;
+  }
+
+  function setPanelInteractivity(panel, open) {
+    if (open) {
+      panel.removeAttribute('inert');
+      if ('inert' in panel) panel.inert = false;
+    } else {
+      panel.setAttribute('inert', '');
+      if ('inert' in panel) panel.inert = true;
+    }
+  }
+
   function setPanel(panel, open) {
+    if (!panel) return;
+
+    if (!open) {
+      var active = document.activeElement;
+      if (active && panel.contains(active)) {
+        var openBtn = getPanelOpenButton(panel);
+        if (openBtn) {
+          openBtn.focus();
+        } else if (typeof active.blur === 'function') {
+          active.blur();
+        }
+      }
+    }
+
+    setPanelInteractivity(panel, open);
     panel.setAttribute('aria-hidden', open ? 'false' : 'true');
     panel.dispatchEvent(new CustomEvent('ll:panel', {
       detail: { open: open },
@@ -189,6 +219,10 @@
   }
 
   function initPanel() {
+    document.querySelectorAll('.ll-panel').forEach(function (panel) {
+      setPanelInteractivity(panel, panel.getAttribute('aria-hidden') !== 'true');
+    });
+
     /* Close / collapse button */
     document.querySelectorAll('.ll-panel-close').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
