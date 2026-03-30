@@ -568,7 +568,7 @@
           <div class="pd-load-spinner"></div>
           <span>Loading GPlates reconstruction data…</span>
         </div>
-        <span class="pd-attribution" aria-hidden="true">EarthByte · MERDITH2021 · CC-BY</span>
+        <span class="pd-attribution" aria-hidden="true">EarthByte · MULLER2019 · CC-BY</span>
 
         <div class="pd-map-hint">Use the slider or play button to follow the breakup of Pangaea from 240 million years ago to today.</div>
       </div>
@@ -685,16 +685,20 @@
   <script>
     // ─── GPlates Real-Data Continental Drift ─────────────────────────────────
     // Coastline polygons: EarthByte Group, University of Sydney
-    // Model: MERDITH2021 (1000 Ma), CC-BY 4.0
-    // Data pre-fetched from gws.gplates.org and simplified (DP ε=0.3°) for
-    // fast local loading. Original resolution preserved for scientific accuracy.
+    // Model: MULLER2019 (0-250 Ma), CC-BY 4.0
+    // Exact timesteps are requested from GPlates at runtime, with local
+    // pre-fetched lesson snapshots kept as a fallback if the API is unavailable.
     // ─────────────────────────────────────────────────────────────────────────
 
-    const GEODATA_URL = t =>
+    const RECONSTRUCTION_MODEL = 'MULLER2019';
+    const GPLATES_URL = t =>
+      `https://gws.gplates.org/reconstruct/coastlines/?time=${t}&model=${RECONSTRUCTION_MODEL}`;
+    const LOCAL_GEODATA_URL = t =>
       `../assets/geodata/pangaea/coastlines_${t}ma_simple.json`;
 
     const KEYFRAME_TIMES = [240, 200, 160, 120, 80, 40, 0];
-    const geoCache = {};      // time (Ma) → GeoJSON FeatureCollection
+    const geoCache = Object.create(null);      // time (Ma) → GeoJSON FeatureCollection
+    const geoRequests = Object.create(null);   // time (Ma) → in-flight Promise
 
     // ─── Narrative frames ─────────────────────────────────────────────────────
     const frames = [
@@ -702,7 +706,7 @@
         summary: 'Most major landmasses are locked together in a single supercontinent. The Atlantic Ocean has not opened yet, and the southern continents still travel as a connected group.',
         ocean: 'No Atlantic Ocean yet', motion: 'Supercontinent still joined',
         guide: ['Africa and South America are still locked together.', 'North America and Eurasia are part of the same broad northern mass.', 'India, Australia, and Antarctica remain grouped in the south.'],
-        note: 'Shapes here are real tectonic plate polygons from the MERDITH2021 model (EarthByte, CC-BY). Each block is a crustal terrane, not a simplified blob.' },
+        note: 'Shapes here are real tectonic plate polygons from the MULLER2019 model (EarthByte, CC-BY). This reconstruction is designed for the last 250 million years, making it a stronger match for a Pangaea-to-today lesson.' },
       { time: 200, title: 'Rifting begins',
         summary: 'Heat and stretching start cracking the supercontinent. North America edges away from Africa and Eurasia, but the pieces still sit much closer together than they do today.',
         ocean: 'Atlantic rift beginning', motion: 'First major splits',
@@ -746,12 +750,38 @@
     const graticule  = d3.geoGraticule().step([30, 30])();
 
     // ─── GPlates fetch ────────────────────────────────────────────────────────
+    function normalizeReconstructionTime(time) {
+      return Math.max(0, Math.min(240, Math.round(time)));
+    }
+
+    async function fetchLocalFallback(time) {
+      const res = await fetch(LOCAL_GEODATA_URL(time));
+      if (!res.ok) throw new Error(`Local fallback HTTP ${res.status} for ${time} Ma`);
+      return res.json();
+    }
+
     async function fetchCoastlines(time) {
-      if (geoCache[time]) return geoCache[time];
-      const res = await fetch(GEODATA_URL(time));
-      if (!res.ok) throw new Error(`GPlates HTTP ${res.status} for ${time} Ma`);
-      geoCache[time] = await res.json();
-      return geoCache[time];
+      const roundedTime = normalizeReconstructionTime(time);
+      if (geoCache[roundedTime]) return geoCache[roundedTime];
+      if (geoRequests[roundedTime]) return geoRequests[roundedTime];
+
+      geoRequests[roundedTime] = (async () => {
+        try {
+          const res = await fetch(GPLATES_URL(roundedTime));
+          if (!res.ok) throw new Error(`GPlates HTTP ${res.status} for ${roundedTime} Ma`);
+          geoCache[roundedTime] = await res.json();
+        } catch (apiErr) {
+          if (!KEYFRAME_TIMES.includes(roundedTime)) throw apiErr;
+          geoCache[roundedTime] = await fetchLocalFallback(roundedTime);
+        }
+        return geoCache[roundedTime];
+      })();
+
+      try {
+        return await geoRequests[roundedTime];
+      } finally {
+        delete geoRequests[roundedTime];
+      }
     }
 
     async function preloadFrames() {
@@ -762,7 +792,7 @@
         renderMap(state.time);
       } catch (err) {
         mapLoadingEl.innerHTML =
-          '<span class="pd-load-error">Could not load reconstruction data. Make sure the geodata files are present and reload the page.</span>';
+          '<span class="pd-load-error">Could not load reconstruction data. Check the GPlates connection and reload the page.</span>';
         console.error('GPlates load error:', err);
       }
     }
@@ -789,42 +819,89 @@
       ctx.stroke();
     }
 
-    function drawCoastlines(geojson, alpha) {
+    function drawCoastlines(geojson) {
       if (!geojson) return;
       ctx.save();
-      ctx.globalAlpha = alpha;
       ctx.beginPath();
       pathGen(geojson);
-      ctx.fillStyle = '#6baa62';
+
+      const landFill = ctx.createLinearGradient(0, 90, 0, 560);
+      landFill.addColorStop(0, '#95b77e');
+      landFill.addColorStop(0.55, '#729764');
+      landFill.addColorStop(1, '#506f52');
+
+      ctx.fillStyle = landFill;
+      ctx.shadowColor = 'rgba(5, 12, 18, 0.26)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 2;
       ctx.fill();
+
+      ctx.shadowColor = 'transparent';
       ctx.beginPath();
       pathGen(geojson);
-      ctx.strokeStyle = 'rgba(232,247,255,0.26)';
-      ctx.lineWidth = 0.6;
+      ctx.strokeStyle = 'rgba(233, 244, 228, 0.42)';
+      ctx.lineWidth = 0.85;
       ctx.stroke();
       ctx.restore();
     }
 
     // ─── Map render ───────────────────────────────────────────────────────────
+    let renderedMapTime = null;
+    let renderedGeoJSON = null;
+    let activeMapRequest = 0;
+
+    function warmNearbyCoastlines(time) {
+      [time - 1, time + 1].forEach(t => {
+        if (t < 0 || t > 240 || geoCache[t] || geoRequests[t]) return;
+        fetchCoastlines(t).catch(() => {});
+      });
+    }
+
     function renderMap(time) {
       ctx.clearRect(0, 0, 1000, 600);
       drawBackground();
       drawGraticule();
 
-      let older   = KEYFRAME_TIMES[0];
-      let younger = KEYFRAME_TIMES[KEYFRAME_TIMES.length - 1];
-      for (let i = 0; i < KEYFRAME_TIMES.length - 1; i++) {
-        if (time <= KEYFRAME_TIMES[i] && time >= KEYFRAME_TIMES[i + 1]) {
-          older   = KEYFRAME_TIMES[i];
-          younger = KEYFRAME_TIMES[i + 1];
-          break;
-        }
+      const exactTime = normalizeReconstructionTime(time);
+      if (renderedMapTime === exactTime && renderedGeoJSON) {
+        drawCoastlines(renderedGeoJSON);
+        return;
       }
-      const span = older - younger;
-      const mix  = span > 0 ? (older - time) / span : 0;
 
-      drawCoastlines(geoCache[older],  1 - mix);
-      drawCoastlines(geoCache[younger], mix);
+      const cached = geoCache[exactTime];
+      if (cached) {
+        renderedMapTime = exactTime;
+        renderedGeoJSON = cached;
+        mapLoadingEl.style.display = 'none';
+        drawCoastlines(cached);
+        warmNearbyCoastlines(exactTime);
+        return;
+      }
+
+      if (renderedGeoJSON) {
+        drawCoastlines(renderedGeoJSON);
+      } else {
+        mapLoadingEl.style.display = 'flex';
+      }
+
+      const requestId = ++activeMapRequest;
+      fetchCoastlines(exactTime)
+        .then(geojson => {
+          if (requestId !== activeMapRequest) return;
+          if (normalizeReconstructionTime(state.time) !== exactTime) return;
+          renderedMapTime = exactTime;
+          renderedGeoJSON = geojson;
+          mapLoadingEl.style.display = 'none';
+          renderMap(state.time);
+          warmNearbyCoastlines(exactTime);
+        })
+        .catch(err => {
+          if (requestId !== activeMapRequest) return;
+          mapLoadingEl.innerHTML =
+            '<span class="pd-load-error">Could not load reconstruction data. Check the GPlates connection and reload the page.</span>';
+          mapLoadingEl.style.display = 'flex';
+          console.error('GPlates load error:', err);
+        });
     }
 
     // ─── Narrative render ─────────────────────────────────────────────────────
