@@ -38,9 +38,12 @@
     [data-theme="night"] .fc-steps li { color: rgba(245,245,247,0.72); }
     .fc-steps li::before { content: counter(fc-step); background: #5856d6; color: #fff; font-size: 0.72rem; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.1rem; }
 
-    .fc-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    .fc-sim-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr); gap: 0.85rem; margin: 0.8rem 0; align-items: stretch; }
+    .fc-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0; background: #f7f8fa; }
     [data-theme="night"] .fc-canvas-wrap { background: #1c1c1e; }
     #fc-canvas { width: 100%; height: 320px; display: block; }
+    #fc-graph-canvas { width: 100%; height: 320px; display: block; }
+    .fc-graph-caption { margin-top: 0.55rem; font-size: 0.78rem; color: #64748b; line-height: 1.5; }
 
     .fc-meters { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 0.6rem 0; }
     .fc-meter { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
@@ -83,6 +86,7 @@
     .diff-hard { background: rgba(255,59,48,0.12); color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
 
     @media (max-width: 700px) {
+      .fc-sim-grid,
       .fc-meters,
       .fc-apps,
       .fc-compare { grid-template-columns: 1fr; }
@@ -156,8 +160,18 @@
         <section class="fc-card" style="--card-accent:#5856d6;">
           <h2>Simulator</h2>
           <p style="font-size:0.84rem;color:#64748b;">Press Drop to release the magnet. Compare copper, aluminum, plastic, iron, or no tube at all to see how material properties change the braking force.</p>
-          <div class="fc-canvas-wrap">
-            <canvas id="fc-canvas" aria-label="Falling magnet in conductive tube simulation"></canvas>
+          <div class="fc-sim-grid">
+            <div>
+              <div class="fc-canvas-wrap">
+                <canvas id="fc-canvas" aria-label="Falling magnet in conductive tube simulation"></canvas>
+              </div>
+            </div>
+            <div>
+              <div class="fc-canvas-wrap">
+                <canvas id="fc-graph-canvas" aria-label="Real-time line graph of magnet velocity and induced current"></canvas>
+              </div>
+              <p class="fc-graph-caption">Live graph: purple shows velocity and orange shows induced current. Each drop traces how the tube material changes the magnet's motion over time.</p>
+            </div>
           </div>
           <div class="fc-meters">
             <div class="fc-meter"><span class="fc-meter-label">Magnet Velocity</span><span class="fc-meter-val" id="fc-vel">0.00 m/s</span></div>
@@ -298,6 +312,8 @@
 (function () {
   const canvas = document.getElementById('fc-canvas');
   const ctx = canvas.getContext('2d');
+  const graphCanvas = document.getElementById('fc-graph-canvas');
+  const graphCtx = graphCanvas.getContext('2d');
 
   const g = 9.81;
   const magnetMass = 0.0118;
@@ -312,6 +328,8 @@
   let raf = null;
   let lastTime = null;
   let currentA = 0;
+  let simTime = 0;
+  let graphPoints = [];
 
   const materialMap = {
     none: { label: "None", conductivity: 0.00, muFactor: 1.0, color: "rgba(220,220,225,0.18)", stroke: "rgba(160,160,170,0.8)" },
@@ -360,6 +378,126 @@
     const loops = getLoopCount();
     const strength = getMagnetStrength();
     return Math.abs(currentA) * strength * loops * material.muFactor * 0.0018;
+  }
+
+  function resizeGraphCanvas() {
+    const W = graphCanvas.offsetWidth || 320;
+    graphCanvas.width = W;
+    graphCanvas.height = 320;
+  }
+
+  function pushGraphPoint() {
+    graphPoints.push({
+      t: simTime,
+      velocity: magnetVel,
+      current: currentA
+    });
+
+    const cutoff = Math.max(6, simTime - 8);
+    while (graphPoints.length > 2 && graphPoints[1].t < cutoff) {
+      graphPoints.shift();
+    }
+  }
+
+  function drawGraph() {
+    resizeGraphCanvas();
+
+    const W = graphCanvas.width;
+    const H = graphCanvas.height;
+    const pad = { left: 46, right: 14, top: 20, bottom: 34 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const maxTime = Math.max(6, simTime, graphPoints.length ? graphPoints[graphPoints.length - 1].t : 0);
+    const maxVel = Math.max(1, ...graphPoints.map((point) => Math.abs(point.velocity)), Math.abs(magnetVel));
+    const maxCur = Math.max(0.4, ...graphPoints.map((point) => Math.abs(point.current)), Math.abs(currentA));
+
+    graphCtx.clearRect(0, 0, W, H);
+    graphCtx.fillStyle = '#f7f8fa';
+    graphCtx.fillRect(0, 0, W, H);
+
+    graphCtx.strokeStyle = 'rgba(88,86,214,0.12)';
+    graphCtx.lineWidth = 1;
+    for (let i = 0; i <= 4; i += 1) {
+      const y = pad.top + (plotH / 4) * i;
+      graphCtx.beginPath();
+      graphCtx.moveTo(pad.left, y);
+      graphCtx.lineTo(W - pad.right, y);
+      graphCtx.stroke();
+    }
+
+    graphCtx.strokeStyle = 'rgba(31,41,55,0.22)';
+    graphCtx.lineWidth = 1.4;
+    graphCtx.beginPath();
+    graphCtx.moveTo(pad.left, pad.top);
+    graphCtx.lineTo(pad.left, H - pad.bottom);
+    graphCtx.lineTo(W - pad.right, H - pad.bottom);
+    graphCtx.stroke();
+
+    graphCtx.font = '11px Inter,sans-serif';
+    graphCtx.fillStyle = '#64748b';
+    graphCtx.textAlign = 'center';
+    graphCtx.fillText('Time (s)', pad.left + plotW / 2, H - 10);
+
+    graphCtx.save();
+    graphCtx.translate(14, pad.top + plotH / 2);
+    graphCtx.rotate(-Math.PI / 2);
+    graphCtx.fillText('Velocity / Current', 0, 0);
+    graphCtx.restore();
+
+    graphCtx.textAlign = 'right';
+    graphCtx.fillText(maxVel.toFixed(1) + ' v', pad.left - 8, pad.top + 10);
+    graphCtx.fillText('0', pad.left - 8, H - pad.bottom + 4);
+
+    graphCtx.textAlign = 'left';
+    graphCtx.fillStyle = '#ff9500';
+    graphCtx.fillText(maxCur.toFixed(1) + ' A', W - pad.right - 32, pad.top + 10);
+
+    graphCtx.fillStyle = '#64748b';
+    graphCtx.textAlign = 'center';
+    for (let i = 0; i <= 3; i += 1) {
+      const t = (maxTime / 3) * i;
+      const x = pad.left + (plotW / 3) * i;
+      graphCtx.fillText(t.toFixed(1), x, H - pad.bottom + 18);
+    }
+
+    const xForTime = (t) => pad.left + (t / maxTime) * plotW;
+    const yForVelocity = (v) => H - pad.bottom - (Math.max(0, v) / maxVel) * plotH;
+    const yForCurrent = (i) => H - pad.bottom - (Math.abs(i) / maxCur) * plotH;
+
+    if (graphPoints.length > 1) {
+      graphCtx.lineWidth = 2.4;
+
+      graphCtx.strokeStyle = '#5856d6';
+      graphCtx.beginPath();
+      graphPoints.forEach((point, index) => {
+        const x = xForTime(point.t);
+        const y = yForVelocity(point.velocity);
+        if (index === 0) graphCtx.moveTo(x, y);
+        else graphCtx.lineTo(x, y);
+      });
+      graphCtx.stroke();
+
+      graphCtx.strokeStyle = '#ff9500';
+      graphCtx.beginPath();
+      graphPoints.forEach((point, index) => {
+        const x = xForTime(point.t);
+        const y = yForCurrent(point.current);
+        if (index === 0) graphCtx.moveTo(x, y);
+        else graphCtx.lineTo(x, y);
+      });
+      graphCtx.stroke();
+    }
+
+    graphCtx.fillStyle = '#5856d6';
+    graphCtx.fillRect(pad.left + 4, pad.top + 4, 10, 3);
+    graphCtx.fillStyle = '#1d1d1f';
+    graphCtx.textAlign = 'left';
+    graphCtx.fillText('Velocity', pad.left + 20, pad.top + 10);
+
+    graphCtx.fillStyle = '#ff9500';
+    graphCtx.fillRect(pad.left + 92, pad.top + 4, 10, 3);
+    graphCtx.fillStyle = '#1d1d1f';
+    graphCtx.fillText('Current', pad.left + 108, pad.top + 10);
   }
 
   function drawArrowV(x, y, len, color, label) {
@@ -461,12 +599,14 @@
 
     document.getElementById('fc-vel').textContent = magnetVel.toFixed(2) + ' m/s';
     document.getElementById('fc-cur').textContent = currentA.toFixed(2) + ' A';
+    drawGraph();
   }
 
   function step(ts) {
     if (!lastTime) lastTime = ts;
     const dt = Math.min((ts - lastTime) / 1000, 0.03);
     lastTime = ts;
+    simTime += dt;
 
     currentA = computeCurrent();
     const brakeForce = computeBrakeForce();
@@ -474,6 +614,7 @@
 
     magnetVel += accel * dt;
     magnetY += magnetVel * dt * scalePxPerMeter;
+    pushGraphPoint();
 
     if (magnetY > canvas.height + 30) {
       running = false;
@@ -498,6 +639,8 @@
     magnetY = startY;
     magnetVel = 0;
     currentA = 0;
+    simTime = 0;
+    graphPoints = [{ t: 0, velocity: 0, current: 0 }];
     lastTime = null;
     document.getElementById('fc-drop-btn').disabled = false;
     drawScene(0);
