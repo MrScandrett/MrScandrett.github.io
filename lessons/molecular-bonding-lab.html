@@ -739,6 +739,158 @@
     .ll-viewport .bondlab-stage {
       min-height: clamp(260px, 45vh, 460px);
     }
+
+    /* ── 3D Structure Explorer ─────────────────────────────────────────── */
+    .mol3d-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    .mol3d-section h2 {
+      margin: 0 0 0.35rem;
+      font-size: clamp(1.45rem, 3vw, 2rem);
+      letter-spacing: -0.03em;
+      color: var(--bond-ink);
+    }
+
+    .mol3d-section > p {
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+      color: var(--bond-muted);
+      max-width: 64ch;
+      line-height: 1.62;
+    }
+
+    .mol3d-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .mol3d-layout { grid-template-columns: 1fr; }
+    }
+
+    .mol3d-molecules {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .mol3d-btn {
+      appearance: none;
+      border: 1px solid var(--bond-line);
+      background: var(--bond-card);
+      color: var(--bond-ink);
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 0.38rem 0.88rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .mol3d-btn:hover {
+      background: rgba(32, 197, 200, 0.08);
+      border-color: rgba(32, 197, 200, 0.5);
+    }
+
+    .mol3d-btn.mol3d-active {
+      background: rgba(52, 199, 89, 0.11);
+      border-color: rgba(52, 199, 89, 0.46);
+      color: #185c2c;
+    }
+
+    .mol3d-props {
+      padding: 1.1rem 1.2rem 1rem;
+    }
+
+    .mol3d-props h3 {
+      margin: 0 0 0.1rem;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+      color: var(--bond-ink);
+    }
+
+    .mol3d-formula {
+      margin: 0 0 0.9rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--bond-muted);
+    }
+
+    .mol3d-prop-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .mol3d-prop {
+      background: rgba(241, 246, 250, 0.92);
+      border: 1px solid rgba(201, 213, 224, 0.88);
+      border-radius: 14px;
+      padding: 0.6rem 0.75rem;
+      display: grid;
+      gap: 0.18rem;
+    }
+
+    .mol3d-prop span {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b7f92;
+    }
+
+    .mol3d-prop strong {
+      font-size: 0.88rem;
+      color: var(--bond-ink);
+      letter-spacing: -0.01em;
+    }
+
+    .mol3d-note {
+      font-size: 0.86rem;
+      color: var(--bond-muted);
+      line-height: 1.6;
+      margin: 0 0 0.55rem;
+    }
+
+    .mol3d-source {
+      font-size: 0.7rem;
+      color: #a0b2bf;
+      margin: 0;
+    }
+
+    .mol3d-viewer-wrap {
+      padding: 0;
+      overflow: hidden;
+      background: var(--bond-card);
+      border: 1px solid var(--bond-line);
+      border-radius: 24px;
+      box-shadow: var(--bond-shadow);
+    }
+
+    #mol3d-viewer {
+      width: 100%;
+      height: 400px;
+      position: relative;
+      display: block;
+    }
+
+    .mol3d-viewer-hint {
+      text-align: center;
+      font-size: 0.7rem;
+      color: #a0b2bf;
+      padding: 0.4rem 0 0.7rem;
+      margin: 0;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -1006,6 +1158,54 @@
 
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
+
+<section class="mol3d-section" aria-labelledby="mol3d-heading">
+  <h2 id="mol3d-heading">3D Structure Explorer</h2>
+  <p>Real molecular geometries from PubChem. Drag to rotate, scroll to zoom. Each shape is a DFT-optimized 3D conformer — not a diagram, the actual electron-cloud geometry that determines how the molecule behaves.</p>
+
+  <div class="mol3d-layout">
+    <div>
+      <div class="mol3d-molecules" role="group" aria-label="Select a molecule">
+        <button class="mol3d-btn mol3d-active" data-mol="h2o">H₂O</button>
+        <button class="mol3d-btn" data-mol="nh3">NH₃</button>
+        <button class="mol3d-btn" data-mol="co2">CO₂</button>
+        <button class="mol3d-btn" data-mol="ch4">CH₄</button>
+        <button class="mol3d-btn" data-mol="hcl">HCl</button>
+        <button class="mol3d-btn" data-mol="cl2">Cl₂</button>
+      </div>
+
+      <div class="mol3d-props bondlab-primer">
+        <h3 id="mol3d-name">Water</h3>
+        <p class="mol3d-formula" id="mol3d-formula">H₂O</p>
+        <div class="mol3d-prop-grid">
+          <div class="mol3d-prop">
+            <span>Geometry</span>
+            <strong id="mol3d-geometry">Bent</strong>
+          </div>
+          <div class="mol3d-prop">
+            <span>Bond Angle</span>
+            <strong id="mol3d-angle">H–O–H: 104.5°</strong>
+          </div>
+          <div class="mol3d-prop">
+            <span>Bond Length</span>
+            <strong id="mol3d-length">O–H: 0.96 Å</strong>
+          </div>
+          <div class="mol3d-prop">
+            <span>Polarity</span>
+            <strong id="mol3d-polarity">Polar (μ = 1.85 D)</strong>
+          </div>
+        </div>
+        <p class="mol3d-note" id="mol3d-note">Two lone pairs on oxygen compress the O–H bonds into a bent shape. That polarity gives water its unusually high boiling point and surface tension.</p>
+        <p class="mol3d-source" id="mol3d-source">PubChem CID 962 · NIST WebBook</p>
+      </div>
+    </div>
+
+    <div class="mol3d-viewer-wrap">
+      <div id="mol3d-viewer" aria-label="3D molecular structure viewer"></div>
+      <p class="mol3d-viewer-hint">Drag to rotate · Scroll to zoom · Right-drag to pan</p>
+    </div>
+  </div>
+</section>
 
   <script>
     const atomCatalog = {
@@ -1599,6 +1799,173 @@
     });
 
     setPair('na-cl');
+  </script>
+  <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+  <script>
+    // ─── 3D Structure Explorer ────────────────────────────────────────────────
+    // Molecular geometries: PubChem (NIH/NLM), public domain
+    // Renderer: 3Dmol.js (BSD-3), University of Pittsburgh
+    // Property data: NIST WebBook / literature
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const MOLECULES = {
+      h2o: {
+        name: 'Water', formula: 'H\u2082O',
+        geometry: 'Bent', angle: 'H\u2013O\u2013H: 104.5\u00b0',
+        length: 'O\u2013H: 0.96 \u00c5', polarity: 'Polar (\u03bc\u2009=\u20091.85\u2009D)',
+        note: 'Two lone pairs on oxygen push the O\u2013H bonds into a bent shape. That asymmetry creates a permanent dipole, giving water its high boiling point and surface tension.',
+        source: 'PubChem CID\u2009962\u2009\u00b7\u2009NIST WebBook',
+        sdf: `962
+  -OEChem-03292620383D
+
+  3  2  0     0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    0.2774    0.8929    0.2544 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.6068   -0.2383   -0.7169 H   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1  3  1  0  0  0  0
+M  END
+$$$$`
+      },
+      nh3: {
+        name: 'Ammonia', formula: 'NH\u2083',
+        geometry: 'Trigonal pyramidal', angle: 'H\u2013N\u2013H: 107.8\u00b0',
+        length: 'N\u2013H: 1.01 \u00c5', polarity: 'Polar (\u03bc\u2009=\u20091.47\u2009D)',
+        note: 'The lone pair on nitrogen sits above the three hydrogen atoms, pushing them downward into a triangular pyramid. This asymmetry makes ammonia polar.',
+        source: 'PubChem CID\u2009222\u2009\u00b7\u2009NIST WebBook',
+        sdf: `222
+  -OEChem-03292620383D
+
+  4  3  0     0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.4417    0.2906    0.8711 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.7256    0.6896   -0.1907 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.4875   -0.8701    0.2089 H   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1  3  1  0  0  0  0
+  1  4  1  0  0  0  0
+M  END
+$$$$`
+      },
+      co2: {
+        name: 'Carbon Dioxide', formula: 'CO\u2082',
+        geometry: 'Linear', angle: 'O\u2013C\u2013O: 180\u00b0',
+        length: 'C\u003dO: 1.16 \u00c5', polarity: 'Nonpolar (\u03bc\u2009=\u20090\u2009D)',
+        note: 'Both C\u003dO bonds are polar, but they point in exactly opposite directions so their dipoles cancel perfectly. CO\u2082 is nonpolar despite having polar bonds.',
+        source: 'PubChem CID\u2009280\u2009\u00b7\u2009NIST WebBook',
+        sdf: `280
+  -OEChem-03292620383D
+
+  3  2  0     0  0  0  0  0  0999 V2000
+   -1.1970    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    1.1970    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  3  2  0  0  0  0
+  2  3  2  0  0  0  0
+M  END
+$$$$`
+      },
+      ch4: {
+        name: 'Methane', formula: 'CH\u2084',
+        geometry: 'Tetrahedral', angle: 'H\u2013C\u2013H: 109.5\u00b0',
+        length: 'C\u2013H: 1.09 \u00c5', polarity: 'Nonpolar (\u03bc\u2009=\u20090\u2009D)',
+        note: 'Four identical C\u2013H bonds point toward the corners of a tetrahedron. All bond dipoles cancel, so methane is nonpolar despite each bond being slightly polar.',
+        source: 'PubChem CID\u2009297\u2009\u00b7\u2009NIST WebBook',
+        sdf: `297
+  -OEChem-03292620383D
+
+  5  4  0     0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.5541    0.7996    0.4965 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.6833   -0.8134   -0.2536 H   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.7782   -0.3735    0.6692 H   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.4593    0.3874   -0.9121 H   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1  3  1  0  0  0  0
+  1  4  1  0  0  0  0
+  1  5  1  0  0  0  0
+M  END
+$$$$`
+      },
+      hcl: {
+        name: 'Hydrogen Chloride', formula: 'HCl',
+        geometry: 'Linear', angle: '\u2014',
+        length: 'H\u2013Cl: 1.27 \u00c5', polarity: 'Polar (\u03bc\u2009=\u20091.08\u2009D)',
+        note: 'Chlorine\u2019s electronegativity (3.16) is much higher than hydrogen\u2019s (2.20), so electron density shifts strongly toward Cl. This is the same pair explored in the Atom Snapper above.',
+        source: 'PubChem CID\u2009313\u2009\u00b7\u2009NIST WebBook',
+        sdf: `313
+  -OEChem-03292620383D
+
+  2  1  0     0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+    0.6058   -0.2053   -1.1384 H   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+M  END
+$$$$`
+      },
+      cl2: {
+        name: 'Chlorine', formula: 'Cl\u2082',
+        geometry: 'Linear', angle: '\u2014',
+        length: 'Cl\u2013Cl: 1.99 \u00c5', polarity: 'Nonpolar (\u03bc\u2009=\u20090\u2009D)',
+        note: 'Two identical chlorine atoms share a single bond. Equal electronegativity means zero charge imbalance and zero dipole \u2014 the Atom Snapper above shows exactly this nonpolar covalent case.',
+        source: 'PubChem CID\u200924526\u2009\u00b7\u2009NIST WebBook',
+        sdf: `24526
+  -OEChem-03292620383D
+
+  2  1  0     0  0  0  0  0  0999 V2000
+   -0.9950    0.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+    0.9950    0.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+M  END
+$$$$`
+      }
+    };
+
+    // ─── Viewer init ──────────────────────────────────────────────────────────
+    let mol3dViewer = null;
+
+    function initMol3dViewer() {
+      if (typeof $3Dmol === 'undefined') return;
+      mol3dViewer = $3Dmol.createViewer('mol3d-viewer', {
+        backgroundColor: '#f7fbfb',
+        antialias: true
+      });
+      loadMolecule('h2o');
+    }
+
+    function loadMolecule(key) {
+      if (!mol3dViewer) return;
+      const mol = MOLECULES[key];
+
+      mol3dViewer.clear();
+      mol3dViewer.addModel(mol.sdf, 'sdf');
+      mol3dViewer.setStyle({}, {
+        stick: { radius: 0.13, colorscheme: 'Jmol' },
+        sphere: { scale: 0.26, colorscheme: 'Jmol' }
+      });
+      mol3dViewer.zoomTo();
+      mol3dViewer.render();
+
+      document.getElementById('mol3d-name').textContent     = mol.name;
+      document.getElementById('mol3d-formula').textContent  = mol.formula;
+      document.getElementById('mol3d-geometry').textContent = mol.geometry;
+      document.getElementById('mol3d-angle').textContent    = mol.angle;
+      document.getElementById('mol3d-length').textContent   = mol.length;
+      document.getElementById('mol3d-polarity').textContent = mol.polarity;
+      document.getElementById('mol3d-note').textContent     = mol.note;
+      document.getElementById('mol3d-source').textContent   = mol.source;
+    }
+
+    document.querySelectorAll('.mol3d-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mol3d-btn').forEach(b => b.classList.remove('mol3d-active'));
+        btn.classList.add('mol3d-active');
+        loadMolecule(btn.dataset.mol);
+      });
+    });
+
+    // Init after layout is painted
+    requestAnimationFrame(initMol3dViewer);
   </script>
   <script src="../assets/js/nav-mobile.js"></script>
   <script src="../assets/js/lesson-layout.js"></script>
