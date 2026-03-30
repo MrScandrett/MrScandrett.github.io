@@ -667,6 +667,7 @@
       display: grid;
       align-content: start;
       padding: 1rem;
+      justify-items: start;
       pointer-events: none;
     }
 
@@ -683,13 +684,80 @@
     }
 
     .steam-galaxy-overlay-card {
-      max-width: 24rem;
+      width: min(250px, calc(100vw - 2rem));
       color: rgba(227, 237, 255, 0.88);
+      background: rgba(9, 18, 31, 0.85);
+      opacity: 0.94;
+      transition: opacity 180ms ease, transform 180ms ease;
     }
 
     .steam-galaxy-overlay-card p {
       margin: 0;
       line-height: 1.6;
+    }
+
+    .steam-galaxy-help-toggle {
+      pointer-events: auto;
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      z-index: 4;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-height: 2.4rem;
+      padding: 0.6rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(164, 196, 255, 0.2);
+      background: rgba(9, 18, 31, 0.82);
+      color: #f4f8ff;
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 14px 30px rgba(4, 10, 20, 0.24);
+      transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, opacity 180ms ease;
+    }
+
+    .steam-galaxy-help-toggle:hover,
+    .steam-galaxy-help-toggle:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(12, 25, 42, 0.92);
+      border-color: rgba(164, 196, 255, 0.32);
+    }
+
+    .steam-galaxy-overlay[hidden],
+    .steam-galaxy-help-toggle.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .steam-galaxy-overlay[hidden] {
+      display: grid;
+      transform: translateY(-8px);
+    }
+
+    .steam-galaxy-overlay-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.15rem;
+    }
+
+    .steam-galaxy-help-close {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.9rem;
+      height: 1.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(164, 196, 255, 0.18);
+      background: rgba(255, 255, 255, 0.04);
+      color: #f4f8ff;
+      font: inherit;
+      font-size: 1rem;
+      cursor: pointer;
     }
 
     .steam-galaxy-overlay-kicker,
@@ -909,12 +977,18 @@
         min-height: 840px;
       }
 
+      .steam-galaxy-overlay,
+      .steam-galaxy-help-toggle {
+        top: 0.85rem;
+        left: 0.85rem;
+      }
+
       .steam-galaxy-overlay {
         padding: 0.85rem;
       }
 
       .steam-galaxy-overlay-card {
-        max-width: none;
+        width: min(280px, calc(100vw - 1.7rem));
       }
 
       .steam-galaxy-stat-grid {
@@ -1002,10 +1076,14 @@
           <div class="steam-galaxy-stage" id="steam-galaxy-stage">
             <canvas class="steam-galaxy-stars" id="steam-galaxy-stars" aria-hidden="true"></canvas>
             <svg class="steam-galaxy-map" id="steam-galaxy-map" aria-label="Interactive STEAM constellation map"></svg>
-            <div class="steam-galaxy-overlay">
+            <button class="steam-galaxy-help-toggle" id="steam-galaxy-help-toggle" type="button" aria-expanded="false" aria-controls="steam-galaxy-help-panel">How to use</button>
+            <div class="steam-galaxy-overlay" id="steam-galaxy-help-panel" hidden>
               <div class="steam-galaxy-overlay-card">
                 <p class="steam-galaxy-overlay-kicker">How to use the map</p>
                 <p>Select a bubble to spotlight its constellation, compare related tools, and open a classroom-ready detail card. Use the filters when you want a cleaner K–2, middle school, or high school view.</p>
+                <div class="steam-galaxy-overlay-actions">
+                  <button class="steam-galaxy-help-close" id="steam-galaxy-help-close" type="button" aria-label="Close help panel">×</button>
+                </div>
               </div>
             </div>
           </div>
@@ -3537,6 +3615,9 @@
     const stage = document.getElementById("steam-galaxy-stage");
     const svg = document.getElementById("steam-galaxy-map");
     const starsCanvas = document.getElementById("steam-galaxy-stars");
+    const helpToggle = document.getElementById("steam-galaxy-help-toggle");
+    const helpPanel = document.getElementById("steam-galaxy-help-panel");
+    const helpClose = document.getElementById("steam-galaxy-help-close");
     const legend = document.getElementById("steam-galaxy-legend");
     const categoryFilters = document.getElementById("steam-category-filters");
     const gradeFilters = document.getElementById("steam-grade-filters");
@@ -3722,6 +3803,8 @@
       let animationFrameId = null;
       let starField = [];
       let latestTime = 0;
+      let helpDismissed = false;
+      let helpAutoTimer = null;
 
       const svgSelection = d3.select(svg);
       const linkLayer = svgSelection.append("g").attr("class", "steam-galaxy-links-layer");
@@ -3858,6 +3941,43 @@
         return links;
       }
 
+      function syncHelpState() {
+        const open = Boolean(helpPanel) && !helpPanel.hidden;
+        if (helpToggle) helpToggle.setAttribute("aria-expanded", String(open));
+      }
+
+      function showHelp(autoHide = false) {
+        if (!helpPanel) return;
+        helpPanel.hidden = false;
+        if (helpToggle) helpToggle.classList.remove("is-hidden");
+        syncHelpState();
+
+        if (helpAutoTimer) {
+          window.clearTimeout(helpAutoTimer);
+          helpAutoTimer = null;
+        }
+
+        if (autoHide && !helpDismissed) {
+          helpAutoTimer = window.setTimeout(() => {
+            dismissHelp(false);
+          }, 3200);
+        }
+      }
+
+      function dismissHelp(permanent = false) {
+        if (!helpPanel) return;
+        helpPanel.hidden = true;
+        if (permanent) {
+          helpDismissed = true;
+          if (helpToggle) helpToggle.classList.add("is-hidden");
+        }
+        if (helpAutoTimer) {
+          window.clearTimeout(helpAutoTimer);
+          helpAutoTimer = null;
+        }
+        syncHelpState();
+      }
+
       function getFloatingPosition(node, time) {
         const drift = node.type === "anchor" ? 2.4 : 1.6;
         const wave = time * 0.00032 + node.floatPhase;
@@ -3962,6 +4082,23 @@
         });
       }
 
+      if (helpToggle && helpPanel) {
+        helpToggle.addEventListener("click", function () {
+          if (helpPanel.hidden) {
+            helpDismissed = false;
+            showHelp(false);
+          } else {
+            dismissHelp(false);
+          }
+        });
+      }
+
+      if (helpClose) {
+        helpClose.addEventListener("click", function () {
+          dismissHelp(false);
+        });
+      }
+
       function renderControls() {
         document.querySelectorAll("[data-filter-group='view']").forEach((button) => {
           button.classList.add("is-active");
@@ -4000,6 +4137,7 @@
       function selectNode(nodeId) {
         if (!nodesById.has(nodeId)) return;
         state.selectedId = nodeId;
+        dismissHelp(true);
         renderPanel();
         renderFrame(latestTime);
       }
@@ -4385,6 +4523,7 @@
       buildControls();
       renderControls();
       runLayout();
+      showHelp(true);
 
       if (!animationFrameId) {
         animationFrameId = window.requestAnimationFrame(animate);
