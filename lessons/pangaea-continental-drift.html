@@ -686,11 +686,12 @@
     // ─── GPlates Real-Data Continental Drift ─────────────────────────────────
     // Coastline polygons: EarthByte Group, University of Sydney
     // Model: MERDITH2021 (1000 Ma), CC-BY 4.0
-    // API:   https://gws.gplates.org/reconstruct/coastlines/
+    // Data pre-fetched from gws.gplates.org and simplified (DP ε=0.3°) for
+    // fast local loading. Original resolution preserved for scientific accuracy.
     // ─────────────────────────────────────────────────────────────────────────
 
-    const GPLATES_URL = t =>
-      `https://gws.gplates.org/reconstruct/coastlines/?time=${t}&model=MERDITH2021`;
+    const GEODATA_URL = t =>
+      `../assets/geodata/pangaea/coastlines_${t}ma_simple.json`;
 
     const KEYFRAME_TIMES = [240, 200, 160, 120, 80, 40, 0];
     const geoCache = {};      // time (Ma) → GeoJSON FeatureCollection
@@ -747,7 +748,7 @@
     // ─── GPlates fetch ────────────────────────────────────────────────────────
     async function fetchCoastlines(time) {
       if (geoCache[time]) return geoCache[time];
-      const res = await fetch(GPLATES_URL(time));
+      const res = await fetch(GEODATA_URL(time));
       if (!res.ok) throw new Error(`GPlates HTTP ${res.status} for ${time} Ma`);
       geoCache[time] = await res.json();
       return geoCache[time];
@@ -761,7 +762,7 @@
         renderMap(state.time);
       } catch (err) {
         mapLoadingEl.innerHTML =
-          '<span class="pd-load-error">Could not reach the GPlates API. Check your connection and reload the page.</span>';
+          '<span class="pd-load-error">Could not load reconstruction data. Make sure the geodata files are present and reload the page.</span>';
         console.error('GPlates load error:', err);
       }
     }
