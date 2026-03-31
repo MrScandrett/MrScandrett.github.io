@@ -2,6 +2,7 @@ import { loadProjects } from "./data.js";
 import {
   createEmptyState,
   createProjectCard,
+  createProjectCardSkeleton,
   projectMatches,
   setActiveNav,
   sortProjects,
@@ -124,6 +125,14 @@ function init() {
 
   if (!dom.grid) return;
 
+  function renderLoadingSkeletons(count = 6) {
+    dom.grid.innerHTML = "";
+    dom.grid.setAttribute("aria-busy", "true");
+    for (let index = 0; index < count; index += 1) {
+      dom.grid.appendChild(createProjectCardSkeleton());
+    }
+  }
+
   // Filter panel toggle
   if (dom.filterToggle && dom.filterPanel) {
     dom.filterToggle.addEventListener("click", () => {
@@ -135,9 +144,13 @@ function init() {
   }
 
   const state = readStateFromQuery();
+  renderLoadingSkeletons();
+  dom.count.textContent = "Loading projects…";
 
   loadProjects()
     .then((projects) => {
+      dom.grid.innerHTML = "";
+      dom.grid.setAttribute("aria-busy", "false");
       const cardsById = new Map();
       projects.forEach((project) => {
         const card = createProjectCard(project, { showFeatured: true });
@@ -308,6 +321,7 @@ function init() {
     })
     .catch((error) => {
       dom.grid.innerHTML = "";
+      dom.grid.setAttribute("aria-busy", "false");
       dom.grid.appendChild(createEmptyState(error.message));
       dom.empty.hidden = true;
       dom.count.textContent = "0 projects";

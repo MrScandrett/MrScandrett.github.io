@@ -257,7 +257,7 @@
     </section>
 
     <section class="section">
-      <div class="vl-grid" id="vl-grid"></div>
+      <div class="vl-grid" id="vl-grid" aria-busy="true" aria-live="polite"></div>
     </section>
   </main>
 
@@ -351,6 +351,77 @@
       }, { once: true });
     }
 
+    function makeSkeletonLine(width) {
+      const line = document.createElement('span');
+      line.className = 'skeleton skeleton-text';
+      line.dataset.width = width;
+      return line;
+    }
+
+    function createVideoSkeletonCard(isFeature = false) {
+      const card = document.createElement('article');
+      card.className = 'vl-card skeleton-card';
+      card.setAttribute('aria-hidden', 'true');
+      if (isFeature) card.classList.add('vl-card--feature', 'skeleton-card--featured', 'skeleton-card--video-feature');
+
+      const media = document.createElement('div');
+      media.className = 'skeleton skeleton-media';
+      media.dataset.ratio = isFeature ? 'feature' : 'video';
+
+      const body = document.createElement('div');
+      body.className = 'skeleton-body';
+
+      const meta = document.createElement('div');
+      meta.className = 'skeleton-meta';
+
+      const avatar = document.createElement('span');
+      avatar.className = 'skeleton skeleton-avatar';
+
+      const metaCopy = document.createElement('div');
+      metaCopy.className = 'skeleton-meta-copy';
+      metaCopy.append(
+        makeSkeletonLine('short'),
+        makeSkeletonLine('long'),
+        makeSkeletonLine('medium')
+      );
+
+      meta.append(avatar, metaCopy);
+      body.appendChild(meta);
+
+      if (isFeature) {
+        body.append(
+          makeSkeletonLine('long'),
+          makeSkeletonLine('medium')
+        );
+      }
+
+      const actions = document.createElement('div');
+      actions.className = 'skeleton-actions';
+      ['5.6rem', '6.4rem'].forEach((width) => {
+        const chip = document.createElement('span');
+        chip.className = 'skeleton skeleton-chip';
+        chip.style.width = width;
+        actions.appendChild(chip);
+      });
+
+      body.appendChild(actions);
+      card.append(media, body);
+      return card;
+    }
+
+    function renderVideoSkeletons() {
+      if (!grid) return;
+      grid.innerHTML = '';
+      grid.append(
+        createVideoSkeletonCard(true),
+        createVideoSkeletonCard(),
+        createVideoSkeletonCard(),
+        createVideoSkeletonCard(),
+        createVideoSkeletonCard(),
+        createVideoSkeletonCard()
+      );
+    }
+
     const grid = document.getElementById('vl-grid');
     const backdrop = document.getElementById('vl-modal-backdrop');
     const modal = backdrop.querySelector('.vl-modal');
@@ -361,6 +432,8 @@
     const modalDesc = document.getElementById('vl-modal-desc');
     const focusableSelector = 'button, [href], input, select, textarea, video[controls], [tabindex]:not([tabindex="-1"])';
     let lastFocused = null;
+
+    renderVideoSkeletons();
 
     function focusableElements(root) {
       return Array.from(root.querySelectorAll(focusableSelector)).filter((element) => {
@@ -406,6 +479,8 @@
         first.focus();
       }
     }
+
+    grid.innerHTML = '';
 
     VIDEOS.forEach((v, index) => {
       const card = document.createElement('button');
@@ -476,6 +551,8 @@
         }
       });
     });
+
+    grid.setAttribute('aria-busy', 'false');
 
     function closeModal() {
       backdrop.classList.remove('open');

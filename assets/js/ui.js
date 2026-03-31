@@ -104,6 +104,41 @@ export function createProjectCard(project, options = {}) {
   return article;
 }
 
+export function createProjectCardSkeleton() {
+  const article = document.createElement("article");
+  article.className = "project-card skeleton-card";
+  article.setAttribute("aria-hidden", "true");
+
+  const media = document.createElement("div");
+  media.className = "skeleton skeleton-media";
+  media.dataset.ratio = "video";
+
+  const body = document.createElement("div");
+  body.className = "skeleton-body";
+
+  const title = document.createElement("span");
+  title.className = "skeleton skeleton-text";
+  title.dataset.width = "long";
+
+  const subtitle = document.createElement("span");
+  subtitle.className = "skeleton skeleton-text";
+  subtitle.dataset.width = "medium";
+
+  const badges = document.createElement("div");
+  badges.className = "skeleton-actions";
+
+  ["short", "short", "medium"].forEach((width) => {
+    const chip = document.createElement("span");
+    chip.className = "skeleton skeleton-chip";
+    if (width === "medium") chip.style.width = "6.75rem";
+    badges.appendChild(chip);
+  });
+
+  body.append(title, subtitle, badges);
+  article.append(media, body);
+  return article;
+}
+
 export function createEmptyState(text) {
   const div = document.createElement("div");
   div.className = "empty-state";
