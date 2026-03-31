@@ -1053,6 +1053,19 @@
       fill: transparent;
     }
 
+    .steam-galaxy-node-icon {
+      pointer-events: none;
+    }
+
+    .steam-galaxy-node-monogram {
+      fill: rgba(247, 251, 255, 0.96);
+      font-weight: 800;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      letter-spacing: 0.04em;
+      pointer-events: none;
+    }
+
     .steam-galaxy-node-kicker {
       font-size: 11px;
       fill: rgba(228, 238, 255, 0.72);
@@ -1060,6 +1073,7 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       text-anchor: middle;
+      transition: opacity 180ms ease;
     }
 
     .steam-galaxy-node-label {
@@ -1067,6 +1081,7 @@
       font-weight: 700;
       text-anchor: middle;
       line-height: 1.2;
+      transition: opacity 180ms ease;
     }
 
     .steam-galaxy-node.is-muted {
@@ -1101,6 +1116,33 @@
 
     .steam-galaxy-node.is-active .steam-galaxy-node-label {
       fill: #ffffff;
+    }
+
+    .steam-galaxy-stage[data-detail-level="cluster"] .steam-galaxy-node[data-tier="primary"] .steam-galaxy-node-kicker,
+    .steam-galaxy-stage[data-detail-level="cluster"] .steam-galaxy-node[data-tier="primary"] .steam-galaxy-node-label,
+    .steam-galaxy-stage[data-detail-level="cluster"] .steam-galaxy-node[data-tier="secondary"] .steam-galaxy-node-kicker,
+    .steam-galaxy-stage[data-detail-level="cluster"] .steam-galaxy-node[data-tier="secondary"] .steam-galaxy-node-label,
+    .steam-galaxy-stage[data-detail-level="cluster"] .steam-galaxy-node[data-tier="peripheral"] .steam-galaxy-node-kicker,
+    .steam-galaxy-stage[data-detail-level="cluster"] .steam-galaxy-node[data-tier="peripheral"] .steam-galaxy-node-label {
+      opacity: 0;
+    }
+
+    .steam-galaxy-stage[data-detail-level="tool"] .steam-galaxy-node[data-tier="secondary"] .steam-galaxy-node-kicker,
+    .steam-galaxy-stage[data-detail-level="tool"] .steam-galaxy-node[data-tier="secondary"] .steam-galaxy-node-label,
+    .steam-galaxy-stage[data-detail-level="tool"] .steam-galaxy-node[data-tier="peripheral"] .steam-galaxy-node-kicker,
+    .steam-galaxy-stage[data-detail-level="tool"] .steam-galaxy-node[data-tier="peripheral"] .steam-galaxy-node-label {
+      opacity: 0;
+    }
+
+    .steam-galaxy-stage[data-detail-level="cluster"] .steam-galaxy-node.is-active .steam-galaxy-node-kicker,
+    .steam-galaxy-stage[data-detail-level="cluster"] .steam-galaxy-node.is-active .steam-galaxy-node-label,
+    .steam-galaxy-stage[data-detail-level="cluster"] .steam-galaxy-node.is-related .steam-galaxy-node-kicker,
+    .steam-galaxy-stage[data-detail-level="cluster"] .steam-galaxy-node.is-related .steam-galaxy-node-label,
+    .steam-galaxy-stage[data-detail-level="tool"] .steam-galaxy-node.is-active .steam-galaxy-node-kicker,
+    .steam-galaxy-stage[data-detail-level="tool"] .steam-galaxy-node.is-active .steam-galaxy-node-label,
+    .steam-galaxy-stage[data-detail-level="tool"] .steam-galaxy-node.is-related .steam-galaxy-node-kicker,
+    .steam-galaxy-stage[data-detail-level="tool"] .steam-galaxy-node.is-related .steam-galaxy-node-label {
+      opacity: 1;
     }
 
     .steam-galaxy-viewport-ui {
@@ -5181,12 +5223,30 @@
         text.append("tspan").attr("x", 0).text(label);
       }
 
+      function getGalaxyNodeIcon(node) {
+        if (node.type === "anchor") return "";
+        const manual = manualAppIcons[node.id];
+        if (manual) return manual;
+
+        try {
+          const url = new URL(node.link);
+          return `https://icons.duckduckgo.com/ip3/${url.hostname}.ico`;
+        } catch (error) {
+          return "";
+        }
+      }
+
+      function getGalaxyMonogram(node) {
+        return getFallbackLabel(node.shortLabel || node.label).slice(0, 2);
+      }
+
       function buildControls() {
         const makeButton = (label, value, group, extra = {}) => {
           const button = document.createElement("button");
           button.type = "button";
           button.className = "steam-galaxy-control";
           button.textContent = label;
+          button.dataset.baseLabel = label;
           button.dataset.filterGroup = group;
           button.dataset.filterValue = value;
           if (extra.color) {
@@ -5339,6 +5399,8 @@
       }
 
       function renderControls() {
+        const filterScopedTools = steamGalaxyNodes.filter((node) => node.type === "tool" && gradeMatches(node) && utilityMatches(node));
+
         document.querySelectorAll("[data-filter-group='view']").forEach((button) => {
           button.classList.add("is-active");
           button.setAttribute("aria-pressed", "true");
@@ -5346,6 +5408,11 @@
 
         document.querySelectorAll("[data-filter-group='category']").forEach((button) => {
           const active = button.dataset.filterValue === state.category;
+          const value = button.dataset.filterValue || "all";
+          const count = value === "all"
+            ? filterScopedTools.length
+            : filterScopedTools.filter((node) => node.category === value).length;
+          button.textContent = `${button.dataset.baseLabel || button.textContent} (${count})`;
           button.classList.toggle("is-active", active);
           button.setAttribute("aria-pressed", String(active));
         });
@@ -5612,6 +5679,9 @@
       }
 
       function applyViewportTransform() {
+        if (stage) {
+          stage.dataset.detailLevel = currentTransform.k < 0.82 ? "cluster" : currentTransform.k < 1.38 ? "tool" : "detail";
+        }
         worldLayer.attr("transform", currentTransform.toString());
         renderMinimap();
       }
@@ -5690,6 +5760,8 @@
 
         entered.append("circle").attr("class", "steam-galaxy-node-surface");
         entered.append("circle").attr("class", "steam-galaxy-node-hit");
+        entered.append("image").attr("class", "steam-galaxy-node-icon");
+        entered.append("text").attr("class", "steam-galaxy-node-monogram");
         entered.append("text").attr("class", "steam-galaxy-node-kicker");
         entered.append("text").attr("class", "steam-galaxy-node-label");
 
@@ -5717,6 +5789,27 @@
 
         merged.select(".steam-galaxy-node-hit")
           .attr("r", (node) => getNodeVisualRadius(node) + 12);
+
+        merged.select(".steam-galaxy-node-icon")
+          .attr("href", (node) => getGalaxyNodeIcon(node))
+          .attr("x", (node) => {
+            const size = node.type === "anchor" ? Math.max(18, getNodeVisualRadius(node) * 0.72) : Math.max(16, getNodeVisualRadius(node) * 0.9);
+            return -size / 2;
+          })
+          .attr("y", (node) => {
+            const size = node.type === "anchor" ? Math.max(18, getNodeVisualRadius(node) * 0.72) : Math.max(16, getNodeVisualRadius(node) * 0.9);
+            return -size / 2;
+          })
+          .attr("width", (node) => node.type === "anchor" ? Math.max(18, getNodeVisualRadius(node) * 0.72) : Math.max(16, getNodeVisualRadius(node) * 0.9))
+          .attr("height", (node) => node.type === "anchor" ? Math.max(18, getNodeVisualRadius(node) * 0.72) : Math.max(16, getNodeVisualRadius(node) * 0.9))
+          .attr("opacity", (node) => node.type === "anchor" ? 0 : 0.96)
+          .attr("preserveAspectRatio", "xMidYMid meet");
+
+        merged.select(".steam-galaxy-node-monogram")
+          .attr("y", 1)
+          .style("font-size", (node) => node.type === "anchor" ? "12px" : `${Math.max(10, Math.round(getNodeVisualRadius(node) * 0.42))}px`)
+          .attr("opacity", (node) => node.type === "anchor" ? 0 : 0.36)
+          .text((node) => node.type === "anchor" ? "" : getGalaxyMonogram(node));
 
         merged.select(".steam-galaxy-node-kicker")
           .attr("y", (node) => node.type === "anchor" ? -12 : -10)
