@@ -4881,32 +4881,61 @@
         return Math.min(max, Math.max(min, value));
       }
 
+      function isFiniteNumber(value) {
+        return Number.isFinite(value);
+      }
+
+      function getSafeScale(value) {
+        const fallback = isFiniteNumber(currentTransform?.k) && currentTransform.k > 0 ? currentTransform.k : 1;
+        return clamp(isFiniteNumber(value) && value > 0 ? value : fallback, zoomExtent[0], zoomExtent[1]);
+      }
+
+      function getSafeTransform(transform) {
+        const scale = getSafeScale(transform?.k);
+        const x = isFiniteNumber(transform?.x) ? transform.x : 0;
+        const y = isFiniteNumber(transform?.y) ? transform.y : 0;
+        return d3.zoomIdentity.translate(x, y).scale(scale);
+      }
+
       function clampTransform(transform) {
-        const scale = clamp(transform.k, zoomExtent[0], zoomExtent[1]);
-        const scaledWidth = worldWidth * scale;
-        const scaledHeight = worldHeight * scale;
-        const minX = scaledWidth > viewportWidth ? viewportWidth - scaledWidth : (viewportWidth - scaledWidth) / 2;
-        const maxX = scaledWidth > viewportWidth ? 0 : (viewportWidth - scaledWidth) / 2;
-        const minY = scaledHeight > viewportHeight ? viewportHeight - scaledHeight : (viewportHeight - scaledHeight) / 2;
-        const maxY = scaledHeight > viewportHeight ? 0 : (viewportHeight - scaledHeight) / 2;
-        return d3.zoomIdentity.translate(clamp(transform.x, minX, maxX), clamp(transform.y, minY, maxY)).scale(scale);
+        const safeTransform = getSafeTransform(transform);
+        const scale = safeTransform.k;
+        const safeViewportWidth = Math.max(viewportWidth, 1);
+        const safeViewportHeight = Math.max(viewportHeight, 1);
+        const safeWorldWidth = Math.max(worldWidth, safeViewportWidth);
+        const safeWorldHeight = Math.max(worldHeight, safeViewportHeight);
+        const scaledWidth = safeWorldWidth * scale;
+        const scaledHeight = safeWorldHeight * scale;
+        const minX = scaledWidth > safeViewportWidth ? safeViewportWidth - scaledWidth : (safeViewportWidth - scaledWidth) / 2;
+        const maxX = scaledWidth > safeViewportWidth ? 0 : (safeViewportWidth - scaledWidth) / 2;
+        const minY = scaledHeight > safeViewportHeight ? safeViewportHeight - scaledHeight : (safeViewportHeight - scaledHeight) / 2;
+        const maxY = scaledHeight > safeViewportHeight ? 0 : (safeViewportHeight - scaledHeight) / 2;
+        return d3.zoomIdentity.translate(clamp(safeTransform.x, minX, maxX), clamp(safeTransform.y, minY, maxY)).scale(scale);
       }
 
       function getViewportRect() {
-        const width = viewportWidth / currentTransform.k;
-        const height = viewportHeight / currentTransform.k;
+        const safeScale = getSafeScale(currentTransform?.k);
+        const safeViewportWidth = Math.max(viewportWidth, 1);
+        const safeViewportHeight = Math.max(viewportHeight, 1);
+        const safeX = isFiniteNumber(currentTransform?.x) ? currentTransform.x : 0;
+        const safeY = isFiniteNumber(currentTransform?.y) ? currentTransform.y : 0;
+        const width = safeViewportWidth / safeScale;
+        const height = safeViewportHeight / safeScale;
         return {
-          x: -currentTransform.x / currentTransform.k,
-          y: -currentTransform.y / currentTransform.k,
+          x: -safeX / safeScale,
+          y: -safeY / safeScale,
           width,
           height
         };
       }
 
       function worldToScreen(point) {
+        const safeScale = getSafeScale(currentTransform?.k);
+        const safeX = isFiniteNumber(currentTransform?.x) ? currentTransform.x : 0;
+        const safeY = isFiniteNumber(currentTransform?.y) ? currentTransform.y : 0;
         return {
-          x: point.x * currentTransform.k + currentTransform.x,
-          y: point.y * currentTransform.k + currentTransform.y
+          x: point.x * safeScale + safeX,
+          y: point.y * safeScale + safeY
         };
       }
 
@@ -4969,9 +4998,10 @@
       }
 
       function centerCameraOn(point, scale = currentTransform.k, duration = 420) {
+        const safeScale = getSafeScale(scale);
         const nextTransform = d3.zoomIdentity
-          .translate(viewportWidth / 2 - point.x * scale, viewportHeight / 2 - point.y * scale)
-          .scale(scale);
+          .translate(Math.max(viewportWidth, 1) / 2 - point.x * safeScale, Math.max(viewportHeight, 1) / 2 - point.y * safeScale)
+          .scale(safeScale);
         setCameraTransform(nextTransform, duration);
       }
 
@@ -5001,7 +5031,8 @@
           left: [stepX, 0]
         };
         const [dx, dy] = offsets[direction] || [0, 0];
-        setCameraTransform(currentTransform.translate(dx / currentTransform.k, dy / currentTransform.k), 260);
+        const safeScale = getSafeScale(currentTransform?.k);
+        setCameraTransform(getSafeTransform(currentTransform).translate(dx / safeScale, dy / safeScale), 260);
       }
 
       function formatGrades(grades) {
@@ -5231,15 +5262,7 @@
 
       function getGalaxyNodeIcon(node) {
         if (node.type === "anchor") return "";
-        const manual = manualAppIcons[node.id];
-        if (manual) return manual;
-
-        try {
-          const url = new URL(node.link);
-          return `https://icons.duckduckgo.com/ip3/${url.hostname}.ico`;
-        } catch (error) {
-          return "";
-        }
+        return manualAppIcons[node.id] || "";
       }
 
       function getGalaxyMonogram(node) {
@@ -5675,16 +5698,18 @@
           .attr("stroke-width", 10)
           .attr("stroke-opacity", 0.9);
 
+        const safeTransform = getSafeTransform(currentTransform);
         if (zoomReadout) {
-          zoomReadout.textContent = `${Math.round(currentTransform.k * 100)}%`;
+          zoomReadout.textContent = `${Math.round(safeTransform.k * 100)}%`;
         }
 
         if (minimapCaption) {
-          minimapCaption.textContent = `Viewport: ${Math.round(bounds.width)} × ${Math.round(bounds.height)} world units at ${Math.round(currentTransform.k * 100)}% zoom.`;
+          minimapCaption.textContent = `Viewport: ${Math.round(bounds.width)} × ${Math.round(bounds.height)} world units at ${Math.round(safeTransform.k * 100)}% zoom.`;
         }
       }
 
       function applyViewportTransform() {
+        currentTransform = getSafeTransform(currentTransform);
         if (stage) {
           stage.dataset.detailLevel = currentTransform.k < 0.82 ? "cluster" : currentTransform.k < 1.38 ? "tool" : "detail";
         }
