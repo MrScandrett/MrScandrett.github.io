@@ -13,33 +13,53 @@
     /* ── YouTube-style grid ── */
     .vl-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 0.9rem 0.75rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem 0.85rem;
     }
-    @media (max-width: 1200px) { .vl-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 1200px) { .vl-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 900px)  { .vl-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 580px)  { .vl-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 380px)  { .vl-grid { grid-template-columns: 1fr; } }
 
     .vl-card {
+      appearance: none;
       cursor: pointer;
-      background: none;
-      border: none;
       padding: 0;
       text-align: left;
       width: 100%;
-      transition: transform 0.15s;
+      font: inherit;
+      color: inherit;
     }
-    .vl-card:hover { transform: translateY(-2px); }
     .vl-card:hover .vl-play-icon { opacity: 1; }
     .vl-card:hover .vl-thumb { opacity: 0.78; }
+    .vl-card:focus-visible {
+      outline: 3px solid rgba(0, 113, 227, 0.26);
+      outline-offset: 3px;
+    }
+
+    .vl-card--feature {
+      grid-column: span 2;
+    }
+    @media (max-width: 900px) {
+      .vl-card--feature {
+        grid-column: 1 / -1;
+      }
+    }
 
     .vl-thumb-wrap {
       position: relative;
-      border-radius: 6px;
-      overflow: hidden;
       aspect-ratio: 16 / 9;
       background: #111;
+      border-bottom: 1px solid rgba(210, 210, 215, 0.52);
+    }
+    .vl-card--feature .vl-thumb-wrap {
+      aspect-ratio: 16 / 10;
+    }
+    @media (min-width: 1024px) {
+      .vl-card--feature .vl-thumb-wrap {
+        aspect-ratio: auto;
+        min-height: 100%;
+      }
     }
     .vl-thumb {
       width: 100%;
@@ -81,7 +101,6 @@
     .vl-meta {
       display: flex;
       gap: 0.5rem;
-      padding: 0.4rem 0 0;
       align-items: flex-start;
     }
     .vl-avatar {
@@ -105,21 +124,37 @@
       min-width: 0;
     }
     .vl-title {
-      font-size: 0.75rem;
-      font-weight: 600;
       margin: 0 0 0.15rem;
-      line-height: 1.35;
-      color: var(--text);
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
     .vl-sub {
-      font-size: 0.65rem;
-      color: var(--muted);
+      font-size: 0.72rem;
       margin: 0;
       line-height: 1.4;
+    }
+    .vl-desc {
+      margin-top: 0.15rem;
+    }
+    .vl-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(0, 113, 227, 0.1);
+      color: #005ec3;
+      border: 1px solid rgba(0, 113, 227, 0.14);
+    }
+    .vl-chip--muted {
+      background: rgba(25, 49, 77, 0.06);
+      color: var(--muted);
+      border-color: rgba(25, 49, 77, 0.08);
     }
 
     /* ── Modal ── */
@@ -374,17 +409,17 @@
 
     VIDEOS.forEach((v, index) => {
       const card = document.createElement('button');
-      card.className = 'vl-card reveal';
+      card.className = 'vl-card card-shell card-shell--border reveal';
       card.type = 'button';
       card.setAttribute('aria-label', `Play: ${v.title}`);
-      if (index === 0) card.classList.add('vl-card--feature');
+      if (index === 0) card.classList.add('vl-card--feature', 'card-shell--featured');
 
       const thumbWrap = document.createElement('div');
-      thumbWrap.className = 'vl-thumb-wrap';
+      thumbWrap.className = 'vl-thumb-wrap card-media';
 
       const img = document.createElement('img');
       img.className = 'vl-thumb';
-      img.alt = '';
+      img.alt = `Thumbnail for ${v.title}`;
 
       const playIcon = document.createElement('div');
       playIcon.className = 'vl-play-icon';
@@ -405,17 +440,25 @@
 
       thumbWrap.append(img, playIcon, durEl);
 
-      const meta = document.createElement('div');
-      meta.className = 'vl-meta';
-      meta.innerHTML = `
-        <div class="vl-avatar">MS</div>
-        <div class="vl-text">
-          <p class="vl-title">${v.title}</p>
-          <p class="vl-sub">Mr. Scandrett &middot; ${v.category}</p>
+      const body = document.createElement('div');
+      body.className = 'card-body';
+      body.innerHTML = `
+        <div class="vl-meta">
+          <div class="vl-avatar" aria-hidden="true">MS</div>
+          <div class="vl-text">
+            <p class="card-kicker">${v.category}</p>
+            <p class="vl-title card-title">${v.title}</p>
+            <p class="vl-sub card-sub">Mr. Scandrett &middot; Class video library</p>
+          </div>
+        </div>
+        ${index === 0 ? `<p class="vl-desc card-sub">${v.desc}</p>` : ''}
+        <div class="card-actions">
+          <span class="vl-chip">Play video</span>
+          <span class="vl-chip vl-chip--muted">${v.category}</span>
         </div>
       `;
 
-      card.append(thumbWrap, meta);
+      card.append(thumbWrap, body);
       grid.appendChild(card);
       captureThumbnail(v.src, v.seekTo, img);
 
