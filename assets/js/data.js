@@ -1,22 +1,22 @@
 let cache = null;
 let loadingPromise = null;
-const PLACEHOLDER_THUMB = "./assets/thumbs/showcase/student-showcase-thumb.png";
+const PLACEHOLDER_THUMB = "/assets/thumbs/showcase/student-showcase-thumb.png";
 
 function resolveThumbPath(value) {
   const raw = String(value || "").trim();
   if (!raw) return PLACEHOLDER_THUMB;
 
-  // Normalise all recognised shorthand forms to ./assets/thumbs/...
-  if (raw.startsWith("/thumbs/"))          return `./assets${raw}`;
-  if (raw.startsWith("thumbs/"))           return `./assets/${raw}`;
-  if (raw.startsWith("./thumbs/"))         return `./assets/${raw.slice(2)}`;
-  if (raw.startsWith("/assets/thumbs/"))   return `.${raw}`;
-  if (raw.startsWith("./assets/thumbs/"))  return raw;
-  if (raw.startsWith("assets/thumbs/"))    return `./${raw}`;
+  // Normalise all recognised shorthand forms to /assets/thumbs/...
+  if (raw.startsWith("/thumbs/"))          return `/assets${raw}`;
+  if (raw.startsWith("thumbs/"))           return `/assets/${raw}`;
+  if (raw.startsWith("./thumbs/"))         return `/assets/${raw.slice(2)}`;
+  if (raw.startsWith("/assets/thumbs/"))   return raw;
+  if (raw.startsWith("./assets/thumbs/"))  return raw.slice(1);
+  if (raw.startsWith("assets/thumbs/"))    return `/${raw}`;
 
-  // Allow app-relative paths (manifest thumbnails live inside ./apps/<slug>/)
-  if (raw.startsWith("./apps/"))           return raw;
-  if (raw.startsWith("apps/"))             return `./${raw}`;
+  // Allow app-relative paths (manifest thumbnails live inside /apps/<slug>/)
+  if (raw.startsWith("./apps/"))           return raw.slice(1);
+  if (raw.startsWith("apps/"))             return `/${raw}`;
 
   // Any other path is rejected — use placeholder.
   return PLACEHOLDER_THUMB;
