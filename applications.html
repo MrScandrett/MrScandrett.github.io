@@ -954,6 +954,15 @@
       pointer-events: none;
     }
 
+    .steam-galaxy-node[data-tier="primary"] .steam-galaxy-node-label {
+      font-weight: 800;
+    }
+
+    .steam-galaxy-node[data-tier="peripheral"] .steam-galaxy-node-label,
+    .steam-galaxy-node[data-tier="peripheral"] .steam-galaxy-node-kicker {
+      opacity: 0.9;
+    }
+
     .steam-galaxy-node.is-related .steam-galaxy-node-surface {
       stroke-width: 2.6;
       filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.16));
@@ -1633,7 +1642,7 @@
             <div class="steam-galaxy-overlay" id="steam-galaxy-help-panel" hidden>
               <div class="steam-galaxy-overlay-card">
                 <p class="steam-galaxy-overlay-kicker">How to use the map</p>
-                <p>Select a bubble to spotlight its constellation, compare related tools, and open a classroom-ready detail card. Drag the galaxy like a world map, zoom for detail, or use Show All Bubbles when you want to confirm the full constellation.</p>
+                <p>Select a bubble to spotlight its constellation, compare related tools, and open a classroom-ready detail card. The map now reveals core bubbles first, then expands deeper tools when you open a region. Drag the galaxy like a world map, zoom for detail, or use Show All Bubbles when you want to confirm the full constellation.</p>
                 <div class="steam-galaxy-overlay-actions">
                   <button class="steam-galaxy-help-close" id="steam-galaxy-help-close" type="button" aria-label="Close help panel">×</button>
                 </div>
@@ -4451,12 +4460,14 @@
 
       const nodesById = new Map(steamGalaxyNodes.map((node) => [node.id, node]));
       const categoryKeys = Object.keys(categoryMeta);
+      const defaultExpandedCategories = new Set(["coding"]);
       const state = {
         category: "all",
         grade: "all",
         utility: "all",
         selectedId: "anchor-coding"
       };
+      const expandedCategories = new Set(defaultExpandedCategories);
 
       let layoutNodes = [];
       let linkData = [];
@@ -4479,6 +4490,7 @@
       const minimapSelection = minimapSvg ? d3.select(minimapSvg) : null;
       const zoomBehavior = d3.zoom()
         .scaleExtent(zoomExtent)
+        .constrain((transform) => clampTransform(transform))
         .filter((event) => !event.ctrlKey || event.type === "wheel")
         .on("start", function (event) {
           stage.classList.toggle("is-panning", event.sourceEvent?.type !== "wheel");
@@ -4606,7 +4618,7 @@
       function fitVisibleNodes(duration = 520) {
         const nodes = visibleNodes();
         if (!nodes.length) return;
-        setCameraTransform(transformForBounds(getBoundsForNodes(nodes), { padding: 84, maxScale: 1.18 }), duration);
+        setCameraTransform(transformForBounds(getBoundsForNodes(nodes), { padding: 84, maxScale: 1.02 }), duration);
       }
 
       function resetView(duration = 520) {
@@ -4648,10 +4660,54 @@
         return state.utility === "all" || (node.utilities || []).includes(state.utility);
       }
 
+      function toolTier(node) {
+        if (node.radius >= 40) return "primary";
+        if (node.radius >= 36) return "secondary";
+        return "peripheral";
+      }
+
+      function isCategoryExpanded(category) {
+        return state.category !== "all" || expandedCategories.has(category);
+      }
+
+      function revealAllows(node) {
+        if (node.type === "anchor") return true;
+        if (state.category !== "all") return true;
+        if (isCategoryExpanded(node.category)) return true;
+        return node.radius >= 40;
+      }
+
+      function getNodeVisualRadius(node) {
+        if (node.type === "anchor") return Math.round(node.radius * 1.06);
+        const tierScale = {
+          primary: 1.08,
+          secondary: 0.98,
+          peripheral: 0.9
+        };
+        return Math.max(26, Math.round(node.radius * (tierScale[toolTier(node)] || 1)));
+      }
+
+      function getOrbitDistance(node) {
+        if (node.type === "anchor") return 0;
+        const tier = toolTier(node);
+        if (tier === "primary") return viewportWidth < 760 ? 170 : 210;
+        if (tier === "secondary") return viewportWidth < 760 ? 250 : 310;
+        return viewportWidth < 760 ? 330 : 402;
+      }
+
+      function expandCategory(category) {
+        expandedCategories.add(category);
+      }
+
+      function collapseExpandedCategories() {
+        expandedCategories.clear();
+        defaultExpandedCategories.forEach((category) => expandedCategories.add(category));
+      }
+
       function toolVisible(node) {
         if (node.type !== "tool") return false;
         const categoryMatch = state.category === "all" || node.category === state.category;
-        return categoryMatch && gradeMatches(node) && utilityMatches(node);
+        return categoryMatch && gradeMatches(node) && utilityMatches(node) && revealAllows(node);
       }
 
       function anchorVisible(node) {
@@ -4802,7 +4858,7 @@
         const midpoint = words.length > 1 ? Math.ceil(words.length / 2) : 1;
         text.selectAll("tspan").remove();
         text.attr("y", words.length > 1 ? 5 : 6);
-        text.style("font-size", node.type === "anchor" ? "16px" : node.radius >= 40 ? "13px" : "12px");
+        text.style("font-size", node.type === "anchor" ? "16px" : toolTier(node) === "primary" ? "13px" : toolTier(node) === "secondary" ? "12px" : "11px");
 
         if (words.length > 1 && label.length > 10) {
           text.append("tspan").attr("x", 0).attr("dy", -7).text(words.slice(0, midpoint).join(" "));
@@ -4857,9 +4913,11 @@
           button.addEventListener("click", function () {
             state.category = key;
             state.selectedId = `anchor-${key}`;
+            expandCategory(key);
             renderControls();
             renderPanel();
             renderFrame(latestTime);
+            resetView();
           });
           legend.appendChild(button);
         });
@@ -4870,10 +4928,18 @@
             const group = button.dataset.filterGroup;
             const value = button.dataset.filterValue || "all";
             state[group] = value;
+            if (group === "category") {
+              if (value === "all") {
+                collapseExpandedCategories();
+              } else {
+                expandCategory(value);
+              }
+            }
             ensureVisibleSelection();
             renderControls();
             renderPanel();
             renderFrame(latestTime);
+            fitVisibleNodes(420);
           });
         });
 
@@ -4883,6 +4949,7 @@
             state.grade = "all";
             state.utility = "all";
             state.selectedId = "anchor-coding";
+            collapseExpandedCategories();
             renderControls();
             renderPanel();
             renderFrame(latestTime);
@@ -4946,6 +5013,19 @@
         });
       }
 
+      if (minimapSvg) {
+        minimapSvg.addEventListener("click", function (event) {
+          if (!worldWidth || !worldHeight) return;
+          const bounds = minimapSvg.getBoundingClientRect();
+          const ratioX = (event.clientX - bounds.left) / bounds.width;
+          const ratioY = (event.clientY - bounds.top) / bounds.height;
+          centerCameraOn({
+            x: clamp(ratioX, 0, 1) * worldWidth,
+            y: clamp(ratioY, 0, 1) * worldHeight
+          }, currentTransform.k, 280);
+        });
+      }
+
       function renderControls() {
         document.querySelectorAll("[data-filter-group='view']").forEach((button) => {
           button.classList.add("is-active");
@@ -4983,6 +5063,10 @@
 
       function selectNode(nodeId) {
         if (!nodesById.has(nodeId)) return;
+        const node = nodesById.get(nodeId);
+        if (node?.category) {
+          expandCategory(node.category);
+        }
         state.selectedId = nodeId;
         dismissHelp(true);
         renderPanel();
@@ -5034,9 +5118,11 @@
             state.grade = "all";
             state.utility = "all";
             state.selectedId = "anchor-coding";
+            collapseExpandedCategories();
             renderControls();
             renderPanel();
             renderFrame(latestTime);
+            fitVisibleNodes();
           };
           panelSecondary.textContent = "Open Full Library";
           panelSecondary.href = "#full-library";
@@ -5100,13 +5186,20 @@
           };
         } else {
           const shouldReset = state.category === node.category;
-          panelSecondary.textContent = shouldReset ? "Show Whole Galaxy" : `Show Only ${meta.anchorLabel}`;
+          panelSecondary.textContent = shouldReset ? "Show Whole Galaxy" : `Focus ${meta.anchorLabel} Region`;
           panelSecondary.onclick = function (event) {
             event.preventDefault();
             state.category = shouldReset ? "all" : node.category;
+            if (state.category === "all") {
+              collapseExpandedCategories();
+              expandCategory(node.category);
+            } else {
+              expandCategory(node.category);
+            }
             renderControls();
             renderPanel();
             renderFrame(latestTime);
+            fitVisibleNodes();
           };
         }
 
@@ -5213,10 +5306,15 @@
 
       function updateStatus() {
         const visibleTools = steamGalaxyNodes.filter((node) => node.type === "tool" && toolVisible(node));
+        const filteredTools = steamGalaxyNodes.filter((node) => node.type === "tool" && (state.category === "all" || node.category === state.category) && gradeMatches(node) && utilityMatches(node));
+        const hiddenTools = Math.max(0, filteredTools.length - visibleTools.length);
         const activeCategory = state.category === "all" ? "all categories" : categoryMeta[state.category].anchorLabel;
         const activeGrade = state.grade === "all" ? "all grades" : state.grade;
         const activeUtility = state.utility === "all" ? "all tool types" : utilityLabel(state.utility);
-        statusText.textContent = `Showing ${visibleTools.length} tool bubbles in ${activeCategory}, filtered for ${activeGrade} and ${activeUtility}. Select any bubble to trace its learning constellation.`;
+        const revealNote = hiddenTools > 0
+          ? ` ${hiddenTools} more bubbles are tucked into collapsed constellations. Select an anchor or tool to expand that region.`
+          : "";
+        statusText.textContent = `Showing ${visibleTools.length} tool bubbles in ${activeCategory}, filtered for ${activeGrade} and ${activeUtility}.${revealNote}`;
       }
 
       function getRelatedIdSet(node) {
@@ -5287,6 +5385,7 @@
 
         merged
           .attr("aria-label", (node) => `${node.label}, ${node.type === "anchor" ? "anchor bubble" : "tool bubble"} in ${categoryMeta[node.category].label}`)
+          .attr("data-tier", (node) => node.type === "anchor" ? "anchor" : toolTier(node))
           .on("click", function (_event, node) {
             selectNode(node.id);
           })
@@ -5297,19 +5396,22 @@
           });
 
         merged.select(".steam-galaxy-node-surface")
-          .attr("r", (node) => node.radius)
+          .attr("r", (node) => getNodeVisualRadius(node))
           .attr("fill", (node) => node.color)
-          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.32 : 0.3)
+          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.34 : (toolTier(node) === "primary" ? 0.34 : toolTier(node) === "secondary" ? 0.28 : 0.22))
           .attr("stroke", (node) => node.color)
           .attr("stroke-opacity", 0.95)
-          .attr("stroke-width", (node) => node.type === "anchor" ? 2.4 : 1.9);
+          .attr("stroke-width", (node) => node.type === "anchor" ? 2.8 : (toolTier(node) === "primary" ? 2.15 : 1.8));
 
         merged.select(".steam-galaxy-node-hit")
-          .attr("r", (node) => node.radius + 10);
+          .attr("r", (node) => getNodeVisualRadius(node) + 12);
 
         merged.select(".steam-galaxy-node-kicker")
           .attr("y", (node) => node.type === "anchor" ? -12 : -10)
-          .text((node) => node.type === "anchor" ? "Pathway" : "Tool");
+          .text((node) => {
+            if (node.type === "anchor") return "Pathway";
+            return toolTier(node) === "primary" ? "Core Tool" : toolTier(node) === "secondary" ? "Studio Tool" : "Extra Tool";
+          });
 
         merged.select(".steam-galaxy-node-label")
           .each(function (node) {
@@ -5375,12 +5477,14 @@
         const simulationNodes = steamGalaxyNodes.map((node) => {
           const target = targets[node.category];
           const offset = offsetFromSeed(node.id);
+          const orbitDistance = getOrbitDistance(node);
           return {
             ...node,
-            x: target.x + offset.x * (node.type === "anchor" ? 4 : 132),
-            y: target.y + offset.y * (node.type === "anchor" ? 4 : 124),
+            x: target.x + offset.x * (node.type === "anchor" ? 4 : orbitDistance * 0.62),
+            y: target.y + offset.y * (node.type === "anchor" ? 4 : orbitDistance * 0.54),
             fx: node.type === "anchor" ? target.x : null,
             fy: node.type === "anchor" ? target.y : null,
+            orbitDistance,
             floatPhase: seededValue(`${node.id}-phase`) * Math.PI * 2
           };
         });
@@ -5388,11 +5492,22 @@
         const simulationLinks = buildLinks();
 
         const simulation = d3.forceSimulation(simulationNodes)
-          .force("link", d3.forceLink(simulationLinks).id((node) => node.id).distance((link) => link.kind === "anchor" ? (viewportWidth < 760 ? 110 : 152) : (viewportWidth < 760 ? 84 : 118)).strength((link) => link.kind === "anchor" ? 0.62 : 0.2))
-          .force("x", d3.forceX((node) => targets[node.category].x).strength((node) => node.type === "anchor" ? 1 : 0.22))
-          .force("y", d3.forceY((node) => targets[node.category].y).strength((node) => node.type === "anchor" ? 1 : 0.22))
-          .force("charge", d3.forceManyBody().strength((node) => node.type === "anchor" ? -920 : -(250 + node.radius * 4.5)))
-          .force("collide", d3.forceCollide((node) => node.radius + (node.type === "anchor" ? 20 : 12)).iterations(7))
+          .force("link", d3.forceLink(simulationLinks).id((node) => node.id).distance((link) => {
+            if (link.kind === "anchor") {
+              const targetNode = typeof link.target === "object" ? link.target : nodesById.get(link.target);
+              return targetNode?.orbitDistance || (viewportWidth < 760 ? 160 : 210);
+            }
+            return viewportWidth < 760 ? 110 : 150;
+          }).strength((link) => link.kind === "anchor" ? 0.8 : 0.16))
+          .force("cluster-x", d3.forceX((node) => targets[node.category].x).strength((node) => node.type === "anchor" ? 0.9 : 0.08))
+          .force("cluster-y", d3.forceY((node) => targets[node.category].y).strength((node) => node.type === "anchor" ? 0.9 : 0.08))
+          .force("orbit", d3.forceRadial(
+            (node) => node.type === "anchor" ? 0 : node.orbitDistance,
+            (node) => targets[node.category].x,
+            (node) => targets[node.category].y
+          ).strength((node) => node.type === "anchor" ? 0 : 0.76))
+          .force("charge", d3.forceManyBody().strength((node) => node.type === "anchor" ? -1280 : -(360 + getNodeVisualRadius(node) * 6.4)))
+          .force("collide", d3.forceCollide((node) => getNodeVisualRadius(node) + (node.type === "anchor" ? 26 : 18)).iterations(8))
           .stop();
 
         for (let tick = 0; tick < 320; tick += 1) simulation.tick();
@@ -5407,7 +5522,7 @@
         renderFrame(latestTime);
         svgSelection.call(zoomBehavior);
         svgSelection.on("dblclick.zoom", null);
-        if (currentTransform === d3.zoomIdentity) {
+        if (currentTransform.k === 1 && currentTransform.x === 0 && currentTransform.y === 0) {
           fitVisibleNodes(0);
         } else {
           setCameraTransform(currentTransform, 0);
