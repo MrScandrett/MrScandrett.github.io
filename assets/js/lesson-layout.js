@@ -11,6 +11,134 @@
 (function (global) {
   'use strict';
 
+  function ensureKawaiiRangeSkin() {
+    if (window.ClassroomOSKawaiiRangeSkin) {
+      window.ClassroomOSKawaiiRangeSkin();
+      return;
+    }
+
+    var STYLE_ID = 'classroomos-kawaii-range-style';
+    var RANGE_SELECTOR = 'input[type="range"]';
+    var RANGE_CLASS = 'cos-kawaii-range';
+
+    function injectStyle() {
+      if (document.getElementById(STYLE_ID)) return;
+
+      var style = document.createElement('style');
+      style.id = STYLE_ID;
+      style.textContent =
+        '.rangeWrapper{display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;height:100%;}' +
+        'input[type="range"].' + RANGE_CLASS + '{' +
+          '--base:#fe8ce4;' +
+          '--light:color-mix(in sRGB,var(--base) 60%,#fff);' +
+          '--lighter:color-mix(in sRGB,var(--base) 30%,#fff);' +
+          '--dark:color-mix(in sRGB,var(--base) 95%,#000);' +
+          '--transparent:color-mix(in sRGB,var(--base) 0%,#0000);' +
+          'appearance:none;-webkit-appearance:none;font-size:clamp(12px,1rem,16px);' +
+          'width:100%;max-width:100%;height:2em;padding:0;border:0.38em solid #fff;border-radius:2em;' +
+          'background:transparent;box-shadow:0 0 1em #0001,0 0.25em 0.5em #0001;overflow:hidden;cursor:pointer;' +
+        '}' +
+        'input[type="range"].' + RANGE_CLASS + ':focus-visible{outline:2px solid color-mix(in sRGB,var(--base) 65%,#fff);outline-offset:4px;}' +
+        'input[type="range"].' + RANGE_CLASS + '::-webkit-slider-runnable-track{' +
+          'background:' +
+            'radial-gradient(circle at 0.75em 0.6em,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
+            'radial-gradient(circle at 1.25em 0.6em,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
+            'radial-gradient(circle at 5em 0.6em,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
+            'linear-gradient(var(--light) 0 0) 1.25em 0.4em / 3.75em calc(0.4em - 0.5px) no-repeat,' +
+            'linear-gradient(90deg,var(--base),var(--transparent) 1em),' +
+            'linear-gradient(#0000 70%,var(--dark) 80%),' +
+            'var(--base);' +
+          'border-radius:2em;height:100%;' +
+        '}' +
+        'input[type="range"].' + RANGE_CLASS + '::-webkit-slider-thumb{' +
+          'appearance:none;-webkit-appearance:none;height:2em;width:2em;margin-top:0;color:var(--lighter);' +
+          'background:' +
+            'radial-gradient(circle at 0.75em 0.6em,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
+            'linear-gradient(90deg,#0000 0.75em,var(--base) 0) 0 0 / 100% 50% no-repeat;' +
+          'border:none;border-radius:50%;' +
+          'box-shadow:' +
+            'inset -0.5em 0 0.5em -0.25em var(--base),' +
+            '1em 0 0 0.25em,2em 0 0 0.25em,3em 0 0 0.25em,4em 0 0 0.25em,5em 0 0 0.25em,' +
+            '6em 0 0 0.25em,7em 0 0 0.25em,8em 0 0 0.25em,9em 0 0 0.25em,10em 0 0 0.25em,' +
+            '11em 0 0 0.25em,12em 0 0 0.25em,13em 0 0 0.25em,14em 0 0 0.25em,15em 0 0 0.25em,' +
+            '16em 0 0 0.25em,17em 0 0 0.25em,18em 0 0 0.25em,19em 0 0 0.25em;' +
+        '}' +
+        'input[type="range"].' + RANGE_CLASS + '::-moz-range-track{' +
+          'background:' +
+            'radial-gradient(circle at 0.75em 30%,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
+            'radial-gradient(circle at 1.5em 30%,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
+            'radial-gradient(circle at 5.5em 30%,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
+            'linear-gradient(var(--light) 0 0) 1.5em calc(15% + 0.18em) / 4em calc(0.4em - 0.5px) no-repeat,' +
+            'linear-gradient(90deg,var(--base),var(--transparent) 1em),' +
+            'linear-gradient(var(--transparent) 70%,var(--dark) 80%),' +
+            'var(--base);' +
+          'border:none;border-radius:2em;height:100%;' +
+        '}' +
+        'input[type="range"].' + RANGE_CLASS + '::-moz-range-thumb{' +
+          'appearance:none;height:2em;width:2em;border:0;color:var(--lighter);' +
+          'background:' +
+            'radial-gradient(circle at 0.75em 0.6em,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
+            'linear-gradient(90deg,var(--transparent) 0.75em,var(--base) 0) 0 0 / 100% 50% no-repeat;' +
+          'border-radius:50% 0 50% 50% 0;' +
+          'box-shadow:' +
+            'inset -0.5em 0 0.5em -0.25em var(--base),' +
+            '1em 0 0 0.25em,2em 0 0 0.25em,3em 0 0 0.25em,4em 0 0 0.25em,5em 0 0 0.25em,' +
+            '6em 0 0 0.25em,7em 0 0 0.25em,8em 0 0 0.25em,9em 0 0 0.25em,10em 0 0 0.25em,' +
+            '11em 0 0 0.25em,12em 0 0 0.25em,13em 0 0 0.25em,14em 0 0 0.25em,15em 0 0 0.25em,' +
+            '16em 0 0 0.25em,17em 0 0 0.25em,18em 0 0 0.25em,19em 0 0 0.25em;' +
+        '}' +
+        'input[type="range"].' + RANGE_CLASS + '::-moz-range-progress{' +
+          'background:transparent;height:100%;border-radius:2em;' +
+        '}';
+      document.head.appendChild(style);
+    }
+
+    function syncSliderAccent(slider) {
+      if (!slider || slider.dataset.rangeSkin === 'native') return;
+
+      slider.classList.add(RANGE_CLASS);
+
+      if (!slider.style.getPropertyValue('--base')) {
+        var accent = window.getComputedStyle(slider).accentColor;
+        if (accent && accent !== 'auto') {
+          slider.style.setProperty('--base', accent);
+        }
+      }
+    }
+
+    function applyToRoot(root) {
+      if (!root || !root.querySelectorAll) return;
+      root.querySelectorAll(RANGE_SELECTOR).forEach(syncSliderAccent);
+      if (root.matches && root.matches(RANGE_SELECTOR)) {
+        syncSliderAccent(root);
+      }
+    }
+
+    window.ClassroomOSKawaiiRangeSkin = function () {
+      injectStyle();
+      applyToRoot(document);
+    };
+
+    window.ClassroomOSKawaiiRangeSkin();
+
+    if (!window.__classroomosKawaiiRangeObserver) {
+      window.__classroomosKawaiiRangeObserver = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          mutation.addedNodes.forEach(function (node) {
+            if (node && node.nodeType === 1) applyToRoot(node);
+          });
+        });
+      });
+
+      window.__classroomosKawaiiRangeObserver.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+      });
+    }
+  }
+
+  ensureKawaiiRangeSkin();
+
   /* ──────────────────────────────────────────────────────────
      Auto panel builder
      If a lesson marks sections with data-ll-panel="guide|controls",
