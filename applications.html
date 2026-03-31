@@ -3893,15 +3893,26 @@
       renderAll();
 
       // AI Awareness Modal Handler
-      setTimeout(function() {
+      (function() {
         const aiModal = document.getElementById('ai-awareness-modal');
         const aiConfirmBtn = document.getElementById('ai-modal-confirm');
         const aiCancelBtn = document.getElementById('ai-modal-cancel');
         const pledgeCheckboxes = document.querySelectorAll('.ai-pledge-checkbox input[type="checkbox"]');
         let pendingAiUrl = null;
+        const aiGateSelector = [
+          '#app-ai a[href]',
+          '.app-link-gemini',
+          '.app-link-googleaimode',
+          '.app-link-googlelabs',
+          '.app-link-claude',
+          '.app-link-anthropicconsole',
+          '.app-link-claudeapi',
+          '.app-link-claudemodels'
+        ].join(', ');
 
-        // AI tool link classes that should trigger the modal
-        const aiToolClasses = ['app-link-claude', 'app-link-chatgpt', 'app-link-gemini', 'app-link-dalle', 'app-link-gpts'];
+        if (!aiModal || !aiConfirmBtn || !aiCancelBtn || !pledgeCheckboxes.length) {
+          return;
+        }
 
         function checkAllPledges() {
           const allChecked = Array.from(pledgeCheckboxes).every(cb => cb.checked);
@@ -3946,20 +3957,20 @@
           }
         });
 
-        // Directly attach click handlers to all AI tool links
-        document.querySelectorAll('.app-link').forEach(link => {
-          const hasAiClass = aiToolClasses.some(cls => link.classList.contains(cls));
-          if (hasAiClass) {
-            link.addEventListener('click', function(e) {
-              e.preventDefault();
-              const href = this.getAttribute('href');
-              if (href) {
-                showAiModal(href);
-              }
-            });
+        // Capture AI link clicks at the document level so dynamically rendered or reordered links are still gated.
+        document.addEventListener('click', function(e) {
+          const link = e.target.closest(aiGateSelector);
+          if (!link) {
+            return;
           }
+          const href = link.getAttribute('href');
+          if (!href) {
+            return;
+          }
+          e.preventDefault();
+          showAiModal(href);
         });
-      }, 100); // Wait for DOM to be fully ready
+      })();
     })();
   </script>
   <script type="module">
