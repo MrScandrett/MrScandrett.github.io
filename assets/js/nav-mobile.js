@@ -389,7 +389,8 @@
   var settingsPanel = null;
   var settingsCurrent = null;
   var settingsStatus = null;
-  var autoInput = null;
+  var modeControls = null;
+  var toneControls = null;
   var themeGrid = null;
   var canvasGrid = null;
 
@@ -406,19 +407,34 @@
       "</button>" +
       '<div class="nav-settings-panel" id="' + panelId + '" hidden>' +
         '<div class="nav-settings-head">' +
-          '<p class="nav-settings-eyebrow">Theme</p>' +
+          '<p class="nav-settings-eyebrow">Theme Controller</p>' +
           '<p class="nav-settings-current" aria-live="polite"></p>' +
         "</div>" +
-        '<p class="nav-settings-note">Choose a theme, or follow local time to switch between Day and Night automatically.</p>' +
-        '<label class="nav-settings-auto">' +
-          '<input type="checkbox" class="nav-settings-auto-input" />' +
-          "<span>Follow local time</span>" +
-        "</label>" +
-        '<div class="nav-theme-grid" role="list"></div>' +
+        '<p class="nav-settings-note">Move between automatic lighting, quick day or night tones, and the full palette without leaving the page.</p>' +
+        '<div class="nav-settings-mode" role="group" aria-label="Theme mode">' +
+          '<button type="button" class="nav-mode-pill" data-mode="auto">Auto</button>' +
+          '<button type="button" class="nav-mode-pill" data-mode="manual">Manual</button>' +
+        '</div>' +
+        '<div class="nav-tone-rail" role="group" aria-label="Quick tone">' +
+          '<button type="button" class="nav-tone-pill" data-tone="day" aria-label="Use day theme">' +
+            '<span class="nav-tone-icon" aria-hidden="true">&#9728;</span>' +
+            '<span class="nav-tone-copy">Day</span>' +
+          '</button>' +
+          '<button type="button" class="nav-tone-pill" data-tone="night" aria-label="Use night theme">' +
+            '<span class="nav-tone-icon" aria-hidden="true">&#9789;</span>' +
+            '<span class="nav-tone-copy">Night</span>' +
+          '</button>' +
+        '</div>' +
+        '<div class="nav-settings-section">' +
+          '<p class="nav-settings-eyebrow">Palette</p>' +
+          '<div class="nav-theme-grid" role="list"></div>' +
+        '</div>' +
         '<div class="nav-settings-divider"></div>' +
-        '<p class="nav-settings-eyebrow">Home Background</p>' +
-        '<p class="nav-settings-note">Animated canvas on the home page hero. Has no effect on other pages.</p>' +
-        '<div class="nav-canvas-grid" role="list"></div>' +
+        '<div class="nav-settings-section">' +
+          '<p class="nav-settings-eyebrow">Home Background</p>' +
+          '<p class="nav-settings-note">Animated canvas on the home page hero. Has no effect on other pages.</p>' +
+          '<div class="nav-canvas-grid" role="list"></div>' +
+        '</div>' +
       "</div>";
 
     var navList = nav.querySelector("ul");
@@ -429,7 +445,8 @@
     settingsPanel = settingsContainer.querySelector(".nav-settings-panel");
     settingsCurrent = settingsContainer.querySelector(".nav-settings-current");
     settingsStatus = settingsContainer.querySelector(".nav-settings-status");
-    autoInput = settingsContainer.querySelector(".nav-settings-auto-input");
+    modeControls = settingsContainer.querySelector(".nav-settings-mode");
+    toneControls = settingsContainer.querySelector(".nav-tone-rail");
     themeGrid = settingsContainer.querySelector(".nav-theme-grid");
     canvasGrid = settingsContainer.querySelector(".nav-canvas-grid");
 
@@ -452,6 +469,34 @@
       });
       themeGrid.appendChild(optionBtn);
     });
+
+    if (modeControls) {
+      modeControls.querySelectorAll(".nav-mode-pill").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var nextMode = button.getAttribute("data-mode");
+          if (nextMode === "auto") {
+            lighting.setMode("auto");
+          } else if (typeof lighting.setTheme === "function") {
+            lighting.setTheme(lighting.getCurrentTheme());
+          } else {
+            lighting.setPhase(lighting.getCurrentPhase());
+          }
+          syncLightingUi();
+        });
+      });
+    }
+
+    if (toneControls) {
+      toneControls.querySelectorAll(".nav-tone-pill").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var tone = button.getAttribute("data-tone");
+          if (!tone) return;
+          if (typeof lighting.setTheme === "function") lighting.setTheme(tone);
+          else lighting.setPhase(tone);
+          syncLightingUi();
+        });
+      });
+    }
 
     // Canvas background options
     CANVAS_OPTIONS.forEach(function (opt) {
@@ -504,6 +549,8 @@
   function updateSettingsUi(mode, activeId) {
     if (!themeGrid) return;
     var themeButtons = themeGrid.querySelectorAll(".nav-theme-chip");
+    var modeButtons = modeControls ? modeControls.querySelectorAll(".nav-mode-pill") : [];
+    var toneButtons = toneControls ? toneControls.querySelectorAll(".nav-tone-pill") : [];
 
     if (settingsCurrent) {
       settingsCurrent.textContent = mode === "auto"
@@ -515,7 +562,19 @@
       settingsStatus.textContent = getOptionLabel(activeId);
     }
 
-    if (autoInput) autoInput.checked = mode === "auto";
+    modeButtons.forEach(function (button) {
+      var isActive = button.getAttribute("data-mode") === mode;
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      button.classList.toggle("is-active", isActive);
+    });
+
+    toneButtons.forEach(function (button) {
+      var tone = button.getAttribute("data-tone");
+      var isActive = tone === activeId;
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      button.classList.toggle("is-active", isActive);
+      button.classList.toggle("is-muted", mode === "auto" && !isActive);
+    });
 
     themeButtons.forEach(function (button) {
       var isActive = button.getAttribute("data-theme") === activeId;
@@ -569,15 +628,6 @@
   if (settingsToggle) {
     settingsToggle.addEventListener("click", function () {
       settingsContainer.classList.contains("is-open") ? closeSettings() : openSettings();
-    });
-  }
-
-  if (autoInput) {
-    autoInput.addEventListener("change", function () {
-      if (autoInput.checked) lighting.setMode("auto");
-      else if (typeof lighting.setTheme === "function") lighting.setTheme(lighting.getCurrentTheme());
-      else lighting.setPhase(lighting.getCurrentPhase());
-      syncLightingUi();
     });
   }
 
