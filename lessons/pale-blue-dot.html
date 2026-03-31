@@ -405,19 +405,19 @@
     };
 
     const OBJECTS = [
-      { name: 'Earth',            dist: 0,           r: EARTH_R,      color: '#3a7bd5', dot: true  },
-      { name: 'Moon',             dist: 3.844e8,      r: MOON_R,       color: '#c0c0c0'             },
-      { name: 'Venus',            dist: 1.08e11,      r: VENUS_R,      color: '#e8b067'             },
-      { name: 'Sun',              dist: AU,           r: SUN_R,        color: '#ffe566'             },
-      { name: 'Mars',             dist: 2.28e11,      r: 3.39e6,       color: '#d45030'             },
-      { name: 'Jupiter',          dist: 7.79e11,      r: JUPITER_R,    color: '#c89060'             },
-      { name: 'Saturn',           dist: 1.43e12,      r: SATURN_R,     color: '#e8d090'             },
-      { name: 'Uranus',           dist: 2.87e12,      r: URANUS_R,     color: '#8bcde6'             },
-      { name: 'Neptune',          dist: 4.50e12,      r: NEPTUNE_R,    color: '#5a78ff'             },
-      { name: 'Voyager 1',        dist: 2.3e13,       r: 0,            color: '#80a0ff', voyager: true },
-      { name: 'Proxima Centauri', dist: 4.01e16,      r: 1.07e8,       color: '#ff8060'             },
-      { name: 'Milky Way center', dist: 2.5e20,       r: 5e19,         color: '#d0b080', galaxy: true },
-      { name: 'Andromeda',        dist: 2.4e22,       r: 4.7e20,       color: '#a080ff'             },
+      { name: 'Earth',            dist: 0,           r: EARTH_R,      color: '#3a7bd5', dot: true,  effects: { atmosphere: true, haloColor: 0x6fa8ff, haloOpacity: 0.28 } },
+      { name: 'Moon',             dist: 3.844e8,     r: MOON_R,       color: '#c0c0c0', effects: {} },
+      { name: 'Venus',            dist: 1.08e11,     r: VENUS_R,      color: '#e8b067', effects: { glow: true, haloColor: 0xffc980, haloOpacity: 0.16 } },
+      { name: 'Sun',              dist: AU,          r: SUN_R,        color: '#ffe566', effects: { glow: true, corona: true, haloColor: 0xffdd72, haloOpacity: 0.55, particleCount: 96, particleSize: 0.12 } },
+      { name: 'Mars',             dist: 2.28e11,     r: 3.39e6,       color: '#d45030', effects: { glow: true, haloColor: 0xff8f66, haloOpacity: 0.12 } },
+      { name: 'Jupiter',          dist: 7.79e11,     r: JUPITER_R,    color: '#c89060', effects: { glow: true, haloColor: 0xf6c48c, haloOpacity: 0.12 } },
+      { name: 'Saturn',           dist: 1.43e12,     r: SATURN_R,     color: '#e8d090', effects: { atmosphere: true, rings: true, haloColor: 0xf8e7b2, haloOpacity: 0.18 } },
+      { name: 'Uranus',           dist: 2.87e12,     r: URANUS_R,     color: '#8bcde6', effects: { atmosphere: true, haloColor: 0x8fdfff, haloOpacity: 0.15 } },
+      { name: 'Neptune',          dist: 4.50e12,     r: NEPTUNE_R,    color: '#5a78ff', effects: { atmosphere: true, haloColor: 0x6b8dff, haloOpacity: 0.16 } },
+      { name: 'Voyager 1',        dist: 2.3e13,      r: 0,            color: '#80a0ff', voyager: true, effects: { glow: true, haloColor: 0x8cb3ff, haloOpacity: 0.12 } },
+      { name: 'Proxima Centauri', dist: 4.01e16,     r: 1.07e8,       color: '#ff8060', effects: { glow: true, corona: true, haloColor: 0xff8d66, haloOpacity: 0.26, particleCount: 48, particleSize: 0.08 } },
+      { name: 'Milky Way center', dist: 2.5e20,      r: 5e19,         color: '#d0b080', galaxy: true, effects: { glow: true, haloColor: 0xe2c49d, haloOpacity: 0.1 } },
+      { name: 'Andromeda',        dist: 2.4e22,      r: 4.7e20,       color: '#a080ff', effects: { glow: true, haloColor: 0xb194ff, haloOpacity: 0.1 } },
     ];
 
     // Milestones shown in readout
@@ -446,6 +446,180 @@
     }
 
     let modelSystem = null;
+
+    function createPbdEffectsSystem(THREE) {
+      const spriteCache = new Map();
+
+      function getSpriteTexture(key, stops) {
+        if (spriteCache.has(key)) return spriteCache.get(key);
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+        stops.forEach(stop => grad.addColorStop(stop.offset, stop.color));
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 256, 256);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        spriteCache.set(key, texture);
+        return texture;
+      }
+
+      function getRingTexture() {
+        return getSpriteTexture('saturn-ring', [
+          { offset: 0, color: 'rgba(255,255,255,0)' },
+          { offset: 0.18, color: 'rgba(236,226,191,0.12)' },
+          { offset: 0.34, color: 'rgba(246,237,210,0.82)' },
+          { offset: 0.52, color: 'rgba(214,198,148,0.42)' },
+          { offset: 0.74, color: 'rgba(246,237,210,0.78)' },
+          { offset: 1, color: 'rgba(255,255,255,0)' }
+        ]);
+      }
+
+      function createHaloSprite(color, opacity, scale) {
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: getSpriteTexture(`halo-${color}-${opacity}`, [
+            { offset: 0, color: 'rgba(255,255,255,0.95)' },
+            { offset: 0.45, color: 'rgba(255,255,255,0.28)' },
+            { offset: 1, color: 'rgba(255,255,255,0)' }
+          ]),
+          color,
+          transparent: true,
+          opacity,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        }));
+        sprite.scale.setScalar(scale);
+        return sprite;
+      }
+
+      function createAtmosphereShell(color, opacity) {
+        return new THREE.Mesh(
+          new THREE.SphereGeometry(1.06, 32, 32),
+          new THREE.MeshBasicMaterial({
+            color,
+            transparent: true,
+            opacity,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            side: THREE.BackSide
+          })
+        );
+      }
+
+      function createRingMesh() {
+        return new THREE.Mesh(
+          new THREE.RingGeometry(1.32, 2.05, 96),
+          new THREE.MeshBasicMaterial({
+            map: getRingTexture(),
+            color: 0xe8d9a8,
+            transparent: true,
+            opacity: 0.85,
+            side: THREE.DoubleSide,
+            depthWrite: false
+          })
+        );
+      }
+
+      function createParticleField(count, size, color, spread, mode) {
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          const i3 = i * 3;
+          const angle = Math.random() * Math.PI * 2;
+          const radial = mode === 'trail'
+            ? (0.8 + Math.random() * spread * 0.5)
+            : (0.95 + Math.random() * spread);
+          const ySpread = mode === 'trail'
+            ? (Math.random() - 0.5) * 0.26
+            : (Math.random() - 0.5) * spread;
+          positions[i3] = Math.cos(angle) * radial;
+          positions[i3 + 1] = ySpread;
+          positions[i3 + 2] = Math.sin(angle) * radial * (mode === 'trail' ? 0.45 : 1);
+        }
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const material = new THREE.PointsMaterial({
+          size,
+          color,
+          transparent: true,
+          opacity: mode === 'trail' ? 0.28 : 0.42,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          sizeAttenuation: true
+        });
+        return new THREE.Points(geometry, material);
+      }
+
+      function buildEffects(name, effects = {}) {
+        const group = new THREE.Group();
+        const parts = {};
+        const haloColor = effects.haloColor || 0xffffff;
+        const haloOpacity = effects.haloOpacity == null ? 0.2 : effects.haloOpacity;
+
+        if (effects.glow) {
+          parts.glow = createHaloSprite(haloColor, haloOpacity, 3.2);
+          group.add(parts.glow);
+        }
+        if (effects.atmosphere) {
+          parts.atmosphere = createAtmosphereShell(haloColor, Math.min(haloOpacity + 0.08, 0.45));
+          group.add(parts.atmosphere);
+        }
+        if (effects.corona) {
+          parts.corona = createParticleField(effects.particleCount || 72, effects.particleSize || 0.09, haloColor, 0.9, 'corona');
+          group.add(parts.corona);
+        }
+        if (effects.rings) {
+          parts.rings = createRingMesh();
+          parts.rings.rotation.x = Math.PI * 0.5;
+          group.add(parts.rings);
+        }
+        if (effects.dustTrail) {
+          parts.dustTrail = createParticleField(effects.particleCount || 40, effects.particleSize || 0.045, haloColor, 1.1, 'trail');
+          parts.dustTrail.rotation.z = Math.PI * 0.2;
+          group.add(parts.dustTrail);
+        }
+
+        group.visible = false;
+        return { name, group, parts };
+      }
+
+      return {
+        create(name, effects) {
+          return buildEffects(name, effects);
+        },
+        sync(instance, layout, zoomLevel) {
+          if (!instance) return;
+          const visible = !!(layout && layout.visible && layout.effectVisible);
+          instance.group.visible = visible;
+          if (!visible) return;
+
+          const zoomFactor = THREE.MathUtils.clamp((zoomLevel - 10) / 50, 0.2, 1.25);
+          if (instance.parts.glow) {
+            const glowScale = 2.4 + zoomFactor * 1.2;
+            instance.parts.glow.scale.set(glowScale, glowScale, 1);
+            instance.parts.glow.material.opacity = layout.haloOpacity;
+          }
+          if (instance.parts.atmosphere) {
+            instance.parts.atmosphere.material.opacity = Math.min(layout.haloOpacity + 0.08, 0.42);
+          }
+          if (instance.parts.corona) {
+            instance.parts.corona.rotation.y += 0.0025;
+            instance.parts.corona.material.opacity = Math.min(0.5, 0.18 + zoomFactor * 0.22);
+            instance.parts.corona.material.size = layout.particleSize;
+          }
+          if (instance.parts.dustTrail) {
+            instance.parts.dustTrail.position.x = -0.7;
+            instance.parts.dustTrail.rotation.y += 0.0015;
+            instance.parts.dustTrail.material.opacity = Math.min(0.28, 0.08 + zoomFactor * 0.12);
+            instance.parts.dustTrail.material.size = Math.max(0.02, layout.particleSize * 0.55);
+          }
+          if (instance.parts.rings) {
+            instance.parts.rings.material.opacity = Math.min(0.92, 0.5 + zoomFactor * 0.25);
+          }
+        }
+      };
+    }
 
     function createPbdModelSystem(THREE, GLTFLoader) {
       if (!modelLayer) return null;
@@ -478,13 +652,24 @@
       modelLayer.appendChild(renderer.domElement);
 
       const loader = new GLTFLoader();
+      const effectsSystem = createPbdEffectsSystem(THREE);
       const viewers = new Map();
       const activeLayouts = new Map();
+      const objectLookup = new Map(OBJECTS.map(obj => [obj.name, obj]));
       const tempBox = new THREE.Box3();
       const tempSize = new THREE.Vector3();
       const tempCenter = new THREE.Vector3();
       let layerW = 0;
       let layerH = 0;
+      let lastZoomLevel = parseFloat(slider.value);
+      let interactionBoosted = false;
+
+      const requestIdle = window.requestIdleCallback || function (cb) {
+        return window.setTimeout(() => cb({
+          didTimeout: false,
+          timeRemaining() { return 16; }
+        }), 32);
+      };
 
       function configureMaterials(root) {
         root.traverse(node => {
@@ -513,6 +698,13 @@
         holder.position.sub(tempCenter);
       }
 
+      function normalizeEffects(fxGroup) {
+        tempBox.setFromObject(fxGroup);
+        if (tempBox.isEmpty()) return;
+        tempBox.getCenter(tempCenter);
+        fxGroup.position.sub(tempCenter);
+      }
+
       function createViewer(name, cfg) {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 20);
@@ -531,38 +723,98 @@
         pose.rotation.x = cfg.tiltX || 0.18;
         pose.rotation.z = cfg.tiltZ || -0.08;
         const spinGroup = new THREE.Group();
+        const modelRoot = new THREE.Group();
+        const fxGroup = new THREE.Group();
         pose.add(spinGroup);
+        spinGroup.add(modelRoot);
+        spinGroup.add(fxGroup);
         scene.add(pose);
+
+        const objectConfig = objectLookup.get(name) || {};
+        const fxConfig = objectConfig.effects || {};
 
         const viewer = {
           scene,
           camera,
           pose,
           spinGroup,
+          modelRoot,
+          fxGroup,
           spin: cfg.spin || 0.003,
+          effects: null,
+          effectsReady: false,
+          loading: false,
           ready: false,
           failed: false
         };
 
-        loader.load(cfg.path, gltf => {
-          const root = gltf.scene || (gltf.scenes && gltf.scenes[0]);
-          if (!root) return;
-          configureMaterials(root);
-          root.updateMatrixWorld(true);
-          spinGroup.add(root);
-          normalizeModel(spinGroup, cfg);
-          viewer.ready = true;
+        function ensureEffects() {
+          if (viewer.effectsReady) return;
+          if (!fxConfig || !Object.keys(fxConfig).length) {
+            viewer.effectsReady = true;
+            return;
+          }
+          viewer.effects = effectsSystem.create(name, fxConfig);
+          fxGroup.add(viewer.effects.group);
+          fxGroup.scale.copy(modelRoot.scale);
+          normalizeEffects(fxGroup);
+          viewer.effectsReady = true;
+        }
+
+        function loadModel() {
+          if (viewer.loading || viewer.ready || viewer.failed) return;
+          viewer.loading = true;
+          loader.load(cfg.path, gltf => {
+            const root = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+            if (!root) {
+              viewer.loading = false;
+              return;
+            }
+            configureMaterials(root);
+            root.updateMatrixWorld(true);
+            modelRoot.add(root);
+            normalizeModel(modelRoot, cfg);
+            ensureEffects();
+            viewer.ready = true;
+            viewer.loading = false;
         }, undefined, err => {
           viewer.failed = true;
+          viewer.loading = false;
           console.warn('Pale Blue Dot model failed to load:', name, err);
         });
+        }
 
+        viewer.ensureEffects = ensureEffects;
+        viewer.load = loadModel;
         viewers.set(name, viewer);
       }
 
       Object.keys(MODEL_CONFIGS).forEach(name => createViewer(name, MODEL_CONFIGS[name]));
 
+      const priorityLoads = ['Earth', 'Sun', 'Moon', 'Jupiter', 'Saturn'];
+      priorityLoads.forEach(name => {
+        const viewer = viewers.get(name);
+        if (viewer) viewer.load();
+      });
+
+      requestIdle(() => {
+        Object.keys(MODEL_CONFIGS).forEach(name => {
+          if (priorityLoads.includes(name)) return;
+          const viewer = viewers.get(name);
+          if (viewer) viewer.load();
+        });
+      });
+
       return {
+        noteInteraction() {
+          if (interactionBoosted) return;
+          interactionBoosted = true;
+          Object.keys(MODEL_CONFIGS).forEach(name => {
+            const viewer = viewers.get(name);
+            if (!viewer || priorityLoads.includes(name)) return;
+            viewer.load();
+          });
+        },
         isReady(name) {
           const viewer = viewers.get(name);
           return !!(viewer && viewer.ready && !viewer.failed);
@@ -573,11 +825,15 @@
           renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
           renderer.setSize(layerW, layerH, false);
         },
-        sync(layouts) {
+        sync(layouts, zoomLevel) {
+          lastZoomLevel = zoomLevel;
           activeLayouts.clear();
           layouts.forEach(layout => {
             const viewer = viewers.get(layout.name);
-            if (!viewer || !viewer.ready || viewer.failed) return;
+            if (!viewer || viewer.failed) return;
+            if (layout.visible && (layout.priority || interactionBoosted)) viewer.load();
+            if (layout.effectVisible) viewer.ensureEffects();
+            if (!viewer.ready) return;
             activeLayouts.set(layout.name, layout);
           });
         },
@@ -590,6 +846,7 @@
             const viewer = viewers.get(name);
             if (!viewer || !viewer.ready || viewer.failed) return;
             viewer.spinGroup.rotation.y += viewer.spin;
+            effectsSystem.sync(viewer.effects, layout, lastZoomLevel);
             const size = Math.max(1, Math.round(layout.size));
             const left = Math.round(layout.x - size / 2);
             const bottom = Math.round(layerH - (layout.y + size / 2));
@@ -652,6 +909,7 @@
       function xFor(distM) { return W / 2 + (distM * scale); }
       function rFor(radiusM) { return Math.max(radiusM * scale, 1.5); }
       const modelLayouts = [];
+      const priorityObjects = new Set(['Earth', 'Sun', 'Moon', 'Jupiter', 'Saturn']);
 
       // ── Sunbeam (visible when Voyager-scale, slider ~40–55) ──
       const sunbeamAlpha = Math.max(0, Math.min(1,
@@ -698,18 +956,33 @@
         const modelDiameter = modelCfg
           ? Math.min(modelCfg.maxPx, Math.max(modelCfg.minPx, cr * 2 * (modelCfg.displayScale || 1)))
           : 0;
+        const effects = obj.effects || {};
+        const haloOpacity = effects.haloOpacity == null ? 0.18 : effects.haloOpacity;
+        const effectVisible = !!(
+          modelCfg &&
+          modelDiameter >= Math.max(modelCfg.minPx || 0, 34) &&
+          modelDiameter <= (modelCfg.hideAbovePx || Infinity) &&
+          cx >= modelDiameter / 2 &&
+          cx <= W - modelDiameter / 2 &&
+          Object.keys(effects).length
+        );
         const showModel = !!(modelReady && modelCfg &&
           cr * 2 >= modelCfg.showAbovePx &&
           cr * 2 <= modelCfg.hideAbovePx &&
           cx >= modelDiameter / 2 &&
           cx <= W - modelDiameter / 2);
 
-        if (showModel) {
+        if (modelCfg && cx >= -modelDiameter && cx <= W + modelDiameter) {
           modelLayouts.push({
             name: obj.name,
             x: cx,
             y: H / 2,
-            size: Math.round(modelDiameter)
+            size: Math.round(modelDiameter),
+            visible: showModel,
+            effectVisible: showModel && effectVisible,
+            haloOpacity: showModel ? haloOpacity : 0,
+            particleSize: Math.max(0.03, (effects.particleSize || 0.08) * (modelDiameter / Math.max(modelCfg.minPx || 1, 1))),
+            priority: priorityObjects.has(obj.name)
           });
         }
 
@@ -776,7 +1049,7 @@
         }
       });
 
-      if (modelSystem) modelSystem.sync(modelLayouts);
+      if (modelSystem) modelSystem.sync(modelLayouts, s);
 
       // ── Scale bar ──
       const barM   = viewM / 8;
@@ -811,7 +1084,10 @@
     }
 
     // ── Event listeners ──
-    slider.addEventListener('input', draw);
+    slider.addEventListener('input', () => {
+      if (modelSystem && modelSystem.noteInteraction) modelSystem.noteInteraction();
+      draw();
+    });
 
     let animId;
     function animate() {
@@ -823,6 +1099,7 @@
     // Scroll to zoom
     wrap.addEventListener('wheel', e => {
       e.preventDefault();
+      if (modelSystem && modelSystem.noteInteraction) modelSystem.noteInteraction();
       const delta = e.deltaY > 0 ? 1.5 : -1.5;
       slider.value = Math.max(0, Math.min(100, parseFloat(slider.value) + delta));
       draw();
@@ -848,7 +1125,11 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
     if (window.__attachPbdModelSystem) {
-      window.__attachPbdModelSystem(THREE, GLTFLoader);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.__attachPbdModelSystem(THREE, GLTFLoader);
+        });
+      });
     }
   </script>
 
