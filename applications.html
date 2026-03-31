@@ -677,6 +677,7 @@
         linear-gradient(180deg, rgba(8, 17, 31, 0.95), rgba(10, 21, 37, 1));
       border: 1px solid rgba(152, 187, 255, 0.14);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      isolation: isolate;
     }
 
     .steam-galaxy-stars,
@@ -695,6 +696,12 @@
 
     .steam-galaxy-map {
       z-index: 2;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .steam-galaxy-stage.is-panning .steam-galaxy-map {
+      cursor: grabbing;
     }
 
     .steam-galaxy-overlay {
@@ -810,6 +817,8 @@
       align-content: start;
       color: #f4f8ff;
       min-height: 100%;
+      position: sticky;
+      top: 1rem;
     }
 
     .steam-galaxy-panel-title {
@@ -937,11 +946,11 @@
     }
 
     .steam-galaxy-node.is-muted {
-      opacity: 0.18;
+      opacity: 0.54;
     }
 
     .steam-galaxy-node.is-hidden {
-      opacity: 0.06;
+      opacity: 0.08;
       pointer-events: none;
     }
 
@@ -959,6 +968,219 @@
 
     .steam-galaxy-node.is-active .steam-galaxy-node-label {
       fill: #ffffff;
+    }
+
+    .steam-galaxy-viewport-ui {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 4;
+      display: grid;
+      gap: 0.8rem;
+      justify-items: end;
+      pointer-events: none;
+    }
+
+    .steam-galaxy-nav-card,
+    .steam-galaxy-minimap-card {
+      pointer-events: auto;
+      display: grid;
+      gap: 0.6rem;
+      padding: 0.85rem 0.95rem;
+      border-radius: 20px;
+      background: rgba(9, 18, 31, 0.82);
+      border: 1px solid rgba(164, 196, 255, 0.14);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 30px rgba(4, 10, 20, 0.22);
+    }
+
+    .steam-galaxy-nav-card {
+      width: min(240px, calc(100vw - 2.5rem));
+    }
+
+    .steam-galaxy-nav-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.6rem;
+    }
+
+    .steam-galaxy-nav-title,
+    .steam-galaxy-minimap-title {
+      margin: 0;
+      color: #f5f9ff;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .steam-galaxy-nav-readout {
+      color: rgba(201, 220, 248, 0.8);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .steam-galaxy-nav-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .steam-galaxy-nav-btn,
+    .steam-galaxy-overflow-cue {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.2rem;
+      padding: 0.5rem 0.78rem;
+      border-radius: 999px;
+      border: 1px solid rgba(164, 196, 255, 0.16);
+      background: rgba(18, 35, 61, 0.9);
+      color: #f3f8ff;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .steam-galaxy-nav-btn:hover,
+    .steam-galaxy-nav-btn:focus-visible,
+    .steam-galaxy-overflow-cue:hover,
+    .steam-galaxy-overflow-cue:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(164, 196, 255, 0.3);
+      background: rgba(24, 47, 84, 0.96);
+    }
+
+    .steam-galaxy-nav-btn[data-galaxy-action="show-all"] {
+      background: linear-gradient(180deg, rgba(90, 168, 255, 0.24), rgba(37, 90, 163, 0.2));
+    }
+
+    .steam-galaxy-nav-hint,
+    .steam-galaxy-minimap-caption {
+      margin: 0;
+      color: rgba(218, 231, 253, 0.78);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .steam-galaxy-minimap-card {
+      width: min(220px, calc(100vw - 2.5rem));
+    }
+
+    .steam-galaxy-minimap-frame {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(164, 196, 255, 0.14);
+      background:
+        radial-gradient(circle at 50% 40%, rgba(25, 52, 91, 0.78), rgba(6, 13, 24, 0.94) 70%),
+        linear-gradient(180deg, rgba(7, 15, 28, 0.95), rgba(8, 17, 31, 1));
+    }
+
+    .steam-galaxy-minimap {
+      display: block;
+      width: 100%;
+      height: 144px;
+      cursor: crosshair;
+    }
+
+    .steam-galaxy-edge-fade {
+      position: absolute;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0.92;
+    }
+
+    .steam-galaxy-edge-fade--top,
+    .steam-galaxy-edge-fade--bottom {
+      left: 0;
+      right: 0;
+      height: 74px;
+    }
+
+    .steam-galaxy-edge-fade--left,
+    .steam-galaxy-edge-fade--right {
+      top: 0;
+      bottom: 0;
+      width: 74px;
+    }
+
+    .steam-galaxy-edge-fade--top {
+      top: 0;
+      background: linear-gradient(180deg, rgba(7, 15, 28, 0.82), rgba(7, 15, 28, 0));
+    }
+
+    .steam-galaxy-edge-fade--bottom {
+      bottom: 0;
+      background: linear-gradient(0deg, rgba(7, 15, 28, 0.84), rgba(7, 15, 28, 0));
+    }
+
+    .steam-galaxy-edge-fade--left {
+      left: 0;
+      background: linear-gradient(90deg, rgba(7, 15, 28, 0.82), rgba(7, 15, 28, 0));
+    }
+
+    .steam-galaxy-edge-fade--right {
+      right: 0;
+      background: linear-gradient(270deg, rgba(7, 15, 28, 0.82), rgba(7, 15, 28, 0));
+    }
+
+    .steam-galaxy-overflow-cues {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .steam-galaxy-overflow-cue {
+      position: absolute;
+      pointer-events: auto;
+      box-shadow: 0 12px 24px rgba(4, 10, 20, 0.24);
+    }
+
+    .steam-galaxy-overflow-cue[hidden] {
+      display: none;
+    }
+
+    .steam-galaxy-overflow-cue--top {
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .steam-galaxy-overflow-cue--right {
+      top: 50%;
+      right: 1rem;
+      transform: translateY(-50%);
+    }
+
+    .steam-galaxy-overflow-cue--bottom {
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .steam-galaxy-overflow-cue--left {
+      top: 50%;
+      left: 1rem;
+      transform: translateY(-50%);
+    }
+
+    .steam-galaxy-overflow-cue--top:hover,
+    .steam-galaxy-overflow-cue--top:focus-visible,
+    .steam-galaxy-overflow-cue--bottom:hover,
+    .steam-galaxy-overflow-cue--bottom:focus-visible {
+      transform: translateX(-50%) translateY(-1px);
+    }
+
+    .steam-galaxy-overflow-cue--right:hover,
+    .steam-galaxy-overflow-cue--right:focus-visible,
+    .steam-galaxy-overflow-cue--left:hover,
+    .steam-galaxy-overflow-cue--left:focus-visible {
+      transform: translateY(-50%) translateY(-1px);
     }
 
     .app-mode-btn:focus-visible,
@@ -1012,6 +1234,27 @@
         min-height: 840px;
       }
 
+      .steam-galaxy-panel {
+        position: static;
+      }
+
+      .steam-galaxy-viewport-ui {
+        top: auto;
+        right: 0.85rem;
+        bottom: 0.85rem;
+        left: 0.85rem;
+        justify-items: stretch;
+      }
+
+      .steam-galaxy-nav-card,
+      .steam-galaxy-minimap-card {
+        width: auto;
+      }
+
+      .steam-galaxy-minimap {
+        height: 128px;
+      }
+
       .steam-galaxy-overlay,
       .steam-galaxy-help-toggle {
         top: 0.85rem;
@@ -1028,6 +1271,21 @@
 
       .steam-galaxy-stat-grid {
         grid-template-columns: 1fr;
+      }
+
+      .steam-galaxy-overflow-cue--right,
+      .steam-galaxy-overflow-cue--left {
+        top: auto;
+        bottom: 8.8rem;
+        transform: none;
+      }
+
+      .steam-galaxy-overflow-cue--left {
+        left: 0.85rem;
+      }
+
+      .steam-galaxy-overflow-cue--right {
+        right: 0.85rem;
       }
     }
 
@@ -1339,11 +1597,43 @@
           <div class="steam-galaxy-stage" id="steam-galaxy-stage">
             <canvas class="steam-galaxy-stars" id="steam-galaxy-stars" aria-hidden="true"></canvas>
             <svg class="steam-galaxy-map" id="steam-galaxy-map" aria-label="Interactive STEAM constellation map"></svg>
+            <div class="steam-galaxy-edge-fade steam-galaxy-edge-fade--top" aria-hidden="true"></div>
+            <div class="steam-galaxy-edge-fade steam-galaxy-edge-fade--right" aria-hidden="true"></div>
+            <div class="steam-galaxy-edge-fade steam-galaxy-edge-fade--bottom" aria-hidden="true"></div>
+            <div class="steam-galaxy-edge-fade steam-galaxy-edge-fade--left" aria-hidden="true"></div>
+            <div class="steam-galaxy-overflow-cues" aria-hidden="false">
+              <button class="steam-galaxy-overflow-cue steam-galaxy-overflow-cue--top" id="steam-galaxy-cue-top" type="button" data-pan-direction="up" hidden>↑ More above</button>
+              <button class="steam-galaxy-overflow-cue steam-galaxy-overflow-cue--right" id="steam-galaxy-cue-right" type="button" data-pan-direction="right" hidden>More to the right →</button>
+              <button class="steam-galaxy-overflow-cue steam-galaxy-overflow-cue--bottom" id="steam-galaxy-cue-bottom" type="button" data-pan-direction="down" hidden>↓ More below</button>
+              <button class="steam-galaxy-overflow-cue steam-galaxy-overflow-cue--left" id="steam-galaxy-cue-left" type="button" data-pan-direction="left" hidden>← More to the left</button>
+            </div>
+            <div class="steam-galaxy-viewport-ui" aria-label="Galaxy navigation controls">
+              <div class="steam-galaxy-nav-card">
+                <div class="steam-galaxy-nav-head">
+                  <p class="steam-galaxy-nav-title">Galaxy Camera</p>
+                  <span class="steam-galaxy-nav-readout" id="steam-galaxy-zoom-readout">100%</span>
+                </div>
+                <div class="steam-galaxy-nav-buttons">
+                  <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="zoom-in">Zoom In</button>
+                  <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="zoom-out">Zoom Out</button>
+                  <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="reset-view">Reset View</button>
+                  <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="show-all">Show All Bubbles</button>
+                </div>
+                <p class="steam-galaxy-nav-hint">Drag the constellation, pinch or scroll to zoom, or tap the mini-map to jump across the world.</p>
+              </div>
+              <div class="steam-galaxy-minimap-card">
+                <p class="steam-galaxy-minimap-title">Constellation Overview</p>
+                <div class="steam-galaxy-minimap-frame">
+                  <svg class="steam-galaxy-minimap" id="steam-galaxy-minimap" aria-label="Constellation overview mini-map"></svg>
+                </div>
+                <p class="steam-galaxy-minimap-caption" id="steam-galaxy-minimap-caption">The bright rectangle shows your current viewport.</p>
+              </div>
+            </div>
             <button class="steam-galaxy-help-toggle" id="steam-galaxy-help-toggle" type="button" aria-expanded="false" aria-controls="steam-galaxy-help-panel">How to use</button>
             <div class="steam-galaxy-overlay" id="steam-galaxy-help-panel" hidden>
               <div class="steam-galaxy-overlay-card">
                 <p class="steam-galaxy-overlay-kicker">How to use the map</p>
-                <p>Select a bubble to spotlight its constellation, compare related tools, and open a classroom-ready detail card. Use the filters when you want a cleaner K–2, middle school, or high school view.</p>
+                <p>Select a bubble to spotlight its constellation, compare related tools, and open a classroom-ready detail card. Drag the galaxy like a world map, zoom for detail, or use Show All Bubbles when you want to confirm the full constellation.</p>
                 <div class="steam-galaxy-overlay-actions">
                   <button class="steam-galaxy-help-close" id="steam-galaxy-help-close" type="button" aria-label="Close help panel">×</button>
                 </div>
@@ -4000,6 +4290,11 @@
     const panelPrimary = document.getElementById("steam-panel-primary");
     const panelSecondary = document.getElementById("steam-panel-secondary");
     const panelRelated = document.getElementById("steam-panel-related");
+    const zoomReadout = document.getElementById("steam-galaxy-zoom-readout");
+    const minimapSvg = document.getElementById("steam-galaxy-minimap");
+    const minimapCaption = document.getElementById("steam-galaxy-minimap-caption");
+    const navButtons = Array.from(document.querySelectorAll("[data-galaxy-action]"));
+    const overflowCueButtons = Array.from(document.querySelectorAll("[data-pan-direction]"));
 
     if (stage && svg && starsCanvas) {
       // ===== STEAM Galaxy Explorer: sample categories =====
@@ -4170,10 +4465,31 @@
       let latestTime = 0;
       let helpDismissed = false;
       let helpAutoTimer = null;
+      let viewportWidth = 0;
+      let viewportHeight = 0;
+      let worldWidth = 0;
+      let worldHeight = 0;
+      let currentTransform = d3.zoomIdentity;
+      const zoomExtent = [0.46, 2.8];
 
       const svgSelection = d3.select(svg);
-      const linkLayer = svgSelection.append("g").attr("class", "steam-galaxy-links-layer");
-      const nodeLayer = svgSelection.append("g").attr("class", "steam-galaxy-node-layer");
+      const worldLayer = svgSelection.append("g").attr("class", "steam-galaxy-world-layer");
+      const linkLayer = worldLayer.append("g").attr("class", "steam-galaxy-links-layer");
+      const nodeLayer = worldLayer.append("g").attr("class", "steam-galaxy-node-layer");
+      const minimapSelection = minimapSvg ? d3.select(minimapSvg) : null;
+      const zoomBehavior = d3.zoom()
+        .scaleExtent(zoomExtent)
+        .filter((event) => !event.ctrlKey || event.type === "wheel")
+        .on("start", function (event) {
+          stage.classList.toggle("is-panning", event.sourceEvent?.type !== "wheel");
+        })
+        .on("zoom", function (event) {
+          currentTransform = event.transform;
+          applyViewportTransform();
+        })
+        .on("end", function () {
+          stage.classList.remove("is-panning");
+        });
 
       function seededValue(seed) {
         let total = 0;
@@ -4187,6 +4503,133 @@
         const x = seededValue(`${seed}-x`) * 2 - 1;
         const y = seededValue(`${seed}-y`) * 2 - 1;
         return { x, y };
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function clampTransform(transform) {
+        const scale = clamp(transform.k, zoomExtent[0], zoomExtent[1]);
+        const scaledWidth = worldWidth * scale;
+        const scaledHeight = worldHeight * scale;
+        const minX = scaledWidth > viewportWidth ? viewportWidth - scaledWidth : (viewportWidth - scaledWidth) / 2;
+        const maxX = scaledWidth > viewportWidth ? 0 : (viewportWidth - scaledWidth) / 2;
+        const minY = scaledHeight > viewportHeight ? viewportHeight - scaledHeight : (viewportHeight - scaledHeight) / 2;
+        const maxY = scaledHeight > viewportHeight ? 0 : (viewportHeight - scaledHeight) / 2;
+        return d3.zoomIdentity.translate(clamp(transform.x, minX, maxX), clamp(transform.y, minY, maxY)).scale(scale);
+      }
+
+      function getViewportRect() {
+        const width = viewportWidth / currentTransform.k;
+        const height = viewportHeight / currentTransform.k;
+        return {
+          x: -currentTransform.x / currentTransform.k,
+          y: -currentTransform.y / currentTransform.k,
+          width,
+          height
+        };
+      }
+
+      function worldToScreen(point) {
+        return {
+          x: point.x * currentTransform.k + currentTransform.x,
+          y: point.y * currentTransform.k + currentTransform.y
+        };
+      }
+
+      function transformForBounds(bounds, options = {}) {
+        const padding = options.padding ?? 96;
+        const maxScale = options.maxScale ?? zoomExtent[1];
+        const minScale = options.minScale ?? zoomExtent[0];
+        const boundedWidth = Math.max(bounds.width, 1);
+        const boundedHeight = Math.max(bounds.height, 1);
+        const scale = clamp(
+          Math.min(
+            (viewportWidth - padding * 2) / boundedWidth,
+            (viewportHeight - padding * 2) / boundedHeight
+          ),
+          minScale,
+          maxScale
+        );
+        const centerX = bounds.x + boundedWidth / 2;
+        const centerY = bounds.y + boundedHeight / 2;
+        return clampTransform(
+          d3.zoomIdentity
+            .translate(viewportWidth / 2 - centerX * scale, viewportHeight / 2 - centerY * scale)
+            .scale(scale)
+        );
+      }
+
+      function getBoundsForNodes(nodes) {
+        if (!nodes.length) {
+          return {
+            x: 0,
+            y: 0,
+            width: Math.max(worldWidth, 1),
+            height: Math.max(worldHeight, 1)
+          };
+        }
+
+        const minX = Math.min(...nodes.map((node) => node.x - node.radius - 28));
+        const minY = Math.min(...nodes.map((node) => node.y - node.radius - 28));
+        const maxX = Math.max(...nodes.map((node) => node.x + node.radius + 28));
+        const maxY = Math.max(...nodes.map((node) => node.y + node.radius + 28));
+
+        return {
+          x: clamp(minX, 0, worldWidth),
+          y: clamp(minY, 0, worldHeight),
+          width: clamp(maxX, 0, worldWidth) - clamp(minX, 0, worldWidth),
+          height: clamp(maxY, 0, worldHeight) - clamp(minY, 0, worldHeight)
+        };
+      }
+
+      function visibleNodes() {
+        return layoutNodes.filter((node) => nodeVisible(node));
+      }
+
+      function setCameraTransform(transform, duration = 0) {
+        const nextTransform = clampTransform(transform);
+        const selection = duration
+          ? svgSelection.transition().duration(duration)
+          : svgSelection;
+        selection.call(zoomBehavior.transform, nextTransform);
+      }
+
+      function centerCameraOn(point, scale = currentTransform.k, duration = 420) {
+        const nextTransform = d3.zoomIdentity
+          .translate(viewportWidth / 2 - point.x * scale, viewportHeight / 2 - point.y * scale)
+          .scale(scale);
+        setCameraTransform(nextTransform, duration);
+      }
+
+      function fitVisibleNodes(duration = 520) {
+        const nodes = visibleNodes();
+        if (!nodes.length) return;
+        setCameraTransform(transformForBounds(getBoundsForNodes(nodes), { padding: 84, maxScale: 1.18 }), duration);
+      }
+
+      function resetView(duration = 520) {
+        const selectedNode = ensureVisibleSelection();
+        if (!selectedNode) {
+          fitVisibleNodes(duration);
+          return;
+        }
+        const scale = selectedNode.type === "anchor" ? 0.82 : 0.98;
+        centerCameraOn(selectedNode, clamp(scale, zoomExtent[0], 1.12), duration);
+      }
+
+      function nudgeCamera(direction) {
+        const stepX = viewportWidth * 0.18;
+        const stepY = viewportHeight * 0.18;
+        const offsets = {
+          up: [0, stepY],
+          right: [-stepX, 0],
+          down: [0, -stepY],
+          left: [stepX, 0]
+        };
+        const [dx, dy] = offsets[direction] || [0, 0];
+        setCameraTransform(currentTransform.translate(dx / currentTransform.k, dy / currentTransform.k), 260);
       }
 
       function formatGrades(grades) {
@@ -4443,6 +4886,45 @@
             renderControls();
             renderPanel();
             renderFrame(latestTime);
+            resetView();
+          });
+        });
+
+        navButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            const action = button.dataset.galaxyAction;
+            if (action === "zoom-in") {
+              const nextScale = clamp(currentTransform.k * 1.18, zoomExtent[0], zoomExtent[1]);
+              centerCameraOn({
+                x: getViewportRect().x + getViewportRect().width / 2,
+                y: getViewportRect().y + getViewportRect().height / 2
+              }, nextScale, 220);
+              return;
+            }
+
+            if (action === "zoom-out") {
+              const nextScale = clamp(currentTransform.k / 1.18, zoomExtent[0], zoomExtent[1]);
+              centerCameraOn({
+                x: getViewportRect().x + getViewportRect().width / 2,
+                y: getViewportRect().y + getViewportRect().height / 2
+              }, nextScale, 220);
+              return;
+            }
+
+            if (action === "show-all") {
+              fitVisibleNodes();
+              return;
+            }
+
+            if (action === "reset-view") {
+              resetView();
+            }
+          });
+        });
+
+        overflowCueButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            nudgeCamera(button.dataset.panDirection || "");
           });
         });
       }
@@ -4505,6 +4987,7 @@
         dismissHelp(true);
         renderPanel();
         renderFrame(latestTime);
+        resetView(380);
       }
 
       function getRelatedNodes(node) {
@@ -4640,6 +5123,94 @@
         });
       }
 
+      function renderOverflowCues(positionedNodes) {
+        const counts = { up: 0, right: 0, down: 0, left: 0 };
+        visibleNodes().forEach((node) => {
+          const position = worldToScreen(positionedNodes.get(node.id) || node);
+          const radius = node.radius * currentTransform.k;
+          if (position.y + radius < 0) counts.up += 1;
+          if (position.x - radius > viewportWidth) counts.right += 1;
+          if (position.y - radius > viewportHeight) counts.down += 1;
+          if (position.x + radius < 0) counts.left += 1;
+        });
+
+        const labels = {
+          up: (count) => `↑ ${count} more above`,
+          right: (count) => `${count} more to the right →`,
+          down: (count) => `↓ ${count} more below`,
+          left: (count) => `← ${count} more to the left`
+        };
+
+        overflowCueButtons.forEach((button) => {
+          const direction = button.dataset.panDirection || "";
+          const count = counts[direction] || 0;
+          button.hidden = count === 0;
+          if (count > 0) {
+            button.textContent = labels[direction](count);
+          }
+        });
+      }
+
+      function renderMinimap() {
+        if (!minimapSelection) return;
+        minimapSelection.attr("viewBox", `0 0 ${worldWidth} ${worldHeight}`);
+
+        const nodes = visibleNodes();
+        const bounds = getViewportRect();
+
+        const dots = minimapSelection
+          .selectAll("circle.steam-galaxy-minimap-node")
+          .data(nodes, (node) => node.id);
+
+        dots.exit().remove();
+
+        dots.enter()
+          .append("circle")
+          .attr("class", "steam-galaxy-minimap-node")
+          .merge(dots)
+          .attr("cx", (node) => node.x)
+          .attr("cy", (node) => node.y)
+          .attr("r", (node) => node.type === "anchor" ? 26 : Math.max(12, node.radius * 0.52))
+          .attr("fill", (node) => node.color)
+          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.55 : 0.36)
+          .attr("stroke", (node) => node.color)
+          .attr("stroke-opacity", 0.9)
+          .attr("stroke-width", (node) => node.type === "anchor" ? 6 : 4);
+
+        const viewportData = [bounds];
+        const viewportRect = minimapSelection
+          .selectAll("rect.steam-galaxy-minimap-viewport")
+          .data(viewportData);
+
+        viewportRect.enter()
+          .append("rect")
+          .attr("class", "steam-galaxy-minimap-viewport")
+          .merge(viewportRect)
+          .attr("x", bounds.x)
+          .attr("y", bounds.y)
+          .attr("width", bounds.width)
+          .attr("height", bounds.height)
+          .attr("rx", 28)
+          .attr("ry", 28)
+          .attr("fill", "rgba(255, 255, 255, 0.02)")
+          .attr("stroke", "#f4f8ff")
+          .attr("stroke-width", 10)
+          .attr("stroke-opacity", 0.9);
+
+        if (zoomReadout) {
+          zoomReadout.textContent = `${Math.round(currentTransform.k * 100)}%`;
+        }
+
+        if (minimapCaption) {
+          minimapCaption.textContent = `Viewport: ${Math.round(bounds.width)} × ${Math.round(bounds.height)} world units at ${Math.round(currentTransform.k * 100)}% zoom.`;
+        }
+      }
+
+      function applyViewportTransform() {
+        worldLayer.attr("transform", currentTransform.toString());
+        renderMinimap();
+      }
+
       function updateStatus() {
         const visibleTools = steamGalaxyNodes.filter((node) => node.type === "tool" && toolVisible(node));
         const activeCategory = state.category === "all" ? "all categories" : categoryMeta[state.category].anchorLabel;
@@ -4687,7 +5258,7 @@
         });
       }
 
-      function clamp(node, width, height) {
+      function clampNodeToWorld(node, width, height) {
         const padding = node.radius + 18;
         node.x = Math.min(width - padding, Math.max(padding, node.x));
         node.y = Math.min(height - padding, Math.max(padding, node.y));
@@ -4728,7 +5299,7 @@
         merged.select(".steam-galaxy-node-surface")
           .attr("r", (node) => node.radius)
           .attr("fill", (node) => node.color)
-          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.28 : 0.2)
+          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.32 : 0.3)
           .attr("stroke", (node) => node.color)
           .attr("stroke-opacity", 0.95)
           .attr("stroke-width", (node) => node.type === "anchor" ? 2.4 : 1.9);
@@ -4753,10 +5324,10 @@
         starsCanvas.style.width = `${width}px`;
         starsCanvas.style.height = `${height}px`;
 
-        const starCount = Math.max(90, Math.round((width * height) / 11000));
+        const starCount = Math.max(120, Math.round((width * height) / 9000));
         starField = Array.from({ length: starCount }, (_, index) => ({
-          x: seededValue(`star-${index}-x`) * width,
-          y: seededValue(`star-${index}-y`) * height,
+          x: seededValue(`star-${index}-x`) * worldWidth,
+          y: seededValue(`star-${index}-y`) * worldHeight,
           size: 0.8 + seededValue(`star-${index}-size`) * 2.4,
           alpha: 0.2 + seededValue(`star-${index}-alpha`) * 0.6,
           drift: 0.08 + seededValue(`star-${index}-drift`) * 0.18
@@ -4779,29 +5350,35 @@
 
         starField.forEach((star, index) => {
           const pulse = 0.75 + Math.sin(time * 0.00045 * star.drift * 10 + index) * 0.18;
-          const y = (star.y + time * star.drift * 0.02) % height;
+          const parallaxX = star.x * 0.22 * currentTransform.k + currentTransform.x * 0.16;
+          const parallaxY = (star.y * 0.22 * currentTransform.k + currentTransform.y * 0.16 + time * star.drift * 0.02) % (height + 120);
+          const x = ((parallaxX % (width + 120)) + (width + 120)) % (width + 120) - 60;
+          const y = ((parallaxY % (height + 120)) + (height + 120)) % (height + 120) - 60;
           ctx.beginPath();
           ctx.fillStyle = `rgba(201, 223, 255, ${star.alpha * pulse})`;
-          ctx.arc(star.x, y, star.size * pulse, 0, Math.PI * 2);
+          ctx.arc(x, y, star.size * pulse, 0, Math.PI * 2);
           ctx.fill();
         });
       }
 
       function runLayout() {
-        const width = Math.max(stage.clientWidth, 320);
-        const height = Math.max(stage.clientHeight, 560);
-        const targets = buildCategoryTargets(width, height);
+        viewportWidth = Math.max(stage.clientWidth, 320);
+        viewportHeight = Math.max(stage.clientHeight, 560);
+        worldWidth = Math.max(Math.round(viewportWidth * 1.95), 1500);
+        worldHeight = Math.max(Math.round(viewportHeight * 1.85), 1280);
+        const targets = buildCategoryTargets(worldWidth, worldHeight);
 
-        svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-        resizeStarField(width, height);
+        svg.setAttribute("viewBox", `0 0 ${viewportWidth} ${viewportHeight}`);
+        zoomBehavior.extent([[0, 0], [viewportWidth, viewportHeight]]);
+        resizeStarField(viewportWidth, viewportHeight);
 
         const simulationNodes = steamGalaxyNodes.map((node) => {
           const target = targets[node.category];
           const offset = offsetFromSeed(node.id);
           return {
             ...node,
-            x: target.x + offset.x * (node.type === "anchor" ? 4 : 78),
-            y: target.y + offset.y * (node.type === "anchor" ? 4 : 72),
+            x: target.x + offset.x * (node.type === "anchor" ? 4 : 132),
+            y: target.y + offset.y * (node.type === "anchor" ? 4 : 124),
             fx: node.type === "anchor" ? target.x : null,
             fy: node.type === "anchor" ? target.y : null,
             floatPhase: seededValue(`${node.id}-phase`) * Math.PI * 2
@@ -4811,7 +5388,7 @@
         const simulationLinks = buildLinks();
 
         const simulation = d3.forceSimulation(simulationNodes)
-          .force("link", d3.forceLink(simulationLinks).id((node) => node.id).distance((link) => link.kind === "anchor" ? (width < 760 ? 84 : 102) : (width < 760 ? 68 : 82)).strength((link) => link.kind === "anchor" ? 0.62 : 0.2))
+          .force("link", d3.forceLink(simulationLinks).id((node) => node.id).distance((link) => link.kind === "anchor" ? (viewportWidth < 760 ? 110 : 152) : (viewportWidth < 760 ? 84 : 118)).strength((link) => link.kind === "anchor" ? 0.62 : 0.2))
           .force("x", d3.forceX((node) => targets[node.category].x).strength((node) => node.type === "anchor" ? 1 : 0.22))
           .force("y", d3.forceY((node) => targets[node.category].y).strength((node) => node.type === "anchor" ? 1 : 0.22))
           .force("charge", d3.forceManyBody().strength((node) => node.type === "anchor" ? -920 : -(250 + node.radius * 4.5)))
@@ -4821,13 +5398,20 @@
         for (let tick = 0; tick < 320; tick += 1) simulation.tick();
         simulation.stop();
 
-        simulationNodes.forEach((node) => clamp(node, width, height));
+        simulationNodes.forEach((node) => clampNodeToWorld(node, worldWidth, worldHeight));
 
         layoutNodes = simulationNodes;
         linkData = simulationLinks;
         drawNodes();
         renderPanel();
         renderFrame(latestTime);
+        svgSelection.call(zoomBehavior);
+        svgSelection.on("dblclick.zoom", null);
+        if (currentTransform === d3.zoomIdentity) {
+          fitVisibleNodes(0);
+        } else {
+          setCameraTransform(currentTransform, 0);
+        }
       }
 
       function renderFrame(time = 0) {
@@ -4878,6 +5462,9 @@
             const position = positionedNodes.get(node.id) || { x: node.x, y: node.y };
             return `translate(${position.x},${position.y})`;
           });
+
+        renderOverflowCues(positionedNodes);
+        applyViewportTransform();
       }
 
       function animate(time) {
