@@ -1,0 +1,50 @@
+name: Update Verse of the Day
+
+on:
+  schedule:
+    # Run daily at 12:00 AM UTC (7:00 PM EST / 8:00 PM EDT)
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  update-votd:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Run VOTD updater
+        run: node scripts/update-votd.js
+
+      - name: Check if votd.json changed
+        id: check_changes
+        run: |
+          if git diff --quiet assets/data/votd.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure Git
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Actions"
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git add assets/data/votd.json
+          git commit -m "chore: update verse of the day
+
+- Automated daily update from YouVersion
+- $(date '+%Y-%m-%d')"
+          git push
