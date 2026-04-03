@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="./archimedes/fluid-sim.css" />
   <style>
     /* ── Page ─────────────────────────────────────────── */
     .ap-page { padding-bottom: 3.5rem; }
@@ -272,6 +273,7 @@
     }
     #ap-tank-canvas { max-height: calc(100dvh - 140px); }
   </style>
+  <script src="./archimedes/fluid-sim.js"></script>
 </head>
 <body class="theme-liquid-woodland theme-steam">
 <div class="ll-viewport">
@@ -455,6 +457,66 @@
           <span class="ap-result-label">Result</span>
           <span id="ap-r-verdict"></span>
         </div>
+      </div>
+    </section>
+
+    <!-- ── WebGL Fluid Simulation ── -->
+    <section class="ap-card" style="--card-accent:#5ac8fa;">
+      <h2>Buoyancy & Fluid Dynamics (Interactive)</h2>
+      <p>Explore how buoyancy forces depend on object density, mass, and fluid density. Watch real-time fluid dynamics in action:</p>
+
+      <div class="archimedes-instructions">
+        <strong>How to use:</strong>
+        <ol>
+          <li>Adjust <strong>Object Density</strong> and <strong>Fluid Density</strong> with the sliders below</li>
+          <li>Watch the <strong>Physics Display</strong> update in real-time</li>
+          <li>Observe how the <strong>Net Force</strong> determines if an object floats or sinks</li>
+          <li>Click the canvas to create ripples and disturb the fluid</li>
+        </ol>
+      </div>
+
+      <div class="archimedes-fluid-container">
+        <canvas id="archimedes-fluid-canvas" aria-label="Interactive fluid dynamics simulation showing buoyancy"></canvas>
+        <div class="ap-physics-display"></div>
+      </div>
+
+      <div class="archimedes-controls">
+        <div class="control-group">
+          <label for="object-density">Object Density (kg/m³)</label>
+          <input type="range" id="object-density" min="10" max="2000" value="500" step="10">
+          <span class="control-value" id="object-density-display">500 kg/m³</span>
+        </div>
+
+        <div class="control-group">
+          <label for="object-mass">Object Mass (kg)</label>
+          <input type="range" id="object-mass" min="0.1" max="100" value="1" step="0.5">
+          <span class="control-value" id="object-mass-display">1 kg</span>
+        </div>
+
+        <div class="control-group">
+          <label for="fluid-density">Fluid Density (kg/m³)</label>
+          <input type="range" id="fluid-density" min="500" max="2000" value="1000" step="10">
+          <span class="control-value" id="fluid-density-display">1000 kg/m³ (Water)</span>
+        </div>
+      </div>
+
+      <div class="archimedes-controls" style="border-top: 1px solid #e5e5e7; padding-top: 1rem;">
+        <div style="grid-column: 1 / -1;">
+          <div class="control-buttons">
+            <button class="control-btn primary" id="btn-play-pause">▶ Play</button>
+            <button class="control-btn" id="btn-reset">↻ Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 1rem; padding: 1rem; background: rgba(88,86,214,0.05); border-radius: 10px; border: 1px solid rgba(88,86,214,0.2);">
+        <strong style="color: #5856d6;">Physics Principle:</strong>
+        <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: #3f4f65;">
+          <strong>Buoyant Force = ρ<sub>fluid</sub> × g × V<sub>object</sub></strong>
+        </p>
+        <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: #3f4f65;">
+          If Buoyant Force > Weight Force, the object floats. If Buoyant Force &lt; Weight Force, the object sinks.
+        </p>
       </div>
     </section>
 
@@ -983,6 +1045,67 @@
 
   })();
   </script>
+  <script src="../assets/js/classroom-animations.js"></script>
   <script src="../assets/js/lesson-layout.js"></script>
+  <script>
+    // Initialize fluid simulation controls
+    document.addEventListener('DOMContentLoaded', () => {
+      const objectDensityInput = document.getElementById('object-density');
+      const objectMassInput = document.getElementById('object-mass');
+      const fluidDensityInput = document.getElementById('fluid-density');
+      const btnPlayPause = document.getElementById('btn-play-pause');
+      const btnReset = document.getElementById('btn-reset');
+
+      // Update displays when sliders change
+      if (objectDensityInput) {
+        objectDensityInput.addEventListener('input', (e) => {
+          const value = parseInt(e.target.value);
+          document.getElementById('object-density-display').textContent = `${value} kg/m³`;
+          ArchimedesFluidSim.setObjectDensity(value);
+        });
+      }
+
+      if (objectMassInput) {
+        objectMassInput.addEventListener('input', (e) => {
+          const value = parseFloat(e.target.value);
+          document.getElementById('object-mass-display').textContent = `${value.toFixed(1)} kg`;
+          ArchimedesFluidSim.setObjectMass(value);
+        });
+      }
+
+      if (fluidDensityInput) {
+        fluidDensityInput.addEventListener('input', (e) => {
+          const value = parseInt(e.target.value);
+          const fluid = value === 1000 ? ' (Water)' : value === 800 ? ' (Oil)' : '';
+          document.getElementById('fluid-density-display').textContent = `${value} kg/m³${fluid}`;
+          ArchimedesFluidSim.setFluidDensity(value);
+        });
+      }
+
+      if (btnPlayPause) {
+        btnPlayPause.addEventListener('click', () => {
+          const isRunning = ArchimedesFluidSim.toggleRunning();
+          btnPlayPause.textContent = isRunning ? '⏸ Pause' : '▶ Play';
+        });
+      }
+
+      if (btnReset) {
+        btnReset.addEventListener('click', () => {
+          ArchimedesFluidSim.reset();
+        });
+      }
+
+      // Canvas click to disturb fluid
+      const canvas = document.getElementById('archimedes-fluid-canvas');
+      if (canvas) {
+        canvas.addEventListener('click', (e) => {
+          const rect = canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          ArchimedesFluidSim.disturbFluid(x, y, 30, 1);
+        });
+      }
+    });
+  </script>
 </body>
 </html>

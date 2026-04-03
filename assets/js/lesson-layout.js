@@ -293,6 +293,17 @@
           if (target) {
             target.setAttribute('aria-hidden', 'false');
             target.classList.add('ll-active');
+            // Crossfade in if ClassroomAnimations available
+            if (window.ClassroomAnimations) {
+              target.style.opacity = '0';
+              window.ClassroomAnimations.animate(
+                'll-tab-fade',
+                function (eased) { target.style.opacity = eased; },
+                180,
+                'easeOutQuad',
+                function () { target.style.opacity = ''; }
+              );
+            }
           }
 
           /* fire custom event so lessons can react */
@@ -340,6 +351,45 @@
 
     setPanelInteractivity(panel, open);
     panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+
+    // Animate panel slide if ClassroomAnimations is available
+    if (window.ClassroomAnimations) {
+      var isMobile = window.innerWidth <= 680;
+      if (isMobile) {
+        // Mobile: slide up from bottom
+        panel.style.transition = 'none';
+        window.ClassroomAnimations.animate(
+          'll-panel-toggle',
+          function (eased) {
+            var from = open ? 100 : 0;
+            var to   = open ? 0   : 100;
+            panel.style.transform = 'translateY(' + (from + (to - from) * eased) + '%)';
+          },
+          260,
+          'easeOutQuad',
+          function () { if (!open) panel.style.transform = ''; }
+        );
+      } else {
+        // Desktop: slide in from right
+        panel.style.transition = 'none';
+        window.ClassroomAnimations.animate(
+          'll-panel-toggle',
+          function (eased) {
+            var from = open ? 100 : 0;
+            var to   = open ? 0   : 100;
+            panel.style.transform = 'translateX(' + (from + (to - from) * eased) + '%)';
+            panel.style.opacity   = open ? eased : 1 - eased;
+          },
+          240,
+          'easeOutQuad',
+          function () {
+            panel.style.transform = '';
+            panel.style.opacity   = '';
+          }
+        );
+      }
+    }
+
     panel.dispatchEvent(new CustomEvent('ll:panel', {
       detail: { open: open },
       bubbles: true
@@ -483,7 +533,30 @@
      */
     setReadout: function (id, value, unit) {
       var el = document.querySelector('[data-readout="' + id + '"]');
-      if (el) el.textContent = unit != null ? value + unit : String(value);
+      if (!el) return;
+
+      // Animate numeric transitions if ClassroomAnimations is available
+      if (window.ClassroomAnimations && typeof value === 'number') {
+        var fromStr = el.dataset.readoutLast != null ? el.dataset.readoutLast : el.textContent;
+        var from = parseFloat(fromStr) || 0;
+        var to = value;
+        var decimals = String(value).includes('.') ? String(value).split('.')[1].length : 0;
+        el.dataset.readoutLast = value;
+        window.ClassroomAnimations.animate(
+          'll-readout-' + id,
+          function (eased) {
+            var current = from + (to - from) * eased;
+            el.textContent = unit != null ? current.toFixed(decimals) + unit : current.toFixed(decimals);
+          },
+          250,
+          'easeOutQuad',
+          function () {
+            el.textContent = unit != null ? value + unit : String(value);
+          }
+        );
+      } else {
+        el.textContent = unit != null ? value + unit : String(value);
+      }
     },
 
     /**

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EHT Animation System - Test</title>
+  <link rel="stylesheet" href="./eht-animations.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 2rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .test-box {
+      background: rgba(52, 152, 219, 0.2);
+      border: 1px solid #3498db;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+    }
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .square {
+      width: 100px;
+      height: 100px;
+      background: #e74c3c;
+      border-radius: 4px;
+      margin: 1rem 0;
+    }
+    .status {
+      background: rgba(46, 204, 113, 0.1);
+      border: 1px solid #2ecc71;
+      border-radius: 4px;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>EHT Animation System Test</h1>
+
+  <div class="test-box">
+    <h2>Animation Module Status</h2>
+    <div id="status" class="status">
+      Loading...
+    </div>
+  </div>
+
+  <div class="test-box">
+    <h2>Test: Fade In/Out</h2>
+    <div class="square" id="fadeBox"></div>
+    <div class="controls">
+      <button onclick="testFadeIn()">Fade In</button>
+      <button onclick="testFadeOut()">Fade Out</button>
+    </div>
+  </div>
+
+  <div class="test-box">
+    <h2>Test: Scale Animation</h2>
+    <div class="square" id="scaleBox"></div>
+    <div class="controls">
+      <button onclick="testScale()">Pulse Scale</button>
+      <button onclick="testBounce()">Bounce</button>
+    </div>
+  </div>
+
+  <div class="test-box">
+    <h2>Test: Easing Functions</h2>
+    <div class="controls">
+      <button onclick="testEasing('easeOutQuad')">easeOutQuad</button>
+      <button onclick="testEasing('easeOutElastic')">easeOutElastic</button>
+      <button onclick="testEasing('easeOutBounce')">easeOutBounce</button>
+    </div>
+    <div class="square" id="easingBox"></div>
+  </div>
+
+  <div class="test-box">
+    <h2>Test: Animation Control</h2>
+    <div class="controls">
+      <button onclick="testLongAnimation()">Start Long Anim</button>
+      <button onclick="pauseAnimation()">Pause</button>
+      <button onclick="resumeAnimation()">Resume</button>
+      <button onclick="cancelAnimation()">Cancel</button>
+    </div>
+    <div class="square" id="controlBox"></div>
+  </div>
+
+  <script src="./eht-animations.js"></script>
+  <script>
+    // Wait for EHTAnimations to be ready
+    function updateStatus() {
+      const status = document.getElementById('status');
+      const metrics = EHTAnimations.getMetrics();
+      const easings = EHTAnimations.getEasingNames();
+
+      status.innerHTML = `
+        <strong>✓ Animation Module Loaded</strong><br>
+        Active Animations: ${EHTAnimations.getAnimationCount()}<br>
+        FPS: ${metrics.fps} | Frame Time: ${metrics.frameTime.toFixed(2)}ms<br>
+        Available Easings: ${easings.length} functions<br>
+        <br>
+        <strong>Sample Easings:</strong><br>
+        ${easings.slice(0, 5).join(', ')}<br>
+        ...and ${easings.length - 5} more
+      `;
+    }
+
+    function testFadeIn() {
+      EHTAnimations.animate(
+        'fadeIn',
+        (eased) => {
+          document.getElementById('fadeBox').style.opacity = eased;
+        },
+        1000,
+        'easeInOutQuad'
+      );
+    }
+
+    function testFadeOut() {
+      EHTAnimations.animate(
+        'fadeOut',
+        (eased) => {
+          document.getElementById('fadeBox').style.opacity = 1 - eased;
+        },
+        1000,
+        'easeInOutQuad'
+      );
+    }
+
+    function testScale() {
+      EHTAnimations.animate(
+        'scale',
+        (eased) => {
+          const box = document.getElementById('scaleBox');
+          box.style.transform = `scale(${1 + eased * 0.3})`;
+          box.style.opacity = 1 - eased * 0.3;
+        },
+        800,
+        'easeOutElastic'
+      );
+    }
+
+    function testBounce() {
+      EHTAnimations.animate(
+        'bounce',
+        (eased) => {
+          const box = document.getElementById('scaleBox');
+          box.style.transform = `translateY(${eased * -50}px)`;
+        },
+        600,
+        'easeOutBounce'
+      );
+    }
+
+    function testEasing(easingName) {
+      EHTAnimations.animate(
+        'easing-test',
+        (eased) => {
+          const box = document.getElementById('easingBox');
+          box.style.transform = `translateX(${eased * 200}px)`;
+        },
+        800,
+        easingName
+      );
+    }
+
+    function testLongAnimation() {
+      EHTAnimations.animate(
+        'long-anim',
+        (eased) => {
+          const box = document.getElementById('controlBox');
+          box.style.background = `hsl(${eased * 360}, 100%, 50%)`;
+        },
+        5000,
+        'linear',
+        () => {
+          console.log('Animation completed!');
+        }
+      );
+    }
+
+    function pauseAnimation() {
+      EHTAnimations.pauseAnimation('long-anim');
+    }
+
+    function resumeAnimation() {
+      EHTAnimations.resumeAnimation('long-anim');
+    }
+
+    function cancelAnimation() {
+      EHTAnimations.cancelAnimation('long-anim');
+    }
+
+    // Update status on load and periodically
+    setTimeout(updateStatus, 100);
+    setInterval(updateStatus, 500);
+  </script>
+</body>
+</html>
