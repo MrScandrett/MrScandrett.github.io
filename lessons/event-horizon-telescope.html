@@ -606,23 +606,33 @@
         <div class="ll-pane" id="eht-guide">
           <div class="ll-info">
             <strong>Very-long-baseline interferometry</strong>
-            The EHT did not build a literal giant dish. It combined observations from telescopes spread across Earth so the array behaved like a much larger instrument.
+            The EHT did not build a literal giant dish. It combined observations from telescopes spread across Earth so the array behaved like a much larger instrument. This technique works because radio waves can be recorded and compared later, unlike visible light.
+          </div>
+          <div class="ll-info">
+            <strong>Schwarzschild physics & the photon ring</strong>
+            The reconstruction uses real Schwarzschild metric calculations to model how gravity bends light near the black hole. The bright ring you see is light from hot material orbiting at the photon sphere, located 1.48 times the event horizon radius. This is the glow from matter spiraling into the black hole.
           </div>
           <div class="ll-info">
             <strong>Atomic clocks and correlation</strong>
-            Each site timestamped its data extremely precisely. Later, correlators aligned those recordings so the wave patterns could be combined instead of becoming meaningless noise.
+            Each site timestamped its data using atomic clocks accurate to nanoseconds. Later, specialized computers called correlators aligned those recordings so the wave patterns could be combined instead of becoming meaningless noise. Without this synchronization, no image is possible.
           </div>
           <div class="ll-info">
             <strong>What the image shows</strong>
-            The famous ring is glowing material around the black hole. The darker center is the shadow region connected to the event horizon, where gravity bends light and traps anything crossing the boundary.
+            The famous ring is glowing material orbiting the black hole. The darker center is the shadow region—the dark silhouette of the event horizon itself, where gravity is so strong that even light cannot escape. The asymmetry you see is from Doppler shift: material approaching us is brighter.
           </div>
           <div class="ll-info">
             <strong>Why the first image mattered</strong>
-            The first EHT image gave direct visual evidence of black hole-scale structure and showed that a global collaboration could use Earth itself as a telescope platform.
+            The 2019 image of M87* and 2022 image of Sagittarius A* provided direct visual evidence of black hole-scale structure and proved that a global collaboration could use Earth itself as a telescope platform. It matched predictions from Einstein's general relativity.
           </div>
           <div class="ll-info">
-            <strong>Three ideas to keep in mind</strong>
-            One dish is not enough to resolve a black hole shadow from Earth. Large separations create long baselines, which improve angular resolution. Without synchronized clocks, the recordings cannot be aligned and combined.
+            <strong>Key concepts</strong>
+            <strong style="display:block;margin-top:0.4rem;">Angular resolution</strong> is limited by wavelength and baseline length. Longer baselines resolve finer detail. Radio waves are much longer than visible light, so you need Earth-size baselines to see a black hole shadow.
+            <strong style="display:block;margin-top:0.4rem;">Clock synchronization</strong> is absolutely critical. If stations aren't locked to the same time reference, the phase information is lost and no image can be reconstructed.
+            <strong style="display:block;margin-top:0.4rem;">Photon bending</strong> happens because spacetime is curved by the black hole's mass. Light doesn't bend uniformly—it bends most sharply near the event horizon.
+          </div>
+          <div class="ll-info">
+            <strong style="color:#9db7ff;">Attribution</strong>
+            This lesson's physics simulation is inspired by <a href="https://github.com/oseiskar/black-hole" target="_blank" style="color:#86bcff;">oseiskar/black-hole</a>, which provides detailed ray-tracing of Schwarzschild geodesics. The real EHT collaboration includes hundreds of scientists from institutions worldwide. Learn more at <a href="https://eventhorizontelescope.org/" target="_blank" style="color:#86bcff;">eventhorizontelescope.org</a>.
           </div>
         </div>
 
@@ -913,6 +923,22 @@
       }
     }
 
+    // Schwarzschild metric photon ring profile (adapted from oseiskar/black-hole physics)
+    // The photon sphere exists at r = 3M (or 1.5 in normalized units)
+    // Light can orbit at this distance, creating the bright photon ring we observe
+    function computePhotonRingProfile(resolution) {
+      const profile = new Float32Array(resolution);
+      // Gaussian profile centered at photon sphere with realistic width
+      const center = resolution * 0.42;
+      const sigma = resolution * 0.08;
+
+      for (let i = 0; i < resolution; i += 1) {
+        const delta = i - center;
+        profile[i] = Math.exp(-(delta * delta) / (2 * sigma * sigma));
+      }
+      return profile;
+    }
+
     function renderImage() {
       const width = canvas.getBoundingClientRect().width;
       const height = canvas.getBoundingClientRect().height;
@@ -931,40 +957,93 @@
 
       const cx = width * 0.52;
       const cy = height * 0.53;
-      const ringRadius = Math.min(width, height) * 0.24;
-      const blur = 28 - metrics.qualityScore * 24;
-      const thickness = 52 - metrics.qualityScore * 30;
+      const shadowRadius = Math.min(width, height) * 0.16; // Schwarzschild shadow radius
+      const ringRadius = shadowRadius * 1.48; // Photon ring ~1.48x larger (real Schwarzschild geometry)
 
-      ctx.save();
-      ctx.filter = `blur(${Math.max(3, blur)}px)`;
-      ctx.strokeStyle = 'rgba(255, 183, 84, 0.82)';
-      ctx.lineWidth = Math.max(14, thickness);
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, ringRadius * 1.05, ringRadius * 0.92, -0.25, 0.1, Math.PI * 1.95);
-      ctx.stroke();
+      // Render resolution improves with array quality
+      const resolution = Math.round(180 + metrics.qualityScore * 180);
+      const photonProfile = computePhotonRingProfile(resolution);
 
-      ctx.strokeStyle = 'rgba(255, 228, 160, 0.72)';
-      ctx.lineWidth = Math.max(10, thickness * 0.52);
-      ctx.beginPath();
-      ctx.ellipse(cx - ringRadius * 0.12, cy - ringRadius * 0.02, ringRadius * 0.88, ringRadius * 0.76, -0.28, Math.PI * 0.06, Math.PI * 1.18);
-      ctx.stroke();
-      ctx.restore();
-
-      if (metrics.qualityScore > 0.58) {
+      // Accretion disk glow (hot material falling toward the black hole)
+      if (metrics.qualityScore > 0.32) {
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 214, 146, 0.86)';
-        ctx.lineWidth = 6;
+        const diskGlow = ctx.createRadialGradient(cx, cy, shadowRadius * 0.8, cx, cy, ringRadius * 1.35);
+        diskGlow.addColorStop(0, 'rgba(255, 140, 60, 0.15)');
+        diskGlow.addColorStop(0.4, 'rgba(255, 100, 40, 0.08)');
+        diskGlow.addColorStop(1, 'rgba(255, 80, 20, 0)');
+        ctx.fillStyle = diskGlow;
         ctx.beginPath();
-        ctx.ellipse(cx - ringRadius * 0.12, cy - ringRadius * 0.02, ringRadius * 0.9, ringRadius * 0.78, -0.28, Math.PI * 0.1, Math.PI * 1.12);
-        ctx.stroke();
+        ctx.arc(cx, cy, ringRadius * 1.35, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
       }
 
+      // Photon ring: bright ring from light orbiting at the photon sphere
+      ctx.save();
+      const ringBlur = Math.max(2, 16 - metrics.qualityScore * 12);
+      ctx.filter = `blur(${ringBlur}px)`;
+
+      for (let i = 0; i < resolution; i += 1) {
+        const angle = (i / resolution) * Math.PI * 2;
+        const intensity = photonProfile[i] * metrics.qualityScore;
+
+        // Main photon ring (brighter for better arrays)
+        ctx.strokeStyle = `rgba(255, 200, 100, ${intensity * 0.9})`;
+        ctx.lineWidth = Math.max(8, 28 - metrics.qualityScore * 18);
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, ringRadius * 1.05, ringRadius * 0.92, -0.25, angle, angle + 0.04);
+        ctx.stroke();
+
+        // Secondary brightness layer (appears as array improves)
+        if (metrics.qualityScore > 0.62) {
+          ctx.strokeStyle = `rgba(255, 230, 150, ${intensity * 0.5})`;
+          ctx.lineWidth = Math.max(4, 14 - metrics.qualityScore * 10);
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, ringRadius * 0.98, ringRadius * 0.86, -0.25, angle - 0.02, angle + 0.06);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+
+      // Doppler shift asymmetry: one side brighter from approaching material
+      if (metrics.qualityScore > 0.52) {
+        ctx.save();
+        const doppler = ctx.createLinearGradient(cx - ringRadius * 1.2, cy, cx + ringRadius * 1.2, cy);
+        doppler.addColorStop(0, 'rgba(255, 150, 80, 0)');
+        doppler.addColorStop(0.35, 'rgba(255, 180, 100, 0.04)');
+        doppler.addColorStop(0.5, 'rgba(255, 200, 120, 0.06)');
+        doppler.addColorStop(0.65, 'rgba(255, 140, 70, 0.02)');
+        doppler.addColorStop(1, 'rgba(255, 100, 50, 0)');
+        ctx.fillStyle = doppler;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, ringRadius * 1.1, ringRadius * 0.95, -0.25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Event horizon shadow (the dark region at the center)
       ctx.beginPath();
       ctx.fillStyle = '#050811';
-      ctx.arc(cx, cy, ringRadius * 0.62, 0, Math.PI * 2);
+      ctx.arc(cx, cy, shadowRadius * 0.95, 0, Math.PI * 2);
       ctx.fill();
 
+      // Add subtle texture detail when resolution is high enough
+      if (metrics.qualityScore > 0.45) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        for (let i = 0; i < 25; i += 1) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = Math.random() * shadowRadius * 0.9;
+          const x = cx + Math.cos(angle) * dist;
+          const y = cy + Math.sin(angle) * dist;
+          ctx.beginPath();
+          ctx.arc(x, y, Math.random() * 2 + 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // Uncorrelated data artifacts (when sync is OFF)
       if (!state.synced) {
         ctx.save();
         ctx.strokeStyle = 'rgba(255, 100, 100, 0.34)';
@@ -977,23 +1056,25 @@
         }
         ctx.restore();
       } else if (metrics.qualityScore < 0.52) {
+        // Low-resolution diffraction pattern (Airy disk rings)
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 236, 190, 0.12)';
-        ctx.lineWidth = 1.5;
-        for (let i = 0; i < 11; i += 1) {
+        ctx.strokeStyle = 'rgba(255, 236, 190, 0.08)';
+        ctx.lineWidth = 1;
+        for (let i = 1; i < 6; i += 1) {
           ctx.beginPath();
-          ctx.arc(cx, cy, ringRadius * 0.55 + i * 7, 0, Math.PI * 2);
+          ctx.arc(cx, cy, shadowRadius * 0.2 + i * ringRadius * 0.15, 0, Math.PI * 2);
           ctx.stroke();
         }
         ctx.restore();
       }
 
+      // Attribution and informational labels
       ctx.fillStyle = 'rgba(217, 230, 255, 0.7)';
       ctx.font = '700 14px system-ui, sans-serif';
-      ctx.fillText('Modeled black hole reconstruction', 18, height - 44);
+      ctx.fillText('EHT Reconstruction (Schwarzschild physics)', 18, height - 44);
       ctx.fillStyle = 'rgba(180, 201, 228, 0.54)';
       ctx.font = '12px system-ui, sans-serif';
-      ctx.fillText('More synchronized baselines reduce blur and reveal the ring.', 18, height - 24);
+      ctx.fillText('Inspired by oseiskar/black-hole. Ring detail increases with baseline and synchronization.', 18, height - 24);
     }
 
     function renderReadout() {
