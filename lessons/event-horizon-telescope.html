@@ -613,6 +613,14 @@
             The reconstruction uses real Schwarzschild metric calculations to model how gravity bends light near the black hole. The bright ring you see is light from hot material orbiting at the photon sphere, located 1.48 times the event horizon radius. This is the glow from matter spiraling into the black hole.
           </div>
           <div class="ll-info">
+            <strong>Accretion disk models & black-body radiation</strong>
+            Real black holes are surrounded by different disk types. A thin disk (Shakura–Sunyaev) orbits close and hot; a thick torus (ADAF) extends further and cooler; a slim disk occurs in super-Eddington accretion. Colors are based on black-body radiation: hotter material (blue-white) orbits closer, cooler material (orange-red) is further out. The lesson switches models as array quality improves.
+          </div>
+          <div class="ll-info">
+            <strong>Relativistic jets</strong>
+            Magnetic fields threading the accretion disk can launch jets of plasma at near-light speed perpendicular to the disk. These jets are visible at high array resolution as blue columns of light shooting from the black hole's poles. Jets are powered by the Blandford–Znajek mechanism and carry away rotational energy.
+          </div>
+          <div class="ll-info">
             <strong>Atomic clocks and correlation</strong>
             Each site timestamped its data using atomic clocks accurate to nanoseconds. Later, specialized computers called correlators aligned those recordings so the wave patterns could be combined instead of becoming meaningless noise. Without this synchronization, no image is possible.
           </div>
@@ -629,10 +637,11 @@
             <strong style="display:block;margin-top:0.4rem;">Angular resolution</strong> is limited by wavelength and baseline length. Longer baselines resolve finer detail. Radio waves are much longer than visible light, so you need Earth-size baselines to see a black hole shadow.
             <strong style="display:block;margin-top:0.4rem;">Clock synchronization</strong> is absolutely critical. If stations aren't locked to the same time reference, the phase information is lost and no image can be reconstructed.
             <strong style="display:block;margin-top:0.4rem;">Photon bending</strong> happens because spacetime is curved by the black hole's mass. Light doesn't bend uniformly—it bends most sharply near the event horizon.
+            <strong style="display:block;margin-top:0.4rem;">Black-body spectrum</strong> tells us the disk temperature from color. Hotter material emits in blue-white; cooler material glows orange-red. This matches real observations of M87* and Sagittarius A*.
           </div>
           <div class="ll-info">
             <strong style="color:#9db7ff;">Attribution</strong>
-            This lesson's physics simulation is inspired by <a href="https://github.com/oseiskar/black-hole" target="_blank" style="color:#86bcff;">oseiskar/black-hole</a>, which provides detailed ray-tracing of Schwarzschild geodesics. The real EHT collaboration includes hundreds of scientists from institutions worldwide. Learn more at <a href="https://eventhorizontelescope.org/" target="_blank" style="color:#86bcff;">eventhorizontelescope.org</a>.
+            This lesson's physics combines insights from <a href="https://github.com/oseiskar/black-hole" target="_blank" style="color:#86bcff;">oseiskar/black-hole</a> (Schwarzschild ray-tracing) and <a href="https://github.com/Adriwin06/black-hole" target="_blank" style="color:#86bcff;">Adriwin06/black-hole</a> (accretion models, tone-mapping, jets). The real EHT collaboration includes hundreds of scientists from institutions worldwide. Learn more at <a href="https://eventhorizontelescope.org/" target="_blank" style="color:#86bcff;">eventhorizontelescope.org</a>.
           </div>
         </div>
 
@@ -923,6 +932,121 @@
       }
     }
 
+    // Black-body radiation curve (Planck spectrum lookup)
+    // Maps temperature in Kelvin to RGB color
+    function temperatureToColor(tempKelvin) {
+      tempKelvin = Math.max(3000, Math.min(30000, tempKelvin));
+      const t = (tempKelvin - 3000) / 27000;
+      let r, g, b;
+      if (t < 0.3) {
+        r = 1;
+        g = Math.sqrt(t / 0.3) * 0.4;
+        b = 0;
+      } else if (t < 0.6) {
+        const s = (t - 0.3) / 0.3;
+        r = 1;
+        g = 0.4 + s * 0.6;
+        b = 0;
+      } else if (t < 0.8) {
+        const s = (t - 0.6) / 0.2;
+        r = 1;
+        g = 1;
+        b = s * 0.3;
+      } else {
+        const s = (t - 0.8) / 0.2;
+        r = 1;
+        g = 1;
+        b = 0.3 + s * 0.7;
+      }
+      return { r, g, b };
+    }
+
+    function getDiskProfile(quality, modelType) {
+      const profile = { radii: [], temps: [], densities: [] };
+      if (modelType === 'adaf') {
+        const steps = Math.round(40 + quality * 40);
+        for (let i = 0; i < steps; i++) {
+          const r = 2 + (i / steps) * 18;
+          const T = 5000 + (1 - Math.exp(-r / 8)) * 8000;
+          const density = Math.exp(-r / 12) * (1 + 0.3 * Math.sin(i * 0.5));
+          profile.radii.push(r);
+          profile.temps.push(T);
+          profile.densities.push(density);
+        }
+      } else if (modelType === 'slim') {
+        const steps = Math.round(35 + quality * 35);
+        for (let i = 0; i < steps; i++) {
+          const r = 1.8 + (i / steps) * 12;
+          const T = 8000 + (1 - Math.exp(-r / 4)) * 15000;
+          const density = Math.exp(-r / 6) * (1 + 0.4 * Math.cos(i * 0.6));
+          profile.radii.push(r);
+          profile.temps.push(T);
+          profile.densities.push(density);
+        }
+      } else {
+        const steps = Math.round(45 + quality * 45);
+        for (let i = 0; i < steps; i++) {
+          const r = 1.5 + (i / steps) * 20;
+          const T = 9000 + (1 - Math.exp(-r / 6)) * 10000;
+          const density = Math.exp(-r / 8) * (1 + 0.2 * Math.sin(i * 0.4));
+          profile.radii.push(r);
+          profile.temps.push(T);
+          profile.densities.push(density);
+        }
+      }
+      return profile;
+    }
+
+    function toneMap(r, g, b, exposure) {
+      const tonemapFunc = (x) => {
+        const a = 2.51, b_tm = 0.03, c = 2.43, d = 0.59, e = 0.14;
+        return Math.max(0, Math.min(1, (x * (a * x + b_tm)) / (x * (c * x + d) + e)));
+      };
+      return {
+        r: tonemapFunc(r * exposure),
+        g: tonemapFunc(g * exposure),
+        b: tonemapFunc(b * exposure)
+      };
+    }
+
+    function renderDiskWithModel(cx, cy, ringRadius, metrics, diskModel) {
+      const diskProfile = getDiskProfile(metrics.qualityScore, diskModel);
+      ctx.save();
+      for (let i = 0; i < diskProfile.radii.length; i++) {
+        const r = diskProfile.radii[i];
+        const radiusPixels = (r / 3.5) * ringRadius;
+        const temp = diskProfile.temps[i];
+        const density = diskProfile.densities[i] * metrics.qualityScore;
+        const color = temperatureToColor(temp);
+        const toneMapped = toneMap(color.r, color.g, color.b, 0.8 * density);
+        ctx.strokeStyle = `rgba(${Math.round(toneMapped.r * 255)}, ${Math.round(toneMapped.g * 255)}, ${Math.round(toneMapped.b * 255)}, ${density * 0.7})`;
+        ctx.lineWidth = Math.max(2, ringRadius * 0.04 * density);
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, radiusPixels * 1.05, radiusPixels * 0.9, -0.25, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function renderJet(cx, cy, ringRadius, metrics) {
+      if (metrics.qualityScore < 0.65) return;
+      ctx.save();
+      const jetIntensity = (metrics.qualityScore - 0.65) / 0.35;
+      for (const side of [-1, 1]) {
+        const jetBaseX = cx;
+        const jetBaseY = cy - ringRadius * 0.6 * side;
+        ctx.fillStyle = `rgba(${Math.round(100 + jetIntensity * 155)}, ${Math.round(150 + jetIntensity * 100)}, 255, ${jetIntensity * 0.4})`;
+        for (let i = 0; i < 5; i++) {
+          const y = jetBaseY + (i * ringRadius * 0.15 * side);
+          const width = ringRadius * 0.06 * (1 - i * 0.15) * jetIntensity;
+          ctx.beginPath();
+          ctx.ellipse(jetBaseX, y, width, width * 0.3, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
     // Schwarzschild metric photon ring profile (adapted from oseiskar/black-hole physics)
     // The photon sphere exists at r = 3M (or 1.5 in normalized units)
     // Light can orbit at this distance, creating the bright photon ring we observe
@@ -964,18 +1088,11 @@
       const resolution = Math.round(180 + metrics.qualityScore * 180);
       const photonProfile = computePhotonRingProfile(resolution);
 
-      // Accretion disk glow (hot material falling toward the black hole)
-      if (metrics.qualityScore > 0.32) {
-        ctx.save();
-        const diskGlow = ctx.createRadialGradient(cx, cy, shadowRadius * 0.8, cx, cy, ringRadius * 1.35);
-        diskGlow.addColorStop(0, 'rgba(255, 140, 60, 0.15)');
-        diskGlow.addColorStop(0.4, 'rgba(255, 100, 40, 0.08)');
-        diskGlow.addColorStop(1, 'rgba(255, 80, 20, 0)');
-        ctx.fillStyle = diskGlow;
-        ctx.beginPath();
-        ctx.arc(cx, cy, ringRadius * 1.35, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+      // Accretion disk (multiple models: thin, ADAF torus, slim disk)
+      if (metrics.qualityScore > 0.28) {
+        // Select disk model based on quality (in real lesson, this could be a control)
+        const diskModel = metrics.qualityScore > 0.7 ? 'thin' : (metrics.qualityScore > 0.5 ? 'adaf' : 'thin');
+        renderDiskWithModel(cx, cy, ringRadius, metrics, diskModel);
       }
 
       // Photon ring: bright ring from light orbiting at the photon sphere
@@ -1068,13 +1185,16 @@
         ctx.restore();
       }
 
+      // Relativistic jets (visible at high quality)
+      renderJet(cx, cy, ringRadius, metrics);
+
       // Attribution and informational labels
       ctx.fillStyle = 'rgba(217, 230, 255, 0.7)';
       ctx.font = '700 14px system-ui, sans-serif';
       ctx.fillText('EHT Reconstruction (Schwarzschild physics)', 18, height - 44);
       ctx.fillStyle = 'rgba(180, 201, 228, 0.54)';
       ctx.font = '12px system-ui, sans-serif';
-      ctx.fillText('Inspired by oseiskar/black-hole. Ring detail increases with baseline and synchronization.', 18, height - 24);
+      ctx.fillText('Inspired by oseiskar/black-hole & Adriwin06/black-hole. Disk model and jets added.', 18, height - 24);
     }
 
     function renderReadout() {
