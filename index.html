@@ -131,16 +131,17 @@
             <p class="vod-fallback-kicker">Featured Today</p>
             <p class="vod-fallback-title" id="vod-fallback-title"></p>
           </div>
-          <button class="vod-play-btn" id="vod-play-btn" aria-label="Play video">
+          <span class="vod-play-btn" aria-hidden="true">
             <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.92"/>
               <polygon points="23,17 43,28 23,39" fill="#111"/>
             </svg>
-          </button>
+          </span>
           <span class="vod-duration" id="vod-duration"></span>
         </div>
         <p class="vod-category" id="vod-category"></p>
         <p class="vod-title" id="vod-title"></p>
+        <p class="vod-desc" id="vod-desc"></p>
         <a class="vod-link" href="video-library.html">View all videos →</a>
       </div>
 
@@ -189,7 +190,7 @@
   </main>
 
   <!-- VOD Modal -->
-  <div class="vod-modal-backdrop" id="vod-modal-backdrop" role="dialog" aria-modal="true" aria-label="Video player">
+  <div class="vod-modal-backdrop" id="vod-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="vod-modal-title">
     <div class="vod-modal">
       <button class="vod-modal-close" id="vod-modal-close" aria-label="Close video">✕</button>
       <video id="vod-modal-video" controls></video>
@@ -210,13 +211,20 @@
   <script src="assets/js/nav-mobile.js"></script>
   <script src="assets/js/sidepanel-drag.js"></script>
   <script>
-    document.getElementById("home-launch-settings").addEventListener("click", function () {
-      var toggle = document.querySelector(".nav-settings-toggle");
-      if (toggle) toggle.click();
-    });
+    const homeLaunchSettings = document.getElementById("home-launch-settings");
+    if (homeLaunchSettings) {
+      homeLaunchSettings.addEventListener("click", function () {
+        var toggle = document.querySelector(".nav-settings-toggle");
+        if (toggle) toggle.click();
+      });
+    }
   </script>
   <script>
     (function () {
+      function byId(id) {
+        return document.getElementById(id);
+      }
+
       const VOD_LIST = [
         { src: 'assets/videos/stevejobs_onfailure.mp4', title: 'Steve Jobs on Failure', category: 'Interview', desc: 'Steve Jobs reflects on failure, resilience, and what it really means to build something that matters.', seekTo: 1 },
         { src: 'assets/videos/stevejobs_life.mp4', title: 'Steve Jobs on Life', category: 'Interview', desc: 'Steve Jobs shares his perspective on life, purpose, and the importance of following what you love.', seekTo: 1 },
@@ -225,24 +233,31 @@
 
       const v = VOD_LIST[Math.floor(Math.random() * VOD_LIST.length)];
 
-      document.getElementById('vod-category').textContent = v.category;
-      document.getElementById('vod-title').textContent = v.title;
-      document.getElementById('vod-desc').textContent = v.desc;
-      document.getElementById('vod-fallback-title').textContent = v.title;
+      const vodCategory = byId('vod-category');
+      const vodTitle = byId('vod-title');
+      const vodDesc = byId('vod-desc');
+      const vodFallbackTitle = byId('vod-fallback-title');
+
+      if (vodCategory) vodCategory.textContent = v.category;
+      if (vodTitle) vodTitle.textContent = v.title;
+      if (vodDesc) vodDesc.textContent = v.desc;
+      if (vodFallbackTitle) vodFallbackTitle.textContent = v.title;
 
       // Generate thumbnail via canvas
-      const thumbWrap = document.getElementById('vod-thumb-wrap');
-      const thumbImg = document.getElementById('vod-thumb');
+      const thumbWrap = byId('vod-thumb-wrap');
+      const thumbImg = byId('vod-thumb');
       const tmpVid = document.createElement('video');
-      thumbWrap.classList.add('vod-thumb-wrap--fallback');
+      if (thumbWrap) thumbWrap.classList.add('vod-thumb-wrap--fallback');
 
       function showVodFallback() {
+        if (!thumbWrap || !thumbImg) return;
         thumbWrap.classList.add('vod-thumb-wrap--fallback');
         thumbImg.removeAttribute('src');
         tmpVid.src = '';
       }
 
       function hideVodFallback() {
+        if (!thumbWrap) return;
         thumbWrap.classList.remove('vod-thumb-wrap--fallback');
       }
 
@@ -253,7 +268,10 @@
         const s = tmpVid.duration;
         if (s && isFinite(s)) {
           const m = Math.floor(s / 60);
-          document.getElementById('vod-duration').textContent = m + ':' + Math.floor(s % 60).toString().padStart(2, '0');
+          const vodDuration = byId('vod-duration');
+          if (vodDuration) {
+            vodDuration.textContent = m + ':' + Math.floor(s % 60).toString().padStart(2, '0');
+          }
         }
         tmpVid.currentTime = Math.min(v.seekTo, tmpVid.duration * 0.1);
       });
@@ -267,46 +285,58 @@
           return;
         }
         ctx.drawImage(tmpVid, 0, 0, canvas.width, canvas.height);
-        thumbImg.src = canvas.toDataURL('image/jpeg', 0.85);
+        if (thumbImg) thumbImg.src = canvas.toDataURL('image/jpeg', 0.85);
         hideVodFallback();
         tmpVid.src = '';
       }, { once: true });
       tmpVid.addEventListener('error', showVodFallback, { once: true });
-      thumbImg.addEventListener('error', showVodFallback);
+      if (thumbImg) thumbImg.addEventListener('error', showVodFallback);
 
       // Play button → open modal
-      const backdrop = document.getElementById('vod-modal-backdrop');
-      const modalVideo = document.getElementById('vod-modal-video');
+      const backdrop = byId('vod-modal-backdrop');
+      const modalVideo = byId('vod-modal-video');
+      const modalCategory = byId('vod-modal-category');
+      const modalTitle = byId('vod-modal-title');
+      const modalClose = byId('vod-modal-close');
+      let lastFocusedEl = null;
 
       function openVod() {
-        document.getElementById('vod-modal-category').textContent = v.category;
-        document.getElementById('vod-modal-title').textContent = v.title;
+        if (!backdrop || !modalVideo) return;
+        lastFocusedEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        if (modalCategory) modalCategory.textContent = v.category;
+        if (modalTitle) modalTitle.textContent = v.title;
         modalVideo.src = v.src;
         backdrop.classList.add('open');
+        if (modalClose) modalClose.focus();
         const playPromise = modalVideo.play();
         if (playPromise && typeof playPromise.catch === 'function') {
           playPromise.catch(() => {});
         }
       }
 
-      document.getElementById('vod-play-btn').addEventListener('click', openVod);
-      document.getElementById('vod-thumb-wrap').addEventListener('click', openVod);
-      document.getElementById('vod-thumb-wrap').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          openVod();
-        }
-      });
+      if (thumbWrap) {
+        thumbWrap.addEventListener('click', openVod);
+        thumbWrap.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openVod();
+          }
+        });
+      }
 
       function closeModal() {
+        if (!backdrop || !modalVideo) return;
         backdrop.classList.remove('open');
         modalVideo.pause();
         modalVideo.src = '';
+        if (lastFocusedEl) lastFocusedEl.focus();
       }
 
-      document.getElementById('vod-modal-close').addEventListener('click', closeModal);
-      backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+      if (modalClose) modalClose.addEventListener('click', closeModal);
+      if (backdrop) backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && backdrop && backdrop.classList.contains('open')) closeModal();
+      });
 
       const weekdayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const currentDay = weekdayNames[new Date().getDay()];
