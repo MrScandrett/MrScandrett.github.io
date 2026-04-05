@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CAD Camera Controls &amp; Orientation · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Fabrication Lesson 01 - learn orbit, pan, zoom, home view, the orientation cube, and axis awareness with an interactive 3D CAD camera simulation." />
+  <title>3D Modeling &amp; Camera Controls · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Fabrication Lesson 01 — learn orbit, pan, zoom, home view, the orientation cube, axis awareness, matcap materials, and polygon meshes with an interactive 3D lab and live matcap editor." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
@@ -210,7 +210,7 @@
 
     .cadnav-terms {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.9rem;
     }
 
@@ -510,6 +510,12 @@
       }
     }
 
+    @media (max-width: 980px) {
+      .cadnav-terms {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
     @media (max-width: 780px) {
       .cadnav-terms {
         grid-template-columns: 1fr;
@@ -636,7 +642,271 @@
       opacity: 0; transition: opacity 0.2s;
     }
     .cadnav-canvas-lock-pill.visible { opacity: 1; }
+
+    /* ══ MATCAP STUDIO ══════════════════════════════════════════
+       Windows 98 / XP–inspired panel chrome blended into the
+       lesson design system. The matcap section sits between the
+       camera-controls simulation and the transfer cards.
+    ═══════════════════════════════════════════════════════════ */
+
+    .matcap-section { padding: 1.3rem; }
+
+    .matcap-lab-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.75fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    /* XP window chrome */
+    .xp-window {
+      background: #d4d0c8;
+      border: 2px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      box-shadow: inset 1px 1px 0 #dfdfdf, inset -1px -1px 0 #404040;
+      border-radius: 3px;
+      overflow: hidden;
+      font-family: 'Segoe UI', 'MS Sans Serif', Tahoma, Geneva, sans-serif;
+    }
+
+    .xp-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 5px 3px 6px;
+      background: linear-gradient(90deg, #0a246a 0%, #3a6ea5 100%);
+      color: #fff;
+      font-size: 0.71rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      min-height: 22px;
+      user-select: none;
+    }
+
+    .xp-title-text { flex: 1; }
+
+    .xp-winbtns { display: flex; gap: 2px; }
+
+    .xp-winbtn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 17px;
+      height: 14px;
+      font-size: 0.52rem;
+      font-weight: 900;
+      border: 1px solid;
+      border-color: #dfdfdf #404040 #404040 #dfdfdf;
+      background: #d4d0c8;
+      color: #000;
+      cursor: default;
+      border-radius: 2px;
+      line-height: 1;
+    }
+
+    .xp-winbtn.close { background: #cc3333; color: #fff; border-color: #ff6666 #660000 #660000 #ff6666; }
+    .xp-winbtn:hover { background: #e8e4dc; }
+    .xp-winbtn.close:hover { background: #e84444; }
+
+    .xp-menu-bar {
+      display: flex;
+      padding: 1px 3px 0;
+      background: #d4d0c8;
+      border-bottom: 1px solid #b4b0a8;
+      gap: 0;
+    }
+
+    .xp-menu-item {
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      cursor: default;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      color: #000;
+      white-space: nowrap;
+    }
+
+    .xp-menu-item:hover {
+      background: linear-gradient(180deg, #3a70c4, #1a4898);
+      color: #fff;
+    }
+
+    .xp-statusbar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 4px;
+      background: #d4d0c8;
+      border-top: 1px solid #b4b0a8;
+      font-size: 0.66rem;
+      color: #333;
+    }
+
+    .xp-status-panel {
+      padding: 1px 8px;
+      border: 1px solid;
+      border-color: #808080 #dfdfdf #dfdfdf #808080;
+      min-width: 60px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Three.js viewer canvas */
+    #suzanneCanvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #1a1a2e;
+    }
+
+    /* Matcap drawing canvas (circular) */
+    .matcap-canvas-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+      background: #d4d0c8;
+    }
+
+    #matcapDrawCanvas {
+      display: block;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      cursor: crosshair;
+      border: 2px solid;
+      border-color: #808080 #dfdfdf #dfdfdf #808080;
+      box-shadow: inset 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    /* XP toolbar */
+    .xp-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      background: #d4d0c8;
+      border-top: 1px solid #b4b0a8;
+      flex-wrap: wrap;
+    }
+
+    .xp-label {
+      font-size: 0.69rem;
+      color: #222;
+      white-space: nowrap;
+    }
+
+    .xp-color-swatch {
+      width: 24px;
+      height: 20px;
+      border: 2px solid;
+      border-color: #808080 #dfdfdf #dfdfdf #808080;
+      background: #fff;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .xp-color-input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+
+    .xp-range {
+      width: 72px;
+      cursor: pointer;
+      accent-color: #0a246a;
+    }
+
+    .xp-btn-push {
+      appearance: none;
+      padding: 2px 12px;
+      min-height: 21px;
+      font-size: 0.7rem;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #d4d0c8;
+      border: 2px solid;
+      border-color: #dfdfdf #808080 #808080 #dfdfdf;
+      cursor: pointer;
+      color: #000;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+
+    .xp-btn-push:hover { background: #e8e4dc; }
+    .xp-btn-push:active { border-color: #808080 #dfdfdf #dfdfdf #808080; background: #c0bcb4; }
+
+    .brush-preview-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 10px;
+      background: #d4d0c8;
+      border-top: 1px solid #b4b0a8;
+      min-height: 26px;
+    }
+
+    .brush-dot {
+      border-radius: 50%;
+      background: #fff;
+      transition: width 0.1s, height 0.1s, background 0.1s;
+      flex-shrink: 0;
+    }
+
+    /* Preset thumbnails */
+    .matcap-presets-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 10px;
+      background: #d4d0c8;
+    }
+
+    .matcap-preset-thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #808080;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.35);
+      display: block;
+      background: #222;
+      transition: border-color 0.1s, box-shadow 0.1s;
+    }
+
+    .matcap-preset-thumb:hover { border-color: #3a6ea5; }
+    .matcap-preset-thumb.is-active {
+      border-color: #0a246a;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.35), 0 0 0 2px rgba(10,36,106,0.5);
+    }
+
+    /* Info panel inside XP window */
+    .xp-info-content {
+      padding: 8px 10px;
+      background: #d4d0c8;
+      font-size: 0.72rem;
+      color: #1a1a1a;
+      line-height: 1.55;
+    }
+
+    .xp-info-content p { margin: 0 0 6px; }
+    .xp-info-content p:last-child { margin: 0; color: #555; font-size: 0.67rem; }
+
+    @media (max-width: 980px) {
+      .matcap-lab-grid { grid-template-columns: 1fr; }
+    }
   </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -645,7 +915,7 @@
     <div class="cadnav-topbar ll-topbar">
       <div class="cadnav-topbar-inner">
         <a href="../steam-lessons.html#module-fabrication">Back to Fabrication</a>
-        <div class="cadnav-topbar-title">CAD Camera Controls &amp; Orientation</div>
+        <div class="cadnav-topbar-title">3D Modeling &amp; Camera Controls</div>
         <a href="../index.html">Home</a>
       </div>
     </div>
@@ -656,14 +926,16 @@
     <section class="cadnav-hero">
       <div class="cadnav-hero-copy">
         <p class="cadnav-eyebrow">Fabrication · Lesson 01</p>
-        <h1>Camera Controls in 3D CAD</h1>
-        <p class="cadnav-lede">If a part looks upside down, tiny, or lost in space, the problem is usually navigation. This lesson teaches the camera language shared by tools like Tinkercad and Autodesk Fusion 360: orbit, pan, zoom, home view, the orientation cube, and axis awareness.</p>
+        <h1>3D Modeling &amp; Camera Controls</h1>
+        <p class="cadnav-lede">If a part looks upside down, tiny, or lost in space, the problem is usually navigation. This lesson teaches the camera language shared by tools like Tinkercad and Autodesk Fusion 360 — orbit, pan, zoom, home view, the orientation cube, and axis awareness — then takes it further with real-time 3D surface materials and a live matcap editor.</p>
         <div class="cadnav-meta" aria-label="Lesson focus">
           <span>Orbit</span>
           <span>Pan</span>
           <span>Zoom</span>
           <span>Home view</span>
           <span>Orientation cube</span>
+          <span>Matcap materials</span>
+          <span>Polygon mesh</span>
           <span>Simulation lab</span>
         </div>
       </div>
@@ -676,16 +948,17 @@
           <li>Top, front, and right views help you sketch and measure from the correct side.</li>
           <li>Orbit helps inspection. Pan re-centers the workspace. Zoom helps detail work.</li>
           <li>Home view and fit view recover the model when you get lost.</li>
+          <li>Surface materials and matcaps give 3D shapes their final look — and orbit is what lets you judge them properly.</li>
         </ul>
-        <p class="cadnav-note">Different software maps these actions to different mouse buttons and gestures, but the vocabulary stays consistent.</p>
+        <p class="cadnav-note">Different software maps these actions to different mouse buttons and gestures, but the vocabulary stays consistent across Tinkercad, Fusion 360, Blender, and ZBrush.</p>
       </aside>
     </section>
 
     <section class="cadnav-section">
       <div class="cadnav-section-head">
         <p class="cadnav-kicker">Core Terms</p>
-        <h2>Learn the camera words that transfer between CAD programs.</h2>
-        <p class="cadnav-body">Click any card to spotlight the term in the lab panel, then practice it in the simulation below.</p>
+        <h2>Learn the camera and 3D modeling words that transfer between software.</h2>
+        <p class="cadnav-body">Click any card to spotlight the term in the lab panel, then practice it in the simulation below. The last two cards extend into 3D surface materials — concepts you will use in Blender, ZBrush, and Nomad Sculpt.</p>
       </div>
       <div class="cadnav-terms">
         <article class="cadnav-term-card is-active" data-term="orbit" tabindex="0">
@@ -717,6 +990,16 @@
           <p class="cadnav-kicker">Reference</p>
           <h3>Axes</h3>
           <p>X, Y, and Z axes tell you which way is left-right, up-down, and depth. CAD navigation makes more sense when you watch the axes as you move.</p>
+        </article>
+        <article class="cadnav-term-card" data-term="matcap" tabindex="0">
+          <p class="cadnav-kicker">Surface Lighting</p>
+          <h3>Matcap</h3>
+          <p>A matcap (material capture) is a sphere image that wraps onto a 3D model using its surface normals to fake realistic lighting and reflection without a full render engine. ZBrush and Blender use them constantly.</p>
+        </article>
+        <article class="cadnav-term-card" data-term="mesh" tabindex="0">
+          <p class="cadnav-kicker">3D Structure</p>
+          <h3>Polygon Mesh</h3>
+          <p>A polygon mesh is the collection of vertices, edges, and faces that defines a 3D object's shape. Every model you orbit, sculpt, or 3D-print starts as a mesh. Surface normals on each face point outward and control how light and matcaps interact.</p>
         </article>
       </div>
     </section>
@@ -848,6 +1131,118 @@
       </div>
     </section>
 
+    <!-- ══ MATCAP STUDIO ══════════════════════════════════════════
+         Three.js viewer (Suzanne monkey head + MeshMatcapMaterial)
+         paired with a live matcap painting canvas and preset bank.
+         Windows 98 / XP panel chrome blended into the lesson.
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="cadnav-section matcap-section" aria-labelledby="matcap-title">
+      <div class="cadnav-section-head">
+        <p class="cadnav-kicker">Matcap Studio · 3D Surface Lab</p>
+        <h2 id="matcap-title">Paint a surface material. Watch it wrap the model in real time.</h2>
+        <p class="cadnav-body">A matcap encodes lighting, shadow, and reflection in a single sphere image. Draw on the editor below — every brushstroke updates the monkey head instantly. Use orbit to see how the matcap reads from different angles, just like you practiced above.</p>
+      </div>
+
+      <div class="matcap-lab-grid">
+
+        <!-- ── Left: Three.js Suzanne viewer ─────────────── -->
+        <div class="xp-window">
+          <div class="xp-titlebar">
+            <span class="xp-title-text">3D Preview — Suzanne.obj</span>
+            <div class="xp-winbtns">
+              <span class="xp-winbtn">─</span>
+              <span class="xp-winbtn">□</span>
+              <span class="xp-winbtn close">✕</span>
+            </div>
+          </div>
+          <div class="xp-menu-bar">
+            <span class="xp-menu-item">File</span>
+            <span class="xp-menu-item">View</span>
+            <span class="xp-menu-item">Render</span>
+            <span class="xp-menu-item">Help</span>
+          </div>
+          <canvas id="suzanneCanvas" aria-label="3D preview of Suzanne monkey head with live matcap material"></canvas>
+          <div class="xp-statusbar">
+            <span class="xp-status-panel" id="suzanneStatus">Loading model…</span>
+            <span class="xp-status-panel" id="suzannePolyCount">&nbsp;</span>
+            <span class="xp-status-panel" style="flex:1">Drag to orbit · Scroll to zoom</span>
+          </div>
+        </div>
+
+        <!-- ── Right: Matcap editor column ───────────────── -->
+        <div style="display:grid;gap:0.7rem;">
+
+          <!-- Drawing canvas panel -->
+          <div class="xp-window">
+            <div class="xp-titlebar">
+              <span class="xp-title-text">Matcap Editor</span>
+              <div class="xp-winbtns">
+                <span class="xp-winbtn">─</span>
+                <span class="xp-winbtn">□</span>
+                <span class="xp-winbtn close">✕</span>
+              </div>
+            </div>
+            <div class="xp-menu-bar">
+              <span class="xp-menu-item">Paint</span>
+              <span class="xp-menu-item">Brush</span>
+              <span class="xp-menu-item">Effects</span>
+            </div>
+            <div class="matcap-canvas-wrap">
+              <canvas id="matcapDrawCanvas" width="256" height="256" aria-label="Matcap painting canvas"></canvas>
+            </div>
+            <div class="brush-preview-row">
+              <span class="xp-label">Brush:</span>
+              <span class="brush-dot" id="brushDot" style="width:12px;height:12px;background:#ffffff;"></span>
+              <span class="xp-label" id="brushSizeLabel">12 px</span>
+            </div>
+            <div class="xp-toolbar">
+              <span class="xp-label">Color</span>
+              <label style="position:relative;cursor:pointer;">
+                <span class="xp-color-swatch" id="colorSwatch" style="background:#ffffff;"></span>
+                <input type="color" class="xp-color-input" id="brushColor" value="#ffffff">
+              </label>
+              <span class="xp-label">Size</span>
+              <input type="range" class="xp-range" id="brushSize" min="2" max="60" value="12">
+              <button type="button" class="xp-btn-push" id="clearMatcap">Clear</button>
+              <button type="button" class="xp-btn-push" id="fillMatcap">Fill</button>
+            </div>
+          </div>
+
+          <!-- Preset materials panel -->
+          <div class="xp-window">
+            <div class="xp-titlebar">
+              <span class="xp-title-text">Preset Materials</span>
+              <div class="xp-winbtns">
+                <span class="xp-winbtn close">✕</span>
+              </div>
+            </div>
+            <div class="matcap-presets-grid" id="matcapPresets" aria-label="Preset matcap materials">
+              <!-- Canvas thumbnails injected by JS -->
+            </div>
+            <div class="xp-statusbar">
+              <span class="xp-status-panel" id="presetName" style="flex:1">Chrome</span>
+            </div>
+          </div>
+
+          <!-- About matcaps info panel -->
+          <div class="xp-window">
+            <div class="xp-titlebar">
+              <span class="xp-title-text">About Matcap &amp; Surface Normals</span>
+              <div class="xp-winbtns">
+                <span class="xp-winbtn close">✕</span>
+              </div>
+            </div>
+            <div class="xp-info-content">
+              <p>A <strong>matcap</strong> (material capture) is a 2D sphere image that simulates how a surface looks under a specific lighting environment. The renderer samples the sphere using each polygon's <strong>surface normal</strong> — the direction that face is pointing in world space.</p>
+              <p>That is why the same matcap looks different from the front vs the side: orbit changes which part of the sphere image each normal points toward. Software like <strong>ZBrush</strong>, <strong>Blender</strong>, and <strong>Nomad Sculpt</strong> use matcaps for real-time sculpting feedback.</p>
+              <p>The test model is <strong>Suzanne</strong> — Blender's unofficial mascot and the standard benchmark mesh for testing shaders and matcaps since 2002.</p>
+            </div>
+          </div>
+
+        </div><!-- end editor column -->
+      </div><!-- end matcap-lab-grid -->
+    </section>
+
     <section class="cadnav-transfer-grid" aria-label="How the terms transfer to software">
       <article class="cadnav-transfer-card">
         <span class="cadnav-mini-note">Tinkercad</span>
@@ -890,6 +1285,400 @@
 
   <script src="../assets/js/classroom-animations.js"></script>
   <script src="../assets/js/lesson-layout.js"></script>
+
+  <!-- ══ THREE.JS MATCAP STUDIO ══════════════════════════════════
+       Fully self-contained module. Suzanne OBJ + OrbitControls +
+       live CanvasTexture from the paint canvas below.
+  ═══════════════════════════════════════════════════════════════ -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OBJLoader }      from 'three/addons/loaders/OBJLoader.js';
+    import { OrbitControls }  from 'three/addons/controls/OrbitControls.js';
+
+    /* ── Renderer ────────────────────────────────────────────── */
+    const suzCanvas  = document.getElementById('suzanneCanvas');
+    const renderer   = new THREE.WebGLRenderer({ canvas: suzCanvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x1a1a2e, 1);
+
+    const scene  = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    camera.position.set(0, 0.1, 3.8);
+
+    /* ── Orbit controls ─────────────────────────────────────── */
+    const controls = new OrbitControls(camera, suzCanvas);
+    controls.enableDamping    = true;
+    controls.dampingFactor    = 0.07;
+    controls.minDistance      = 1.8;
+    controls.maxDistance      = 9;
+    controls.autoRotate       = true;
+    controls.autoRotateSpeed  = 0.9;
+
+    /* ── Matcap texture from draw canvas ────────────────────── */
+    const drawCanvas = document.getElementById('matcapDrawCanvas');
+    const drawCtx    = drawCanvas.getContext('2d');
+    const matcapTex  = new THREE.CanvasTexture(drawCanvas);
+    const matcapMat  = new THREE.MeshMatcapMaterial({ matcap: matcapTex });
+
+    /* ── Load Suzanne ───────────────────────────────────────── */
+    const statusEl    = document.getElementById('suzanneStatus');
+    const polyCountEl = document.getElementById('suzannePolyCount');
+
+    const loader = new OBJLoader();
+    loader.load(
+      'https://raw.githubusercontent.com/mrdoob/three.js/r163/examples/models/obj/suzanne/Suzanne.obj',
+      (obj) => {
+        let poly = 0;
+        obj.traverse(child => {
+          if (child.isMesh) {
+            child.material = matcapMat;
+            if (child.geometry.index) poly += child.geometry.index.count / 3;
+            else poly += child.geometry.attributes.position.count / 3;
+          }
+        });
+        scene.add(obj);
+        statusEl.textContent    = 'Drag to orbit · Scroll to zoom';
+        polyCountEl.textContent = `${Math.round(poly).toLocaleString()} triangles`;
+      },
+      (xhr) => {
+        if (xhr.total) {
+          const pct = Math.round(xhr.loaded / xhr.total * 100);
+          statusEl.textContent = `Loading… ${pct}%`;
+        }
+      },
+      () => {
+        /* Fallback: torus knot if OBJ fails to load */
+        const geo  = new THREE.TorusKnotGeometry(1, 0.34, 160, 20);
+        const mesh = new THREE.Mesh(geo, matcapMat);
+        scene.add(mesh);
+        statusEl.textContent    = 'Drag to orbit · Scroll to zoom';
+        polyCountEl.textContent = 'Fallback mesh';
+      }
+    );
+
+    /* ── Resize helper ──────────────────────────────────────── */
+    function syncSize() {
+      const w = suzCanvas.clientWidth;
+      const h = suzCanvas.clientHeight;
+      if (suzCanvas.width !== Math.round(w * renderer.getPixelRatio()) ||
+          suzCanvas.height !== Math.round(h * renderer.getPixelRatio())) {
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+    }
+
+    /* ── Render loop ─────────────────────────────────────────── */
+    function loop() {
+      requestAnimationFrame(loop);
+      syncSize();
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    loop();
+
+    /* ════════════════════════════════════════════════════════════
+       MATCAP PAINT ENGINE
+    ════════════════════════════════════════════════════════════ */
+
+    /* ── Preset definitions ─────────────────────────────────── */
+    const PRESETS = [
+      {
+        name: 'Chrome',
+        draw(ctx, w, h) {
+          const cx = w * 0.5, cy = h * 0.5, r = w * 0.5;
+          circ(ctx, cx, cy, r);
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          g.addColorStop(0,   '#ffffff');
+          g.addColorStop(0.28,'#c8dcf4');
+          g.addColorStop(0.62,'#507898');
+          g.addColorStop(1,   '#060c18');
+          ctx.fillStyle = g; ctx.fill();
+          hilight(ctx, cx - r*0.3, cy - r*0.35, r*0.28, 'rgba(255,255,255,0.96)', 'rgba(255,255,255,0)');
+        }
+      },
+      {
+        name: 'Matte Clay',
+        draw(ctx, w, h) {
+          const cx = w*0.5, cy = h*0.5, r = w*0.5;
+          circ(ctx, cx, cy, r);
+          const g = ctx.createRadialGradient(cx - r*0.22, cy - r*0.25, 0, cx, cy, r);
+          g.addColorStop(0,   '#f0d4b4');
+          g.addColorStop(0.5, '#c49060');
+          g.addColorStop(1,   '#2e1408');
+          ctx.fillStyle = g; ctx.fill();
+          hilight(ctx, cx - r*0.22, cy - r*0.3, r*0.22, 'rgba(255,240,220,0.55)', 'rgba(255,240,220,0)');
+        }
+      },
+      {
+        name: 'Toon Blue',
+        draw(ctx, w, h) {
+          const cx = w*0.5, cy = h*0.5, r = w*0.5;
+          circ(ctx, cx, cy, r);
+          const g = ctx.createRadialGradient(cx, cy, r*0.3, cx, cy, r);
+          g.addColorStop(0,   '#4488ee');
+          g.addColorStop(0.78,'#0e2d99');
+          g.addColorStop(1,   '#020814');
+          ctx.fillStyle = g; ctx.fill();
+          hilight(ctx, cx - r*0.28, cy - r*0.32, r*0.21, 'rgba(255,255,255,1)', 'rgba(160,210,255,0)');
+        }
+      },
+      {
+        name: 'Neon',
+        draw(ctx, w, h) {
+          const cx = w*0.5, cy = h*0.5, r = w*0.5;
+          circ(ctx, cx, cy, r);
+          ctx.fillStyle = '#06020e'; ctx.fill();
+          circ(ctx, cx, cy, r);
+          const g1 = ctx.createRadialGradient(cx - r*0.2, cy + r*0.2, 0, cx, cy, r*0.85);
+          g1.addColorStop(0, 'rgba(40,255,180,0.9)');
+          g1.addColorStop(0.5,'rgba(10,80,120,0.35)');
+          g1.addColorStop(1,  'rgba(0,0,0,0)');
+          ctx.fillStyle = g1; ctx.fill();
+          circ(ctx, cx, cy, r);
+          const g2 = ctx.createRadialGradient(cx + r*0.22, cy - r*0.3, 0, cx, cy, r*0.7);
+          g2.addColorStop(0, 'rgba(200,50,255,0.75)');
+          g2.addColorStop(1,  'rgba(100,0,200,0)');
+          ctx.fillStyle = g2; ctx.fill();
+        }
+      },
+      {
+        name: 'Gold',
+        draw(ctx, w, h) {
+          const cx = w*0.5, cy = h*0.5, r = w*0.5;
+          circ(ctx, cx, cy, r);
+          const g = ctx.createRadialGradient(cx - r*0.15, cy - r*0.2, 0, cx, cy, r);
+          g.addColorStop(0,   '#ffffb8');
+          g.addColorStop(0.22,'#f0c040');
+          g.addColorStop(0.58,'#966808');
+          g.addColorStop(1,   '#180b00');
+          ctx.fillStyle = g; ctx.fill();
+          hilight(ctx, cx - r*0.15, cy - r*0.25, r*0.19, 'rgba(255,255,220,0.92)', 'rgba(255,255,180,0)');
+        }
+      },
+      {
+        name: 'Pearl',
+        draw(ctx, w, h) {
+          const cx = w*0.5, cy = h*0.5, r = w*0.5;
+          circ(ctx, cx, cy, r);
+          const g = ctx.createRadialGradient(cx - r*0.1, cy - r*0.15, 0, cx, cy, r);
+          g.addColorStop(0,   '#f8f4ff');
+          g.addColorStop(0.38,'#cec0e8');
+          g.addColorStop(0.72,'#9080c0');
+          g.addColorStop(1,   '#160e28');
+          ctx.fillStyle = g; ctx.fill();
+          circ(ctx, cx, cy, r);
+          const g2 = ctx.createRadialGradient(cx + r*0.12, cy + r*0.18, 0, cx, cy, r*0.55);
+          g2.addColorStop(0, 'rgba(160,240,220,0.42)');
+          g2.addColorStop(1,  'rgba(80,180,200,0)');
+          ctx.fillStyle = g2; ctx.fill();
+        }
+      },
+      {
+        name: 'Obsidian',
+        draw(ctx, w, h) {
+          const cx = w*0.5, cy = h*0.5, r = w*0.5;
+          circ(ctx, cx, cy, r);
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          g.addColorStop(0,   '#3a3850');
+          g.addColorStop(0.4, '#1a1828');
+          g.addColorStop(1,   '#010108');
+          ctx.fillStyle = g; ctx.fill();
+          hilight(ctx, cx - r*0.32, cy - r*0.38, r*0.16, 'rgba(255,255,255,0.7)', 'rgba(255,255,255,0)');
+        }
+      },
+      {
+        name: 'Warm Wax',
+        draw(ctx, w, h) {
+          const cx = w*0.5, cy = h*0.5, r = w*0.5;
+          circ(ctx, cx, cy, r);
+          const g = ctx.createRadialGradient(cx - r*0.2, cy - r*0.22, 0, cx + r*0.1, cy + r*0.1, r);
+          g.addColorStop(0,   '#ffe8cc');
+          g.addColorStop(0.35,'#e8885a');
+          g.addColorStop(0.7, '#7c2808');
+          g.addColorStop(1,   '#100300');
+          ctx.fillStyle = g; ctx.fill();
+          hilight(ctx, cx - r*0.2, cy - r*0.28, r*0.18, 'rgba(255,240,220,0.62)', 'rgba(255,200,150,0)');
+        }
+      },
+    ];
+
+    /* helper: draw circle path */
+    function circ(ctx, cx, cy, r) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    }
+    /* helper: radial highlight spot */
+    function hilight(ctx, x, y, r, c0, c1) {
+      circ(ctx, x, y, r);   // reuse path for gradient
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, c0);
+      g.addColorStop(1, c1);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+
+    /* ── Render preset to any canvas ctx ───────────────────── */
+    function renderPreset(ctx, preset, w, h) {
+      ctx.save();
+      ctx.clearRect(0, 0, w, h);
+      ctx.beginPath();
+      ctx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, w, h);
+      preset.draw(ctx, w, h);
+      ctx.restore();
+    }
+
+    /* ── Load a preset onto the draw canvas ─────────────────── */
+    let currentPresetIdx = 0;
+
+    function loadPreset(idx) {
+      currentPresetIdx = idx;
+      const p = PRESETS[idx];
+      renderPreset(drawCtx, p, drawCanvas.width, drawCanvas.height);
+      matcapTex.needsUpdate = true;
+      document.getElementById('presetName').textContent = p.name;
+      document.querySelectorAll('.matcap-preset-thumb').forEach((el, i) =>
+        el.classList.toggle('is-active', i === idx)
+      );
+    }
+
+    /* ── Build preset thumbnail row ─────────────────────────── */
+    function buildPresets() {
+      const container = document.getElementById('matcapPresets');
+      PRESETS.forEach((preset, idx) => {
+        const thumb = document.createElement('canvas');
+        thumb.width  = 52;
+        thumb.height = 52;
+        thumb.className = 'matcap-preset-thumb';
+        thumb.title     = preset.name;
+        renderPreset(thumb.getContext('2d'), preset, 52, 52);
+        thumb.addEventListener('click', () => {
+          loadPreset(idx);
+          controls.autoRotate = true;
+        });
+        container.appendChild(thumb);
+      });
+    }
+
+    buildPresets();
+    loadPreset(0);
+
+    /* ── Painting ───────────────────────────────────────────── */
+    let painting = false;
+    let lastPt   = null;
+
+    function canvasXY(e) {
+      const rect = drawCanvas.getBoundingClientRect();
+      const sx   = drawCanvas.width  / rect.width;
+      const sy   = drawCanvas.height / rect.height;
+      const cx   = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy   = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: (cx - rect.left) * sx, y: (cy - rect.top) * sy };
+    }
+
+    function inCircle(x, y) {
+      const cx = drawCanvas.width  / 2;
+      const cy = drawCanvas.height / 2;
+      const r  = drawCanvas.width  / 2;
+      return (x - cx) ** 2 + (y - cy) ** 2 <= r * r;
+    }
+
+    function paintAt(x, y) {
+      const color = document.getElementById('brushColor').value;
+      const size  = parseInt(document.getElementById('brushSize').value, 10);
+      drawCtx.save();
+      /* Clip to circle boundary */
+      drawCtx.beginPath();
+      drawCtx.arc(drawCanvas.width / 2, drawCanvas.height / 2, drawCanvas.width / 2, 0, Math.PI * 2);
+      drawCtx.clip();
+      drawCtx.lineWidth   = size;
+      drawCtx.strokeStyle = color;
+      drawCtx.lineCap     = 'round';
+      drawCtx.lineJoin    = 'round';
+      drawCtx.beginPath();
+      if (lastPt) { drawCtx.moveTo(lastPt.x, lastPt.y); }
+      else        { drawCtx.moveTo(x, y); }
+      drawCtx.lineTo(x, y);
+      drawCtx.stroke();
+      drawCtx.restore();
+      lastPt = { x, y };
+      matcapTex.needsUpdate = true;
+    }
+
+    drawCanvas.addEventListener('mousedown', e => {
+      painting = true;
+      lastPt   = null;
+      controls.autoRotate = false;
+      const p = canvasXY(e);
+      if (inCircle(p.x, p.y)) paintAt(p.x, p.y);
+    });
+    drawCanvas.addEventListener('mousemove', e => {
+      if (!painting) return;
+      const p = canvasXY(e);
+      if (inCircle(p.x, p.y)) paintAt(p.x, p.y);
+    });
+    drawCanvas.addEventListener('mouseup',    () => { painting = false; lastPt = null; });
+    drawCanvas.addEventListener('mouseleave', () => { painting = false; lastPt = null; });
+
+    drawCanvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      painting = true; lastPt = null;
+      controls.autoRotate = false;
+      const p = canvasXY(e);
+      if (inCircle(p.x, p.y)) paintAt(p.x, p.y);
+    }, { passive: false });
+    drawCanvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (!painting) return;
+      const p = canvasXY(e);
+      if (inCircle(p.x, p.y)) paintAt(p.x, p.y);
+    }, { passive: false });
+    drawCanvas.addEventListener('touchend', () => { painting = false; lastPt = null; });
+
+    /* ── Brush UI controls ──────────────────────────────────── */
+    const brushDot      = document.getElementById('brushDot');
+    const brushSizeLbl  = document.getElementById('brushSizeLabel');
+    const colorSwatch   = document.getElementById('colorSwatch');
+    const brushColorPkr = document.getElementById('brushColor');
+
+    brushColorPkr.addEventListener('input', e => {
+      colorSwatch.style.background = e.target.value;
+      brushDot.style.background    = e.target.value;
+    });
+
+    colorSwatch.addEventListener('click', () => brushColorPkr.click());
+
+    document.getElementById('brushSize').addEventListener('input', e => {
+      const sz = parseInt(e.target.value, 10);
+      brushSizeLbl.textContent = sz + ' px';
+      const vis = Math.min(sz, 40);
+      brushDot.style.width  = vis + 'px';
+      brushDot.style.height = vis + 'px';
+    });
+
+    document.getElementById('clearMatcap').addEventListener('click', () => {
+      loadPreset(currentPresetIdx);
+    });
+
+    document.getElementById('fillMatcap').addEventListener('click', () => {
+      const color = document.getElementById('brushColor').value;
+      drawCtx.save();
+      drawCtx.beginPath();
+      drawCtx.arc(drawCanvas.width / 2, drawCanvas.height / 2, drawCanvas.width / 2, 0, Math.PI * 2);
+      drawCtx.clip();
+      drawCtx.fillStyle = color;
+      drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+      drawCtx.restore();
+      matcapTex.needsUpdate = true;
+    });
+
+  </script>
+
   <script>
   /* ═══════════════════════════════════════════════════════════════
      CAD CAMERA CONTROLS — upgraded engine
@@ -990,12 +1779,14 @@
 
     /* ── Term copy ────────────────────────────────────────── */
     const termCopy = {
-      orbit: { title: 'Orbit',             description: 'Orbit rotates the camera around the model so you can inspect it from new angles without changing the model itself.' },
-      pan:   { title: 'Pan',               description: 'Pan slides the camera window left, right, up, or down. Use it when the angle is correct but the part is not centred.' },
-      zoom:  { title: 'Zoom',              description: 'Zoom changes your distance from the model. Move in for detail inspection, move out for a full-part overview.' },
-      home:  { title: 'Home View',         description: 'Home view returns the camera to a safe reference angle — the quick recovery move when the part feels lost in space.' },
-      cube:  { title: 'Orientation Cube',  description: 'The orientation cube snaps the camera to standard views like front, top, and right so work starts from a known direction.' },
-      axis:  { title: 'Axes',              description: 'X, Y, and Z axes show left-right, up-down, and depth. Watch the coloured fins on the calibration part as you orbit.' },
+      orbit:  { title: 'Orbit',             description: 'Orbit rotates the camera around the model so you can inspect it from new angles without changing the model itself.' },
+      pan:    { title: 'Pan',               description: 'Pan slides the camera window left, right, up, or down. Use it when the angle is correct but the part is not centred.' },
+      zoom:   { title: 'Zoom',              description: 'Zoom changes your distance from the model. Move in for detail inspection, move out for a full-part overview.' },
+      home:   { title: 'Home View',         description: 'Home view returns the camera to a safe reference angle — the quick recovery move when the part feels lost in space.' },
+      cube:   { title: 'Orientation Cube',  description: 'The orientation cube snaps the camera to standard views like front, top, and right so work starts from a known direction.' },
+      axis:   { title: 'Axes',              description: 'X, Y, and Z axes show left-right, up-down, and depth. Watch the coloured fins on the calibration part as you orbit.' },
+      matcap: { title: 'Matcap',            description: 'A matcap (material capture) is a sphere image that wraps onto a 3D mesh using surface normals to simulate lighting and reflection without a full render. Used in Blender, ZBrush, and Nomad Sculpt.' },
+      mesh:   { title: 'Polygon Mesh',      description: 'A polygon mesh is the set of vertices, edges, and faces defining a 3D shape. Surface normals on each face point outward and determine how light and matcaps interact with the surface.' },
     };
 
     /* ══ CALIBRATION BRACKET GEOMETRY ═══════════════════════

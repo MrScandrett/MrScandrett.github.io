@@ -251,30 +251,36 @@
       z-index: 1;
     }
 
+    /* ── Scanlines — enhanced raster pass ───────────────────── */
     .crt-screen::before {
       content: "";
       position: absolute;
       inset: 0;
       background:
         repeating-linear-gradient(
-          to bottom,
-          rgba(255, 255, 255, 0.04) 0px,
-          rgba(255, 255, 255, 0.04) 1px,
-          rgba(0, 0, 0, 0) 3px
+          0deg,
+          rgba(0, 0, 0, 0)    0px,
+          rgba(0, 0, 0, 0)    2px,
+          rgba(0, 0, 0, 0.20) 2px,
+          rgba(0, 0, 0, 0.20) 4px
         );
-      mix-blend-mode: overlay;
-      opacity: 0.2;
+      mix-blend-mode: multiply;
+      opacity: 1;
       pointer-events: none;
+      z-index: 200;
     }
 
+    /* ── Phosphor bloom + edge darkening ─────────────────────── */
     .crt-screen::after {
       content: "";
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(120% 90% at 50% 20%, rgba(80, 255, 160, 0.05), rgba(0, 0, 0, 0) 60%),
-        radial-gradient(120% 90% at 50% 80%, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0) 55%);
+        radial-gradient(ellipse 90% 65% at 50% 28%, rgba(60, 255, 120, 0.06) 0%, transparent 65%),
+        radial-gradient(ellipse 100% 80% at 50% -8%, rgba(255, 255, 255, 0.04), transparent 55%),
+        radial-gradient(ellipse 130% 100% at 50% 115%, rgba(0, 0, 0, 0.45), transparent 52%);
       pointer-events: none;
+      z-index: 150;
     }
 
     .crt-screen > * {
@@ -636,6 +642,196 @@
         max-width: 100%;
       }
     }
+
+    /* ══════════════════════════════════════════════════════════
+       COOL-RETRO-TERM CRT EFFECT SUITE
+       Phosphor glow · power-on · flicker · burn-in · noise
+       Inspired by https://github.com/Swordfish90/cool-retro-term
+    ══════════════════════════════════════════════════════════ */
+
+    /* ── CRT power-on startup animation ─────────────────────── */
+    @keyframes crt-poweron {
+      0%   { opacity: 0;
+             transform: perspective(1400px) rotateX(0.6deg) scaleY(0);
+             filter: brightness(0); }
+      5%   { opacity: 1;
+             transform: perspective(1400px) rotateX(0.6deg) scaleY(0.002);
+             filter: brightness(9) saturate(0) blur(2px); }
+      10%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(0.005);
+             filter: brightness(5) blur(1px); }
+      18%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(0.025);
+             filter: brightness(2.5); }
+      35%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(0.65);
+             filter: brightness(1.7); }
+      52%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(1.018);
+             filter: brightness(1.12); }
+      67%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(0.994);
+             filter: brightness(0.94); }
+      82%  { transform: perspective(1400px) rotateX(0.6deg) scaleY(1.004);
+             filter: brightness(1.03); }
+      100% { transform: perspective(1400px) rotateX(0.6deg) scaleY(1);
+             filter: brightness(1); }
+    }
+
+    /* ── Phosphor screen flicker ─────────────────────────────── */
+    @keyframes crt-flicker {
+      0%,  17%, 19%, 22%, 27%, 52%, 56%, 96%, 100% { filter: brightness(1); }
+      18%  { filter: brightness(0.88); }
+      20%  { filter: brightness(1.07); }
+      23%  { filter: brightness(0.93); }
+      25%  { filter: brightness(1.02); }
+      53%  { filter: brightness(0.91); }
+      54%  { filter: brightness(0.97); }
+      55%  { filter: brightness(1.05); }
+      97%  { filter: brightness(0.95); }
+      98%  { filter: brightness(1.04); }
+    }
+
+    /* Apply power-on + persistent flicker to the screen */
+    .crt-screen {
+      animation:
+        crt-poweron 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) both,
+        crt-flicker 13s 1.9s infinite;
+      transform-origin: center center;
+      /* Enhanced corner shadows for curvature illusion */
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+        inset 0 0 80px rgba(0, 0, 0, 0.65),
+        inset 50px 0 80px rgba(0, 0, 0, 0.22),
+        inset -50px 0 80px rgba(0, 0, 0, 0.22),
+        inset 0 50px 80px rgba(0, 0, 0, 0.18),
+        inset 0 -50px 80px rgba(0, 0, 0, 0.28),
+        0 0 0 1px rgba(0, 0, 0, 0.35);
+    }
+
+    /* ── Canvas overlay (noise, sweep, vignette) ─────────────── */
+    #crt-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+      border-radius: 18px;
+      display: block;
+    }
+
+    /* ── Phosphor glow on ELIZA messages — green phosphor ─────── */
+    .eliza1966-message[data-role="ELIZA"] .eliza1966-message-body {
+      text-shadow:
+        -0.65px 0    rgba(255,  45,  45, 0.20),
+         0.65px 0    rgba( 45,  45, 255, 0.20),
+         0  0   4px  rgba( 65, 255, 125, 0.95),
+         0  0  12px  rgba( 65, 255, 125, 0.55),
+         0  0  28px  rgba( 65, 255, 125, 0.18),
+         0  0  52px  rgba( 65, 255, 125, 0.06);
+    }
+
+    .eliza1966-message[data-role="ELIZA"] .eliza1966-message-head {
+      text-shadow:
+        0 0  4px rgba(110, 255, 180, 1),
+        0 0 14px rgba(110, 255, 180, 0.6),
+        0 0 30px rgba(110, 255, 180, 0.22);
+    }
+
+    /* ── Phosphor glow on YOU messages — amber phosphor ─────── */
+    .eliza1966-message[data-role="YOU"] .eliza1966-message-body {
+      text-shadow:
+        -0.65px 0    rgba(255,  45,  45, 0.18),
+         0.65px 0    rgba( 45,  45, 255, 0.18),
+         0  0   4px  rgba(255, 212,  75, 0.98),
+         0  0  12px  rgba(255, 200,  55, 0.52),
+         0  0  28px  rgba(255, 185,  35, 0.18),
+         0  0  50px  rgba(255, 170,  20, 0.06);
+    }
+
+    .eliza1966-message[data-role="YOU"] .eliza1966-message-head {
+      text-shadow:
+        0 0  4px rgba(255, 225, 105, 1),
+        0 0 14px rgba(255, 212,  75, 0.55);
+    }
+
+    /* ── SYSTEM messages — dim green ─────────────────────────── */
+    .eliza1966-message[data-role="SYSTEM"] .eliza1966-message-body {
+      text-shadow:
+        0 0  3px rgba(155, 220, 165, 0.75),
+        0 0 10px rgba(110, 195, 135, 0.32);
+    }
+
+    /* ── Topline header glow ─────────────────────────────────── */
+    .eliza1966-topline {
+      text-shadow:
+        0 0  6px rgba(75, 255, 135, 0.8),
+        0 0 20px rgba(75, 255, 135, 0.35),
+        0 0 40px rgba(75, 255, 135, 0.12);
+    }
+
+    /* ── Input glow + custom caret ───────────────────────────── */
+    #eliza-input {
+      text-shadow: 0 0 4px rgba(75, 255, 135, 0.6);
+      caret-color: #7dffb0;
+    }
+
+    /* ── Burn-in / phosphor persistence on old messages ─────── */
+    .eliza1966-message.crt-old {
+      opacity: 0.76;
+      filter: blur(0.15px) brightness(0.85);
+      transition: opacity 0.8s ease, filter 0.8s ease;
+    }
+
+    .eliza1966-message.crt-older {
+      opacity: 0.52;
+      filter: blur(0.28px) brightness(0.70);
+      transition: opacity 0.8s ease, filter 0.8s ease;
+    }
+
+    /* ── Typing indicator — phosphor blink ───────────────────── */
+    @keyframes crt-blink {
+      0%,  49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .eliza1966-typing:not([hidden]) {
+      animation: crt-blink 1.05s step-end infinite;
+      text-shadow: 0 0 6px rgba(75, 255, 135, 0.7);
+    }
+
+    /* ── Outer frame ambient phosphor bleed ──────────────────── */
+    .crt-frame {
+      box-shadow:
+        0  18px 60px  rgba(0,  0,  0, 0.60),
+        inset 0  0  0 1px rgba(255, 255, 255, 0.07),
+        inset 0 -18px 40px rgba(0,  0,  0, 0.52),
+        0  0  90px rgba(35, 255, 90, 0.05),
+        0  0 200px rgba(35, 255, 90, 0.025);
+    }
+
+    /* ── Onboarding section subtle glow ─────────────────────── */
+    .eliza1966-starter {
+      transition: text-shadow 0.15s, background 0.15s;
+    }
+
+    .eliza1966-starter:hover {
+      text-shadow: 0 0 6px rgba(75, 255, 135, 0.65), 0 0 14px rgba(75, 255, 135, 0.28);
+    }
+
+    /* ── Reduced-motion: preserve layout, remove animation ──── */
+    @media (prefers-reduced-motion: reduce) {
+      .crt-screen {
+        animation: none !important;
+        transform: perspective(1400px) rotateX(0.6deg);
+        filter: none !important;
+      }
+      .eliza1966-message.crt-old,
+      .eliza1966-message.crt-older {
+        opacity: 1;
+        filter: none;
+        transition: none;
+      }
+      .eliza1966-typing:not([hidden]) {
+        animation: none;
+      }
+    }
   </style>
 </head>
 <body class="theme-eliza1966">
@@ -662,6 +858,8 @@
           <section id="live-demo" class="section eliza1966-wrap crt-shell" aria-label="Live ELIZA Demo">
             <div class="crt-frame" aria-hidden="true"></div>
             <div class="crt-screen">
+            <!-- CRT canvas overlay: noise · sweep line · vignette · jitter -->
+            <canvas id="crt-overlay" aria-hidden="true"></canvas>
             <article class="eliza1966-terminal" id="eliza-lab">
               <p class="eliza1966-topline">LESSON 07 · LIVE ELIZA DEMO</p>
               <div class="eliza1966-toolbar" role="group" aria-label="ELIZA controls">
@@ -878,5 +1076,197 @@
   <script src="../assets/js/nav-mobile.js"></script>
   <script src="../assets/js/classroom-animations.js"></script>
   <script src="../assets/js/lesson-layout.js"></script>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       COOL-RETRO-TERM CRT EFFECTS ENGINE
+       Canvas overlay: phosphor grain · sweep line · chromatic
+       aberration edge shift · flicker · vignette · burn-in aging
+       Inspired by github.com/Swordfish90/cool-retro-term
+  ════════════════════════════════════════════════════════════ -->
+  <script>
+  (function initCRT() {
+    'use strict';
+
+    const overlay = document.getElementById('crt-overlay');
+    if (!overlay) return;
+    const ctx = overlay.getContext('2d');
+
+    let w = 1, h = 1, t = 0;
+    let flickerVal = 1, flickerDown = 200;
+
+    /* ── Canvas size sync ──────────────────────────────────── */
+    function resize() {
+      const dpr  = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = overlay.parentElement.getBoundingClientRect();
+      overlay.width  = Math.round(rect.width  * dpr);
+      overlay.height = Math.round(rect.height * dpr);
+      overlay.style.width  = rect.width  + 'px';
+      overlay.style.height = rect.height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      w = rect.width;
+      h = rect.height;
+    }
+
+    try {
+      new ResizeObserver(resize).observe(overlay.parentElement);
+    } catch (_) {}
+    window.addEventListener('resize', resize, { passive: true });
+    resize();
+
+    /* ── Pre-bake phosphor noise frames ────────────────────── */
+    /* Each frame is a 384×384 canvas of sparse green-tinted grain,
+       matching the phosphor spectral output of a P31 green screen. */
+    const NFRAMES = 6, NSIZE = 384;
+    const noiseFrames = [];
+
+    function bakeNoiseFrame() {
+      const oc  = document.createElement('canvas');
+      oc.width  = NSIZE;
+      oc.height = NSIZE;
+      const oc2 = oc.getContext('2d');
+      const id  = oc2.createImageData(NSIZE, NSIZE);
+      const d   = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (Math.random() < 0.038) {                    // sparse
+          const v  = (Math.random() * 210 + 45) | 0;
+          d[i]     = (v * 0.05)  | 0;                  // R  near-zero
+          d[i + 1] = (v * 0.88)  | 0;                  // G  dominant (phosphor)
+          d[i + 2] = (v * 0.08)  | 0;                  // B  faint
+          d[i + 3] = (Math.random() * 30 + 5) | 0;     // α  very transparent
+        }
+      }
+      oc2.putImageData(id, 0, 0);
+      return oc;
+    }
+
+    for (let f = 0; f < NFRAMES; f++) noiseFrames.push(bakeNoiseFrame());
+
+    let noiseIdx = 0, noiseTick = 0;
+
+    /* ── Main render loop ──────────────────────────────────── */
+    function loop() {
+      requestAnimationFrame(loop);
+      t += 1 / 60;
+
+      ctx.clearRect(0, 0, w, h);
+
+      /* ── 1. Phosphor noise grain ─────────────────────────── */
+      /* Cycle through pre-baked frames, random tile offset    */
+      noiseTick++;
+      if (noiseTick % 2 === 0) {
+        noiseIdx = (noiseIdx + 1) % NFRAMES;
+      }
+
+      const pat = ctx.createPattern(noiseFrames[noiseIdx], 'repeat');
+      if (pat) {
+        const nx = (Math.random() * NSIZE) | 0;
+        const ny = (Math.random() * NSIZE) | 0;
+        pat.setTransform(new DOMMatrix().translateSelf(-nx, -ny));
+        ctx.globalAlpha = 0.42;
+        ctx.fillStyle   = pat;
+        ctx.fillRect(0, 0, w, h);
+        ctx.globalAlpha = 1;
+      }
+
+      /* ── 2. Phosphor sweep line (electron gun scan) ──────── */
+      /* Slow-moving bright band simulating the CRT raster scan */
+      const sweepY = ((t * 0.065) % 1) * h;
+      const sg = ctx.createLinearGradient(0, sweepY - 50, 0, sweepY + 50);
+      sg.addColorStop(0,    'rgba(65, 255, 125, 0)');
+      sg.addColorStop(0.35, 'rgba(65, 255, 125, 0.022)');
+      sg.addColorStop(0.5,  'rgba(65, 255, 125, 0.052)');
+      sg.addColorStop(0.65, 'rgba(65, 255, 125, 0.022)');
+      sg.addColorStop(1,    'rgba(65, 255, 125, 0)');
+      ctx.fillStyle = sg;
+      ctx.fillRect(0, sweepY - 50, w, 100);
+
+      /* ── 3. Horizontal sync jitter (rare interference) ───── */
+      /* Simulates momentary loss of horizontal sync signal     */
+      if (Math.random() < 0.003) {
+        const jy  = Math.random() * h;
+        const jw  = w * (0.15 + Math.random() * 0.7);
+        const jx  = Math.random() * (w - jw);
+        ctx.fillStyle = 'rgba(65, 255, 125, 0.055)';
+        ctx.fillRect(jx, jy, jw, 1);
+        ctx.fillStyle = 'rgba(65, 255, 125, 0.022)';
+        ctx.fillRect(jx * 0.8, jy + 1, jw * 1.1, 1.5);
+      }
+
+      /* ── 4. Flicker (phosphor phosphorescence decay) ──────── */
+      /* Random brightness drop + overshoot, eases back to 1   */
+      if (--flickerDown <= 0) {
+        flickerVal  = 0.91 + Math.random() * 0.18;      // 0.91 – 1.09
+        flickerDown = (Math.random() * 350 + 55) | 0;
+      }
+      flickerVal += (1 - flickerVal) * 0.15;            // ease back
+
+      if (flickerVal < 1) {
+        ctx.fillStyle = `rgba(0,0,0,${(1 - flickerVal) * 0.62})`;
+        ctx.fillRect(0, 0, w, h);
+      } else if (flickerVal > 1) {
+        ctx.fillStyle = `rgba(65,255,125,${(flickerVal - 1) * 0.20})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      /* ── 5. Vignette ─────────────────────────────────────── */
+      const vg = ctx.createRadialGradient(
+        w * 0.5, h * 0.5, Math.min(w, h) * 0.22,
+        w * 0.5, h * 0.5, Math.max(w, h) * 0.74
+      );
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(1, 'rgba(0,0,0,0.75)');
+      ctx.fillStyle = vg;
+      ctx.fillRect(0, 0, w, h);
+
+      /* ── 6. Chromatic aberration edge shift ──────────────── */
+      /* Red fringe on left edge, blue fringe on right edge —  */
+      /* replicates imperfect electron beam convergence         */
+      const em = Math.min(w * 0.055, 28);
+
+      const lg = ctx.createLinearGradient(0, 0, em, 0);
+      lg.addColorStop(0, 'rgba(255, 0, 0, 0.038)');
+      lg.addColorStop(1, 'rgba(255, 0, 0, 0)');
+      ctx.fillStyle = lg;
+      ctx.fillRect(0, 0, em, h);
+
+      const rg = ctx.createLinearGradient(w, 0, w - em, 0);
+      rg.addColorStop(0, 'rgba(0, 0, 255, 0.038)');
+      rg.addColorStop(1, 'rgba(0, 0, 255, 0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(w - em, 0, em, h);
+
+      /* Top edge — very faint red fringe (convergence artefact) */
+      const tg = ctx.createLinearGradient(0, 0, 0, Math.min(h * 0.04, 18));
+      tg.addColorStop(0, 'rgba(255, 0, 0, 0.022)');
+      tg.addColorStop(1, 'rgba(255, 0, 0, 0)');
+      ctx.fillStyle = tg;
+      ctx.fillRect(0, 0, w, Math.min(h * 0.04, 18));
+    }
+
+    loop();
+
+    /* ── Burn-in: phosphor persistence aging ──────────────── */
+    /* Older messages fade and blur slightly, simulating       */
+    /* the slow decay of phosphor excitation over time         */
+    function applyBurnIn() {
+      const log  = document.getElementById('eliza-chat-log');
+      if (!log) return;
+      const msgs = Array.from(log.querySelectorAll('.eliza1966-message'));
+      const n    = msgs.length;
+      msgs.forEach(function(m, i) {
+        const age = n - 1 - i;
+        m.classList.toggle('crt-older', age >= 8);
+        m.classList.toggle('crt-old',   age >= 4 && age < 8);
+      });
+    }
+
+    const chatLog = document.getElementById('eliza-chat-log');
+    if (chatLog) {
+      new MutationObserver(applyBurnIn)
+        .observe(chatLog, { childList: true, subtree: false });
+    }
+
+  })();
+  </script>
 </body>
 </html>

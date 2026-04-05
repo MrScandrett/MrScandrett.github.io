@@ -14,6 +14,63 @@
       margin-top: 1rem;
     }
 
+    /* ── Tab bar ── */
+    .app-tab-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1.5rem;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(25, 49, 77, 0.1);
+      position: sticky;
+      top: 56px;
+      z-index: 20;
+    }
+
+    .app-tab {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 1.2rem;
+      border-radius: 20px;
+      border: 1px solid rgba(25, 49, 77, 0.14);
+      background: rgba(255, 255, 255, 0.82);
+      color: #19314d;
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .app-tab:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+      border-color: rgba(25, 49, 77, 0.22);
+    }
+
+    .app-tab[aria-selected="true"],
+    .app-tab.is-active {
+      background: linear-gradient(180deg, rgba(0, 113, 227, 0.16), rgba(0, 113, 227, 0.08));
+      border-color: rgba(0, 113, 227, 0.4);
+      box-shadow: 0 10px 24px rgba(0, 113, 227, 0.14);
+      color: #003d82;
+    }
+
+    .app-tab-icon { font-size: 1rem; }
+
+    [role="tabpanel"][hidden] { display: none !important; }
+
+    @media (max-width: 480px) {
+      .app-tab-label { display: none; }
+      .app-tab { padding: 0.6rem 0.85rem; }
+      .app-tab-icon { font-size: 1.3rem; }
+    }
+
+    /* ── Shell ── */
     .app-system-shell {
       background: rgba(255, 255, 255, 0.78);
       border: 1px solid rgba(25, 49, 77, 0.12);
@@ -1034,14 +1091,41 @@
     }
 
     .steam-galaxy-link {
-      stroke-width: 1.7;
       stroke-linecap: round;
       opacity: 0;
+      fill: none;
       transition: opacity 180ms ease;
     }
 
     .steam-galaxy-link.is-visible {
-      opacity: 0.5;
+      opacity: 0.58;
+      stroke-dasharray: 7 16;
+      animation: steam-link-flow 2.8s linear infinite;
+    }
+
+    @keyframes steam-link-flow {
+      to { stroke-dashoffset: -23; }
+    }
+
+    .steam-galaxy-node-aura {
+      fill: none;
+      pointer-events: none;
+      animation: steam-aura-pulse 3.6s ease-in-out infinite;
+    }
+
+    .steam-galaxy-node-nucleus {
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    @keyframes steam-aura-pulse {
+      0%, 100% { stroke-opacity: 0.08; stroke-width: 1.2px; }
+      50%       { stroke-opacity: 0.32; stroke-width: 2.4px; }
+    }
+
+    .steam-galaxy-node.is-active .steam-galaxy-node-aura,
+    .steam-galaxy-node:hover .steam-galaxy-node-aura {
+      animation-duration: 1.4s;
     }
 
     .steam-galaxy-node {
@@ -1721,17 +1805,28 @@
   <main id="main-content">
     <section class="hero applications-hero" aria-label="Quick Start">
       <div class="applications-hero-copy">
-        <p class="eyebrow">Quick Start</p>
+        <p class="eyebrow">Applications</p>
         <h1 class="reveal">Classroom Applications</h1>
-        <p class="applications-hero-lead reveal" style="--i:1">Explore the applications page as a STEAM constellation map. Bubble size shows how central a tool is, color shows its learning family, and nearby clusters reveal which tools naturally belong together for students.</p>
-        <div class="applications-hero-actions">
-          <a class="applications-chip applications-chip--primary" href="#knowledge-atlas">Explore The Galaxy</a>
-          <a class="applications-chip applications-chip--secondary" href="#guided-studio">Choose A Learning Path</a>
-          <a class="applications-chip applications-chip--secondary" href="#full-library">Explore Full Library</a>
-        </div>
+        <p class="applications-hero-lead reveal" style="--i:1">Three ways to find the right tool — explore the visual galaxy, follow a guided mission, or browse the full library.</p>
       </div>
-
     </section>
+
+    <nav class="app-tab-bar" role="tablist" aria-label="Applications views">
+      <button class="app-tab is-active" role="tab" aria-selected="true" aria-controls="tab-panel-galaxy" id="tab-btn-galaxy" type="button">
+        <span class="app-tab-icon" aria-hidden="true">🌌</span>
+        <span class="app-tab-label">Galaxy</span>
+      </button>
+      <button class="app-tab" role="tab" aria-selected="false" aria-controls="tab-panel-guided" id="tab-btn-guided" type="button">
+        <span class="app-tab-icon" aria-hidden="true">🎯</span>
+        <span class="app-tab-label">Guided</span>
+      </button>
+      <button class="app-tab" role="tab" aria-selected="false" aria-controls="tab-panel-library" id="tab-btn-library" type="button">
+        <span class="app-tab-icon" aria-hidden="true">📚</span>
+        <span class="app-tab-label">Library</span>
+      </button>
+    </nav>
+
+    <div id="tab-panel-galaxy" role="tabpanel" aria-labelledby="tab-btn-galaxy">
 
     <!-- ===== STEAM Galaxy Explorer: HTML ===== -->
     <section class="section app-system" id="knowledge-atlas" aria-label="STEAM Galaxy Explorer">
@@ -1885,6 +1980,10 @@
       </div>
     </section>
 
+    </div><!-- /tab-panel-galaxy -->
+
+    <div id="tab-panel-guided" role="tabpanel" aria-labelledby="tab-btn-guided" hidden>
+
     <section class="section app-system" id="guided-studio" aria-label="Guided Launcher">
       <div class="app-system-shell">
         <div class="app-system-topbar">
@@ -1897,12 +1996,6 @@
             <button class="app-mode-btn is-active" type="button" data-app-mode-btn="student">Student Mode</button>
             <button class="app-mode-btn" type="button" data-app-mode-btn="teacher">Teacher Mode</button>
           </div>
-        </div>
-
-        <div class="app-quick-links" aria-label="Quick links">
-          <a class="app-quick-link" href="#guided-studio">Missions</a>
-          <a class="app-quick-link" href="#build-today">Projects</a>
-          <a class="app-quick-link" href="#full-library">Library</a>
         </div>
 
         <div class="app-mission-grid" aria-label="Mission selector">
@@ -2098,21 +2191,9 @@
       </div>
     </section>
 
-    <section class="section app-system" id="full-library" aria-label="Full Library">
-      <div class="app-system-shell app-library-shell">
-        <div class="app-library-head">
-          <div class="app-library-copy">
-            <p class="eyebrow">Explore More</p>
-            <h2>Full Library</h2>
-            <p>Teacher Mode opens the whole tool ecosystem. Student Mode keeps this collapsed until you intentionally expand it.</p>
-          </div>
-          <div class="app-level-row">
-            <button id="toggle-library" class="app-library-btn" type="button" aria-expanded="false">Open Full Library</button>
-          </div>
-        </div>
-        <p id="library-status" class="app-library-status">Student Mode is on. The full library is hidden until you open it.</p>
-      </div>
-    </section>
+    </div><!-- /tab-panel-guided -->
+
+    <div id="tab-panel-library" role="tabpanel" aria-labelledby="tab-btn-library" hidden>
 
     <section class="section library-section" id="app-launcher">
       <div class="section-head">
@@ -2353,6 +2434,54 @@
                 <span class="tile-kicker">Applied Science</span>
                 <strong>NASA</strong>
                 <small>Explore real missions, datasets, imagery, and science resources to study applied science, engineering, and systems thinking.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-nasa-eyes" href="https://eyes.nasa.gov/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Explore</span>
+                  <span class="app-tag app-tag--soft">3D space</span>
+                </div>
+                <span class="tile-kicker">Space Science</span>
+                <strong>NASA Eyes</strong>
+                <small>Fly through our solar system in real-time 3D — track spacecraft positions, explore planets, and visualize mission data.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-smithsonian" href="https://learninglab.si.edu/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Research</span>
+                  <span class="app-tag app-tag--soft">Art + history</span>
+                </div>
+                <span class="tile-kicker">Primary Sources</span>
+                <strong>Smithsonian Learning Lab</strong>
+                <small>Access millions of museum artifacts, images, and curated learning collections from Smithsonian's 19 museums and galleries.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-google-scholar" href="https://scholar.google.com/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Research</span>
+                  <span class="app-tag app-tag--soft">Academic papers</span>
+                </div>
+                <span class="tile-kicker">Scholarly Search</span>
+                <strong>Google Scholar</strong>
+                <small>Search academic papers, theses, and citations across all fields — a reliable starting point for research-based assignments.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-pbs-kids" href="https://pbskids.org/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Learn</span>
+                  <span class="app-tag app-tag--soft">K–5</span>
+                </div>
+                <span class="tile-kicker">Educational Media</span>
+                <strong>PBS Kids</strong>
+                <small>Games, videos, and learning activities tied to trusted educational shows — best for K–5 STEAM exploration and literacy.</small>
               </div>
             </a>
 
@@ -3078,6 +3207,42 @@
                 <small>Experiment with rhythm, melody, sound waves, and song ideas using playful browser-based music tools.</small>
               </div>
             </a>
+
+            <a class="tile reveal app-link app-link-soundtrap" href="https://www.soundtrap.com/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Create</span>
+                  <span class="app-tag app-tag--soft">Music + podcasts</span>
+                </div>
+                <span class="tile-kicker">Music Studio</span>
+                <strong>Soundtrap</strong>
+                <small>Browser-based DAW for recording, composing, and collaborating on music and podcasts — great for group media projects.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-bandlab" href="https://www.bandlab.com/education" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Create</span>
+                  <span class="app-tag app-tag--soft">Social music</span>
+                </div>
+                <span class="tile-kicker">Music Production</span>
+                <strong>BandLab</strong>
+                <small>Free cloud-based music creation platform with an education hub — record, mix, and share original tracks from any browser.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-wevideo" href="https://www.wevideo.com/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Edit</span>
+                  <span class="app-tag app-tag--soft">Video + media</span>
+                </div>
+                <span class="tile-kicker">Video Production</span>
+                <strong>WeVideo</strong>
+                <small>Cloud video editor with green screen, screen recording, and audio tools — ideal for student documentary and presentation projects.</small>
+              </div>
+            </a>
           </div>
         </div>
 
@@ -3241,6 +3406,42 @@
                 <span class="tile-kicker">Model Viewer</span>
                 <strong>STL Viewer</strong>
                 <small>Open and inspect STL files in the browser to check model shape, scale, and orientation before printing.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-microbit" href="https://makecode.microbit.org/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Code</span>
+                  <span class="app-tag app-tag--soft">Physical computing</span>
+                </div>
+                <span class="tile-kicker">Robotics + Coding</span>
+                <strong>micro:bit MakeCode</strong>
+                <small>Program a micro:bit with block or JavaScript code — flash LEDs, read sensors, and control small hardware projects.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-sketchup" href="https://edu.sketchup.com/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Design</span>
+                  <span class="app-tag app-tag--soft">3D modeling</span>
+                </div>
+                <span class="tile-kicker">3D Design</span>
+                <strong>SketchUp for Schools</strong>
+                <small>Browser-based 3D modeling with a gentle learning curve — great for architectural and product design projects.</small>
+              </div>
+            </a>
+
+            <a class="tile reveal app-link app-link-printables" href="https://www.printables.com/" target="_blank" rel="noreferrer">
+              <div class="app-copy">
+                <div class="app-meta">
+                  <span class="app-tag">Browse</span>
+                  <span class="app-tag app-tag--soft">3D print files</span>
+                </div>
+                <span class="tile-kicker">Fabrication</span>
+                <strong>Printables</strong>
+                <small>A large library of free, community-made 3D print files — download, remix, and bring digital designs into the physical world.</small>
               </div>
             </a>
           </div>
@@ -3567,6 +3768,42 @@
             <small>Open browser-based simulation and game experiments, including playful physics sandboxes students can study and explore.</small>
           </div>
         </a>
+
+        <a class="tile reveal app-link app-link-makecode-arcade" href="https://arcade.makecode.com/" target="_blank" rel="noreferrer">
+          <div class="app-copy">
+            <div class="app-meta">
+              <span class="app-tag">Build</span>
+              <span class="app-tag app-tag--soft">Retro games</span>
+            </div>
+            <span class="tile-kicker">Game Design + Coding</span>
+            <strong>MakeCode Arcade</strong>
+            <small>Design sprite-based retro games with block or JavaScript code — program characters, levels, enemies, and score systems.</small>
+          </div>
+        </a>
+
+        <a class="tile reveal app-link app-link-gdevelop" href="https://gdevelop.io/" target="_blank" rel="noreferrer">
+          <div class="app-copy">
+            <div class="app-meta">
+              <span class="app-tag">Build</span>
+              <span class="app-tag app-tag--soft">No-code engine</span>
+            </div>
+            <span class="tile-kicker">Game Engine</span>
+            <strong>GDevelop</strong>
+            <small>Event-driven game engine that runs in the browser — build complete 2D games without writing traditional code.</small>
+          </div>
+        </a>
+
+        <a class="tile reveal app-link app-link-godot" href="https://godotengine.org/" target="_blank" rel="noreferrer">
+          <div class="app-copy">
+            <div class="app-meta">
+              <span class="app-tag">Build</span>
+              <span class="app-tag app-tag--soft">Open source</span>
+            </div>
+            <span class="tile-kicker">Game Engine</span>
+            <strong>Godot</strong>
+            <small>Free, open-source game engine for 2D and 3D projects — used by indie developers worldwide and a strong coding pathway for advanced students.</small>
+          </div>
+        </a>
       </div>
     </section>
 
@@ -3771,6 +4008,9 @@
         </a>
       </div>
     </section>
+
+    </div><!-- /tab-panel-library -->
+
   </main>
 
   <section id="tinkercad-picker" class="class-picker hidden" hidden role="dialog" aria-modal="true" aria-labelledby="class-picker-title">
@@ -4522,17 +4762,11 @@
 
       function renderLibrary() {
         document.body.setAttribute("data-app-mode", state.mode);
-        const showLibrary = state.mode === "teacher" ? true : state.libraryOpen;
+        // Library is always shown inside the Library tab — no toggle gate
         librarySections.forEach((section) => {
           const hasMatches = section.dataset.libraryMatches !== "false";
-          section.hidden = !showLibrary || !hasMatches;
+          section.hidden = !hasMatches;
         });
-        libraryButton.setAttribute("aria-expanded", String(showLibrary));
-        libraryButton.textContent = showLibrary ? "Hide Full Library" : "Open Full Library";
-        libraryButton.classList.toggle("is-active", showLibrary);
-        libraryStatus.textContent = showLibrary
-          ? "The full library is open. Scroll for the complete tool ecosystem."
-          : "Student Mode is on. The full library is hidden until you open it.";
       }
 
       function renderControls() {
@@ -4648,6 +4882,39 @@
       decorateActionLabels();
       setupCompactCardInteractions();
       renderAll();
+
+      // ── Tab bar ──────────────────────────────────────────────────
+      (function () {
+        const tabButtons = Array.from(document.querySelectorAll('.app-tab[role="tab"]'));
+        const tabPanels  = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+
+        function activateTab(tabId) {
+          tabButtons.forEach(function (btn) {
+            const active = btn.id === tabId;
+            btn.setAttribute('aria-selected', String(active));
+            btn.classList.toggle('is-active', active);
+          });
+          tabPanels.forEach(function (panel) {
+            panel.hidden = panel.getAttribute('aria-labelledby') !== tabId;
+          });
+          // Ensure library renders when switching to it
+          if (tabId === 'tab-btn-library') {
+            renderAll();
+          }
+        }
+
+        tabButtons.forEach(function (btn) {
+          btn.addEventListener('click', function () { activateTab(btn.id); });
+        });
+
+        // Keyboard nav: arrow keys move between tabs
+        tabButtons.forEach(function (btn, i) {
+          btn.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowRight') { e.preventDefault(); tabButtons[(i + 1) % tabButtons.length].focus(); tabButtons[(i + 1) % tabButtons.length].click(); }
+            if (e.key === 'ArrowLeft')  { e.preventDefault(); tabButtons[(i - 1 + tabButtons.length) % tabButtons.length].focus(); tabButtons[(i - 1 + tabButtons.length) % tabButtons.length].click(); }
+          });
+        });
+      })();
 
       // AI Awareness Modal Handler
       (function() {
@@ -4845,6 +5112,26 @@
           starterToolId: "canva",
           mission: "art",
           guidedLevel: "35"
+        },
+        ai: {
+          label: "AI Tools",
+          anchorLabel: "AI",
+          color: "#f0a53c",
+          description: "Use AI assistants, builders, and APIs for writing, coding, research, image generation, and project support.",
+          teaches: "Prompting, critical evaluation of AI output, tool selection, and integrating AI into real creative and coding workflows.",
+          starterToolId: "chatgpt",
+          mission: "learn",
+          guidedLevel: "68"
+        },
+        immersive: {
+          label: "Immersive / Creative Tech",
+          anchorLabel: "Immersive",
+          color: "#6f42c1",
+          description: "Build for VR, AR, WebXR, projection mapping, and interactive 3D worlds using browser-friendly creative tech tools.",
+          teaches: "Spatial computing, scene design, creative coding, media installation, and immersive storytelling through interactive environments.",
+          starterToolId: "aframe",
+          mission: "art",
+          guidedLevel: "912"
         }
       };
 
@@ -4878,43 +5165,187 @@
         { id: "anchor-research", type: "anchor", label: "Research", shortLabel: "Research", category: "research", radius: 74, importance: 1, grades: ["K-2", "3-5", "6-8", "9-12"] },
         { id: "anchor-art", type: "anchor", label: "Art", shortLabel: "Art", category: "art", radius: 74, importance: 1, grades: ["K-2", "3-5", "6-8", "9-12"] },
 
-        { id: "scratch", type: "tool", label: "Scratch", shortLabel: "Scratch", category: "coding", radius: 42, grades: ["K-2", "3-5", "6-8"], description: "Block-based coding for stories, animations, and starter games.", teaches: "Events, loops, variables, remixing, and creative computing confidence.", login: "Optional to save work", free: true, browser: true, openSource: true, tags: ["Free", "Browser-Based", "Teacher Pick"], utilities: ["free", "browser", "open-source", "class-demo", "projects"], link: "https://scratch.mit.edu/", related: ["codeorg", "blockly-games", "makecode-arcade"], mission: "game", guidedLevel: "35" },
-        { id: "codeorg", type: "tool", label: "Code.org", shortLabel: "Code.org", category: "coding", radius: 40, grades: ["K-2", "3-5", "6-8", "9-12"], description: "Structured coding pathways and lesson-friendly activities for classrooms.", teaches: "Sequencing, conditions, persistence, and scaffolding from beginner to advanced.", login: "Optional, often used with class sections", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based", "Best for class demo"], utilities: ["free", "browser", "class-demo"], link: "https://code.org/", related: ["scratch", "blockly-games", "replit"], mission: "game", guidedLevel: "35" },
-        { id: "blockly-games", type: "tool", label: "Blockly Games", shortLabel: "Blockly Games", category: "coding", radius: 34, grades: ["3-5", "6-8"], description: "Small puzzle worlds that teach programming ideas one mechanic at a time.", teaches: "Algorithmic thinking, loops, functions, and cause-and-effect in code.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "open-source", "class-demo"], link: "https://blockly.games/", related: ["scratch", "codeorg", "makecode-arcade"], mission: "game", guidedLevel: "35" },
-        { id: "replit", type: "tool", label: "Replit", shortLabel: "Replit", category: "coding", radius: 36, grades: ["6-8", "9-12"], description: "Browser IDE for text-based coding, web apps, and collaborative prototypes.", teaches: "Syntax, debugging, publishing, collaboration, and iteration in real code.", login: "Login required for saving", free: true, browser: true, openSource: false, tags: ["Browser-Based", "Best for projects"], utilities: ["free", "browser", "projects"], link: "https://replit.com/", related: ["codeorg", "godot", "gdevelop"], mission: "web", guidedLevel: "912" },
+        { id: "scratch",          type: "tool", label: "Scratch",             shortLabel: "Scratch",      category: "coding",   categories: ["coding",   "games"],    radius: 42, grades: ["K-2", "3-5", "6-8"],        description: "Block-based coding for stories, animations, and starter games.",                                                                                                                                                                                                                                                                   teaches: "Events, loops, variables, remixing, and creative computing confidence.",                                                     login: "Optional to save work",              free: true,  browser: true,  openSource: true,  tags: ["Free", "Browser-Based", "Teacher Pick"],           utilities: ["free", "browser", "open-source", "class-demo", "projects"], link: "https://scratch.mit.edu/",                related: ["codeorg", "blockly-games", "makecode-arcade"],      mission: "game", guidedLevel: "35" },
+        { id: "codeorg",          type: "tool", label: "Code.org",            shortLabel: "Code.org",     category: "coding",   categories: ["coding"],              radius: 40, grades: ["K-2", "3-5", "6-8", "9-12"], description: "Structured coding pathways and lesson-friendly activities for classrooms.",                                                                                                                                                                                                                                                teaches: "Sequencing, conditions, persistence, and scaffolding from beginner to advanced.",                                            login: "Optional, often used with class sections", free: true,  browser: true,  openSource: false, tags: ["Free", "Browser-Based", "Best for class demo"],    utilities: ["free", "browser", "class-demo"],                            link: "https://code.org/",                   related: ["scratch", "blockly-games", "replit"],               mission: "game", guidedLevel: "35" },
+        { id: "blockly-games",    type: "tool", label: "Blockly Games",       shortLabel: "Blockly Games",category: "coding",   categories: ["coding",   "games"],    radius: 34, grades: ["3-5", "6-8"],                description: "Small puzzle worlds that teach programming ideas one mechanic at a time.",                                                                                                                                                                                                                                                     teaches: "Algorithmic thinking, loops, functions, and cause-and-effect in code.",                                                     login: "No login required",                  free: true,  browser: true,  openSource: true,  tags: ["Free", "No Login", "Browser-Based"],                utilities: ["free", "no-login", "browser", "open-source", "class-demo"], link: "https://blockly.games/",              related: ["scratch", "codeorg", "makecode-arcade"],            mission: "game", guidedLevel: "35" },
+        { id: "replit",           type: "tool", label: "Replit",              shortLabel: "Replit",       category: "coding",   categories: ["coding"],              radius: 36, grades: ["6-8", "9-12"],               description: "Browser IDE for text-based coding, web apps, and collaborative prototypes.",                                                                                                                                                                                                                                                  teaches: "Syntax, debugging, publishing, collaboration, and iteration in real code.",                                                  login: "Login required for saving",          free: true,  browser: true,  openSource: false, tags: ["Browser-Based", "Best for projects"],               utilities: ["free", "browser", "projects"],                              link: "https://replit.com/",                 related: ["codeorg", "godot", "gdevelop"],                     mission: "web",  guidedLevel: "912" },
 
-        { id: "microbit-makecode", type: "tool", label: "micro:bit MakeCode", shortLabel: "MakeCode", category: "robotics", radius: 40, grades: ["3-5", "6-8", "9-12"], description: "Program micro:bit projects with blocks or JavaScript in a classroom-friendly editor.", teaches: "Sensors, inputs, outputs, hardware logic, and event-driven physical computing.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "open-source", "class-demo", "projects"], link: "https://makecode.microbit.org/", related: ["wokwi", "tinkercad", "arduino-project-hub"], mission: "robot", guidedLevel: "68" },
-        { id: "wokwi", type: "tool", label: "Wokwi", shortLabel: "Wokwi", category: "robotics", radius: 36, grades: ["6-8", "9-12"], description: "Simulate Arduino and microcontroller builds before touching physical hardware.", teaches: "Circuit debugging, iteration, code-hardware connections, and faster testing loops.", login: "Optional for saving", free: true, browser: true, openSource: true, tags: ["Free", "Browser-Based", "Open Source"], utilities: ["free", "browser", "open-source", "class-demo", "projects"], link: "https://wokwi.com/", related: ["microbit-makecode", "tinkercad", "arduino-project-hub"], mission: "robot", guidedLevel: "68" },
-        { id: "arduino-project-hub", type: "tool", label: "Arduino Project Hub", shortLabel: "Project Hub", category: "robotics", radius: 34, grades: ["6-8", "9-12"], description: "A browsable collection of Arduino builds and inspiration. Filter first by IoT / Monitoring, Robotics, and Data Visualization. High-value searches to click first: Ultrasonic Radar, Smart Energy Meter, IoT Plant Watering System, Self-Balancing Robot, Bluetooth Car, and Solar Tracker.", teaches: "Project planning, component awareness, and translating examples into original builds.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Research + build"], utilities: ["free", "no-login", "browser", "projects"], link: "https://projecthub.arduino.cc/", related: ["wokwi", "microbit-makecode", "printables"], mission: "robot", guidedLevel: "68" },
+        { id: "microbit-makecode",type: "tool", label: "micro:bit MakeCode",  shortLabel: "MakeCode",     category: "robotics", categories: ["robotics", "coding"],   radius: 40, grades: ["3-5", "6-8", "9-12"],       description: "Program micro:bit projects with blocks or JavaScript in a classroom-friendly editor.",                                                                                                                                                                                                                                        teaches: "Sensors, inputs, outputs, hardware logic, and event-driven physical computing.",                                            login: "No login required",                  free: true,  browser: true,  openSource: true,  tags: ["Free", "No Login", "Browser-Based"],                utilities: ["free", "no-login", "browser", "open-source", "class-demo", "projects"], link: "https://makecode.microbit.org/", related: ["wokwi", "tinkercad", "arduino-project-hub"],         mission: "robot", guidedLevel: "68" },
+        { id: "wokwi",            type: "tool", label: "Wokwi",               shortLabel: "Wokwi",        category: "robotics", categories: ["robotics"],             radius: 36, grades: ["6-8", "9-12"],               description: "Simulate Arduino and microcontroller builds before touching physical hardware.",                                                                                                                                                                                                                                             teaches: "Circuit debugging, iteration, code-hardware connections, and faster testing loops.",                                         login: "Optional for saving",                free: true,  browser: true,  openSource: true,  tags: ["Free", "Browser-Based", "Open Source"],             utilities: ["free", "browser", "open-source", "class-demo", "projects"], link: "https://wokwi.com/",                  related: ["microbit-makecode", "tinkercad", "arduino-project-hub"], mission: "robot", guidedLevel: "68" },
+        { id: "arduino-project-hub", type: "tool", label: "Arduino Project Hub", shortLabel: "Project Hub", category: "robotics", categories: ["robotics"],           radius: 34, grades: ["6-8", "9-12"],               description: "A browsable collection of Arduino builds and inspiration. Filter first by IoT / Monitoring, Robotics, and Data Visualization. High-value searches to click first: Ultrasonic Radar, Smart Energy Meter, IoT Plant Watering System, Self-Balancing Robot, Bluetooth Car, and Solar Tracker.", teaches: "Project planning, component awareness, and translating examples into original builds.", login: "No login required",     free: true,  browser: true,  openSource: false, tags: ["Free", "No Login", "Research + build"],             utilities: ["free", "no-login", "browser", "projects"],                 link: "https://projecthub.arduino.cc/",     related: ["wokwi", "microbit-makecode", "printables"],         mission: "robot", guidedLevel: "68" },
 
-        { id: "chrome-music-lab", type: "tool", label: "Chrome Music Lab", shortLabel: "Music Lab", category: "music", radius: 40, grades: ["K-2", "3-5", "6-8"], description: "Short musical experiments that make sound patterns visual and playful.", teaches: "Rhythm, melody, pattern, experimentation, and making music concepts easy to see.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Best for class demo"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://musiclab.chromeexperiments.com/", related: ["soundtrap", "bandlab", "pbs-kids"], mission: "art", guidedLevel: "35" },
-        { id: "soundtrap", type: "tool", label: "Soundtrap", shortLabel: "Soundtrap", category: "music", radius: 38, grades: ["3-5", "6-8", "9-12"], description: "Collaborative music and podcast studio for recording, looping, and editing.", teaches: "Layering, recording, collaboration, editing, and project-based media production.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based", "Best for projects"], utilities: ["browser", "projects"], link: "https://www.soundtrap.com/", related: ["chrome-music-lab", "bandlab", "wevideo"], mission: "art", guidedLevel: "68" },
-        { id: "bandlab", type: "tool", label: "BandLab", shortLabel: "BandLab", category: "music", radius: 36, grades: ["6-8", "9-12"], description: "Create tracks, record audio, and mix music in a modern browser studio.", teaches: "Digital audio workflows, arrangement, revision, and sharing finished compositions.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based", "Best for projects"], utilities: ["free", "browser", "projects"], link: "https://www.bandlab.com/education", related: ["soundtrap", "chrome-music-lab", "wevideo"], mission: "art", guidedLevel: "912" },
+        { id: "chrome-music-lab", type: "tool", label: "Chrome Music Lab",    shortLabel: "Music Lab",    category: "music",    categories: ["music"],               radius: 40, grades: ["K-2", "3-5", "6-8"],        description: "Short musical experiments that make sound patterns visual and playful.",                                                                                                                                                                                                                                                         teaches: "Rhythm, melody, pattern, experimentation, and making music concepts easy to see.",                                          login: "No login required",                  free: true,  browser: true,  openSource: false, tags: ["Free", "No Login", "Best for class demo"],          utilities: ["free", "no-login", "browser", "class-demo"],               link: "https://musiclab.chromeexperiments.com/", related: ["soundtrap", "bandlab", "pbs-kids"],              mission: "art",  guidedLevel: "35" },
+        { id: "soundtrap",        type: "tool", label: "Soundtrap",           shortLabel: "Soundtrap",    category: "music",    categories: ["music",    "art"],      radius: 38, grades: ["3-5", "6-8", "9-12"],       description: "Collaborative music and podcast studio for recording, looping, and editing.",                                                                                                                                                                                                                                               teaches: "Layering, recording, collaboration, editing, and project-based media production.",                                          login: "Login required",                     free: false, browser: true,  openSource: false, tags: ["Browser-Based", "Best for projects"],               utilities: ["browser", "projects"],                                      link: "https://www.soundtrap.com/",          related: ["chrome-music-lab", "bandlab", "wevideo"],           mission: "art",  guidedLevel: "68" },
+        { id: "bandlab",          type: "tool", label: "BandLab",             shortLabel: "BandLab",      category: "music",    categories: ["music",    "art"],      radius: 36, grades: ["6-8", "9-12"],               description: "Create tracks, record audio, and mix music in a modern browser studio.",                                                                                                                                                                                                                                                     teaches: "Digital audio workflows, arrangement, revision, and sharing finished compositions.",                                        login: "Login required",                     free: true,  browser: true,  openSource: false, tags: ["Free", "Browser-Based", "Best for projects"],       utilities: ["free", "browser", "projects"],                              link: "https://www.bandlab.com/education",   related: ["soundtrap", "chrome-music-lab", "wevideo"],         mission: "art",  guidedLevel: "912" },
 
-        { id: "tinkercad", type: "tool", label: "Tinkercad", shortLabel: "Tinkercad", category: "design3d", radius: 44, grades: ["3-5", "6-8", "9-12"], description: "Design 3D objects, circuits, and quick prototypes inside one accessible browser tool.", teaches: "Spatial reasoning, prototyping, electronics planning, and beginner-friendly CAD habits.", login: "Login recommended for saving", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based", "Teacher Pick"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://www.tinkercad.com/", related: ["sketchup", "printables", "wokwi", "microbit-makecode"], mission: "robot", guidedLevel: "68" },
-        { id: "sketchup", type: "tool", label: "SketchUp for Schools", shortLabel: "SketchUp", category: "design3d", radius: 36, grades: ["6-8", "9-12"], description: "Model spaces and products with a stronger architecture and product-design feel.", teaches: "Precision, scale, perspective, and moving from concept sketches into dimensional models.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based", "Best for projects"], utilities: ["free", "browser", "projects"], link: "https://edu.sketchup.com/", related: ["tinkercad", "printables", "canva"], mission: "robot", guidedLevel: "912" },
-        { id: "printables", type: "tool", label: "Printables", shortLabel: "Printables", category: "design3d", radius: 32, grades: ["3-5", "6-8", "9-12"], description: "Browse ready-made 3D models and classroom examples for fabrication ideas.", teaches: "Model evaluation, remixing, fabrication choices, and identifying printable design features.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Project inspiration"], utilities: ["free", "no-login", "browser", "projects"], link: "https://www.printables.com/", related: ["tinkercad", "sketchup", "arduino-project-hub"], mission: "robot", guidedLevel: "68" },
+        { id: "tinkercad",        type: "tool", label: "Tinkercad",           shortLabel: "Tinkercad",    category: "design3d", categories: ["design3d", "robotics"], radius: 44, grades: ["3-5", "6-8", "9-12"],       description: "Design 3D objects, circuits, and quick prototypes inside one accessible browser tool.",                                                                                                                                                                                                                                       teaches: "Spatial reasoning, prototyping, electronics planning, and beginner-friendly CAD habits.",                                   login: "Login recommended for saving",       free: true,  browser: true,  openSource: false, tags: ["Free", "Browser-Based", "Teacher Pick"],           utilities: ["free", "browser", "class-demo", "projects"],               link: "https://www.tinkercad.com/",          related: ["sketchup", "printables", "wokwi", "microbit-makecode"], mission: "robot", guidedLevel: "68" },
+        { id: "sketchup",         type: "tool", label: "SketchUp for Schools",shortLabel: "SketchUp",     category: "design3d", categories: ["design3d"],             radius: 36, grades: ["6-8", "9-12"],               description: "Model spaces and products with a stronger architecture and product-design feel.",                                                                                                                                                                                                                                            teaches: "Precision, scale, perspective, and moving from concept sketches into dimensional models.",                                  login: "Login required",                     free: true,  browser: true,  openSource: false, tags: ["Free", "Browser-Based", "Best for projects"],       utilities: ["free", "browser", "projects"],                              link: "https://edu.sketchup.com/",           related: ["tinkercad", "printables", "canva"],                 mission: "robot", guidedLevel: "912" },
+        { id: "printables",       type: "tool", label: "Printables",          shortLabel: "Printables",   category: "design3d", categories: ["design3d"],             radius: 32, grades: ["3-5", "6-8", "9-12"],       description: "Browse ready-made 3D models and classroom examples for fabrication ideas.",                                                                                                                                                                                                                                                  teaches: "Model evaluation, remixing, fabrication choices, and identifying printable design features.",                               login: "No login required",                  free: true,  browser: true,  openSource: false, tags: ["Free", "No Login", "Project inspiration"],          utilities: ["free", "no-login", "browser", "projects"],                 link: "https://www.printables.com/",         related: ["tinkercad", "sketchup", "arduino-project-hub"],     mission: "robot", guidedLevel: "68" },
 
-        { id: "makecode-arcade", type: "tool", label: "MakeCode Arcade", shortLabel: "Arcade", category: "games", radius: 40, grades: ["3-5", "6-8"], description: "Build retro-style games with blocks or JavaScript and test them instantly.", teaches: "Gameplay loops, variables, event systems, sprite logic, and iterative design.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "open-source", "class-demo", "projects"], link: "https://arcade.makecode.com/", related: ["scratch", "blockly-games", "gdevelop"], mission: "game", guidedLevel: "68" },
-        { id: "gdevelop", type: "tool", label: "GDevelop", shortLabel: "GDevelop", category: "games", radius: 36, grades: ["6-8", "9-12"], description: "No-code and low-code game engine for bigger interactive projects.", teaches: "Scene design, game logic, condition systems, iteration, and publishing workflows.", login: "Optional, depends on workflow", free: true, browser: true, openSource: true, tags: ["Free", "Browser-Based", "Open Source"], utilities: ["free", "browser", "open-source", "projects"], link: "https://gdevelop.io/", related: ["makecode-arcade", "godot", "piskel"], mission: "game", guidedLevel: "68" },
-        { id: "godot", type: "tool", label: "Godot", shortLabel: "Godot", category: "games", radius: 34, grades: ["9-12"], description: "Open-source game engine for deeper interactive projects and advanced student teams.", teaches: "Scenes, scripting, systems design, iteration, and moving toward professional-style tools.", login: "No login required", free: true, browser: false, openSource: true, tags: ["Free", "Open Source", "Advanced"], utilities: ["free", "open-source", "projects"], link: "https://godotengine.org/", related: ["gdevelop", "replit", "piskel"], mission: "game", guidedLevel: "912" },
+        { id: "makecode-arcade",  type: "tool", label: "MakeCode Arcade",     shortLabel: "Arcade",       category: "games",    categories: ["games",    "coding"],   radius: 40, grades: ["3-5", "6-8"],                description: "Build retro-style games with blocks or JavaScript and test them instantly.",                                                                                                                                                                                                                                                    teaches: "Gameplay loops, variables, event systems, sprite logic, and iterative design.",                                             login: "No login required",                  free: true,  browser: true,  openSource: true,  tags: ["Free", "No Login", "Browser-Based"],                utilities: ["free", "no-login", "browser", "open-source", "class-demo", "projects"], link: "https://arcade.makecode.com/",   related: ["scratch", "blockly-games", "gdevelop"],             mission: "game", guidedLevel: "68" },
+        { id: "gdevelop",         type: "tool", label: "GDevelop",            shortLabel: "GDevelop",     category: "games",    categories: ["games",    "coding"],   radius: 36, grades: ["6-8", "9-12"],               description: "No-code and low-code game engine for bigger interactive projects.",                                                                                                                                                                                                                                                            teaches: "Scene design, game logic, condition systems, iteration, and publishing workflows.",                                          login: "Optional, depends on workflow",      free: true,  browser: true,  openSource: true,  tags: ["Free", "Browser-Based", "Open Source"],             utilities: ["free", "browser", "open-source", "projects"],               link: "https://gdevelop.io/",                related: ["makecode-arcade", "godot", "piskel"],               mission: "game", guidedLevel: "68" },
+        { id: "godot",            type: "tool", label: "Godot",               shortLabel: "Godot",        category: "games",    categories: ["games",    "coding"],   radius: 34, grades: ["9-12"],                      description: "Open-source game engine for deeper interactive projects and advanced student teams.",                                                                                                                                                                                                                                        teaches: "Scenes, scripting, systems design, iteration, and moving toward professional-style tools.",                                 login: "No login required",                  free: true,  browser: false, openSource: true,  tags: ["Free", "Open Source", "Advanced"],                  utilities: ["free", "open-source", "projects"],                          link: "https://godotengine.org/",            related: ["gdevelop", "replit", "piskel"],                     mission: "game", guidedLevel: "912" },
 
-        { id: "phet", type: "tool", label: "PhET", shortLabel: "PhET", category: "science", radius: 40, grades: ["3-5", "6-8", "9-12"], description: "Interactive science and math simulations for exploring concepts through experimentation.", teaches: "Modeling, hypothesis testing, variable changes, and noticing patterns in systems.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "open-source", "class-demo"], link: "https://phet.colorado.edu/", related: ["desmos", "nasa-eyes", "britannica"], mission: "learn", guidedLevel: "68" },
-        { id: "desmos", type: "tool", label: "Desmos", shortLabel: "Desmos", category: "science", radius: 36, grades: ["3-5", "6-8", "9-12"], description: "Graphing, activities, and math exploration tools that make patterns easier to discuss.", teaches: "Graph interpretation, mathematical modeling, and interactive inquiry.", login: "Optional for saving activities", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based", "Best for class demo"], utilities: ["free", "browser", "class-demo"], link: "https://www.desmos.com/", related: ["phet", "britannica", "codeorg"], mission: "learn", guidedLevel: "68" },
-        { id: "nasa-eyes", type: "tool", label: "NASA Eyes", shortLabel: "NASA Eyes", category: "science", radius: 34, grades: ["6-8", "9-12"], description: "Visualize space, climate, and data-rich scientific systems through interactive NASA experiences.", teaches: "Scientific modeling, systems awareness, data storytelling, and curiosity-driven questioning.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Visual simulation"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://eyes.nasa.gov/", related: ["phet", "britannica", "smithsonian-learning-lab"], mission: "learn", guidedLevel: "912" },
+        { id: "phet",             type: "tool", label: "PhET",                shortLabel: "PhET",         category: "science",  categories: ["science"],              radius: 40, grades: ["3-5", "6-8", "9-12"],       description: "Interactive science and math simulations for exploring concepts through experimentation.",                                                                                                                                                                                                                                   teaches: "Modeling, hypothesis testing, variable changes, and noticing patterns in systems.",                                         login: "No login required",                  free: true,  browser: true,  openSource: true,  tags: ["Free", "No Login", "Browser-Based"],                utilities: ["free", "no-login", "browser", "open-source", "class-demo"], link: "https://phet.colorado.edu/",          related: ["desmos", "nasa-eyes", "britannica"],                mission: "learn", guidedLevel: "68" },
+        { id: "desmos",           type: "tool", label: "Desmos",              shortLabel: "Desmos",       category: "science",  categories: ["science",  "research"], radius: 36, grades: ["3-5", "6-8", "9-12"],       description: "Graphing, activities, and math exploration tools that make patterns easier to discuss.",                                                                                                                                                                                                                                     teaches: "Graph interpretation, mathematical modeling, and interactive inquiry.",                                                     login: "Optional for saving activities",     free: true,  browser: true,  openSource: false, tags: ["Free", "Browser-Based", "Best for class demo"],    utilities: ["free", "browser", "class-demo"],                            link: "https://www.desmos.com/",             related: ["phet", "britannica", "codeorg"],                    mission: "learn", guidedLevel: "68" },
+        { id: "nasa-eyes",        type: "tool", label: "NASA Eyes",           shortLabel: "NASA Eyes",    category: "science",  categories: ["science",  "research"], radius: 34, grades: ["6-8", "9-12"],               description: "Visualize space, climate, and data-rich scientific systems through interactive NASA experiences.",                                                                                                                                                                                                                            teaches: "Scientific modeling, systems awareness, data storytelling, and curiosity-driven questioning.",                              login: "No login required",                  free: true,  browser: true,  openSource: false, tags: ["Free", "No Login", "Visual simulation"],            utilities: ["free", "no-login", "browser", "class-demo"],               link: "https://eyes.nasa.gov/",              related: ["phet", "britannica", "smithsonian-learning-lab"],   mission: "learn", guidedLevel: "912" },
 
-        { id: "britannica", type: "tool", label: "Britannica", shortLabel: "Britannica", category: "research", radius: 38, grades: ["3-5", "6-8", "9-12"], description: "Start with trusted overview knowledge before students branch into deeper source work.", teaches: "Background research, vocabulary building, source confidence, and jumping-off points for inquiry.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Teacher Pick"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://www.britannica.com/", related: ["smithsonian-learning-lab", "google-scholar", "phet", "pbs-kids"], mission: "learn", guidedLevel: "68" },
-        { id: "smithsonian-learning-lab", type: "tool", label: "Smithsonian Learning Lab", shortLabel: "Learning Lab", category: "research", radius: 36, grades: ["K-2", "3-5", "6-8", "9-12"], description: "Explore curated collections, artifacts, and lesson-ready resource sets.", teaches: "Close looking, source comparison, thematic research, and connecting objects to bigger questions.", login: "Optional for saving collections", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based", "Collection-based"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://learninglab.si.edu/", related: ["britannica", "google-scholar", "nasa-eyes", "canva"], mission: "learn", guidedLevel: "68" },
-        { id: "google-scholar", type: "tool", label: "Google Scholar", shortLabel: "Scholar", category: "research", radius: 32, grades: ["9-12"], description: "Search academic articles and stronger evidence when students are ready for deeper research.", teaches: "Academic search habits, source refinement, and more advanced evidence gathering.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Advanced"], utilities: ["free", "no-login", "browser"], link: "https://scholar.google.com/", related: ["britannica", "smithsonian-learning-lab", "nasa-eyes"], mission: "learn", guidedLevel: "912" },
-        { id: "pbs-kids", type: "tool", label: "PBS Kids", shortLabel: "PBS Kids", category: "research", radius: 32, grades: ["K-2", "3-5"], description: "Age-friendly educational games and media for younger students exploring core ideas.", teaches: "Observation, curiosity, pattern recognition, and topic exploration in an accessible format.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "K–5 friendly"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://pbskids.org/", related: ["britannica", "chrome-music-lab", "smithsonian-learning-lab"], mission: "learn", guidedLevel: "35" },
+        { id: "britannica",       type: "tool", label: "Britannica",          shortLabel: "Britannica",   category: "research", categories: ["research"],             radius: 38, grades: ["3-5", "6-8", "9-12"],       description: "Start with trusted overview knowledge before students branch into deeper source work.",                                                                                                                                                                                                                                       teaches: "Background research, vocabulary building, source confidence, and jumping-off points for inquiry.",                          login: "No login required",                  free: true,  browser: true,  openSource: false, tags: ["Free", "No Login", "Teacher Pick"],                 utilities: ["free", "no-login", "browser", "class-demo"],               link: "https://www.britannica.com/",         related: ["smithsonian-learning-lab", "google-scholar", "phet", "pbs-kids"], mission: "learn", guidedLevel: "68" },
+        { id: "smithsonian-learning-lab", type: "tool", label: "Smithsonian Learning Lab", shortLabel: "Learning Lab", category: "research", categories: ["research", "art"], radius: 36, grades: ["K-2", "3-5", "6-8", "9-12"], description: "Explore curated collections, artifacts, and lesson-ready resource sets.", teaches: "Close looking, source comparison, thematic research, and connecting objects to bigger questions.", login: "Optional for saving collections", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based", "Collection-based"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://learninglab.si.edu/", related: ["britannica", "google-scholar", "nasa-eyes", "canva"], mission: "learn", guidedLevel: "68" },
+        { id: "google-scholar",   type: "tool", label: "Google Scholar",      shortLabel: "Scholar",      category: "research", categories: ["research"],             radius: 32, grades: ["9-12"],                      description: "Search academic articles and stronger evidence when students are ready for deeper research.",                                                                                                                                                                                                                               teaches: "Academic search habits, source refinement, and more advanced evidence gathering.",                                          login: "No login required",                  free: true,  browser: true,  openSource: false, tags: ["Free", "No Login", "Advanced"],                     utilities: ["free", "no-login", "browser"],                              link: "https://scholar.google.com/",         related: ["britannica", "smithsonian-learning-lab", "nasa-eyes"], mission: "learn", guidedLevel: "912" },
+        { id: "pbs-kids",         type: "tool", label: "PBS Kids",            shortLabel: "PBS Kids",     category: "research", categories: ["research"],             radius: 32, grades: ["K-2", "3-5"],                description: "Age-friendly educational games and media for younger students exploring core ideas.",                                                                                                                                                                                                                                           teaches: "Observation, curiosity, pattern recognition, and topic exploration in an accessible format.",                               login: "No login required",                  free: true,  browser: true,  openSource: false, tags: ["Free", "No Login", "K–5 friendly"],                 utilities: ["free", "no-login", "browser", "class-demo"],               link: "https://pbskids.org/",                related: ["britannica", "chrome-music-lab", "smithsonian-learning-lab"], mission: "learn", guidedLevel: "35" },
 
-        { id: "canva", type: "tool", label: "Canva", shortLabel: "Canva", category: "art", radius: 40, grades: ["3-5", "6-8", "9-12"], description: "Create posters, slides, infographics, and media pieces with quick visual polish.", teaches: "Layout, visual hierarchy, communication, storytelling, and presentation design.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based", "Teacher Pick"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://www.canva.com/", related: ["piskel", "wevideo", "sketchup", "smithsonian-learning-lab"], mission: "art", guidedLevel: "35" },
-        { id: "piskel", type: "tool", label: "Piskel", shortLabel: "Piskel", category: "art", radius: 34, grades: ["3-5", "6-8", "9-12"], description: "Create pixel art, sprites, and simple animations for games and digital storytelling.", teaches: "Animation frames, visual simplification, sprite creation, and asset design.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source", "projects"], link: "https://www.piskelapp.com/", related: ["canva", "gdevelop", "scratch"], mission: "art", guidedLevel: "68" },
-        { id: "wevideo", type: "tool", label: "WeVideo", shortLabel: "WeVideo", category: "art", radius: 34, grades: ["3-5", "6-8", "9-12"], description: "Edit video projects, voiceover explainers, and media-rich storytelling pieces.", teaches: "Sequencing, pacing, editing, narration, and multimedia communication.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based", "Best for projects"], utilities: ["browser", "projects"], link: "https://www.wevideo.com/", related: ["canva", "bandlab", "soundtrap"], mission: "art", guidedLevel: "68" }
-      ].map((node) => ({
-        ...node,
-        color: categoryMeta[node.category].color
-      }));
+        { id: "canva",            type: "tool", label: "Canva",               shortLabel: "Canva",        category: "art",      categories: ["art"],                  radius: 40, grades: ["3-5", "6-8", "9-12"],       description: "Create posters, slides, infographics, and media pieces with quick visual polish.",                                                                                                                                                                                                                                              teaches: "Layout, visual hierarchy, communication, storytelling, and presentation design.",                                           login: "Login required",                     free: true,  browser: true,  openSource: false, tags: ["Free", "Browser-Based", "Teacher Pick"],           utilities: ["free", "browser", "class-demo", "projects"],               link: "https://www.canva.com/",              related: ["piskel", "wevideo", "sketchup", "smithsonian-learning-lab"], mission: "art", guidedLevel: "35" },
+        { id: "piskel",           type: "tool", label: "Piskel",              shortLabel: "Piskel",       category: "art",      categories: ["art",      "games"],    radius: 34, grades: ["3-5", "6-8", "9-12"],       description: "Create pixel art, sprites, and simple animations for games and digital storytelling.",                                                                                                                                                                                                                                       teaches: "Animation frames, visual simplification, sprite creation, and asset design.",                                               login: "No login required",                  free: true,  browser: true,  openSource: true,  tags: ["Free", "No Login", "Open Source"],                  utilities: ["free", "no-login", "browser", "open-source", "projects"],  link: "https://www.piskelapp.com/",          related: ["canva", "gdevelop", "scratch"],                     mission: "art",  guidedLevel: "68" },
+        { id: "wevideo",          type: "tool", label: "WeVideo",             shortLabel: "WeVideo",      category: "art",      categories: ["art",      "music"],    radius: 34, grades: ["3-5", "6-8", "9-12"],       description: "Edit video projects, voiceover explainers, and media-rich storytelling pieces.",                                                                                                                                                                                                                                             teaches: "Sequencing, pacing, editing, narration, and multimedia communication.",                                                     login: "Login required",                     free: false, browser: true,  openSource: false, tags: ["Browser-Based", "Best for projects"],               utilities: ["browser", "projects"],                                      link: "https://www.wevideo.com/",            related: ["canva", "bandlab", "soundtrap"],                    mission: "art",  guidedLevel: "68" },
+
+        // ── New anchor nodes ──────────────────────────────────────────────
+        { id: "anchor-ai",        type: "anchor", label: "AI",        shortLabel: "AI",        category: "ai",        radius: 76, importance: 1, grades: ["6-8", "9-12"] },
+        { id: "anchor-immersive", type: "anchor", label: "Immersive", shortLabel: "Immersive", category: "immersive", radius: 72, importance: 1, grades: ["6-8", "9-12"] },
+
+        // ── AI tools ─────────────────────────────────────────────────────
+        { id: "chatgpt",         type: "tool", label: "ChatGPT",            shortLabel: "ChatGPT",     category: "ai", categories: ["ai"],              radius: 42, grades: ["6-8", "9-12"], description: "Use ChatGPT for writing help, coding support, brainstorming, tutoring, and everyday classroom questions.", teaches: "Prompting, revision, research support, and evaluating AI output.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://chat.openai.com/", related: ["claude", "gemini", "openaiplayground"], mission: "learn", guidedLevel: "68" },
+        { id: "gemini",          type: "tool", label: "Gemini",             shortLabel: "Gemini",      category: "ai", categories: ["ai"],              radius: 40, grades: ["6-8", "9-12"], description: "Google's main AI chat interface for brainstorming, drafting, summarizing, and research support.", teaches: "Prompting, critical reading of AI output, and using AI in research workflows.", login: "Login recommended", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://gemini.google.com/", related: ["chatgpt", "claude", "googlelabs"], mission: "learn", guidedLevel: "68" },
+        { id: "claude",          type: "tool", label: "Claude",             shortLabel: "Claude",      category: "ai", categories: ["ai"],              radius: 40, grades: ["6-8", "9-12"], description: "Use Claude for writing, coding, reasoning, and working through long documents or research materials.", teaches: "Prompting, source analysis, structured writing, and AI-assisted reasoning.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://claude.ai/", related: ["chatgpt", "gemini", "claudeapi"], mission: "learn", guidedLevel: "68" },
+        { id: "gpts",            type: "tool", label: "GPTs",               shortLabel: "GPTs",        category: "ai", categories: ["ai"],              radius: 26, grades: ["9-12"],         description: "Create custom AI assistants for specific classroom jobs, subjects, workflows, or project roles.", teaches: "System prompting, AI customization, and designing specialized tools.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser", "projects"], link: "https://chat.openai.com/gpts", related: ["chatgpt", "openaiplayground"], mission: "learn", guidedLevel: "912" },
+        { id: "dalle",           type: "tool", label: "DALL-E",             shortLabel: "DALL-E",      category: "ai", categories: ["ai", "art"],       radius: 28, grades: ["6-8", "9-12"], description: "Generate original images from text prompts inside ChatGPT for posters, concepts, storyboards, and creative projects.", teaches: "Prompt engineering for visuals, iteration, and evaluating AI-generated imagery.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser", "projects"], link: "https://chat.openai.com/", related: ["chatgpt", "sora", "canva"], mission: "art", guidedLevel: "68" },
+        { id: "codex",           type: "tool", label: "Codex",              shortLabel: "Codex",       category: "ai", categories: ["ai", "coding"],    radius: 26, grades: ["9-12"],         description: "Advanced code generation and automation tools to help plan, write, and improve software projects.", teaches: "AI-assisted coding, code review, and iterative software development.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser", "projects"], link: "https://openai.com/codex", related: ["chatgpt", "replit", "openaiplatform"], mission: "web", guidedLevel: "912" },
+        { id: "openaiplatform",  type: "tool", label: "OpenAI API Platform",shortLabel: "OpenAI API",  category: "ai", categories: ["ai", "coding"],    radius: 26, grades: ["9-12"],         description: "Access OpenAI models, build apps, and connect AI tools directly into code and software projects.", teaches: "API usage, AI integration, and building AI-powered applications.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser", "projects"], link: "https://platform.openai.com/", related: ["anthropicconsole", "openaiplayground", "replit"], mission: "web", guidedLevel: "912" },
+        { id: "anthropicconsole",type: "tool", label: "Anthropic Console",  shortLabel: "Console",     category: "ai", categories: ["ai", "coding"],    radius: 20, grades: ["9-12"],         description: "Manage API keys, model access, and usage details for projects built with Anthropic tools.", teaches: "API key management and building with Claude.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser", "projects"], link: "https://console.anthropic.com/", related: ["claudeapi", "claude", "openaiplatform"], mission: "web", guidedLevel: "912" },
+        { id: "claudeapi",       type: "tool", label: "Claude API Docs",    shortLabel: "Claude API",  category: "ai", categories: ["ai", "coding"],    radius: 20, grades: ["9-12"],         description: "Read the full documentation for building apps, tools, and workflows with Claude.", teaches: "API documentation reading, Claude integration, and AI app building.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://docs.anthropic.com/", related: ["anthropicconsole", "claude", "replit"], mission: "web", guidedLevel: "912" },
+        { id: "openaiplayground",type: "tool", label: "OpenAI Playground",  shortLabel: "Playground",  category: "ai", categories: ["ai", "coding"],    radius: 22, grades: ["9-12"],         description: "Experiment with prompts, compare model behavior, and test AI ideas before building them into projects.", teaches: "Systematic prompting, model comparison, and iterative AI design.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser", "projects"], link: "https://platform.openai.com/playground", related: ["chatgpt", "openaiplatform"], mission: "learn", guidedLevel: "912" },
+        { id: "sora",            type: "tool", label: "Sora",               shortLabel: "Sora",        category: "ai", categories: ["ai", "art"],       radius: 22, grades: ["9-12"],         description: "Create video from text prompts with OpenAI's text-to-video tool for visual storytelling and media experiments.", teaches: "Visual prompting, storyboarding, and iterating on AI-generated video.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser", "projects"], link: "https://openai.com/sora", related: ["dalle", "wevideo", "kapwing"], mission: "art", guidedLevel: "912" },
+        { id: "whisper",         type: "tool", label: "Whisper",            shortLabel: "Whisper",     category: "ai", categories: ["ai", "music"],     radius: 22, grades: ["6-8", "9-12"], description: "Transcribe speech, capture voice input, and turn spoken audio into text for notes, captions, and accessibility.", teaches: "Speech-to-text workflows, accessibility design, and AI audio tools.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "Open Source"], utilities: ["free", "browser", "open-source"], link: "https://openai.com/research/whisper", related: ["openaitts", "bandlab", "obs"], mission: "art", guidedLevel: "68" },
+        { id: "openaitts",       type: "tool", label: "OpenAI Text-to-Speech",shortLabel: "TTS",       category: "ai", categories: ["ai"],              radius: 18, grades: ["9-12"],         description: "Generate realistic voices from text for narration, accessibility, prototypes, and interactive media.", teaches: "Text-to-speech integration and accessibility-aware design.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser"], link: "https://platform.openai.com/docs/guides/text-to-speech", related: ["whisper", "openaiplatform"], mission: "art", guidedLevel: "912" },
+        { id: "openaimodels",    type: "tool", label: "OpenAI Models",      shortLabel: "OAI Models",  category: "ai", categories: ["ai"],              radius: 16, grades: ["9-12"],         description: "Browse available GPT, image, audio, and realtime models to choose the right tool for a task.", teaches: "Model selection and understanding AI capability tiers.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://platform.openai.com/docs/models", related: ["openaiplatform", "claudemodels"], mission: "learn", guidedLevel: "912" },
+        { id: "claudemodels",    type: "tool", label: "Claude Models Guide", shortLabel: "Claude Models",category:"ai", categories: ["ai"],              radius: 16, grades: ["9-12"],         description: "Compare Claude model tiers, capabilities, and use cases when choosing the right model for a project.", teaches: "Model comparison and task-to-model matching.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://docs.anthropic.com/en/docs/models-overview", related: ["claudeapi", "openaimodels"], mission: "learn", guidedLevel: "912" },
+        { id: "chatgptsearch",   type: "tool", label: "ChatGPT Search",     shortLabel: "GPT Search",  category: "ai", categories: ["ai", "research"],  radius: 22, grades: ["6-8", "9-12"], description: "Research topics with AI-powered search that combines conversational answers with web results.", teaches: "Evaluating AI search output against traditional sources.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser"], link: "https://chatgpt.com/?hints=search", related: ["chatgpt", "gemini", "britannica"], mission: "learn", guidedLevel: "68" },
+        { id: "googleaimode",    type: "tool", label: "Google AI Mode",     shortLabel: "AI Mode",     category: "ai", categories: ["ai", "research"],  radius: 18, grades: ["6-8", "9-12"], description: "Open Google's AI-style search results page when AI Mode is enabled on your account.", teaches: "Using AI-augmented search and comparing results.", login: "Login recommended", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser"], link: "https://www.google.com/search?q=&udm=50", related: ["gemini", "chatgptsearch"], mission: "learn", guidedLevel: "68" },
+        { id: "googlelabs",      type: "tool", label: "Google Labs",        shortLabel: "Google Labs", category: "ai", categories: ["ai"],              radius: 16, grades: ["9-12"],         description: "Manage Google AI experiments and preview features like AI Mode when available on your account.", teaches: "Exploring experimental AI features critically.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser"], link: "https://labs.google.com/", related: ["gemini", "googleaimode"], mission: "learn", guidedLevel: "912" },
+
+        // ── Immersive / Creative Tech tools ───────────────────────────────
+        { id: "aframe",          type: "tool", label: "A-Frame",            shortLabel: "A-Frame",     category: "immersive", categories: ["immersive", "coding"],   radius: 32, grades: ["9-12"],         description: "Create interactive VR scenes with HTML-style building blocks, making web-based VR design easier to learn and prototype.", teaches: "Declarative 3D scene building, WebXR basics, and HTML-to-space thinking.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source", "projects"], link: "https://aframe.io/", related: ["threejs", "p5xr", "reactxr"], mission: "art", guidedLevel: "912" },
+        { id: "threejs",         type: "tool", label: "Three.js",           shortLabel: "Three.js",    category: "immersive", categories: ["immersive", "coding"],   radius: 34, grades: ["9-12"],         description: "Build interactive 3D worlds, animations, and WebXR experiences with one of the most popular JavaScript libraries for the web.", teaches: "3D scene graphs, lighting, animation loops, and web graphics programming.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source", "projects"], link: "https://threejs.org/", related: ["babylonjs", "aframe", "playcanvas"], mission: "web", guidedLevel: "912" },
+        { id: "babylonjs",       type: "tool", label: "Babylon.js",         shortLabel: "Babylon.js",  category: "immersive", categories: ["immersive", "coding"],   radius: 28, grades: ["9-12"],         description: "Build rich 3D scenes, simulations, and WebXR experiences with a powerful JavaScript engine designed for the browser.", teaches: "Scene management, physics integration, and immersive web app architecture.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source", "projects"], link: "https://www.babylonjs.com/", related: ["threejs", "aframe", "playcanvas"], mission: "web", guidedLevel: "912" },
+        { id: "playcanvas",      type: "tool", label: "PlayCanvas",         shortLabel: "PlayCanvas",  category: "immersive", categories: ["immersive", "games"],    radius: 28, grades: ["9-12"],         description: "Design and publish interactive 3D, AR, and VR experiences with a browser-based editor and real-time collaboration tools.", teaches: "Component-based game development and collaborative 3D project workflows.", login: "Login required", free: true, browser: true, openSource: true, tags: ["Free", "Browser-Based", "Open Source"], utilities: ["free", "browser", "open-source", "projects"], link: "https://playcanvas.com/", related: ["threejs", "babylonjs", "gdevelop"], mission: "game", guidedLevel: "912" },
+        { id: "processing",      type: "tool", label: "Processing",         shortLabel: "Processing",  category: "immersive", categories: ["immersive", "coding"],   radius: 30, grades: ["6-8", "9-12"], description: "Learn creative coding by building interactive sketches, animations, and digital art with a beginner-friendly programming environment.", teaches: "Visual programming, generative art, and connecting code to real-time output.", login: "No login required", free: true, browser: false, openSource: true, tags: ["Free", "Open Source"], utilities: ["free", "open-source", "projects"], link: "https://processing.org/", related: ["p5xr", "aframe", "piskel"], mission: "art", guidedLevel: "68" },
+        { id: "vr",              type: "tool", label: "Immersive Web",      shortLabel: "Immersive Web",category: "immersive", categories: ["immersive"],            radius: 22, grades: ["9-12"],         description: "Tutorials, samples, and guides to get started building VR experiences on the web.", teaches: "WebXR standards, device support, and VR development starting points.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://immersiveweb.dev/", related: ["aframe", "threejs", "babylonjs"], mission: "art", guidedLevel: "912" },
+        { id: "omniverse",       type: "tool", label: "NVIDIA Omniverse",   shortLabel: "Omniverse",   category: "immersive", categories: ["immersive", "design3d"], radius: 22, grades: ["9-12"],         description: "Create connected 3D worlds, simulations, and collaborative digital scenes with NVIDIA's Omniverse platform.", teaches: "Real-time simulation, collaborative 3D workflows, and USD scene standards.", login: "Login required", free: true, browser: false, openSource: false, tags: ["Free"], utilities: ["free", "projects"], link: "https://developer.nvidia.com/omniverse", related: ["threejs", "babylonjs", "tinkercad"], mission: "art", guidedLevel: "912" },
+        { id: "wonderland",      type: "tool", label: "Wonderland Engine",  shortLabel: "Wonderland",  category: "immersive", categories: ["immersive"],            radius: 18, grades: ["9-12"],         description: "Create high-performance AR and VR experiences for the web with a lightweight engine built for immersive applications.", teaches: "WebXR performance, component architecture, and immersive web deployment.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser", "projects"], link: "https://wonderlandengine.com/", related: ["aframe", "babylonjs", "threejs"], mission: "art", guidedLevel: "912" },
+        { id: "p5xr",            type: "tool", label: "p5.xr",              shortLabel: "p5.xr",       category: "immersive", categories: ["immersive", "coding"],   radius: 20, grades: ["9-12"],         description: "Experiment with VR and AR using p5.js-style creative coding tools that make immersive prototyping more approachable.", teaches: "XR prototyping through creative coding and iterative spatial sketches.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source"], link: "https://p5xr.org/#/", related: ["aframe", "processing", "threejs"], mission: "art", guidedLevel: "912" },
+        { id: "reactxr",         type: "tool", label: "React XR",           shortLabel: "React XR",    category: "immersive", categories: ["immersive", "coding"],   radius: 18, grades: ["9-12"],         description: "Build immersive VR and AR interfaces with React-based tools that connect modern web app development to XR experiences.", teaches: "Component-driven XR, React integration, and immersive UI patterns.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source", "projects"], link: "https://www.react-xr.com/", related: ["aframe", "threejs", "babylonjs"], mission: "web", guidedLevel: "912" },
+        { id: "heavym",          type: "tool", label: "HeavyM",             shortLabel: "HeavyM",      category: "immersive", categories: ["immersive", "art"],      radius: 20, grades: ["9-12"],         description: "Create projection mapping shows, animated visuals, and stage-ready media for walls, objects, and immersive spaces.", teaches: "Projection mapping workflow, visual design for physical spaces, and live performance media.", login: "Login required", free: false, browser: false, openSource: false, tags: ["Best for projects"], utilities: ["projects"], link: "https://www.heavym.net/", related: ["madmapper", "processing", "wevideo"], mission: "art", guidedLevel: "912" },
+        { id: "madmapper",       type: "tool", label: "MadMapper",          shortLabel: "MadMapper",   category: "immersive", categories: ["immersive", "art"],      radius: 18, grades: ["9-12"],         description: "Design projection mapping installations and control visuals across surfaces, stages, and LED setups for immersive media projects.", teaches: "Surface mapping, media output, and large-scale visual installation design.", login: "Login required", free: false, browser: false, openSource: false, tags: ["Best for projects"], utilities: ["projects"], link: "https://madmapper.com/", related: ["heavym", "processing", "obs"], mission: "art", guidedLevel: "912" },
+
+        // ── Research / Knowledge tools (new) ─────────────────────────────
+        { id: "khan",            type: "tool", label: "Khan Academy",       shortLabel: "Khan",        category: "research", categories: ["research"],             radius: 36, grades: ["K-2", "3-5", "6-8", "9-12"], description: "Lessons, videos, and practice work across core subjects at every grade level.", teaches: "Self-paced mastery, math fluency, and structured learning across subjects.", login: "Optional", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based", "Teacher Pick"], utilities: ["free", "browser", "class-demo"], link: "https://www.khanacademy.org/", related: ["britannica", "pbs-kids", "desmos"], mission: "learn", guidedLevel: "35" },
+        { id: "duolingo",        type: "tool", label: "Duolingo",           shortLabel: "Duolingo",    category: "research", categories: ["research"],             radius: 26, grades: ["3-5", "6-8", "9-12"],       description: "Master languages through bite-sized lessons, daily challenges, and interactive practice.", teaches: "Language learning habits, spaced repetition, and multilingual fluency.", login: "Optional", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser"], link: "https://www.duolingo.com/", related: ["khan", "britannica"], mission: "learn", guidedLevel: "35" },
+        { id: "clever",          type: "tool", label: "Clever",             shortLabel: "Clever",      category: "research", categories: ["research"],             radius: 18, grades: ["K-2", "3-5", "6-8", "9-12"], description: "School portal and app sign-in when a class uses district logins.", teaches: "Navigating school tech infrastructure and account management.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser"], link: "https://clever.com/", related: ["britannica", "khan"], mission: "learn", guidedLevel: "35" },
+        { id: "sep",             type: "tool", label: "Stanford Encyclopedia of Philosophy", shortLabel: "SEP", category: "research", categories: ["research"], radius: 20, grades: ["9-12"], description: "Expert, regularly updated philosophy articles to study how serious academic writing, argument, and analysis work.", teaches: "Argument structure, academic precision, and philosophical reasoning.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://plato.stanford.edu/", related: ["britannica", "google-scholar", "arxiv"], mission: "learn", guidedLevel: "912" },
+        { id: "mathworld",       type: "tool", label: "Wolfram MathWorld",  shortLabel: "MathWorld",   category: "research", categories: ["research", "science"], radius: 22, grades: ["9-12"],         description: "Dense, formula-rich math encyclopedia for exploring advanced concepts, definitions, theorems, and mathematical notation.", teaches: "Mathematical notation, proof reading, and advanced concept lookup.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://mathworld.wolfram.com/", related: ["wolframalpha", "desmos", "geogebra"], mission: "learn", guidedLevel: "912" },
+        { id: "scholarpedia",    type: "tool", label: "Scholarpedia",       shortLabel: "Scholarpedia",category: "research", categories: ["research"],             radius: 18, grades: ["9-12"],         description: "Expert-written encyclopedia articles focused on areas like physics, neuroscience, and computation.", teaches: "Reading primary expert sources and domain-specific academic writing.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "http://www.scholarpedia.org/", related: ["britannica", "sep", "arxiv"], mission: "learn", guidedLevel: "912" },
+        { id: "loc",             type: "tool", label: "Library of Congress", shortLabel: "LoC",        category: "research", categories: ["research"],             radius: 24, grades: ["6-8", "9-12"],  description: "Explore primary sources like maps, recordings, photos, manuscripts, and historical documents from one of the world's largest collections.", teaches: "Primary source analysis, archival research, and historical evidence gathering.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://www.loc.gov/", related: ["smithsonian-learning-lab", "googleartsculture", "britannica"], mission: "learn", guidedLevel: "68" },
+        { id: "gutenberg",       type: "tool", label: "Project Gutenberg",  shortLabel: "Gutenberg",   category: "research", categories: ["research"],             radius: 20, grades: ["6-8", "9-12"],  description: "Access thousands of free public-domain books and classic texts for literature study, historical reading, and canon exploration.", teaches: "Close reading, genre history, and using primary literary sources.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://www.gutenberg.org/", related: ["openlibrary", "hathitrust", "loc"], mission: "learn", guidedLevel: "68" },
+        { id: "openlibrary",     type: "tool", label: "Open Library",       shortLabel: "Open Library",category: "research", categories: ["research"],             radius: 18, grades: ["6-8", "9-12"],  description: "Browse a massive catalog of books and borrow digital scans to support reading, research, and book discovery.", teaches: "Digital library navigation, borrowing, and book-based research habits.", login: "Optional", free: true, browser: true, openSource: true, tags: ["Free", "Open Source"], utilities: ["free", "browser", "open-source"], link: "https://openlibrary.org/", related: ["gutenberg", "hathitrust", "britannica"], mission: "learn", guidedLevel: "68" },
+        { id: "hathitrust",      type: "tool", label: "HathiTrust",         shortLabel: "HathiTrust",  category: "research", categories: ["research"],             radius: 16, grades: ["9-12"],         description: "Search a large university-backed digital archive of books and research materials for deeper academic reading.", teaches: "Advanced archival search and navigating large academic collections.", login: "Optional", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser"], link: "https://www.hathitrust.org/", related: ["openlibrary", "gutenberg", "google-scholar"], mission: "learn", guidedLevel: "912" },
+        { id: "ncbi",            type: "tool", label: "NCBI",               shortLabel: "NCBI",        category: "research", categories: ["research", "science"], radius: 24, grades: ["9-12"],         description: "Search biology, genetics, and medical research resources, including papers and databases used in real scientific study.", teaches: "Scientific database search, reading abstracts, and biology-domain research.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://www.ncbi.nlm.nih.gov/", related: ["arxiv", "google-scholar", "britannica"], mission: "learn", guidedLevel: "912" },
+        { id: "arxiv",           type: "tool", label: "arXiv",              shortLabel: "arXiv",       category: "research", categories: ["research", "science"], radius: 24, grades: ["9-12"],         description: "Read current research preprints in AI, physics, and math to study how new knowledge is created and shared.", teaches: "Reading academic preprints, tracking research fields, and understanding scientific communication.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://arxiv.org/", related: ["ncbi", "google-scholar", "sep"], mission: "learn", guidedLevel: "912" },
+        { id: "ourworldindata",  type: "tool", label: "Our World in Data",  shortLabel: "OWID",        category: "research", categories: ["research", "science"], radius: 28, grades: ["6-8", "9-12"],  description: "Explore clean, interactive global datasets and visualizations to study trends, evidence, and real-world data stories.", teaches: "Data literacy, evidence-based reasoning, and visual data interpretation.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://ourworldindata.org/", related: ["gapminder", "desmos", "britannica"], mission: "learn", guidedLevel: "68" },
+        { id: "gapminder",       type: "tool", label: "Gapminder",          shortLabel: "Gapminder",   category: "research", categories: ["research", "science"], radius: 24, grades: ["6-8", "9-12"],  description: "Explore animated statistical models and global development data to see patterns, change over time, and evidence-based stories.", teaches: "Statistical visualization, debunking misconceptions with data, and comparative analysis.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://www.gapminder.org/", related: ["ourworldindata", "desmos", "britannica"], mission: "learn", guidedLevel: "68" },
+        { id: "mapclub",         type: "tool", label: "Map Club",           shortLabel: "Map Club",    category: "research", categories: ["research"],             radius: 18, grades: ["6-8", "9-12"],  description: "Create interactive maps and location-based visual stories that connect geography, data, and classroom research.", teaches: "Spatial thinking, geographic data visualization, and mapping storytelling.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://map.club/", related: ["gapminder", "ourworldindata", "googleartsculture"], mission: "learn", guidedLevel: "68" },
+        { id: "googleartsculture",type:"tool", label: "Google Arts & Culture",shortLabel: "Arts & Culture",category:"research",categories: ["art", "research"],  radius: 24, grades: ["3-5", "6-8", "9-12"], description: "Explore museums, artworks, historical objects, and cultural collections through interactive exhibits.", teaches: "Art history, cultural context, close observation, and primary source exploration.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://artsandculture.google.com/", related: ["smithsonian-learning-lab", "loc", "canva"], mission: "art", guidedLevel: "35" },
+
+        // ── Science / Simulation tools (new) ─────────────────────────────
+        { id: "nasa",            type: "tool", label: "NASA",               shortLabel: "NASA",        category: "science", categories: ["science", "research"],  radius: 32, grades: ["3-5", "6-8", "9-12"], description: "Explore real missions, datasets, imagery, and science resources to study applied science, engineering, and systems thinking.", teaches: "Scientific inquiry, systems thinking, and applying evidence from real mission data.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://www.nasa.gov/", related: ["nasa-eyes", "phet", "britannica"], mission: "learn", guidedLevel: "35" },
+        { id: "geogebra",        type: "tool", label: "GeoGebra",           shortLabel: "GeoGebra",    category: "science", categories: ["science", "research"],  radius: 26, grades: ["3-5", "6-8", "9-12"], description: "Investigate geometry, algebra, graphing, and modeling with dynamic interactive math tools.", teaches: "Dynamic geometry, function exploration, and visual math reasoning.", login: "Optional", free: true, browser: true, openSource: true, tags: ["Free", "Browser-Based", "Open Source"], utilities: ["free", "browser", "open-source", "class-demo"], link: "https://www.geogebra.org/", related: ["desmos", "mathworld", "phet"], mission: "learn", guidedLevel: "35" },
+        { id: "wolframalpha",    type: "tool", label: "Wolfram Alpha",      shortLabel: "Wolfram Alpha",category:"science", categories: ["science", "research"],  radius: 26, grades: ["6-8", "9-12"],       description: "Solve equations, analyze data, and get step-by-step computational answers across math and science topics.", teaches: "Computational thinking, answer verification, and structured problem solving.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://www.wolframalpha.com/", related: ["desmos", "mathworld", "geogebra"], mission: "learn", guidedLevel: "68" },
+        { id: "climatekids",     type: "tool", label: "NASA Climate Kids",  shortLabel: "Climate Kids", category:"science", categories: ["science"],              radius: 18, grades: ["K-2", "3-5"],          description: "Learn about weather, climate, Earth systems, and environmental science through student-friendly NASA activities.", teaches: "Earth systems, evidence for climate patterns, and data interpretation at younger levels.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "K–5 friendly"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://climatekids.nasa.gov/", related: ["nasa", "phet", "pbs-kids"], mission: "learn", guidedLevel: "35" },
+
+        // ── Coding tools (new) ────────────────────────────────────────────
+        { id: "github",          type: "tool", label: "GitHub",             shortLabel: "GitHub",      category: "coding", categories: ["coding"],               radius: 32, grades: ["6-8", "9-12"],       description: "Save code, track versions, and publish web projects with GitHub's version control platform.", teaches: "Version control, collaborative coding, branching, and publishing with GitHub Pages.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based", "Best for projects"], utilities: ["free", "browser", "projects"], link: "https://github.com/", related: ["replit", "glitch", "githubdesktop"], mission: "web", guidedLevel: "912" },
+        { id: "glitch",          type: "tool", label: "Glitch",             shortLabel: "Glitch",      category: "coding", categories: ["coding"],               radius: 26, grades: ["6-8", "9-12"],       description: "Build and remix web apps in the browser with fast sharing, live editing, and beginner-accessible setup.", teaches: "Remixing, web app structure, and sharing projects with live URLs.", login: "Optional", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://glitch.com/", related: ["replit", "github", "googlesites"], mission: "web", guidedLevel: "68" },
+        { id: "figma",           type: "tool", label: "Figma",              shortLabel: "Figma",       category: "art",    categories: ["art", "coding"],        radius: 30, grades: ["6-8", "9-12"],       description: "Design apps, websites, wireframes, and interface prototypes collaboratively in the browser.", teaches: "UI/UX thinking, wireframing, visual hierarchy, and design-to-code communication.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://www.figma.com/", related: ["canva", "piskel", "thunkable"], mission: "art", guidedLevel: "68" },
+        { id: "thunkable",       type: "tool", label: "Thunkable",          shortLabel: "Thunkable",   category: "coding", categories: ["coding"],               radius: 22, grades: ["6-8", "9-12"],       description: "Build mobile apps with drag-and-drop logic and visual components for classroom projects and prototypes.", teaches: "Mobile app structure, UI logic, and no-code app development.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://www.thunkable.com/", related: ["glide", "scratch", "replit"], mission: "web", guidedLevel: "68" },
+        { id: "glide",           type: "tool", label: "Glide",              shortLabel: "Glide",       category: "coding", categories: ["coding"],               radius: 22, grades: ["6-8", "9-12"],       description: "Turn data and spreadsheets into simple apps, tools, and dashboards without needing traditional coding.", teaches: "Data-driven app design and spreadsheet-to-app thinking.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://www.glideapps.com/", related: ["thunkable", "googledocs", "scratch"], mission: "web", guidedLevel: "68" },
+        { id: "githubdesktop",   type: "tool", label: "GitHub Desktop",     shortLabel: "GH Desktop",  category: "coding", categories: ["coding"],               radius: 18, grades: ["9-12"],               description: "Simpler visual workflow for commits, branches, and syncing projects with GitHub.", teaches: "Visual version control, branching, and code history management.", login: "Login required", free: true, browser: false, openSource: true, tags: ["Free", "Open Source"], utilities: ["free", "open-source", "projects"], link: "https://desktop.github.com/", related: ["github", "replit"], mission: "web", guidedLevel: "912" },
+        { id: "googlesites",     type: "tool", label: "Google Sites",       shortLabel: "Sites",       category: "coding", categories: ["coding", "art"],        radius: 18, grades: ["3-5", "6-8", "9-12"], description: "Build simple websites, class pages, and student portfolios without needing advanced web design skills.", teaches: "Web publishing basics, layout, and organizing content for an audience.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://sites.google.com/", related: ["github", "glitch", "canva"], mission: "web", guidedLevel: "35" },
+        { id: "ninite",          type: "tool", label: "Ninite",             shortLabel: "Ninite",      category: "coding", categories: ["coding"],               radius: 14, grades: ["9-12"],               description: "Install multiple classroom or lab apps at once with a simple bulk installer.", teaches: "Software setup and lab management efficiency.", login: "No login required", free: true, browser: false, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login"], link: "https://ninite.com/", related: ["github", "githubdesktop"], mission: "web", guidedLevel: "912" },
+
+        // ── Art / Media tools (new) ───────────────────────────────────────
+        { id: "artstation",      type: "tool", label: "ArtStation",         shortLabel: "ArtStation",  category: "art", categories: ["art"],                  radius: 24, grades: ["6-8", "9-12"],       description: "Share digital art, concept work, 3D projects, and visual portfolios in a professional online gallery format.", teaches: "Portfolio curation, professional presentation, and studying professional digital art.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://www.artstation.com/", related: ["canva", "figma", "piskel"], mission: "art", guidedLevel: "68" },
+        { id: "photopea",        type: "tool", label: "Photopea",           shortLabel: "Photopea",    category: "art", categories: ["art"],                  radius: 24, grades: ["6-8", "9-12"],       description: "Edit images, layered graphics, and design files in the browser with powerful Photoshop-style tools.", teaches: "Layer-based editing, image composition, and digital asset processing.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "projects"], link: "https://www.photopea.com/", related: ["pixlr", "canva", "piskel"], mission: "art", guidedLevel: "68" },
+        { id: "pixlr",           type: "tool", label: "Pixlr",              shortLabel: "Pixlr",       category: "art", categories: ["art"],                  radius: 20, grades: ["3-5", "6-8", "9-12"], description: "Create and edit photos, graphics, and digital artwork in a browser-based design tool.", teaches: "Image editing, visual design, and creating digital graphics for projects.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "projects"], link: "https://pixlr.com/", related: ["photopea", "canva", "piskel"], mission: "art", guidedLevel: "35" },
+        { id: "googledocs",      type: "tool", label: "Google Docs",        shortLabel: "Docs",        category: "art", categories: ["art"],                  radius: 22, grades: ["3-5", "6-8", "9-12"], description: "Write notes, essays, and collaborative documents in the browser with easy sharing and commenting.", teaches: "Document structure, collaborative editing, and writing workflow.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://docs.google.com/", related: ["googleslides", "googledrive", "canva"], mission: "art", guidedLevel: "35" },
+        { id: "googleslides",    type: "tool", label: "Google Slides",      shortLabel: "Slides",      category: "art", categories: ["art"],                  radius: 18, grades: ["3-5", "6-8", "9-12"], description: "Create presentations, classroom reports, and project showcases with easy collaboration and sharing.", teaches: "Visual communication, slide design, and presentation structure.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://slides.google.com/", related: ["canva", "googledocs", "figma"], mission: "art", guidedLevel: "35" },
+        { id: "clipchamp",       type: "tool", label: "Clipchamp",          shortLabel: "Clipchamp",   category: "art", categories: ["art"],                  radius: 20, grades: ["3-5", "6-8", "9-12"], description: "Create and edit videos, voiceovers, screen recordings, and simple media projects in the browser.", teaches: "Video editing workflow, timeline editing, and screen recording for presentations.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://clipchamp.com/", related: ["wevideo", "kapwing", "obs"], mission: "art", guidedLevel: "35" },
+        { id: "kapwing",         type: "tool", label: "Kapwing",            shortLabel: "Kapwing",     category: "art", categories: ["art"],                  radius: 18, grades: ["6-8", "9-12"],       description: "Edit videos, add captions, make memes, and build short-form media projects with browser-based tools.", teaches: "Short-form media production, captioning, and media editing for social contexts.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://www.kapwing.com/", related: ["clipchamp", "wevideo", "sora"], mission: "art", guidedLevel: "68" },
+        { id: "obs",             type: "tool", label: "OBS Studio",         shortLabel: "OBS",         category: "art", categories: ["art", "music"],         radius: 22, grades: ["6-8", "9-12"],       description: "Record screens, cameras, and audio for tutorials, demos, livestreams, and classroom video projects.", teaches: "Multi-source recording, scene composition, and audio-video production workflow.", login: "No login required", free: true, browser: false, openSource: true, tags: ["Free", "Open Source"], utilities: ["free", "open-source", "projects"], link: "https://obsproject.com/", related: ["wevideo", "bandlab", "kapwing"], mission: "art", guidedLevel: "68" },
+        { id: "ezgif",           type: "tool", label: "EZGIF",              shortLabel: "EZGIF",       category: "art", categories: ["art"],                  radius: 16, grades: ["3-5", "6-8", "9-12"], description: "Resize, crop, convert, and optimize GIFs and short video clips for websites, projects, and presentations.", teaches: "Image/animation optimization and web asset preparation.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://ezgif.com/", related: ["photopea", "tinypng", "kapwing"], mission: "art", guidedLevel: "35" },
+        { id: "tinypng",         type: "tool", label: "TinyPNG",            shortLabel: "TinyPNG",     category: "art", categories: ["art", "coding"],        radius: 14, grades: ["3-5", "6-8", "9-12"], description: "Compress images to reduce file size and make websites load faster without noticeably hurting visual quality.", teaches: "Web performance basics and asset optimization.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://tinypng.com/", related: ["ezgif", "photopea", "glitch"], mission: "web", guidedLevel: "35" },
+
+        // ── Google Productivity ───────────────────────────────────────────
+        { id: "googlesheets",    type: "tool", label: "Google Sheets",      shortLabel: "Sheets",      category: "science", categories: ["science", "research"], radius: 22, grades: ["3-5", "6-8", "9-12"], description: "Organize data, build budgets, run calculations, and track information in collaborative spreadsheets.", teaches: "Data organization, formula logic, and spreadsheet-based evidence management.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "class-demo", "projects"], link: "https://sheets.google.com/", related: ["desmos", "googledocs", "gapminder"], mission: "learn", guidedLevel: "35" },
+        { id: "googledrive",     type: "tool", label: "Google Drive",       shortLabel: "Drive",       category: "research", categories: ["research"],            radius: 18, grades: ["3-5", "6-8", "9-12"], description: "Store, organize, share, and manage classroom files, documents, slides, and project folders.", teaches: "File management, cloud storage, and sharing best practices.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "class-demo"], link: "https://drive.google.com/", related: ["googledocs", "googleslides", "googlesites"], mission: "learn", guidedLevel: "35" },
+        { id: "googleforms",     type: "tool", label: "Google Forms",       shortLabel: "Forms",       category: "research", categories: ["research"],            radius: 16, grades: ["3-5", "6-8", "9-12"], description: "Create quizzes, surveys, sign-ups, and assignment forms that collect responses automatically.", teaches: "Survey design, data collection, and reading response summaries.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "class-demo"], link: "https://forms.google.com/", related: ["googlesheets", "googledocs", "britannica"], mission: "learn", guidedLevel: "35" },
+
+        // ── Robotics / Electronics tools (new) ───────────────────────────
+        { id: "diode",           type: "tool", label: "Diode",              shortLabel: "Diode",       category: "robotics", categories: ["robotics"],            radius: 26, grades: ["6-8", "9-12"],       description: "Build and simulate circuit prototypes on a 3D breadboard — no hardware needed.", teaches: "Circuit layout, component behavior, and breadboard simulation workflows.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://www.withdiode.com/", related: ["wokwi", "circuitlab", "falstad"], mission: "robot", guidedLevel: "68" },
+        { id: "circuitlab",      type: "tool", label: "CircuitLab",         shortLabel: "CircuitLab",  category: "robotics", categories: ["robotics", "science"], radius: 24, grades: ["6-8", "9-12"],       description: "Draw, test, and analyze electronic circuits in the browser with schematic tools and built-in simulation.", teaches: "Schematic reading, circuit analysis, and simulation-based debugging.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser", "projects"], link: "https://www.circuitlab.com/", related: ["falstad", "diode", "wokwi"], mission: "robot", guidedLevel: "68" },
+        { id: "falstad",         type: "tool", label: "Falstad Circuit Simulator", shortLabel: "Falstad", category: "robotics", categories: ["robotics", "science"], radius: 22, grades: ["6-8", "9-12"], description: "Experiment with live circuit simulations in the browser and see current, voltage, and component behavior update in real time.", teaches: "Electrical fundamentals, Ohm's law in practice, and simulation-driven inquiry.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://www.falstad.com/circuit/", related: ["circuitlab", "diode", "wokwi"], mission: "robot", guidedLevel: "68" },
+        { id: "vexvr",           type: "tool", label: "VEXcode VR",         shortLabel: "VEXcode VR",  category: "robotics", categories: ["robotics", "coding"],  radius: 24, grades: ["6-8", "9-12"],       description: "Learn coding and robotics concepts by programming a virtual robot in interactive browser-based challenge worlds.", teaches: "Event-driven coding, robot navigation, sensors, and command sequencing.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "class-demo", "projects"], link: "https://vr.vex.com/", related: ["microbit-makecode", "wokwi", "diode"], mission: "robot", guidedLevel: "68" },
+        { id: "gazebo",          type: "tool", label: "Gazebo",             shortLabel: "Gazebo",      category: "robotics", categories: ["robotics", "science"], radius: 20, grades: ["9-12"],               description: "Test robots, sensors, and environments in a realistic physics simulation used for robotics design and experimentation.", teaches: "Physics simulation, sensor modeling, and robot testing methodology.", login: "No login required", free: true, browser: false, openSource: true, tags: ["Free", "Open Source"], utilities: ["free", "open-source", "projects"], link: "https://gazebosim.org/home", related: ["wokwi", "vexvr", "onshape"], mission: "robot", guidedLevel: "912" },
+        { id: "onshape",         type: "tool", label: "Onshape",            shortLabel: "Onshape",     category: "design3d", categories: ["design3d", "robotics"], radius: 26, grades: ["9-12"],              description: "Create precise 3D models, mechanical parts, and engineering designs in a browser-based CAD platform built for collaboration.", teaches: "Parametric CAD, mechanical design reasoning, and collaborative engineering workflows.", login: "Login required", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://www.onshape.com/en/", related: ["tinkercad", "sketchup", "gazebo"], mission: "robot", guidedLevel: "912" },
+        { id: "sparkfunlearn",   type: "tool", label: "SparkFun Learn",     shortLabel: "SparkFun",    category: "robotics", categories: ["robotics"],            radius: 20, grades: ["6-8", "9-12"],       description: "Use tutorials and project walkthroughs to learn circuits, sensors, microcontrollers, and physical computing.", teaches: "Electronics fundamentals, reading data sheets, and guided maker workflows.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://learn.sparkfun.com/", related: ["adafruitlearn", "wokwi", "arduino-project-hub"], mission: "robot", guidedLevel: "68" },
+        { id: "adafruitlearn",   type: "tool", label: "Adafruit Learning System", shortLabel: "Adafruit", category: "robotics", categories: ["robotics"],         radius: 20, grades: ["6-8", "9-12"],       description: "Follow step-by-step maker tutorials for electronics, coding, wearables, sensors, and creative hardware builds.", teaches: "Maker project workflow, component wiring, and building from tutorials.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://learn.adafruit.com/", related: ["sparkfunlearn", "arduino-project-hub", "wokwi"], mission: "robot", guidedLevel: "68" },
+
+        // ── 3D Design tools (new) ─────────────────────────────────────────
+        { id: "cura",            type: "tool", label: "Cura",               shortLabel: "Cura",        category: "design3d", categories: ["design3d"],            radius: 22, grades: ["6-8", "9-12"],       description: "Prepare 3D models for printing by slicing files, adjusting print settings, and generating printer-ready output.", teaches: "Print preparation, layer settings, and fabrication quality decisions.", login: "No login required", free: true, browser: false, openSource: true, tags: ["Free", "Open Source"], utilities: ["free", "open-source", "projects"], link: "https://ultimaker.com/software/ultimaker-cura/", related: ["prusaslicer", "tinkercad", "stlviewer"], mission: "robot", guidedLevel: "68" },
+        { id: "prusaslicer",     type: "tool", label: "PrusaSlicer",        shortLabel: "PrusaSlicer", category: "design3d", categories: ["design3d"],            radius: 18, grades: ["9-12"],               description: "Slice 3D models, tune print profiles, and prepare detailed printing workflows for classroom fabrication projects.", teaches: "Advanced slicing parameters and optimizing models for physical fabrication.", login: "No login required", free: true, browser: false, openSource: true, tags: ["Free", "Open Source"], utilities: ["free", "open-source", "projects"], link: "https://www.prusa3d.com/page/prusaslicer_424/", related: ["cura", "tinkercad", "printables"], mission: "robot", guidedLevel: "912" },
+        { id: "stlviewer",       type: "tool", label: "STL Viewer",         shortLabel: "STL Viewer",  category: "design3d", categories: ["design3d"],            radius: 16, grades: ["6-8", "9-12"],       description: "Open and inspect STL files in the browser to check model shape, scale, and orientation before printing.", teaches: "Model review, print preparation awareness, and 3D file inspection.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://www.viewstl.com/", related: ["cura", "prusaslicer", "tinkercad"], mission: "robot", guidedLevel: "68" },
+        { id: "polypizza",       type: "tool", label: "Poly Pizza",         shortLabel: "Poly Pizza",  category: "design3d", categories: ["design3d", "art"],     radius: 18, grades: ["3-5", "6-8", "9-12"], description: "Free low-poly 3D models for scenes, levels, and prototypes.", teaches: "3D asset sourcing, model evaluation, and using CC0 assets responsibly.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://poly.pizza", related: ["printables", "tinkercad", "piskel"], mission: "art", guidedLevel: "35" },
+
+        // ── Games (new) ───────────────────────────────────────────────────
+        { id: "bloxels",         type: "tool", label: "Bloxels",            shortLabel: "Bloxels",     category: "games", categories: ["games", "art"],          radius: 22, grades: ["3-5", "6-8"],         description: "Build pixel-art characters, levels, and side-scrolling game worlds in the Bloxels studio.", teaches: "Level design, visual storytelling, and game-world creation.", login: "Login required", free: false, browser: true, openSource: false, tags: ["Browser-Based"], utilities: ["browser", "projects"], link: "https://play.bloxels.com/", related: ["piskel", "makecode-arcade", "scratch"], mission: "game", guidedLevel: "35" },
+        { id: "lightbot",        type: "tool", label: "Lightbot",           shortLabel: "Lightbot",    category: "games", categories: ["games", "coding"],        radius: 22, grades: ["K-2", "3-5", "6-8"],  description: "Solve programming-style puzzles using sequencing, procedures, and logic without needing typed code.", teaches: "Sequencing, procedures, decomposition, and debugging through game puzzles.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://lightbot.com/", related: ["blockly-games", "scratch", "codeorg"], mission: "game", guidedLevel: "35" },
+        { id: "scratchjr",       type: "tool", label: "ScratchJr",          shortLabel: "ScratchJr",   category: "coding", categories: ["coding", "games"],        radius: 24, grades: ["K-2"],                 description: "Introduce younger learners to coding by snapping together simple programs that make characters move, jump, and tell stories.", teaches: "Sequential thinking, cause-and-effect, and early computational concepts.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "K–2 friendly"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://codejr.org/scratchjr/index.html", related: ["scratch", "pbs-kids", "blockly-games"], mission: "game", guidedLevel: "35" },
+        { id: "freeciv",         type: "tool", label: "Freeciv",            shortLabel: "Freeciv",     category: "games", categories: ["games", "research"],      radius: 18, grades: ["6-8", "9-12"],         description: "Open-source Civilization-style strategy game that builds systems thinking, resource management, and historical understanding.", teaches: "Systems thinking, resource trade-offs, diplomacy, and iterative decision making.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser"], link: "https://www.freecivweb.com/", related: ["oregontrail", "timeguessr", "gapminder"], mission: "game", guidedLevel: "68" },
+        { id: "oregontrail",     type: "tool", label: "The Oregon Trail",   shortLabel: "Oregon Trail", category: "games", categories: ["games", "research"],     radius: 20, grades: ["3-5", "6-8"],          description: "Classic decision-making game that teaches westward expansion, resource choices, risk, and survival under historical constraints.", teaches: "Historical context, risk assessment, and consequence-based decision making.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://oregontrail.ws/games/the-oregon-trail/", related: ["freeciv", "timeguessr", "britannica"], mission: "game", guidedLevel: "35" },
+        { id: "timeguessr",      type: "tool", label: "TimeGuessr",         shortLabel: "TimeGuessr",  category: "games", categories: ["games", "research"],      radius: 18, grades: ["6-8", "9-12"],         description: "Study visual clues to guess when and where a photo was taken, building historical inference and geography skills.", teaches: "Visual analysis, historical inference, and evidence-based deduction.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://timeguessr.com/", related: ["oregontrail", "gapminder", "googleartsculture"], mission: "game", guidedLevel: "68" },
+        { id: "mitgamelab",      type: "tool", label: "MIT Game Lab",       shortLabel: "MIT Game Lab", category: "games", categories: ["games", "research"],     radius: 16, grades: ["9-12"],                 description: "Explore game research, design experiments, and creative technology projects from MIT's interdisciplinary game lab.", teaches: "Game design theory, research methods, and studying games as serious design systems.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login"], utilities: ["free", "no-login", "browser"], link: "https://gamelab.mit.edu", related: ["gdevelop", "godot", "replit"], mission: "game", guidedLevel: "912" },
+        { id: "roomrecess",      type: "tool", label: "RoomRecess",         shortLabel: "RoomRecess",  category: "games", categories: ["games"],                  radius: 16, grades: ["K-2", "3-5"],          description: "Play teacher-built educational games that reinforce math, reading, typing, and problem-solving for younger learners.", teaches: "Math fluency, reading, and core skill practice through play.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "K–5 friendly"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://www.roomrecess.com/", related: ["pbs-kids", "toytheater", "funbrain"], mission: "game", guidedLevel: "35" },
+        { id: "toytheater",      type: "tool", label: "Toy Theater",        shortLabel: "Toy Theater", category: "games", categories: ["games", "science"],       radius: 16, grades: ["K-2", "3-5"],          description: "Use interactive games and visual tools to build conceptual understanding in math, logic, and pattern recognition.", teaches: "Number sense, logic, pattern building, and conceptual math foundations.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "K–5 friendly"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://toytheater.com/", related: ["roomrecess", "pbs-kids", "desmos"], mission: "game", guidedLevel: "35" },
+        { id: "funbrain",        type: "tool", label: "Funbrain",           shortLabel: "Funbrain",    category: "games", categories: ["games"],                  radius: 14, grades: ["K-2", "3-5"],          description: "Classic academic games and activities that reinforce math, reading, grammar, and core classroom skills.", teaches: "Math, reading, and core academic skills through game-based practice.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "K–5 friendly"], utilities: ["free", "no-login", "browser", "class-demo"], link: "https://www.funbrain.com/", related: ["roomrecess", "pbs-kids", "toytheater"], mission: "game", guidedLevel: "35" },
+        { id: "danball",         type: "tool", label: "Dan-Ball",           shortLabel: "Dan-Ball",    category: "games", categories: ["games", "science"],       radius: 20, grades: ["3-5", "6-8"],          description: "Browser-based simulation and game experiments, including playful physics sandboxes students can study and explore.", teaches: "Emergent behavior, particle physics intuition, and sandbox experimentation.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://dan-ball.jp/en/", related: ["phet", "toytheater", "scratch"], mission: "game", guidedLevel: "35" },
+        { id: "windows93",       type: "tool", label: "Windows 93",         shortLabel: "Windows 93",  category: "games", categories: ["games"],                  radius: 18, grades: ["6-8", "9-12"],         description: "Explore a fake but fully interactive retro-style operating system packed with strange tools, demos, and hacks.", teaches: "Interface history, hacker culture, and curiosity-driven exploration of OS ideas.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://www.windows93.net/", related: ["infinitemac", "pcjs", "v86"], mission: "game", guidedLevel: "68" },
+        { id: "infinitemac",     type: "tool", label: "Infinite Mac",       shortLabel: "Infinite Mac", category: "games", categories: ["games", "research"],     radius: 14, grades: ["6-8", "9-12"],         description: "Use classic Macintosh systems in the browser to explore computing history, old software, and how interfaces have changed.", teaches: "Computing history, interface evolution, and software archaeology.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://infinitemac.org/", related: ["pcjs", "windows93", "msdosarchive"], mission: "game", guidedLevel: "68" },
+        { id: "msdosarchive",    type: "tool", label: "Archive.org MS-DOS Games", shortLabel: "MS-DOS Archive", category:"games", categories: ["games", "research"], radius: 16, grades: ["6-8", "9-12"], description: "Play classic MS-DOS games in the browser to study game history, changing mechanics, and design constraints across eras.", teaches: "Game design history, evolving mechanics, and reading design in historical context.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://archive.org/details/softwarelibrary_msdos_games", related: ["archivesoftware", "infinitemac", "pcjs"], mission: "game", guidedLevel: "68" },
+        { id: "v86",             type: "tool", label: "v86",                shortLabel: "v86",         category: "coding", categories: ["coding", "games"],        radius: 16, grades: ["9-12"],                 description: "Run Linux, Windows 95/98, and FreeDOS in the browser to explore OS architecture, emulation, and virtualization concepts.", teaches: "OS architecture, virtualization concepts, and system boot processes.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source"], link: "https://copy.sh/v86/", related: ["jslinux", "emulatorjs", "pcjs"], mission: "web", guidedLevel: "912" },
+        { id: "jslinux",         type: "tool", label: "JSLinux",            shortLabel: "JSLinux",     category: "coding", categories: ["coding", "games"],        radius: 16, grades: ["9-12"],                 description: "Boot Linux instantly in the browser for a pure terminal experience that helps students explore low-level OS and command-line workflows.", teaches: "Command-line basics, Linux fundamentals, and terminal navigation.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://bellard.org/jslinux/", related: ["v86", "replit", "github"], mission: "web", guidedLevel: "912" },
+        { id: "pcjs",            type: "tool", label: "PCjs",               shortLabel: "PCjs",        category: "games", categories: ["games", "research"],      radius: 14, grades: ["9-12"],                 description: "Boot classic IBM PCs, MS-DOS, and early Windows systems in the browser to explore file systems and command-line history.", teaches: "Computing archaeology, early OS interfaces, and file system concepts.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source"], link: "https://www.pcjs.org/", related: ["infinitemac", "msdosarchive", "v86"], mission: "game", guidedLevel: "912" },
+        { id: "emulatorjs",      type: "tool", label: "EmulatorJS",         shortLabel: "EmulatorJS",  category: "games", categories: ["games"],                  radius: 14, grades: ["6-8", "9-12"],         description: "Run classic console systems like NES, SNES, GBA, and PS1 in the browser while exploring hardware abstraction and ROM systems.", teaches: "Hardware abstraction, emulation concepts, and game console history.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source"], link: "https://emulatorjs.org/", related: ["msdosarchive", "archivesoftware", "pcjs"], mission: "game", guidedLevel: "68" },
+        { id: "archivesoftware", type: "tool", label: "Archive.org Software Library", shortLabel: "Archive Software", category: "games", categories: ["games", "research"], radius: 16, grades: ["6-8", "9-12"], description: "Browse a large legal library of preserved software, MS-DOS games, early apps, and educational programs to study software history.", teaches: "Software preservation, tech history, and the evolution of computing tools.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://archive.org/details/software", related: ["msdosarchive", "emulatorjs", "loc"], mission: "game", guidedLevel: "68" },
+        { id: "osgl",            type: "tool", label: "Open Source Games List", shortLabel: "OSGL",    category: "games", categories: ["games", "coding"],        radius: 14, grades: ["9-12"],                 description: "Browse a central hub of open-source games and engines to study architecture, ecosystems, and reverse-engineering style thinking.", teaches: "Open-source exploration, game architecture analysis, and code reading.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source"], link: "https://trilarion.github.io/opensourcegames/", related: ["githubopensourcegames", "godot", "gdevelop"], mission: "game", guidedLevel: "912" },
+        { id: "githubopensourcegames", type: "tool", label: "GitHub Open Source Games Collection", shortLabel: "OSS Games", category: "games", categories: ["games", "coding"], radius: 14, grades: ["9-12"], description: "Explore a large curated list of open-source games to study code structure, remix projects, and learn from real software repositories.", teaches: "Code reading, open-source contribution culture, and game software exploration.", login: "No login required", free: true, browser: true, openSource: true, tags: ["Free", "No Login", "Open Source"], utilities: ["free", "no-login", "browser", "open-source"], link: "https://github.com/bobeff/open-source-games", related: ["osgl", "godot", "github"], mission: "game", guidedLevel: "912" },
+
+        // ── Free Assets ───────────────────────────────────────────────────
+        { id: "opengameart",     type: "tool", label: "OpenGameArt",        shortLabel: "OpenGameArt", category: "art", categories: ["art", "games"],          radius: 20, grades: ["3-5", "6-8", "9-12"], description: "Community-donated 2D art, sprite sheets, and music for game projects.", teaches: "Asset sourcing, license reading, and curating components for game builds.", login: "Optional", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://opengameart.org", related: ["kenney", "craftpix", "piskel"], mission: "game", guidedLevel: "35" },
+        { id: "kenney",          type: "tool", label: "Kenney.nl",          shortLabel: "Kenney",      category: "art", categories: ["art", "games"],          radius: 22, grades: ["3-5", "6-8", "9-12"], description: "High-quality CC0 sprites, tiles, UI pieces, and audio packs for games and prototypes.", teaches: "Asset integration, prototyping speed, and CC0 license use.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "projects"], link: "https://kenney.nl/assets", related: ["opengameart", "craftpix", "makecode-arcade"], mission: "game", guidedLevel: "35" },
+        { id: "craftpix",        type: "tool", label: "CraftPix Freebies",  shortLabel: "CraftPix",    category: "art", categories: ["art", "games"],          radius: 16, grades: ["6-8", "9-12"],       description: "Free 2D characters, environments, and interface kits for game design projects.", teaches: "Game art sourcing and evaluating professional-quality assets.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser", "projects"], link: "https://craftpix.net/freebies", related: ["kenney", "opengameart", "piskel"], mission: "game", guidedLevel: "68" },
+        { id: "freesound",       type: "tool", label: "Freesound",          shortLabel: "Freesound",   category: "music", categories: ["music", "art"],          radius: 20, grades: ["3-5", "6-8", "9-12"], description: "Creative Commons sound effects and recorded audio clips for projects and games.", teaches: "Audio sourcing, Creative Commons licensing, and sound design for media.", login: "Optional", free: true, browser: true, openSource: false, tags: ["Free", "Browser-Based"], utilities: ["free", "browser", "projects"], link: "https://freesound.org", related: ["chrome-music-lab", "bandlab", "obs"], mission: "art", guidedLevel: "35" },
+        { id: "uiverse",         type: "tool", label: "uiverse",            shortLabel: "uiverse",     category: "art", categories: ["art", "coding"],         radius: 18, grades: ["6-8", "9-12"],       description: "Browse community-made UI components, hover effects, loaders, and buttons for web projects.", teaches: "CSS component thinking, UI inspiration, and reading community code.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://uiverse.io/", related: ["cssscanbuttons", "figma", "glitch"], mission: "web", guidedLevel: "68" },
+        { id: "cssscanbuttons",  type: "tool", label: "CSS Scan Buttons",   shortLabel: "CSS Buttons", category: "coding", categories: ["coding", "art"],        radius: 14, grades: ["6-8", "9-12"],       description: "Ready-to-copy CSS button examples to improve web app styling and interaction design.", teaches: "CSS properties, styling components, and adapting existing code snippets.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://getcssscan.com/css-buttons-examples", related: ["uiverse", "freefrontendbuttons", "glitch"], mission: "web", guidedLevel: "68" },
+        { id: "freefrontendbuttons",type:"tool",label:"Free Frontend CSS Buttons",shortLabel:"FE Buttons",category:"coding",categories:["coding","art"],        radius: 14, grades: ["6-8", "9-12"],       description: "Curated CSS button collections and front-end examples for styling ideas and faster prototyping.", teaches: "CSS exploration and translating design inspiration into code.", login: "No login required", free: true, browser: true, openSource: false, tags: ["Free", "No Login", "Browser-Based"], utilities: ["free", "no-login", "browser"], link: "https://freefrontend.com/css-buttons/", related: ["cssscanbuttons", "uiverse", "figma"], mission: "web", guidedLevel: "68" }
+      ].map((node) => {
+        const cats = node.categories || [node.category];
+        const colors = cats.map((c) => categoryMeta[c]?.color || categoryMeta[node.category].color);
+        return {
+          ...node,
+          categories: cats,
+          color: colors[0],
+          colors,
+          gradientId: colors.length > 1 ? `grad-${node.id}` : null
+        };
+      });
 
       const nodesById = new Map(steamGalaxyNodes.map((node) => [node.id, node]));
       const categoryKeys = Object.keys(categoryMeta);
@@ -4931,6 +5362,8 @@
       let linkData = [];
       let animationFrameId = null;
       let starField = [];
+      let nebulaClouds = [];
+      let filaments = [];
       let latestTime = 0;
       let helpDismissed = false;
       let helpAutoTimer = null;
@@ -4942,6 +5375,7 @@
       const zoomExtent = [0.46, 2.8];
 
       const svgSelection = d3.select(svg);
+      const defsSelection = svgSelection.append("defs");
       const worldLayer = svgSelection.append("g").attr("class", "steam-galaxy-world-layer");
       const linkLayer = worldLayer.append("g").attr("class", "steam-galaxy-links-layer");
       const nodeLayer = worldLayer.append("g").attr("class", "steam-galaxy-node-layer");
@@ -5115,8 +5549,9 @@
           fitVisibleNodes(duration);
           return;
         }
+        const layoutNode = layoutNodes.find((n) => n.id === selectedNode.id) || selectedNode;
         const scale = selectedNode.type === "anchor" ? 0.82 : 0.98;
-        centerCameraOn(selectedNode, clamp(scale, zoomExtent[0], 1.12), duration);
+        centerCameraOn(layoutNode, clamp(scale, zoomExtent[0], 1.12), duration);
       }
 
       function nudgeCamera(direction) {
@@ -5163,7 +5598,9 @@
         if (node.type === "anchor") return true;
         if (state.category !== "all") return true;
         if (isCategoryExpanded(node.category)) return true;
-        return node.radius >= 40;
+        if (node.radius >= 40) return true;
+        if (node.radius >= 26) return currentTransform.k >= 1.25;
+        return currentTransform.k >= 1.7;
       }
 
       function getNodeVisualRadius(node) {
@@ -5195,7 +5632,8 @@
 
       function toolVisible(node) {
         if (node.type !== "tool") return false;
-        const categoryMatch = state.category === "all" || node.category === state.category;
+        const cats = node.categories || [node.category];
+        const categoryMatch = state.category === "all" || cats.includes(state.category);
         return categoryMatch && gradeMatches(node) && utilityMatches(node) && revealAllows(node);
       }
 
@@ -5203,7 +5641,14 @@
         if (node.type !== "anchor") return false;
         const categoryMatch = state.category === "all" || node.category === state.category;
         if (!categoryMatch) return false;
-        return steamGalaxyNodes.some((tool) => tool.type === "tool" && tool.category === node.category && toolVisible(tool));
+        // Show anchor if any tools pass grade/utility filters regardless of zoom threshold —
+        // anchors serve as landmarks that guide users to zoom in for hidden tools.
+        return steamGalaxyNodes.some((tool) => {
+          const cats = tool.categories || [tool.category];
+          if (tool.type !== "tool" || !cats.includes(node.category)) return false;
+          const catMatch = state.category === "all" || cats.includes(state.category);
+          return catMatch && gradeMatches(tool) && utilityMatches(tool);
+        });
       }
 
       function nodeVisible(node) {
@@ -5227,17 +5672,30 @@
         return fallback;
       }
 
+      function getNodeTarget(node, targets) {
+        if (node.type === "anchor") return targets[node.category];
+        const cats = node.categories || [node.category];
+        const positions = cats.map((c) => targets[c]).filter(Boolean);
+        if (positions.length === 1) return positions[0];
+        return {
+          x: positions.reduce((sum, p) => sum + p.x, 0) / positions.length,
+          y: positions.reduce((sum, p) => sum + p.y, 0) / positions.length
+        };
+      }
+
       function buildCategoryTargets(width, height) {
         if (width < 760) {
           const mobileTargets = {
-            coding: [0.3, 0.14],
-            robotics: [0.72, 0.14],
-            design3d: [0.7, 0.34],
-            games: [0.28, 0.34],
-            art: [0.28, 0.56],
-            music: [0.72, 0.56],
-            science: [0.3, 0.78],
-            research: [0.72, 0.78]
+            coding:    [0.30, 0.09],
+            robotics:  [0.72, 0.09],
+            design3d:  [0.72, 0.27],
+            games:     [0.28, 0.27],
+            art:       [0.28, 0.45],
+            music:     [0.72, 0.45],
+            immersive: [0.28, 0.63],
+            ai:        [0.72, 0.63],
+            science:   [0.30, 0.81],
+            research:  [0.72, 0.81]
           };
 
           return Object.fromEntries(
@@ -5249,14 +5707,16 @@
         }
 
         const desktopTargets = {
-          coding: [0.24, 0.26],
-          design3d: [0.5, 0.18],
-          robotics: [0.77, 0.28],
-          research: [0.81, 0.54],
-          science: [0.7, 0.78],
-          music: [0.48, 0.82],
-          art: [0.25, 0.76],
-          games: [0.15, 0.52]
+          coding:    [0.24, 0.26],
+          design3d:  [0.50, 0.17],
+          robotics:  [0.76, 0.28],
+          ai:        [0.64, 0.44],
+          research:  [0.80, 0.58],
+          science:   [0.68, 0.78],
+          music:     [0.46, 0.83],
+          art:       [0.24, 0.75],
+          immersive: [0.36, 0.50],
+          games:     [0.14, 0.52]
         };
 
         return Object.fromEntries(
@@ -5274,12 +5734,16 @@
         steamGalaxyNodes
           .filter((node) => node.type === "tool")
           .forEach((tool) => {
-            const anchorId = `anchor-${tool.category}`;
-            const anchorKey = [anchorId, tool.id].sort().join("::");
-            if (!seen.has(anchorKey)) {
-              seen.add(anchorKey);
-              links.push({ id: anchorKey, source: anchorId, target: tool.id, kind: "anchor" });
-            }
+            const cats = tool.categories || [tool.category];
+            cats.forEach((cat) => {
+              const anchorId = `anchor-${cat}`;
+              if (!nodesById.has(anchorId)) return;
+              const anchorKey = [anchorId, tool.id].sort().join("::");
+              if (!seen.has(anchorKey)) {
+                seen.add(anchorKey);
+                links.push({ id: anchorKey, source: anchorId, target: tool.id, kind: "anchor" });
+              }
+            });
 
             (tool.related || []).forEach((relatedId) => {
               if (!nodesById.has(relatedId)) return;
@@ -5538,7 +6002,7 @@
           const value = button.dataset.filterValue || "all";
           const count = value === "all"
             ? filterScopedTools.length
-            : filterScopedTools.filter((node) => node.category === value).length;
+            : filterScopedTools.filter((node) => (node.categories || [node.category]).includes(value)).length;
           button.textContent = `${button.dataset.baseLabel || button.textContent} (${count})`;
           button.classList.toggle("is-active", active);
           button.setAttribute("aria-pressed", String(active));
@@ -5586,20 +6050,21 @@
 
         if (node.type === "anchor") {
           return visibleTools
-            .filter((tool) => tool.category === node.category)
+            .filter((tool) => (tool.categories || [tool.category]).includes(node.category))
             .sort((left, right) => right.radius - left.radius)
             .slice(0, 6);
         }
 
+        const cats = node.categories || [node.category];
+        const anchors = cats.map((c) => nodesById.get(`anchor-${c}`)).filter(Boolean);
         const relationIds = new Set(node.related || []);
         const relationNodes = visibleTools.filter((tool) => relationIds.has(tool.id));
-        const anchor = nodesById.get(`anchor-${node.category}`);
         const extras = visibleTools
-          .filter((tool) => tool.category === node.category && tool.id !== node.id && !relationIds.has(tool.id))
+          .filter((tool) => cats.some((c) => (tool.categories || [tool.category]).includes(c)) && tool.id !== node.id && !relationIds.has(tool.id))
           .sort((left, right) => right.radius - left.radius)
           .slice(0, Math.max(0, 5 - relationNodes.length));
 
-        return [anchor, ...relationNodes, ...extras].filter(Boolean);
+        return [...anchors, ...relationNodes, ...extras].filter(Boolean);
       }
 
       function renderPanel() {
@@ -5647,7 +6112,9 @@
         panelTitle.textContent = node.label;
         panelDesc.textContent = isAnchor ? meta.description : node.description;
         panelTeaches.textContent = isAnchor ? meta.teaches : node.teaches;
-        panelCategory.textContent = meta.label;
+        panelCategory.textContent = isAnchor
+          ? meta.label
+          : (node.categories || [node.category]).map((c) => categoryMeta[c]?.label || c).join(" · ");
         panelGrades.textContent = isAnchor ? "K–12 pathway" : formatGrades(node.grades);
         panelLogin.textContent = isAnchor ? "Varies by tool" : node.login;
         panelFree.textContent = isAnchor ? "Mixed by tool, mostly free starts" : (node.free ? "Yes" : "Limited free tier / check plan");
@@ -5842,10 +6309,11 @@
           return ids;
         }
 
-        ids.add(`anchor-${node.category}`);
+        const cats = node.categories || [node.category];
+        cats.forEach((c) => ids.add(`anchor-${c}`));
         (node.related || []).forEach((id) => ids.add(id));
         steamGalaxyNodes.forEach((candidate) => {
-          if (candidate.type === "tool" && candidate.category === node.category && toolVisible(candidate) && candidate.radius >= 38) {
+          if (candidate.type === "tool" && cats.some((c) => (candidate.categories || [candidate.category]).includes(c)) && toolVisible(candidate) && candidate.radius >= 38) {
             ids.add(candidate.id);
           }
         });
@@ -5863,7 +6331,11 @@
           if (selectedNode.type === "anchor") {
             return sourceId === selectedNode.id || targetId === selectedNode.id;
           }
-          return sourceId === selectedNode.id || targetId === selectedNode.id || (sourceId === `anchor-${selectedNode.category}` && targetId === selectedNode.id) || (targetId === `anchor-${selectedNode.category}` && sourceId === selectedNode.id);
+          const selectedCats = selectedNode.categories || [selectedNode.category];
+          const anchorIds = new Set(selectedCats.map((c) => `anchor-${c}`));
+          return sourceId === selectedNode.id || targetId === selectedNode.id ||
+            (anchorIds.has(sourceId) && targetId === selectedNode.id) ||
+            (anchorIds.has(targetId) && sourceId === selectedNode.id);
         });
       }
 
@@ -5873,7 +6345,30 @@
         node.y = Math.min(height - padding, Math.max(padding, node.y));
       }
 
+      function buildGradients() {
+        const multiNodes = layoutNodes.filter((node) => node.gradientId && node.colors && node.colors.length > 1);
+        const grads = defsSelection.selectAll("linearGradient.node-grad").data(multiNodes, (node) => node.id);
+        grads.exit().remove();
+        const entered = grads.enter()
+          .append("linearGradient")
+          .attr("class", "node-grad")
+          .attr("x1", "0%").attr("y1", "0%")
+          .attr("x2", "100%").attr("y2", "100%");
+        entered.append("stop").attr("offset", "0%");
+        entered.append("stop").attr("offset", "100%");
+        const merged = entered.merge(grads);
+        merged.attr("id", (node) => node.gradientId);
+        merged.select("stop:first-child")
+          .attr("stop-color", (node) => node.colors[0])
+          .attr("stop-opacity", 0.9);
+        merged.select("stop:last-child")
+          .attr("stop-color", (node) => node.colors[1])
+          .attr("stop-opacity", 0.9);
+      }
+
       function drawNodes() {
+        buildGradients();
+
         const nodesSelection = nodeLayer
           .selectAll("g.steam-galaxy-node")
           .data(layoutNodes, (node) => node.id);
@@ -5887,7 +6382,9 @@
           .attr("role", "button")
           .attr("tabindex", 0);
 
+        entered.append("circle").attr("class", "steam-galaxy-node-aura");
         entered.append("circle").attr("class", "steam-galaxy-node-surface");
+        entered.append("circle").attr("class", "steam-galaxy-node-nucleus");
         entered.append("circle").attr("class", "steam-galaxy-node-hit");
         entered.append("image").attr("class", "steam-galaxy-node-icon");
         entered.append("text").attr("class", "steam-galaxy-node-monogram");
@@ -5908,13 +6405,23 @@
             selectNode(node.id);
           });
 
+        merged.select(".steam-galaxy-node-aura")
+          .attr("r", (node) => getNodeVisualRadius(node) * (node.type === "anchor" ? 1.52 : 1.42))
+          .attr("stroke", (node) => node.color)
+          .style("animation-delay", (node) => `-${seededValue(node.id + "-aura") * 4.2}s`);
+
         merged.select(".steam-galaxy-node-surface")
           .attr("r", (node) => getNodeVisualRadius(node))
-          .attr("fill", (node) => node.color)
+          .attr("fill", (node) => node.gradientId ? `url(#${node.gradientId})` : node.color)
           .attr("fill-opacity", (node) => node.type === "anchor" ? 0.34 : (toolTier(node) === "primary" ? 0.34 : toolTier(node) === "secondary" ? 0.28 : 0.22))
           .attr("stroke", (node) => node.color)
           .attr("stroke-opacity", 0.95)
           .attr("stroke-width", (node) => node.type === "anchor" ? 2.8 : (toolTier(node) === "primary" ? 2.15 : 1.8));
+
+        merged.select(".steam-galaxy-node-nucleus")
+          .attr("r", (node) => node.type === "anchor" ? Math.round(getNodeVisualRadius(node) * 0.22) : Math.max(3, Math.round(getNodeVisualRadius(node) * 0.18)))
+          .attr("fill", (node) => node.color)
+          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.82 : 0.6);
 
         merged.select(".steam-galaxy-node-hit")
           .attr("r", (node) => getNodeVisualRadius(node) + 12);
@@ -5964,9 +6471,37 @@
         starField = Array.from({ length: starCount }, (_, index) => ({
           x: seededValue(`star-${index}-x`) * worldWidth,
           y: seededValue(`star-${index}-y`) * worldHeight,
-          size: 0.8 + seededValue(`star-${index}-size`) * 2.4,
-          alpha: 0.2 + seededValue(`star-${index}-alpha`) * 0.6,
-          drift: 0.08 + seededValue(`star-${index}-drift`) * 0.18
+          size: 0.6 + seededValue(`star-${index}-size`) * 3.2,
+          alpha: 0.15 + seededValue(`star-${index}-alpha`) * 0.65,
+          drift: 0.06 + seededValue(`star-${index}-drift`) * 0.2
+        }));
+
+        // Nebula clouds — one per category, seeded position, category color
+        const catEntries = Object.entries(categoryMeta);
+        nebulaClouds = catEntries.map(([key, meta], i) => {
+          const hex = meta.color;
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return {
+            x: seededValue(`nebula-${key}-x`) * worldWidth,
+            y: seededValue(`nebula-${key}-y`) * worldHeight,
+            radius: 110 + seededValue(`nebula-${key}-r`) * 200,
+            alpha: 0.035 + seededValue(`nebula-${key}-a`) * 0.05,
+            phase: seededValue(`nebula-${key}-phase`) * Math.PI * 2,
+            r, g, b
+          };
+        });
+
+        // Neural filaments — long faint curved axons scattered through world
+        filaments = Array.from({ length: 30 }, (_, i) => ({
+          x1: seededValue(`fil-${i}-x1`) * worldWidth,
+          y1: seededValue(`fil-${i}-y1`) * worldHeight,
+          x2: seededValue(`fil-${i}-x2`) * worldWidth,
+          y2: seededValue(`fil-${i}-y2`) * worldHeight,
+          bx: seededValue(`fil-${i}-bx`) - 0.5,
+          by: seededValue(`fil-${i}-by`) - 0.5,
+          phase: seededValue(`fil-${i}-phase`) * Math.PI * 2
         }));
       }
 
@@ -5981,20 +6516,104 @@
         ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
         ctx.clearRect(0, 0, width, height);
 
-        ctx.fillStyle = "rgba(6, 14, 27, 0.22)";
+        // ── Layer 1: deep-space background wash ──────────────────────────
+        ctx.fillStyle = "rgba(5, 10, 22, 0.28)";
         ctx.fillRect(0, 0, width, height);
 
+        // ── Layer 2: category nebula clouds ──────────────────────────────
+        nebulaClouds.forEach((cloud) => {
+          const px = ((cloud.x * 0.14 * currentTransform.k + currentTransform.x * 0.12) % (width * 1.6) + width * 1.6) % (width * 1.6) - width * 0.3;
+          const py = ((cloud.y * 0.14 * currentTransform.k + currentTransform.y * 0.12) % (height * 1.6) + height * 1.6) % (height * 1.6) - height * 0.3;
+          const breathe = 0.88 + Math.sin(time * 0.00013 + cloud.phase) * 0.12;
+          const alpha = cloud.alpha * (0.72 + Math.sin(time * 0.00025 + cloud.phase * 1.7) * 0.28);
+          const r = cloud.radius * breathe;
+          const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
+          grad.addColorStop(0,   `rgba(${cloud.r},${cloud.g},${cloud.b},${alpha})`);
+          grad.addColorStop(0.45,`rgba(${cloud.r},${cloud.g},${cloud.b},${alpha * 0.35})`);
+          grad.addColorStop(1,   `rgba(${cloud.r},${cloud.g},${cloud.b},0)`);
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(px, py, r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // ── Layer 3: neural filaments (faint axon-like curves) ────────────
+        filaments.forEach((fil) => {
+          const t = (time * 0.00018 + fil.phase / (Math.PI * 2)) % 1;
+          const alpha = Math.sin(t * Math.PI) * 0.09;
+          if (alpha < 0.008) return;
+          const scale = 0.15 * currentTransform.k;
+          const tx = currentTransform.x * 0.12;
+          const ty = currentTransform.y * 0.12;
+          const x1 = ((fil.x1 * scale + tx) % (width + 300) + width + 300) % (width + 300) - 150;
+          const y1 = ((fil.y1 * scale + ty) % (height + 300) + height + 300) % (height + 300) - 150;
+          const x2 = ((fil.x2 * scale + tx) % (width + 300) + width + 300) % (width + 300) - 150;
+          const y2 = ((fil.y2 * scale + ty) % (height + 300) + height + 300) % (height + 300) - 150;
+          const bx = (x1 + x2) / 2 + fil.bx * 140;
+          const by = (y1 + y2) / 2 + fil.by * 140;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(bx, by, x2, y2);
+          ctx.strokeStyle = `rgba(110, 170, 255, ${alpha})`;
+          ctx.lineWidth = 0.55;
+          ctx.stroke();
+        });
+
+        // ── Layer 4: star field with cross-flare on bright stars ──────────
         starField.forEach((star, index) => {
-          const pulse = 0.75 + Math.sin(time * 0.00045 * star.drift * 10 + index) * 0.18;
+          const pulse = 0.76 + Math.sin(time * 0.00042 * star.drift * 10 + index) * 0.18;
           const parallaxX = star.x * 0.22 * currentTransform.k + currentTransform.x * 0.16;
           const parallaxY = (star.y * 0.22 * currentTransform.k + currentTransform.y * 0.16 + time * star.drift * 0.02) % (height + 120);
           const x = ((parallaxX % (width + 120)) + (width + 120)) % (width + 120) - 60;
           const y = ((parallaxY % (height + 120)) + (height + 120)) % (height + 120) - 60;
+          const r = star.size * pulse;
+          const alpha = star.alpha * pulse;
           ctx.beginPath();
-          ctx.fillStyle = `rgba(201, 223, 255, ${star.alpha * pulse})`;
-          ctx.arc(x, y, star.size * pulse, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(201, 223, 255, ${alpha})`;
+          ctx.arc(x, y, r, 0, Math.PI * 2);
           ctx.fill();
+          // Diffraction cross-flare on the largest stars
+          if (star.size > 2.6) {
+            const fl = r * 3.2;
+            ctx.strokeStyle = `rgba(201, 223, 255, ${alpha * 0.28})`;
+            ctx.lineWidth = 0.55;
+            ctx.beginPath();
+            ctx.moveTo(x - fl, y); ctx.lineTo(x + fl, y);
+            ctx.moveTo(x, y - fl); ctx.lineTo(x, y + fl);
+            ctx.stroke();
+          }
         });
+
+        // ── Layer 5: hexagonal cellular automata grid ─────────────────────
+        const hexSize = 68;
+        const hexW = hexSize * Math.sqrt(3);
+        const hexH = hexSize * 2;
+        const rowStep = hexH * 0.75;
+        const offX = ((currentTransform.x * 0.07) % hexW + hexW) % hexW;
+        const offY = ((currentTransform.y * 0.07) % rowStep + rowStep) % rowStep;
+        const cols = Math.ceil(width / hexW) + 2;
+        const rows = Math.ceil(height / rowStep) + 2;
+
+        for (let row = -1; row < rows; row++) {
+          for (let col = -1; col < cols; col++) {
+            const cx = col * hexW + (row % 2 === 0 ? 0 : hexW / 2) + offX;
+            const cy = row * rowStep + offY;
+            const cellPhase = Math.sin(row * 2.31 + col * 3.73) * Math.PI + Math.cos(row * 1.17 - col * 2.89) * Math.PI;
+            const fireAlpha = Math.max(0, Math.sin(time * 0.00038 + cellPhase) * 0.5 + 0.15) * 0.072;
+            if (fireAlpha < 0.004) continue;
+            ctx.strokeStyle = `rgba(60, 130, 230, ${fireAlpha})`;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+              const ang = (Math.PI / 3) * i - Math.PI / 6;
+              const hx = cx + hexSize * Math.cos(ang);
+              const hy = cy + hexSize * Math.sin(ang);
+              i === 0 ? ctx.moveTo(hx, hy) : ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
       }
 
       function runLayout() {
@@ -6009,15 +6628,16 @@
         resizeStarField(viewportWidth, viewportHeight);
 
         const simulationNodes = steamGalaxyNodes.map((node) => {
-          const target = targets[node.category];
+          const target = getNodeTarget(node, targets);
+          const anchorTarget = targets[node.category];
           const offset = offsetFromSeed(node.id);
           const orbitDistance = getOrbitDistance(node);
           return {
             ...node,
             x: target.x + offset.x * (node.type === "anchor" ? 4 : orbitDistance * 0.62),
             y: target.y + offset.y * (node.type === "anchor" ? 4 : orbitDistance * 0.54),
-            fx: node.type === "anchor" ? target.x : null,
-            fy: node.type === "anchor" ? target.y : null,
+            fx: node.type === "anchor" ? anchorTarget.x : null,
+            fy: node.type === "anchor" ? anchorTarget.y : null,
             orbitDistance,
             floatPhase: seededValue(`${node.id}-phase`) * Math.PI * 2
           };
@@ -6033,12 +6653,12 @@
             }
             return viewportWidth < 760 ? 110 : 150;
           }).strength((link) => link.kind === "anchor" ? 0.8 : 0.16))
-          .force("cluster-x", d3.forceX((node) => targets[node.category].x).strength((node) => node.type === "anchor" ? 0.9 : 0.08))
-          .force("cluster-y", d3.forceY((node) => targets[node.category].y).strength((node) => node.type === "anchor" ? 0.9 : 0.08))
+          .force("cluster-x", d3.forceX((node) => getNodeTarget(node, targets).x).strength((node) => node.type === "anchor" ? 0.9 : 0.08))
+          .force("cluster-y", d3.forceY((node) => getNodeTarget(node, targets).y).strength((node) => node.type === "anchor" ? 0.9 : 0.08))
           .force("orbit", d3.forceRadial(
             (node) => node.type === "anchor" ? 0 : node.orbitDistance,
-            (node) => targets[node.category].x,
-            (node) => targets[node.category].y
+            (node) => getNodeTarget(node, targets).x,
+            (node) => getNodeTarget(node, targets).y
           ).strength((node) => node.type === "anchor" ? 0 : 0.76))
           .force("charge", d3.forceManyBody().strength((node) => node.type === "anchor" ? -1280 : -(360 + getNodeVisualRadius(node) * 6.4)))
           .force("collide", d3.forceCollide((node) => getNodeVisualRadius(node) + (node.type === "anchor" ? 26 : 18)).iterations(8))
@@ -6074,27 +6694,31 @@
         updateStatus();
 
         const linksSelection = linkLayer
-          .selectAll("line.steam-galaxy-link")
+          .selectAll("path.steam-galaxy-link")
           .data(activeLinks, (link) => link.id);
 
         linksSelection.exit().remove();
 
         const mergedLinks = linksSelection
           .enter()
-          .append("line")
+          .append("path")
           .attr("class", "steam-galaxy-link")
           .merge(linksSelection);
 
         mergedLinks
           .attr("class", "steam-galaxy-link is-visible")
+          .attr("stroke-width", (link) => link.kind === "anchor" ? 1.6 : 1.1)
           .attr("stroke", (link) => {
             const sourceId = link.source.id || link.source;
             return nodesById.get(sourceId)?.color || "#8bbcff";
           })
-          .attr("x1", (link) => positionedNodes.get(link.source.id || link.source)?.x || 0)
-          .attr("y1", (link) => positionedNodes.get(link.source.id || link.source)?.y || 0)
-          .attr("x2", (link) => positionedNodes.get(link.target.id || link.target)?.x || 0)
-          .attr("y2", (link) => positionedNodes.get(link.target.id || link.target)?.y || 0);
+          .attr("d", (link) => {
+            const s = positionedNodes.get(link.source.id || link.source) || { x: 0, y: 0 };
+            const t = positionedNodes.get(link.target.id || link.target) || { x: 0, y: 0 };
+            const bx = (s.x + t.x) / 2 + (seededValue(link.id + "-bx") - 0.5) * 52;
+            const by = (s.y + t.y) / 2 + (seededValue(link.id + "-by") - 0.5) * 52;
+            return `M ${s.x} ${s.y} Q ${bx} ${by} ${t.x} ${t.y}`;
+          });
 
         nodeLayer.selectAll("g.steam-galaxy-node")
           .attr("class", (node) => {
