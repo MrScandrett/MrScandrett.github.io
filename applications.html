@@ -885,13 +885,24 @@
     }
 
     .steam-galaxy-layout {
-      grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.74fr);
+      --layout-panel-width: 360px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, var(--layout-panel-width));
       align-items: stretch;
+      gap: 1.5rem;
+      transition: grid-template-columns 0.6s cubic-bezier(0.19, 1, 0.22, 1), gap 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    .steam-galaxy-layout.is-retracted {
+      --layout-panel-width: 0px;
+      gap: 0;
     }
 
     .steam-galaxy-stage {
       position: relative;
-      min-height: 760px;
+      min-height: 500px;
+      height: clamp(500px, 84vh, 850px);
+      width: 100%;
+      min-width: 0;
       border-radius: 28px;
       overflow: hidden;
       background:
@@ -1039,8 +1050,67 @@
       align-content: start;
       color: #f4f8ff;
       min-height: 100%;
+      min-width: 0;
       position: sticky;
       top: 1rem;
+      max-width: 400px;
+      width: 100%;
+      justify-self: end;
+      overflow: visible;
+      transition: opacity 0.4s ease, transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    .steam-galaxy-layout.is-retracted .steam-galaxy-panel {
+      opacity: 0;
+      transform: translateX(50px);
+      pointer-events: none;
+    }
+
+    .steam-galaxy-layout.is-retracted .panel-toggle-control {
+      pointer-events: auto;
+    }
+
+    .panel-toggle-control {
+      position: absolute;
+      left: -32px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 32px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-right: none;
+      border-radius: 12px 0 0 12px;
+      background: #111827;
+      color: #5aa8ff;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      box-shadow:
+        inset 1px 1px 0 rgba(255, 255, 255, 0.1),
+        inset -1px -1px 0 rgba(0, 0, 0, 0.5),
+        -8px 0 15px rgba(0, 0, 0, 0.4);
+      z-index: 100;
+      transition: width 0.2s ease, left 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .panel-toggle-control:hover,
+    .panel-toggle-control:focus-visible {
+      left: -38px;
+      width: 38px;
+      background: #5aa8ff;
+      border-color: rgba(164, 196, 255, 0.3);
+      color: #ffffff;
+      transform: translateY(-50%);
+    }
+
+    .panel-toggle-control svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.4;
+      filter: drop-shadow(0 0 5px currentColor);
     }
 
     .steam-galaxy-panel-title {
@@ -1574,10 +1644,16 @@
 
       .steam-galaxy-stage {
         min-height: 840px;
+        height: auto;
       }
 
       .steam-galaxy-panel {
         position: static;
+        max-width: none;
+      }
+
+      .panel-toggle-control {
+        display: none;
       }
 
       .steam-galaxy-viewport-ui {
@@ -1628,6 +1704,17 @@
 
       .steam-galaxy-overflow-cue--right {
         right: 0.85rem;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .steam-galaxy-layout {
+        --layout-panel-width: 380px;
+      }
+
+      .steam-galaxy-stage {
+        min-height: 720px;
+        height: min(84vh, 850px);
       }
     }
 
@@ -1996,6 +2083,9 @@
           </div>
 
           <aside class="steam-galaxy-panel" id="steam-galaxy-panel">
+            <button class="panel-toggle-control" id="galaxy-panel-toggle" type="button" aria-label="Hide detail panel" aria-pressed="false" title="Toggle Detail View">
+              <i data-lucide="chevron-right" aria-hidden="true"></i>
+            </button>
             <p class="steam-galaxy-panel-eyebrow" id="steam-panel-tier">Anchor bubble</p>
             <h3 class="steam-galaxy-panel-title" id="steam-panel-title">Coding</h3>
             <p class="steam-galaxy-panel-desc" id="steam-panel-desc">Explore programming pathways that move from block-based play into more advanced coding, computational thinking, and real project making.</p>
@@ -5141,6 +5231,8 @@
     const minimapCaption = document.getElementById("steam-galaxy-minimap-caption");
     const navButtons = Array.from(document.querySelectorAll("[data-galaxy-action]"));
     const overflowCueButtons = Array.from(document.querySelectorAll("[data-pan-direction]"));
+    const galaxyLayout = document.querySelector(".steam-galaxy-layout");
+    const galaxyPanelToggle = document.getElementById("galaxy-panel-toggle");
 
     if (stage && svg && starsCanvas) {
       // ===== STEAM Galaxy Explorer: sample categories =====
@@ -5828,6 +5920,28 @@
           );
         }
 
+        if (width >= 1200) {
+          const widescreenTargets = {
+            coding:    [0.15, 0.28],
+            design3d:  [0.34, 0.18],
+            robotics:  [0.60, 0.20],
+            ai:        [0.83, 0.30],
+            games:     [0.16, 0.69],
+            art:       [0.36, 0.80],
+            music:     [0.61, 0.80],
+            science:   [0.83, 0.70],
+            immersive: [0.48, 0.51],
+            research:  [0.70, 0.51]
+          };
+
+          return Object.fromEntries(
+            Object.entries(widescreenTargets).map(([key, [x, y]]) => [
+              key,
+              { x: width * x, y: height * y }
+            ])
+          );
+        }
+
         const desktopTargets = {
           coding:    [0.24, 0.26],
           design3d:  [0.50, 0.17],
@@ -6035,12 +6149,16 @@
             state.utility = "all";
             state.focusMode = false;
             state.selectedId = "anchor-coding";
+            panelAutoRetracted = false;
             if (stage) stage.dataset.focusMode = "false";
             const focusButton = document.getElementById("btn-focus-mode");
             if (focusButton) {
               focusButton.classList.remove("is-active");
               focusButton.textContent = "Simple View: Off";
               focusButton.setAttribute("aria-pressed", "false");
+            }
+            if (galaxyLayout?.classList.contains("is-retracted")) {
+              setGalaxyPanelRetracted(false);
             }
             collapseExpandedCategories();
             renderControls();
@@ -6059,10 +6177,20 @@
               button.classList.toggle("is-active", state.focusMode);
               button.textContent = state.focusMode ? "Simple View: On" : "Simple View: Off";
               button.setAttribute("aria-pressed", String(state.focusMode));
+              if (window.innerWidth > 1024 && galaxyLayout) {
+                const isRetracted = galaxyLayout.classList.contains("is-retracted");
+                if (state.focusMode && !isRetracted) {
+                  panelAutoRetracted = true;
+                  setGalaxyPanelRetracted(true);
+                } else if (!state.focusMode && isRetracted && panelAutoRetracted) {
+                  panelAutoRetracted = false;
+                  setGalaxyPanelRetracted(false);
+                }
+              }
               ensureVisibleSelection();
               renderPanel();
               renderFrame(latestTime);
-              fitVisibleNodes(320);
+              fitVisibleNodes(state.focusMode ? 600 : 320);
               return;
             }
 
@@ -6774,8 +6902,9 @@
       function runLayout() {
         viewportWidth = Math.max(stage.clientWidth, 320);
         viewportHeight = Math.max(stage.clientHeight, 560);
-        worldWidth = Math.max(Math.round(viewportWidth * 1.95), 1500);
-        worldHeight = Math.max(Math.round(viewportHeight * 1.85), 1280);
+        const wideViewport = viewportWidth >= 1200;
+        worldWidth = Math.max(Math.round(viewportWidth * (wideViewport ? 2.2 : 1.95)), wideViewport ? 1900 : 1500);
+        worldHeight = Math.max(Math.round(viewportHeight * (wideViewport ? 1.45 : 1.85)), wideViewport ? 1080 : 1280);
         const targets = buildCategoryTargets(worldWidth, worldHeight);
 
         svg.setAttribute("viewBox", `0 0 ${viewportWidth} ${viewportHeight}`);
@@ -7028,13 +7157,51 @@
         animationFrameId = window.requestAnimationFrame(animate);
       }
 
+      let panelLayoutTimer = null;
+      let panelAutoRetracted = false;
+
+      function setGalaxyPanelRetracted(nextRetracted) {
+        if (!galaxyLayout) return;
+        galaxyLayout.classList.toggle("is-retracted", nextRetracted);
+        syncGalaxyPanelToggle();
+        scheduleGalaxyLayoutRefresh();
+      }
+
+      function syncGalaxyPanelToggle() {
+        if (!galaxyLayout || !galaxyPanelToggle) return;
+        const isRetracted = galaxyLayout.classList.contains("is-retracted");
+        galaxyPanelToggle.setAttribute("aria-pressed", String(isRetracted));
+        galaxyPanelToggle.setAttribute("aria-label", isRetracted ? "Show detail panel" : "Hide detail panel");
+        galaxyPanelToggle.title = isRetracted ? "Show detail panel" : "Hide detail panel";
+        galaxyPanelToggle.innerHTML = `<i data-lucide="${isRetracted ? "chevron-left" : "chevron-right"}" aria-hidden="true"></i>`;
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }
+
+      function scheduleGalaxyLayoutRefresh() {
+        window.clearTimeout(panelLayoutTimer);
+        panelLayoutTimer = window.setTimeout(function () {
+          runLayout();
+          fitVisibleNodes(500);
+        }, 610);
+      }
+
       buildControls();
       renderControls();
       runLayout();
       showHelp(true);
+      syncGalaxyPanelToggle();
 
       if (!animationFrameId) {
         animationFrameId = window.requestAnimationFrame(animate);
+      }
+
+      if (galaxyPanelToggle && galaxyLayout) {
+        galaxyPanelToggle.addEventListener("click", function () {
+          panelAutoRetracted = false;
+          setGalaxyPanelRetracted(!galaxyLayout.classList.contains("is-retracted"));
+        });
       }
 
       if ("ResizeObserver" in window) {
