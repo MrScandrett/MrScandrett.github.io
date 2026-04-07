@@ -937,6 +937,13 @@
       cursor: grabbing;
     }
 
+    .steam-galaxy-stage.is-panning .steam-galaxy-panel,
+    .steam-galaxy-stage.is-panning .steam-galaxy-viewport-ui > *,
+    .steam-galaxy-stage.is-panning .steam-galaxy-overlay-card {
+      backdrop-filter: none !important;
+      background: rgba(10, 20, 35, 0.98);
+    }
+
     .steam-galaxy-overlay {
       z-index: 3;
       display: grid;
@@ -1205,13 +1212,17 @@
     }
 
     .steam-galaxy-link.is-visible {
-      opacity: 0.58;
-      stroke-dasharray: 7 16;
-      animation: steam-link-flow 2.8s linear infinite;
+      opacity: 0.6;
+      stroke-dasharray: 8 16;
+      animation: steam-link-flow 6s linear infinite;
     }
 
     @keyframes steam-link-flow {
-      to { stroke-dashoffset: -23; }
+      to { stroke-dashoffset: -24; }
+    }
+
+    .steam-galaxy-particles-layer {
+      display: none !important;
     }
 
     .steam-galaxy-node-aura {
@@ -5578,7 +5589,16 @@
       let worldWidth = 0;
       let worldHeight = 0;
       let currentTransform = d3.zoomIdentity;
+      let lastInteractionTime = performance.now();
+      let lastStarRenderTime = 0;
+      let frozenTimeOffset = 0;
+      let lastActiveTime = 0;
+      let wasIdleLastFrame = false;
       const zoomExtent = [0.46, 2.8];
+      const STASIS_DELAY = 3000;
+      const IDLE_STAR_FRAME_MS = 80;
+      const backgroundBuffer = document.createElement("canvas");
+      const backgroundBufferCtx = backgroundBuffer.getContext("2d");
 
       const svgSelection = d3.select(svg);
       const defsSelection = svgSelection.append("defs");
@@ -6780,6 +6800,64 @@
         }));
       }
 
+      function renderHexGrid(ctx, width, height) {
+        const hexSize = 68;
+        const hexW = hexSize * Math.sqrt(3);
+        const hexH = hexSize * 2;
+        const rowStep = hexH * 0.75;
+        const cols = Math.ceil(width / hexW) + 2;
+        const rows = Math.ceil(height / rowStep) + 2;
+
+        ctx.strokeStyle = "rgba(60, 130, 230, 0.08)";
+        ctx.lineWidth = 0.5;
+
+        for (let row = -1; row < rows; row += 1) {
+          for (let col = -1; col < cols; col += 1) {
+            const cx = col * hexW + (row % 2 === 0 ? 0 : hexW / 2);
+            const cy = row * rowStep;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i += 1) {
+              const ang = (Math.PI / 3) * i - Math.PI / 6;
+              const hx = cx + hexSize * Math.cos(ang);
+              const hy = cy + hexSize * Math.sin(ang);
+              if (i === 0) {
+                ctx.moveTo(hx, hy);
+              } else {
+                ctx.lineTo(hx, hy);
+              }
+            }
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+      }
+
+      function renderFilaments(ctx) {
+        filaments.forEach((fil) => {
+          ctx.beginPath();
+          ctx.moveTo(fil.x1, fil.y1);
+          const bx = (fil.x1 + fil.x2) / 2 + fil.bx * 140;
+          const by = (fil.y1 + fil.y2) / 2 + fil.by * 140;
+          ctx.quadraticCurveTo(bx, by, fil.x2, fil.y2);
+          ctx.strokeStyle = "rgba(110, 170, 255, 0.06)";
+          ctx.lineWidth = 0.55;
+          ctx.stroke();
+        });
+      }
+
+      function bakeBackground() {
+        if (!backgroundBufferCtx) return;
+        backgroundBuffer.width = Math.max(1, worldWidth);
+        backgroundBuffer.height = Math.max(1, worldHeight);
+        backgroundBufferCtx.clearRect(0, 0, backgroundBuffer.width, backgroundBuffer.height);
+        renderHexGrid(backgroundBufferCtx, worldWidth, worldHeight);
+        renderFilaments(backgroundBufferCtx);
+      }
+
+      function pokeEngine() {
+        lastInteractionTime = performance.now();
+      }
+
       function renderStars(time) {
         const ctx = starsCanvas.getContext("2d");
         if (!ctx) return;
@@ -6791,11 +6869,9 @@
         ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
         ctx.clearRect(0, 0, width, height);
 
-        // ── Layer 1: deep-space background wash ──────────────────────────
         ctx.fillStyle = "rgba(5, 10, 22, 0.28)";
         ctx.fillRect(0, 0, width, height);
 
-        // ── Layer 2: category nebula clouds ──────────────────────────────
         nebulaClouds.forEach((cloud) => {
           const px = ((cloud.x * 0.14 * currentTransform.k + currentTransform.x * 0.12) % (width * 1.6) + width * 1.6) % (width * 1.6) - width * 0.3;
           const py = ((cloud.y * 0.14 * currentTransform.k + currentTransform.y * 0.12) % (height * 1.6) + height * 1.6) % (height * 1.6) - height * 0.3;
@@ -6812,34 +6888,19 @@
           ctx.fill();
         });
 
-        // ── Layer 3: neural filaments (faint axon-like curves) ────────────
-        filaments.forEach((fil) => {
-          const t = (time * 0.00018 + fil.phase / (Math.PI * 2)) % 1;
-          const alpha = Math.sin(t * Math.PI) * 0.09;
-          if (alpha < 0.008) return;
-          const scale = 0.15 * currentTransform.k;
-          const tx = currentTransform.x * 0.12;
-          const ty = currentTransform.y * 0.12;
-          const x1 = ((fil.x1 * scale + tx) % (width + 300) + width + 300) % (width + 300) - 150;
-          const y1 = ((fil.y1 * scale + ty) % (height + 300) + height + 300) % (height + 300) - 150;
-          const x2 = ((fil.x2 * scale + tx) % (width + 300) + width + 300) % (width + 300) - 150;
-          const y2 = ((fil.y2 * scale + ty) % (height + 300) + height + 300) % (height + 300) - 150;
-          const bx = (x1 + x2) / 2 + fil.bx * 140;
-          const by = (y1 + y2) / 2 + fil.by * 140;
-          ctx.beginPath();
-          ctx.moveTo(x1, y1);
-          ctx.quadraticCurveTo(bx, by, x2, y2);
-          ctx.strokeStyle = `rgba(110, 170, 255, ${alpha})`;
-          ctx.lineWidth = 0.55;
-          ctx.stroke();
-        });
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.translate(currentTransform.x, currentTransform.y);
+        ctx.scale(currentTransform.k, currentTransform.k);
+        ctx.drawImage(backgroundBuffer, 0, 0);
+        ctx.restore();
 
-        // ── Layer 4: star field with cross-flare on bright stars ──────────
-        // Star twinkle: global oscillation for living starfield
         const globalTwinkle = 0.88 + Math.sin(time * 0.0005) * 0.12;
         ctx.globalAlpha = globalTwinkle;
 
-        const activeStarCount = state.focusMode ? Math.max(48, Math.floor(starField.length * 0.4)) : starField.length;
+        const activeStarCount = state.focusMode
+          ? Math.max(48, Math.floor(starField.length * 0.3))
+          : Math.min(starField.length, 100);
         for (let index = 0; index < activeStarCount; index += 1) {
           const star = starField[index];
           const pulse = 0.76 + Math.sin(time * 0.00042 * star.drift * 10 + index) * 0.18;
@@ -6866,37 +6927,6 @@
         }
 
         ctx.globalAlpha = 1;
-
-        // ── Layer 5: hexagonal cellular automata grid ─────────────────────
-        const hexSize = 68;
-        const hexW = hexSize * Math.sqrt(3);
-        const hexH = hexSize * 2;
-        const rowStep = hexH * 0.75;
-        const offX = ((currentTransform.x * 0.07) % hexW + hexW) % hexW;
-        const offY = ((currentTransform.y * 0.07) % rowStep + rowStep) % rowStep;
-        const cols = Math.ceil(width / hexW) + 2;
-        const rows = Math.ceil(height / rowStep) + 2;
-
-        for (let row = -1; row < rows; row++) {
-          for (let col = -1; col < cols; col++) {
-            const cx = col * hexW + (row % 2 === 0 ? 0 : hexW / 2) + offX;
-            const cy = row * rowStep + offY;
-            const cellPhase = Math.sin(row * 2.31 + col * 3.73) * Math.PI + Math.cos(row * 1.17 - col * 2.89) * Math.PI;
-            const fireAlpha = Math.max(0, Math.sin(time * 0.00038 + cellPhase) * 0.5 + 0.15) * 0.072;
-            if (fireAlpha < 0.004) continue;
-            ctx.strokeStyle = `rgba(60, 130, 230, ${fireAlpha})`;
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            for (let i = 0; i < 6; i++) {
-              const ang = (Math.PI / 3) * i - Math.PI / 6;
-              const hx = cx + hexSize * Math.cos(ang);
-              const hy = cy + hexSize * Math.sin(ang);
-              i === 0 ? ctx.moveTo(hx, hy) : ctx.lineTo(hx, hy);
-            }
-            ctx.closePath();
-            ctx.stroke();
-          }
-        }
       }
 
       function runLayout() {
@@ -6910,6 +6940,7 @@
         svg.setAttribute("viewBox", `0 0 ${viewportWidth} ${viewportHeight}`);
         zoomBehavior.extent([[0, 0], [viewportWidth, viewportHeight]]);
         resizeStarField(viewportWidth, viewportHeight);
+        bakeBackground();
 
         const simulationNodes = steamGalaxyNodes.map((node) => {
           const target = getNodeTarget(node, targets);
@@ -6983,128 +7014,7 @@
         });
       // ────────────────────────────────────────────────────────────────────────
 
-      // ── Directional link particles ──────────────────────────────────────────
-      // Layered glow: tight halo (1.5) + wide corona (5), both merged with sharp core
-      defsSelection.append("filter")
-        .attr("id", "galaxy-particle-glow")
-        .attr("x", "-200%").attr("y", "-200%").attr("width", "500%").attr("height", "500%")
-        .call(f => {
-          f.append("feGaussianBlur").attr("in", "SourceGraphic").attr("stdDeviation", "1.5").attr("result", "halo");
-          f.append("feGaussianBlur").attr("in", "SourceGraphic").attr("stdDeviation", "5").attr("result", "corona");
-          // boost corona brightness
-          f.append("feComponentTransfer").attr("in", "corona").attr("result", "coronaBright").call(ct => {
-            ct.append("feFuncR").attr("type", "linear").attr("slope", "2.5");
-            ct.append("feFuncG").attr("type", "linear").attr("slope", "2.5");
-            ct.append("feFuncB").attr("type", "linear").attr("slope", "2.5");
-          });
-          f.append("feMerge").call(m => {
-            m.append("feMergeNode").attr("in", "coronaBright");
-            m.append("feMergeNode").attr("in", "halo");
-            m.append("feMergeNode").attr("in", "SourceGraphic");
-          });
-        });
-
-      // screen blend so particles add light on the dark background
-      particleLayer.style("mix-blend-mode", "screen");
-
-      // linkId → [{t, speed, offset}]  (offset is a [0,1) phase offset per particle)
-      const linkParticles = new Map();
-      let lastParticleTime = null;
-
-      function _bezierPt(s, cp, t2, u) {
-        return u * u * s + 2 * u * (1 - u) * cp + (1 - u) * (1 - u) * t2;
-      }
-
-      function _lightenHex(hex, amount) {
-        const h = hex.replace("#", "");
-        const r = parseInt(h.slice(0, 2), 16);
-        const g = parseInt(h.slice(2, 4), 16);
-        const b = parseInt(h.slice(4, 6), 16);
-        const lr = Math.round(r + (255 - r) * amount);
-        const lg = Math.round(g + (255 - g) * amount);
-        const lb = Math.round(b + (255 - b) * amount);
-        return `rgb(${lr},${lg},${lb})`;
-      }
-
-      function syncParticles(activeLinks) {
-        const activeIds = new Set(activeLinks.map(l => l.id));
-        // remove stale
-        for (const id of linkParticles.keys()) {
-          if (!activeIds.has(id)) linkParticles.delete(id);
-        }
-        // add new
-        for (const link of activeLinks) {
-          if (!linkParticles.has(link.id)) {
-            const count = link.kind === "anchor" ? 3 : 2;
-            const speed = link.kind === "anchor" ? 0.00028 : 0.00020;
-            const particles = [];
-            for (let i = 0; i < count; i++) {
-              particles.push({ t: i / count, speed });
-            }
-            linkParticles.set(link.id, particles);
-          }
-        }
-      }
-
-      function renderParticles(activeLinks, positionedNodes, dt) {
-        // advance t for all particles
-        for (const [, particles] of linkParticles) {
-          for (const p of particles) {
-            p.t = (p.t + p.speed * dt) % 1;
-          }
-        }
-
-        // build data array for D3
-        const dots = [];
-        for (const link of activeLinks) {
-          const particles = linkParticles.get(link.id);
-          if (!particles) continue;
-          const s = positionedNodes.get(link.source.id || link.source) || { x: 0, y: 0 };
-          const tg = positionedNodes.get(link.target.id || link.target) || { x: 0, y: 0 };
-          const cpx = (s.x + tg.x) / 2 + (seededValue(link.id + "-bx") - 0.5) * 52;
-          const cpy = (s.y + tg.y) / 2 + (seededValue(link.id + "-by") - 0.5) * 52;
-          const baseColor = nodesById.get(link.source.id || link.source)?.color || "#8bbcff";
-          // lighten the base color toward white so it pops against the dark background
-          const color = _lightenHex(baseColor, 0.45);
-          for (const p of particles) {
-            const u = 1 - p.t;
-            const x = _bezierPt(s.x, cpx, tg.x, u);
-            const y = _bezierPt(s.y, cpy, tg.y, u);
-            // smooth fade at ends; floor at 0.25 so they're never invisible
-            const fade = Math.max(Math.min(p.t / 0.12, 1) * Math.min((1 - p.t) / 0.12, 1), 0.25);
-            dots.push({ id: link.id + "-" + particles.indexOf(p), x, y, color, opacity: fade });
-          }
-        }
-
-        const sel = particleLayer.selectAll("circle.galaxy-particle").data(dots, d => d.id);
-        sel.exit().remove();
-        sel.enter().append("circle")
-          .attr("class", "galaxy-particle")
-          .attr("r", 3.8)
-          .attr("filter", "url(#galaxy-particle-glow)")
-          .merge(sel)
-          .attr("cx", d => d.x)
-          .attr("cy", d => d.y)
-          .attr("fill", d => d.color)
-          .attr("opacity", d => d.opacity);
-      }
-      // ────────────────────────────────────────────────────────────────────────
-
-      function renderFrame(time = 0) {
-        latestTime = time;
-        const selectedNode = ensureVisibleSelection();
-        const relatedIds = getRelatedIdSet(selectedNode);
-        const activeLinks = getActiveLinks(selectedNode, relatedIds);
-        const positionedNodes = new Map(layoutNodes.map((node) => [node.id, getFloatingPosition(node, time)]));
-        const dt = lastParticleTime === null ? 16 : Math.min(time - lastParticleTime, 64);
-        lastParticleTime = time;
-
-        syncParticles(activeLinks);
-        renderParticles(activeLinks, positionedNodes, dt);
-
-        renderStars(time);
-        updateStatus();
-
+      function syncVisuals(positions, selectedNode, relatedIds, activeLinks) {
         const linksSelection = linkLayer
           .selectAll("path.steam-galaxy-link")
           .data(activeLinks, (link) => link.id);
@@ -7125,8 +7035,8 @@
             return nodesById.get(sourceId)?.color || "#8bbcff";
           })
           .attr("d", (link) => {
-            const s = positionedNodes.get(link.source.id || link.source) || { x: 0, y: 0 };
-            const t = positionedNodes.get(link.target.id || link.target) || { x: 0, y: 0 };
+            const s = positions.get(link.source.id || link.source) || { x: 0, y: 0 };
+            const t = positions.get(link.target.id || link.target) || { x: 0, y: 0 };
             const bx = (s.x + t.x) / 2 + (seededValue(link.id + "-bx") - 0.5) * 52;
             const by = (s.y + t.y) / 2 + (seededValue(link.id + "-by") - 0.5) * 52;
             return `M ${s.x} ${s.y} Q ${bx} ${by} ${t.x} ${t.y}`;
@@ -7144,12 +7054,51 @@
           })
           .attr("aria-pressed", (node) => String(selectedNode?.id === node.id))
           .attr("transform", (node) => {
-            const position = positionedNodes.get(node.id) || { x: node.x, y: node.y };
+            const position = positions.get(node.id) || { x: node.x, y: node.y };
             return `translate(${position.x},${position.y})`;
           });
+      }
 
+      function renderFrame(time = 0) {
+        latestTime = time;
+        const isIdle = time - lastInteractionTime > STASIS_DELAY;
+
+        if (!isIdle) {
+          if (wasIdleLastFrame && lastActiveTime > 0) {
+            frozenTimeOffset += time - lastActiveTime;
+          }
+          lastActiveTime = time;
+        }
+
+        const driftTime = time - frozenTimeOffset;
+        const selectedNode = ensureVisibleSelection();
+        const relatedIds = getRelatedIdSet(selectedNode);
+        const activeLinks = getActiveLinks(selectedNode, relatedIds);
+        updateStatus();
+
+        if (isIdle) {
+          if (!wasIdleLastFrame) {
+            const finalPositions = new Map(layoutNodes.map((node) => [node.id, getFloatingPosition(node, driftTime)]));
+            syncVisuals(finalPositions, selectedNode, relatedIds, activeLinks);
+            renderStars(time);
+            applyViewportTransform();
+            renderOverflowCues(finalPositions);
+            wasIdleLastFrame = true;
+            lastStarRenderTime = time;
+          } else if (time - lastStarRenderTime > IDLE_STAR_FRAME_MS) {
+            renderStars(time);
+            lastStarRenderTime = time;
+          }
+          return;
+        }
+
+        wasIdleLastFrame = false;
+        const positionedNodes = new Map(layoutNodes.map((node) => [node.id, getFloatingPosition(node, driftTime)]));
+        syncVisuals(positionedNodes, selectedNode, relatedIds, activeLinks);
+        renderStars(time);
         renderOverflowCues(positionedNodes);
         applyViewportTransform();
+        lastStarRenderTime = time;
       }
 
       function animate(time) {
@@ -7189,6 +7138,7 @@
 
       buildControls();
       renderControls();
+      d3.select("#knowledge-atlas").on("mousedown.poke touchstart.poke wheel.poke click.poke", pokeEngine);
       runLayout();
       showHelp(true);
       syncGalaxyPanelToggle();
