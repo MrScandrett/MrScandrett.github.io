@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google AI Studio - Galaxy Explorer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --panel-bg: rgba(15, 23, 42, 0.8);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: white;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 0;
+        }
+
+        svg {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+            cursor: grab;
+        }
+        svg:active { cursor: grabbing; }
+
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .side-panel {
+            position: absolute;
+            right: 20px; top: 20px;
+            width: 320px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            pointer-events: all;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .side-panel.hidden { transform: translateX(360px); }
+
+        h2 { margin: 0 0 10px 0; color: #fff; font-size: 1.5rem; }
+        p { color: #cbd5e1; line-height: 1.5; font-size: 0.95rem; }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .node text {
+            font-weight: 700;
+            font-size: 12px;
+            pointer-events: none;
+            paint-order: stroke fill;
+            stroke: #000;
+            stroke-width: 3px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .link {
+            fill: none;
+            stroke-opacity: 0.3;
+            transition: stroke-opacity 0.3s;
+        }
+
+        .particle {
+            mix-blend-mode: screen;
+        }
+
+        .dimmed { opacity: 0.12 !important; }
+        .highlight { stroke-opacity: 0.9 !important; }
+
+        .instruction {
+            position: absolute;
+            bottom: 20px; left: 20px;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.8rem;
+        }
+
+        #back-link {
+            position: absolute;
+            top: 20px; left: 20px;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8rem;
+            text-decoration: none;
+            pointer-events: all;
+            background: rgba(255,255,255,0.06);
+            padding: 6px 14px;
+            border-radius: 20px;
+            transition: background 0.2s;
+        }
+        #back-link:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    </style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<svg id="galaxy"></svg>
+
+<div id="ui-layer">
+    <a href="applications.html" id="back-link">← Back to ClassroomOS</a>
+
+    <div id="detail-panel" class="side-panel hidden">
+        <div id="category-tag" class="tag">Category</div>
+        <h2 id="node-name">Tool Name</h2>
+        <p id="node-desc">Description goes here…</p>
+        <div style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.1);padding-top:15px;">
+            <small style="color:#64748b;">Capabilities:</small>
+            <ul id="node-features" style="padding-left:18px;margin-top:8px;color:#94a3b8;font-size:0.85rem;"></ul>
+        </div>
+    </div>
+
+    <div class="instruction">Scroll to Zoom &nbsp;·&nbsp; Drag to Pan &nbsp;·&nbsp; Click to Explore</div>
+</div>
+
+<script>
+const data = {
+    nodes: [
+        // Anchors
+        { id: "hub-pro",   label: "Gemini 1.5 Pro",   type: "anchor", group: "models", desc: "The most capable model for complex reasoning, coding, and creative tasks.", features: ["2M Token Context", "Multimodal Input", "Complex Reasoning"] },
+        { id: "hub-flash", label: "Gemini 1.5 Flash",  type: "anchor", group: "models", desc: "Optimised for speed and efficiency without sacrificing intelligence.", features: ["Low Latency", "High Throughput", "Cost Effective"] },
+        { id: "hub-tools", label: "Developer Tools",   type: "anchor", group: "dev",    desc: "Advanced utilities for building and testing AI applications.", features: ["System Instructions", "JSON Mode", "Safety Filters"] },
+        { id: "hub-integ", label: "Integration",       type: "anchor", group: "integ",  desc: "Seamless ways to bring Gemini into your production environment.", features: ["API Keys", "Vertex AI Link", "SDK Support"] },
+
+        // Pro tools
+        { id: "t-context",   label: "Long Context",    type: "tool", group: "models", desc: "Upload entire codebases or hour-long videos for analysis.", parent: "hub-pro" },
+        { id: "t-audio",     label: "Audio Sensing",   type: "tool", group: "models", desc: "Native audio processing without requiring transcription.", parent: "hub-pro" },
+
+        // Flash tools
+        { id: "t-streaming", label: "Fast Streaming",  type: "tool", group: "models", desc: "Get real-time token-by-token responses for chat applications.", parent: "hub-flash" },
+        { id: "t-batch",     label: "Batch API",       type: "tool", group: "models", desc: "Process large volumes of data asynchronously at lower cost.", parent: "hub-flash" },
+
+        // Dev tools
+        { id: "t-json",      label: "Structured Output", type: "tool", group: "dev", desc: "Force the model to return valid, schema-compliant JSON.", parent: "hub-tools" },
+        { id: "t-tuning",    label: "Model Tuning",    type: "tool", group: "dev", desc: "Fine-tune Gemini on your own data for specialised behaviour.", parent: "hub-tools" },
+        { id: "t-tokens",    label: "Token Counter",   type: "tool", group: "dev", desc: "Precision monitoring for prompt cost and context optimisation.", parent: "hub-tools" },
+
+        // Integration tools
+        { id: "t-keys",      label: "API Key Manager", type: "tool", group: "integ", desc: "Securely create, rotate, and scope your access credentials.", parent: "hub-integ" },
+        { id: "t-python",    label: "Python SDK",      type: "tool", group: "integ", desc: "The quickest path to production in standard AI stacks.", parent: "hub-integ" },
+        { id: "t-prompt",    label: "Prompt Gallery",  type: "tool", group: "integ", desc: "Battle-tested prompt templates to jump-start your project.", parent: "hub-integ" }
+    ],
+    links: [
+        { source: "hub-pro",   target: "t-context" },
+        { source: "hub-pro",   target: "t-audio" },
+        { source: "hub-flash", target: "t-streaming" },
+        { source: "hub-flash", target: "t-batch" },
+        { source: "hub-tools", target: "t-json" },
+        { source: "hub-tools", target: "t-tuning" },
+        { source: "hub-tools", target: "t-tokens" },
+        { source: "hub-integ", target: "t-keys" },
+        { source: "hub-integ", target: "t-python" },
+        { source: "hub-integ", target: "t-prompt" },
+        // Inter-hub
+        { source: "hub-pro",   target: "hub-flash" },
+        { source: "hub-pro",   target: "hub-tools" },
+        { source: "hub-tools", target: "hub-integ" }
+    ]
+};
+
+const colors = { models: "#A142F4", dev: "#FBBC05", integ: "#34A853" };
+
+const width = window.innerWidth;
+const height = window.innerHeight;
+
+// Canvas background
+const canvas = document.getElementById('starfield');
+const ctx = canvas.getContext('2d');
+canvas.width = width;
+canvas.height = height;
+
+const svg = d3.select("#galaxy").attr("width", width).attr("height", height);
+const gMain = svg.append("g");
+
+const zoom = d3.zoom().scaleExtent([0.3, 3])
+    .on("zoom", (event) => {
+        gMain.attr("transform", event.transform);
+        drawBackground(event.transform);
+    });
+svg.call(zoom);
+
+// Stars
+const stars = Array.from({ length: 400 }, () => ({
+    x: Math.random() * width * 3 - width,
+    y: Math.random() * height * 3 - height,
+    size: Math.random() * 1.5,
+    opacity: Math.random()
+}));
+
+function drawBackground(transform = { x: 0, y: 0, k: 1 }) {
+    ctx.clearRect(0, 0, width, height);
+
+    data.nodes.filter(n => n.type === 'anchor').forEach(node => {
+        if (node.x == null) return;
+        const x = node.x * transform.k + transform.x;
+        const y = node.y * transform.k + transform.y;
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, 400 * transform.k);
+        const c = d3.color(colors[node.group]);
+        grad.addColorStop(0, c.copy({ opacity: 0.18 }).toString());
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+    });
+
+    ctx.fillStyle = "white";
+    stars.forEach(s => {
+        const sx = ((s.x * transform.k + transform.x) % width + width) % width;
+        const sy = ((s.y * transform.k + transform.y) % height + height) % height;
+        ctx.globalAlpha = s.opacity;
+        ctx.beginPath();
+        ctx.arc(sx, sy, s.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+}
+
+// D3 simulation — pre-ticked, then frozen
+const simulation = d3.forceSimulation(data.nodes)
+    .force("link", d3.forceLink(data.links).id(d => d.id)
+        .distance(d => d.source.type === 'anchor' && d.target.type === 'anchor' ? 260 : 110))
+    .force("charge", d3.forceManyBody().strength(-900))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .stop();
+
+for (let i = 0; i < 320; ++i) simulation.tick();
+
+// SVG layers
+const linkGroup     = gMain.append("g").attr("class", "links-layer");
+const particleGroup = gMain.append("g").attr("class", "particles-layer").style("mix-blend-mode", "screen");
+const nodeGroup     = gMain.append("g").attr("class", "nodes-layer");
+
+// Defs — glow filter
+const defs = svg.append("defs");
+defs.append("filter").attr("id", "glow")
+    .attr("x", "-100%").attr("y", "-100%").attr("width", "300%").attr("height", "300%")
+    .call(f => {
+        f.append("feGaussianBlur").attr("stdDeviation", "4").attr("result", "blur");
+        f.append("feMerge").call(m => {
+            m.append("feMergeNode").attr("in", "blur");
+            m.append("feMergeNode").attr("in", "SourceGraphic");
+        });
+    });
+
+// Links
+const links = linkGroup.selectAll(".link")
+    .data(data.links).enter().append("path")
+    .attr("class", "link")
+    .attr("stroke", d => colors[d.source.group] || "#555")
+    .attr("stroke-width", 1.5);
+
+// Nodes
+const nodes = nodeGroup.selectAll(".node")
+    .data(data.nodes).enter().append("g")
+    .attr("class", "node")
+    .on("click", (event, d) => { event.stopPropagation(); focusNode(d); })
+    .call(d3.drag()
+        .on("start", (e, d) => { d.fx = d.x; d.fy = d.y; })
+        .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; d.x = e.x; d.y = e.y; })
+        .on("end",   (e, d) => { d.fx = null; d.fy = null; }));
+
+nodes.append("circle")
+    .attr("r", d => d.type === 'anchor' ? 24 : 11)
+    .attr("fill", d => colors[d.group])
+    .attr("fill-opacity", d => d.type === 'anchor' ? 0.35 : 0.28)
+    .attr("stroke", d => colors[d.group])
+    .attr("stroke-width", d => d.type === 'anchor' ? 2.5 : 1.8)
+    .attr("filter", "url(#glow)");
+
+// Nucleus dot
+nodes.append("circle")
+    .attr("r", d => d.type === 'anchor' ? 5 : 3)
+    .attr("fill", d => colors[d.group])
+    .attr("opacity", 0.85);
+
+nodes.append("text")
+    .attr("dy", d => d.type === 'anchor' ? 40 : 24)
+    .attr("text-anchor", "middle")
+    .attr("fill", "white")
+    .style("font-size", d => d.type === 'anchor' ? "13px" : "11px")
+    .text(d => d.label);
+
+// Particles — 2 per link, staggered
+const particleData = [];
+data.links.forEach((link, i) => {
+    particleData.push({ link, t: 0,   speed: 0.0022 + Math.random() * 0.0018 });
+    particleData.push({ link, t: 0.5, speed: 0.0022 + Math.random() * 0.0018 });
+});
+
+const particleEls = particleGroup.selectAll(".particle")
+    .data(particleData).enter().append("circle")
+    .attr("class", "particle")
+    .attr("r", 3)
+    .attr("filter", "url(#glow)");
+
+// Interaction
+function focusNode(d) {
+    const panel = d3.select("#detail-panel");
+    panel.classed("hidden", false);
+    d3.select("#node-name").text(d.label);
+    d3.select("#node-desc").text(d.desc || "");
+    d3.select("#category-tag").text(d.group).style("background-color", colors[d.group] || "#555");
+
+    const featuresList = d3.select("#node-features");
+    featuresList.selectAll("li").remove();
+    (d.features || ["API Access", "Real-time"]).forEach(f => featuresList.append("li").text(f));
+
+    const related = new Set([d.id]);
+    data.links.forEach(l => {
+        if (l.source.id === d.id) related.add(l.target.id);
+        if (l.target.id === d.id) related.add(l.source.id);
+    });
+
+    nodes.classed("dimmed", n => !related.has(n.id));
+    links.classed("dimmed", l => l.source.id !== d.id && l.target.id !== d.id);
+    links.classed("highlight", l => l.source.id === d.id || l.target.id === d.id);
+}
+
+svg.on("click", () => {
+    d3.select("#detail-panel").classed("hidden", true);
+    nodes.classed("dimmed", false);
+    links.classed("dimmed", false).classed("highlight", false);
+});
+
+// Bezier helper
+function bezierPt(sx, cpx, tx, u) {
+    return u * u * sx + 2 * u * (1 - u) * cpx + (1 - u) * (1 - u) * tx;
+}
+
+// Animation loop
+function tick() {
+    const time = Date.now() * 0.001;
+
+    // Drift nodes
+    nodes.attr("transform", d => {
+        const dx = Math.sin(time * 0.7 + d.x * 0.01) * 3;
+        const dy = Math.cos(time * 0.7 + d.y * 0.01) * 3;
+        d.cx = d.x + dx;
+        d.cy = d.y + dy;
+        return `translate(${d.cx},${d.cy})`;
+    });
+
+    // Update links with drift
+    links.attr("d", d => {
+        const sx = d.source.cx ?? d.source.x;
+        const sy = d.source.cy ?? d.source.y;
+        const tx = d.target.cx ?? d.target.x;
+        const ty = d.target.cy ?? d.target.y;
+        const cpx = (sx + tx) / 2 + (ty - sy) * 0.25;
+        const cpy = (sy + ty) / 2 - (tx - sx) * 0.25;
+        d.memo = { sx, sy, tx, ty, cpx, cpy };
+        return `M${sx},${sy} Q${cpx},${cpy} ${tx},${ty}`;
+    });
+
+    // Advance particles
+    particleEls
+        .attr("cx", d => {
+            if (!d.link.memo) return 0;
+            d.t = (d.t + d.speed) % 1;
+            const u = 1 - d.t;
+            return bezierPt(d.link.memo.sx, d.link.memo.cpx, d.link.memo.tx, u);
+        })
+        .attr("cy", d => {
+            if (!d.link.memo) return 0;
+            const u = 1 - d.t;
+            return bezierPt(d.link.memo.sy, d.link.memo.cpy, d.link.memo.ty, u);
+        })
+        .attr("fill", d => {
+            const baseColor = colors[d.link.source.group] || "#fff";
+            const c = d3.color(baseColor);
+            return c ? c.brighter(1.5).toString() : "#fff";
+        })
+        .attr("opacity", d => {
+            const fade = Math.min(d.t / 0.1, 1) * Math.min((1 - d.t) / 0.1, 1);
+            return Math.max(fade, 0.2);
+        });
+
+    requestAnimationFrame(tick);
+}
+
+drawBackground();
+tick();
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
+    drawBackground();
+});
+</script>
+</body>
+</html>

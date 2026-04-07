@@ -1126,22 +1126,21 @@
     .steam-galaxy-node-aura {
       fill: none;
       pointer-events: none;
-      animation: steam-aura-pulse 3.6s ease-in-out infinite;
+      /* Subtle — just a soft outer ring, no distracting pulse */
+      stroke-opacity: 0.12;
+      stroke-width: 1px;
+    }
+
+    .steam-galaxy-node.is-active .steam-galaxy-node-aura,
+    .steam-galaxy-node:hover .steam-galaxy-node-aura,
+    .steam-galaxy-node.is-related .steam-galaxy-node-aura {
+      stroke-opacity: 0.35;
+      stroke-width: 2px;
     }
 
     .steam-galaxy-node-nucleus {
       pointer-events: none;
-      opacity: 0.55;
-    }
-
-    @keyframes steam-aura-pulse {
-      0%, 100% { stroke-opacity: 0.08; stroke-width: 1.2px; }
-      50%       { stroke-opacity: 0.32; stroke-width: 2.4px; }
-    }
-
-    .steam-galaxy-node.is-active .steam-galaxy-node-aura,
-    .steam-galaxy-node:hover .steam-galaxy-node-aura {
-      animation-duration: 1.4s;
+      opacity: 0.9;
     }
 
     .steam-galaxy-node {
@@ -1171,21 +1170,39 @@
     }
 
     .steam-galaxy-node-kicker {
-      font-size: 11px;
-      fill: rgba(228, 238, 255, 0.72);
-      font-weight: 700;
-      letter-spacing: 0.12em;
+      font-size: 9px;
+      fill: rgba(228, 238, 255, 0.38);
+      font-weight: 600;
+      letter-spacing: 0.10em;
       text-transform: uppercase;
       text-anchor: middle;
       transition: opacity 180ms ease;
+      opacity: 0.3;
+    }
+
+    /* Hide kicker on peripheral (Extra Tool) nodes — too noisy */
+    .steam-galaxy-node[data-tier="peripheral"] .steam-galaxy-node-kicker {
+      opacity: 0 !important;
+    }
+
+    /* Show kicker more clearly only when active or hovered */
+    .steam-galaxy-node.is-active .steam-galaxy-node-kicker,
+    .steam-galaxy-node:hover .steam-galaxy-node-kicker,
+    .steam-galaxy-node.is-related .steam-galaxy-node-kicker {
+      opacity: 0.7;
     }
 
     .steam-galaxy-node-label {
-      fill: #f7fbff;
-      font-weight: 700;
+      fill: #ffffff;
+      font-weight: 800;
       text-anchor: middle;
-      line-height: 1.2;
+      line-height: 1.25;
       transition: opacity 180ms ease;
+      /* dark outline for legibility against both bubble and starfield */
+      stroke: rgba(0,0,0,0.75);
+      stroke-width: 3px;
+      paint-order: stroke fill;
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,0.85));
     }
 
     .steam-galaxy-node.is-muted {
@@ -1201,21 +1218,20 @@
       font-weight: 800;
     }
 
-    .steam-galaxy-node[data-tier="peripheral"] .steam-galaxy-node-label,
-    .steam-galaxy-node[data-tier="peripheral"] .steam-galaxy-node-kicker {
+    .steam-galaxy-node[data-tier="peripheral"] .steam-galaxy-node-label {
       opacity: 0.9;
     }
 
     .steam-galaxy-node.is-related .steam-galaxy-node-surface {
-      stroke-width: 2.6;
-      filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.16));
+      stroke-width: 2.8;
+      fill-opacity: 0.55 !important;
     }
 
     .steam-galaxy-node.is-active .steam-galaxy-node-surface,
     .steam-galaxy-node:hover .steam-galaxy-node-surface,
     .steam-galaxy-node:focus-visible .steam-galaxy-node-surface {
-      stroke-width: 3;
-      filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.22));
+      stroke-width: 3.2;
+      fill-opacity: 0.65 !important;
     }
 
     .steam-galaxy-node.is-active .steam-galaxy-node-label {
@@ -5427,6 +5443,7 @@
       const defsSelection = svgSelection.append("defs");
       const worldLayer = svgSelection.append("g").attr("class", "steam-galaxy-world-layer");
       const linkLayer = worldLayer.append("g").attr("class", "steam-galaxy-links-layer");
+      const particleLayer = worldLayer.append("g").attr("class", "steam-galaxy-particles-layer");
       const nodeLayer = worldLayer.append("g").attr("class", "steam-galaxy-node-layer");
       const minimapSelection = minimapSvg ? d3.select(minimapSvg) : null;
       const zoomBehavior = d3.zoom()
@@ -5860,7 +5877,7 @@
         const midpoint = words.length > 1 ? Math.ceil(words.length / 2) : 1;
         text.selectAll("tspan").remove();
         text.attr("y", words.length > 1 ? 5 : 6);
-        text.style("font-size", node.type === "anchor" ? "16px" : toolTier(node) === "primary" ? "13px" : toolTier(node) === "secondary" ? "12px" : "11px");
+        text.style("font-size", node.type === "anchor" ? "17px" : toolTier(node) === "primary" ? "14px" : toolTier(node) === "secondary" ? "13px" : "12px");
 
         if (words.length > 1 && label.length > 10) {
           text.append("tspan").attr("x", 0).attr("dy", -7).text(words.slice(0, midpoint).join(" "));
@@ -6461,16 +6478,18 @@
 
         merged.select(".steam-galaxy-node-surface")
           .attr("r", (node) => getNodeVisualRadius(node))
-          .attr("fill", (node) => node.gradientId ? `url(#${node.gradientId})` : node.color)
-          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.34 : (toolTier(node) === "primary" ? 0.34 : toolTier(node) === "secondary" ? 0.28 : 0.22))
+          .attr("fill", (node) => node.color)
+          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.38 : (toolTier(node) === "primary" ? 0.36 : toolTier(node) === "secondary" ? 0.30 : 0.24))
           .attr("stroke", (node) => node.color)
-          .attr("stroke-opacity", 0.95)
-          .attr("stroke-width", (node) => node.type === "anchor" ? 2.8 : (toolTier(node) === "primary" ? 2.15 : 1.8));
+          .attr("stroke-opacity", 1)
+          .attr("stroke-width", (node) => node.type === "anchor" ? 2.5 : (toolTier(node) === "primary" ? 2 : 1.6))
+          .attr("filter", "url(#galaxy-node-glow)");
 
         merged.select(".steam-galaxy-node-nucleus")
-          .attr("r", (node) => node.type === "anchor" ? Math.round(getNodeVisualRadius(node) * 0.22) : Math.max(3, Math.round(getNodeVisualRadius(node) * 0.18)))
+          .attr("r", (node) => node.type === "anchor" ? Math.round(getNodeVisualRadius(node) * 0.20) : Math.max(3, Math.round(getNodeVisualRadius(node) * 0.22)))
           .attr("fill", (node) => node.color)
-          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.82 : 0.6);
+          .attr("fill-opacity", 1)
+          .attr("filter", "url(#galaxy-node-glow)");
 
         merged.select(".steam-galaxy-node-hit")
           .attr("r", (node) => getNodeVisualRadius(node) + 12);
@@ -6609,6 +6628,10 @@
         });
 
         // ── Layer 4: star field with cross-flare on bright stars ──────────
+        // Star twinkle: global oscillation for living starfield
+        const globalTwinkle = 0.88 + Math.sin(time * 0.0005) * 0.12;
+        ctx.globalAlpha = globalTwinkle;
+
         starField.forEach((star, index) => {
           const pulse = 0.76 + Math.sin(time * 0.00042 * star.drift * 10 + index) * 0.18;
           const parallaxX = star.x * 0.22 * currentTransform.k + currentTransform.x * 0.16;
@@ -6632,6 +6655,8 @@
             ctx.stroke();
           }
         });
+
+        ctx.globalAlpha = 1;
 
         // ── Layer 5: hexagonal cellular automata grid ─────────────────────
         const hexSize = 68;
@@ -6732,12 +6757,137 @@
         }
       }
 
+      // ── Node glow filter ────────────────────────────────────────────────────
+      defsSelection.append("filter")
+        .attr("id", "galaxy-node-glow")
+        .attr("x", "-80%").attr("y", "-80%").attr("width", "260%").attr("height", "260%")
+        .call(f => {
+          f.append("feGaussianBlur").attr("stdDeviation", "5").attr("result", "blur");
+          f.append("feMerge").call(m => {
+            m.append("feMergeNode").attr("in", "blur");
+            m.append("feMergeNode").attr("in", "SourceGraphic");
+          });
+        });
+      // ────────────────────────────────────────────────────────────────────────
+
+      // ── Directional link particles ──────────────────────────────────────────
+      // Layered glow: tight halo (1.5) + wide corona (5), both merged with sharp core
+      defsSelection.append("filter")
+        .attr("id", "galaxy-particle-glow")
+        .attr("x", "-200%").attr("y", "-200%").attr("width", "500%").attr("height", "500%")
+        .call(f => {
+          f.append("feGaussianBlur").attr("in", "SourceGraphic").attr("stdDeviation", "1.5").attr("result", "halo");
+          f.append("feGaussianBlur").attr("in", "SourceGraphic").attr("stdDeviation", "5").attr("result", "corona");
+          // boost corona brightness
+          f.append("feComponentTransfer").attr("in", "corona").attr("result", "coronaBright").call(ct => {
+            ct.append("feFuncR").attr("type", "linear").attr("slope", "2.5");
+            ct.append("feFuncG").attr("type", "linear").attr("slope", "2.5");
+            ct.append("feFuncB").attr("type", "linear").attr("slope", "2.5");
+          });
+          f.append("feMerge").call(m => {
+            m.append("feMergeNode").attr("in", "coronaBright");
+            m.append("feMergeNode").attr("in", "halo");
+            m.append("feMergeNode").attr("in", "SourceGraphic");
+          });
+        });
+
+      // screen blend so particles add light on the dark background
+      particleLayer.style("mix-blend-mode", "screen");
+
+      // linkId → [{t, speed, offset}]  (offset is a [0,1) phase offset per particle)
+      const linkParticles = new Map();
+      let lastParticleTime = null;
+
+      function _bezierPt(s, cp, t2, u) {
+        return u * u * s + 2 * u * (1 - u) * cp + (1 - u) * (1 - u) * t2;
+      }
+
+      function _lightenHex(hex, amount) {
+        const h = hex.replace("#", "");
+        const r = parseInt(h.slice(0, 2), 16);
+        const g = parseInt(h.slice(2, 4), 16);
+        const b = parseInt(h.slice(4, 6), 16);
+        const lr = Math.round(r + (255 - r) * amount);
+        const lg = Math.round(g + (255 - g) * amount);
+        const lb = Math.round(b + (255 - b) * amount);
+        return `rgb(${lr},${lg},${lb})`;
+      }
+
+      function syncParticles(activeLinks) {
+        const activeIds = new Set(activeLinks.map(l => l.id));
+        // remove stale
+        for (const id of linkParticles.keys()) {
+          if (!activeIds.has(id)) linkParticles.delete(id);
+        }
+        // add new
+        for (const link of activeLinks) {
+          if (!linkParticles.has(link.id)) {
+            const count = link.kind === "anchor" ? 3 : 2;
+            const speed = link.kind === "anchor" ? 0.00028 : 0.00020;
+            const particles = [];
+            for (let i = 0; i < count; i++) {
+              particles.push({ t: i / count, speed });
+            }
+            linkParticles.set(link.id, particles);
+          }
+        }
+      }
+
+      function renderParticles(activeLinks, positionedNodes, dt) {
+        // advance t for all particles
+        for (const [, particles] of linkParticles) {
+          for (const p of particles) {
+            p.t = (p.t + p.speed * dt) % 1;
+          }
+        }
+
+        // build data array for D3
+        const dots = [];
+        for (const link of activeLinks) {
+          const particles = linkParticles.get(link.id);
+          if (!particles) continue;
+          const s = positionedNodes.get(link.source.id || link.source) || { x: 0, y: 0 };
+          const tg = positionedNodes.get(link.target.id || link.target) || { x: 0, y: 0 };
+          const cpx = (s.x + tg.x) / 2 + (seededValue(link.id + "-bx") - 0.5) * 52;
+          const cpy = (s.y + tg.y) / 2 + (seededValue(link.id + "-by") - 0.5) * 52;
+          const baseColor = nodesById.get(link.source.id || link.source)?.color || "#8bbcff";
+          // lighten the base color toward white so it pops against the dark background
+          const color = _lightenHex(baseColor, 0.45);
+          for (const p of particles) {
+            const u = 1 - p.t;
+            const x = _bezierPt(s.x, cpx, tg.x, u);
+            const y = _bezierPt(s.y, cpy, tg.y, u);
+            // smooth fade at ends; floor at 0.25 so they're never invisible
+            const fade = Math.max(Math.min(p.t / 0.12, 1) * Math.min((1 - p.t) / 0.12, 1), 0.25);
+            dots.push({ id: link.id + "-" + particles.indexOf(p), x, y, color, opacity: fade });
+          }
+        }
+
+        const sel = particleLayer.selectAll("circle.galaxy-particle").data(dots, d => d.id);
+        sel.exit().remove();
+        sel.enter().append("circle")
+          .attr("class", "galaxy-particle")
+          .attr("r", 3.8)
+          .attr("filter", "url(#galaxy-particle-glow)")
+          .merge(sel)
+          .attr("cx", d => d.x)
+          .attr("cy", d => d.y)
+          .attr("fill", d => d.color)
+          .attr("opacity", d => d.opacity);
+      }
+      // ────────────────────────────────────────────────────────────────────────
+
       function renderFrame(time = 0) {
         latestTime = time;
         const selectedNode = ensureVisibleSelection();
         const relatedIds = getRelatedIdSet(selectedNode);
         const activeLinks = getActiveLinks(selectedNode, relatedIds);
         const positionedNodes = new Map(layoutNodes.map((node) => [node.id, getFloatingPosition(node, time)]));
+        const dt = lastParticleTime === null ? 16 : Math.min(time - lastParticleTime, 64);
+        lastParticleTime = time;
+
+        syncParticles(activeLinks);
+        renderParticles(activeLinks, positionedNodes, dt);
 
         renderStars(time);
         updateStatus();
