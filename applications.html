@@ -5747,10 +5747,10 @@
           };
         }
 
-        const minX = Math.min(...nodes.map((node) => node.x - node.radius - 28));
-        const minY = Math.min(...nodes.map((node) => node.y - node.radius - 28));
-        const maxX = Math.max(...nodes.map((node) => node.x + node.radius + 28));
-        const maxY = Math.max(...nodes.map((node) => node.y + node.radius + 28));
+        const minX = Math.min(...nodes.map((node) => node.x - node.radius - 64));
+        const minY = Math.min(...nodes.map((node) => node.y - node.radius - 64));
+        const maxX = Math.max(...nodes.map((node) => node.x + node.radius + 64));
+        const maxY = Math.max(...nodes.map((node) => node.y + node.radius + 64));
 
         return {
           x: clamp(minX, 0, worldWidth),
@@ -5783,7 +5783,7 @@
       function fitVisibleNodes(duration = 520) {
         const nodes = visibleNodes();
         if (!nodes.length) return;
-        setCameraTransform(transformForBounds(getBoundsForNodes(nodes), { padding: 84, maxScale: 1.02 }), duration);
+        setCameraTransform(transformForBounds(getBoundsForNodes(nodes), { padding: 132, maxScale: 0.94 }), duration);
       }
 
       function resetView(duration = 520) {
@@ -5866,9 +5866,9 @@
       function getOrbitDistance(node) {
         if (node.type === "anchor") return 0;
         const tier = toolTier(node);
-        if (tier === "primary") return viewportWidth < 760 ? 170 : 210;
-        if (tier === "secondary") return viewportWidth < 760 ? 250 : 310;
-        return viewportWidth < 760 ? 330 : 402;
+        if (tier === "primary") return viewportWidth < 760 ? 210 : 290;
+        if (tier === "secondary") return viewportWidth < 760 ? 310 : 430;
+        return viewportWidth < 760 ? 405 : 560;
       }
 
       function expandCategory(category) {
@@ -5936,16 +5936,16 @@
       function buildCategoryTargets(width, height) {
         if (width < 760) {
           const mobileTargets = {
-            coding:    [0.30, 0.09],
-            robotics:  [0.72, 0.09],
-            design3d:  [0.72, 0.27],
-            games:     [0.28, 0.27],
-            art:       [0.28, 0.45],
-            music:     [0.72, 0.45],
-            immersive: [0.28, 0.63],
-            ai:        [0.72, 0.63],
-            science:   [0.30, 0.81],
-            research:  [0.72, 0.81]
+            coding:    [0.22, 0.10],
+            robotics:  [0.78, 0.11],
+            design3d:  [0.80, 0.31],
+            games:     [0.20, 0.31],
+            art:       [0.19, 0.52],
+            music:     [0.80, 0.53],
+            immersive: [0.22, 0.74],
+            ai:        [0.79, 0.72],
+            science:   [0.26, 0.90],
+            research:  [0.76, 0.90]
           };
 
           return Object.fromEntries(
@@ -5958,16 +5958,16 @@
 
         if (width >= 1200) {
           const widescreenTargets = {
-            coding:    [0.15, 0.28],
-            design3d:  [0.34, 0.18],
-            robotics:  [0.60, 0.20],
-            ai:        [0.83, 0.30],
-            games:     [0.16, 0.69],
-            art:       [0.36, 0.80],
-            music:     [0.61, 0.80],
-            science:   [0.83, 0.70],
-            immersive: [0.48, 0.51],
-            research:  [0.70, 0.51]
+            coding:    [0.12, 0.25],
+            games:     [0.13, 0.72],
+            design3d:  [0.33, 0.12],
+            art:       [0.33, 0.86],
+            robotics:  [0.62, 0.15],
+            immersive: [0.50, 0.50],
+            music:     [0.63, 0.86],
+            ai:        [0.87, 0.28],
+            science:   [0.88, 0.73],
+            research:  [0.71, 0.52]
           };
 
           return Object.fromEntries(
@@ -5979,16 +5979,16 @@
         }
 
         const desktopTargets = {
-          coding:    [0.24, 0.26],
-          design3d:  [0.50, 0.17],
-          robotics:  [0.76, 0.28],
-          ai:        [0.64, 0.44],
-          research:  [0.80, 0.58],
-          science:   [0.68, 0.78],
-          music:     [0.46, 0.83],
-          art:       [0.24, 0.75],
-          immersive: [0.36, 0.50],
-          games:     [0.14, 0.52]
+          coding:    [0.16, 0.22],
+          games:     [0.14, 0.71],
+          design3d:  [0.40, 0.12],
+          art:       [0.31, 0.84],
+          immersive: [0.44, 0.50],
+          robotics:  [0.72, 0.18],
+          ai:        [0.83, 0.34],
+          research:  [0.72, 0.52],
+          science:   [0.84, 0.76],
+          music:     [0.58, 0.86]
         };
 
         return Object.fromEntries(
@@ -6543,12 +6543,12 @@
           .merge(dots)
           .attr("cx", (node) => node.x)
           .attr("cy", (node) => node.y)
-          .attr("r", (node) => node.type === "anchor" ? 26 : Math.max(12, node.radius * 0.52))
+          .attr("r", (node) => node.type === "anchor" ? 20 : Math.max(8, node.radius * 0.36))
           .attr("fill", (node) => node.color)
-          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.55 : 0.36)
+          .attr("fill-opacity", (node) => node.type === "anchor" ? 0.52 : 0.3)
           .attr("stroke", (node) => node.color)
-          .attr("stroke-opacity", 0.9)
-          .attr("stroke-width", (node) => node.type === "anchor" ? 6 : 4);
+          .attr("stroke-opacity", 0.82)
+          .attr("stroke-width", (node) => node.type === "anchor" ? 4 : 2.5);
 
         const viewportData = [bounds];
         const viewportRect = minimapSelection
@@ -6648,7 +6648,7 @@
       }
 
       function clampNodeToWorld(node, width, height) {
-        const padding = node.radius + 18;
+        const padding = node.radius + 72;
         node.x = Math.min(width - padding, Math.max(padding, node.x));
         node.y = Math.min(height - padding, Math.max(padding, node.y));
       }
@@ -6949,8 +6949,8 @@
         viewportWidth = Math.max(stage.clientWidth, 320);
         viewportHeight = Math.max(stage.clientHeight, 560);
         const wideViewport = viewportWidth >= 1200;
-        worldWidth = Math.max(Math.round(viewportWidth * (wideViewport ? 2.2 : 1.95)), wideViewport ? 1900 : 1500);
-        worldHeight = Math.max(Math.round(viewportHeight * (wideViewport ? 1.45 : 1.85)), wideViewport ? 1080 : 1280);
+        worldWidth = Math.max(Math.round(viewportWidth * (wideViewport ? 2.95 : 2.35)), wideViewport ? 2500 : 1850);
+        worldHeight = Math.max(Math.round(viewportHeight * (wideViewport ? 2.05 : 2.2)), wideViewport ? 1500 : 1460);
         const targets = buildCategoryTargets(worldWidth, worldHeight);
 
         svg.setAttribute("viewBox", `0 0 ${viewportWidth} ${viewportHeight}`);
