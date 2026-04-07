@@ -29,7 +29,7 @@
   }
 
   function getLightingForTheme(theme) {
-    return theme === "night" ? "night" : "day";
+    return (theme === "night" || theme === "diamond") ? "night" : "day";
   }
 
   function readStorage(key) {
