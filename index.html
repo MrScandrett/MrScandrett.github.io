@@ -130,48 +130,41 @@
       <!-- Weather -->
       <div class="home-widget home-widget--weather" aria-label="Current weather">
         <div class="home-weather-shell">
-          <div class="home-weather-topline">
-            <p class="home-widget-eyebrow">Environmental Station</p>
-            <p class="home-weather-station" id="home-weather-station">LW_FL_32750</p>
+          <div class="weather-header">
+            <span class="home-weather-station-wrap">Station: <span class="home-weather-station" id="home-weather-station">LW_FL_32750</span></span>
+            <span class="home-weather-city" id="home-weather-city">LONGWOOD, FL</span>
           </div>
-          <div class="home-weather-header">
-            <div class="home-weather-heading">
-              <p class="home-weather-city" id="home-weather-city">LONGWOOD, FL</p>
-              <p class="home-weather-status" id="home-weather-status">STATUS: LOADING</p>
-            </div>
-            <p class="home-weather-condition" id="home-weather-condition">Loading conditions</p>
-          </div>
-          <div class="home-weather-primary">
-            <div class="home-weather-tempblock">
+          <div class="home-weather-dashboard">
+            <div class="weather-primary">
               <p class="home-weather-temp" id="home-weather-temp">--°</p>
+              <p class="home-weather-condition" id="home-weather-condition">Loading conditions</p>
+              <p class="home-weather-status" id="home-weather-status">STATUS: LOADING</p>
               <p class="home-weather-range">
-                LOW <span id="home-weather-min">--°</span>
-                <span aria-hidden="true">·</span>
-                HIGH <span id="home-weather-max">--°</span>
+                LO: <span id="home-weather-min">--°</span>
+                <span aria-hidden="true">//</span>
+                HI: <span id="home-weather-max">--°</span>
               </p>
             </div>
-            <div class="home-weather-telemetry" aria-label="Weather telemetry">
-              <div class="home-weather-readout">
-                <p class="home-weather-label">WIND_SPEED</p>
-                <p class="home-weather-value" id="home-weather-wind">-- MPH</p>
+            <div class="weather-telemetry-grid" aria-label="Weather telemetry">
+              <div class="telemetry-stat" id="home-weather-wind-card">
+                <span class="stat-label">WIND_SPD</span>
+                <span class="stat-value" id="home-weather-wind">-- MPH</span>
               </div>
-              <div class="home-weather-readout">
-                <p class="home-weather-label">HUMIDITY</p>
-                <p class="home-weather-value" id="home-weather-humidity">--%</p>
+              <div class="telemetry-stat" id="home-weather-uv-card">
+                <span class="stat-label">UV_INDEX</span>
+                <span class="stat-value" id="home-weather-uv">--</span>
               </div>
-              <div class="home-weather-readout home-weather-readout--warn">
-                <p class="home-weather-label">UV_INDEX</p>
-                <p class="home-weather-value" id="home-weather-uv">--</p>
+              <div class="telemetry-stat" id="home-weather-pollen-card">
+                <span class="stat-label">POLLEN</span>
+                <span class="stat-value" id="home-weather-pollen">--</span>
               </div>
-              <div class="home-weather-readout home-weather-readout--warn">
-                <p class="home-weather-label">POLLEN_OUTLOOK</p>
-                <p class="home-weather-value" id="home-weather-pollen">--</p>
+              <div class="telemetry-stat" id="home-weather-humidity-card">
+                <span class="stat-label">HUMIDITY</span>
+                <span class="stat-value" id="home-weather-humidity">--%</span>
               </div>
             </div>
           </div>
-          <div class="home-weather-horizon">
-            <p class="home-weather-horizon-label">Forecast Horizon</p>
-            <div class="home-weather-forecast" id="home-weather-forecast" aria-label="Three day forecast"></div>
+          <div class="weather-forecast" id="home-weather-forecast" aria-label="Five day forecast">
           </div>
         </div>
       </div>
@@ -420,7 +413,11 @@
         humidity: document.getElementById('home-weather-humidity'),
         uv: document.getElementById('home-weather-uv'),
         pollen: document.getElementById('home-weather-pollen'),
-        forecast: document.getElementById('home-weather-forecast')
+        forecast: document.getElementById('home-weather-forecast'),
+        windCard: document.getElementById('home-weather-wind-card'),
+        humidityCard: document.getElementById('home-weather-humidity-card'),
+        uvCard: document.getElementById('home-weather-uv-card'),
+        pollenCard: document.getElementById('home-weather-pollen-card')
       };
 
       function setWeatherCard(data) {
@@ -433,14 +430,15 @@
         weatherEls.max.textContent = `${Math.round(data.max)}°`;
         weatherEls.wind.textContent = `${Math.round(data.wind)} MPH`;
         weatherEls.humidity.textContent = `${Math.round(data.humidity)}%`;
-        weatherEls.uv.textContent = data.uvDisplay;
-        weatherEls.pollen.textContent = data.pollen.label;
+        weatherEls.uv.textContent = data.uvLabel;
+        weatherEls.pollen.textContent = data.pollen.display;
+        weatherEls.uvCard.classList.toggle('telemetry-stat--alert', data.uvAlert);
+        weatherEls.pollenCard.classList.toggle('telemetry-stat--alert', data.pollenAlert);
         weatherEls.forecast.innerHTML = data.forecast.map((day) => `
-          <div class="home-weather-horizon-day">
-            <p class="home-weather-horizon-name">${day.label}</p>
-            <p class="home-weather-horizon-icon" aria-hidden="true">${day.icon}</p>
-            <p class="home-weather-horizon-temp">${Math.round(day.max)}°</p>
-            <p class="home-weather-horizon-note">${day.note}</p>
+          <div class="forecast-slot">
+            <span class="forecast-day">${day.label}</span>
+            <span class="forecast-icon" aria-hidden="true">${day.icon}</span>
+            <span class="forecast-temp">${Math.round(day.max)}°</span>
           </div>
         `).join('');
       }
@@ -489,8 +487,7 @@
         return '🌤️';
       }
 
-      function formatForecastLabel(dateString, index) {
-        if (index === 0) return 'TODAY';
+      function formatForecastLabel(dateString) {
         const date = new Date(`${dateString}T12:00:00`);
         return date.toLocaleDateString(undefined, { weekday: 'short' }).toUpperCase();
       }
@@ -505,12 +502,12 @@
       function getPollenOutlook(dateString) {
         const month = new Date(`${dateString}T12:00:00`).getMonth() + 1;
         if (month >= 2 && month <= 4) {
-          return { label: 'HIGH', score: 3 };
+          return { label: 'HIGH', score: 3, display: 'HIGH' };
         }
         if (month === 5 || month === 6 || month === 10) {
-          return { label: 'MODERATE', score: 2 };
+          return { label: 'MODERATE', score: 2, display: 'MOD' };
         }
-        return { label: 'LOW', score: 1 };
+        return { label: 'LOW', score: 1, display: 'LOW' };
       }
 
       function buildMissionStatus({ weatherCode, uv, pollenScore, rainChance }) {
@@ -527,7 +524,7 @@
         url.searchParams.set('daily', 'temperature_2m_min,temperature_2m_max,weather_code,uv_index_max,precipitation_probability_max');
         url.searchParams.set('temperature_unit', 'fahrenheit');
         url.searchParams.set('wind_speed_unit', 'mph');
-        url.searchParams.set('forecast_days', '3');
+        url.searchParams.set('forecast_days', '5');
         url.searchParams.set('timezone', 'auto');
 
         const response = await fetch(url.toString());
@@ -567,15 +564,16 @@
           temperature: current.temperature_2m,
           wind: current.wind_speed_10m || 0,
           humidity: current.relative_humidity_2m || 0,
-          uvDisplay: uv >= 10 ? '10+' : uv.toFixed(1),
+          uvLabel: uv >= 8 ? `${uv >= 10 ? '10+' : uv.toFixed(1)} HIGH` : (uv >= 6 ? `${uv.toFixed(1)} MOD` : uv.toFixed(1)),
+          uvAlert: uv >= 6,
           pollen,
+          pollenAlert: pollen.score >= 2,
           min: daily.temperature_2m_min[0],
           max: daily.temperature_2m_max[0],
-          forecast: daily.time.slice(0, 3).map((dateString, index) => ({
-            label: formatForecastLabel(dateString, index),
+          forecast: daily.time.slice(0, 5).map((dateString, index) => ({
+            label: formatForecastLabel(dateString),
             icon: weatherIconFromCode(daily.weather_code[index]),
-            max: daily.temperature_2m_max[index],
-            note: weatherLabelFromCode(daily.weather_code[index]).toUpperCase()
+            max: daily.temperature_2m_max[index]
           }))
         };
       }
@@ -619,12 +617,33 @@
             weatherEls.station.textContent = DEFAULT_WEATHER.stationId;
             weatherEls.status.textContent = 'STATUS: STANDBY';
             weatherEls.condition.textContent = 'WEATHER UNAVAILABLE';
+            weatherEls.uv.textContent = '--';
+            weatherEls.pollen.textContent = '--';
             weatherEls.forecast.innerHTML = `
-              <div class="home-weather-horizon-day">
-                <p class="home-weather-horizon-name">LOCAL</p>
-                <p class="home-weather-horizon-icon" aria-hidden="true">--</p>
-                <p class="home-weather-horizon-temp">--°</p>
-                <p class="home-weather-horizon-note">TRY AGAIN SOON</p>
+              <div class="forecast-slot">
+                <span class="forecast-day">LOCAL</span>
+                <span class="forecast-icon" aria-hidden="true">--</span>
+                <span class="forecast-temp">--°</span>
+              </div>
+              <div class="forecast-slot">
+                <span class="forecast-day">WAIT</span>
+                <span class="forecast-icon" aria-hidden="true">--</span>
+                <span class="forecast-temp">--°</span>
+              </div>
+              <div class="forecast-slot">
+                <span class="forecast-day">TRY</span>
+                <span class="forecast-icon" aria-hidden="true">--</span>
+                <span class="forecast-temp">--°</span>
+              </div>
+              <div class="forecast-slot">
+                <span class="forecast-day">AGAIN</span>
+                <span class="forecast-icon" aria-hidden="true">--</span>
+                <span class="forecast-temp">--°</span>
+              </div>
+              <div class="forecast-slot">
+                <span class="forecast-day">SOON</span>
+                <span class="forecast-icon" aria-hidden="true">--</span>
+                <span class="forecast-temp">--°</span>
               </div>
             `;
           }
