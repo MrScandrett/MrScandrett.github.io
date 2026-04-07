@@ -1170,7 +1170,13 @@
     }
 
     .steam-galaxy-node-surface {
-      transition: transform 180ms ease, opacity 180ms ease, stroke-width 180ms ease, filter 180ms ease;
+      will-change: transform, filter;
+      transition:
+        transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+        opacity 180ms ease,
+        stroke-width 0.2s ease,
+        fill-opacity 0.2s ease,
+        filter 180ms ease;
     }
 
     .steam-galaxy-node-hit {
@@ -1253,6 +1259,20 @@
     .steam-galaxy-node:focus-visible .steam-galaxy-node-surface {
       stroke-width: 3.2;
       fill-opacity: 0.65 !important;
+    }
+
+    .steam-galaxy-node:hover .steam-galaxy-node-surface,
+    .steam-galaxy-node:focus-visible .steam-galaxy-node-surface {
+      transform: scale(1.12);
+      fill-opacity: 0.85 !important;
+      stroke-width: 5px !important;
+      filter: drop-shadow(0 0 15px var(--node-color, #fff));
+    }
+
+    .steam-galaxy-stage[data-focus-mode="true"] .steam-galaxy-node[data-tier="peripheral"],
+    .steam-galaxy-stage[data-focus-mode="true"] .steam-galaxy-node[data-tier="secondary"] {
+      opacity: 0.04 !important;
+      pointer-events: none;
     }
 
     .steam-galaxy-node.is-active .steam-galaxy-node-label {
@@ -1372,6 +1392,12 @@
 
     .steam-galaxy-nav-btn[data-galaxy-action="show-all"] {
       background: linear-gradient(180deg, rgba(90, 168, 255, 0.24), rgba(37, 90, 163, 0.2));
+    }
+
+    .steam-galaxy-nav-btn[data-galaxy-action="reset-view"] {
+      background: #0071e3;
+      color: #ffffff;
+      font-weight: 800;
     }
 
     .steam-galaxy-nav-hint,
@@ -1941,12 +1967,13 @@
                   <span class="steam-galaxy-nav-readout" id="steam-galaxy-zoom-readout">100%</span>
                 </div>
                 <div class="steam-galaxy-nav-buttons">
+                  <button class="steam-galaxy-nav-btn" type="button" id="btn-focus-mode" data-galaxy-action="toggle-focus" aria-pressed="false">Simple View: Off</button>
                   <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="zoom-in">Zoom In</button>
                   <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="zoom-out">Zoom Out</button>
-                  <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="reset-view">Reset View</button>
+                  <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="reset-view">Center Camera</button>
                   <button class="steam-galaxy-nav-btn" type="button" data-galaxy-action="show-all">Show All Bubbles</button>
                 </div>
-                <p class="steam-galaxy-nav-hint">Drag the constellation, pinch or scroll to zoom, or tap the mini-map to jump across the world.</p>
+                <p class="steam-galaxy-nav-hint">Use Simple View for a quieter map, then drag, pinch, scroll, or tap the mini-map to move around.</p>
               </div>
               <div class="steam-galaxy-minimap-card">
                 <p class="steam-galaxy-minimap-title">Constellation Overview</p>
@@ -1974,7 +2001,7 @@
             <p class="steam-galaxy-panel-desc" id="steam-panel-desc">Explore programming pathways that move from block-based play into more advanced coding, computational thinking, and real project making.</p>
 
             <div>
-              <p class="steam-galaxy-section-label">What it teaches</p>
+              <p class="steam-galaxy-section-label">Classroom Use</p>
               <p class="steam-galaxy-panel-teaches" id="steam-panel-teaches">Sequencing, debugging, logic, creative problem-solving, and the confidence to move from remixing into original builds.</p>
             </div>
 
@@ -1984,7 +2011,7 @@
                 <strong id="steam-panel-category">Coding / Programming</strong>
               </div>
               <div class="steam-galaxy-stat">
-                <span>Grade Range</span>
+                <span>Recommended For</span>
                 <strong id="steam-panel-grades">K–12 pathway</strong>
               </div>
               <div class="steam-galaxy-stat">
@@ -1992,7 +2019,7 @@
                 <strong id="steam-panel-login">Varies by tool</strong>
               </div>
               <div class="steam-galaxy-stat">
-                <span>Free</span>
+                <span>Cost &amp; Access</span>
                 <strong id="steam-panel-free">Mostly free tools</strong>
               </div>
             </div>
@@ -5440,7 +5467,8 @@
         category: "all",
         grade: "all",
         utility: "all",
-        selectedId: "anchor-coding"
+        selectedId: "anchor-coding",
+        focusMode: false
       };
       const expandedCategories = new Set(defaultExpandedCategories);
 
@@ -5677,11 +5705,18 @@
         return "peripheral";
       }
 
+      function focusModeAllows(node) {
+        if (!state.focusMode) return true;
+        if (node.type === "anchor") return true;
+        return toolTier(node) === "primary";
+      }
+
       function isCategoryExpanded(category) {
         return state.category !== "all" || expandedCategories.has(category);
       }
 
       function revealAllows(node) {
+        if (!focusModeAllows(node)) return false;
         if (node.type === "anchor") return true;
         if (state.category !== "all") return true;
         if (isCategoryExpanded(node.category)) return true;
@@ -5998,7 +6033,15 @@
             state.category = "all";
             state.grade = "all";
             state.utility = "all";
+            state.focusMode = false;
             state.selectedId = "anchor-coding";
+            if (stage) stage.dataset.focusMode = "false";
+            const focusButton = document.getElementById("btn-focus-mode");
+            if (focusButton) {
+              focusButton.classList.remove("is-active");
+              focusButton.textContent = "Simple View: Off";
+              focusButton.setAttribute("aria-pressed", "false");
+            }
             collapseExpandedCategories();
             renderControls();
             renderPanel();
@@ -6010,6 +6053,19 @@
         navButtons.forEach((button) => {
           button.addEventListener("click", function () {
             const action = button.dataset.galaxyAction;
+            if (action === "toggle-focus") {
+              state.focusMode = !state.focusMode;
+              if (stage) stage.dataset.focusMode = String(state.focusMode);
+              button.classList.toggle("is-active", state.focusMode);
+              button.textContent = state.focusMode ? "Simple View: On" : "Simple View: Off";
+              button.setAttribute("aria-pressed", String(state.focusMode));
+              ensureVisibleSelection();
+              renderPanel();
+              renderFrame(latestTime);
+              fitVisibleNodes(320);
+              return;
+            }
+
             if (action === "zoom-in") {
               const nextScale = clamp(currentTransform.k * 1.18, zoomExtent[0], zoomExtent[1]);
               centerCameraOn({
@@ -6204,7 +6260,7 @@
           : (node.categories || [node.category]).map((c) => categoryMeta[c]?.label || c).join(" · ");
         panelGrades.textContent = isAnchor ? "K–12 pathway" : formatGrades(node.grades);
         panelLogin.textContent = isAnchor ? "Varies by tool" : node.login;
-        panelFree.textContent = isAnchor ? "Mixed by tool, mostly free starts" : (node.free ? "Yes" : "Limited free tier / check plan");
+        panelFree.textContent = isAnchor ? "Mostly free starts; login varies by tool" : (node.free ? "Free to use" : "Limited free tier / check plan");
 
         const badgeValues = isAnchor
           ? [`Starter: ${starterTool?.label || meta.anchorLabel}`, "Anchor bubble", "Classroom pathway"]
@@ -6376,10 +6432,11 @@
         const activeCategory = state.category === "all" ? "all categories" : categoryMeta[state.category].anchorLabel;
         const activeGrade = state.grade === "all" ? "all grades" : state.grade;
         const activeUtility = state.utility === "all" ? "all tool types" : utilityLabel(state.utility);
+        const focusNote = state.focusMode ? " Simple View is showing anchor bubbles and core tools only." : "";
         const revealNote = hiddenTools > 0
           ? ` ${hiddenTools} more bubbles are tucked into collapsed constellations. Select an anchor or tool to expand that region.`
           : "";
-        statusText.textContent = `Showing ${visibleTools.length} tool bubbles in ${activeCategory}, filtered for ${activeGrade} and ${activeUtility}.${revealNote}`;
+        statusText.textContent = `Showing ${visibleTools.length} tool bubbles in ${activeCategory}, filtered for ${activeGrade} and ${activeUtility}.${focusNote}${revealNote}`;
       }
 
       function getRelatedIdSet(node) {
@@ -6483,6 +6540,7 @@
         merged
           .attr("aria-label", (node) => `${node.label}, ${node.type === "anchor" ? "anchor bubble" : "tool bubble"} in ${categoryMeta[node.category].label}`)
           .attr("data-tier", (node) => node.type === "anchor" ? "anchor" : toolTier(node))
+          .style("--node-color", (node) => node.color)
           .on("click", function (_event, node) {
             selectNode(node.id);
           })
@@ -6653,7 +6711,9 @@
         const globalTwinkle = 0.88 + Math.sin(time * 0.0005) * 0.12;
         ctx.globalAlpha = globalTwinkle;
 
-        starField.forEach((star, index) => {
+        const activeStarCount = state.focusMode ? Math.max(48, Math.floor(starField.length * 0.4)) : starField.length;
+        for (let index = 0; index < activeStarCount; index += 1) {
+          const star = starField[index];
           const pulse = 0.76 + Math.sin(time * 0.00042 * star.drift * 10 + index) * 0.18;
           const parallaxX = star.x * 0.22 * currentTransform.k + currentTransform.x * 0.16;
           const parallaxY = (star.y * 0.22 * currentTransform.k + currentTransform.y * 0.16 + time * star.drift * 0.02) % (height + 120);
@@ -6675,7 +6735,7 @@
             ctx.moveTo(x, y - fl); ctx.lineTo(x, y + fl);
             ctx.stroke();
           }
-        });
+        }
 
         ctx.globalAlpha = 1;
 
@@ -6771,6 +6831,9 @@
         renderFrame(latestTime);
         svgSelection.call(zoomBehavior);
         svgSelection.on("dblclick.zoom", null);
+        if (stage) {
+          stage.dataset.focusMode = String(state.focusMode);
+        }
         if (currentTransform.k === 1 && currentTransform.x === 0 && currentTransform.y === 0) {
           fitVisibleNodes(0);
         } else {
