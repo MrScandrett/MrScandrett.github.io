@@ -129,17 +129,49 @@
 
       <!-- Weather -->
       <div class="home-widget home-widget--weather" aria-label="Current weather">
-        <p class="home-widget-eyebrow">🌤 Weather · <span id="home-weather-city">LONGWOOD, FL</span></p>
-        <p class="home-weather-condition" id="home-weather-condition">LOADING</p>
-        <p class="home-weather-temp" id="home-weather-temp">--°</p>
-        <div class="home-weather-minmax">
-          <div class="home-weather-min">
-            <p class="home-weather-label">Min</p>
-            <p class="home-weather-value" id="home-weather-min">--°</p>
+        <div class="home-weather-shell">
+          <div class="home-weather-topline">
+            <p class="home-widget-eyebrow">Environmental Station</p>
+            <p class="home-weather-station" id="home-weather-station">LW_FL_32750</p>
           </div>
-          <div class="home-weather-max">
-            <p class="home-weather-label">Max</p>
-            <p class="home-weather-value" id="home-weather-max">--°</p>
+          <div class="home-weather-header">
+            <div class="home-weather-heading">
+              <p class="home-weather-city" id="home-weather-city">LONGWOOD, FL</p>
+              <p class="home-weather-status" id="home-weather-status">STATUS: LOADING</p>
+            </div>
+            <p class="home-weather-condition" id="home-weather-condition">Loading conditions</p>
+          </div>
+          <div class="home-weather-primary">
+            <div class="home-weather-tempblock">
+              <p class="home-weather-temp" id="home-weather-temp">--°</p>
+              <p class="home-weather-range">
+                LOW <span id="home-weather-min">--°</span>
+                <span aria-hidden="true">·</span>
+                HIGH <span id="home-weather-max">--°</span>
+              </p>
+            </div>
+            <div class="home-weather-telemetry" aria-label="Weather telemetry">
+              <div class="home-weather-readout">
+                <p class="home-weather-label">WIND_SPEED</p>
+                <p class="home-weather-value" id="home-weather-wind">-- MPH</p>
+              </div>
+              <div class="home-weather-readout">
+                <p class="home-weather-label">HUMIDITY</p>
+                <p class="home-weather-value" id="home-weather-humidity">--%</p>
+              </div>
+              <div class="home-weather-readout home-weather-readout--warn">
+                <p class="home-weather-label">UV_INDEX</p>
+                <p class="home-weather-value" id="home-weather-uv">--</p>
+              </div>
+              <div class="home-weather-readout home-weather-readout--warn">
+                <p class="home-weather-label">POLLEN_OUTLOOK</p>
+                <p class="home-weather-value" id="home-weather-pollen">--</p>
+              </div>
+            </div>
+          </div>
+          <div class="home-weather-horizon">
+            <p class="home-weather-horizon-label">Forecast Horizon</p>
+            <div class="home-weather-forecast" id="home-weather-forecast" aria-label="Three day forecast"></div>
           </div>
         </div>
       </div>
@@ -371,24 +403,46 @@
 
       const DEFAULT_WEATHER = {
         label: 'LONGWOOD, FL',
+        stationId: 'LW_FL_32750',
         latitude: 28.7031,
         longitude: -81.3384
       };
 
       const weatherEls = {
+        station: document.getElementById('home-weather-station'),
         city: document.getElementById('home-weather-city'),
+        status: document.getElementById('home-weather-status'),
         condition: document.getElementById('home-weather-condition'),
         temp: document.getElementById('home-weather-temp'),
         min: document.getElementById('home-weather-min'),
-        max: document.getElementById('home-weather-max')
+        max: document.getElementById('home-weather-max'),
+        wind: document.getElementById('home-weather-wind'),
+        humidity: document.getElementById('home-weather-humidity'),
+        uv: document.getElementById('home-weather-uv'),
+        pollen: document.getElementById('home-weather-pollen'),
+        forecast: document.getElementById('home-weather-forecast')
       };
 
       function setWeatherCard(data) {
         weatherEls.city.textContent = data.label.toUpperCase();
+        weatherEls.station.textContent = data.stationId;
+        weatherEls.status.textContent = data.status;
         weatherEls.condition.textContent = data.condition.toUpperCase();
         weatherEls.temp.textContent = `${Math.round(data.temperature)}°`;
         weatherEls.min.textContent = `${Math.round(data.min)}°`;
         weatherEls.max.textContent = `${Math.round(data.max)}°`;
+        weatherEls.wind.textContent = `${Math.round(data.wind)} MPH`;
+        weatherEls.humidity.textContent = `${Math.round(data.humidity)}%`;
+        weatherEls.uv.textContent = data.uvDisplay;
+        weatherEls.pollen.textContent = data.pollen.label;
+        weatherEls.forecast.innerHTML = data.forecast.map((day) => `
+          <div class="home-weather-horizon-day">
+            <p class="home-weather-horizon-name">${day.label}</p>
+            <p class="home-weather-horizon-icon" aria-hidden="true">${day.icon}</p>
+            <p class="home-weather-horizon-temp">${Math.round(day.max)}°</p>
+            <p class="home-weather-horizon-note">${day.note}</p>
+          </div>
+        `).join('');
       }
 
       function weatherLabelFromCode(code) {
@@ -425,14 +479,55 @@
         return map[code] || 'Current conditions';
       }
 
+      function weatherIconFromCode(code) {
+        if (code === 0) return '☀️';
+        if (code <= 3) return '⛅';
+        if (code >= 45 && code <= 48) return '🌫️';
+        if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return '🌧️';
+        if (code >= 71 && code <= 86) return '❄️';
+        if (code >= 95) return '⛈️';
+        return '🌤️';
+      }
+
+      function formatForecastLabel(dateString, index) {
+        if (index === 0) return 'TODAY';
+        const date = new Date(`${dateString}T12:00:00`);
+        return date.toLocaleDateString(undefined, { weekday: 'short' }).toUpperCase();
+      }
+
+      function buildStationId(location) {
+        if (location.stationId) return location.stationId;
+        const lat = Math.abs(Math.round(location.latitude * 10)).toString().padStart(4, '0');
+        const lon = Math.abs(Math.round(location.longitude * 10)).toString().padStart(4, '0');
+        return `WX_${lat}_${lon}`;
+      }
+
+      function getPollenOutlook(dateString) {
+        const month = new Date(`${dateString}T12:00:00`).getMonth() + 1;
+        if (month >= 2 && month <= 4) {
+          return { label: 'HIGH', score: 3 };
+        }
+        if (month === 5 || month === 6 || month === 10) {
+          return { label: 'MODERATE', score: 2 };
+        }
+        return { label: 'LOW', score: 1 };
+      }
+
+      function buildMissionStatus({ weatherCode, uv, pollenScore, rainChance }) {
+        if (weatherCode >= 95 || rainChance >= 75) return 'STATUS: WEATHER WATCH';
+        if (uv >= 8 || pollenScore >= 3) return 'STATUS: ADVISORY';
+        return 'STATUS: NOMINAL';
+      }
+
       async function fetchWeatherForLocation(location) {
         const url = new URL('https://api.open-meteo.com/v1/forecast');
         url.searchParams.set('latitude', location.latitude);
         url.searchParams.set('longitude', location.longitude);
-        url.searchParams.set('current', 'temperature_2m,weather_code');
-        url.searchParams.set('daily', 'temperature_2m_min,temperature_2m_max');
+        url.searchParams.set('current', 'temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m');
+        url.searchParams.set('daily', 'temperature_2m_min,temperature_2m_max,weather_code,uv_index_max,precipitation_probability_max');
         url.searchParams.set('temperature_unit', 'fahrenheit');
-        url.searchParams.set('forecast_days', '1');
+        url.searchParams.set('wind_speed_unit', 'mph');
+        url.searchParams.set('forecast_days', '3');
         url.searchParams.set('timezone', 'auto');
 
         const response = await fetch(url.toString());
@@ -444,16 +539,44 @@
         const current = payload && payload.current;
         const daily = payload && payload.daily;
 
-        if (!current || !daily || !daily.temperature_2m_min || !daily.temperature_2m_max) {
+        if (
+          !current ||
+          !daily ||
+          !daily.temperature_2m_min ||
+          !daily.temperature_2m_max ||
+          !daily.time
+        ) {
           throw new Error('Incomplete weather payload');
         }
 
+        const todayDate = daily.time[0];
+        const pollen = getPollenOutlook(todayDate);
+        const uv = Number(daily.uv_index_max && daily.uv_index_max[0]) || 0;
+        const rainChance = Number(daily.precipitation_probability_max && daily.precipitation_probability_max[0]) || 0;
+
         return {
           label: location.label,
+          stationId: buildStationId(location),
+          status: buildMissionStatus({
+            weatherCode: current.weather_code,
+            uv,
+            pollenScore: pollen.score,
+            rainChance
+          }),
           condition: weatherLabelFromCode(current.weather_code),
           temperature: current.temperature_2m,
+          wind: current.wind_speed_10m || 0,
+          humidity: current.relative_humidity_2m || 0,
+          uvDisplay: uv >= 10 ? '10+' : uv.toFixed(1),
+          pollen,
           min: daily.temperature_2m_min[0],
-          max: daily.temperature_2m_max[0]
+          max: daily.temperature_2m_max[0],
+          forecast: daily.time.slice(0, 3).map((dateString, index) => ({
+            label: formatForecastLabel(dateString, index),
+            icon: weatherIconFromCode(daily.weather_code[index]),
+            max: daily.temperature_2m_max[index],
+            note: weatherLabelFromCode(daily.weather_code[index]).toUpperCase()
+          }))
         };
       }
 
@@ -493,7 +616,17 @@
             setWeatherCard(weather);
           } catch (fallbackError) {
             weatherEls.city.textContent = DEFAULT_WEATHER.label;
+            weatherEls.station.textContent = DEFAULT_WEATHER.stationId;
+            weatherEls.status.textContent = 'STATUS: STANDBY';
             weatherEls.condition.textContent = 'WEATHER UNAVAILABLE';
+            weatherEls.forecast.innerHTML = `
+              <div class="home-weather-horizon-day">
+                <p class="home-weather-horizon-name">LOCAL</p>
+                <p class="home-weather-horizon-icon" aria-hidden="true">--</p>
+                <p class="home-weather-horizon-temp">--°</p>
+                <p class="home-weather-horizon-note">TRY AGAIN SOON</p>
+              </div>
+            `;
           }
         }
       })();
