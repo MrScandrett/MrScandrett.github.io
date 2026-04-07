@@ -214,6 +214,36 @@ html[data-theme="topaz"] {
   --glow-md: 0 0 22px rgba(244, 169, 0, 0.2);
 }
 
+html[data-theme="vaporwave"] {
+  --bg: #050505;
+  --text: #ffffff;
+  --muted: #9ae9f7;
+  --line: rgba(255, 0, 255, 0.44);
+  --white: #000000;
+  --blue: #00ffff;
+  --page-wash:
+    radial-gradient(980px 520px at 50% 100%, rgba(255, 255, 0, 0.18), transparent 50%),
+    radial-gradient(1200px 620px at -10% -10%, rgba(255, 0, 255, 0.18), transparent 52%),
+    radial-gradient(920px 420px at 110% 0%, rgba(0, 255, 255, 0.16), transparent 42%);
+  --header-bg: rgba(0, 0, 0, 0.9);
+  --header-border: rgba(255, 0, 255, 0.66);
+  --nav-ink: #8af7ff;
+  --nav-ink-strong: #ffffff;
+  --nav-hover-bg: rgba(255, 0, 255, 0.16);
+  --surface-1: rgba(0, 0, 0, 0.88);
+  --surface-2: rgba(10, 0, 22, 0.96);
+  --theme-accent: #ff00ff;
+  --theme-accent-strong: #00ffff;
+  --theme-accent-soft: rgba(255, 0, 255, 0.22);
+  --shadow: 5px 5px 0 rgba(255, 0, 255, 0.55), -3px -3px 0 rgba(0, 255, 255, 0.36);
+  --shadow-1: 5px 5px 0 rgba(255, 0, 255, 0.52), -3px -3px 0 rgba(0, 255, 255, 0.32);
+  --shadow-2: 6px 6px 0 rgba(255, 0, 255, 0.56), -4px -4px 0 rgba(0, 255, 255, 0.34);
+  --shadow-3: 8px 8px 0 rgba(255, 0, 255, 0.58), -5px -5px 0 rgba(0, 255, 255, 0.34);
+  --shadow-4: 10px 10px 0 rgba(255, 0, 255, 0.6), -6px -6px 0 rgba(0, 255, 255, 0.34);
+  --glow-sm: 0 0 12px rgba(255, 0, 255, 0.22);
+  --glow-md: 0 0 24px rgba(0, 255, 255, 0.18);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -255,6 +285,62 @@ html[data-theme="diamond"] body {
     linear-gradient(var(--bg), var(--bg));
 }
 
+html[data-theme="vaporwave"] body {
+  position: relative;
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.05) 0 1px,
+      rgba(0, 0, 0, 0) 1px 3px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 255, 0.06),
+      rgba(0, 255, 255, 0.02),
+      rgba(255, 255, 0, 0.05)
+    ),
+    radial-gradient(circle at 50% 112%, rgba(255, 255, 0, 0.15), transparent 30%),
+    var(--page-wash),
+    linear-gradient(var(--bg), var(--bg));
+  background-attachment: fixed;
+}
+
+html[data-theme="vaporwave"] body::before,
+html[data-theme="vaporwave"] body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+html[data-theme="vaporwave"] body::before {
+  inset: 0;
+  z-index: 0;
+  opacity: 0.18;
+  background-image:
+    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.42) 0 1px, transparent 1px 100%),
+    radial-gradient(circle at 78% 32%, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 100%),
+    radial-gradient(circle at 48% 62%, rgba(255, 255, 255, 0.3) 0 1px, transparent 1px 100%);
+  background-size: 160px 160px, 220px 220px, 180px 180px;
+  mix-blend-mode: screen;
+  animation: vaporwave-static-shift 1.2s steps(2) infinite;
+}
+
+html[data-theme="vaporwave"] body::after {
+  bottom: -20vh;
+  left: 50%;
+  z-index: 0;
+  width: 180vw;
+  height: 56vh;
+  transform: translateX(-50%) perspective(640px) rotateX(68deg);
+  background:
+    linear-gradient(90deg, #ff00ff 0%, #00ffff 35%, #ffff00 68%, #ff00ff 100%);
+  opacity: 0.22;
+  filter: blur(36px);
+  animation: vaporwave-road-flicker 4s ease-in-out infinite;
+}
+
 @keyframes sakura-petals-fall {
   from {
     background-position: 0 -140px, 110px -240px, 160px -180px, 240px -300px, 0 0, 0 0;
@@ -264,8 +350,31 @@ html[data-theme="diamond"] body {
   }
 }
 
+@keyframes vaporwave-static-shift {
+  0% { transform: translate3d(0, 0, 0); }
+  33% { transform: translate3d(1px, -1px, 0); }
+  66% { transform: translate3d(-1px, 1px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes vaporwave-road-flicker {
+  0%, 100% {
+    opacity: 0.18;
+    transform: translateX(-50%) perspective(640px) rotateX(68deg) scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translateX(-50%) perspective(640px) rotateX(70deg) scale(1.04);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html[data-theme="sakura"] body {
+    animation: none;
+  }
+
+  html[data-theme="vaporwave"] body::before,
+  html[data-theme="vaporwave"] body::after {
     animation: none;
   }
 }
@@ -1761,6 +1870,7 @@ button.card-shell {
 .nav-theme-chip[data-theme="sakura"] .nav-theme-swatch { background: linear-gradient(135deg, #fff7fb, #ff85b2); }
 .nav-theme-chip[data-theme="diamond"] .nav-theme-swatch { background: linear-gradient(135deg, #091224, #00c6ff); }
 .nav-theme-chip[data-theme="emerald"] .nav-theme-swatch { background: linear-gradient(135deg, #f4fff7, #50db82); }
+.nav-theme-chip[data-theme="vaporwave"] .nav-theme-swatch { background: linear-gradient(135deg, #050505 12%, #ff00ff 52%, #00ffff 100%); }
 
 html[data-theme="emerald"] .site-header,
 html[data-theme="emerald"] .nav-settings-panel,
@@ -2006,6 +2116,110 @@ html[data-theme="diamond"] .app-launch-link:focus-visible {
   background: #00f3ff;
   color: #04101f;
   box-shadow: 0 0 28px rgba(0, 243, 255, 0.32);
+}
+
+html[data-theme="vaporwave"] body,
+html[data-theme="vaporwave"] input,
+html[data-theme="vaporwave"] select,
+html[data-theme="vaporwave"] button,
+html[data-theme="vaporwave"] textarea {
+  font-family: "Courier New", Courier, monospace;
+}
+
+html[data-theme="vaporwave"] .site-header,
+html[data-theme="vaporwave"] .nav-settings-panel,
+html[data-theme="vaporwave"] .nav-settings-toggle,
+html[data-theme="vaporwave"] .nav-mode-pill,
+html[data-theme="vaporwave"] .nav-tone-pill,
+html[data-theme="vaporwave"] .nav-theme-chip,
+html[data-theme="vaporwave"] input[type="search"],
+html[data-theme="vaporwave"] input[type="text"],
+html[data-theme="vaporwave"] select,
+html[data-theme="vaporwave"] .pill,
+html[data-theme="vaporwave"] button.secondary,
+html[data-theme="vaporwave"] .button.secondary,
+html[data-theme="vaporwave"] .card-shell,
+html[data-theme="vaporwave"] .project-card,
+html[data-theme="vaporwave"] .detail-main,
+html[data-theme="vaporwave"] .detail-side,
+html[data-theme="vaporwave"] .about-card,
+html[data-theme="vaporwave"] .github-lesson-card,
+html[data-theme="vaporwave"] .about-step,
+html[data-theme="vaporwave"] .steam-galaxy-overlay-card,
+html[data-theme="vaporwave"] .steam-galaxy-panel,
+html[data-theme="vaporwave"] .steam-galaxy-help-toggle,
+html[data-theme="vaporwave"] .app-launch-link {
+  background:
+    linear-gradient(180deg, rgba(20, 0, 38, 0.96), rgba(0, 0, 0, 0.98));
+  border-color: rgba(255, 0, 255, 0.58);
+  border-radius: 8px;
+  color: #ffffff;
+  box-shadow:
+    5px 5px 0 rgba(255, 0, 255, 0.45),
+    -3px -3px 0 rgba(0, 255, 255, 0.22);
+}
+
+html[data-theme="vaporwave"] .site-header,
+html[data-theme="vaporwave"] .nav-settings-panel {
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
+}
+
+html[data-theme="vaporwave"] .site-nav a,
+html[data-theme="vaporwave"] .nav-settings-eyebrow,
+html[data-theme="vaporwave"] .nav-theme-label small,
+html[data-theme="vaporwave"] .nav-settings-note,
+html[data-theme="vaporwave"] .steam-galaxy-overlay-kicker,
+html[data-theme="vaporwave"] .steam-galaxy-panel-eyebrow,
+html[data-theme="vaporwave"] .steam-galaxy-section-label,
+html[data-theme="vaporwave"] .steam-galaxy-panel-desc,
+html[data-theme="vaporwave"] .steam-galaxy-panel-teaches,
+html[data-theme="vaporwave"] .steam-galaxy-status,
+html[data-theme="vaporwave"] .steam-galaxy-panel small {
+  color: #8ffcff;
+}
+
+html[data-theme="vaporwave"] .site-nav a[aria-current="page"],
+html[data-theme="vaporwave"] .site-nav a:hover,
+html[data-theme="vaporwave"] .nav-settings-toggle:hover,
+html[data-theme="vaporwave"] .nav-settings.is-open .nav-settings-toggle,
+html[data-theme="vaporwave"] .nav-mode-pill.is-active,
+html[data-theme="vaporwave"] .nav-tone-pill.is-active,
+html[data-theme="vaporwave"] .nav-theme-chip.is-active,
+html[data-theme="vaporwave"] .app-launch-link:hover,
+html[data-theme="vaporwave"] .app-launch-link:focus-visible {
+  background:
+    linear-gradient(180deg, rgba(255, 0, 255, 0.12), rgba(0, 0, 0, 0.96));
+  border-color: rgba(0, 255, 255, 0.72);
+  color: #ffff00;
+}
+
+html[data-theme="vaporwave"] .site-nav a[aria-current="page"],
+html[data-theme="vaporwave"] .site-nav a:hover,
+html[data-theme="vaporwave"] .nav-settings-toggle:hover,
+html[data-theme="vaporwave"] .nav-settings.is-open .nav-settings-toggle,
+html[data-theme="vaporwave"] .nav-mode-pill.is-active,
+html[data-theme="vaporwave"] .nav-tone-pill.is-active,
+html[data-theme="vaporwave"] .nav-theme-chip.is-active,
+html[data-theme="vaporwave"] .nav-settings-status,
+html[data-theme="vaporwave"] .nav-tone-icon,
+html[data-theme="vaporwave"] .nav-theme-swatch,
+html[data-theme="vaporwave"] .steam-galaxy-panel-title,
+html[data-theme="vaporwave"] .steam-galaxy-node-label {
+  text-shadow:
+    1px 0 0 rgba(255, 0, 255, 0.55),
+    -1px 0 0 rgba(0, 255, 255, 0.55);
+}
+
+html[data-theme="vaporwave"] :focus-visible {
+  outline: 2px solid #00ffff;
+  outline-offset: 3px;
+}
+
+html[data-theme="vaporwave"] .steam-galaxy-node-surface {
+  stroke: #00ffff !important;
+  fill: #090013 !important;
+  fill-opacity: 0.92 !important;
 }
 
 .nav-settings-divider {

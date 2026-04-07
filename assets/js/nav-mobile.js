@@ -150,7 +150,8 @@
     { id: "sakura", label: "Sakura", detail: "Soft pink and white with cherry blossom drift." },
     { id: "diamond", label: "Diamond", detail: "An icy light blue gemstone glow." },
     { id: "emerald", label: "Emerald", detail: "A pale green gemstone shine." },
-    { id: "topaz", label: "Honey", detail: "Sunlit amber with a bright hive glow." }
+    { id: "topaz", label: "Honey", detail: "Sunlit amber with a bright hive glow." },
+    { id: "vaporwave", label: "Vaporwave", detail: "Broken VHS neon with a corrupted rainbow horizon." }
   ];
 
   var CANVAS_OPTIONS = [
@@ -250,7 +251,8 @@
   }
 
   function getLightingForTheme(theme) {
-    return normalizeTheme(theme) === "night" ? "night" : "day";
+    var normalized = normalizeTheme(theme);
+    return (normalized === "night" || normalized === "diamond" || normalized === "vaporwave") ? "night" : "day";
   }
 
   function ensureLightingApi() {

@@ -180,6 +180,30 @@ body.theme-liquid-woodland[data-theme="topaz"] {
   --focus-ring: #ffb900;
 }
 
+body.theme-liquid-woodland[data-theme="vaporwave"] {
+  --page-top: #050505;
+  --page-bottom: #0a0016;
+  --page-glow: rgba(255, 0, 255, 0.18);
+  --page-glow-strong: rgba(0, 255, 255, 0.14);
+  --glass-fill: rgba(0, 0, 0, 0.84);
+  --glass-fill-strong: rgba(8, 0, 18, 0.92);
+  --glass-fill-soft: rgba(12, 0, 24, 0.64);
+  --glass-stroke: rgba(255, 0, 255, 0.38);
+  --glass-stroke-soft: rgba(0, 255, 255, 0.18);
+  --glass-shadow: 5px 5px 0 rgba(255, 0, 255, 0.42), -3px -3px 0 rgba(0, 255, 255, 0.18);
+  --glass-shadow-soft: 4px 4px 0 rgba(255, 0, 255, 0.34), -2px -2px 0 rgba(0, 255, 255, 0.14);
+  --text-main: #ffffff;
+  --text-muted: rgba(143, 252, 255, 0.8);
+  --text-soft: rgba(143, 252, 255, 0.62);
+  --accent-gold: #ff00ff;
+  --accent-copper: #00ffff;
+  --accent-moss: #ffff00;
+  --accent-sky: rgba(0, 255, 255, 0.88);
+  --focus-ring: #00ffff;
+  color-scheme: dark;
+  font-family: "Courier New", Courier, monospace;
+}
+
 @keyframes sakura-petals-fall {
   from {
     background-position: 0 -140px, 110px -240px, 160px -180px, 240px -300px, 0 0, 0 0, 0 0;
@@ -195,6 +219,24 @@ body.theme-liquid-woodland[data-theme="topaz"] {
   }
 }
 
+@keyframes vaporwave-static-shift {
+  0% { transform: translate3d(0, 0, 0); }
+  33% { transform: translate3d(1px, -1px, 0); }
+  66% { transform: translate3d(-1px, 1px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes vaporwave-road-flicker {
+  0%, 100% {
+    opacity: 0.18;
+    transform: translateX(-50%) perspective(640px) rotateX(68deg) scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translateX(-50%) perspective(640px) rotateX(70deg) scale(1.04);
+  }
+}
+
 body.theme-liquid-woodland::before {
   content: "";
   position: fixed;
@@ -204,6 +246,49 @@ body.theme-liquid-woodland::before {
   opacity: 0.08;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E");
   mix-blend-mode: soft-light;
+}
+
+body.theme-liquid-woodland[data-theme="vaporwave"]::before {
+  opacity: 0.18;
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06) 0 1px,
+      rgba(0, 0, 0, 0) 1px 3px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 255, 0.06),
+      rgba(0, 255, 255, 0.02),
+      rgba(255, 255, 0, 0.05)
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E");
+  background-size: auto, auto, 180px 180px;
+  mix-blend-mode: screen;
+  animation: vaporwave-static-shift 1.2s steps(2) infinite;
+}
+
+body.theme-liquid-woodland[data-theme="vaporwave"]::after {
+  content: "";
+  position: fixed;
+  bottom: -20vh;
+  left: 50%;
+  z-index: 0;
+  width: 180vw;
+  height: 56vh;
+  pointer-events: none;
+  transform: translateX(-50%) perspective(640px) rotateX(68deg);
+  background: linear-gradient(90deg, #ff00ff 0%, #00ffff 35%, #ffff00 68%, #ff00ff 100%);
+  opacity: 0.22;
+  filter: blur(36px);
+  animation: vaporwave-road-flicker 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.theme-liquid-woodland[data-theme="vaporwave"]::before,
+  body.theme-liquid-woodland[data-theme="vaporwave"]::after {
+    animation: none;
+  }
 }
 
 body.theme-liquid-woodland .site-header,
@@ -552,6 +637,10 @@ body.theme-liquid-woodland .nav-theme-chip[data-theme="topaz"] .nav-theme-swatch
   background: linear-gradient(135deg, #fff9e3, #ffb900);
 }
 
+body.theme-liquid-woodland .nav-theme-chip[data-theme="vaporwave"] .nav-theme-swatch {
+  background: linear-gradient(135deg, #050505 12%, #ff00ff 52%, #00ffff 100%);
+}
+
 body.theme-liquid-woodland[data-theme="sakura"] .site-header,
 body.theme-liquid-woodland[data-theme="sakura"] .nav-settings-panel,
 body.theme-liquid-woodland[data-theme="sakura"] .nav-settings-toggle,
@@ -649,6 +738,45 @@ body.theme-liquid-woodland[data-theme="diamond"] .nav-settings-toggle:hover {
     rgba(8, 18, 35, 0.82);
 }
 
+body.theme-liquid-woodland[data-theme="vaporwave"] .site-header,
+body.theme-liquid-woodland[data-theme="vaporwave"] .nav-settings-panel,
+body.theme-liquid-woodland[data-theme="vaporwave"] .nav-settings-toggle,
+body.theme-liquid-woodland[data-theme="vaporwave"] .nav-theme-chip,
+body.theme-liquid-woodland[data-theme="vaporwave"] .launchpad-shell,
+body.theme-liquid-woodland[data-theme="vaporwave"] .votd-card,
+body.theme-liquid-woodland[data-theme="vaporwave"] .vod-card,
+body.theme-liquid-woodland[data-theme="vaporwave"] .card,
+body.theme-liquid-woodland[data-theme="vaporwave"] .module-banner,
+body.theme-liquid-woodland[data-theme="vaporwave"] .module-tile-grid,
+body.theme-liquid-woodland[data-theme="vaporwave"] .vl-card,
+body.theme-liquid-woodland[data-theme="vaporwave"] .vl-modal,
+body.theme-liquid-woodland[data-theme="vaporwave"] .music-theory-landscape,
+body.theme-liquid-woodland[data-theme="vaporwave"] .music-interval-card,
+body.theme-liquid-woodland[data-theme="vaporwave"] .music-interval-chip,
+body.theme-liquid-woodland[data-theme="vaporwave"] .music-piano-wrap,
+body.theme-liquid-woodland[data-theme="vaporwave"] .home-widget,
+body.theme-liquid-woodland[data-theme="vaporwave"] .home-launch-card {
+  background: linear-gradient(180deg, rgba(20, 0, 38, 0.96), rgba(0, 0, 0, 0.98));
+  border-color: rgba(255, 0, 255, 0.48);
+  border-radius: 8px;
+  box-shadow:
+    5px 5px 0 rgba(255, 0, 255, 0.38),
+    -3px -3px 0 rgba(0, 255, 255, 0.18);
+}
+
+body.theme-liquid-woodland[data-theme="vaporwave"] .site-nav a[aria-current="page"],
+body.theme-liquid-woodland[data-theme="vaporwave"] .site-nav a:hover,
+body.theme-liquid-woodland[data-theme="vaporwave"] .nav-theme-chip.is-active,
+body.theme-liquid-woodland[data-theme="vaporwave"] .nav-settings-toggle:hover {
+  border-color: rgba(0, 255, 255, 0.72);
+  background:
+    linear-gradient(180deg, rgba(255, 0, 255, 0.12), rgba(0, 0, 0, 0.96));
+  color: #ffff00;
+  text-shadow:
+    1px 0 0 rgba(255, 0, 255, 0.55),
+    -1px 0 0 rgba(0, 255, 255, 0.55);
+}
+
 body.theme-liquid-woodland[data-theme="sakura"] .site-nav a[aria-current="page"],
 body.theme-liquid-woodland[data-theme="sakura"] .site-nav a:hover,
 body.theme-liquid-woodland[data-theme="sakura"] .nav-theme-chip.is-active,
@@ -706,6 +834,22 @@ body.theme-liquid-woodland[data-theme="topaz"].theme-music-lab {
     linear-gradient(180deg, #fffaf0 0%, #fff6d9 44%, #fff9e3 100%);
 }
 
+body.theme-liquid-woodland[data-theme="vaporwave"].theme-home,
+body.theme-liquid-woodland[data-theme="vaporwave"].theme-steam,
+body.theme-liquid-woodland[data-theme="vaporwave"].theme-video-library,
+body.theme-liquid-woodland[data-theme="vaporwave"].theme-music-lab {
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.04) 0 1px,
+      rgba(0, 0, 0, 0) 1px 3px
+    ),
+    radial-gradient(1000px 560px at 50% 108%, rgba(255, 255, 0, 0.16), transparent 40%),
+    radial-gradient(980px 520px at -10% -10%, rgba(255, 0, 255, 0.18), transparent 50%),
+    radial-gradient(920px 440px at 110% 0%, rgba(0, 255, 255, 0.14), transparent 45%),
+    linear-gradient(180deg, #050505 0%, #05000d 44%, #0a0016 100%);
+}
+
 body.theme-liquid-woodland.theme-home[data-theme="sakura"] .home-widget--schedule,
 body.theme-liquid-woodland.theme-home[data-theme="emerald"] .home-widget--schedule,
 body.theme-liquid-woodland.theme-home[data-theme="topaz"] .home-widget--schedule {
@@ -758,12 +902,33 @@ body.theme-liquid-woodland.theme-home[data-theme="diamond"] .weekly-day-card--of
   border-color: var(--glass-stroke-soft);
 }
 
+body.theme-liquid-woodland.theme-home[data-theme="vaporwave"] .home-widget--schedule {
+  background: linear-gradient(180deg, rgba(20, 0, 38, 0.96), rgba(0, 0, 0, 0.98));
+  border-color: rgba(255, 0, 255, 0.42);
+  box-shadow:
+    5px 5px 0 rgba(255, 0, 255, 0.34),
+    -3px -3px 0 rgba(0, 255, 255, 0.16);
+}
+
+body.theme-liquid-woodland.theme-home[data-theme="vaporwave"] .weekly-day-card,
+body.theme-liquid-woodland.theme-home[data-theme="vaporwave"] .weekly-day-card--off {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(0, 255, 255, 0.18);
+}
+
 body.theme-liquid-woodland.theme-home[data-theme="sakura"] .weekly-day-dot,
 body.theme-liquid-woodland.theme-home[data-theme="emerald"] .weekly-day-dot,
 body.theme-liquid-woodland.theme-home[data-theme="topaz"] .weekly-day-dot,
 body.theme-liquid-woodland.theme-home[data-theme="diamond"] .weekly-day-dot {
   background: linear-gradient(180deg, var(--accent-copper) 0%, var(--accent-gold) 100%);
   box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent-gold) 14%, transparent), 0 8px 16px color-mix(in srgb, var(--accent-gold) 18%, transparent);
+}
+
+body.theme-liquid-woodland.theme-home[data-theme="vaporwave"] .weekly-day-dot {
+  background: linear-gradient(180deg, #00ffff 0%, #ff00ff 100%);
+  box-shadow:
+    0 0 0 7px rgba(255, 0, 255, 0.14),
+    0 8px 16px rgba(0, 255, 255, 0.18);
 }
 
 body.theme-liquid-woodland main {
@@ -796,6 +961,22 @@ body.theme-liquid-woodland .music-theory-head h2,
 body.theme-liquid-woodland .card h2,
 body.theme-liquid-woodland .card h3 {
   font-family: "Univers", "Helvetica Neue", Arial, sans-serif;
+}
+
+body.theme-liquid-woodland[data-theme="vaporwave"] h1,
+body.theme-liquid-woodland[data-theme="vaporwave"] .section-head h2,
+body.theme-liquid-woodland[data-theme="vaporwave"] .module-banner-title,
+body.theme-liquid-woodland[data-theme="vaporwave"] .votd-verse,
+body.theme-liquid-woodland[data-theme="vaporwave"] .vod-title,
+body.theme-liquid-woodland[data-theme="vaporwave"] .vl-title,
+body.theme-liquid-woodland[data-theme="vaporwave"] .music-theory-head h2,
+body.theme-liquid-woodland[data-theme="vaporwave"] .card h2,
+body.theme-liquid-woodland[data-theme="vaporwave"] .card h3,
+body.theme-liquid-woodland[data-theme="vaporwave"] .nav-settings-current {
+  font-family: "Courier New", Courier, monospace;
+  text-shadow:
+    1px 0 0 rgba(255, 0, 255, 0.55),
+    -1px 0 0 rgba(0, 255, 255, 0.55);
 }
 
 body.theme-liquid-woodland h1 {

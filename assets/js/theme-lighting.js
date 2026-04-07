@@ -2,7 +2,7 @@
   var REFRESH_MS = 15 * 60 * 1000;
   var STORAGE_MODE = "classroomos-lighting-mode";
   var STORAGE_THEME = "classroomos-lighting-phase";
-  var VALID_THEMES = ["day", "night", "sakura", "diamond", "emerald", "topaz"];
+  var VALID_THEMES = ["day", "night", "sakura", "diamond", "emerald", "topaz", "vaporwave"];
   var currentTheme = null;
   var CHANGE_EVENT = "classroomos:lightingchange";
 
@@ -29,7 +29,7 @@
   }
 
   function getLightingForTheme(theme) {
-    return (theme === "night" || theme === "diamond") ? "night" : "day";
+    return (theme === "night" || theme === "diamond" || theme === "vaporwave") ? "night" : "day";
   }
 
   function readStorage(key) {

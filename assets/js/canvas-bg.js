@@ -31,7 +31,8 @@
       sakura:  [220,  80, 150],
       diamond: [ 80, 190, 255],
       emerald: [ 50, 180, 100],
-      topaz:   [255, 185,   0]
+      topaz:   [255, 185,   0],
+      vaporwave: [255,   0, 255]
     };
     return map[theme] || map['day'];
   }
