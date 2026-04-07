@@ -150,7 +150,7 @@
     { id: "sakura", label: "Sakura", detail: "Soft pink and white with cherry blossom drift." },
     { id: "diamond", label: "Diamond", detail: "An icy light blue gemstone glow." },
     { id: "emerald", label: "Emerald", detail: "A pale green gemstone shine." },
-    { id: "topaz", label: "Topaz", detail: "A warm orange gemstone wash." }
+    { id: "topaz", label: "Honey", detail: "Sunlit amber with a bright hive glow." }
   ];
 
   var CANVAS_OPTIONS = [
