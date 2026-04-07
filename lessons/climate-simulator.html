@@ -72,6 +72,14 @@
       font-size: 0.7rem; color: rgba(160,190,255,0.45); pointer-events: none;
       white-space: nowrap;
     }
+    .data-badge {
+      position: absolute; bottom: 14px; right: 14px;
+      background: rgba(0,8,30,0.65); backdrop-filter: blur(6px);
+      border: 1px solid rgba(80,200,255,0.25);
+      border-radius: 6px; padding: 4px 10px;
+      font-size: 0.65rem; color: rgba(120,200,255,0.7); pointer-events: none;
+      display: none;
+    }
 
     /* ── Control Panel ── */
     .ctrl-panel {
@@ -265,6 +273,7 @@
       </svg>
       <div class="mode-badge" id="mode-badge">🌪️ Weather Patterns</div>
       <div class="drag-hint">Drag to rotate · Scroll to zoom</div>
+      <div class="data-badge" id="rb-badge">Rayleigh-Bénard · The Well (NeurIPS 2024)</div>
     </div>
 
         </div><!-- .cs-wrap -->
@@ -433,6 +442,39 @@
     }
 
     /* ══════════════════════════════════════════
+       RAYLEIGH-BÉNARD DATA  (The Well, NeurIPS 2024)
+       Run scripts/extract-the-well.py once to generate
+       assets/data/rayleigh-benard.png, then commit it.
+       Falls back silently to pure fBm if the file is absent.
+    ══════════════════════════════════════════ */
+    let rbConvection = null; // { data: Uint8ClampedArray, w, h } | null
+
+    function loadConvectionTexture() {
+      const img = new window.Image();
+      img.onload = function () {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        const ctx2 = c.getContext('2d');
+        ctx2.drawImage(img, 0, 0);
+        const px = ctx2.getImageData(0, 0, c.width, c.height);
+        rbConvection = { data: px.data, w: c.width, h: c.height };
+        document.getElementById('rb-badge').style.display = 'block';
+        textureNeedsUpdate = true;
+      };
+      img.onerror = function () { rbConvection = null; };
+      img.src = '../assets/data/rayleigh-benard.png';
+    }
+
+    // Sample the convection texture at normalised coords (tiled, returns 0–1)
+    function sampleRB(nx, ny) {
+      const x = (((nx * 2) % 1) + 1) % 1; // tile ×2 horizontally to match globe aspect
+      const y = ((ny % 1) + 1) % 1;
+      const px = (Math.floor(x * rbConvection.w)) | 0;
+      const py = (Math.floor(y * rbConvection.h)) | 0;
+      return rbConvection.data[(py * rbConvection.w + px) * 4] / 255;
+    }
+
+    /* ══════════════════════════════════════════
        PROCEDURAL EARTH TEXTURE
     ══════════════════════════════════════════ */
     let earthTexture = null, cloudTexture = null, specTexture = null;
@@ -473,8 +515,13 @@
             g = 240 + (params.ice < 20 ? -30 : 0);
             b = 255;
           } else if (!isLand) {
-            // Ocean
-            const depth = fbm(nx * 5 + 200, ny * 3 + 100, 3) * 0.4 + 0.6;
+            // Ocean — blend fBm depth with real Rayleigh-Bénard convection data.
+            // convBlend ramps from 0 → 0.65 as tempAnomaly rises 0 → 5 °C,
+            // so students literally watch convection cells emerge as CO₂ climbs.
+            const fbmDepth = fbm(nx * 5 + 200, ny * 3 + 100, 3) * 0.4 + 0.6;
+            const convBlend = rbConvection ? clamp(params.tempAnomaly / 5, 0, 0.65) : 0;
+            const rbVal = rbConvection ? sampleRB(nx, ny) * 0.4 + 0.6 : fbmDepth;
+            const depth = lerp(fbmDepth, rbVal, convBlend);
             const warmBias = Math.max(0, (1 - absLat / 55)) * params.tempAnomaly * 3;
             r = clamp(Math.round(8 + depth * 18 + warmBias * 5), 0, 255);
             g = clamp(Math.round(30 + depth * 55 + warmBias), 0, 255);
@@ -1167,6 +1214,9 @@
     /* ══════════════════════════════════════════
        INIT
     ══════════════════════════════════════════ */
+    // Try to load real Rayleigh-Bénard data (graceful no-op if file absent)
+    loadConvectionTexture();
+
     // Initial texture build
     applyTextures({ tempAnomaly: climate.tempAnomaly, ice: state.ice, deforest: state.deforest, heatMap: false });
     updateReadouts();
