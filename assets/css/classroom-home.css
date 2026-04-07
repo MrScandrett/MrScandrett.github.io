@@ -23,6 +23,13 @@
   --theme-accent: #0071e3;
   --theme-accent-strong: #005ec3;
   --theme-accent-soft: rgba(0, 113, 227, 0.12);
+
+  /* Launchpad Animation System */
+  --lp-card-radius: 24px;
+  --lp-transition-snappy: 140ms cubic-bezier(0.2, 0, 0, 1);
+  --lp-transition-fluid: 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --lp-specular-highlight: inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  --lp-gutter-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 html[data-lighting="morning"],
@@ -12597,12 +12604,114 @@ body.theme-liquid-woodland.theme-home .sidepanel-component .vod-inner {
 .home-launch-card--settings { border-color: rgba(209, 213, 219, 0.3); }
 
 /* Icon badge backgrounds */
-.home-launch-card--lessons  .home-launch-icon { background: rgba(99, 179, 237, 0.18); }
-.home-launch-card--apps     .home-launch-icon { background: rgba(251, 191, 36, 0.18); }
-.home-launch-card--downloads .home-launch-icon { background: rgba(110, 231, 183, 0.18); }
-.home-launch-card--showcase .home-launch-icon { background: rgba(196, 181, 253, 0.18); }
-.home-launch-card--library  .home-launch-icon { background: rgba(252, 165, 165, 0.18); }
-.home-launch-card--settings .home-launch-icon { background: rgba(209, 213, 219, 0.18); }
+.home-launch-card--lessons  .card-emoji { background: rgba(99, 179, 237, 0.18); }
+.home-launch-card--apps     .card-emoji { background: rgba(251, 191, 36, 0.18); }
+.home-launch-card--downloads .card-emoji { background: rgba(110, 231, 183, 0.18); }
+.home-launch-card--showcase .card-emoji { background: rgba(196, 181, 253, 0.18); }
+.home-launch-card--library  .card-emoji { background: rgba(252, 165, 165, 0.18); }
+.home-launch-card--settings .card-emoji { background: rgba(209, 213, 219, 0.18); }
+
+/* ── Holographic Launchpad System ────────────────────────────────────────── */
+
+/* Glow color mapping per card */
+.home-launch-card[data-card="lessons"]   { --lp-glow-color: hsla(271, 91%, 61%, 0.45); }
+.home-launch-card[data-card="apps"]      { --lp-glow-color: hsla(176, 67%, 42%, 0.45); }
+.home-launch-card[data-card="downloads"] { --lp-glow-color: hsla(217, 89%, 61%, 0.45); }
+.home-launch-card[data-card="showcase"]  { --lp-glow-color: hsla(340, 100%, 71%, 0.45); }
+.home-launch-card[data-card="library"]   { --lp-glow-color: hsla(27, 100%, 65%, 0.45); }
+.home-launch-card[data-card="settings"]  { --lp-glow-color: hsla(215, 16%, 47%, 0.45); }
+
+/* Holographic emoji with continuous float animation */
+.card-emoji {
+  display: inline-block;
+  font-size: 4.5rem;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none !important;
+  margin-bottom: 0 !important;
+  will-change: transform, filter;
+  animation: lp-float-ambient 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px var(--lp-glow-color));
+  transition: filter var(--lp-transition-snappy);
+  user-select: none;
+}
+
+.home-launch-card:hover .card-emoji {
+  animation: lp-float-hover 2s ease-in-out infinite;
+  filter:
+    drop-shadow(0 0 15px var(--lp-glow-color))
+    drop-shadow(0 0 35px var(--lp-glow-color));
+}
+
+/* Shimmer effect layer */
+.card-shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.03) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: lp-shimmer-ambient 8s linear infinite;
+  border-radius: 16px;
+  z-index: 1;
+}
+
+.home-launch-card:hover .card-shimmer {
+  background: linear-gradient(110deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: lp-shimmer-active 1.2s ease-out forwards;
+}
+
+/* Ensure card is positioned relative for shimmer overlay */
+.home-launch-card {
+  position: relative;
+}
+
+/* Animation keyframes */
+@keyframes lp-float-ambient {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(1deg); }
+}
+
+@keyframes lp-float-hover {
+  0%, 100% { transform: translateY(-8px) scale(1.1); }
+  50% { transform: translateY(-15px) scale(1.15) rotate(3deg); }
+}
+
+@keyframes lp-shimmer-ambient {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@keyframes lp-shimmer-active {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+
+/* Low Power Mode: Disable animations and heavy effects */
+@media (prefers-reduced-motion: reduce) {
+  .card-emoji,
+  .card-shimmer {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+.is-low-power .card-emoji,
+.is-low-power .card-shimmer {
+  animation: none !important;
+  transition: opacity 0.2s ease !important;
+  transform: none !important;
+}
 
 /* Responsive */
 @media (max-width: 640px) {
