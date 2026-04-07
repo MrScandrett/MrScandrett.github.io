@@ -7,6 +7,7 @@
   <meta name="description" content="Launch classroom apps like Scratch, Tinkercad, Clever, and Code.org." />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <script src="assets/js/theme-lighting.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7/dist/fuse.min.js"></script>
   <style>
     .app-system {
       display: grid;
@@ -4709,11 +4710,18 @@
         const query = (librarySearch?.value || "").trim().toLowerCase();
         let matches = 0;
 
+        // Recompute fuzzy match set for this query
+        if (query && fuseInstance) {
+          fuseMatchSet = new Set(fuseInstance.search(query).map(r => r.item.el));
+        } else {
+          fuseMatchSet = null;
+        }
+
         libraryTiles.forEach((tile) => {
           const groupMatch = state.libraryFilter === "all" || tile.dataset.libraryGroup === state.libraryFilter;
           const tileGrades = (tile.dataset.grade || "").split(",").filter(Boolean);
           const gradeMatch = state.libraryGradeMode === "all" || tileGrades.length === 0 || tileGrades.includes(state.level);
-          const textMatch = !query || tile.dataset.librarySearch.includes(query);
+          const textMatch = !query || (fuseMatchSet ? fuseMatchSet.has(tile) : tile.dataset.librarySearch.includes(query));
           const visible = groupMatch && gradeMatch && textMatch;
           tile.hidden = !visible;
           tile.dataset.gradeHidden = String(!gradeMatch);
@@ -4878,6 +4886,29 @@
       };
 
       decorateLibraryTiles();
+
+      // ── Fuse.js fuzzy search index ────────────────────────────────────────
+      let fuseInstance = null;
+      let fuseMatchSet = null; // Set<Element> | null — null means "no active query"
+
+      (function buildFuseIndex() {
+        if (typeof Fuse === 'undefined') return;
+        const items = Array.from(libraryTiles).map(tile => ({
+          el:    tile,
+          title: (tile.querySelector('strong')?.textContent || '').trim(),
+          text:  tile.dataset.librarySearch || '',
+        }));
+        fuseInstance = new Fuse(items, {
+          keys: [
+            { name: 'title', weight: 3 },
+            { name: 'text',  weight: 1 },
+          ],
+          threshold: 0.38,
+          minMatchCharLength: 2,
+          ignoreLocation: true,
+        });
+      })();
+
       decorateProjectCards();
       decorateActionLabels();
       setupCompactCardInteractions();
