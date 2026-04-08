@@ -473,42 +473,78 @@
         title: 'Steve Jobs on Failure',
         category: 'Interview',
         desc: 'A rare interview clip where Steve Jobs reflects on failure, resilience, and what it really means to build something that matters.',
-        seekTo: 30
+        seekTo: 30,
+        insight: 'Objective: Notice how setbacks can become design fuel. This is here to help students reflect on resilience, iteration, and the difference between quitting and revising.',
+        chapters: {
+          12: 'Failure',
+          44: 'Resilience',
+          86: 'Build Again'
+        }
       },
       {
         src: 'assets/videos/stevejobs_life.mp4',
         title: 'Steve Jobs on Life',
         category: 'Interview',
         desc: 'Steve Jobs shares his perspective on life, purpose, and the importance of following what you love — even when the path isn\'t clear.',
-        seekTo: 30
+        seekTo: 30,
+        insight: 'Objective: Connect personal purpose to long-term craft. Students can listen for the parts about curiosity, identity, and choosing meaningful work.',
+        chapters: {
+          18: 'Purpose',
+          62: 'Following Love',
+          114: 'What Matters'
+        }
       },
       {
         src: 'assets/videos/carlsagan_palebluedot.mp4',
         title: 'Carl Sagan — Pale Blue Dot',
         category: 'Science & Perspective',
         desc: 'Carl Sagan reflects on a photograph of Earth taken from 3.7 billion miles away, and what it means for how we treat each other and our world.',
-        seekTo: 30
+        seekTo: 30,
+        insight: 'Objective: Use scale to deepen humility. This selection invites students to think about perspective, stewardship, and how scientific imagery can change ethics.',
+        chapters: {
+          8: 'The Image',
+          48: 'Perspective',
+          102: 'Responsibility'
+        }
       },
       {
         src: 'assets/videos/Carl Sagan Kids Questions.mp4',
         title: 'Carl Sagan "Encourage Kids to Ask Questions" (The Tonight Show 1977)',
         category: 'Science & Education',
         desc: 'In this 1977 Tonight Show appearance, Carl Sagan makes a passionate case for nurturing curiosity in children — why asking questions is the foundation of all science, and how adults can keep that spark alive.',
-        seekTo: 15
+        seekTo: 15,
+        insight: 'Objective: Model curiosity as a habit, not a personality trait. This is a good anchor for classroom discussion about inquiry, wonder, and intellectual courage.',
+        chapters: {
+          10: 'Ask Questions',
+          58: 'How Science Starts',
+          122: 'Protect Wonder'
+        }
       },
       {
         src: 'assets/videos/deadpoetsociety.mp4',
         title: 'Dead Poets Society',
         category: 'Film & Inspiration',
         desc: 'A memorable clip from Dead Poets Society focused on voice, courage, and the challenge of thinking for yourself.',
-        seekTo: 15
+        seekTo: 15,
+        insight: 'Objective: Help students identify moments where conformity and courage collide. This clip works well when discussing voice, pressure, and independent thought.',
+        chapters: {
+          15: 'Set the Scene',
+          52: 'Voice',
+          96: 'Think for Yourself'
+        }
       },
       {
         src: 'assets/videos/makeyourlifespectacular.mp4',
         title: 'Make Your Life Spectacular',
         category: 'Motivation',
         desc: 'An inspirational video about living with purpose, bringing energy to your work, and making your life mean something.',
-        seekTo: 15
+        seekTo: 15,
+        insight: 'Objective: Push reflection beyond hype. Students can track which ideas are emotionally persuasive and which ones become actionable choices.',
+        chapters: {
+          12: 'Purpose',
+          47: 'Energy',
+          92: 'Action'
+        }
       }
     ];
 
@@ -616,8 +652,16 @@
     const modalCategory = document.getElementById('vl-modal-category');
     const modalTitle = document.getElementById('vl-modal-title');
     const modalDesc = document.getElementById('vl-modal-desc');
+    const modalInsight = document.getElementById('vl-modal-insight');
+    const modalChapters = document.getElementById('vl-modal-chapters');
+    const modalHud = document.getElementById('vl-modal-hud');
+    const theaterGlow = document.getElementById('vl-theater-glow');
     const focusableSelector = 'button, [href], input, select, textarea, video[controls], [tabindex]:not([tabindex="-1"])';
     let lastFocused = null;
+    let ambientFrame = null;
+    let ambientCanvas = null;
+    let ambientCtx = null;
+    let activeVideo = null;
 
     renderVideoSkeletons();
 
@@ -664,6 +708,77 @@
         event.preventDefault();
         first.focus();
       }
+    }
+
+    function formatTimecode(seconds) {
+      if (!isFinite(seconds)) return '00:00';
+      const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
+
+    function updateHud() {
+      modalHud.textContent = `${formatTimecode(modalVideo.currentTime)} / ${formatTimecode(modalVideo.duration)}`;
+    }
+
+    function stopAmbientLight() {
+      if (ambientFrame) {
+        cancelAnimationFrame(ambientFrame);
+        ambientFrame = null;
+      }
+      theaterGlow.style.background = '';
+    }
+
+    function startAmbientLight(videoEl) {
+      if (!ambientCanvas) {
+        ambientCanvas = document.createElement('canvas');
+        ambientCanvas.width = 1;
+        ambientCanvas.height = 1;
+        ambientCtx = ambientCanvas.getContext('2d', { willReadFrequently: true });
+      }
+
+      function tick() {
+        if (videoEl !== activeVideo || videoEl.paused || videoEl.ended || videoEl.readyState < 2) {
+          ambientFrame = null;
+          return;
+        }
+        try {
+          ambientCtx.drawImage(videoEl, 0, 0, 1, 1);
+          const data = ambientCtx.getImageData(0, 0, 1, 1).data;
+          const r = data[0];
+          const g = data[1];
+          const b = data[2];
+          theaterGlow.style.background =
+            `radial-gradient(circle at 30% 25%, rgba(${r}, ${g}, ${b}, 0.34) 0%, transparent 55%), ` +
+            `radial-gradient(circle at 70% 72%, rgba(${Math.min(255, r + 12)}, ${Math.min(255, g + 12)}, ${Math.min(255, b + 12)}, 0.22) 0%, transparent 58%)`;
+        } catch (err) {
+          stopAmbientLight();
+          return;
+        }
+        ambientFrame = requestAnimationFrame(tick);
+      }
+
+      stopAmbientLight();
+      ambientFrame = requestAnimationFrame(tick);
+    }
+
+    function renderChapters(chapters) {
+      const entries = Object.entries(chapters || {});
+      if (!entries.length) {
+        modalChapters.innerHTML = '<button type="button" disabled>No chapters</button>';
+        return;
+      }
+      modalChapters.innerHTML = '';
+      entries.forEach(([time, label]) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label;
+        button.addEventListener('click', () => {
+          modalVideo.currentTime = Number(time);
+          updateHud();
+        });
+        modalChapters.appendChild(button);
+      });
     }
 
     grid.innerHTML = '';
@@ -719,17 +834,45 @@
         </div>
       `;
 
+      if (index === 0) {
+        const overlay = document.createElement('div');
+        overlay.className = 'vl-feature-overlay';
+        overlay.innerHTML = `
+          <p class="vl-feature-kicker">Featured Screening</p>
+          <p class="vl-feature-title">${v.title}</p>
+          <p class="vl-feature-note">${v.insight}</p>
+        `;
+        thumbWrap.appendChild(overlay);
+      }
+
       card.append(thumbWrap, body);
       grid.appendChild(card);
       captureThumbnail(v.src, v.seekTo, img);
 
+      card.addEventListener('mousemove', (event) => {
+        const rect = card.getBoundingClientRect();
+        const px = (event.clientX - rect.left) / rect.width;
+        const py = (event.clientY - rect.top) / rect.height;
+        const rotateY = (px - 0.5) * 8;
+        const rotateX = (0.5 - py) * 8;
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+      });
+
       card.addEventListener('click', () => {
         lastFocused = card;
+        activeVideo = modalVideo;
         modalVideo.src = v.src;
         modalCategory.textContent = v.category;
         modalTitle.textContent = v.title;
         modalDesc.textContent = v.desc;
+        modalInsight.textContent = v.insight;
+        renderChapters(v.chapters);
+        updateHud();
         backdrop.classList.add('open');
+        theaterGlow.classList.add('open');
         window.setTimeout(moveFocusIntoModal, 0);
         const playPromise = modalVideo.play();
         if (playPromise && typeof playPromise.catch === 'function') {
@@ -742,12 +885,26 @@
 
     function closeModal() {
       backdrop.classList.remove('open');
+      theaterGlow.classList.remove('open');
+      stopAmbientLight();
+      activeVideo = null;
       modalVideo.pause();
       modalVideo.src = '';
+      modalChapters.innerHTML = '';
+      modalHud.textContent = '00:00 / 00:00';
       if (lastFocused && document.contains(lastFocused)) {
         lastFocused.focus();
       }
     }
+
+    modalVideo.addEventListener('timeupdate', updateHud);
+    modalVideo.addEventListener('loadedmetadata', updateHud);
+    modalVideo.addEventListener('play', () => {
+      activeVideo = modalVideo;
+      startAmbientLight(modalVideo);
+    });
+    modalVideo.addEventListener('pause', stopAmbientLight);
+    modalVideo.addEventListener('ended', stopAmbientLight);
 
     closeButton.addEventListener('click', closeModal);
     backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
