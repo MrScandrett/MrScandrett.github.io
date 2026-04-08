@@ -73,6 +73,7 @@ const els = {
   scaleLock:    document.getElementById('scaleLock'),
   overlayNames: document.getElementById('overlayNames'),
   oscCanvas:    document.getElementById('oscCanvas'),
+  spectrumCanvas: document.getElementById('spectrumCanvas'),
   modularPlay:  document.getElementById('modularPlay'),
   modularStop:  document.getElementById('modularStop'),
   modularFreq:  document.getElementById('modularFreq'),
@@ -116,6 +117,7 @@ function ensureAudio() {
 
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = 0.82;
 
   master.connect(analyser);
   analyser.connect(audioCtx.destination);
@@ -147,10 +149,17 @@ function noteAllowed(note) {
 // ───── Voice management ─────
 function clearVoice(note) { if (activeVoices.has(note)) stopVoice(note); }
 
+function applyVoiceEnvelope(gainNode, peak, now) {
+  const { a: A, d: D, s: S } = adsr;
+  gainNode.gain.cancelScheduledValues(now);
+  gainNode.gain.setValueAtTime(0.0001, now);
+  gainNode.gain.linearRampToValueAtTime(peak, now + A);
+  gainNode.gain.linearRampToValueAtTime(Math.max(peak * Math.max(S, 0.12), 0.0001), now + A + D);
+}
+
 function startSynth(note, velocity) {
   clearVoice(note);
   const v = Math.max(0.05, velocity);
-  const { a: A, d: D, s: S } = adsr;
 
   const osc    = audioCtx.createOscillator();
   const gain   = audioCtx.createGain();
@@ -164,22 +173,19 @@ function startSynth(note, velocity) {
   filter.Q.value = 0.8;
 
   const now = audioCtx.currentTime;
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.linearRampToValueAtTime(v * 0.5,          now + A);
-  gain.gain.linearRampToValueAtTime(v * Math.max(S, 0.01), now + A + D);
+  applyVoiceEnvelope(gain, v * 0.5, now);
 
   osc.connect(filter);
   filter.connect(gain);
   gain.connect(master);
   osc.start();
 
-  activeVoices.set(note, { osc, gain, oneShot: false });
+  activeVoices.set(note, { gain, sources: [osc] });
 }
 
 function startPiano(note, velocity) {
   clearVoice(note);
   const v = Math.max(0.05, velocity);
-  const A = adsr.a;
 
   const osc1   = audioCtx.createOscillator();
   const osc2   = audioCtx.createOscillator();
@@ -198,9 +204,7 @@ function startPiano(note, velocity) {
   filter.Q.value = 0.4;
 
   const now = audioCtx.currentTime;
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.linearRampToValueAtTime(v * 0.7, now + A);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + A + 1.4);
+  applyVoiceEnvelope(gain, v * 0.72, now);
 
   osc1.connect(filter);
   osc2.connect(filter);
@@ -209,7 +213,7 @@ function startPiano(note, velocity) {
   osc1.start();
   osc2.start();
 
-  activeVoices.set(note, { osc1, osc2, gain, oneShot: true });
+  activeVoices.set(note, { gain, sources: [osc1, osc2] });
 }
 
 // ───── Drum synthesis ─────
@@ -337,20 +341,16 @@ function stopVoice(note) {
   const now = audioCtx.currentTime;
   const R   = adsr.r;
 
-  if (voice.oneShot) {
-    if (voice.osc1) voice.osc1.stop(now + 0.15);
-    if (voice.osc2) voice.osc2.stop(now + 0.15);
-    activeVoices.delete(note);
-    return;
-  }
-
   if (voice.gain) {
-    const cur = Math.max(voice.gain.gain.value, 0.0001);
     voice.gain.gain.cancelScheduledValues(now);
+    const cur = Math.max(voice.gain.gain.value, 0.0001);
     voice.gain.gain.setValueAtTime(cur, now);
     voice.gain.gain.exponentialRampToValueAtTime(0.0001, now + R);
   }
-  if (voice.osc) voice.osc.stop(now + R + 0.02);
+  const stopAt = now + R + 0.05;
+  (voice.sources || []).forEach((source) => {
+    try { source.stop(stopAt); } catch (_err) {}
+  });
   activeVoices.delete(note);
 }
 
@@ -738,11 +738,16 @@ function drawPatchCables() {
 
     const start = jackCenter(outputEl, rackRect);
     const end = jackCenter(inputEl, rackRect);
-    const distance = Math.max(40, Math.abs(end.x - start.x) * 0.5);
-    const direction = end.x >= start.x ? 1 : -1;
+    const horizontal = end.x - start.x;
+    const vertical = end.y - start.y;
+    const distance = Math.max(44, Math.abs(horizontal) * 0.48);
+    const direction = horizontal >= 0 ? 1 : -1;
+    const sag = Math.min(96, 20 + Math.abs(horizontal) * 0.08 + Math.abs(vertical) * 0.24);
     const c1x = start.x + distance * direction;
     const c2x = end.x - distance * direction;
-    const d = `M ${start.x} ${start.y} C ${c1x} ${start.y}, ${c2x} ${end.y}, ${end.x} ${end.y}`;
+    const c1y = start.y + sag;
+    const c2y = end.y + sag;
+    const d = `M ${start.x} ${start.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${end.x} ${end.y}`;
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', d);
@@ -824,44 +829,99 @@ function initModularPatchbay() {
   updateModularStatus();
 }
 
-// ───── Oscilloscope ─────
-(function startOscilloscope() {
-  const canvas = els.oscCanvas;
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+// ───── Oscilloscope + harmonic monitor ─────
+(function startSignalMonitors() {
+  const scopeCanvas = els.oscCanvas;
+  const spectrumCanvas = els.spectrumCanvas;
+  if (!scopeCanvas && !spectrumCanvas) return;
+
+  const scopeCtx = scopeCanvas ? scopeCanvas.getContext('2d') : null;
+  const spectrumCtx = spectrumCanvas ? spectrumCanvas.getContext('2d') : null;
+  const phosphor = '#39FF14';
+
+  function paintMonitorShell(ctx, width, height) {
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#101820';
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = 'rgba(57, 255, 20, 0.04)';
+    for (let x = 0; x < width; x += 44) ctx.fillRect(x, 0, 1, height);
+    for (let y = 0; y < height; y += 28) ctx.fillRect(0, y, width, 1);
+  }
+
+  function drawScope(data) {
+    if (!scopeCtx || !scopeCanvas) return;
+    const width = scopeCanvas.width;
+    const height = scopeCanvas.height;
+    paintMonitorShell(scopeCtx, width, height);
+
+    scopeCtx.strokeStyle = 'rgba(57, 255, 20, 0.18)';
+    scopeCtx.lineWidth = 1;
+    scopeCtx.beginPath();
+    scopeCtx.moveTo(0, height / 2);
+    scopeCtx.lineTo(width, height / 2);
+    scopeCtx.stroke();
+
+    if (!data) return;
+
+    scopeCtx.strokeStyle = phosphor;
+    scopeCtx.shadowColor = 'rgba(57, 255, 20, 0.55)';
+    scopeCtx.shadowBlur = 8;
+    scopeCtx.lineWidth = 2.1;
+    scopeCtx.beginPath();
+    const slice = width / data.length;
+    let x = 0;
+    for (let i = 0; i < data.length; i += 1) {
+      const y = (data[i] / 255) * height;
+      if (i === 0) scopeCtx.moveTo(x, y);
+      else scopeCtx.lineTo(x, y);
+      x += slice;
+    }
+    scopeCtx.stroke();
+    scopeCtx.shadowBlur = 0;
+  }
+
+  function drawSpectrum(data) {
+    if (!spectrumCtx || !spectrumCanvas) return;
+    const width = spectrumCanvas.width;
+    const height = spectrumCanvas.height;
+    paintMonitorShell(spectrumCtx, width, height);
+
+    spectrumCtx.fillStyle = 'rgba(57, 255, 20, 0.08)';
+    spectrumCtx.fillRect(0, height - 28, width, 28);
+
+    if (!data) return;
+
+    const bins = Math.min(144, data.length);
+    const barWidth = width / bins;
+    spectrumCtx.shadowColor = 'rgba(57, 255, 20, 0.6)';
+    spectrumCtx.shadowBlur = 9;
+    for (let i = 1; i < bins; i += 1) {
+      const magnitude = data[i] / 255;
+      const logIndex = Math.log2(i + 1) / Math.log2(bins + 1);
+      const x = logIndex * (width - barWidth);
+      const barHeight = Math.max(2, magnitude * (height - 18));
+      spectrumCtx.fillStyle = `rgba(57, 255, 20, ${0.2 + magnitude * 0.75})`;
+      spectrumCtx.fillRect(x, height - barHeight - 6, Math.max(2, barWidth * 1.8), barHeight);
+    }
+    spectrumCtx.shadowBlur = 0;
+  }
 
   function draw() {
     requestAnimationFrame(draw);
-    const W = canvas.width;
-    const H = canvas.height;
 
-    ctx.fillStyle = '#1c2430';
-    ctx.fillRect(0, 0, W, H);
-
-    // Centre guide line
-    ctx.strokeStyle = '#2e3d50';
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2);
-    ctx.stroke();
-
-    if (!analyser) return; // audio not started yet — just show flat line
-
-    const bufLen = analyser.frequencyBinCount;
-    const data   = new Uint8Array(bufLen);
-    analyser.getByteTimeDomainData(data);
-
-    ctx.strokeStyle = '#6eeab6';
-    ctx.lineWidth   = 2;
-    ctx.beginPath();
-    const sliceW = W / bufLen;
-    let x = 0;
-    for (let i = 0; i < bufLen; i++) {
-      const y = ((data[i] / 128) / 2) * H;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      x += sliceW;
+    if (!analyser) {
+      drawScope(null);
+      drawSpectrum(null);
+      return;
     }
-    ctx.stroke();
+
+    const timeData = new Uint8Array(analyser.fftSize);
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteTimeDomainData(timeData);
+    analyser.getByteFrequencyData(freqData);
+
+    drawScope(timeData);
+    drawSpectrum(freqData);
   }
 
   draw();

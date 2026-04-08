@@ -7,14 +7,14 @@
   <meta name="description" content="Videos uploaded by Mr. Scandrett for the classroom." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <style>
-    /* ── YouTube-style grid ── */
+    /* ── Screening room grid ── */
     .vl-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1rem 0.85rem;
+      gap: 1rem 0.95rem;
     }
     @media (max-width: 1200px) { .vl-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 900px)  { .vl-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -29,12 +29,31 @@
       width: 100%;
       font: inherit;
       color: inherit;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      border-radius: 22px;
+      overflow: hidden;
     }
     .vl-card:hover .vl-play-icon { opacity: 1; }
-    .vl-card:hover .vl-thumb { opacity: 0.78; }
+    .vl-card:hover .vl-thumb { opacity: 0.88; transform: scale(1.02); }
     .vl-card:focus-visible {
       outline: 3px solid rgba(0, 113, 227, 0.26);
       outline-offset: 3px;
+    }
+    .vl-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.2) 42%, transparent 66%);
+      opacity: 0;
+      transform: translateX(-120%);
+      transition: opacity 0.2s ease, transform 0.4s ease;
+      pointer-events: none;
+    }
+    .vl-card:hover::after {
+      opacity: 1;
+      transform: translateX(120%);
     }
 
     .vl-card--feature {
@@ -51,9 +70,10 @@
       aspect-ratio: 16 / 9;
       background: #111;
       border-bottom: 1px solid rgba(210, 210, 215, 0.52);
+      overflow: hidden;
     }
     .vl-card--feature .vl-thumb-wrap {
-      aspect-ratio: 16 / 10;
+      aspect-ratio: 21 / 9;
     }
     @media (min-width: 1024px) {
       .vl-card--feature .vl-thumb-wrap {
@@ -66,7 +86,20 @@
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: opacity 0.15s;
+      transition: opacity 0.15s, transform 0.25s ease;
+    }
+    .vl-thumb-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03)),
+        radial-gradient(rgba(255,255,255,0.06) 0.6px, transparent 0.8px);
+      background-size: auto, 3px 3px;
+      mix-blend-mode: soft-light;
+      opacity: 0.34;
+      pointer-events: none;
+      z-index: 1;
     }
     .vl-play-icon {
       position: absolute;
@@ -77,6 +110,7 @@
       opacity: 0;
       transition: opacity 0.15s;
       background: rgba(0, 0, 0, 0.25);
+      z-index: 2;
     }
     .vl-play-icon svg {
       width: 30px;
@@ -94,7 +128,8 @@
       padding: 1px 4px;
       border-radius: 3px;
       letter-spacing: 0.02em;
-      font-family: 'Inter', sans-serif;
+      font-family: 'IBM Plex Mono', monospace;
+      z-index: 2;
     }
 
     /* YouTube-style row: avatar + text */
@@ -138,6 +173,38 @@
     .vl-desc {
       margin-top: 0.15rem;
     }
+    .vl-feature-overlay {
+      position: absolute;
+      inset: auto 1rem 1rem 1rem;
+      z-index: 2;
+      padding: 1rem 1.05rem;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(7, 18, 32, 0.15), rgba(7, 18, 32, 0.78));
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #f8fbff;
+      backdrop-filter: blur(10px);
+    }
+    .vl-feature-kicker {
+      margin: 0 0 0.3rem;
+      font: 700 0.68rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(191, 223, 255, 0.88);
+    }
+    .vl-feature-title {
+      margin: 0;
+      font-size: clamp(1.1rem, 2vw, 1.55rem);
+      font-weight: 800;
+      max-width: 24ch;
+      line-height: 1.05;
+    }
+    .vl-feature-note {
+      margin: 0.45rem 0 0;
+      max-width: 60ch;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: rgba(235, 245, 255, 0.84);
+    }
     .vl-chip {
       display: inline-flex;
       align-items: center;
@@ -157,12 +224,25 @@
       border-color: rgba(25, 49, 77, 0.08);
     }
 
-    /* ── Modal ── */
+    /* ── Cinema modal ── */
+    .theater-glow {
+      position: fixed;
+      inset: 0;
+      filter: blur(100px);
+      z-index: 199;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease, background 0.6s ease;
+    }
+    .theater-glow.open { opacity: 1; }
     .vl-modal-backdrop {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.86);
+      background:
+        radial-gradient(circle at top, rgba(82, 115, 173, 0.16), transparent 40%),
+        rgba(3, 8, 18, 0.92);
+      backdrop-filter: blur(18px);
       z-index: 200;
       align-items: center;
       justify-content: center;
@@ -172,41 +252,118 @@
 
     .vl-modal {
       width: 100%;
-      max-width: 880px;
-      border-radius: 14px;
+      max-width: 1120px;
+      border-radius: 24px;
       overflow: hidden;
-      background: #111;
+      background: rgba(9, 17, 31, 0.92);
+      border: 1px solid rgba(154, 193, 255, 0.12);
       box-shadow: 0 32px 80px rgba(0, 0, 0, 0.75);
       position: relative;
+    }
+    .vl-modal-stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+      gap: 0;
+    }
+    .vl-player-wrap {
+      padding: 1rem;
+      border-right: 1px solid rgba(154, 193, 255, 0.08);
     }
     .vl-modal video {
       display: block;
       width: 100%;
       aspect-ratio: 16 / 9;
       background: #000;
+      border-radius: 18px;
+      position: relative;
+      z-index: 1;
     }
-    .vl-modal-info {
-      padding: 0.8rem 1rem 1rem;
+    .vl-now-playing {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 0.75rem;
+      color: #d4e6ff;
+      font: 600 0.72rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .vl-now-playing strong {
+      color: #f4f9ff;
+      font-weight: 700;
+    }
+    .vl-modal-side {
+      padding: 1rem 1rem 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
     }
     .vl-modal-category {
       font-size: 0.64rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #777;
+      color: #8cb7ff;
       margin: 0 0 0.15rem;
+      font-family: "IBM Plex Mono", monospace;
     }
     .vl-modal-title {
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 700;
       color: #fff;
       margin: 0 0 0.3rem;
+      font-family: "IBM Plex Mono", monospace;
     }
     .vl-modal-desc {
       font-size: 0.8rem;
-      color: #999;
+      color: #b4c7df;
       margin: 0;
       line-height: 1.5;
+    }
+    .teacher-insight-card {
+      background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 100%);
+      border-left: 3px solid #3b82f6;
+      padding: 1rem;
+      border-radius: 0 15px 15px 0;
+    }
+    .teacher-insight-card p {
+      margin: 0;
+      color: #d7e7fb;
+      line-height: 1.55;
+      font-size: 0.82rem;
+    }
+    .teacher-insight-card strong {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: #8cb7ff;
+      font: 700 0.72rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .vl-chapters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    .vl-chapters button {
+      border: 1px solid rgba(154, 193, 255, 0.14);
+      background: rgba(255,255,255,0.06);
+      color: #eef6ff;
+      border-radius: 10px;
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      font: 700 0.68rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    }
+    .vl-chapters button:hover,
+    .vl-chapters button:focus-visible {
+      background: rgba(59,130,246,0.18);
+      border-color: rgba(147,197,253,0.4);
+      transform: translateY(-1px);
+      outline: none;
     }
     .vl-modal-close {
       position: absolute;
@@ -223,6 +380,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+    @media (max-width: 900px) {
+      .vl-modal-stage {
+        grid-template-columns: 1fr;
+      }
+      .vl-player-wrap {
+        border-right: none;
+        border-bottom: 1px solid rgba(154, 193, 255, 0.08);
+      }
     }
   </style>
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
@@ -261,15 +427,35 @@
     </section>
   </main>
 
+  <div class="theater-glow" id="vl-theater-glow" aria-hidden="true"></div>
+
   <!-- Modal -->
   <div class="vl-modal-backdrop" id="vl-modal-backdrop" role="dialog" aria-modal="true" aria-label="Video player">
     <div class="vl-modal" tabindex="-1">
       <button class="vl-modal-close" id="vl-modal-close" aria-label="Close video">✕</button>
-      <video id="vl-modal-video" controls></video>
-      <div class="vl-modal-info">
-        <p class="vl-modal-category" id="vl-modal-category"></p>
-        <p class="vl-modal-title" id="vl-modal-title"></p>
-        <p class="vl-modal-desc" id="vl-modal-desc"></p>
+      <div class="vl-modal-stage">
+        <div class="vl-player-wrap">
+          <video id="vl-modal-video" controls crossorigin="anonymous"></video>
+          <div class="vl-now-playing">
+            <span>Now Playing</span>
+            <strong id="vl-modal-hud">00:00 / 00:00</strong>
+          </div>
+        </div>
+        <div class="vl-modal-side">
+          <div class="vl-modal-info">
+            <p class="vl-modal-category" id="vl-modal-category"></p>
+            <p class="vl-modal-title" id="vl-modal-title"></p>
+            <p class="vl-modal-desc" id="vl-modal-desc"></p>
+          </div>
+          <div class="teacher-insight-card">
+            <strong>Teacher Insight</strong>
+            <p id="vl-modal-insight"></p>
+          </div>
+          <div>
+            <p class="vl-modal-category" style="margin-bottom:0.45rem;">Quick Jumps</p>
+            <div class="vl-chapters" id="vl-modal-chapters"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

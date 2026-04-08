@@ -1079,6 +1079,277 @@
       .lib-dir-hint  { display: none; }
       .lib-directory { gap: 0.4rem; padding: 0.7rem 0.9rem; }
     }
+
+    /* ── Interactive Archive Upgrades ───────────── */
+    .library-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at var(--flashlight-x, 50%) var(--flashlight-y, 24%),
+          rgba(255, 237, 200, 0.18) 0,
+          rgba(255, 229, 171, 0.12) 8%,
+          rgba(255, 214, 145, 0.06) 16%,
+          rgba(0, 0, 0, 0.18) 24%,
+          rgba(0, 0, 0, 0.78) 42%,
+          rgba(0, 0, 0, 0.95) 100%);
+      mix-blend-mode: multiply;
+      opacity: 1;
+      animation: none !important;
+      clip-path: none;
+    }
+
+    .library-scene::before,
+    .library-scene::after,
+    body.library-page::before {
+      content: none !important;
+      animation: none !important;
+    }
+
+    .library-dust {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.34;
+      mix-blend-mode: screen;
+    }
+
+    main#main-content,
+    .site-header,
+    .site-footer {
+      position: relative;
+      z-index: 2;
+    }
+
+    .lib-directory-search {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.48rem;
+      min-width: min(100%, 320px);
+      margin-left: auto;
+      padding: 0.42rem 0.62rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 226, 180, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .lib-search-icon {
+      color: rgba(255, 229, 202, 0.72);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .lib-search-input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #f7ecdb;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .lib-search-input::placeholder {
+      color: rgba(244, 233, 220, 0.52);
+    }
+
+    .lib-search-stats {
+      margin-left: 0.35rem;
+      font-size: 0.68rem;
+      color: rgba(244, 233, 220, 0.72);
+      white-space: nowrap;
+    }
+
+    .book.is-search-dim {
+      opacity: 0.12;
+      pointer-events: none;
+      filter: grayscale(0.48) saturate(0.7);
+      transform: translateY(6px) scale(0.985);
+    }
+
+    .book.is-search-dim .book-popup {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    .book.is-search-hit .book-spine {
+      box-shadow:
+        0 0 0 1px rgba(255, 222, 148, 0.55),
+        0 0 18px rgba(255, 196, 72, 0.24),
+        -3px 0 8px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+
+    .book-spine-label.book-spine-label--gold {
+      background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: none;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.46));
+    }
+
+    .book-popup-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.15rem;
+    }
+
+    .book-popup-btn {
+      appearance: none;
+      border: 1px solid rgba(0, 113, 227, 0.16);
+      background: rgba(0, 113, 227, 0.08);
+      color: #0d5fc2;
+      border-radius: 999px;
+      padding: 0.36rem 0.72rem;
+      font: inherit;
+      font-size: 0.7rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .book-popup-btn:hover {
+      background: rgba(0, 113, 227, 0.14);
+    }
+
+    .library-reader-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.2rem;
+      background: rgba(5, 6, 10, 0.76);
+      backdrop-filter: blur(10px);
+    }
+
+    .library-reader-backdrop.is-open {
+      display: flex;
+    }
+
+    .library-reader {
+      width: min(900px, 100%);
+      max-height: min(88vh, 820px);
+      overflow: auto;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 226, 180, 0.14);
+      background:
+        linear-gradient(rgba(59, 110, 246, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 110, 246, 0.05) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(18, 11, 7, 0.97), rgba(8, 8, 10, 0.98));
+      background-size: 20px 20px, 20px 20px, 100% 100%;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.45);
+      color: #f7ecdb;
+    }
+
+    .library-reader-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 1rem 1rem 0.8rem;
+      border-bottom: 1px solid rgba(255, 226, 180, 0.12);
+    }
+
+    .library-reader-head p {
+      margin: 0 0 0.2rem;
+      color: rgba(244, 233, 220, 0.68);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 800;
+    }
+
+    .library-reader-head h2 {
+      margin: 0;
+      font-size: clamp(1.1rem, 2vw, 1.5rem);
+      color: #fff5e9;
+    }
+
+    .library-reader-close {
+      appearance: none;
+      border: 1px solid rgba(255, 226, 180, 0.16);
+      background: rgba(255,255,255,0.05);
+      color: #f7ecdb;
+      border-radius: 999px;
+      min-width: 2.2rem;
+      min-height: 2.2rem;
+      font: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .library-reader-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(240px, 0.95fr);
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .reader-glass {
+      border-radius: 16px;
+      border: 1px solid rgba(255, 226, 180, 0.1);
+      background: rgba(255,255,255,0.04);
+      padding: 0.95rem 1rem;
+    }
+
+    .reader-glass h3 {
+      margin: 0 0 0.6rem;
+      color: #fff2df;
+      font-size: 0.98rem;
+    }
+
+    .reader-glass p,
+    .reader-glass li {
+      color: rgba(244, 233, 220, 0.84);
+      line-height: 1.56;
+    }
+
+    .reader-shortcuts {
+      margin: 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .reader-shortcuts strong {
+      color: #fff7ef;
+    }
+
+    .reader-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 0 1rem 1rem;
+    }
+
+    .reader-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(255, 196, 110, 0.12);
+      border: 1px solid rgba(255, 196, 110, 0.24);
+      color: #ffcf86;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    @media (max-width: 840px) {
+      .library-reader-body {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body class="library-page">
@@ -1103,6 +1374,7 @@
   </header>
 
   <div class="library-scene" aria-hidden="true"></div>
+  <canvas class="library-dust" id="libraryDust" aria-hidden="true"></canvas>
 
   <main id="main-content">
 
@@ -1133,6 +1405,11 @@
           📖 User Manuals
           <span class="lib-dir-count">18</span>
         </a>
+        <label class="lib-directory-search" for="librarySearch">
+          <span class="lib-search-icon">⌕</span>
+          <input class="lib-search-input" id="librarySearch" type="search" placeholder="Search titles, authors, tags, or manuals..." autocomplete="off" />
+        </label>
+        <span class="lib-search-stats" id="librarySearchStats">68 visible</span>
         <span class="lib-dir-hint">Hover any spine to preview</span>
       </nav>
     </section>
@@ -2111,10 +2388,130 @@
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="https://github.com/MrScandrett" target="_blank" rel="noreferrer">GitHub</a></p>
   </footer>
 
+  <div class="library-reader-backdrop" id="libraryReaderBackdrop" role="dialog" aria-modal="true" aria-labelledby="libraryReaderTitle">
+    <div class="library-reader">
+      <div class="library-reader-head">
+        <div>
+          <p>ClassroomOS Reader</p>
+          <h2 id="libraryReaderTitle">Quick Read</h2>
+        </div>
+        <button type="button" class="library-reader-close" id="libraryReaderClose" aria-label="Close quick read">✕</button>
+      </div>
+      <div class="library-reader-body">
+        <section class="reader-glass">
+          <h3 id="libraryReaderSubtitle">Cheat Sheet</h3>
+          <p id="libraryReaderDesc">A short, classroom-first way to get productive before opening the full manual.</p>
+          <ol class="reader-shortcuts" id="libraryReaderList"></ol>
+        </section>
+        <aside class="reader-glass">
+          <h3>Why This Helps</h3>
+          <p id="libraryReaderWhy">Manuals are powerful, but they are also huge. This quick-read panel gives students a useful first foothold.</p>
+          <p id="libraryReaderMeta">Official documentation link follows below.</p>
+        </aside>
+      </div>
+      <div class="reader-footer">
+        <span id="libraryReaderFooterText" style="color:rgba(244,233,220,0.7);font-size:0.8rem;">Use this as a launchpad, then jump into the full docs.</span>
+        <a class="reader-link" id="libraryReaderLink" href="#" target="_blank" rel="noreferrer">Open full manual ↗</a>
+      </div>
+    </div>
+  </div>
+
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
   <script>
     (function () {
+      var searchInput = document.getElementById('librarySearch');
+      var searchStats = document.getElementById('librarySearchStats');
+      var readerBackdrop = document.getElementById('libraryReaderBackdrop');
+      var readerClose = document.getElementById('libraryReaderClose');
+      var readerTitle = document.getElementById('libraryReaderTitle');
+      var readerSubtitle = document.getElementById('libraryReaderSubtitle');
+      var readerDesc = document.getElementById('libraryReaderDesc');
+      var readerList = document.getElementById('libraryReaderList');
+      var readerWhy = document.getElementById('libraryReaderWhy');
+      var readerMeta = document.getElementById('libraryReaderMeta');
+      var readerLink = document.getElementById('libraryReaderLink');
+      var lastReaderTrigger = null;
+
+      var MANUAL_CHEATSHEETS = {
+        'Blender Manual': {
+          subtitle: '5 fast wins in Blender',
+          why: 'Blender can feel enormous on first launch. These are the first controls that make the interface stop feeling hostile.',
+          items: [
+            { label: 'Middle mouse', text: 'Orbit the camera around the model.' },
+            { label: 'Shift + middle mouse', text: 'Pan across the scene without changing angle.' },
+            { label: 'S', text: 'Scale a selected object instantly.' },
+            { label: 'G', text: 'Grab and move an object in 3D space.' },
+            { label: 'Tab', text: 'Switch between Object Mode and Edit Mode.' }
+          ]
+        },
+        'Fusion 360 Help': {
+          subtitle: 'Fusion 360 starter moves',
+          why: 'Fusion gets easier once students separate sketching, viewing, and finishing operations into a repeatable rhythm.',
+          items: [
+            { label: 'Middle drag', text: 'Orbit the camera around the part.' },
+            { label: 'Shift + middle drag', text: 'Pan when the part drifts off screen.' },
+            { label: 'Create Sketch', text: 'Start on a known plane before drawing.' },
+            { label: 'E', text: 'Extrude a profile into a solid body.' },
+            { label: 'Home / Fit', text: 'Recover the model when the camera gets lost.' }
+          ]
+        },
+        'TinkerCAD Learning Center': {
+          subtitle: 'TinkerCAD in five moves',
+          why: 'TinkerCAD rewards simple habits. If students know these, they can build almost anything in the beginner workflow.',
+          items: [
+            { label: 'Drag shape', text: 'Place a primitive on the workplane.' },
+            { label: 'White handles', text: 'Resize the object in X and Y.' },
+            { label: 'Black cone', text: 'Lift the object vertically above the workplane.' },
+            { label: 'Ctrl/Cmd + D', text: 'Duplicate shapes for symmetry and repetition.' },
+            { label: 'Group', text: 'Combine solids and holes into a finished part.' }
+          ]
+        },
+        'Arduino Uno R3 Documentation': {
+          subtitle: 'Arduino Uno quick read',
+          why: 'Students usually need a working mental model of pins, power, and the upload loop before the full docs become useful.',
+          items: [
+            { label: 'Digital pins 0–13', text: 'Use for HIGH/LOW inputs and outputs.' },
+            { label: 'A0–A5', text: 'Use for analog sensor readings.' },
+            { label: '5V / GND', text: 'Power and ground are the first wiring checkpoints.' },
+            { label: 'setup()', text: 'Runs once when the board starts.' },
+            { label: 'loop()', text: 'Runs over and over to drive your project behavior.' }
+          ]
+        },
+        'Visual Studio Code Docs': {
+          subtitle: 'VS Code survival pack',
+          why: 'A few editor habits unlock most classroom coding tasks without forcing students to absorb the entire IDE at once.',
+          items: [
+            { label: 'Ctrl/Cmd + P', text: 'Jump to any file by name.' },
+            { label: 'Ctrl/Cmd + Shift + P', text: 'Open the Command Palette for nearly everything.' },
+            { label: 'Ctrl/Cmd + `', text: 'Toggle the integrated terminal.' },
+            { label: 'Explorer', text: 'Use the left panel to navigate project files.' },
+            { label: 'Extensions', text: 'Install language support and classroom tools quickly.' }
+          ]
+        },
+        'Scratch Wiki': {
+          subtitle: 'Scratch quick-start cheats',
+          why: 'Scratch becomes easier when students focus on a few patterns: events, motion, loops, and variables.',
+          items: [
+            { label: 'When green flag clicked', text: 'Start a script when the project begins.' },
+            { label: 'Forever', text: 'Repeat behavior continuously.' },
+            { label: 'Broadcast', text: 'Send messages between sprites and scenes.' },
+            { label: 'Variables', text: 'Track score, state, or counters.' },
+            { label: 'Costumes & sounds', text: 'Make projects feel alive with feedback.' }
+          ]
+        },
+        'Godot Engine Docs': {
+          subtitle: 'Godot first footholds',
+          why: 'Godot clicks faster when students understand scenes, nodes, and signals as the core grammar of the engine.',
+          items: [
+            { label: 'Scene', text: 'Treat a scene as a reusable object or level chunk.' },
+            { label: 'Node tree', text: 'Everything in Godot is built from nodes.' },
+            { label: 'Inspector', text: 'Adjust properties without writing code first.' },
+            { label: 'Signals', text: 'Connect events like button clicks or collisions.' },
+            { label: 'Play current scene', text: 'Test one part of the game quickly.' }
+          ]
+        }
+      };
 
       /* ── Popup overflow correction ─────────────── */
       var POPUP_W = 238;
@@ -2135,6 +2532,54 @@
       /* ── Book interactions ─────────────────────── */
       var allBooks = Array.from(document.querySelectorAll('.book'));
       var popupActionSelector = '.book-popup a, .book-popup button';
+      var LIBRARY_DATA = allBooks.map(function (book, index) {
+        var popup = book.querySelector('.book-popup');
+        var title = (book.querySelector('.book-popup-title') || book.querySelector('.book-spine-label'));
+        var author = book.querySelector('.book-popup-author');
+        var desc = book.querySelector('.book-popup-desc');
+        var tag = book.querySelector('.book-popup-tag');
+        var section = book.closest('.lib-anchor');
+        return {
+          id: 'book-' + (index + 1),
+          title: title ? title.textContent.trim() : '',
+          author: author ? author.textContent.trim() : '',
+          desc: desc ? desc.textContent.trim() : '',
+          tag: tag ? tag.textContent.trim() : '',
+          tags: (book.getAttribute('data-rtags') || '') + ' ' + (section ? section.id.replace('section-', '') : ''),
+          section: section ? section.id : '',
+          element: book,
+          popup: popup
+        };
+      });
+
+      function updateSearchStats(visibleCount, totalCount, query) {
+        if (!searchStats) return;
+        if (query) {
+          searchStats.textContent = visibleCount + ' / ' + totalCount + ' matches';
+        } else {
+          searchStats.textContent = totalCount + ' visible';
+        }
+      }
+
+      function applyArchiveSearch(query) {
+        var normalized = (query || '').trim().toLowerCase();
+        var visibleCount = 0;
+        LIBRARY_DATA.forEach(function (bookData) {
+          var haystack = [
+            bookData.title,
+            bookData.author,
+            bookData.desc,
+            bookData.tag,
+            bookData.tags
+          ].join(' ').toLowerCase();
+          var match = !normalized || haystack.indexOf(normalized) !== -1;
+          bookData.element.classList.toggle('is-search-dim', !match);
+          bookData.element.classList.toggle('is-search-hit', !!normalized && match);
+          if (!match) syncPopupState(bookData.element, false);
+          if (match) visibleCount += 1;
+        });
+        updateSearchStats(visibleCount, LIBRARY_DATA.length, normalized);
+      }
 
       function popupActions(book) {
         return Array.from(book.querySelectorAll(popupActionSelector));
@@ -2241,6 +2686,171 @@
       document.addEventListener('click', function () {
         closeAllBooks();
       });
+
+      if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          applyArchiveSearch(searchInput.value);
+        });
+      }
+      applyArchiveSearch('');
+
+      /* ── Classics gold-leaf labels ───────────────── */
+      document.querySelectorAll('#section-classics .book-spine-label').forEach(function (label) {
+        label.classList.add('book-spine-label--gold');
+      });
+
+      /* ── Quick-read modal for manuals ───────────── */
+      function openReader(payload, triggerEl) {
+        if (!payload || !readerBackdrop || !readerTitle || !readerSubtitle || !readerDesc || !readerList || !readerWhy || !readerMeta || !readerLink) return;
+        lastReaderTrigger = triggerEl || null;
+        readerTitle.textContent = payload.title;
+        readerSubtitle.textContent = payload.subtitle;
+        readerDesc.textContent = payload.desc;
+        readerWhy.textContent = payload.why;
+        readerMeta.textContent = payload.author;
+        readerLink.href = payload.link;
+        readerLink.textContent = payload.linkLabel || 'Open full manual ↗';
+        readerList.innerHTML = '';
+        payload.items.forEach(function (item) {
+          var li = document.createElement('li');
+          li.innerHTML = '<strong>' + item.label + '</strong> — ' + item.text;
+          readerList.appendChild(li);
+        });
+        readerBackdrop.classList.add('is-open');
+        readerClose.focus();
+      }
+
+      function closeReader() {
+        if (!readerBackdrop) return;
+        readerBackdrop.classList.remove('is-open');
+        if (lastReaderTrigger) lastReaderTrigger.focus();
+      }
+
+      if (readerClose) readerClose.addEventListener('click', closeReader);
+      if (readerBackdrop) {
+        readerBackdrop.addEventListener('click', function (e) {
+          if (e.target === readerBackdrop) closeReader();
+        });
+      }
+
+      document.querySelectorAll('#section-manuals .book').forEach(function (book) {
+        var popup = book.querySelector('.book-popup');
+        var titleEl = book.querySelector('.book-popup-title');
+        var descEl = book.querySelector('.book-popup-desc');
+        var authorEl = book.querySelector('.book-popup-author');
+        var linkEl = popup ? popup.querySelector('.book-popup-cta[href]') : null;
+        if (!popup || !titleEl || !linkEl) return;
+        var cheatsheet = MANUAL_CHEATSHEETS[titleEl.textContent.trim()];
+        if (!cheatsheet) return;
+
+        var actions = document.createElement('div');
+        actions.className = 'book-popup-actions';
+
+        var quickReadBtn = document.createElement('button');
+        quickReadBtn.type = 'button';
+        quickReadBtn.className = 'book-popup-btn';
+        quickReadBtn.textContent = 'Quick Read';
+        quickReadBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          openReader({
+            title: titleEl.textContent.trim(),
+            subtitle: cheatsheet.subtitle,
+            desc: descEl ? descEl.textContent.trim() : 'A short ClassroomOS launchpad before the full manual.',
+            why: cheatsheet.why,
+            author: authorEl ? authorEl.textContent.trim() : 'Official documentation',
+            link: linkEl.href,
+            linkLabel: linkEl.textContent.trim(),
+            items: cheatsheet.items
+          }, quickReadBtn);
+        });
+
+        linkEl.classList.add('book-popup-btn');
+        actions.appendChild(quickReadBtn);
+        linkEl.parentNode.insertBefore(actions, linkEl);
+        actions.appendChild(linkEl);
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && readerBackdrop && readerBackdrop.classList.contains('is-open')) {
+          closeReader();
+        }
+      });
+
+      /* ── Flashlight + shelf parallax ───────────── */
+      function setFlashlight(x, y) {
+        document.documentElement.style.setProperty('--flashlight-x', x + 'px');
+        document.documentElement.style.setProperty('--flashlight-y', y + 'px');
+      }
+
+      setFlashlight(window.innerWidth * 0.5, Math.max(160, window.innerHeight * 0.26));
+
+      document.addEventListener('mousemove', function (e) {
+        setFlashlight(e.clientX, e.clientY);
+        document.querySelectorAll('.bookcase, .bookcase-flex').forEach(function (shelf) {
+          var rect = shelf.getBoundingClientRect();
+          var rx = ((e.clientY - rect.top) / rect.height - 0.5) * -3;
+          var ry = ((e.clientX - rect.left) / rect.width - 0.5) * 4;
+          shelf.style.transform = 'perspective(1000px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
+        });
+      });
+
+      document.addEventListener('mouseleave', function () {
+        document.querySelectorAll('.bookcase, .bookcase-flex').forEach(function (shelf) {
+          shelf.style.transform = '';
+        });
+      });
+
+      /* ── Dust particles ────────────────────────── */
+      var dustCanvas = document.getElementById('libraryDust');
+      if (dustCanvas) {
+        var dustCtx = dustCanvas.getContext('2d');
+        var particles = [];
+
+        function resizeDust() {
+          dustCanvas.width = window.innerWidth;
+          dustCanvas.height = window.innerHeight;
+        }
+
+        function seedDust() {
+          particles = Array.from({ length: 48 }, function () {
+            return {
+              x: Math.random() * dustCanvas.width,
+              y: Math.random() * dustCanvas.height,
+              r: 0.6 + Math.random() * 2.2,
+              dx: -0.12 + Math.random() * 0.24,
+              dy: -0.08 + Math.random() * 0.18,
+              alpha: 0.08 + Math.random() * 0.22
+            };
+          });
+        }
+
+        function drawDust() {
+          if (!dustCtx) return;
+          dustCtx.clearRect(0, 0, dustCanvas.width, dustCanvas.height);
+          particles.forEach(function (p) {
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < -10) p.x = dustCanvas.width + 10;
+            if (p.x > dustCanvas.width + 10) p.x = -10;
+            if (p.y < -10) p.y = dustCanvas.height + 10;
+            if (p.y > dustCanvas.height + 10) p.y = -10;
+            dustCtx.beginPath();
+            dustCtx.fillStyle = 'rgba(255, 242, 215,' + p.alpha + ')';
+            dustCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            dustCtx.fill();
+          });
+          requestAnimationFrame(drawDust);
+        }
+
+        resizeDust();
+        seedDust();
+        drawDust();
+        window.addEventListener('resize', function () {
+          resizeDust();
+          seedDust();
+        });
+      }
 
       /* ── Recipe filter ─────────────────────────── */
       var filterBtns   = Array.from(document.querySelectorAll('[data-rfilter]'));

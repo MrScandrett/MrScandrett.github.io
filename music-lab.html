@@ -7,7 +7,7 @@
   <meta name="description" content="USB MIDI keyboard lab with WebMIDI and WebAudio — oscilloscope, scale lock, ADSR, and step sequencer." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <style>
     /* ===== Music Lab ===== */
@@ -287,8 +287,14 @@
     }
     .music-piano-key--white { z-index: 1; height: 100%; }
     .music-piano-key.is-active {
-      box-shadow: inset 0 0 0 2px rgba(128,255,201,0.58), 0 0 12px rgba(110,234,182,0.45);
-      filter: brightness(1.05);
+      background: linear-gradient(180deg, #ffffff 0%, #d9e4ff 42%, #4067f2 100%);
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55), 0 0 20px rgba(64, 103, 242, 0.48);
+      color: #17305f;
+      filter: brightness(1.06);
+    }
+    .music-piano-key--black.is-active {
+      background: linear-gradient(180deg, #90aaf8 0%, #496eff 58%, #20358a 100%);
+      color: #f7faff;
     }
     .music-piano-key:focus-visible { outline: 2px solid #2e7ac6; outline-offset: -2px; z-index: 5; }
 
@@ -496,18 +502,45 @@
       font-size: 1rem;
       color: #10233d;
     }
+    .ml-monitor-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+    .ml-monitor-panel {
+      display: grid;
+      gap: 0.38rem;
+    }
+    .ml-monitor-label {
+      font: 700 0.72rem/1.2 "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #51657d;
+    }
+    .ml-monitor-note {
+      margin: 0;
+      color: #5b6e86;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
 
     /* ── Oscilloscope ── */
     .ml-osc-canvas {
       display: block;
       width: 100%;
-      height: 80px;
+      height: 110px;
       border-radius: 10px;
       background: #1c2430;
     }
 
     /* ── ADSR ── */
     .ml-adsr-card { margin-bottom: 0.9rem; }
+    .music-studio-dashboard {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+      gap: 0.9rem;
+      align-items: start;
+    }
     .ml-adsr-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -576,6 +609,8 @@
       .music-piano-roll { height: 160px; }
       .ml-adsr-grid { grid-template-columns: repeat(2, 1fr); }
       .ml-modular-grid { grid-template-columns: 1fr; }
+      .ml-monitor-grid,
+      .music-studio-dashboard { grid-template-columns: 1fr; }
       .ml-modular-header { align-items: flex-start; }
       .ml-modular-rack { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
       .music-theory-rail { grid-template-columns: repeat(13, minmax(90px, 1fr)); }
@@ -745,6 +780,8 @@
         background: #1b1f27;
       }
       .ml-modular-monitor h3 { color: #e7edf7; }
+      .ml-monitor-label,
+      .ml-monitor-note { color: #9ba8ba; }
       .ml-jack-input { border-color: #6ea8ff; background: rgba(110, 168, 255, 0.2); }
       .ml-jack-output { border-color: #f7b955; background: rgba(247, 185, 85, 0.2); }
 
@@ -1072,56 +1109,69 @@
         </div>
 
         <div class="ml-modular-monitor">
-          <h3>Waveform Monitor</h3>
-          <canvas id="oscCanvas" class="ml-osc-canvas" width="1200" height="120"
-                  aria-label="Live audio oscilloscope"></canvas>
+          <h3>Waveform + Harmonics Monitor</h3>
+          <div class="ml-monitor-grid">
+            <div class="ml-monitor-panel">
+              <span class="ml-monitor-label">Oscilloscope</span>
+              <canvas id="oscCanvas" class="ml-osc-canvas" width="1200" height="160"
+                      aria-label="Live audio oscilloscope"></canvas>
+            </div>
+            <div class="ml-monitor-panel">
+              <span class="ml-monitor-label">Harmonic Spectrogram</span>
+              <canvas id="spectrumCanvas" class="ml-osc-canvas" width="1200" height="160"
+                      aria-label="Live harmonic spectrogram"></canvas>
+            </div>
+          </div>
           <div class="music-lab-row">
             <button id="modularPlay" class="music-lab-btn" type="button">▶ Play Test Tone</button>
             <button id="modularStop" class="music-lab-btn" type="button">■ Stop</button>
           </div>
           <p id="modularStatus" class="music-lab-status">Patch: Osc → VCA → Output · Output: silent</p>
+          <p class="ml-monitor-note">Sine waves stay clean. Square and saw waves reveal stacked overtones, so students can see timbre instead of just hearing it.</p>
           <p class="music-lab-status">Tip: Click an output jack, then an input jack to patch a cable. Click an input again to unplug.</p>
         </div>
       </div>
     </article>
 
-    <!-- ── Row 3: ADSR ── -->
-    <article class="card ml-adsr-card">
-      <h2>Envelope (ADSR) <span class="ml-adsr-note">Synth &amp; Piano</span></h2>
-      <div class="ml-adsr-grid">
-        <label class="ml-slider-field">
-          <span class="ml-slider-label-row">Attack <span class="ml-slider-val" id="adsrAVal">10ms</span></span>
-          <input type="range" id="adsrA" min="1" max="500" value="10" aria-label="Attack time">
-        </label>
-        <label class="ml-slider-field">
-          <span class="ml-slider-label-row">Decay <span class="ml-slider-val" id="adsrDVal">120ms</span></span>
-          <input type="range" id="adsrD" min="10" max="2000" value="120" aria-label="Decay time">
-        </label>
-        <label class="ml-slider-field">
-          <span class="ml-slider-label-row">Sustain <span class="ml-slider-val" id="adsrSVal">25%</span></span>
-          <input type="range" id="adsrS" min="0" max="100" value="25" aria-label="Sustain level">
-        </label>
-        <label class="ml-slider-field">
-          <span class="ml-slider-label-row">Release <span class="ml-slider-val" id="adsrRVal">120ms</span></span>
-          <input type="range" id="adsrR" min="10" max="1000" value="120" aria-label="Release time">
-        </label>
-      </div>
-    </article>
-
-    <!-- ── Row 4: Step Sequencer ── -->
-    <article class="card ml-seq-card">
-      <h2>Step Sequencer</h2>
-      <div class="ml-seq-controls">
-        <button id="seqPlay"  class="music-lab-btn" type="button">▶ Play</button>
-        <button id="seqClear" class="music-lab-btn" type="button">✕ Clear</button>
-        <div class="ml-seq-bpm-field">
-          <label for="seqBpmSlider">BPM</label>
-          <input type="range" id="seqBpmSlider" min="60" max="200" value="120" aria-label="Sequencer BPM">
-          <span class="ml-seq-bpm-val" id="seqBpmVal">120</span>
+    <div class="music-studio-dashboard">
+      <!-- ── Row 3: ADSR ── -->
+      <article class="card ml-adsr-card">
+        <h2>Envelope (ADSR) <span class="ml-adsr-note">Synth &amp; Piano</span></h2>
+        <div class="ml-adsr-grid">
+          <label class="ml-slider-field">
+            <span class="ml-slider-label-row">Attack <span class="ml-slider-val" id="adsrAVal">10ms</span></span>
+            <input type="range" id="adsrA" min="1" max="500" value="10" aria-label="Attack time">
+          </label>
+          <label class="ml-slider-field">
+            <span class="ml-slider-label-row">Decay <span class="ml-slider-val" id="adsrDVal">120ms</span></span>
+            <input type="range" id="adsrD" min="10" max="2000" value="120" aria-label="Decay time">
+          </label>
+          <label class="ml-slider-field">
+            <span class="ml-slider-label-row">Sustain <span class="ml-slider-val" id="adsrSVal">25%</span></span>
+            <input type="range" id="adsrS" min="0" max="100" value="25" aria-label="Sustain level">
+          </label>
+          <label class="ml-slider-field">
+            <span class="ml-slider-label-row">Release <span class="ml-slider-val" id="adsrRVal">120ms</span></span>
+            <input type="range" id="adsrR" min="10" max="1000" value="120" aria-label="Release time">
+          </label>
         </div>
-      </div>
-      <div id="seqGrid" class="ml-seq-grid" aria-label="Drum step sequencer grid"></div>
-    </article>
+      </article>
+
+      <!-- ── Row 4: Step Sequencer ── -->
+      <article class="card ml-seq-card">
+        <h2>Step Sequencer</h2>
+        <div class="ml-seq-controls">
+          <button id="seqPlay"  class="music-lab-btn" type="button">▶ Play</button>
+          <button id="seqClear" class="music-lab-btn" type="button">✕ Clear</button>
+          <div class="ml-seq-bpm-field">
+            <label for="seqBpmSlider">BPM</label>
+            <input type="range" id="seqBpmSlider" min="60" max="200" value="120" aria-label="Sequencer BPM">
+            <span class="ml-seq-bpm-val" id="seqBpmVal">120</span>
+          </div>
+        </div>
+        <div id="seqGrid" class="ml-seq-grid" aria-label="Drum step sequencer grid"></div>
+      </article>
+    </div>
 
   </main>
 
