@@ -69,8 +69,10 @@
       border-radius: 20px;
       overflow: hidden;
       border: 1px solid rgba(60, 80, 180, 0.3);
-      box-shadow: 0 0 80px rgba(30, 60, 200, 0.15);
-      cursor: ns-resize;
+      box-shadow:
+        0 0 80px rgba(30, 60, 200, 0.15),
+        inset 0 0 36px rgba(96, 136, 255, 0.12);
+      cursor: crosshair;
     }
     #pbd-canvas { display: block; width: 100%; }
     .pbd-planet-layer {
@@ -83,6 +85,49 @@
       display: block;
       width: 100%;
       height: 100%;
+    }
+    .pbd-canvas-wrap::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      box-shadow: inset 0 0 48px rgba(6, 12, 28, 0.6);
+    }
+    .pbd-quote-overlay {
+      position: absolute;
+      left: 1.4rem;
+      right: 1.4rem;
+      bottom: 1.2rem;
+      z-index: 3;
+      max-width: 540px;
+      padding: 1rem 1.15rem;
+      background: linear-gradient(180deg, rgba(2, 4, 18, 0.18), rgba(2, 4, 18, 0.5));
+      border-left: 2px solid rgba(170, 196, 255, 0.5);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+      pointer-events: none;
+    }
+    .pbd-quote-overlay.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .pbd-quote-overlay blockquote {
+      margin: 0 0 0.5rem;
+      color: rgba(220, 232, 255, 0.92);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1rem;
+      line-height: 1.6;
+      font-style: italic;
+    }
+    .pbd-quote-overlay cite {
+      color: rgba(162, 185, 230, 0.86);
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-style: normal;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     /* ── Slider ── */
@@ -189,6 +234,33 @@
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
+    .pbd-journey-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin-top: 0.85rem;
+      padding: 0.8rem 1rem;
+      border: 1px solid rgba(108, 149, 255, 0.28);
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(22, 42, 88, 0.92), rgba(14, 28, 58, 0.98));
+      color: #dce8ff;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    }
+    .pbd-journey-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(130, 174, 255, 0.46);
+      background: linear-gradient(180deg, rgba(28, 52, 105, 0.96), rgba(16, 32, 70, 1));
+    }
+    .pbd-journey-btn.is-running {
+      color: #ffe5a6;
+      border-color: rgba(255, 222, 132, 0.36);
+    }
 
     /* ── Milestone legend ── */
     .pbd-legend {
@@ -251,6 +323,12 @@
       <div class="pbd-canvas-wrap" id="pbd-wrap">
         <canvas id="pbd-canvas"></canvas>
         <div class="pbd-planet-layer" id="pbd-planet-layer" aria-hidden="true"></div>
+        <div class="pbd-quote-overlay" id="pbd-quote-overlay" aria-hidden="true">
+          <blockquote>
+            "On a mote of dust suspended in a sunbeam."
+          </blockquote>
+          <cite>— Carl Sagan</cite>
+        </div>
       </div>
 
       <div class="pbd-readout">
@@ -298,6 +376,7 @@
           <hr class="ll-hr" />
           <span class="ll-label">Tip</span>
           <div class="ll-info">Scroll on the canvas to zoom. Drag the slider to any scale level.</div>
+          <button class="pbd-journey-btn" id="pbd-journey-btn" type="button">Start Journey</button>
         </div>
 
         <div class="ll-pane" id="pbd-guide">
@@ -354,8 +433,10 @@
     const scaleValueEl = document.getElementById('pbd-scale-value');
     const milestoneEl = document.getElementById('pbd-milestone');
     const quoteEl = document.getElementById('pbd-quote');
+    const quoteOverlayEl = document.getElementById('pbd-quote-overlay');
     const wrap = document.getElementById('pbd-wrap');
     const modelLayer = document.getElementById('pbd-planet-layer');
+    const journeyBtn = document.getElementById('pbd-journey-btn');
 
     // ── Scale map: slider 0→100 maps logarithmically to meters across viewport ──
     // 0   = 10 m  (human scale)
@@ -439,6 +520,7 @@
       STARS.push({
         x: Math.random(),
         y: Math.random(),
+        z: Math.random() * 4 + 1,
         r: Math.random() * 1.2 + 0.2,
         a: Math.random() * 0.6 + 0.2,
         twinkle: Math.random() * Math.PI * 2,
@@ -870,6 +952,55 @@
     };
 
     let W, H;
+    let journeyFrame = null;
+    let journeyActive = false;
+    const JOURNEY_START = 0;
+    const JOURNEY_END = 45;
+    const JOURNEY_DURATION = 15000;
+
+    function setJourneyState(active) {
+      journeyActive = active;
+      if (!journeyBtn) return;
+      journeyBtn.classList.toggle('is-running', active);
+      journeyBtn.textContent = active ? 'Journey In Progress…' : 'Start Journey';
+    }
+
+    function stopJourney() {
+      if (journeyFrame) {
+        cancelAnimationFrame(journeyFrame);
+        journeyFrame = null;
+      }
+      setJourneyState(false);
+    }
+
+    function startJourney() {
+      stopJourney();
+      setJourneyState(true);
+      slider.value = JOURNEY_START;
+      const start = performance.now();
+
+      function step(now) {
+        const elapsed = now - start;
+        const progress = Math.min(1, elapsed / JOURNEY_DURATION);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        slider.value = (JOURNEY_START + (JOURNEY_END - JOURNEY_START) * eased).toFixed(1);
+        draw();
+        if (progress < 1) {
+          journeyFrame = requestAnimationFrame(step);
+        } else {
+          journeyFrame = null;
+          setJourneyState(false);
+        }
+      }
+
+      journeyFrame = requestAnimationFrame(step);
+    }
+
+    function noteManualInteraction() {
+      if (modelSystem && modelSystem.noteInteraction) modelSystem.noteInteraction();
+      if (journeyActive) stopJourney();
+    }
+
     function resize() {
       W = wrap.clientWidth;
       H = Math.round(W * 0.52);
@@ -895,10 +1026,16 @@
 
       // ── Stars ──
       frame++;
+      const zoomEffect = s * 0.01;
       STARS.forEach(st => {
+        const offsetX = ((st.x - 0.5) * zoomEffect * st.z) * W * 0.085;
+        const offsetY = ((st.y - 0.5) * zoomEffect * st.z) * H * 0.085;
+        const sx = st.x * W + offsetX;
+        const sy = st.y * H + offsetY;
+        if (sx < -4 || sx > W + 4 || sy < -4 || sy > H + 4) return;
         const twinkle = 0.55 + 0.45 * Math.sin(st.twinkle + frame * 0.018);
         ctx.beginPath();
-        ctx.arc(st.x * W, st.y * H, st.r, 0, Math.PI * 2);
+        ctx.arc(sx, sy, st.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(200, 215, 255, ${st.a * twinkle})`;
         ctx.fill();
       });
@@ -1000,20 +1137,35 @@
 
         // Body
         if (obj.r > 0 && !showModel) {
-          ctx.beginPath();
-          ctx.arc(cx, H/2, Math.max(cr, 1.5), 0, Math.PI * 2);
-          ctx.fillStyle = obj.color;
-          ctx.fill();
-
-          // Earth: add continent-like patches + atmosphere
-          if (obj.name === 'Earth' && cr > 4) {
+          if (obj.name === 'Earth' && sunbeamAlpha > 0.55 && cr <= 2.4) {
+            const flicker = 0.72 + 0.28 * Math.sin(frame * 0.2);
             ctx.beginPath();
-            ctx.arc(cx, H/2, Math.max(cr * 1.08, 2), 0, Math.PI * 2);
-            const atm = ctx.createRadialGradient(cx, H/2, cr * 0.7, cx, H/2, cr * 1.1);
-            atm.addColorStop(0, 'rgba(80,160,255,0)');
-            atm.addColorStop(1, 'rgba(80,160,255,0.18)');
-            ctx.fillStyle = atm;
+            ctx.arc(cx, H / 2, 1.15, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(182, 220, 255, ${0.92 * flicker})`;
             ctx.fill();
+            ctx.beginPath();
+            ctx.arc(cx, H / 2, 2.6, 0, Math.PI * 2);
+            const mote = ctx.createRadialGradient(cx, H / 2, 0, cx, H / 2, 2.6);
+            mote.addColorStop(0, `rgba(120, 180, 255, ${0.45 * flicker})`);
+            mote.addColorStop(1, 'rgba(120, 180, 255, 0)');
+            ctx.fillStyle = mote;
+            ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.arc(cx, H/2, Math.max(cr, 1.5), 0, Math.PI * 2);
+            ctx.fillStyle = obj.color;
+            ctx.fill();
+
+            // Earth: add continent-like patches + atmosphere
+            if (obj.name === 'Earth' && cr > 4) {
+              ctx.beginPath();
+              ctx.arc(cx, H/2, Math.max(cr * 1.08, 2), 0, Math.PI * 2);
+              const atm = ctx.createRadialGradient(cx, H/2, cr * 0.7, cx, H/2, cr * 1.1);
+              atm.addColorStop(0, 'rgba(80,160,255,0)');
+              atm.addColorStop(1, 'rgba(80,160,255,0.18)');
+              ctx.fillStyle = atm;
+              ctx.fill();
+            }
           }
         }
 
@@ -1081,11 +1233,12 @@
       // ── Sagan quote ──
       const showQuote = s >= 40 && s <= 58;
       quoteEl.classList.toggle('visible', showQuote);
+      if (quoteOverlayEl) quoteOverlayEl.classList.toggle('visible', showQuote);
     }
 
     // ── Event listeners ──
     slider.addEventListener('input', () => {
-      if (modelSystem && modelSystem.noteInteraction) modelSystem.noteInteraction();
+      noteManualInteraction();
       draw();
     });
 
@@ -1099,11 +1252,21 @@
     // Scroll to zoom
     wrap.addEventListener('wheel', e => {
       e.preventDefault();
-      if (modelSystem && modelSystem.noteInteraction) modelSystem.noteInteraction();
+      noteManualInteraction();
       const delta = e.deltaY > 0 ? 1.5 : -1.5;
       slider.value = Math.max(0, Math.min(100, parseFloat(slider.value) + delta));
       draw();
     }, { passive: false });
+
+    if (journeyBtn) {
+      journeyBtn.addEventListener('click', () => {
+        if (journeyActive) {
+          stopJourney();
+          return;
+        }
+        startJourney();
+      });
+    }
 
     window.addEventListener('resize', resize);
     // Defer first resize until after layout is computed, then start animation loop
