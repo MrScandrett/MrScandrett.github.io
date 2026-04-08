@@ -2,16 +2,24 @@
   const byId = (id) => document.getElementById(id);
 
   const corpusEl = byId("ngram-corpus");
+  const corpusWrapEl = byId("ngram-corpus-wrap");
+  const corpusOverlayEl = byId("ngram-corpus-overlay");
+  const scanTallyEl = byId("ngram-scan-tally");
   const nEl = byId("ngram-order");
   const smoothingEl = byId("ngram-smoothing");
   const buildEl = byId("ngram-build");
   const loadSampleEl = byId("ngram-load-sample");
   const seedEl = byId("ngram-seed");
+  const seedGhostEl = byId("ngram-seed-ghost");
+  const liveProbabilitiesEl = byId("ngram-live-probs");
   const lengthEl = byId("ngram-length");
   const tempEl = byId("ngram-temp");
   const generateEl = byId("ngram-generate");
   const predictionsEl = byId("ngram-predictions");
   const outputEl = byId("ngram-output");
+  const compareToggleEl = byId("ngram-toggle-compare");
+  const comparePanelEl = byId("ngram-compare-panel");
+  const neuralOutputEl = byId("ngram-neural-output");
   const metricsEl = byId("ngram-metrics");
   const statusEl = byId("ngram-status");
   const metricCardsEl = byId("ngram-metric-cards");
@@ -43,16 +51,24 @@
 
   const required = [
     corpusEl,
+    corpusWrapEl,
+    corpusOverlayEl,
+    scanTallyEl,
     nEl,
     smoothingEl,
     buildEl,
     loadSampleEl,
     seedEl,
+    seedGhostEl,
+    liveProbabilitiesEl,
     lengthEl,
     tempEl,
     generateEl,
     predictionsEl,
     outputEl,
+    compareToggleEl,
+    comparePanelEl,
+    neuralOutputEl,
     metricsEl,
     statusEl,
     metricCardsEl,
@@ -218,6 +234,7 @@
   };
 
   let model = null;
+  let scanRunId = 0;
 
   function splitSentences(text) {
     const clean = String(text || "").replace(/\r/g, " ").replace(/\n+/g, " ");
@@ -360,12 +377,12 @@
     sample(distribution, temperature) {
       const t = Math.max(0, Number.isFinite(temperature) ? temperature : 1);
 
-      if (!distribution.length) return "</s>";
-      if (t === 0) return distribution[0][0];
+      if (!distribution.length) return { token: "</s>", baseProbability: 1 };
+      if (t === 0) return { token: distribution[0][0], baseProbability: distribution[0][1] };
 
       const weighted = distribution.map(([token, probability]) => {
         const safeProbability = Math.max(probability, 1e-12);
-        return [token, Math.pow(safeProbability, 1 / t)];
+        return [token, probability, Math.pow(safeProbability, 1 / t)];
       });
 
       let sum = 0;
@@ -374,20 +391,22 @@
       }
 
       let threshold = Math.random() * sum;
-      for (const [token, weight] of weighted) {
+      for (const [token, probability, weight] of weighted) {
         threshold -= weight;
         if (threshold <= 0) {
-          return token;
+          return { token, baseProbability: probability };
         }
       }
 
-      return weighted[weighted.length - 1][0];
+      const [token, probability] = weighted[weighted.length - 1];
+      return { token, baseProbability: probability };
     }
 
     generate(seedTokens, steps, temperature) {
       const out = seedTokens.slice();
       const totalSteps = Math.max(1, Number(steps) || 30);
       let seenContextHits = 0;
+      const choices = [];
 
       for (let i = 0; i < totalSteps; i += 1) {
         const { distribution, contextSeen } = this.getDistribution(out);
@@ -396,13 +415,19 @@
           seenContextHits += 1;
         }
 
-        const nextToken = this.sample(distribution, temperature);
-        out.push(nextToken);
+        const sampled = this.sample(distribution, temperature);
+        out.push(sampled.token);
+        choices.push({
+          token: sampled.token,
+          probability: sampled.baseProbability,
+          contextSeen
+        });
       }
 
       return {
         tokens: out,
-        coverage: seenContextHits / totalSteps
+        coverage: seenContextHits / totalSteps,
+        choices
       };
     }
   }
@@ -445,6 +470,13 @@
 
   function printMetrics(data) {
     metricsEl.textContent = JSON.stringify(data, null, 2);
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
 
   function currentSeedTokens() {
@@ -527,6 +559,47 @@
       article.appendChild(detail);
       metricCardsEl.appendChild(article);
     }
+  }
+
+  function renderLiveProbabilities(distribution) {
+    liveProbabilitiesEl.innerHTML = "";
+    const topThree = distribution.slice(0, 3);
+
+    if (!topThree.length) {
+      const pill = document.createElement("span");
+      pill.className = "ngram-prob-pill";
+      pill.textContent = "Teach the robot to see live guesses.";
+      liveProbabilitiesEl.appendChild(pill);
+      return;
+    }
+
+    for (const [token, probability] of topThree) {
+      const pill = document.createElement("span");
+      pill.className = "ngram-prob-pill";
+      const intensity = Math.max(0.14, Math.min(0.9, probability));
+      pill.style.background = `rgba(59, 130, 246, ${0.08 + intensity * 0.24})`;
+      pill.style.borderColor = `rgba(59, 130, 246, ${0.16 + intensity * 0.34})`;
+
+      const word = document.createElement("span");
+      word.className = "ngram-prob-pill__word";
+      word.textContent = formatPredictionToken(token);
+
+      const value = document.createElement("span");
+      value.textContent = `${(probability * 100).toFixed(1)}%`;
+
+      pill.appendChild(word);
+      pill.appendChild(value);
+      liveProbabilitiesEl.appendChild(pill);
+    }
+  }
+
+  function renderSeedGhost(snapshot) {
+    const seed = seedEl.value || "";
+    if (!seed.trim() || !snapshot.topToken || snapshot.topToken === "</s>") {
+      seedGhostEl.textContent = "";
+      return;
+    }
+    seedGhostEl.innerHTML = `<strong>↦ ${escapeHtml(snapshot.topToken)}</strong>`;
   }
 
   function showStaticOutput(text) {
@@ -723,7 +796,114 @@
   function refreshPredictions() {
     const snapshot = getPredictionSnapshot();
     renderPredictions(snapshot.distribution);
+    renderLiveProbabilities(snapshot.distribution);
+    renderSeedGhost(snapshot);
     updateSummaryCards("live");
+  }
+
+  function renderGeneratedOutput(seedTokens, choices) {
+    const noSpaceBefore = new Set([",", ".", "!", "?", ";", ":", ")"]);
+    const noSpaceAfter = new Set(["("]);
+    const fragments = [];
+    let previous = "";
+
+    const allTokens = [...seedTokens.map((token) => ({ token, probability: 1, seed: true })), ...choices];
+
+    for (const item of allTokens) {
+      const token = item.token;
+      if (token === "<s>") continue;
+      if (token === "</s>") {
+        fragments.push("\n");
+        previous = token;
+        continue;
+      }
+
+      const addSpace =
+        fragments.length > 0 &&
+        fragments[fragments.length - 1] !== "\n" &&
+        !noSpaceBefore.has(token) &&
+        !noSpaceAfter.has(previous);
+
+      if (addSpace) fragments.push(" ");
+
+      if (item.seed) {
+        fragments.push(escapeHtml(token));
+      } else {
+        const probability = item.probability || 0;
+        const confidenceClass =
+          probability >= 0.6
+            ? "ngram-output-token--high"
+            : probability >= 0.22
+              ? "ngram-output-token--medium"
+              : "ngram-output-token--low";
+        fragments.push(
+          `<span class="ngram-output-token ${confidenceClass}" title="Confidence ${(probability * 100).toFixed(1)}%">${escapeHtml(token)}</span>`
+        );
+      }
+
+      previous = token;
+    }
+
+    outputEl.innerHTML = fragments.join("").trim();
+  }
+
+  function renderNeuralComparison() {
+    if (!compareToggleEl.checked) {
+      comparePanelEl.hidden = true;
+      return;
+    }
+
+    comparePanelEl.hidden = false;
+    const seed = (seedEl.value || "").trim() || "the class";
+    const label = PRESETS[state.presetKey]?.label || "the sample";
+    const comparison = `${seed} keeps its meaning and continues with a smoother sentence. In a neural model, the reply stays anchored to ${label.toLowerCase()} instead of only repeating the most local counts.`;
+    neuralOutputEl.textContent = comparison;
+  }
+
+  function renderCorpusOverlay(words, currentIndex, windowSize) {
+    const start = currentIndex;
+    const end = currentIndex + windowSize - 1;
+    corpusOverlayEl.innerHTML = words
+      .map((word, index) => {
+        const escaped = escapeHtml(word);
+        if (index < start || index > end) return `${escaped} `;
+        const target = index === end ? " target-word-glow" : "";
+        return `<span class="ngram-window-highlight${target}">${escaped}</span> `;
+      })
+      .join("");
+  }
+
+  async function animateCorpusScan(text, order) {
+    const cleanWords = String(text || "").trim().split(/\s+/).filter(Boolean);
+    const windowSize = Math.max(1, Number(order) || 2);
+
+    if (!cleanWords.length) {
+      corpusWrapEl.classList.remove("is-scanning");
+      corpusOverlayEl.innerHTML = "";
+      scanTallyEl.textContent = "The scanner will highlight the context window as the robot learns.";
+      return;
+    }
+
+    const runId = ++scanRunId;
+    corpusWrapEl.classList.add("is-scanning");
+    const cappedWords = cleanWords.slice(0, 180);
+
+    for (let i = 0; i <= Math.max(0, cappedWords.length - windowSize); i += 1) {
+      if (runId !== scanRunId) return;
+      renderCorpusOverlay(cappedWords, i, windowSize);
+      const context = cappedWords.slice(i, i + windowSize - 1).join(" ");
+      const target = cappedWords[i + windowSize - 1] || "";
+      scanTallyEl.innerHTML = `Context <strong>${escapeHtml(context || "<start>")}</strong> → next word <strong>${escapeHtml(target)}</strong>`;
+      await new Promise((resolve) => window.setTimeout(resolve, 45));
+    }
+
+    if (runId !== scanRunId) return;
+    scanTallyEl.textContent = "Scan complete. The robot has counted the moving context windows in the story.";
+    window.setTimeout(() => {
+      if (runId !== scanRunId) return;
+      corpusWrapEl.classList.remove("is-scanning");
+      corpusOverlayEl.innerHTML = "";
+    }, 220);
   }
 
   function applyMode(modeKey) {
@@ -791,7 +971,7 @@
     setStatus(`${preset.label} ready. Click Teach.`);
   }
 
-  function buildModel(options) {
+  async function buildModel(options) {
     setCompactPanel("play");
     const corpusText = (corpusEl.value || "").trim();
     if (!corpusText) {
@@ -806,6 +986,8 @@
       renderPredictions([]);
       return;
     }
+
+    await animateCorpusScan(corpusText, Math.max(1, Number(nEl.value) || 2));
 
     const tokens = tokenize(corpusText, { lowercase: true });
     if (!tokens.length) {
@@ -829,6 +1011,7 @@
     }
 
     refreshPredictions();
+    renderNeuralComparison();
     const snapshot = getPredictionSnapshot();
     showStaticOutput(`Robot ready. Starter phrase: "${seedEl.value.trim()}". Click Generate to watch it continue the sentence.`);
     updateSummaryCards("trained");
@@ -866,9 +1049,8 @@
     const steps = Math.max(1, Math.min(200, Number(lengthEl.value) || 30));
     const temperature = Math.max(0, Number.isFinite(Number(tempEl.value)) ? Number(tempEl.value) : 0.9);
     const generated = model.generate(currentSeedTokens(), steps, temperature);
-    const generatedText = prettyText(generated.tokens);
-
-    animateOutput(generatedText);
+    renderGeneratedOutput(currentSeedTokens(), generated.choices);
+    renderNeuralComparison();
     updateSummaryCards("generated", {
       coverage: generated.coverage,
       temperature
@@ -941,7 +1123,12 @@
   seedEl.addEventListener("input", () => {
     if (!model) return;
     refreshPredictions();
+    renderNeuralComparison();
     setStatus("Starter phrase updated.");
+  });
+
+  compareToggleEl.addEventListener("change", () => {
+    renderNeuralComparison();
   });
 
   predictionsEl.addEventListener("click", (event) => {
@@ -992,6 +1179,9 @@
   updateConsoleClasses();
   applyCompactPanels();
   updateSummaryCards("waiting");
+  renderLiveProbabilities([]);
+  renderSeedGhost({ topToken: null });
+  renderNeuralComparison();
   printMetrics({
     status: "waiting"
   });
