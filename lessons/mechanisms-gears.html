@@ -1,0 +1,1516 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mechanisms and Gear Systems · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Engineering Lesson 02 — explore gear ratios, torque, speed, and mechanical advantage in a live transmission lab." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .gear-page {
+      padding-bottom: 3.6rem;
+    }
+
+    .gear-shell {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 0;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .gear-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .gear-hero-copy,
+    .gear-hero-brief,
+    .gear-card,
+    .gear-lab {
+      padding: 1.3rem;
+      border-radius: 26px;
+      border: 1px solid rgba(193, 206, 224, 0.9);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(245, 249, 252, 0.96));
+      box-shadow: 0 18px 44px rgba(10, 25, 42, 0.08);
+    }
+
+    .gear-hero-copy {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 14% 20%, rgba(255, 186, 64, 0.18), transparent 32%),
+        radial-gradient(circle at 88% 18%, rgba(72, 160, 255, 0.16), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(245, 249, 252, 0.96));
+    }
+
+    .gear-hero-copy::after {
+      content: "";
+      position: absolute;
+      right: -50px;
+      bottom: -60px;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(58, 130, 246, 0.12) 0%, rgba(58, 130, 246, 0) 72%);
+      pointer-events: none;
+    }
+
+    .gear-eyebrow,
+    .gear-kicker {
+      margin: 0 0 0.45rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #667b90;
+    }
+
+    .gear-hero-copy h1 {
+      margin: 0;
+      max-width: 10ch;
+      font-size: clamp(2rem, 4vw, 3.35rem);
+      line-height: 1.02;
+      letter-spacing: -0.05em;
+      color: #122334;
+    }
+
+    .gear-lede,
+    .gear-card p,
+    .gear-brief-copy,
+    .gear-stage-note,
+    .gear-theory-text,
+    .gear-checklist li,
+    .gear-tip-card small,
+    .gear-principle-card small,
+    .gear-step-card small {
+      color: #486277;
+      line-height: 1.66;
+    }
+
+    .gear-lede {
+      margin: 0.95rem 0 0;
+      max-width: 64ch;
+      font-size: 1rem;
+    }
+
+    .gear-meta,
+    .gear-mission-grid,
+    .gear-principle-grid,
+    .gear-step-grid,
+    .gear-tip-grid,
+    .gear-dashboard-grid {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .gear-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .gear-meta span,
+    .gear-brief-stat strong,
+    .gear-status-pill,
+    .gear-signal {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.85rem;
+      padding: 0.28rem 0.72rem;
+      border-radius: 999px;
+      border: 1px solid rgba(141, 167, 188, 0.32);
+      background: rgba(240, 246, 251, 0.94);
+      color: #204f78;
+      font-size: 0.77rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .gear-hero-brief {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+      background:
+        radial-gradient(circle at top right, rgba(255, 189, 95, 0.14), transparent 40%),
+        linear-gradient(180deg, rgba(248, 251, 253, 0.99), rgba(243, 248, 252, 0.96));
+    }
+
+    .gear-hero-brief h2,
+    .gear-card h2,
+    .gear-lab h2 {
+      margin: 0;
+      color: #122334;
+      letter-spacing: -0.02em;
+    }
+
+    .gear-brief-copy {
+      margin: 0.45rem 0 0;
+      font-size: 0.92rem;
+    }
+
+    .gear-mission-grid,
+    .gear-principle-grid,
+    .gear-step-grid,
+    .gear-tip-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 0.85rem;
+    }
+
+    .gear-brief-stat,
+    .gear-principle-card,
+    .gear-step-card,
+    .gear-tip-card,
+    .gear-dashboard-card {
+      border-radius: 18px;
+      border: 1px solid rgba(198, 210, 221, 0.94);
+      background: rgba(255, 255, 255, 0.74);
+      padding: 0.95rem 1rem;
+    }
+
+    .gear-brief-stat strong {
+      margin-bottom: 0.4rem;
+      padding-left: 0;
+      padding-right: 0;
+      min-height: auto;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      color: #153453;
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .gear-brief-stat span {
+      display: block;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #101e2c;
+    }
+
+    .gear-brief-stat small {
+      display: block;
+      margin-top: 0.24rem;
+      color: #60778b;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .gear-card p {
+      margin: 0.55rem 0 0;
+      font-size: 0.9rem;
+    }
+
+    .gear-principle-card strong,
+    .gear-step-card strong,
+    .gear-tip-card strong {
+      display: block;
+      margin-bottom: 0.3rem;
+      color: #122334;
+    }
+
+    .gear-lab {
+      display: grid;
+      gap: 1rem;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 252, 0.96));
+    }
+
+    .gear-lab-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 0.85rem;
+    }
+
+    .gear-lab-sub {
+      margin: 0.3rem 0 0;
+      max-width: 74ch;
+      color: #4b6479;
+      line-height: 1.58;
+      font-size: 0.92rem;
+    }
+
+    .gear-status-pill {
+      width: fit-content;
+      white-space: nowrap;
+    }
+
+    .gear-status-pill.is-warn {
+      color: #8b5a06;
+      background: rgba(255, 239, 208, 0.95);
+      border-color: rgba(241, 177, 67, 0.34);
+    }
+
+    .gear-status-pill.is-danger {
+      color: #8a2323;
+      background: rgba(255, 233, 233, 0.95);
+      border-color: rgba(227, 93, 93, 0.34);
+    }
+
+    .gear-lab-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.8fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .gear-stage {
+      position: relative;
+      overflow: hidden;
+      min-height: 470px;
+      border-radius: 24px;
+      border: 1px solid rgba(22, 38, 58, 0.08);
+      background:
+        radial-gradient(circle at top, rgba(255, 193, 69, 0.08), transparent 24%),
+        linear-gradient(180deg, #132033 0%, #0d1727 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+
+    .gear-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .gear-stage-header {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      right: 1rem;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+      align-items: start;
+    }
+
+    .gear-stage-panel,
+    .gear-stage-callout {
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 17, 29, 0.68);
+      color: rgba(239, 246, 255, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+    }
+
+    .gear-stage-panel {
+      display: grid;
+      gap: 0.45rem;
+      padding: 0.8rem 0.95rem;
+      max-width: 340px;
+    }
+
+    .gear-stage-panel strong {
+      color: #f6b73f;
+      font-size: 0.76rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .gear-stage-panel span,
+    .gear-stage-callout span {
+      color: rgba(231, 241, 255, 0.8);
+      line-height: 1.55;
+      font-size: 0.78rem;
+    }
+
+    .gear-stage-callout {
+      padding: 0.8rem 0.92rem;
+      width: min(230px, 42%);
+      display: grid;
+      gap: 0.25rem;
+      justify-items: start;
+    }
+
+    .gear-stage-callout strong {
+      color: #b7d8ff;
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #gearCanvas {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 470px;
+      border-radius: 24px;
+      cursor: crosshair;
+    }
+
+    .gear-stage-note {
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      margin: 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.8rem 0.95rem;
+      border-radius: 16px;
+      background: rgba(7, 13, 24, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: rgba(235, 244, 255, 0.9);
+      font-size: 0.8rem;
+      line-height: 1.55;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .gear-signal {
+      color: #f0f6ff;
+      background: rgba(31, 71, 108, 0.5);
+      border-color: rgba(123, 184, 236, 0.24);
+    }
+
+    .gear-signal.is-warn {
+      color: #fff7d8;
+      background: rgba(148, 101, 19, 0.42);
+      border-color: rgba(255, 202, 89, 0.24);
+    }
+
+    .gear-signal.is-danger {
+      color: #ffe7e5;
+      background: rgba(131, 31, 31, 0.42);
+      border-color: rgba(255, 110, 110, 0.24);
+    }
+
+    .gear-control-panel,
+    .gear-theory-panel {
+      border-radius: 22px;
+      border: 1px solid rgba(190, 204, 220, 0.9);
+      background:
+        linear-gradient(180deg, rgba(250, 252, 255, 0.98), rgba(244, 248, 252, 0.95));
+      padding: 1rem;
+      display: grid;
+      gap: 0.95rem;
+      align-content: start;
+    }
+
+    .gear-control-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.85rem;
+      align-items: baseline;
+    }
+
+    .gear-control-head h3,
+    .gear-theory-panel h3 {
+      margin: 0;
+      color: #132435;
+      font-size: 0.98rem;
+      letter-spacing: -0.02em;
+    }
+
+    .gear-control-head small,
+    .gear-theory-panel p {
+      color: #5f778c;
+      line-height: 1.55;
+    }
+
+    .gear-control-group {
+      display: grid;
+      gap: 0.55rem;
+      padding: 0.9rem;
+      border-radius: 18px;
+      border: 1px solid rgba(205, 214, 224, 0.92);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .gear-control-group label {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      align-items: center;
+      color: #17324b;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .gear-control-help {
+      margin: 0;
+      color: #61788d;
+      font-size: 0.79rem;
+      line-height: 1.5;
+    }
+
+    .gear-value {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #122334;
+      letter-spacing: -0.04em;
+    }
+
+    .gear-balance-card,
+    .gear-math-card,
+    .gear-dashboard-card {
+      padding: 0.95rem 1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(201, 212, 224, 0.94);
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .gear-balance-card h4,
+    .gear-math-card h4,
+    .gear-dashboard-card h4 {
+      margin: 0 0 0.6rem;
+      color: #16324b;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .gear-balance-scale {
+      position: relative;
+      height: 0.75rem;
+      border-radius: 999px;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(58, 130, 246, 0.95), rgba(255, 190, 69, 0.95));
+    }
+
+    .gear-balance-scale::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+    }
+
+    .gear-balance-needle {
+      position: absolute;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.94);
+      background: #0f1727;
+      box-shadow: 0 10px 20px rgba(15, 23, 39, 0.24);
+      transform: translate(-50%, -50%);
+      transition: left 0.22s ease;
+    }
+
+    .gear-balance-labels {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-top: 0.52rem;
+      color: #5d768b;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .gear-gauge {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .gear-gauge-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: baseline;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+    }
+
+    .gear-gauge-track {
+      height: 0.66rem;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(209, 220, 231, 0.84);
+    }
+
+    .gear-gauge-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      transition: width 0.24s ease;
+    }
+
+    .gear-gauge-fill.torque {
+      background: linear-gradient(90deg, #f9cf66, #f29d2f);
+    }
+
+    .gear-gauge-fill.speed {
+      background: linear-gradient(90deg, #8fd0ff, #3d8fff);
+    }
+
+    .gear-mono {
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .gear-math-line {
+      margin: 0.35rem 0 0;
+      color: #263f57;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .gear-math-line strong {
+      color: #122334;
+    }
+
+    .gear-math-card .gear-formula {
+      margin: 0;
+      font-size: 1rem;
+      color: #102031;
+      line-height: 1.6;
+    }
+
+    .gear-test-button {
+      border: 0;
+      border-radius: 16px;
+      padding: 0.92rem 1rem;
+      font: inherit;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #0f1727;
+      background: linear-gradient(135deg, #ffd66f, #f4ac33);
+      box-shadow: 0 16px 28px rgba(241, 176, 55, 0.24);
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+    }
+
+    .gear-test-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 30px rgba(241, 176, 55, 0.28);
+      filter: saturate(1.06);
+    }
+
+    .gear-test-button:disabled {
+      cursor: default;
+      opacity: 0.72;
+      transform: none;
+      box-shadow: 0 10px 18px rgba(15, 23, 39, 0.12);
+    }
+
+    .gear-dashboard-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .gear-dashboard-card strong {
+      display: block;
+      color: #60778b;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.28rem;
+    }
+
+    .gear-dashboard-card span {
+      display: block;
+      color: #102031;
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+    }
+
+    .gear-dashboard-card small {
+      display: block;
+      margin-top: 0.3rem;
+      color: #60778b;
+      line-height: 1.5;
+    }
+
+    .gear-theory-panel {
+      background:
+        radial-gradient(circle at top right, rgba(67, 136, 255, 0.08), transparent 42%),
+        linear-gradient(180deg, rgba(247, 251, 255, 0.99), rgba(243, 248, 252, 0.96));
+    }
+
+    .gear-theory-list {
+      margin: 0;
+      padding-left: 1.05rem;
+      display: grid;
+      gap: 0.55rem;
+      color: #4e667b;
+      line-height: 1.58;
+      font-size: 0.84rem;
+    }
+
+    .gear-footer-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.4rem;
+      color: #23527c;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .gear-footer-link:hover {
+      color: #153552;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 960px) {
+      .gear-hero,
+      .gear-lab-grid,
+      .gear-mission-grid,
+      .gear-principle-grid,
+      .gear-step-grid,
+      .gear-tip-grid,
+      .gear-dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .gear-shell {
+        width: min(100%, calc(100% - 1rem));
+      }
+
+      .gear-hero-copy,
+      .gear-hero-brief,
+      .gear-card,
+      .gear-lab {
+        padding: 1rem;
+        border-radius: 22px;
+      }
+
+      .gear-stage,
+      #gearCanvas {
+        min-height: 400px;
+        height: 400px;
+      }
+
+      .gear-stage-header,
+      .gear-stage-note,
+      .gear-control-head,
+      .gear-lab-head {
+        display: grid;
+      }
+
+      .gear-stage-callout {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+  <div class="ll-sim">
+  <main id="main-content" class="gear-page">
+    <div class="gear-shell">
+      <section class="gear-hero">
+        <article class="gear-hero-copy">
+          <p class="gear-eyebrow">Engineering · Lesson 02</p>
+          <h1>Mechanisms and Gear Systems</h1>
+          <p class="gear-lede">This lab makes the Golden Rule of Mechanics visible: if you want more turning force, you must give up speed. Configure a live transmission, watch the gears mesh tooth-by-tooth, and decide whether your system should favor velocity or torque to lift a heavy crate safely.</p>
+          <div class="gear-meta">
+            <span>Mechanical advantage</span>
+            <span>Gear ratios</span>
+            <span>Torque vs speed</span>
+            <span>Industrial lift lab</span>
+          </div>
+          <a class="gear-footer-link" href="../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
+        </article>
+
+        <aside class="gear-hero-brief" aria-label="Gear systems mission brief">
+          <div>
+            <p class="gear-kicker">Mission brief</p>
+            <h2>Lift the clinic supply crate</h2>
+            <p class="gear-brief-copy">A motor can only deliver a limited amount of input torque. Your job is to choose a driver gear and a driven gear that create enough mechanical advantage to hoist the load, but not so much output speed that the crate slams upward and destabilizes the system.</p>
+          </div>
+
+          <div class="gear-mission-grid">
+            <div class="gear-brief-stat">
+              <strong>Motor</strong>
+              <span>420 Nm</span>
+              <small>Available input torque from the motor shaft</small>
+            </div>
+            <div class="gear-brief-stat">
+              <strong>Motor speed</strong>
+              <span>120 rpm</span>
+              <small>Input shaft rotation before the gear reduction</small>
+            </div>
+            <div class="gear-brief-stat">
+              <strong>Target</strong>
+              <span>Lift safely</span>
+              <small>Output torque must beat the crate load without overspeeding the winch</small>
+            </div>
+            <div class="gear-brief-stat">
+              <strong>Trade-off</strong>
+              <span>No free lunch</span>
+              <small>More torque means less speed. More speed means less torque.</small>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="gear-card">
+        <h2>What gears actually do</h2>
+        <p>Gears do not create energy out of nowhere. They redistribute it. A small driver gear pushing a larger driven gear makes the output spin more slowly, but with greater torque. Reverse that pairing and the system spins faster, but the lifting force drops. That trade is the heart of mechanical advantage.</p>
+        <div class="gear-principle-grid">
+          <article class="gear-principle-card">
+            <strong>Driver gear</strong>
+            <small>The motor gear is the input. Its tooth count sets how much leverage it has over the next gear.</small>
+          </article>
+          <article class="gear-principle-card">
+            <strong>Driven gear</strong>
+            <small>The output gear receives motion. A larger driven gear increases torque and lowers rpm.</small>
+          </article>
+          <article class="gear-principle-card">
+            <strong>Opposite rotation</strong>
+            <small>Two meshed gears always rotate in opposite directions. The lab visualizes that sign flip directly.</small>
+          </article>
+          <article class="gear-principle-card">
+            <strong>Mechanical advantage</strong>
+            <small>When the ratio grows above 1:1, the output gains force while sacrificing speed. That is what lets a machine lift heavier loads.</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="gear-lab">
+        <div class="gear-lab-head">
+          <div>
+            <p class="gear-kicker">Transmission lab</p>
+            <h2>Mechanical Advantage Studio</h2>
+            <p class="gear-lab-sub">Tune the driver, driven, and crate load. Then engage the motor and watch whether the transmission stalls, lifts cleanly, or hoists too fast and crashes the payload.</p>
+          </div>
+          <span class="gear-status-pill" id="gear-status-pill">System ready</span>
+        </div>
+
+        <div class="gear-lab-grid">
+          <div class="gear-stage">
+            <div class="gear-stage-header">
+              <div class="gear-stage-panel">
+                <strong>Golden rule monitor</strong>
+                <span id="gear-stage-copy">Right now the system is balanced. Change the tooth counts and the live gauges will show how power shifts between speed and torque.</span>
+              </div>
+              <div class="gear-stage-callout">
+                <strong>Load challenge</strong>
+                <span id="gear-stage-load">500 kg crate on a 0.18 m winch drum</span>
+              </div>
+            </div>
+            <canvas id="gearCanvas" width="840" height="470" aria-label="Interactive gear transmission simulation"></canvas>
+            <p class="gear-stage-note">
+              <span id="gear-stage-note">Build a reduction gear if the motor keeps stalling. Build a faster ratio only if you can still lift the crate without overspeeding the winch.</span>
+              <span class="gear-signal" id="gear-signal">Torque and speed balanced</span>
+            </p>
+          </div>
+
+          <div class="gear-control-stack">
+            <section class="gear-control-panel" aria-label="Transmission controls">
+              <div class="gear-control-head">
+                <h3>Configuration</h3>
+                <small>Every adjustment updates the simulation and the math in real time.</small>
+              </div>
+
+              <div class="gear-control-group">
+                <label for="gear-driver-slider">
+                  <span>Driver gear</span>
+                  <span class="gear-value" id="gear-driver-label">20T</span>
+                </label>
+                <input id="gear-driver-slider" type="range" min="8" max="40" step="4" value="20" />
+                <p class="gear-control-help">Smaller driver gears increase the ratio when they power a larger output gear.</p>
+              </div>
+
+              <div class="gear-control-group">
+                <label for="gear-driven-slider">
+                  <span>Driven gear</span>
+                  <span class="gear-value" id="gear-driven-label">28T</span>
+                </label>
+                <input id="gear-driven-slider" type="range" min="8" max="48" step="4" value="28" />
+                <p class="gear-control-help">Larger driven gears boost torque but slow the output shaft and winch.</p>
+              </div>
+
+              <div class="gear-control-group">
+                <label for="gear-load-slider">
+                  <span>Crate load</span>
+                  <span class="gear-value" id="gear-load-label">500 kg</span>
+                </label>
+                <input id="gear-load-slider" type="range" min="250" max="900" step="50" value="500" />
+                <p class="gear-control-help">Heavier crates require more output torque. If your ratio is too aggressive toward speed, the motor will stall.</p>
+              </div>
+
+              <div class="gear-balance-card">
+                <h4>Balance meter</h4>
+                <div class="gear-balance-scale">
+                  <div class="gear-balance-needle" id="gear-balance-needle" style="left:50%"></div>
+                </div>
+                <div class="gear-balance-labels">
+                  <span>Velocity</span>
+                  <span>Torque</span>
+                </div>
+              </div>
+
+              <div class="gear-gauge">
+                <div class="gear-gauge-head">
+                  <span style="color:#c98519;">Output torque</span>
+                  <span class="gear-mono" id="gear-torque-value">1.29x</span>
+                </div>
+                <div class="gear-gauge-track">
+                  <div class="gear-gauge-fill torque" id="gear-torque-bar"></div>
+                </div>
+              </div>
+
+              <div class="gear-gauge">
+                <div class="gear-gauge-head">
+                  <span style="color:#2f7fe7;">Output speed</span>
+                  <span class="gear-mono" id="gear-speed-value">0.71x</span>
+                </div>
+                <div class="gear-gauge-track">
+                  <div class="gear-gauge-fill speed" id="gear-speed-bar"></div>
+                </div>
+              </div>
+
+              <div class="gear-math-card">
+                <h4>Live ratio math</h4>
+                <p class="gear-formula gear-mono" id="gear-ratio-display">28 ÷ 20 = 1.40 : 1</p>
+                <p class="gear-math-line"><strong>Gear ratio</strong> = Teeth out / Teeth in</p>
+                <p class="gear-math-line"><strong>Output torque</strong> = Input torque × ratio × efficiency</p>
+                <p class="gear-math-line"><strong>Output speed</strong> = Input speed ÷ ratio</p>
+              </div>
+
+              <button class="gear-test-button" id="gear-test-btn" type="button">Engage motor</button>
+            </section>
+
+            <section class="gear-theory-panel">
+              <h3>Why this works</h3>
+              <p class="gear-theory-text">The lab uses a real ratio relationship. If the output gear has more teeth, it turns more slowly and gains torque. If the input gear is larger than the output gear, the winch gets faster but weaker.</p>
+              <ul class="gear-theory-list">
+                <li>A ratio above <span class="gear-mono">1.00 : 1</span> is a reduction. That favors force over speed.</li>
+                <li>A ratio below <span class="gear-mono">1.00 : 1</span> is a speed-up train. That favors rpm over lifting power.</li>
+                <li>If the output torque is lower than the required drum torque, the motor stalls and the crate stays put.</li>
+                <li>If the winch rpm climbs too high, the crate lifts unsafely fast and the system fails even if the torque is sufficient.</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+
+        <div class="gear-dashboard-grid">
+          <article class="gear-dashboard-card">
+            <strong>Output torque</strong>
+            <span id="gear-output-torque">541 Nm</span>
+            <small>Turning force available at the driven gear after the ratio and efficiency are applied.</small>
+          </article>
+          <article class="gear-dashboard-card">
+            <strong>Required torque</strong>
+            <span id="gear-required-torque">883 Nm</span>
+            <small>The drum needs this much torque to lift the crate against gravity.</small>
+          </article>
+          <article class="gear-dashboard-card">
+            <strong>Output speed</strong>
+            <span id="gear-output-speed">86 rpm</span>
+            <small>Fast systems lift quicker, but too much speed makes the hoist unstable.</small>
+          </article>
+          <article class="gear-dashboard-card">
+            <strong>Mechanical verdict</strong>
+            <span id="gear-verdict">Undersized</span>
+            <small id="gear-verdict-copy">The motor is currently short on torque. Increase the reduction ratio to gain lifting force.</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="gear-card">
+        <h2>Design sequence</h2>
+        <p>Machine design is usually a loop: define the job, estimate the force, choose a mechanism, and check the trade-offs. The same loop is happening inside this lesson.</p>
+        <div class="gear-step-grid">
+          <article class="gear-step-card">
+            <strong>1. Estimate the load</strong>
+            <small>Start by asking how much force the machine needs to move the object at all.</small>
+          </article>
+          <article class="gear-step-card">
+            <strong>2. Choose the ratio</strong>
+            <small>Match the gear sizes so the output shaft has the right balance of torque and rpm.</small>
+          </article>
+          <article class="gear-step-card">
+            <strong>3. Check the motion</strong>
+            <small>Even a strong design can fail if it moves too fast for the task or for the material being handled.</small>
+          </article>
+          <article class="gear-step-card">
+            <strong>4. Retune the system</strong>
+            <small>If the machine stalls or overspeeds, adjust the ratio and test again until the mechanism matches the job.</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="gear-card">
+        <h2>Quick design tips</h2>
+        <p>If your hoist keeps failing, these are the first levers to pull.</p>
+        <div class="gear-tip-grid">
+          <article class="gear-tip-card">
+            <strong>Use a small driver for heavy loads</strong>
+            <small>A smaller input gear powering a larger output gear is the classic way to gain torque.</small>
+          </article>
+          <article class="gear-tip-card">
+            <strong>Watch the balance meter</strong>
+            <small>If the needle stays far to the left, you are chasing speed. The motor will likely run out of lifting force.</small>
+          </article>
+          <article class="gear-tip-card">
+            <strong>Do not ignore safe speed</strong>
+            <small>A ratio can be “strong enough” and still fail because the crate accelerates too aggressively.</small>
+          </article>
+          <article class="gear-tip-card">
+            <strong>Math and motion should agree</strong>
+            <small>If the ratio doubles, torque should roughly double while rpm should roughly halve. The canvas and gauges are there to make that trade visible.</small>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      const INPUT_TORQUE = 420;
+      const INPUT_SPEED_RPM = 120;
+      const EFFICIENCY = 0.92;
+      const DRUM_RADIUS_METERS = 0.18;
+      const GRAVITY = 9.81;
+      const SAFE_OUTPUT_SPEED_RPM = 52;
+      const LIFT_TARGET = 150;
+
+      const canvas = document.getElementById('gearCanvas');
+      const ctx = canvas.getContext('2d');
+      const stageCopy = document.getElementById('gear-stage-copy');
+      const stageLoad = document.getElementById('gear-stage-load');
+      const stageNote = document.getElementById('gear-stage-note');
+      const signal = document.getElementById('gear-signal');
+      const statusPill = document.getElementById('gear-status-pill');
+      const verdictEl = document.getElementById('gear-verdict');
+      const verdictCopy = document.getElementById('gear-verdict-copy');
+      const ratioDisplay = document.getElementById('gear-ratio-display');
+      const torqueValue = document.getElementById('gear-torque-value');
+      const speedValue = document.getElementById('gear-speed-value');
+      const torqueBar = document.getElementById('gear-torque-bar');
+      const speedBar = document.getElementById('gear-speed-bar');
+      const balanceNeedle = document.getElementById('gear-balance-needle');
+      const outputTorqueEl = document.getElementById('gear-output-torque');
+      const requiredTorqueEl = document.getElementById('gear-required-torque');
+      const outputSpeedEl = document.getElementById('gear-output-speed');
+      const driverSlider = document.getElementById('gear-driver-slider');
+      const drivenSlider = document.getElementById('gear-driven-slider');
+      const loadSlider = document.getElementById('gear-load-slider');
+      const driverLabel = document.getElementById('gear-driver-label');
+      const drivenLabel = document.getElementById('gear-driven-label');
+      const loadLabel = document.getElementById('gear-load-label');
+      const testButton = document.getElementById('gear-test-btn');
+
+      const system = {
+        driverTeeth: 20,
+        drivenTeeth: 28,
+        loadKg: 500,
+        ratio: 1.4,
+        outputTorque: 0,
+        requiredTorque: 0,
+        outputSpeed: 0,
+        rotation: 0,
+        running: false,
+        mode: 'ready',
+        lift: 0,
+        bounce: 0,
+        lastTime: 0,
+        stallPhase: 0
+      };
+
+      function clamp(min, value, max) {
+        return Math.max(min, Math.min(value, max));
+      }
+
+      function resizeCanvas() {
+        const bounds = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(bounds.width * dpr);
+        canvas.height = Math.round(bounds.height * dpr);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+      }
+
+      function computeState() {
+        system.driverTeeth = Number(driverSlider.value);
+        system.drivenTeeth = Number(drivenSlider.value);
+        system.loadKg = Number(loadSlider.value);
+        system.ratio = system.drivenTeeth / system.driverTeeth;
+        system.outputTorque = INPUT_TORQUE * system.ratio * EFFICIENCY;
+        system.requiredTorque = system.loadKg * GRAVITY * DRUM_RADIUS_METERS;
+        system.outputSpeed = INPUT_SPEED_RPM / system.ratio;
+      }
+
+      function setReadyState() {
+        system.running = false;
+        system.mode = 'ready';
+        system.lift = 0;
+        system.bounce = 0;
+        system.stallPhase = 0;
+        testButton.disabled = false;
+        statusPill.textContent = 'System ready';
+        statusPill.className = 'gear-status-pill';
+      }
+
+      function updateUi() {
+        computeState();
+
+        driverLabel.textContent = system.driverTeeth + 'T';
+        drivenLabel.textContent = system.drivenTeeth + 'T';
+        loadLabel.textContent = system.loadKg + ' kg';
+        stageLoad.textContent = system.loadKg + ' kg crate on a ' + DRUM_RADIUS_METERS.toFixed(2) + ' m winch drum';
+
+        ratioDisplay.textContent = system.drivenTeeth + ' \u00F7 ' + system.driverTeeth + ' = ' + system.ratio.toFixed(2) + ' : 1';
+
+        const torqueMultiplier = system.ratio * EFFICIENCY;
+        const speedMultiplier = 1 / system.ratio;
+        torqueValue.textContent = torqueMultiplier.toFixed(2) + 'x';
+        speedValue.textContent = speedMultiplier.toFixed(2) + 'x';
+        torqueBar.style.width = Math.min(100, torqueMultiplier * 28) + '%';
+        speedBar.style.width = Math.min(100, speedMultiplier * 80) + '%';
+
+        const balance = clamp(0, ((system.ratio - 0.5) / (6 - 0.5)) * 100, 100);
+        balanceNeedle.style.left = balance.toFixed(1) + '%';
+
+        outputTorqueEl.textContent = Math.round(system.outputTorque) + ' Nm';
+        requiredTorqueEl.textContent = Math.round(system.requiredTorque) + ' Nm';
+        outputSpeedEl.textContent = Math.round(system.outputSpeed) + ' rpm';
+
+        if (system.outputTorque < system.requiredTorque) {
+          verdictEl.textContent = 'Undersized';
+          verdictCopy.textContent = 'The motor is currently short on torque. Increase the reduction ratio to gain lifting force.';
+          stageCopy.textContent = 'Your output shaft is too weak for this load. A larger driven gear or a smaller driver gear will trade speed for lifting force.';
+          stageNote.textContent = 'This setup stalls because the output torque never beats the load torque on the drum.';
+          signal.textContent = 'Torque deficit';
+          signal.className = 'gear-signal is-danger';
+        } else if (system.outputSpeed > SAFE_OUTPUT_SPEED_RPM) {
+          verdictEl.textContent = 'Too fast';
+          verdictCopy.textContent = 'The load can move, but the winch rpm is too high for a safe lift. Reduce the output speed before testing.';
+          stageCopy.textContent = 'This transmission has enough force, but it is tuned like a race car instead of a hoist. You need more control.';
+          stageNote.textContent = 'The crate will surge upward too quickly. Increase reduction until the lift speed comes back into the safe band.';
+          signal.textContent = 'Overspeed risk';
+          signal.className = 'gear-signal is-warn';
+        } else {
+          verdictEl.textContent = 'Lift-capable';
+          verdictCopy.textContent = 'This ratio has enough torque and a safe enough output speed to hoist the crate steadily.';
+          stageCopy.textContent = 'The ratio now favors the kind of slow, controlled force a hoist needs. Engage the motor and watch the reduction do its job.';
+          stageNote.textContent = 'This setup should lift safely because output torque exceeds the load while winch speed stays controlled.';
+          signal.textContent = 'Safe operating band';
+          signal.className = 'gear-signal';
+        }
+      }
+
+      function setStatus(text, className) {
+        statusPill.textContent = text;
+        statusPill.className = 'gear-status-pill ' + className;
+      }
+
+      function toothPath(radius, teeth, toothDepth) {
+        const path = new Path2D();
+        const step = (Math.PI * 2) / teeth;
+
+        for (let tooth = 0; tooth < teeth; tooth += 1) {
+          const start = tooth * step;
+          const outerA = start + (step * 0.18);
+          const outerB = start + (step * 0.52);
+          const innerB = start + (step * 0.76);
+          const innerRadius = radius * 0.92;
+          const outerRadius = radius + toothDepth;
+
+          const points = [
+            [Math.cos(start) * innerRadius, Math.sin(start) * innerRadius],
+            [Math.cos(outerA) * radius, Math.sin(outerA) * radius],
+            [Math.cos(outerA + (step * 0.08)) * outerRadius, Math.sin(outerA + (step * 0.08)) * outerRadius],
+            [Math.cos(outerB) * outerRadius, Math.sin(outerB) * outerRadius],
+            [Math.cos(innerB) * radius, Math.sin(innerB) * radius]
+          ];
+
+          if (tooth === 0) {
+            path.moveTo(points[0][0], points[0][1]);
+          }
+
+          points.forEach(function (point) {
+            path.lineTo(point[0], point[1]);
+          });
+        }
+
+        path.closePath();
+        return path;
+      }
+
+      function drawGear(config) {
+        const toothDepth = Math.max(8, config.radius * 0.12);
+        ctx.save();
+        ctx.translate(config.x, config.y);
+        ctx.rotate(config.angle);
+
+        const gearPath = toothPath(config.radius, config.teeth, toothDepth);
+        const fill = ctx.createRadialGradient(-config.radius * 0.2, -config.radius * 0.24, 10, 0, 0, config.radius + toothDepth);
+        fill.addColorStop(0, config.innerColor);
+        fill.addColorStop(1, config.outerColor);
+
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = config.stroke;
+        ctx.lineWidth = 2;
+        ctx.fill(gearPath);
+        ctx.stroke(gearPath);
+
+        ctx.beginPath();
+        ctx.arc(0, 0, config.radius * 0.46, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(9, 16, 28, 0.88)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(201, 226, 255, 0.16)';
+        ctx.stroke();
+
+        for (let spoke = 0; spoke < 6; spoke += 1) {
+          const theta = (Math.PI * 2 * spoke) / 6;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(theta) * config.radius * 0.18, Math.sin(theta) * config.radius * 0.18);
+          ctx.lineTo(Math.cos(theta) * config.radius * 0.78, Math.sin(theta) * config.radius * 0.78);
+          ctx.strokeStyle = 'rgba(225, 239, 255, 0.16)';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#dfe7f2';
+        ctx.fill();
+
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(228, 238, 250, 0.82)';
+        ctx.font = '700 11px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(config.label, config.x, config.y + config.radius + 30);
+      }
+
+      function drawMotor(x, y) {
+        ctx.save();
+        ctx.fillStyle = '#121d30';
+        ctx.strokeStyle = 'rgba(246, 193, 85, 0.28)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(x - 78, y - 42, 110, 84, 18);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#f7c95d';
+        ctx.font = '800 11px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('MOTOR', x - 22, y - 8);
+        ctx.fillStyle = 'rgba(225, 235, 248, 0.8)';
+        ctx.font = '600 10px Inter, sans-serif';
+        ctx.fillText('420 Nm · 120 rpm', x - 22, y + 14);
+        ctx.restore();
+      }
+
+      function drawTorqueArrow(x, y, width, color, label) {
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + width, y);
+        ctx.lineTo(x + width - 12, y - 8);
+        ctx.moveTo(x + width, y);
+        ctx.lineTo(x + width - 12, y + 8);
+        ctx.stroke();
+
+        ctx.font = '700 10px JetBrains Mono, monospace';
+        ctx.textAlign = width >= 0 ? 'left' : 'right';
+        ctx.fillText(label, x + width + (width >= 0 ? 10 : -10), y + 4);
+        ctx.restore();
+      }
+
+      function drawCrate(x, groundY, dt) {
+        const ropeTop = 104;
+        const crateSize = 54;
+        const crateY = groundY - system.lift;
+
+        if (system.mode === 'overspeed') {
+          system.bounce += dt * 0.015;
+        } else if (system.mode === 'lifting') {
+          system.bounce = Math.max(0, system.bounce * 0.9);
+        } else {
+          system.bounce *= 0.84;
+        }
+
+        const shake = system.mode === 'overspeed' ? Math.sin(system.bounce) * 7 : 0;
+        const sway = system.mode === 'stall' ? Math.sin(system.stallPhase) * 2 : 0;
+        const finalX = x + shake + sway;
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(196, 211, 225, 0.86)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath();
+        ctx.moveTo(x, ropeTop);
+        ctx.lineTo(finalX, crateY - crateSize);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#6b3412';
+        ctx.strokeStyle = '#f3a24c';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(finalX - (crateSize * 0.5), crateY - crateSize, crateSize, crateSize, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(255, 213, 146, 0.62)';
+        ctx.beginPath();
+        ctx.moveTo(finalX - 17, crateY - crateSize + 8);
+        ctx.lineTo(finalX + 17, crateY - 8);
+        ctx.moveTo(finalX + 17, crateY - crateSize + 8);
+        ctx.lineTo(finalX - 17, crateY - 8);
+        ctx.stroke();
+
+        ctx.fillStyle = '#f4f8ff';
+        ctx.font = '700 11px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(system.loadKg + ' KG', finalX, crateY - 22);
+        ctx.restore();
+      }
+
+      function drawHud(width, height) {
+        ctx.save();
+        const panelX = width - 220;
+        const panelY = 92;
+        ctx.fillStyle = 'rgba(6, 14, 24, 0.74)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, 176, 116, 18);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#f7c95d';
+        ctx.font = '800 10px JetBrains Mono, monospace';
+        ctx.fillText('TRANSMISSION READOUT', panelX + 16, panelY + 22);
+
+        ctx.fillStyle = 'rgba(230, 240, 252, 0.9)';
+        ctx.font = '600 11px Inter, sans-serif';
+        ctx.fillText('Ratio: ' + system.ratio.toFixed(2) + ' : 1', panelX + 16, panelY + 48);
+        ctx.fillText('Torque: ' + Math.round(system.outputTorque) + ' Nm', panelX + 16, panelY + 68);
+        ctx.fillText('Speed: ' + Math.round(system.outputSpeed) + ' rpm', panelX + 16, panelY + 88);
+        ctx.fillText('Load req: ' + Math.round(system.requiredTorque) + ' Nm', panelX + 16, panelY + 108);
+        ctx.restore();
+      }
+
+      function render(timestamp) {
+        if (!system.lastTime) {
+          system.lastTime = timestamp;
+        }
+
+        const dt = timestamp - system.lastTime;
+        system.lastTime = timestamp;
+
+        const width = canvas.getBoundingClientRect().width;
+        const height = canvas.getBoundingClientRect().height;
+        ctx.clearRect(0, 0, width, height);
+
+        const driverRadius = system.driverTeeth * 2.4;
+        const drivenRadius = system.drivenTeeth * 2.4;
+        const centerY = height * 0.49;
+        const driverX = clamp(180, (width * 0.34), width * 0.42);
+        const drivenX = driverX + driverRadius + drivenRadius + 6;
+        const drumX = Math.min(width - 138, drivenX + drivenRadius + 92);
+
+        if (system.running) {
+          const baseAngular = (INPUT_SPEED_RPM / 60) * Math.PI * 2;
+          const scaled = baseAngular / 60;
+
+          if (system.mode === 'lifting') {
+            system.rotation += scaled * (dt / 16.6667);
+            system.lift = Math.min(LIFT_TARGET, system.lift + ((SAFE_OUTPUT_SPEED_RPM / Math.max(system.outputSpeed, 1)) * 0.8) + ((system.outputSpeed / SAFE_OUTPUT_SPEED_RPM) * 0.6));
+            if (system.lift >= LIFT_TARGET) {
+              system.running = false;
+              system.mode = 'success';
+              testButton.disabled = false;
+              setStatus('Lift complete', '');
+              stageNote.textContent = 'Success. The transmission produced enough torque and kept the winch in a safe speed band.';
+              signal.textContent = 'Successful lift';
+              signal.className = 'gear-signal';
+            }
+          } else if (system.mode === 'overspeed') {
+            system.rotation += (scaled * 1.4) * (dt / 16.6667);
+            system.lift = Math.min(LIFT_TARGET * 0.62, system.lift + ((system.outputSpeed / SAFE_OUTPUT_SPEED_RPM) * 2.8));
+            if (system.lift >= LIFT_TARGET * 0.62) {
+              system.running = false;
+              testButton.disabled = false;
+              setStatus('Overspeed failure', 'is-warn');
+              stageNote.textContent = 'The hoist had enough force, but it ran too fast and destabilized the crate before the lift could finish.';
+              signal.textContent = 'Crate crash';
+              signal.className = 'gear-signal is-warn';
+            }
+          } else if (system.mode === 'stall') {
+            system.stallPhase += dt * 0.025;
+            system.rotation += Math.sin(system.stallPhase) * 0.02;
+          }
+        }
+
+        drawMotor(driverX - driverRadius - 44, centerY);
+
+        drawGear({
+          x: driverX,
+          y: centerY,
+          radius: driverRadius,
+          teeth: system.driverTeeth,
+          angle: system.rotation,
+          label: 'DRIVER',
+          innerColor: '#f7d06c',
+          outerColor: '#c4811f',
+          stroke: 'rgba(255, 226, 165, 0.34)'
+        });
+
+        drawGear({
+          x: drivenX,
+          y: centerY,
+          radius: drivenRadius,
+          teeth: system.drivenTeeth,
+          angle: -(system.rotation * (system.driverTeeth / system.drivenTeeth)) + (Math.PI / system.drivenTeeth),
+          label: 'DRIVEN',
+          innerColor: '#8ccbff',
+          outerColor: '#2d70d8',
+          stroke: 'rgba(193, 229, 255, 0.32)'
+        });
+
+        const torqueArrowWidth = clamp(46, (system.outputTorque / Math.max(system.requiredTorque, 1)) * 90, 108);
+        const speedArrowWidth = clamp(34, (system.outputSpeed / SAFE_OUTPUT_SPEED_RPM) * 88, 108);
+        drawTorqueArrow(driverX - 40, centerY - driverRadius - 34, 58, 'rgba(245, 200, 92, 0.92)', 'Input');
+        drawTorqueArrow(drivenX + 36, centerY - drivenRadius - 34, torqueArrowWidth, 'rgba(121, 214, 255, 0.9)', 'Output');
+        drawTorqueArrow(drumX - 20, centerY + 114, -speedArrowWidth, 'rgba(255, 169, 92, 0.74)', 'Winch rpm');
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(146, 181, 214, 0.4)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(drivenX + drivenRadius + 10, centerY);
+        ctx.lineTo(drumX, centerY);
+        ctx.lineTo(drumX, 108);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(drumX, 108, 16, 0, Math.PI * 2);
+        ctx.fillStyle = '#15253a';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(188, 216, 244, 0.5)';
+        ctx.stroke();
+        ctx.restore();
+
+        drawCrate(drumX, height - 62, dt);
+        drawHud(width, height);
+
+        requestAnimationFrame(render);
+      }
+
+      function engageMotor() {
+        computeState();
+        system.rotation = 0;
+        system.lift = 0;
+        system.bounce = 0;
+        system.stallPhase = 0;
+        system.running = true;
+        testButton.disabled = true;
+
+        if (system.outputTorque < system.requiredTorque) {
+          system.mode = 'stall';
+          setStatus('Motor stalled', 'is-danger');
+          stageNote.textContent = 'The motor is turning, but the transmission cannot create enough output torque to overcome the load.';
+          signal.textContent = 'Stall';
+          signal.className = 'gear-signal is-danger';
+          window.setTimeout(function () {
+            system.running = false;
+            testButton.disabled = false;
+          }, 1100);
+          return;
+        }
+
+        if (system.outputSpeed > SAFE_OUTPUT_SPEED_RPM) {
+          system.mode = 'overspeed';
+          setStatus('Overspeed lift', 'is-warn');
+          stageNote.textContent = 'The load is moving, but the winch is spinning too quickly for a safe hoist.';
+          signal.textContent = 'Overspeed';
+          signal.className = 'gear-signal is-warn';
+          return;
+        }
+
+        system.mode = 'lifting';
+        setStatus('Lifting load', '');
+        stageNote.textContent = 'The reduction ratio is doing exactly what a hoist needs: controlled speed with enough force to beat gravity.';
+        signal.textContent = 'Lifting';
+        signal.className = 'gear-signal';
+      }
+
+      function onControlInput() {
+        setReadyState();
+        updateUi();
+      }
+
+      driverSlider.addEventListener('input', onControlInput);
+      drivenSlider.addEventListener('input', onControlInput);
+      loadSlider.addEventListener('input', onControlInput);
+      testButton.addEventListener('click', engageMotor);
+      window.addEventListener('resize', resizeCanvas);
+
+      resizeCanvas();
+      updateUi();
+      requestAnimationFrame(render);
+    }());
+  </script>
+  </div>
+  </div>
+</div>
+</body>
+</html>
