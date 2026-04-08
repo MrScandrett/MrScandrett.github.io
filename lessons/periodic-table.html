@@ -90,6 +90,102 @@
       border-radius: 999px; font-size: 0.82rem; background: var(--white, #fff);
       color: var(--text, #1d1d1f); width: 165px; outline: none; font-family: inherit; }
     .pt-search:focus { border-color: var(--blue, #0071e3); }
+    .pt-temp-card,
+    .pt-lens-card {
+      display: grid;
+      gap: 0.7rem;
+      padding: 0.9rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.82);
+    }
+    .pt-temp-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+    }
+    .pt-temp-readout {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text, #1d1d1f);
+    }
+    .pt-temp-state {
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .pt-temp-slider {
+      width: 100%;
+      accent-color: var(--blue, #0071e3);
+    }
+    .pt-temp-scale {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.35rem;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: #7b8a9c;
+      text-transform: uppercase;
+    }
+    .pt-temp-scale span:nth-child(2),
+    .pt-temp-scale span:nth-child(3),
+    .pt-temp-scale span:nth-child(4) {
+      text-align: center;
+    }
+    .pt-temp-scale span:last-child {
+      text-align: right;
+    }
+    .pt-heatmap-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+    .pt-heat-btn,
+    .pt-command-btn,
+    .pt-command-item {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.86);
+      color: var(--text, #1d1d1f);
+      font: inherit;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+    .pt-heat-btn,
+    .pt-command-btn {
+      min-height: 2.5rem;
+      padding: 0.65rem 0.8rem;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-align: left;
+    }
+    .pt-heat-btn:hover,
+    .pt-command-btn:hover,
+    .pt-command-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0,113,227,0.34);
+      box-shadow: 0 10px 20px rgba(15,23,42,0.08);
+    }
+    .pt-heat-btn.is-active {
+      background: rgba(0,113,227,0.12);
+      border-color: rgba(0,113,227,0.46);
+      color: #0b58d6;
+    }
+    .pt-command-status,
+    .pt-data-note {
+      margin: 0;
+      font-size: 0.75rem;
+      line-height: 1.55;
+      color: #64748b;
+    }
+    .pt-data-note.is-ready {
+      color: #0f766e;
+    }
 
     /* ── Table container ──────────────────────────────── */
     .pt-wrap { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7);
@@ -110,11 +206,28 @@
     .el.el-selected { border-color: rgba(0,0,0,0.45) !important;
       transform: scale(1.1); z-index: 20; }
     .el.el-dimmed { opacity: 0.15; pointer-events: none; }
+    .el.el-isolated-out {
+      filter: blur(2px) grayscale(50%);
+      opacity: 0.22;
+    }
+    .el.el-command-match {
+      box-shadow:
+        0 0 0 2px rgba(255, 204, 0, 0.48),
+        0 8px 18px rgba(255, 204, 0, 0.18);
+    }
     .el-num  { font-size: 0.52rem; font-weight: 700; opacity: 0.75; line-height: 1; }
     .el-sym  { font-size: 1rem;    font-weight: 800; line-height: 1.1; text-align: center; }
     .el-name { font-size: 0.42rem; text-align: center; opacity: 0.8;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .el-mass { font-size: 0.42rem; text-align: center; opacity: 0.6; }
+    .el-phase {
+      font-size: 0.34rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center;
+      opacity: 0.7;
+    }
 
     /* ── f-block placeholder ──────────────────────────── */
     .pt-ph { border-radius: 5px; background: rgba(0,0,0,0.04);
@@ -136,18 +249,43 @@
     .pt-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.8rem;
       margin-top: 0.9rem; padding-top: 0.75rem;
       border-top: 1px solid var(--line, #d2d2d7); }
-    .pt-legend-item { display: flex; align-items: center; gap: 0.3rem;
-      font-size: 0.7rem; font-weight: 500; color: var(--text, #1d1d1f); }
+    .pt-legend-item { display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.7rem; font-weight: 600; color: var(--text, #1d1d1f);
+      border: 1px solid transparent; border-radius: 999px; background: transparent;
+      padding: 0.2rem 0.45rem; cursor: pointer; font-family: inherit; }
+    .pt-legend-item:hover { border-color: rgba(0,113,227,0.18); background: rgba(0,113,227,0.06); }
     .pt-legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
 
     /* ── Element detail panel ─────────────────────────── */
     .el-panel { margin-top: 1rem; background: var(--white, #fff);
       border: 1px solid var(--line, #d2d2d7); border-radius: var(--radius, 18px);
       box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
-      display: none; gap: 1.4rem; padding: 1.4rem 1.6rem; align-items: start; }
+      display: none; gap: 1.2rem; padding: 1.4rem 1.6rem; align-items: start; }
     .el-panel.ep-open { display: grid; grid-template-columns: auto 1fr;
       animation: epSlide 0.28s cubic-bezier(0.4,0,0.2,1); }
     @keyframes epSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .ep-visuals {
+      display: grid;
+      gap: 0.9rem;
+      width: min(100%, 270px);
+    }
+    .ep-card {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(244,247,253,0.86));
+      padding: 0.95rem;
+    }
+    .ep-card h3 {
+      margin: 0 0 0.3rem;
+      font-size: 0.84rem;
+      letter-spacing: -0.01em;
+    }
+    .ep-card p {
+      margin: 0;
+      color: #58677a;
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
 
     /* ── Bohr SVG ─────────────────────────────────────── */
     .bohr-svg { display: block; }
@@ -157,7 +295,7 @@
     @keyframes orb-ccw { to { transform: rotate(-360deg); } }
 
     /* ── Panel info ───────────────────────────────────── */
-    .ep-info { display: flex; flex-direction: column; gap: 0.55rem; min-width: 0; }
+    .ep-info { display: flex; flex-direction: column; gap: 0.7rem; min-width: 0; }
     .ep-top  { display: flex; align-items: flex-start; gap: 0.7rem; }
     .ep-header { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
     .ep-sym  { font-size: 2.8rem; font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
@@ -166,27 +304,251 @@
     .ep-meta { display: flex; flex-wrap: wrap; gap: 0.35rem 0.85rem;
       font-size: 0.8rem; color: #64748b; }
     .ep-meta strong { color: var(--text, #1d1d1f); font-weight: 700; }
-    .ep-badge { display: inline-block; padding: 3px 10px; border-radius: 999px;
-      font-size: 0.7rem; font-weight: 700; color: #fff; width: fit-content; }
+    .ep-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+    }
+    .ep-badge,
+    .ep-state,
+    .ep-crystal-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.8rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      width: fit-content;
+    }
+    .ep-badge { color: #fff; }
+    .ep-state,
+    .ep-crystal-tag {
+      border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(0,0,0,0.04);
+      color: #334155;
+    }
     .ep-config { font-size: 0.8rem; font-family: 'SF Mono', monospace;
       background: rgba(0,0,0,0.04); padding: 7px 11px; border-radius: 8px;
       color: var(--text, #1d1d1f); letter-spacing: 0.01em; }
     [data-theme="night"] .ep-config { background: rgba(255,255,255,0.07); }
     .ep-desc { font-size: 0.87rem; line-height: 1.65; color: #3f4f65; max-width: 60ch; }
     [data-theme="night"] .ep-desc { color: rgba(245,245,247,0.7); }
+    .ep-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+    .ep-stat {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px;
+      padding: 0.8rem;
+      background: rgba(255,255,255,0.8);
+      min-width: 0;
+    }
+    .ep-stat-label {
+      display: block;
+      font-size: 0.64rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 0.28rem;
+    }
+    .ep-stat-value {
+      display: block;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text, #1d1d1f);
+      line-height: 1.25;
+    }
+    .ep-stat-sub {
+      display: block;
+      margin-top: 0.15rem;
+      color: #64748b;
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
+    .ep-usage-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+    .ep-usage-item {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px;
+      padding: 0.85rem;
+      background: rgba(255,255,255,0.8);
+      display: grid;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+    .ep-usage-icon {
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+    .ep-usage-title {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--text, #1d1d1f);
+    }
+    .ep-usage-copy {
+      font-size: 0.72rem;
+      line-height: 1.45;
+      color: #64748b;
+    }
     .ep-close { background: none; border: 1px solid var(--line, #d2d2d7);
       border-radius: 8px; padding: 4px 10px; font-size: 0.76rem; cursor: pointer;
       color: #777; font-family: inherit; margin-left: auto; flex-shrink: 0; }
     .ep-close:hover { background: var(--line, #d2d2d7); }
+    .crystal-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* ── Command palette ─────────────────────────────── */
+    .pt-command {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 8vh 1rem 1rem;
+    }
+    .pt-command.is-open { display: flex; }
+    .pt-command-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15,23,42,0.42);
+      backdrop-filter: blur(6px);
+    }
+    .pt-command-dialog {
+      position: relative;
+      z-index: 1;
+      width: min(620px, calc(100vw - 2rem));
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.95);
+      box-shadow: 0 30px 80px rgba(15,23,42,0.22);
+      overflow: hidden;
+    }
+    .pt-command-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.8rem;
+      padding: 1rem;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .pt-command-input {
+      width: 100%;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 12px;
+      padding: 0.82rem 0.95rem;
+      font: inherit;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .pt-command-input:focus {
+      border-color: rgba(0,113,227,0.42);
+    }
+    .pt-command-close {
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.9);
+      padding: 0.75rem 0.95rem;
+      font: inherit;
+      cursor: pointer;
+    }
+    .pt-command-list {
+      display: grid;
+      gap: 0.35rem;
+      padding: 0.8rem;
+      max-height: min(56vh, 420px);
+      overflow: auto;
+    }
+    .pt-command-item {
+      display: grid;
+      gap: 0.18rem;
+      padding: 0.8rem 0.9rem;
+      text-align: left;
+    }
+    .pt-command-item strong {
+      font-size: 0.84rem;
+      color: var(--text, #1d1d1f);
+    }
+    .pt-command-item small {
+      color: #64748b;
+      font-size: 0.74rem;
+      line-height: 1.45;
+    }
+    .pt-command-empty {
+      padding: 1rem;
+      color: #64748b;
+      font-size: 0.82rem;
+    }
 
     @media (max-width: 700px) {
       .el-panel.ep-open { grid-template-columns: 1fr; }
       .bohr-svg { margin: 0 auto; }
       .pt-primer-grid { grid-template-columns: 1fr; }
+      .ep-stat-grid,
+      .ep-usage-grid,
+      .pt-heatmap-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 560px) {
+      .ep-stat-grid,
+      .ep-usage-grid,
+      .pt-heatmap-row {
+        grid-template-columns: 1fr;
+      }
+      .pt-command-head {
+        grid-template-columns: 1fr;
+      }
     }
     [data-theme="night"] .pt-wrap,
     [data-theme="night"] .el-panel { background: var(--white, #2c2c2e); }
     [data-theme="night"] .el { background: rgba(255,255,255,0.06) !important; }
+    [data-theme="night"] .pt-temp-card,
+    [data-theme="night"] .pt-lens-card,
+    [data-theme="night"] .ep-card,
+    [data-theme="night"] .ep-stat,
+    [data-theme="night"] .ep-usage-item,
+    [data-theme="night"] .pt-command-dialog,
+    [data-theme="night"] .pt-command-item,
+    [data-theme="night"] .pt-command-btn,
+    [data-theme="night"] .pt-heat-btn {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.1);
+      color: var(--text, #f5f5f7);
+    }
+    [data-theme="night"] .pt-command-input {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.1);
+      color: var(--text, #f5f5f7);
+    }
+    [data-theme="night"] .pt-command-status,
+    [data-theme="night"] .pt-data-note,
+    [data-theme="night"] .pt-temp-state,
+    [data-theme="night"] .ep-card p,
+    [data-theme="night"] .ep-stat-sub,
+    [data-theme="night"] .ep-usage-copy,
+    [data-theme="night"] .ep-stat-label,
+    [data-theme="night"] .pt-temp-scale,
+    [data-theme="night"] .pt-command-item small {
+      color: rgba(245,245,247,0.68);
+    }
+    [data-theme="night"] .ep-state,
+    [data-theme="night"] .ep-crystal-tag {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.12);
+      color: rgba(245,245,247,0.86);
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -260,8 +622,17 @@
 
     <!-- Detail Panel -->
     <div class="el-panel" id="el-panel" role="region" aria-label="Element details" aria-live="polite">
-      <div class="bohr-wrap">
-        <svg class="bohr-svg" id="bohr-svg" viewBox="0 0 280 280" width="210" height="210" aria-hidden="true"></svg>
+      <div class="ep-visuals">
+        <section class="ep-card bohr-wrap">
+          <h3>Electron Shell Model</h3>
+          <p id="ep-shell-note">Electron motion speeds up as electronegativity increases.</p>
+          <svg class="bohr-svg" id="bohr-svg" viewBox="0 0 280 280" width="210" height="210" aria-hidden="true"></svg>
+        </section>
+        <section class="ep-card">
+          <h3>Crystal Structure Preview</h3>
+          <svg class="crystal-svg" id="crystal-svg" viewBox="0 0 220 140" aria-hidden="true"></svg>
+          <p id="ep-crystal-note">Metals tend to form repeating lattices, while gases spread apart.</p>
+        </section>
       </div>
       <div class="ep-info">
         <div class="ep-top">
@@ -277,8 +648,14 @@
           </div>
           <button class="ep-close" id="ep-close" aria-label="Close element panel">✕ Close</button>
         </div>
-        <span class="ep-badge" id="ep-badge"></span>
+        <div class="ep-pill-row">
+          <span class="ep-badge" id="ep-badge"></span>
+          <span class="ep-state" id="ep-state"></span>
+          <span class="ep-crystal-tag" id="ep-crystal-tag"></span>
+        </div>
+        <div class="ep-stat-grid" id="ep-stats"></div>
         <div class="ep-config" id="ep-config"></div>
+        <div class="ep-usage-grid" id="ep-usage"></div>
         <p class="ep-desc" id="ep-desc"></p>
       </div>
     </div>
@@ -301,8 +678,32 @@
           <button class="pt-filter-btn" data-cat="all" style="color:#555;border-color:#bbb;" aria-pressed="true">All 118</button>
         </div>
         <hr class="ll-hr" />
+        <span class="ll-label">State of Matter</span>
+        <div class="pt-temp-card">
+          <div class="pt-temp-head">
+            <strong class="pt-temp-readout" id="pt-temp-readout">295 K</strong>
+            <span class="pt-temp-state" id="pt-temp-state-readout">Room temperature</span>
+          </div>
+          <input class="pt-temp-slider" id="pt-temp" type="range" min="0" max="4000" step="1" value="295" aria-label="Set global temperature in Kelvin" />
+          <div class="pt-temp-scale" aria-hidden="true">
+            <span>0 K</span>
+            <span>Cold</span>
+            <span>Room</span>
+            <span>Forge</span>
+            <span>4000 K</span>
+          </div>
+        </div>
+        <hr class="ll-hr" />
+        <span class="ll-label">Property Lens</span>
+        <div class="pt-heatmap-row" id="pt-heatmap" aria-label="Highlight table by property"></div>
+        <hr class="ll-hr" />
+        <span class="ll-label">Discovery Commands</span>
+        <button class="pt-command-btn" id="pt-command-open" type="button">Open command palette</button>
+        <p class="pt-command-status" id="pt-command-status">Try “batteries”, “balloons”, or “chips”.</p>
+        <hr class="ll-hr" />
         <span class="ll-label">Search</span>
         <input class="pt-search" type="search" placeholder="Search elements…" id="pt-search" aria-label="Search elements by name, symbol, or number" style="margin-left:0;width:100%;box-sizing:border-box;" />
+        <p class="pt-data-note" id="pt-data-note">Loading property data…</p>
       </div>
 
       <div class="ll-pane" id="pt-guide">
@@ -337,6 +738,17 @@
 
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
+
+  <div class="pt-command" id="pt-command" aria-hidden="true">
+    <div class="pt-command-backdrop" id="pt-command-backdrop"></div>
+    <div class="pt-command-dialog" role="dialog" aria-modal="true" aria-labelledby="pt-command-input">
+      <div class="pt-command-head">
+        <input class="pt-command-input" id="pt-command-input" type="text" placeholder="Search commands like batteries, balloons, chips…" />
+        <button class="pt-command-close" id="pt-command-close" type="button">Close</button>
+      </div>
+      <div class="pt-command-list" id="pt-command-list"></div>
+    </div>
+  </div>
 
   <footer class="site-footer" style="display:none;" aria-hidden="true">
     <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>

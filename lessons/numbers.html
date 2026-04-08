@@ -7,7 +7,7 @@
   <meta name="description" content="Mathematics Lesson 01 — discover the history of numbers, integers, fractions, primes, factors, multiples, modular arithmetic, and why dividing by zero breaks everything." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
@@ -38,6 +38,10 @@
     .num-card p:last-child { margin-bottom: 0; }
     [data-theme="night"] .num-card { background: var(--white,#2c2c2e); }
     [data-theme="night"] .num-card p { color: rgba(245,245,247,0.72); }
+    .num-data {
+      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      letter-spacing: 0;
+    }
 
     /* ── Timeline ── */
     .num-timeline { list-style: none; padding: 0; margin: 0.8rem 0 0; display: flex; flex-direction: column; gap: 0; }
@@ -105,6 +109,25 @@
       border: 1px solid var(--line,#d2d2d7); border-radius: 10px; margin-top: 0.6rem;
     }
     [data-theme="night"] .num-prime-info { background: rgba(255,255,255,0.04); color: rgba(245,245,247,0.72); }
+    .num-prime-toolbar {
+      display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin: 0.6rem 0;
+    }
+    .num-prime-cell.is-sieve-focus {
+      background: rgba(255,149,0,0.18);
+      border-color: rgba(255,149,0,0.55);
+      color: #ff9500;
+      transform: scale(1.08);
+    }
+    .num-prime-cell.is-crossed {
+      opacity: 0.2;
+      background: rgba(0,0,0,0.03);
+      color: #94a3b8;
+      text-decoration: line-through;
+      border-color: transparent;
+    }
+    [data-theme="night"] .num-prime-cell.is-crossed {
+      background: rgba(255,255,255,0.03);
+    }
 
     /* ── Factor finder ── */
     .num-factor-row { display: flex; gap: 0.7rem; align-items: center; margin: 0.7rem 0 0.5rem; flex-wrap: wrap; }
@@ -134,20 +157,72 @@
     [data-theme="night"] .num-chip { color: #ffb340; }
     .num-chip.prime-chip { background: rgba(255,149,0,0.22); border-color: #ff9500; }
 
-    /* ── Clock ── */
-    .num-clock-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin: 0.9rem 0; }
-    .num-clock-controls { display: flex; gap: 0.5rem 1rem; align-items: center; flex-wrap: wrap; justify-content: center; }
-    .num-clock-label { font-size: 0.82rem; font-weight: 700; color: #64748b; }
-    .num-clock-num {
-      width: 68px; padding: 6px 8px; border: 1.5px solid var(--line,#d2d2d7);
-      border-radius: 10px; font-size: 1rem; font-weight: 800; font-family: inherit;
-      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none; text-align: center;
+    /* ── Modular pattern engine ── */
+    .num-mod-wrap { display: grid; gap: 0.95rem; margin: 0.9rem 0; }
+    .num-mod-controls {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem;
     }
-    .num-clock-num:focus { border-color: #ff9500; }
-    #num-clock-canvas { border-radius: 50%; display: block; }
-    .num-clock-equation { font-size: 1.05rem; font-weight: 800; text-align: center; }
-    .num-clock-equation span { color: #ff9500; }
-    .num-clock-explain { font-size: 0.82rem; color: #64748b; text-align: center; max-width: 42ch; line-height: 1.5; }
+    .num-mod-control {
+      display: grid; gap: 0.35rem; padding: 0.8rem 0.9rem;
+      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7); border-radius: 12px;
+    }
+    [data-theme="night"] .num-mod-control { background: rgba(255,255,255,0.04); }
+    .num-mod-label { font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+    .num-mod-range { width: 100%; accent-color: #ff9500; }
+    .num-mod-value { font-size: 1rem; font-weight: 800; color: #ff9500; }
+    .num-mod-stage {
+      display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 0.85rem; align-items: stretch;
+    }
+    .num-mod-canvas-wrap {
+      position: relative; min-height: 420px; border-radius: 16px; overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, #141414 0%, #090b10 100%);
+      border: 1px solid rgba(255,149,0,0.16);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+    #num-mod-canvas { display: block; width: 100%; height: 100%; }
+    .num-mod-overlay {
+      position: absolute; top: 0.85rem; left: 0.85rem; right: 0.85rem;
+      display: flex; justify-content: space-between; gap: 0.75rem; pointer-events: none;
+    }
+    .num-mod-stat {
+      padding: 0.42rem 0.6rem; border-radius: 10px;
+      background: rgba(8, 10, 16, 0.78); border: 1px solid rgba(255,149,0,0.18);
+      color: rgba(255,255,255,0.88); font-size: 0.75rem;
+    }
+    .num-mod-side {
+      display: grid; gap: 0.75rem;
+      background: rgba(255,149,0,0.06); border: 1px solid rgba(255,149,0,0.18);
+      border-radius: 16px; padding: 0.95rem;
+    }
+    .num-mod-side p { margin: 0; font-size: 0.82rem; }
+    .num-mod-equation { font-size: 1rem; font-weight: 800; color: #ff9500; }
+    .num-mod-caption { font-size: 0.82rem; color: #64748b; line-height: 1.55; }
+
+    /* ── Infinite number line ── */
+    .num-line-wrap { display: grid; gap: 0.85rem; margin-top: 0.85rem; }
+    .num-line-head {
+      display: flex; justify-content: space-between; gap: 0.6rem; align-items: center; flex-wrap: wrap;
+    }
+    .num-line-controls {
+      display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;
+    }
+    .num-line-frame {
+      position: relative; min-height: 180px; border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,149,0,0.06), rgba(0,0,0,0.02));
+      border: 1px solid var(--line,#d2d2d7); overflow: hidden;
+    }
+    [data-theme="night"] .num-line-frame { background: linear-gradient(180deg, rgba(255,149,0,0.08), rgba(255,255,255,0.03)); }
+    #num-line-canvas { display: block; width: 100%; height: 180px; }
+    .num-line-readout {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+      font-size: 0.8rem; color: #64748b;
+    }
+    .num-line-pill {
+      padding: 0.3rem 0.55rem; border-radius: 999px;
+      background: rgba(255,149,0,0.1); border: 1px solid rgba(255,149,0,0.2);
+      color: #c27000;
+    }
+    [data-theme="night"] .num-line-pill { color: #ffb340; }
 
     /* ── Divide by zero ── */
     .num-zero-row { display: flex; align-items: center; gap: 0.8rem; margin: 0.7rem 0; flex-wrap: wrap; }
@@ -165,11 +240,22 @@
       padding: 0.85rem 1rem; border-radius: 12px;
       border: 1.5px solid rgba(255,59,48,0.25); background: rgba(255,59,48,0.05); margin-top: 0.5rem;
     }
+    .num-zero-display.is-unstable {
+      animation: num-zero-shake 0.22s linear;
+    }
     .num-zero-eq { font-size: 1.1rem; font-weight: 900; }
     .num-zero-result { font-size: 1rem; font-weight: 800; color: #ff3b30; }
     .num-zero-bar { width: 100%; height: 7px; border-radius: 4px; background: rgba(0,0,0,0.08); margin-top: 0.5rem; overflow: hidden; }
     .num-zero-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#ff9500,#ff3b30); transition: width 0.1s; }
     [data-theme="night"] .num-zero-bar { background: rgba(255,255,255,0.1); }
+    @keyframes num-zero-shake {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-4px); }
+      40% { transform: translateX(4px); }
+      60% { transform: translateX(-3px); }
+      80% { transform: translateX(3px); }
+      100% { transform: translateX(0); }
+    }
 
     /* ── Practice ── */
     .num-practice { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.75rem; }
@@ -199,6 +285,8 @@
 
     @media (max-width: 600px) {
       .num-type-grid { grid-template-columns: 1fr; }
+      .num-mod-controls,
+      .num-mod-stage { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -337,7 +425,7 @@
         </div>
       </div>
 
-      <p>The grid below shows 1–100. <strong style="color:#ff9500;">Orange</strong> = prime. Click any number to inspect it.</p>
+      <p>The grid below shows 1–100. <strong style="color:#ff9500;">Orange</strong> = prime. Click any number to inspect it, or run the sieve to watch composite numbers get filtered away.</p>
 
       <div class="num-prime-legend">
         <div class="num-prime-legend-item">
@@ -352,6 +440,12 @@
           <div class="num-legend-swatch" style="background:rgba(0,0,0,0.04);"></div>
           <span style="color:#94a3b8;">1 (neither)</span>
         </div>
+      </div>
+
+      <div class="num-prime-toolbar">
+        <button class="num-btn" type="button" onclick="runSieve()">Run Sieve</button>
+        <button class="num-btn" type="button" style="background:#1f2937;" onclick="resetPrimeGrid()">Reset Grid</button>
+        <span class="num-data" id="num-sieve-status" style="font-size:0.8rem;color:#64748b;">Ready to filter multiples.</span>
       </div>
 
       <div class="num-prime-grid" id="num-prime-grid"></div>
@@ -398,8 +492,8 @@
 
     <!-- ── 5. Modular arithmetic ── -->
     <section class="num-card" style="--card-accent:#ff9500;">
-      <h2>🕐 Modular Arithmetic — Clock Math</h2>
-      <p>What time is it <strong>5 hours after 10 o'clock?</strong> Not 15:00 — it's <strong>3:00</strong>. That's modular arithmetic in action. Numbers "wrap around" when they reach a certain value called the <strong>modulus</strong>.</p>
+      <h2>🌀 Modular Arithmetic — Pattern Math</h2>
+      <p>Clock math is just the beginning. When a number wraps around a circle and gets multiplied again and again, modular arithmetic turns into geometry. The result is string art made from pure remainders.</p>
 
       <div class="num-callout orange">
         <span class="num-callout-icon">🔢</span>
@@ -409,19 +503,42 @@
         </div>
       </div>
 
-      <h3>Interactive Clock Calculator</h3>
-      <p>Set a starting hour and add any number of hours. See where the hand lands.</p>
+      <h3>Modular String Art</h3>
+      <p>Pick how many points live on the circle and how fast the multiplier changes. At multiplier 2, the pattern forms a cardioid. At 3, a nephroid appears. Arithmetic becomes visible.</p>
 
-      <div class="num-clock-wrap">
-        <div class="num-clock-controls">
-          <span class="num-clock-label">Start hour:</span>
-          <input type="number" class="num-clock-num" id="num-clock-start" value="10" min="1" max="12" oninput="updateClock()" />
-          <span class="num-clock-label">+ add hours:</span>
-          <input type="number" class="num-clock-num" id="num-clock-add" value="5" min="0" max="999" oninput="updateClock()" />
+      <div class="num-mod-wrap">
+        <div class="num-mod-controls">
+          <label class="num-mod-control" for="num-mod-points">
+            <span class="num-mod-label">Points on Circle</span>
+            <input class="num-mod-range" id="num-mod-points" type="range" min="60" max="280" step="10" value="180" oninput="updateModControls()" />
+            <span class="num-mod-value num-data" id="num-mod-points-val">180</span>
+          </label>
+          <label class="num-mod-control" for="num-mod-multiplier">
+            <span class="num-mod-label">Multiplier</span>
+            <input class="num-mod-range" id="num-mod-multiplier" type="range" min="1" max="20" step="0.05" value="2" oninput="setManualMultiplier(this.value)" />
+            <span class="num-mod-value num-data" id="num-mod-multiplier-val">2.00</span>
+          </label>
+          <label class="num-mod-control" for="num-mod-speed">
+            <span class="num-mod-label">Animation Speed</span>
+            <input class="num-mod-range" id="num-mod-speed" type="range" min="0" max="1.5" step="0.05" value="0.35" oninput="updateModControls()" />
+            <span class="num-mod-value num-data" id="num-mod-speed-val">0.35x</span>
+          </label>
         </div>
-        <canvas id="num-clock-canvas" width="200" height="200"></canvas>
-        <div class="num-clock-equation" id="num-clock-eq"></div>
-        <div class="num-clock-explain" id="num-clock-explain"></div>
+
+        <div class="num-mod-stage">
+          <div class="num-mod-canvas-wrap">
+            <canvas id="num-mod-canvas" width="720" height="420"></canvas>
+            <div class="num-mod-overlay">
+              <div class="num-mod-stat num-data">Rule: x → (x × m) mod n</div>
+              <div class="num-mod-stat num-data" id="num-mod-family">Family: Cardioid threshold</div>
+            </div>
+          </div>
+          <div class="num-mod-side">
+            <div class="num-mod-equation num-data" id="num-mod-eq">x → (x × 2.00) mod 180</div>
+            <p id="num-mod-explain">At multiplier 2, every point connects to double itself around the circle. The repeated wraparound makes a heart-like cardioid.</p>
+            <p class="num-mod-caption">This is why modular arithmetic matters in computer graphics, music sequencing, cryptography, and digital pattern design: the same remainder rule can create rhythm, symmetry, and structure.</p>
+          </div>
+        </div>
       </div>
 
       <h3>Mod in the Real World</h3>
@@ -442,6 +559,28 @@
           <div class="num-type-name">📦 Hash Tables</div>
           <div class="num-type-desc">Computers store data using mod: slot = hash(item) mod table_size. Every dictionary in code uses this.</div>
         </div>
+      </div>
+    </section>
+
+    <section class="num-card" style="--card-accent:#ff9500;">
+      <h2>🔎 The Infinite Zoom Number Line</h2>
+      <p>Between 0 and 1 there is no “next” fraction. Zoom in and the line keeps revealing new rational waypoints: halves, quarters, eighths, sixteenths. Density is the point.</p>
+
+      <div class="num-line-wrap">
+        <div class="num-line-head">
+          <div class="num-line-readout">
+            <span class="num-line-pill num-data" id="num-line-range-pill">Window: 0.0000 → 1.0000</span>
+            <span class="num-line-pill num-data" id="num-line-step-pill">Resolution: halves</span>
+          </div>
+          <div class="num-line-controls">
+            <button class="num-btn" type="button" style="background:#1f2937;" onclick="zoomNumberLine(-1)">Zoom Out</button>
+            <button class="num-btn" type="button" onclick="zoomNumberLine(1)">Zoom In</button>
+          </div>
+        </div>
+        <div class="num-line-frame">
+          <canvas id="num-line-canvas" width="900" height="180"></canvas>
+        </div>
+        <p class="num-mod-caption">Each zoom step halves the window around the centre. New fractions appear because number lines are not made of isolated pebbles; they are dense with structure.</p>
       </div>
     </section>
 

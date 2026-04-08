@@ -136,13 +136,15 @@
 
     .dna-helix {
       margin-top: 1rem;
-      min-height: 280px;
+      min-height: 360px;
       border-radius: 28px;
-      border: 1px solid rgba(38, 107, 191, 0.12);
+      border: 1px solid rgba(109, 177, 255, 0.2);
       background:
-        linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(232, 242, 255, 0.94));
+        radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.65), transparent 16%),
+        linear-gradient(180deg, rgba(15, 33, 58, 0.94), rgba(17, 46, 83, 0.96));
       position: relative;
       overflow: hidden;
+      padding: 1.15rem;
     }
 
     .dna-helix::before,
@@ -153,8 +155,9 @@
       bottom: 10%;
       width: 8px;
       border-radius: 999px;
-      background: linear-gradient(180deg, #67a4ff, #2c7be5);
-      filter: drop-shadow(0 8px 18px rgba(44, 123, 229, 0.25));
+      background: linear-gradient(180deg, rgba(103, 164, 255, 0.8), rgba(44, 123, 229, 0.9));
+      filter: drop-shadow(0 8px 18px rgba(44, 123, 229, 0.35));
+      opacity: 0.9;
     }
 
     .dna-helix::before {
@@ -165,30 +168,383 @@
     .dna-helix::after {
       right: 34%;
       transform: rotate(-18deg);
-      background: linear-gradient(180deg, #6dddb4, #2ca67f);
+      background: linear-gradient(180deg, rgba(109, 221, 180, 0.86), rgba(44, 166, 127, 0.92));
+    }
+
+    .dna-helix-head {
+      position: relative;
+      z-index: 2;
+      max-width: 27rem;
+    }
+
+    .dna-helix-head h2 {
+      color: #f6fbff;
+      margin-bottom: 0.45rem;
+    }
+
+    .dna-helix-head p,
+    .dna-helix-head strong {
+      color: rgba(232, 243, 255, 0.84);
+    }
+
+    .dna-helix-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-top: 0.85rem;
+      padding: 0.45rem 0.72rem;
+      border-radius: 999px;
+      border: 1px solid rgba(145, 195, 255, 0.25);
+      background: rgba(255, 255, 255, 0.08);
+      font: 600 0.74rem "IBM Plex Mono", monospace;
+      color: #dbeeff;
+    }
+
+    .dna-helix-board {
+      position: absolute;
+      inset: 0;
+      padding: 3.9rem 1rem 1.1rem;
     }
 
     .dna-rung {
       position: absolute;
       left: 50%;
-      width: 34%;
-      height: 8px;
+      width: 38%;
+      min-height: 42px;
       transform: translateX(-50%);
       border-radius: 999px;
-      background: linear-gradient(90deg, rgba(44, 123, 229, 0.9), rgba(109, 221, 180, 0.9));
-      box-shadow: 0 4px 12px rgba(64, 115, 188, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0 0.5rem;
+      background: linear-gradient(90deg, rgba(44, 123, 229, 0.15), rgba(109, 221, 180, 0.15));
+      border: 1px solid rgba(150, 207, 255, 0.14);
+      transform-style: preserve-3d;
+      animation: dna-rung-spin var(--spin-speed, 5.6s) infinite linear;
+      box-shadow: 0 10px 20px rgba(9, 20, 38, 0.22);
     }
 
-    .dna-rung span {
+    .dna-rung::before {
+      content: "";
       position: absolute;
-      top: -1.1rem;
-      font: 700 0.76rem "IBM Plex Mono", monospace;
-      color: #47617f;
-      letter-spacing: 0.08em;
+      left: 18%;
+      right: 18%;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.35), rgba(255,255,255,0.06));
+      top: 50%;
+      transform: translateY(-50%);
     }
 
-    .dna-rung .left { left: 0.2rem; }
-    .dna-rung .right { right: 0.2rem; }
+    .dna-rung.is-fixed {
+      box-shadow: 0 0 0 1px rgba(118, 255, 212, 0.28), 0 0 28px rgba(118, 255, 212, 0.24);
+      background: linear-gradient(90deg, rgba(44, 123, 229, 0.28), rgba(109, 221, 180, 0.28));
+    }
+
+    .dna-rung.is-spark::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(125, 255, 229, 0.35) 32%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .dna-base,
+    .dna-choice {
+      position: relative;
+      z-index: 1;
+      width: 2.7rem;
+      height: 2.7rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font: 700 0.95rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.08em;
+      border: 1px solid transparent;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .dna-base {
+      color: #fff;
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.12);
+    }
+
+    .dna-choice {
+      appearance: none;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.08);
+      color: #edf6ff;
+      border-color: rgba(169, 210, 255, 0.2);
+    }
+
+    .dna-choice:hover,
+    .dna-choice:focus-visible {
+      transform: translateY(-1px) scale(1.04);
+      border-color: rgba(173, 227, 255, 0.55);
+      box-shadow: 0 0 18px rgba(135, 208, 255, 0.2);
+      outline: none;
+    }
+
+    .dna-choice.is-correct {
+      background: rgba(118, 255, 212, 0.18);
+      border-color: rgba(118, 255, 212, 0.48);
+      box-shadow: 0 0 18px rgba(118, 255, 212, 0.28);
+    }
+
+    .dna-choice.is-wrong {
+      background: rgba(255, 118, 139, 0.16);
+      border-color: rgba(255, 118, 139, 0.4);
+    }
+
+    .dna-base-a { background: rgba(255, 88, 88, 0.92); box-shadow: 0 0 16px rgba(255, 88, 88, 0.3); }
+    .dna-base-t { background: rgba(92, 149, 255, 0.92); box-shadow: 0 0 16px rgba(92, 149, 255, 0.3); }
+    .dna-base-c { background: rgba(255, 203, 79, 0.92); color: #213; box-shadow: 0 0 16px rgba(255, 203, 79, 0.28); }
+    .dna-base-g { background: rgba(77, 214, 152, 0.92); box-shadow: 0 0 16px rgba(77, 214, 152, 0.28); }
+
+    .dna-helix-meter {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      z-index: 2;
+      min-width: 170px;
+      border-radius: 16px;
+      padding: 0.8rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(155, 205, 255, 0.18);
+      backdrop-filter: blur(12px);
+    }
+
+    .dna-helix-meter p {
+      margin: 0 0 0.28rem;
+      color: #d6ebff;
+      font: 600 0.72rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .dna-meter-track {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .dna-meter-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #67a4ff, #6dddb4);
+      transition: width 0.22s ease;
+    }
+
+    .dna-helix-note {
+      margin-top: 0.55rem;
+      color: rgba(220, 238, 255, 0.8);
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+
+    .dna-square-shell {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .dna-lab-panel {
+      border-radius: 22px;
+      border: 1px solid rgba(38, 107, 191, 0.1);
+      background: linear-gradient(180deg, rgba(248, 252, 255, 0.92), rgba(237, 245, 255, 0.88));
+      padding: 1rem;
+    }
+
+    .dna-control-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .dna-control {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .dna-control label {
+      font: 700 0.72rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #567393;
+    }
+
+    .dna-control select {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid rgba(38, 107, 191, 0.14);
+      background: rgba(255, 255, 255, 0.8);
+      padding: 0.75rem 0.85rem;
+      font: 600 0.92rem "IBM Plex Mono", monospace;
+      color: #1f3e67;
+    }
+
+    .dna-square {
+      margin-top: 0;
+      display: grid;
+      grid-template-columns: 80px repeat(2, minmax(110px, 1fr));
+      gap: 0.45rem;
+      align-items: stretch;
+    }
+
+    .dna-square div {
+      min-height: 84px;
+      border-radius: 18px;
+      border: 1px solid rgba(38, 107, 191, 0.08);
+      background: rgba(255, 255, 255, 0.62);
+      display: grid;
+      place-items: center;
+      padding: 0.6rem;
+      text-align: center;
+      backdrop-filter: blur(12px);
+    }
+
+    .dna-square .label {
+      min-height: 56px;
+      font-weight: 800;
+      color: #32547a;
+      background: rgba(226, 238, 252, 0.72);
+    }
+
+    .dna-offspring {
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .dna-offspring:hover,
+    .dna-offspring:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(38, 107, 191, 0.28);
+      box-shadow: 0 12px 24px rgba(34, 90, 160, 0.12);
+      outline: none;
+    }
+
+    .dna-offspring.is-selected {
+      border-color: rgba(38, 107, 191, 0.44);
+      box-shadow: 0 0 0 2px rgba(103, 164, 255, 0.14), 0 14px 28px rgba(34, 90, 160, 0.14);
+      background: rgba(255, 255, 255, 0.84);
+    }
+
+    .dna-square .genotype {
+      font: 700 1.18rem "IBM Plex Mono", monospace;
+      color: #20456f;
+    }
+
+    .dna-square .phenotype {
+      font-size: 0.82rem;
+      color: #55708d;
+    }
+
+    .dna-square .chance {
+      margin-top: 0.2rem;
+      font: 600 0.72rem "IBM Plex Mono", monospace;
+      color: #286fb8;
+    }
+
+    .dna-prob-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.8rem;
+    }
+
+    .dna-prob-card {
+      border-radius: 18px;
+      padding: 0.85rem;
+      border: 1px solid rgba(38, 107, 191, 0.08);
+      background: rgba(255, 255, 255, 0.56);
+      backdrop-filter: blur(10px);
+    }
+
+    .dna-prob-card strong {
+      display: block;
+      font: 800 1.18rem "IBM Plex Mono", monospace;
+      color: #18446d;
+    }
+
+    .dna-prob-card span {
+      display: block;
+      margin-top: 0.28rem;
+      font-size: 0.8rem;
+      color: #5f7896;
+    }
+
+    .dna-plant-card {
+      border-radius: 22px;
+      border: 1px solid rgba(38, 107, 191, 0.1);
+      background: linear-gradient(180deg, rgba(245, 251, 255, 0.86), rgba(232, 244, 255, 0.92));
+      padding: 1rem;
+    }
+
+    .dna-plant-card h3 {
+      margin-bottom: 0.35rem;
+    }
+
+    .dna-plant-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      margin-top: 0.8rem;
+    }
+
+    .dna-plant-stage {
+      transform-origin: center 320px;
+      transition: transform 0.28s ease;
+    }
+
+    .dna-seed {
+      transition: fill 0.24s ease, filter 0.24s ease;
+    }
+
+    .dna-readout {
+      margin-top: 0.8rem;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .dna-readout div {
+      border-radius: 16px;
+      padding: 0.7rem 0.8rem;
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid rgba(38, 107, 191, 0.08);
+    }
+
+    .dna-readout strong {
+      display: block;
+      font: 700 0.72rem "IBM Plex Mono", monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #567393;
+    }
+
+    .dna-readout span {
+      display: block;
+      margin-top: 0.24rem;
+      color: #21456f;
+      font-weight: 700;
+    }
+
+    @keyframes dna-rung-spin {
+      from { transform: translateX(-50%) rotateY(0deg); }
+      to { transform: translateX(-50%) rotateY(360deg); }
+    }
 
     .dna-mini-grid,
     .dna-flip-grid,
@@ -251,42 +607,6 @@
       text-transform: uppercase;
     }
 
-    .dna-square {
-      margin-top: 1rem;
-      display: grid;
-      grid-template-columns: 84px repeat(2, minmax(90px, 1fr));
-      gap: 0.45rem;
-      align-items: stretch;
-    }
-
-    .dna-square div {
-      min-height: 84px;
-      border-radius: 22px;
-      border: 1px solid rgba(38, 107, 191, 0.11);
-      background: rgba(247, 251, 255, 0.94);
-      display: grid;
-      place-items: center;
-      padding: 0.6rem;
-      text-align: center;
-    }
-
-    .dna-square .label {
-      min-height: 56px;
-      font-weight: 800;
-      color: #32547a;
-      background: rgba(229, 239, 252, 0.94);
-    }
-
-    .dna-square .genotype {
-      font: 700 1.2rem "IBM Plex Mono", monospace;
-      color: #20456f;
-    }
-
-    .dna-square .phenotype {
-      font-size: 0.82rem;
-      color: #55708d;
-    }
-
     .dna-list {
       margin: 0.8rem 0 0;
       padding-left: 1.1rem;
@@ -297,8 +617,22 @@
       .dna-grid-3,
       .dna-mini-grid,
       .dna-flip-grid,
-      .dna-case-grid {
+      .dna-case-grid,
+      .dna-square-shell {
         grid-template-columns: 1fr;
+      }
+
+      .dna-control-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .dna-helix-board {
+        padding-top: 8.7rem;
+      }
+
+      .dna-helix-meter {
+        position: static;
+        margin-top: 0.8rem;
       }
     }
 
@@ -312,7 +646,15 @@
       }
 
       .dna-square {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 64px repeat(2, minmax(0, 1fr));
+      }
+
+      .dna-rung {
+        width: 48%;
+      }
+
+      .dna-prob-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -350,12 +692,19 @@
         <span>Replication</span>
         <span>Punnett squares</span>
       </div>
-      <div class="dna-helix" aria-hidden="true">
-        <div class="dna-rung" style="top:16%;"><span class="left">A</span><span class="right">T</span></div>
-        <div class="dna-rung" style="top:30%; width:30%;"><span class="left">C</span><span class="right">G</span></div>
-        <div class="dna-rung" style="top:44%; width:35%;"><span class="left">G</span><span class="right">C</span></div>
-        <div class="dna-rung" style="top:58%; width:31%;"><span class="left">T</span><span class="right">A</span></div>
-        <div class="dna-rung" style="top:72%; width:34%;"><span class="left">A</span><span class="right">T</span></div>
+      <div class="dna-helix" id="dna-helix">
+        <div class="dna-helix-head">
+          <p class="dna-kicker" style="color:#9fd0ff;">Code Cracker</p>
+          <h2>Repair the DNA ladder</h2>
+          <p>Click the correct complementary base to finish each rung. Match <strong>A with T</strong> and <strong>C with G</strong>. Each correct repair makes the helix spin faster and glow brighter.</p>
+          <div class="dna-helix-status" id="dna-helix-status">0 / 5 rungs repaired</div>
+        </div>
+        <div class="dna-helix-meter">
+          <p>Repair Meter</p>
+          <div class="dna-meter-track"><div class="dna-meter-bar" id="dna-meter-bar"></div></div>
+          <div class="dna-helix-note" id="dna-helix-note">Stable DNA needs the right partner on every rung.</div>
+        </div>
+        <div class="dna-helix-board" id="dna-helix-board" aria-label="Interactive DNA base pairing game"></div>
       </div>
     </section>
 
@@ -463,25 +812,75 @@
     </section>
 
     <section class="dna-card">
-      <p class="dna-kicker">Model</p>
-      <h2>How a Punnett square predicts outcomes</h2>
-      <p>A Punnett square is a probability tool. It does not tell us what will happen to every individual offspring, but it helps us predict likely genotype and phenotype ratios.</p>
-      <div class="dna-square" aria-label="Punnett square for Tt x Tt">
-        <div class="label"></div>
-        <div class="label">T</div>
-        <div class="label">t</div>
-        <div class="label">T</div>
-        <div><div class="genotype">TT</div><div class="phenotype">Dominant trait</div></div>
-        <div><div class="genotype">Tt</div><div class="phenotype">Dominant trait</div></div>
-        <div class="label">t</div>
-        <div><div class="genotype">Tt</div><div class="phenotype">Dominant trait</div></div>
-        <div><div class="genotype">tt</div><div class="phenotype">Recessive trait</div></div>
+      <p class="dna-kicker">Breeding Lab</p>
+      <h2>Genetic Breeding Lab</h2>
+      <p>Pick a trait, choose the parent genotypes, and watch the square re-calculate. Then click any offspring box to turn the genotype into a visible pea plant phenotype.</p>
+      <div class="dna-square-shell">
+        <div class="dna-lab-panel">
+          <div class="dna-control-grid">
+            <div class="dna-control">
+              <label for="dna-trait-select">Trait</label>
+              <select id="dna-trait-select">
+                <option value="height">Plant height (T/t)</option>
+                <option value="color">Seed color (Y/y)</option>
+              </select>
+            </div>
+            <div class="dna-control">
+              <label for="dna-parent-1">Parent 1</label>
+              <select id="dna-parent-1"></select>
+            </div>
+            <div class="dna-control">
+              <label for="dna-parent-2">Parent 2</label>
+              <select id="dna-parent-2"></select>
+            </div>
+          </div>
+          <div class="dna-square" id="dna-square" aria-label="Interactive Punnett square"></div>
+          <div class="dna-prob-grid" id="dna-prob-grid"></div>
+        </div>
+        <aside class="dna-plant-card">
+          <p class="dna-kicker">Phenotype Visualizer</p>
+          <h3>Virtual Pea Plant</h3>
+          <p id="dna-plant-summary">Select an offspring genotype to see how the inherited letters show up in the plant.</p>
+          <svg class="dna-plant-svg" id="visual-plant" viewBox="0 0 280 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pea plant phenotype visualizer">
+            <defs>
+              <linearGradient id="dnaLeafGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#59c172" />
+                <stop offset="100%" stop-color="#2e8b57" />
+              </linearGradient>
+              <linearGradient id="dnaStemGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#71c75e" />
+                <stop offset="100%" stop-color="#2f8e3f" />
+              </linearGradient>
+            </defs>
+            <rect x="84" y="315" width="112" height="26" rx="10" fill="#8a6b4a" opacity="0.18"/>
+            <path d="M72 314 C122 290, 162 290, 212 314" fill="#7ab85d" opacity="0.42"/>
+            <g class="dna-plant-stage" id="dna-plant-stage">
+              <rect id="dna-stem" x="134" y="110" width="12" height="190" rx="8" fill="url(#dnaStemGrad)"/>
+              <path d="M139 160 C100 148, 92 128, 102 112 C124 114, 136 132, 139 160Z" fill="url(#dnaLeafGrad)"/>
+              <path d="M141 200 C176 188, 194 166, 184 148 C160 152, 145 172, 141 200Z" fill="url(#dnaLeafGrad)"/>
+              <path d="M139 238 C105 230, 95 214, 101 196 C122 198, 136 214, 139 238Z" fill="url(#dnaLeafGrad)"/>
+              <path d="M141 268 C170 258, 188 238, 182 220 C158 224, 146 242, 141 268Z" fill="url(#dnaLeafGrad)"/>
+              <circle class="dna-seed" id="dna-seed-1" cx="112" cy="104" r="16" fill="#ffd54f"/>
+              <circle class="dna-seed" id="dna-seed-2" cx="140" cy="88" r="18" fill="#ffd54f"/>
+              <circle class="dna-seed" id="dna-seed-3" cx="168" cy="104" r="16" fill="#ffd54f"/>
+            </g>
+          </svg>
+          <div class="dna-readout">
+            <div>
+              <strong>Selected genotype</strong>
+              <span id="dna-selected-genotype">Tt</span>
+            </div>
+            <div>
+              <strong>Visible phenotype</strong>
+              <span id="dna-selected-phenotype">Tall plant</span>
+            </div>
+            <div>
+              <strong>Dominance note</strong>
+              <span id="dna-selected-note">One dominant allele is enough to make the plant tall.</span>
+            </div>
+          </div>
+        </aside>
       </div>
-      <ul class="dna-list">
-        <li>Genotype ratio: 1 <code>TT</code> : 2 <code>Tt</code> : 1 <code>tt</code></li>
-        <li>Phenotype ratio: 3 dominant : 1 recessive</li>
-        <li>This works best for simple single-gene examples used in intro genetics</li>
-      </ul>
     </section>
 
     <section class="dna-card">

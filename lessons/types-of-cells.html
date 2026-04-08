@@ -221,6 +221,7 @@
         linear-gradient(180deg, rgba(19, 72, 42, 0.08), rgba(19, 72, 42, 0.03));
       position: relative;
       overflow: hidden;
+      isolation: isolate;
     }
 
     .cell-shell,
@@ -237,24 +238,30 @@
       inset: 16% 14%;
       background: radial-gradient(circle at 36% 34%, rgba(185, 243, 209, 0.94), rgba(78, 184, 122, 0.94));
       box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.24);
+      border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+      animation: membrane-breathe 7s ease-in-out infinite;
     }
 
     .cell-shell.is-plant {
       border-radius: 28px;
       inset: 13% 12%;
       background: linear-gradient(145deg, rgba(198, 239, 160, 0.95), rgba(92, 181, 95, 0.95));
+      animation: none;
     }
 
     .cell-shell.is-bacteria {
       inset: 32% 18%;
       border-radius: 999px;
       background: linear-gradient(145deg, rgba(147, 239, 181, 0.96), rgba(40, 159, 111, 0.96));
+      animation: none;
     }
 
     .cell-core {
       inset: 35% 36%;
       background: radial-gradient(circle at 30% 30%, rgba(255, 247, 214, 0.95), rgba(241, 188, 74, 0.96));
       box-shadow: 0 12px 24px rgba(129, 88, 12, 0.15);
+      animation: organelle-drift 6.4s ease-in-out infinite;
+      cursor: pointer;
     }
 
     .cell-core.is-hidden {
@@ -264,12 +271,21 @@
     .cell-organelle {
       background: rgba(255, 255, 255, 0.82);
       box-shadow: 0 6px 12px rgba(20, 60, 40, 0.08);
+      backdrop-filter: blur(4px);
+      animation: organelle-drift 5.8s ease-in-out infinite;
+      cursor: pointer;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, outline-color 0.22s ease;
+      outline: 2px solid transparent;
+      z-index: 2;
     }
 
     .cell-organelle.one { width: 42px; height: 22px; top: 28%; left: 26%; }
     .cell-organelle.two { width: 32px; height: 32px; top: 54%; left: 30%; background: rgba(152, 228, 244, 0.92); }
     .cell-organelle.three { width: 38px; height: 18px; top: 58%; right: 26%; background: rgba(255, 219, 164, 0.92); }
     .cell-organelle.four { width: 26px; height: 26px; top: 26%; right: 28%; background: rgba(237, 197, 255, 0.9); }
+    .cell-organelle.two { animation-delay: -1.2s; }
+    .cell-organelle.three { animation-delay: -2.1s; }
+    .cell-organelle.four { animation-delay: -3.2s; }
 
     .cell-vacuole {
       width: 120px;
@@ -279,6 +295,9 @@
       background: radial-gradient(circle at 30% 30%, rgba(225, 247, 255, 0.82), rgba(138, 206, 233, 0.78));
       border: 2px solid rgba(255, 255, 255, 0.45);
       display: none;
+      backdrop-filter: blur(4px);
+      animation: organelle-drift 7.1s ease-in-out infinite;
+      cursor: pointer;
     }
 
     .cell-wall {
@@ -314,6 +333,61 @@
     .cell-label.wall { top: 8%; left: 14%; display: none; }
     .cell-label.dna { top: 22%; left: 18%; display: none; }
     .cell-label.tail { top: 55%; right: 5%; display: none; }
+
+    .cytoplasm-particle {
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.26);
+      pointer-events: none;
+      animation: cytoplasm-float 8s ease-in-out infinite;
+      z-index: 1;
+    }
+
+    .cell-focus-ring {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .cell-inspector {
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 5;
+      border-radius: 18px;
+      padding: 0.85rem 1rem;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(238, 246, 240, 0.94));
+      border: 1px solid rgba(26, 127, 75, 0.12);
+      box-shadow: 0 18px 36px rgba(26, 68, 42, 0.12);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      pointer-events: none;
+    }
+
+    .cell-inspector.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .cell-inspector strong {
+      display: block;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #1a7f4b;
+    }
+
+    .cell-inspector span {
+      display: block;
+      margin-top: 0.35rem;
+      color: #355443;
+      line-height: 1.55;
+      font-size: 0.84rem;
+    }
 
     .focus-copy h3 {
       font-size: 1.5rem;
@@ -410,6 +484,17 @@
       background: linear-gradient(180deg, rgba(251, 255, 251, 0.95), rgba(236, 246, 237, 0.95));
     }
 
+    .organelle-card {
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      cursor: pointer;
+    }
+
+    .organelle-card.is-linked {
+      border-color: rgba(26, 127, 75, 0.34);
+      box-shadow: 0 18px 34px rgba(26, 127, 75, 0.12);
+      transform: translateY(-2px);
+    }
+
     .organelle-icon,
     .special-icon {
       width: 2.5rem;
@@ -499,6 +584,122 @@
       color: rgba(239, 255, 241, 0.9);
     }
 
+    .morph-lab {
+      margin-top: 1rem;
+      border-radius: 22px;
+      padding: 1rem;
+      border: 1px solid rgba(26, 127, 75, 0.12);
+      background: linear-gradient(180deg, rgba(251, 255, 251, 0.95), rgba(236, 246, 237, 0.95));
+    }
+
+    .morph-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 0.8rem;
+    }
+
+    .morph-btn {
+      border: 1px solid rgba(26, 127, 75, 0.16);
+      background: rgba(255, 255, 255, 0.9);
+      color: #28503c;
+      border-radius: 999px;
+      padding: 0.55rem 0.85rem;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+
+    .morph-btn:hover,
+    .morph-btn[aria-pressed="true"] {
+      background: rgba(26, 127, 75, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .morph-stage {
+      margin-top: 0.9rem;
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .cell-visual--morph {
+      min-height: 220px;
+    }
+
+    .cell-visual--morph .cell-shell {
+      transition: inset 0.9s ease, border-radius 0.9s ease, clip-path 0.9s ease, transform 0.9s ease, box-shadow 0.9s ease;
+    }
+
+    .cell-visual--morph .cell-core {
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .cell-visual--morph.is-neuron .cell-shell {
+      inset: 17% 18%;
+      clip-path: polygon(50% 0%, 63% 26%, 86% 18%, 74% 40%, 100% 48%, 76% 57%, 88% 82%, 58% 70%, 50% 100%, 42% 70%, 12% 82%, 24% 57%, 0% 48%, 26% 40%, 14% 18%, 37% 26%);
+      border-radius: 0;
+      box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.18);
+    }
+
+    .cell-visual--morph.is-rbc .cell-shell {
+      inset: 22% 24%;
+      border-radius: 50%;
+      clip-path: none;
+      box-shadow:
+        inset 0 0 0 12px rgba(255, 255, 255, 0.18),
+        inset 0 0 38px rgba(90, 20, 20, 0.22);
+      transform: scaleY(0.78);
+      background: radial-gradient(circle at 50% 48%, rgba(255, 196, 196, 0.58) 0 24%, rgba(218, 84, 84, 0.9) 52%, rgba(167, 36, 36, 0.95) 100%);
+    }
+
+    .cell-visual--morph.is-rbc .cell-core {
+      opacity: 0;
+      transform: scale(0);
+    }
+
+    .morph-copy {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .morph-copy h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .morph-copy p {
+      margin: 0;
+      color: #486653;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    @keyframes organelle-drift {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      33% { transform: translate3d(4px, -5px, 0) scale(1.03); }
+      66% { transform: translate3d(-3px, 5px, 0) scale(0.98); }
+    }
+
+    @keyframes cytoplasm-float {
+      0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.18; }
+      50% { transform: translate3d(8px, -10px, 0); opacity: 0.38; }
+    }
+
+    @keyframes membrane-breathe {
+      0%, 100% {
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        transform: scale(1);
+      }
+      50% {
+        border-radius: 52% 48% 38% 62% / 52% 42% 58% 48%;
+        transform: scale(1.01);
+      }
+    }
+
     .pathway-links {
       display: grid;
       gap: 0.8rem;
@@ -537,6 +738,7 @@
     @media (max-width: 980px) {
       .cells-grid--2,
       .focus-top,
+      .morph-stage,
       .special-grid,
       .organelle-grid,
       .starter-grid,
@@ -566,6 +768,12 @@
 
       .cell-visual {
         min-height: 220px;
+      }
+
+      .cell-inspector {
+        left: 0.75rem;
+        right: 0.75rem;
+        bottom: 0.75rem;
       }
     }
   </style>
@@ -642,19 +850,24 @@
             <div class="focus-panel">
               <div class="focus-top">
                 <div class="cell-visual" aria-hidden="true">
+                  <div class="cell-focus-ring"></div>
                   <div class="cell-wall"></div>
                   <div class="cell-shell"></div>
-                  <div class="cell-core"></div>
-                  <div class="cell-vacuole"></div>
-                  <div class="cell-organelle one"></div>
-                  <div class="cell-organelle two"></div>
-                  <div class="cell-organelle three"></div>
-                  <div class="cell-organelle four"></div>
+                  <div class="cell-core" data-organelle="nucleus"></div>
+                  <div class="cell-vacuole" data-organelle="vacuole"></div>
+                  <div class="cell-organelle one" data-organelle="ribosomes"></div>
+                  <div class="cell-organelle two" data-organelle="mitochondria"></div>
+                  <div class="cell-organelle three" data-organelle="chloroplasts"></div>
+                  <div class="cell-organelle four" data-organelle="cell-wall"></div>
                   <div class="cell-flagellum"></div>
                   <div class="cell-label nucleus">Nucleus</div>
                   <div class="cell-label wall">Cell wall</div>
                   <div class="cell-label dna">DNA region</div>
                   <div class="cell-label tail">Flagellum</div>
+                  <div class="cell-inspector" id="cell-inspector" aria-live="polite">
+                    <strong id="cell-inspector-title">Organelle Inspector</strong>
+                    <span id="cell-inspector-copy">Select a structure to see its job inside the cell.</span>
+                  </div>
                 </div>
                 <div class="focus-copy">
                   <h3 id="focus-title">Bacterial Cell</h3>
@@ -715,32 +928,32 @@
             <h2>Organelle Guide</h2>
             <p class="section-copy">Organelles are the working parts inside a cell. Instead of memorizing names alone, connect each one to a job.</p>
             <div class="organelle-grid">
-              <article class="organelle-card">
+              <article class="organelle-card" data-organelle="nucleus">
                 <div class="organelle-icon">N</div>
                 <h3>Nucleus</h3>
                 <p>The control center. It stores DNA and helps direct what proteins the cell builds.</p>
               </article>
-              <article class="organelle-card">
+              <article class="organelle-card" data-organelle="mitochondria">
                 <div class="organelle-icon">M</div>
                 <h3>Mitochondria</h3>
                 <p>The energy processors. They break down food molecules to release usable energy for the cell.</p>
               </article>
-              <article class="organelle-card">
+              <article class="organelle-card" data-organelle="chloroplasts">
                 <div class="organelle-icon">C</div>
                 <h3>Chloroplasts</h3>
                 <p>Found in plant cells. They capture sunlight and turn it into stored chemical energy through photosynthesis.</p>
               </article>
-              <article class="organelle-card">
+              <article class="organelle-card" data-organelle="vacuole">
                 <div class="organelle-icon">V</div>
                 <h3>Vacuole</h3>
                 <p>A storage space for water, nutrients, and wastes. In plant cells the central vacuole also helps hold shape.</p>
               </article>
-              <article class="organelle-card">
+              <article class="organelle-card" data-organelle="ribosomes">
                 <div class="organelle-icon">R</div>
                 <h3>Ribosomes</h3>
                 <p>Protein builders. Ribosomes are found in all cells, including prokaryotic cells.</p>
               </article>
-              <article class="organelle-card">
+              <article class="organelle-card" data-organelle="cell-wall">
                 <div class="organelle-icon">W</div>
                 <h3>Cell Wall</h3>
                 <p>A rigid outer support layer found in plants and many bacteria. It helps protect the cell and maintain shape.</p>
@@ -776,6 +989,29 @@
             <div class="teach-note">
               <h3>Teaching Move</h3>
               <p>Ask students to finish the sentence <span class="mono">"This shape helps because..."</span> for each specialized cell. That keeps the focus on structure and function instead of isolated vocabulary.</p>
+            </div>
+            <div class="morph-lab">
+              <h3>Specialization Morph Lab</h3>
+              <p class="section-copy">Start with a generic animal cell, then morph it into a specialist. The visual change should match the job.</p>
+              <div class="morph-toolbar" role="toolbar" aria-label="Morph the cell model">
+                <button class="morph-btn" type="button" data-morph="animal" aria-pressed="true">Generic Animal</button>
+                <button class="morph-btn" type="button" data-morph="neuron" aria-pressed="false">Neuron</button>
+                <button class="morph-btn" type="button" data-morph="red-blood-cell" aria-pressed="false">Red Blood Cell</button>
+              </div>
+              <div class="morph-stage">
+                <div class="cell-visual cell-visual--morph" id="morph-visual" aria-hidden="true">
+                  <div class="cell-shell"></div>
+                  <div class="cell-core"></div>
+                  <div class="cell-organelle one"></div>
+                  <div class="cell-organelle two"></div>
+                  <div class="cell-organelle three"></div>
+                  <div class="cell-organelle four"></div>
+                </div>
+                <div class="morph-copy">
+                  <h3 id="morph-title">Generic Animal Cell</h3>
+                  <p id="morph-copy">A flexible animal cell can be reshaped into many specialist forms. Its membrane supports a wide range of jobs.</p>
+                </div>
+              </div>
             </div>
           </section>
         </div>
@@ -949,6 +1185,7 @@
     };
 
     const compareButtons = Array.from(document.querySelectorAll(".compare-btn"));
+    const visual = document.querySelector(".cell-visual");
     const shell = document.querySelector(".cell-shell");
     const core = document.querySelector(".cell-core");
     const vacuole = document.querySelector(".cell-vacuole");
@@ -958,6 +1195,117 @@
     const wallLabel = document.querySelector(".cell-label.wall");
     const dnaLabel = document.querySelector(".cell-label.dna");
     const tailLabel = document.querySelector(".cell-label.tail");
+    const inspector = document.getElementById("cell-inspector");
+    const inspectorTitle = document.getElementById("cell-inspector-title");
+    const inspectorCopy = document.getElementById("cell-inspector-copy");
+    const organelleCards = Array.from(document.querySelectorAll(".organelle-card"));
+    const organelleNodes = Array.from(document.querySelectorAll(".cell-core, .cell-organelle, .cell-vacuole"));
+    const morphButtons = Array.from(document.querySelectorAll(".morph-btn"));
+    const morphVisual = document.getElementById("morph-visual");
+    const morphTitle = document.getElementById("morph-title");
+    const morphCopy = document.getElementById("morph-copy");
+
+    const ORGANELLE_INFO = {
+      nucleus: {
+        title: "Nucleus",
+        copy: "Stores DNA and helps direct what proteins the cell builds. It is one of the clearest signs that a cell is eukaryotic."
+      },
+      mitochondria: {
+        title: "Mitochondria",
+        copy: "Release usable energy from food molecules so the cell can keep working."
+      },
+      chloroplasts: {
+        title: "Chloroplasts",
+        copy: "Capture sunlight and convert it into stored chemical energy during photosynthesis."
+      },
+      vacuole: {
+        title: "Vacuole",
+        copy: "Stores water and dissolved materials. In plant cells it also helps maintain pressure and shape."
+      },
+      ribosomes: {
+        title: "Ribosomes",
+        copy: "Assemble proteins. Ribosomes are found in all cells, including bacteria."
+      },
+      "cell-wall": {
+        title: "Cell Wall",
+        copy: "Provides protection and support outside the cell membrane, helping the cell keep its shape."
+      }
+    };
+
+    const MORPH_DATA = {
+      animal: {
+        title: "Generic Animal Cell",
+        copy: "A flexible animal cell can be reshaped into many specialist forms. Its membrane supports a wide range of jobs."
+      },
+      neuron: {
+        title: "Neuron",
+        copy: "Long branches help neurons receive and send signals. The stretched shape supports communication across long distances."
+      },
+      "red-blood-cell": {
+        title: "Red Blood Cell",
+        copy: "The nucleus is removed and the cell flattens into a biconcave disc, leaving more room to carry oxygen."
+      }
+    };
+
+    function buildCytoplasmParticles(count = 34) {
+      if (!visual) return;
+      visual.querySelectorAll(".cytoplasm-particle").forEach(node => node.remove());
+      for (let i = 0; i < count; i += 1) {
+        const particle = document.createElement("span");
+        const size = (Math.random() * 4 + 2).toFixed(1);
+        particle.className = "cytoplasm-particle";
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        particle.style.animationDelay = `${(Math.random() * 6).toFixed(2)}s`;
+        particle.style.animationDuration = `${(6 + Math.random() * 4).toFixed(2)}s`;
+        visual.prepend(particle);
+      }
+    }
+
+    function setInspector(organelleKey) {
+      const data = ORGANELLE_INFO[organelleKey];
+      if (!inspector || !inspectorTitle || !inspectorCopy || !data) return;
+      inspectorTitle.textContent = data.title;
+      inspectorCopy.textContent = data.copy;
+      inspector.classList.add("is-visible");
+    }
+
+    function setLinkedOrganelle(organelleKey) {
+      organelleCards.forEach((card) => {
+        card.classList.toggle("is-linked", card.dataset.organelle === organelleKey);
+      });
+      organelleNodes.forEach((node) => {
+        const active = node.dataset.organelle === organelleKey;
+        node.style.outlineColor = active ? "rgba(26, 127, 75, 0.46)" : "transparent";
+        node.style.boxShadow = active
+          ? "0 0 0 6px rgba(26, 127, 75, 0.14), 0 14px 28px rgba(20, 60, 40, 0.12)"
+          : "";
+        node.style.transform = active ? "scale(1.08)" : "";
+      });
+    }
+
+    function resetLinkedOrganelle() {
+      organelleCards.forEach((card) => card.classList.remove("is-linked"));
+      organelleNodes.forEach((node) => {
+        node.style.outlineColor = "transparent";
+        node.style.boxShadow = "";
+        node.style.transform = "";
+      });
+    }
+
+    function renderMorph(type) {
+      if (!morphVisual || !morphTitle || !morphCopy) return;
+      morphVisual.classList.remove("is-neuron", "is-rbc");
+      if (type === "neuron") morphVisual.classList.add("is-neuron");
+      if (type === "red-blood-cell") morphVisual.classList.add("is-rbc");
+      morphTitle.textContent = MORPH_DATA[type].title;
+      morphCopy.textContent = MORPH_DATA[type].copy;
+      morphButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", button.dataset.morph === type ? "true" : "false");
+      });
+    }
 
     function renderCell(cellKey) {
       const data = CELL_DATA[cellKey];
@@ -983,13 +1331,52 @@
         const active = button.dataset.cell === cellKey;
         button.setAttribute("aria-pressed", active ? "true" : "false");
       });
+
+      resetLinkedOrganelle();
+      buildCytoplasmParticles(cellKey === "bacteria" ? 22 : cellKey === "plant" ? 40 : 34);
+      setInspector(cellKey === "bacteria" ? "ribosomes" : data.showVacuole ? "vacuole" : "nucleus");
     }
 
     compareButtons.forEach((button) => {
       button.addEventListener("click", () => renderCell(button.dataset.cell));
     });
 
+    organelleNodes.forEach((node) => {
+      node.addEventListener("click", () => {
+        const organelleKey = node.dataset.organelle;
+        if (!organelleKey) return;
+        setInspector(organelleKey);
+        setLinkedOrganelle(organelleKey);
+      });
+    });
+
+    organelleCards.forEach((card) => {
+      card.addEventListener("mouseenter", () => {
+        const organelleKey = card.dataset.organelle;
+        if (!organelleKey) return;
+        setLinkedOrganelle(organelleKey);
+      });
+      card.addEventListener("mouseleave", resetLinkedOrganelle);
+      card.addEventListener("focusin", () => {
+        const organelleKey = card.dataset.organelle;
+        if (!organelleKey) return;
+        setLinkedOrganelle(organelleKey);
+      });
+      card.addEventListener("focusout", resetLinkedOrganelle);
+      card.addEventListener("click", () => {
+        const organelleKey = card.dataset.organelle;
+        if (!organelleKey) return;
+        setInspector(organelleKey);
+        setLinkedOrganelle(organelleKey);
+      });
+    });
+
+    morphButtons.forEach((button) => {
+      button.addEventListener("click", () => renderMorph(button.dataset.morph));
+    });
+
     renderCell("bacteria");
+    renderMorph("animal");
 
     document.querySelectorAll(".quiz-card").forEach((card) => {
       const answer = card.dataset.answer;
