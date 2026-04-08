@@ -922,6 +922,317 @@
     <p><a href="../steam-lessons.html#module-lifesci">Back to Life Sciences</a></p>
   </footer>
   <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      const HELIX_ENGINE = {
+        complement: { A: "T", T: "A", C: "G", G: "C" },
+        rungs: ["A", "C", "G", "T", "A"],
+        choices: [
+          ["T", "G"],
+          ["A", "G"],
+          ["C", "T"],
+          ["A", "C"],
+          ["T", "C"]
+        ]
+      };
+
+      const GENETIC_ENGINE = {
+        traits: {
+          height: { dominant: "T", recessive: "t", domName: "Tall plant", recName: "Short plant", description: "Stem height" },
+          color: { dominant: "Y", recessive: "y", domName: "Yellow seeds", recName: "Green seeds", description: "Seed color" }
+        },
+        calculate: function (p1, p2) {
+          const alleles1 = p1.split("");
+          const alleles2 = p2.split("");
+          const outcomes = [];
+
+          alleles1.forEach(function (a1) {
+            alleles2.forEach(function (a2) {
+              outcomes.push(orderGenotype(a1 + a2));
+            });
+          });
+          return outcomes;
+        }
+      };
+
+      const helixBoard = document.getElementById("dna-helix-board");
+      const helixStatus = document.getElementById("dna-helix-status");
+      const helixBar = document.getElementById("dna-meter-bar");
+      const helixNote = document.getElementById("dna-helix-note");
+      const helixRoot = document.getElementById("dna-helix");
+
+      const traitSelect = document.getElementById("dna-trait-select");
+      const parent1Select = document.getElementById("dna-parent-1");
+      const parent2Select = document.getElementById("dna-parent-2");
+      const squareRoot = document.getElementById("dna-square");
+      const probGrid = document.getElementById("dna-prob-grid");
+      const plantSummary = document.getElementById("dna-plant-summary");
+      const plantStage = document.getElementById("dna-plant-stage");
+      const selectedGenotype = document.getElementById("dna-selected-genotype");
+      const selectedPhenotype = document.getElementById("dna-selected-phenotype");
+      const selectedNote = document.getElementById("dna-selected-note");
+      const seeds = [
+        document.getElementById("dna-seed-1"),
+        document.getElementById("dna-seed-2"),
+        document.getElementById("dna-seed-3")
+      ];
+
+      const labState = {
+        trait: "height",
+        parent1: "Tt",
+        parent2: "Tt",
+        selectedOutcome: "Tt"
+      };
+
+      function orderGenotype(genotype) {
+        return genotype.split("").sort(function (a, b) {
+          const aUpper = a === a.toUpperCase();
+          const bUpper = b === b.toUpperCase();
+          if (aUpper !== bUpper) return aUpper ? -1 : 1;
+          return a.localeCompare(b);
+        }).join("");
+      }
+
+      function getTraitOptions(traitKey) {
+        const trait = GENETIC_ENGINE.traits[traitKey];
+        return [
+          trait.dominant + trait.dominant,
+          trait.dominant + trait.recessive,
+          trait.recessive + trait.recessive
+        ];
+      }
+
+      function phenotypeFor(traitKey, genotype) {
+        const trait = GENETIC_ENGINE.traits[traitKey];
+        return genotype.includes(trait.dominant) ? trait.domName : trait.recName;
+      }
+
+      function updatePlant(traitKey, genotype) {
+        const isDominant = genotype.includes(GENETIC_ENGINE.traits[traitKey].dominant);
+        if (traitKey === "height") {
+          plantStage.style.transform = isDominant ? "scaleY(1.08)" : "scaleY(0.72)";
+          seeds.forEach(function (seed) {
+            seed.setAttribute("fill", "#ffd54f");
+          });
+          selectedPhenotype.textContent = isDominant ? "Tall plant" : "Short plant";
+          selectedNote.textContent = isDominant
+            ? "One dominant T allele is enough to build the tall-stem phenotype."
+            : "Only tt removes the dominant instruction, so the plant stays short.";
+        } else {
+          plantStage.style.transform = "scaleY(1)";
+          seeds.forEach(function (seed) {
+            seed.setAttribute("fill", isDominant ? "#ffd54f" : "#75b64a");
+          });
+          selectedPhenotype.textContent = isDominant ? "Yellow seeds" : "Green seeds";
+          selectedNote.textContent = isDominant
+            ? "At least one Y allele makes the seeds yellow."
+            : "Only yy leaves the recessive green seed color visible.";
+        }
+        selectedGenotype.textContent = genotype;
+        plantSummary.textContent = "Selected offspring " + genotype + " shows the " + phenotypeFor(traitKey, genotype).toLowerCase() + " phenotype.";
+      }
+
+      function renderProbabilityCards(outcomes) {
+        const total = outcomes.length;
+        const genotypeCounts = outcomes.reduce(function (acc, genotype) {
+          acc[genotype] = (acc[genotype] || 0) + 1;
+          return acc;
+        }, {});
+        const phenotypeCounts = outcomes.reduce(function (acc, genotype) {
+          const phenotype = phenotypeFor(labState.trait, genotype);
+          acc[phenotype] = (acc[phenotype] || 0) + 1;
+          return acc;
+        }, {});
+
+        const cards = [];
+        Object.keys(genotypeCounts).sort().forEach(function (key) {
+          cards.push(
+            '<div class="dna-prob-card"><strong>' +
+              Math.round((genotypeCounts[key] / total) * 100) +
+              '%</strong><span>' +
+              key +
+              " genotype</span></div>"
+          );
+        });
+        Object.keys(phenotypeCounts).forEach(function (key) {
+          cards.push(
+            '<div class="dna-prob-card"><strong>' +
+              Math.round((phenotypeCounts[key] / total) * 100) +
+              '%</strong><span>' +
+              key +
+              "</span></div>"
+          );
+        });
+        probGrid.innerHTML = cards.join("");
+      }
+
+      function renderPunnettSquare() {
+        const trait = GENETIC_ENGINE.traits[labState.trait];
+        const alleles1 = labState.parent1.split("");
+        const alleles2 = labState.parent2.split("");
+        const outcomes = GENETIC_ENGINE.calculate(labState.parent1, labState.parent2);
+        const counts = outcomes.reduce(function (acc, genotype) {
+          acc[genotype] = (acc[genotype] || 0) + 1;
+          return acc;
+        }, {});
+
+        squareRoot.innerHTML = "";
+        squareRoot.insertAdjacentHTML("beforeend", '<div class="label"></div>');
+        alleles2.forEach(function (allele) {
+          squareRoot.insertAdjacentHTML("beforeend", '<div class="label">' + allele + "</div>");
+        });
+
+        alleles1.forEach(function (leftAllele) {
+          squareRoot.insertAdjacentHTML("beforeend", '<div class="label">' + leftAllele + "</div>");
+          alleles2.forEach(function (topAllele) {
+            const genotype = orderGenotype(leftAllele + topAllele);
+            const phenotype = phenotypeFor(labState.trait, genotype);
+            const chance = Math.round((counts[genotype] / outcomes.length) * 100);
+            const selectedClass = genotype === labState.selectedOutcome ? " is-selected" : "";
+            squareRoot.insertAdjacentHTML(
+              "beforeend",
+              '<div class="dna-offspring' +
+                selectedClass +
+                '" tabindex="0" data-genotype="' +
+                genotype +
+                '">' +
+                '<div class="genotype">' + genotype + "</div>" +
+                '<div class="phenotype">' + phenotype + "</div>" +
+                '<div class="chance">' + chance + "% chance</div>" +
+              "</div>"
+            );
+          });
+        });
+
+        squareRoot.querySelectorAll(".dna-offspring").forEach(function (cell) {
+          cell.addEventListener("click", function () {
+            labState.selectedOutcome = cell.dataset.genotype;
+            renderPunnettSquare();
+            updatePlant(labState.trait, labState.selectedOutcome);
+          });
+          cell.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              cell.click();
+            }
+          });
+        });
+
+        renderProbabilityCards(outcomes);
+        updatePlant(labState.trait, labState.selectedOutcome);
+      }
+
+      function populateParentMenus() {
+        const options = getTraitOptions(labState.trait);
+        [parent1Select, parent2Select].forEach(function (select, index) {
+          const current = index === 0 ? labState.parent1 : labState.parent2;
+          select.innerHTML = options.map(function (value) {
+            return '<option value="' + value + '"' + (value === current ? " selected" : "") + ">" + value + "</option>";
+          }).join("");
+        });
+      }
+
+      function updateLabForTrait(traitKey) {
+        const trait = GENETIC_ENGINE.traits[traitKey];
+        labState.trait = traitKey;
+        labState.parent1 = trait.dominant + trait.recessive;
+        labState.parent2 = trait.dominant + trait.recessive;
+        labState.selectedOutcome = trait.dominant + trait.recessive;
+        populateParentMenus();
+        renderPunnettSquare();
+      }
+
+      function renderHelixGame() {
+        helixBoard.innerHTML = "";
+        HELIX_ENGINE.rungs.forEach(function (base, index) {
+          const top = 17 + (index * 15);
+          const width = 32 + ((index % 2) * 5);
+          const rung = document.createElement("div");
+          rung.className = "dna-rung";
+          rung.style.top = top + "%";
+          rung.style.width = width + "%";
+          rung.style.setProperty("--spin-speed", "5.6s");
+
+          const left = document.createElement("div");
+          left.className = "dna-base dna-base-" + base.toLowerCase();
+          left.textContent = base;
+          rung.appendChild(left);
+
+          const choiceWrap = document.createElement("div");
+          choiceWrap.style.display = "flex";
+          choiceWrap.style.gap = "0.4rem";
+
+          HELIX_ENGINE.choices[index].forEach(function (choice) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "dna-choice dna-base-" + choice.toLowerCase();
+            button.textContent = choice;
+            button.addEventListener("click", function () {
+              const correct = HELIX_ENGINE.complement[base];
+              if (choice === correct) {
+                button.classList.add("is-correct");
+                rung.classList.add("is-fixed", "is-spark");
+                choiceWrap.querySelectorAll("button").forEach(function (other) {
+                  other.disabled = true;
+                });
+                setTimeout(function () {
+                  rung.classList.remove("is-spark");
+                }, 320);
+                updateHelixProgress();
+              } else {
+                button.classList.add("is-wrong");
+                helixNote.textContent = "Not quite. " + base + " only pairs with " + correct + ".";
+                setTimeout(function () {
+                  button.classList.remove("is-wrong");
+                }, 320);
+              }
+            });
+            choiceWrap.appendChild(button);
+          });
+
+          rung.appendChild(choiceWrap);
+          helixBoard.appendChild(rung);
+        });
+        updateHelixProgress();
+      }
+
+      function updateHelixProgress() {
+        const repaired = helixBoard.querySelectorAll(".dna-rung.is-fixed").length;
+        const total = HELIX_ENGINE.rungs.length;
+        const progress = (repaired / total) * 100;
+        helixStatus.textContent = repaired + " / " + total + " rungs repaired";
+        helixBar.style.width = progress + "%";
+        const speed = Math.max(1.9, 5.6 - (repaired * 0.65));
+        helixRoot.querySelectorAll(".dna-rung").forEach(function (rung) {
+          rung.style.setProperty("--spin-speed", speed + "s");
+        });
+        if (repaired === total) {
+          helixNote.textContent = "Repair complete. Complementary base pairing is what makes accurate DNA copying possible.";
+          helixRoot.style.boxShadow = "0 0 0 1px rgba(118,255,212,0.18), 0 28px 70px rgba(44,123,229,0.18)";
+        } else {
+          helixRoot.style.boxShadow = "";
+          helixNote.textContent = "Stable DNA needs the right partner on every rung.";
+        }
+      }
+
+      traitSelect.addEventListener("change", function () {
+        updateLabForTrait(traitSelect.value);
+      });
+
+      parent1Select.addEventListener("change", function () {
+        labState.parent1 = parent1Select.value;
+        renderPunnettSquare();
+      });
+
+      parent2Select.addEventListener("change", function () {
+        labState.parent2 = parent2Select.value;
+        renderPunnettSquare();
+      });
+
+      renderHelixGame();
+      updateLabForTrait("height");
+    })();
+  </script>
   <script src="../assets/js/classroom-animations.js"></script>
 </body>
 </html>

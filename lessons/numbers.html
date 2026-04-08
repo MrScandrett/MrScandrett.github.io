@@ -702,17 +702,23 @@
           </div>
         </div>
         <hr class="ll-hr" />
-        <span class="ll-label">Clock Calculator</span>
+        <span class="ll-label">Pattern Engine</span>
         <div class="ll-param">
-          <div class="ll-param-label">Start hour</div>
-          <input type="number" min="1" max="12" value="10"
-            onchange="document.getElementById('num-clock-start').value=this.value;updateClock();"
+          <div class="ll-param-label">Points on circle</div>
+          <input type="range" min="60" max="280" step="10" value="180"
+            onchange="document.getElementById('num-mod-points').value=this.value;updateModControls();"
             style="width:100%;padding:6px 8px;border:1.5px solid var(--ll-panel-border);border-radius:8px;font-size:0.9rem;font-family:inherit;background:transparent;color:inherit;margin-top:0.25rem;" />
         </div>
         <div class="ll-param">
-          <div class="ll-param-label">Add hours</div>
-          <input type="number" min="0" max="999" value="5"
-            onchange="document.getElementById('num-clock-add').value=this.value;updateClock();"
+          <div class="ll-param-label">Multiplier</div>
+          <input type="range" min="1" max="20" step="0.05" value="2"
+            onchange="document.getElementById('num-mod-multiplier').value=this.value;setManualMultiplier(this.value);"
+            style="width:100%;padding:6px 8px;border:1.5px solid var(--ll-panel-border);border-radius:8px;font-size:0.9rem;font-family:inherit;background:transparent;color:inherit;margin-top:0.25rem;" />
+        </div>
+        <div class="ll-param">
+          <div class="ll-param-label">Animation speed</div>
+          <input type="range" min="0" max="1.5" step="0.05" value="0.35"
+            onchange="document.getElementById('num-mod-speed').value=this.value;updateModControls();"
             style="width:100%;padding:6px 8px;border:1.5px solid var(--ll-panel-border);border-radius:8px;font-size:0.9rem;font-family:inherit;background:transparent;color:inherit;margin-top:0.25rem;" />
         </div>
       </div>
@@ -742,11 +748,11 @@
         <span class="ll-label">Modular Arithmetic</span>
         <div class="ll-info">
           <strong>a mod n</strong>
-          The remainder when a is divided by n. Clock math: 15 mod 12 = 3.
+          The remainder when a is divided by n. Pattern math: x → (x × m) mod n.
         </div>
         <div class="ll-info">
           <strong>Why it matters</strong>
-          RSA encryption, calendar calculations, hash tables, and game loops all rely on mod.
+          RSA encryption, symmetry engines, sequencers, hash tables, and game loops all rely on mod.
         </div>
       </div>
     </div>
@@ -792,6 +798,9 @@ Ancient Egyptians used fractions extensively in construction. The precision of t
     }
 
     /* ── Prime helpers ── */
+    let primeCells = [];
+    let sieveRunId = 0;
+
     function isPrime(n) {
       if (n < 2) return false;
       if (n === 2) return true;
@@ -817,6 +826,7 @@ Ancient Egyptians used fractions extensively in construction. The precision of t
       for (let i = 1; i <= 100; i++) {
         const cell = document.createElement('div');
         cell.className = 'num-prime-cell';
+        cell.dataset.number = String(i);
         cell.textContent = i;
         if (i === 1) cell.classList.add('is-one');
         else if (isPrime(i)) cell.classList.add('is-prime');
@@ -834,8 +844,50 @@ Ancient Egyptians used fractions extensively in construction. The precision of t
           }
         });
         grid.appendChild(cell);
+        primeCells.push(cell);
       }
     })();
+
+    function resetPrimeGrid(cancelRun = true) {
+      if (cancelRun) sieveRunId += 1;
+      primeCells.forEach((cell) => {
+        cell.classList.remove('is-crossed', 'is-sieve-focus', 'selected');
+      });
+      document.getElementById('num-sieve-status').textContent = 'Ready to filter multiples.';
+      document.getElementById('num-prime-info').innerHTML = 'Click any number above to see its factors.';
+    }
+
+    async function runSieve() {
+      const runId = ++sieveRunId;
+      resetPrimeGrid(false);
+      const status = document.getElementById('num-sieve-status');
+      const info = document.getElementById('num-prime-info');
+      const limit = 100;
+      const crossed = new Set([1]);
+
+      for (let base = 2; base * base <= limit; base += 1) {
+        if (runId !== sieveRunId || crossed.has(base)) return;
+        const baseCell = primeCells[base - 1];
+        baseCell.classList.add('is-sieve-focus');
+        status.textContent = `Filtering multiples of ${base}...`;
+        info.innerHTML = `<strong class="num-data">${base}</strong> survives the sieve, so it is prime. Now cross out every larger multiple of ${base}.`;
+        await new Promise((resolve) => setTimeout(resolve, 520));
+
+        for (let multiple = base * 2; multiple <= limit; multiple += base) {
+          if (runId !== sieveRunId) return;
+          if (crossed.has(multiple)) continue;
+          crossed.add(multiple);
+          const cell = primeCells[multiple - 1];
+          cell.classList.add('is-crossed');
+          await new Promise((resolve) => setTimeout(resolve, 70));
+        }
+
+        baseCell.classList.remove('is-sieve-focus');
+      }
+
+      status.textContent = 'Sieve complete: the uncrossed numbers are prime.';
+      info.innerHTML = '<strong>Prime survivors:</strong> the numbers left standing are the atoms of the grid. Every crossed-out number was a multiple of something smaller.';
+    }
 
     /* ── Factor finder ── */
     function findFactors() {
@@ -858,62 +910,176 @@ ${!prime ? `<div style="margin-top:0.45rem;font-size:0.82rem;color:#64748b;">Pri
     }
     findFactors();
 
-    /* ── Clock calculator ── */
-    function updateClock() {
-      const start  = Math.max(1, Math.min(12, parseInt(document.getElementById('num-clock-start').value) || 10));
-      const add    = Math.max(0, parseInt(document.getElementById('num-clock-add').value) || 0);
-      const total  = start + add;
-      let result   = total % 12;
-      if (result === 0) result = 12;
+    /* ── Modular string art ── */
+    const modState = {
+      n: 180,
+      multiplier: 2,
+      targetMultiplier: 2,
+      speed: 0.35,
+      rafId: null
+    };
 
-      const canvas = document.getElementById('num-clock-canvas');
-      const ctx    = canvas.getContext('2d');
-      const W = 200, H = 200, cx = 100, cy = 100, r = 88;
-      const night  = document.documentElement.getAttribute('data-theme') === 'night';
-      const bg     = night ? '#2c2c2e' : '#ffffff';
-      const fg     = night ? 'rgba(245,245,247,0.9)' : '#1d1d1f';
+    function updateModControls() {
+      modState.n = parseInt(document.getElementById('num-mod-points').value, 10);
+      modState.speed = parseFloat(document.getElementById('num-mod-speed').value);
+      document.getElementById('num-mod-points-val').textContent = String(modState.n);
+      document.getElementById('num-mod-speed-val').textContent = `${modState.speed.toFixed(2)}x`;
+    }
 
-      ctx.clearRect(0, 0, W, H);
+    function describeModFamily(multiplier) {
+      if (Math.abs(multiplier - 2) < 0.16) return 'Family: Cardioid threshold';
+      if (Math.abs(multiplier - 3) < 0.16) return 'Family: Nephroid threshold';
+      if (multiplier < 2) return 'Family: Star lattice';
+      if (multiplier < 4) return 'Family: Petal curve';
+      if (multiplier < 7) return 'Family: Orbital web';
+      return 'Family: Resonant mesh';
+    }
 
-      // Face
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = bg; ctx.fill();
-      ctx.strokeStyle = '#ff9500'; ctx.lineWidth = 3; ctx.stroke();
+    function setManualMultiplier(value) {
+      modState.targetMultiplier = parseFloat(value);
+      document.getElementById('num-mod-multiplier-val').textContent = modState.targetMultiplier.toFixed(2);
+    }
 
-      // Hour labels
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = '700 11px Inter,sans-serif'; ctx.fillStyle = fg;
-      for (let i = 1; i <= 12; i++) {
-        const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
-        ctx.fillText(i, cx + (r - 16) * Math.cos(a), cy + (r - 16) * Math.sin(a));
+    function drawModPattern(time) {
+      const canvas = document.getElementById('num-mod-canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(360, Math.round(rect.width || 720));
+      const height = Math.max(360, Math.round(rect.height || 420));
+      if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
       }
 
-      // Hand (destination)
-      const handAngle = (result / 12) * Math.PI * 2 - Math.PI / 2;
-      ctx.beginPath(); ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + (r - 22) * Math.cos(handAngle), cy + (r - 22) * Math.sin(handAngle));
-      ctx.strokeStyle = '#ff9500'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#090b10';
+      ctx.fillRect(0, 0, width, height);
 
-      // Centre dot
-      ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#ff9500'; ctx.fill();
+      modState.multiplier += (modState.targetMultiplier - modState.multiplier) * 0.08;
+      const n = modState.n;
+      const cx = width / 2;
+      const cy = height / 2;
+      const radius = Math.min(width, height) * 0.37;
 
-      // Starting hour dot
-      const sa = (start / 12) * Math.PI * 2 - Math.PI / 2;
-      ctx.beginPath(); ctx.arc(cx + (r - 22) * Math.cos(sa), cy + (r - 22) * Math.sin(sa), 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#64748b'; ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,149,0,0.2)';
+      ctx.lineWidth = 1.25;
+      ctx.stroke();
 
-      document.getElementById('num-clock-eq').innerHTML =
-        `(${start} + ${add}) mod 12 = <span>${result}</span>`;
-      document.getElementById('num-clock-explain').textContent =
-        `${start} + ${add} = ${total}. Dividing by 12 gives ${Math.floor(total / 12)} full rotation${Math.floor(total/12) !== 1 ? 's' : ''} remainder ${result}. The hand lands on ${result}.`;
+      for (let i = 0; i < n; i += 1) {
+        const angle1 = (i / n) * Math.PI * 2 - Math.PI / 2;
+        const x1 = cx + radius * Math.cos(angle1);
+        const y1 = cy + radius * Math.sin(angle1);
+        const target = (i * modState.multiplier) % n;
+        const angle2 = (target / n) * Math.PI * 2 - Math.PI / 2;
+        const x2 = cx + radius * Math.cos(angle2);
+        const y2 = cy + radius * Math.sin(angle2);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = 'rgba(255,149,0,0.18)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      document.getElementById('num-mod-multiplier-val').textContent = modState.targetMultiplier.toFixed(2);
+      document.getElementById('num-mod-eq').textContent = `x → (x × ${modState.multiplier.toFixed(2)}) mod ${n}`;
+      document.getElementById('num-mod-family').textContent = describeModFamily(modState.multiplier);
+      document.getElementById('num-mod-explain').textContent =
+        `With ${n} points on the circle, each point connects to its multiplied remainder. Multiplier ${modState.multiplier.toFixed(2)} bends the web into a ${describeModFamily(modState.multiplier).replace('Family: ', '').toLowerCase()}.`;
+
+      if (modState.speed > 0) {
+        const base = 2 + Math.sin(time * 0.00022 * (0.3 + modState.speed)) * (1.8 + modState.speed * 4.2);
+        modState.targetMultiplier = Math.max(1, Math.min(20, base + 1));
+        document.getElementById('num-mod-multiplier').value = modState.targetMultiplier.toFixed(2);
+      }
+
+      modState.rafId = requestAnimationFrame(drawModPattern);
     }
-    updateClock();
+
+    updateModControls();
+    setManualMultiplier(document.getElementById('num-mod-multiplier').value);
+    modState.rafId = requestAnimationFrame(drawModPattern);
+
+    /* ── Infinite number line ── */
+    const numberLineState = { level: 0, center: 0.5 };
+
+    function renderNumberLine() {
+      const canvas = document.getElementById('num-line-canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(500, Math.round(rect.width || 900));
+      const height = 180;
+      if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+
+      const span = 1 / Math.pow(2, numberLineState.level);
+      let min = numberLineState.center - span / 2;
+      let max = numberLineState.center + span / 2;
+      if (min < 0) { max -= min; min = 0; }
+      if (max > 1) { min -= (max - 1); max = 1; }
+      min = Math.max(0, min);
+      max = Math.min(1, max);
+
+      const y = 96;
+      ctx.strokeStyle = '#1f2937';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(40, y);
+      ctx.lineTo(width - 40, y);
+      ctx.stroke();
+
+      const stepDenom = Math.pow(2, Math.min(numberLineState.level + 1, 8));
+      for (let i = 0; i <= stepDenom; i += 1) {
+        const value = i / stepDenom;
+        if (value < min - 1e-9 || value > max + 1e-9) continue;
+        const ratio = (value - min) / (max - min || 1);
+        const x = 40 + ratio * (width - 80);
+        const major = i % 2 === 0 || numberLineState.level >= 3;
+        ctx.strokeStyle = major ? '#ff9500' : 'rgba(255,149,0,0.35)';
+        ctx.lineWidth = major ? 2.4 : 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x, y - (major ? 24 : 12));
+        ctx.lineTo(x, y + (major ? 24 : 12));
+        ctx.stroke();
+
+        if (major) {
+          const label = value === 0 || value === 1
+            ? String(value)
+            : `${i}/${stepDenom}`;
+          ctx.fillStyle = '#ff9500';
+          ctx.font = '600 12px "IBM Plex Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, x, y - 32);
+        }
+      }
+
+      document.getElementById('num-line-range-pill').textContent = `Window: ${min.toFixed(4)} → ${max.toFixed(4)}`;
+      document.getElementById('num-line-step-pill').textContent = `Resolution: 1/${stepDenom}`;
+    }
+
+    function zoomNumberLine(direction) {
+      numberLineState.level = Math.max(0, Math.min(7, numberLineState.level + direction));
+      renderNumberLine();
+    }
+    renderNumberLine();
+    window.addEventListener('resize', renderNumberLine);
 
     /* ── Divide by zero demo ── */
     function updateZero() {
       const d = parseFloat(document.getElementById('num-zero-range').value);
       const result = 10 / d;
+      const display = document.querySelector('.num-zero-display');
       document.getElementById('num-zero-dval').textContent = d.toFixed(2);
       document.getElementById('num-zero-eq').textContent = `10 ÷ ${d.toFixed(2)}`;
       document.getElementById('num-zero-res').textContent =
@@ -923,6 +1089,13 @@ ${!prime ? `<div style="margin-top:0.45rem;font-size:0.82rem;color:#64748b;">Pri
       const pct = ((d - 0.01) / 4.99) * 100;
       document.getElementById('num-zero-range').style.background =
         `linear-gradient(90deg,#ff3b30 0%,#ff9500 ${pct}%,rgba(0,0,0,0.12) ${pct}%)`;
+      if (display) {
+        display.classList.remove('is-unstable');
+        if (d <= 0.35) {
+          void display.offsetWidth;
+          display.classList.add('is-unstable');
+        }
+      }
     }
     updateZero();
 
