@@ -791,27 +791,64 @@
     </section>
 
     <section class="fc-demo">
-      <h2>Field Probe Demo</h2>
-      <p class="fc-demo-sub">This is a teaching model, not a full Maxwell-equation solver. Use it to see the one big classroom idea: closed cage inside means zero field.</p>
-
-      <!-- Controls moved to ll-panel -->
+      <h2>EM Shielding Lab: Visualize Electromagnetic Waves</h2>
+      <p class="fc-demo-sub">See how electromagnetic waves interact with the cage. Observe wave interference, electron redistribution, and signal attenuation in real-time. Adjust mesh density to understand why microwave doors block microwaves but let visible light through.</p>
 
       <div class="fc-demo-layout">
-        <div class="fc-stage" id="fc-stage" data-probe="inside" data-integrity="closed">
-          <div class="fc-spark fc-spark--a" aria-hidden="true"></div>
-          <div class="fc-spark fc-spark--b" aria-hidden="true"></div>
-          <div class="fc-spark fc-spark--c" aria-hidden="true"></div>
-          <div class="fc-spark fc-spark--d" aria-hidden="true"></div>
-
-          <div class="fc-cage">
-            <div class="fc-gap" aria-hidden="true"></div>
-            <div class="fc-door" aria-hidden="true"></div>
-            <div class="fc-probe-dot" id="fc-probe-dot" aria-hidden="true"></div>
-            <div class="fc-probe-label" aria-hidden="true">Probe</div>
-            <div class="fc-student">
-              <div class="fc-student-body" aria-hidden="true"></div>
-              <span>Inside cage</span>
+        <div style="background: #0a0a0c; border-radius: 12px; overflow: hidden; border: 1px solid #27272a;">
+          <!-- Status Bar -->
+          <div style="background: #1a1a1c; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #27272a;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="width: 2px; height: 2px; background: #34c759; border-radius: 50%; display: inline-block;"></span>
+              Wave Processor Active
             </div>
+            <div id="fc-signal-strength">Inside: -90dBm (Blocked)</div>
+          </div>
+
+          <!-- Simulation Canvas -->
+          <canvas id="fc-sim-canvas" style="width: 100%; height: 400px; display: block; background: #0a0a1a;"></canvas>
+
+          <!-- UI Overlays -->
+          <div style="padding: 1rem; background: #0a0a0c; border-top: 1px solid #27272a;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+              <div>
+                <label style="font-size: 0.7rem; color: #64748b; display: block; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Wavelength (Frequency)</label>
+                <input type="range" id="fc-freq-slider" min="20" max="150" value="80" style="width: 100%; accent-color: #ff9500;">
+                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">Higher frequency = shorter wavelength</div>
+              </div>
+              <div>
+                <label style="font-size: 0.7rem; color: #64748b; display: block; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Mesh Hole Size</label>
+                <input type="range" id="fc-mesh-slider" min="5" max="50" value="20" style="width: 100%; accent-color: #34c759;">
+                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">Smaller holes block shorter waves</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+              <button id="fc-toggle-cage" style="padding: 0.6rem 1rem; background: #ff9500; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem; flex: 1;">
+                REMOVE CAGE
+              </button>
+              <button id="fc-show-charges" style="padding: 0.6rem 1rem; background: #64748b; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem; flex: 1;">
+                SHOW CHARGES
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry Panel -->
+        <div style="margin-top: 1.5rem; padding: 1rem; background: linear-gradient(135deg, rgba(0,122,255,0.06), rgba(88,86,214,0.06)); border: 1px solid rgba(0,122,255,0.18); border-radius: 12px;">
+          <h3 style="margin: 0 0 0.75rem; font-size: 0.9rem; color: #ff9500; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Field Strength Meter</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div style="padding: 0.75rem; background: rgba(0,0,0,0.3); border-radius: 8px;">
+              <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Inside cage</div>
+              <div id="fc-inside-strength" style="font-size: 1.2rem; font-weight: 700; color: #34c759; font-family: monospace;">-90 dBm</div>
+            </div>
+            <div style="padding: 0.75rem; background: rgba(0,0,0,0.3); border-radius: 8px;">
+              <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Outside cage</div>
+              <div id="fc-outside-strength" style="font-size: 1.2rem; font-weight: 700; color: #ff3b30; font-family: monospace;">-20 dBm</div>
+            </div>
+          </div>
+          <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,122,255,0.1); border-radius: 8px; border-left: 3px solid #007aff;">
+            <p style="margin: 0; font-size: 0.85rem; color: #64748b; line-height: 1.5;">💡 <strong style="color: #007aff;">Key insight:</strong> The cage works because the mesh holes are much smaller than the wavelength being blocked. See what happens when frequency increases!</p>
           </div>
         </div>
       </div>
@@ -1034,104 +1071,134 @@
   <script src="../assets/js/nav-mobile.js"></script>
   <script>
     (function () {
-      const strengthInput = document.getElementById('fc-strength');
-      const strengthValue = document.getElementById('fc-strength-value');
-      const stage = document.getElementById('fc-stage');
-      const meterValue = document.getElementById('fc-meter-value');
-      const meterCaption = document.getElementById('fc-meter-caption');
-      const shielding = document.getElementById('fc-shielding');
-      const path = document.getElementById('fc-path');
-      const why = document.getElementById('fc-why');
+      const canvas = document.getElementById('fc-sim-canvas');
+      const ctx = canvas.getContext('2d');
+      const freqSlider = document.getElementById('fc-freq-slider');
+      const meshSlider = document.getElementById('fc-mesh-slider');
+      const toggleBtn = document.getElementById('fc-toggle-cage');
+      const chargesBtn = document.getElementById('fc-show-charges');
+      const signalStrength = document.getElementById('fc-signal-strength');
+      const insideStrength = document.getElementById('fc-inside-strength');
+      const outsideStrength = document.getElementById('fc-outside-strength');
 
-      let probe = 'inside';
-      let integrity = 'closed';
+      let width, height;
+      let cageActive = true;
+      let showCharges = false;
+      let waveTime = 0;
 
-      function computeOutsideField(level) {
-        return Math.round(level * 12);
+      function resize() {
+        width = canvas.width = canvas.offsetWidth * 2;
+        height = canvas.height = canvas.offsetHeight * 2;
+        ctx.scale(2, 2);
       }
+      window.addEventListener('resize', resize);
+      resize();
 
-      function computeField(level) {
-        const outsideField = computeOutsideField(level);
+      const params = {
+        freq: 80,
+        meshSize: 20,
+        showCharges: false
+      };
 
-        if (probe === 'inside' && integrity === 'closed') {
-          return 0;
-        }
+      freqSlider.addEventListener('input', (e) => params.freq = e.target.value);
+      meshSlider.addEventListener('input', (e) => params.meshSize = e.target.value);
 
-        if (probe === 'inside' && integrity === 'open') {
-          return Math.round(outsideField * 0.42);
-        }
-
-        return outsideField;
-      }
-
-      function updateDemo() {
-        const level = Number(strengthInput.value);
-        const outsideField = computeOutsideField(level);
-        const field = computeField(level);
-        const shieldPercent = outsideField === 0 ? 100 : Math.max(0, Math.round((1 - field / outsideField) * 100));
-
-        strengthValue.textContent = level + '%';
-        stage.dataset.probe = probe;
-        stage.dataset.integrity = integrity;
-        stage.style.setProperty('--fc-opacity', String(0.08 + level / 135));
-        stage.style.setProperty('--fc-glow', String(0.18 + level / 120));
-        meterValue.textContent = field.toLocaleString() + ' V/m';
-
-        if (level === 0) {
-          meterCaption.textContent = 'With no external field, the probe reads zero whether it is inside or outside.';
-          shielding.textContent = '100%';
-          path.textContent = 'No charge motion';
-          why.textContent = 'No external field means there is nothing to cancel.';
-          return;
-        }
-
-        if (probe === 'inside' && integrity === 'closed') {
-          meterCaption.textContent = 'Probe is inside a closed conductor, so the electric field reads zero.';
-          shielding.textContent = '100%';
-          path.textContent = 'Outside surface';
-          why.textContent = 'Charges rearrange until the interior field cancels.';
-          return;
-        }
-
-        if (probe === 'inside' && integrity === 'open') {
-          meterCaption.textContent = 'The opening lets field leak into the cavity, so the interior is no longer a quiet zone.';
-          shielding.textContent = shieldPercent + '%';
-          path.textContent = 'Leak through opening';
-          why.textContent = 'A broken shell cannot fully cancel the interior field.';
-          return;
-        }
-
-        meterCaption.textContent = 'Outside the cage, the probe still feels the external field.';
-        shielding.textContent = '0%';
-        path.textContent = 'Probe exposed';
-        why.textContent = 'Faraday cages protect the enclosed interior, not the outside air.';
-      }
-
-      document.querySelectorAll('[data-probe]').forEach((button) => {
-        button.addEventListener('click', function () {
-          probe = button.dataset.probe;
-          document.querySelectorAll('[data-probe]').forEach((chip) => {
-            chip.classList.toggle('is-active', chip === button);
-            chip.classList.toggle('ll-active', chip === button);
-          });
-          updateDemo();
-        });
+      toggleBtn.addEventListener('click', (e) => {
+        cageActive = !cageActive;
+        toggleBtn.textContent = cageActive ? "REMOVE CAGE" : "APPLY CAGE";
+        toggleBtn.style.background = cageActive ? '#ff9500' : '#64748b';
       });
 
-      document.querySelectorAll('[data-integrity]').forEach((button) => {
-        button.addEventListener('click', function () {
-          integrity = button.dataset.integrity;
-          document.querySelectorAll('[data-integrity]').forEach((chip) => {
-            chip.classList.toggle('is-active', chip === button);
-            chip.classList.toggle('ll-active', chip === button);
-          });
-          updateDemo();
-        });
+      chargesBtn.addEventListener('click', (e) => {
+        showCharges = !showCharges;
+        chargesBtn.textContent = showCharges ? "HIDE CHARGES" : "SHOW CHARGES";
+        chargesBtn.style.background = showCharges ? '#007aff' : '#64748b';
       });
 
-      strengthInput.addEventListener('input', updateDemo);
-      updateDemo();
+      function updateMeters() {
+        const outsideDBm = -20 - (params.freq / 20);
+        const insideDBm = cageActive ? -85 - (params.meshSize / 5) : outsideDBm + 5;
+        const shieldingPercent = cageActive ? Math.round((1 - Math.pow(10, (insideDBm - outsideDBm) / 10)) * 100) : 0;
 
+        insideStrength.textContent = insideDBm.toFixed(0) + ' dBm';
+        outsideStrength.textContent = outsideDBm.toFixed(0) + ' dBm';
+        signalStrength.textContent = `Inside: ${insideDBm.toFixed(0)}dBm (${shieldingPercent}% blocked)`;
+      }
+
+      function draw() {
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0, 0, width / 2, height / 2);
+
+        const centerX = (width / 2) / 2;
+        const centerY = (height / 2) / 2;
+        const cageSize = 80;
+
+        waveTime += 0.05;
+
+        // Draw incoming waves from left
+        for (let x = 0; x < width / 2; x += 6) {
+          for (let y = 0; y < height / 2; y += 15) {
+            let distToCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+            let inCage = distToCenter < cageSize;
+
+            let amplitude = 12;
+            if (cageActive && inCage) {
+              amplitude = 1;
+            }
+
+            let wave = Math.sin((x / params.freq) - waveTime) * amplitude;
+
+            ctx.fillStyle = cageActive && inCage ? 'rgba(20,20,60,0.4)' : 'rgba(59,130,246,0.5)';
+            ctx.fillRect(x, y + wave + 5, 3, 2);
+          }
+        }
+
+        // Draw cage
+        if (cageActive) {
+          ctx.strokeStyle = '#ff9500';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, cageSize, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Draw mesh holes
+          const meshHoleSize = parseInt(params.meshSize) / 10;
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          for (let i = 0; i < 16; i++) {
+            const angle = (i / 16) * Math.PI * 2;
+            const x = centerX + Math.cos(angle) * cageSize;
+            const y = centerY + Math.sin(angle) * cageSize;
+            ctx.beginPath();
+            ctx.arc(x, y, meshHoleSize, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Draw electron charges if enabled
+          if (showCharges) {
+            for (let i = 0; i < 32; i++) {
+              const angle = (i / 32) * Math.PI * 2;
+              const shift = Math.sin(waveTime) * 5;
+              const x = centerX + Math.cos(angle + shift / 100) * (cageSize + 2);
+              const y = centerY + Math.sin(angle + shift / 100) * (cageSize + 2);
+
+              ctx.fillStyle = '#3b82f6';
+              ctx.beginPath();
+              ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          updateMeters();
+        } else {
+          updateMeters();
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      draw();
+
+      // Quiz functionality
       document.querySelectorAll('.fc-question').forEach((question) => {
         const answer = question.dataset.answer;
         const explanation = question.dataset.explanation;
@@ -1162,6 +1229,8 @@
           });
         });
       });
+
+      updateMeters();
     }());
   </script>
   <script src="../assets/js/classroom-animations.js"></script>
