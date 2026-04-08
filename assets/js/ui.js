@@ -57,8 +57,15 @@ export function createProjectCard(project, options = {}) {
 
   const link = document.createElement("a");
   link.className = "card-link";
-  link.href = project.appUrl || projectUrl(project.id);
-  link.setAttribute("aria-label", `Open project: ${project.title} by ${project.student}`);
+  link.href = "javascript:void(0)";
+  link.setAttribute("aria-label", `View project: ${project.title} by ${project.student}`);
+  link.addEventListener("click", (e) => {
+    e.preventDefault();
+    // Call the global modal function if it exists
+    if (typeof openProjectModal === 'function') {
+      openProjectModal(project);
+    }
+  });
   link.addEventListener("keydown", (event) => {
     if (event.key === " ") {
       event.preventDefault();
@@ -74,6 +81,24 @@ export function createProjectCard(project, options = {}) {
   image.src = project.thumbnail;
   image.alt = `${project.title} thumbnail`;
   thumb.appendChild(image);
+
+  // Add type badge overlay
+  const typeBadge = document.createElement("div");
+  typeBadge.className = `card-type-badge type-${(project.type || 'game').toLowerCase()}`;
+  typeBadge.textContent = project.type || 'Project';
+  thumb.appendChild(typeBadge);
+
+  // Add student credit overlay
+  const creditOverlay = document.createElement("div");
+  creditOverlay.className = "card-credit-overlay";
+  const studentName = document.createElement("p");
+  studentName.className = "card-student-name";
+  studentName.textContent = project.student;
+  const yearGroup = document.createElement("p");
+  yearGroup.className = "card-year-group";
+  yearGroup.textContent = `${project.year} • ${project.term}`;
+  creditOverlay.append(studentName, yearGroup);
+  thumb.appendChild(creditOverlay);
 
   const body = document.createElement("div");
   body.className = "card-body";

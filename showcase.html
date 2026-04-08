@@ -79,8 +79,110 @@
     <p>Tip: bookmark filtered views — URL state is preserved.</p>
   </footer>
 
+  <!-- Project Detail Modal (Lightbox) -->
+  <div id="project-modal" class="project-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="flex: 1;">
+          <div class="card-type-badge" id="modal-badge" style="position: static; margin-bottom: 12px;"></div>
+        </div>
+        <button class="modal-close-btn" onclick="closeProjectModal()" aria-label="Close modal">✕</button>
+      </div>
+
+      <div class="modal-gallery" id="modal-gallery"></div>
+
+      <div class="modal-info">
+        <div>
+          <h2 id="modal-title"></h2>
+          <div class="modal-credits">
+            <p class="modal-student" id="modal-student"></p>
+            <p class="modal-year" id="modal-year"></p>
+          </div>
+          <p class="modal-description" id="modal-description"></p>
+          <div class="modal-actions" id="modal-actions"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="assets/js/browse.js"></script>
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
+  <script>
+    function openProjectModal(projectData) {
+      const modal = document.getElementById('project-modal');
+      const gallery = document.getElementById('modal-gallery');
+      const title = document.getElementById('modal-title');
+      const student = document.getElementById('modal-student');
+      const yearGroup = document.getElementById('modal-year');
+      const description = document.getElementById('modal-description');
+      const actions = document.getElementById('modal-actions');
+      const badge = document.getElementById('modal-badge');
+
+      title.textContent = projectData.title;
+      student.textContent = projectData.student;
+      yearGroup.textContent = projectData.year;
+      description.textContent = projectData.short_description;
+
+      // Set badge
+      badge.className = `card-type-badge type-${(projectData.type || 'game').toLowerCase()}`;
+      badge.textContent = projectData.type || 'Project';
+
+      // Gallery images
+      gallery.innerHTML = '';
+      const images = [projectData.hero, ...(projectData.gallery || [])];
+      images.forEach(img => {
+        if (img) {
+          const div = document.createElement('div');
+          div.className = 'modal-gallery-item';
+          const imgEl = document.createElement('img');
+          imgEl.src = img;
+          imgEl.alt = projectData.title;
+          div.appendChild(imgEl);
+          gallery.appendChild(div);
+        }
+      });
+
+      // Action links
+      actions.innerHTML = '';
+      if (projectData.appUrl) {
+        const btn = document.createElement('a');
+        btn.href = projectData.appUrl;
+        btn.target = '_blank';
+        btn.rel = 'noreferrer';
+        btn.className = 'modal-btn primary';
+        btn.textContent = '→ Launch Project';
+        actions.appendChild(btn);
+      }
+      if (projectData.links && projectData.links.repo) {
+        const btn = document.createElement('a');
+        btn.href = projectData.links.repo;
+        btn.target = '_blank';
+        btn.rel = 'noreferrer';
+        btn.className = 'modal-btn';
+        btn.textContent = '→ View Code';
+        actions.appendChild(btn);
+      }
+
+      modal.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeProjectModal() {
+      const modal = document.getElementById('project-modal');
+      modal.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+
+    // Close modal on background click
+    document.getElementById('project-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'project-modal') closeProjectModal();
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeProjectModal();
+    });
+  </script>
 </body>
 </html>
