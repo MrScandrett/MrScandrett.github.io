@@ -582,11 +582,13 @@
       <div class="pt-hero-meta">
         <span>118 elements</span>
         <span class="dot"></span>
-        <span>Animated Bohr models</span>
+        <span>Temperature states</span>
         <span class="dot"></span>
-        <span>Click any element to explore</span>
+        <span>Property lenses</span>
+        <span class="dot"></span>
+        <span>Animated shell models</span>
       </div>
-      <p class="pt-lede">Every substance in the universe is built from atoms of pure elements. Use this lesson to read the table by periods, groups, and families, then click any element to inspect its atomic structure and electron shells.</p>
+      <p class="pt-lede">Every substance in the universe is built from atoms of pure elements. Use the temperature slider, category filters, and property lenses to read the table like a living map, then click any element to inspect its shell model, matter state, crystal behavior, and real-world uses.</p>
     </section>
 
     <section class="pt-primer" aria-label="How to read the periodic table">
@@ -894,199 +896,576 @@
       [118,'Og','Oganesson',294,'ng',[2,8,18,32,32,18,8],18,7,'Named after physicist Yuri Oganessian. The heaviest confirmed element and the only period-7 noble gas. May actually be a solid at room temperature.'],
     ];
 
-    /* ── Build filter buttons ─────────────────────────── */
-    const ctrl = document.getElementById('pt-controls');
-    const allBtn = ctrl.querySelector('[data-cat="all"]');
-    allBtn.style.borderColor = '#bbb';
-    allBtn.style.color = '#555';
+    const PROPERTY_SOURCE_URL = 'https://raw.githubusercontent.com/Bowserinator/Periodic-Table-JSON/master/PeriodicTableJSON.json';
+    const PROPERTY_CACHE_KEY = 'classroomos-periodic-ref-v1';
+    const HEATMAPS = {
+      none: { label: 'Category', tint: 'rgba(0,113,227,0.12)' },
+      density: { label: 'Density', tint: 'hsla(205, 100%, 52%, VAR)' },
+      electronegativity: { label: 'Electronegativity', tint: 'hsla(286, 92%, 58%, VAR)' },
+      rarity: { label: 'Rarity', tint: 'hsla(44, 100%, 52%, VAR)' }
+    };
+    const COMMANDS = [
+      { label: 'batteries', note: 'Lithium, cobalt, nickel, and manganese power modern battery chemistry.', symbols: ['Li', 'Co', 'Ni', 'Mn', 'C'] },
+      { label: 'balloons', note: 'Helium is the classic lift gas because it is inert and lighter than air.', symbols: ['He'] },
+      { label: 'chips', note: 'Silicon, gallium, germanium, copper, and gold connect the computing world.', symbols: ['Si', 'Ga', 'Ge', 'Cu', 'Au'] },
+      { label: 'lightbulbs', note: 'Tungsten filaments and argon atmospheres let bulbs run hot without burning up.', symbols: ['W', 'Ar'] },
+      { label: 'bones', note: 'Calcium, phosphorus, magnesium, and oxygen build hard mineral structure.', symbols: ['Ca', 'P', 'Mg', 'O'] },
+      { label: 'water', note: 'Hydrogen and oxygen combine into one of the most important molecules on Earth.', symbols: ['H', 'O'] },
+      { label: 'fireworks', note: 'Strontium, barium, copper, sodium, and magnesium shape fireworks color and brightness.', symbols: ['Sr', 'Ba', 'Cu', 'Na', 'Mg'] },
+      { label: 'stainless steel', note: 'Iron, chromium, and nickel make corrosion-resistant structural alloys.', symbols: ['Fe', 'Cr', 'Ni'] },
+      { label: 'nuclear', note: 'Uranium, plutonium, thorium, cadmium, and hafnium anchor reactor technology.', symbols: ['U', 'Pu', 'Th', 'Cd', 'Hf'] }
+    ];
+    const CATEGORY_APPLICATIONS = {
+      ak: [{ icon: '🔋', title: 'Reactive power', copy: 'Single valence electrons make these metals energy-rich and easy to ionize.' }],
+      ae: [{ icon: '🦴', title: 'Structure', copy: 'These metals strengthen minerals, alloys, and many biological systems.' }],
+      tm: [{ icon: '🏗️', title: 'Engineering metal', copy: 'Transition metals dominate tools, wiring, engines, and catalysts.' }],
+      pt: [{ icon: '🧰', title: 'Useful alloying', copy: 'Post-transition metals are often soft, conductive, and easy to shape.' }],
+      ml: [{ icon: '💻', title: 'Semiconductor bridge', copy: 'Metalloids sit between metals and nonmetals, making electronics possible.' }],
+      nm: [{ icon: '🧬', title: 'Life chemistry', copy: 'Nonmetals often build molecules, fuels, biomolecules, and gases.' }],
+      ha: [{ icon: '🧪', title: 'Reactive chemistry', copy: 'Halogens are strong oxidizers used in sanitation, lighting, and synthesis.' }],
+      ng: [{ icon: '🎈', title: 'Inert atmosphere', copy: 'Noble gases resist bonding and protect other materials from reaction.' }],
+      ln: [{ icon: '🧲', title: 'Rare-earth magnetics', copy: 'Lanthanides power magnets, lasers, phosphors, and precision optics.' }],
+      ac: [{ icon: '☢️', title: 'Radiation science', copy: 'Actinides dominate nuclear energy, radiotherapy, and isotope research.' }]
+    };
+    const ELEMENT_APPLICATIONS = {
+      H: [{ icon: '🚀', title: 'Rocket fuel', copy: 'Hydrogen powers fuel cells and high-efficiency propulsion systems.' }],
+      He: [{ icon: '🎈', title: 'Party balloon', copy: 'Helium lifts balloons and cools MRI magnets without reacting.' }],
+      Li: [{ icon: '📱', title: 'Smartphone battery', copy: 'Lithium-ion chemistry stores a huge amount of energy per kilogram.' }],
+      C: [{ icon: '💎', title: 'Diamond and graphite', copy: 'Carbon shifts from pencil graphite to diamond depending on structure.' }],
+      O: [{ icon: '🫁', title: 'Breathing and combustion', copy: 'Oxygen keeps metabolism and fire going.' }],
+      Si: [{ icon: '💻', title: 'Computer chip', copy: 'Silicon wafers host the transistors inside modern processors.' }],
+      P: [{ icon: '🧬', title: 'DNA backbone', copy: 'Phosphorus links the sugar-phosphate rails of DNA and ATP.' }],
+      Cl: [{ icon: '🏊', title: 'Pool sanitation', copy: 'Chlorine compounds disinfect water by damaging microbes.' }],
+      Fe: [{ icon: '🏗️', title: 'Steel beam', copy: 'Iron is the backbone of structural steel and machinery.' }],
+      Co: [{ icon: '🔋', title: 'Battery cathode', copy: 'Cobalt helps stabilize high-energy rechargeable battery chemistry.' }],
+      Ni: [{ icon: '🪙', title: 'Stainless and coins', copy: 'Nickel improves corrosion resistance and strength.' }],
+      Cu: [{ icon: '⚡', title: 'Electrical wiring', copy: 'Copper moves electric current with very low resistance.' }],
+      Ga: [{ icon: '🤲', title: 'Melts in your hand', copy: 'Gallium becomes liquid near room temperature and powers LEDs.' }],
+      Br: [{ icon: '🧴', title: 'Liquid halogen', copy: 'Bromine is one of the only elements that is liquid near room temperature.' }],
+      Ag: [{ icon: '📷', title: 'Photography and electronics', copy: 'Silver reflects light well and conducts electricity better than any other metal.' }],
+      I: [{ icon: '🧂', title: 'Iodized salt', copy: 'Iodine protects thyroid health in tiny but essential doses.' }],
+      Xe: [{ icon: '🚀', title: 'Ion thruster', copy: 'Xenon is used as a propellant in spacecraft ion engines.' }],
+      Nd: [{ icon: '🎧', title: 'Permanent magnet', copy: 'Neodymium magnets power speakers, motors, and wind turbines.' }],
+      W: [{ icon: '💡', title: 'Lightbulb filament', copy: 'Tungsten survives extreme heat without melting.' }],
+      Au: [{ icon: '💍', title: 'Corrosion-proof conductor', copy: 'Gold protects contacts and jewelry because it barely reacts.' }],
+      Hg: [{ icon: '🌡️', title: 'Liquid metal', copy: 'Mercury stays liquid at room temperature, unlike almost every metal.' }],
+      U: [{ icon: '⚛️', title: 'Nuclear fuel', copy: 'Uranium stores enormous energy in its atomic nucleus.' }],
+      Pu: [{ icon: '🛰️', title: 'Space power', copy: 'Plutonium isotopes can power spacecraft far from the Sun.' }],
+      Am: [{ icon: '🚨', title: 'Smoke detector', copy: 'Americium helps ionization smoke alarms sense combustion particles.' }]
+    };
 
-    Object.entries(CATS).forEach(([key, {label, color}]) => {
-      const btn = document.createElement('button');
-      btn.className = 'pt-filter-btn';
-      btn.dataset.cat = key;
-      btn.textContent = label;
-      btn.style.color = color;
-      btn.style.borderColor = color;
-      btn.setAttribute('aria-pressed', 'false');
-      ctrl.appendChild(btn);
-    });
-
-    /* ── Build legend ─────────────────────────────────── */
-    const legend = document.getElementById('pt-legend');
-    Object.entries(CATS).forEach(([key, {label, color}]) => {
-      const item = document.createElement('div');
-      item.className = 'pt-legend-item';
-      item.innerHTML = `<span class="pt-legend-dot" style="background:${color}25;border:1.5px solid ${color};"></span>${label}`;
-      legend.appendChild(item);
-    });
-
-    /* ── Build grid ───────────────────────────────────── */
     const grid = document.getElementById('pt-grid');
+    const legend = document.getElementById('pt-legend');
+    const ctrl = document.getElementById('pt-controls');
+    const tempInput = document.getElementById('pt-temp');
+    const tempReadout = document.getElementById('pt-temp-readout');
+    const tempStateReadout = document.getElementById('pt-temp-state-readout');
+    const heatmapWrap = document.getElementById('pt-heatmap');
+    const searchInput = document.getElementById('pt-search');
+    const dataNote = document.getElementById('pt-data-note');
+    const commandStatus = document.getElementById('pt-command-status');
+    const commandOpen = document.getElementById('pt-command-open');
+    const commandRoot = document.getElementById('pt-command');
+    const commandBackdrop = document.getElementById('pt-command-backdrop');
+    const commandInput = document.getElementById('pt-command-input');
+    const commandClose = document.getElementById('pt-command-close');
+    const commandList = document.getElementById('pt-command-list');
+    const detailPanel = document.getElementById('el-panel');
 
-    // f-block divider (row 8)
-    const frow = document.createElement('div');
-    frow.className = 'pt-frow';
-    frow.setAttribute('aria-hidden', 'true');
-    frow.innerHTML = '<div class="pt-frow-line"></div><span class="pt-frow-label">f-block</span><div class="pt-frow-line"></div>';
-    grid.appendChild(frow);
+    const BASE_ELEMENTS = EL.map(([number, symbol, name, mass, cat, shells, col, row, description]) => ({ number, symbol, name, mass, cat, shells, col, row, description }));
 
-    // Period-6 and period-7 f-block placeholders
-    [[3, 6, '57–71'], [3, 7, '89–103']].forEach(([col, row, label]) => {
-      const ph = document.createElement('div');
-      ph.className = 'pt-ph';
-      ph.style.gridColumn = col;
-      ph.style.gridRow = row;
-      ph.textContent = label;
-      ph.setAttribute('aria-hidden', 'true');
-      grid.appendChild(ph);
-    });
+    let propertyRefBySymbol = {};
+    let elements = [];
+    let selectedSymbol = null;
+    let activeCat = 'all';
+    let isolatedCat = null;
+    let searchQ = '';
+    let activeHeatmap = 'none';
+    let currentTemp = Number(tempInput.value || 295);
+    let commandMatches = new Set();
 
-    // Element cells
-    EL.forEach(([z, sym, name, mass, cat, shells, col, row, desc]) => {
-      const color = CATS[cat].color;
-      const cell = document.createElement('button');
-      cell.className = 'el';
-      cell.dataset.z = z;
-      cell.dataset.cat = cat;
-      cell.style.gridColumn = col;
-      cell.style.gridRow = row;
-      cell.style.background = color + '22';
-      cell.style.color = color;
-      cell.setAttribute('aria-label', `${name}, element ${z}`);
-      cell.innerHTML =
-        `<span class="el-num">${z}</span>` +
-        `<span class="el-sym">${sym}</span>` +
-        `<span class="el-name">${name}</span>` +
-        `<span class="el-mass">${mass}</span>`;
-      cell.addEventListener('click', () => showEl(z, sym, name, mass, cat, shells, desc));
-      grid.appendChild(cell);
-    });
+    function hexToRgb(hex) {
+      const clean = String(hex || '').replace('#', '');
+      const expanded = clean.length === 3 ? clean.split('').map((ch) => ch + ch).join('') : clean;
+      const int = parseInt(expanded, 16);
+      return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
+    }
 
-    /* ── Filter ───────────────────────────────────────── */
-    let activeCat = 'all', searchQ = '';
+    function rgba(hex, alpha) {
+      const { r, g, b } = hexToRgb(hex);
+      return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+    }
 
-    function applyFilter() {
-      document.querySelectorAll('.el').forEach(c => {
-        const matchCat  = activeCat === 'all' || c.dataset.cat === activeCat;
-        const matchSrch = !searchQ ||
-          c.querySelector('.el-sym').textContent.toLowerCase().includes(searchQ) ||
-          c.querySelector('.el-name').textContent.toLowerCase().includes(searchQ) ||
-          c.dataset.z.startsWith(searchQ);
-        c.classList.toggle('el-dimmed', !(matchCat && matchSrch));
+    function normalizeValue(value) {
+      return Number.isFinite(Number(value)) ? Number(value) : null;
+    }
+
+    function simplifyRemoteData(payload) {
+      const out = {};
+      (payload.elements || []).forEach((element) => {
+        if (!element || !element.symbol || element.number > 118) return;
+        out[element.symbol] = {
+          melt: normalizeValue(element.melt),
+          boil: normalizeValue(element.boil),
+          density: normalizeValue(element.density),
+          electronegativity: normalizeValue(element.electronegativity_pauling),
+          electronConfig: String(element.electron_configuration_semantic || element.electron_configuration || '').replace(/^\*/, ''),
+          phase: element.phase ? String(element.phase).toLowerCase() : null,
+          appearance: element.appearance || '',
+          summary: element.summary || ''
+        };
+      });
+      return out;
+    }
+
+    async function loadReferenceData() {
+      try {
+        const cached = localStorage.getItem(PROPERTY_CACHE_KEY);
+        if (cached) {
+          propertyRefBySymbol = JSON.parse(cached);
+          dataNote.textContent = 'Using cached lab property data.';
+          dataNote.classList.add('is-ready');
+          rebuildElements();
+          renderAll();
+        }
+      } catch (error) {
+        dataNote.textContent = 'Property cache unavailable. Using built-in lesson data.';
+      }
+
+      try {
+        const response = await fetch(PROPERTY_SOURCE_URL, { cache: 'force-cache' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const json = await response.json();
+        propertyRefBySymbol = simplifyRemoteData(json);
+        try { localStorage.setItem(PROPERTY_CACHE_KEY, JSON.stringify(propertyRefBySymbol)); } catch (error) {}
+        dataNote.textContent = 'Lab property data loaded: temperature, density, and electronegativity are live.';
+        dataNote.classList.add('is-ready');
+      } catch (error) {
+        if (!Object.keys(propertyRefBySymbol).length) {
+          dataNote.textContent = 'Could not load extended chemistry data. Core lesson mode is still available.';
+          dataNote.classList.remove('is-ready');
+        }
+      }
+
+      rebuildElements();
+      renderAll();
+    }
+
+    function estimateRarity(base, ref) {
+      if (base.number >= 93) return 1;
+      if (base.cat === 'ln' || base.cat === 'ac') return 0.78;
+      if (['Rh', 'Ir', 'Os', 'Re', 'Pt', 'Au', 'Te'].includes(base.symbol)) return 0.86;
+      if (['H', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'K', 'Ca', 'Fe'].includes(base.symbol)) return 0.14;
+      if (ref && typeof ref.summary === 'string' && /rare|rarest|synthetic/i.test(ref.summary)) return 0.82;
+      return Math.min(0.68, 0.18 + base.number / 180);
+    }
+
+    function getApplications(symbol, cat) {
+      return [].concat(ELEMENT_APPLICATIONS[symbol] || [], CATEGORY_APPLICATIONS[cat] || []).slice(0, 3);
+    }
+
+    function getCrystalProfile(symbol, cat) {
+      if (['He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn', 'Og'].includes(symbol)) return { label: 'Atomic cloud', note: 'Noble gases stay far apart and only condense at very low temperatures.', mode: 'gas' };
+      if (['C', 'Si', 'B'].includes(symbol) || cat === 'ml') return { label: 'Network solid', note: 'Covalent bonds connect atoms into repeating, rigid frameworks.', mode: 'network' };
+      if (cat === 'nm' || cat === 'ha') return { label: 'Molecular packing', note: 'Discrete molecules pack together with weaker attractions than metallic lattices.', mode: 'molecular' };
+      return { label: 'Metal lattice', note: 'Positive metal ions sit in a repeating lattice with mobile electrons flowing around them.', mode: 'metal' };
+    }
+
+    function rebuildElements() {
+      elements = BASE_ELEMENTS.map((base) => {
+        const ref = propertyRefBySymbol[base.symbol] || {};
+        return Object.assign({}, base, {
+          melt: normalizeValue(ref.melt),
+          boil: normalizeValue(ref.boil),
+          density: normalizeValue(ref.density),
+          electronegativity: normalizeValue(ref.electronegativity),
+          electronConfig: ref.electronConfig || base.shells.map((count, index) => 'n' + (index + 1) + ':' + count).join(' · '),
+          phase: ref.phase || null,
+          appearance: ref.appearance || '',
+          summary: ref.summary || base.description,
+          applications: getApplications(base.symbol, base.cat),
+          crystal: getCrystalProfile(base.symbol, base.cat),
+          rarity: estimateRarity(base, ref)
+        });
       });
     }
 
-    ctrl.addEventListener('click', e => {
-      const btn = e.target.closest('.pt-filter-btn');
-      if (!btn) return;
-      activeCat = btn.dataset.cat;
-      document.querySelectorAll('.pt-filter-btn').forEach(b => {
-        const active = b === btn;
-        b.classList.toggle('pt-btn-active', active);
-        b.classList.toggle('pt-btn-dimmed', !active && activeCat !== 'all');
-        b.setAttribute('aria-pressed', active);
-        if (active && activeCat !== 'all') {
-          b.style.background = CATS[activeCat]?.color || '#555';
-        } else {
-          b.style.background = '';
-        }
-      });
-      if (activeCat === 'all') {
-        document.querySelectorAll('.pt-filter-btn').forEach(b => {
-          b.classList.remove('pt-btn-dimmed', 'pt-btn-active');
-          b.style.background = '';
-        });
+    function getState(element, temperature) {
+      if (Number.isFinite(element.melt) && temperature < element.melt) return 'solid';
+      if (Number.isFinite(element.boil) && temperature < element.boil && (!Number.isFinite(element.melt) || temperature >= element.melt)) return 'liquid';
+      if (Number.isFinite(element.boil) && temperature >= element.boil) return 'gas';
+      return element.phase || 'unknown';
+    }
+
+    function getStateLabel(state) {
+      return state === 'solid' || state === 'liquid' || state === 'gas' ? state : 'predicted';
+    }
+
+    function getStateSubtitle() {
+      if (currentTemp <= 80) return 'Cryogenic range';
+      if (currentTemp < 260) return 'Cold lab';
+      if (currentTemp < 330) return 'Room temperature';
+      if (currentTemp < 900) return 'Hot plate';
+      if (currentTemp < 1800) return 'Foundry range';
+      return 'Stellar-hot lab';
+    }
+
+    function getHeatmapValue(element) {
+      if (activeHeatmap === 'density') return element.density;
+      if (activeHeatmap === 'electronegativity') return element.electronegativity;
+      if (activeHeatmap === 'rarity') return element.rarity;
+      return null;
+    }
+
+    function getHeatmapIntensity(element) {
+      if (activeHeatmap === 'none') return 0;
+      const values = elements.map(getHeatmapValue).filter((value) => Number.isFinite(value));
+      if (!values.length) return 0;
+      const max = Math.max.apply(null, values);
+      const value = getHeatmapValue(element);
+      if (!Number.isFinite(value) || max <= 0) return 0;
+      return Math.pow(value / max, 0.72);
+    }
+
+    function getCellBackground(element, state) {
+      const base = CATS[element.cat].color;
+      const intensity = getHeatmapIntensity(element);
+      const heatOverlay = intensity > 0 ? HEATMAPS[activeHeatmap].tint.replace('VAR', (0.18 + intensity * 0.6).toFixed(3)) : null;
+      const layers = [];
+      if (heatOverlay) layers.push(heatOverlay);
+      if (state === 'liquid') {
+        layers.push('linear-gradient(180deg, rgba(255,255,255,0.86), rgba(59,130,246,0.22))');
+        layers.push('linear-gradient(135deg, rgba(56,189,248,0.34), rgba(14,165,233,0.18))');
+      } else if (state === 'gas') {
+        layers.push('radial-gradient(circle at 50% 35%, rgba(255,255,255,0.9), rgba(255,255,255,0.12) 55%, rgba(255,255,255,0.02) 100%)');
+        layers.push('linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.05))');
+      } else if (state === 'unknown') {
+        layers.push('linear-gradient(180deg, rgba(255,255,255,0.76), ' + rgba(base, 0.14) + ')');
+      } else {
+        layers.push('linear-gradient(180deg, rgba(255,255,255,0.88), ' + rgba(base, 0.18) + ')');
+        layers.push('linear-gradient(135deg, ' + rgba(base, 0.1) + ', rgba(255,255,255,0.2))');
       }
-      applyFilter();
-    });
+      return layers.join(', ');
+    }
 
-    document.getElementById('pt-search').addEventListener('input', e => {
-      searchQ = e.target.value.toLowerCase().trim();
-      applyFilter();
-    });
+    function matchesFilters(element) {
+      const matchesCat = activeCat === 'all' || element.cat === activeCat;
+      const matchesSearch = !searchQ || element.symbol.toLowerCase().includes(searchQ) || element.name.toLowerCase().includes(searchQ) || String(element.number).startsWith(searchQ);
+      return matchesCat && matchesSearch;
+    }
 
-    /* ── Bohr model SVG ───────────────────────────────── */
-    function buildBohr(shells, color) {
-      const cx = 140, cy = 140;
-      const rSteps = [34, 58, 82, 102, 120, 136, 150];
-      const speeds  = [3.5, 5.5, 8, 11, 14, 17, 20];
-      let svg = `<g transform="translate(${cx},${cy})">`;
-
-      // Orbit rings
-      shells.forEach((n, i) => {
-        const r = rSteps[i] ?? rSteps[rSteps.length-1] + (i-6)*13;
-        svg += `<circle class="orbit-ring" cx="0" cy="0" r="${r}"/>`;
-      });
-
-      // Electrons
-      shells.forEach((n, i) => {
-        const r     = rSteps[i] ?? rSteps[rSteps.length-1] + (i-6)*13;
-        const spd   = speeds[i] ?? 22;
-        const dir   = i % 2 === 0 ? 'orb-cw' : 'orb-ccw';
-        if (n > 0 && n <= 20) {
-          const step  = (2 * Math.PI) / n;
-          let dots = '';
-          for (let j = 0; j < n; j++) {
-            const a = step * j;
-            dots += `<circle cx="${(r * Math.cos(a)).toFixed(1)}" cy="${(r * Math.sin(a)).toFixed(1)}" r="4.5" fill="${color}" opacity="0.88"/>`;
-          }
-          svg += `<g style="animation:${dir} ${spd}s linear infinite">${dots}</g>`;
-        } else if (n > 20) {
-          svg += `<text x="${r+7}" y="0" style="font-size:8px;font-weight:700;fill:${color};dominant-baseline:central;">${n}e⁻</text>`;
+    function renderCategoryControls() {
+      ctrl.innerHTML = '';
+      const defs = [['all', { label: 'All 118', color: '#555' }]].concat(Object.entries(CATS));
+      defs.forEach(([key, meta]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pt-filter-btn';
+        btn.dataset.cat = key;
+        btn.textContent = meta.label;
+        btn.style.color = meta.color;
+        btn.style.borderColor = key === 'all' ? '#bbb' : meta.color;
+        const active = activeCat === key;
+        btn.classList.toggle('pt-btn-active', active && key !== 'all');
+        btn.classList.toggle('pt-btn-dimmed', activeCat !== 'all' && !active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        if (active && key !== 'all') {
+          btn.style.background = meta.color;
+          btn.style.color = '#fff';
         }
+        btn.addEventListener('mouseenter', () => { if (key !== 'all') { isolatedCat = key; renderGrid(); } });
+        btn.addEventListener('mouseleave', () => { if (isolatedCat === key) { isolatedCat = null; renderGrid(); } });
+        btn.addEventListener('click', () => { activeCat = key; renderAll(); });
+        ctrl.appendChild(btn);
       });
+    }
 
-      // Nucleus
-      const totalE = shells.reduce((a,b)=>a+b,0);
-      const nr = Math.min(26, 9 + shells.length * 2.2);
-      svg += `<circle cx="0" cy="0" r="${nr.toFixed(1)}" fill="${color}" opacity="0.85"/>`;
-      const fs = totalE > 99 ? 9 : totalE > 9 ? 11 : 14;
-      svg += `<text x="0" y="0" style="font-size:${fs}px;font-weight:800;fill:#fff;text-anchor:middle;dominant-baseline:central;">${totalE}</text>`;
+    function renderLegend() {
+      legend.innerHTML = '';
+      Object.entries(CATS).forEach(([key, meta]) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'pt-legend-item';
+        item.innerHTML = '<span class="pt-legend-dot" style="background:' + meta.color + '25;border:1.5px solid ' + meta.color + ';"></span>' + meta.label;
+        item.addEventListener('mouseenter', () => { isolatedCat = key; renderGrid(); });
+        item.addEventListener('mouseleave', () => { isolatedCat = null; renderGrid(); });
+        item.addEventListener('click', () => { activeCat = key; renderAll(); });
+        legend.appendChild(item);
+      });
+    }
+
+    function renderHeatmapControls() {
+      heatmapWrap.innerHTML = '';
+      Object.entries(HEATMAPS).forEach(([key, meta]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pt-heat-btn';
+        btn.textContent = meta.label;
+        btn.classList.toggle('is-active', activeHeatmap === key);
+        btn.addEventListener('click', () => { activeHeatmap = key; renderAll(); });
+        heatmapWrap.appendChild(btn);
+      });
+    }
+
+    function renderGrid() {
+      grid.innerHTML = '';
+      const frow = document.createElement('div');
+      frow.className = 'pt-frow';
+      frow.setAttribute('aria-hidden', 'true');
+      frow.innerHTML = '<div class="pt-frow-line"></div><span class="pt-frow-label">f-block</span><div class="pt-frow-line"></div>';
+      grid.appendChild(frow);
+      [[3, 6, '57–71'], [3, 7, '89–103']].forEach(([col, row, label]) => {
+        const ph = document.createElement('div');
+        ph.className = 'pt-ph';
+        ph.style.gridColumn = col;
+        ph.style.gridRow = row;
+        ph.textContent = label;
+        ph.setAttribute('aria-hidden', 'true');
+        grid.appendChild(ph);
+      });
+      elements.forEach((element) => {
+        const color = CATS[element.cat].color;
+        const state = getState(element, currentTemp);
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'el';
+        cell.dataset.z = String(element.number);
+        cell.dataset.cat = element.cat;
+        cell.style.gridColumn = element.col;
+        cell.style.gridRow = element.row;
+        cell.style.background = getCellBackground(element, state);
+        cell.style.color = state === 'gas' ? '#446072' : color;
+        cell.style.borderColor = state === 'liquid' ? 'rgba(59,130,246,0.32)' : rgba(color, 0.34);
+        cell.classList.toggle('el-selected', selectedSymbol === element.symbol);
+        cell.classList.toggle('el-dimmed', !matchesFilters(element));
+        cell.classList.toggle('el-isolated-out', !!isolatedCat && element.cat !== isolatedCat);
+        cell.classList.toggle('el-command-match', commandMatches.has(element.symbol));
+        cell.setAttribute('aria-label', element.name + ', element ' + element.number + ', ' + getStateLabel(state) + ' at ' + currentTemp + ' Kelvin');
+        cell.innerHTML = '<span class="el-num">' + element.number + '</span>' + '<span class="el-sym">' + element.symbol + '</span>' + '<span class="el-name">' + element.name + '</span>' + '<span class="el-phase">' + getStateLabel(state) + '</span>' + '<span class="el-mass">' + element.mass + '</span>';
+        cell.addEventListener('click', () => showElement(element, true));
+        grid.appendChild(cell);
+      });
+    }
+
+    function buildBohr(shells, color, electronegativity) {
+      const cx = 140;
+      const cy = 140;
+      const rSteps = [34, 58, 82, 102, 120, 136, 150];
+      const orbitBias = Number.isFinite(electronegativity) ? Math.max(0.55, 1.32 - electronegativity * 0.14) : 1;
+      let svg = '<g transform="translate(' + cx + ',' + cy + ')">';
+      shells.forEach((count, index) => {
+        const r = rSteps[index] ?? rSteps[rSteps.length - 1] + (index - 6) * 13;
+        svg += '<circle class="orbit-ring" cx="0" cy="0" r="' + r + '"/>';
+        if (count <= 0) return;
+        const duration = (4.2 + index * 2.4) * orbitBias;
+        const direction = index % 2 === 0 ? 'orb-cw' : 'orb-ccw';
+        const step = (2 * Math.PI) / count;
+        let dots = '';
+        for (let i = 0; i < count; i++) {
+          const angle = step * i;
+          dots += '<circle cx="' + (r * Math.cos(angle)).toFixed(1) + '" cy="' + (r * Math.sin(angle)).toFixed(1) + '" r="4.2" fill="' + color + '" opacity="0.88"/>';
+        }
+        svg += '<g style="transform-origin:center;animation:' + direction + ' ' + duration.toFixed(2) + 's linear infinite">' + dots + '</g>';
+      });
+      const total = shells.reduce((sum, count) => sum + count, 0);
+      svg += '<circle cx="0" cy="0" r="' + Math.min(27, 9 + shells.length * 2.2) + '" fill="' + color + '" opacity="0.9"/>';
+      svg += '<text x="0" y="0" style="font-size:' + (total > 99 ? 9 : total > 9 ? 11 : 14) + 'px;font-weight:800;fill:#fff;text-anchor:middle;dominant-baseline:central;">' + total + '</text>';
       svg += '</g>';
       return svg;
     }
 
-    /* ── Show element panel ───────────────────────────── */
-    let curZ = null;
-    function showEl(z, sym, name, mass, cat, shells, desc) {
-      document.querySelectorAll('.el.el-selected').forEach(c => c.classList.remove('el-selected'));
-      document.querySelector(`.el[data-z="${z}"]`)?.classList.add('el-selected');
-      curZ = z;
-
-      const color = CATS[cat].color;
-      document.getElementById('bohr-svg').innerHTML = buildBohr(shells, color);
-      document.getElementById('ep-sym').textContent  = sym;
-      document.getElementById('ep-sym').style.color  = color;
-      document.getElementById('ep-name').textContent = name;
-      document.getElementById('ep-num').textContent  = z;
-      document.getElementById('ep-mass').textContent = mass;
-      document.getElementById('ep-badge').textContent      = CATS[cat].label;
-      document.getElementById('ep-badge').style.background = color;
-      document.getElementById('ep-config').textContent =
-        shells.map((n,i) => `Shell ${i+1}: ${n}e⁻`).join('  ·  ');
-      document.getElementById('ep-desc').textContent = desc;
-
-      const panel = document.getElementById('el-panel');
-      panel.classList.remove('ep-open');
-      void panel.offsetWidth;
-      panel.classList.add('ep-open');
-      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    function buildCrystalModel(element, state) {
+      const color = state === 'liquid' ? '#38bdf8' : state === 'gas' ? '#c084fc' : CATS[element.cat].color;
+      const nodes = [];
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 4; col++) nodes.push({ x: 34 + col * 42 + row * 10, y: 32 + row * 28 });
+      }
+      if (element.crystal.mode === 'gas') {
+        return '<rect x="6" y="8" width="208" height="124" rx="18" fill="' + rgba(color, 0.08) + '" stroke="' + rgba(color, 0.22) + '" /><circle cx="58" cy="54" r="11" fill="' + rgba(color, 0.48) + '" /><circle cx="126" cy="78" r="14" fill="' + rgba(color, 0.28) + '" /><circle cx="176" cy="46" r="9" fill="' + rgba(color, 0.42) + '" /><circle cx="92" cy="108" r="8" fill="' + rgba(color, 0.24) + '" />';
+      }
+      const lines = [];
+      nodes.forEach((node, index) => {
+        const next = nodes[index + 1];
+        if (next && (index + 1) % 4 !== 0) lines.push('<line x1="' + node.x + '" y1="' + node.y + '" x2="' + next.x + '" y2="' + next.y + '" stroke="' + rgba(color, 0.28) + '" stroke-width="2"/>');
+        const below = nodes[index + 4];
+        if (below) lines.push('<line x1="' + node.x + '" y1="' + node.y + '" x2="' + below.x + '" y2="' + below.y + '" stroke="' + rgba(color, 0.2) + '" stroke-width="2"/>');
+      });
+      const circles = nodes.map((node) => '<circle cx="' + node.x + '" cy="' + node.y + '" r="' + (element.crystal.mode === 'network' ? 6.2 : 5.1) + '" fill="' + rgba(color, 0.74) + '" stroke="' + rgba(color, 0.9) + '" stroke-width="1.2"/>').join('');
+      const liquidOverlay = state === 'liquid' ? '<path d="M20 100 C48 82, 84 124, 116 98 S176 76, 204 98" fill="none" stroke="' + rgba('#38bdf8', 0.9) + '" stroke-width="8" stroke-linecap="round"/>' : '';
+      return '<rect x="6" y="8" width="208" height="124" rx="18" fill="' + rgba(color, 0.06) + '" stroke="' + rgba(color, 0.22) + '" />' + lines.join('') + circles + liquidOverlay;
     }
 
-    document.getElementById('ep-close').addEventListener('click', () => {
-      document.getElementById('el-panel').classList.remove('ep-open');
-      document.querySelectorAll('.el.el-selected').forEach(c => c.classList.remove('el-selected'));
-      curZ = null;
+    function formatValue(value, suffix, digits) {
+      if (!Number.isFinite(value)) return 'Unknown';
+      const precision = typeof digits === 'number' ? digits : value >= 100 ? 0 : 2;
+      return Number(value).toFixed(precision) + (suffix || '');
+    }
+
+    function formatStateText(element) {
+      const state = getState(element, currentTemp);
+      if (state === 'solid') return 'Solid below ' + formatValue(element.melt, ' K', 0);
+      if (state === 'liquid') return Number.isFinite(element.boil) ? 'Liquid until ' + formatValue(element.boil, ' K', 0) : 'Liquid in this temperature band';
+      if (state === 'gas') return Number.isFinite(element.boil) ? 'Gas above ' + formatValue(element.boil, ' K', 0) : 'Gas under standard conditions';
+      return 'Predicted state';
+    }
+
+    function renderStats(element) {
+      const state = getState(element, currentTemp);
+      const stats = [
+        { label: 'Current state', value: getStateLabel(state), sub: currentTemp + ' K · ' + formatStateText(element) },
+        { label: 'Melting point', value: formatValue(element.melt, ' K', 0), sub: 'Where the solid begins to loosen.' },
+        { label: 'Boiling point', value: formatValue(element.boil, ' K', 0), sub: 'Where particles escape into gas.' },
+        { label: 'Electronegativity', value: formatValue(element.electronegativity, '', 2), sub: 'Higher values pull shared electrons harder.' },
+        { label: 'Density', value: formatValue(element.density, ' g/cm³', 2), sub: 'Mass packed into a given volume.' },
+        { label: 'Rarity lens', value: Math.round(element.rarity * 100) + ' / 100', sub: 'Higher scores mean rarer or harder-to-find materials.' },
+        { label: 'Electron shells', value: element.shells.join(' · '), sub: element.electronConfig || 'Shell population model' },
+        { label: 'Appearance', value: element.appearance ? element.appearance.split(',')[0] : 'Reference lesson note', sub: 'Observed under ordinary lab conditions.' }
+      ];
+      document.getElementById('ep-stats').innerHTML = stats.map((stat) => '<div class="ep-stat"><span class="ep-stat-label">' + stat.label + '</span><span class="ep-stat-value">' + stat.value + '</span><span class="ep-stat-sub">' + stat.sub + '</span></div>').join('');
+    }
+
+    function renderUsage(element) {
+      document.getElementById('ep-usage').innerHTML = element.applications.map((item) => '<article class="ep-usage-item"><span class="ep-usage-icon">' + item.icon + '</span><span class="ep-usage-title">' + item.title + '</span><span class="ep-usage-copy">' + item.copy + '</span></article>').join('');
+    }
+
+    function showElement(element, shouldScroll) {
+      selectedSymbol = element.symbol;
+      const state = getState(element, currentTemp);
+      const color = CATS[element.cat].color;
+      document.getElementById('bohr-svg').innerHTML = buildBohr(element.shells, color, element.electronegativity);
+      document.getElementById('crystal-svg').innerHTML = buildCrystalModel(element, state);
+      document.getElementById('ep-shell-note').textContent = Number.isFinite(element.electronegativity) ? 'Electronegativity ' + element.electronegativity.toFixed(2) + ' tightens the electron pull and speeds the shell model.' : 'Electronegativity data is limited here, so shell motion stays in neutral mode.';
+      document.getElementById('ep-crystal-note').textContent = element.crystal.note;
+      document.getElementById('ep-crystal-tag').textContent = element.crystal.label;
+      document.getElementById('ep-sym').textContent = element.symbol;
+      document.getElementById('ep-sym').style.color = color;
+      document.getElementById('ep-name').textContent = element.name;
+      document.getElementById('ep-num').textContent = element.number;
+      document.getElementById('ep-mass').textContent = element.mass;
+      document.getElementById('ep-badge').textContent = CATS[element.cat].label;
+      document.getElementById('ep-badge').style.background = color;
+      document.getElementById('ep-state').textContent = getStateLabel(state) + ' at ' + currentTemp + ' K';
+      document.getElementById('ep-config').textContent = element.electronConfig || element.shells.map((count, index) => 'Shell ' + (index + 1) + ': ' + count + 'e⁻').join(' · ');
+      document.getElementById('ep-desc').textContent = element.summary || element.description;
+      renderStats(element);
+      renderUsage(element);
+      detailPanel.classList.remove('ep-open');
+      void detailPanel.offsetWidth;
+      detailPanel.classList.add('ep-open');
+      renderGrid();
+      if (shouldScroll) detailPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function closePanel() {
+      selectedSymbol = null;
+      detailPanel.classList.remove('ep-open');
+      renderGrid();
+    }
+
+    function renderTemperatureReadout() {
+      tempReadout.textContent = currentTemp + ' K';
+      tempStateReadout.textContent = getStateSubtitle();
+    }
+
+    function renderCommandList(filter) {
+      const needle = String(filter || '').trim().toLowerCase();
+      const items = COMMANDS.filter((command) => !needle || command.label.includes(needle) || command.note.toLowerCase().includes(needle));
+      if (!items.length) {
+        commandList.innerHTML = '<div class="pt-command-empty">No command found yet. Try batteries, balloons, chips, or fireworks.</div>';
+        return;
+      }
+      commandList.innerHTML = items.map((command) => '<button class="pt-command-item" type="button" data-command="' + command.label + '"><strong>' + command.label + '</strong><small>' + command.note + '</small></button>').join('');
+    }
+
+    function openCommandPalette() {
+      commandRoot.classList.add('is-open');
+      commandRoot.setAttribute('aria-hidden', 'false');
+      commandInput.value = '';
+      renderCommandList('');
+      setTimeout(() => commandInput.focus(), 0);
+    }
+
+    function closeCommandPalette() {
+      commandRoot.classList.remove('is-open');
+      commandRoot.setAttribute('aria-hidden', 'true');
+    }
+
+    function applyCommand(label) {
+      const command = COMMANDS.find((entry) => entry.label === label);
+      if (!command) return;
+      commandMatches = new Set(command.symbols);
+      commandStatus.textContent = 'Command "' + command.label + '" highlighting ' + command.symbols.join(', ') + '.';
+      const lead = elements.find((entry) => commandMatches.has(entry.symbol));
+      closeCommandPalette();
+      renderGrid();
+      if (lead) showElement(lead, true);
+    }
+
+    function clearCommandHighlight() {
+      commandMatches = new Set();
+      commandStatus.textContent = 'Try “batteries”, “balloons”, or “chips”.';
+      renderGrid();
+    }
+
+    function renderAll() {
+      renderCategoryControls();
+      renderLegend();
+      renderHeatmapControls();
+      renderTemperatureReadout();
+      renderGrid();
+      if (selectedSymbol) {
+        const element = elements.find((entry) => entry.symbol === selectedSymbol);
+        if (element) showElement(element, false);
+      }
+    }
+
+    searchInput.addEventListener('input', (event) => {
+      searchQ = event.target.value.toLowerCase().trim();
+      if (!searchQ) clearCommandHighlight();
+      renderGrid();
     });
 
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && curZ) {
-        document.getElementById('el-panel').classList.remove('ep-open');
-        document.querySelectorAll('.el.el-selected').forEach(c => c.classList.remove('el-selected'));
-        curZ = null;
+    tempInput.addEventListener('input', (event) => {
+      currentTemp = Number(event.target.value);
+      renderTemperatureReadout();
+      renderGrid();
+      if (selectedSymbol) {
+        const element = elements.find((entry) => entry.symbol === selectedSymbol);
+        if (element) showElement(element, false);
       }
     });
 
+    document.getElementById('ep-close').addEventListener('click', closePanel);
+    commandOpen.addEventListener('click', openCommandPalette);
+    commandClose.addEventListener('click', closeCommandPalette);
+    commandBackdrop.addEventListener('click', closeCommandPalette);
+    commandInput.addEventListener('input', (event) => renderCommandList(event.target.value));
+    commandInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        const first = commandList.querySelector('[data-command]');
+        if (first) applyCommand(first.dataset.command);
+      }
+    });
+    commandList.addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-command]');
+      if (btn) applyCommand(btn.dataset.command);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        openCommandPalette();
+        return;
+      }
+      if (event.key === 'Escape') {
+        if (commandRoot.classList.contains('is-open')) closeCommandPalette();
+        else if (selectedSymbol) closePanel();
+      }
+    });
+
+    rebuildElements();
+    renderAll();
+    loadReferenceData();
   })();
   </script>
   <script src="../assets/js/classroom-animations.js"></script>
