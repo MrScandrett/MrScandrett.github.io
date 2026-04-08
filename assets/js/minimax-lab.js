@@ -7,6 +7,10 @@ const treeToggle = document.getElementById("mm-tree-toggle");
 
 const turnRoleEl = document.getElementById("mm-turn-role");
 const aiChoiceEl = document.getElementById("mm-ai-choice");
+const gaugeNeedleEl = document.getElementById("mm-gauge-needle");
+const tensionLabelEl = document.getElementById("mm-tension-label");
+const dustLayerEl = document.getElementById("mm-dust-layer");
+const eraserEl = document.getElementById("mm-eraser");
 
 const metricDepthEl = document.getElementById("mm-metric-depth");
 const metricNodesEl = document.getElementById("mm-metric-nodes");
@@ -30,6 +34,10 @@ const required = [
   treeToggle,
   turnRoleEl,
   aiChoiceEl,
+  gaugeNeedleEl,
+  tensionLabelEl,
+  dustLayerEl,
+  eraserEl,
   metricDepthEl,
   metricNodesEl,
   metricBranchEl,
@@ -65,6 +73,10 @@ const state = {
   aiLastMove: null,
   aiHighlight: null,
   aiPending: false,
+  thinkingTimer: null,
+  heatmap: {},
+  heatmapBestMoves: [],
+  pendingMistakeMove: null,
   treeVisible: false,
   evalLogExpanded: false,
   preferFasterWins: false,
@@ -142,6 +154,137 @@ function pushDebug(line) {
   if (state.debugLines.length > 260) {
     state.debugLines = state.debugLines.slice(state.debugLines.length - 260);
   }
+}
+
+function simulateMove(board, index, player) {
+  const next = board.slice();
+  next[index] = player;
+  return next;
+}
+
+function scoreForCurrentBoard(board, player, depthLimit) {
+  const stats = { nodes: 0, maxDepth: 0, branchTotal: 0, branchSamples: 0, evalStates: [] };
+  return minimax(board.slice(), player, 0, depthLimit, stats).score;
+}
+
+function computeHeatmap(board, player = "X") {
+  const moves = availableMoves(board);
+  const depthLimit = Math.max(1, Math.min(9, Number(depthSelect.value) || 9));
+  const map = {};
+  let bestScore = player === "X" ? -Infinity : Infinity;
+
+  for (const move of moves) {
+    const projected = simulateMove(board, move, player);
+    const nextScore = scoreForCurrentBoard(projected, opposite(player), depthLimit - 1);
+    map[move] = nextScore;
+    if (player === "X") bestScore = Math.max(bestScore, nextScore);
+    else bestScore = Math.min(bestScore, nextScore);
+  }
+
+  const bestMoves = moves.filter((move) => map[move] === bestScore);
+  return { map, bestMoves, bestScore: Number.isFinite(bestScore) ? bestScore : 0 };
+}
+
+function tensionLabel(score) {
+  if (score >= 0.75) return "X has a forced win";
+  if (score >= 0.25) return "X is pressuring the board";
+  if (score <= -0.75) return "O has a forced win";
+  if (score <= -0.25) return "O is taking control";
+  return "Perfect draw";
+}
+
+function updateTensionMeter() {
+  const depthLimit = Math.max(1, Math.min(9, Number(depthSelect.value) || 9));
+  const score = state.winner
+    ? terminalScore(state.winner)
+    : scoreForCurrentBoard(state.board, state.turn, depthLimit);
+
+  const clamped = Math.max(-1, Math.min(1, score));
+  const angle = clamped * 65;
+  gaugeNeedleEl.style.transform = `rotate(${angle}deg)`;
+  tensionLabelEl.textContent = tensionLabel(clamped);
+}
+
+function renderHeatmapCell(button, index) {
+  if (state.turn !== "X" || state.winner || state.aiPending || state.board[index]) return;
+  const score = state.heatmap[index];
+  if (typeof score !== "number") return;
+
+  button.classList.add("has-ghost");
+  const ghost = document.createElement("span");
+  ghost.className = "minimax-ghost-score";
+  if (score > 0) ghost.classList.add("is-good");
+  if (score < 0) ghost.classList.add("is-bad");
+  ghost.textContent = score > 0 ? "+1" : score < 0 ? "-1" : "0";
+  button.appendChild(ghost);
+}
+
+function updateHeatmapProjection() {
+  if (state.turn === "X" && !state.winner && !state.aiPending) {
+    const projection = computeHeatmap(state.board, "X");
+    state.heatmap = projection.map;
+    state.heatmapBestMoves = projection.bestMoves;
+  } else {
+    state.heatmap = {};
+    state.heatmapBestMoves = [];
+  }
+}
+
+function spawnChalkDust(index) {
+  const cell = boardEl.querySelector(`[data-index="${index}"]`);
+  if (!cell || !dustLayerEl) return;
+  const boardRect = boardEl.getBoundingClientRect();
+  const cellRect = cell.getBoundingClientRect();
+  const centerX = cellRect.left - boardRect.left + cellRect.width / 2;
+  const centerY = cellRect.top - boardRect.top + cellRect.height / 2;
+
+  for (let i = 0; i < 6; i += 1) {
+    const particle = document.createElement("span");
+    particle.className = "minimax-dust";
+    particle.style.left = `${centerX + (Math.random() * 24 - 12)}px`;
+    particle.style.top = `${centerY + (Math.random() * 18 - 9)}px`;
+    particle.style.animationDelay = `${i * 20}ms`;
+    dustLayerEl.appendChild(particle);
+    window.setTimeout(() => particle.remove(), 700);
+  }
+}
+
+function clearThinkingTimer() {
+  if (state.thinkingTimer) {
+    window.clearInterval(state.thinkingTimer);
+    state.thinkingTimer = null;
+  }
+}
+
+function renderThinkingOverlay() {
+  if (!state.aiPending) return;
+  const openMoves = availableMoves(state.board);
+  openMoves.forEach((move) => {
+    const button = boardEl.querySelector(`[data-index="${move}"]`);
+    if (!button) return;
+    const mark = document.createElement("span");
+    mark.className = "minimax-thinking-mark";
+    mark.textContent = Math.random() > 0.5 ? "X" : "O";
+    button.appendChild(mark);
+  });
+}
+
+function animateResetBoard(onClear) {
+  if (!eraserEl) {
+    onClear();
+    return Promise.resolve();
+  }
+
+  eraserEl.classList.add("is-active");
+  return new Promise((resolve) => {
+    window.setTimeout(() => {
+      onClear();
+    }, 360);
+    window.setTimeout(() => {
+      eraserEl.classList.remove("is-active");
+      resolve();
+    }, 760);
+  });
 }
 
 function minimax(board, player, depth, depthLimit, stats) {
@@ -458,12 +601,21 @@ function renderBoard() {
       button.classList.add("is-ai-choice");
     }
 
+    if (state.pendingMistakeMove === i) {
+      button.classList.add("is-mistake");
+    }
+
     button.disabled = Boolean(value) || Boolean(state.winner) || state.turn !== "X" || state.aiPending;
     button.addEventListener("click", () => {
       onPlayerMove(i);
     });
 
+    renderHeatmapCell(button, i);
     boardEl.appendChild(button);
+  }
+
+  if (state.aiPending) {
+    renderThinkingOverlay();
   }
 
   aiMoveBtn.disabled = state.winner !== null || state.turn !== "O" || state.aiPending;
@@ -477,6 +629,7 @@ function applyMove(index, player) {
   if (state.board[index] || state.winner) return;
   state.board[index] = player;
   state.lastMove = index;
+  spawnChalkDust(index);
   if (player === "O") {
     state.aiLastMove = index;
   }
@@ -520,24 +673,43 @@ function runAiSearchAndMove() {
   state.aiHighlight = result.move;
   state.aiLastMove = result.move;
   aiChoiceEl.textContent = `AI chose ${moveLabel(result.move)} with score ${result.score.toFixed(2)}.`;
+  renderTurnRole();
   renderBoard();
 
+  const thinkingDuration = 520;
+  const start = performance.now();
+  clearThinkingTimer();
+  state.thinkingTimer = window.setInterval(() => {
+    const elapsed = performance.now() - start;
+    const progress = Math.min(1, elapsed / thinkingDuration);
+    metricNodesEl.textContent = String(Math.max(1, Math.round(metrics.nodes * progress)));
+    renderBoard();
+  }, 70);
+
   window.setTimeout(() => {
+    clearThinkingTimer();
     applyMove(result.move, "O");
     state.aiHighlight = null;
     state.aiPending = false;
     renderTurnRole();
+    updateHeatmapProjection();
+    updateTensionMeter();
     renderBoard();
     renderTree();
-  }, 320);
+  }, thinkingDuration);
 }
 
 function onPlayerMove(index) {
   if (state.turn !== "X" || state.winner || state.board[index]) return;
 
+  if (state.heatmapBestMoves.length) {
+    state.pendingMistakeMove = state.heatmapBestMoves.includes(index) ? null : index;
+  }
   applyMove(index, "X");
   aiChoiceEl.textContent = "AI is evaluating replies...";
   renderTurnRole();
+  updateHeatmapProjection();
+  updateTensionMeter();
   renderBoard();
   renderTree();
 
@@ -550,24 +722,38 @@ function onPlayerMove(index) {
   }
 }
 
-function resetGame() {
-  state.board = Array(9).fill(null);
-  state.turn = "X";
-  state.winner = null;
-  state.lastMove = null;
-  state.aiLastMove = null;
-  state.aiHighlight = null;
-  state.aiPending = false;
-  state.evalLogExpanded = false;
+function resetGame({ animate = true } = {}) {
+  clearThinkingTimer();
+  const runReset = () => {
+    state.board = Array(9).fill(null);
+    state.turn = "X";
+    state.winner = null;
+    state.lastMove = null;
+    state.aiLastMove = null;
+    state.aiHighlight = null;
+    state.aiPending = false;
+    state.evalLogExpanded = false;
+    state.pendingMistakeMove = null;
+    state.heatmap = {};
+    state.heatmapBestMoves = [];
 
-  aiChoiceEl.textContent = "AI choice will appear here after search.";
+    aiChoiceEl.textContent = "AI choice will appear here after search.";
 
-  updateMetrics({ depth: 0, nodes: 0, branching: 0 });
-  renderEvalLog([]);
-  renderTurnRole();
-  renderBoard();
-  renderTree();
-  renderDebugLog();
+    updateMetrics({ depth: 0, nodes: 0, branching: 0 });
+    renderEvalLog([]);
+    renderTurnRole();
+    updateHeatmapProjection();
+    updateTensionMeter();
+    renderBoard();
+    renderTree();
+    renderDebugLog();
+  };
+
+  if (animate) {
+    animateResetBoard(runReset);
+  } else {
+    runReset();
+  }
 }
 
 resetBtn.addEventListener("click", () => {
@@ -579,6 +765,9 @@ aiMoveBtn.addEventListener("click", () => {
 });
 
 depthSelect.addEventListener("change", () => {
+  updateHeatmapProjection();
+  updateTensionMeter();
+  renderBoard();
   renderTree();
 });
 
@@ -587,6 +776,9 @@ fastWinsToggle.addEventListener("change", () => {
   aiChoiceEl.textContent = state.preferFasterWins
     ? "Depth bias enabled: engine prefers faster outcomes in equal-score lines."
     : "Depth bias disabled: pure terminal-score minimax.";
+  updateHeatmapProjection();
+  updateTensionMeter();
+  renderBoard();
   renderTree();
 });
 
@@ -620,4 +812,4 @@ debugClearBtn.addEventListener("click", () => {
   renderDebugLog();
 });
 
-resetGame();
+resetGame({ animate: false });

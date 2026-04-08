@@ -5,11 +5,148 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>N-gram Text Predictor · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="N-gram Text Predictor lesson in the AI Origins unit." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     .ll-viewport .ngram-shell-body {
       grid-template-columns: minmax(0, 1fr);
+    }
+    .ngram-lab .ngram-output,
+    .ngram-lab .ngram-metric-value,
+    .ngram-lab .ngram-metric-detail,
+    .ngram-lab .ngram-metrics-details .ngram-output,
+    .ngram-lab .ngram-status,
+    .ngram-lab .ngram-seed-ghost,
+    .ngram-lab .ngram-prediction-prob,
+    .ngram-lab .ngram-prob-pill,
+    .ngram-lab .ngram-scan-tally {
+      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .ngram-seed-wrap {
+      position: relative;
+    }
+    .ngram-seed-ghost {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 0.9rem;
+      color: rgba(100, 116, 139, 0.65);
+      pointer-events: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ngram-seed-ghost strong {
+      color: rgba(59, 130, 246, 0.75);
+      font-weight: 600;
+    }
+    .ngram-seed-live {
+      display: grid;
+      gap: 0.55rem;
+      margin-top: 0.55rem;
+    }
+    .ngram-prob-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    .ngram-prob-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      border-radius: 999px;
+      padding: 0.38rem 0.65rem;
+      border: 1px solid rgba(59, 130, 246, 0.18);
+      background: rgba(59, 130, 246, 0.08);
+      color: #1e3a8a;
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+    .ngram-prob-pill__word {
+      color: #0f172a;
+      font-weight: 700;
+    }
+    .ngram-corpus-wrap {
+      position: relative;
+    }
+    .ngram-corpus-overlay {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
+      padding: 0.9rem 1rem;
+      border-radius: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: rgba(255, 255, 255, 0.82);
+      color: #0f172a;
+      border: 1px solid rgba(59, 130, 246, 0.18);
+    }
+    .ngram-corpus-wrap.is-scanning .ngram-corpus-overlay {
+      opacity: 1;
+    }
+    .ngram-lab.ngram-high-contrast .ngram-corpus-overlay,
+    [data-theme="night"] .ngram-corpus-overlay {
+      background: rgba(15, 23, 42, 0.88);
+      color: rgba(255, 255, 255, 0.92);
+    }
+    .ngram-window-highlight {
+      background: rgba(59, 130, 246, 0.16);
+      border-bottom: 2px solid #3b82f6;
+      border-radius: 4px;
+      padding: 0.05rem 0.02rem;
+    }
+    .target-word-glow {
+      color: #2563eb;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+    .ngram-scan-hud {
+      display: grid;
+      gap: 0.45rem;
+      margin-top: 0.55rem;
+    }
+    .ngram-scan-tally {
+      min-height: 2.8rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.06);
+      color: #334155;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+    [data-theme="night"] .ngram-scan-tally {
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.82);
+    }
+    .ngram-compare-toggle {
+      margin-top: 0.55rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+    }
+    .ngram-output-token {
+      border-radius: 4px;
+      padding: 0.04rem 0.02rem;
+    }
+    .ngram-output-token--high { color: #111827; }
+    .ngram-output-token--medium { color: #7c4a03; }
+    .ngram-output-token--low { color: #c2410c; }
+    [data-theme="night"] .ngram-output-token--high { color: rgba(255,255,255,0.92); }
+    [data-theme="night"] .ngram-output-token--medium { color: #fbbf24; }
+    [data-theme="night"] .ngram-output-token--low { color: #fb923c; }
+    .ngram-compare-panel[hidden] { display: none !important; }
+    .ngram-compare-note {
+      font-size: 0.76rem;
+      color: #64748b;
+      margin-top: 0.45rem;
     }
   </style>
 </head>
@@ -51,6 +188,11 @@
               <h3>Watch The Robot Write</h3>
               <p class="ngram-panel-note">When you change the controls, keep your eyes here. This is the live result.</p>
               <pre id="ngram-output" class="ngram-output">Pick a sample, teach the robot, and generate from a starter phrase.</pre>
+              <section id="ngram-compare-panel" class="ngram-compare-panel" hidden>
+                <h4 title="N-grams count nearby words. Neural language models learn broader relationships across many layers.">Neural AI Comparison</h4>
+                <pre id="ngram-neural-output" class="ngram-output">Turn on comparison mode to see a semantic-style continuation.</pre>
+                <p class="ngram-compare-note">N-grams count words; LLMs model relationships.</p>
+              </section>
             </section>
 
             <div class="ngram-stage-bottom">
@@ -103,7 +245,13 @@
                     <span id="ngram-seed-label">Starter Phrase</span>
                     <small id="ngram-seed-help">Try something short like "our class" or "the moon".</small>
                   </label>
-                  <input id="ngram-seed" type="text" placeholder="Type a seed phrase..." />
+                  <div class="ngram-seed-wrap">
+                    <input id="ngram-seed" type="text" placeholder="Type a seed phrase..." autocomplete="off" />
+                    <div id="ngram-seed-ghost" class="ngram-seed-ghost" aria-hidden="true"></div>
+                  </div>
+                  <div class="ngram-seed-live">
+                    <div id="ngram-live-probs" class="ngram-prob-pills" aria-live="polite"></div>
+                  </div>
 
                   <div class="ngram-row ngram-controls">
                     <label class="ngram-field ngram-stack-field" for="ngram-length">
@@ -121,6 +269,10 @@
                     <button id="ngram-generate" type="button">Generate</button>
                   </div>
                   <p class="ngram-panel-note ngram-run-note">Change the starter phrase or randomness, then watch the live output on the left.</p>
+                  <label class="ngram-compare-toggle" title="Compare how a count-based model differs from a meaning-focused continuation.">
+                    <input id="ngram-toggle-compare" type="checkbox" />
+                    <span>Compare with Neural AI</span>
+                  </label>
                 </section>
               </div>
 
@@ -149,7 +301,13 @@
                     <span id="ngram-corpus-label">Story Text</span>
                     <small id="ngram-corpus-help">Tip: 3 to 8 sentences works great.</small>
                   </label>
-                  <textarea id="ngram-corpus" rows="8" placeholder="Paste or load a small text corpus..."></textarea>
+                  <div id="ngram-corpus-wrap" class="ngram-corpus-wrap">
+                    <textarea id="ngram-corpus" rows="8" placeholder="Paste or load a small text corpus..."></textarea>
+                    <div id="ngram-corpus-overlay" class="ngram-corpus-overlay" aria-hidden="true"></div>
+                  </div>
+                  <div class="ngram-scan-hud">
+                    <div id="ngram-scan-tally" class="ngram-scan-tally" aria-live="polite">The scanner will highlight the context window as the robot learns.</div>
+                  </div>
 
                   <div class="ngram-row ngram-controls">
                     <button id="ngram-load-sample" type="button">Load Class Sample</button>
