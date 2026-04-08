@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Counting Rods · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Mathematics Lesson — Explore ancient Chinese counting rods, a revolutionary calculating method that dominated East Asian mathematics for over 1,500 years." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #8b4513; --ll-tab-active: #8b4513; --ll-tab-active-bg: rgba(139,69,19,0.12); }
+    .rods-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ── */
+    .rods-hero { padding: 0.4rem 0 1.3rem; }
+    .rods-hero h1 { max-width: 26ch; margin-left: 0; font-size: clamp(1.55rem,3.5vw,2.3rem); }
+    .rods-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .rods-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .rods-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .rods-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Card ── */
+    .rods-card {
+      background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7);
+      border-left: 3.5px solid var(--card-accent,#8b4513);
+      border-radius: var(--radius,18px);
+      box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+    }
+    .rods-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .rods-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .rods-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .rods-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .rods-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .rods-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Callout ── */
+    .rods-callout {
+      border-radius: 12px; padding: 0.8rem 1rem; margin: 0.7rem 0;
+      display: flex; gap: 0.7rem; align-items: flex-start;
+    }
+    .rods-callout.brown { background: rgba(139,69,19,0.08); border: 1.5px solid rgba(139,69,19,0.25); }
+    .rods-callout.blue   { background: rgba(0,122,255,0.07);  border: 1.5px solid rgba(0,122,255,0.2); }
+    .rods-callout-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .rods-callout-text { font-size: 0.86rem; line-height: 1.6; color: #3f4f65; }
+    [data-theme="night"] .rods-callout-text { color: rgba(245,245,247,0.75); }
+
+    /* ── Rod visualization ── */
+    .rods-display { background: rgba(0,0,0,0.03); border: 1.5px solid var(--line,#d2d2d7); border-radius: 12px; padding: 1.2rem; margin: 0.9rem 0; }
+    [data-theme="night"] .rods-display { background: rgba(255,255,255,0.04); }
+    .rods-title { font-weight: 700; color: #8b4513; margin-bottom: 0.7rem; font-size: 0.9rem; }
+
+    /* Vertical and horizontal rods */
+    .rods-vertical { display: inline-flex; flex-direction: column; gap: 1px; margin: 0 3px; }
+    .rods-vertical .rod { width: 3px; height: 16px; background: #8b4513; border-radius: 1px; }
+
+    .rods-horizontal { display: inline-flex; gap: 1px; margin: 0 3px; }
+    .rods-horizontal .rod { width: 16px; height: 3px; background: #8b4513; border-radius: 1px; }
+
+    .rod-number { display: inline-flex; align-items: center; gap: 6px; font-size: 0.95rem; margin: 0.4rem 1rem 0.4rem 0; }
+
+    /* ── Conversion ── */
+    .rods-converter { background: rgba(0,0,0,0.03); border: 1.5px solid var(--line,#d2d2d7); border-radius: 12px; padding: 1rem; margin: 0.9rem 0; }
+    [data-theme="night"] .rods-converter { background: rgba(255,255,255,0.04); }
+    .conv-row { display: flex; gap: 1rem; align-items: center; margin: 0.7rem 0; flex-wrap: wrap; }
+    .conv-label { font-weight: 600; font-size: 0.88rem; color: #64748b; min-width: 80px; }
+    .conv-input {
+      width: 100px; padding: 8px 12px; border: 1.5px solid var(--line,#d2d2d7);
+      border-radius: 10px; font-size: 1rem; font-weight: 700; font-family: inherit;
+      background: var(--white,#fff); color: var(--text,#1d1d1f); outline: none; text-align: center;
+    }
+    .conv-input:focus { border-color: #8b4513; }
+    .conv-btn {
+      padding: 8px 18px; border-radius: 10px; border: none;
+      background: #8b4513; color: #fff; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+    }
+    .conv-btn:hover { opacity: 0.85; }
+    .conv-result { font-size: 0.9rem; padding: 0.75rem 1rem; background: rgba(139,69,19,0.08); border: 1.5px solid rgba(139,69,19,0.22); border-radius: 10px; margin-top: 0.6rem; min-height: 2rem; display: flex; align-items: center; }
+    .conv-result-rods { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
+
+    /* ── Timeline ── */
+    .rods-timeline { list-style: none; padding: 0; margin: 0.8rem 0 0; display: flex; flex-direction: column; gap: 0; }
+    .rods-timeline li { display: flex; gap: 0.9rem; align-items: flex-start; font-size: 0.86rem; color: #3f4f65; line-height: 1.55; padding: 0.7rem 0; border-bottom: 1px solid var(--line,#d2d2d7); }
+    .rods-timeline li:last-child { border-bottom: none; }
+    [data-theme="night"] .rods-timeline li { color: rgba(245,245,247,0.72); border-bottom-color: rgba(255,255,255,0.07); }
+    .rods-tl-year { flex-shrink: 0; min-width: 80px; font-weight: 800; color: #8b4513; font-size: 0.82rem; }
+    .rods-tl-icon { flex-shrink: 0; font-size: 1.1rem; }
+
+    @media (max-width: 600px) {
+      .conv-row { flex-direction: column; align-items: stretch; }
+      .conv-input { width: 100%; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+  <div class="ll-sim">
+  <main id="main-content" class="rods-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero rods-hero">
+      <p class="eyebrow">Mathematics · Ancient Computing</p>
+      <h1>Counting Rods</h1>
+      <div class="rods-hero-meta">
+        <span>Chinese Computing History</span>
+        <span class="dot"></span>
+        <span>1,500+ Years of Dominance</span>
+        <span class="dot"></span>
+        <span>Place-Value System</span>
+        <span class="dot"></span>
+        <span>Interactive Visualization</span>
+      </div>
+      <p class="rods-lede">Long before the abacus, ancient China developed an ingenious calculating system using bamboo rods. For more than 1,500 years, counting rods were the primary computational tool in East Asia — used by mathematicians, astronomers, and merchants. This lesson explores how these simple sticks revolutionized mathematics and introduced concepts that are still fundamental today.</p>
+    </section>
+
+    <!-- ── 1. The History ── -->
+    <section class="rods-card" style="--card-accent:#8b4513;">
+      <h2>📜 A Brief History</h2>
+      <p>The exact origins of counting rods are lost to history, but evidence suggests they emerged during the Warring States period (475–221 BC). What we know comes from mathematical texts, archaeological evidence, and the earliest surviving computational manuals.</p>
+
+      <ul class="rods-timeline">
+        <li>
+          <span class="rods-tl-year">~400 BC</span>
+          <span class="rods-tl-icon">🗺️</span>
+          <div><strong>Warring States Period.</strong> References to counting rods appear in Chinese texts. Merchants and astronomers begin using rods for trade calculations and celestial predictions.</div>
+        </li>
+        <li>
+          <span class="rods-tl-year">~200 BC</span>
+          <span class="rods-tl-icon">📐</span>
+          <div><strong>Standardization begins.</strong> The <em>Huangdi Neijing</em> mentions standardized counting procedures. Rods become more uniform in length and thickness — made of bamboo, wood, or bone.</div>
+        </li>
+        <li>
+          <span class="rods-tl-year">~100 AD</span>
+          <span class="rods-tl-icon">📚</span>
+          <div><strong>Mathematical systematisation.</strong> Texts like the <em>Suanjing</em> (Computational Manual) document rod placement rules and operations for addition, subtraction, multiplication, and division.</div>
+        </li>
+        <li>
+          <span class="rods-tl-year">~1200 AD</span>
+          <span class="rods-tl-icon">📖</span>
+          <div><strong>The abacus rises.</strong> As the abacus gained popularity, counting rods gradually declined in China. However, they remained dominant in Korea and Japan for centuries longer.</div>
+        </li>
+        <li>
+          <span class="rods-tl-year">Today</span>
+          <span class="rods-tl-icon">🏛️</span>
+          <div><strong>A mathematical relic.</strong> Counting rods are studied in mathematics history and cultural heritage contexts. They represent a crucial milestone in the development of calculation technology.</div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ── 2. How They Work ── -->
+    <section class="rods-card" style="--card-accent:#8b4513;">
+      <h2>🧮 The System: How It Works</h2>
+      <p>Counting rods used a brilliant place-value system where the <strong>position</strong> of each rod and the <strong>orientation</strong> (vertical or horizontal) encoded both the digit and its magnitude.</p>
+
+      <h3>The Basic Rules:</h3>
+      <ul style="margin:0.6rem 0;padding-left:1.2rem;color:#3f4f65;font-size:0.88rem;line-height:1.65;">
+        <li><strong>Vertical rods</strong> (standing) represent the number directly — each rod = 1 unit</li>
+        <li><strong>Horizontal rods</strong> (lying flat) represent 5 units each</li>
+        <li><strong>Alternating rows</strong> represent different place values (ones, fives, tens, fifties, hundreds, etc.)</li>
+        <li><strong>Empty spaces</strong> represent zero — crucial for a true place-value system!</li>
+      </ul>
+
+      <div class="rods-display">
+        <div class="rods-title">Examples of Rod Numbers:</div>
+
+        <div class="rod-number">
+          <strong>1:</strong>
+          <div class="rods-vertical"><div class="rod"></div></div>
+        </div>
+
+        <div class="rod-number">
+          <strong>2:</strong>
+          <div class="rods-vertical"><div class="rod"></div><div class="rod"></div></div>
+        </div>
+
+        <div class="rod-number">
+          <strong>5:</strong>
+          <div class="rods-horizontal"><div class="rod"></div></div>
+        </div>
+
+        <div class="rod-number">
+          <strong>6:</strong>
+          <div class="rods-horizontal"><div class="rod"></div></div>
+          <div class="rods-vertical"><div class="rod"></div></div>
+        </div>
+
+        <div class="rod-number">
+          <strong>9:</strong>
+          <div class="rods-horizontal"><div class="rod"></div></div>
+          <div class="rods-vertical"><div class="rod"></div><div class="rod"></div><div class="rod"></div><div class="rod"></div></div>
+        </div>
+
+        <div style="margin-top:0.8rem; padding-top:0.8rem; border-top: 1px solid rgba(0,0,0,0.1);">
+          <p style="margin:0;font-weight:700;color:#8b4513;margin-bottom:0.5rem;">The Genius: Place Value</p>
+          <p style="margin:0;font-size:0.85rem;">Unlike Roman numerals (I, V, X, L, C...), rods use position to represent magnitude. A single vertical rod in the first row = 1, but that same rod in the second row = 10. In the third row = 100. This is the same principle your modern decimal system uses!</p>
+        </div>
+      </div>
+
+      <div class="rods-callout blue" style="margin-top:0.9rem;">
+        <span class="rods-callout-icon">💡</span>
+        <div class="rods-callout-text">
+          <strong>The Zero Problem:</strong> For centuries, many ancient cultures couldn't represent zero effectively. Counting rods solved this with an empty space. No rods = nothing. This simple innovation was revolutionary.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 3. Interactive Converter ── -->
+    <section class="rods-card" style="--card-accent:#8b4513;">
+      <h2>🔄 Convert Modern to Counting Rods</h2>
+      <p>Try converting a decimal number to counting rod representation. Enter a number (0–999) to see how it would be displayed with rods.</p>
+
+      <div class="rods-converter">
+        <div class="conv-row">
+          <label class="conv-label">Number:</label>
+          <input type="number" id="rods-conv-input" class="conv-input" value="42" min="0" max="999" />
+          <button class="conv-btn" onclick="convertToRods()">Convert</button>
+        </div>
+
+        <div id="rods-conv-result" class="conv-result">
+          <div>Enter a number and click Convert.</div>
+        </div>
+      </div>
+
+      <div class="rods-callout brown">
+        <span class="rods-callout-icon">⚙️</span>
+        <div class="rods-callout-text">
+          <strong>Reading the display:</strong> The top row shows the hundreds place, the middle shows tens, and the bottom shows ones. Horizontal rods represent 5 units, vertical rods represent 1 unit each.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 4. Why They Matter ── -->
+    <section class="rods-card" style="--card-accent:#8b4513;">
+      <h2>⭐ Why Counting Rods Matter</h2>
+
+      <h3>1. Introduced Place Value to the World</h3>
+      <p>Long before Europe adopted the Hindu-Arabic numeral system, China used rods to perform complex calculations with true place-value notation. This concept was crucial for all modern mathematics.</p>
+
+      <h3>2. Enabled Advanced Mathematics</h3>
+      <p>With counting rods, Chinese mathematicians could perform:</p>
+      <ul style="margin:0.5rem 0;padding-left:1.2rem;color:#3f4f65;font-size:0.88rem;line-height:1.65;">
+        <li>Linear algebra and solving systems of equations (described in the 3rd century AD <em>Nine Chapters on the Mathematical Art</em>)</li>
+        <li>Polynomial equation solving</li>
+        <li>Astronomical and calendar calculations with remarkable precision</li>
+      </ul>
+
+      <h3>3. Portable and Practical</h3>
+      <p>A bundle of rods weighed little and could be packed away. Merchants, tax collectors, and astronomers carried them everywhere. They were the "laptop of ancient Asia."</p>
+
+      <h3>4. A Cognitive Tool</h3>
+      <p>Rods made mathematics visual and tactile. Operators could physically manipulate rods to think through problems — similar to how we use paper and pencil today.</p>
+
+      <div class="rods-callout brown" style="margin-top:0.9rem;">
+        <span class="rods-callout-icon">🌍</span>
+        <div class="rods-callout-text">
+          <strong>Global Impact:</strong> While Europe still used Roman numerals in the medieval period, China and East Asia were solving polynomial equations with counting rods. Knowledge of this system eventually influenced Indian mathematicians and, centuries later, European scholars.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 5. The Quote ── -->
+    <section class="rods-card" style="--card-accent:#8b4513;">
+      <p style="font-style:italic;font-size:0.95rem;color:#3f4f65;">
+        "The rods for calculation are made of bamboo, two fen wide and three cun long. The positive rods have three edges, totaling 216 pieces forming a hexagon, belonging to the Qian. The negative rods have four edges, totaling 144 pieces forming a square, belonging to the Kun."
+      </p>
+      <p style="margin:0.7rem 0 0;font-size:0.82rem;color:#64748b;">— Tang Dynasty "Calendar Chronicle, Book of Sui"</p>
+    </section>
+
+  </main>
+  </div>
+  </div>
+</div>
+
+  <script>
+    function convertToRods() {
+      const num = parseInt(document.getElementById('rods-conv-input').value) || 0;
+      const clamp = Math.min(999, Math.max(0, num));
+
+      // Extract digits
+      const hundreds = Math.floor(clamp / 100);
+      const tens = Math.floor((clamp % 100) / 10);
+      const ones = clamp % 10;
+
+      // Helper to create rod display
+      function rodDisplay(digit, isHundreds = false) {
+        const h = Math.floor(digit / 5);
+        const v = digit % 5;
+        let html = '';
+        if (h > 0) html += `<div style="display:inline-flex;gap:1px;margin-right:4px;"><div style="width:14px;height:3px;background:#8b4513;border-radius:1px;"></div></div>`;
+        for (let i = 0; i < v; i++) {
+          html += `<div style="display:inline-flex;flex-direction:column;gap:1px;margin-right:2px;"><div style="width:3px;height:14px;background:#8b4513;border-radius:1px;"></div></div>`;
+        }
+        return html || '(empty)';
+      }
+
+      const result = document.getElementById('rods-conv-result');
+      result.innerHTML = `
+        <div style="width:100%;">
+          <div style="display:flex;gap:1rem;margin-bottom:0.8rem;padding-bottom:0.8rem;border-bottom:1px solid rgba(0,0,0,0.1);">
+            <div style="flex:1;">
+              <div style="font-size:0.75rem;font-weight:700;color:#64748b;margin-bottom:0.3rem;">HUNDREDS</div>
+              <div style="font-size:1.1rem;font-weight:600;letter-spacing:2px;">${rodDisplay(hundreds)}</div>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:0.75rem;font-weight:700;color:#64748b;margin-bottom:0.3rem;">TENS</div>
+              <div style="font-size:1.1rem;font-weight:600;letter-spacing:2px;">${rodDisplay(tens)}</div>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:0.75rem;font-weight:700;color:#64748b;margin-bottom:0.3rem;">ONES</div>
+              <div style="font-size:1.1rem;font-weight:600;letter-spacing:2px;">${rodDisplay(ones)}</div>
+            </div>
+          </div>
+          <div style="font-size:0.85rem;color:#3f4f65;">
+            <strong>${clamp}</strong> in counting rods = ${hundreds} hundred${hundreds !== 1 ? 's' : ''} + ${tens} ten${tens !== 1 ? 's' : ''} + ${ones} one${ones !== 1 ? 's' : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // Initialize on load
+    convertToRods();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

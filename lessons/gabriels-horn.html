@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gabriel's Horn · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Mathematics Lesson — Explore Gabriel's Horn (Torricelli's Trumpet), a paradoxical geometric figure with finite volume but infinite surface area, revealing deep truths about infinity." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #007AFF; --ll-tab-active: #007AFF; --ll-tab-active-bg: rgba(0,122,255,0.12); }
+    .horn-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ── */
+    .horn-hero { padding: 0.4rem 0 1.3rem; }
+    .horn-hero h1 { max-width: 26ch; margin-left: 0; font-size: clamp(1.55rem,3.5vw,2.3rem); }
+    .horn-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .horn-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .horn-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .horn-lede { color: rgba(245,245,247,0.7); }
+
+    /* ── Card ── */
+    .horn-card {
+      background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7);
+      border-left: 3.5px solid var(--card-accent,#007AFF);
+      border-radius: var(--radius,18px);
+      box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+    }
+    .horn-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .horn-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .horn-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .horn-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .horn-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .horn-card p { color: rgba(245,245,247,0.72); }
+
+    /* ── Callout ── */
+    .horn-callout {
+      border-radius: 12px; padding: 0.8rem 1rem; margin: 0.7rem 0;
+      display: flex; gap: 0.7rem; align-items: flex-start;
+    }
+    .horn-callout.blue   { background: rgba(0,122,255,0.07);  border: 1.5px solid rgba(0,122,255,0.2); }
+    .horn-callout.red    { background: rgba(255,59,48,0.07);  border: 1.5px solid rgba(255,59,48,0.22); }
+    .horn-callout.green  { background: rgba(52,199,89,0.07);  border: 1.5px solid rgba(52,199,89,0.2); }
+    .horn-callout-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .horn-callout-text { font-size: 0.86rem; line-height: 1.6; color: #3f4f65; }
+    [data-theme="night"] .horn-callout-text { color: rgba(245,245,247,0.75); }
+
+    /* ── Math equations ── */
+    .horn-equation { background: rgba(0,0,0,0.03); border: 1.5px solid var(--line,#d2d2d7); border-radius: 12px; padding: 1rem; margin: 0.8rem 0; font-family: 'Monaco','Courier New',monospace; font-size: 0.95rem; color: #3f4f65; line-height: 1.7; overflow-x: auto; }
+    [data-theme="night"] .horn-equation { background: rgba(255,255,255,0.04); }
+    .math-var { color: #007AFF; font-weight: 700; }
+    .math-result { color: #34c759; font-weight: 700; }
+
+    /* ── Interactive Demo ── */
+    .horn-demo { background: rgba(0,0,0,0.03); border: 1.5px solid var(--line,#d2d2d7); border-radius: 12px; padding: 1.2rem; margin: 0.9rem 0; }
+    [data-theme="night"] .horn-demo { background: rgba(255,255,255,0.04); }
+    .demo-title { font-weight: 700; color: #007AFF; margin-bottom: 0.7rem; font-size: 0.9rem; }
+    .demo-control { display: flex; gap: 1rem; align-items: center; margin: 0.8rem 0; flex-wrap: wrap; }
+    .demo-label { font-weight: 600; font-size: 0.88rem; color: #64748b; min-width: 120px; }
+    .demo-range {
+      flex: 1; min-width: 150px; -webkit-appearance: none; appearance: none;
+      height: 6px; border-radius: 3px; outline: none; cursor: pointer; background: linear-gradient(90deg,#007AFF 0%,#007AFF 50%,rgba(0,0,0,0.12) 50%);
+    }
+    .demo-range::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: #007AFF; cursor: pointer;
+    }
+    .demo-value { font-size: 0.95rem; font-weight: 700; color: #007AFF; min-width: 60px; }
+
+    /* ── Metric table ── */
+    .horn-metrics { margin: 1rem 0; }
+    .metric-row { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0; border-bottom: 1px solid rgba(0,0,0,0.08); font-size: 0.88rem; }
+    [data-theme="night"] .metric-row { border-bottom-color: rgba(255,255,255,0.07); }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-label { color: #64748b; font-weight: 600; }
+    .metric-value { color: #007AFF; font-weight: 700; font-family: 'Monaco','Courier New',monospace; }
+
+    /* ── Timeline ── */
+    .horn-timeline { list-style: none; padding: 0; margin: 0.8rem 0 0; display: flex; flex-direction: column; gap: 0; }
+    .horn-timeline li { display: flex; gap: 0.9rem; align-items: flex-start; font-size: 0.86rem; color: #3f4f65; line-height: 1.55; padding: 0.7rem 0; border-bottom: 1px solid var(--line,#d2d2d7); }
+    .horn-timeline li:last-child { border-bottom: none; }
+    [data-theme="night"] .horn-timeline li { color: rgba(245,245,247,0.72); border-bottom-color: rgba(255,255,255,0.07); }
+    .horn-tl-year { flex-shrink: 0; min-width: 80px; font-weight: 800; color: #007AFF; font-size: 0.82rem; }
+    .horn-tl-icon { flex-shrink: 0; font-size: 1.1rem; }
+
+    .canvas-container { text-align: center; margin: 1rem 0; }
+    canvas { border: 1.5px solid var(--line,#d2d2d7); border-radius: 10px; background: #fff; }
+    [data-theme="night"] canvas { background: #2c2c2e; }
+
+    @media (max-width: 600px) {
+      .demo-control { flex-direction: column; align-items: stretch; }
+      .demo-range { min-width: 100%; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+  <div class="ll-sim">
+  <main id="main-content" class="horn-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero horn-hero">
+      <p class="eyebrow">Mathematics · Calculus & Infinity</p>
+      <h1>Gabriel's Horn</h1>
+      <div class="horn-hero-meta">
+        <span>Torricelli's Trumpet</span>
+        <span class="dot"></span>
+        <span>Finite Volume, Infinite Surface</span>
+        <span class="dot"></span>
+        <span>The Paradox of Infinity</span>
+        <span class="dot"></span>
+        <span>Calculus & Limits</span>
+      </div>
+      <p class="horn-lede">In the 17th century, mathematician Evangelista Torricelli discovered something that defies intuition: a geometric shape that can be filled with a finite amount of paint, yet would require an infinite amount to coat its surface. This seemingly impossible object, named Gabriel's Horn, reveals profound truths about infinity, calculus, and the strange behavior of numbers as they approach zero.</p>
+    </section>
+
+    <!-- ── 1. The Paradox ── -->
+    <section class="horn-card" style="--card-accent:#007AFF;">
+      <h2>🤔 The Impossible Paradox</h2>
+      <p>Gabriel's Horn (also called Torricelli's Trumpet) is defined mathematically by rotating the curve <strong>y = 1/x</strong> (for x ≥ 1) around the x-axis. This creates a shape that stretches to infinity but never actually touches itself.</p>
+
+      <h3>The Paradox Stated:</h3>
+      <ul style="margin:0.6rem 0;padding-left:1.2rem;color:#3f4f65;font-size:0.88rem;line-height:1.65;">
+        <li><strong>Volume:</strong> π cubic units (finite) — you could fill it with a finite amount of paint</li>
+        <li><strong>Surface Area:</strong> Infinite — it would take infinitely much paint to coat the outside</li>
+      </ul>
+
+      <div class="horn-callout red">
+        <span class="horn-callout-icon">⚠️</span>
+        <div class="horn-callout-text">
+          <strong>This seems impossible!</strong> How can a shape hold a finite amount of liquid but have an infinite exterior? Isn't the inside surface the same as the outside? The resolution lies in how we calculate surface area for unbounded regions — the curve becomes so narrow that its surface area diverges to infinity, even though the enclosed volume converges to a finite value.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 2. The Mathematics ── -->
+    <section class="horn-card" style="--card-accent:#007AFF;">
+      <h2>📐 The Mathematics: How to Calculate</h2>
+
+      <h3>Defining the Horn</h3>
+      <div class="horn-equation">
+        <strong>Function:</strong> <span class="math-var">y = 1/x</span> for <span class="math-var">x ≥ 1</span>
+        <br/><strong>Rotate around:</strong> The x-axis
+        <br/><strong>Result:</strong> Gabriel's Horn
+      </div>
+
+      <h3>Calculating Volume</h3>
+      <p>When you rotate a curve around an axis, the volume is found using the disk method:</p>
+      <div class="horn-equation">
+        <strong>V = π ∫₁^∞ (1/x)² dx</strong>
+        <br/><br/>
+        <strong>V = π ∫₁^∞ 1/x² dx</strong>
+        <br/><br/>
+        <strong>V = π [−1/x]₁^∞</strong>
+        <br/><br/>
+        <strong>V = π [(0) − (−1)]</strong>
+        <br/><br/>
+        <strong style="color:#34c759;">V = π ≈ 3.14159... cubic units (FINITE)</strong>
+      </div>
+
+      <h3>Surface Area</h3>
+      <p>The surface area of a surface of revolution is more complex:</p>
+      <div class="horn-equation">
+        <strong>SA = 2π ∫₁^∞ (1/x)√(1 + (−1/x²)²) dx</strong>
+        <br/><br/>
+        <strong>SA = 2π ∫₁^∞ (1/x)√(1 + 1/x⁴) dx</strong>
+        <br/><br/>
+        <strong style="color:#ff3b30;">SA = ∞ (INFINITE)</strong>
+        <br/><br/>
+        <span style="font-size:0.82rem;">The integral diverges — no matter what upper limit you choose, the contribution from the tail grows without bound.</span>
+      </div>
+
+      <div class="horn-callout blue">
+        <span class="horn-callout-icon">💡</span>
+        <div class="horn-callout-text">
+          <strong>Why the difference?</strong> The volume integral has x² in the denominator (stronger decay), which converges. The surface area integral only has x (weaker decay) plus the √(...) term, which keeps it from converging as quickly.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 3. Interactive Demo ── -->
+    <section class="horn-card" style="--card-accent:#007AFF;">
+      <h2>🔍 Interactive Visualization</h2>
+      <p>Explore how the horn's properties change as you limit how far it extends. Drag the slider to see the finite approximation of volume and surface area.</p>
+
+      <div class="horn-demo">
+        <div class="demo-title">Upper Bound Limit (x-axis extends to:)</div>
+        <div class="demo-control">
+          <label class="demo-label">Extend to x =</label>
+          <input type="range" id="horn-limit" class="demo-range" min="1" max="100" value="10" step="1" oninput="updateHornDemo()" />
+          <div class="demo-value" id="horn-limit-display">10</div>
+        </div>
+
+        <div class="horn-metrics" id="horn-metrics">
+          <!-- Will be filled by JavaScript -->
+        </div>
+
+        <div class="horn-callout green" style="margin-top:1rem;">
+          <span class="horn-callout-icon">📊</span>
+          <div class="horn-callout-text">
+            <strong>Notice:</strong> As you extend the horn further, volume grows much more slowly (approaching π), but surface area grows dramatically. This is the essence of the paradox — the surface diverges while volume converges.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 4. Historical Context ── -->
+    <section class="horn-card" style="--card-accent:#007AFF;">
+      <h2>📜 The History Behind the Name</h2>
+
+      <ul class="horn-timeline">
+        <li>
+          <span class="horn-tl-year">1641</span>
+          <span class="horn-tl-icon">📖</span>
+          <div><strong>Torricelli discovers the shape.</strong> Evangelista Torricelli (student of Galileo) first described this geometric figure while studying solids of revolution. He called it "<em>Solidum hyperbolicum acutum</em>" (acute hyperbolic solid).</div>
+        </li>
+        <li>
+          <span class="horn-tl-year">1600s</span>
+          <span class="horn-tl-icon">🎺</span>
+          <div><strong>The "Gabriel's Horn" name.</strong> Later mathematicians likened the shape to a trumpet and named it after the biblical Archangel Gabriel, who announced important events by blowing his horn — a poetic reference to a shape that extends infinitely.</div>
+        </li>
+        <li>
+          <span class="horn-tl-year">1700s</span>
+          <span class="horn-tl-icon">🔬</span>
+          <div><strong>The paradox becomes famous.</strong> As calculus developed, the paradox gained attention. How could something so geometrically "real" have such contradictory properties? It puzzled mathematicians for centuries.</div>
+        </li>
+        <li>
+          <span class="horn-tl-year">Today</span>
+          <span class="horn-tl-icon">💻</span>
+          <div><strong>Gabriel's Horn in modern mathematics.</strong> It's taught in calculus courses as a classic example of how intuition can fail when dealing with infinity. It also demonstrates the power of integration to analyze geometric properties.</div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ── 5. Why This Matters ── -->
+    <section class="horn-card" style="--card-accent:#007AFF;">
+      <h2>⭐ Why Gabriel's Horn Matters</h2>
+
+      <h3>1. It Challenges Our Intuition</h3>
+      <p>Gabriel's Horn shows that mathematical reality can be counterintuitive. We expect volume and surface area to scale together, but infinity breaks this expectation.</p>
+
+      <h3>2. It Demonstrates the Power of Calculus</h3>
+      <p>Without integration and limits, we could never rigorously analyze this shape. Calculus lets us handle infinity in a precise, mathematical way.</p>
+
+      <h3>3. It Illustrates the Difference Between Finite and Infinite</h3>
+      <p>Two integrals that look similar (both have factors of x in the denominator) can have completely different convergence properties. This sensitivity is crucial for understanding infinite processes.</p>
+
+      <h3>4. Practical Applications</h3>
+      <p>While Gabriel's Horn is a theoretical curiosity, the mathematical principles apply to:</p>
+      <ul style="margin:0.5rem 0;padding-left:1.2rem;color:#3f4f65;font-size:0.88rem;line-height:1.65;">
+        <li>Signal processing and Fourier analysis</li>
+        <li>Probability distributions with infinite tails</li>
+        <li>Acoustic resonance in horn instruments (the namesake!)</li>
+        <li>Relativistic physics and singularities</li>
+      </ul>
+
+      <div class="horn-callout blue" style="margin-top:0.9rem;">
+        <span class="horn-callout-icon">🌌</span>
+        <div class="horn-callout-text">
+          <strong>Philosophical Insight:</strong> Gabriel's Horn suggests that "infinite" doesn't always mean "impossibly large." Some infinite quantities are more infinite than others. A bounded region in space can hide infinite complexity — a realization that shaped modern mathematics and even quantum mechanics.
+        </div>
+      </div>
+    </section>
+
+  </main>
+  </div>
+  </div>
+</div>
+
+  <script>
+    function updateHornDemo() {
+      const limit = parseFloat(document.getElementById('horn-limit').value) || 1;
+      document.getElementById('horn-limit-display').textContent = limit;
+
+      // Calculate finite volume up to limit
+      // Volume = π ∫₁^limit 1/x² dx = π(1 - 1/limit)
+      const finiteVolume = Math.PI * (1 - 1/limit);
+      const percentOfFull = ((1 - 1/limit) / 1) * 100;
+
+      // Approximate surface area (numerical approximation)
+      // SA = 2π ∫₁^limit (1/x)√(1 + 1/x⁴) dx
+      let surfaceArea = 0;
+      const steps = 1000;
+      for (let i = 0; i < steps; i++) {
+        const x1 = 1 + (limit - 1) * (i / steps);
+        const x2 = 1 + (limit - 1) * ((i + 1) / steps);
+        const xMid = (x1 + x2) / 2;
+        const y = 1 / xMid;
+        const dy = -1 / (xMid * xMid);
+        const arcLength = Math.sqrt(1 + dy * dy);
+        const circum = 2 * Math.PI * y;
+        surfaceArea += circum * arcLength * (x2 - x1);
+      }
+
+      const metrics = `
+        <div class="metric-row">
+          <span class="metric-label">Upper Limit (x):</span>
+          <span class="metric-value">${limit.toFixed(2)}</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Finite Volume:</span>
+          <span class="metric-value">${finiteVolume.toFixed(4)}π</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">% of Full Volume (π):</span>
+          <span class="metric-value">${percentOfFull.toFixed(1)}%</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Surface Area:</span>
+          <span class="metric-value">${surfaceArea.toFixed(2)}</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">SA to Volume Ratio:</span>
+          <span class="metric-value">${(surfaceArea / finiteVolume).toFixed(2)}</span>
+        </div>
+        <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid rgba(0,0,0,0.1);">
+          <p style="margin:0;font-size:0.82rem;color:#64748b;">
+            <strong>Observation:</strong> As the limit increases, volume approaches π very quickly, but surface area continues growing steadily. This difference in growth rates is the paradox made visible.
+          </p>
+        </div>
+      `;
+
+      document.getElementById('horn-metrics').innerHTML = metrics;
+    }
+
+    // Initialize on load
+    updateHornDemo();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
