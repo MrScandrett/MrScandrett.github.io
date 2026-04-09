@@ -662,3 +662,12 @@
     syncLightingUi();
   }
 }());
+
+// ── Command Palette (Cmd+K / Ctrl+K global search) ──────────────────
+(function () {
+  var s = document.createElement('script');
+  var isSubdir = location.pathname.includes('/lessons/') || location.pathname.includes('/projects/');
+  s.src = (isSubdir ? '../' : '') + 'assets/js/command-palette.js';
+  s.defer = true;
+  document.head.appendChild(s);
+}());
