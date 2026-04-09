@@ -7,7 +7,7 @@
   <meta name="description" content="Mathematics Lesson 02 — explore Pi, circles, circumference, and area with interactive tools, a digit explorer, and practice problems." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
@@ -89,51 +89,347 @@
     .pi-color-c  { color: #34c759; }
     .pi-color-a  { color: #ff3b30; }
 
-    /* ── Interactive circle explorer ──────────────────── */
-    .pi-explorer {
-      background: var(--white,#fff);
+    /* ── Discovery lab ────────────────────────────────── */
+    .pi-mono {
+      font-family: "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .pi-discovery {
+      background:
+        radial-gradient(120% 120% at 0% 0%, rgba(59,130,246,0.18), transparent 55%),
+        radial-gradient(110% 110% at 100% 100%, rgba(16,185,129,0.16), transparent 52%),
+        linear-gradient(180deg, #101828 0%, #0b1220 100%);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      box-shadow: 0 18px 44px rgba(3, 7, 18, 0.28);
+      color: #e2e8f0;
+      padding: 1.35rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .pi-discovery p { color: rgba(226,232,240,0.8); }
+    .pi-discovery-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .pi-discovery-title { display: grid; gap: 0.24rem; }
+    .pi-discovery-kicker {
+      color: #93c5fd;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .pi-discovery h2 {
+      margin: 0;
+      font-size: clamp(1.25rem, 2.6vw, 1.8rem);
+      letter-spacing: -0.03em;
+      color: #f8fafc;
+    }
+    .pi-discovery-sub {
+      margin: 0;
+      max-width: 64ch;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+    .pi-ratio-hud {
+      min-width: 180px;
+      padding: 0.9rem 1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(59,130,246,0.28);
+      background: rgba(15, 23, 42, 0.62);
+      text-align: right;
+    }
+    .pi-ratio-hud .label {
+      display: block;
+      color: #93c5fd;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .pi-ratio-hud .value {
+      font-size: clamp(1.35rem, 3vw, 2rem);
+      font-weight: 800;
+      color: #60a5fa;
+      text-shadow: 0 0 18px rgba(59,130,246,0.34);
+    }
+    .pi-roll-stage {
+      position: relative;
+      min-height: 280px;
+      padding: 1rem 1rem 0.8rem;
+      border-radius: 16px;
+      border: 1px solid rgba(148,163,184,0.18);
+      background:
+        linear-gradient(180deg, rgba(15,23,42,0.75), rgba(15,23,42,0.94)),
+        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+      overflow: hidden;
+    }
+    .pi-roll-readout {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-top: 1rem;
+    }
+    .pi-roll-stat {
+      padding: 0.75rem 0.85rem;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.14);
+      background: rgba(255,255,255,0.04);
+    }
+    .pi-roll-stat strong {
+      display: block;
+      font-size: 0.72rem;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.24rem;
+    }
+    .pi-roll-stat span {
+      display: block;
+      color: #f8fafc;
+      font-size: 1.02rem;
+      font-weight: 700;
+    }
+    .pi-ruler {
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      height: 110px;
+      border-top: 2px solid rgba(71, 85, 105, 0.75);
+      background-image:
+        repeating-linear-gradient(90deg, rgba(100,116,139,0.36) 0 1px, transparent 1px 36px),
+        linear-gradient(180deg, transparent 0, rgba(15,23,42,0.28) 100%);
+      background-position: 0 54px, 0 0;
+      background-size: 36px 54px, auto;
+      border-radius: 0 0 14px 14px;
+    }
+    .pi-ruler::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(90deg, rgba(148,163,184,0.14) 0 1px, transparent 1px 9px);
+      background-size: 9px 32px;
+      background-repeat: repeat-x;
+      opacity: 0.75;
+    }
+    .pi-roll-line {
+      position: absolute;
+      left: 0;
+      bottom: 54px;
+      height: 4px;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #38bdf8, #60a5fa);
+      box-shadow: 0 0 12px rgba(59,130,246,0.55);
+      transition: width 120ms linear;
+    }
+    .pi-roll-marker {
+      position: absolute;
+      bottom: 58px;
+      width: 0;
+      border-left: 2px dashed rgba(96,165,250,0.9);
+      height: 88px;
+      transform: translateX(-1px);
+    }
+    .pi-roll-marker span {
+      position: absolute;
+      top: -1.2rem;
+      left: -0.55rem;
+      color: #93c5fd;
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+    .pi-roller-wrap {
+      position: absolute;
+      bottom: 54px;
+      width: 0;
+      height: 0;
+      transform: translateX(-50%);
+      transition: left 120ms linear;
+    }
+    .pi-roller {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      border-radius: 50%;
+      border: 4px solid rgba(248,250,252,0.92);
+      background:
+        radial-gradient(circle at 35% 35%, rgba(255,255,255,0.12), transparent 58%),
+        rgba(15,23,42,0.82);
+      box-shadow: 0 0 20px rgba(248,250,252,0.12);
+      transform: translate(-50%, 50%) rotate(0deg);
+      transform-origin: center center;
+    }
+    .pi-roller-spoke {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      height: 3px;
+      width: 50%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(248,113,113,0.2), #f87171);
+      transform-origin: left center;
+      transform: translateY(-50%);
+    }
+    .pi-roller-center {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f8fafc;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 12px rgba(248,250,252,0.4);
+    }
+    .pi-roller-label {
+      position: absolute;
+      top: calc(100% + 0.55rem);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.72rem;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+    .pi-control-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+    .pi-control-card {
+      padding: 0.85rem 0.95rem;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.14);
+      background: rgba(255,255,255,0.04);
+    }
+    .pi-control-card label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 0.45rem;
+      color: #cbd5e1;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .pi-control-card .val { color: #f8fafc; font-size: 1rem; }
+    .pi-control-card input[type="range"] { width: 100%; accent-color: #60a5fa; }
+    .pi-lab-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-top: 1rem;
+    }
+    .pi-tool-card {
+      border-radius: 16px;
+      border: 1px solid rgba(148,163,184,0.16);
+      background: rgba(255,255,255,0.04);
+      padding: 1rem;
+      display: grid;
+      gap: 0.7rem;
+    }
+    .pi-tool-card h3 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 1rem;
+    }
+    .pi-tool-card p {
+      margin: 0;
+      font-size: 0.83rem;
+      color: rgba(226,232,240,0.76);
+      line-height: 1.58;
+    }
+    .pi-tool-meta {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+    .pi-tool-meta strong { color: #f8fafc; }
+    .pi-tool-canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 12px;
+      background: rgba(2,6,23,0.72);
+      border: 1px solid rgba(148,163,184,0.14);
+      display: block;
+    }
+    .pi-earth-card {
+      display: grid;
+      gap: 0.8rem;
+      align-content: space-between;
+    }
+    .pi-earth-box,
+    .pi-nasa-box {
+      padding: 0.85rem 0.95rem;
+      border-radius: 14px;
+      border: 1px solid rgba(245,158,11,0.18);
+      background: rgba(245,158,11,0.08);
+    }
+    .pi-nasa-box {
+      border-color: rgba(59,130,246,0.18);
+      background: rgba(59,130,246,0.08);
+    }
+    .pi-earth-box strong,
+    .pi-nasa-box strong {
+      display: block;
+      margin-bottom: 0.3rem;
+      color: #fde68a;
+      font-size: 0.76rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+    .pi-nasa-box strong { color: #93c5fd; }
+    .pi-earth-value {
+      color: #fef3c7;
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+    .pi-digit-controls {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 0.75rem 0 0.9rem;
+    }
+    .pi-digit-input {
+      flex: 1 1 220px;
+      min-width: 180px;
+      padding: 0.72rem 0.9rem;
+      border-radius: 10px;
       border: 1px solid var(--line,#d2d2d7);
-      border-left: 3.5px solid #af52de;
-      border-radius: var(--radius,18px);
-      box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
-      padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+      font: 500 0.92rem/1.2 "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+      background: var(--white,#fff);
+      color: var(--text,#1d1d1f);
+      outline: none;
     }
-    [data-theme="night"] .pi-explorer { background: var(--white,#2c2c2e); }
-    .pi-explorer h2 { margin: 0 0 0.18rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .pi-explorer-sub { margin: 0 0 1rem; font-size: 0.84rem; color: #64748b; }
-    .pi-explorer-body {
-      display: grid; grid-template-columns: 1fr auto; gap: 1.6rem; align-items: start;
+    .pi-digit-input:focus { border-color: #007aff; }
+    .pi-digit-btn {
+      padding: 0.72rem 1rem;
+      border-radius: 10px;
+      border: none;
+      background: #007aff;
+      color: #fff;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
     }
-    .pi-slider-row { margin-bottom: 0.8rem; }
-    .pi-slider-label { display: flex; justify-content: space-between; align-items: baseline;
-      font-size: 0.82rem; font-weight: 700; margin-bottom: 0.25rem; }
-    .pi-slider-label .val { font-size: 1.05rem; font-weight: 900; }
-    input[type="range"].pi-range {
-      width: 100%; -webkit-appearance: none; appearance: none;
-      height: 6px; border-radius: 3px; outline: none; cursor: pointer;
-      background: linear-gradient(90deg, #af52de 0%, #af52de 30%, rgba(0,0,0,0.1) 30%);
+    .pi-digit-btn:hover { opacity: 0.9; }
+    .pi-digit-result {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-bottom: 0.3rem;
     }
-    input[type="range"].pi-range::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 18px; height: 18px;
-      border-radius: 50%; background: #af52de; cursor: pointer;
-    }
-    [data-theme="night"] input[type="range"].pi-range {
-      background: linear-gradient(90deg, #af52de 0%, #af52de 30%, rgba(255,255,255,0.12) 30%);
-    }
-    .pi-stats {
-      display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin-top: 0.3rem;
-    }
-    .pi-stat {
-      background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7);
-      border-radius: 10px; padding: 0.6rem 0.8rem;
-    }
-    [data-theme="night"] .pi-stat { background: rgba(255,255,255,0.04); }
-    .pi-stat .stat-name { font-size: 0.72rem; font-weight: 700; color: #64748b;
-      display: block; letter-spacing: 0.04em; text-transform: uppercase; }
-    .pi-stat .stat-val { font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums;
-      display: block; margin-top: 0.1rem; }
-    .pi-canvas-wrap { width: 220px; flex-shrink: 0; }
-    #pi-canvas { display: block; border-radius: 10px; }
 
     /* ── Digits explorer ──────────────────────────────── */
     .pi-digits-wrap {
@@ -214,9 +510,11 @@
       display: flex; align-items: center; justify-content: center; }
 
     @media (max-width: 780px) {
-      .pi-explorer-body { grid-template-columns: 1fr; }
-      .pi-canvas-wrap { width: 100%; display: flex; justify-content: center; }
-      #pi-canvas { width: 200px; height: 200px; }
+      .pi-discovery-head,
+      .pi-control-grid,
+      .pi-lab-grid,
+      .pi-roll-readout { grid-template-columns: 1fr; }
+      .pi-roll-stage { min-height: 310px; }
       .pi-formulas { grid-template-columns: 1fr; }
       .pi-world-grid { grid-template-columns: 1fr; }
     }
@@ -328,42 +626,96 @@
       </ol>
     </section>
 
-    <!-- ── Interactive Explorer ── -->
-    <section class="pi-explorer">
-      <h2>Circle Explorer</h2>
-      <p class="pi-explorer-sub">Drag the slider to change the radius — circumference and area update instantly.</p>
-      <div class="pi-explorer-body">
-        <div>
-          <div class="pi-slider-row">
-            <div class="pi-slider-label" style="color:#af52de;">
-              <span>Radius <strong>r</strong></span>
-              <span class="val" id="pi-val-r">5</span>
+    <!-- ── Archimedes Discovery Lab ── -->
+    <section class="pi-discovery" aria-labelledby="pi-discovery-title">
+      <div class="pi-discovery-head">
+        <div class="pi-discovery-title">
+          <span class="pi-discovery-kicker">Archimedes Discovery Lab</span>
+          <h2 id="pi-discovery-title">Watch a circle unroll its own proof</h2>
+          <p class="pi-discovery-sub">Instead of memorizing 3.14, roll the circumference out onto a ruler, squeeze a circle with polygons, and rearrange area slices into a rectangle. The constant becomes visible.</p>
+        </div>
+        <div class="pi-ratio-hud">
+          <span class="label">Current Ratio (C/d)</span>
+          <span class="value pi-mono" id="pi-ratio-hud">3.14159</span>
+        </div>
+      </div>
+
+      <div class="pi-roll-stage">
+        <div class="pi-ruler" id="pi-ruler">
+          <div class="pi-roll-line" id="pi-roll-line"></div>
+          <div class="pi-roll-marker" id="pi-roll-marker"><span>πd</span></div>
+          <div class="pi-roller-wrap" id="pi-roller-wrap">
+            <div class="pi-roller" id="pi-roller">
+              <div class="pi-roller-spoke" id="pi-roller-spoke"></div>
+              <div class="pi-roller-center"></div>
             </div>
-            <input type="range" class="pi-range" id="pi-slider" min="1" max="20" value="5"
-              aria-label="Circle radius" />
-          </div>
-          <div class="pi-stats">
-            <div class="pi-stat">
-              <span class="stat-name">Diameter</span>
-              <span class="stat-val" id="pi-diam" style="color:#ff9500;"></span>
-            </div>
-            <div class="pi-stat">
-              <span class="stat-name">Circumference</span>
-              <span class="stat-val" id="pi-circ" style="color:#34c759;"></span>
-            </div>
-            <div class="pi-stat">
-              <span class="stat-name">Area</span>
-              <span class="stat-val" id="pi-area" style="color:#ff3b30;"></span>
-            </div>
-            <div class="pi-stat">
-              <span class="stat-name">C ÷ d</span>
-              <span class="stat-val" id="pi-ratio" style="color:#af52de;"></span>
-            </div>
+            <div class="pi-roller-label pi-mono" id="pi-roller-label">d = 1.00</div>
           </div>
         </div>
-        <div class="pi-canvas-wrap">
-          <canvas id="pi-canvas" width="220" height="220" aria-label="Circle diagram"></canvas>
+      </div>
+
+      <div class="pi-control-grid">
+        <div class="pi-control-card">
+          <label for="pi-roll-slider"><span>Roll Progress</span><span class="val pi-mono" id="pi-roll-val">0%</span></label>
+          <input type="range" id="pi-roll-slider" min="0" max="100" value="0" aria-label="Rolling progress">
         </div>
+        <div class="pi-control-card">
+          <label for="pi-diameter-slider"><span>Circle Diameter</span><span class="val pi-mono" id="pi-diameter-val">1.00</span></label>
+          <input type="range" id="pi-diameter-slider" min="50" max="200" value="100" aria-label="Circle diameter">
+        </div>
+        <div class="pi-control-card">
+          <label for="pi-reset"><span>Experiment</span><span class="val pi-mono">Reset</span></label>
+          <button class="pi-digit-btn" id="pi-reset" type="button" style="width:100%;background:#2563eb;">Reset Experiment</button>
+        </div>
+      </div>
+
+      <div class="pi-roll-readout">
+        <div class="pi-roll-stat"><strong>Diameter d</strong><span class="pi-mono" id="pi-stat-d">1.00</span></div>
+        <div class="pi-roll-stat"><strong>Circumference C</strong><span class="pi-mono" id="pi-stat-c">3.14159</span></div>
+        <div class="pi-roll-stat"><strong>One Full Turn</strong><span class="pi-mono" id="pi-stat-turn">0.00000</span></div>
+        <div class="pi-roll-stat"><strong>Area πr²</strong><span class="pi-mono" id="pi-stat-a">0.78540</span></div>
+      </div>
+
+      <div class="pi-lab-grid">
+        <article class="pi-tool-card">
+          <h3>Archimedes' Polygon</h3>
+          <p>As the number of sides grows, the jagged perimeter closes in on the circle. This is the idea of a limit in plain sight.</p>
+          <label for="pi-poly-slider" class="pi-mono" style="font-size:0.76rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Sides <span id="pi-poly-count" style="float:right;color:#f8fafc;">6</span></label>
+          <input type="range" id="pi-poly-slider" min="3" max="96" value="6" aria-label="Polygon side count" style="width:100%;accent-color:#10b981;">
+          <canvas id="pi-poly-canvas" class="pi-tool-canvas" width="480" height="280" aria-label="Polygon approximation canvas"></canvas>
+          <div class="pi-tool-meta">
+            <span>π ≈ <strong class="pi-mono" id="pi-poly-approx">3.00000</strong></span>
+            <span>Error <strong class="pi-mono" id="pi-poly-error">0.14159</strong></span>
+          </div>
+        </article>
+
+        <article class="pi-tool-card">
+          <h3>Slices to Rectangle</h3>
+          <p>Cut a circle into more and more wedges, then alternate them. The shape approaches a rectangle with width πr and height r.</p>
+          <label for="pi-slice-slider" class="pi-mono" style="font-size:0.76rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Slices <span id="pi-slice-count" style="float:right;color:#f8fafc;">12</span></label>
+          <input type="range" id="pi-slice-slider" min="6" max="48" step="2" value="12" aria-label="Circle slice count" style="width:100%;accent-color:#f97316;">
+          <canvas id="pi-slice-canvas" class="pi-tool-canvas" width="480" height="280" aria-label="Area rearrangement canvas"></canvas>
+          <div class="pi-tool-meta">
+            <span>Rectangle width <strong class="pi-mono">πr</strong></span>
+            <span>Rectangle height <strong class="pi-mono">r</strong></span>
+            <span>Area <strong class="pi-mono">πr²</strong></span>
+          </div>
+        </article>
+
+        <article class="pi-tool-card pi-earth-card">
+          <div>
+            <h3>The Earth Test</h3>
+            <p>If Earth's diameter is about 12,742 km, the distance around the equator follows the same rule as a coin or a wheel.</p>
+          </div>
+          <div class="pi-earth-box">
+            <strong>Using C = πd</strong>
+            <div class="pi-earth-value pi-mono" id="pi-earth-value">40,030 km</div>
+          </div>
+          <div class="pi-nasa-box">
+            <strong>Why precision matters</strong>
+            <p style="margin:0;">NASA only needs about 15 decimal places of π for mission work. Even that is enough to measure enormous circles with hair-thin accuracy.</p>
+          </div>
+        </article>
       </div>
     </section>
 
@@ -402,9 +754,15 @@
     <!-- ── The Digits of Pi ── -->
     <section class="pi-card" style="--card-accent:#007aff;">
       <h2>The Digits of Pi</h2>
-      <p>Pi is <strong>irrational</strong> — it cannot be written as a simple fraction. Its decimal expansion goes on forever without ever settling into a repeating pattern. Here are the first 200 digits:</p>
-      <div class="pi-digits-wrap" id="pi-digits-display" aria-label="First 200 digits of Pi"></div>
-      <p style="margin-top:0.6rem;">Pi is also believed to be <strong>normal</strong> — meaning every digit (0–9) appears with equal frequency in the long run. No digit is "special." The digit 3 is no more common than 7 over billions of digits.</p>
+      <p>Pi never ends, so this lesson now includes a live search tool. Look for a birthday, zip code, or favorite pattern inside the first 100,000 digits and jump right to it.</p>
+      <div class="pi-digit-controls">
+        <input type="text" class="pi-digit-input" id="pi-digit-query" inputmode="numeric" placeholder="Search digits like 314, 2026, or 8675309" aria-label="Search the digits of pi">
+        <button type="button" class="pi-digit-btn" id="pi-digit-search">Search Digits</button>
+        <button type="button" class="pi-digit-btn" id="pi-digit-clear" style="background:#64748b;">Show Start</button>
+      </div>
+      <div class="pi-digit-result pi-mono" id="pi-digit-result">Showing the opening digits of π.</div>
+      <div class="pi-digits-wrap" id="pi-digits-display" aria-label="Digits of Pi search display"></div>
+      <p style="margin-top:0.6rem;">Pi is irrational, and it is also believed to be normal. Over enough digits, every short pattern should appear somewhere — which is why digit search feels a little like hiding and seeking in infinity.</p>
     </section>
 
     <!-- ── Pi in the Real World ── -->
@@ -515,29 +873,56 @@
     </div>
     <div class="ll-panel-body">
       <div class="ll-pane ll-active" id="pi-params">
-        <span class="ll-label">Circle Explorer</span>
+        <span class="ll-label">Discovery Lab</span>
         <div class="ll-param">
           <div class="ll-param-label">
-            <span>Radius <strong>r</strong></span>
-            <span class="ll-val" id="pi-panel-r">5</span>
+            <span>Roll progress</span>
+            <span class="ll-val" id="pi-panel-roll-val">0%</span>
           </div>
-          <input type="range" id="pi-panel-slider" min="1" max="20" value="5"
-            style="width:100%;accent-color:#af52de;" aria-label="Circle radius" />
-          <div class="ll-param-ends"><span>1</span><span>20</span></div>
+          <input type="range" id="pi-panel-roll" min="0" max="100" value="0"
+            style="width:100%;accent-color:#2563eb;" aria-label="Rolling progress" />
+          <div class="ll-param-ends"><span>0%</span><span>100%</span></div>
+        </div>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>Diameter <strong>d</strong></span>
+            <span class="ll-val" id="pi-panel-diameter-val">1.00</span>
+          </div>
+          <input type="range" id="pi-panel-diameter" min="50" max="200" value="100"
+            style="width:100%;accent-color:#10b981;" aria-label="Circle diameter" />
+          <div class="ll-param-ends"><span>0.50</span><span>2.00</span></div>
+        </div>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>Polygon sides</span>
+            <span class="ll-val" id="pi-panel-poly-val">6</span>
+          </div>
+          <input type="range" id="pi-panel-poly" min="3" max="96" value="6"
+            style="width:100%;accent-color:#10b981;" aria-label="Polygon side count" />
+          <div class="ll-param-ends"><span>3</span><span>96</span></div>
+        </div>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>Area slices</span>
+            <span class="ll-val" id="pi-panel-slices-val">12</span>
+          </div>
+          <input type="range" id="pi-panel-slices" min="6" max="48" step="2" value="12"
+            style="width:100%;accent-color:#f97316;" aria-label="Circle slice count" />
+          <div class="ll-param-ends"><span>6</span><span>48</span></div>
         </div>
         <hr class="ll-hr" />
         <div class="ll-readouts">
           <div class="ll-readout">
             <span class="ll-readout-lbl">Diameter</span>
-            <span class="ll-readout-val" id="pi-panel-diam" style="color:#ff9500;">10</span>
+            <span class="ll-readout-val" id="pi-panel-diam" style="color:#ff9500;">1.00</span>
           </div>
           <div class="ll-readout">
             <span class="ll-readout-lbl">Circumference</span>
-            <span class="ll-readout-val" id="pi-panel-circ" style="color:#34c759;">31.42</span>
+            <span class="ll-readout-val" id="pi-panel-circ" style="color:#34c759;">3.14159</span>
           </div>
           <div class="ll-readout">
-            <span class="ll-readout-lbl">Area</span>
-            <span class="ll-readout-val" id="pi-panel-area" style="color:#ff3b30;">78.54</span>
+            <span class="ll-readout-lbl">Polygon π</span>
+            <span class="ll-readout-val" id="pi-panel-poly-approx" style="color:#10b981;">3.00000</span>
           </div>
           <div class="ll-readout">
             <span class="ll-readout-lbl">C ÷ d</span>
@@ -548,30 +933,24 @@
       <div class="ll-pane" id="pi-guide">
         <span class="ll-label">What is Pi?</span>
         <div class="ll-info">
-          <strong>Definition</strong>
-          π = circumference ÷ diameter, always. For any circle, this ratio is the same irrational number: 3.14159…
-        </div>
-        <span class="ll-label">Formulas</span>
-        <div class="ll-info">
-          <strong>Circumference</strong>
-          C = 2πr &nbsp; or &nbsp; C = πd
+          <strong>Unrolling proof</strong>
+          Roll one full circumference onto a ruler and the straightened distance always lands at π times the diameter.
         </div>
         <div class="ll-info">
-          <strong>Area</strong>
-          A = πr²
-        </div>
-        <span class="ll-label">Key Facts</span>
-        <div class="ll-info">
-          <strong>Irrational Number</strong>
-          π cannot be expressed as a simple fraction. Its digits go on forever without repeating.
+          <strong>Archimedes' idea</strong>
+          Inscribed polygons underestimate a circle. As the side count rises, the perimeter approaches π.
         </div>
         <div class="ll-info">
-          <strong>History</strong>
-          Calculated to 105 trillion digits in 2024 using cloud computing. Still no pattern found.
+          <strong>Area proof</strong>
+          Alternating circle slices form a rectangle with width πr and height r, so area becomes πr².
         </div>
         <div class="ll-info">
-          <strong>Pi Day</strong>
-          March 14 (3/14) is celebrated as Pi Day worldwide, including at NASA.
+          <strong>Digit search</strong>
+          The lesson searches the first 100,000 digits of π so students can test whether their own number patterns appear.
+        </div>
+        <div class="ll-info">
+          <strong>Useful precision</strong>
+          You do not need infinite digits to do serious work. A small handful of decimals already powers engineering and spaceflight.
         </div>
       </div>
     </div>
@@ -589,129 +968,313 @@
   </footer>
 
   <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/pi-digits-100k.js"></script>
   <script>
   (function () {
     const PI = Math.PI;
+    const earthDiameterKm = 12742;
+    const piDigits = window.PI_DIGITS_100K || '3.14159265358979323846264338327950288419716939937510';
+    const digitString = piDigits.slice(2);
 
-    /* ── Digit display ────────────────────────────────── */
-    const piDigits =
-      '3.14159265358979323846264338327950288419716939937510' +
-      '58209749445923078164062862089986280348253421170679' +
-      '82148086513282306647093844609550582231725359408128' +
-      '48111745028410270193852110555964462294895493038196';
+    const rollSlider = document.getElementById('pi-roll-slider');
+    const diameterSlider = document.getElementById('pi-diameter-slider');
+    const polySlider = document.getElementById('pi-poly-slider');
+    const sliceSlider = document.getElementById('pi-slice-slider');
+    const panelRoll = document.getElementById('pi-panel-roll');
+    const panelDiameter = document.getElementById('pi-panel-diameter');
+    const panelPoly = document.getElementById('pi-panel-poly');
+    const panelSlices = document.getElementById('pi-panel-slices');
 
-    const digWrap = document.getElementById('pi-digits-display');
-    let html = '';
-    for (let i = 0; i < piDigits.length; i++) {
-      const ch = piDigits[i];
-      if (i === 0) {
-        html += `<span class="pi-digit-pi">${ch}</span>`;
-      } else if (ch === '.') {
-        html += `<span style="color:#af52de;font-weight:800;">.</span>`;
+    const ruler = document.getElementById('pi-ruler');
+    const roller = document.getElementById('pi-roller');
+    const rollerWrap = document.getElementById('pi-roller-wrap');
+    const rollerLabel = document.getElementById('pi-roller-label');
+    const rollLine = document.getElementById('pi-roll-line');
+    const rollMarker = document.getElementById('pi-roll-marker');
+    const ratioHud = document.getElementById('pi-ratio-hud');
+
+    const polyCanvas = document.getElementById('pi-poly-canvas');
+    const polyCtx = polyCanvas.getContext('2d');
+    const sliceCanvas = document.getElementById('pi-slice-canvas');
+    const sliceCtx = sliceCanvas.getContext('2d');
+
+    const digitsDisplay = document.getElementById('pi-digits-display');
+    const digitQuery = document.getElementById('pi-digit-query');
+    const digitResult = document.getElementById('pi-digit-result');
+
+    function formatNumber(value, decimals = 5) {
+      return Number(value).toFixed(decimals);
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function updateRolling() {
+      const progress = Number(rollSlider.value) / 100;
+      const diameter = Number(diameterSlider.value) / 100;
+      const circumference = PI * diameter;
+      const area = PI * Math.pow(diameter / 2, 2);
+      const visualDiameter = Number(diameterSlider.value) * 0.88;
+      const rulerWidth = Math.max(240, ruler.clientWidth);
+      const pxPerUnit = Math.max(84, (rulerWidth - 48) / 7.2);
+      const fullDistancePx = circumference * pxPerUnit;
+      const currentDistancePx = fullDistancePx * progress;
+      const leftPx = currentDistancePx;
+      const rotation = progress * 360;
+
+      roller.style.width = visualDiameter + 'px';
+      roller.style.height = visualDiameter + 'px';
+      roller.style.transform = `translate(-50%, 50%) rotate(${rotation}deg)`;
+      rollerWrap.style.left = leftPx + 'px';
+      rollLine.style.width = currentDistancePx + 'px';
+      rollMarker.style.left = fullDistancePx + 'px';
+      rollerLabel.textContent = `d = ${formatNumber(diameter, 2)}`;
+
+      document.getElementById('pi-roll-val').textContent = `${Math.round(progress * 100)}%`;
+      document.getElementById('pi-diameter-val').textContent = formatNumber(diameter, 2);
+      document.getElementById('pi-ratio-hud').textContent = formatNumber(circumference / diameter, 5);
+      document.getElementById('pi-stat-d').textContent = formatNumber(diameter, 2);
+      document.getElementById('pi-stat-c').textContent = formatNumber(circumference, 5);
+      document.getElementById('pi-stat-turn').textContent = formatNumber(circumference * progress, 5);
+      document.getElementById('pi-stat-a').textContent = formatNumber(area, 5);
+
+      document.getElementById('pi-panel-roll-val').textContent = `${Math.round(progress * 100)}%`;
+      document.getElementById('pi-panel-diameter-val').textContent = formatNumber(diameter, 2);
+      document.getElementById('pi-panel-diam').textContent = formatNumber(diameter, 2);
+      document.getElementById('pi-panel-circ').textContent = formatNumber(circumference, 5);
+      document.getElementById('pi-panel-ratio').textContent = formatNumber(circumference / diameter, 5);
+    }
+
+    function drawPolygon() {
+      const n = Number(polySlider.value);
+      const width = polyCanvas.width;
+      const height = polyCanvas.height;
+      const cx = width / 2;
+      const cy = height / 2;
+      const radius = Math.min(width, height) * 0.28;
+      const approxPi = n * Math.sin(Math.PI / n);
+      const error = PI - approxPi;
+
+      polyCtx.clearRect(0, 0, width, height);
+      polyCtx.fillStyle = '#08101d';
+      polyCtx.fillRect(0, 0, width, height);
+
+      polyCtx.strokeStyle = 'rgba(148,163,184,0.3)';
+      polyCtx.lineWidth = 1.4;
+      polyCtx.beginPath();
+      polyCtx.arc(cx, cy, radius, 0, PI * 2);
+      polyCtx.stroke();
+
+      polyCtx.strokeStyle = '#10b981';
+      polyCtx.lineWidth = 2.3;
+      polyCtx.beginPath();
+      for (let i = 0; i <= n; i += 1) {
+        const angle = -PI / 2 + (i / n) * PI * 2;
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
+        if (i === 0) polyCtx.moveTo(x, y);
+        else polyCtx.lineTo(x, y);
+      }
+      polyCtx.stroke();
+
+      polyCtx.fillStyle = 'rgba(16,185,129,0.14)';
+      polyCtx.fill();
+
+      polyCtx.fillStyle = '#cbd5e1';
+      polyCtx.font = '600 14px "IBM Plex Mono", monospace';
+      polyCtx.fillText(`n = ${n}`, 18, 24);
+      polyCtx.fillText(`π ≈ ${approxPi.toFixed(5)}`, 18, 44);
+
+      document.getElementById('pi-poly-count').textContent = n;
+      document.getElementById('pi-poly-approx').textContent = approxPi.toFixed(5);
+      document.getElementById('pi-poly-error').textContent = error.toFixed(5);
+      document.getElementById('pi-panel-poly-val').textContent = n;
+      document.getElementById('pi-panel-poly-approx').textContent = approxPi.toFixed(5);
+    }
+
+    function drawSlices() {
+      const slices = Number(sliceSlider.value);
+      const width = sliceCanvas.width;
+      const height = sliceCanvas.height;
+      const leftCx = width * 0.27;
+      const leftCy = height * 0.54;
+      const radius = Math.min(width, height) * 0.22;
+      const rectX = width * 0.56;
+      const rectY = height * 0.2;
+      const rectW = width * 0.3;
+      const rectH = height * 0.54;
+      const sliceH = rectH / slices;
+
+      sliceCtx.clearRect(0, 0, width, height);
+      sliceCtx.fillStyle = '#08101d';
+      sliceCtx.fillRect(0, 0, width, height);
+
+      for (let i = 0; i < slices; i += 1) {
+        const start = -PI / 2 + (i / slices) * PI * 2;
+        const end = start + (PI * 2) / slices;
+        sliceCtx.beginPath();
+        sliceCtx.moveTo(leftCx, leftCy);
+        sliceCtx.arc(leftCx, leftCy, radius, start, end);
+        sliceCtx.closePath();
+        sliceCtx.fillStyle = i % 2 === 0 ? 'rgba(249,115,22,0.82)' : 'rgba(250,204,21,0.82)';
+        sliceCtx.fill();
+
+        const y = rectY + i * sliceH;
+        const direction = i % 2 === 0 ? 1 : -1;
+        sliceCtx.beginPath();
+        if (direction > 0) {
+          sliceCtx.moveTo(rectX, y + sliceH);
+          sliceCtx.lineTo(rectX + rectW, y + sliceH);
+          sliceCtx.lineTo(rectX + rectW - radius * 0.18, y);
+          sliceCtx.lineTo(rectX + radius * 0.18, y);
+        } else {
+          sliceCtx.moveTo(rectX + radius * 0.18, y + sliceH);
+          sliceCtx.lineTo(rectX + rectW - radius * 0.18, y + sliceH);
+          sliceCtx.lineTo(rectX + rectW, y);
+          sliceCtx.lineTo(rectX, y);
+        }
+        sliceCtx.closePath();
+        sliceCtx.fillStyle = i % 2 === 0 ? 'rgba(249,115,22,0.72)' : 'rgba(250,204,21,0.72)';
+        sliceCtx.fill();
+      }
+
+      sliceCtx.strokeStyle = 'rgba(148,163,184,0.38)';
+      sliceCtx.strokeRect(rectX, rectY, rectW, rectH);
+      sliceCtx.fillStyle = '#cbd5e1';
+      sliceCtx.font = '600 14px "IBM Plex Mono", monospace';
+      sliceCtx.fillText('Circle', 34, 24);
+      sliceCtx.fillText('Rearranged slices', rectX, 24);
+
+      document.getElementById('pi-slice-count').textContent = slices;
+      document.getElementById('pi-panel-slices-val').textContent = slices;
+    }
+
+    function renderDigits(matchIndex = -1, query = '') {
+      let start = 0;
+      let end = Math.min(digitString.length, 320);
+      if (matchIndex >= 0) {
+        start = Math.max(0, matchIndex - 30);
+        end = Math.min(digitString.length, matchIndex + query.length + 150);
+      }
+      const segment = digitString.slice(start, end);
+      let rendered = '';
+
+      if (start === 0) {
+        rendered += '<span class="pi-digit-pi">3</span><span style="color:#af52de;font-weight:800;">.</span>';
       } else {
-        html += `<span>${ch}</span>`;
+        rendered += `<span style="color:#64748b;">…</span>`;
+      }
+
+      if (matchIndex >= 0 && query) {
+        const localIndex = matchIndex - start;
+        const before = escapeHtml(segment.slice(0, localIndex));
+        const hit = escapeHtml(segment.slice(localIndex, localIndex + query.length));
+        const after = escapeHtml(segment.slice(localIndex + query.length));
+        rendered += `${before}<span class="pi-digit-hi">${hit}</span>${after}`;
+      } else {
+        rendered += escapeHtml(segment);
+      }
+
+      if (end < digitString.length) rendered += `<span style="color:#64748b;">…</span>`;
+      digitsDisplay.innerHTML = rendered;
+    }
+
+    function searchDigits() {
+      const query = (digitQuery.value || '').replace(/\D/g, '');
+      if (!query) {
+        digitResult.textContent = 'Showing the opening digits of π.';
+        renderDigits();
+        return;
+      }
+      const matchIndex = digitString.indexOf(query);
+      if (matchIndex === -1) {
+        digitResult.textContent = `No match for ${query} in the first 100,000 digits loaded here.`;
+        renderDigits();
+        return;
+      }
+      digitResult.textContent = `Found ${query} starting at decimal place ${matchIndex + 1}.`;
+      renderDigits(matchIndex, query);
+    }
+
+    function syncSlider(target, value) {
+      if (target && String(target.value) !== String(value)) target.value = value;
+    }
+
+    function updateAll() {
+      syncSlider(panelRoll, rollSlider.value);
+      syncSlider(panelDiameter, diameterSlider.value);
+      syncSlider(panelPoly, polySlider.value);
+      syncSlider(panelSlices, sliceSlider.value);
+      updateRolling();
+      drawPolygon();
+      drawSlices();
+    }
+
+    function sizeCanvasToDisplay(canvas) {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(240, Math.round(rect.width * ratio));
+      const height = Math.max(160, Math.round(rect.height * ratio));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
       }
     }
-    digWrap.innerHTML = html;
 
-    /* ── Canvas drawing ───────────────────────────────── */
-    const canvas = document.getElementById('pi-canvas');
-    const ctx    = canvas.getContext('2d');
-
-    function drawCircle(r) {
-      const W = canvas.width, H = canvas.height;
-      const cx = W / 2, cy = H / 2;
-      const maxR = W / 2 - 20;
-      const scale = Math.min(maxR / 20, maxR / r); // max r is 20
-      const sr = r * scale;
-
-      ctx.clearRect(0, 0, W, H);
-
-      // Circle fill
-      ctx.beginPath();
-      ctx.arc(cx, cy, sr, 0, 2 * PI);
-      ctx.fillStyle = 'rgba(175,82,222,0.1)';
-      ctx.fill();
-
-      // Circle stroke
-      ctx.strokeStyle = '#34c759';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      // Diameter line
-      ctx.strokeStyle = '#ff9500';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 4]);
-      ctx.beginPath();
-      ctx.moveTo(cx - sr, cy);
-      ctx.lineTo(cx + sr, cy);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Radius line
-      ctx.strokeStyle = '#af52de';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + sr, cy);
-      ctx.stroke();
-
-      // Center dot
-      ctx.beginPath();
-      ctx.arc(cx, cy, 4, 0, 2 * PI);
-      ctx.fillStyle = '#af52de';
-      ctx.fill();
-
-      // Labels
-      ctx.font = 'bold 12px Inter, sans-serif';
-      ctx.textAlign = 'center';
-
-      ctx.fillStyle = '#af52de';
-      ctx.fillText('r', cx + sr / 2, cy - 7);
-
-      ctx.fillStyle = '#ff9500';
-      ctx.fillText('d', cx, cy + sr + 15);
-
-      ctx.fillStyle = '#34c759';
-      // Circumference label along top arc
-      ctx.fillText('C', cx - sr - 12, cy - 8);
+    function resizeCanvases() {
+      sizeCanvasToDisplay(polyCanvas);
+      sizeCanvasToDisplay(sliceCanvas);
+      updateAll();
     }
 
-    /* ── Slider update ────────────────────────────────── */
-    function updateSliderBg(slider, val) {
-      const pct = (val - slider.min) / (slider.max - slider.min) * 100;
-      slider.style.background =
-        `linear-gradient(90deg, #af52de ${pct}%, rgba(0,0,0,0.1) ${pct}%)`;
-    }
+    document.getElementById('pi-earth-value').textContent =
+      `${Math.round(PI * earthDiameterKm).toLocaleString()} km`;
 
-    function updateExplorer() {
-      const r = parseFloat(document.getElementById('pi-slider').value);
-      const d = r * 2;
-      const C = 2 * PI * r;
-      const A = PI * r * r;
+    rollSlider.addEventListener('input', updateAll);
+    diameterSlider.addEventListener('input', updateAll);
+    polySlider.addEventListener('input', updateAll);
+    sliceSlider.addEventListener('input', updateAll);
 
-      document.getElementById('pi-val-r').textContent = r;
-      document.getElementById('pi-diam').textContent = d;
-      document.getElementById('pi-circ').textContent = C.toFixed(2);
-      document.getElementById('pi-area').textContent = A.toFixed(2);
-      document.getElementById('pi-ratio').textContent = (C / d).toFixed(5);
+    panelRoll.addEventListener('input', () => { rollSlider.value = panelRoll.value; updateAll(); });
+    panelDiameter.addEventListener('input', () => { diameterSlider.value = panelDiameter.value; updateAll(); });
+    panelPoly.addEventListener('input', () => { polySlider.value = panelPoly.value; updateAll(); });
+    panelSlices.addEventListener('input', () => { sliceSlider.value = panelSlices.value; updateAll(); });
 
-      drawCircle(r);
-      updateSliderBg(document.getElementById('pi-slider'), r);
-    }
+    document.getElementById('pi-reset').addEventListener('click', () => {
+      rollSlider.value = 0;
+      panelRoll.value = 0;
+      updateAll();
+    });
 
-    document.getElementById('pi-slider').addEventListener('input', updateExplorer);
-    updateExplorer();
+    document.getElementById('pi-digit-search').addEventListener('click', searchDigits);
+    document.getElementById('pi-digit-clear').addEventListener('click', () => {
+      digitQuery.value = '';
+      digitResult.textContent = 'Showing the opening digits of π.';
+      renderDigits();
+    });
+    digitQuery.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        searchDigits();
+      }
+    });
 
-    /* ── Practice checker ─────────────────────────────── */
     window.piCheck = function (num, correct, tol) {
       const input = document.getElementById('pans-' + num);
-      const fb    = document.getElementById('pfb-' + num);
-      const hint  = document.getElementById('phint-' + num);
-      const val   = parseFloat(input.value);
+      const fb = document.getElementById('pfb-' + num);
+      const hint = document.getElementById('phint-' + num);
+      const val = parseFloat(input.value);
 
       fb.className = 'pi-feedback';
-      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('wrong'); return; }
+      if (isNaN(val)) {
+        fb.textContent = 'Enter a number.';
+        fb.classList.add('wrong');
+        return;
+      }
 
       if (Math.abs(val - correct) <= tol) {
         fb.textContent = '✓ Correct!';
@@ -726,42 +1289,9 @@
       }
     };
 
-  })();
-  </script>
-  <script>
-  /* ── Panel slider syncs with in-page explorer ── */
-  (function () {
-    const panelSlider = document.getElementById('pi-panel-slider');
-    const inPageSlider = document.getElementById('pi-slider');
-    if (!panelSlider || !inPageSlider) return;
-
-    function syncFromPanel() {
-      inPageSlider.value = panelSlider.value;
-      inPageSlider.dispatchEvent(new Event('input'));
-      /* update panel readouts */
-      const r = parseFloat(panelSlider.value);
-      const PI = Math.PI, d = r * 2, C = 2 * PI * r, A = PI * r * r;
-      document.getElementById('pi-panel-r').textContent    = r;
-      document.getElementById('pi-panel-diam').textContent = d;
-      document.getElementById('pi-panel-circ').textContent = C.toFixed(2);
-      document.getElementById('pi-panel-area').textContent = A.toFixed(2);
-      document.getElementById('pi-panel-ratio').textContent = (C / d).toFixed(5);
-    }
-
-    function syncFromPage() {
-      panelSlider.value = inPageSlider.value;
-      const r = parseFloat(inPageSlider.value);
-      const PI = Math.PI, d = r * 2, C = 2 * PI * r, A = PI * r * r;
-      document.getElementById('pi-panel-r').textContent    = r;
-      document.getElementById('pi-panel-diam').textContent = d;
-      document.getElementById('pi-panel-circ').textContent = C.toFixed(2);
-      document.getElementById('pi-panel-area').textContent = A.toFixed(2);
-      document.getElementById('pi-panel-ratio').textContent = (C / d).toFixed(5);
-    }
-
-    panelSlider.addEventListener('input', syncFromPanel);
-    inPageSlider.addEventListener('input', syncFromPage);
-    syncFromPage();
+    window.addEventListener('resize', resizeCanvases);
+    renderDigits();
+    resizeCanvases();
   })();
   </script>
   <script src="../assets/js/classroom-animations.js"></script>
