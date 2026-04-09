@@ -5,7 +5,6 @@ const modeSelect = document.getElementById("modeSelect");
 const levelSelect = document.getElementById("levelSelect");
 const ruleSelect = document.getElementById("ruleSelect");
 const voxelRuleSelect = document.getElementById("voxelRuleSelect");
-const patternSelect = document.getElementById("patternSelect");
 const seedSelect = document.getElementById("seedSelect");
 const speedRange = document.getElementById("speedRange");
 const speedValue = document.getElementById("speedValue");
@@ -30,10 +29,20 @@ const applyPatternBtn = document.getElementById("applyPatternBtn");
 
 const generationCount = document.getElementById("generationCount");
 const liveCount = document.getElementById("liveCount");
+const stabilityPeak = document.getElementById("stabilityPeak");
+const entropyValue = document.getElementById("entropyValue");
 const levelSummary = document.getElementById("levelSummary");
+const generationCount2 = document.getElementById("generationCount2");
+const liveCount2 = document.getElementById("liveCount2");
+const stabilityPeak2 = document.getElementById("stabilityPeak2");
+const entropyValue2 = document.getElementById("entropyValue2");
 
 const canvasWrap = document.getElementById("canvasWrap");
 const voxelViewport = document.getElementById("voxelViewport");
+const stampGhost = document.getElementById("stampGhost");
+const entropySparkline = document.getElementById("entropySparkline");
+const universalityToast = document.getElementById("universalityToast");
+const patternButtons = Array.from(document.querySelectorAll(".ll-preset[data-preset]"));
 
 const LEVELS = {
   beginner: {
@@ -86,9 +95,11 @@ let pointerDown = false;
 let rows = 20;
 let cols = 20;
 let grid2d = [];
+let ageGrid2d = [];
 
 let voxelSize = 12;
 let grid3d = new Uint8Array(0);
+let ageGrid3d = new Uint16Array(0);
 
 let scene = null;
 let camera = null;
@@ -102,6 +113,50 @@ let threeAnimating = false;
 let THREE = null;
 let OrbitControls = null;
 let liveCellColor = liveColorInput.value || "#ff6b35";
+let activePattern = "none";
+let hoverCell = null;
+let entropyHistory = [];
+let previousLiveCount = 0;
+let universalityShown = false;
+
+const PATTERN_COORDS = {
+  none: [],
+  glider: [
+    [0, 1],
+    [1, 2],
+    [2, 0],
+    [2, 1],
+    [2, 2]
+  ],
+  lwss: [
+    [0, 1],
+    [0, 2],
+    [0, 3],
+    [0, 4],
+    [1, 0],
+    [1, 4],
+    [2, 4],
+    [3, 0],
+    [3, 3]
+  ],
+  pulsar: [
+    [-6, -4], [-6, -3], [-6, -2], [-6, 2], [-6, 3], [-6, 4],
+    [-4, -6], [-3, -6], [-2, -6], [2, -6], [3, -6], [4, -6],
+    [-1, -4], [-1, -3], [-1, -2], [-1, 2], [-1, 3], [-1, 4],
+    [-4, -1], [-3, -1], [-2, -1], [2, -1], [3, -1], [4, -1],
+    [-4, 1], [-3, 1], [-2, 1], [2, 1], [3, 1], [4, 1],
+    [1, -4], [1, -3], [1, -2], [1, 2], [1, 3], [1, 4],
+    [-4, 6], [-3, 6], [-2, 6], [2, 6], [3, 6], [4, 6],
+    [6, -4], [6, -3], [6, -2], [6, 2], [6, 3], [6, 4]
+  ],
+  gosper: [
+    [0, 24], [1, 22], [1, 24], [2, 12], [2, 13], [2, 20], [2, 21], [2, 34], [2, 35],
+    [3, 11], [3, 15], [3, 20], [3, 21], [3, 34], [3, 35],
+    [4, 0], [4, 1], [4, 10], [4, 16], [4, 20], [4, 21],
+    [5, 0], [5, 1], [5, 10], [5, 14], [5, 16], [5, 17], [5, 22], [5, 24],
+    [6, 10], [6, 16], [6, 24], [7, 11], [7, 15], [8, 12], [8, 13]
+  ]
+};
 
 function parseRulePart(partText) {
   const part = partText.trim();
@@ -131,10 +186,18 @@ function makeGrid2d(r, c, fill = 0) {
   return Array.from({ length: r }, () => Array(c).fill(fill));
 }
 
+function makeAgeGrid2d(r, c) {
+  return Array.from({ length: r }, () => Array(c).fill(0));
+}
+
 function makeGrid3d(size, fill = 0) {
   const data = new Uint8Array(size * size * size);
   if (fill !== 0) data.fill(fill);
   return data;
+}
+
+function makeAgeGrid3d(size) {
+  return new Uint16Array(size * size * size);
 }
 
 function idx3d(x, y, z) {
@@ -163,9 +226,53 @@ function activeLiveCount() {
   return mode === "2d" ? countLive2d() : countLive3d();
 }
 
+function activeMaxAge() {
+  if (mode === "2d") {
+    let max = 0;
+    for (let r = 0; r < rows; r += 1) {
+      for (let c = 0; c < cols; c += 1) {
+        if (ageGrid2d[r][c] > max) max = ageGrid2d[r][c];
+      }
+    }
+    return max;
+  }
+
+  let max = 0;
+  for (let i = 0; i < ageGrid3d.length; i += 1) {
+    if (ageGrid3d[i] > max) max = ageGrid3d[i];
+  }
+  return max;
+}
+
+function pushEntropySample(currentLive) {
+  const delta = currentLive - previousLiveCount;
+  previousLiveCount = currentLive;
+  entropyHistory.push(delta);
+  if (entropyHistory.length > 80) entropyHistory.shift();
+  drawEntropySparkline();
+  return delta;
+}
+
 function updateStats() {
+  const live = activeLiveCount();
+  const maxAge = activeMaxAge();
+  const delta = pushEntropySample(live);
   generationCount.textContent = String(generation);
-  liveCount.textContent = String(activeLiveCount());
+  liveCount.textContent = String(live);
+  if (generationCount2) generationCount2.textContent = String(generation);
+  if (liveCount2) liveCount2.textContent = String(live);
+  if (stabilityPeak) stabilityPeak.textContent = String(maxAge);
+  if (stabilityPeak2) stabilityPeak2.textContent = String(maxAge);
+  if (entropyValue) entropyValue.textContent = `${delta >= 0 ? "+" : ""}${delta}`;
+  if (entropyValue2) entropyValue2.textContent = `${delta >= 0 ? "+" : ""}${delta}`;
+
+  if (!universalityShown && generation >= 1000 && universalityToast) {
+    universalityShown = true;
+    universalityToast.classList.remove("hidden");
+    window.setTimeout(() => {
+      universalityToast.classList.add("hidden");
+    }, 6200);
+  }
 }
 
 function normalizeColor(value) {
