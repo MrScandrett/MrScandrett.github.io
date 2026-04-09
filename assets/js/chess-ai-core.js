@@ -518,6 +518,300 @@ function evaluate(board, perspective, profile) {
   return score;
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function normalizeMetric(value, scale) {
+  return clamp(0.5 + value / scale, 0, 1);
+}
+
+function materialBalance(board, perspective) {
+  let total = 0;
+  for (const piece of board) {
+    if (!piece) continue;
+    const value = PIECE_VALUE[typeOf(piece)] || 0;
+    total += colorOf(piece) === perspective ? value : -value;
+  }
+  return total;
+}
+
+function centralityScore(index) {
+  const row = rowOf(index);
+  const col = colOf(index);
+  return Math.max(0, 4 - (Math.abs(row - 3.5) + Math.abs(col - 3.5)));
+}
+
+function pawnStructureBalance(board, perspective) {
+  let score = 0;
+
+  for (let col = 0; col < SIZE; col += 1) {
+    let ownPawns = 0;
+    let enemyPawns = 0;
+    for (let row = 0; row < SIZE; row += 1) {
+      const piece = board[idx(row, col)];
+      if (piece === `${perspective}P`) ownPawns += 1;
+      if (piece === `${opposite(perspective)}P`) enemyPawns += 1;
+    }
+    if (ownPawns > 1) score -= (ownPawns - 1) * 16;
+    if (enemyPawns > 1) score += (enemyPawns - 1) * 16;
+  }
+
+  for (let i = 0; i < board.length; i += 1) {
+    const piece = board[i];
+    if (typeOf(piece) !== "P") continue;
+    const color = colorOf(piece);
+    const sign = color === perspective ? 1 : -1;
+    const row = rowOf(i);
+    const col = colOf(i);
+    const forward = color === "W" ? -1 : 1;
+    const supportRow = row - forward;
+    let supported = false;
+
+    for (const dc of [-1, 1]) {
+      const supportCol = col + dc;
+      if (!inBounds(supportRow, supportCol)) continue;
+      if (board[idx(supportRow, supportCol)] === `${color}P`) {
+        supported = true;
+      }
+    }
+
+    if (supported) score += sign * 10;
+  }
+
+  return score;
+}
+
+function kingSafetyBalance(board, perspective) {
+  const ownKing = findKing(board, perspective);
+  const enemyKing = findKing(board, opposite(perspective));
+  if (ownKing === -1 || enemyKing === -1) return 0;
+
+  function kingExposure(kingSquare, kingColor) {
+    let exposure = 0;
+    const row = rowOf(kingSquare);
+    const col = colOf(kingSquare);
+
+    for (let dr = -1; dr <= 1; dr += 1) {
+      for (let dc = -1; dc <= 1; dc += 1) {
+        if (dr === 0 && dc === 0) continue;
+        const nextRow = row + dr;
+        const nextCol = col + dc;
+        if (!inBounds(nextRow, nextCol)) {
+          exposure += 6;
+          continue;
+        }
+
+        const square = idx(nextRow, nextCol);
+        if (isSquareAttacked(board, square, opposite(kingColor))) exposure += 16;
+        const occupant = board[square];
+        if (occupant === `${kingColor}P`) exposure -= 5;
+      }
+    }
+
+    return exposure;
+  }
+
+  return kingExposure(enemyKing, opposite(perspective)) - kingExposure(ownKing, perspective);
+}
+
+function positionalBalance(board, perspective) {
+  let score = 0;
+  for (let i = 0; i < board.length; i += 1) {
+    const piece = board[i];
+    if (!piece) continue;
+    const sign = colorOf(piece) === perspective ? 1 : -1;
+    score += sign * centralityScore(i) * (typeOf(piece) === "P" ? 6 : 10);
+  }
+  return score;
+}
+
+function mobilityBalance(board, perspective) {
+  return legalMoves(board, perspective).length - legalMoves(board, opposite(perspective)).length;
+}
+
+function heuristicSnapshot(board, perspective, profile) {
+  const metrics = {
+    material: materialBalance(board, perspective),
+    mobility: mobilityBalance(board, perspective),
+    position: positionalBalance(board, perspective),
+    pawnStructure: pawnStructureBalance(board, perspective),
+    kingSafety: kingSafetyBalance(board, perspective)
+  };
+
+  const weights = profile.evalWeights || {};
+  const normalized = {
+    material: normalizeMetric(metrics.material, 1400),
+    mobility: normalizeMetric(metrics.mobility, 20),
+    position: normalizeMetric(metrics.position, 120),
+    pawnStructure: normalizeMetric(metrics.pawnStructure, 90),
+    kingSafety: normalizeMetric(metrics.kingSafety, 90)
+  };
+
+  return { metrics, normalized, weights };
+}
+
+function renderRadar(profile) {
+  const weights = profile.evalWeights || {};
+  const axes = [
+    { key: "material", label: "Material" },
+    { key: "mobility", label: "Mobility" },
+    { key: "position", label: "Position" },
+    { key: "pawnStructure", label: "Pawns" },
+    { key: "kingSafety", label: "King" }
+  ];
+  const cx = 110;
+  const cy = 110;
+  const radius = 76;
+  const levels = [0.25, 0.5, 0.75, 1];
+
+  const rings = levels.map((level) => {
+    const points = axes.map((axis, index) => {
+      const angle = (-Math.PI / 2) + (Math.PI * 2 * index / axes.length);
+      const x = cx + Math.cos(angle) * radius * level;
+      const y = cy + Math.sin(angle) * radius * level;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    }).join(" ");
+    return `<polygon class="chess-radar-grid" points="${points}"></polygon>`;
+  }).join("");
+
+  const spokes = axes.map((axis, index) => {
+    const angle = (-Math.PI / 2) + (Math.PI * 2 * index / axes.length);
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    return `<line class="chess-radar-grid" x1="${cx}" y1="${cy}" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}"></line>`;
+  }).join("");
+
+  const shapePoints = axes.map((axis, index) => {
+    const angle = (-Math.PI / 2) + (Math.PI * 2 * index / axes.length);
+    const level = clamp(weights[axis.key] || 0, 0, 1);
+    const x = cx + Math.cos(angle) * radius * level;
+    const y = cy + Math.sin(angle) * radius * level;
+    return { x, y };
+  });
+
+  const labels = axes.map((axis, index) => {
+    const angle = (-Math.PI / 2) + (Math.PI * 2 * index / axes.length);
+    const x = cx + Math.cos(angle) * (radius + 22);
+    const y = cy + Math.sin(angle) * (radius + 22);
+    return `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" dominant-baseline="middle">${axis.label}</text>`;
+  }).join("");
+
+  radarElement.innerHTML = `
+    ${rings}
+    ${spokes}
+    <polygon class="chess-radar-shape" points="${shapePoints.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(" ")}"></polygon>
+    ${shapePoints.map((point) => `<circle class="chess-radar-point" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="3"></circle>`).join("")}
+    ${labels}
+  `;
+}
+
+function updateAdvantage(score) {
+  const clamped = clamp(score, -1400, 1400);
+  const percent = Math.abs(clamped) / 1400 * 50;
+  advantageBarFill.classList.toggle("is-black", clamped < 0);
+  advantageBarFill.style.height = `${percent}%`;
+  advantageText.textContent = `${(clamped / 100).toFixed(1)}`;
+
+  if (clamped > 30) {
+    evalLabelElement.textContent = "White Better";
+  } else if (clamped < -30) {
+    evalLabelElement.textContent = "Black Better";
+  } else {
+    evalLabelElement.textContent = "Balanced";
+  }
+}
+
+function updateHeuristicHud() {
+  const profile = activeModel();
+  const snapshot = heuristicSnapshot(state.board, state.aiColor, profile);
+  const rows = [
+    ["Material", snapshot.weights.material || 0],
+    ["Mobility", snapshot.weights.mobility || 0],
+    ["Position", snapshot.weights.position || 0],
+    ["Pawn Structure", snapshot.weights.pawnStructure || 0],
+    ["King Safety", snapshot.weights.kingSafety || 0]
+  ];
+
+  heuristicHud.innerHTML = rows.map(([label, value]) => `
+    <div class="chess-heuristic-row">
+      <span>${label}</span>
+      <strong>${Math.round(value * 100)}%</strong>
+      <div class="chess-heuristic-meter"><span style="width:${Math.round(value * 100)}%"></span></div>
+    </div>
+  `).join("");
+
+  eraNoteElement.innerHTML = `<strong>${profile.label}</strong><br>${profile.logicNote}`;
+  renderRadar(profile);
+}
+
+function squareCenter(index) {
+  const size = boardElement.clientWidth / SIZE;
+  return {
+    x: colOf(index) * size + size / 2,
+    y: rowOf(index) * size + size / 2
+  };
+}
+
+function renderGhostLines() {
+  const size = boardElement.clientWidth || 0;
+  if (!size) {
+    ghostLayer.innerHTML = "";
+    return;
+  }
+
+  ghostLayer.setAttribute("viewBox", `0 0 ${size} ${size}`);
+  const lines = state.aiPreviewMoves.slice(0, 3).map((entry, index) => {
+    const from = squareCenter(entry.move.from);
+    const to = squareCenter(entry.move.to);
+    const midX = (from.x + to.x) / 2;
+    const midY = (from.y + to.y) / 2 - 0.12 * size + index * 6;
+    return `
+      <path
+        class="chess-ghost-line ${index === 0 ? "is-primary" : ""}"
+        d="M ${from.x.toFixed(2)} ${from.y.toFixed(2)} Q ${midX.toFixed(2)} ${midY.toFixed(2)} ${to.x.toFixed(2)} ${to.y.toFixed(2)}"
+      ></path>
+    `;
+  }).join("");
+
+  ghostLayer.innerHTML = lines;
+}
+
+function computeControlHeatmap(board, color, profile) {
+  const control = new Array(SIZE * SIZE).fill(0);
+  const enemyKing = findKing(board, opposite(color));
+
+  for (let i = 0; i < board.length; i += 1) {
+    const piece = board[i];
+    if (!piece || colorOf(piece) !== color) continue;
+
+    const attacks = pseudoMovesForPiece(board, i, piece, true);
+    const pieceBase =
+      typeOf(piece) === "P" ? 0.45 :
+      typeOf(piece) === "N" ? 0.78 :
+      typeOf(piece) === "B" ? 0.72 :
+      typeOf(piece) === "R" ? 0.86 :
+      typeOf(piece) === "Q" ? 1 :
+      0.54;
+
+    for (const move of attacks) {
+      let pressure = pieceBase;
+      pressure += centralityScore(move.to) * (profile.centerWeight || 0) * 0.08;
+      if (enemyKing !== -1 && Math.max(Math.abs(rowOf(enemyKing) - rowOf(move.to)), Math.abs(colOf(enemyKing) - colOf(move.to))) <= 1) {
+        pressure += (profile.checkBonus || 0) * 0.02;
+      }
+      control[move.to] += pressure;
+    }
+  }
+
+  const max = Math.max(...control, 0.01);
+  return control.map((value) => clamp(value / max, 0, 1));
+}
+
+function scoreForDisplay(board) {
+  return evaluate(board, "W", activeModel());
+}
+
 function minimax(board, turn, depth, alpha, beta, perspective, profile, ply = 0) {
   if (depth <= 0) {
     return { score: evaluate(board, perspective, profile), move: null };
@@ -592,9 +886,9 @@ function scoreCandidateMove(board, move, depth, profile) {
   return score;
 }
 
-function chooseAiMove(board, profile) {
+function getAiCandidateMoves(board, profile) {
   const analysis = analyzePosition(board, state.aiColor);
-  if (analysis.over || analysis.moves.length === 0) return null;
+  if (analysis.over || analysis.moves.length === 0) return [];
 
   const depth = resolveSearchDepth(profile);
   const scored = analysis.moves.map((move) => ({
@@ -603,6 +897,11 @@ function chooseAiMove(board, profile) {
   }));
 
   scored.sort((a, b) => b.score - a.score);
+  return scored;
+}
+
+function chooseAiMove(board, profile) {
+  const scored = getAiCandidateMoves(board, profile);
   const best = scored[0];
   if (!best) return null;
 
@@ -660,10 +959,17 @@ function statusText() {
   return `Black (${model.label}) to move${checkNote}.`;
 }
 
+function updateAesthetic() {
+  const model = activeModel();
+  const era = model.eraSkin || state.aiModelId;
+  document.body.dataset.chessTheme = state.aiModelId;
+  document.body.dataset.chessEra = era;
+  labElement.dataset.modelTheme = era;
+}
+
 function renderModelNote() {
   const model = activeModel();
-  document.body.dataset.chessTheme = state.aiModelId;
-  labElement.dataset.modelTheme = state.aiModelId;
+  updateAesthetic();
   modelNoteElement.innerHTML = `
     <span class="chess-model-kicker">${model.themeKicker}</span>
     <strong class="chess-model-title">${model.themeTitle}</strong>
@@ -677,6 +983,7 @@ function renderBoard() {
   boardElement.innerHTML = "";
 
   const checkSquare = state.inCheckColor ? findKing(state.board, state.inCheckColor) : -1;
+  const controlHeatmap = computeControlHeatmap(state.board, state.aiColor, activeModel());
 
   for (let i = 0; i < state.board.length; i += 1) {
     const row = rowOf(i);
@@ -688,6 +995,7 @@ function renderBoard() {
     button.className = `chess-square ${(row + col) % 2 === 0 ? "light" : "dark"}`;
     button.setAttribute("role", "gridcell");
     button.dataset.index = String(i);
+    button.style.setProperty("--control-alpha", (controlHeatmap[i] * 0.42).toFixed(3));
 
     if (state.selected === i) button.classList.add("selected");
     if (state.legalTargets.includes(i)) button.classList.add("target");
@@ -712,7 +1020,11 @@ function renderBoard() {
   depthSelect.disabled = state.aiThinking;
   modelSelect.disabled = state.aiThinking;
 
+  state.latestEval = scoreForDisplay(state.board);
+  updateAdvantage(state.latestEval);
+  updateHeuristicHud();
   renderModelNote();
+  renderGhostLines();
   statusElement.textContent = statusText();
   renderLog();
 }
@@ -734,6 +1046,8 @@ function runAiTurn() {
   if (state.winner || state.turn !== state.aiColor) return;
 
   const model = activeModel();
+  const candidates = getAiCandidateMoves(state.board, model);
+  state.aiPreviewMoves = candidates.slice(0, 3);
   state.aiThinking = true;
   renderBoard();
 
@@ -741,6 +1055,7 @@ function runAiTurn() {
     const analysis = analyzePosition(state.board, state.aiColor);
 
     if (analysis.over || analysis.moves.length === 0) {
+      state.aiPreviewMoves = [];
       state.aiThinking = false;
       updateGameStatus();
       renderBoard();
@@ -753,6 +1068,7 @@ function runAiTurn() {
     state.turn = state.humanColor;
     state.selected = null;
     state.legalTargets = [];
+    state.aiPreviewMoves = [];
 
     state.aiThinking = false;
     updateGameStatus();
@@ -830,6 +1146,7 @@ function resetGame() {
   state.winner = null;
   state.aiThinking = false;
   state.inCheckColor = null;
+  state.aiPreviewMoves = [];
   state.log = [
     `New 8x8 game started vs ${model.label}.`,
     `Model note: ${model.summary}`,
@@ -861,6 +1178,10 @@ resetButton.addEventListener("click", () => {
 
 modelSelect.addEventListener("change", () => {
   syncModelSelection(true);
+});
+
+window.addEventListener("resize", () => {
+  renderGhostLines();
 });
 
 syncModelSelection(false);
