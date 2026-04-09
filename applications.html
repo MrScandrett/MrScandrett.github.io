@@ -2184,6 +2184,7 @@
       </p>
 
       <div class="ai-modal-actions">
+        <button type="button" class="ai-modal-btn ai-modal-btn-secondary" id="ai-modal-reset" hidden>Revoke Saved License</button>
         <button type="button" class="ai-modal-btn ai-modal-btn-secondary" id="ai-modal-cancel">Cancel</button>
         <button type="button" class="ai-modal-btn ai-modal-btn-primary" id="ai-modal-confirm" disabled>Access AI Tool</button>
       </div>
@@ -4481,13 +4482,58 @@
         libraryGradeMode: "current"
       };
 
-      const missionMeta = {
-        game: { label: "Make A Game" },
-        robot: { label: "Build A Robot" },
-        art: { label: "Design Art / Media" },
-        web: { label: "Build A Website" },
-        learn: { label: "Learn & Practice" }
+      const MISSION_MAP = {
+        game: {
+          label: "Make A Game",
+          search: "scratch arcade gdevelop kenney piskel game design",
+          filter: "games",
+          jump: "#games",
+          anchorId: "anchor-games",
+          scale: 1.14,
+          constellation: ["scratch", "makecode-arcade", "kenney"]
+        },
+        robot: {
+          label: "Build A Robot",
+          search: "robotics arduino makecode microbit wokwi tinkercad circuits engineering",
+          filter: "engineering",
+          jump: "#app-engineering",
+          anchorId: "anchor-robotics",
+          scale: 1.14,
+          constellation: ["microbit-makecode", "wokwi", "tinkercad"]
+        },
+        art: {
+          label: "Design Art / Media",
+          search: "canva piskel figma media video music art culture",
+          filter: "all",
+          jump: "#app-start",
+          anchorId: "anchor-art",
+          scale: 1.12,
+          constellation: ["canva", "piskel", "figma"]
+        },
+        web: {
+          label: "Build A Website",
+          search: "google sites glitch figma github replit website web design",
+          filter: "all",
+          jump: "#app-start",
+          anchorId: "anchor-coding",
+          scale: 1.12,
+          constellation: ["googlesites", "glitch", "figma"]
+        },
+        learn: {
+          label: "Learn & Practice",
+          search: "khan britannica phet desmos duolingo research science practice",
+          filter: "all",
+          jump: "#app-start",
+          anchorId: "anchor-research",
+          scale: 1.14,
+          constellation: ["khan", "britannica", "phet"]
+        }
       };
+      window.APPLICATIONS_MISSION_MAP = MISSION_MAP;
+
+      const missionMeta = Object.fromEntries(
+        Object.entries(MISSION_MAP).map(([key, config]) => [key, { label: config.label }])
+      );
 
       const levelMeta = {
         k2: "K-2",
@@ -5392,34 +5438,6 @@
       })();
 
       (function () {
-        const missionIntentMeta = {
-          game: {
-            search: "scratch arcade gdevelop kenney piskel game design",
-            filter: "games",
-            jump: "#games"
-          },
-          robot: {
-            search: "robotics arduino makecode microbit wokwi tinkercad circuits engineering",
-            filter: "engineering",
-            jump: "#app-engineering"
-          },
-          art: {
-            search: "canva piskel figma media video music art culture",
-            filter: "all",
-            jump: "#app-start"
-          },
-          web: {
-            search: "google sites glitch figma github replit website web design",
-            filter: "all",
-            jump: "#app-start"
-          },
-          learn: {
-            search: "khan britannica phet desmos duolingo research science practice",
-            filter: "all",
-            jump: "#app-start"
-          }
-        };
-
         function searchLibrary(query, options = {}) {
           state.libraryFilter = options.filter || "all";
           state.libraryGradeMode = options.gradeMode || state.libraryGradeMode || "current";
@@ -5433,7 +5451,7 @@
         }
 
         function syncLibraryToMission(missionKey, options = {}) {
-          const intent = missionIntentMeta[missionKey];
+          const intent = MISSION_MAP[missionKey];
           if (!intent) return;
           searchLibrary(intent.search, {
             filter: intent.filter,
@@ -5528,6 +5546,16 @@
                 gradeMode: "all",
                 scrollSelector: "#app-ai"
               });
+            }
+          },
+          {
+            id: "ai-license",
+            icon: "🪪",
+            title: "AI license settings",
+            desc: "Review the AI pledge and revoke the saved license if you want students to sign again.",
+            keywords: "ai license pledge settings revoke responsible use modal",
+            run: function () {
+              window.applicationsAiGate?.openSettings?.();
             }
           },
           {
@@ -5679,11 +5707,14 @@
 
       // AI Awareness Modal Handler
       (function() {
+        const AI_PLEDGE_STORAGE_KEY = "ai_pledge_signed";
         const aiModal = document.getElementById('ai-awareness-modal');
         const aiConfirmBtn = document.getElementById('ai-modal-confirm');
         const aiCancelBtn = document.getElementById('ai-modal-cancel');
+        const aiResetBtn = document.getElementById('ai-modal-reset');
         const pledgeCheckboxes = document.querySelectorAll('.ai-pledge-checkbox input[type="checkbox"]');
         let pendingAiUrl = null;
+        let aiModalMode = "gate";
         const aiGateSelector = [
           '#app-ai a[href]',
           '.app-link-gemini',
@@ -5699,29 +5730,78 @@
           return;
         }
 
+        function readAiPledgeSigned() {
+          try {
+            return localStorage.getItem(AI_PLEDGE_STORAGE_KEY) === "true";
+          } catch (error) {
+            return false;
+          }
+        }
+
+        function writeAiPledgeSigned(value) {
+          try {
+            if (value) {
+              localStorage.setItem(AI_PLEDGE_STORAGE_KEY, "true");
+            } else {
+              localStorage.removeItem(AI_PLEDGE_STORAGE_KEY);
+            }
+          } catch (error) {
+            // Ignore storage failures and keep the modal functional for this session.
+          }
+        }
+
+        function hasSignedAiPledge() {
+          return readAiPledgeSigned();
+        }
+
         function checkAllPledges() {
+          if (hasSignedAiPledge()) {
+            aiConfirmBtn.disabled = false;
+            return;
+          }
           const allChecked = Array.from(pledgeCheckboxes).every(cb => cb.checked);
           aiConfirmBtn.disabled = !allChecked;
         }
 
-        function showAiModal(url) {
-          pendingAiUrl = url;
+        function syncAiLicenseUi() {
+          const signed = hasSignedAiPledge();
+          if (aiResetBtn) {
+            aiResetBtn.hidden = !signed;
+          }
+          aiConfirmBtn.textContent = pendingAiUrl ? "Access AI Tool" : (signed ? "License Saved" : "Save License");
+        }
+
+        function showAiModal(url, options = {}) {
+          pendingAiUrl = url || null;
+          aiModalMode = options.mode || "gate";
           aiModal.classList.add('show');
-          // Reset checkboxes when modal opens
-          pledgeCheckboxes.forEach(cb => cb.checked = false);
+          if (!hasSignedAiPledge()) {
+            pledgeCheckboxes.forEach(cb => cb.checked = false);
+          }
+          syncAiLicenseUi();
           checkAllPledges();
         }
 
         function closeAiModal() {
           aiModal.classList.remove('show');
           pendingAiUrl = null;
+          aiModalMode = "gate";
         }
 
         function proceedToAiTool() {
+          writeAiPledgeSigned(true);
+          syncAiLicenseUi();
           if (pendingAiUrl) {
             window.open(pendingAiUrl, '_blank', 'noreferrer');
-            closeAiModal();
           }
+          closeAiModal();
+        }
+
+        function revokeAiLicense() {
+          writeAiPledgeSigned(false);
+          pledgeCheckboxes.forEach(cb => cb.checked = false);
+          syncAiLicenseUi();
+          checkAllPledges();
         }
 
         // Add event listeners to pledge checkboxes
@@ -5734,6 +5814,15 @@
 
         // Confirm button
         aiConfirmBtn.addEventListener('click', proceedToAiTool);
+
+        if (aiResetBtn) {
+          aiResetBtn.addEventListener('click', function () {
+            revokeAiLicense();
+            if (aiModalMode !== "settings") {
+              closeAiModal();
+            }
+          });
+        }
 
         // Close modal when clicking outside
         aiModal.addEventListener('click', function(e) {
@@ -5753,8 +5842,20 @@
             return;
           }
           e.preventDefault();
+          if (hasSignedAiPledge()) {
+            window.open(href, '_blank', 'noreferrer');
+            return;
+          }
           showAiModal(href);
         });
+
+        window.applicationsAiGate = {
+          hasSigned: hasSignedAiPledge,
+          openSettings: function () {
+            showAiModal(null, { mode: "settings" });
+          },
+          revoke: revokeAiLicense
+        };
       })();
     })();
   </script>
@@ -6146,7 +6247,7 @@
       const zoomExtent = [0.46, 2.8];
       const STASIS_DELAY = 3000;
       const IDLE_STAR_FRAME_MS = 80;
-      const missionBridgeMeta = {
+      const missionBridgeMeta = window.APPLICATIONS_MISSION_MAP || {
         game: {
           anchorId: "anchor-games",
           scale: 1.14,
