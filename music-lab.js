@@ -203,11 +203,13 @@ function noteAllowed(note) {
   return !activeScaleKeys || activeScaleKeys.includes(note % 12);
 }
 
+function naturalStaffIndex(midi) {
+  const octave = Math.floor(midi / 12) - 1;
+  return (octave * 7) + CHROMATIC_TO_STAFF[midi % 12];
+}
+
 function getNoteLayout(midi, centerMidi) {
-  const diff = midi - centerMidi;
-  const octaves = Math.floor(diff / 12);
-  const chroma = ((diff % 12) + 12) % 12;
-  const steps = (octaves * 7) + CHROMATIC_TO_STAFF[chroma];
+  const steps = naturalStaffIndex(midi) - naturalStaffIndex(centerMidi);
   const yBase = 72;
   const stepPx = 5;
   return {
