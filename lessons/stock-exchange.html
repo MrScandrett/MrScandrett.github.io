@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     /* ── Page ─────────────────────────────────────── */
-    .sx-page { padding-bottom: 3.5rem; }
+    .sx-page { padding-bottom: 5rem; }
 
     /* ── Hero ─────────────────────────────────────── */
     .sx-hero { padding: 0.4rem 0 1.1rem; }
@@ -165,6 +165,16 @@
     .sx-chart-wrap { border-radius: 10px; overflow: hidden; border: 1px solid var(--line, #d2d2d7); }
     #sx-chart { display: block; width: 100%; height: auto; }
     .sx-chart-caption { font-size: 0.72rem; color: #94a3b8; margin-top: 0.3rem; line-height: 1.5; }
+    .sx-sector-badge {
+      display: inline-flex; align-items: center; gap: 0.28rem;
+      font-size: 0.62rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 0.22rem 0.42rem; border-radius: 999px;
+      background: rgba(148,163,184,0.14); color: #64748b; margin-left: 0.45rem;
+    }
+    .sx-sector-badge.bullish { background: rgba(34,197,94,0.14); color: #16a34a; }
+    .sx-sector-badge.bearish { background: rgba(239,68,68,0.12); color: #dc2626; }
+    .sx-sector-badge.neutral { background: rgba(148,163,184,0.14); color: #64748b; }
+    [data-theme="night"] .sx-sector-badge.neutral { color: rgba(245,245,247,0.68); }
 
     /* Trade form */
     .sx-trade-section { border-top: 1px solid var(--line, #d2d2d7); padding-top: 0.8rem; }
@@ -189,6 +199,41 @@
     .sx-trade-msg { font-size: 0.77rem; color: #94a3b8; margin-top: 0.3rem; min-height: 1.2em; }
     .sx-trade-msg.ok  { color: #10b981; }
     .sx-trade-msg.err { color: #ef4444; }
+    .sx-limit-order-card {
+      margin-top: 0.95rem; padding: 0.95rem 1rem; border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.18); background: rgba(15,23,42,0.03);
+    }
+    [data-theme="night"] .sx-limit-order-card {
+      background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1);
+    }
+    .sx-limit-grid {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 0.5rem;
+      align-items: end;
+    }
+    @media (max-width: 700px) {
+      .sx-limit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .sx-field { display: flex; flex-direction: column; gap: 0.28rem; }
+    .sx-field label {
+      font-size: 0.66rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #64748b;
+    }
+    .sx-limit-list {
+      display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.8rem;
+    }
+    .sx-limit-item {
+      display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;
+      padding: 0.55rem 0.7rem; border-radius: 10px; background: rgba(148,163,184,0.08);
+      font-size: 0.76rem;
+    }
+    .sx-limit-item strong, .sx-limit-item span { font-family: 'IBM Plex Mono', monospace; }
+    .sx-limit-empty { font-size: 0.75rem; color: #94a3b8; font-style: italic; margin-top: 0.7rem; }
+    .sx-chip-btn {
+      border: 1px solid rgba(239,68,68,0.25); background: rgba(239,68,68,0.08); color: #dc2626;
+      border-radius: 999px; padding: 0.22rem 0.55rem; font-size: 0.68rem; font-weight: 700; cursor: pointer;
+    }
+    .sx-limit-msg { min-height: 1.1rem; margin-top: 0.45rem; font-size: 0.74rem; }
+    .sx-limit-msg.ok { color: #10b981; }
+    .sx-limit-msg.err { color: #ef4444; }
 
     /* ── Side column ───────────────────────────────── */
     .sx-side-col { display: flex; flex-direction: column; }
@@ -297,6 +342,25 @@
     .sx-reset-btn { font-size: 0.75rem; font-weight: 700; border: 1px solid var(--line, #d2d2d7); border-radius: 7px; padding: 0.28rem 0.7rem; cursor: pointer; background: transparent; color: #64748b; transition: all 0.15s; }
     .sx-reset-btn:hover { border-color: #ef4444; color: #ef4444; }
     .sx-reset-note { font-size: 0.73rem; color: #94a3b8; }
+    .sx-ticker-wrap {
+      position: fixed; left: 0; bottom: 0; width: 100%; z-index: 1000;
+      height: 32px; display: flex; align-items: center; overflow: hidden; white-space: nowrap;
+      background: #030712; border-top: 1px solid rgba(148,163,184,0.22);
+      box-shadow: 0 -10px 22px rgba(0,0,0,0.2);
+    }
+    .sx-ticker-move {
+      display: inline-block; min-width: 100%; padding-left: 100%;
+      animation: sx-ticker-scroll 36s linear infinite;
+    }
+    .sx-ticker-item {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.74rem; font-weight: 700;
+    }
+    .sx-ticker-item em { font-style: normal; color: rgba(255,255,255,0.6); }
+    @keyframes sx-ticker-scroll {
+      0% { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(-100%, 0, 0); }
+    }
 
     .ll-viewport .sx-body {
       grid-template-columns: minmax(0, 1fr);
@@ -442,7 +506,7 @@
           <div class="sx-chart-wrap">
             <canvas id="sx-chart" width="520" height="160" aria-label="Price chart for selected company"></canvas>
           </div>
-          <p class="sx-chart-caption">Click any company card above to view its chart. The dashed line marks the opening price. Green = above start · Red = below start.</p>
+          <p class="sx-chart-caption">Candlesticks show each price window’s open, high, low, and close. Long wicks mean uncertainty. Green candles closed above open; red candles closed below it.</p>
 
           <!-- Trade form -->
           <div class="sx-trade-section">
@@ -454,6 +518,30 @@
               <button class="sx-sell-btn" onclick="executeTrade('sell')">Sell</button>
             </div>
             <div class="sx-trade-msg" id="sx-trade-msg" aria-live="polite"></div>
+
+            <div class="sx-limit-order-card">
+              <div class="sx-trade-label" style="margin-bottom:0.7rem;">Limit Orders</div>
+              <div class="sx-limit-grid">
+                <div class="sx-field">
+                  <label for="sx-limit-type">Order</label>
+                  <select class="sx-trade-input" id="sx-limit-type" aria-label="Limit order type">
+                    <option value="buy">Buy</option>
+                    <option value="sell">Sell</option>
+                  </select>
+                </div>
+                <div class="sx-field">
+                  <label for="sx-limit-price">Limit Price</label>
+                  <input type="number" class="sx-trade-input" id="sx-limit-price" min="0.01" step="0.01" value="140.00" aria-label="Limit price" />
+                </div>
+                <div class="sx-field">
+                  <label for="sx-limit-shares">Shares</label>
+                  <input type="number" class="sx-trade-input" id="sx-limit-shares" min="1" max="9999" value="5" aria-label="Limit order shares" />
+                </div>
+                <button class="sx-btn primary" onclick="placeLimitOrder()">Queue</button>
+              </div>
+              <div class="sx-limit-msg" id="sx-limit-msg" aria-live="polite"></div>
+              <div class="sx-limit-list" id="sx-limit-list" aria-live="polite"></div>
+            </div>
           </div>
         </div>
 
@@ -622,6 +710,10 @@
 
         </main>
 
+        <div class="sx-ticker-wrap" aria-hidden="true">
+          <div class="sx-ticker-move" id="sx-ticker-tape"></div>
+        </div>
+
         <footer class="site-footer">
           <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
         </footer>
@@ -640,10 +732,10 @@
 
   /* ── Company definitions ─────────────────────────── */
   const COMPANY_DEFS = {
-    TSPK: { name: 'TechSpark',       sector: 'Consumer Tech',       tagline: 'Smartphones, laptops &amp; smart devices', start: 142.50, vol: 0.007, color: '#7c3aed' },
-    GRLE: { name: 'GreenLeaf Energy',sector: 'Clean Energy',         tagline: 'Electric vehicles &amp; solar panels',     start: 67.80,  vol: 0.011, color: '#10b981' },
-    MGMT: { name: 'MegaMart',        sector: 'Retail &amp; Logistics', tagline: 'Online store &amp; next-day delivery',   start: 221.40, vol: 0.005, color: '#f59e0b' },
-    BCHE: { name: 'BioCore Health',  sector: 'Pharmaceuticals',      tagline: 'Medicines, vaccines &amp; clinical trials',start: 54.30,  vol: 0.014, color: '#0ea5e9' },
+    TSPK: { name: 'TechSpark',        sector: 'Consumer Tech',        sectorKey: 'tech',   tagline: 'Smartphones, laptops &amp; smart devices', start: 142.50, vol: 0.007, color: '#7c3aed' },
+    GRLE: { name: 'GreenLeaf Energy', sector: 'Clean Energy',         sectorKey: 'energy', tagline: 'Electric vehicles &amp; solar panels',     start: 67.80,  vol: 0.011, color: '#10b981' },
+    MGMT: { name: 'MegaMart',         sector: 'Retail &amp; Logistics', sectorKey: 'retail', tagline: 'Online store &amp; next-day delivery',   start: 221.40, vol: 0.005, color: '#f59e0b' },
+    BCHE: { name: 'BioCore Health',   sector: 'Pharmaceuticals',      sectorKey: 'pharma', tagline: 'Medicines, vaccines &amp; clinical trials',start: 54.30,  vol: 0.014, color: '#0ea5e9' },
   };
 
   /* ── News pool ───────────────────────────────────── */
@@ -702,21 +794,43 @@
   const HOURS   = ['9:00am','10:00am','11:00am','12:00pm','1:00pm','2:00pm','3:00pm','4:00pm'];
   const DAYS    = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
   const START_CASH = 10000;
+  const MAX_CANDLES = 40;
+  const sectorSentimentDefaults = { tech: 1, energy: 1, retail: 1, pharma: 1 };
 
   let state = {};
+
+  function makeSeedSeries(def) {
+    const ohlcHistory = [];
+    const sparkHistory = [];
+    let price = def.start;
+    for (let i = 0; i < 18; i++) {
+      const open = price;
+      const close = Math.max(1, open + (Math.random() - 0.5) * open * def.vol * 1.2 + (def.start - open) * 0.02);
+      const wickSwing = open * def.vol * (0.5 + Math.random() * 1.1);
+      const high = Math.max(open, close) + wickSwing * Math.random();
+      const low = Math.max(1, Math.min(open, close) - wickSwing * Math.random());
+      const candle = { o: open, h: high, l: low, c: close };
+      ohlcHistory.push(candle);
+      sparkHistory.push(close);
+      price = close;
+    }
+    return { price, ohlcHistory, sparkHistory, currentCandle: { o: price, h: price, l: price, c: price } };
+  }
 
   function buildState() {
     const companies = {};
     TICKERS.forEach(t => {
       const d = COMPANY_DEFS[t];
-      const hist = [];
-      let p = d.start;
-      for (let i = 0; i < 16; i++) {
-        p = Math.max(1, p + (Math.random() - 0.5) * p * d.vol * 0.6 + (d.start - p) * 0.02);
-        hist.push(p);
-      }
-      hist.push(d.start);
-      companies[t] = { ...d, price: d.start, history: hist, holdings: 0, avgCost: 0 };
+      const seeded = makeSeedSeries(d);
+      companies[t] = {
+        ...d,
+        price: seeded.price,
+        ohlcHistory: seeded.ohlcHistory,
+        currentCandle: seeded.currentCandle,
+        sparkHistory: seeded.sparkHistory,
+        holdings: 0,
+        avgCost: 0
+      };
     });
     return {
       companies,
@@ -729,6 +843,9 @@
       tickInterval: null,
       nextNewsIn: 3 + Math.floor(Math.random() * 3),
       tickCount: 0,
+      limitOrders: [],
+      orderSeq: 1,
+      sectorSentiment: { ...sectorSentimentDefaults }
     };
   }
 
@@ -776,6 +893,7 @@
     document.getElementById('sx-news-list').innerHTML = '<div class="sx-news-item"><div class="sx-news-time">—</div><div class="sx-news-headline" style="color:#94a3b8;font-style:italic;">Open the market to start receiving news.</div></div>';
     document.querySelectorAll('.sx-speed-btn').forEach((b,i) => b.classList.toggle('active', i===0));
     renderAll();
+    selectTicker(state.selected);
   }
 
   /* ── Simulation tick ─────────────────────────────── */
@@ -788,14 +906,28 @@
       if (state.day >= DAYS.length) state.day = 0;
     }
 
-    // Update all stock prices (random walk + mean reversion)
+    // Sentiment mean reversion
+    Object.keys(state.sectorSentiment).forEach(key => {
+      state.sectorSentiment[key] += (1 - state.sectorSentiment[key]) * 0.08;
+    });
+
+    // Update all stock prices (drift + noise + sector ripple)
     TICKERS.forEach(t => {
       const c = state.companies[t];
-      const drift = (c.start - c.price) * 0.008;
-      const noise = (Math.random() - 0.5) * c.price * c.vol;
-      c.price = Math.max(1, c.price + drift + noise);
-      c.history.push(c.price);
-      if (c.history.length > 90) c.history.shift();
+      const sentiment = state.sectorSentiment[c.sectorKey] || 1;
+      const open = c.price;
+      const drift = (c.start - c.price) * 0.006;
+      const noise = (Math.random() - 0.5) * c.price * c.vol * sentiment;
+      const close = Math.max(1, c.price + drift + noise);
+      const wickSwing = close * c.vol * (0.6 + Math.abs(sentiment - 1) * 1.6);
+      const high = Math.max(open, close) + wickSwing * Math.random();
+      const low = Math.max(1, Math.min(open, close) - wickSwing * Math.random());
+      c.price = close;
+      c.currentCandle = { o: open, h: high, l: low, c: close };
+      c.ohlcHistory.push({ ...c.currentCandle });
+      if (c.ohlcHistory.length > MAX_CANDLES) c.ohlcHistory.shift();
+      c.sparkHistory.push(close);
+      if (c.sparkHistory.length > 90) c.sparkHistory.shift();
     });
 
     // Possibly fire news event
@@ -806,6 +938,7 @@
       state.nextNewsIn = 2 + Math.floor(Math.random() * 4);
     }
 
+    checkLimitOrders();
     renderAll();
   }
 
@@ -816,16 +949,25 @@
     if (event.t) {
       const c = state.companies[event.t];
       c.price = Math.max(1, c.price * (1 + impact));
-      c.history.push(c.price);
-      if (c.history.length > 90) c.history.shift();
+      c.currentCandle.h = Math.max(c.currentCandle.h, c.price);
+      c.currentCandle.l = Math.min(c.currentCandle.l, c.price);
+      c.currentCandle.c = c.price;
+      syncLatestCandle(event.t);
+      const sectorBoost = 1 + impact * 0.35;
+      state.sectorSentiment[c.sectorKey] = Math.max(0.72, Math.min(1.4, state.sectorSentiment[c.sectorKey] * sectorBoost));
       flashCard(event.t, impact > 0);
     } else {
       // Market-wide
       TICKERS.forEach(t => {
         const c = state.companies[t];
         c.price = Math.max(1, c.price * (1 + impact));
-        c.history.push(c.price);
-        if (c.history.length > 90) c.history.shift();
+        c.currentCandle.h = Math.max(c.currentCandle.h, c.price);
+        c.currentCandle.l = Math.min(c.currentCandle.l, c.price);
+        c.currentCandle.c = c.price;
+        syncLatestCandle(t);
+      });
+      Object.keys(state.sectorSentiment).forEach(key => {
+        state.sectorSentiment[key] = Math.max(0.72, Math.min(1.4, state.sectorSentiment[key] * (1 + impact * 0.22)));
       });
     }
 
@@ -862,12 +1004,11 @@
   }
 
   /* ── Trading ─────────────────────────────────────── */
-  function executeTrade(action) {
-    const ticker = state.selected;
-    const shares = parseInt(document.getElementById('sx-shares-input').value) || 0;
+  function executeTrade(action, ticker = state.selected, sharesOverride = null, priceOverride = null) {
+    const shares = sharesOverride == null ? (parseInt(document.getElementById('sx-shares-input').value) || 0) : sharesOverride;
     const c = state.companies[ticker];
-    const cost = shares * c.price;
-    const msg = document.getElementById('sx-trade-msg');
+    const executionPrice = priceOverride == null ? c.price : priceOverride;
+    const cost = shares * executionPrice;
 
     if (shares <= 0) { showMsg('Enter a valid number of shares.', 'err'); return; }
 
@@ -878,13 +1019,13 @@
       c.holdings += shares;
       c.avgCost = (prev + cost) / c.holdings;
       state.cash -= cost;
-      showMsg(`Bought ${shares} share${shares>1?'s':''} of ${ticker} at $${c.price.toFixed(2)}.`, 'ok');
+      showMsg(`Bought ${shares} share${shares>1?'s':''} of ${ticker} at $${executionPrice.toFixed(2)}.`, 'ok');
     } else {
       if (shares > c.holdings) { showMsg(`You only own ${c.holdings} share${c.holdings!==1?'s':''}. Sell less.`, 'err'); return; }
       c.holdings -= shares;
       if (c.holdings === 0) c.avgCost = 0;
       state.cash += cost;
-      showMsg(`Sold ${shares} share${shares>1?'s':''} of ${ticker} at $${c.price.toFixed(2)}.`, 'ok');
+      showMsg(`Sold ${shares} share${shares>1?'s':''} of ${ticker} at $${executionPrice.toFixed(2)}.`, 'ok');
     }
     renderPortfolio();
   }
@@ -904,6 +1045,122 @@
     document.getElementById('sx-trade-cost').textContent = 'est. $' + cost.toFixed(2);
   }
 
+  function syncLatestCandle(ticker) {
+    const c = state.companies[ticker];
+    if (c.ohlcHistory.length) {
+      c.ohlcHistory[c.ohlcHistory.length - 1] = { ...c.currentCandle };
+    }
+    if (c.sparkHistory.length) {
+      c.sparkHistory[c.sparkHistory.length - 1] = c.price;
+    }
+  }
+
+  function showLimitMsg(txt, type) {
+    const el = document.getElementById('sx-limit-msg');
+    el.textContent = txt;
+    el.className = 'sx-limit-msg ' + type;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.textContent = ''; el.className = 'sx-limit-msg'; }, 4000);
+  }
+
+  function placeLimitOrder() {
+    const ticker = state.selected;
+    const type = document.getElementById('sx-limit-type').value;
+    const price = parseFloat(document.getElementById('sx-limit-price').value);
+    const shares = parseInt(document.getElementById('sx-limit-shares').value) || 0;
+    const company = state.companies[ticker];
+
+    if (!(price > 0) || shares <= 0) {
+      showLimitMsg('Enter a valid price and share count.', 'err');
+      return;
+    }
+    if (type === 'buy' && price * shares > state.cash) {
+      showLimitMsg('This buy limit would cost more cash than you have.', 'err');
+      return;
+    }
+    if (type === 'sell' && shares > company.holdings) {
+      showLimitMsg(`You only own ${company.holdings} share${company.holdings === 1 ? '' : 's'} of ${ticker}.`, 'err');
+      return;
+    }
+
+    state.limitOrders.push({
+      id: state.orderSeq++,
+      ticker,
+      type,
+      price,
+      shares
+    });
+    showLimitMsg(`Queued ${type.toUpperCase()} ${shares} ${ticker} @ $${price.toFixed(2)}.`, 'ok');
+    renderLimitOrders();
+  }
+
+  function cancelLimitOrder(id) {
+    state.limitOrders = state.limitOrders.filter(order => order.id !== id);
+    renderLimitOrders();
+  }
+
+  function checkLimitOrders() {
+    state.limitOrders = state.limitOrders.filter(order => {
+      const currentPrice = state.companies[order.ticker].price;
+      const triggered = order.type === 'buy' ? currentPrice <= order.price : currentPrice >= order.price;
+      if (!triggered) return true;
+      if (order.type === 'buy' && order.shares * currentPrice > state.cash) {
+        showLimitMsg(`Buy limit for ${order.ticker} expired: cash is now too low.`, 'err');
+        return false;
+      }
+      if (order.type === 'sell' && order.shares > state.companies[order.ticker].holdings) {
+        showLimitMsg(`Sell limit for ${order.ticker} expired: shares are no longer available.`, 'err');
+        return false;
+      }
+      executeTrade(order.type, order.ticker, order.shares, currentPrice);
+      addNewsItem({
+        h: `Limit order executed for ${order.ticker}: ${order.type.toUpperCase()} ${order.shares} @ $${currentPrice.toFixed(2)}`,
+        t: order.ticker,
+        w: 'Automated orders let traders react to price targets even while they are focused somewhere else.'
+      }, 0);
+      return false;
+    });
+    renderLimitOrders();
+  }
+
+  function renderLimitOrders() {
+    const list = document.getElementById('sx-limit-list');
+    if (!list) return;
+    const orders = state.limitOrders.filter(order => order.ticker === state.selected);
+    if (!orders.length) {
+      list.innerHTML = '<div class="sx-limit-empty">No queued orders for this ticker.</div>';
+      return;
+    }
+    list.innerHTML = orders.map(order => `
+      <div class="sx-limit-item">
+        <div>
+          <strong>${order.type.toUpperCase()}</strong>
+          <span>${order.shares} ${order.ticker} @ $${order.price.toFixed(2)}</span>
+        </div>
+        <button class="sx-chip-btn" onclick="cancelLimitOrder(${order.id})">Cancel</button>
+      </div>
+    `).join('');
+  }
+
+  function updateTickerTape() {
+    const tape = document.getElementById('sx-ticker-tape');
+    if (!tape) return;
+    tape.innerHTML = TICKERS.map(t => {
+      const c = state.companies[t];
+      const change = ((c.price - c.start) / c.start * 100);
+      const color = change >= 0 ? '#39FF14' : '#ff3e3e';
+      const sentiment = state.sectorSentiment[c.sectorKey] || 1;
+      return `<span class="sx-ticker-item" style="color:${color};">${t} <em>$${c.price.toFixed(2)}</em> ${change >= 0 ? '+' : ''}${change.toFixed(2)}% <em>${sentiment.toFixed(2)}× ${c.sector}</em></span>`;
+    }).join('');
+  }
+
+  function sentimentBadgeMarkup(company) {
+    const sentiment = state.sectorSentiment[company.sectorKey] || 1;
+    const cls = sentiment > 1.04 ? 'bullish' : sentiment < 0.96 ? 'bearish' : 'neutral';
+    const label = sentiment > 1.04 ? 'Sector bullish' : sentiment < 0.96 ? 'Sector cautious' : 'Sector balanced';
+    return `<span class="sx-sector-badge ${cls}">${label}</span>`;
+  }
+
   /* ── Company selection ───────────────────────────── */
   function selectTicker(t) {
     state.selected = t;
@@ -912,10 +1169,12 @@
     });
     const c = state.companies[t];
     document.getElementById('sx-sel-name').innerHTML = c.name + ' <span style="font-size:0.75rem;font-weight:500;color:#94a3b8;">(' + t + ')</span>';
-    document.getElementById('sx-sel-sector').textContent = c.sector;
+    document.getElementById('sx-sel-sector').innerHTML = c.sector + sentimentBadgeMarkup(c);
     document.getElementById('sx-sel-tagline').innerHTML = c.tagline;
     document.getElementById('sx-trade-ticker').textContent = t;
+    document.getElementById('sx-limit-price').value = c.price.toFixed(2);
     updateTradeCost();
+    renderLimitOrders();
     drawChart(t);
   }
 
@@ -951,10 +1210,13 @@
     const schgEl = document.getElementById('sx-sel-change');
     schgEl.textContent = ssign + schg.toFixed(2) + '%';
     schgEl.className = 'sx-selected-change ' + scls;
+    document.getElementById('sx-sel-sector').innerHTML = sc.sector + sentimentBadgeMarkup(sc);
 
     drawChart(state.selected);
     renderPortfolio();
     updateTradeCost();
+    renderLimitOrders();
+    updateTickerTape();
   }
 
   function renderPortfolio() {
@@ -1011,7 +1273,7 @@
     const canvas = document.getElementById('sx-chart');
     const ctx = canvas.getContext('2d');
     const c = state.companies[ticker];
-    const hist = c.history;
+    const hist = c.ohlcHistory.slice(-MAX_CANDLES);
     const W = canvas.width, H = canvas.height;
     const PADR = 8, PADL = 48, PADT = 12, PADB = 18;
     const dark = document.documentElement.dataset.theme === 'night';
@@ -1021,13 +1283,12 @@
     ctx.fillRect(0, 0, W, H);
 
     if (hist.length < 2) return;
-    const visible = hist.slice(-80);
-    const prices = visible;
-    const minP = Math.min(...prices) * 0.993;
-    const maxP = Math.max(...prices) * 1.007;
+    const allPrices = hist.flatMap(d => [d.h, d.l]);
+    const minP = Math.min(...allPrices) * 0.993;
+    const maxP = Math.max(...allPrices) * 1.007;
     const rng  = maxP - minP || 1;
 
-    function fx(i) { return PADL + (i / (prices.length - 1)) * (W - PADL - PADR); }
+    function fx(i) { return PADL + (i / Math.max(hist.length - 1, 1)) * (W - PADL - PADR); }
     function fy(p) { return PADT + (1 - (p - minP) / rng) * (H - PADT - PADB); }
 
     // Grid lines
@@ -1051,31 +1312,24 @@
     ctx.beginPath(); ctx.moveTo(PADL, startY); ctx.lineTo(W - PADR, startY); ctx.stroke();
     ctx.setLineDash([]);
 
-    // Area fill
-    const isUp = c.price >= c.start;
-    const lineColor = isUp ? '#10b981' : '#ef4444';
-    ctx.globalAlpha = 0.07;
-    ctx.fillStyle = lineColor;
-    ctx.beginPath();
-    prices.forEach((p, i) => { if (i === 0) ctx.moveTo(fx(i), fy(p)); else ctx.lineTo(fx(i), fy(p)); });
-    ctx.lineTo(fx(prices.length - 1), H - PADB);
-    ctx.lineTo(fx(0), H - PADB);
-    ctx.closePath(); ctx.fill();
-    ctx.globalAlpha = 1;
-
-    // Price line
-    ctx.strokeStyle = lineColor;
-    ctx.lineWidth = 2;
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    prices.forEach((p, i) => { if (i === 0) ctx.moveTo(fx(i), fy(p)); else ctx.lineTo(fx(i), fy(p)); });
-    ctx.stroke();
-
-    // End dot
-    const ex = fx(prices.length - 1), ey = fy(prices[prices.length - 1]);
-    ctx.beginPath(); ctx.arc(ex, ey, 3.5, 0, Math.PI * 2);
-    ctx.fillStyle = lineColor; ctx.fill();
-    ctx.strokeStyle = dark ? '#1a1a1c' : '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+    const candleWidth = Math.max(6, (W - PADL - PADR) / hist.length - 3);
+    hist.forEach((d, i) => {
+      const x = fx(i) - candleWidth / 2;
+      const isBull = d.c >= d.o;
+      const color = isBull ? '#22c55e' : '#ef4444';
+      const yOpen = fy(d.o);
+      const yClose = fy(d.c);
+      const yHigh = fy(d.h);
+      const yLow = fy(d.l);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(x + candleWidth / 2, yHigh);
+      ctx.lineTo(x + candleWidth / 2, yLow);
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.fillRect(x, Math.min(yOpen, yClose), candleWidth, Math.max(1.5, Math.abs(yOpen - yClose)));
+    });
   }
 
   /* ── Sparkline drawing ───────────────────────────── */
@@ -1083,7 +1337,7 @@
     const canvas = document.getElementById('sx-spark-' + ticker);
     const ctx = canvas.getContext('2d');
     const c = state.companies[ticker];
-    const hist = c.history.slice(-22);
+    const hist = c.sparkHistory.slice(-22);
     const W = canvas.width, H = canvas.height;
 
     ctx.clearRect(0, 0, W, H);
@@ -1109,6 +1363,7 @@
 
   /* ── Init ─────────────────────────────────────────── */
   renderAll();
+  selectTicker(state.selected);
   </script>
 </body>
 </html>

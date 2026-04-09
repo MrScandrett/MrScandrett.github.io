@@ -8,6 +8,9 @@
     name="description"
     content="A Systems and Society lesson about humanity's attempts to gather, preserve, and share knowledge from the Tower of Babel to the Library of Alexandria, the modern Bibliotheca Alexandrina, and the Internet."
   />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
@@ -22,15 +25,52 @@
       --atlas-green: #2d9d78;
       --atlas-red: #c75a4a;
       --atlas-shadow: 0 20px 44px rgba(18, 34, 53, 0.08);
+      --atlas-bg-top: #f8fbff;
+      --atlas-bg-bottom: #eef3f8;
+      --atlas-grid-glow: rgba(45, 125, 210, 0.08);
+      --atlas-terminal-ink: #d9f3ff;
+      --atlas-terminal-muted: rgba(217, 243, 255, 0.7);
     }
 
     body {
       margin: 0;
+      font-family: "Manrope", sans-serif;
       color: var(--atlas-ink);
       background:
         radial-gradient(980px 520px at 0% 0%, rgba(216, 154, 43, 0.18), transparent 58%),
         radial-gradient(920px 440px at 100% 0%, rgba(45, 125, 210, 0.14), transparent 56%),
-        linear-gradient(180deg, #f8fbff 0%, #eef3f8 100%);
+        linear-gradient(180deg, var(--atlas-bg-top) 0%, var(--atlas-bg-bottom) 100%);
+      transition: background 420ms ease, color 420ms ease;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background:
+        linear-gradient(rgba(90, 255, 184, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90, 255, 184, 0.06) 1px, transparent 1px);
+      background-size: 24px 24px;
+      transition: opacity 360ms ease;
+      z-index: 0;
+    }
+
+    body.atlas-terminal {
+      --atlas-ink: var(--atlas-terminal-ink);
+      --atlas-muted: var(--atlas-terminal-muted);
+      --atlas-line: rgba(101, 189, 215, 0.18);
+      --atlas-panel: rgba(8, 18, 28, 0.9);
+      --atlas-panel-soft: rgba(8, 22, 36, 0.88);
+      --atlas-bg-top: #08111d;
+      --atlas-bg-bottom: #0e1b2c;
+      --atlas-grid-glow: rgba(95, 255, 194, 0.1);
+      --atlas-shadow: 0 24px 52px rgba(0, 0, 0, 0.28);
+    }
+
+    body.atlas-terminal::before {
+      opacity: 1;
     }
 
     .atlas-topbar {
@@ -40,6 +80,11 @@
       backdrop-filter: blur(14px) saturate(150%);
       background: rgba(248, 251, 255, 0.86);
       border-bottom: 1px solid var(--atlas-line);
+      transition: background 360ms ease, border-color 360ms ease;
+    }
+
+    body.atlas-terminal .atlas-topbar {
+      background: rgba(7, 14, 22, 0.78);
     }
 
     .atlas-topbar-inner {
@@ -57,11 +102,15 @@
       text-decoration: none;
       font-size: 0.84rem;
       font-weight: 700;
+      transition: color 240ms ease;
     }
 
     .atlas-topbar a:hover { color: #123a5c; }
+    body.atlas-terminal .atlas-topbar a { color: #73c8ff; }
+    body.atlas-terminal .atlas-topbar a:hover { color: #b8ecff; }
 
     .atlas-topbar-title {
+      font-family: "IBM Plex Mono", monospace;
       font-size: 0.92rem;
       font-weight: 800;
       letter-spacing: -0.01em;
@@ -81,6 +130,9 @@
       border: 1px solid var(--atlas-line);
       background: linear-gradient(180deg, var(--atlas-panel), var(--atlas-panel-soft));
       box-shadow: var(--atlas-shadow);
+      position: relative;
+      z-index: 1;
+      transition: background 360ms ease, border-color 360ms ease, box-shadow 360ms ease;
     }
 
     .atlas-hero {
@@ -101,6 +153,7 @@
     }
 
     .atlas-hero h1 {
+      font-family: "Cormorant Garamond", serif;
       margin: 0;
       font-size: clamp(2rem, 4vw, 3.35rem);
       line-height: 1.02;
@@ -161,8 +214,18 @@
     .atlas-section h2,
     .atlas-mini-card h3,
     .atlas-compare-card h3 {
+      font-family: "Cormorant Garamond", serif;
       margin: 0 0 0.45rem;
       letter-spacing: -0.02em;
+    }
+
+    body.atlas-terminal .atlas-hero h1,
+    body.atlas-terminal .atlas-side-box h2,
+    body.atlas-terminal .atlas-section h2,
+    body.atlas-terminal .atlas-mini-card h3,
+    body.atlas-terminal .atlas-compare-card h3 {
+      font-family: "IBM Plex Mono", monospace;
+      letter-spacing: -0.03em;
     }
 
     .atlas-side-box p,
@@ -252,17 +315,372 @@
       font-size: 0.92rem;
     }
 
+    .atlas-lab {
+      overflow: hidden;
+    }
+
+    .atlas-lab-shell {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+      align-items: start;
+    }
+
+    .atlas-stage {
+      border-radius: 22px;
+      border: 1px solid rgba(86, 109, 135, 0.18);
+      background:
+        linear-gradient(180deg, rgba(255, 251, 241, 0.92), rgba(244, 237, 222, 0.9));
+      padding: 1rem;
+      min-height: 430px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body.atlas-terminal .atlas-stage {
+      background:
+        radial-gradient(circle at top, rgba(71, 170, 255, 0.12), transparent 38%),
+        linear-gradient(180deg, rgba(6, 16, 26, 0.96), rgba(10, 25, 38, 0.94));
+    }
+
+    .atlas-lab-toolbar,
+    .atlas-lab-actions,
+    .atlas-signal-modes,
+    .atlas-signal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: center;
+    }
+
+    .atlas-lab-toggle,
+    .atlas-lab-btn,
+    .atlas-source,
+    .atlas-fact-chip {
+      border: 1px solid rgba(86, 109, 135, 0.24);
+      border-radius: 999px;
+      padding: 0.55rem 0.8rem;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--atlas-ink);
+      font: inherit;
+      cursor: pointer;
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, opacity 180ms ease;
+    }
+
+    .atlas-lab-toggle:hover,
+    .atlas-lab-btn:hover,
+    .atlas-source:hover,
+    .atlas-fact-chip:hover {
+      transform: translateY(-1px);
+    }
+
+    .atlas-lab-toggle.is-active,
+    .atlas-signal-modes .is-active {
+      background: rgba(45, 125, 210, 0.16);
+      border-color: rgba(45, 125, 210, 0.36);
+      color: #184d79;
+    }
+
+    body.atlas-terminal .atlas-lab-toggle,
+    body.atlas-terminal .atlas-lab-btn,
+    body.atlas-terminal .atlas-source,
+    body.atlas-terminal .atlas-fact-chip {
+      background: rgba(10, 30, 42, 0.78);
+      color: var(--atlas-terminal-ink);
+      border-color: rgba(108, 173, 206, 0.24);
+    }
+
+    body.atlas-terminal .atlas-lab-toggle.is-active,
+    body.atlas-terminal .atlas-signal-modes .is-active {
+      background: rgba(87, 245, 255, 0.12);
+      color: #c7f8ff;
+      border-color: rgba(87, 245, 255, 0.34);
+    }
+
+    .atlas-lab-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.85rem;
+    }
+
+    .atlas-kpi {
+      border-radius: 16px;
+      padding: 0.8rem;
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid rgba(86, 109, 135, 0.14);
+    }
+
+    .atlas-kpi-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #5b7186;
+    }
+
+    .atlas-kpi-value {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    body.atlas-terminal .atlas-kpi {
+      background: rgba(10, 30, 42, 0.76);
+    }
+
+    body.atlas-terminal .atlas-kpi-label {
+      color: rgba(201, 236, 255, 0.72);
+    }
+
+    .atlas-topology-stage {
+      position: relative;
+      min-height: 280px;
+      margin-top: 0.95rem;
+      border-radius: 20px;
+      border: 1px solid rgba(86, 109, 135, 0.14);
+      background:
+        linear-gradient(var(--atlas-grid-glow) 1px, transparent 1px),
+        linear-gradient(90deg, var(--atlas-grid-glow) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.06));
+      background-size: 22px 22px, 22px 22px, 100% 100%;
+      overflow: hidden;
+    }
+
+    .atlas-library-stack {
+      position: absolute;
+      inset: 0;
+      padding: 1rem;
+      display: grid;
+      align-content: end;
+      justify-items: center;
+      gap: 0.18rem;
+    }
+
+    .atlas-stack-block {
+      width: min(86%, calc(64px + var(--size, 0) * 6px));
+      max-width: 360px;
+      min-height: 16px;
+      border-radius: 6px 6px 2px 2px;
+      border: 1px solid rgba(20, 34, 53, 0.12);
+      background: linear-gradient(90deg, var(--tone-a), var(--tone-b));
+      box-shadow: 0 10px 18px rgba(30, 38, 49, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.2rem 0.55rem;
+      font-size: 0.74rem;
+      font-weight: 700;
+      transform-origin: center bottom;
+      transition: transform 420ms ease, opacity 420ms ease, filter 420ms ease;
+    }
+
+    .atlas-stack-block.is-lost {
+      opacity: 0.16;
+      filter: grayscale(1) blur(1px);
+      transform: translateY(42px) rotate(calc(var(--tilt, 1) * 12deg));
+    }
+
+    .atlas-stack-flash {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at center, rgba(255, 184, 94, 0.26), rgba(199, 90, 74, 0.08), transparent 62%);
+      opacity: 0;
+      transition: opacity 260ms ease;
+      pointer-events: none;
+    }
+
+    .atlas-stack-flash.is-live {
+      opacity: 1;
+    }
+
+    .atlas-network-svg {
+      width: 100%;
+      height: 280px;
+      display: block;
+    }
+
+    .atlas-network-link {
+      stroke: rgba(20, 34, 53, 0.16);
+      stroke-width: 2;
+      stroke-dasharray: 6 6;
+    }
+
+    .atlas-network-link.is-active {
+      stroke: rgba(45, 125, 210, 0.28);
+    }
+
+    .atlas-network-node {
+      fill: #2d7dd2;
+      cursor: pointer;
+      filter: drop-shadow(0 0 6px rgba(45, 125, 210, 0.28));
+      transition: opacity 220ms ease, transform 220ms ease, filter 220ms ease;
+    }
+
+    .atlas-network-node.is-offline {
+      fill: #6f7e89;
+      opacity: 0.28;
+      filter: none;
+    }
+
+    .atlas-network-label {
+      font-size: 10px;
+      font-family: "IBM Plex Mono", monospace;
+      fill: currentColor;
+      opacity: 0.78;
+    }
+
+    .atlas-network-particle {
+      transition: transform 320ms ease, opacity 220ms ease;
+    }
+
+    body.atlas-terminal .atlas-network-link {
+      stroke: rgba(92, 176, 255, 0.2);
+    }
+
+    body.atlas-terminal .atlas-network-link.is-active {
+      stroke: rgba(87, 245, 255, 0.34);
+    }
+
+    .atlas-lab-note,
+    .atlas-source-note,
+    .atlas-result {
+      margin-top: 0.85rem;
+      padding: 0.9rem 1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(86, 109, 135, 0.16);
+      background: rgba(255, 255, 255, 0.64);
+      color: var(--atlas-muted);
+    }
+
+    body.atlas-terminal .atlas-lab-note,
+    body.atlas-terminal .atlas-source-note,
+    body.atlas-terminal .atlas-result {
+      background: rgba(10, 28, 39, 0.76);
+    }
+
+    .atlas-side-panel {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .atlas-status-log {
+      list-style: none;
+      padding: 0;
+      margin: 0.8rem 0 0;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .atlas-status-log li {
+      border-left: 3px solid rgba(45, 125, 210, 0.32);
+      padding-left: 0.7rem;
+      font-size: 0.88rem;
+    }
+
+    .atlas-source-grid {
+      margin-top: 0.95rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.55rem;
+      align-items: start;
+    }
+
+    .atlas-source {
+      border-radius: 16px;
+      text-align: left;
+      min-height: 82px;
+      padding: 0.8rem;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .atlas-source.is-dim {
+      opacity: 0.28;
+    }
+
+    .atlas-source.is-cred {
+      border-color: rgba(45, 157, 120, 0.38);
+      background: rgba(45, 157, 120, 0.08);
+    }
+
+    .atlas-source.is-fake {
+      border-color: rgba(199, 90, 74, 0.28);
+    }
+
+    .atlas-fact-target {
+      margin-top: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(216, 154, 43, 0.12);
+      border: 1px solid rgba(216, 154, 43, 0.22);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.76rem;
+    }
+
+    .atlas-data-hud {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 42;
+      min-width: 210px;
+      padding: 0.8rem 0.95rem;
+      border-radius: 16px;
+      border: 1px solid rgba(86, 109, 135, 0.18);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 40px rgba(18, 34, 53, 0.14);
+    }
+
+    .atlas-data-hud strong {
+      display: block;
+      margin-bottom: 0.24rem;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .atlas-data-hud span {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    body.atlas-terminal .atlas-data-hud {
+      background: rgba(6, 16, 26, 0.84);
+    }
+
     @media (max-width: 900px) {
       .atlas-hero,
       .atlas-grid-3,
       .atlas-grid-2,
-      .atlas-prompt-grid {
+      .atlas-prompt-grid,
+      .atlas-lab-shell {
         grid-template-columns: 1fr;
       }
 
       .atlas-timeline li {
         grid-template-columns: 1fr;
         gap: 0.3rem;
+      }
+
+      .atlas-lab-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .atlas-data-hud {
+        right: 10px;
+        left: 10px;
+        bottom: 10px;
+        min-width: 0;
       }
     }
   </style>
@@ -413,6 +831,90 @@
         </div>
       </section>
 
+      <section class="atlas-section atlas-card atlas-lab">
+        <p class="atlas-kicker">Knowledge Systems Lab</p>
+        <h2>Stress-Test How Information Survives</h2>
+        <p>Switch between centralized and distributed systems, then see what happens when a crisis hits. After that, test whether your problem is access or filtering.</p>
+        <div class="atlas-lab-shell">
+          <div class="atlas-stage">
+            <div class="atlas-lab-toolbar">
+              <button class="atlas-lab-toggle is-active" id="modeCentralized" type="button">Centralized: Alexandria</button>
+              <button class="atlas-lab-toggle" id="modeDistributed" type="button">Distributed: Internet</button>
+            </div>
+            <div class="atlas-lab-kpis">
+              <div class="atlas-kpi">
+                <span class="atlas-kpi-label">Total Scrolls</span>
+                <span class="atlas-kpi-value" id="scrollCount">700,000</span>
+              </div>
+              <div class="atlas-kpi">
+                <span class="atlas-kpi-label">Lost Knowledge</span>
+                <span class="atlas-kpi-value" id="lostCount">0</span>
+              </div>
+              <div class="atlas-kpi">
+                <span class="atlas-kpi-label">Servers Online</span>
+                <span class="atlas-kpi-value" id="serverCount">10</span>
+              </div>
+              <div class="atlas-kpi">
+                <span class="atlas-kpi-label">Signal Quality</span>
+                <span class="atlas-kpi-value" id="signalQuality">Curated</span>
+              </div>
+            </div>
+            <div class="atlas-topology-stage" id="topologyStage">
+              <div class="atlas-stack-flash" id="stackFlash"></div>
+            </div>
+            <div class="atlas-lab-actions" style="margin-top:0.95rem;">
+              <button class="atlas-lab-btn" id="growKnowledgeBtn" type="button">Grow Archive</button>
+              <button class="atlas-lab-btn" id="chaosEventBtn" type="button">Chaos Event</button>
+              <button class="atlas-lab-btn" id="restoreNetworkBtn" type="button">Reset System</button>
+            </div>
+            <div class="atlas-lab-note" id="labStatus">
+              Alexandria begins as a single magnificent center: powerful, curated, and fragile if the center falls.
+            </div>
+          </div>
+
+          <div class="atlas-side-panel">
+            <div class="atlas-side-box">
+              <p class="atlas-kicker">Read the Lab</p>
+              <h2>What to watch for</h2>
+              <ul class="atlas-list">
+                <li>Centralized systems preserve quality well, but concentrate risk.</li>
+                <li>Distributed systems sacrifice neatness in exchange for resilience.</li>
+                <li>In the modern era, storage is cheap. Trust and filtering are the harder problems.</li>
+              </ul>
+            </div>
+            <div class="atlas-side-box">
+              <p class="atlas-kicker">Event Log</p>
+              <ul class="atlas-status-log" id="eventLog">
+                <li>The archive is stable. No losses recorded yet.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="atlas-source-note" style="margin-top:1rem;">
+          <strong>Try this:</strong> Add knowledge to Alexandria, then trigger two chaos events. Switch to the network and knock out servers by clicking the nodes. Compare how much survives.
+        </div>
+      </section>
+
+      <section class="atlas-section atlas-card">
+        <p class="atlas-kicker">Signal vs. Noise</p>
+        <h2>Curation vs. Algorithm</h2>
+        <p>Find the target fact. In Alexandria mode, there are only a handful of carefully selected sources. In Internet mode, there are many more voices, but most are low-quality or misleading.</p>
+        <div class="atlas-signal-modes">
+          <button class="atlas-lab-toggle is-active" id="filterAlexandriaBtn" type="button">Mode A: Alexandria</button>
+          <button class="atlas-lab-toggle" id="filterInternetBtn" type="button">Mode B: Internet</button>
+        </div>
+        <div class="atlas-fact-target">Target fact: <span id="factTarget">What was the main weakness of the Library of Alexandria?</span></div>
+        <div class="atlas-source-grid" id="sourceGrid"></div>
+        <div class="atlas-signal-actions" style="margin-top:0.9rem;">
+          <button class="atlas-lab-btn" id="shuffleSourcesBtn" type="button">Shuffle Sources</button>
+          <button class="atlas-lab-btn" id="resetSourcesBtn" type="button">Reset Challenge</button>
+        </div>
+        <div class="atlas-result" id="filterResult">
+          Open a source and decide whether it helps you answer the question or adds noise.
+        </div>
+      </section>
+
       <section class="atlas-section atlas-card">
         <p class="atlas-kicker">Think</p>
         <h2>Discussion Prompts</h2>
@@ -434,6 +936,346 @@
       </section>
     </div>
   </main>
+  <div class="atlas-data-hud" aria-live="polite">
+    <strong>Data Created Since Open</strong>
+    <span id="dataCounter">0.0 GB</span>
+  </div>
   <script src="../assets/js/classroom-animations.js"></script>
+  <script>
+    const KNOWLEDGE_SIM = {
+      mode: "centralized",
+      scrollsTotal: 700000,
+      lostScrolls: 0,
+      stack: [],
+      nodes: [
+        { id: "s1", x: 70, y: 56 }, { id: "s2", x: 170, y: 42 }, { id: "s3", x: 282, y: 74 },
+        { id: "s4", x: 382, y: 52 }, { id: "s5", x: 488, y: 88 }, { id: "s6", x: 98, y: 198 },
+        { id: "s7", x: 212, y: 168 }, { id: "s8", x: 336, y: 212 }, { id: "s9", x: 446, y: 186 },
+        { id: "s10", x: 540, y: 154 }
+      ],
+      particles: [],
+      links: [],
+      log(message) {
+        const eventLog = document.getElementById("eventLog");
+        if (!eventLog) return;
+        const item = document.createElement("li");
+        item.textContent = message;
+        eventLog.prepend(item);
+        while (eventLog.children.length > 5) {
+          eventLog.removeChild(eventLog.lastChild);
+        }
+      },
+      buildStack() {
+        const categories = [
+          ["Science Scroll", "#f6d18a", "#d89a2b"],
+          ["Math Scroll", "#b8d4ff", "#2d7dd2"],
+          ["Poetry Scroll", "#c9efd3", "#2d9d78"],
+          ["Law Scroll", "#f4c1b6", "#c75a4a"]
+        ];
+        this.stack = Array.from({ length: 11 }, (_, index) => {
+          const [label, toneA, toneB] = categories[index % categories.length];
+          return {
+            label,
+            lost: false,
+            size: 8 + (index % 5),
+            toneA,
+            toneB
+          };
+        });
+      },
+      buildNetwork() {
+        this.links = [
+          ["s1", "s2"], ["s1", "s6"], ["s2", "s3"], ["s2", "s7"], ["s3", "s4"],
+          ["s3", "s8"], ["s4", "s5"], ["s4", "s9"], ["s5", "s10"], ["s6", "s7"],
+          ["s7", "s8"], ["s8", "s9"], ["s9", "s10"], ["s6", "s8"], ["s7", "s9"], ["s2", "s6"]
+        ];
+        this.nodes = this.nodes.map((node) => ({ ...node, online: true }));
+        const palette = ["#57f5ff", "#7fd0ff", "#f6d18a", "#8de0b0"];
+        this.particles = Array.from({ length: 18 }, (_, index) => ({
+          nodeId: this.nodes[index % this.nodes.length].id,
+          color: palette[index % palette.length]
+        }));
+      },
+      onlineNodes() {
+        return this.nodes.filter((node) => node.online);
+      },
+      updateKpis() {
+        document.getElementById("scrollCount").textContent = this.scrollsTotal.toLocaleString();
+        document.getElementById("lostCount").textContent = this.lostScrolls.toLocaleString();
+        document.getElementById("serverCount").textContent = String(this.onlineNodes().length);
+        document.getElementById("signalQuality").textContent = this.mode === "centralized" ? "Curated" : "Rerouting";
+      },
+      renderStack(stage) {
+        stage.innerHTML = '<div class="atlas-stack-flash" id="stackFlash"></div><div class="atlas-library-stack" id="libraryStack"></div>';
+        const stackWrap = document.getElementById("libraryStack");
+        this.stack.forEach((block, index) => {
+          const node = document.createElement("div");
+          node.className = `atlas-stack-block${block.lost ? " is-lost" : ""}`;
+          node.style.setProperty("--size", String(block.size));
+          node.style.setProperty("--tone-a", block.toneA);
+          node.style.setProperty("--tone-b", block.toneB);
+          node.style.setProperty("--tilt", index % 2 === 0 ? "1" : "-1");
+          node.innerHTML = `<span>${block.label}</span><span>${block.lost ? "lost" : "safe"}</span>`;
+          stackWrap.appendChild(node);
+        });
+      },
+      renderNetwork(stage) {
+        const width = 620;
+        const height = 280;
+        const online = new Set(this.onlineNodes().map((node) => node.id));
+        const lines = this.links
+          .filter(([a, b]) => online.has(a) && online.has(b))
+          .map(([a, b]) => {
+            const na = this.nodes.find((node) => node.id === a);
+            const nb = this.nodes.find((node) => node.id === b);
+            return `<line class="atlas-network-link is-active" x1="${na.x}" y1="${na.y}" x2="${nb.x}" y2="${nb.y}"></line>`;
+          })
+          .join("");
+        const particles = this.particles.map((particle, index) => {
+          const host = this.nodes.find((node) => node.id === particle.nodeId && node.online) || this.onlineNodes()[index % Math.max(this.onlineNodes().length, 1)];
+          if (!host) return "";
+          const offsetX = (index % 3) * 8 - 8;
+          const offsetY = Math.floor(index / 3) % 3 * 8 - 8;
+          return `<circle class="atlas-network-particle" cx="${host.x + offsetX}" cy="${host.y + offsetY}" r="4" fill="${particle.color}"></circle>`;
+        }).join("");
+        const nodes = this.nodes.map((node) => `
+          <g data-node-id="${node.id}" class="network-group">
+            <circle class="atlas-network-node${node.online ? "" : " is-offline"}" cx="${node.x}" cy="${node.y}" r="16"></circle>
+            <text class="atlas-network-label" x="${node.x}" y="${node.y + 30}" text-anchor="middle">${node.id.toUpperCase()}</text>
+          </g>
+        `).join("");
+        stage.innerHTML = `<svg class="atlas-network-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Distributed server network">${lines}${particles}${nodes}</svg>`;
+        stage.querySelectorAll("[data-node-id]").forEach((group) => {
+          group.addEventListener("click", () => {
+            const nodeId = group.getAttribute("data-node-id");
+            this.destroyNode(nodeId);
+          });
+        });
+      },
+      render() {
+        const stage = document.getElementById("topologyStage");
+        if (!stage) return;
+        document.getElementById("modeCentralized").classList.toggle("is-active", this.mode === "centralized");
+        document.getElementById("modeDistributed").classList.toggle("is-active", this.mode === "distributed");
+        if (this.mode === "centralized") {
+          this.renderStack(stage);
+          document.getElementById("labStatus").textContent = "Alexandria concentrates expertise in one place. The archive is elegant, searchable, and exposed to a single point of failure.";
+        } else {
+          this.renderNetwork(stage);
+          document.getElementById("labStatus").textContent = "Distributed networks trade neatness for resilience. When a node drops, the rest of the graph can keep carrying copies.";
+        }
+        this.updateKpis();
+      },
+      growArchive() {
+        if (this.mode === "centralized") {
+          this.scrollsTotal += 25000;
+          const categories = [
+            ["Astronomy Scroll", "#b8d4ff", "#2d7dd2"],
+            ["Medicine Scroll", "#c9efd3", "#2d9d78"],
+            ["Epic Scroll", "#f6d18a", "#d89a2b"]
+          ];
+          const [label, toneA, toneB] = categories[this.stack.length % categories.length];
+          this.stack.push({ label, lost: false, size: 8 + (this.stack.length % 5), toneA, toneB });
+          this.log("New scrolls copied into Alexandria. The center becomes richer and more important.");
+        } else {
+          this.scrollsTotal += 25000;
+          const online = this.onlineNodes();
+          if (online.length) {
+            this.particles.push({
+              nodeId: online[this.particles.length % online.length].id,
+              color: ["#57f5ff", "#7fd0ff", "#8de0b0"][this.particles.length % 3]
+            });
+          }
+          this.log("New copies spread across the network. Redundancy rises with each replication.");
+        }
+        this.render();
+      },
+      triggerCrisis() {
+        if (this.mode === "centralized") {
+          const survivors = this.stack.filter((block) => !block.lost);
+          const loseCount = Math.max(1, Math.round(survivors.length * (0.35 + Math.random() * 0.35)));
+          survivors.slice(-loseCount).forEach((block) => {
+            block.lost = true;
+          });
+          const scrollLoss = Math.round(this.scrollsTotal * (0.18 + Math.random() * 0.22));
+          this.lostScrolls += scrollLoss;
+          this.scrollsTotal = Math.max(0, this.scrollsTotal - scrollLoss);
+          this.render();
+          const flash = document.getElementById("stackFlash");
+          if (flash) {
+            flash.classList.add("is-live");
+            window.setTimeout(() => flash.classList.remove("is-live"), 420);
+          }
+          this.log(`Chaos event: ${scrollLoss.toLocaleString()} scrolls lost to fire, war, or neglect.`);
+          document.getElementById("labStatus").textContent = "The center has been hit. A curated archive can lose huge amounts at once when its building, patrons, or politics fail.";
+          return;
+        }
+        const online = this.onlineNodes();
+        if (online.length <= 2) {
+          this.log("Only a small backbone remains. Reset the network to restore redundancy.");
+          return;
+        }
+        const target = online[Math.floor(Math.random() * online.length)];
+        this.destroyNode(target.id);
+      },
+      destroyNode(nodeId) {
+        if (this.mode !== "distributed") return;
+        const target = this.nodes.find((node) => node.id === nodeId);
+        if (!target || !target.online) return;
+        target.online = false;
+        const online = this.onlineNodes();
+        this.particles = this.particles.map((particle, index) => ({
+          ...particle,
+          nodeId: online.length ? online[index % online.length].id : particle.nodeId
+        }));
+        this.log(`Server ${nodeId.toUpperCase()} lost. Traffic rerouted through surviving nodes.`);
+        document.getElementById("labStatus").textContent = "A node dropped offline, but the graph still holds. Distribution reduces catastrophic loss because no single server is the whole archive.";
+        this.render();
+      },
+      reset() {
+        this.scrollsTotal = 700000;
+        this.lostScrolls = 0;
+        this.buildStack();
+        this.buildNetwork();
+        this.render();
+        this.log("System reset. Start another stress test.");
+      },
+      init() {
+        this.buildStack();
+        this.buildNetwork();
+        this.render();
+      }
+    };
+
+    const FILTER_GAME = {
+      mode: "alexandria",
+      targetFact: "The Library of Alexandria's main weakness was centralization in one vulnerable institution.",
+      alexandriaSources: [
+        { title: "Head Librarian Notes", blurb: "Catalog report: one institution can preserve knowledge well, but concentrated collections are exposed to political instability.", credible: true, hit: true },
+        { title: "Port Customs Ledger", blurb: "Records of copied scrolls arriving from across the Mediterranean.", credible: true, hit: false },
+        { title: "Scholar's Commentary", blurb: "Classification matters because storing texts is useless without retrieval.", credible: true, hit: false },
+        { title: "Court Rumor", blurb: "The library was infinite and could never be harmed.", credible: false, hit: false },
+        { title: "Scribe Memo", blurb: "Translation and copying expand access, but the collection still depends on a single center.", credible: true, hit: false }
+      ],
+      internetSources: [],
+      buildInternetSources() {
+        const results = [];
+        for (let i = 0; i < 50; i += 1) {
+          results.push({
+            title: `Feed ${i + 1}`,
+            blurb: i === 7
+              ? "Reliable archive essay: the library's greatest structural weakness was concentrating knowledge in one location."
+              : i % 9 === 0
+                ? "Hot take: Alexandria failed because readers got bored of scrolls."
+                : i % 7 === 0
+                  ? "Low-context repost: everything ancient was automatically wiser and safer."
+                  : "Content mill summary: lots of facts, little sourcing, and no clear answer.",
+            credible: i === 7 || i === 19 || i === 31,
+            hit: i === 7
+          });
+        }
+        this.internetSources = results;
+      },
+      currentSources() {
+        return this.mode === "alexandria" ? this.alexandriaSources : this.internetSources;
+      },
+      render() {
+        document.getElementById("filterAlexandriaBtn").classList.toggle("is-active", this.mode === "alexandria");
+        document.getElementById("filterInternetBtn").classList.toggle("is-active", this.mode === "internet");
+        const grid = document.getElementById("sourceGrid");
+        grid.innerHTML = "";
+        this.currentSources().forEach((source, index) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = `atlas-source${source.credible ? " is-cred" : " is-fake"}`;
+          button.innerHTML = `<strong>${source.title}</strong><br>${source.blurb}`;
+          button.addEventListener("click", () => this.inspect(index));
+          grid.appendChild(button);
+        });
+        document.getElementById("signalQuality").textContent = this.mode === "alexandria" ? "Curated" : "Noisy";
+      },
+      inspect(index) {
+        const source = this.currentSources()[index];
+        const result = document.getElementById("filterResult");
+        if (source.hit) {
+          result.innerHTML = `<strong>Signal found.</strong> ${source.blurb} This source answers the question directly.`;
+        } else if (source.credible) {
+          result.innerHTML = `<strong>Useful, but indirect.</strong> ${source.blurb} This is trustworthy context, but it does not fully answer the target question.`;
+        } else {
+          result.innerHTML = `<strong>Noise detected.</strong> ${source.blurb} This source adds confusion without reliable evidence.`;
+        }
+      },
+      shuffle() {
+        const items = [...this.currentSources()];
+        for (let i = items.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [items[i], items[j]] = [items[j], items[i]];
+        }
+        if (this.mode === "alexandria") this.alexandriaSources = items;
+        else this.internetSources = items;
+        this.render();
+        document.getElementById("filterResult").textContent = "Sources shuffled. Find the strongest signal again.";
+      },
+      reset() {
+        this.buildInternetSources();
+        this.mode = "alexandria";
+        this.render();
+        document.getElementById("filterResult").textContent = "Open a source and decide whether it helps you answer the question or adds noise.";
+      },
+      init() {
+        this.buildInternetSources();
+        this.render();
+      }
+    };
+
+    function updateDataCounter() {
+      const startedAt = Date.now();
+      const target = document.getElementById("dataCounter");
+      const tick = () => {
+        const seconds = Math.max(0, (Date.now() - startedAt) / 1000);
+        const gigabytes = seconds * 7.4;
+        target.textContent = `${gigabytes.toFixed(gigabytes > 100 ? 0 : 1)} GB`;
+      };
+      tick();
+      window.setInterval(tick, 1000);
+    }
+
+    function updateAtlasTheme() {
+      const progress = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      document.body.classList.toggle("atlas-terminal", progress > 0.48);
+    }
+
+    document.getElementById("modeCentralized").addEventListener("click", () => {
+      KNOWLEDGE_SIM.mode = "centralized";
+      KNOWLEDGE_SIM.render();
+    });
+    document.getElementById("modeDistributed").addEventListener("click", () => {
+      KNOWLEDGE_SIM.mode = "distributed";
+      KNOWLEDGE_SIM.render();
+    });
+    document.getElementById("growKnowledgeBtn").addEventListener("click", () => KNOWLEDGE_SIM.growArchive());
+    document.getElementById("chaosEventBtn").addEventListener("click", () => KNOWLEDGE_SIM.triggerCrisis());
+    document.getElementById("restoreNetworkBtn").addEventListener("click", () => KNOWLEDGE_SIM.reset());
+
+    document.getElementById("filterAlexandriaBtn").addEventListener("click", () => {
+      FILTER_GAME.mode = "alexandria";
+      FILTER_GAME.render();
+      document.getElementById("filterResult").textContent = "Only a few sources appear, but most are trustworthy. Find the strongest evidence.";
+    });
+    document.getElementById("filterInternetBtn").addEventListener("click", () => {
+      FILTER_GAME.mode = "internet";
+      FILTER_GAME.render();
+      document.getElementById("filterResult").textContent = "Now the signal is buried under many more voices. Find the one source that answers the question cleanly.";
+    });
+    document.getElementById("shuffleSourcesBtn").addEventListener("click", () => FILTER_GAME.shuffle());
+    document.getElementById("resetSourcesBtn").addEventListener("click", () => FILTER_GAME.reset());
+
+    window.addEventListener("scroll", updateAtlasTheme, { passive: true });
+
+    KNOWLEDGE_SIM.init();
+    FILTER_GAME.init();
+    updateDataCounter();
+    updateAtlasTheme();
+  </script>
 </body>
 </html>
