@@ -26,6 +26,13 @@ const metricConclusions = document.getElementById("expert-metric-conclusions");
 const conclusionsBody = document.getElementById("expert-conclusions");
 const whyPanel = document.getElementById("expert-why");
 const traceList = document.getElementById("expert-trace");
+const logicFlowViz = document.getElementById("logic-flow-viz");
+const consolePanel = document.getElementById("expert-console");
+const builderIf = document.getElementById("expert-builder-if");
+const builderThen = document.getElementById("expert-builder-then");
+const builderCertainty = document.getElementById("expert-builder-certainty");
+const builderAdd = document.getElementById("expert-builder-add");
+const builderPreview = document.getElementById("expert-builder-preview");
 
 const required = [
   expertLab,
@@ -49,7 +56,14 @@ const required = [
   metricConclusions,
   conclusionsBody,
   whyPanel,
-  traceList
+  traceList,
+  logicFlowViz,
+  consolePanel,
+  builderIf,
+  builderThen,
+  builderCertainty,
+  builderAdd,
+  builderPreview
 ];
 
 if (required.some((node) => !node)) {
@@ -300,7 +314,8 @@ const MODE_NOTES = {
 const state = {
   mode: "easy",
   lastRun: null,
-  selectedWhyFact: null
+  selectedWhyFact: null,
+  consoleLines: []
 };
 
 function titleCaseFact(value) {
@@ -324,6 +339,20 @@ function clamp01(value) {
 
 function round2(value) {
   return Math.round(value * 100) / 100;
+}
+
+function appendConsole(message, highlighted = false) {
+  state.consoleLines.push({ message, highlighted });
+  if (state.consoleLines.length > 16) state.consoleLines.shift();
+  consolePanel.innerHTML = state.consoleLines
+    .map((line) => `<div class="expert-console-line${line.highlighted ? " is-highlight" : ""}">${line.message}</div>`)
+    .join("");
+  consolePanel.scrollTop = consolePanel.scrollHeight;
+}
+
+function resetConsole(message = "[ENGINE] Waiting for evidence...") {
+  state.consoleLines = [];
+  appendConsole(message);
 }
 
 function getFactControls(key) {
@@ -701,6 +730,91 @@ function renderTrace(trace) {
   }
 }
 
+function renderLogicFlow(trace, focusedFact = null) {
+  const rules = readJsonRulesSafe();
+  const ruleIds = rules.map((rule) => rule.id);
+  const factNames = Array.from(
+    new Set([
+      ...trace.flatMap((item) => item.matched.map((matched) => matched.fact)),
+      ...trace.map((item) => item.targetFact)
+    ])
+  );
+
+  const width = 760;
+  const height = Math.max(210, 80 + Math.max(ruleIds.length, factNames.length) * 34);
+  const ruleX = 240;
+  const factX = 520;
+
+  const rulePos = new Map(ruleIds.map((id, index) => [id, { x: ruleX, y: 46 + index * 34 }]));
+  const factPos = new Map(factNames.map((fact, index) => [fact, { x: factX, y: 46 + index * 34 }]));
+
+  const links = [];
+  for (const item of trace) {
+    for (const matched of item.matched) {
+      links.push({
+        key: `${matched.fact}-${item.ruleId}`,
+        from: factPos.get(matched.fact),
+        to: rulePos.get(item.ruleId),
+        active: focusedFact ? item.targetFact === focusedFact : true
+      });
+    }
+    links.push({
+      key: `${item.ruleId}-${item.targetFact}`,
+      from: rulePos.get(item.ruleId),
+      to: factPos.get(item.targetFact),
+      active: focusedFact ? item.targetFact === focusedFact : true
+    });
+  }
+
+  const spark = trace.length
+    ? (() => {
+        const target = trace[trace.length - 1];
+        const pos = factPos.get(target.targetFact);
+        return `<circle class="eg-flow-spark" cx="${pos.x}" cy="${pos.y}" r="5"></circle>`;
+      })()
+    : "";
+
+  logicFlowViz.innerHTML = `
+    <svg class="eg-flow-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Inference chain graph">
+      ${links
+        .map(
+          (link) =>
+            `<line class="eg-flow-link${link.active ? " is-active" : ""}" x1="${link.from?.x || 0}" y1="${link.from?.y || 0}" x2="${link.to?.x || 0}" y2="${link.to?.y || 0}"></line>`
+        )
+        .join("")}
+      ${ruleIds
+        .map((id) => {
+          const pos = rulePos.get(id);
+          const active = trace.some((item) => item.ruleId === id && (!focusedFact || item.targetFact === focusedFact));
+          return `
+            <rect class="eg-flow-node rule${active ? " is-active" : ""}" x="${pos.x - 70}" y="${pos.y - 14}" width="140" height="28" rx="10"></rect>
+            <text class="eg-flow-text" x="${pos.x}" y="${pos.y + 4}" text-anchor="middle">${id}</text>
+          `;
+        })
+        .join("")}
+      ${factNames
+        .map((fact) => {
+          const pos = factPos.get(fact);
+          const active = trace.some((item) => (item.targetFact === fact || item.matched.some((matched) => matched.fact === fact)) && (!focusedFact || item.targetFact === focusedFact));
+          return `
+            <rect class="eg-flow-node fact${active ? " is-active" : ""}" x="${pos.x - 92}" y="${pos.y - 14}" width="184" height="28" rx="10"></rect>
+            <text class="eg-flow-text" x="${pos.x}" y="${pos.y + 4}" text-anchor="middle">${displayFactName(fact)}</text>
+          `;
+        })
+        .join("")}
+      ${spark}
+    </svg>
+  `;
+}
+
+function readJsonRulesSafe() {
+  try {
+    return readJsonRules();
+  } catch (_error) {
+    return DEFAULT_RULES;
+  }
+}
+
 function renderConclusions(factState, initialFacts, trace) {
   const rows = [];
   const byFact = new Map();
@@ -751,12 +865,13 @@ function renderConclusions(factState, initialFacts, trace) {
     const whyButton = document.createElement("button");
     whyButton.type = "button";
     whyButton.className = "expert-why-trigger";
-    whyButton.textContent = "Why?";
+    whyButton.textContent = "Trace Logic";
     whyButton.disabled = related.length === 0;
-    whyButton.setAttribute("aria-label", `Why for ${displayFactName(row.fact)}`);
+    whyButton.setAttribute("aria-label", `Trace logic for ${displayFactName(row.fact)}`);
 
     whyButton.addEventListener("click", () => {
       renderWhyPanel(row.fact, row.confidence, related);
+      renderLogicFlow(trace, row.fact);
     });
 
     whyTd.appendChild(whyButton);
@@ -769,11 +884,66 @@ function renderConclusions(factState, initialFacts, trace) {
   const preferredFact = state.selectedWhyFact && byFact.has(state.selectedWhyFact) ? state.selectedWhyFact : rows[0].fact;
   const preferredConfidence = rows.find((row) => row.fact === preferredFact)?.confidence ?? rows[0].confidence;
   renderWhyPanel(preferredFact, preferredConfidence, byFact.get(preferredFact) || []);
+  renderLogicFlow(trace, preferredFact);
 }
 
 function updateConflictHelp() {
   const mode = conflictSelect.value;
   conflictHelp.textContent = CONFLICT_HELP[mode] || CONFLICT_HELP.mycin;
+}
+
+function renderConflictBanner(trace) {
+  const banner = document.getElementById("eg-conflict-banner");
+  if (!banner) return;
+
+  const grouped = new Map();
+  for (const item of trace) {
+    if (!grouped.has(item.targetFact)) grouped.set(item.targetFact, []);
+    grouped.get(item.targetFact).push(item);
+  }
+
+  const conflict = Array.from(grouped.entries()).find(([, entries]) => {
+    const positives = entries.some((entry) => entry.incoming > 0);
+    const negatives = entries.some((entry) => entry.incoming < 0);
+    return positives && negatives;
+  });
+
+  if (!conflict) {
+    banner.className = "eg-conflict-banner";
+    banner.textContent = "";
+    return;
+  }
+
+  const [fact, entries] = conflict;
+  banner.className = "eg-conflict-banner is-visible";
+  banner.textContent = `Conflict detected for ${displayFactName(fact)}. Some rules supported it while others opposed it. Compare the trace buttons to inspect both sides of the evidence.`;
+}
+
+function buildBuilderOptions() {
+  builderIf.innerHTML = EVIDENCE_CATALOG.map((item) => `<option value="${item.key}">${item.label}</option>`).join("");
+  builderThen.innerHTML = Object.entries(CONCLUSION_META)
+    .map(([key, meta]) => `<option value="${key}">${meta.label}</option>`)
+    .join("");
+}
+
+function updateBuilderPreview() {
+  builderPreview.textContent = `IF ${displayFactName(builderIf.value)}\nTHEN ${displayFactName(builderThen.value)}\ncertainty ${Number(builderCertainty.value).toFixed(1)}`;
+}
+
+function addBuilderRule() {
+  const rules = readJsonRulesSafe();
+  const nextId = `R${rules.length + 1}`;
+  const rule = {
+    id: nextId,
+    if: [{ fact: builderIf.value, min: 0.5 }],
+    then: { fact: builderThen.value, certainty: clamp01(builderCertainty.value), sign: 1 },
+    note: `${displayFactName(builderIf.value)} supports ${displayFactName(builderThen.value)}.`
+  };
+  rules.push(rule);
+  rulesEditor.value = JSON.stringify(rules, null, 2);
+  metricRules.textContent = String(rules.length);
+  rulesStatus.textContent = `Added ${nextId} with the visual builder.`;
+  rulesStatus.classList.remove("is-error");
 }
 
 function clearFacts() {
@@ -792,6 +962,9 @@ function clearFacts() {
   conclusionsBody.innerHTML = "";
   traceList.innerHTML = "";
   whyPanel.innerHTML = '<p class="expert-note">Run the rules and choose "Why?" on a result to see a compact explanation.</p>';
+  renderLogicFlow([]);
+  renderConflictBanner([]);
+  resetConsole();
 
   metricFired.textContent = "0";
   metricPasses.textContent = "0";
@@ -870,21 +1043,56 @@ function runEngineNow() {
 
   renderConclusions(result.factState, initialFacts, result.trace);
   renderTrace(result.trace);
+  renderConflictBanner(result.trace);
 
   runningStatus.textContent = `Finished. Fired ${result.rulesFired} rules across ${result.passes} pass(es).`;
 }
 
-function runEngine() {
+async function runEngine() {
   runningStatus.textContent = "Running the rules...";
   runButton.disabled = true;
+  resetConsole("[ENGINE] Initializing forward chaining...");
 
-  window.setTimeout(() => {
+  try {
+    let rules;
     try {
-      runEngineNow();
-    } finally {
-      runButton.disabled = false;
+      rules = readJsonRules();
+      rulesStatus.textContent = "Rules look valid.";
+      rulesStatus.classList.remove("is-error");
+    } catch (error) {
+      rulesStatus.textContent = error.message;
+      rulesStatus.classList.add("is-error");
+      runningStatus.textContent = "Could not run. Please fix the rules JSON and try again.";
+      appendConsole(`[ENGINE] ERROR: ${error.message}`, true);
+      return;
     }
-  }, 25);
+
+    const initialFacts = readInitialFacts();
+    const maxPasses = Math.max(1, Math.min(20, Number(maxPassesInput.value) || 8));
+    const conflictMode = conflictSelect.value;
+
+    appendConsole(`[ENGINE] Loaded ${rules.length} rules.`, true);
+    appendConsole(`[ENGINE] Evidence count: ${initialFacts.size}.`);
+    if (!initialFacts.size) appendConsole("[ENGINE] No evidence selected yet. Conclusions may stay empty.");
+
+    for (const [fact, confidence] of initialFacts.entries()) {
+      appendConsole(`[ENGINE] Fact identified: ${fact} @ ${confidence.toFixed(2)}`);
+    }
+
+    const preview = runForwardChaining(rules, initialFacts, conflictMode, maxPasses);
+    if (!preview.trace.length) {
+      appendConsole("[ENGINE] No rules fired. Gather more evidence or lower thresholds.", true);
+    } else {
+      for (const step of preview.trace) {
+        appendConsole(`[ENGINE] Rule '${step.ruleId}' triggered → ${step.targetFact} (${step.after.toFixed(2)})`, true);
+        await new Promise((resolve) => window.setTimeout(resolve, 120));
+      }
+    }
+
+    runEngineNow();
+  } finally {
+    runButton.disabled = false;
+  }
 }
 
 runButton.addEventListener("click", () => {
@@ -918,8 +1126,27 @@ conflictSelect.addEventListener("change", () => {
   renderWhyPanel(state.selectedWhyFact, confidence, entries);
 });
 
+builderIf.addEventListener("change", updateBuilderPreview);
+builderThen.addEventListener("change", updateBuilderPreview);
+builderCertainty.addEventListener("input", updateBuilderPreview);
+builderAdd.addEventListener("click", addBuilderRule);
+
+window.expertSystemBridge = {
+  traceGameEvidence(symptoms = []) {
+    const initialFacts = new Map(symptoms.map((key) => [key, 0.8]));
+    const result = runForwardChaining(DEFAULT_RULES, initialFacts, "mycin", 4);
+    renderLogicFlow(result.trace);
+    appendConsole(`[GAME] Probe update with ${symptoms.length} clue(s).`, true);
+    if (result.trace.length) {
+      appendConsole(`[GAME] Latest inferred fact: ${displayFactName(result.trace[result.trace.length - 1].targetFact)}.`);
+    }
+  }
+};
+
 buildFactsUi();
 loadDefaultRules();
 updateConflictHelp();
+buildBuilderOptions();
+updateBuilderPreview();
 applyMode("easy");
 clearFacts();

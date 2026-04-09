@@ -160,7 +160,8 @@
   /* ─── DOM refs (populated on init) ─────────────────────────────── */
   let elRound, elScore, elInspLeft, elPatientName, elPatientFlavour,
       elAreaBtns, elRevealedList, elAnalysis, elDiagBtns,
-      elResultBanner, elNextBtn, elFinalScreen, elFinalScore, elPlayAgain;
+      elResultBanner, elNextBtn, elFinalScreen, elFinalScore, elPlayAgain,
+      elRobotSvg, elProbeReadout, elGaugeFill, elGaugeValue, elGaugeLabel, elGaugeSub, elConflictBanner;
 
   /* ─── Init ─────────────────────────────────────────────────────── */
   function init() {
@@ -178,6 +179,13 @@
     elFinalScreen    = document.getElementById('eg-final');
     elFinalScore     = document.getElementById('eg-final-score');
     elPlayAgain      = document.getElementById('eg-play-again');
+    elRobotSvg       = document.getElementById('eg-robot-svg');
+    elProbeReadout   = document.getElementById('eg-probe-readout');
+    elGaugeFill      = document.getElementById('eg-gauge-fill');
+    elGaugeValue     = document.getElementById('eg-gauge-value');
+    elGaugeLabel     = document.getElementById('eg-gauge-label');
+    elGaugeSub       = document.getElementById('eg-gauge-sub');
+    elConflictBanner = document.getElementById('eg-conflict-banner');
 
     if (!elRound) return; // game section not in DOM
 
@@ -226,12 +234,17 @@
       btn.addEventListener('click', () => inspectArea(area));
       elAreaBtns.appendChild(btn);
     });
+    renderRobotBlueprint(sc);
 
     // Revealed list
     elRevealedList.innerHTML = '<li class="eg-no-clues">No clues yet — inspect an area above.</li>';
 
     // Analysis
     elAnalysis.innerHTML = '<p class="eg-analysis-empty">Inspect the robot to gather evidence. The AI will update here.</p>';
+    updateGauge(null);
+    elConflictBanner.className = 'eg-conflict-banner';
+    elConflictBanner.textContent = '';
+    if (window.expertSystemBridge) window.expertSystemBridge.traceGameEvidence([]);
 
     // Diagnosis buttons
     renderDiagButtons(false);
@@ -274,9 +287,77 @@
 
     // Run engine and update analysis
     updateAnalysis();
+    if (window.expertSystemBridge) window.expertSystemBridge.traceGameEvidence(state.revealed);
 
     // Enable diagnosis once any symptom is found
     renderDiagButtons(state.revealed.length > 0);
+  }
+
+  function renderRobotBlueprint(sc) {
+    if (!elRobotSvg) return;
+    const used = state.inspectedAreas;
+    const zones = {
+      sensors: { label: 'CPU / Sensors', shape: '<rect x="115" y="28" width="110" height="70" rx="18"></rect>' },
+      power:   { label: 'Battery Core', shape: '<rect x="120" y="118" width="100" height="68" rx="16"></rect>' },
+      wiring:  { label: 'Bus Lines', shape: '<rect x="96" y="194" width="148" height="38" rx="12"></rect>' },
+      motors:  { label: 'Drive Train', shape: '<rect x="86" y="244" width="168" height="42" rx="14"></rect>' }
+    };
+
+    elRobotSvg.innerHTML = `
+      <g fill="none" stroke="#94a3b8" stroke-width="3">
+        <rect x="102" y="18" width="136" height="86" rx="24"></rect>
+        <rect x="86" y="106" width="168" height="130" rx="28"></rect>
+        <line x1="122" y1="236" x2="108" y2="294"></line>
+        <line x1="218" y1="236" x2="232" y2="294"></line>
+        <line x1="122" y1="104" x2="94" y2="146"></line>
+        <line x1="218" y1="104" x2="246" y2="146"></line>
+        <circle cx="145" cy="56" r="8"></circle>
+        <circle cx="195" cy="56" r="8"></circle>
+      </g>
+      ${Object.entries(zones)
+        .map(([key, zone]) => `
+          <g data-area-key="${key}" tabindex="0" role="button" aria-label="Probe ${zone.label}">
+            <g class="eg-probe-node${used.has(key) ? ' is-used' : ''}">${zone.shape}</g>
+            <text class="eg-probe-label" x="170" y="${key === 'sensors' ? 72 : key === 'power' ? 156 : key === 'wiring' ? 218 : 270}" text-anchor="middle">${zone.label}</text>
+          </g>
+        `)
+        .join('')}
+    `;
+
+    elRobotSvg.querySelectorAll('[data-area-key]').forEach((node) => {
+      const area = sc.areas.find((item) => item.key === node.dataset.areaKey);
+      node.addEventListener('click', () => inspectArea(area));
+      node.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        inspectArea(area);
+      });
+      node.addEventListener('mouseenter', () => updateProbeReadout(area));
+      node.addEventListener('focus', () => updateProbeReadout(area));
+    });
+  }
+
+  function updateProbeReadout(area) {
+    if (!elProbeReadout || !area) return;
+    const lines = {
+      power: 'Voltage probe: 4.8V under load · brownout risk possible.',
+      sensors: 'Diagnostic bus: intermittent sensor response packets.',
+      wiring: 'Continuity scan: one branch has unstable resistance.',
+      motors: 'Motor telemetry: startup torque drops after spin-up.'
+    };
+    elProbeReadout.innerHTML = `<strong>Logic Probe</strong>${lines[area.key] || 'No signal.'}<div class="eg-probe-hint">Click to spend an inspect token and reveal formal evidence.</div>`;
+  }
+
+  function updateGauge(result) {
+    const pathLength = 138.2;
+    const pct = result ? Math.round(result.cf * 100) : 0;
+    if (elGaugeFill) {
+      elGaugeFill.style.strokeDasharray = `${pathLength}`;
+      elGaugeFill.style.strokeDashoffset = `${pathLength - pathLength * (pct / 100)}`;
+    }
+    if (elGaugeValue) elGaugeValue.textContent = `${pct}%`;
+    if (elGaugeLabel) elGaugeLabel.textContent = result ? FAULT_META[result.fault]?.label || result.fault : 'No diagnosis yet';
+    if (elGaugeSub) elGaugeSub.textContent = result ? 'Top rule confidence from visible clues.' : 'Gather evidence to raise confidence.';
   }
 
   function addRevealedItem(symptomKey, areaLabel) {
@@ -302,10 +383,17 @@
 
     if (results.length === 0) {
       elAnalysis.innerHTML = '<p class="eg-analysis-empty">The engine hasn\'t fired any rules yet — gather more evidence.</p>';
+      updateGauge(null);
       return;
     }
 
     const topResults = results.slice(0, 4);
+    updateGauge(topResults[0]);
+    const hasConflict = topResults.length > 1 && Math.abs(topResults[0].cf - topResults[1].cf) < 0.15;
+    elConflictBanner.className = `eg-conflict-banner${hasConflict ? ' is-visible' : ''}`;
+    elConflictBanner.textContent = hasConflict
+      ? `Conflict warning: ${FAULT_META[topResults[0].fault]?.label} and ${FAULT_META[topResults[1].fault]?.label} are close. Probe another subsystem before committing.`
+      : '';
     elAnalysis.innerHTML = topResults.map(({ fault, cf }) => {
       const meta  = FAULT_META[fault] || { label: fault, color: '#888' };
       const pct   = Math.round(cf * 100);

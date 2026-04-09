@@ -6,6 +6,13 @@ const depthSelect = document.getElementById("chess-depth");
 const modelSelect = document.getElementById("chess-model");
 const modelNoteElement = document.getElementById("chess-model-note");
 const labElement = document.getElementById("chess-lab");
+const ghostLayer = document.getElementById("chess-ghost-layer");
+const advantageBarFill = document.getElementById("advantage-bar-fill");
+const advantageText = document.getElementById("advantage-text");
+const heuristicHud = document.getElementById("heuristic-hud");
+const radarElement = document.getElementById("chess-radar");
+const eraNoteElement = document.getElementById("chess-era-note");
+const evalLabelElement = document.getElementById("chess-eval-label");
 
 if (
   !boardElement ||
@@ -15,7 +22,14 @@ if (
   !depthSelect ||
   !modelSelect ||
   !modelNoteElement ||
-  !labElement
+  !labElement ||
+  !ghostLayer ||
+  !advantageBarFill ||
+  !advantageText ||
+  !heuristicHud ||
+  !radarElement ||
+  !eraNoteElement ||
+  !evalLabelElement
 ) {
   throw new Error("Chess lesson could not initialize. Missing required DOM nodes.");
 }
@@ -72,6 +86,9 @@ const MODEL_PROFILES = {
     themeKicker: "1951 · Hand-built rules",
     themePrompt: "Expect short lookahead, more surprises, and moves that feel clever one turn but shaky the next.",
     themeTags: ["Shallow search", "Rule-based", "More randomness"],
+    eraSkin: "turochamp1951",
+    logicNote: "Turing's hand-calculation era. The engine mostly counts pieces and only lightly rewards movement and shape.",
+    evalWeights: { material: 0.95, mobility: 0.05, position: 0.02, pawnStructure: 0.03, kingSafety: 0.04 },
     baseDepth: 1,
     recommendedBudget: 2,
     variability: 0.58,
@@ -81,7 +98,7 @@ const MODEL_PROFILES = {
     pawnAdvanceWeight: 0.8,
     checkBonus: 9,
     captureBias: 0.12,
-    thinkDelay: 120
+    thinkDelay: 1800
   },
   machack1967: {
     label: "Mac Hack VI (1967)",
@@ -91,6 +108,9 @@ const MODEL_PROFILES = {
     themeKicker: "1967 · Tournament-era computing",
     themePrompt: "Watch for steadier material play and fewer obvious mistakes, but not the crushing calculation of later engines.",
     themeTags: ["Mainframe era", "Material-first", "Steadier search"],
+    eraSkin: "deepblue1997",
+    logicNote: "Tournament-era search with better move ordering and a broader sense of development, but still strongly material-first.",
+    evalWeights: { material: 0.72, mobility: 0.16, position: 0.18, pawnStructure: 0.08, kingSafety: 0.12 },
     baseDepth: 2,
     recommendedBudget: 2,
     variability: 0.28,
@@ -110,6 +130,9 @@ const MODEL_PROFILES = {
     themeKicker: "1997 · Industrial brute force",
     themePrompt: "This era should feel colder and more tactical: sharper captures, faster punishment, and less hesitation.",
     themeTags: ["Alpha-beta", "Tactical pressure", "Custom hardware"],
+    eraSkin: "deepblue1997",
+    logicNote: "Brute-force search era. Deep Blue style rewards tactical forcing lines, activity, and exploiting king danger much more aggressively.",
+    evalWeights: { material: 0.6, mobility: 0.2, position: 0.2, pawnStructure: 0.1, kingSafety: 0.24 },
     baseDepth: 3,
     recommendedBudget: 2,
     variability: 0.08,
@@ -129,6 +152,9 @@ const MODEL_PROFILES = {
     themeKicker: "2020s · Clean modern evaluation",
     themePrompt: "Look for calmer, cleaner positions and fewer flashy mistakes. The engine should feel more balanced and less chaotic.",
     themeTags: ["Lower randomness", "Better position play", "Deeper practical search"],
+    eraSkin: "modern2020s",
+    logicNote: "Modern engines blend raw calculation with broader positional judgment: pawn shape, king shelter, and quiet pressure all matter.",
+    evalWeights: { material: 0.35, mobility: 0.2, position: 0.35, pawnStructure: 0.22, kingSafety: 0.18 },
     baseDepth: 3,
     recommendedBudget: 3,
     variability: 0.03,
@@ -191,7 +217,9 @@ const state = {
   winner: null,
   aiThinking: false,
   inCheckColor: null,
-  log: []
+  log: [],
+  aiPreviewMoves: [],
+  latestEval: 0
 };
 
 const initialModelId = new URLSearchParams(window.location.search).get("model");
