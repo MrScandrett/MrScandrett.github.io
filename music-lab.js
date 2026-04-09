@@ -62,6 +62,12 @@ let seqPlaying = false;
 let seqTimerId = null;
 let seqBpm     = 120;
 
+// ── Look-ahead Scheduler ──
+let nextStepTime         = 0.0;
+const LOOKAHEAD_MS       = 25.0;
+const SCHEDULE_AHEAD_SEC = 0.1;
+const seqVisualTimers    = [];
+
 // ───── DOM refs ─────
 const els = {
   enableAudio:  document.getElementById('enableAudio'),
@@ -112,14 +118,40 @@ function setStatus(extra) {
 function ensureAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  master   = audioCtx.createGain();
+
+  // Master gain
+  master = audioCtx.createGain();
   master.gain.value = 0.6;
 
+  // Master limiter — prevents clipping when many notes play at once
+  const limiter = audioCtx.createDynamicsCompressor();
+  limiter.threshold.setValueAtTime(-12, audioCtx.currentTime);
+  limiter.knee.setValueAtTime(40,  audioCtx.currentTime);
+  limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
+  limiter.attack.setValueAtTime(0.001, audioCtx.currentTime);
+  limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
+
+  // Parallel delay for spatial depth
+  const delay         = audioCtx.createDelay(1.0);
+  delay.delayTime.value = 0.28;
+  const delayFeedback = audioCtx.createGain();
+  delayFeedback.gain.value = 0.18;
+  const delayWet      = audioCtx.createGain();
+  delayWet.gain.value = 0.22;
+  master.connect(delay);
+  delay.connect(delayFeedback);
+  delayFeedback.connect(delay);
+  delay.connect(delayWet);
+  delayWet.connect(limiter);
+
+  // Analyser
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048;
   analyser.smoothingTimeConstant = 0.82;
 
-  master.connect(analyser);
+  // Signal chain: master → limiter (direct + wet delay) → analyser → speakers
+  master.connect(limiter);
+  limiter.connect(analyser);
   analyser.connect(audioCtx.destination);
 
   setStatus();
@@ -224,10 +256,10 @@ function makeNoiseBuffer(sec) {
   return buf;
 }
 
-function drumKick() {
+function drumKick(time) {
+  const now  = time;
   const osc  = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  const now  = audioCtx.currentTime;
   osc.type = 'sine';
   osc.frequency.setValueAtTime(140, now);
   osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
@@ -237,34 +269,34 @@ function drumKick() {
   osc.start(now); osc.stop(now + 0.2);
 }
 
-function drumSnare() {
+function drumSnare(time) {
+  const now    = time;
   const noise  = audioCtx.createBufferSource();
   noise.buffer = makeNoiseBuffer(0.2);
   const filter = audioCtx.createBiquadFilter();
   filter.type  = 'highpass'; filter.frequency.value = 1200;
   const gain   = audioCtx.createGain();
-  const now    = audioCtx.currentTime;
   gain.gain.setValueAtTime(0.6, now);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
   noise.connect(filter); filter.connect(gain); gain.connect(master);
   noise.start(now); noise.stop(now + 0.14);
 }
 
-function drumHat() {
+function drumHat(time) {
+  const now    = time;
   const noise  = audioCtx.createBufferSource();
   noise.buffer = makeNoiseBuffer(0.08);
   const filter = audioCtx.createBiquadFilter();
   filter.type  = 'highpass'; filter.frequency.value = 6000;
   const gain   = audioCtx.createGain();
-  const now    = audioCtx.currentTime;
   gain.gain.setValueAtTime(0.35, now);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
   noise.connect(filter); filter.connect(gain); gain.connect(master);
   noise.start(now); noise.stop(now + 0.06);
 }
 
-function drumClap() {
-  const now = audioCtx.currentTime;
+function drumClap(time) {
+  const now = time;
   for (const dt of [0, 0.015, 0.03]) {
     const noise  = audioCtx.createBufferSource();
     noise.buffer = makeNoiseBuffer(0.06);
@@ -278,10 +310,10 @@ function drumClap() {
   }
 }
 
-function drumTom(freq) {
+function drumTom(freq, time) {
+  const now  = time;
   const osc  = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  const now  = audioCtx.currentTime;
   osc.type = 'sine';
   osc.frequency.setValueAtTime(freq, now);
   gain.gain.setValueAtTime(0.55, now);
@@ -290,10 +322,10 @@ function drumTom(freq) {
   osc.start(now); osc.stop(now + 0.24);
 }
 
-function drumPerc() {
+function drumPerc(time) {
+  const now  = time;
   const osc  = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  const now  = audioCtx.currentTime;
   osc.type = 'square';
   osc.frequency.setValueAtTime(520, now);
   osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
@@ -303,32 +335,33 @@ function drumPerc() {
   osc.start(now); osc.stop(now + 0.12);
 }
 
-function drumCrash() {
+function drumCrash(time) {
+  const now    = time;
   const noise  = audioCtx.createBufferSource();
   noise.buffer = makeNoiseBuffer(0.6);
   const filter = audioCtx.createBiquadFilter();
   filter.type  = 'highpass'; filter.frequency.value = 3000;
   const gain   = audioCtx.createGain();
-  const now    = audioCtx.currentTime;
   gain.gain.setValueAtTime(0.25, now);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
   noise.connect(filter); filter.connect(gain); gain.connect(master);
   noise.start(now); noise.stop(now + 0.6);
 }
 
-function triggerDrum(name) {
+function triggerDrum(name, time) {
   if (!audioCtx) return;
   if (audioCtx.state !== 'running') audioCtx.resume();
+  const t = (time !== undefined) ? time : audioCtx.currentTime;
   switch (name) {
-    case 'kick':  drumKick();    break;
-    case 'snare': drumSnare();   break;
-    case 'hat':   drumHat();     break;
-    case 'clap':  drumClap();    break;
-    case 'tom1':  drumTom(180);  break;
-    case 'tom2':  drumTom(120);  break;
-    case 'perc':  drumPerc();    break;
-    case 'crash': drumCrash();   break;
-    default:      drumPerc();    break;
+    case 'kick':  drumKick(t);       break;
+    case 'snare': drumSnare(t);      break;
+    case 'hat':   drumHat(t);        break;
+    case 'clap':  drumClap(t);       break;
+    case 'tom1':  drumTom(180, t);   break;
+    case 'tom2':  drumTom(120, t);   break;
+    case 'perc':  drumPerc(t);       break;
+    case 'crash': drumCrash(t);      break;
+    default:      drumPerc(t);       break;
   }
 }
 
@@ -739,13 +772,13 @@ function drawPatchCables() {
     const start = jackCenter(outputEl, rackRect);
     const end = jackCenter(inputEl, rackRect);
     const horizontal = end.x - start.x;
-    const vertical = end.y - start.y;
-    const distance = Math.max(44, Math.abs(horizontal) * 0.48);
-    const direction = horizontal >= 0 ? 1 : -1;
-    const sag = Math.min(96, 20 + Math.abs(horizontal) * 0.08 + Math.abs(vertical) * 0.24);
-    const c1x = start.x + distance * direction;
-    const c2x = end.x - distance * direction;
+    const vertical   = end.y - start.y;
+    const totalDist  = Math.sqrt(horizontal * horizontal + vertical * vertical);
+    // Gravity sag grows with cable length — shorter cables stay taut
+    const sag = Math.min(90, Math.max(35, totalDist * 0.28));
+    const c1x = start.x;
     const c1y = start.y + sag;
+    const c2x = end.x;
     const c2y = end.y + sag;
     const d = `M ${start.x} ${start.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${end.x} ${end.y}`;
 
@@ -987,33 +1020,56 @@ function seqSetCurrent(step, active) {
   }
 }
 
-function seqTick() {
-  const prev = (seqStep + SEQ_STEPS - 1) % SEQ_STEPS;
-  seqSetCurrent(prev, false);
-  seqSetCurrent(seqStep, true);
+// ── Look-ahead scheduler (replaces jittery setInterval) ──
+function scheduleStep(step, time) {
+  // Sync visual indicator exactly when the beat plays (not ahead of it)
+  const msUntilBeat = Math.max(0, (time - audioCtx.currentTime) * 1000);
+  const timerId = setTimeout(() => {
+    const prev = (step + SEQ_STEPS - 1) % SEQ_STEPS;
+    seqSetCurrent(prev, false);
+    seqSetCurrent(step, true);
+  }, msUntilBeat);
+  seqVisualTimers.push(timerId);
 
-  ensureAudio();
+  // Schedule audio exactly on the audio clock
   for (let r = 0; r < SEQ_DRUMS.length; r++) {
-    if (seqGrid[r][seqStep]) triggerDrum(SEQ_DRUMS[r]);
+    if (seqGrid[r][step]) triggerDrum(SEQ_DRUMS[r], time);
   }
+}
 
+function advanceStep() {
+  const secondsPer16th = 60.0 / seqBpm / 4;
+  nextStepTime += secondsPer16th;
   seqStep = (seqStep + 1) % SEQ_STEPS;
 }
 
-function seqIntervalMs() { return Math.round(60000 / seqBpm / 4); }
+function scheduler() {
+  while (nextStepTime < audioCtx.currentTime + SCHEDULE_AHEAD_SEC) {
+    scheduleStep(seqStep, nextStepTime);
+    advanceStep();
+  }
+  if (seqPlaying) {
+    seqTimerId = setTimeout(scheduler, LOOKAHEAD_MS);
+  }
+}
 
 function seqStart() {
   if (seqPlaying) return;
-  seqPlaying = true;
-  seqStep    = 0;
+  ensureAudio();
+  seqPlaying    = true;
+  seqStep       = 0;
+  nextStepTime  = audioCtx.currentTime;
   els.seqPlay.textContent = '⏹ Stop';
   els.seqPlay.classList.add('btn-active');
-  seqTimerId = setInterval(seqTick, seqIntervalMs());
+  scheduler();
 }
 
 function seqStop() {
   seqPlaying = false;
-  if (seqTimerId !== null) { clearInterval(seqTimerId); seqTimerId = null; }
+  if (seqTimerId !== null) { clearTimeout(seqTimerId); seqTimerId = null; }
+  // Cancel any pending visual updates
+  seqVisualTimers.forEach(id => clearTimeout(id));
+  seqVisualTimers.length = 0;
   const prev = (seqStep + SEQ_STEPS - 1) % SEQ_STEPS;
   seqSetCurrent(prev, false);
   seqStep = 0;
@@ -1072,11 +1128,7 @@ els.seqClear.addEventListener('click', seqClearAll);
 els.seqBpmSlider.addEventListener('input', (e) => {
   seqBpm = Number(e.target.value);
   els.seqBpmVal.textContent = seqBpm;
-  if (seqPlaying) {
-    // Restart interval at new BPM without resetting position
-    clearInterval(seqTimerId);
-    seqTimerId = setInterval(seqTick, seqIntervalMs());
-  }
+  // Look-ahead scheduler picks up new BPM automatically on next advanceStep
 });
 
 for (const pad of document.querySelectorAll('[data-drum]')) {
