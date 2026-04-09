@@ -41,6 +41,31 @@ const PIANO_START_NOTE = 48; // C3
 const PIANO_END_NOTE   = 72; // C5
 const BLACK_CLASSES    = new Set([1, 3, 6, 8, 10]);
 const NOTE_NAMES       = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const CHROMATIC_TO_STAFF = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
+
+const THEORY_NOTES = [
+  { midi: 60, label: 'C', accidental: '', solfege: 'Do', interval: 'P1', semitones: 0, family: 'perfect' },
+  { midi: 61, label: 'C# / Db', accidental: '♯', solfege: 'Di', interval: 'm2', semitones: 1, family: 'minor' },
+  { midi: 62, label: 'D', accidental: '', solfege: 'Re', interval: 'M2', semitones: 2, family: 'major' },
+  { midi: 63, label: 'D# / Eb', accidental: '♯', solfege: 'Ri', interval: 'm3', semitones: 3, family: 'minor' },
+  { midi: 64, label: 'E', accidental: '', solfege: 'Mi', interval: 'M3', semitones: 4, family: 'major' },
+  { midi: 65, label: 'F', accidental: '', solfege: 'Fa', interval: 'P4', semitones: 5, family: 'perfect' },
+  { midi: 66, label: 'F# / Gb', accidental: '♯', solfege: 'Fi', interval: 'TT', semitones: 6, family: 'tritone' },
+  { midi: 67, label: 'G', accidental: '', solfege: 'Sol', interval: 'P5', semitones: 7, family: 'perfect' },
+  { midi: 68, label: 'G# / Ab', accidental: '♯', solfege: 'Si', interval: 'm6', semitones: 8, family: 'minor' },
+  { midi: 69, label: 'A', accidental: '', solfege: 'La', interval: 'M6', semitones: 9, family: 'major' },
+  { midi: 70, label: 'A# / Bb', accidental: '♯', solfege: 'Li', interval: 'm7', semitones: 10, family: 'minor' },
+  { midi: 71, label: 'B', accidental: '', solfege: 'Ti', interval: 'M7', semitones: 11, family: 'major' },
+  { midi: 72, label: 'C', accidental: '', solfege: 'Do', interval: 'P8', semitones: 12, family: 'perfect' },
+];
+
+const CLEF_CONFIG = {
+  treble:  { symbol: '𝄞', centerMidi: 71 },
+  bass:    { symbol: '𝄢', centerMidi: 50 },
+  alto:    { symbol: '𝄡', centerMidi: 60 },
+  soprano: { symbol: '𝄡', centerMidi: 69 },
+  grand:   { isGrand: true }
+};
 
 // ───── Piano state ─────
 const pianoState = {
@@ -176,6 +201,134 @@ function isBlackKey(note)     { return BLACK_CLASSES.has(note % 12); }
 
 function noteAllowed(note) {
   return !activeScaleKeys || activeScaleKeys.includes(note % 12);
+}
+
+function getNoteLayout(midi, centerMidi) {
+  const diff = midi - centerMidi;
+  const octaves = Math.floor(diff / 12);
+  const chroma = ((diff % 12) + 12) % 12;
+  const steps = (octaves * 7) + CHROMATIC_TO_STAFF[chroma];
+  const yBase = 72;
+  const stepPx = 5;
+  return {
+    steps,
+    y: yBase - (steps * stepPx)
+  };
+}
+
+function buildLedgerLines(y, steps) {
+  const lines = [];
+  const bottomLineY = 92;
+  const topLineY = 52;
+  const ledgerXs = 'x1="18" x2="46"';
+
+  if (steps <= -6) {
+    for (let ledgerY = bottomLineY + 10; ledgerY <= y + 0.1; ledgerY += 10) {
+      lines.push(`<line class="ledger-line" ${ledgerXs} y1="${ledgerY}" y2="${ledgerY}" />`);
+    }
+  }
+
+  if (steps >= 6) {
+    for (let ledgerY = topLineY - 10; ledgerY >= y - 0.1; ledgerY -= 10) {
+      lines.push(`<line class="ledger-line" ${ledgerXs} y1="${ledgerY}" y2="${ledgerY}" />`);
+    }
+  }
+
+  return lines.join('');
+}
+
+function noteSvgMarkup(note, centerMidi) {
+  const layout = getNoteLayout(note.midi, centerMidi);
+  const stemDown = layout.steps >= 4;
+  const headCx = note.accidental ? 34 : 30;
+  const stemX = stemDown ? headCx - 7 : headCx + 7;
+  const stemY2 = stemDown ? layout.y + 35 : layout.y - 35;
+  const accidental = note.accidental
+    ? `<text class="note-accidental" x="6" y="${layout.y + 6}" aria-hidden="true">${note.accidental}</text>`
+    : '';
+
+  return `
+    <svg class="music-staff-svg" viewBox="0 0 72 122" aria-hidden="true" focusable="false">
+      ${buildLedgerLines(layout.y, layout.steps)}
+      ${accidental}
+      <ellipse class="note-head" cx="${headCx}" cy="${layout.y}" rx="7" ry="5"></ellipse>
+      <line class="note-stem" x1="${stemX}" y1="${layout.y}" x2="${stemX}" y2="${stemY2}"></line>
+    </svg>
+  `;
+}
+
+function noteButtonMarkup(note, centerMidi, leftPx) {
+  return `
+    <button
+      class="note-container music-interval-card ${note.family}"
+      type="button"
+      style="left:${leftPx}px"
+      data-midi="${note.midi}"
+      aria-label="${note.label}, ${note.solfege}, ${note.interval}, ${note.semitones} semitones"
+      title="${note.label} · ${note.interval}"
+    >
+      ${noteSvgMarkup(note, centerMidi)}
+      <span class="note-labels">
+        <span class="music-interval-note">${note.label}</span>
+        <span class="music-interval-solfege">${note.solfege}</span>
+        <span class="music-interval-name">${note.interval}</span>
+        <span class="music-interval-semitones">${note.semitones} semitone${note.semitones === 1 ? '' : 's'}</span>
+      </span>
+    </button>
+  `;
+}
+
+function renderStaffBlock(clefType, notes) {
+  const config = CLEF_CONFIG[clefType];
+  const noteMarkup = notes.map((note, index) => noteButtonMarkup(note, config.centerMidi, 80 + (index * 64))).join('');
+  return `
+    <div class="staff-block" data-clef="${clefType}">
+      <div class="clef-symbol" aria-hidden="true">${config.symbol}</div>
+      ${noteMarkup}
+    </div>
+  `;
+}
+
+function renderTheoryStaff(clefKey) {
+  const staffSystem = document.getElementById('staffSystem');
+  if (!staffSystem) return;
+
+  if (clefKey === 'grand') {
+    staffSystem.classList.add('grand-staff');
+    const bassNotes = THEORY_NOTES.filter((note) => note.midi <= 60);
+    const trebleNotes = THEORY_NOTES.filter((note) => note.midi >= 60);
+    staffSystem.innerHTML = [
+      renderStaffBlock('treble', trebleNotes),
+      renderStaffBlock('bass', bassNotes)
+    ].join('');
+  } else {
+    staffSystem.classList.remove('grand-staff');
+    staffSystem.innerHTML = renderStaffBlock(clefKey, THEORY_NOTES);
+  }
+
+  staffSystem.querySelectorAll('.note-container').forEach((button) => {
+    const midi = Number(button.dataset.midi);
+    const release = () => noteOffFromUi(midi);
+
+    button.addEventListener('click', () => {
+      noteOnFromUi(midi, 0.7);
+      button.classList.add('is-active');
+      window.setTimeout(() => {
+        release();
+        button.classList.remove('is-active');
+      }, 420);
+    });
+
+    button.addEventListener('mouseleave', () => button.classList.remove('is-active'));
+    button.addEventListener('blur', () => button.classList.remove('is-active'));
+  });
+}
+
+function initTheoryMap() {
+  const selector = document.getElementById('clefSelector');
+  if (!selector) return;
+  renderTheoryStaff(selector.value);
+  selector.addEventListener('change', () => renderTheoryStaff(selector.value));
 }
 
 // ───── Voice management ─────
@@ -1316,5 +1469,6 @@ wirePianoRollPointer();
 buildSeqGrid();
 initModularPatchbay();
 initCircleOfFifths();
+initTheoryMap();
 readAdsr();   // set initial display values from slider defaults
 setStatus();
