@@ -350,6 +350,100 @@ function fitSimulationViewport() {
   }
 }
 
+function getCellColorFromAge(age) {
+  if (age <= 0) return null;
+  if (age > 50) {
+    const lightness = Math.min(72, 48 + age * 0.22);
+    return `hsl(45 100% ${lightness}%)`;
+  }
+  const lightness = Math.min(70, 44 + age * 0.45);
+  const saturation = Math.min(100, 70 + age);
+  return `hsl(200 ${saturation}% ${lightness}%)`;
+}
+
+function drawEntropySparkline() {
+  if (!entropySparkline) return;
+  const sparkCtx = entropySparkline.getContext("2d");
+  const width = entropySparkline.width;
+  const height = entropySparkline.height;
+  sparkCtx.clearRect(0, 0, width, height);
+
+  sparkCtx.fillStyle = "#0d1418";
+  sparkCtx.fillRect(0, 0, width, height);
+
+  sparkCtx.strokeStyle = "rgba(126, 200, 160, 0.14)";
+  sparkCtx.lineWidth = 1;
+  for (let i = 1; i <= 3; i += 1) {
+    const y = (height / 4) * i;
+    sparkCtx.beginPath();
+    sparkCtx.moveTo(0, y);
+    sparkCtx.lineTo(width, y);
+    sparkCtx.stroke();
+  }
+
+  if (!entropyHistory.length) return;
+  const maxAbs = Math.max(4, ...entropyHistory.map((value) => Math.abs(value)));
+  const baseline = height / 2;
+
+  sparkCtx.strokeStyle = "rgba(87, 245, 255, 0.9)";
+  sparkCtx.lineWidth = 2;
+  sparkCtx.beginPath();
+  entropyHistory.forEach((value, index) => {
+    const x = (index / Math.max(entropyHistory.length - 1, 1)) * (width - 12) + 6;
+    const y = baseline - (value / maxAbs) * (height * 0.36);
+    if (index === 0) sparkCtx.moveTo(x, y);
+    else sparkCtx.lineTo(x, y);
+  });
+  sparkCtx.stroke();
+
+  sparkCtx.strokeStyle = "rgba(250, 204, 21, 0.26)";
+  sparkCtx.beginPath();
+  sparkCtx.moveTo(0, baseline);
+  sparkCtx.lineTo(width, baseline);
+  sparkCtx.stroke();
+}
+
+function renderStampGhost() {
+  if (!stampGhost || mode !== "2d" || activePattern === "none" || !hoverCell) {
+    if (stampGhost) stampGhost.classList.add("hidden");
+    return;
+  }
+
+  const coords = PATTERN_COORDS[activePattern] || [];
+  if (!coords.length) {
+    stampGhost.classList.add("hidden");
+    return;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const cellWidth = rect.width / cols;
+  const cellHeight = rect.height / rows;
+  const minRow = Math.min(...coords.map(([r]) => r));
+  const minCol = Math.min(...coords.map(([, c]) => c));
+  const maxRow = Math.max(...coords.map(([r]) => r));
+  const maxCol = Math.max(...coords.map(([, c]) => c));
+  const baseRow = hoverCell.r + minRow;
+  const baseCol = hoverCell.c + minCol;
+
+  stampGhost.classList.remove("hidden");
+  stampGhost.style.gridTemplateColumns = `repeat(${maxCol - minCol + 1}, ${Math.max(6, Math.floor(cellWidth - 2))}px)`;
+  stampGhost.style.left = `${Math.round(baseCol * cellWidth + 1)}px`;
+  stampGhost.style.top = `${Math.round(baseRow * cellHeight + 1)}px`;
+  stampGhost.innerHTML = "";
+
+  const lookup = new Set(coords.map(([r, c]) => `${r - minRow}:${c - minCol}`));
+  for (let r = 0; r <= maxRow - minRow; r += 1) {
+    for (let c = 0; c <= maxCol - minCol; c += 1) {
+      const cell = document.createElement("span");
+      cell.className = "stamp-ghost-cell";
+      cell.style.visibility = lookup.has(`${r}:${c}`) ? "visible" : "hidden";
+      cell.style.width = `${Math.max(6, Math.floor(cellWidth - 2))}px`;
+      cell.style.height = `${Math.max(6, Math.floor(cellHeight - 2))}px`;
+      stampGhost.appendChild(cell);
+    }
+  }
+}
+
 function drawGrid2d() {
   const width = canvas.width;
   const height = canvas.height;
@@ -359,16 +453,17 @@ function drawGrid2d() {
   ctx.fillStyle = "#f4efde";
   ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = liveCellColor;
   for (let r = 0; r < rows; r += 1) {
     for (let c = 0; c < cols; c += 1) {
       if (grid2d[r][c] === 1) {
+        const color = getCellColorFromAge(ageGrid2d[r][c]) || liveCellColor;
+        ctx.fillStyle = color;
         ctx.fillRect(c * cellWidth + 1, r * cellHeight + 1, Math.max(1, cellWidth - 2), Math.max(1, cellHeight - 2));
       }
     }
   }
 
-  ctx.strokeStyle = "rgba(76, 95, 103, 0.24)";
+  ctx.strokeStyle = "rgba(134, 255, 177, 0.14)";
   ctx.lineWidth = 1;
 
   for (let r = 0; r <= rows; r += 1) {
@@ -386,19 +481,31 @@ function drawGrid2d() {
     ctx.lineTo(x, height);
     ctx.stroke();
   }
+
+  renderStampGhost();
 }
 
 function resetGrid2d() {
   fitSimulationViewport();
   grid2d = makeGrid2d(rows, cols);
+  ageGrid2d = makeAgeGrid2d(rows, cols);
   generation = 0;
+  previousLiveCount = 0;
+  entropyHistory = [];
+  universalityShown = false;
+  if (universalityToast) universalityToast.classList.add("hidden");
   drawGrid2d();
   updateStats();
 }
 
 function resetGrid3d() {
   grid3d = makeGrid3d(voxelSize);
+  ageGrid3d = makeAgeGrid3d(voxelSize);
   generation = 0;
+  previousLiveCount = 0;
+  entropyHistory = [];
+  universalityShown = false;
+  if (universalityToast) universalityToast.classList.add("hidden");
   drawGrid3d();
   updateStats();
 }
@@ -425,6 +532,7 @@ function neighbors2d(r, c, wrapMode) {
 
 function step2d() {
   const next = makeGrid2d(rows, cols);
+  const nextAge = makeAgeGrid2d(rows, cols);
   const { births, survives } = parseRule(ruleSelect.value);
   const wrapMode = LEVELS[levelSelect.value].wrap2d;
 
@@ -434,13 +542,16 @@ function step2d() {
       const n = neighbors2d(r, c, wrapMode);
       if (!alive && births.has(n)) {
         next[r][c] = 1;
+        nextAge[r][c] = 1;
       } else if (alive && survives.has(n)) {
         next[r][c] = 1;
+        nextAge[r][c] = ageGrid2d[r][c] + 1;
       }
     }
   }
 
   grid2d = next;
+  ageGrid2d = nextAge;
   generation += 1;
   drawGrid2d();
   updateStats();
@@ -475,6 +586,7 @@ function neighbors3d(x, y, z, wrapMode) {
 
 function step3d() {
   const next = makeGrid3d(voxelSize);
+  const nextAge = makeAgeGrid3d(voxelSize);
   const { births, survives } = parseRule(voxelRuleSelect.value);
   const wrapMode = LEVELS[levelSelect.value].wrap3d;
 
@@ -487,14 +599,17 @@ function step3d() {
 
         if (!alive && births.has(n)) {
           next[i] = 1;
+          nextAge[i] = 1;
         } else if (alive && survives.has(n)) {
           next[i] = 1;
+          nextAge[i] = ageGrid3d[i] + 1;
         }
       }
     }
   }
 
   grid3d = next;
+  ageGrid3d = nextAge;
   generation += 1;
   drawGrid3d();
   updateStats();
@@ -503,12 +618,19 @@ function step3d() {
 function randomize2d() {
   const fillChance = LEVELS[levelSelect.value].randomFill2d;
   grid2d = makeGrid2d(rows, cols);
+  ageGrid2d = makeAgeGrid2d(rows, cols);
   for (let r = 0; r < rows; r += 1) {
     for (let c = 0; c < cols; c += 1) {
-      grid2d[r][c] = Math.random() < fillChance ? 1 : 0;
+      const alive = Math.random() < fillChance ? 1 : 0;
+      grid2d[r][c] = alive;
+      ageGrid2d[r][c] = alive ? 1 : 0;
     }
   }
   generation = 0;
+  previousLiveCount = 0;
+  entropyHistory = [];
+  universalityShown = false;
+  if (universalityToast) universalityToast.classList.add("hidden");
   drawGrid2d();
   updateStats();
 }
@@ -516,12 +638,19 @@ function randomize2d() {
 function randomize3d() {
   const fillChance = LEVELS[levelSelect.value].randomFill3d;
   grid3d = makeGrid3d(voxelSize);
+  ageGrid3d = makeAgeGrid3d(voxelSize);
 
   for (let i = 0; i < grid3d.length; i += 1) {
-    grid3d[i] = Math.random() < fillChance ? 1 : 0;
+    const alive = Math.random() < fillChance ? 1 : 0;
+    grid3d[i] = alive;
+    ageGrid3d[i] = alive ? 1 : 0;
   }
 
   generation = 0;
+  previousLiveCount = 0;
+  entropyHistory = [];
+  universalityShown = false;
+  if (universalityToast) universalityToast.classList.add("hidden");
   drawGrid3d();
   updateStats();
 }
@@ -535,123 +664,29 @@ function centerPattern2d(coords) {
     const nc = centerC + c;
     if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
       grid2d[nr][nc] = 1;
+      ageGrid2d[nr][nc] = 1;
     }
+  }
+}
+
+function injectPatternAt(anchorRow, anchorCol, coords) {
+  const wrapMode = LEVELS[levelSelect.value].wrap2d;
+  for (const [rowOffset, colOffset] of coords) {
+    let nr = anchorRow + rowOffset;
+    let nc = anchorCol + colOffset;
+    if (wrapMode) {
+      nr = (nr + rows) % rows;
+      nc = (nc + cols) % cols;
+    }
+    if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+    grid2d[nr][nc] = 1;
+    ageGrid2d[nr][nc] = 1;
   }
 }
 
 function applyPattern2d(name) {
   if (name === "none") return;
-
-  const patterns = {
-    glider: [
-      [0, 1],
-      [1, 2],
-      [2, 0],
-      [2, 1],
-      [2, 2]
-    ],
-    lwss: [
-      [0, 1],
-      [0, 2],
-      [0, 3],
-      [0, 4],
-      [1, 0],
-      [1, 4],
-      [2, 4],
-      [3, 0],
-      [3, 3]
-    ],
-    pulsar: [
-      [-6, -4],
-      [-6, -3],
-      [-6, -2],
-      [-6, 2],
-      [-6, 3],
-      [-6, 4],
-      [-4, -6],
-      [-3, -6],
-      [-2, -6],
-      [2, -6],
-      [3, -6],
-      [4, -6],
-      [-1, -4],
-      [-1, -3],
-      [-1, -2],
-      [-1, 2],
-      [-1, 3],
-      [-1, 4],
-      [-4, -1],
-      [-3, -1],
-      [-2, -1],
-      [2, -1],
-      [3, -1],
-      [4, -1],
-      [-4, 1],
-      [-3, 1],
-      [-2, 1],
-      [2, 1],
-      [3, 1],
-      [4, 1],
-      [1, -4],
-      [1, -3],
-      [1, -2],
-      [1, 2],
-      [1, 3],
-      [1, 4],
-      [-4, 6],
-      [-3, 6],
-      [-2, 6],
-      [2, 6],
-      [3, 6],
-      [4, 6],
-      [6, -4],
-      [6, -3],
-      [6, -2],
-      [6, 2],
-      [6, 3],
-      [6, 4]
-    ],
-    gosper: [
-      [0, 24],
-      [1, 22],
-      [1, 24],
-      [2, 12],
-      [2, 13],
-      [2, 20],
-      [2, 21],
-      [2, 34],
-      [2, 35],
-      [3, 11],
-      [3, 15],
-      [3, 20],
-      [3, 21],
-      [3, 34],
-      [3, 35],
-      [4, 0],
-      [4, 1],
-      [4, 10],
-      [4, 16],
-      [4, 20],
-      [4, 21],
-      [5, 0],
-      [5, 1],
-      [5, 10],
-      [5, 14],
-      [5, 16],
-      [5, 17],
-      [5, 22],
-      [5, 24],
-      [6, 10],
-      [6, 16],
-      [6, 24],
-      [7, 11],
-      [7, 15],
-      [8, 12],
-      [8, 13]
-    ]
-  };
-
-  centerPattern2d(patterns[name] || []);
+  centerPattern2d(PATTERN_COORDS[name] || []);
   drawGrid2d();
   updateStats();
 }
@@ -659,6 +694,7 @@ function applyPattern2d(name) {
 function setVoxelCell(x, y, z, value) {
   if (x < 0 || x >= voxelSize || y < 0 || y >= voxelSize || z < 0 || z >= voxelSize) return;
   grid3d[idx3d(x, y, z)] = value;
+  ageGrid3d[idx3d(x, y, z)] = value ? 1 : 0;
 }
 
 function applySeed3d(name) {
@@ -725,12 +761,25 @@ function toggleCell2d(evt, paintValue = null) {
 
   if (paintValue === null) {
     grid2d[r][c] = grid2d[r][c] ? 0 : 1;
+    ageGrid2d[r][c] = grid2d[r][c] ? 1 : 0;
   } else {
     grid2d[r][c] = paintValue;
+    ageGrid2d[r][c] = paintValue ? 1 : 0;
   }
 
   drawGrid2d();
   updateStats();
+}
+
+function setActivePattern(name) {
+  activePattern = name;
+  patternButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.preset === name);
+  });
+  hintText.textContent = name === "none"
+    ? HINT_2D
+    : `Stamp Tool: ${name} selected. Move over the grid to preview, then click to inject the organism.`;
+  renderStampGhost();
 }
 
 function setRunning(state) {
@@ -792,7 +841,15 @@ function updateModeUi() {
   voxelViewport.classList.toggle("hidden", !is3d);
 
   applyPatternBtn.textContent = is3d ? "Place Voxel Seed" : "Place Pattern";
-  hintText.textContent = is3d ? HINT_3D : HINT_2D;
+  hintText.textContent = is3d
+    ? HINT_3D
+    : (activePattern === "none"
+      ? HINT_2D
+      : `Stamp Tool: ${activePattern} selected. Move over the grid to preview, then click to inject the organism.`);
+  if (is3d) {
+    hoverCell = null;
+    renderStampGhost();
+  }
 }
 
 async function initThreeIfNeeded() {
@@ -901,9 +958,13 @@ function drawGrid3d() {
   for (let z = 0; z < voxelSize; z += 1) {
     for (let y = 0; y < voxelSize; y += 1) {
       for (let x = 0; x < voxelSize; x += 1) {
-        if (grid3d[idx3d(x, y, z)] !== 1) continue;
+        const i = idx3d(x, y, z);
+        if (grid3d[i] !== 1) continue;
 
-        dummy.position.set(x - offset, y - offset, z - offset);
+        const age = ageGrid3d[i] || 1;
+        const height = Math.min(3.6, 0.85 + age * 0.035);
+        dummy.position.set(x - offset, y - offset + (height - 1) / 2, z - offset);
+        dummy.scale.set(1, height, 1);
         dummy.updateMatrix();
         voxelMesh.setMatrixAt(instanceCount, dummy.matrix);
         instanceCount += 1;
@@ -1043,7 +1104,7 @@ clearBtn.addEventListener("click", () => {
 applyPatternBtn.addEventListener("click", () => {
   setRunning(false);
   if (mode === "2d") {
-    applyPattern2d(patternSelect.value);
+    applyPattern2d(activePattern === "none" ? "glider" : activePattern);
   } else {
     applySeed3d(seedSelect.value);
   }
@@ -1052,16 +1113,37 @@ applyPatternBtn.addEventListener("click", () => {
 canvas.addEventListener("pointerdown", (evt) => {
   if (mode !== "2d") return;
   pointerDown = true;
+  if (activePattern !== "none") {
+    const { r, c } = pointerToCell2d(evt);
+    injectPatternAt(r, c, PATTERN_COORDS[activePattern] || []);
+    drawGrid2d();
+    updateStats();
+    return;
+  }
   toggleCell2d(evt);
 });
 
 canvas.addEventListener("pointermove", (evt) => {
-  if (mode !== "2d" || !pointerDown) return;
+  if (mode !== "2d") return;
+  hoverCell = pointerToCell2d(evt);
+  renderStampGhost();
+  if (!pointerDown || activePattern !== "none") return;
   toggleCell2d(evt, 1);
 });
 
 window.addEventListener("pointerup", () => {
   pointerDown = false;
+});
+
+canvas.addEventListener("pointerleave", () => {
+  hoverCell = null;
+  renderStampGhost();
+});
+
+patternButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setActivePattern(button.dataset.preset || "none");
+  });
 });
 
 window.addEventListener("resize", () => {
@@ -1087,3 +1169,4 @@ switchMode("2d").catch((error) => {
 });
 
 setLearningMode(document.body.classList.contains("mode-advanced") ? "advanced" : "beginner");
+setActivePattern("none");
