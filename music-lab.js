@@ -76,6 +76,11 @@ const pianoState = {
   showNoteNames: false,
 };
 
+const bridgeState = {
+  activeNotes: new Set(),
+  activeTimers: new Map(),
+};
+
 // ───── Step Sequencer ─────
 const SEQ_STEPS  = 16;
 const SEQ_DRUMS  = ['kick','snare','hat','clap','tom1','tom2','perc','crash'];
@@ -129,6 +134,8 @@ const els = {
   seqBpmSlider: document.getElementById('seqBpmSlider'),
   seqBpmVal:    document.getElementById('seqBpmVal'),
   seqGrid:      document.getElementById('seqGrid'),
+  staffSystem:  document.getElementById('staffSystem'),
+  labHudValue:  document.getElementById('labHudValue'),
 };
 
 // ───── Status bar ─────
@@ -203,6 +210,47 @@ function noteAllowed(note) {
   return !activeScaleKeys || activeScaleKeys.includes(note % 12);
 }
 
+function currentWaveformLabel() {
+  if (els.preset && els.preset.value === 'piano') return 'Piano';
+  if (els.preset && els.preset.value === 'drums') return 'Drums';
+  return modular.wave ? `${modular.wave[0].toUpperCase()}${modular.wave.slice(1)}` : 'Sine';
+}
+
+function updateHud(message) {
+  if (els.labHudValue) els.labHudValue.textContent = message;
+}
+
+function formatFrequency(note) {
+  return `${midiNoteToHz(note).toFixed(2)}Hz`;
+}
+
+function highlightTheoryNotes(notes, shouldScroll) {
+  if (!els.staffSystem) return;
+  const midiSet = new Set(notes);
+  const firstMatch = els.staffSystem.querySelector(`.theory-map-note[data-midi="${notes[0]}"]`);
+  els.staffSystem.querySelectorAll('.theory-map-note').forEach((el) => {
+    const midi = Number(el.dataset.midi);
+    el.classList.toggle('is-bridge-active', midiSet.has(midi));
+  });
+  if (shouldScroll && firstMatch) {
+    firstMatch.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+}
+
+function highlightFifthsByPitchClasses(pitchClasses) {
+  const pitchSet = new Set(pitchClasses);
+  document.querySelectorAll('.fifths-group').forEach((group) => {
+    const root = Number(group.dataset.root);
+    const active = pitchSet.has(root);
+    group.classList.toggle('active', active);
+  });
+}
+
+function clearBridgeHighlights() {
+  highlightTheoryNotes([], false);
+  highlightFifthsByPitchClasses([]);
+}
+
 function naturalStaffIndex(midi) {
   const octave = Math.floor(midi / 12) - 1;
   return (octave * 7) + CHROMATIC_TO_STAFF[midi % 12];
@@ -262,7 +310,7 @@ function noteSvgMarkup(note, centerMidi) {
 function noteButtonMarkup(note, centerMidi, leftPx) {
   return `
     <button
-      class="note-container music-interval-card ${note.family}"
+      class="note-container music-interval-card theory-map-note ${note.family}"
       type="button"
       style="left:${leftPx}px"
       data-midi="${note.midi}"
@@ -310,15 +358,10 @@ function renderTheoryStaff(clefKey) {
 
   staffSystem.querySelectorAll('.note-container').forEach((button) => {
     const midi = Number(button.dataset.midi);
-    const release = () => noteOffFromUi(midi);
+    const solfege = button.querySelector('.music-interval-solfege')?.textContent || '';
 
     button.addEventListener('click', () => {
-      noteOnFromUi(midi, 0.7);
-      button.classList.add('is-active');
-      window.setTimeout(() => {
-        release();
-        button.classList.remove('is-active');
-      }, 420);
+      os_triggerNote(midi, 0.7, { solfege });
     });
 
     button.addEventListener('mouseleave', () => button.classList.remove('is-active'));
@@ -554,6 +597,91 @@ function noteOnFromUi(note, velocity) {
 
 function noteOffFromUi(note) { stopVoice(note); }
 
+function os_releaseNote(note) {
+  if (bridgeState.activeTimers.has(note)) {
+    clearTimeout(bridgeState.activeTimers.get(note));
+    bridgeState.activeTimers.delete(note);
+  }
+  noteOffFromUi(note);
+  bridgeState.activeNotes.delete(note);
+  setKeyActive(note, false);
+  highlightTheoryNotes(Array.from(bridgeState.activeNotes), false);
+  if (!bridgeState.activeNotes.size) {
+    highlightFifthsByPitchClasses([]);
+  } else {
+    highlightFifthsByPitchClasses(Array.from(bridgeState.activeNotes).map((midi) => midi % 12));
+  }
+}
+
+function os_triggerNote(midi, velocity, options) {
+  const config = Object.assign({
+    duration: 420,
+    highlightTheory: true,
+    highlightPiano: true,
+    highlightCircle: true,
+    scrollTheory: true,
+    hudLabel: noteName(midi),
+    solfege: '',
+  }, options || {});
+
+  if (!noteAllowed(midi)) return;
+
+  noteOnFromUi(midi, velocity);
+  bridgeState.activeNotes.add(midi);
+  if (config.highlightPiano) setKeyActive(midi, true);
+  if (config.highlightTheory) highlightTheoryNotes(Array.from(bridgeState.activeNotes), config.scrollTheory);
+  if (config.highlightCircle) highlightFifthsByPitchClasses(Array.from(bridgeState.activeNotes).map((note) => note % 12));
+
+  const solfegeText = config.solfege ? ` (${config.solfege})` : '';
+  updateHud(`Now Playing: ${config.hudLabel}${solfegeText} · Frequency: ${formatFrequency(midi)} · Waveform: ${currentWaveformLabel()}`);
+
+  if (bridgeState.activeTimers.has(midi)) {
+    clearTimeout(bridgeState.activeTimers.get(midi));
+    bridgeState.activeTimers.delete(midi);
+  }
+
+  if (config.duration && Number.isFinite(config.duration)) {
+    const timer = setTimeout(() => {
+      os_releaseNote(midi);
+      bridgeState.activeTimers.delete(midi);
+      if (!bridgeState.activeNotes.size) {
+        updateHud(`Now Playing: idle · Frequency: — · Waveform: ${currentWaveformLabel()}`);
+      }
+    }, config.duration);
+    bridgeState.activeTimers.set(midi, timer);
+  }
+}
+
+function os_triggerChord(notes, options) {
+  const config = Object.assign({
+    duration: 700,
+    label: 'Chord',
+    solfege: '',
+  }, options || {});
+
+  const playableNotes = notes.filter((note) => noteAllowed(note));
+  if (!playableNotes.length) return;
+
+  playableNotes.forEach((note) => {
+    noteOnFromUi(note, 0.68);
+    bridgeState.activeNotes.add(note);
+    setKeyActive(note, true);
+  });
+
+  highlightTheoryNotes(playableNotes, true);
+  highlightFifthsByPitchClasses(playableNotes.map((note) => note % 12));
+  updateHud(`Now Playing: ${config.label}${config.solfege ? ` (${config.solfege})` : ''} · Frequency: ${formatFrequency(playableNotes[0])} · Waveform: ${currentWaveformLabel()}`);
+
+  const releaseTimer = setTimeout(() => {
+    playableNotes.forEach((note) => os_releaseNote(note));
+    if (!bridgeState.activeNotes.size) {
+      updateHud(`Now Playing: idle · Frequency: — · Waveform: ${currentWaveformLabel()}`);
+    }
+  }, config.duration);
+
+  fifthsReleaseTimers.push(releaseTimer);
+}
+
 // ───── Piano key visual state ─────
 function setKeyActive(note, active) {
   const key = pianoState.keyByNote.get(note);
@@ -562,8 +690,7 @@ function setKeyActive(note, active) {
 
 function releasePianoPointer() {
   if (pianoState.activeNote !== null) {
-    noteOffFromUi(pianoState.activeNote);
-    setKeyActive(pianoState.activeNote, false);
+    os_releaseNote(pianoState.activeNote);
   }
   pianoState.pointerDown = false;
   pianoState.pointerId   = null;
@@ -573,11 +700,9 @@ function releasePianoPointer() {
 function activatePianoNote(note) {
   if (pianoState.activeNote === note) return;
   if (pianoState.activeNote !== null) {
-    noteOffFromUi(pianoState.activeNote);
-    setKeyActive(pianoState.activeNote, false);
+    os_releaseNote(pianoState.activeNote);
   }
-  noteOnFromUi(note);
-  setKeyActive(note, true);
+  os_triggerNote(note, 0.82, { duration: null, hudLabel: `${noteName(note)} key` });
   pianoState.activeNote = note;
 }
 
@@ -603,20 +728,17 @@ function makePianoKey(note, keyClass, leftPct, widthPct) {
   key.addEventListener('keydown', (e) => {
     if (e.repeat || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault();
-    noteOnFromUi(note);
-    setKeyActive(note, true);
+    os_triggerNote(note, 0.82, { duration: null, hudLabel: `${noteName(note)} key` });
   });
 
   key.addEventListener('keyup', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     e.preventDefault();
-    noteOffFromUi(note);
-    setKeyActive(note, false);
+    os_releaseNote(note);
   });
 
   key.addEventListener('blur', () => {
-    noteOffFromUi(note);
-    setKeyActive(note, false);
+    os_releaseNote(note);
   });
 
   pianoState.keyByNote.set(note, key);
@@ -722,7 +844,7 @@ function onMidiMessage(ev) {
 
     // note-on with vel=0 treated as note-off
     if (data2 === 0) {
-      if (preset !== 'drums') { stopVoice(note); setKeyActive(note, false); }
+      if (preset !== 'drums') { os_releaseNote(note); }
       return;
     }
 
@@ -733,14 +855,12 @@ function onMidiMessage(ev) {
     }
 
     if (!noteAllowed(note)) return;
-    if (preset === 'piano') startPiano(note, vel);
-    else                    startSynth(note, vel);
-    setKeyActive(note, true);   // ← MIDI highlight
+    os_triggerNote(note, vel, { duration: null, hudLabel: `${noteName(note)} MIDI`, scrollTheory: false });
     return;
   }
 
   if (cmd === 0x80) {
-    if (preset !== 'drums') { stopVoice(data1); setKeyActive(data1, false); }
+    if (preset !== 'drums') { os_releaseNote(data1); }
   }
 }
 
@@ -761,6 +881,7 @@ function triggerPad(name) {
   ensureAudio();
   if (audioCtx.state !== 'running') audioCtx.resume();
   triggerDrum(name);
+  updateHud(`Now Playing: ${name[0].toUpperCase()}${name.slice(1)} drum hit · Frequency: percussion spectrum · Waveform: Drums`);
 }
 
 // ───── Scale Lock ─────
@@ -1244,7 +1365,10 @@ function seqClearAll() {
 els.enableAudio.addEventListener('click', enableAudio);
 els.enableMidi.addEventListener('click',  enableMidi);
 els.midiIn.addEventListener('change',    (e) => setMidiInput(e.target.value));
-els.preset.addEventListener('change',    releasePianoPointer);
+els.preset.addEventListener('change',    () => {
+  releasePianoPointer();
+  updateHud(`Now Playing: idle · Frequency: — · Waveform: ${currentWaveformLabel()}`);
+});
 
 els.scaleLock.addEventListener('change', (e) => applyScaleLock(e.target.value));
 
@@ -1420,11 +1544,15 @@ function playChordFromCircle(item, isMinor, groupEl) {
   document.querySelectorAll('.fifths-group').forEach(g => g.classList.remove('active'));
   fifthsReleaseTimers.forEach(id => clearTimeout(id));
   fifthsReleaseTimers = [];
+  bridgeState.activeTimers.forEach((timerId) => clearTimeout(timerId));
+  bridgeState.activeTimers.clear();
 
   // Also clear any piano highlights from previous chord
   for (const [note, key] of pianoState.keyByNote) {
     key.classList.remove('is-active');
   }
+  bridgeState.activeNotes.clear();
+  highlightTheoryNotes([], false);
 
   groupEl.classList.add('active');
 
@@ -1438,22 +1566,14 @@ function playChordFromCircle(item, isMinor, groupEl) {
   const chordLabel = isMinor ? item.minor : item.major;
   const chordType  = isMinor ? 'minor' : 'major';
 
-  // Play each note
-  chordNotes.forEach(note => {
-    if (note >= PIANO_START_NOTE && note <= PIANO_END_NOTE) {
-      noteOnFromUi(note, 0.68);
-      setKeyActive(note, true);
-    }
+  os_triggerChord(chordNotes, {
+    duration: 700,
+    label: `${chordLabel} ${chordType} chord`,
+    solfege: chordNotes.map((note) => {
+      const match = THEORY_NOTES.find((entry) => entry.midi % 12 === note % 12);
+      return match ? match.solfege : NOTE_NAMES[note % 12];
+    }).join('-')
   });
-
-  // Auto-release after 700ms
-  const releaseTimer = setTimeout(() => {
-    chordNotes.forEach(note => {
-      noteOffFromUi(note);
-      setKeyActive(note, false);
-    });
-  }, 700);
-  fifthsReleaseTimers.push(releaseTimer);
 
   // Update info display
   const display = document.getElementById('fifthsChordDisplay');
@@ -1464,6 +1584,9 @@ function playChordFromCircle(item, isMinor, groupEl) {
     `;
   }
 }
+
+window.os_triggerNote = os_triggerNote;
+window.os_releaseNote = os_releaseNote;
 
 // ───── Initialise ─────
 buildPianoRoll();

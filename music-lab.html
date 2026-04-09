@@ -117,6 +117,44 @@
       align-content: start;
     }
 
+    .pillar-theory .card {
+      background: #fdfdf8;
+      border: 1px solid #dcd7c9;
+      color: #2c2921;
+    }
+
+    .pillar-science .card {
+      background: rgba(15, 23, 42, 0.84);
+      border-left: 4px solid #39FF14;
+      border-color: rgba(148, 163, 184, 0.18);
+      color: #f8fafc;
+    }
+
+    .pillar-studio .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+
+    .pillar-science .card h2,
+    .pillar-science .card h3,
+    .pillar-science .music-lab-status,
+    .pillar-science .ml-monitor-note,
+    .pillar-science .ml-section-label,
+    .pillar-science .ml-module-meta,
+    .pillar-science .ml-jack-row,
+    .pillar-science .ml-monitor-label,
+    .pillar-science .ml-adsr-note,
+    .pillar-science .ml-slider-field,
+    .pillar-science .ml-module-slider {
+      color: #dbe7ff;
+    }
+
+    .pillar-science .ml-slider-val,
+    .pillar-science .ml-module-val {
+      color: #39FF14;
+    }
+
     .music-lab-row {
       display: flex;
       gap: 0.6rem;
@@ -1257,328 +1295,357 @@
     </div>
   </header>
 
-  <main id="main-content" class="music-lab-wrap">
-    <section class="card music-theory-landscape" aria-labelledby="chromatic-scale-title">
-      <div class="music-theory-head">
-        <p class="eyebrow">Theory Map</p>
-        <h2 id="chromatic-scale-title"><span aria-hidden="true">𝄞 </span>Chromatic Notation Engine</h2>
-        <p class="music-theory-note">
-          One octave from C up to the next C contains <strong>12 semitone steps</strong> and <strong>13 note positions</strong> if you count both C&apos;s.
-          Switch clefs to watch the same MIDI notes jump to their engraved locations, then click any notehead to hear it through the current preset.
-        </p>
-      </div>
-
-      <div class="music-theory-controls">
-        <div class="engraver-controls">
-          <label for="clefSelector">Clef View</label>
-          <select id="clefSelector" class="music-engraver-select" aria-label="Select clef view for chromatic notes">
-            <option value="treble">Treble Clef (G)</option>
-            <option value="bass">Bass Clef (F)</option>
-            <option value="grand">Grand Staff (Piano)</option>
-            <option value="alto">Alto Clef (C)</option>
-            <option value="soprano">Soprano Clef (C)</option>
-          </select>
-        </div>
-        <div class="music-theory-badge">Interactive engraving linked to current synth preset</div>
-      </div>
-
-      <div id="staffSystem" class="staff-system" aria-live="polite" aria-label="Clef-aware chromatic staff renderer"></div>
-
-      <div class="music-interval-summary" aria-label="Interval families from unison to octave">
-        <article class="music-interval-chip">
-          <strong>Perfect</strong>
-          <span>P1, P4, P5, and P8 are the stable anchor intervals.</span>
-        </article>
-        <article class="music-interval-chip">
-          <strong>Minor</strong>
-          <span>m2, m3, m6, and m7 sit one semitone lower than their major partners.</span>
-        </article>
-        <article class="music-interval-chip">
-          <strong>Major</strong>
-          <span>M2, M3, M6, and M7 are the brighter forms of those same interval families.</span>
-        </article>
-        <article class="music-interval-chip">
-          <strong>Tritone</strong>
-          <span>The 6-semitone midpoint is often labeled TT, A4, or d5.</span>
-        </article>
-      </div>
-    </section>
-
-    <section class="hero">
-      <p class="eyebrow">Create + Sound</p>
-      <h1>Music Lab</h1>
+  <main id="main-content" class="music-lab-wrap music-lab-layout">
+    <section class="lab-intro" aria-labelledby="music-lab-title">
+      <p class="eyebrow">ClassroomOS Studio</p>
+      <h1 id="music-lab-title">Music Lab</h1>
       <p class="music-lab-status">
-        Plug in a USB MIDI keyboard, then press <span class="music-lab-kbd">Enable Audio</span>.
-        Choose a preset and play. Use Scale Lock to stay in key, and the Step Sequencer to build drum patterns.
+        The lab is organized as a three-pillar studio: <strong>Theory</strong> explains how we name and write sound, <strong>Science</strong> shows how timbre is built, and <strong>Studio</strong> turns those ideas into patterns, chords, and performance.
       </p>
     </section>
 
-    <!-- ── Row 1: Connection + Piano Roll ── -->
-    <div class="music-lab-grid">
-
-      <article class="card">
-        <h2>Connection</h2>
-
-        <div class="music-lab-row">
-          <button id="enableAudio" class="music-lab-btn" type="button">Enable Audio</button>
-          <button id="enableMidi"  class="music-lab-btn" type="button" disabled>Enable MIDI</button>
-        </div>
-
-        <div style="height:0.65rem"></div>
-
-        <div class="music-lab-row">
-          <label class="music-lab-field" for="midiIn">
-            <span>MIDI Device</span>
-            <select id="midiIn" aria-label="MIDI input device"></select>
-          </label>
-          <label class="music-lab-field" for="preset">
-            <span>Preset</span>
-            <select id="preset" aria-label="Instrument preset">
-              <option value="synth">Synth Lead</option>
-              <option value="piano">Piano (simple)</option>
-              <option value="drums">Drums</option>
-            </select>
-          </label>
-        </div>
-
-        <div style="height:0.65rem"></div>
-
-        <div class="music-lab-row">
-          <label class="music-lab-field" for="scaleLock">
-            <span>Scale Lock</span>
-            <select id="scaleLock" aria-label="Scale lock">
-              <option value="">Off</option>
-              <option value="cmaj">C Major</option>
-              <option value="cmin">C Minor</option>
-              <option value="cpent">C Pentatonic</option>
-              <option value="cblues">C Blues</option>
-            </select>
-          </label>
-
-          <label class="music-lab-field" style="justify-content:end">
-            <span>Overlays</span>
-            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.88rem;padding-top:0.25rem">
-              <input type="checkbox" id="overlayNames"> Note names
-            </label>
-          </label>
-        </div>
-
-        <div style="height:0.65rem"></div>
-        <p id="status" class="music-lab-status">Audio: off · MIDI: off</p>
-        <div style="height:0.65rem"></div>
-
-        <details>
-          <summary>Notes</summary>
-          <ul>
-            <li>WebMIDI usually requires HTTPS and a supported browser (Chrome/Edge).</li>
-            <li>Piano is a lightweight synthesized approximation for fast classroom load times.</li>
-            <li>Drums trigger on note-on. Pads below are clickable and touch-friendly.</li>
-            <li>Scale Lock greys out and silences keys outside the selected scale.</li>
-            <li>ADSR sliders shape the volume envelope for Synth and Piano presets.</li>
-          </ul>
-        </details>
-      </article>
-
-      <article class="card">
-        <h2>Piano Roll + Drum Pads</h2>
-        <div class="music-piano-wrap">
-          <p class="music-piano-help">Press and drag your mouse (or finger) across the keys to play notes.</p>
-          <div id="pianoRoll" class="music-piano-roll" role="group" aria-label="On-screen piano roll"></div>
-        </div>
-        <div class="music-lab-pads">
-          <button class="music-lab-pad" data-drum="kick"  type="button">Kick</button>
-          <button class="music-lab-pad" data-drum="snare" type="button">Snare</button>
-          <button class="music-lab-pad" data-drum="hat"   type="button">Hi-Hat</button>
-          <button class="music-lab-pad" data-drum="clap"  type="button">Clap</button>
-          <button class="music-lab-pad" data-drum="tom1"  type="button">Tom</button>
-          <button class="music-lab-pad" data-drum="tom2"  type="button">Low Tom</button>
-          <button class="music-lab-pad" data-drum="perc"  type="button">Perc</button>
-          <button class="music-lab-pad" data-drum="crash" type="button">Crash</button>
-        </div>
-        <div style="height:0.65rem"></div>
-        <p class="music-lab-status">Tip: Set preset to <span class="music-lab-kbd">Drums</span> for MIDI-triggered drums.</p>
-      </article>
-
-    </div><!-- /music-lab-grid -->
-
-    <!-- ── Row 2: Modular Patchbay ── -->
-    <article class="card ml-modular-card">
-      <div class="ml-modular-header">
-        <div>
-          <h2>Modular Patchbay</h2>
-          <p class="music-lab-status">Choose a waveform, then patch cables to route the sound to the output.</p>
-        </div>
-        <div class="ml-waveform-select">
-          <span class="ml-section-label">Waveform Selector</span>
-          <div class="ml-waveform-buttons" role="radiogroup" aria-label="Waveform selector">
-            <button class="ml-waveform-btn" type="button" data-waveform="sine" aria-pressed="false">Sine</button>
-            <button class="ml-waveform-btn" type="button" data-waveform="triangle" aria-pressed="false">Triangle</button>
-            <button class="ml-waveform-btn" type="button" data-waveform="square" aria-pressed="false">Square</button>
-            <button class="ml-waveform-btn" type="button" data-waveform="sawtooth" aria-pressed="false">Sawtooth</button>
-          </div>
-        </div>
+    <section class="lab-pillar pillar-theory" aria-labelledby="pillar-theory-title">
+      <div class="pillar-head">
+        <span class="pillar-num">01</span>
+        <h2 id="pillar-theory-title">The Language of Music</h2>
       </div>
 
-      <div class="ml-modular-grid">
-        <div class="ml-modular-rack" id="modularRack" aria-label="Modular patch rack">
-          <svg id="patchSvg" class="ml-patch-cables" aria-hidden="true"></svg>
-
-          <div class="ml-module ml-module-osc">
-            <div class="ml-module-head">
-              <h3>Oscillator</h3>
-              <span class="ml-module-tag">Source</span>
-            </div>
-            <label class="ml-module-slider" for="modularFreq">
-              <span>Frequency</span>
-              <input type="range" id="modularFreq" min="60" max="880" value="220" aria-label="Oscillator frequency">
-              <span class="ml-module-val" id="modularFreqVal">220 Hz</span>
-            </label>
-            <div class="ml-jack-row">
-              <span>Out</span>
-              <button class="ml-jack ml-jack-output" type="button" data-jack="osc-out" data-type="output"
-                      aria-label="Oscillator output jack"></button>
-            </div>
-          </div>
-
-          <div class="ml-module ml-module-vca">
-            <div class="ml-module-head">
-              <h3>VCA</h3>
-              <span class="ml-module-tag">Level</span>
-            </div>
-            <label class="ml-module-slider" for="modularVca">
-              <span>Level</span>
-              <input type="range" id="modularVca" min="0" max="100" value="60" aria-label="VCA level">
-              <span class="ml-module-val" id="modularVcaVal">60%</span>
-            </label>
-            <div class="ml-jack-row">
-              <span>In</span>
-              <button class="ml-jack ml-jack-input" type="button" data-jack="vca-in" data-type="input"
-                      aria-label="VCA input jack"></button>
-              <span>Out</span>
-              <button class="ml-jack ml-jack-output" type="button" data-jack="vca-out" data-type="output"
-                      aria-label="VCA output jack"></button>
-            </div>
-          </div>
-
-          <div class="ml-module ml-module-out">
-            <div class="ml-module-head">
-              <h3>Output</h3>
-              <span class="ml-module-tag">Speakers</span>
-            </div>
-            <p class="ml-module-meta">Patch a cable here to hear audio.</p>
-            <div class="ml-jack-row">
-              <span>In</span>
-              <button class="ml-jack ml-jack-input" type="button" data-jack="out-in" data-type="input"
-                      aria-label="Output input jack"></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ml-modular-monitor">
-          <h3>Waveform + Harmonics Monitor</h3>
-          <div class="ml-monitor-grid">
-            <div class="ml-monitor-panel">
-              <span class="ml-monitor-label">Oscilloscope</span>
-              <canvas id="oscCanvas" class="ml-osc-canvas" width="1200" height="160"
-                      aria-label="Live audio oscilloscope"></canvas>
-            </div>
-            <div class="ml-monitor-panel">
-              <span class="ml-monitor-label">Harmonic Spectrogram</span>
-              <canvas id="spectrumCanvas" class="ml-osc-canvas" width="1200" height="160"
-                      aria-label="Live harmonic spectrogram"></canvas>
-            </div>
-          </div>
-          <div class="music-lab-row">
-            <button id="modularPlay" class="music-lab-btn" type="button">▶ Play Test Tone</button>
-            <button id="modularStop" class="music-lab-btn" type="button">■ Stop</button>
-          </div>
-          <p id="modularStatus" class="music-lab-status">Patch: Osc → VCA → Output · Output: silent</p>
-          <p class="ml-monitor-note">Sine waves stay clean. Square and saw waves reveal stacked overtones, so students can see timbre instead of just hearing it.</p>
-          <p class="music-lab-status">Tip: Click an output jack, then an input jack to patch a cable. Click an input again to unplug.</p>
-        </div>
-      </div>
-    </article>
-
-    <div class="music-studio-dashboard">
-      <!-- ── Row 3: ADSR ── -->
-      <article class="card ml-adsr-card">
-        <h2>Envelope (ADSR) <span class="ml-adsr-note">Synth &amp; Piano</span></h2>
-        <div class="ml-adsr-grid">
-          <label class="ml-slider-field">
-            <span class="ml-slider-label-row">Attack <span class="ml-slider-val" id="adsrAVal">10ms</span></span>
-            <input type="range" id="adsrA" min="1" max="500" value="10" aria-label="Attack time">
-          </label>
-          <label class="ml-slider-field">
-            <span class="ml-slider-label-row">Decay <span class="ml-slider-val" id="adsrDVal">120ms</span></span>
-            <input type="range" id="adsrD" min="10" max="2000" value="120" aria-label="Decay time">
-          </label>
-          <label class="ml-slider-field">
-            <span class="ml-slider-label-row">Sustain <span class="ml-slider-val" id="adsrSVal">25%</span></span>
-            <input type="range" id="adsrS" min="0" max="100" value="25" aria-label="Sustain level">
-          </label>
-          <label class="ml-slider-field">
-            <span class="ml-slider-label-row">Release <span class="ml-slider-val" id="adsrRVal">120ms</span></span>
-            <input type="range" id="adsrR" min="10" max="1000" value="120" aria-label="Release time">
-          </label>
-        </div>
-      </article>
-
-      <!-- ── Row 4: Step Sequencer ── -->
-      <article class="card ml-seq-card">
-        <h2>Step Sequencer</h2>
-        <div class="ml-seq-controls">
-          <button id="seqPlay"  class="music-lab-btn" type="button">▶ Play</button>
-          <button id="seqClear" class="music-lab-btn" type="button">✕ Clear</button>
-          <div class="ml-seq-bpm-field">
-            <label for="seqBpmSlider">BPM</label>
-            <input type="range" id="seqBpmSlider" min="60" max="200" value="120" aria-label="Sequencer BPM">
-            <span class="ml-seq-bpm-val" id="seqBpmVal">120</span>
-          </div>
-        </div>
-        <div id="seqGrid" class="ml-seq-grid" aria-label="Drum step sequencer grid"></div>
-      </article>
-    </div>
-
-    <!-- ── Circle of Fifths ── -->
-    <article class="card ml-fifths-card">
-      <h2>Circle of Fifths</h2>
-      <div class="ml-fifths-layout">
-        <div class="ml-fifths-container">
-          <svg id="fifthsSvg" viewBox="0 0 400 400" width="100%" height="100%"
-               role="img" aria-label="Interactive Circle of Fifths"></svg>
-        </div>
-        <div class="ml-fifths-info-panel">
-          <h3>Harmony Explorer</h3>
-          <div class="ml-fifths-chord-display" id="fifthsChordDisplay">
-            <span class="chord-idle">Click any segment to play a chord and light the piano keys</span>
-          </div>
-          <div class="ml-fifths-legend">
-            <div class="ml-fifths-legend-item">
-              <span class="ml-fifths-legend-swatch" style="background:rgba(57,255,20,0.18);border:1.5px solid #39FF14"></span>
-              Outer ring — Major key &amp; chord
-            </div>
-            <div class="ml-fifths-legend-item">
-              <span class="ml-fifths-legend-swatch" style="background:rgba(57,255,20,0.08);border:1.5px solid rgba(57,255,20,0.4)"></span>
-              Inner ring — Relative minor chord
-            </div>
-          </div>
-          <p class="ml-fifths-note">
-            Each outer key shares its segment with its <strong>relative minor</strong> — they use the same 7 notes.
-            Moving clockwise adds one sharp; counter-clockwise adds one flat.
-            Try clicking <strong>C → G → D</strong> to hear a classic I–V–II progression.
-          </p>
-          <p class="ml-fifths-note">
-            Chord voicings use your current <strong>ADSR envelope</strong> and <strong>Preset</strong> — patch the Modular Patchbay first for the most interesting timbre.
+      <section class="card music-theory-landscape" aria-labelledby="chromatic-scale-title">
+        <div class="music-theory-head">
+          <p class="eyebrow">Theory Map</p>
+          <h2 id="chromatic-scale-title"><span aria-hidden="true">𝄞 </span>Chromatic Notation Engine</h2>
+          <p class="music-theory-note">
+            One octave from C up to the next C contains <strong>12 semitone steps</strong> and <strong>13 note positions</strong> if you count both C&apos;s.
+            Switch clefs to watch the same MIDI notes jump to their engraved locations, then click any notehead to hear it through the current preset.
           </p>
         </div>
-      </div>
-    </article>
 
+        <div class="music-theory-controls">
+          <div class="engraver-controls">
+            <label for="clefSelector">Clef View</label>
+            <select id="clefSelector" class="music-engraver-select" aria-label="Select clef view for chromatic notes">
+              <option value="treble">Treble Clef (G)</option>
+              <option value="bass">Bass Clef (F)</option>
+              <option value="grand">Grand Staff (Piano)</option>
+              <option value="alto">Alto Clef (C)</option>
+              <option value="soprano">Soprano Clef (C)</option>
+            </select>
+          </div>
+          <div class="music-theory-badge">Interactive engraving linked to current synth preset</div>
+        </div>
+
+        <div id="staffSystem" class="staff-system" aria-live="polite" aria-label="Clef-aware chromatic staff renderer"></div>
+
+        <div class="music-interval-summary" aria-label="Interval families from unison to octave">
+          <article class="music-interval-chip">
+            <strong>Perfect</strong>
+            <span>P1, P4, P5, and P8 are the stable anchor intervals.</span>
+          </article>
+          <article class="music-interval-chip">
+            <strong>Minor</strong>
+            <span>m2, m3, m6, and m7 sit one semitone lower than their major partners.</span>
+          </article>
+          <article class="music-interval-chip">
+            <strong>Major</strong>
+            <span>M2, M3, M6, and M7 are the brighter forms of those same interval families.</span>
+          </article>
+          <article class="music-interval-chip">
+            <strong>Tritone</strong>
+            <span>The 6-semitone midpoint is often labeled TT, A4, or d5.</span>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <section class="lab-pillar pillar-science" aria-labelledby="pillar-science-title">
+      <div class="pillar-head">
+        <span class="pillar-num">02</span>
+        <h2 id="pillar-science-title">The Science of Sound</h2>
+      </div>
+
+      <div class="pillar-grid pillar-science-grid">
+        <article class="card ml-modular-card">
+          <div class="ml-modular-header">
+            <div>
+              <h2>Modular Patchbay</h2>
+              <p class="music-lab-status">Choose a waveform, then patch cables to route the sound to the output.</p>
+            </div>
+            <div class="ml-waveform-select">
+              <span class="ml-section-label">Waveform Selector</span>
+              <div class="ml-waveform-buttons" role="radiogroup" aria-label="Waveform selector">
+                <button class="ml-waveform-btn" type="button" data-waveform="sine" aria-pressed="false">Sine</button>
+                <button class="ml-waveform-btn" type="button" data-waveform="triangle" aria-pressed="false">Triangle</button>
+                <button class="ml-waveform-btn" type="button" data-waveform="square" aria-pressed="false">Square</button>
+                <button class="ml-waveform-btn" type="button" data-waveform="sawtooth" aria-pressed="false">Sawtooth</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ml-modular-grid">
+            <div class="ml-modular-rack" id="modularRack" aria-label="Modular patch rack">
+              <svg id="patchSvg" class="ml-patch-cables" aria-hidden="true"></svg>
+
+              <div class="ml-module ml-module-osc">
+                <div class="ml-module-head">
+                  <h3>Oscillator</h3>
+                  <span class="ml-module-tag">Source</span>
+                </div>
+                <label class="ml-module-slider" for="modularFreq">
+                  <span>Frequency</span>
+                  <input type="range" id="modularFreq" min="60" max="880" value="220" aria-label="Oscillator frequency">
+                  <span class="ml-module-val" id="modularFreqVal">220 Hz</span>
+                </label>
+                <div class="ml-jack-row">
+                  <span>Out</span>
+                  <button class="ml-jack ml-jack-output" type="button" data-jack="osc-out" data-type="output"
+                          aria-label="Oscillator output jack"></button>
+                </div>
+              </div>
+
+              <div class="ml-module ml-module-vca">
+                <div class="ml-module-head">
+                  <h3>VCA</h3>
+                  <span class="ml-module-tag">Level</span>
+                </div>
+                <label class="ml-module-slider" for="modularVca">
+                  <span>Level</span>
+                  <input type="range" id="modularVca" min="0" max="100" value="60" aria-label="VCA level">
+                  <span class="ml-module-val" id="modularVcaVal">60%</span>
+                </label>
+                <div class="ml-jack-row">
+                  <span>In</span>
+                  <button class="ml-jack ml-jack-input" type="button" data-jack="vca-in" data-type="input"
+                          aria-label="VCA input jack"></button>
+                  <span>Out</span>
+                  <button class="ml-jack ml-jack-output" type="button" data-jack="vca-out" data-type="output"
+                          aria-label="VCA output jack"></button>
+                </div>
+              </div>
+
+              <div class="ml-module ml-module-out">
+                <div class="ml-module-head">
+                  <h3>Output</h3>
+                  <span class="ml-module-tag">Speakers</span>
+                </div>
+                <p class="ml-module-meta">Patch a cable here to hear audio.</p>
+                <div class="ml-jack-row">
+                  <span>In</span>
+                  <button class="ml-jack ml-jack-input" type="button" data-jack="out-in" data-type="input"
+                          aria-label="Output input jack"></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="ml-modular-monitor">
+              <h3>Waveform + Harmonics Monitor</h3>
+              <div class="ml-monitor-grid">
+                <div class="ml-monitor-panel">
+                  <span class="ml-monitor-label">Oscilloscope</span>
+                  <canvas id="oscCanvas" class="ml-osc-canvas" width="1200" height="160"
+                          aria-label="Live audio oscilloscope"></canvas>
+                </div>
+                <div class="ml-monitor-panel">
+                  <span class="ml-monitor-label">Harmonic Spectrogram</span>
+                  <canvas id="spectrumCanvas" class="ml-osc-canvas" width="1200" height="160"
+                          aria-label="Live harmonic spectrogram"></canvas>
+                </div>
+              </div>
+              <div class="music-lab-row">
+                <button id="modularPlay" class="music-lab-btn" type="button">▶ Play Test Tone</button>
+                <button id="modularStop" class="music-lab-btn" type="button">■ Stop</button>
+              </div>
+              <p id="modularStatus" class="music-lab-status">Patch: Osc → VCA → Output · Output: silent</p>
+              <p class="ml-monitor-note">Sine waves stay clean. Square and saw waves reveal stacked overtones, so students can see timbre instead of just hearing it.</p>
+              <p class="music-lab-status">Tip: Click an output jack, then an input jack to patch a cable. Click an input again to unplug.</p>
+            </div>
+          </div>
+        </article>
+
+        <div class="science-stack">
+          <article class="card ml-adsr-card">
+            <h2>Envelope (ADSR) <span class="ml-adsr-note">Synth &amp; Piano</span></h2>
+            <div class="ml-adsr-grid">
+              <label class="ml-slider-field">
+                <span class="ml-slider-label-row">Attack <span class="ml-slider-val" id="adsrAVal">10ms</span></span>
+                <input type="range" id="adsrA" min="1" max="500" value="10" aria-label="Attack time">
+              </label>
+              <label class="ml-slider-field">
+                <span class="ml-slider-label-row">Decay <span class="ml-slider-val" id="adsrDVal">120ms</span></span>
+                <input type="range" id="adsrD" min="10" max="2000" value="120" aria-label="Decay time">
+              </label>
+              <label class="ml-slider-field">
+                <span class="ml-slider-label-row">Sustain <span class="ml-slider-val" id="adsrSVal">25%</span></span>
+                <input type="range" id="adsrS" min="0" max="100" value="25" aria-label="Sustain level">
+              </label>
+              <label class="ml-slider-field">
+                <span class="ml-slider-label-row">Release <span class="ml-slider-val" id="adsrRVal">120ms</span></span>
+                <input type="range" id="adsrR" min="10" max="1000" value="120" aria-label="Release time">
+              </label>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="lab-pillar pillar-studio" aria-labelledby="pillar-studio-title">
+      <div class="pillar-head">
+        <span class="pillar-num">03</span>
+        <h2 id="pillar-studio-title">The Implementation Studio</h2>
+      </div>
+
+      <div class="pillar-grid pillar-studio-grid">
+        <div class="studio-stack">
+          <article class="card">
+            <h2>Connection + Session Controls</h2>
+            <p class="music-lab-status music-lab-status-compact">
+              Plug in a USB MIDI keyboard, then press <span class="music-lab-kbd">Enable Audio</span>. Choose a preset, lock a scale if needed, and decide whether the piano overlay should show note names.
+            </p>
+
+            <div style="height:0.65rem"></div>
+            <div class="music-lab-row">
+              <button id="enableAudio" class="music-lab-btn" type="button">Enable Audio</button>
+              <button id="enableMidi"  class="music-lab-btn" type="button" disabled>Enable MIDI</button>
+            </div>
+
+            <div style="height:0.65rem"></div>
+
+            <div class="music-lab-row">
+              <label class="music-lab-field" for="midiIn">
+                <span>MIDI Device</span>
+                <select id="midiIn" aria-label="MIDI input device"></select>
+              </label>
+              <label class="music-lab-field" for="preset">
+                <span>Preset</span>
+                <select id="preset" aria-label="Instrument preset">
+                  <option value="synth">Synth Lead</option>
+                  <option value="piano">Piano (simple)</option>
+                  <option value="drums">Drums</option>
+                </select>
+              </label>
+            </div>
+
+            <div style="height:0.65rem"></div>
+
+            <div class="music-lab-row">
+              <label class="music-lab-field" for="scaleLock">
+                <span>Scale Lock</span>
+                <select id="scaleLock" aria-label="Scale lock">
+                  <option value="">Off</option>
+                  <option value="cmaj">C Major</option>
+                  <option value="cmin">C Minor</option>
+                  <option value="cpent">C Pentatonic</option>
+                  <option value="cblues">C Blues</option>
+                </select>
+              </label>
+
+              <label class="music-lab-field" style="justify-content:end">
+                <span>Overlays</span>
+                <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.88rem;padding-top:0.25rem">
+                  <input type="checkbox" id="overlayNames"> Note names
+                </label>
+              </label>
+            </div>
+
+            <div style="height:0.65rem"></div>
+            <p id="status" class="music-lab-status">Audio: off · MIDI: off</p>
+          </article>
+
+          <article class="card">
+            <h2>Piano Roll + Drum Pads</h2>
+            <div class="music-piano-wrap">
+              <p class="music-piano-help">Press and drag your mouse (or finger) across the keys to play notes.</p>
+              <div id="pianoRoll" class="music-piano-roll" role="group" aria-label="On-screen piano roll"></div>
+            </div>
+            <div class="music-lab-pads">
+              <button class="music-lab-pad" data-drum="kick"  type="button">Kick</button>
+              <button class="music-lab-pad" data-drum="snare" type="button">Snare</button>
+              <button class="music-lab-pad" data-drum="hat"   type="button">Hi-Hat</button>
+              <button class="music-lab-pad" data-drum="clap"  type="button">Clap</button>
+              <button class="music-lab-pad" data-drum="tom1"  type="button">Tom</button>
+              <button class="music-lab-pad" data-drum="tom2"  type="button">Low Tom</button>
+              <button class="music-lab-pad" data-drum="perc"  type="button">Perc</button>
+              <button class="music-lab-pad" data-drum="crash" type="button">Crash</button>
+            </div>
+            <div style="height:0.65rem"></div>
+            <p class="music-lab-status">Tip: Set preset to <span class="music-lab-kbd">Drums</span> for MIDI-triggered drums.</p>
+          </article>
+
+          <article class="card ml-seq-card">
+            <h2>Step Sequencer</h2>
+            <div class="ml-seq-controls">
+              <button id="seqPlay"  class="music-lab-btn" type="button">▶ Play</button>
+              <button id="seqClear" class="music-lab-btn" type="button">✕ Clear</button>
+              <div class="ml-seq-bpm-field">
+                <label for="seqBpmSlider">BPM</label>
+                <input type="range" id="seqBpmSlider" min="60" max="200" value="120" aria-label="Sequencer BPM">
+                <span class="ml-seq-bpm-val" id="seqBpmVal">120</span>
+              </div>
+            </div>
+            <div id="seqGrid" class="ml-seq-grid" aria-label="Drum step sequencer grid"></div>
+          </article>
+        </div>
+
+        <div class="studio-stack">
+          <article class="card ml-fifths-card">
+            <h2>Circle of Fifths</h2>
+            <div class="ml-fifths-layout">
+              <div class="ml-fifths-container">
+                <svg id="fifthsSvg" viewBox="0 0 400 400" width="100%" height="100%"
+                     role="img" aria-label="Interactive Circle of Fifths"></svg>
+              </div>
+              <div class="ml-fifths-info-panel">
+                <h3>Harmony Explorer</h3>
+                <div class="ml-fifths-chord-display" id="fifthsChordDisplay">
+                  <span class="chord-idle">Click any segment to play a chord and light the piano keys</span>
+                </div>
+                <div class="ml-fifths-legend">
+                  <div class="ml-fifths-legend-item">
+                    <span class="ml-fifths-legend-swatch" style="background:rgba(57,255,20,0.18);border:1.5px solid #39FF14"></span>
+                    Outer ring — Major key &amp; chord
+                  </div>
+                  <div class="ml-fifths-legend-item">
+                    <span class="ml-fifths-legend-swatch" style="background:rgba(57,255,20,0.08);border:1.5px solid rgba(57,255,20,0.4)"></span>
+                    Inner ring — Relative minor chord
+                  </div>
+                </div>
+                <p class="ml-fifths-note">
+                  Each outer key shares its segment with its <strong>relative minor</strong> — they use the same 7 notes.
+                  Moving clockwise adds one sharp; counter-clockwise adds one flat.
+                  Try clicking <strong>C → G → D</strong> to hear a classic I–V–II progression.
+                </p>
+                <p class="ml-fifths-note">
+                  Chord voicings use your current <strong>ADSR envelope</strong> and <strong>Preset</strong> — patch the Modular Patchbay first for the most interesting timbre.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <h2>Session Notes</h2>
+            <details>
+              <summary>Notes</summary>
+              <ul>
+                <li>WebMIDI usually requires HTTPS and a supported browser (Chrome/Edge).</li>
+                <li>Piano is a lightweight synthesized approximation for fast classroom load times.</li>
+                <li>Drums trigger on note-on. Pads below are clickable and touch-friendly.</li>
+                <li>Scale Lock greys out and silences keys outside the selected scale.</li>
+                <li>ADSR sliders shape the volume envelope for Synth and Piano presets.</li>
+              </ul>
+            </details>
+          </article>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer">
     <p><a href="index.html">Back to Home</a></p>
   </footer>
+
+  <div id="labHud" class="lab-hud" role="status" aria-live="polite">
+    <span class="lab-hud-label">Current Event</span>
+    <span id="labHudValue" class="lab-hud-value">Now Playing: idle · Frequency: — · Waveform: Sine</span>
+  </div>
 
   <script src="music-lab.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
