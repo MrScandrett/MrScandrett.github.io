@@ -626,6 +626,113 @@
     }
     .ml-seq-beat-gap { width: 0.35rem; flex-shrink: 0; }
 
+    /* ── Circle of Fifths ── */
+    .ml-fifths-card { margin-bottom: 0.9rem; }
+    .ml-fifths-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 1.2rem;
+      align-items: start;
+    }
+    .ml-fifths-container {
+      max-width: 360px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .ml-fifths-container svg { display: block; overflow: visible; }
+
+    .fifths-segment {
+      fill: rgba(22, 28, 38, 0.92);
+      stroke: rgba(255,255,255,0.08);
+      stroke-width: 1;
+      cursor: pointer;
+      transition: fill 0.15s, stroke 0.15s, filter 0.15s;
+    }
+    .fifths-group:hover .fifths-segment {
+      fill: rgba(57, 255, 20, 0.1);
+      stroke: #39FF14;
+      stroke-width: 1.5;
+      filter: drop-shadow(0 0 6px rgba(57,255,20,0.35));
+    }
+    .fifths-group.active .fifths-segment {
+      fill: rgba(57, 255, 20, 0.18);
+      stroke: #39FF14;
+      stroke-width: 2;
+      filter: drop-shadow(0 0 10px rgba(57,255,20,0.55));
+    }
+    .fifths-text {
+      fill: rgba(255,255,255,0.55);
+      font-family: 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+      pointer-events: none;
+      user-select: none;
+    }
+    .fifths-group:hover .fifths-text,
+    .fifths-group.active .fifths-text {
+      fill: #39FF14;
+      font-weight: 700;
+    }
+    .fifths-center-label {
+      fill: rgba(255,255,255,0.28);
+      font-family: 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+      pointer-events: none;
+      user-select: none;
+    }
+    .ml-fifths-info-panel {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .ml-fifths-info-panel h3 { margin: 0; font-size: 1rem; color: #10233d; }
+    .ml-fifths-chord-display {
+      background: #101820;
+      border-radius: 10px;
+      border: 1px solid rgba(57,255,20,0.15);
+      padding: 0.85rem 1rem;
+      font-family: 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+      font-size: 0.82rem;
+      color: #39FF14;
+      min-height: 3.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .ml-fifths-chord-display .chord-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+    .ml-fifths-chord-display .chord-notes {
+      font-size: 0.75rem;
+      color: rgba(57,255,20,0.65);
+    }
+    .ml-fifths-chord-display .chord-idle {
+      color: rgba(255,255,255,0.25);
+      font-size: 0.78rem;
+    }
+    .ml-fifths-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .ml-fifths-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: #5b6e86;
+    }
+    .ml-fifths-legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .ml-fifths-note {
+      font-size: 0.78rem;
+      color: #5b6e86;
+      line-height: 1.55;
+    }
+
     /* ── Responsive ── */
     @media (max-width: 860px) {
       .music-lab-grid { grid-template-columns: 1fr; }
@@ -633,7 +740,8 @@
       .ml-adsr-grid { grid-template-columns: repeat(2, 1fr); }
       .ml-modular-grid { grid-template-columns: 1fr; }
       .ml-monitor-grid,
-      .music-studio-dashboard { grid-template-columns: 1fr; }
+      .music-studio-dashboard,
+      .ml-fifths-layout { grid-template-columns: 1fr; }
       .ml-modular-header { align-items: flex-start; }
       .ml-modular-rack { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
       .music-theory-rail { grid-template-columns: repeat(13, minmax(90px, 1fr)); }
@@ -807,6 +915,11 @@
       .ml-monitor-note { color: #9ba8ba; }
       .ml-jack-input { border-color: #6ea8ff; background: rgba(110, 168, 255, 0.2); }
       .ml-jack-output { border-color: #f7b955; background: rgba(247, 185, 85, 0.2); }
+
+      /* ── Circle of Fifths dark ── */
+      .ml-fifths-info-panel h3 { color: #e7edf7; }
+      .ml-fifths-note,
+      .ml-fifths-legend-item { color: #9ba8ba; }
 
       /* ── Staff SVG dark-mode lines ── */
       .music-staff-svg .s-line,
@@ -1197,6 +1310,41 @@
         <div id="seqGrid" class="ml-seq-grid" aria-label="Drum step sequencer grid"></div>
       </article>
     </div>
+
+    <!-- ── Circle of Fifths ── -->
+    <article class="card ml-fifths-card">
+      <h2>Circle of Fifths</h2>
+      <div class="ml-fifths-layout">
+        <div class="ml-fifths-container">
+          <svg id="fifthsSvg" viewBox="0 0 400 400" width="100%" height="100%"
+               role="img" aria-label="Interactive Circle of Fifths"></svg>
+        </div>
+        <div class="ml-fifths-info-panel">
+          <h3>Harmony Explorer</h3>
+          <div class="ml-fifths-chord-display" id="fifthsChordDisplay">
+            <span class="chord-idle">Click any segment to play a chord and light the piano keys</span>
+          </div>
+          <div class="ml-fifths-legend">
+            <div class="ml-fifths-legend-item">
+              <span class="ml-fifths-legend-swatch" style="background:rgba(57,255,20,0.18);border:1.5px solid #39FF14"></span>
+              Outer ring — Major key &amp; chord
+            </div>
+            <div class="ml-fifths-legend-item">
+              <span class="ml-fifths-legend-swatch" style="background:rgba(57,255,20,0.08);border:1.5px solid rgba(57,255,20,0.4)"></span>
+              Inner ring — Relative minor chord
+            </div>
+          </div>
+          <p class="ml-fifths-note">
+            Each outer key shares its segment with its <strong>relative minor</strong> — they use the same 7 notes.
+            Moving clockwise adds one sharp; counter-clockwise adds one flat.
+            Try clicking <strong>C → G → D</strong> to hear a classic I–V–II progression.
+          </p>
+          <p class="ml-fifths-note">
+            Chord voicings use your current <strong>ADSR envelope</strong> and <strong>Preset</strong> — patch the Modular Patchbay first for the most interesting timbre.
+          </p>
+        </div>
+      </div>
+    </article>
 
   </main>
 

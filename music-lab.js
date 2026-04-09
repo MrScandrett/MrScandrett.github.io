@@ -1144,10 +1144,177 @@ for (const pad of document.querySelectorAll('[data-drum]')) {
   });
 }
 
+// ───── Circle of Fifths ─────
+const FIFTHS_DATA = [
+  { major: 'C',  minor: 'Am',  root: 0  },
+  { major: 'G',  minor: 'Em',  root: 7  },
+  { major: 'D',  minor: 'Bm',  root: 2  },
+  { major: 'A',  minor: 'F#m', root: 9  },
+  { major: 'E',  minor: 'C#m', root: 4  },
+  { major: 'B',  minor: 'G#m', root: 11 },
+  { major: 'F#', minor: 'D#m', root: 6  },
+  { major: 'Db', minor: 'Bbm', root: 1  },
+  { major: 'Ab', minor: 'Fm',  root: 8  },
+  { major: 'Eb', minor: 'Cm',  root: 3  },
+  { major: 'Bb', minor: 'Gm',  root: 10 },
+  { major: 'F',  minor: 'Dm',  root: 5  },
+];
+
+// Per-segment hue (evenly spaced around the hue wheel for a rainbow circle)
+function fifthsHue(i) { return Math.round((i / 12) * 360); }
+
+function initCircleOfFifths() {
+  const svg = document.getElementById('fifthsSvg');
+  if (!svg) return;
+
+  const cx = 200, cy = 200;
+  const outerR = 185, midR = 125, innerR = 68;
+  const GAP    = 0.018; // radians gap between segments
+
+  function arc(r1, r2, aStart, aEnd) {
+    const x1 = cx + r1 * Math.cos(aStart + GAP), y1 = cy + r1 * Math.sin(aStart + GAP);
+    const x2 = cx + r1 * Math.cos(aEnd   - GAP), y2 = cy + r1 * Math.sin(aEnd   - GAP);
+    const x3 = cx + r2 * Math.cos(aEnd   - GAP), y3 = cy + r2 * Math.sin(aEnd   - GAP);
+    const x4 = cx + r2 * Math.cos(aStart + GAP), y4 = cy + r2 * Math.sin(aStart + GAP);
+    return `M ${x1} ${y1} A ${r1} ${r1} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${r2} ${r2} 0 0 0 ${x4} ${y4} Z`;
+  }
+
+  function makeSvg(tag) { return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+
+  // Add radial grid lines for visual depth
+  for (let i = 0; i < 12; i++) {
+    const a = (i * 30 - 90) * Math.PI / 180;
+    const line = makeSvg('line');
+    line.setAttribute('x1', cx + innerR * Math.cos(a));
+    line.setAttribute('y1', cy + innerR * Math.sin(a));
+    line.setAttribute('x2', cx + outerR * Math.cos(a));
+    line.setAttribute('y2', cy + outerR * Math.sin(a));
+    line.setAttribute('stroke', 'rgba(255,255,255,0.05)');
+    line.setAttribute('stroke-width', '1');
+    svg.appendChild(line);
+  }
+
+  FIFTHS_DATA.forEach((item, i) => {
+    const aStart = (i * 30 - 105) * Math.PI / 180;
+    const aEnd   = ((i + 1) * 30 - 105) * Math.PI / 180;
+    const aMid   = (aStart + aEnd) / 2;
+    const hue    = fifthsHue(i);
+
+    function buildSegment(r1, r2, label, isMinor) {
+      const g    = makeSvg('g');
+      g.setAttribute('class', 'fifths-group');
+      g.setAttribute('data-root', item.root);
+      g.setAttribute('data-minor', isMinor ? 'true' : 'false');
+
+      const path = makeSvg('path');
+      path.setAttribute('d', arc(r1, r2, aStart, aEnd));
+      path.setAttribute('class', 'fifths-segment');
+      // Subtle per-key tint
+      path.style.fill = `hsla(${hue}, 60%, 14%, 0.92)`;
+
+      const textR = r2 + (r1 - r2) / 2;
+      const text  = makeSvg('text');
+      text.setAttribute('x', cx + textR * Math.cos(aMid));
+      text.setAttribute('y', cy + textR * Math.sin(aMid) + 5);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('class', 'fifths-text');
+      text.setAttribute('font-size', isMinor ? '11' : '13');
+      text.textContent = label;
+
+      g.appendChild(path);
+      g.appendChild(text);
+
+      g.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        playChordFromCircle(item, isMinor, g);
+      });
+
+      svg.appendChild(g);
+    }
+
+    buildSegment(outerR, midR, item.major, false);
+    buildSegment(midR,   innerR, item.minor, true);
+  });
+
+  // Center label
+  const centerCircle = makeSvg('circle');
+  centerCircle.setAttribute('cx', cx);
+  centerCircle.setAttribute('cy', cy);
+  centerCircle.setAttribute('r', innerR - 2);
+  centerCircle.setAttribute('fill', '#0d1117');
+  centerCircle.setAttribute('stroke', 'rgba(255,255,255,0.06)');
+  svg.appendChild(centerCircle);
+
+  const centerText = makeSvg('text');
+  centerText.setAttribute('x', cx);
+  centerText.setAttribute('y', cy + 5);
+  centerText.setAttribute('text-anchor', 'middle');
+  centerText.setAttribute('class', 'fifths-center-label');
+  centerText.setAttribute('font-size', '11');
+  centerText.textContent = '5ths';
+  svg.appendChild(centerText);
+}
+
+let fifthsReleaseTimers = [];
+
+function playChordFromCircle(item, isMinor, groupEl) {
+  ensureAudio();
+  if (audioCtx.state !== 'running') audioCtx.resume();
+
+  // Clear active state and pending release timers
+  document.querySelectorAll('.fifths-group').forEach(g => g.classList.remove('active'));
+  fifthsReleaseTimers.forEach(id => clearTimeout(id));
+  fifthsReleaseTimers = [];
+
+  // Also clear any piano highlights from previous chord
+  for (const [note, key] of pianoState.keyByNote) {
+    key.classList.remove('is-active');
+  }
+
+  groupEl.classList.add('active');
+
+  // Chord intervals: major 0-4-7, minor 0-3-7
+  const intervals = isMinor ? [0, 3, 7] : [0, 4, 7];
+  // Root in octave 4 (MIDI 60 = C4), but clamp to piano range
+  const midiRoot = Math.min(60 + item.root, 67); // keep chord inside our piano
+
+  const chordNotes = intervals.map(iv => midiRoot + iv);
+  const noteNames  = chordNotes.map(n => NOTE_NAMES[n % 12]).join(' – ');
+  const chordLabel = isMinor ? item.minor : item.major;
+  const chordType  = isMinor ? 'minor' : 'major';
+
+  // Play each note
+  chordNotes.forEach(note => {
+    if (note >= PIANO_START_NOTE && note <= PIANO_END_NOTE) {
+      noteOnFromUi(note, 0.68);
+      setKeyActive(note, true);
+    }
+  });
+
+  // Auto-release after 700ms
+  const releaseTimer = setTimeout(() => {
+    chordNotes.forEach(note => {
+      noteOffFromUi(note);
+      setKeyActive(note, false);
+    });
+  }, 700);
+  fifthsReleaseTimers.push(releaseTimer);
+
+  // Update info display
+  const display = document.getElementById('fifthsChordDisplay');
+  if (display) {
+    display.innerHTML = `
+      <span class="chord-name">${chordLabel}</span>
+      <span class="chord-notes">${chordType} · ${noteNames}</span>
+    `;
+  }
+}
+
 // ───── Initialise ─────
 buildPianoRoll();
 wirePianoRollPointer();
 buildSeqGrid();
 initModularPatchbay();
+initCircleOfFifths();
 readAdsr();   // set initial display values from slider defaults
 setStatus();
