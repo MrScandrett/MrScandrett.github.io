@@ -146,7 +146,7 @@
     }
     .nl-garden {
       position: relative;
-      height: 420px;
+      height: clamp(320px, 42vw, 420px);
       overflow: hidden;
       background: linear-gradient(180deg, #dff2ff 0%, #f6f0e5 78%, #dbe8b5 78%, #b7cd79 100%);
       border-bottom: 4px solid #4d6b25;
@@ -165,17 +165,17 @@
       position: absolute;
       left: 31%;
       bottom: 0;
-      width: 54px;
-      height: 250px;
+      width: clamp(38px, 5.5vw, 54px);
+      height: clamp(180px, 24vw, 250px);
       border-radius: 14px 14px 0 0;
       background: linear-gradient(180deg, #7a5236 0%, #5d4037 100%);
     }
     .nl-tree-leaves {
       position: absolute;
       left: 16%;
-      bottom: 162px;
-      width: 260px;
-      height: 205px;
+      bottom: clamp(115px, 15vw, 162px);
+      width: clamp(180px, 28vw, 260px);
+      height: clamp(145px, 19vw, 205px);
       border-radius: 50% 48% 42% 44%;
       background:
         radial-gradient(circle at 28% 35%, rgba(255,255,255,0.16), transparent 24%),
@@ -203,10 +203,11 @@
     }
     .nl-newton {
       position: absolute;
-      right: 16%;
+      left: 34%;
       bottom: 0;
       width: 118px;
       height: 196px;
+      transform-origin: bottom left;
     }
     .nl-newton-head {
       position: absolute;
@@ -381,9 +382,10 @@
       color: #ef4444;
       font-family: Georgia, "Times New Roman", serif;
       opacity: 0;
-      transform: scale(0.7) rotate(-8deg);
-      transition: opacity 0.14s ease, transform 0.14s ease;
+      transform: scale(0.4) rotate(-12deg);
+      transition: opacity 0.08s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
       pointer-events: none;
+      white-space: nowrap;
     }
     .nl-bonk.is-visible {
       opacity: 1;
@@ -402,8 +404,8 @@
     .nl-apple-controls {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 0.8rem;
-      padding: 1rem 1.1rem 1.15rem;
+      gap: 0.6rem;
+      padding: 0.9rem 1rem 1.05rem;
       background: #f8f2e8;
     }
     .nl-control-card {
@@ -473,10 +475,15 @@
     /* ── Newton bio card ──────────────────────────────── */
     .nl-bio { display: flex; gap: 1rem; align-items: flex-start; }
     .nl-bio-portrait {
-      width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
-      background: linear-gradient(135deg, #ffcc00 0%, #ff9500 100%);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 2rem; line-height: 1;
+      width: 116px; height: 176px; border-radius: 12px; flex-shrink: 0;
+      border: 3px solid #ffcc00;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+      overflow: hidden;
+      background: #e8dcc8;
+    }
+    .nl-bio-portrait img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center top;
+      display: block;
     }
     .nl-bio-text { flex: 1; font-size: 0.87rem; color: #3f4f65; line-height: 1.62; }
     [data-theme="night"] .nl-bio-text { color: rgba(245,245,247,0.72); }
@@ -578,6 +585,11 @@
       animation: nl-bonk-shake 0.18s linear 2;
     }
 
+    @media (max-width: 780px) {
+      .nl-apple-controls { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; padding: 0.75rem 0.8rem 0.9rem; }
+      .nl-story-btn, .nl-select { padding: 0.65rem 0.6rem; font-size: 0.82rem; }
+      .nl-newton { transform: scale(0.82); }
+    }
     @media (max-width: 680px) {
       .nl-examples { grid-template-columns: 1fr; }
       .nl-summary  { grid-template-columns: 1fr; }
@@ -585,11 +597,7 @@
       .nl-readout  { grid-template-columns: repeat(3,1fr); }
       .nl-bio      { flex-direction: column; align-items: center; text-align: center; }
       .nl-apple-controls { grid-template-columns: 1fr; }
-      .nl-garden { height: 460px; }
-      .nl-tree-trunk { left: 18%; }
-      .nl-tree-leaves { left: 2%; width: 230px; }
-      .nl-apple { left: 39%; }
-      .nl-newton { right: 4%; transform: scale(0.92); transform-origin: bottom right; }
+      .nl-newton { transform: scale(0.68); }
     }
   </style>
 </head>
@@ -643,7 +651,9 @@
         <section class="nl-card" style="--card-accent:#ffcc00;">
           <h2>Who Was Isaac Newton?</h2>
           <div class="nl-bio">
-            <div class="nl-bio-portrait" aria-hidden="true">🍎</div>
+            <div class="nl-bio-portrait">
+              <img src="../assets/thumbs/isaacnewton.jpg" alt="Portrait of Isaac Newton">
+            </div>
             <p class="nl-bio-text">
               <strong>Isaac Newton (1643–1727)</strong> was an English mathematician and physicist who changed science forever. According to legend, watching an apple fall from a tree made him wonder: why do things fall <em>down</em>? That question led him to develop the laws of gravity and motion. He published his three laws of motion in his masterwork <em>Principia Mathematica</em> in 1687. Newton also invented calculus, designed the first reflecting telescope, and explained why white light contains every color of the rainbow. Scientists consider him one of the most influential people who ever lived.
             </p>
@@ -1112,17 +1122,43 @@
     const forceDownLabel = document.getElementById('nl-force-down-label');
     const forceUpLabel = document.getElementById('nl-force-up-label');
 
-    const APPLE_START_TOP = 128;
-    const APPLE_LEFT = '43%';
     const GRAVITY = 9.8;
+    const newtonEl = document.querySelector('.nl-newton');
+    const newtonHeadEl = document.querySelector('.nl-newton-head');
+
+    /* Compute the horizontal center of Newton's head relative to the garden */
+    function getNewtonHeadCenterX() {
+      var gardenRect = garden.getBoundingClientRect();
+      var headRect   = newtonHeadEl.getBoundingClientRect();
+      return headRect.left - gardenRect.left + headRect.width / 2;
+    }
+
+    /* Compute apple rest left (px) — center-right of the tree canopy */
+    function getAppleRestLeft() {
+      var gardenRect = garden.getBoundingClientRect();
+      var leavesRect = leaves.getBoundingClientRect();
+      var canopyCenter = leavesRect.left - gardenRect.left + leavesRect.width * 0.62;
+      var appleHalfW  = appleVisual.offsetWidth / 2;
+      return Math.round(canopyCenter - appleHalfW);
+    }
+
     const MASS_META = {
       1: { size: 36, impact: 'Gentle', law2: 'A small apple still accelerates downward because gravity is the unbalanced force.' },
       3: { size: 48, impact: 'Solid', law2: 'A bigger apple has more mass, so the same fall carries more momentum into the impact.' },
       10: { size: 74, impact: 'Huge', law2: 'A giant apple does not get extra gravitational acceleration here, but its larger mass makes the collision much more dramatic.' }
     };
 
+    function getAppleStartTop() { return Math.round(garden.offsetHeight * 0.305); }
+    function getBonkThreshold() {
+      var gardenRect = garden.getBoundingClientRect();
+      var headRect   = newtonHeadEl.getBoundingClientRect();
+      var appleH     = appleVisual.offsetHeight;
+      /* stop when apple bottom is 25% into the head */
+      return Math.round(headRect.top - gardenRect.top - appleH + headRect.height * 0.25);
+    }
+
     let mass = 1;
-    let positionY = APPLE_START_TOP;
+    let positionY = getAppleStartTop();
     let velocity = 0;
     let isFalling = false;
     let fallFrame = null;
@@ -1160,29 +1196,36 @@
     }
 
     function placeImpactEffects() {
-      const appleRect = apple.getBoundingClientRect();
+      const appleRect  = apple.getBoundingClientRect();
       const gardenRect = garden.getBoundingClientRect();
-      const centerX = appleRect.left - gardenRect.left + (appleRect.width / 2);
-      const contactY = appleRect.top - gardenRect.top + appleRect.height - 6;
+      const gardenW    = gardenRect.width;
+      const centerX    = appleRect.left - gardenRect.left + appleRect.width / 2;
+      const contactY   = appleRect.top  - gardenRect.top  + appleRect.height;
 
-      arrowDown.style.left = (centerX - 2) + 'px';
-      arrowDown.style.top = (contactY - 54) + 'px';
-      arrowUp.style.left = (centerX + 26) + 'px';
-      arrowUp.style.top = (contactY + 10) + 'px';
+      /* Two arrows side-by-side at the contact point */
+      arrowDown.style.left = (centerX - 16) + 'px';
+      arrowDown.style.top  = (contactY - 48) + 'px';
+      arrowUp.style.left   = (centerX + 8)  + 'px';
+      arrowUp.style.top    = (contactY + 4) + 'px';
 
-      forceDownLabel.style.left = Math.max(8, centerX - 96) + 'px';
-      forceDownLabel.style.top = (contactY - 84) + 'px';
-      forceUpLabel.style.left = Math.max(8, centerX - 36) + 'px';
-      forceUpLabel.style.top = (contactY + 54) + 'px';
+      /* Labels: clamp so they never overflow the garden edges */
+      const labelDownX = Math.min(Math.max(8, centerX - 80), gardenW - 180);
+      const labelUpX   = Math.min(Math.max(8, centerX - 80), gardenW - 200);
+      forceDownLabel.style.left = labelDownX + 'px';
+      forceDownLabel.style.top  = (contactY - 74) + 'px';
+      forceUpLabel.style.left   = labelUpX + 'px';
+      forceUpLabel.style.top    = (contactY + 52) + 'px';
 
-      bonk.style.left = (centerX - 58) + 'px';
-      bonk.style.top = (contactY - 98) + 'px';
+      /* BONK above the contact */
+      const bonkX = Math.min(Math.max(4, centerX - 40), gardenW - 90);
+      bonk.style.left = bonkX + 'px';
+      bonk.style.top  = (contactY - 72) + 'px';
     }
 
     function bonkEffect() {
       isFalling = false;
       fallFrame = null;
-      positionY = 300;
+      positionY = getBonkThreshold();
       apple.style.top = positionY + 'px';
       placeImpactEffects();
       [bonk, arrowDown, arrowUp, forceDownLabel, forceUpLabel].forEach(function (el) {
@@ -1201,7 +1244,7 @@
       positionY += velocity;
       apple.style.top = positionY + 'px';
 
-      if (positionY >= 300) {
+      if (positionY >= getBonkThreshold()) {
         bonkEffect();
         return;
       }
@@ -1216,6 +1259,12 @@
         leaves.classList.remove('is-shaking');
       }, 520);
       lawText.textContent = 'Law 1: The apple was at rest until the tree shake supplied an unbalanced force.';
+
+      /* Align apple above Newton's head before it falls */
+      var headCenterX = getNewtonHeadCenterX();
+      var appleHalfW  = appleVisual.offsetWidth / 2;
+      apple.style.left = (headCenterX - appleHalfW) + 'px';
+
       velocity = 0;
       isFalling = true;
       fallFrame = requestAnimationFrame(fallLoop);
@@ -1228,9 +1277,9 @@
       }
       isFalling = false;
       velocity = 0;
-      positionY = APPLE_START_TOP;
+      positionY = getAppleStartTop();
       apple.style.top = positionY + 'px';
-      apple.style.left = APPLE_LEFT;
+      apple.style.left = getAppleRestLeft() + 'px';
       hideImpactEffects();
       if (preserveMassMessage) {
         lawText.textContent = 'Law 2: Gravity gives each apple the same downward acceleration here, but more mass means a bigger impact when it lands.';
@@ -1253,6 +1302,14 @@
 
     updateAppleMass(1, true);
     resetApple(false);
+
+    window.addEventListener('resize', function () {
+      if (!isFalling) {
+        positionY = getAppleStartTop();
+        apple.style.top = positionY + 'px';
+        apple.style.left = getAppleRestLeft() + 'px';
+      }
+    });
 
     /* ── Practice checker ─────────────────────────────── */
     window.nlCheck = function (num, correct, tol) {
