@@ -1,107 +1,49 @@
-#!/usr/bin/env node
-/**
- * Daily Verse of the Day (VOTD) Updater
- * Fetches the latest verse from YouVersion and updates votd.json
- */
-
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-const VOTD_JSON_PATH = path.join(__dirname, '../assets/data/votd.json');
+const TOKEN = process.env.YOUVERSION_TOKEN;
 
-/**
- * Fetch VOTD from Bible.com
- */
-function fetchVotd() {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'www.bible.com',
-      path: '/verse-of-the-day',
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; VOTD-Updater/1.0)'
-      },
-      timeout: 10000
-    };
+if (!TOKEN) {
+  console.error("Missing YOUVERSION_TOKEN environment variable");
+  process.exit(1);
+}
 
-    const req = https.request(options, (res) => {
-      let data = '';
+async function fetchVOTD() {
+  // The YouVersion API expects the day of the year (1-365)
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = (now - start) + ((start.getTimezoneOffset() - now.getTimezoneOffset()) * 60 * 1000);
+  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
+  const url = `https://developers.youversionapi.com/1.0/verse_of_the_day/${dayOfYear}?version_id=1`;
 
-      res.on('end', () => {
-        try {
-          // Parse the HTML to extract verse data from JSON-LD
-          const jsonLdMatch = data.match(/<script type="application\/ld\+json">(.*?)<\/script>/s);
-          if (!jsonLdMatch) {
-            reject(new Error('Could not find JSON-LD data in page'));
-            return;
-          }
-
-          const jsonLd = JSON.parse(jsonLdMatch[1]);
-          
-          // Extract verse information
-          if (!jsonLd.text || !jsonLd.name) {
-            reject(new Error('Missing verse text or reference in JSON-LD'));
-            return;
-          }
-
-          resolve({
-            text: jsonLd.text.trim(),
-            reference: jsonLd.name.trim(),
-            deeplink: 'https://www.bible.com/verse-of-the-day',
-            sourceLabel: 'YouVersion official',
-            fetchedAt: new Date().toISOString(),
-            source: 'https://www.bible.com/verse-of-the-day'
-          });
-        } catch (error) {
-          reject(new Error(`Failed to parse verse data: ${error.message}`));
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('Request timeout'));
-    });
-
-    req.end();
+  const response = await fetch(url, {
+    headers: {
+      'X-YouVersion-Developer-Token': TOKEN,
+      'Accept': 'application/json',
+      'User-Agent': 'ClassroomOS-Automation'
+    }
   });
+
+  if (!response.ok) throw new Error(`API Error: ${response.status} ${response.statusText}`);
+  const data = await response.json();
+
+  // Format the data perfectly for your votd.js script
+  const output = {
+    fetchedAt: new Date().toISOString(),
+    source: "https://www.bible.com/verse-of-the-day",
+    sourceLabel: "YouVersion official",
+    reference: data.verse.human_reference,
+    text: data.verse.text,
+    deeplink: data.verse.url
+  };
+
+  const outputPath = path.join(__dirname, '../assets/data/votd.json');
+  fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
+  console.log("Successfully updated votd.json with: " + data.verse.human_reference);
 }
 
-/**
- * Update the votd.json file
- */
-async function updateVotdFile() {
-  try {
-    console.log('📖 Fetching verse of the day from YouVersion...');
-    const verse = await fetchVotd();
-
-    console.log(`✓ Found verse: ${verse.reference}`);
-    console.log(`  "${verse.text.substring(0, 60)}..."`);
-
-    // Write to file
-    fs.writeFileSync(
-      VOTD_JSON_PATH,
-      JSON.stringify(verse, null, 2) + '\n',
-      'utf8'
-    );
-
-    console.log(`✓ Updated ${VOTD_JSON_PATH}`);
-    return verse;
-  } catch (error) {
-    console.error('❌ Error updating VOTD:', error.message);
-    process.exit(1);
-  }
-}
-
-// Run if called directly
-if (require.main === module) {
-  updateVotdFile();
-}
-
-module.exports = { fetchVotd, updateVotdFile };
+fetchVOTD().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
