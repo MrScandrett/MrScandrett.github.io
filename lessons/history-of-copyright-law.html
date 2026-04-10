@@ -868,6 +868,266 @@ This song is Copyrighted in U.S., under Seal of Copyright # 154085, for a period
       </section>
     </div>
   </main>
+  <script>
+    (function () {
+      const COPYRIGHT_STOPS = [
+        {
+          year: 1710,
+          title: "1710 · The Statute of Anne",
+          summary: "The first modern copyright law shifts power toward authors and sets a limited term instead of perpetual control.",
+          termLabel: "14 years + possible renewal",
+          bar: 14,
+          lobby: "Early printer and publisher pressure",
+          mickey: false
+        },
+        {
+          year: 1790,
+          title: "1790 · The first U.S. Copyright Act",
+          summary: "The new U.S. law protects books, maps, and charts for 14 years, renewable once if the author is alive.",
+          termLabel: "14 years + 14 renewal",
+          bar: 18,
+          lobby: "Low corporate pressure",
+          mickey: false
+        },
+        {
+          year: 1831,
+          title: "1831 · Music gains a stronger place",
+          summary: "Congress extends the initial term to 28 years and responds to a larger publishing economy.",
+          termLabel: "28 years + renewal",
+          bar: 28,
+          lobby: "Growing publishing interests",
+          mickey: false
+        },
+        {
+          year: 1909,
+          title: "1909 · Industrial media age expansion",
+          summary: "Copyright updates for records, photography, and mass entertainment in a more commercial media economy.",
+          termLabel: "28 years + 28 renewal",
+          bar: 40,
+          lobby: "Studios and publishers gain influence",
+          mickey: true
+        },
+        {
+          year: 1976,
+          title: "1976 · Modern copyright structure",
+          summary: "Congress rewrites copyright law, extends terms, broadens protected works, and codifies fair use.",
+          termLabel: "Life of author + 50 years",
+          bar: 72,
+          lobby: "Major media lobbying",
+          mickey: true
+        },
+        {
+          year: 1998,
+          title: "1998 · DMCA and Sonny Bono extension",
+          summary: "Digital copying pressures collide with stronger legal control. Terms grow again, and anti-circumvention rules arrive.",
+          termLabel: "Life + 70 years",
+          bar: 92,
+          lobby: "High corporate lobbying pressure",
+          mickey: true
+        },
+        {
+          year: 2024,
+          title: "Today · Long copyright, slow public domain",
+          summary: "Modern culture runs on copying tools, but exclusive rights can last for generations before work becomes public domain.",
+          termLabel: "Life + 70 years",
+          bar: 100,
+          lobby: "Long-tail corporate stewardship",
+          mickey: true
+        }
+      ];
+
+      const FAIR_USE_CASES = [
+        {
+          title: "The Meme Case",
+          text: "A user adds text to a copyrighted movie screenshot to make a joke on social media.",
+          factors: {
+            purpose: { label: "Purpose and character", value: 4, reason: "Commentary and humor make the use more transformative." },
+            nature: { label: "Nature of the work", value: -2, reason: "A movie frame comes from a creative, fictional work." },
+            amount: { label: "Amount used", value: 2, reason: "One frame is a small slice of the whole movie." },
+            market: { label: "Market effect", value: 4, reason: "The meme does not replace buying or watching the film." }
+          }
+        },
+        {
+          title: "The Textbook Case",
+          text: "A teacher photocopies an entire 400-page workbook for 30 students.",
+          factors: {
+            purpose: { label: "Purpose and character", value: 2, reason: "Education helps, but copying whole books is still risky." },
+            nature: { label: "Nature of the work", value: -1, reason: "A workbook is factual but also sold as a structured teaching product." },
+            amount: { label: "Amount used", value: -5, reason: "The entire workbook is copied, not a small excerpt." },
+            market: { label: "Market effect", value: -10, reason: "The copies replace sales of the original workbook." }
+          }
+        }
+      ];
+
+      const REMIX_TOOLS = {
+        crop: { className: "is-cropped", delta: 25, note: "Cropping changes framing and what the viewer is asked to notice." },
+        filter: { className: "is-filtered", delta: 20, note: "Filtering changes mood and visual language, but not necessarily meaning on its own." },
+        context: { className: "is-contextualized", delta: 35, note: "Adding context can make the work criticism, commentary, or scholarship instead of simple copying." }
+      };
+
+      const scrollSvg = document.getElementById("copyrightScroll");
+      const yearSlider = document.getElementById("copyrightYear");
+      const durationBar = document.getElementById("copyrightDurationBar");
+      const mickey = document.getElementById("copyrightMickey");
+      const lawTitle = document.getElementById("copyrightLawTitle");
+      const lawSummary = document.getElementById("copyrightLawSummary");
+      const termChip = document.getElementById("copyrightTermChip");
+      const lobbyChip = document.getElementById("copyrightLobbyChip");
+      const publicDomainBadge = document.getElementById("publicDomainBadge");
+      const fairUseCases = document.getElementById("fairUseCases");
+      const fairUseFactors = document.getElementById("fairUseFactors");
+      const fairUseCaseTitle = document.getElementById("fairUseCaseTitle");
+      const fairUseCaseText = document.getElementById("fairUseCaseText");
+      const fairUseNeedle = document.getElementById("fairUseNeedle");
+      const fairUseVerdict = document.getElementById("fairUseVerdict");
+      const fairUseReason = document.getElementById("fairUseReason");
+      const remixArtwork = document.getElementById("remixArtwork");
+      const remixTools = document.getElementById("remixTools");
+      const remixMeterFill = document.getElementById("remixMeterFill");
+      const remixVerdict = document.getElementById("remixVerdict");
+      const remixMeterNote = document.getElementById("remixMeterNote");
+
+      if (!yearSlider) return;
+
+      function renderScroll() {
+        scrollSvg.innerHTML = `
+          <path d="M 40 96 C 180 18, 330 148, 500 86 S 820 36, 1000 92" fill="none" stroke="#c98b2e" stroke-width="8" stroke-linecap="round"></path>
+          ${COPYRIGHT_STOPS.map((stop, index) => {
+            const x = 72 + index * 160;
+            const y = index % 2 === 0 ? 74 : 112;
+            return `
+              <circle cx="${x}" cy="${y}" r="12" fill="#286fb8" opacity="0.9"></circle>
+              <text x="${x}" y="${y - 24}" text-anchor="middle" font-family="Special Elite, monospace" font-size="12" fill="#44556a">${stop.year}</text>
+            `;
+          }).join("")}
+        `;
+      }
+
+      function closestStop(year) {
+        return COPYRIGHT_STOPS.reduce((best, stop) => (
+          Math.abs(stop.year - year) < Math.abs(best.year - year) ? stop : best
+        ), COPYRIGHT_STOPS[0]);
+      }
+
+      function updateTimer() {
+        const year = Number(yearSlider.value);
+        const stop = closestStop(year);
+        durationBar.style.width = `${stop.bar}%`;
+        lawTitle.textContent = stop.title;
+        lawSummary.textContent = stop.summary;
+        termChip.textContent = stop.termLabel;
+        lobbyChip.textContent = stop.lobby;
+        mickey.classList.toggle("is-visible", stop.mickey);
+
+        const publicDomainSoon = stop.bar <= 28;
+        publicDomainBadge.textContent = publicDomainSoon
+          ? "Public Domain Window: works return relatively quickly"
+          : "Public Domain Window: culture stays locked up much longer";
+        publicDomainBadge.classList.toggle("is-glowing", publicDomainSoon);
+      }
+
+      let fairCaseIndex = 0;
+      const fairState = { purpose: 0, nature: 0, amount: 0, market: 0 };
+
+      function renderFairUseCases() {
+        fairUseCases.innerHTML = FAIR_USE_CASES.map((item, index) => `
+          <button class="folio-case-btn${index === fairCaseIndex ? " is-active" : ""}" type="button" data-case-index="${index}">
+            ${item.title}
+          </button>
+        `).join("");
+
+        fairUseCases.querySelectorAll("[data-case-index]").forEach((button) => {
+          button.addEventListener("click", () => {
+            fairCaseIndex = Number(button.dataset.caseIndex);
+            const selected = FAIR_USE_CASES[fairCaseIndex];
+            Object.assign(fairState, Object.fromEntries(Object.entries(selected.factors).map(([key, value]) => [key, value.value])));
+            renderFairUseCases();
+            renderFairUseFactors();
+            updateFairUseVerdict();
+          });
+        });
+      }
+
+      function renderFairUseFactors() {
+        const selected = FAIR_USE_CASES[fairCaseIndex];
+        fairUseCaseTitle.textContent = selected.title;
+        fairUseCaseText.textContent = selected.text;
+        fairUseFactors.innerHTML = Object.entries(selected.factors).map(([key, factor]) => `
+          <div class="folio-factor-item">
+            <strong>${factor.label}</strong>
+            <span>${factor.reason}</span>
+            <div class="folio-case-list">
+              <button class="folio-factor-btn ${fairState[key] >= 0 ? "is-active" : ""}" type="button" data-factor="${key}" data-value="${factor.value}">Leans fair</button>
+              <button class="folio-factor-btn ${fairState[key] < 0 ? "is-active" : ""}" type="button" data-factor="${key}" data-value="${-Math.abs(factor.value)}">Leans infringement</button>
+            </div>
+          </div>
+        `).join("");
+
+        fairUseFactors.querySelectorAll("[data-factor]").forEach((button) => {
+          button.addEventListener("click", () => {
+            fairState[button.dataset.factor] = Number(button.dataset.value);
+            renderFairUseFactors();
+            updateFairUseVerdict();
+          });
+        });
+      }
+
+      function updateFairUseVerdict() {
+        const total = Object.values(fairState).reduce((sum, value) => sum + value, 0);
+        fairUseNeedle.style.transform = `rotate(${Math.max(-38, Math.min(38, total * -2.2))}deg)`;
+
+        if (total >= 6) {
+          fairUseVerdict.textContent = "Likely Fair Use";
+          fairUseReason.textContent = "The educational or transformative reasons outweigh the amount and market concerns.";
+        } else if (total <= -6) {
+          fairUseVerdict.textContent = "Likely Infringement";
+          fairUseReason.textContent = "Too much of the original is being used, or the copying substitutes for the market.";
+        } else {
+          fairUseVerdict.textContent = "Legal Gray Area";
+          fairUseReason.textContent = "The factors are mixed, which is exactly why fair use decisions often require judgment.";
+        }
+      }
+
+      const remixState = { crop: false, filter: false, context: false };
+
+      function updateRemix() {
+        let score = 10;
+        Object.entries(REMIX_TOOLS).forEach(([key, tool]) => {
+          remixArtwork.classList.toggle(tool.className, remixState[key]);
+          if (remixState[key]) score += tool.delta;
+        });
+        score = Math.min(100, score);
+        remixMeterFill.style.width = `${score}%`;
+        remixVerdict.textContent = `Transformative Meter: ${score}%`;
+
+        if (score < 35) {
+          remixMeterNote.textContent = "This still looks mostly like a copy of the original work with little new meaning added.";
+        } else if (score < 70) {
+          remixMeterNote.textContent = "The work is changing form, but a judge would still ask whether the new use adds enough new expression or purpose.";
+        } else {
+          remixMeterNote.textContent = "Now the work looks much more transformative: new framing, new aesthetics, and new commentary all point toward a stronger remix argument.";
+        }
+      }
+
+      remixTools.querySelectorAll("[data-tool]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const tool = button.dataset.tool;
+          remixState[tool] = !remixState[tool];
+          button.classList.toggle("is-active", remixState[tool]);
+          updateRemix();
+        });
+      });
+
+      renderScroll();
+      renderFairUseCases();
+      Object.assign(fairState, Object.fromEntries(Object.entries(FAIR_USE_CASES[0].factors).map(([key, value]) => [key, value.value])));
+      renderFairUseFactors();
+      updateFairUseVerdict();
+      updateRemix();
+      updateTimer();
+      yearSlider.addEventListener("input", updateTimer);
+    })();
+  </script>
   <script src="../assets/js/classroom-animations.js"></script>
 </body>
 </html>
