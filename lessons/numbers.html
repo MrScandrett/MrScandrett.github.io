@@ -31,6 +31,20 @@
       border-radius: var(--radius,18px);
       box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08));
       padding: 1.2rem 1.4rem; margin-bottom: 1rem;
+      position: relative;
+    }
+    .num-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius,18px);
+      background: rgba(0,0,0,0);
+      transition: background 0.3s ease;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .num-card:has(.num-tl-thumb:hover)::before {
+      background: rgba(0,0,0,0.55);
     }
     .num-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
     .num-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
@@ -44,14 +58,103 @@
     }
 
     /* ── Timeline ── */
-    .num-timeline { list-style: none; padding: 0; margin: 0.8rem 0 0; display: flex; flex-direction: column; gap: 0; }
-    .num-timeline li { display: flex; gap: 0.9rem; align-items: flex-start;
+    .num-timeline {
+      list-style: none; padding: 0; margin: 1rem 0 0;
+      display: flex; flex-direction: column; gap: 0;
+      position: relative;
+    }
+    /* Vertical spine */
+    .num-timeline::before {
+      content: "";
+      position: absolute;
+      left: 88px; /* aligns with dot center */
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: linear-gradient(180deg, #ff9500 0%, #ffcc00 100%);
+      opacity: 0.35;
+      border-radius: 999px;
+    }
+    .num-timeline li {
+      display: flex; gap: 0.9rem; align-items: flex-start;
       font-size: 0.86rem; color: #3f4f65; line-height: 1.55;
-      padding: 0.7rem 0; border-bottom: 1px solid var(--line,#d2d2d7); }
-    .num-timeline li:last-child { border-bottom: none; }
-    [data-theme="night"] .num-timeline li { color: rgba(245,245,247,0.72); border-bottom-color: rgba(255,255,255,0.07); }
-    .num-tl-year { flex-shrink: 0; min-width: 80px; font-weight: 800; color: #ff9500; font-size: 0.82rem; }
+      padding: 0.85rem 0 0.85rem 1.6rem;
+      position: relative;
+    }
+    /* Timeline dot */
+    .num-timeline li::before {
+      content: "";
+      position: absolute;
+      left: 81px;
+      top: 1.15rem;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #ff9500;
+      border: 3px solid var(--white, #fff);
+      box-shadow: 0 0 0 2px #ff9500;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    [data-theme="night"] .num-timeline li::before {
+      border-color: #2c2c2e;
+    }
+    .num-timeline li:last-child::before { background: #34c759; box-shadow: 0 0 0 2px #34c759; }
+    [data-theme="night"] .num-timeline li { color: rgba(245,245,247,0.72); }
+    .num-tl-year { flex-shrink: 0; width: 80px; font-weight: 800; color: #ff9500; font-size: 0.82rem; text-align: right; padding-right: 0.5rem; margin-top: 0.1rem; }
+    .num-timeline li:last-child .num-tl-year { color: #34c759; }
     .num-tl-icon { flex-shrink: 0; font-size: 1.1rem; }
+    .num-tl-thumb {
+      flex-shrink: 0;
+      width: 64px;
+      height: 64px;
+      border-radius: 8px;
+      overflow: visible;
+      border: 1px solid var(--line,#d2d2d7);
+      background: #e8e8ed;
+      position: relative;
+      z-index: 3;
+      cursor: zoom-in;
+    }
+    .num-tl-thumb img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block;
+      border-radius: 8px;
+      transition: transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.3s ease;
+      transform-origin: left center;
+      position: relative;
+      z-index: 3;
+    }
+    .num-tl-thumb:hover {
+      z-index: 10;
+    }
+    .num-tl-thumb:hover img {
+      transform: scale(4.5);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    /* Babylon custom popup — suppress photo scale, show illustration instead */
+    .num-tl-thumb--babylon:hover img {
+      transform: none;
+      box-shadow: none;
+      opacity: 0;
+    }
+    .num-babylon-popup {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 420px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 24px 72px rgba(0,0,0,0.55);
+      opacity: 0;
+      transform: scale(0.6) translateY(8px);
+      transform-origin: left top;
+      transition: opacity 0.25s ease, transform 0.32s cubic-bezier(0.34, 1.3, 0.64, 1);
+      pointer-events: none;
+    }
+    .num-tl-thumb--babylon:hover .num-babylon-popup {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
 
     /* ── Number type grid ── */
     .num-type-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; margin: 0.9rem 0; }
@@ -347,27 +450,76 @@
       <ul class="num-timeline">
         <li>
           <span class="num-tl-year">~30,000 BC</span>
-          <span class="num-tl-icon">🦴</span>
+          <div class="num-tl-thumb"><img src="../assets/thumbs/lebombo-650x366.jpg" alt="Lebombo Bone"></div>
           <div><strong>Tally bones.</strong> The <em>Lebombo Bone</em> found in Swaziland has 29 notches carved into it — likely a counting tool or lunar calendar. Humans were tracking quantities before writing fully existed.</div>
         </li>
         <li>
           <span class="num-tl-year">~3,000 BC</span>
-          <span class="num-tl-icon">📐</span>
+          <div class="num-tl-thumb num-tl-thumb--babylon">
+            <img src="../assets/thumbs/babylonianB60.jpg" alt="Babylonian base-60 tablet">
+            <div class="num-babylon-popup" aria-hidden="true">
+              <svg viewBox="0 0 420 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Babylonian base-60 numeral system diagram">
+                <!-- Tablet background -->
+                <rect x="2" y="2" width="416" height="296" rx="16" fill="#b8904a" stroke="#7a5020" stroke-width="2"/>
+                <rect x="7" y="7" width="406" height="286" rx="13" fill="#d4aa72"/>
+                <!-- Grain texture lines -->
+                <line x1="7" y1="50" x2="413" y2="50" stroke="#c09050" stroke-width="0.4" opacity="0.4"/>
+                <line x1="7" y1="100" x2="413" y2="100" stroke="#c09050" stroke-width="0.4" opacity="0.3"/>
+                <line x1="7" y1="200" x2="413" y2="200" stroke="#c09050" stroke-width="0.4" opacity="0.3"/>
+                <line x1="7" y1="250" x2="413" y2="250" stroke="#c09050" stroke-width="0.4" opacity="0.4"/>
+                <!-- Title -->
+                <text x="210" y="34" text-anchor="middle" font-family="Georgia,serif" font-size="17" font-weight="bold" fill="#3b2000" letter-spacing="1">BABYLONIAN BASE-60</text>
+                <text x="210" y="50" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#7a5020" font-style="italic">Sexagesimal place-value notation · c. 3000 BC</text>
+                <line x1="20" y1="57" x2="400" y2="57" stroke="#8b6030" stroke-width="1.2" opacity="0.5"/>
+                <!-- Column headers -->
+                <text x="90"  y="75" text-anchor="middle" font-family="Georgia,serif" font-size="13" font-weight="bold" fill="#5a3800">60s place</text>
+                <text x="210" y="75" text-anchor="middle" font-family="Georgia,serif" font-size="13" font-weight="bold" fill="#5a3800">10s place</text>
+                <text x="330" y="75" text-anchor="middle" font-family="Georgia,serif" font-size="13" font-weight="bold" fill="#5a3800">1s place</text>
+                <!-- Column dividers -->
+                <line x1="150" y1="57" x2="150" y2="245" stroke="#8b6030" stroke-width="1" opacity="0.35"/>
+                <line x1="270" y1="57" x2="270" y2="245" stroke="#8b6030" stroke-width="1" opacity="0.35"/>
+                <!-- 60s column: one vertical wedge (large) -->
+                <polygon points="90,90 74,138 106,138" fill="#3b2000" opacity="0.88"/>
+                <!-- 10s column: one horizontal corner wedge -->
+                <polygon points="186,98 222,115 186,132" fill="#3b2000" opacity="0.88"/>
+                <!-- 1s column: one vertical wedge -->
+                <polygon points="330,90 314,138 346,138" fill="#3b2000" opacity="0.88"/>
+                <!-- Values below wedges -->
+                <text x="90"  y="158" text-anchor="middle" font-family="Georgia,serif" font-size="14" fill="#3b2000">× 60 = <tspan font-weight="bold">60</tspan></text>
+                <text x="210" y="158" text-anchor="middle" font-family="Georgia,serif" font-size="14" fill="#3b2000">× 10 = <tspan font-weight="bold">10</tspan></text>
+                <text x="330" y="158" text-anchor="middle" font-family="Georgia,serif" font-size="14" fill="#3b2000">× 1 = <tspan font-weight="bold">1</tspan></text>
+                <!-- Wedge key -->
+                <text x="90"  y="174" text-anchor="middle" font-family="Georgia,serif" font-size="9.5" fill="#7a5020" font-style="italic">▼ ones wedge</text>
+                <text x="210" y="174" text-anchor="middle" font-family="Georgia,serif" font-size="9.5" fill="#7a5020" font-style="italic">▶ tens wedge</text>
+                <text x="330" y="174" text-anchor="middle" font-family="Georgia,serif" font-size="9.5" fill="#7a5020" font-style="italic">▼ ones wedge</text>
+                <!-- Total line -->
+                <line x1="20" y1="182" x2="400" y2="182" stroke="#8b6030" stroke-width="1.2" opacity="0.5"/>
+                <text x="210" y="204" text-anchor="middle" font-family="Georgia,serif" font-size="16" fill="#3b2000">60 + 10 + 1 = <tspan font-weight="bold" font-size="18">71</tspan></text>
+                <!-- Footer facts -->
+                <line x1="20" y1="216" x2="400" y2="216" stroke="#8b6030" stroke-width="0.8" opacity="0.4"/>
+                <text x="210" y="234" text-anchor="middle" font-family="Georgia,serif" font-size="10.5" fill="#5a3800">Each position is worth <tspan font-weight="bold">60×</tspan> the column to its right</text>
+                <text x="210" y="251" text-anchor="middle" font-family="Georgia,serif" font-size="10.5" fill="#5a3800">Their legacy: <tspan font-weight="bold">60</tspan> seconds/minute · <tspan font-weight="bold">60</tspan> minutes/hour · <tspan font-weight="bold">360°</tspan> in a circle</text>
+                <line x1="20" y1="261" x2="400" y2="261" stroke="#8b6030" stroke-width="0.8" opacity="0.4"/>
+                <text x="210" y="278" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#8b6030" font-style="italic">Babylonians used only 2 symbols to write any number up to 59</text>
+                <text x="210" y="291" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#8b6030" font-style="italic">before shifting to the next sexagesimal place</text>
+              </svg>
+            </div>
+          </div>
           <div><strong>Babylonian base-60.</strong> The Babylonians counted in groups of 60 — which is why we still have 60 seconds in a minute and 360° in a circle. They were also early pioneers of place-value notation.</div>
         </li>
         <li>
           <span class="num-tl-year">~300 BC</span>
-          <span class="num-tl-icon">🏛️</span>
+          <div class="num-tl-thumb"><img src="../assets/thumbs/euclid.jpg" alt="Euclid"></div>
           <div><strong>Greek number theory.</strong> Euclid proved there are infinitely many prime numbers. The Greeks had no symbol for zero — they considered it philosophically absurd to have a "number of nothing."</div>
         </li>
         <li>
           <span class="num-tl-year">628 AD</span>
-          <span class="num-tl-icon">🔢</span>
+          <div class="num-tl-thumb"><img src="../assets/thumbs/brahmagupta.jpeg" alt="Brahmagupta"></div>
           <div><strong>Zero becomes a number.</strong> Indian mathematician <strong>Brahmagupta</strong> was the first to treat zero as a real number with arithmetic rules — including what happens when you add, subtract, and multiply with it. Revolutionary.</div>
         </li>
         <li>
           <span class="num-tl-year">~1200 AD</span>
-          <span class="num-tl-icon">🌍</span>
+          <div class="num-tl-thumb"><img src="../assets/thumbs/liberabaci.jpeg" alt="Liber Abaci manuscript"></div>
           <div><strong>Hindu-Arabic numerals reach Europe.</strong> Fibonacci's <em>Liber Abaci</em> introduced Europeans to the 0–9 system we use today. Before this, Europe used Roman numerals — try doing long division with IV, XII, and XLVIII.</div>
         </li>
         <li>

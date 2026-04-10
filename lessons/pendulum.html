@@ -26,6 +26,16 @@
     .pd-card p:last-child { margin-bottom:0; }
     [data-theme="night"] .pd-card { background:#2c2c2e; }
     [data-theme="night"] .pd-card p { color:rgba(245,245,247,0.72); }
+    .pd-bio { display:flex; gap:1rem; align-items:flex-start; }
+    .pd-bio-portrait {
+      flex-shrink:0; width:116px; height:176px; border-radius:12px; overflow:hidden;
+      border:3px solid #ffcc00; box-shadow:0 4px 14px rgba(0,0,0,0.14); background:#e8dcc8;
+    }
+    .pd-bio-portrait img { width:100%; height:100%; object-fit:cover; object-position:center top; display:block; }
+    @media (max-width:520px) {
+      .pd-bio { flex-direction:column; align-items:center; }
+      .pd-bio-portrait { width:100%; height:180px; }
+    }
     .pd-formula-box { background:linear-gradient(135deg,rgba(255,149,0,0.09),rgba(255,149,0,0.03));border:1px solid rgba(255,149,0,0.3);border-radius:14px;padding:1.1rem 1.3rem;margin:0.8rem 0;text-align:center; }
     .pd-formula-sym { font-size:clamp(1.3rem,3.5vw,1.9rem);font-weight:800;color:#ff9f0a;display:block;margin-bottom:0.5rem; }
     .pd-formula-vars { display:flex;flex-wrap:wrap;gap:0.3rem 1.2rem;justify-content:center;font-size:0.82rem;color:#3f4f65; }
@@ -35,15 +45,15 @@
     .pd-lab-shell { border:1px solid rgba(148,163,184,0.2);border-radius:20px;overflow:hidden;margin:0.9rem 0;background:radial-gradient(circle at top,#0f172a 0%,#020617 55%,#01030a 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 16px 36px rgba(2,6,23,0.24);color:#e2e8f0; }
     .pd-lab-stage { position:relative;min-height:460px;padding:0; }
     #pd-canvas { width:100%;height:460px;display:block;cursor:crosshair;touch-action:none; }
-    .pd-lab-hud { position:absolute;inset:1rem auto auto 1rem;display:flex;gap:0.9rem;flex-wrap:wrap;pointer-events:none; }
+    .pd-lab-hud { display:flex;gap:0.9rem;align-items:center;flex-wrap:wrap;padding:0.75rem 1rem;background:linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,1));border-top:1px solid rgba(148,163,184,0.1); }
     .pd-glass { background:rgba(15,23,42,0.76);backdrop-filter:blur(18px);border:1px solid rgba(148,163,184,0.18);box-shadow:0 14px 32px rgba(15,23,42,0.32); }
-    .pd-energy-hud { display:flex;gap:1rem;padding:0.95rem 1rem;border-radius:18px;align-items:flex-end; }
-    .pd-energy-meter { display:flex;flex-direction:column;align-items:center;gap:0.45rem;min-width:52px; }
-    .pd-energy-meter span { font-size:0.64rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#94a3b8; }
-    .pd-energy-well { height:160px;width:16px;border-radius:999px;overflow:hidden;background:rgba(30,41,59,0.92);border:1px solid rgba(148,163,184,0.12);position:relative; }
+    .pd-energy-hud { display:flex;gap:1.1rem;padding:0.6rem 0.9rem;border-radius:14px;align-items:flex-end; }
+    .pd-energy-meter { display:flex;flex-direction:column;align-items:center;gap:0.38rem;min-width:44px; }
+    .pd-energy-meter span { font-size:0.62rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#94a3b8; }
+    .pd-energy-well { height:64px;width:14px;border-radius:999px;overflow:hidden;background:rgba(30,41,59,0.92);border:1px solid rgba(148,163,184,0.12);position:relative; }
     .pd-energy-fill { position:absolute;left:0;right:0;bottom:0;transition:height 0.06s linear; }
-    .pd-energy-meter strong { font-size:0.72rem;color:#f8fafc; }
-    .pd-status-pill { padding:0.65rem 0.9rem;border-radius:999px;display:flex;align-items:center;gap:0.55rem;font-size:0.77rem;font-weight:700;color:#e2e8f0; }
+    .pd-energy-meter strong { font-size:0.7rem;color:#f8fafc; }
+    .pd-status-pill { padding:0.55rem 0.85rem;border-radius:999px;display:flex;align-items:center;gap:0.5rem;font-size:0.76rem;font-weight:700;color:#e2e8f0;margin-left:auto; }
     .pd-status-dot { width:0.55rem;height:0.55rem;border-radius:50%;background:#fb7185;box-shadow:0 0 12px rgba(251,113,133,0.8);animation:pd-pulse 1.4s ease-in-out infinite; }
     .pd-lab-caption { display:grid;grid-template-columns:repeat(4,1fr);gap:0.7rem;padding:1rem;background:linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.98));border-top:1px solid rgba(148,163,184,0.14); }
     .pd-lab-stat { border-radius:14px;padding:0.85rem 0.95rem;background:rgba(15,23,42,0.64);border:1px solid rgba(148,163,184,0.14); }
@@ -78,9 +88,8 @@
       #pd-canvas { height:400px; }
     }
     @media (max-width: 560px) {
-      .pd-lab-hud { inset:0.75rem;gap:0.65rem; }
-      .pd-energy-hud { gap:0.7rem;padding:0.75rem 0.8rem; }
-      .pd-energy-well { height:130px;width:14px; }
+      .pd-energy-hud { gap:0.7rem;padding:0.5rem 0.7rem; }
+      .pd-energy-well { height:50px; }
       .pd-lab-caption { grid-template-columns:1fr; }
     }
     @keyframes pd-pulse {
@@ -145,7 +154,12 @@
 
         <section class="pd-card" style="--card-accent:#ffcc00;">
           <h2>Galileo and the Pendulum</h2>
-          <p><strong>Galileo Galilei (1564–1642)</strong> reportedly observed a chandelier swinging in the Cathedral of Pisa and noticed something remarkable: regardless of how wide the swing, it seemed to take the same time to complete each oscillation. He tested this using his own pulse as a timer. This property — constant period for small angles — led to the development of pendulum clocks, which were the world's most accurate timekeepers for nearly 300 years.</p>
+          <div class="pd-bio">
+            <div class="pd-bio-portrait">
+              <img src="../assets/thumbs/galileo.jpg" alt="Portrait of Galileo Galilei">
+            </div>
+            <p><strong>Galileo Galilei (1564–1642)</strong> reportedly observed a chandelier swinging in the Cathedral of Pisa and noticed something remarkable: regardless of how wide the swing, it seemed to take the same time to complete each oscillation. He tested this using his own pulse as a timer. This property — constant period for small angles — led to the development of pendulum clocks, which were the world's most accurate timekeepers for nearly 300 years.</p>
+          </div>
         </section>
 
         <section class="pd-card" style="--card-accent:#ff9f0a;">
@@ -172,28 +186,28 @@
           <div class="pd-lab-shell">
             <div class="pd-lab-stage">
               <canvas id="pd-canvas" aria-label="Pendulum energy conservation laboratory"></canvas>
-              <div class="pd-lab-hud" aria-hidden="true">
-                <div class="pd-glass pd-energy-hud">
-                  <div class="pd-energy-meter">
-                    <span>Potential</span>
-                    <div class="pd-energy-well"><div class="pd-energy-fill" id="pd-pe-fill" style="height:50%;background:linear-gradient(180deg,#38bdf8,#2563eb);"></div></div>
-                    <strong id="pd-pe-pct">50%</strong>
-                  </div>
-                  <div class="pd-energy-meter">
-                    <span>Kinetic</span>
-                    <div class="pd-energy-well"><div class="pd-energy-fill" id="pd-ke-fill" style="height:50%;background:linear-gradient(180deg,#34d399,#059669);"></div></div>
-                    <strong id="pd-ke-pct">50%</strong>
-                  </div>
-                  <div class="pd-energy-meter">
-                    <span>Heat</span>
-                    <div class="pd-energy-well"><div class="pd-energy-fill" id="pd-heat-fill" style="height:0%;background:linear-gradient(180deg,#fb923c,#ea580c);"></div></div>
-                    <strong id="pd-heat-pct">0%</strong>
-                  </div>
+            </div>
+            <div class="pd-lab-hud" aria-hidden="true">
+              <div class="pd-glass pd-energy-hud">
+                <div class="pd-energy-meter">
+                  <span>Potential</span>
+                  <div class="pd-energy-well"><div class="pd-energy-fill" id="pd-pe-fill" style="height:50%;background:linear-gradient(180deg,#38bdf8,#2563eb);"></div></div>
+                  <strong id="pd-pe-pct">50%</strong>
                 </div>
-                <div class="pd-glass pd-status-pill">
-                  <span class="pd-status-dot"></span>
-                  <span>Period <span id="pd-r-period">0.00 s</span></span>
+                <div class="pd-energy-meter">
+                  <span>Kinetic</span>
+                  <div class="pd-energy-well"><div class="pd-energy-fill" id="pd-ke-fill" style="height:50%;background:linear-gradient(180deg,#34d399,#059669);"></div></div>
+                  <strong id="pd-ke-pct">50%</strong>
                 </div>
+                <div class="pd-energy-meter">
+                  <span>Heat</span>
+                  <div class="pd-energy-well"><div class="pd-energy-fill" id="pd-heat-fill" style="height:0%;background:linear-gradient(180deg,#fb923c,#ea580c);"></div></div>
+                  <strong id="pd-heat-pct">0%</strong>
+                </div>
+              </div>
+              <div class="pd-glass pd-status-pill">
+                <span class="pd-status-dot"></span>
+                <span>Period <span id="pd-r-period">0.00 s</span></span>
               </div>
             </div>
             <div class="pd-lab-caption">

@@ -273,17 +273,20 @@
       100% { box-shadow:0 0 0 0 rgba(37,99,235,0); }
     }
     #geoCanvas { display:block; width:100%; height:auto; }
-    .py-square-a { fill: rgba(59,130,246,0.1); stroke:#3b82f6; }
-    .py-square-b { fill: rgba(16,185,129,0.1); stroke:#10b981; }
-    .py-square-c { fill: rgba(245,158,11,0.1); stroke:#f59e0b; }
-    .py-square-fill-a { fill: rgba(59,130,246,0.3); }
-    .py-square-fill-b { fill: rgba(16,185,129,0.28); }
-    .py-square-fill-c { fill: rgba(245,158,11,0.2); }
+    .py-square-a { fill: rgba(59,130,246,0.12); stroke:#3b82f6; }
+    .py-square-b { fill: rgba(16,185,129,0.12); stroke:#10b981; }
+    .py-square-c { fill: rgba(245,158,11,0.12); stroke:#f59e0b; }
+    .py-square-fill-a { fill: rgba(59,130,246,0.38); }
+    .py-square-fill-b { fill: rgba(16,185,129,0.36); }
+    .py-square-fill-c { fill: rgba(245,158,11,0.25); }
     .py-area-square {
-      stroke-width:2.2;
-      stroke-dasharray:4 4;
+      stroke-width: 2.5;
+      stroke-dasharray: 8 5;
       transition: all 260ms cubic-bezier(0.4, 0, 0.2, 1);
     }
+    #rightAngle { stroke: #64748b; stroke-width: 2.5; }
+    #trianglePath { fill: rgba(241,245,249,0.9); }
+    [data-theme="night"] #trianglePath { fill: rgba(30,41,59,0.7); }
     .py-blueprint-grid {
       display:grid; gap:0.9rem;
     }
@@ -480,7 +483,7 @@
             <span class="py-live-dot"></span>
             <span>Live Geometry Engine</span>
           </div>
-          <svg id="geoCanvas" viewBox="0 0 600 600" aria-label="Blueprint-style right triangle with squares built on each side">
+          <svg id="geoCanvas" viewBox="0 0 700 700" aria-label="Blueprint-style right triangle with squares built on each side">
             <defs>
               <clipPath id="hypSquareClip">
                 <rect id="squareCClip" x="0" y="0" width="0" height="0"></rect>
@@ -498,12 +501,12 @@
 
             <path id="trianglePath" d="" fill="rgba(255,255,255,0.82)" stroke="#1e293b" stroke-width="3"></path>
 
-            <text id="labelA" x="0" y="0" font-size="18" font-weight="800" fill="#2563eb" font-family="Inter, sans-serif">a</text>
-            <text id="labelB" x="0" y="0" font-size="18" font-weight="800" fill="#059669" font-family="Inter, sans-serif">b</text>
-            <text id="labelC" x="0" y="0" font-size="18" font-weight="800" fill="#d97706" font-family="Inter, sans-serif">c</text>
-            <text id="labelA2" x="0" y="0" font-size="14" font-weight="700" fill="#2563eb" font-family="Inter, sans-serif">a²</text>
-            <text id="labelB2" x="0" y="0" font-size="14" font-weight="700" fill="#059669" font-family="Inter, sans-serif">b²</text>
-            <text id="labelC2" x="0" y="0" font-size="14" font-weight="700" fill="#d97706" font-family="Inter, sans-serif">c²</text>
+            <text id="labelA" x="0" y="0" font-size="16" font-weight="800" fill="#2563eb" font-family="Inter, sans-serif" text-anchor="middle">a</text>
+            <text id="labelB" x="0" y="0" font-size="16" font-weight="800" fill="#059669" font-family="Inter, sans-serif" text-anchor="middle">b</text>
+            <text id="labelC" x="0" y="0" font-size="16" font-weight="800" fill="#d97706" font-family="Inter, sans-serif" text-anchor="middle">c</text>
+            <text id="labelA2" x="0" y="0" font-size="22" font-weight="800" fill="#2563eb" font-family="Inter, sans-serif" text-anchor="middle" opacity="0.7">a²</text>
+            <text id="labelB2" x="0" y="0" font-size="22" font-weight="800" fill="#059669" font-family="Inter, sans-serif" text-anchor="middle" opacity="0.7">b²</text>
+            <text id="labelC2" x="0" y="0" font-size="22" font-weight="800" fill="#d97706" font-family="Inter, sans-serif" text-anchor="middle" opacity="0.7">c²</text>
           </svg>
         </div>
 
@@ -977,8 +980,9 @@
       const alpha = Math.atan2(aRaw, bRaw) * (180 / Math.PI);
       const beta = 90 - alpha;
 
-      const startX = 410;
-      const startY = 410;
+      /* Dynamic anchor — keeps the triangle centred with safe margins in the 700×700 viewBox */
+      const startX = Math.min(Math.round(700 - aRaw - 44), 470);
+      const startY = Math.min(Math.round(700 - bRaw - 44), 450);
       const v1 = { x: startX, y: startY };
       const v2 = { x: startX, y: startY - aRaw };
       const v3 = { x: startX - bRaw, y: startY };
@@ -998,14 +1002,26 @@
       setRect(svg.squareCFillA, v3.x, v3.y - cRaw, cRaw * ratioA, cRaw, hypTransform);
       setRect(svg.squareCFillB, v3.x + cRaw * ratioA, v3.y - cRaw, cRaw * ratioB, cRaw, hypTransform);
 
-      setLabel(svg.labelA, v1.x + aRaw / 2, v1.y - aRaw / 2, 'a');
-      setLabel(svg.labelB, v1.x - bRaw / 2, v1.y + bRaw / 2 + 16, 'b');
+      /* Side labels: ON the triangle edges (inside the triangle for a/b, on hyp for c) */
+      setLabel(svg.labelA, v1.x - 20, (v1.y + v2.y) / 2 + 6, 'a');
+      setLabel(svg.labelB, (v1.x + v3.x) / 2, v1.y - 14, 'b');
 
       const angleRad = Math.atan2(aRaw, bRaw);
-      setLabel(svg.labelC, v3.x + (cRaw / 2) * Math.cos(angleRad - 0.25), v3.y - (cRaw / 2) * Math.sin(angleRad - 0.25), 'c');
+      setLabel(svg.labelC, v3.x + (cRaw / 2) * Math.cos(angleRad + 0.22), v3.y - (cRaw / 2) * Math.sin(angleRad + 0.22) - 12, 'c');
+
+      /* Area labels: centered inside their respective squares */
       setLabel(svg.labelA2, v1.x + aRaw / 2, v2.y + aRaw / 2 + 8, `a²`);
-      setLabel(svg.labelB2, v3.x + bRaw / 2, v1.y + bRaw / 2 + 20, `b²`);
-      setLabel(svg.labelC2, v3.x + cRaw * 0.52, v3.y - cRaw * 0.12, `c²`);
+      setLabel(svg.labelB2, v3.x + bRaw / 2, v1.y + bRaw / 2 + 8, `b²`);
+      /* c² must sit at the rotated centre of squareC.
+         SVG rotate(θ,cx,cy): new_dx = dx·cos θ − dy·sin θ,  new_dy = dx·sin θ + dy·cos θ
+         Square local centre: dx = cRaw/2, dy = −cRaw/2
+         θ = (90°−angle) → cos θ = sin(angleRad), sin θ = cos(angleRad) */
+      const cosA = Math.cos(angleRad);
+      const sinA = Math.sin(angleRad);
+      setLabel(svg.labelC2,
+        v3.x + (cRaw / 2) * (sinA + cosA),
+        v3.y + (cRaw / 2) * (cosA - sinA),
+        `c²`);
 
       const markerSize = 16;
       svg.rightAngle.setAttribute('d', `M ${v1.x - markerSize} ${v1.y} L ${v1.x - markerSize} ${v1.y - markerSize} L ${v1.x} ${v1.y - markerSize}`);
