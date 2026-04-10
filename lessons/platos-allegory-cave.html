@@ -456,21 +456,49 @@
     }
 
     .cave-model-hotspot {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      border: none;
+      background: transparent;
+      color: #fff6e8;
+      cursor: pointer;
+      padding: 0;
+    }
+    .cave-model-hotspot::after {
+      content: "";
+      position: absolute;
+      left: -6px;
+      top: -6px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 209, 136, 0.42);
+      animation: cave-pulse 1.9s infinite;
+    }
+    .cave-hotspot-orb {
       width: 22px;
       height: 22px;
       border-radius: 50%;
       border: 2px solid rgba(255, 246, 231, 0.9);
       background: radial-gradient(circle at 35% 35%, #ffd188, #e6a64d 70%);
       box-shadow: 0 0 12px rgba(230, 166, 77, 0.55);
-      cursor: pointer;
+      flex: 0 0 auto;
     }
-    .cave-model-hotspot::after {
-      content: "";
-      position: absolute;
-      inset: -6px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 209, 136, 0.42);
-      animation: cave-pulse 1.9s infinite;
+    .cave-hotspot-label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0.26rem 0.58rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 222, 176, 0.18);
+      background: rgba(18, 14, 11, 0.82);
+      font-size: 0.73rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.22);
     }
     @keyframes cave-pulse {
       0% { transform: scale(0.8); opacity: 0.65; }
@@ -980,9 +1008,18 @@
               field-of-view="32deg"
               min-camera-orbit="auto 40deg auto"
               max-camera-orbit="auto 100deg auto">
-              <button class="cave-model-hotspot" slot="hotspot-fire" data-surface="0 0 0 0 0" data-hotspot="fire" aria-label="Focus on the fire"></button>
-              <button class="cave-model-hotspot" slot="hotspot-puppets" data-surface="0 0 0 0 0" data-hotspot="puppets" aria-label="Focus on the puppets"></button>
-              <button class="cave-model-hotspot" slot="hotspot-sun" data-surface="0 0 0 0 0" data-hotspot="sun" aria-label="Focus on the light beyond the cave"></button>
+              <button class="cave-model-hotspot" slot="hotspot-fire" data-position="0.75m 0.8m -0.35m" data-normal="0 1 0" data-hotspot="fire" aria-label="Focus on the fire">
+                <span class="cave-hotspot-orb" aria-hidden="true"></span>
+                <span class="cave-hotspot-label">Fire</span>
+              </button>
+              <button class="cave-model-hotspot" slot="hotspot-puppets" data-position="0.2m 1.05m -0.05m" data-normal="0 1 0" data-hotspot="puppets" aria-label="Focus on the puppets">
+                <span class="cave-hotspot-orb" aria-hidden="true"></span>
+                <span class="cave-hotspot-label">Puppets</span>
+              </button>
+              <button class="cave-model-hotspot" slot="hotspot-sun" data-position="-1.15m 1.4m 1.3m" data-normal="0 1 0" data-hotspot="sun" aria-label="Focus on the light beyond the cave">
+                <span class="cave-hotspot-orb" aria-hidden="true"></span>
+                <span class="cave-hotspot-label">Sun</span>
+              </button>
               <div class="cave-model-fallback">
                 Your browser can't display the interactive model.
                 <a href="../assets/models/allegory_of_the_cave.glb">Download the GLB file instead</a>.
@@ -1634,22 +1671,6 @@
 
       viewer.addEventListener("load", function() {
         resetView();
-        // Approximate symbolic locations for the model hotspots.
-        viewer.updateHotspot({
-          name: "hotspot-fire",
-          position: "0.75m 0.8m -0.35m",
-          normal: "0 1 0"
-        });
-        viewer.updateHotspot({
-          name: "hotspot-puppets",
-          position: "0.2m 1.05m -0.05m",
-          normal: "0 1 0"
-        });
-        viewer.updateHotspot({
-          name: "hotspot-sun",
-          position: "-1.15m 1.4m 1.3m",
-          normal: "0 1 0"
-        });
       });
 
       viewer.addEventListener("error", function() {
