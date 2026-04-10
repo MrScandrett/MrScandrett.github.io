@@ -14,17 +14,18 @@
     .music-lab-wrap {
       max-width: 1240px;
       margin: 0 auto;
-      padding: 1.2rem 0 2rem;
+      padding: 1.2rem 1rem 2rem;
     }
 
     .music-lab-layout {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: 1fr;
       gap: 2rem;
       align-items: start;
     }
 
-    .music-lab-layout > .lab-intro {
+    .music-lab-layout > .lab-intro,
+    .music-lab-layout > .lab-hud {
       grid-column: 1 / -1;
     }
 
@@ -111,7 +112,7 @@
     }
 
     .pillar-science-grid {
-      grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
+      grid-template-columns: 1fr;
     }
 
     .pillar-studio-grid {
@@ -340,17 +341,15 @@
       border-radius: 18px;
       background: rgba(255,255,255,0.42);
       border: 1px solid rgba(72, 55, 18, 0.08);
-      overflow-x: auto;
       position: relative;
       min-height: 260px;
-      scrollbar-width: thin;
     }
 
     .staff-system.grand-staff::before {
       content: "{";
       position: absolute;
       left: 0.65rem;
-      top: 1.05rem;
+      top: 2.25rem;
       font-size: 9rem;
       line-height: 0.88;
       font-family: "Times New Roman", serif;
@@ -360,15 +359,15 @@
 
     .staff-block {
       position: relative;
-      min-width: 940px;
-      height: 184px;
+      width: 100%;
+      height: 224px;
       padding: 1.1rem 1rem 0.85rem 4rem;
       background:
-        linear-gradient(var(--ink) 1px, transparent 1px) 0 calc(52px + var(--staff-gap) * 0),
-        linear-gradient(var(--ink) 1px, transparent 1px) 0 calc(52px + var(--staff-gap) * 1),
-        linear-gradient(var(--ink) 1px, transparent 1px) 0 calc(52px + var(--staff-gap) * 2),
-        linear-gradient(var(--ink) 1px, transparent 1px) 0 calc(52px + var(--staff-gap) * 3),
-        linear-gradient(var(--ink) 1px, transparent 1px) 0 calc(52px + var(--staff-gap) * 4);
+        linear-gradient(var(--ink) 1px, transparent 1px) 0 calc(72px + var(--staff-gap) * 0),
+        linear-gradient(var(--ink) 1px, transparent 1px) 0 calc(72px + var(--staff-gap) * 1),
+        linear-gradient(var(--ink) 1px, transparent 1px) 0 calc(72px + var(--staff-gap) * 2),
+        linear-gradient(var(--ink) 1px, transparent 1px) 0 calc(72px + var(--staff-gap) * 3),
+        linear-gradient(var(--ink) 1px, transparent 1px) 0 calc(72px + var(--staff-gap) * 4);
       background-repeat: no-repeat;
       background-size: 100% 100%;
     }
@@ -377,8 +376,8 @@
       content: "";
       position: absolute;
       left: 3.1rem;
-      top: 52px;
-      bottom: 92px;
+      top: 72px;
+      bottom: 112px;
       width: 1.5px;
       background: rgba(26, 27, 30, 0.75);
     }
@@ -386,34 +385,40 @@
     .clef-symbol {
       position: absolute;
       left: 0.4rem;
-      top: 16px;
+      top: 26px;
       font-size: 4.2rem;
       line-height: 1;
       color: var(--ink);
       user-select: none;
     }
 
-    .staff-block[data-clef="bass"] .clef-symbol { top: 20px; }
+    .staff-block[data-clef="treble"] .clef-symbol { top: 26px; }
+    .staff-block[data-clef="bass"] .clef-symbol { top: 40px; }
     .staff-block[data-clef="alto"] .clef-symbol,
-    .staff-block[data-clef="soprano"] .clef-symbol { top: 22px; }
+    .staff-block[data-clef="soprano"] .clef-symbol { top: 42px; }
 
     .note-container {
       --family-color: #3a6ea5;
       position: absolute;
       top: 0;
-      width: 72px;
+      min-width: 72px;
+      width: max-content;
+      transform: translateX(-50%);
       padding: 0.2rem 0 0;
       border: none;
       background: transparent;
       font: inherit;
       text-align: center;
       cursor: pointer;
-      transition: transform 0.12s ease;
+      opacity: 0;
+      transition: opacity 0.15s ease, transform 0.12s ease;
     }
 
     .note-container:hover,
-    .note-container:focus-visible {
-      transform: translateY(-4px) scale(1.02);
+    .note-container:focus-visible,
+    .note-container.is-bridge-active {
+      transform: translateX(-50%) translateY(-4px) scale(1.02);
+      opacity: 1;
       outline: none;
     }
 
@@ -424,7 +429,7 @@
     .music-staff-svg {
       display: block;
       width: 72px;
-      height: 122px;
+      height: 162px;
       margin: 0 auto;
       overflow: visible;
     }
@@ -563,6 +568,7 @@
       text-align: center;
       user-select: none;
       font: inherit;
+      font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.1s;
@@ -574,6 +580,7 @@
       border-radius: 12px;
       background: #f8fbff;
       padding: 0.65rem;
+      margin-top: 1rem;
       margin-bottom: 0.75rem;
       overflow: hidden;
     }
@@ -741,6 +748,7 @@
       height: 100%;
       pointer-events: none;
       overflow: visible;
+      z-index: 5;
     }
     .ml-patch-cables,
     .ml-fifths-container svg {
@@ -753,12 +761,34 @@
     .ml-fifths-container svg {
       height: auto;
     }
-    .ml-patch-cables path {
+    .ml-cable-shadow {
+      stroke: rgba(0, 0, 0, 0.2);
+      stroke-width: 6;
+      fill: none;
+      stroke-linecap: round;
+      transform: translateY(3px);
+    }
+    .ml-cable-core {
       stroke: #f5a623;
       stroke-width: 4;
       fill: none;
       stroke-linecap: round;
-      filter: drop-shadow(0 4px 6px rgba(245, 166, 35, 0.3));
+    }
+    .ml-cable-pulse {
+      stroke: #ffffff;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-dasharray: 6 8;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .ml-modular-rack.is-playing .ml-cable-pulse {
+      opacity: 1;
+      animation: ml-cable-flow 0.4s linear infinite;
+    }
+    @keyframes ml-cable-flow {
+      to { stroke-dashoffset: -14; }
     }
     .ml-module {
       --module-accent: #3357e5;
@@ -831,6 +861,14 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
+    .ml-jack-row.out-only {
+      justify-content: flex-end;
+    }
+    .ml-jack-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
     .ml-jack {
       width: 18px;
       height: 18px;
@@ -902,12 +940,6 @@
 
     /* ── ADSR ── */
     .ml-adsr-card { margin-bottom: 0.9rem; }
-    .music-studio-dashboard {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-      gap: 0.9rem;
-      align-items: start;
-    }
     .ml-adsr-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -944,7 +976,13 @@
     }
     .ml-seq-bpm-field input[type=range] { width: 110px; accent-color: #3357e5; }
     .ml-seq-bpm-val { font-weight: 700; color: #3357e5; min-width: 2.4rem; }
-    .ml-seq-grid { display: flex; flex-direction: column; gap: 0.32rem; }
+    .ml-seq-grid { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 0.32rem; 
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
     .ml-seq-row  { display: flex; align-items: center; gap: 0.4rem; }
     .ml-seq-label {
       font-size: 0.7rem;
@@ -1158,7 +1196,7 @@
       .ml-modular-rack { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .music-interval-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .staff-system { padding-left: 3rem; }
-      .staff-block { min-width: 860px; padding-left: 3.6rem; }
+      .staff-block { padding-left: 3.6rem; }
       .music-lab-layout { gap: 1.5rem; }
     }
     @media (max-width: 680px) {
@@ -1172,7 +1210,7 @@
       .music-engraver-select { min-width: 0; width: 100%; }
       .staff-system { padding-left: 2.5rem; }
       .staff-system.grand-staff::before { left: 0.2rem; top: 1.25rem; font-size: 7.5rem; }
-      .staff-block { min-width: 760px; padding-left: 3.3rem; }
+      .staff-block { padding-left: 3.3rem; }
       .lab-pillar { padding: 1rem; }
       .music-piano-roll { min-width: 640px; }
       .lab-hud { width: calc(100vw - 1rem); }
@@ -1407,8 +1445,7 @@
           <p class="eyebrow">Theory Map</p>
           <h2 id="chromatic-scale-title"><span aria-hidden="true">𝄞 </span>Chromatic Notation Engine</h2>
           <p class="music-theory-note">
-            One octave from C up to the next C contains <strong>12 semitone steps</strong> and <strong>13 note positions</strong> if you count both C&apos;s.
-            Switch clefs to watch the same MIDI notes jump to their engraved locations, then click any notehead to hear it through the current preset.
+            The grand staff dynamically engraves the notes you play as sheet music chords. Play multiple piano keys or click the Circle of Fifths to build polyphonic chords and see interval relationships mapped in real time.
           </p>
         </div>
 
@@ -1426,7 +1463,16 @@
           <div class="music-theory-badge">Interactive engraving linked to current synth preset</div>
         </div>
 
-        <div id="staffSystem" class="staff-system" aria-live="polite" aria-label="Clef-aware chromatic staff renderer"></div>
+        <div id="staffSystem" class="staff-system" aria-label="Clef-aware chromatic staff renderer"></div>
+
+        <div class="music-piano-wrap">
+          <p class="music-piano-help">
+            Play notes with your mouse, finger, or computer keyboard (<span class="music-lab-kbd">A, W, S, E, D, F, T, G, Y, H, U, J, K</span>).
+          </p>
+          <div class="music-piano-scroll">
+            <div id="pianoRoll" class="music-piano-roll" role="group" aria-label="On-screen piano roll"></div>
+          </div>
+        </div>
 
         <div class="music-interval-summary" aria-label="Interval families from unison to octave">
           <article class="music-interval-chip">
@@ -1483,15 +1529,16 @@
                   <span class="ml-module-tag">Source</span>
                 </div>
                 <label class="ml-module-slider" for="modularFreq">
-                  <span>Frequency</span>
+                <span class="ml-slider-label-row">Frequency <span class="ml-module-val" id="modularFreqVal">220 Hz</span></span>
                   <input type="range" id="modularFreq" min="60" max="880" value="220" aria-label="Oscillator frequency">
-                  <span class="ml-module-val" id="modularFreqVal">220 Hz</span>
                 </label>
-                <div class="ml-jack-row">
+              <div class="ml-jack-row out-only">
+                <div class="ml-jack-group">
                   <span>Out</span>
                   <button class="ml-jack ml-jack-output" type="button" data-jack="osc-out" data-type="output"
                           aria-label="Oscillator output jack"></button>
                 </div>
+              </div>
               </div>
 
               <div class="ml-module ml-module-vca">
@@ -1500,17 +1547,20 @@
                   <span class="ml-module-tag">Level</span>
                 </div>
                 <label class="ml-module-slider" for="modularVca">
-                  <span>Level</span>
+                <span class="ml-slider-label-row">Level <span class="ml-module-val" id="modularVcaVal">60%</span></span>
                   <input type="range" id="modularVca" min="0" max="100" value="60" aria-label="VCA level">
-                  <span class="ml-module-val" id="modularVcaVal">60%</span>
                 </label>
                 <div class="ml-jack-row">
+                <div class="ml-jack-group">
                   <span>In</span>
                   <button class="ml-jack ml-jack-input" type="button" data-jack="vca-in" data-type="input"
                           aria-label="VCA input jack"></button>
+                </div>
+                <div class="ml-jack-group">
                   <span>Out</span>
                   <button class="ml-jack ml-jack-output" type="button" data-jack="vca-out" data-type="output"
                           aria-label="VCA output jack"></button>
+                </div>
                 </div>
               </div>
 
@@ -1521,9 +1571,11 @@
                 </div>
                 <p class="ml-module-meta">Patch a cable here to hear audio.</p>
                 <div class="ml-jack-row">
+                <div class="ml-jack-group">
                   <span>In</span>
                   <button class="ml-jack ml-jack-input" type="button" data-jack="out-in" data-type="input"
                           aria-label="Output input jack"></button>
+                </div>
                 </div>
               </div>
             </div>
@@ -1643,13 +1695,7 @@
           </article>
 
           <article class="card">
-            <h2>Piano Roll + Drum Pads</h2>
-            <div class="music-piano-wrap">
-              <p class="music-piano-help">Press and drag your mouse (or finger) across the keys to play notes.</p>
-              <div class="music-piano-scroll">
-                <div id="pianoRoll" class="music-piano-roll" role="group" aria-label="On-screen piano roll"></div>
-              </div>
-            </div>
+            <h2>Drum Pads</h2>
             <div class="music-lab-pads">
               <button class="music-lab-pad" data-drum="kick"  type="button">Kick</button>
               <button class="music-lab-pad" data-drum="snare" type="button">Snare</button>
