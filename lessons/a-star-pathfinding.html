@@ -9,6 +9,206 @@
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     .ll-viewport { --ll-panel-w: 300px; --ll-accent: #d45a00; --ll-tab-active: #e06b00; --ll-tab-active-bg: rgba(212,90,0,0.10); }
+
+    /* A* Rescue Grid Lab Styles */
+    .astar-mission-lab {
+      background: var(--glass-fill-strong, #ffffff);
+      border: 1px solid var(--line, rgba(0,0,0,0.1));
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    [data-theme="night"] .astar-mission-lab {
+      background: #111827;
+      border-color: rgba(255,255,255,0.08);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .astar-control-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--line, rgba(0,0,0,0.08));
+    }
+    [data-theme="night"] .astar-control-bar { border-color: rgba(255,255,255,0.1); }
+    
+    .astar-control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .astar-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-right: 0.25rem;
+    }
+    .astar-tool {
+      background: rgba(0,0,0,0.03);
+      border: 1px solid var(--line, rgba(0,0,0,0.1));
+      color: #334155;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    [data-theme="night"] .astar-tool {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.1);
+      color: #e2e8f0;
+    }
+    .astar-tool:hover {
+      background: rgba(0,0,0,0.06);
+    }
+    [data-theme="night"] .astar-tool:hover { background: rgba(255,255,255,0.1); }
+    .astar-tool.is-active {
+      background: var(--ll-active-bg, #fff4e6);
+      border-color: var(--ll-accent, #d45a00);
+      color: var(--ll-accent, #d45a00);
+      box-shadow: 0 0 10px rgba(212, 90, 0, 0.15);
+    }
+    [data-theme="night"] .astar-tool.is-active {
+      background: var(--ll-accent, #d45a00);
+      color: #fff;
+    }
+    
+    .astar-grid-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .astar-grid-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .astar-grid-canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #f1f5f9;
+      border-radius: 8px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    [data-theme="night"] .astar-grid-canvas {
+      background: #1e293b;
+    }
+    
+    .astar-status {
+      margin: 0;
+      padding: 0.85rem 1rem;
+      background: rgba(0,0,0,0.04);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #475569;
+    }
+    [data-theme="night"] .astar-status { background: rgba(255,255,255,0.05); color: #cbd5e1; }
+    
+    .astar-legend {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+    .astar-legend li { display: flex; align-items: center; gap: 0.4rem; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+    .swatch.rover { background: #3b82f6; border-radius: 50%; }
+    .swatch.beacon { background: #22c55e; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+    .swatch.debris { background: #475569; }
+    [data-theme="night"] .swatch.debris { background: #94a3b8; }
+    .swatch.sand { background: #fcd34d; }
+    [data-theme="night"] .swatch.sand { background: #ca8a04; }
+    .swatch.open { background: rgba(59, 130, 246, 0.2); }
+    .swatch.closed { background: rgba(148, 163, 184, 0.3); }
+    .swatch.path { background: #a855f7; border-radius: 50%; }
+    
+    .astar-side-panel {
+      display: grid;
+      gap: 1rem;
+    }
+    .astar-panel {
+      background: #f8fafc;
+      border: 1px solid var(--line, rgba(0,0,0,0.1));
+      border-radius: 12px;
+      padding: 1.2rem;
+    }
+    [data-theme="night"] .astar-panel {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .astar-panel h3 {
+      margin: 0 0 1rem;
+      font-size: 0.9rem;
+      color: #1e293b;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    [data-theme="night"] .astar-panel h3 { color: #f1f5f9; }
+    
+    .astar-instrument-list,
+    .astar-metric-list {
+      list-style: none;
+      padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .astar-instrument-list li,
+    .astar-metric-list li {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.85rem; color: #475569;
+    }
+    [data-theme="night"] .astar-instrument-list li,
+    [data-theme="night"] .astar-metric-list li { color: #cbd5e1; }
+    
+    .astar-instrument-list strong,
+    .astar-metric-list strong {
+      font-family: 'IBM Plex Mono', monospace;
+      color: #3b82f6;
+      font-size: 0.95rem;
+      background: rgba(0,0,0,0.05);
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      text-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+      animation: crt-flicker 4s infinite;
+    }
+    [data-theme="night"] .astar-instrument-list strong,
+    [data-theme="night"] .astar-metric-list strong { color: #60a5fa; background: rgba(255,255,255,0.05); }
+
+    @keyframes crt-flicker {
+      0% { opacity: 1; }
+      5% { opacity: 0.8; }
+      10% { opacity: 1; }
+      15% { opacity: 0.9; }
+      20% { opacity: 1; }
+      100% { opacity: 1; }
+    }
+    
+    .astar-panel-note {
+      font-size: 0.8rem; color: #64748b; margin: 0 0 0.75rem;
+    }
+    
+    .astar-table-wrap { overflow-x: auto; }
+    .astar-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left; }
+    .astar-table th { color: #64748b; font-weight: 600; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.1); }
+    [data-theme="night"] .astar-table th { border-bottom-color: rgba(255,255,255,0.1); }
+    .astar-table td { padding: 0.5rem 0; color: #334155; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    [data-theme="night"] .astar-table td { color: #e2e8f0; border-bottom-color: rgba(255,255,255,0.05); }
+    .astar-table tbody tr:last-child td { border-bottom: none; }
+    
+    @media (max-width: 960px) {
+      .astar-grid-layout { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -52,7 +252,7 @@
 
           <div class="astar-grid-layout">
             <section class="astar-grid-panel" aria-label="Mission map simulation panel">
-              <div class="astar-grid" id="astar-grid" role="grid" aria-label="Rescue mission grid"></div>
+              <canvas id="astar-grid" class="astar-grid-canvas" aria-label="Rescue mission grid"></canvas>
               <p id="astar-status" class="astar-status" aria-live="polite">Build your grid, then run the mission.</p>
 
               <ul class="astar-legend" aria-label="Grid legend">

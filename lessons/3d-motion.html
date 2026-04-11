@@ -88,8 +88,7 @@
 
     .motion-card,
     .motion-hero-panel,
-    .lab-panel,
-    .lab-overlay-card {
+    .lab-panel {
       border-radius: 28px;
       border: 1px solid var(--hud-line);
       background: linear-gradient(180deg, rgba(9, 20, 39, 0.9), rgba(5, 14, 29, 0.78));
@@ -131,7 +130,7 @@
 
     .lab-stage-card {
       position: relative;
-      min-height: 42rem;
+      min-height: 32rem;
       overflow: hidden;
       border-radius: 34px;
       border: 1px solid rgba(147, 197, 253, 0.16);
@@ -154,39 +153,19 @@
       height: 100%;
     }
 
-    .lab-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      pointer-events: none;
-      padding: 1.1rem;
-      gap: 1rem;
-    }
-
-    .lab-overlay-top,
-    .lab-overlay-bottom {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-
-    .lab-overlay-left,
-    .lab-overlay-right {
+    .lab-dashboard {
       display: grid;
-      gap: 0.85rem;
-      max-width: min(24rem, 100%);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
     }
 
-    .lab-overlay-card {
-      padding: 1rem 1.05rem;
-      pointer-events: auto;
+    .lab-dashboard-col {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
     }
 
-    .lab-overlay-card h2,
-    .lab-overlay-card h3,
     .lab-panel h2,
     .motion-card h2 {
       margin: 0 0 0.55rem;
@@ -630,21 +609,11 @@
 
     @media (max-width: 820px) {
       .lab-stage-card {
-        min-height: 38rem;
+        min-height: 24rem;
       }
 
-      .lab-overlay {
-        padding: 0.8rem;
-      }
-
-      .lab-overlay-top,
-      .lab-overlay-bottom {
-        flex-direction: column;
-      }
-
-      .lab-overlay-left,
-      .lab-overlay-right {
-        max-width: 100%;
+      .lab-dashboard {
+        grid-template-columns: 1fr;
       }
 
       .hud-readouts,
@@ -704,97 +673,95 @@
             </section>
 
             <section class="lab-grid">
-              <div class="lab-stage-card">
-                <div class="lab-canvas" id="motion-lab-canvas" aria-label="3D motion laboratory with a drone flying through coordinate space"></div>
+          <div class="lab-main-col">
+            <div class="lab-stage-card">
+              <div class="lab-canvas" id="motion-lab-canvas" aria-label="3D motion laboratory with a drone flying through coordinate space"></div>
+            </div>
 
-                <div class="lab-overlay">
-                  <div class="lab-overlay-top">
-                    <div class="lab-overlay-left">
-                      <div class="lab-overlay-card">
-                        <div class="hud-title">
-                          <i data-lucide="navigation-2" aria-hidden="true"></i>
-                          <span>Flight HUD</span>
-                        </div>
-                        <div class="hud-row">
-                          <div class="hud-row-head" style="color:var(--z-color);">
-                            <span>Altitude (Z)</span>
-                            <span id="hud-altitude">0.0 m</span>
-                          </div>
-                          <div class="telemetry-track"><div class="telemetry-fill" id="hud-altitude-bar" style="background:var(--z-color);"></div></div>
-                        </div>
-                        <div class="hud-row">
-                          <div class="hud-row-head" style="color:var(--y-color);">
-                            <span>Speed Magnitude</span>
-                            <span id="hud-speed">0.0 m/s</span>
-                          </div>
-                          <div class="telemetry-track"><div class="telemetry-fill" id="hud-speed-bar" style="background:var(--y-color);"></div></div>
-                        </div>
-                        <div class="hud-row">
-                          <div class="hud-row-head" style="color:var(--x-color);">
-                            <span>Acceleration Magnitude</span>
-                            <span id="hud-accel">0.0 m/s²</span>
-                          </div>
-                          <div class="telemetry-track"><div class="telemetry-fill" id="hud-accel-bar" style="background:var(--x-color);"></div></div>
-                        </div>
-                        <div class="hud-readouts">
-                          <div class="hud-readout">
-                            <span class="label">X Position</span>
-                            <span class="value" id="hud-x-pos">0.0</span>
-                          </div>
-                          <div class="hud-readout">
-                            <span class="label">Y Position</span>
-                            <span class="value" id="hud-y-pos">0.0</span>
-                          </div>
-                          <div class="hud-readout">
-                            <span class="label">Heading</span>
-                            <span class="value" id="hud-heading">0°</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="lab-overlay-card">
-                        <div class="control-strip">
-                          <span class="keycap">W</span>
-                          <span class="keycap">A</span>
-                          <span class="keycap">S</span>
-                          <span class="keycap">D</span>
-                          <span>Move on the floor plane</span>
-                        </div>
-                        <div class="control-strip" style="margin-top:0.55rem;">
-                          <span class="keycap">Space</span>
-                          <span class="keycap">Shift</span>
-                          <span>Raise or lower altitude</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="lab-overlay-right">
-                      <button type="button" class="lab-button" id="toggle-vectors">
-                        <span>
-                          <strong>Vector Breakdown</strong>
-                          <small>Show the X, Y, and Z velocity lasers.</small>
-                        </span>
-                        <span class="toggle-indicator" id="vector-indicator" aria-hidden="true"></span>
-                      </button>
-                      <button type="button" class="lab-button" id="reset-flight">
-                        <span>
-                          <strong>Reset Flight</strong>
-                          <small>Return the drone, trail, and telemetry history to zero.</small>
-                        </span>
-                        <i data-lucide="refresh-cw" aria-hidden="true"></i>
-                      </button>
-                    </div>
+            <div class="lab-dashboard">
+              <div class="lab-dashboard-col">
+                <div class="motion-card">
+                  <div class="hud-title">
+                    <i data-lucide="navigation-2" aria-hidden="true"></i>
+                    <span>Flight HUD</span>
                   </div>
-
-                  <div class="lab-overlay-bottom">
-                    <div class="lab-overlay-left" style="max-width:28rem;">
-                      <div class="lab-overlay-card">
-                        <p class="callout-note"><strong>Concept Check:</strong> fire the drone straight up with the <span class="z-axis">blue Z vector</span>, then add horizontal thrust. The altitude graph keeps telling the Z-story while the floor drift only rewrites the X and Y stories. That is vector independence in plain sight.</p>
-                      </div>
+                  <div class="hud-row">
+                    <div class="hud-row-head" style="color:var(--z-color);">
+                      <span>Altitude (Z)</span>
+                      <span id="hud-altitude">0.0 m</span>
+                    </div>
+                    <div class="telemetry-track"><div class="telemetry-fill" id="hud-altitude-bar" style="background:var(--z-color);"></div></div>
+                  </div>
+                  <div class="hud-row">
+                    <div class="hud-row-head" style="color:var(--y-color);">
+                      <span>Speed Magnitude</span>
+                      <span id="hud-speed">0.0 m/s</span>
+                    </div>
+                    <div class="telemetry-track"><div class="telemetry-fill" id="hud-speed-bar" style="background:var(--y-color);"></div></div>
+                  </div>
+                  <div class="hud-row">
+                    <div class="hud-row-head" style="color:var(--x-color);">
+                      <span>Acceleration Magnitude</span>
+                      <span id="hud-accel">0.0 m/s²</span>
+                    </div>
+                    <div class="telemetry-track"><div class="telemetry-fill" id="hud-accel-bar" style="background:var(--x-color);"></div></div>
+                  </div>
+                  <div class="hud-readouts">
+                    <div class="hud-readout">
+                      <span class="label">X Position</span>
+                      <span class="value" id="hud-x-pos">0.0</span>
+                    </div>
+                    <div class="hud-readout">
+                      <span class="label">Y Position</span>
+                      <span class="value" id="hud-y-pos">0.0</span>
+                    </div>
+                    <div class="hud-readout">
+                      <span class="label">Heading</span>
+                      <span class="value" id="hud-heading">0°</span>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <div class="lab-dashboard-col">
+                <div style="display: grid; gap: 0.85rem;">
+                  <button type="button" class="lab-button" id="toggle-vectors">
+                    <span>
+                      <strong>Vector Breakdown</strong>
+                      <small>Show the X, Y, and Z velocity lasers.</small>
+                    </span>
+                    <span class="toggle-indicator" id="vector-indicator" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" class="lab-button" id="reset-flight">
+                    <span>
+                      <strong>Reset Flight</strong>
+                      <small>Return the drone, trail, and telemetry history to zero.</small>
+                    </span>
+                    <i data-lucide="refresh-cw" aria-hidden="true"></i>
+                  </button>
+                </div>
+
+                <div class="motion-card" style="padding: 1rem 1.05rem;">
+                  <div class="control-strip">
+                    <span class="keycap">W</span>
+                    <span class="keycap">A</span>
+                    <span class="keycap">S</span>
+                    <span class="keycap">D</span>
+                    <span>Move on the floor plane</span>
+                  </div>
+                  <div class="control-strip" style="margin-top:0.55rem;">
+                    <span class="keycap">Space</span>
+                    <span class="keycap">Shift</span>
+                    <span>Raise or lower altitude</span>
+                  </div>
+                </div>
+
+                <div class="motion-card" style="padding: 1rem 1.05rem;">
+                  <p class="callout-note"><strong>Concept Check:</strong> fire the drone straight up with the <span class="z-axis">blue Z vector</span>, then add horizontal thrust. The altitude graph keeps telling the Z-story while the floor drift only rewrites the X and Y stories. That is vector independence in plain sight.</p>
+                </div>
+              </div>
+            </div>
+          </div>
 
               <aside class="lab-panel" aria-label="Flight telemetry and lesson controls">
                 <div>
@@ -1304,6 +1271,12 @@
         if (state.velocity.y < 0) state.velocity.y = 0;
       }
 
+        // Grid boundaries (keep drone within the 60x60 grid area)
+        if (state.position.x > 30) { state.position.x = 30; state.velocity.x = 0; }
+        if (state.position.x < -30) { state.position.x = -30; state.velocity.x = 0; }
+        if (state.position.z > 30) { state.position.z = 30; state.velocity.z = 0; }
+        if (state.position.z < -30) { state.position.z = -30; state.velocity.z = 0; }
+
       state.acceleration.copy(state.velocity).sub(state.prevVelocity).divideScalar(Math.max(dt, 0.0001));
       state.prevVelocity.copy(state.velocity);
 
@@ -1356,6 +1329,7 @@
     }
 
     window.addEventListener("keydown", (event) => {
+      if (event.code === "Space") event.preventDefault();
       keys[event.code] = true;
       if (event.code === "KeyR") {
         setVectorsVisible(!state.vectorsVisible);
@@ -1364,6 +1338,12 @@
 
     window.addEventListener("keyup", (event) => {
       keys[event.code] = false;
+    });
+
+    window.addEventListener("blur", () => {
+      for (const key in keys) {
+        keys[key] = false;
+      }
     });
 
     window.addEventListener("resize", resizeRenderer);

@@ -230,7 +230,8 @@ const state = {
   timer: null,
   running: false,
   lastResult: null,
-  pendingDynamicGrid: null
+  pendingDynamicGrid: null,
+  hoveredCell: null
 };
 
 function getTheme() {
@@ -504,7 +505,9 @@ function runGridAStar(cells, start, goal, options) {
         h: current.h,
         f: current.f,
         expandedCount,
-        message: `Expanding node ${current.key.replace(",", ", ")}.`
+        message: `Expanding node ${current.key.replace(",", ", ")}.`,
+        cameFrom: new Map(cameFrom),
+        nodeScores: new Map(nodeScores)
       });
     }
   }
@@ -520,6 +523,7 @@ function runGridAStar(cells, start, goal, options) {
     expandedCount,
     nodeScores,
     closedSet,
+    cameFrom,
     message: success ? "Route solved." : "No route under current constraints."
   };
 }
@@ -847,7 +851,8 @@ function buildPathFrames(result, prefixExpansions = 0) {
       type: "path",
       openSet: [],
       closedSet: closed,
-      pathSet: result.path.slice(0, i + 1),
+    pathSet: new Set(result.path.slice(0, i + 1)),
+    pathArray: result.path.slice(0, i + 1),
       currentKey: key,
       g: scores.g,
       h: scores.h,
@@ -994,7 +999,10 @@ function applyFrame(rawFrame) {
     ...rawFrame,
     openSet: new Set(rawFrame.openSet || []),
     closedSet: new Set(rawFrame.closedSet || []),
-    pathSet: new Set(rawFrame.pathSet || [])
+    pathSet: new Set(rawFrame.pathSet || []),
+    pathArray: Array.isArray(rawFrame.pathSet) ? rawFrame.pathSet : (rawFrame.pathArray || []),
+    cameFrom: rawFrame.cameFrom || new Map(),
+    nodeScores: rawFrame.nodeScores || new Map()
   };
 
   if (frame.type === "event" && state.pendingDynamicGrid) {
@@ -1352,45 +1360,181 @@ function describeCell(x, y, terrain, frame) {
 }
 
 function renderGrid(frame = state.currentFrame) {
+  if (!gridEl.getContext) return;
+  const ctx = gridEl.getContext("2d");
   const theme = getTheme();
-  gridEl.style.setProperty("--astar-cols", String(state.width));
-  gridEl.dataset.theme = state.theme;
-  const panel = gridEl.closest(".astar-grid-panel");
-  if (panel) panel.dataset.theme = state.theme;
+  const isNight = getComputedStyle(document.body).getPropertyValue('--is-night-theme') === 'true';
 
-  const fragment = document.createDocumentFragment();
+  const dpr = window.devicePixelRatio || 1;
+  const rect = gridEl.getBoundingClientRect();
+  const cWidth = rect.width;
+  const cHeight = (rect.width / state.width) * state.height;
+
+  if (gridEl.width !== Math.round(cWidth * dpr) || gridEl.height !== Math.round(cHeight * dpr)) {
+    gridEl.width = Math.round(cWidth * dpr);
+    gridEl.height = Math.round(cHeight * dpr);
+    gridEl.style.height = `${cHeight}px`;
+  }
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cWidth, cHeight);
+  ctx.save();
+
+  const cellW = cWidth / state.width;
+  
+  const gap = 2;
+  const size = cellW - gap;
+  const maxH = heuristicValue(state.heuristic, 0, 0, state.goal.x, state.goal.y) || 1;
+  
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "center";
+  ctx.font = `${Math.max(10, Math.floor(size * 0.55))}px 'IBM Plex Mono', monospace`;
 
   for (let y = 0; y < state.height; y += 1) {
     for (let x = 0; x < state.width; x += 1) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = `astar-cell ${terrainClass(terrainAt(state.cells, x, y))}`;
-      btn.dataset.x = String(x);
-      btn.dataset.y = String(y);
-      btn.setAttribute("role", "gridcell");
-
       const key = keyOf(x, y);
-      if (frame?.openSet?.has(key)) btn.classList.add("is-open");
-      if (frame?.closedSet?.has(key)) btn.classList.add("is-closed");
-      if (frame?.pathSet?.has(key)) btn.classList.add("is-path");
-      if (frame?.currentKey === key) btn.classList.add("is-current");
-      if (isStart(x, y)) btn.classList.add("is-rover");
-      if (isGoal(x, y)) btn.classList.add("is-beacon");
+      const cx = x * cellW + gap / 2;
+      const cy = y * cellW + gap / 2;
+      
+      const terrain = terrainAt(state.cells, x, y);
+      let bgColor = isNight ? "#1e293b" : "#f1f5f9";
+      
+      if (terrain === "blocked") {
+        bgColor = isNight ? "#475569" : "#94a3b8"; 
+      } else if (terrain === "sand") {
+        bgColor = isNight ? "#ca8a04" : "#fcd34d"; 
+      } else {
+        const hVal = heuristicValue(state.heuristic, x, y, state.goal.x, state.goal.y);
+        const intensity = Math.max(0, 1 - (hVal / maxH));
+        const hue = 220 - (intensity * 175); // Blue to Gold
+        const light = isNight ? 20 + intensity * 20 : 90 - intensity * 20;
+        bgColor = `hsla(${hue}, 80%, ${light}%, 1)`;
+      }
+      
+      ctx.fillStyle = bgColor;
+      if (ctx.roundRect) {
+        ctx.beginPath(); ctx.roundRect(cx, cy, size, size, 4); ctx.fill();
+      } else {
+        ctx.fillRect(cx, cy, size, size);
+      }
 
-      if (isStart(x, y)) btn.textContent = theme.startSymbol;
-      else if (isGoal(x, y)) btn.textContent = theme.goalSymbol;
-      else if (terrainAt(state.cells, x, y) === "blocked") btn.textContent = theme.blockedSymbol;
-      else if (terrainAt(state.cells, x, y) === "sand") btn.textContent = theme.slowSymbol;
-      else if (frame?.pathSet?.has(key)) btn.textContent = "•";
-      else btn.textContent = "";
+      if (frame?.closedSet?.has(key) || state.lastResult?.closedSet?.has(key)) {
+        ctx.fillStyle = isNight ? "rgba(148, 163, 184, 0.3)" : "rgba(148, 163, 184, 0.5)";
+        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(cx, cy, size, size, 4); ctx.fill(); } 
+        else { ctx.fillRect(cx, cy, size, size); }
+      }
+      if (frame?.openSet?.has(key)) {
+        ctx.fillStyle = isNight ? "rgba(59, 130, 246, 0.4)" : "rgba(59, 130, 246, 0.5)";
+        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(cx, cy, size, size, 4); ctx.fill(); } 
+        else { ctx.fillRect(cx, cy, size, size); }
+      }
+      if (frame?.currentKey === key) {
+        ctx.fillStyle = "rgba(251, 191, 36, 0.9)";
+        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(cx, cy, size, size, 4); ctx.fill(); } 
+        else { ctx.fillRect(cx, cy, size, size); }
+      }
 
-      btn.setAttribute("aria-label", describeCell(x, y, terrainAt(state.cells, x, y), frame));
-      fragment.appendChild(btn);
+      const parentKey = frame?.cameFrom?.get(key) || state.lastResult?.cameFrom?.get(key);
+      if (parentKey && (frame?.closedSet?.has(key) || state.lastResult?.closedSet?.has(key)) && !isStart(x, y) && !isGoal(x, y)) {
+        const { x: px, y: py } = coordsFromKey(parentKey);
+        const pcx = px * cellW + cellW / 2;
+        const pcy = py * cellW + cellW / 2;
+        const ccx = x * cellW + cellW / 2;
+        const ccy = y * cellW + cellW / 2;
+        
+        ctx.beginPath();
+        ctx.moveTo(ccx, ccy);
+        ctx.lineTo(ccx + (pcx - ccx) * 0.35, ccy + (pcy - ccy) * 0.35);
+        ctx.strokeStyle = isNight ? "rgba(255, 255, 255, 0.4)" : "rgba(0, 0, 0, 0.3)";
+        ctx.lineWidth = Math.max(1.5, size * 0.08);
+        ctx.lineCap = "round";
+        ctx.stroke();
+      }
+      
+      let symbol = "";
+      if (isStart(x, y)) symbol = theme.startSymbol;
+      else if (isGoal(x, y)) symbol = theme.goalSymbol;
+      else if (terrain === "blocked") symbol = theme.blockedSymbol;
+      else if (terrain === "sand") symbol = theme.slowSymbol;
+      
+      if (symbol) {
+        ctx.fillStyle = isNight ? "rgba(255, 255, 255, 0.9)" : "rgba(0, 0, 0, 0.8)";
+        ctx.fillText(symbol, cx + size/2, cy + size/2 + (size * 0.05));
+      }
     }
   }
 
-  gridEl.innerHTML = "";
-  gridEl.appendChild(fragment);
+  const path = Array.isArray(frame?.pathArray) && frame.pathArray.length > 0 ? frame.pathArray : (state.lastResult?.path || []);
+  if (path.length > 0) {
+    ctx.beginPath();
+    ctx.strokeStyle = "#a855f7";
+    ctx.lineWidth = Math.max(4, size * 0.25);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    
+    ctx.shadowColor = "#a855f7";
+    ctx.shadowBlur = 8;
+    
+    for (let i = 0; i < path.length; i++) {
+      const { x, y } = coordsFromKey(path[i]);
+      const px = x * cellW + cellW / 2;
+      const py = y * cellW + cellW / 2;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  if (state.hoveredCell && inBounds(state.hoveredCell.x, state.hoveredCell.y)) {
+    const { x, y } = state.hoveredCell;
+    const key = keyOf(x, y);
+    const scores = frame?.nodeScores?.get(key) || state.lastResult?.nodeScores?.get(key);
+    
+    if (scores) {
+      const cx = x * cellW + gap / 2;
+      const cy = y * cellW + gap / 2;
+      
+      const hudW = Math.max(70, size * 1.8);
+      const hudH = Math.max(54, size * 1.4);
+      const hx = Math.min(cx, cWidth - hudW);
+      const hy = Math.max(cy - hudH - 8, 0);
+
+      ctx.fillStyle = isNight ? "rgba(15, 23, 42, 0.95)" : "rgba(255, 255, 255, 0.95)";
+      ctx.shadowColor = "rgba(0,0,0,0.4)";
+      ctx.shadowBlur = 12;
+      if (ctx.roundRect) {
+        ctx.beginPath(); ctx.roundRect(hx, hy, hudW, hudH, 6); ctx.fill();
+      } else {
+        ctx.fillRect(hx, hy, hudW, hudH);
+      }
+      ctx.shadowBlur = 0;
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = isNight ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)";
+      ctx.stroke();
+
+      ctx.font = "bold 11px 'IBM Plex Mono', monospace";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      
+      ctx.fillStyle = "#3b82f6";
+      ctx.fillText(`g: ${scores.g.toFixed(1)}`, hx + 8, hy + 8);
+      
+      ctx.fillStyle = "#22c55e";
+      ctx.fillText(`h: ${scores.h.toFixed(1)}`, hx + 8, hy + 22);
+
+      ctx.beginPath();
+      ctx.moveTo(hx + 8, hy + 37);
+      ctx.lineTo(hx + hudW - 8, hy + 37);
+      ctx.stroke();
+
+      ctx.fillStyle = isNight ? "#f8fafc" : "#0f172a";
+      ctx.fillText(`f: ${scores.f.toFixed(1)}`, hx + 8, hy + 41);
+    }
+  }
+  
+  ctx.restore();
 }
 
 buildGridBtn.addEventListener("click", () => {
@@ -1402,18 +1546,56 @@ buildGridBtn.addEventListener("click", () => {
   updateStatus(`New mission grid ready. ${ai} is waiting for instructions.`);
 });
 
-gridEl.addEventListener("click", (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLButtonElement)) return;
-  if (state.running) return;
+let isPainting = false;
 
-  const x = Number(target.dataset.x);
-  const y = Number(target.dataset.y);
+function handlePointer(event) {
+  if (state.running) return;
+  if (event.type === "pointermove" && !isPainting) return;
+  event.preventDefault(); // Prevents dragging artifacts on desktop
+
+  const rect = gridEl.getBoundingClientRect();
+  const cellW = rect.width / state.width;
+  const x = Math.floor((event.clientX - rect.left) / cellW);
+  const y = Math.floor((event.clientY - rect.top) / cellW);
+
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
-  updateCellByTool(x, y);
-  clearSearchOverlay();
-  updateStatus(`${getAiName()} found a new map setup. Run Mission to test the route.`);
+  if (updateCellByTool(x, y)) {
+    clearSearchOverlay();
+    if (event.type === "pointerdown") {
+      updateStatus(`${getAiName()} found a new map setup. Run Mission to test the route.`);
+    }
+  }
+}
+
+gridEl.addEventListener("pointerdown", (event) => {
+  isPainting = true;
+  handlePointer(event);
+});
+
+gridEl.addEventListener("pointermove", (event) => {
+  const rect = gridEl.getBoundingClientRect();
+  const cellW = rect.width / state.width;
+  const hx = Math.floor((event.clientX - rect.left) / cellW);
+  const hy = Math.floor((event.clientY - rect.top) / cellW);
+  if (inBounds(hx, hy)) {
+    state.hoveredCell = { x: hx, y: hy };
+    if (!state.running) requestAnimationFrame(() => renderGrid(state.currentFrame));
+  }
+  handlePointer(event);
+});
+
+gridEl.addEventListener("pointerleave", () => {
+  state.hoveredCell = null;
+  if (!state.running) requestAnimationFrame(() => renderGrid(state.currentFrame));
+});
+
+window.addEventListener("pointerup", () => {
+  isPainting = false;
+});
+
+window.addEventListener("pointercancel", () => {
+  isPainting = false;
 });
 
 for (const button of toolButtons) {

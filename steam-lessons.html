@@ -206,6 +206,27 @@
         opacity: 0.6;
       }
 
+      .search-clear {
+        position: absolute;
+        right: 2.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        border-radius: 50%;
+        color: rgba(255, 255, 255, 0.8);
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        padding: 0;
+        transition: background 0.2s, color 0.2s;
+      }
+      .search-clear:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: #fff;
+      }
+
       .search-status {
         font-size: 0.85rem;
         color: rgba(255, 255, 255, 0.6);
@@ -274,11 +295,19 @@
         var searchStatus = document.getElementById("search-status");
         var moduleSections = document.querySelectorAll(".module-section");
 
+            // Assign unique View Transition names to enable smooth layout sliding
+            moduleSections.forEach(function(section, secIndex) {
+              section.style.viewTransitionName = "module-sec-" + secIndex;
+              section.querySelectorAll(".tile").forEach(function(tile, tileIndex) {
+                tile.style.viewTransitionName = "lesson-tile-" + secIndex + "-" + tileIndex;
+              });
+            });
+
         function normalizeText(text) {
           return text.toLowerCase().trim();
         }
 
-        function performSearch() {
+            function updateDOM() {
           var query = normalizeText(searchInput.value);
           var totalMatches = 0;
 
@@ -324,8 +353,19 @@
           }
         }
 
+            var searchTimeout;
+            function performSearch() {
+              clearTimeout(searchTimeout);
+              searchTimeout = setTimeout(function() {
+                if (document.startViewTransition) {
+                  document.startViewTransition(updateDOM);
+                } else {
+                  updateDOM(); // Fallback for older browsers
+                }
+              }, 40); // Small debounce prevents jank on rapid typing
+            }
+
         searchInput.addEventListener("input", performSearch);
-        searchInput.addEventListener("keyup", performSearch);
       })();
     </script>
 
