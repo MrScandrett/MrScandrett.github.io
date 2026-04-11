@@ -179,5 +179,9 @@
     }
   });
 
-  window.setInterval(sync, REFRESH_MS);
+  window.setInterval(function () {
+    if (getMode() === "auto") {
+      sync();
+    }
+  }, REFRESH_MS);
 }());

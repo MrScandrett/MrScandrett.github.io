@@ -42,8 +42,8 @@
     .cl-compare-card small  { font-size: 0.78rem; color: #3f4f65; line-height: 1.5; }
     [data-theme="night"] .cl-compare-card small { color: rgba(245,245,247,0.68); }
 
-    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
-    [data-theme="night"] .cl-canvas-wrap { background: #1c1c1e; }
+    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #050814; }
+    [data-theme="night"] .cl-canvas-wrap { background: #02040a; }
     #cl-canvas { width: 100%; height: 220px; display: block; cursor: crosshair; }
 
     .cl-readouts { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.5rem; margin: 0.6rem 0; }
@@ -370,39 +370,69 @@
     return K * Math.abs(getQ1()) * Math.abs(getQ2()) / (r * r);
   }
 
-  function colorFor(sign) { return sign > 0 ? '#ff3b30' : '#007aff'; }
+  function drawVectorField(W, H, x1, x2, CY) {
+    const spacing = 24;
+    const q1 = getQ1();
+    const q2 = getQ2();
 
-  function drawFieldLines(W, H, x1, x2, y) {
-    const lineCount = 9;
-    for (let i = 0; i < lineCount; i += 1) {
-      const yy = 28 + i * ((H - 56) / (lineCount - 1));
-      const grad = ctx.createLinearGradient(0, yy, W, yy);
-      grad.addColorStop(0, 'rgba(0,122,255,0.04)');
-      grad.addColorStop(0.5, 'rgba(255,159,10,0.1)');
-      grad.addColorStop(1, 'rgba(255,59,48,0.04)');
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(20, yy);
-      ctx.bezierCurveTo((x1 + x2) / 2 - 60, yy, (x1 + x2) / 2 + 60, yy, W - 20, yy);
-      ctx.stroke();
+    for (let x = spacing / 2; x < W; x += spacing) {
+      for (let y = spacing / 2; y < H; y += spacing) {
+        const dx1 = x - x1, dy1 = y - CY;
+        const r1sq = dx1*dx1 + dy1*dy1;
+        const r1 = Math.sqrt(r1sq);
+
+        const dx2 = x - x2, dy2 = y - CY;
+        const r2sq = dx2*dx2 + dy2*dy2;
+        const r2 = Math.sqrt(r2sq);
+
+        // Don't draw vectors inside the charges
+        if (r1 < 20 || r2 < 20) continue;
+
+        // E = kq/r^2 (we skip k here since we are just visualizing relative strength and direction)
+        const e1 = q1 / r1sq;
+        const e2 = q2 / r2sq;
+
+        const ex = e1 * (dx1 / r1) + e2 * (dx2 / r2);
+        const ey = e1 * (dy1 / r1) + e2 * (dy2 / r2);
+
+        const emag = Math.sqrt(ex*ex + ey*ey);
+        if (emag === 0) continue;
+
+        const ex_norm = ex / emag;
+        const ey_norm = ey / emag;
+
+        const len = 12;
+        const alpha = Math.min(0.65, emag * 80000000); // Scale opacity by field strength
+
+        ctx.strokeStyle = `rgba(160, 190, 255, ${alpha})`;
+        ctx.fillStyle = `rgba(160, 190, 255, ${alpha})`;
+        ctx.lineWidth = 1.5;
+
+        const endX = x + ex_norm * len / 2;
+        const endY = y + ey_norm * len / 2;
+        const startX = x - ex_norm * len / 2;
+        const startY = y - ey_norm * len / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        // Arrowhead
+        const headLen = 4;
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - ex_norm * headLen - ey_norm * headLen * 0.6, endY - ey_norm * headLen + ex_norm * headLen * 0.6);
+        ctx.lineTo(endX - ex_norm * headLen + ey_norm * headLen * 0.6, endY - ey_norm * headLen - ex_norm * headLen * 0.6);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
-
-    ctx.strokeStyle = 'rgba(100,116,139,0.18)';
-    ctx.lineWidth = 1.25;
-    ctx.strokeRect(14, 14, W - 28, H - 28);
-
-    ctx.font = '10px Inter,sans-serif';
-    ctx.fillStyle = '#64748b';
-    ctx.textAlign = 'left';
-    ctx.fillText('air region', 20, 28);
-    ctx.textAlign = 'right';
-    ctx.fillText('boundary', W - 20, 28);
-    ctx.textAlign = 'center';
-    ctx.fillText('field model', W / 2, H - 28);
   }
 
-  function draw() {
+  let timeOffset = 0;
+  function draw(ts = 0) {
+    timeOffset = ts / 1000;
     const W = canvas.offsetWidth || 600;
     canvas.width = W; canvas.height = 220;
     const H = 220;
@@ -413,12 +443,23 @@
     const force = calcForce(W);
     const attract = (getQ1() * getQ2()) < 0;
 
-    ctx.clearRect(0, 0, W, H);
-    drawFieldLines(W, H, x1, x2, CY);
+    // Richer background and spatial grid to give depth
+    const bgGrad = ctx.createRadialGradient(W/2, CY, 0, W/2, CY, W*0.8);
+    bgGrad.addColorStop(0, '#0f172a');
+    bgGrad.addColorStop(1, '#02040a');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = 'rgba(120, 150, 200, 0.05)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 30) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    drawVectorField(W, H, x1, x2, CY);
 
     // Distance line
     ctx.setLineDash([4,4]);
-    ctx.strokeStyle = 'rgba(100,116,139,0.4)';
+    ctx.strokeStyle = 'rgba(140,160,200,0.4)';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x1, CY); ctx.lineTo(x2, CY); ctx.stroke();
     ctx.setLineDash([]);
@@ -426,7 +467,7 @@
     // Distance label
     const r = distMeters(W);
     ctx.font = '11px Inter,sans-serif';
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = '#94a3b8';
     ctx.textAlign = 'center';
     ctx.fillText('r = ' + r.toFixed(2) + ' m', (x1+x2)/2, CY - 12);
 
@@ -437,6 +478,8 @@
     ctx.strokeStyle = arrowColor;
     ctx.fillStyle   = arrowColor;
     ctx.lineWidth = 2.5;
+    ctx.shadowColor = arrowColor;
+    ctx.shadowBlur = 12;
 
     if (attract) {
       // arrows pointing inward
@@ -447,21 +490,54 @@
       drawArrow(ctx, x1 + R + 5, CY, x1 + R + 5 - scale, CY);
       drawArrow(ctx, x2 - R - 5, CY, x2 - R - 5 + scale, CY);
     }
+    ctx.shadowBlur = 0;
 
     // Charge circles
     [[x1, q1sign, q1mag], [x2, q2sign, q2mag]].forEach(([cx, sign, mag]) => {
-      ctx.beginPath();
-      ctx.arc(cx, CY, R, 0, Math.PI*2);
-      ctx.fillStyle = colorFor(sign);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.font = 'bold 14px Inter,sans-serif';
+      const baseColor = sign > 0 ? '255, 40, 80' : '0, 190, 255';
+      const coreColor = sign > 0 ? '#ffb3b0' : '#b0efff';
+      const shadowColor = sign > 0 ? '#8a0010' : '#002b66';
+
+      const pulse = 1 + Math.sin(timeOffset * 5 + cx) * 0.08;
+      const glowRadius = (R + mag * 4.5) * pulse;
+
+      ctx.globalCompositeOperation = 'screen';
+      const glow = ctx.createRadialGradient(cx, CY, R * 0.5, cx, CY, glowRadius);
+      glow.addColorStop(0, `rgba(${baseColor}, 0.6)`);
+      glow.addColorStop(0.4, `rgba(${baseColor}, 0.15)`);
+      glow.addColorStop(1, `rgba(${baseColor}, 0)`);
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(cx, CY, glowRadius, 0, Math.PI*2); ctx.fill();
+
+      ctx.globalCompositeOperation = 'source-over';
+      // Harder specular highlight for a glossy 3D feel
+      const sphere = ctx.createRadialGradient(cx - R * 0.35, CY - R * 0.35, R * 0.05, cx, CY, R * 1.1);
+      sphere.addColorStop(0, '#ffffff');
+      sphere.addColorStop(0.15, coreColor);
+      sphere.addColorStop(0.5, `rgb(${baseColor})`);
+      sphere.addColorStop(1, shadowColor);
+      ctx.fillStyle = sphere;
+      ctx.beginPath(); ctx.arc(cx, CY, R, 0, Math.PI*2); ctx.fill();
+
+      // Subtle inner rim light to pop off the dark background
+      const rim = ctx.createRadialGradient(cx, CY, R * 0.75, cx, CY, R);
+      rim.addColorStop(0, 'rgba(255,255,255,0)');
+      rim.addColorStop(1, 'rgba(255,255,255,0.25)');
+      ctx.fillStyle = rim;
+      ctx.beginPath(); ctx.arc(cx, CY, R, 0, Math.PI*2); ctx.fill();
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(cx, CY, R - 1, 0, Math.PI*2); ctx.stroke();
+
+      ctx.font = 'bold 15px Inter,sans-serif';
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      ctx.shadowColor = `rgb(${baseColor})`;
+      ctx.shadowBlur = 8;
       ctx.fillText((sign > 0 ? '+' : '−') + mag + 'μ', cx, CY);
+      ctx.shadowBlur = 0;
     });
     ctx.textBaseline = 'alphabetic';
 
@@ -546,8 +622,12 @@
     draw();
   };
 
-  window.addEventListener('resize', draw);
-  draw();
+  function loop(ts) {
+    draw(ts);
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize', () => draw(performance.now()));
+  requestAnimationFrame(loop);
 
   // Practice
   window.clCheck = function(n, ans, tol) {

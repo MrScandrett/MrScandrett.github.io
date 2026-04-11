@@ -128,6 +128,49 @@
 
   ensureKawaiiRangeSkin();
 
+  function injectNavA11yStyles() {
+    if (document.getElementById("classroomos-nav-a11y")) return;
+    var style = document.createElement("style");
+    style.id = "classroomos-nav-a11y";
+    style.textContent =
+      '.nav-settings-toggle:focus-visible, .site-nav a:focus-visible, .nav-mode-pill:focus-visible, .nav-tone-pill:focus-visible, .nav-theme-chip:focus-visible {' +
+        'outline: 2px solid var(--theme-accent, #007aff); outline-offset: 2px;' +
+      '}' +
+      /* Responsive grid for theme/canvas chips */
+      '.nav-theme-grid, .nav-canvas-grid {' +
+        'display: grid;' +
+        'grid-template-columns: 1fr; /* Single column on narrow screens */' +
+        'gap: 0.4rem;' +
+      '}' +
+      '@media (min-width: 420px) {' +
+        '.nav-theme-grid, .nav-canvas-grid { grid-template-columns: 1fr 1fr; } /* Two columns on wider screens */' +
+      '}' +
+      '.nav-theme-chip.is-active .nav-theme-swatch::after {' +
+        'content: "\\2713"; color: #fff; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 0.85em;' +
+        'animation: cosThemePop 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;' +
+      '}' +
+      '@keyframes cosThemePop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }' +
+      '.nav-auto-note {' +
+        'display: none; margin: 0.45rem 0 0.1rem; padding: 0.42rem 0.72rem;' +
+        'background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.28);' +
+        'border-radius: 8px; font-size: 0.77rem; line-height: 1.5;' +
+        'color: var(--theme-accent, #92400e);' +
+      '}' +
+      '[data-theme="night"] .nav-auto-note, [data-lighting="night"] .nav-auto-note { color: #fcd34d; }' +
+      '.nav-auto-note.is-visible { display: block; }' +
+      '.nav-theme-chip[aria-disabled="true"], .nav-tone-pill[aria-disabled="true"] { cursor: not-allowed; }' +
+      '@media (max-width: 768px) {' +
+        '.site-nav {' +
+          'transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, visibility 0s 0.3s;' +
+        '}' +
+        '.site-nav.is-open {' +
+          'transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, visibility 0s 0s;' +
+        '}' +
+      '}';
+    document.head.appendChild(style);
+  }
+  injectNavA11yStyles();
+
   var ICON_MENU = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
     '<rect x="2" y="4"  width="16" height="2" rx="1" fill="currentColor"/>' +
     '<rect x="2" y="9"  width="16" height="2" rx="1" fill="currentColor"/>' +
@@ -395,6 +438,8 @@
   var toneControls = null;
   var themeGrid = null;
   var canvasGrid = null;
+  var autoNote = null;
+  var trapFocusHandler = null;
 
   if (!isThemeIndependent) {
     settingsContainer = document.createElement(nav.querySelector("ul") ? "li" : "div");
@@ -407,16 +452,17 @@
         '<span>Settings</span>' +
         '<span class="nav-settings-status" aria-hidden="true"></span>' +
       "</button>" +
-      '<div class="nav-settings-panel" id="' + panelId + '" hidden>' +
+      '<div class="nav-settings-panel" id="' + panelId + '" role="dialog" aria-modal="true" aria-label="Theme Settings" hidden>' +
         '<div class="nav-settings-head">' +
           '<p class="nav-settings-eyebrow">Theme Controller</p>' +
           '<p class="nav-settings-current" aria-live="polite"></p>' +
         "</div>" +
         '<p class="nav-settings-note">Move between automatic lighting, quick day or night tones, and the full palette without leaving the page.</p>' +
         '<div class="nav-settings-mode" role="group" aria-label="Theme mode">' +
-          '<button type="button" class="nav-mode-pill" data-mode="auto">Auto</button>' +
-          '<button type="button" class="nav-mode-pill" data-mode="manual">Manual</button>' +
+          '<button type="button" class="nav-mode-pill" data-mode="auto" aria-pressed="false">Auto</button>' +
+          '<button type="button" class="nav-mode-pill" data-mode="manual" aria-pressed="false">Manual</button>' +
         '</div>' +
+        '<p class="nav-auto-note" role="status" aria-live="polite">Following local time — select <strong>Manual</strong> above to choose a theme.</p>' +
         '<div class="nav-tone-rail" role="group" aria-label="Quick tone">' +
           '<button type="button" class="nav-tone-pill" data-tone="day" aria-label="Use day theme">' +
             '<span class="nav-tone-icon" aria-hidden="true">&#9728;</span>' +
@@ -451,6 +497,7 @@
     toneControls = settingsContainer.querySelector(".nav-tone-rail");
     themeGrid = settingsContainer.querySelector(".nav-theme-grid");
     canvasGrid = settingsContainer.querySelector(".nav-canvas-grid");
+    autoNote = settingsContainer.querySelector(".nav-auto-note");
 
     THEME_OPTIONS.forEach(function (option) {
       var optionBtn = document.createElement("button");
@@ -458,6 +505,8 @@
       optionBtn.className = "nav-theme-chip";
       optionBtn.setAttribute("data-theme", option.id);
       optionBtn.setAttribute("role", "listitem");
+      optionBtn.setAttribute("aria-label", option.label + " theme \u2014 " + option.detail);
+      optionBtn.setAttribute("aria-pressed", "false");
       optionBtn.innerHTML =
         '<span class="nav-theme-swatch" aria-hidden="true"></span>' +
         '<span class="nav-theme-label">' +
@@ -508,6 +557,7 @@
       btn.setAttribute("data-canvas-bg", opt.id);
       btn.setAttribute("role", "listitem");
       btn.setAttribute("aria-pressed", "false");
+      btn.setAttribute("aria-label", opt.label + " canvas background \u2014 " + opt.detail);
       btn.innerHTML =
         '<span class="nav-canvas-icon" aria-hidden="true">' + opt.icon + '</span>' +
         '<span class="nav-theme-label">' +
@@ -539,13 +589,38 @@
     settingsContainer.classList.add("is-open");
     settingsToggle.setAttribute("aria-expanded", "true");
     settingsPanel.hidden = false;
+    var firstInteractive = settingsPanel.querySelector("button");
+    if (firstInteractive) firstInteractive.focus();
+
+    // Install focus trap
+    trapFocusHandler = function (e) {
+      if (e.key !== "Tab" || !settingsPanel || settingsPanel.hidden) return;
+      var focusable = Array.prototype.slice.call(
+        settingsPanel.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+      );
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last  = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener("keydown", trapFocusHandler);
   }
 
   function closeSettings() {
     if (!settingsContainer) return;
+    var wasOpen = settingsContainer.classList.contains("is-open");
     settingsContainer.classList.remove("is-open");
     settingsToggle.setAttribute("aria-expanded", "false");
     settingsPanel.hidden = true;
+    if (trapFocusHandler) {
+      document.removeEventListener("keydown", trapFocusHandler);
+      trapFocusHandler = null;
+    }
+    if (wasOpen && settingsToggle) settingsToggle.focus();
   }
 
   function updateSettingsUi(mode, activeId) {
@@ -570,19 +645,39 @@
       button.classList.toggle("is-active", isActive);
     });
 
+    var isAuto = mode === "auto";
+
+    if (autoNote) {
+      autoNote.classList.toggle("is-visible", isAuto);
+    }
+
     toneButtons.forEach(function (button) {
       var tone = button.getAttribute("data-tone");
       var isActive = tone === activeId;
       button.setAttribute("aria-pressed", isActive ? "true" : "false");
       button.classList.toggle("is-active", isActive);
-      button.classList.toggle("is-muted", mode === "auto" && !isActive);
+      button.classList.toggle("is-muted", isAuto && !isActive);
+      if (isAuto) {
+        button.setAttribute("aria-disabled", "true");
+        button.setAttribute("title", "Switch to Manual mode to change the theme");
+      } else {
+        button.removeAttribute("aria-disabled");
+        button.removeAttribute("title");
+      }
     });
 
     themeButtons.forEach(function (button) {
       var isActive = button.getAttribute("data-theme") === activeId;
       button.setAttribute("aria-pressed", isActive ? "true" : "false");
       button.classList.toggle("is-active", isActive);
-      button.classList.toggle("is-muted", mode === "auto" && !isActive);
+      button.classList.toggle("is-muted", isAuto && !isActive);
+      if (isAuto) {
+        button.setAttribute("aria-disabled", "true");
+        button.setAttribute("title", "Switch to Manual mode to change the theme");
+      } else {
+        button.removeAttribute("aria-disabled");
+        button.removeAttribute("title");
+      }
     });
   }
 
@@ -644,8 +739,15 @@
 
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
-      closeSettings();
-      closeNav();
+      if (settingsContainer && settingsContainer.classList.contains("is-open")) {
+        closeSettings();
+        e.preventDefault();
+        e.stopPropagation();
+      } else if (nav.classList.contains("is-open")) {
+        closeNav();
+        e.preventDefault();
+        e.stopPropagation();
+      }
     }
   });
 

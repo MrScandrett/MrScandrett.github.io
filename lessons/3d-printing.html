@@ -195,6 +195,7 @@
       border: 1px solid rgba(255,107,53,0.22);
       background: #0e0700;
       overflow: hidden;
+    position: relative;
     }
     #p3d-canvas { display: block; width: 100%; }
 
@@ -598,50 +599,83 @@
         <!-- Controls -->
         <div class="p3d-controls">
 
+          <!-- Core Material & Temp -->
           <div class="p3d-control-row">
-            <label>Layer Height <span id="lh-val">0.20 mm</span></label>
-            <input type="range" id="lh-slider" min="0.05" max="0.40" step="0.05" value="0.20" />
+            <label for="mat-select">Material</label>
+            <div style="position: relative;">
+              <select id="mat-select">
+                <option value="pla">PLA</option>
+                <option value="petg">PETG</option>
+                <option value="abs">ABS</option>
+                <option value="tpu">TPU (Flexible)</option>
+                <option value="asa">ASA</option>
+              </select>
+              <span aria-hidden="true" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: rgba(255,200,160,0.7); font-size: 0.7rem;">▼</span>
+            </div>
           </div>
 
           <div class="p3d-control-row">
-            <label>Infill Density <span id="inf-val">20%</span></label>
-            <input type="range" id="inf-slider" min="0" max="100" step="5" value="20" />
-          </div>
-
-          <div class="p3d-control-row">
-            <label>Wall Count <span id="walls-val">3</span></label>
-            <input type="range" id="walls-slider" min="1" max="8" step="1" value="3" />
-          </div>
-
-          <div class="p3d-control-row">
-            <label>Print Speed <span id="spd-val">50 mm/s</span></label>
-            <input type="range" id="spd-slider" min="10" max="300" step="10" value="50" />
-          </div>
-
-          <div class="p3d-control-row">
-            <label>Nozzle Temp <span id="tmp-val">210 °C</span></label>
+            <label for="tmp-slider">Nozzle Temp <span id="tmp-val">210 °C</span></label>
             <input type="range" id="tmp-slider" min="170" max="310" step="5" value="210" />
+            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
+              <span>170°C</span>
+              <span>310°C</span>
+            </div>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid rgba(255,107,53,0.15); margin: 0.4rem 0;" />
+
+          <!-- Slicing Geometry -->
+          <div class="p3d-control-row">
+            <label for="lh-slider">Layer Height <span id="lh-val">0.20 mm</span></label>
+            <input type="range" id="lh-slider" min="0.05" max="0.40" step="0.05" value="0.20" />
+            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
+              <span>0.05 (Fine)</span>
+              <span>0.40 (Draft)</span>
+            </div>
           </div>
 
           <div class="p3d-control-row">
-            <label>Supports</label>
-            <select id="sup-select">
-              <option value="none">None</option>
-              <option value="normal">Normal (touching buildplate)</option>
-              <option value="everywhere">Everywhere</option>
-              <option value="tree">Tree supports</option>
-            </select>
+            <label for="walls-slider">Wall Count <span id="walls-val">3</span></label>
+            <input type="range" id="walls-slider" min="1" max="8" step="1" value="3" />
+            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
+              <span>1</span>
+              <span>8</span>
+            </div>
           </div>
 
           <div class="p3d-control-row">
-            <label>Material</label>
-            <select id="mat-select">
-              <option value="pla">PLA</option>
-              <option value="petg">PETG</option>
-              <option value="abs">ABS</option>
-              <option value="tpu">TPU (Flexible)</option>
-              <option value="asa">ASA</option>
-            </select>
+            <label for="inf-slider">Infill Density <span id="inf-val">20%</span></label>
+            <input type="range" id="inf-slider" min="0" max="100" step="5" value="20" />
+            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
+              <span>0% (Hollow)</span>
+              <span>100% (Solid)</span>
+            </div>
+          </div>
+
+          <div class="p3d-control-row">
+            <label for="sup-select">Supports</label>
+            <div style="position: relative;">
+              <select id="sup-select">
+                <option value="none">None</option>
+                <option value="normal">Normal (touching buildplate)</option>
+                <option value="everywhere">Everywhere</option>
+                <option value="tree">Tree supports</option>
+              </select>
+              <span aria-hidden="true" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: rgba(255,200,160,0.7); font-size: 0.7rem;">▼</span>
+            </div>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid rgba(255,107,53,0.15); margin: 0.4rem 0;" />
+
+          <!-- Kinematics -->
+          <div class="p3d-control-row">
+            <label for="spd-slider">Print Speed <span id="spd-val">50 mm/s</span></label>
+            <input type="range" id="spd-slider" min="10" max="300" step="10" value="50" />
+            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
+              <span>10</span>
+              <span>300 mm/s</span>
+            </div>
           </div>
 
         </div>
@@ -649,7 +683,15 @@
         <!-- Preview + stats -->
         <div>
           <div class="p3d-preview-wrap">
-            <canvas id="p3d-canvas" width="500" height="320"></canvas>
+            <div style="position: absolute; top: 12px; right: 12px; z-index: 10;">
+              <button id="view-toggle" type="button" class="p3d-btn secondary" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 8px; border-radius:6px; font-size:0.7rem; cursor:pointer;">3D View</button>
+            </div>
+            <canvas id="p3d-canvas" width="500" height="320" aria-label="Cross-section preview of the 3D model with selected slicer settings"></canvas>
+            <div class="p3d-layer-slider-wrap">
+              <label for="layer-slider">Layer View</label>
+              <input type="range" id="layer-slider" min="1" max="300" value="150" />
+              <span id="layer-readout">Layer 150 / 300</span>
+            </div>
             <div class="p3d-canvas-legend">
               <div class="p3d-legend-item"><div class="p3d-legend-swatch" style="background:rgba(255,107,53,0.9)"></div>Wall perimeters</div>
               <div class="p3d-legend-item"><div class="p3d-legend-swatch" style="background:rgba(255,149,0,0.7)"></div>Infill</div>
@@ -1284,6 +1326,10 @@
     var supSelect   = document.getElementById('sup-select');
     var matSelect   = document.getElementById('mat-select');
 
+    var layerSlider = document.getElementById('layer-slider');
+    var layerReadout= document.getElementById('layer-readout');
+    var currentLayer = 150;
+
     var MAT = {
       pla:  { name:'PLA',  tmp:[195,220], bed:[55,65],   enclosure:false, stringy:false },
       petg: { name:'PETG', tmp:[230,250], bed:[70,85],   enclosure:false, stringy:true  },
@@ -1319,15 +1365,23 @@
       var perim   = 4 * MODEL_SIDE;                      // 160 mm
       var area    = MODEL_SIDE * MODEL_SIDE;             // 1600 mm²
 
-      // Extrusion lengths per layer
-      var shellExt  = perim * s.walls;                  // mm/layer
-      var innerArea = Math.max(0, area - perim * NOZZLE * s.walls);
-      var infillExt = innerArea * (s.inf / 100) / NOZZLE; // mm/layer
-      var topBotExt = TOP_BOT * 2 * area / NOZZLE;      // fixed top+bottom
+      var solidLayers = Math.min(layers, TOP_BOT * 2);
+      var infillLayers = Math.max(0, layers - solidLayers);
 
-      var extNoTravel = (shellExt + infillExt) * layers + topBotExt;
+      // Extrusion lengths per layer
+      var shellExtLayer = perim * s.walls;
+      var innerArea = Math.max(0, area - perim * NOZZLE * s.walls);
+      var solidInnerExtLayer = innerArea / NOZZLE;
+      var infillExtLayer = solidInnerExtLayer * (s.inf / 100);
+
+      var shellTotal = shellExtLayer * layers;
+      var topBotTotal = solidInnerExtLayer * solidLayers;
+      var infillTotal = infillExtLayer * infillLayers;
+      var supportTotal = (s.sup !== 'none') ? (shellTotal + topBotTotal) * 0.15 : 0;
+
+      var extNoTravel = shellTotal + topBotTotal + infillTotal + supportTotal;
       var extWithTrav = extNoTravel * 1.18;              // 18% travel overhead
-      if (s.sup !== 'none') extWithTrav *= 1.28;
+      if (s.sup !== 'none') extWithTrav *= 1.1;          // extra travel for supports
 
       var timeMin   = Math.max(1, Math.round(extWithTrav / s.spd / 60));
       // Filament mass: volume of extruded bead = ext × nozzle × lh; density PLA ~1.24 g/cm³
@@ -1335,12 +1389,13 @@
       var wallMm    = (s.walls * NOZZLE).toFixed(1);
 
       // Breakdown fractions for the bar
-      var tShell  = (shellExt  * layers) / extWithTrav;
-      var tInfill = (infillExt * layers) / extWithTrav;
-      var tTopBot = topBotExt  / extWithTrav;
-      var tTravel = 1 - tShell - tInfill - tTopBot;
+      var tShell   = shellTotal / extWithTrav;
+      var tInfill  = infillTotal / extWithTrav;
+      var tTopBot  = topBotTotal / extWithTrav;
+      var tSupport = supportTotal / extWithTrav;
+      var tTravel  = 1 - tShell - tInfill - tTopBot - tSupport;
 
-      return { layers, wallMm, filament, timeMin, tShell, tInfill, tTopBot, tTravel };
+      return { layers, wallMm, filament, timeMin, tShell, tInfill, tTopBot, tSupport, tTravel };
     }
 
     function calcQuality(s) {
@@ -1373,14 +1428,25 @@
       document.getElementById('stat-filament').innerHTML = st.filament + '<span class="p3d-stat-unit"> g</span>';
       document.getElementById('stat-walls').innerHTML    = st.wallMm + '<span class="p3d-stat-unit"> mm</span>';
 
+      if (layerSlider) {
+        var prevMax = parseInt(layerSlider.max, 10) || st.layers;
+        layerSlider.max = st.layers;
+        if (currentLayer >= prevMax || currentLayer > st.layers) {
+          currentLayer = st.layers;
+          layerSlider.value = st.layers;
+        }
+        layerReadout.textContent = 'Layer ' + currentLayer + ' / ' + st.layers;
+      }
+
       // breakdown bar — flex proportional to each segment
       function setSeg(id, frac) {
         var el = document.getElementById(id);
-        if (el) el.style.flex = Math.max(frac, 0.01).toFixed(3);
+        if (el) el.style.flex = Math.max(frac, 0.001).toFixed(3);
       }
       setSeg('seg-shell',  st.tShell);
       setSeg('seg-infill', st.tInfill);
       setSeg('seg-topbot', st.tTopBot);
+      setSeg('seg-support', st.tSupport);
       setSeg('seg-travel', st.tTravel);
     }
 
@@ -1401,8 +1467,111 @@
       }).join('');
     }
 
+  var is3DView = false;
+  var viewAngle = 0;
+  var isDragging = false;
+  var lastMouseX = 0;
+  var viewToggle = document.getElementById('view-toggle');
+  var canvasEl = document.getElementById('p3d-canvas');
+
+  if (viewToggle) {
+    viewToggle.addEventListener('click', function() {
+      is3DView = !is3DView;
+      viewToggle.textContent = is3DView ? '2D View' : '3D View';
+      if (canvasEl) canvasEl.style.cursor = is3DView ? 'grab' : 'default';
+      refresh();
+    });
+  }
+
+  if (canvasEl) {
+    canvasEl.addEventListener('mousedown', function(e) {
+      if (!is3DView) return;
+      isDragging = true;
+      lastMouseX = e.clientX;
+      canvasEl.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mousemove', function(e) {
+      if (!isDragging || !is3DView) return;
+      var dx = e.clientX - lastMouseX;
+      // Limit rotation to ~45 degrees to preserve the painter's algorithm depth sorting
+      viewAngle = Math.max(-0.8, Math.min(0.8, viewAngle - dx * 0.01));
+      lastMouseX = e.clientX;
+      refresh();
+    });
+    window.addEventListener('mouseup', function() {
+      if (isDragging && is3DView) canvasEl.style.cursor = 'grab';
+      isDragging = false;
+    });
+  }
+
+  function drawSim3D(s, layerIdx, totalLayers) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#0e0700';
+    ctx.fillRect(0, 0, W, H);
+
+    var cx = W / 2, cy = H * 0.78, scale = 3.5;
+    var isoX = function(x, y, z) {
+      var rx = x * Math.cos(viewAngle) - y * Math.sin(viewAngle);
+      var ry = x * Math.sin(viewAngle) + y * Math.cos(viewAngle);
+      return cx + (rx - ry) * Math.cos(0.523) * scale;
+    };
+    var isoY = function(x, y, z) {
+      var rx = x * Math.cos(viewAngle) - y * Math.sin(viewAngle);
+      var ry = x * Math.sin(viewAngle) + y * Math.cos(viewAngle);
+      return cy + (rx + ry) * Math.sin(0.523) * scale - z * scale;
+    };
+
+    function drawPoly(pts, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(isoX(pts[0][0], pts[0][1], pts[0][2]), isoY(pts[0][0], pts[0][1], pts[0][2]));
+      for (var j = 1; j < pts.length; j++) { ctx.lineTo(isoX(pts[j][0], pts[j][1], pts[j][2]), isoY(pts[j][0], pts[j][1], pts[j][2])); }
+      ctx.closePath();
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.lineWidth = 1; ctx.strokeStyle = stroke; ctx.stroke(); }
+    }
+
+    drawPoly([[-40, -40, 0], [40, -40, 0], [40, 40, 0], [-40, 40, 0]], 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.15)');
+
+    var curH = layerIdx * s.lh;
+    if (curH > 0) {
+      var bw = 20;
+      drawPoly([[-bw, -bw, 0], [-bw, bw, 0], [-bw, bw, curH], [-bw, -bw, curH]], 'rgba(200,80,40,0.9)', 'rgba(255,107,53,0.5)');
+      drawPoly([[-bw, bw, 0], [bw, bw, 0], [bw, bw, curH], [-bw, bw, curH]], 'rgba(255,107,53,0.8)', 'rgba(255,107,53,0.5)');
+      drawPoly([[-bw, -bw, curH], [bw, -bw, curH], [bw, bw, curH], [-bw, bw, curH]], 'rgba(255,107,53,1)', null);
+      var iw = bw - (s.walls * 0.4);
+      if (iw > 0) {
+        if ((layerIdx <= 4) || (layerIdx > totalLayers - 4)) {
+          drawPoly([[-iw, -iw, curH], [iw, -iw, curH], [iw, iw, curH], [-iw, iw, curH]], 'rgba(255,220,180,0.9)', null);
+        } else if (s.inf > 0) {
+          drawPoly([[-iw, -iw, curH], [iw, -iw, curH], [iw, iw, curH], [-iw, iw, curH]], 'rgba(20,10,0,0.8)', null);
+          ctx.strokeStyle = 'rgba(255,149,0,0.8)'; ctx.lineWidth = 1.5;
+          var spacing = Math.max(2, (100 / s.inf) * 2.5);
+          for (var lx = -iw; lx <= iw; lx += spacing) { ctx.beginPath(); ctx.moveTo(isoX(lx, -iw, curH), isoY(lx, -iw, curH)); ctx.lineTo(isoX(lx, iw, curH), isoY(lx, iw, curH)); ctx.stroke(); }
+          for (var ly = -iw; ly <= iw; ly += spacing) { ctx.beginPath(); ctx.moveTo(isoX(-iw, ly, curH), isoY(-iw, ly, curH)); ctx.lineTo(isoX(iw, ly, curH), isoY(iw, ly, curH)); ctx.stroke(); }
+        } else { drawPoly([[-iw, -iw, curH], [iw, -iw, curH], [iw, iw, curH], [-iw, iw, curH]], 'rgba(20,10,0,0.8)', null); }
+      }
+    }
+    if (s.sup !== 'none') {
+      var supH = Math.min(curH, totalLayers * s.lh * 0.7);
+      if (supH > 0) {
+         var sw = 8, sx = 28, sy = 0;
+         drawPoly([[sx-sw, sy-sw, 0], [sx-sw, sy+sw, 0], [sx-sw, sy+sw, supH], [sx-sw, sy-sw, supH]], 'rgba(0,200,255,0.2)', 'rgba(0,200,255,0.4)');
+         drawPoly([[sx-sw, sy+sw, 0], [sx+sw, sy+sw, 0], [sx+sw, sy+sw, supH], [sx-sw, sy+sw, supH]], 'rgba(0,200,255,0.15)', 'rgba(0,200,255,0.4)');
+         drawPoly([[sx-sw, sy-sw, supH], [sx+sw, sy-sw, supH], [sx+sw, sy+sw, supH], [sx-sw, sy+sw, supH]], 'rgba(0,200,255,0.3)', 'rgba(0,200,255,0.5)');
+      }
+    }
+  }
+
     /* ── Canvas cross-section renderer ── */
     function drawSim(s) {
+    var MODEL_H_MM = 60, TOP_BOT_LAYERS = 4;
+    var layers   = Math.round(MODEL_H_MM / s.lh);
+    
+    if (is3DView) {
+      drawSim3D(s, currentLayer, layers);
+      return;
+    }
+
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = '#0e0700';
       ctx.fillRect(0, 0, W, H);
@@ -1412,8 +1581,6 @@
       var mW = Math.round(W * 0.56);
       var mH = H - mY - PAD;
 
-      var MODEL_H_MM = 60, TOP_BOT_LAYERS = 4;
-      var layers   = Math.round(MODEL_H_MM / s.lh);
       var layerPx  = mH / layers;
       var NOZZLE_PX = 4; // px per nozzle-width wall
 
@@ -1422,10 +1589,12 @@
       var blockH       = mH / renderLayers;
 
       for (var i = 0; i < renderLayers; i++) {
-        var layerIdx = Math.round(i / renderLayers * layers); // actual layer index
+        var layerIdx = Math.round((i / Math.max(1, renderLayers - 1)) * (layers - 1)) + 1; // 1-indexed actual layer
+        if (layerIdx > currentLayer) continue;
+
         var y = mY + mH - (i + 1) * blockH;
         var h = Math.max(blockH - 0.6, 0.4);
-        var isSolid = (i < TOP_BOT_LAYERS) || (i >= renderLayers - TOP_BOT_LAYERS);
+        var isSolid = (layerIdx <= TOP_BOT_LAYERS) || (layerIdx > layers - TOP_BOT_LAYERS);
 
         // — walls (left & right perimeters) —
         for (var w = 0; w < s.walls; w++) {
@@ -1531,6 +1700,7 @@
 
     function refresh() {
       var s = getS();
+      if (layerSlider) currentLayer = parseInt(layerSlider.value, 10);
       updateLabels(s);
       updateStats(s);
       updateQuality(s);
@@ -1538,8 +1708,8 @@
       drawSim(s);
     }
 
-    [lhSlider, infSlider, wallsSlider, spdSlider, tmpSlider].forEach(function(el) {
-      el.addEventListener('input', refresh);
+    [lhSlider, infSlider, wallsSlider, spdSlider, tmpSlider, layerSlider].forEach(function(el) {
+      if (el) el.addEventListener('input', refresh);
     });
     [supSelect, matSelect].forEach(function(el) {
       el.addEventListener('change', refresh);
