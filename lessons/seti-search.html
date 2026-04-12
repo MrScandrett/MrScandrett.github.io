@@ -222,6 +222,11 @@
       border-radius: 4px;
       cursor: crosshair;
     }
+    #wowCanvas {
+      max-width: 100%;
+      height: auto;
+      cursor: crosshair;
+    }
     .am-canvas-hint {
       text-align: center;
       font-size: 0.73rem;
@@ -494,14 +499,18 @@
       font-family: inherit;
       transition: background 0.14s;
     }
-    .am-accordion-btn:hover { background: rgba(30,160,90,0.1); }
+    .am-accordion-btn:hover,
+    .am-accordion-btn.am--open { 
+      background: rgba(30,160,90,0.1); 
+      color: #fff; 
+    }
     .am-accordion-btn .am-chevron {
       margin-left: auto;
       transition: transform 0.2s;
       color: rgba(160,220,190,0.4);
       font-size: 0.7rem;
     }
-    .am-accordion-btn.am--open .am-chevron { transform: rotate(90deg); }
+    .am-accordion-btn.am--open .am-chevron { transform: rotate(90deg); color: #6ee8b0; }
     .am-accordion-body {
       display: none;
       padding: 0 1.1rem 0.8rem 2.8rem;
@@ -509,7 +518,14 @@
       color: rgba(190,235,210,0.72);
       line-height: 1.6;
     }
-    .am-accordion-body.am--open { display: block; }
+    .am-accordion-body.am--open { 
+      display: block; 
+      animation: am-fade-in 0.2s ease-out forwards;
+    }
+    @keyframes am-fade-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     /* ── Content grid for Golden Record ── */
     .am-content-grid {
@@ -940,6 +956,46 @@
               <div class="am-fact-lbl">Natural sounds alongside greetings and music</div>
             </div>
           </div>
+        </div>
+
+        <!-- Interstellar Playlist -->
+        <div class="am-card">
+          <div class="am-card-head">
+            <h2>The Interstellar Playlist</h2>
+            <span class="am-badge">Music</span>
+          </div>
+          <ul class="am-track-list">
+            <li class="am-track-item">
+              <p class="am-track-title">Johnny B. Goode</p>
+              <p class="am-track-artist">Chuck Berry</p>
+              <p class="am-track-desc">Represents the energy and invention of rock and roll. Sagan fought to include it despite objections that rock was "adolescent," arguing that aliens would appreciate its driving, mathematical rhythm and pure joy.</p>
+            </li>
+            <li class="am-track-item">
+              <p class="am-track-title">Dark Was the Night, Cold Was the Ground</p>
+              <p class="am-track-artist">Blind Willie Johnson</p>
+              <p class="am-track-desc">A haunting, wordless blues slide-guitar piece expressing profound human loneliness. The committee chose it specifically to represent the universal human experience of sorrow and isolation.</p>
+            </li>
+            <li class="am-track-item">
+              <p class="am-track-title">The Well-Tempered Clavier, Book 2</p>
+              <p class="am-track-artist">Johann Sebastian Bach</p>
+              <p class="am-track-desc">Bach's compositions are renowned for their strict mathematical precision, symmetry, and counterpoint—qualities scientists hoped advanced extraterrestrial minds would readily recognize and appreciate.</p>
+            </li>
+            <li class="am-track-item">
+              <p class="am-track-title">Symphony No. 5, First Movement</p>
+              <p class="am-track-artist">Ludwig van Beethoven</p>
+              <p class="am-track-desc">With its iconic four-note opening motif, this masterpiece captures the dramatic, monumental scale of human struggle, resilience, and triumph.</p>
+            </li>
+            <li class="am-track-item">
+              <p class="am-track-title">Navajo Night Chant</p>
+              <p class="am-track-artist">Traditional Navajo</p>
+              <p class="am-track-desc">Chosen to represent the rich spiritual and healing traditions of Indigenous North Americans, capturing the resonant depth of the human voice in ceremonial prayer.</p>
+            </li>
+            <li class="am-track-item">
+              <p class="am-track-title">Morning Star and Devil Bird</p>
+              <p class="am-track-artist">Australian Aborigine</p>
+              <p class="am-track-desc">An ancient vocal and didgeridoo recording that acts as a deep-time capsule, showcasing the musical heritage of one of the oldest continuous living cultures on Earth.</p>
+            </li>
+          </ul>
         </div>
 
         <!-- Reflection -->
@@ -1628,25 +1684,32 @@
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
       ctx.fillRect(0, 0, W, H);
-      var barW = W / data.length;
       var maxV = 35;
+      var padLeft = 40;
+      var padRight = 10;
+      var padTop = 20;
+      var padBottom = 20;
+      var graphW = W - padLeft - padRight;
+      var graphH = H - padTop - padBottom;
+      var baseY = H - padBottom;
+
       // Grid lines
       ctx.strokeStyle = 'rgba(40,200,120,0.15)';
       ctx.lineWidth = 1;
       for (var g = 0; g <= maxV; g += 5) {
-        var gy = H - (g / maxV) * (H - 30) - 15;
-        ctx.beginPath(); ctx.moveTo(40, gy); ctx.lineTo(W - 10, gy); ctx.stroke();
+        var gy = baseY - (g / maxV) * graphH;
+        ctx.beginPath(); ctx.moveTo(padLeft, gy); ctx.lineTo(W - padRight, gy); ctx.stroke();
         ctx.fillStyle = 'rgba(160,220,190,0.4)';
         ctx.font = '10px monospace';
         ctx.textAlign = 'right';
-        ctx.fillText(g, 36, gy + 3);
+        ctx.fillText(g, padLeft - 4, gy + 3);
       }
       // Bars
       for (var i = 0; i < data.length; i++) {
-        var x = 40 + i * ((W - 50) / data.length);
-        var bw = (W - 50) / data.length - 2;
-        var bh = (data[i] / maxV) * (H - 45);
-        var y = H - bh - 15;
+        var x = padLeft + i * (graphW / data.length);
+        var bw = (graphW / data.length) - 1.5;
+        var bh = (data[i] / maxV) * graphH;
+        var y = baseY - bh;
         var isSignal = i >= 32 && i <= 37;
         ctx.fillStyle = isSignal ? '#ff4444' : 'rgba(68,136,255,0.6)';
         if (i === hoverIdx) ctx.fillStyle = '#6ee8b0';
@@ -1657,25 +1720,31 @@
           ctx.fillStyle = '#fff';
           ctx.font = 'bold 11px monospace';
           ctx.textAlign = 'center';
-          ctx.fillText(labels[i], x + bw/2, y - 5);
+          ctx.fillText(labels[i], x + bw/2, y - 4);
         }
       }
       // Hover tooltip
       if (hoverIdx >= 0 && hoverIdx < data.length) {
+        var tx = padLeft + hoverIdx * (graphW / data.length) + (graphW / data.length) / 2;
+        var ty = padTop - 5;
+        
+        var tooltipX = Math.max(padLeft + 35, Math.min(W - padRight - 35, tx));
+        
         ctx.fillStyle = 'rgba(0,0,0,0.8)';
-        var tx = 40 + hoverIdx * ((W-50)/data.length) + ((W-50)/data.length)/2;
-        var ty = 20;
-        ctx.fillRect(tx - 30, ty - 12, 60, 18);
+        ctx.fillRect(tooltipX - 35, ty - 14, 70, 20);
         ctx.fillStyle = '#6ee8b0';
         ctx.font = 'bold 11px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('Intensity: ' + data[hoverIdx].toFixed(1), tx, ty);
+        
+        var isSignal = hoverIdx >= 32 && hoverIdx <= 37;
+        var valStr = isSignal ? data[hoverIdx].toString() : data[hoverIdx].toFixed(1);
+        ctx.fillText('Int: ' + valStr, tooltipX, ty);
       }
       // Axis label
       ctx.fillStyle = 'rgba(160,220,190,0.5)';
       ctx.font = '10px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Time →', W/2, H - 2);
+      ctx.fillText('Time →', W/2, H - 4);
     }
 
     drawWow(-1);
@@ -1696,12 +1765,16 @@
     function updateDrake() {
       var N = 1;
       sliders.forEach(function(s) {
-        N *= parseFloat(s.value);
+        var val = parseFloat(s.value);
+        if (s.id === 'sliderL') val = Math.pow(10, val);
+        N *= val;
         var valEl = document.getElementById(s.id + 'Val');
-        if (valEl) valEl.textContent = parseFloat(s.value).toLocaleString();
+        if (valEl) {
+          valEl.textContent = s.id === 'sliderL' ? Math.round(val).toLocaleString() : val.toLocaleString();
+        }
       });
       if (resultEl) {
-        resultEl.textContent = N < 1 ? N.toFixed(4) : Math.round(N).toLocaleString();
+        resultEl.textContent = N < 1 ? Number(N.toPrecision(3)).toString() : Math.round(N).toLocaleString();
       }
     }
     sliders.forEach(function(s) {
