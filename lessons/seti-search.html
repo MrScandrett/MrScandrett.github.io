@@ -1401,7 +1401,7 @@
       },
       {
         id: 6, name: "Arecibo Telescope", rows: [60, 72],
-        color: "#5555ff",
+        color: "#cc44ff",
         desc: "The hardware that sent the message. Bottom rows encode the dish diameter."
       },
       {
@@ -1488,17 +1488,20 @@
     function pixelColor(r, c, bit) {
       if (!bit || bit === "0") return null;
       if (mode === "bw") return "#fff";
-      // Earth pixel shifted upward toward the human (Row 55, Column 12 in 1-based coords).
-      if (r === 54 && c === 11) return "#ffdd00";
       var sid = sectionForRow(r);
       if (sid < 0) return "#fff";
       var sec = SECTIONS[sid];
-      // Helix: center column (col 11) = white (encodes nucleotide count ~4 billion)
-      if (sid === 3 && c === 11) return "#ffffff";
-      // Human: center columns = red figure; flanking columns = white (population & height data)
-      if (sid === 4) return (c >= 7 && c <= 15) ? "#dd2222" : "#ffffff";
-      // Telescope: bottom 2 rows = white (diameter encoding); rest = blue
-      if (sid === 6) return (r >= 71) ? "#ffffff" : "#5555ff";
+      
+      // 1. Human Head & Body
+      if ((r === 45 || r === 46) && c === 10) return "#dd2222";
+      if (r >= 47 && r <= 54 && c >= 6 && c <= 14) return "#dd2222";
+      // 2. Human Flanking Data (Population and Height)
+      if (r >= 45 && r <= 54 && (c <= 5 || c >= 15)) return "#ffffff";
+      // 3. DNA Spine (Encodes nucleotide count, spans into Formulas section)
+      if (r >= 26 && r <= 44 && (c === 10 || c === 11)) return "#ffffff";
+      
+      // Telescope: bottom 2 rows = white (diameter encoding); rest matches section color
+      if (sid === 6) return (r >= 71) ? "#ffffff" : sec.color;
       return sec.color;
     }
 
