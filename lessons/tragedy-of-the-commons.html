@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tragedy of the Commons · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Humanities Lesson — a multi-agent simulation exploring shared resource depletion, game theory, and the tension between individual and collective interest." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── Commons Page Tokens ── */
+    body.commons-page {
+      font-family: "Inter", system-ui, sans-serif;
+      color: #1c2415;
+      background:
+        radial-gradient(circle at 10% 12%, rgba(132, 204, 22, 0.18), transparent 26%),
+        radial-gradient(circle at 88% 14%, rgba(234, 179, 8, 0.16), transparent 22%),
+        linear-gradient(180deg, #f9fdf4 0%, #f0f6e6 100%);
+    }
+
+    .commons-page .site-header,
+    .commons-page .site-footer {
+      background: rgba(249, 253, 244, 0.84);
+      backdrop-filter: blur(18px);
+    }
+
+    .commons-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .commons-card {
+      border-radius: 26px;
+      border: 1px solid rgba(132, 204, 22, 0.18);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 20px 50px rgba(22, 36, 10, 0.07);
+      padding: 1.3rem;
+    }
+
+    .commons-hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .commons-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #65802e;
+    }
+
+    .commons-hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3.8vw, 3rem);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      color: #1c2415;
+    }
+
+    .commons-lede {
+      margin: 0.85rem 0 0;
+      font-size: 1.02rem;
+      color: #4a6132;
+      line-height: 1.66;
+    }
+
+    /* ── Pasture Visualization ── */
+    .commons-pasture-wrap {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #2d4a1a;
+    }
+
+    .commons-pasture-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 380px;
+    }
+
+    /* ── Farmer Controls ── */
+    .commons-farmer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .commons-farmer-card {
+      padding: 1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(132, 204, 22, 0.2);
+      background: #f9fdf4;
+      text-align: center;
+    }
+
+    .commons-farmer-card h4 {
+      margin: 0 0 0.4rem;
+      font-size: 0.95rem;
+      color: #1c2415;
+    }
+
+    .commons-farmer-card .farmer-herd {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #4a6132;
+    }
+
+    /* ── Resource Meter ── */
+    .commons-meter {
+      height: 28px;
+      border-radius: 14px;
+      background: #e5e7d0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .commons-meter-fill {
+      height: 100%;
+      border-radius: 14px;
+      background: linear-gradient(90deg, #84cc16, #65a30d);
+      transition: width 0.4s ease;
+    }
+
+    .commons-meter-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #1c2415;
+    }
+
+    /* ── Graph ── */
+    .commons-graph-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 180px;
+      border-radius: 14px;
+      background: #fafcf6;
+      border: 1px solid rgba(132, 204, 22, 0.2);
+    }
+
+    /* ── Theory Cards ── */
+    .commons-theory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .commons-theory-card {
+      padding: 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(132, 204, 22, 0.14);
+      background: #fafcf6;
+    }
+
+    .commons-theory-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.05rem;
+      color: #1c2415;
+    }
+
+    .commons-theory-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #4a6132;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 740px) {
+      .commons-hero { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="commons-page">
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+<div class="commons-shell">
+
+  <div class="commons-hero">
+    <div class="commons-card">
+      <p class="commons-eyebrow">Humanities · Game Theory</p>
+      <h1>Tragedy of the Commons</h1>
+      <p class="commons-lede">
+        A shared pasture. Five farmers. Each wants to add more livestock — but
+        the grass is finite. When everyone maximises their own herd, the common
+        resource collapses. Can you find the strategy that sustains the commons?
+      </p>
+    </div>
+
+    <div class="commons-card">
+      <p class="commons-eyebrow">The Dilemma</p>
+      <ul style="padding-left:1.1rem; color:#4a6132; line-height:1.7; font-size:0.95rem;">
+        <li><strong>Individual payoff</strong> — each extra animal earns money for the farmer</li>
+        <li><strong>Shared cost</strong> — overgrazing degrades the pasture for everyone</li>
+        <li><strong>Nash Equilibrium</strong> — the "rational" choice leads to collective ruin</li>
+        <li>Solutions: quotas, taxes, privatisation, or voluntary cooperation</li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — PASTURE VISUALIZATION
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="commons-card">
+    <p class="commons-eyebrow">The Shared Pasture</p>
+    <div class="commons-pasture-wrap">
+      <canvas id="pastureCanvas"></canvas>
+    </div>
+
+    <!-- Resource Health Meter -->
+    <div style="margin-top:1rem;">
+      <p style="font-size:0.82rem; font-weight:700; color:#65802e; margin:0 0 0.3rem;">Pasture Health</p>
+      <div class="commons-meter">
+        <div class="commons-meter-fill" id="healthFill" style="width:100%;"></div>
+        <div class="commons-meter-label"><span id="healthPct">100</span>%</div>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — FARMER CONTROLS
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="commons-card">
+    <p class="commons-eyebrow">Your Decision — Each Round, Choose How Many to Graze</p>
+    <div class="commons-farmer-grid">
+      <div class="commons-farmer-card" style="border-color: #ef4444;">
+        <h4>You (Farmer 1)</h4>
+        <div class="farmer-herd" id="f1Herd">3</div>
+        <input type="range" id="f1Slider" min="0" max="10" value="3" style="width:100%;" />
+        <div style="font-size:0.78rem; color:#65802e; margin-top:0.3rem;">Herd size: <span id="f1Label">3</span></div>
+      </div>
+      <div class="commons-farmer-card">
+        <h4>Farmer 2 (AI)</h4>
+        <div class="farmer-herd" id="f2Herd">3</div>
+        <div style="font-size:0.78rem; color:#65802e;">Strategy: Greedy</div>
+      </div>
+      <div class="commons-farmer-card">
+        <h4>Farmer 3 (AI)</h4>
+        <div class="farmer-herd" id="f3Herd">3</div>
+        <div style="font-size:0.78rem; color:#65802e;">Strategy: Cooperative</div>
+      </div>
+      <div class="commons-farmer-card">
+        <h4>Farmer 4 (AI)</h4>
+        <div class="farmer-herd" id="f4Herd">3</div>
+        <div style="font-size:0.78rem; color:#65802e;">Strategy: Tit-for-Tat</div>
+      </div>
+      <div class="commons-farmer-card">
+        <h4>Farmer 5 (AI)</h4>
+        <div class="farmer-herd" id="f5Herd">3</div>
+        <div style="font-size:0.78rem; color:#65802e;">Strategy: Random</div>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:1rem;">
+      <button id="advanceBtn" style="padding:0.7rem 2rem; border-radius:12px; background:#65a30d; color:#fff; font-weight:700; font-size:1rem; border:none; cursor:pointer;">
+        Advance One Season
+      </button>
+      <button id="resetBtn" style="padding:0.7rem 1.4rem; border-radius:12px; background:#e5e7d0; color:#4a6132; font-weight:700; font-size:1rem; border:none; cursor:pointer; margin-left:0.5rem;">
+        Reset
+      </button>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 4 — HISTORY GRAPH
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="commons-card">
+    <p class="commons-eyebrow">Resource &amp; Wealth Over Time</p>
+    <div class="commons-graph-wrap">
+      <canvas id="commonsGraph"></canvas>
+    </div>
+    <p style="margin:0.5rem 0 0; font-size:0.85rem; color:#65802e;">
+      Green = pasture health · Colored lines = each farmer's cumulative wealth
+    </p>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 5 — THEORY CARDS
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="commons-theory-grid">
+    <div class="commons-theory-card">
+      <h3>Garrett Hardin (1968)</h3>
+      <p>Published "The Tragedy of the Commons" — arguing that shared resources are inevitably overexploited without regulation.</p>
+    </div>
+    <div class="commons-theory-card">
+      <h3>Nash Equilibrium</h3>
+      <p>Each farmer's "best response" is to add livestock — even knowing the system will collapse. No individual can improve their outcome by changing alone.</p>
+    </div>
+    <div class="commons-theory-card">
+      <h3>Elinor Ostrom</h3>
+      <p>Won the 2009 Nobel Prize by proving communities <em>can</em> self-govern commons successfully — without privatization or top-down regulation.</p>
+    </div>
+    <div class="commons-theory-card">
+      <h3>Modern Commons</h3>
+      <p>Climate change, ocean fisheries, and internet bandwidth are today's "commons." The same game theory applies at planetary scale.</p>
+    </div>
+  </div>
+
+</div><!-- /.commons-shell -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── TODO: Full implementation ──
+   *
+   * SIMULATION MODEL
+   *   - pastureHealth: starts at 100, regenerates each round by a logistic function
+   *   - regeneration = growthRate * health * (1 - health/capacity)
+   *   - consumption = sum of all herds * consumptionPerAnimal
+   *   - newHealth = health + regeneration - consumption (clamped to 0–100)
+   *   - If health reaches 0 → collapse, game over
+   *
+   * AI FARMER STRATEGIES
+   *   - Greedy: always increases herd by 1 each round (up to max)
+   *   - Cooperative: keeps herd at sustainable level (totalCapacity / numFarmers)
+   *   - Tit-for-Tat: cooperates initially; if anyone overgrazes, matches next round
+   *   - Random: random herd size between 1 and 6
+   *
+   * WEALTH TRACKING
+   *   - Each round: farmer earns (herd size * pricePerAnimal * healthMultiplier)
+   *   - healthMultiplier drops as pasture degrades (animals produce less on poor grass)
+   *   - Cumulative wealth tracked per farmer
+   *
+   * PASTURE CANVAS (pastureCanvas)
+   *   - Top-down view of green pasture
+   *   - Grass color/density reflects health (lush green → brown/bare)
+   *   - Scatter animal dots per farmer (color-coded)
+   *   - Animate grazing movement
+   *
+   * HISTORY GRAPH (commonsGraph)
+   *   - X-axis = round number
+   *   - Green area = pasture health over time
+   *   - Colored lines = each farmer's cumulative wealth
+   *   - Vertical line at collapse point if it happens
+   *
+   * POLICY EXPERIMENTS (future extension)
+   *   - Toggle: carbon tax, quotas, privatisation
+   *   - See how each policy changes the outcome
+   */
+
+  // Placeholder: wire slider display
+  var s = document.getElementById('f1Slider');
+  var l = document.getElementById('f1Label');
+  var h = document.getElementById('f1Herd');
+  if (s) {
+    s.addEventListener('input', function () {
+      l.textContent = s.value;
+      h.textContent = s.value;
+    });
+  }
+}());
+</script>
+
+</body>
+</html>

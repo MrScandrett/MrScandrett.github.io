@@ -278,9 +278,9 @@ function isSquareAttacked(board, target, byColor) {
 
   for (let i = 0; i < board.length; i += 1) {
     const piece = board[i];
-    if (!piece || colorOf(piece) !== byColor) continue;
+    if (!piece || piece[0] !== byColor) continue;
 
-    const pieceType = typeOf(piece);
+    const pieceType = piece[1];
     const fromRow = rowOf(i);
     const fromCol = colOf(i);
 
@@ -361,8 +361,8 @@ function pseudoMovesForPiece(board, from, piece, attackOnly = false) {
   const moves = [];
   const row = rowOf(from);
   const col = colOf(from);
-  const color = colorOf(piece);
-  const type = typeOf(piece);
+  const color = piece[0];
+  const type = piece[1];
 
   if (type === "P") {
     const dir = color === "W" ? -1 : 1;
@@ -444,7 +444,7 @@ function pseudoMovesForPiece(board, from, piece, attackOnly = false) {
 function moveOrderScore(move, movingPiece) {
   let score = 0;
   if (move.capture) {
-    score += PIECE_VALUE[typeOf(move.capture)] * 10 - PIECE_VALUE[typeOf(movingPiece)];
+    score += PIECE_VALUE[move.capture[1]] * 10 - PIECE_VALUE[movingPiece[1]];
   }
   if (move.promotion) score += 8000;
   return score;
@@ -455,14 +455,18 @@ function legalMoves(board, color) {
 
   for (let i = 0; i < board.length; i += 1) {
     const piece = board[i];
-    if (!piece || colorOf(piece) !== color) continue;
+    if (!piece || piece[0] !== color) continue;
 
     const pseudo = pseudoMovesForPiece(board, i, piece, false);
 
     for (const move of pseudo) {
-      const next = applyMove(board, move);
-      if (isInCheck(next, color)) continue;
-      all.push({ ...move, piece });
+      const captured = board[move.to];
+      board[move.from] = null;
+      board[move.to] = move.promotion || piece;
+      const isCheck = isInCheck(board, color);
+      board[move.from] = piece;
+      board[move.to] = captured;
+      if (!isCheck) all.push({ ...move, piece });
     }
   }
 
@@ -492,8 +496,8 @@ function evaluate(board, perspective, profile) {
     const piece = board[i];
     if (!piece) continue;
 
-    const color = colorOf(piece);
-    const type = typeOf(piece);
+    const color = piece[0];
+    const type = piece[1];
     const row = rowOf(i);
     const col = colOf(i);
     const baseValue = PIECE_VALUE[type] || 0;
@@ -832,8 +836,13 @@ function minimax(board, turn, depth, alpha, beta, perspective, profile, ply = 0)
     let bestScore = -Infinity;
 
     for (const move of moves) {
-      const next = applyMove(board, move);
-      const result = minimax(next, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1);
+      const captured = board[move.to];
+      const piece = board[move.from];
+      board[move.from] = null;
+      board[move.to] = move.promotion || piece;
+      const result = minimax(board, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1);
+      board[move.from] = piece;
+      board[move.to] = captured;
 
       if (result.score > bestScore) {
         bestScore = result.score;
@@ -850,8 +859,13 @@ function minimax(board, turn, depth, alpha, beta, perspective, profile, ply = 0)
   let bestScore = Infinity;
 
   for (const move of moves) {
-    const next = applyMove(board, move);
-    const result = minimax(next, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1);
+    const captured = board[move.to];
+    const piece = board[move.from];
+    board[move.from] = null;
+    board[move.to] = move.promotion || piece;
+    const result = minimax(board, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1);
+    board[move.from] = piece;
+    board[move.to] = captured;
 
     if (result.score < bestScore) {
       bestScore = result.score;

@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Digital Signal Processing · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Applied Physics Lesson — visualize Fourier transforms, build audio filters, and explore how digital systems decompose complex signals into frequencies." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── DSP Page Tokens ── */
+    body.dsp-page {
+      font-family: "Inter", system-ui, sans-serif;
+      color: #14202e;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(6, 182, 212, 0.18), transparent 26%),
+        radial-gradient(circle at 86% 16%, rgba(217, 70, 239, 0.14), transparent 22%),
+        linear-gradient(180deg, #f0fdfa 0%, #e6f7f4 100%);
+    }
+
+    .dsp-page .site-header,
+    .dsp-page .site-footer {
+      background: rgba(240, 253, 250, 0.84);
+      backdrop-filter: blur(18px);
+    }
+
+    .dsp-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .dsp-card {
+      border-radius: 26px;
+      border: 1px solid rgba(6, 182, 212, 0.16);
+      background: rgba(255, 255, 255, 0.93);
+      box-shadow: 0 20px 50px rgba(10, 30, 40, 0.07);
+      padding: 1.3rem;
+    }
+
+    .dsp-hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .dsp-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #0891b2;
+    }
+
+    .dsp-hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3.8vw, 3rem);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      color: #14202e;
+    }
+
+    .dsp-lede {
+      margin: 0.85rem 0 0;
+      font-size: 1.02rem;
+      color: #3b6474;
+      line-height: 1.66;
+    }
+
+    /* ── Waveform Canvases ── */
+    .dsp-wave-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .dsp-wave-card {
+      border-radius: 18px;
+      overflow: hidden;
+      background: #0c1e28;
+    }
+
+    .dsp-wave-card canvas {
+      display: block;
+      width: 100%;
+      height: 180px;
+    }
+
+    .dsp-wave-label {
+      padding: 0.5rem 0.8rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #67e8f9;
+      background: #0c1e28;
+    }
+
+    /* ── Frequency Sliders (Additive Synthesis) ── */
+    .dsp-freq-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .dsp-freq-slider {
+      padding: 0.8rem;
+      border-radius: 14px;
+      border: 1px solid rgba(6, 182, 212, 0.15);
+      background: #f0fdfa;
+      text-align: center;
+    }
+
+    .dsp-freq-slider label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #0891b2;
+      margin-bottom: 0.3rem;
+    }
+
+    .dsp-freq-slider .freq-hz {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #14202e;
+    }
+
+    /* ── EQ Band Filters ── */
+    .dsp-eq-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 0.6rem;
+      padding: 1rem;
+    }
+
+    .dsp-eq-band {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .dsp-eq-band input[type="range"] {
+      writing-mode: vertical-lr;
+      direction: rtl;
+      height: 120px;
+    }
+
+    .dsp-eq-band .eq-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #0891b2;
+    }
+
+    /* ── Theory Cards ── */
+    .dsp-theory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .dsp-theory-card {
+      padding: 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(6, 182, 212, 0.12);
+      background: #f0fdfa;
+    }
+
+    .dsp-theory-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.05rem;
+      color: #14202e;
+    }
+
+    .dsp-theory-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #3b6474;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 740px) {
+      .dsp-hero { grid-template-columns: 1fr; }
+      .dsp-wave-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="dsp-page">
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+<div class="dsp-shell">
+
+  <div class="dsp-hero">
+    <div class="dsp-card">
+      <p class="dsp-eyebrow">Applied Physics · Signal Processing</p>
+      <h1>Digital Signal Processing</h1>
+      <p class="dsp-lede">
+        Every sound you hear is a sum of pure sine waves. The <strong>Fourier Transform</strong>
+        decomposes that mixture into its constituent frequencies — the same math
+        behind music EQs, MRI scanners, voice recognition, and Wi-Fi.
+      </p>
+    </div>
+
+    <div class="dsp-card">
+      <p class="dsp-eyebrow">Key Concepts</p>
+      <ul style="padding-left:1.1rem; color:#3b6474; line-height:1.7; font-size:0.95rem;">
+        <li><strong>Time Domain</strong> — amplitude vs. time (the waveform you see)</li>
+        <li><strong>Frequency Domain</strong> — amplitude vs. frequency (the spectrum)</li>
+        <li><strong>Fourier Transform</strong> — the bridge between the two domains</li>
+        <li><strong>Filters</strong> — boost or cut specific frequency bands</li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — DUAL WAVEFORM VIEW (Time + Frequency)
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="dsp-card">
+    <p class="dsp-eyebrow">Live Visualizer</p>
+
+    <div style="text-align:center; margin-bottom:1rem;">
+      <button id="micBtn" style="padding:0.6rem 1.4rem; border-radius:10px; background:#0891b2; color:#fff; font-weight:700; border:none; cursor:pointer; margin-right:0.5rem;">
+        Use Microphone
+      </button>
+      <button id="toneBtn" style="padding:0.6rem 1.4rem; border-radius:10px; background:#0e7490; color:#fff; font-weight:700; border:none; cursor:pointer;">
+        Play Test Tone
+      </button>
+    </div>
+
+    <div class="dsp-wave-grid">
+      <div class="dsp-wave-card">
+        <div class="dsp-wave-label">Time Domain (Waveform)</div>
+        <canvas id="waveCanvas"></canvas>
+      </div>
+      <div class="dsp-wave-card">
+        <div class="dsp-wave-label">Frequency Domain (Spectrum)</div>
+        <canvas id="spectrumCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — ADDITIVE SYNTHESIS
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="dsp-card">
+    <p class="dsp-eyebrow">Additive Synthesis — Build a Sound from Sine Waves</p>
+    <div class="dsp-freq-controls">
+      <div class="dsp-freq-slider">
+        <label>Fundamental</label>
+        <div class="freq-hz" id="f0Hz">220</div>
+        <input type="range" id="f0Slider" min="80" max="880" value="220" style="width:100%;" />
+        <input type="range" id="f0Amp" min="0" max="100" value="80" style="width:100%;" />
+        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
+      </div>
+      <div class="dsp-freq-slider">
+        <label>2nd Harmonic</label>
+        <div class="freq-hz" id="f1Hz">440</div>
+        <input type="range" id="f1Amp" min="0" max="100" value="40" style="width:100%;" />
+        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
+      </div>
+      <div class="dsp-freq-slider">
+        <label>3rd Harmonic</label>
+        <div class="freq-hz" id="f2Hz">660</div>
+        <input type="range" id="f2Amp" min="0" max="100" value="20" style="width:100%;" />
+        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
+      </div>
+      <div class="dsp-freq-slider">
+        <label>4th Harmonic</label>
+        <div class="freq-hz" id="f3Hz">880</div>
+        <input type="range" id="f3Amp" min="0" max="100" value="10" style="width:100%;" />
+        <div style="font-size:0.7rem; color:#3b6474;">Amplitude</div>
+      </div>
+    </div>
+    <p style="margin:0.8rem 0 0; font-size:0.88rem; color:#3b6474; text-align:center;">
+      Drag amplitudes to zero to hear how each harmonic shapes the timbre.
+      A square wave ≈ odd harmonics only. A sawtooth ≈ all harmonics.
+    </p>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 4 — EQ / FILTER
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="dsp-card">
+    <p class="dsp-eyebrow">Graphic Equalizer</p>
+    <div class="dsp-eq-wrap">
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="60" />
+        <span class="eq-label">60</span>
+      </div>
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="250" />
+        <span class="eq-label">250</span>
+      </div>
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="1k" />
+        <span class="eq-label">1k</span>
+      </div>
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="4k" />
+        <span class="eq-label">4k</span>
+      </div>
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="8k" />
+        <span class="eq-label">8k</span>
+      </div>
+      <div class="dsp-eq-band">
+        <input type="range" min="-12" max="12" value="0" class="eqBand" data-freq="16k" />
+        <span class="eq-label">16k</span>
+      </div>
+    </div>
+    <p style="text-align:center; font-size:0.85rem; color:#3b6474;">
+      Boost or cut frequency bands (±12 dB). Watch the spectrum change in real time.
+    </p>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 5 — THEORY CARDS
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="dsp-theory-grid">
+    <div class="dsp-theory-card">
+      <h3>Joseph Fourier (1807)</h3>
+      <p>Proved that any periodic function can be decomposed into a sum of sines and cosines — one of the most powerful ideas in all of mathematics.</p>
+    </div>
+    <div class="dsp-theory-card">
+      <h3>FFT Algorithm</h3>
+      <p>The Fast Fourier Transform (Cooley–Tukey, 1965) computes the frequency decomposition in O(n log n) time — making real-time audio analysis possible.</p>
+    </div>
+    <div class="dsp-theory-card">
+      <h3>Nyquist–Shannon Theorem</h3>
+      <p>To capture a frequency, you must sample at least twice per cycle. CD audio samples at 44.1 kHz, capturing up to ~22 kHz — the limit of human hearing.</p>
+    </div>
+    <div class="dsp-theory-card">
+      <h3>Applications</h3>
+      <p>MP3 compression, noise cancellation, medical imaging (MRI/CT), radar, seismology, and speech recognition all rely on the same DSP fundamentals.</p>
+    </div>
+  </div>
+
+</div><!-- /.dsp-shell -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── TODO: Full implementation ──
+   *
+   * AUDIO PIPELINE (Web Audio API)
+   *   - AudioContext with AnalyserNode (FFT size 2048)
+   *   - Two source modes:
+   *     1. Microphone: getUserMedia → AnalyserNode
+   *     2. Test tone: OscillatorNode → GainNode → AnalyserNode → destination
+   *   - EQ: chain of BiquadFilterNodes (peaking, one per band)
+   *
+   * TIME DOMAIN CANVAS (waveCanvas)
+   *   - analyser.getByteTimeDomainData()
+   *   - Draw waveform: cyan line on dark background
+   *   - Scrolling or oscilloscope-style triggered display
+   *
+   * FREQUENCY DOMAIN CANVAS (spectrumCanvas)
+   *   - analyser.getByteFrequencyData()
+   *   - Bar chart or smooth curve: x = frequency (log scale), y = amplitude
+   *   - Color gradient from cyan to magenta
+   *   - Label key frequency markers (100, 1k, 10k Hz)
+   *
+   * ADDITIVE SYNTHESIS
+   *   - 4 OscillatorNodes at fundamental × {1, 2, 3, 4}
+   *   - Amplitude sliders control individual GainNodes
+   *   - Fundamental slider updates all harmonic frequencies proportionally
+   *   - Output merges into the same analyser for visualization
+   *
+   * GRAPHIC EQUALIZER
+   *   - 6 BiquadFilterNodes (type: "peaking")
+   *   - Center frequencies: 60, 250, 1000, 4000, 8000, 16000 Hz
+   *   - Slider range: ±12 dB gain
+   *   - Q factor ~1.4 for musical EQ width
+   *
+   * MICROPHONE INPUT
+   *   - Request permission via getUserMedia({ audio: true })
+   *   - Connect MediaStreamSource to analyser
+   *   - Route through EQ filters before analyser
+   */
+
+  // Placeholder: update harmonic frequency labels
+  var f0 = document.getElementById('f0Slider');
+  if (f0) {
+    f0.addEventListener('input', function () {
+      var base = parseInt(f0.value);
+      document.getElementById('f0Hz').textContent = base;
+      document.getElementById('f1Hz').textContent = base * 2;
+      document.getElementById('f2Hz').textContent = base * 3;
+      document.getElementById('f3Hz').textContent = base * 4;
+    });
+  }
+}());
+</script>
+
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CRISPR &amp; Synthetic Biology Lab · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Life Sciences Lesson 03 — use a CRISPR-Cas9 simulator to edit a bacterial genome, exploring guide RNA design, gene knockouts, and bioluminescence." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── CRISPR Page Tokens ── */
+    body.crispr-page {
+      font-family: "Manrope", system-ui, sans-serif;
+      color: #1a2b3e;
+      background:
+        radial-gradient(circle at 10% 12%, rgba(74, 222, 128, 0.2), transparent 26%),
+        radial-gradient(circle at 88% 16%, rgba(168, 85, 247, 0.16), transparent 24%),
+        linear-gradient(180deg, #f5fdf8 0%, #edf7f0 100%);
+    }
+
+    .crispr-page .site-header,
+    .crispr-page .site-footer {
+      background: rgba(245, 253, 248, 0.84);
+      backdrop-filter: blur(18px);
+    }
+
+    .crispr-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .crispr-card {
+      border-radius: 26px;
+      border: 1px solid rgba(74, 222, 128, 0.18);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 20px 50px rgba(16, 42, 30, 0.07);
+      padding: 1.3rem;
+    }
+
+    .crispr-hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .crispr-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #4a8c64;
+    }
+
+    .crispr-hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3.8vw, 3rem);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      color: #0f2a1c;
+    }
+
+    .crispr-lede {
+      margin: 0.85rem 0 0;
+      font-size: 1.02rem;
+      color: #3d6651;
+      line-height: 1.66;
+    }
+
+    /* ── DNA Sequence Editor ── */
+    .crispr-sequence-wrap {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      padding: 1rem;
+      border-radius: 14px;
+      background: #0d1f17;
+      color: #a8f0c0;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .crispr-sequence-wrap .highlight-target {
+      background: rgba(251, 191, 36, 0.35);
+      color: #fbbf24;
+      border-radius: 2px;
+    }
+
+    .crispr-sequence-wrap .highlight-cut {
+      background: rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    /* ── Guide RNA Designer ── */
+    .crispr-grna-panel {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.8rem;
+      align-items: end;
+    }
+
+    .crispr-grna-panel input {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 1rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 10px;
+      border: 2px solid rgba(74, 222, 128, 0.3);
+      background: #f0fdf4;
+    }
+
+    /* ── Step Cards ── */
+    .crispr-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .crispr-step-card {
+      padding: 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(74, 222, 128, 0.15);
+      background: #f8fdf9;
+    }
+
+    .crispr-step-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.05rem;
+      color: #0f2a1c;
+    }
+
+    .crispr-step-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #3d6651;
+      line-height: 1.6;
+    }
+
+    /* ── Petri Dish Result ── */
+    .crispr-petri {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 1.5rem auto;
+      border-radius: 50%;
+      background: radial-gradient(circle, #e8f5e9 60%, #c8e6c9 100%);
+      border: 3px solid #a5d6a7;
+      box-shadow: inset 0 4px 20px rgba(0,0,0,0.06);
+    }
+
+    @media (max-width: 740px) {
+      .crispr-hero { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="crispr-page">
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+<div class="crispr-shell">
+
+  <div class="crispr-hero">
+    <div class="crispr-card">
+      <p class="crispr-eyebrow">Life Sciences · Lesson 03</p>
+      <h1>CRISPR &amp; Synthetic Biology Lab</h1>
+      <p class="crispr-lede">
+        CRISPR-Cas9 lets scientists cut DNA at a precise location and rewrite the
+        genetic code. Design a guide RNA, target a gene, and watch your virtual
+        bacteria glow — or resist antibiotics — depending on your edit.
+      </p>
+    </div>
+
+    <div class="crispr-card">
+      <p class="crispr-eyebrow">How It Works</p>
+      <ul style="padding-left:1.1rem; color:#3d6651; line-height:1.7; font-size:0.95rem;">
+        <li><strong>Cas9</strong> — molecular scissors guided to a specific DNA target</li>
+        <li><strong>Guide RNA</strong> — a 20-base sequence that matches the target gene</li>
+        <li><strong>PAM site</strong> — a short motif (NGG) that Cas9 requires to bind</li>
+        <li><strong>Repair</strong> — cell fixes the cut, often disabling (knockout) or inserting new code</li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — DNA SEQUENCE VIEWER
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="crispr-card">
+    <p class="crispr-eyebrow">Bacterial Genome Viewer</p>
+    <div class="crispr-sequence-wrap" id="sequenceViewer">
+      <!-- TODO: Render ~200bp of a simplified E. coli-like sequence.
+           Highlight PAM sites (NGG) in yellow.
+           When guide RNA is entered, highlight the matching 20bp target.
+           Show the Cas9 cut site with a red marker between bp 3-4 upstream of PAM. -->
+      ATGCGTAACCTGGATTCGAA<span class="highlight-target">TTACGGATCAGCTTGAAGCC</span><span class="highlight-cut">|</span>AGG
+      CTTAGCAAGTCCTTGAAACG...
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — GUIDE RNA DESIGNER
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="crispr-card">
+    <p class="crispr-eyebrow">Design Your Guide RNA</p>
+    <div class="crispr-grna-panel">
+      <input type="text" id="grnaInput" maxlength="20" placeholder="Enter 20-base guide sequence (A, T, C, G)..." />
+      <button id="cutBtn" style="padding:0.6rem 1.4rem; border-radius:10px; background:#16a34a; color:#fff; font-weight:700; border:none; cursor:pointer;">
+        Cut DNA
+      </button>
+    </div>
+    <p style="margin:0.6rem 0 0; font-size:0.85rem; color:#6b8f7a;">
+      Your guide RNA must match a sequence adjacent to a PAM site (NGG) to cut successfully.
+    </p>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 4 — PROCESS STEPS
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="crispr-steps">
+    <div class="crispr-step-card">
+      <h3>1. Select Target Gene</h3>
+      <p>Choose which gene to edit: <em>luxA</em> (bioluminescence) or <em>ampR</em> (antibiotic resistance). Each has different PAM sites and outcomes.</p>
+    </div>
+    <div class="crispr-step-card">
+      <h3>2. Design Guide RNA</h3>
+      <p>Type a 20-nucleotide sequence that complements the target. The simulator highlights matches and warns of off-target sites.</p>
+    </div>
+    <div class="crispr-step-card">
+      <h3>3. Cas9 Cuts</h3>
+      <p>If your guide matches a valid PAM-adjacent target, Cas9 creates a double-strand break. Watch the animation of the molecular scissors.</p>
+    </div>
+    <div class="crispr-step-card">
+      <h3>4. Observe the Result</h3>
+      <p>The cell repairs the cut. A knockout disables the gene; an insertion adds new function. Check the petri dish to see if your bacteria glow.</p>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 5 — PETRI DISH RESULT
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="crispr-card" style="text-align:center;">
+    <p class="crispr-eyebrow">Petri Dish — Result</p>
+    <div class="crispr-petri" id="petriDish">
+      <!-- TODO: Canvas or DOM-based petri dish
+           - Scatter colony dots across the dish
+           - If luxA gene successfully inserted → colonies glow green (animated pulse)
+           - If knockout succeeded → colonies survive on antibiotic plate
+           - If guide RNA was wrong → no colonies / no glow
+           - Include a UV light toggle button for bioluminescence reveal -->
+    </div>
+    <p style="color:#3d6651; font-size:0.92rem;">
+      Toggle the UV light to check for bioluminescence.
+    </p>
+  </div>
+
+</div><!-- /.crispr-shell -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── TODO: Full implementation ──
+   *
+   * DATA MODEL
+   *   - Simplified bacterial genome: ~200bp string with known gene regions
+   *   - Gene map: { luxA: { start, end, function }, ampR: { start, end, function } }
+   *   - PAM sites: scan sequence for NGG motifs, store positions
+   *
+   * GUIDE RNA MATCHING
+   *   - On input: scan for complementary match adjacent to a PAM site
+   *   - Highlight match in sequence viewer (yellow = target, red = cut site)
+   *   - Warn if multiple matches (off-target risk)
+   *   - Validate: only A/T/C/G characters, exactly 20 bases
+   *
+   * CAS9 CUT ANIMATION
+   *   - Animate scissors icon moving to the cut site
+   *   - Split the sequence visually at the cut point
+   *   - Show repair options: NHEJ (knockout) vs HDR (insertion)
+   *
+   * PETRI DISH VISUALIZATION
+   *   - Canvas-based circular dish with scattered colony dots
+   *   - Colony behavior based on edit result:
+   *     · luxA insert → green glow animation on UV toggle
+   *     · ampR knockout → colonies die on antibiotic plate
+   *   - UV light button toggles dark background + glow effect
+   *
+   * GENE SELECTOR
+   *   - Toggle between luxA and ampR targets
+   *   - Update sequence viewer highlighting accordingly
+   */
+}());
+</script>
+
+</body>
+</html>

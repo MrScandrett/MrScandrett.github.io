@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PID Control &amp; Feedback Loops · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Engineering Lesson 03 — tune a PID controller to stabilize a drone, exploring proportional, integral, and derivative feedback in real time." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── PID Page Tokens ── */
+    body.pid-page {
+      font-family: "Inter", system-ui, sans-serif;
+      color: #0f1f30;
+      background:
+        radial-gradient(circle at 12% 14%, rgba(56, 189, 248, 0.18), transparent 26%),
+        radial-gradient(circle at 85% 18%, rgba(251, 146, 60, 0.16), transparent 24%),
+        linear-gradient(180deg, #f4f9ff 0%, #eaf1fb 100%);
+    }
+
+    .pid-page .site-header,
+    .pid-page .site-footer {
+      background: rgba(244, 249, 255, 0.84);
+      backdrop-filter: blur(18px);
+    }
+
+    .pid-shell {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .pid-card {
+      border-radius: 26px;
+      border: 1px solid rgba(193, 206, 224, 0.9);
+      background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(245,249,252,0.96));
+      box-shadow: 0 18px 44px rgba(10, 25, 42, 0.08);
+      padding: 1.3rem;
+    }
+
+    .pid-hero {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .pid-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #667b90;
+    }
+
+    .pid-hero-copy h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      color: #0f1f30;
+    }
+
+    .pid-lede {
+      margin: 0.9rem 0 0;
+      font-size: 1.05rem;
+      color: #486277;
+      line-height: 1.66;
+    }
+
+    /* ── Sim Canvas ── */
+    .pid-sim-wrap {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #0b1928;
+    }
+
+    .pid-sim-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 360px;
+    }
+
+    /* ── Sliders ── */
+    .pid-controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .pid-slider-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #486277;
+      margin-bottom: 0.4rem;
+    }
+
+    .pid-slider-group input[type="range"] {
+      width: 100%;
+    }
+
+    .pid-slider-group .pid-val {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #0f1f30;
+    }
+
+    /* ── Error Graph ── */
+    .pid-graph-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 200px;
+      border-radius: 14px;
+      background: #fafcfe;
+      border: 1px solid rgba(193, 206, 224, 0.6);
+    }
+
+    /* ── Theory Cards ── */
+    .pid-theory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .pid-theory-card {
+      padding: 1.2rem;
+      border-radius: 18px;
+      border: 1px solid rgba(193, 206, 224, 0.6);
+      background: #fafcfe;
+    }
+
+    .pid-theory-card h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.1rem;
+      color: #0f1f30;
+    }
+
+    .pid-theory-card p {
+      margin: 0;
+      font-size: 0.92rem;
+      color: #486277;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 740px) {
+      .pid-hero { grid-template-columns: 1fr; }
+      .pid-controls { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="pid-page">
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+<div class="pid-shell">
+
+  <div class="pid-hero">
+    <div class="pid-card pid-hero-copy">
+      <p class="pid-eyebrow">Engineering · Lesson 03</p>
+      <h1>PID Control &amp; Feedback Loops</h1>
+      <p class="pid-lede">
+        Every autopilot, thermostat, and self-driving car relies on the same
+        elegant idea: measure the error, then correct it — <strong>proportionally</strong>,
+        by its <strong>accumulation</strong>, and by its <strong>rate of change</strong>.
+        Tune a virtual drone and feel the math come alive.
+      </p>
+    </div>
+
+    <div class="pid-card">
+      <p class="pid-eyebrow">Quick Brief</p>
+      <ul style="padding-left:1.1rem; color:#486277; line-height:1.7; font-size:0.95rem;">
+        <li><strong>P</strong> — Proportional: correction scales with current error</li>
+        <li><strong>I</strong> — Integral: corrects accumulated past error (drift)</li>
+        <li><strong>D</strong> — Derivative: dampens based on rate of change (overshoot)</li>
+        <li>Together they form the most widely used control algorithm in engineering</li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — INTERACTIVE SIM (Drone / Inverted Pendulum)
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="pid-card">
+    <p class="pid-eyebrow">Live Simulator</p>
+
+    <!-- Canvas: drone attempting to hold altitude at a red setpoint line -->
+    <div class="pid-sim-wrap">
+      <canvas id="pidCanvas"></canvas>
+    </div>
+
+    <!-- P / I / D gain sliders -->
+    <div class="pid-controls" style="margin-top:1rem;">
+      <div class="pid-slider-group">
+        <label>Kp — Proportional <span class="pid-val" id="kpVal">1.0</span></label>
+        <input type="range" id="kpSlider" min="0" max="5" step="0.1" value="1.0" />
+      </div>
+      <div class="pid-slider-group">
+        <label>Ki — Integral <span class="pid-val" id="kiVal">0.0</span></label>
+        <input type="range" id="kiSlider" min="0" max="2" step="0.05" value="0.0" />
+      </div>
+      <div class="pid-slider-group">
+        <label>Kd — Derivative <span class="pid-val" id="kdVal">0.0</span></label>
+        <input type="range" id="kdSlider" min="0" max="3" step="0.1" value="0.0" />
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — LIVE ERROR GRAPH
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="pid-card">
+    <p class="pid-eyebrow">Error Over Time</p>
+    <div class="pid-graph-wrap">
+      <canvas id="pidGraph"></canvas>
+    </div>
+    <p style="margin:0.6rem 0 0; font-size:0.88rem; color:#667b90;">
+      Blue = setpoint · Orange = actual position · Shaded area = error
+    </p>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 4 — THEORY CARDS
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="pid-theory-grid">
+    <div class="pid-theory-card">
+      <h3>Proportional (P)</h3>
+      <p>
+        The P term produces an output proportional to the current error.
+        High Kp responds aggressively but can overshoot. Too low and the
+        system is sluggish, never quite reaching the setpoint ("steady-state error").
+      </p>
+    </div>
+    <div class="pid-theory-card">
+      <h3>Integral (I)</h3>
+      <p>
+        The I term sums all past error over time. It eliminates steady-state
+        error that P alone cannot fix, but too much Ki causes oscillation
+        and "integral windup."
+      </p>
+    </div>
+    <div class="pid-theory-card">
+      <h3>Derivative (D)</h3>
+      <p>
+        The D term reacts to the rate of change of the error. It acts as a
+        brake, smoothing out overshoot and damping oscillations. Too much Kd
+        amplifies sensor noise.
+      </p>
+    </div>
+    <div class="pid-theory-card">
+      <h3>Tuning in the Real World</h3>
+      <p>
+        Engineers use methods like Ziegler–Nichols to find good starting gains.
+        The goal: reach the setpoint quickly, with minimal overshoot and no
+        sustained oscillation. Explore the sliders above to feel this balance.
+      </p>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 5 — CHALLENGE MODE (placeholder)
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="pid-card" style="text-align:center; padding:2rem;">
+    <p class="pid-eyebrow">Challenge Mode — Coming Soon</p>
+    <p style="color:#486277; font-size:1rem; max-width:520px; margin:0 auto;">
+      Random wind gusts will push your drone off course. Can you tune the PID
+      gains to recover within 2 seconds every time?
+    </p>
+  </div>
+
+</div><!-- /.pid-shell -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── TODO: Full implementation ──
+   *
+   * PHYSICS MODEL
+   *   - Drone mass, gravity, thrust force
+   *   - Simple 1D vertical dynamics: F = m*a, with PID output as thrust adjustment
+   *   - Setpoint = red horizontal line (adjustable via click/drag on canvas)
+   *
+   * PID LOOP (runs at ~60 fps via requestAnimationFrame)
+   *   - error = setpoint - currentAltitude
+   *   - integral += error * dt  (with windup clamp)
+   *   - derivative = (error - prevError) / dt
+   *   - output = Kp * error + Ki * integral + Kd * derivative
+   *   - Apply output as upward thrust offset
+   *
+   * CANVAS RENDERING (pidCanvas)
+   *   - Sky gradient background
+   *   - Drone sprite (simple geometric quad-rotor)
+   *   - Red setpoint line with label
+   *   - Propeller spin speed proportional to thrust
+   *
+   * ERROR GRAPH (pidGraph)
+   *   - Scrolling time-series plot
+   *   - Blue line = setpoint, Orange line = actual altitude
+   *   - Shaded region between = error magnitude
+   *   - X-axis = time (last ~10 seconds), Y-axis = altitude
+   *
+   * SLIDER WIRING
+   *   - kpSlider → Kp gain, kiSlider → Ki gain, kdSlider → Kd gain
+   *   - Update displayed values in real time
+   *   - Reset integral accumulator when Ki changes (prevent windup spike)
+   *
+   * CHALLENGE MODE (future)
+   *   - Random lateral/vertical force impulses (wind gusts)
+   *   - Timer: measure settling time after each gust
+   *   - Score based on average settling time
+   */
+
+  // Placeholder: wire sliders to display values
+  var sliders = ['kp', 'ki', 'kd'];
+  sliders.forEach(function (id) {
+    var slider = document.getElementById(id + 'Slider');
+    var val = document.getElementById(id + 'Val');
+    if (slider && val) {
+      slider.addEventListener('input', function () {
+        val.textContent = parseFloat(slider.value).toFixed(id === 'ki' ? 2 : 1);
+      });
+    }
+  });
+}());
+</script>
+
+</body>
+</html>

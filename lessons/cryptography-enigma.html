@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cryptography &amp; The Enigma · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Computer Science Lesson — explore encryption from Caesar ciphers to the Enigma machine and RSA key exchange through interactive simulators." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── Crypto Page Tokens ── */
+    body.crypto-page {
+      font-family: "Inter", system-ui, sans-serif;
+      color: #121c2e;
+      background:
+        radial-gradient(circle at 8% 10%, rgba(99, 102, 241, 0.18), transparent 24%),
+        radial-gradient(circle at 90% 15%, rgba(244, 114, 182, 0.14), transparent 22%),
+        linear-gradient(180deg, #f5f3ff 0%, #eef0fb 100%);
+    }
+
+    .crypto-page .site-header,
+    .crypto-page .site-footer {
+      background: rgba(245, 243, 255, 0.84);
+      backdrop-filter: blur(18px);
+    }
+
+    .crypto-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .crypto-card {
+      border-radius: 26px;
+      border: 1px solid rgba(99, 102, 241, 0.14);
+      background: rgba(255, 255, 255, 0.93);
+      box-shadow: 0 20px 50px rgba(18, 18, 50, 0.07);
+      padding: 1.3rem;
+    }
+
+    .crypto-hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .crypto-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #6366f1;
+    }
+
+    .crypto-hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3.8vw, 3rem);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      color: #121c2e;
+    }
+
+    .crypto-lede {
+      margin: 0.85rem 0 0;
+      font-size: 1.02rem;
+      color: #4b5080;
+      line-height: 1.66;
+    }
+
+    /* ── Enigma Machine Visual ── */
+    .enigma-wrap {
+      text-align: center;
+      padding: 1.5rem;
+    }
+
+    .enigma-rotors {
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .enigma-rotor {
+      width: 80px;
+      height: 120px;
+      border-radius: 14px;
+      border: 2px solid rgba(99, 102, 241, 0.3);
+      background: linear-gradient(180deg, #e8e6f8, #d4d1f0);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .enigma-rotor .rotor-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #6366f1;
+      margin-bottom: 0.4rem;
+    }
+
+    .enigma-rotor .rotor-val {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #121c2e;
+    }
+
+    /* ── Lampboard ── */
+    .enigma-lampboard {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .enigma-lamp {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid rgba(99, 102, 241, 0.25);
+      background: #2a2640;
+      color: #8884b0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: all 0.15s;
+    }
+
+    .enigma-lamp.lit {
+      background: #fbbf24;
+      color: #1a1630;
+      box-shadow: 0 0 18px rgba(251, 191, 36, 0.5);
+    }
+
+    /* ── Keyboard Input ── */
+    .enigma-keyboard {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.4rem;
+      max-width: 520px;
+      margin: 1rem auto 0;
+    }
+
+    .enigma-key {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      background: #faf9fe;
+      cursor: pointer;
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Tabs for switching cipher modes ── */
+    .crypto-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .crypto-tab {
+      padding: 0.5rem 1.2rem;
+      border-radius: 10px;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      background: #faf9fe;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: #4b5080;
+    }
+
+    .crypto-tab.active {
+      background: #6366f1;
+      color: #fff;
+      border-color: #6366f1;
+    }
+
+    /* ── History Cards ── */
+    .crypto-history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .crypto-history-card {
+      padding: 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(99, 102, 241, 0.12);
+      background: #faf9fe;
+    }
+
+    .crypto-history-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.05rem;
+      color: #121c2e;
+    }
+
+    .crypto-history-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #4b5080;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 740px) {
+      .crypto-hero { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="crypto-page">
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+<div class="crypto-shell">
+
+  <div class="crypto-hero">
+    <div class="crypto-card">
+      <p class="crypto-eyebrow">Computer Science · Cryptography</p>
+      <h1>Cryptography &amp; The Enigma</h1>
+      <p class="crypto-lede">
+        From ancient Rome to the Allied codebreakers at Bletchley Park, encryption
+        has shaped history. Step through three eras of cryptography: shift ciphers,
+        the Enigma machine, and modern RSA public-key encryption.
+      </p>
+    </div>
+
+    <div class="crypto-card">
+      <p class="crypto-eyebrow">Three Eras</p>
+      <ul style="padding-left:1.1rem; color:#4b5080; line-height:1.7; font-size:0.95rem;">
+        <li><strong>Caesar Cipher</strong> — shift every letter by a fixed amount</li>
+        <li><strong>Enigma Machine</strong> — polyalphabetic substitution with rotors</li>
+        <li><strong>RSA</strong> — public-key encryption using prime factorization</li>
+        <li>Each era solved flaws in the previous generation</li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — CIPHER TABS (Caesar / Enigma / RSA)
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="crypto-card">
+    <div class="crypto-tabs">
+      <button class="crypto-tab active" data-tab="caesar">Caesar Cipher</button>
+      <button class="crypto-tab" data-tab="enigma">Enigma Machine</button>
+      <button class="crypto-tab" data-tab="rsa">RSA Exchange</button>
+    </div>
+
+    <!-- ── Caesar Cipher Panel ── -->
+    <div id="caesarPanel">
+      <p class="crypto-eyebrow">Caesar Cipher — Shift Cipher</p>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:1rem; align-items:center;">
+        <label style="font-weight:700; color:#4b5080;">Shift (1–25):</label>
+        <input type="range" id="caesarShift" min="1" max="25" value="3" style="width:100%;" />
+      </div>
+      <div style="margin-top:1rem; display:grid; gap:0.6rem;">
+        <textarea id="caesarPlain" rows="2" placeholder="Type plaintext here..." style="font-family:'JetBrains Mono',monospace; padding:0.6rem; border-radius:10px; border:1px solid rgba(99,102,241,0.2);"></textarea>
+        <div id="caesarCipher" style="font-family:'JetBrains Mono',monospace; padding:0.8rem; border-radius:10px; background:#2a2640; color:#c4b5fd; min-height:2.5rem;"></div>
+      </div>
+    </div>
+
+    <!-- ── Enigma Panel ── -->
+    <div id="enigmaPanel" style="display:none;">
+      <p class="crypto-eyebrow">Enigma Machine Simulator</p>
+      <div class="enigma-wrap">
+        <div class="enigma-rotors">
+          <div class="enigma-rotor">
+            <span class="rotor-label">Rotor I</span>
+            <span class="rotor-val" id="rotor1">A</span>
+          </div>
+          <div class="enigma-rotor">
+            <span class="rotor-label">Rotor II</span>
+            <span class="rotor-val" id="rotor2">A</span>
+          </div>
+          <div class="enigma-rotor">
+            <span class="rotor-label">Rotor III</span>
+            <span class="rotor-val" id="rotor3">A</span>
+          </div>
+        </div>
+
+        <div class="enigma-lampboard" id="lampboard">
+          <!-- TODO: generate 26 lamp divs A–Z -->
+        </div>
+
+        <div class="enigma-keyboard" id="keyboard">
+          <!-- TODO: generate 26 key buttons A–Z -->
+        </div>
+      </div>
+
+      <div style="margin-top:1rem; font-family:'JetBrains Mono',monospace; text-align:center;">
+        <div style="color:#4b5080; font-size:0.82rem; margin-bottom:0.3rem;">Output</div>
+        <div id="enigmaOutput" style="padding:0.6rem; background:#2a2640; color:#fbbf24; border-radius:10px; min-height:1.6rem; letter-spacing:0.2em;"></div>
+      </div>
+    </div>
+
+    <!-- ── RSA Panel ── -->
+    <div id="rsaPanel" style="display:none;">
+      <p class="crypto-eyebrow">RSA Key Exchange</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div style="padding:1rem; border-radius:14px; background:#faf9fe; border:1px solid rgba(99,102,241,0.15);">
+          <h4 style="margin:0 0 0.5rem; color:#6366f1;">Key Generation</h4>
+          <p style="font-size:0.88rem; color:#4b5080; margin:0;">
+            Pick two primes <strong>p</strong> and <strong>q</strong>.
+            The simulator computes n = p × q and derives the public/private key pair.
+          </p>
+          <div style="margin-top:0.8rem; display:flex; gap:0.6rem;">
+            <input type="number" id="rsaP" placeholder="p" style="width:5rem; padding:0.4rem; border-radius:8px; border:1px solid rgba(99,102,241,0.2); text-align:center;" />
+            <input type="number" id="rsaQ" placeholder="q" style="width:5rem; padding:0.4rem; border-radius:8px; border:1px solid rgba(99,102,241,0.2); text-align:center;" />
+            <button id="rsaGenBtn" style="padding:0.4rem 1rem; border-radius:8px; background:#6366f1; color:#fff; font-weight:700; border:none; cursor:pointer;">Generate</button>
+          </div>
+        </div>
+        <div style="padding:1rem; border-radius:14px; background:#faf9fe; border:1px solid rgba(99,102,241,0.15);">
+          <h4 style="margin:0 0 0.5rem; color:#6366f1;">Encrypt / Decrypt</h4>
+          <p style="font-size:0.88rem; color:#4b5080; margin:0;">
+            Enter a number to encrypt with the public key, then decrypt with the private key to verify.
+          </p>
+          <div id="rsaResults" style="margin-top:0.8rem; font-family:'JetBrains Mono',monospace; font-size:0.88rem; color:#121c2e;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — HISTORICAL CONTEXT
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="crypto-history-grid">
+    <div class="crypto-history-card">
+      <h3>Julius Caesar (58 BC)</h3>
+      <p>Used a simple shift cipher to communicate with his generals. Effective against illiterate enemies, trivially broken by frequency analysis.</p>
+    </div>
+    <div class="crypto-history-card">
+      <h3>The Enigma Machine (1930s)</h3>
+      <p>Germany's electro-mechanical cipher used rotating wheels to create a different substitution alphabet for every keypress — 158 quintillion possible settings.</p>
+    </div>
+    <div class="crypto-history-card">
+      <h3>Bletchley Park (1939–45)</h3>
+      <p>Alan Turing and the codebreakers built the Bombe machine to exploit a fatal Enigma flaw: no letter could encrypt to itself. This shortened WWII by an estimated two years.</p>
+    </div>
+    <div class="crypto-history-card">
+      <h3>RSA (1977)</h3>
+      <p>Rivest, Shamir, and Adleman published the first practical public-key system. Security rests on the difficulty of factoring large numbers — the same math behind every HTTPS connection today.</p>
+    </div>
+  </div>
+
+</div><!-- /.crypto-shell -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── TODO: Full implementation ──
+   *
+   * CAESAR CIPHER
+   *   - On input: shift each letter by slider value, preserve case & non-alpha
+   *   - Update ciphertext display in real time
+   *   - Optional: frequency analysis bar chart showing letter distribution
+   *
+   * ENIGMA SIMULATOR
+   *   - Three rotors with historical wiring tables (Rotor I, II, III)
+   *   - Reflector (UKB)
+   *   - On keypress:
+   *     1. Advance rightmost rotor (and cascade via notch positions)
+   *     2. Signal path: key → plugboard → R3 → R2 → R1 → reflector → R1 → R2 → R3 → plugboard → lamp
+   *     3. Light the output lamp, append to output string
+   *   - Rotor position display updates with each keypress
+   *   - Reset button to return rotors to starting position
+   *
+   * RSA KEY EXCHANGE
+   *   - Input: two primes p, q
+   *   - Compute: n = p*q, phi = (p-1)*(q-1)
+   *   - Find e (coprime to phi, typically 65537 or smaller for demo)
+   *   - Compute d = modular inverse of e mod phi
+   *   - Display public key (n, e) and private key (d)
+   *   - Encrypt: c = m^e mod n
+   *   - Decrypt: m = c^d mod n
+   *   - Use BigInt for larger primes
+   *
+   * TAB SWITCHING
+   *   - Show/hide panels based on active tab
+   *   - Persist state when switching between tabs
+   */
+
+  // Tab switching placeholder
+  var tabs = document.querySelectorAll('.crypto-tab');
+  var panels = { caesar: 'caesarPanel', enigma: 'enigmaPanel', rsa: 'rsaPanel' };
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      Object.keys(panels).forEach(function (k) {
+        document.getElementById(panels[k]).style.display = k === tab.dataset.tab ? '' : 'none';
+      });
+    });
+  });
+}());
+</script>
+
+</body>
+</html>
