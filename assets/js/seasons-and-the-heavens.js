@@ -77,6 +77,7 @@ function initializeSimulator() {
 
   let animationRunning = false;
   let precessionAngle = 0;
+  let animationInterval = null;
 
   // Quick jump buttons
   quickButtons.forEach(btn => {
@@ -102,26 +103,26 @@ function initializeSimulator() {
   // Animate Orbit
   animateBtn.addEventListener('click', function() {
     animationRunning = !animationRunning;
-    this.textContent = animationRunning ? '⏸ Pause' : '▶ Animate Orbit';
+    this.textContent = animationRunning ? '⏸ Pause' : '▶ Animate';
 
     if (animationRunning) {
-      let month = 0;
-      const interval = setInterval(() => {
+      let month = parseInt(document.getElementById('sth-month-slider').value);
+      if (animationInterval) clearInterval(animationInterval);
+      animationInterval = setInterval(() => {
         month = (month + 1) % 12;
         document.getElementById('sth-month-slider').value = month;
         document.getElementById('sth-month-slider').dispatchEvent(new Event('input'));
-
-        if (!animationRunning) {
-          clearInterval(interval);
-        }
-      }, 300);
+      }, 600); // Slowed down slightly for better readability on mobile
+    } else {
+      if (animationInterval) clearInterval(animationInterval);
     }
   });
 
   // Reset
   resetBtn.addEventListener('click', function() {
     animationRunning = false;
-    animateBtn.textContent = '▶ Animate Orbit';
+    animateBtn.textContent = '▶ Animate';
+    if (animationInterval) clearInterval(animationInterval);
     document.getElementById('sth-month-slider').value = 0;
     document.getElementById('sth-month-slider').dispatchEvent(new Event('input'));
     tiltToggle.checked = true;
@@ -131,24 +132,35 @@ function initializeSimulator() {
   });
 
   function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, 500, 500);
     const month = parseInt(document.getElementById('sth-month-slider').value);
     drawOrbit(ctx, month, tiltToggle.checked, daylightToggle.checked, precessionToggle.checked);
   }
 
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = 500 * dpr;
+    canvas.height = 500 * dpr;
+    canvas.style.width = '100%';
+    canvas.style.maxWidth = '500px';
+    canvas.style.height = 'auto';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+
   window.updateSimulator = function(month) {
-    if (!animationRunning) {
-      precessionAngle = precessionToggle.checked ? (month * 360 / 12 / 26000) * 100 : 0;
-      draw();
-    }
+    precessionAngle = precessionToggle.checked ? (month * 360 / 12 / 26000) * 100 : 0;
+    draw();
   };
 
-  draw();
+  resizeCanvas();
 }
 
 function drawOrbit(ctx, month, showTilt, showDaylight, showPrecession) {
-  const centerX = ctx.canvas.width / 2;
-  const centerY = ctx.canvas.height / 2;
+  const centerX = 250;
+  const centerY = 250;
   const orbitRadius = 120;
   const earthRadius = 25;
 
