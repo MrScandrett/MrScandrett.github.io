@@ -1204,6 +1204,19 @@
       sunLight.intensity = 1.4 * solarFactor;
       sunLight.color.setHSL(0.1, 0.15 * (1 - (solarFactor - 1) * 5), 0.95);
 
+      // Time-delayed effect: High deforestation naturally increases CO2 over time
+      if (state.deforest > 50 && mode === 'carbon') {
+        const co2IncreaseRate = ((state.deforest - 50) / 50) * 8.0; // up to 8 ppm per second
+        state.co2 = Math.min(700, state.co2 + co2IncreaseRate * dt);
+        const currentSliderVal = parseInt(document.getElementById('s-co2').value);
+        if (Math.floor(state.co2) > currentSliderVal) {
+          document.getElementById('s-co2').value = state.co2;
+          labels.co2.textContent = Math.round(state.co2) + ' ppm';
+          climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
+          updateReadouts();
+        }
+      }
+
       // Particles
       updatePersistentPositions();
       spawnTransient(climate, dt);

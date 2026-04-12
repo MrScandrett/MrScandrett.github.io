@@ -1063,7 +1063,8 @@
         lift: 0,
         bounce: 0,
         lastTime: 0,
-        stallPhase: 0
+        stallPhase: 0,
+        particles: []
       };
 
       function clamp(min, value, max) {
@@ -1095,6 +1096,7 @@
         system.lift = 0;
         system.bounce = 0;
         system.stallPhase = 0;
+        system.particles = [];
         testButton.disabled = false;
         statusPill.textContent = 'System ready';
         statusPill.className = 'gear-status-pill';
@@ -1277,12 +1279,15 @@
         const crateSize = 54;
         const crateY = groundY - system.lift;
 
+        const decayRate1 = Math.pow(0.9, dt / 16.6667);
+        const decayRate2 = Math.pow(0.84, dt / 16.6667);
+
         if (system.mode === 'overspeed') {
           system.bounce += dt * 0.015;
         } else if (system.mode === 'lifting') {
-          system.bounce = Math.max(0, system.bounce * 0.9);
+          system.bounce = Math.max(0, system.bounce * decayRate1);
         } else {
-          system.bounce *= 0.84;
+          system.bounce *= decayRate2;
         }
 
         const shake = system.mode === 'overspeed' ? Math.sin(system.bounce) * 7 : 0;
@@ -1373,7 +1378,8 @@
 
           if (system.mode === 'lifting') {
             system.rotation += scaled * (dt / 16.6667);
-            system.lift = Math.min(LIFT_TARGET, system.lift + ((SAFE_OUTPUT_SPEED_RPM / Math.max(system.outputSpeed, 1)) * 0.8) + ((system.outputSpeed / SAFE_OUTPUT_SPEED_RPM) * 0.6));
+            const liftRate = ((SAFE_OUTPUT_SPEED_RPM / Math.max(system.outputSpeed, 1)) * 0.8) + ((system.outputSpeed / SAFE_OUTPUT_SPEED_RPM) * 0.6);
+            system.lift = Math.min(LIFT_TARGET, system.lift + liftRate * (dt / 16.6667));
             if (system.lift >= LIFT_TARGET) {
               system.running = false;
               system.mode = 'success';
@@ -1385,7 +1391,20 @@
             }
           } else if (system.mode === 'overspeed') {
             system.rotation += (scaled * 1.4) * (dt / 16.6667);
-            system.lift = Math.min(LIFT_TARGET * 0.62, system.lift + ((system.outputSpeed / SAFE_OUTPUT_SPEED_RPM) * 2.8));
+            const overspeedRate = (system.outputSpeed / SAFE_OUTPUT_SPEED_RPM) * 2.8;
+            system.lift = Math.min(LIFT_TARGET * 0.62, system.lift + overspeedRate * (dt / 16.6667));
+
+            const spawnCount = (0.6 + Math.random() * 1.5) * (dt / 16.6667);
+            for (let i = 0; i < Math.floor(spawnCount) + (Math.random() < (spawnCount % 1) ? 1 : 0); i++) {
+              system.particles.push({
+                x: driverX + driverRadius + 3,
+                y: centerY + (Math.random() - 0.5) * 20,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.8) * 8,
+                life: 1.0 + Math.random() * 0.5,
+                decay: 0.03 + Math.random() * 0.05
+              });
+            }
             if (system.lift >= LIFT_TARGET * 0.62) {
               system.running = false;
               testButton.disabled = false;
@@ -1396,7 +1415,7 @@
             }
           } else if (system.mode === 'stall') {
             system.stallPhase += dt * 0.025;
-            system.rotation += Math.sin(system.stallPhase) * 0.02;
+            system.rotation += Math.sin(system.stallPhase) * 0.02 * (dt / 16.6667);
           }
         }
 
@@ -1432,6 +1451,27 @@
         drawTorqueArrow(drivenX + 36, centerY - drivenRadius - 34, torqueArrowWidth, 'rgba(121, 214, 255, 0.9)', 'Output');
         drawTorqueArrow(drumX - 20, centerY + 114, -speedArrowWidth, 'rgba(255, 169, 92, 0.74)', 'Winch rpm');
 
+        for (let i = system.particles.length - 1; i >= 0; i--) {
+          const p = system.particles[i];
+          p.x += p.vx * (dt / 16.6667);
+          p.y += p.vy * (dt / 16.6667);
+          p.vy += 0.25 * (dt / 16.6667);
+          p.life -= p.decay * (dt / 16.6667);
+          
+          if (p.life <= 0) {
+            system.particles.splice(i, 1);
+          } else {
+            ctx.save();
+            ctx.fillStyle = `rgba(255, ${Math.floor(150 + Math.min(1, p.life) * 105)}, 50, ${Math.min(1, p.life)})`;
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = 'rgba(255, 180, 50, 0.8)';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 1 + Math.min(1, p.life) * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
         ctx.save();
         ctx.strokeStyle = 'rgba(146, 181, 214, 0.4)';
         ctx.lineWidth = 4;
@@ -1461,6 +1501,7 @@
         system.lift = 0;
         system.bounce = 0;
         system.stallPhase = 0;
+        system.particles = [];
         system.running = true;
         testButton.disabled = true;
 
