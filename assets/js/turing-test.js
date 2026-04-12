@@ -146,7 +146,7 @@
     return parts.map((part, index) => {
       const clean = part.trim();
       if (!clean) return part;
-      return `<span class="tl-msg-word" data-respondent="${respondent}" data-message-id="${messageId}" data-word-index="${index}">${escapeHtml(part)}</span>`;
+      return `<span class="tl-msg-word" tabindex="0" role="button" data-respondent="${respondent}" data-message-id="${messageId}" data-word-index="${index}">${escapeHtml(part)}</span>`;
     }).join('');
   }
 
@@ -154,6 +154,12 @@
     messageElement.querySelectorAll('.tl-msg-word').forEach((wordEl) => {
       wordEl.addEventListener('click', function () {
         tagWord(this);
+      });
+      wordEl.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          tagWord(this);
+        }
       });
     });
   }

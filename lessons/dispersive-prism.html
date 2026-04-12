@@ -640,7 +640,7 @@
           <div class="ll-param">
             <div class="ll-param-label">
               <span>Beam Angle</span>
-              <span class="ll-val" id="beam-angle-val">30°</span>
+            <span class="ll-val" id="beam-angle-val" aria-live="polite">30°</span>
             </div>
             <input type="range" id="beam-angle" class="prism-range" min="10" max="70" value="30" style="width:100%" />
             <div class="ll-param-ends"><span>10°</span><span>70°</span></div>
@@ -648,7 +648,7 @@
           <div class="ll-param">
             <div class="ll-param-label">
               <span>Prism Rotation</span>
-              <span class="ll-val" id="prism-rotation-val">0°</span>
+            <span class="ll-val" id="prism-rotation-val" aria-live="polite">0°</span>
             </div>
             <input type="range" id="prism-rotation" class="prism-range" min="-25" max="25" value="0" style="width:100%" />
             <div class="ll-param-ends"><span>&#x2212;25°</span><span>+25°</span></div>
@@ -656,7 +656,7 @@
           <div class="ll-param">
             <div class="ll-param-label">
               <span>Beam Width</span>
-              <span class="ll-val" id="beam-width-val">narrow</span>
+            <span class="ll-val" id="beam-width-val" aria-live="polite">narrow</span>
             </div>
             <input type="range" id="beam-width" class="prism-range" min="1" max="3" step="1" value="1" style="width:100%" />
             <div class="ll-param-ends"><span>narrow</span><span>wide</span></div>
@@ -666,7 +666,7 @@
           <div class="ll-param">
             <div class="ll-param-label">
               <span>Recombining Prism</span>
-              <span class="ll-val" id="second-prism-val">off</span>
+            <span class="ll-val" id="second-prism-val" aria-live="polite">off</span>
             </div>
             <input type="range" id="second-prism" class="prism-range" min="0" max="1" step="1" value="0" style="width:100%" />
             <div class="ll-param-ends"><span>off</span><span>on</span></div>
@@ -710,17 +710,41 @@
       var prismRotVal  = document.getElementById('prism-rotation-val');
       var beamWidthVal = document.getElementById('beam-width-val');
       var secondPrismVal = document.getElementById('second-prism-val');
+      var materialEl = document.getElementById('prism-material');
       var resetBtn = document.getElementById('prism-reset');
 
-      var SPECTRUM = [
-        { nm: 405, r: 123, g:  0, b: 224, label: 'Violet' },
-        { nm: 445, r:  68, g: 85, b: 255, label: 'Indigo' },
-        { nm: 475, r:   0, g:180, b: 255, label: 'Blue'   },
-        { nm: 510, r:   0, g:220, b: 120, label: 'Green'  },
-        { nm: 560, r: 220, g:210, b:   0, label: 'Yellow' },
-        { nm: 600, r: 255, g:120, b:   0, label: 'Orange' },
-        { nm: 650, r: 255, g: 26, b:   0, label: 'Red'    }
-      ];
+      function nmToRGB(wavelength) {
+        var r, g, b, factor;
+        if (wavelength >= 380 && wavelength < 440) {
+          r = -(wavelength - 440) / (440 - 380); g = 0.0; b = 1.0;
+        } else if (wavelength >= 440 && wavelength < 490) {
+          r = 0.0; g = (wavelength - 440) / (490 - 440); b = 1.0;
+        } else if (wavelength >= 490 && wavelength < 510) {
+          r = 0.0; g = 1.0; b = -(wavelength - 510) / (510 - 490);
+        } else if (wavelength >= 510 && wavelength < 580) {
+          r = (wavelength - 510) / (580 - 510); g = 1.0; b = 0.0;
+        } else if (wavelength >= 580 && wavelength < 645) {
+          r = 1.0; g = -(wavelength - 645) / (645 - 580); b = 0.0;
+        } else if (wavelength >= 645 && wavelength <= 780) {
+          r = 1.0; g = 0.0; b = 0.0;
+        } else {
+          r = 0.0; g = 0.0; b = 0.0;
+        }
+        factor = (wavelength >= 380 && wavelength < 420) ? 0.3 + 0.7 * (wavelength - 380) / (420 - 380) :
+                 (wavelength >= 420 && wavelength < 701) ? 1.0 :
+                 (wavelength >= 701 && wavelength <= 780) ? 0.3 + 0.7 * (780 - wavelength) / (780 - 700) : 0.0;
+        return { r: Math.round(255 * r * factor), g: Math.round(255 * g * factor), b: Math.round(255 * b * factor) };
+      }
+
+      var SPECTRUM = [];
+      for (var w = 390; w <= 700; w += 6) {
+        var c = nmToRGB(w);
+        SPECTRUM.push({ nm: w, r: c.r, g: c.g, b: c.b, label: w + 'nm' });
+      }
+
+      var dust = Array.from({length: 80}, function() {
+        return { x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3, r: Math.random() * 1.2 + 0.4 };
+      });
 
       function toRad(d) { return d * Math.PI / 180; }
       function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
@@ -736,10 +760,16 @@
         return vec(a.x / l, a.y / l);
       }
 
-      // Cauchy equation (approx) for borosilicate glass (lambda in micrometers)
+      var MATERIALS = {
+        crown: { A: 1.5046, B: 0.00420 },
+        flint: { A: 1.6200, B: 0.0120 },
+        diamond: { A: 2.417, B: 0.0114 }
+      };
+
       function refractiveIndex(nm) {
         var um = nm / 1000;
-        return 1.5046 + 0.00420 / (um * um);
+        var mat = MATERIALS[materialEl ? materialEl.value : 'crown'] || MATERIALS.crown;
+        return mat.A + (mat.B / (um * um));
       }
 
       // Vector refraction. Returns null if total internal reflection.
@@ -897,6 +927,17 @@
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, W, H);
 
+        // Draw volumetric dust particles
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+        dust.forEach(function(d) {
+          d.x += d.vx; d.y += d.vy;
+          if (d.x < 0) d.x = W; else if (d.x > W) d.x = 0;
+          if (d.y < 0) d.y = H; else if (d.y > H) d.y = 0;
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
         var beamAngle  = parseInt(beamAngleEl.value);
         var prismRot   = parseInt(prismRotEl.value);
         var beamW      = parseInt(beamWidthEl.value);
@@ -952,8 +993,8 @@
         var hitLeft = intersectRayPolygon(beamOrigin, beamDir, edges1, -1);
         var beamEnd = hitLeft ? hitLeft.point : toBounds(beamOrigin, beamDir);
 
-        drawRay(beamOrigin, beamEnd, 'rgba(255,255,255,0.7)', beamWidthPx + 2, 0.2, 18);
-        drawRay(beamOrigin, beamEnd, 'rgba(255,255,255,0.85)', beamWidthPx, 0.9, 8);
+        drawRay(beamOrigin, beamEnd, 'rgba(255,255,255,0.7)', beamWidthPx + 4, 0.15, 24);
+        drawRay(beamOrigin, beamEnd, 'rgba(255,255,255,0.9)', beamWidthPx + 1, 0.9, 12);
 
         ctx.fillStyle = 'rgba(200,200,220,0.5)';
         ctx.font = '500 11px Inter, sans-serif';
@@ -1041,9 +1082,15 @@
             if (rayEnd.x > W - 80) {
               ctx.save();
               ctx.fillStyle = color;
-              ctx.globalAlpha = 0.75;
               ctx.font = '600 10px Inter, sans-serif';
-              ctx.fillText(s.label, W - 72, rayEnd.y + 4);
+              if (i === 0 || i === SPECTRUM.length - 1) {
+                ctx.globalAlpha = 0.9;
+                var angle = Math.atan2(exitDir.y, exitDir.x) * 180 / Math.PI;
+                ctx.fillText(s.nm + 'nm (' + angle.toFixed(1) + '°)', W - 78, rayEnd.y + 4);
+              } else if(s.nm % 40 === 0) {
+                ctx.globalAlpha = 0.2;
+                ctx.fillText(s.label, W - 78, rayEnd.y + 4);
+              }
               ctx.restore();
             }
           }
@@ -1069,9 +1116,6 @@
         ctx.fillText('glass prism', cx1 - 28, cy1 + prismSize * 0.55);
       }
 
-      [beamAngleEl, prismRotEl, beamWidthEl, secondPrismEl].forEach(function(el) {
-        el.addEventListener('input', draw);
-      });
 
       if (resetBtn) {
         resetBtn.addEventListener('click', function () {
@@ -1079,11 +1123,15 @@
           prismRotEl.value = 0;
           beamWidthEl.value = 1;
           secondPrismEl.value = 0;
-          draw();
+          if (materialEl) materialEl.value = 'crown';
         });
       }
 
-      draw();
+      function loop() {
+        draw();
+        requestAnimationFrame(loop);
+      }
+      loop();
     })();
 
     // ── Quiz Logic ──

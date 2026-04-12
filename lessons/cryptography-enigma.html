@@ -11,8 +11,25 @@
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
+    /* ── Layout Overrides ── */
+    .ll-viewport {
+      --ll-panel-w: 320px;
+      --ll-accent: #6366f1;
+      --ll-tab-active: #6366f1;
+      --ll-tab-active-bg: rgba(99, 102, 241, 0.12);
+    }
+
+    .crypto-panel {
+      animation: crypto-fade-in 0.3s ease;
+    }
+
+    @keyframes crypto-fade-in {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     /* ── Crypto Page Tokens ── */
-    body.crypto-page {
+    .crypto-page {
       font-family: "Inter", system-ui, sans-serif;
       color: #121c2e;
       background:
@@ -74,38 +91,71 @@
       line-height: 1.66;
     }
 
+    /* ── Cipher Form Elements ── */
+    .crypto-input {
+      width: 100%;
+      font-family: "JetBrains Mono", monospace;
+      padding: 0.6rem;
+      border-radius: 10px;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      background: #faf9fe;
+      color: #121c2e;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .crypto-input:focus {
+      border-color: #6366f1;
+    }
+    .crypto-readout {
+      font-family: "JetBrains Mono", monospace;
+      padding: 0.8rem;
+      border-radius: 10px;
+      background: #1e1b4b;
+      color: #c7d2fe;
+      min-height: 2.5rem;
+      word-break: break-all;
+      font-size: 0.9rem;
+    }
+
     /* ── Enigma Machine Visual ── */
     .enigma-wrap {
-      text-align: center;
-      padding: 1.5rem;
+      padding: 1.5rem 0.5rem;
+      background: #eceaf5;
+      border-radius: 16px;
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      margin-top: 1rem;
     }
 
     .enigma-rotors {
       display: flex;
       justify-content: center;
       gap: 1.2rem;
-      margin-bottom: 1.2rem;
+      margin-bottom: 2rem;
     }
 
     .enigma-rotor {
       width: 80px;
-      height: 120px;
-      border-radius: 14px;
-      border: 2px solid rgba(99, 102, 241, 0.3);
-      background: linear-gradient(180deg, #e8e6f8, #d4d1f0);
+      height: 100px;
+      border-radius: 8px;
+      border: 2px solid rgba(99, 102, 241, 0.4);
+      background: linear-gradient(180deg, #ffffff, #d4d1f0, #ffffff);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       font-family: "JetBrains Mono", monospace;
+      box-shadow: 0 4px 12px rgba(18, 28, 46, 0.1);
     }
 
     .enigma-rotor .rotor-label {
-      font-size: 0.7rem;
-      font-weight: 700;
+      font-size: 0.65rem;
+      font-weight: 800;
       text-transform: uppercase;
-      color: #6366f1;
+      color: #4b5080;
       margin-bottom: 0.4rem;
+      letter-spacing: 0.05em;
     }
 
     .enigma-rotor .rotor-val {
@@ -114,23 +164,29 @@
       color: #121c2e;
     }
 
-    /* ── Lampboard ── */
-    .enigma-lampboard {
+    /* ── Keyboards & Lampboards ── */
+    .enigma-lampboard,
+    .enigma-keyboard {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       justify-content: center;
-      gap: 0.5rem;
-      max-width: 520px;
+      gap: 0.6rem;
       margin: 0 auto;
+      align-items: center;
+    }
+
+    .enigma-row {
+      display: flex;
+      gap: 0.5rem;
     }
 
     .enigma-lamp {
-      width: 38px;
-      height: 38px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
-      border: 2px solid rgba(99, 102, 241, 0.25);
-      background: #2a2640;
-      color: #8884b0;
+      border: 2px solid rgba(99, 102, 241, 0.4);
+      background: #1e1b4b;
+      color: #4b5080;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -138,37 +194,42 @@
       font-weight: 700;
       font-size: 0.9rem;
       transition: all 0.15s;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
     }
 
     .enigma-lamp.lit {
       background: #fbbf24;
-      color: #1a1630;
-      box-shadow: 0 0 18px rgba(251, 191, 36, 0.5);
+      color: #fff;
+      border-color: #fff;
+      box-shadow: 0 0 16px #fbbf24, inset 0 0 8px rgba(255,255,255,0.8);
     }
 
-    /* ── Keyboard Input ── */
     .enigma-keyboard {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.4rem;
-      max-width: 520px;
-      margin: 1rem auto 0;
+      margin-top: 1.5rem;
     }
 
     .enigma-key {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      border: 1px solid rgba(99, 102, 241, 0.2);
+      width: 38px;
+      height: 38px;
+      border-radius: 19px;
+      border: 2px solid rgba(99, 102, 241, 0.3);
       background: #faf9fe;
       cursor: pointer;
       font-family: "JetBrains Mono", monospace;
-      font-weight: 600;
-      font-size: 0.85rem;
+      font-weight: 700;
+      font-size: 0.9rem;
       display: flex;
       align-items: center;
       justify-content: center;
+      color: #121c2e;
+      box-shadow: 0 3px 0 rgba(99, 102, 241, 0.2);
+      user-select: none;
+    }
+
+    .enigma-key:active {
+      transform: translateY(3px);
+      box-shadow: none;
+      background: #e0def4;
     }
 
     /* ── Tabs for switching cipher modes ── */
@@ -193,6 +254,45 @@
       background: #6366f1;
       color: #fff;
       border-color: #6366f1;
+    }
+
+    /* ── RSA Panel ── */
+    .rsa-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    
+    .rsa-box {
+      padding: 1.2rem;
+      border-radius: 16px;
+      background: #f5f3ff;
+      border: 1px solid rgba(99, 102, 241, 0.15);
+    }
+
+    .crypto-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      background: #6366f1;
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .crypto-btn:hover {
+      background: #4f46e5;
+    }
+
+    .rsa-stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+      margin-top: 0.4rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid rgba(99, 102, 241, 0.1);
     }
 
     /* ── History Cards ── */
@@ -224,198 +324,491 @@
 
     @media (max-width: 740px) {
       .crypto-hero { grid-template-columns: 1fr; }
+      .rsa-grid { grid-template-columns: 1fr; }
+      .enigma-key, .enigma-lamp { width: 28px; height: 28px; font-size: 0.8rem; }
     }
   </style>
 </head>
-<body class="crypto-page">
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
 
-<!-- ════════════════════════════════════════════════════════════
-     SECTION 1 — HERO
-     ════════════════════════════════════════════════════════════ -->
-<div class="crypto-shell">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
 
-  <div class="crypto-hero">
-    <div class="crypto-card">
-      <p class="crypto-eyebrow">Computer Science · Cryptography</p>
-      <h1>Cryptography &amp; The Enigma</h1>
-      <p class="crypto-lede">
-        From ancient Rome to the Allied codebreakers at Bletchley Park, encryption
-        has shaped history. Step through three eras of cryptography: shift ciphers,
-        the Enigma machine, and modern RSA public-key encryption.
-      </p>
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="crypto-page">
+        <div class="crypto-shell">
+
+          <div class="crypto-hero">
+            <div class="crypto-card">
+              <p class="crypto-eyebrow">Computer Science · Cryptography</p>
+              <h1>Cryptography &amp; The Enigma</h1>
+              <p class="crypto-lede">
+                From ancient Rome to the Allied codebreakers at Bletchley Park, encryption
+                has shaped history. Step through three eras of cryptography: shift ciphers,
+                the Enigma machine, and modern RSA public-key encryption.
+              </p>
+            </div>
+
+            <div class="crypto-card">
+              <p class="crypto-eyebrow">Three Eras</p>
+              <ul style="padding-left:1.1rem; color:#4b5080; line-height:1.7; font-size:0.95rem;">
+                <li><strong>Caesar Cipher</strong> — shift every letter by a fixed amount</li>
+                <li><strong>Enigma Machine</strong> — polyalphabetic substitution with rotors</li>
+                <li><strong>RSA</strong> — public-key encryption using prime factorization</li>
+                <li>Each era solved flaws in the previous generation</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="crypto-card">
+            <div class="crypto-tabs">
+              <button class="crypto-tab active" data-tab="caesar">Caesar Cipher</button>
+              <button class="crypto-tab" data-tab="enigma">Enigma Machine</button>
+              <button class="crypto-tab" data-tab="rsa">RSA Exchange</button>
+            </div>
+
+            <!-- ── Caesar Cipher Panel ── -->
+            <div id="caesarPanel" class="crypto-panel">
+              <p class="crypto-eyebrow">Caesar Cipher — Shift Cipher</p>
+              <div style="display:grid; grid-template-columns:auto 1fr auto; gap:1rem; align-items:center;">
+                <label style="font-weight:700; color:#4b5080;">Shift:</label>
+                <input type="range" id="caesarShift" min="1" max="25" value="3" style="width:100%; accent-color:#6366f1;" />
+                <span id="caesarShiftVal" style="font-family:'JetBrains Mono',monospace; font-weight:700; width:2ch;">3</span>
+              </div>
+              <div style="margin-top:1.5rem; display:grid; gap:0.6rem;">
+                <textarea id="caesarPlain" class="crypto-input" rows="2" placeholder="Type plaintext here to encrypt..."></textarea>
+                <div style="color:#4b5080; font-size:0.82rem; font-weight:700; margin-top:0.5rem;">Ciphertext Output</div>
+                <div id="caesarCipher" class="crypto-readout"></div>
+              </div>
+            </div>
+
+            <!-- ── Enigma Panel ── -->
+            <div id="enigmaPanel" class="crypto-panel" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <p class="crypto-eyebrow" style="margin:0;">Enigma Machine Simulator</p>
+                <button id="enigmaResetBtn" class="crypto-btn" style="padding:0.3rem 0.6rem; font-size:0.75rem;">Reset Rotors</button>
+              </div>
+              <div class="enigma-wrap">
+                <div class="enigma-rotors">
+                  <div class="enigma-rotor">
+                    <span class="rotor-label">Rotor I</span>
+                    <span class="rotor-val" id="rotor1">A</span>
+                  </div>
+                  <div class="enigma-rotor">
+                    <span class="rotor-label">Rotor II</span>
+                    <span class="rotor-val" id="rotor2">A</span>
+                  </div>
+                  <div class="enigma-rotor">
+                    <span class="rotor-label">Rotor III</span>
+                    <span class="rotor-val" id="rotor3">A</span>
+                  </div>
+                </div>
+
+                <div class="enigma-lampboard" id="lampboard"></div>
+                <div class="enigma-keyboard" id="keyboard"></div>
+              </div>
+
+              <div style="margin-top:1.5rem;">
+                <div style="color:#4b5080; font-size:0.82rem; font-weight:700; margin-bottom:0.3rem;">Decrypted / Encrypted Output</div>
+                <div id="enigmaOutput" class="crypto-readout" style="min-height:3rem; letter-spacing:0.1em; color:#fbbf24;"></div>
+              </div>
+            </div>
+
+            <!-- ── RSA Panel ── -->
+            <div id="rsaPanel" class="crypto-panel" style="display:none;">
+              <p class="crypto-eyebrow">RSA Key Exchange</p>
+              <div class="rsa-grid">
+                <div class="rsa-box">
+                  <h4 style="margin:0 0 0.5rem; color:#6366f1;">1. Key Generation</h4>
+                  <p style="font-size:0.85rem; color:#4b5080; margin:0 0 1rem;">
+                    Pick two prime numbers <strong>p</strong> and <strong>q</strong>. (e.g. 11, 13, 17, 23).
+                  </p>
+                  <div style="display:flex; gap:0.6rem; margin-bottom:1rem;">
+                    <input type="number" id="rsaP" class="crypto-input" placeholder="Prime p" value="11" />
+                    <input type="number" id="rsaQ" class="crypto-input" placeholder="Prime q" value="13" />
+                  </div>
+                  <button id="rsaGenBtn" class="crypto-btn" style="width:100%;">Generate Keys</button>
+                  
+                  <div style="margin-top:1rem;">
+                    <div class="rsa-stat-row"><span>Modulus (N = p×q):</span> <strong id="rsaN">—</strong></div>
+                    <div class="rsa-stat-row"><span>Totient (φ):</span> <strong id="rsaPhi">—</strong></div>
+                    <div class="rsa-stat-row"><span>Public Exponent (e):</span> <strong id="rsaE">—</strong></div>
+                    <div class="rsa-stat-row" style="border:none;"><span>Private Key (d):</span> <strong id="rsaD" style="color:#ef4444;">—</strong></div>
+                  </div>
+                </div>
+
+                <div class="rsa-box">
+                  <h4 style="margin:0 0 0.5rem; color:#6366f1;">2. Encrypt &amp; Decrypt</h4>
+                  <p style="font-size:0.85rem; color:#4b5080; margin:0 0 1rem;">
+                    Enter a numeric message (smaller than N). The math uses <strong>C = M<sup>e</sup> mod N</strong> to encrypt.
+                  </p>
+                  <input type="number" id="rsaMsg" class="crypto-input" placeholder="Message Number (e.g. 42)" />
+                  <button id="rsaEncBtn" class="crypto-btn" style="width:100%; margin-bottom:1rem;">Encrypt (Public Key)</button>
+                  
+                  <div style="margin-bottom:1rem;">
+                    <div style="font-size:0.75rem; color:#4b5080; font-weight:700;">Ciphertext (Intercepted over network):</div>
+                    <div id="rsaCipherOut" class="crypto-readout" style="min-height:auto; padding:0.5rem; color:#fbbf24;">—</div>
+                  </div>
+
+                  <button id="rsaDecBtn" class="crypto-btn" style="width:100%; margin-bottom:1rem;">Decrypt (Private Key)</button>
+
+                  <div>
+                    <div style="font-size:0.75rem; color:#4b5080; font-weight:700;">Decrypted Message:</div>
+                    <div id="rsaPlainOut" class="crypto-readout" style="min-height:auto; padding:0.5rem; color:#34d399;">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="crypto-history-grid">
+            <div class="crypto-history-card">
+              <h3>Julius Caesar (58 BC)</h3>
+              <p>Used a simple shift cipher to communicate with his generals. Effective against illiterate enemies, trivially broken by frequency analysis.</p>
+            </div>
+            <div class="crypto-history-card">
+              <h3>The Enigma Machine (1930s)</h3>
+              <p>Germany's electro-mechanical cipher used rotating wheels to create a different substitution alphabet for every keypress — 158 quintillion possible settings.</p>
+            </div>
+            <div class="crypto-history-card">
+              <h3>Bletchley Park (1939–45)</h3>
+              <p>Alan Turing and the codebreakers built the Bombe machine to exploit a fatal Enigma flaw: no letter could encrypt to itself. This shortened WWII by an estimated two years.</p>
+            </div>
+            <div class="crypto-history-card">
+              <h3>RSA (1977)</h3>
+              <p>Rivest, Shamir, and Adleman published the first practical public-key system. Security rests on the difficulty of factoring large numbers — the same math behind every HTTPS connection today.</p>
+            </div>
+          </div>
+
+        </div>
+      </main>
     </div>
 
-    <div class="crypto-card">
-      <p class="crypto-eyebrow">Three Eras</p>
-      <ul style="padding-left:1.1rem; color:#4b5080; line-height:1.7; font-size:0.95rem;">
-        <li><strong>Caesar Cipher</strong> — shift every letter by a fixed amount</li>
-        <li><strong>Enigma Machine</strong> — polyalphabetic substitution with rotors</li>
-        <li><strong>RSA</strong> — public-key encryption using prime factorization</li>
-        <li>Each era solved flaws in the previous generation</li>
-      </ul>
-    </div>
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="crypt-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="crypt-guide">
+          <span class="ll-label">Shift Ciphers</span>
+          <div class="ll-info">
+            <strong>Symmetric Key</strong>
+            The Caesar cipher uses the exact same key (the shift number) to lock and unlock the message. If the enemy steals the key, the system fails.
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">The Enigma</span>
+          <div class="ll-info">
+            <strong>Polyalphabetic</strong>
+            Instead of shifting every letter by 3, Enigma shifts every letter by a different amount because the rotors physically turn after every keystroke.
+          </div>
+          <div class="ll-info">
+            <strong>The Fatal Flaw</strong>
+            The reflector bounces the signal back through the rotors. This means 'A' encrypts to 'G', and 'G' encrypts back to 'A'. The flaw: a letter could <em>never</em> encrypt to itself. Turing used this rule to break the code.
+          </div>
+          <hr class="ll-hr">
+          <span class="ll-label">Public Key (RSA)</span>
+          <div class="ll-info">
+            <strong>Asymmetric Key</strong>
+            RSA solves the key-sharing problem. You publish a "Public Key" that anyone can use to encrypt a message to you. But only your secret "Private Key" can decrypt it.
+          </div>
+          <div class="ll-info">
+            <strong>Prime Math</strong>
+            It is easy to multiply two primes together ($N = p \times q$), but incredibly hard for a computer to take $N$ and figure out what $p$ and $q$ were.
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
   </div>
-
-<!-- ════════════════════════════════════════════════════════════
-     SECTION 2 — CIPHER TABS (Caesar / Enigma / RSA)
-     ════════════════════════════════════════════════════════════ -->
-
-  <div class="crypto-card">
-    <div class="crypto-tabs">
-      <button class="crypto-tab active" data-tab="caesar">Caesar Cipher</button>
-      <button class="crypto-tab" data-tab="enigma">Enigma Machine</button>
-      <button class="crypto-tab" data-tab="rsa">RSA Exchange</button>
-    </div>
-
-    <!-- ── Caesar Cipher Panel ── -->
-    <div id="caesarPanel">
-      <p class="crypto-eyebrow">Caesar Cipher — Shift Cipher</p>
-      <div style="display:grid; grid-template-columns:auto 1fr; gap:1rem; align-items:center;">
-        <label style="font-weight:700; color:#4b5080;">Shift (1–25):</label>
-        <input type="range" id="caesarShift" min="1" max="25" value="3" style="width:100%;" />
-      </div>
-      <div style="margin-top:1rem; display:grid; gap:0.6rem;">
-        <textarea id="caesarPlain" rows="2" placeholder="Type plaintext here..." style="font-family:'JetBrains Mono',monospace; padding:0.6rem; border-radius:10px; border:1px solid rgba(99,102,241,0.2);"></textarea>
-        <div id="caesarCipher" style="font-family:'JetBrains Mono',monospace; padding:0.8rem; border-radius:10px; background:#2a2640; color:#c4b5fd; min-height:2.5rem;"></div>
-      </div>
-    </div>
-
-    <!-- ── Enigma Panel ── -->
-    <div id="enigmaPanel" style="display:none;">
-      <p class="crypto-eyebrow">Enigma Machine Simulator</p>
-      <div class="enigma-wrap">
-        <div class="enigma-rotors">
-          <div class="enigma-rotor">
-            <span class="rotor-label">Rotor I</span>
-            <span class="rotor-val" id="rotor1">A</span>
-          </div>
-          <div class="enigma-rotor">
-            <span class="rotor-label">Rotor II</span>
-            <span class="rotor-val" id="rotor2">A</span>
-          </div>
-          <div class="enigma-rotor">
-            <span class="rotor-label">Rotor III</span>
-            <span class="rotor-val" id="rotor3">A</span>
-          </div>
-        </div>
-
-        <div class="enigma-lampboard" id="lampboard">
-          <!-- TODO: generate 26 lamp divs A–Z -->
-        </div>
-
-        <div class="enigma-keyboard" id="keyboard">
-          <!-- TODO: generate 26 key buttons A–Z -->
-        </div>
-      </div>
-
-      <div style="margin-top:1rem; font-family:'JetBrains Mono',monospace; text-align:center;">
-        <div style="color:#4b5080; font-size:0.82rem; margin-bottom:0.3rem;">Output</div>
-        <div id="enigmaOutput" style="padding:0.6rem; background:#2a2640; color:#fbbf24; border-radius:10px; min-height:1.6rem; letter-spacing:0.2em;"></div>
-      </div>
-    </div>
-
-    <!-- ── RSA Panel ── -->
-    <div id="rsaPanel" style="display:none;">
-      <p class="crypto-eyebrow">RSA Key Exchange</p>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-        <div style="padding:1rem; border-radius:14px; background:#faf9fe; border:1px solid rgba(99,102,241,0.15);">
-          <h4 style="margin:0 0 0.5rem; color:#6366f1;">Key Generation</h4>
-          <p style="font-size:0.88rem; color:#4b5080; margin:0;">
-            Pick two primes <strong>p</strong> and <strong>q</strong>.
-            The simulator computes n = p × q and derives the public/private key pair.
-          </p>
-          <div style="margin-top:0.8rem; display:flex; gap:0.6rem;">
-            <input type="number" id="rsaP" placeholder="p" style="width:5rem; padding:0.4rem; border-radius:8px; border:1px solid rgba(99,102,241,0.2); text-align:center;" />
-            <input type="number" id="rsaQ" placeholder="q" style="width:5rem; padding:0.4rem; border-radius:8px; border:1px solid rgba(99,102,241,0.2); text-align:center;" />
-            <button id="rsaGenBtn" style="padding:0.4rem 1rem; border-radius:8px; background:#6366f1; color:#fff; font-weight:700; border:none; cursor:pointer;">Generate</button>
-          </div>
-        </div>
-        <div style="padding:1rem; border-radius:14px; background:#faf9fe; border:1px solid rgba(99,102,241,0.15);">
-          <h4 style="margin:0 0 0.5rem; color:#6366f1;">Encrypt / Decrypt</h4>
-          <p style="font-size:0.88rem; color:#4b5080; margin:0;">
-            Enter a number to encrypt with the public key, then decrypt with the private key to verify.
-          </p>
-          <div id="rsaResults" style="margin-top:0.8rem; font-family:'JetBrains Mono',monospace; font-size:0.88rem; color:#121c2e;"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-<!-- ════════════════════════════════════════════════════════════
-     SECTION 3 — HISTORICAL CONTEXT
-     ════════════════════════════════════════════════════════════ -->
-
-  <div class="crypto-history-grid">
-    <div class="crypto-history-card">
-      <h3>Julius Caesar (58 BC)</h3>
-      <p>Used a simple shift cipher to communicate with his generals. Effective against illiterate enemies, trivially broken by frequency analysis.</p>
-    </div>
-    <div class="crypto-history-card">
-      <h3>The Enigma Machine (1930s)</h3>
-      <p>Germany's electro-mechanical cipher used rotating wheels to create a different substitution alphabet for every keypress — 158 quintillion possible settings.</p>
-    </div>
-    <div class="crypto-history-card">
-      <h3>Bletchley Park (1939–45)</h3>
-      <p>Alan Turing and the codebreakers built the Bombe machine to exploit a fatal Enigma flaw: no letter could encrypt to itself. This shortened WWII by an estimated two years.</p>
-    </div>
-    <div class="crypto-history-card">
-      <h3>RSA (1977)</h3>
-      <p>Rivest, Shamir, and Adleman published the first practical public-key system. Security rests on the difficulty of factoring large numbers — the same math behind every HTTPS connection today.</p>
-    </div>
-  </div>
-
-</div><!-- /.crypto-shell -->
+</div>
 
 <script>
 (function () {
   'use strict';
 
-  /* ── TODO: Full implementation ──
-   *
-   * CAESAR CIPHER
-   *   - On input: shift each letter by slider value, preserve case & non-alpha
-   *   - Update ciphertext display in real time
-   *   - Optional: frequency analysis bar chart showing letter distribution
-   *
-   * ENIGMA SIMULATOR
-   *   - Three rotors with historical wiring tables (Rotor I, II, III)
-   *   - Reflector (UKB)
-   *   - On keypress:
-   *     1. Advance rightmost rotor (and cascade via notch positions)
-   *     2. Signal path: key → plugboard → R3 → R2 → R1 → reflector → R1 → R2 → R3 → plugboard → lamp
-   *     3. Light the output lamp, append to output string
-   *   - Rotor position display updates with each keypress
-   *   - Reset button to return rotors to starting position
-   *
-   * RSA KEY EXCHANGE
-   *   - Input: two primes p, q
-   *   - Compute: n = p*q, phi = (p-1)*(q-1)
-   *   - Find e (coprime to phi, typically 65537 or smaller for demo)
-   *   - Compute d = modular inverse of e mod phi
-   *   - Display public key (n, e) and private key (d)
-   *   - Encrypt: c = m^e mod n
-   *   - Decrypt: m = c^d mod n
-   *   - Use BigInt for larger primes
-   *
-   * TAB SWITCHING
-   *   - Show/hide panels based on active tab
-   *   - Persist state when switching between tabs
-   */
-
-  // Tab switching placeholder
-  var tabs = document.querySelectorAll('.crypto-tab');
-  var panels = { caesar: 'caesarPanel', enigma: 'enigmaPanel', rsa: 'rsaPanel' };
-  tabs.forEach(function (tab) {
-    tab.addEventListener('click', function () {
-      tabs.forEach(function (t) { t.classList.remove('active'); });
+  // ── Tab Switching ──
+  const tabs = document.querySelectorAll('.crypto-tab');
+  const panels = { caesar: 'caesarPanel', enigma: 'enigmaPanel', rsa: 'rsaPanel' };
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      Object.keys(panels).forEach(function (k) {
-        document.getElementById(panels[k]).style.display = k === tab.dataset.tab ? '' : 'none';
+      Object.keys(panels).forEach(k => {
+        document.getElementById(panels[k]).style.display = (k === tab.dataset.tab) ? 'block' : 'none';
       });
     });
   });
+
+  // ── Caesar Cipher ──
+  const caesarPlain = document.getElementById('caesarPlain');
+  const caesarCipher = document.getElementById('caesarCipher');
+  const caesarShift = document.getElementById('caesarShift');
+  const caesarShiftVal = document.getElementById('caesarShiftVal');
+
+  function updateCaesar() {
+    const shift = parseInt(caesarShift.value, 10);
+    caesarShiftVal.textContent = shift;
+    const text = caesarPlain.value;
+    let out = '';
+    for (let i = 0; i < text.length; i++) {
+      let c = text.charCodeAt(i);
+      if (c >= 65 && c <= 90) {
+        out += String.fromCharCode(((c - 65 + shift) % 26) + 65);
+      } else if (c >= 97 && c <= 122) {
+        out += String.fromCharCode(((c - 97 + shift) % 26) + 97);
+      } else {
+        out += text.charAt(i);
+      }
+    }
+    caesarCipher.textContent = out;
+  }
+  caesarPlain.addEventListener('input', updateCaesar);
+  caesarShift.addEventListener('input', updateCaesar);
+
+  // ── Enigma Machine ──
+  const enigmaOut = document.getElementById('enigmaOutput');
+  const r1El = document.getElementById('rotor1');
+  const r2El = document.getElementById('rotor2');
+  const r3El = document.getElementById('rotor3');
+  
+  // Historical Rotors
+  const ROTORS = [
+    { wiring: "EKMFLGDQVZNTOWYHXUSPAIBRCJ", notch: 'Q' }, // I (Left)
+    { wiring: "AJDKSIRUXBLHWTMCQGZNPYFVOE", notch: 'E' }, // II (Middle)
+    { wiring: "BDFHJLCPRTXVZNYEIWGAKMUSQO", notch: 'V' }  // III (Right)
+  ];
+  const REFLECTOR = "YRUHQSLDPXNGOKMIEBFZCWVJAT"; // UKW-B
+
+  let r1 = 0, r2 = 0, r3 = 0;
+
+  function updateRotorUI() {
+    r1El.textContent = String.fromCharCode(65 + r1);
+    r2El.textContent = String.fromCharCode(65 + r2);
+    r3El.textContent = String.fromCharCode(65 + r3);
+  }
+
+  document.getElementById('enigmaResetBtn').addEventListener('click', () => {
+    r1 = 0; r2 = 0; r3 = 0;
+    enigmaOut.textContent = '';
+    updateRotorUI();
+  });
+
+  function stepRotors() {
+    let step2 = false;
+    let step1 = false;
+    if (String.fromCharCode(65 + r3) === ROTORS[2].notch) step2 = true;
+    if (String.fromCharCode(65 + r2) === ROTORS[1].notch && step2) step1 = true;
+    
+    r3 = (r3 + 1) % 26;
+    if (step2) r2 = (r2 + 1) % 26;
+    if (step1) r1 = (r1 + 1) % 26;
+    updateRotorUI();
+  }
+
+  function forwardRotor(c, wiring, pos) {
+    let shiftedIn = (c + pos) % 26;
+    let mapped = wiring.charCodeAt(shiftedIn) - 65;
+    return (mapped - pos + 26) % 26;
+  }
+
+  function backwardRotor(c, wiring, pos) {
+    let shiftedIn = (c + pos) % 26;
+    let charIn = String.fromCharCode(shiftedIn + 65);
+    let mapped = wiring.indexOf(charIn);
+    return (mapped - pos + 26) % 26;
+  }
+
+  function encryptEnigma(char) {
+    let c = char.charCodeAt(0) - 65;
+    stepRotors();
+    c = forwardRotor(c, ROTORS[2].wiring, r3);
+    c = forwardRotor(c, ROTORS[1].wiring, r2);
+    c = forwardRotor(c, ROTORS[0].wiring, r1);
+    c = REFLECTOR.charCodeAt(c) - 65;
+    c = backwardRotor(c, ROTORS[0].wiring, r1);
+    c = backwardRotor(c, ROTORS[1].wiring, r2);
+    c = backwardRotor(c, ROTORS[2].wiring, r3);
+    return String.fromCharCode(c + 65);
+  }
+
+  const qwerty = ['QWERTZUIO', 'ASDFGHJK', 'PYXCVBNML'];
+  const keyboardDiv = document.getElementById('keyboard');
+  const lampboardDiv = document.getElementById('lampboard');
+  const lampMap = {};
+
+  qwerty.forEach(rowStr => {
+    const kRow = document.createElement('div');
+    kRow.className = 'enigma-row';
+    const lRow = document.createElement('div');
+    lRow.className = 'enigma-row';
+
+    rowStr.split('').forEach(char => {
+      // Lamp
+      const lamp = document.createElement('div');
+      lamp.className = 'enigma-lamp';
+      lamp.textContent = char;
+      lampMap[char] = lamp;
+      lRow.appendChild(lamp);
+
+      // Key
+      const key = document.createElement('div');
+      key.className = 'enigma-key';
+      key.textContent = char;
+      
+      // Interactions
+      const press = (e) => {
+        e.preventDefault();
+        const outChar = encryptEnigma(char);
+        enigmaOut.textContent += outChar;
+        Object.values(lampMap).forEach(l => l.classList.remove('lit'));
+        lampMap[outChar].classList.add('lit');
+      };
+      const release = (e) => {
+        e.preventDefault();
+        Object.values(lampMap).forEach(l => l.classList.remove('lit'));
+      };
+
+      key.addEventListener('mousedown', press);
+      key.addEventListener('touchstart', press, {passive: false});
+      key.addEventListener('mouseup', release);
+      key.addEventListener('mouseleave', release);
+      key.addEventListener('touchend', release);
+      
+      kRow.appendChild(key);
+    });
+    keyboardDiv.appendChild(kRow);
+    lampboardDiv.appendChild(lRow);
+  });
+
+  // ── RSA Key Exchange ──
+  function gcd(a, b) {
+    return b === 0n ? a : gcd(b, a % b);
+  }
+  
+  function modInverse(e, phi) {
+    let m0 = phi, y = 0n, x = 1n;
+    if (phi === 1n) return 0n;
+    while (e > 1n) {
+      let q = e / phi;
+      let t = phi;
+      phi = e % phi;
+      e = t;
+      t = y;
+      y = x - q * y;
+      x = t;
+    }
+    if (x < 0n) x += m0;
+    return x;
+  }
+
+  function modPow(base, exp, mod) {
+    let res = 1n;
+    base = base % mod;
+    while (exp > 0n) {
+      if (exp % 2n === 1n) res = (res * base) % mod;
+      exp = exp / 2n;
+      base = (base * base) % mod;
+    }
+    return res;
+  }
+
+  function isPrime(num) {
+    if (num <= 1n) return false;
+    if (num <= 3n) return true;
+    if (num % 2n === 0n || num % 3n === 0n) return false;
+    for (let i = 5n; i * i <= num; i += 6n) {
+      if (num % i === 0n || num % (i + 2n) === 0n) return false;
+    }
+    return true;
+  }
+
+  let rsaN = 0n, rsaE = 0n, rsaD = 0n;
+
+  document.getElementById('rsaGenBtn').addEventListener('click', () => {
+    try {
+      const p = BigInt(document.getElementById('rsaP').value);
+      const q = BigInt(document.getElementById('rsaQ').value);
+      
+      if (!isPrime(p) || !isPrime(q)) {
+        alert("Both p and q must be prime numbers.");
+        return;
+      }
+      if (p === q) {
+        alert("p and q must be different primes.");
+        return;
+      }
+
+      rsaN = p * q;
+      const phi = (p - 1n) * (q - 1n);
+      
+      rsaE = 3n;
+      while (gcd(rsaE, phi) !== 1n) {
+        rsaE += 2n;
+      }
+      
+      rsaD = modInverse(rsaE, phi);
+      
+      document.getElementById('rsaN').textContent = rsaN.toString();
+      document.getElementById('rsaPhi').textContent = phi.toString();
+      document.getElementById('rsaE').textContent = rsaE.toString();
+      document.getElementById('rsaD').textContent = rsaD.toString();
+      
+      document.getElementById('rsaCipherOut').textContent = "—";
+      document.getElementById('rsaPlainOut').textContent = "—";
+    } catch (err) {
+      alert("Invalid input for primes.");
+    }
+  });
+
+  document.getElementById('rsaEncBtn').addEventListener('click', () => {
+    if (rsaN === 0n) return alert("Generate keys first.");
+    const mStr = document.getElementById('rsaMsg').value;
+    if (!mStr) return;
+    const m = BigInt(mStr);
+    if (m >= rsaN) return alert("Message number must be less than N (" + rsaN + ") for this basic demo.");
+    const c = modPow(m, rsaE, rsaN);
+    document.getElementById('rsaCipherOut').textContent = c.toString();
+  });
+
+  document.getElementById('rsaDecBtn').addEventListener('click', () => {
+    if (rsaN === 0n) return alert("Generate keys first.");
+    const cStr = document.getElementById('rsaCipherOut').textContent;
+    if (!cStr || cStr === "—") return alert("Encrypt a message first.");
+    const c = BigInt(cStr);
+    const m = modPow(c, rsaD, rsaN);
+    document.getElementById('rsaPlainOut').textContent = m.toString();
+  });
+
 }());
 </script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
 
 </body>
 </html>

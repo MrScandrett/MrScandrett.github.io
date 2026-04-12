@@ -133,6 +133,10 @@
       color: #14202e;
     }
 
+    .dsp-freq-slider input[type="range"] {
+      accent-color: #0891b2;
+    }
+
     /* ── EQ Band Filters ── */
     .dsp-eq-wrap {
       display: flex;
@@ -153,6 +157,7 @@
       writing-mode: vertical-lr;
       direction: rtl;
       height: 120px;
+      accent-color: #0891b2;
     }
 
     .dsp-eq-band .eq-label {
@@ -194,7 +199,31 @@
     }
   </style>
 </head>
-<body class="dsp-page">
+<body class="theme-liquid-woodland theme-steam dsp-page">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content">
 
 <!-- ════════════════════════════════════════════════════════════
      SECTION 1 — HERO
@@ -256,7 +285,10 @@
      ════════════════════════════════════════════════════════════ -->
 
   <div class="dsp-card">
-    <p class="dsp-eyebrow">Additive Synthesis — Build a Sound from Sine Waves</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+      <p class="dsp-eyebrow" style="margin: 0;">Additive Synthesis</p>
+      <button id="squarePresetBtn" style="padding:0.3rem 0.8rem; border-radius:8px; background:#0891b2; color:#fff; border:none; font-weight:700; cursor:pointer; font-size:0.75rem; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">Square Wave Approx</button>
+    </div>
     <div class="dsp-freq-controls">
       <div class="dsp-freq-slider">
         <label>Fundamental</label>
@@ -352,61 +384,311 @@
 
 </div><!-- /.dsp-shell -->
 
+      </main>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   'use strict';
 
-  /* ── TODO: Full implementation ──
-   *
-   * AUDIO PIPELINE (Web Audio API)
-   *   - AudioContext with AnalyserNode (FFT size 2048)
-   *   - Two source modes:
-   *     1. Microphone: getUserMedia → AnalyserNode
-   *     2. Test tone: OscillatorNode → GainNode → AnalyserNode → destination
-   *   - EQ: chain of BiquadFilterNodes (peaking, one per band)
-   *
-   * TIME DOMAIN CANVAS (waveCanvas)
-   *   - analyser.getByteTimeDomainData()
-   *   - Draw waveform: cyan line on dark background
-   *   - Scrolling or oscilloscope-style triggered display
-   *
-   * FREQUENCY DOMAIN CANVAS (spectrumCanvas)
-   *   - analyser.getByteFrequencyData()
-   *   - Bar chart or smooth curve: x = frequency (log scale), y = amplitude
-   *   - Color gradient from cyan to magenta
-   *   - Label key frequency markers (100, 1k, 10k Hz)
-   *
-   * ADDITIVE SYNTHESIS
-   *   - 4 OscillatorNodes at fundamental × {1, 2, 3, 4}
-   *   - Amplitude sliders control individual GainNodes
-   *   - Fundamental slider updates all harmonic frequencies proportionally
-   *   - Output merges into the same analyser for visualization
-   *
-   * GRAPHIC EQUALIZER
-   *   - 6 BiquadFilterNodes (type: "peaking")
-   *   - Center frequencies: 60, 250, 1000, 4000, 8000, 16000 Hz
-   *   - Slider range: ±12 dB gain
-   *   - Q factor ~1.4 for musical EQ width
-   *
-   * MICROPHONE INPUT
-   *   - Request permission via getUserMedia({ audio: true })
-   *   - Connect MediaStreamSource to analyser
-   *   - Route through EQ filters before analyser
-   */
+  const micBtn = document.getElementById('micBtn');
+  const toneBtn = document.getElementById('toneBtn');
+  const waveCanvas = document.getElementById('waveCanvas');
+  const specCanvas = document.getElementById('spectrumCanvas');
+  const waveCtx = waveCanvas.getContext('2d');
+  const specCtx = specCanvas.getContext('2d');
 
-  // Placeholder: update harmonic frequency labels
-  var f0 = document.getElementById('f0Slider');
-  if (f0) {
-    f0.addEventListener('input', function () {
-      var base = parseInt(f0.value);
-      document.getElementById('f0Hz').textContent = base;
-      document.getElementById('f1Hz').textContent = base * 2;
-      document.getElementById('f2Hz').textContent = base * 3;
-      document.getElementById('f3Hz').textContent = base * 4;
+  let audioCtx, analyser, masterGain;
+  let eqNodes = [];
+  let oscillators = [];
+  let oscGains = [];
+  let micSource = null;
+  let micStream = null;
+
+  let mode = 'none'; // 'mic', 'tone', 'none'
+
+  // Controls
+  const f0Slider = document.getElementById('f0Slider');
+  const amps = [
+    document.getElementById('f0Amp'),
+    document.getElementById('f1Amp'),
+    document.getElementById('f2Amp'),
+    document.getElementById('f3Amp')
+  ];
+  const hzLabels = [
+    document.getElementById('f0Hz'),
+    document.getElementById('f1Hz'),
+    document.getElementById('f2Hz'),
+    document.getElementById('f3Hz')
+  ];
+  const eqBands = document.querySelectorAll('.eqBand');
+  const squarePresetBtn = document.getElementById('squarePresetBtn');
+
+  function initAudio() {
+    if (audioCtx) return;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0.8;
+
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.2; // Headroom to prevent clipping when summing 4 oscs
+
+    // Build EQ chain
+    let prevNode = null;
+    eqBands.forEach((slider) => {
+      let eq = audioCtx.createBiquadFilter();
+      eq.type = 'peaking';
+      eq.frequency.value = parseFloat(slider.dataset.freq.replace('k', '000'));
+      eq.Q.value = 1.4;
+      eq.gain.value = parseFloat(slider.value);
+      eqNodes.push(eq);
+
+      if (prevNode) prevNode.connect(eq);
+      prevNode = eq;
+    });
+
+    if (eqNodes.length > 0) {
+      eqNodes[eqNodes.length - 1].connect(masterGain);
+    }
+    masterGain.connect(analyser);
+    analyser.connect(audioCtx.destination);
+  }
+
+  function stopMic() {
+    if (micSource) {
+      micSource.disconnect();
+      micSource = null;
+    }
+    if (micStream) {
+      micStream.getTracks().forEach(t => t.stop());
+      micStream = null;
+    }
+  }
+
+  function stopTone() {
+    oscillators.forEach(o => {
+      try { o.stop(); } catch (e) {}
+      o.disconnect();
+    });
+    oscillators = [];
+    oscGains.forEach(g => g.disconnect());
+    oscGains = [];
+  }
+
+  function updateTone() {
+    if (mode !== 'tone' || !audioCtx) return;
+    const baseFreq = parseFloat(f0Slider.value);
+    for (let i = 0; i < 4; i++) {
+      const freq = baseFreq * (i + 1);
+      hzLabels[i].textContent = Math.round(freq);
+      if (oscillators[i]) {
+        oscillators[i].frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.03);
+        oscGains[i].gain.setTargetAtTime(parseFloat(amps[i].value) / 100, audioCtx.currentTime, 0.03);
+      }
+    }
+  }
+
+  async function startMic() {
+    initAudio();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    stopTone();
+    stopMic();
+
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      micSource = audioCtx.createMediaStreamSource(micStream);
+      micSource.connect(eqNodes[0]);
+      mode = 'mic';
+      updateButtons();
+    } catch (e) {
+      alert('Microphone access denied or not available.');
+      mode = 'none';
+      updateButtons();
+    }
+  }
+
+  function startTone() {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    stopMic();
+    stopTone();
+
+    const baseFreq = parseFloat(f0Slider.value);
+    for (let i = 0; i < 4; i++) {
+      let osc = audioCtx.createOscillator();
+      let gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = baseFreq * (i + 1);
+      gain.gain.value = parseFloat(amps[i].value) / 100;
+      
+      osc.connect(gain);
+      gain.connect(eqNodes[0]);
+      
+      osc.start();
+      oscillators.push(osc);
+      oscGains.push(gain);
+    }
+    mode = 'tone';
+    updateButtons();
+  }
+
+  function updateButtons() {
+    micBtn.style.background = mode === 'mic' ? '#0891b2' : '#e6f7f4';
+    micBtn.style.color = mode === 'mic' ? '#fff' : '#0891b2';
+    micBtn.style.border = mode === 'mic' ? 'none' : '1px solid #0891b2';
+
+    toneBtn.style.background = mode === 'tone' ? '#0891b2' : '#e6f7f4';
+    toneBtn.style.color = mode === 'tone' ? '#fff' : '#0891b2';
+    toneBtn.style.border = mode === 'tone' ? 'none' : '1px solid #0891b2';
+  }
+
+  micBtn.addEventListener('click', () => {
+    if (mode === 'mic') { stopMic(); mode = 'none'; updateButtons(); }
+    else startMic();
+  });
+
+  toneBtn.addEventListener('click', () => {
+    if (mode === 'tone') { stopTone(); mode = 'none'; updateButtons(); }
+    else startTone();
+  });
+
+  f0Slider.addEventListener('input', () => {
+    const baseFreq = parseFloat(f0Slider.value);
+    for (let i = 0; i < 4; i++) hzLabels[i].textContent = Math.round(baseFreq * (i + 1));
+    updateTone();
+  });
+
+  amps.forEach(amp => amp.addEventListener('input', updateTone));
+
+  if (squarePresetBtn) {
+    squarePresetBtn.addEventListener('click', () => {
+      amps[0].value = 100; // Fundamental (1/1)
+      amps[1].value = 0;   // 2nd harmonic (even)
+      amps[2].value = 33;  // 3rd harmonic (1/3)
+      amps[3].value = 0;   // 4th harmonic (even)
+      updateTone();
     });
   }
+
+  eqBands.forEach((slider, i) => {
+    slider.addEventListener('input', (e) => {
+      if (eqNodes[i]) eqNodes[i].gain.setTargetAtTime(parseFloat(e.target.value), audioCtx.currentTime, 0.05);
+    });
+  });
+
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    [waveCanvas, specCanvas].forEach(c => {
+      const rect = c.parentElement.getBoundingClientRect();
+      c.width = rect.width * dpr;
+      c.height = 180 * dpr;
+    });
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  let timeData = new Uint8Array(2048);
+  let freqData = new Uint8Array(1024);
+
+  function draw() {
+    requestAnimationFrame(draw);
+    const W1 = waveCanvas.width, H1 = waveCanvas.height;
+    const W2 = specCanvas.width, H2 = specCanvas.height;
+
+    waveCtx.fillStyle = '#0c1e28';
+    waveCtx.fillRect(0, 0, W1, H1);
+
+    specCtx.fillStyle = '#0c1e28';
+    specCtx.fillRect(0, 0, W2, H2);
+
+    if (!analyser || mode === 'none') {
+      waveCtx.beginPath();
+      waveCtx.moveTo(0, H1/2);
+      waveCtx.lineTo(W1, H1/2);
+      waveCtx.strokeStyle = '#67e8f9';
+      waveCtx.lineWidth = 2;
+      waveCtx.stroke();
+      return;
+    }
+
+    // Draw Time Domain
+    analyser.getByteTimeDomainData(timeData);
+    waveCtx.lineWidth = 3;
+    waveCtx.strokeStyle = '#67e8f9';
+    waveCtx.beginPath();
+    let sliceWidth = W1 / timeData.length;
+    let x = 0;
+    for (let i = 0; i < timeData.length; i++) {
+      let v = timeData[i] / 128.0;
+      let y = v * (H1 / 2);
+      if (i === 0) waveCtx.moveTo(x, y);
+      else waveCtx.lineTo(x, y);
+      x += sliceWidth;
+    }
+    waveCtx.lineTo(W1, H1 / 2);
+    waveCtx.stroke();
+
+    // Draw Frequency Domain
+    analyser.getByteFrequencyData(freqData);
+    // Display only up to ~11kHz to focus on the active ranges
+    let renderBars = Math.floor(freqData.length * 0.45); 
+    let barWidth = W2 / renderBars;
+    let barHeight;
+    x = 0;
+
+    let grad = specCtx.createLinearGradient(0, H2, 0, 0);
+    grad.addColorStop(0, '#06b6d4');
+    grad.addColorStop(0.5, '#a855f7');
+    grad.addColorStop(1, '#ec4899');
+
+    const sampleRate = audioCtx ? audioCtx.sampleRate : 44100;
+    const nyquist = sampleRate / 2;
+    const hzPerBin = nyquist / freqData.length;
+    const labelFreqs = [250, 1000, 4000, 8000];
+
+    specCtx.lineWidth = 1;
+    specCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    specCtx.beginPath();
+    labelFreqs.forEach(freq => {
+      const bin = freq / hzPerBin;
+      if (bin < renderBars) {
+        specCtx.moveTo(bin * barWidth, 0);
+        specCtx.lineTo(bin * barWidth, H2);
+      }
+    });
+    specCtx.stroke();
+
+    specCtx.fillStyle = grad;
+    for (let i = 0; i < renderBars; i++) {
+      barHeight = (freqData[i] / 255.0) * H2;
+      specCtx.fillRect(x, H2 - barHeight, Math.max(1, barWidth - 1), barHeight);
+      x += barWidth;
+    }
+
+    specCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    specCtx.font = '10px "JetBrains Mono", monospace';
+    specCtx.textAlign = 'center';
+    labelFreqs.forEach(freq => {
+      const bin = freq / hzPerBin;
+      if (bin < renderBars) {
+        const text = freq >= 1000 ? (freq / 1000) + 'kHz' : freq + 'Hz';
+        specCtx.fillText(text, bin * barWidth, H2 - 6);
+      }
+    });
+  }
+
+  draw();
+  updateButtons();
 }());
 </script>
+<script src="../assets/js/nav-mobile.js"></script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
 
 </body>
 </html>

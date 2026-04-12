@@ -11,8 +11,14 @@
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
+    .ll-viewport {
+      --ll-panel-w: 280px;
+      --ll-accent: #16a34a;
+      --ll-tab-active: #16a34a;
+      --ll-tab-active-bg: rgba(22, 163, 74, 0.12);
+    }
     /* ── CRISPR Page Tokens ── */
-    body.crispr-page {
+    .crispr-page {
       font-family: "Manrope", system-ui, sans-serif;
       color: #1a2b3e;
       background:
@@ -21,10 +27,8 @@
         linear-gradient(180deg, #f5fdf8 0%, #edf7f0 100%);
     }
 
-    .crispr-page .site-header,
-    .crispr-page .site-footer {
+    .ll-viewport .ll-topbar {
       background: rgba(245, 253, 248, 0.84);
-      backdrop-filter: blur(18px);
     }
 
     .crispr-shell {
@@ -155,13 +159,47 @@
       box-shadow: inset 0 4px 20px rgba(0,0,0,0.06);
     }
 
+    #uvBtn.ll-active {
+      background: #c084fc;
+      color: #fff;
+      border-color: #a855f7;
+    }
+    #ampBtn.ll-active {
+      background: #fca5a5;
+      color: #fff;
+      border-color: #ef4444;
+    }
+
     @media (max-width: 740px) {
       .crispr-hero { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-<body class="crispr-page">
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
 
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="crispr-page">
 <!-- ════════════════════════════════════════════════════════════
      SECTION 1 — HERO
      ════════════════════════════════════════════════════════════ -->
@@ -196,12 +234,6 @@
   <div class="crispr-card">
     <p class="crispr-eyebrow">Bacterial Genome Viewer</p>
     <div class="crispr-sequence-wrap" id="sequenceViewer">
-      <!-- TODO: Render ~200bp of a simplified E. coli-like sequence.
-           Highlight PAM sites (NGG) in yellow.
-           When guide RNA is entered, highlight the matching 20bp target.
-           Show the Cas9 cut site with a red marker between bp 3-4 upstream of PAM. -->
-      ATGCGTAACCTGGATTCGAA<span class="highlight-target">TTACGGATCAGCTTGAAGCC</span><span class="highlight-cut">|</span>AGG
-      CTTAGCAAGTCCTTGAAACG...
     </div>
   </div>
 
@@ -220,6 +252,10 @@
     <p style="margin:0.6rem 0 0; font-size:0.85rem; color:#6b8f7a;">
       Your guide RNA must match a sequence adjacent to a PAM site (NGG) to cut successfully.
     </p>
+    <div id="targetHint" style="margin-top: 0.6rem; font-size: 0.85rem; color: #3d6651;">
+      <strong>Hint:</strong> Target sequence is <code style="background: #e8f5e9; padding: 2px 5px; border-radius: 4px;">GCACTGTTGGAAACGTCGAT</code>. Type its complement (A↔T, C↔G).
+    </div>
+    <div id="crisprFeedback" style="margin-top: 0.8rem; font-size: 0.9rem; font-weight: 700; min-height: 1.2rem;"></div>
   </div>
 
 <!-- ════════════════════════════════════════════════════════════
@@ -251,17 +287,13 @@
 
   <div class="crispr-card" style="text-align:center;">
     <p class="crispr-eyebrow">Petri Dish — Result</p>
-    <div class="crispr-petri" id="petriDish">
-      <!-- TODO: Canvas or DOM-based petri dish
-           - Scatter colony dots across the dish
-           - If luxA gene successfully inserted → colonies glow green (animated pulse)
-           - If knockout succeeded → colonies survive on antibiotic plate
-           - If guide RNA was wrong → no colonies / no glow
-           - Include a UV light toggle button for bioluminescence reveal -->
+    <div class="crispr-petri" id="petriDish" style="overflow: hidden;">
+      <canvas id="petriCanvas" width="280" height="280" style="display: block;"></canvas>
     </div>
-    <p style="color:#3d6651; font-size:0.92rem;">
-      Toggle the UV light to check for bioluminescence.
-    </p>
+    <div style="display: flex; justify-content: center; gap: 0.8rem; margin-top: 1rem;">
+      <button id="uvBtn" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #4a8c64; background: #e8f5e9; cursor: pointer; font-weight: 700; color: #1a2b3e; transition: all 0.2s;">Toggle UV Light</button>
+      <button id="ampBtn" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #4a8c64; background: #e8f5e9; cursor: pointer; font-weight: 700; color: #1a2b3e; transition: all 0.2s;">Add Ampicillin</button>
+    </div>
   </div>
 
 </div><!-- /.crispr-shell -->
@@ -270,35 +302,185 @@
 (function () {
   'use strict';
 
-  /* ── TODO: Full implementation ──
-   *
-   * DATA MODEL
-   *   - Simplified bacterial genome: ~200bp string with known gene regions
-   *   - Gene map: { luxA: { start, end, function }, ampR: { start, end, function } }
-   *   - PAM sites: scan sequence for NGG motifs, store positions
-   *
-   * GUIDE RNA MATCHING
-   *   - On input: scan for complementary match adjacent to a PAM site
-   *   - Highlight match in sequence viewer (yellow = target, red = cut site)
-   *   - Warn if multiple matches (off-target risk)
-   *   - Validate: only A/T/C/G characters, exactly 20 bases
-   *
-   * CAS9 CUT ANIMATION
-   *   - Animate scissors icon moving to the cut site
-   *   - Split the sequence visually at the cut point
-   *   - Show repair options: NHEJ (knockout) vs HDR (insertion)
-   *
-   * PETRI DISH VISUALIZATION
-   *   - Canvas-based circular dish with scattered colony dots
-   *   - Colony behavior based on edit result:
-   *     · luxA insert → green glow animation on UV toggle
-   *     · ampR knockout → colonies die on antibiotic plate
-   *   - UV light button toggles dark background + glow effect
-   *
-   * GENE SELECTOR
-   *   - Toggle between luxA and ampR targets
-   *   - Update sequence viewer highlighting accordingly
-   */
+  const GENOME = "ATGCGTAACCTGGATTCGAA" +
+                 "GCACTGTTGGAAACGTCGAT" + "AGG" +
+                 "CTTAGCAAGTCCTTGAAACGTGCAGCTAATCGTAGCT" +
+                 "TTCGATGCTAAGCTGATCGG" + "CGG" +
+                 "ATCGATCGACTACGATCGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCT";
+
+  const viewer = document.getElementById('sequenceViewer');
+  const input = document.getElementById('grnaInput');
+  const cutBtn = document.getElementById('cutBtn');
+  const geneSelect = document.getElementById('geneSelect');
+  const targetHint = document.getElementById('targetHint');
+  const feedback = document.getElementById('crisprFeedback');
+  const uvBtn = document.getElementById('uvBtn');
+  const ampBtn = document.getElementById('ampBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const canvas = document.getElementById('petriCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let edits = { luxA: false, ampR: false };
+  let uvLight = false;
+  let ampicillin = false;
+
+  const colonies = Array.from({length: 60}, () => {
+    const r = Math.random() * 120;
+    const theta = Math.random() * Math.PI * 2;
+    const baseSize = 1.5 + Math.random() * 3.5;
+    return {
+      x: 140 + r * Math.cos(theta),
+      y: 140 + r * Math.sin(theta),
+      size: baseSize,
+      baseSize: baseSize,
+    };
+  });
+
+  function showFeedback(msg, type) {
+    feedback.textContent = msg;
+    feedback.style.color = type === 'error' ? '#ef4444' : '#16a34a';
+  }
+
+  function getComplement(seq) {
+    const map = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' };
+    return seq.split('').map(c => map[c] || c).join('');
+  }
+
+  function updateViewer() {
+    const val = input.value;
+    const target = getComplement(val);
+    let html = GENOME;
+
+    if (val.length === 20) {
+      const idx = GENOME.indexOf(target);
+      if (idx !== -1) {
+        const before = GENOME.substring(0, idx);
+        const match1 = GENOME.substring(idx, idx + 17);
+        const match2 = GENOME.substring(idx + 17, idx + 20);
+        const pam = GENOME.substring(idx + 20, idx + 23);
+        const after = GENOME.substring(idx + 23);
+        
+        if (pam.length === 3 && pam[1] === 'G' && pam[2] === 'G') {
+          const pamHtml = `<span style="background:rgba(74,222,128,0.3); border-radius:2px; padding:0 2px;">${pam}</span>`;
+          html = `${before}<span class="highlight-target">${match1}</span><span class="highlight-cut">|</span><span class="highlight-target">${match2}</span>${pamHtml}${after}`;
+        } else {
+          html = GENOME.replace(target, `<span style="background:rgba(239,68,68,0.3); border-radius:2px;">${target}</span>`);
+        }
+      }
+    }
+    viewer.innerHTML = html;
+  }
+
+  input.addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^ATCG]/g, '');
+    feedback.textContent = '';
+    updateViewer();
+  });
+
+  geneSelect.addEventListener('change', (e) => {
+    const targetSeq = e.target.value === 'luxA' ? 'GCACTGTTGGAAACGTCGAT' : 'TTCGATGCTAAGCTGATCGG';
+    targetHint.innerHTML = `<strong>Hint:</strong> Target sequence is <code style="background: #e8f5e9; padding: 2px 5px; border-radius: 4px;">${targetSeq}</code>. Type its complement (A↔T, C↔G).`;
+  });
+
+  cutBtn.addEventListener('click', () => {
+    const val = input.value;
+    if (val.length < 20) {
+      showFeedback('Guide RNA must be exactly 20 bases long.', 'error');
+      return;
+    }
+    const target = getComplement(val);
+    const idx = GENOME.indexOf(target);
+    if (idx !== -1) {
+      const pam = GENOME.substring(idx + 20, idx + 23);
+      if (pam.length === 3 && pam[1] === 'G' && pam[2] === 'G') {
+        if (idx === 20) {
+          edits.luxA = true;
+          showFeedback('Cut successful! The luxA gene (bioluminescence) has been inserted.', 'success');
+        } else if (idx === 80) {
+          edits.ampR = true;
+          showFeedback('Cut successful! The ampR gene (antibiotic resistance) has been knocked out.', 'success');
+        }
+      } else {
+        showFeedback('Match found, but no valid PAM site (NGG) adjacent. Cas9 cannot bind.', 'error');
+      }
+    } else {
+      showFeedback('Guide RNA sequence not found in the target genome.', 'error');
+    }
+  });
+
+  uvBtn.addEventListener('click', () => {
+    uvLight = !uvLight;
+    uvBtn.classList.toggle('ll-active', uvLight);
+  });
+
+  ampBtn.addEventListener('click', () => {
+    ampicillin = !ampicillin;
+    ampBtn.classList.toggle('ll-active', ampicillin);
+    
+    if (!ampicillin) {
+      colonies.forEach(c => c.size = c.baseSize);
+    }
+  });
+
+  resetBtn.addEventListener('click', () => {
+    edits.luxA = false;
+    edits.ampR = false;
+    uvLight = false;
+    ampicillin = false;
+    input.value = '';
+    geneSelect.value = 'luxA';
+    geneSelect.dispatchEvent(new Event('change'));
+    uvBtn.classList.remove('ll-active');
+    ampBtn.classList.remove('ll-active');
+    feedback.textContent = '';
+    colonies.forEach(c => c.size = c.baseSize);
+    updateViewer();
+  });
+
+  function drawPetri() {
+    ctx.clearRect(0, 0, 280, 280);
+
+    if (uvLight) {
+      ctx.fillStyle = 'rgba(15, 5, 30, 0.85)';
+      ctx.fillRect(0, 0, 280, 280);
+    }
+    
+    if (ampicillin) {
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+      ctx.fillRect(0, 0, 280, 280);
+    }
+
+    const time = Date.now();
+
+    colonies.forEach((c, i) => {
+      if (ampicillin && edits.ampR) {
+        c.size *= 0.95;
+      }
+
+      if (c.size < 0.2) return;
+
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+
+      if (uvLight && edits.luxA) {
+        const localGlow = Math.abs(Math.sin(time / 400 + i));
+        ctx.fillStyle = `rgba(74, 222, 128, ${0.7 + 0.3 * localGlow})`;
+        ctx.shadowColor = '#4ade80';
+        ctx.shadowBlur = 8 + 8 * localGlow;
+      } else {
+        ctx.fillStyle = uvLight ? 'rgba(255, 255, 255, 0.1)' : '#d4e157';
+        ctx.shadowBlur = 0;
+      }
+      
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    requestAnimationFrame(drawPetri);
+  }
+  
+  updateViewer();
+  requestAnimationFrame(drawPetri);
 }());
 </script>
 
