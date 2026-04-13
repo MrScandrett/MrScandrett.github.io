@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The School of Athens · Mr. Scandrett's ClassroomOS</title>
+  <meta
+    name="description"
+    content="A Systems and Society lesson built as an interactive exhibit around Raphael's School of Athens, featuring clickable thinkers, biographies, and a short Sgt. Pepper interpretation."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --athens-ink: #172233;
+      --athens-muted: #586779;
+      --athens-line: rgba(55, 79, 104, 0.16);
+      --athens-panel: rgba(255, 252, 247, 0.94);
+      --athens-panel-soft: rgba(248, 243, 234, 0.94);
+      --athens-gold: #c28a3c;
+      --athens-blue: #3d6f9e;
+      --athens-olive: #6d7a4d;
+      --athens-rose: #a0544b;
+      --athens-shadow: 0 24px 60px rgba(23, 34, 51, 0.11);
+      --athens-hero-shadow: linear-gradient(180deg, rgba(16, 22, 31, 0.08), rgba(16, 22, 31, 0.3));
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--athens-ink);
+      font-family: "Inter", system-ui, sans-serif;
+      background:
+        radial-gradient(940px 520px at 0% 0%, rgba(194, 138, 60, 0.18), transparent 58%),
+        radial-gradient(880px 480px at 100% 0%, rgba(61, 111, 158, 0.16), transparent 56%),
+        linear-gradient(180deg, #f8f5ef 0%, #eef2f5 100%);
+    }
+
+    .athens-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(14px) saturate(150%);
+      background: rgba(248, 245, 239, 0.86);
+      border-bottom: 1px solid var(--athens-line);
+    }
+
+    .athens-topbar-inner,
+    .athens-shell {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    .athens-topbar-inner {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .athens-topbar a {
+      color: #245987;
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .athens-topbar a:hover { color: #123a5b; }
+
+    .athens-topbar-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      text-align: center;
+    }
+
+    .athens-shell {
+      padding: 1.6rem 0 3.8rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .athens-card {
+      border-radius: 26px;
+      border: 1px solid var(--athens-line);
+      background: linear-gradient(180deg, var(--athens-panel), var(--athens-panel-soft));
+      box-shadow: var(--athens-shadow);
+      overflow: hidden;
+    }
+
+    .athens-card-body {
+      padding: 1.35rem;
+    }
+
+    .athens-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: 1rem;
+    }
+
+    .athens-eyebrow {
+      margin: 0 0 0.45rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #7f6337;
+    }
+
+    .athens-hero h1,
+    .athens-section h2,
+    .athens-lab h2,
+    .athens-pepper h2 {
+      margin: 0;
+      font-family: "Fraunces", Georgia, serif;
+      letter-spacing: -0.03em;
+    }
+
+    .athens-hero h1 {
+      font-size: clamp(2.1rem, 4.2vw, 3.4rem);
+      line-height: 1.02;
+      max-width: 12ch;
+    }
+
+    .athens-lede {
+      margin: 0.95rem 0 0;
+      max-width: 62ch;
+      font-size: 1rem;
+      line-height: 1.72;
+      color: var(--athens-muted);
+    }
+
+    .athens-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .athens-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.8rem;
+      padding: 0.3rem 0.72rem;
+      border-radius: 999px;
+      border: 1px solid rgba(61, 111, 158, 0.2);
+      background: rgba(247, 250, 255, 0.94);
+      color: #285880;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .athens-big-idea,
+    .athens-side-box,
+    .athens-note,
+    .athens-source-box,
+    .athens-pepper-card,
+    .athens-discuss,
+    .athens-exit {
+      border-radius: 20px;
+      border: 1px solid var(--athens-line);
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .athens-big-idea,
+    .athens-side-box,
+    .athens-note,
+    .athens-source-box,
+    .athens-pepper-card,
+    .athens-discuss,
+    .athens-exit {
+      padding: 1rem 1.05rem;
+    }
+
+    .athens-big-idea {
+      margin-top: 1rem;
+      background: linear-gradient(135deg, rgba(194, 138, 60, 0.14), rgba(61, 111, 158, 0.08));
+    }
+
+    .athens-big-idea strong,
+    .athens-side-box strong,
+    .athens-note strong,
+    .athens-source-box strong,
+    .athens-pepper-card strong,
+    .athens-discuss strong,
+    .athens-exit strong {
+      display: block;
+      margin-bottom: 0.28rem;
+      font-size: 0.83rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6f5225;
+    }
+
+    .athens-big-idea p,
+    .athens-side-box p,
+    .athens-note p,
+    .athens-source-box p,
+    .athens-pepper-card p,
+    .athens-discuss p,
+    .athens-exit p {
+      margin: 0;
+      color: var(--athens-muted);
+      line-height: 1.65;
+    }
+
+    .athens-hero-side {
+      display: grid;
+      gap: 0.8rem;
+      align-content: start;
+    }
+
+    .athens-side-list,
+    .athens-outline,
+    .athens-questions,
+    .athens-source-list {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: var(--athens-muted);
+      line-height: 1.7;
+    }
+
+    .athens-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .athens-section,
+    .athens-lab,
+    .athens-pepper {
+      padding: 1.3rem;
+    }
+
+    .athens-section h2,
+    .athens-lab h2,
+    .athens-pepper h2 {
+      font-size: clamp(1.45rem, 2vw, 2rem);
+      line-height: 1.08;
+      margin-bottom: 0.4rem;
+    }
+
+    .athens-section-intro,
+    .athens-lab-intro,
+    .athens-pepper-intro {
+      margin: 0 0 1rem;
+      color: var(--athens-muted);
+      line-height: 1.68;
+      max-width: 70ch;
+    }
+
+    .athens-exhibit-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(310px, 0.9fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .athens-painting-card {
+      position: relative;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(40, 61, 83, 0.1);
+      background: #f0eadf;
+    }
+
+    .athens-painting {
+      position: relative;
+      aspect-ratio: 960 / 745;
+      width: 100%;
+      background:
+        var(--athens-hero-shadow),
+        url("../assets/thumbs/SchoolofAthens.jpg") center / cover no-repeat;
+    }
+
+    .athens-hotspot {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      margin-left: -11px;
+      margin-top: -11px;
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      border-radius: 50%;
+      background: rgba(192, 96, 71, 0.9);
+      box-shadow:
+        0 0 0 5px rgba(192, 96, 71, 0.18),
+        0 8px 16px rgba(21, 33, 48, 0.26);
+      cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .athens-hotspot:hover,
+    .athens-hotspot:focus-visible,
+    .athens-hotspot.is-active {
+      transform: scale(1.08);
+      background: #1f5d90;
+      box-shadow:
+        0 0 0 6px rgba(31, 93, 144, 0.2),
+        0 10px 18px rgba(21, 33, 48, 0.3);
+      outline: none;
+    }
+
+    .athens-hotspot::after {
+      content: attr(data-short);
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 8px);
+      transform: translateX(-50%);
+      white-space: nowrap;
+      padding: 0.24rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(18, 31, 44, 0.8);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.16s ease;
+    }
+
+    .athens-hotspot:hover::after,
+    .athens-hotspot:focus-visible::after,
+    .athens-hotspot.is-active::after {
+      opacity: 1;
+    }
+
+    .athens-painting-caption {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      padding: 0.9rem 1rem;
+      font-size: 0.82rem;
+      color: var(--athens-muted);
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .athens-panel {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .athens-bio-panel {
+      border-radius: 22px;
+      border: 1px solid var(--athens-line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(247,243,235,0.95));
+      padding: 1.15rem;
+      min-height: 100%;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .athens-bio-kicker {
+      margin: 0 0 0.4rem;
+      color: #6b7d90;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .athens-bio-panel h3 {
+      margin: 0;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      line-height: 1.06;
+    }
+
+    .athens-bio-meta {
+      margin: 0.45rem 0 0;
+      color: #45688a;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .athens-bio-summary,
+    .athens-bio-impact,
+    .athens-bio-lookfor {
+      margin: 0.8rem 0 0;
+      color: var(--athens-muted);
+      line-height: 1.68;
+      font-size: 0.94rem;
+    }
+
+    .athens-bio-panel h4 {
+      margin: 0.95rem 0 0.22rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #795722;
+    }
+
+    .athens-bio-tag {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 0.8rem;
+      padding: 0.34rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(61, 111, 158, 0.1);
+      color: #2e628f;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+
+    .athens-figure-list {
+      display: grid;
+      gap: 0.55rem;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .athens-figure-btn {
+      border: 1px solid rgba(61, 111, 158, 0.16);
+      background: rgba(248, 251, 255, 0.88);
+      color: #264f73;
+      border-radius: 14px;
+      padding: 0.72rem 0.78rem;
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+      transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
+    }
+
+    .athens-figure-btn:hover,
+    .athens-figure-btn:focus-visible,
+    .athens-figure-btn.is-active {
+      border-color: rgba(194, 138, 60, 0.5);
+      background: rgba(255, 248, 238, 0.96);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .athens-figure-btn strong {
+      display: block;
+      margin-bottom: 0.15rem;
+      font-size: 0.86rem;
+    }
+
+    .athens-figure-btn span {
+      font-size: 0.76rem;
+      color: #64778b;
+    }
+
+    .athens-plan-grid {
+      display: grid;
+      gap: 0.85rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 0.9rem;
+    }
+
+    .athens-plan-card {
+      border-radius: 18px;
+      border: 1px solid var(--athens-line);
+      background: rgba(255, 255, 255, 0.76);
+      padding: 1rem;
+    }
+
+    .athens-plan-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .athens-plan-card p,
+    .athens-plan-card li {
+      margin: 0;
+      color: var(--athens-muted);
+      line-height: 1.65;
+      font-size: 0.9rem;
+    }
+
+    .athens-plan-card ul {
+      margin: 0;
+      padding-left: 1.05rem;
+    }
+
+    .athens-pepper-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-top: 0.9rem;
+    }
+
+    .athens-pepper-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .athens-footnote {
+      margin-top: 0.8rem;
+      font-size: 0.8rem;
+      color: #6c7883;
+    }
+
+    .athens-footnote a,
+    .athens-source-list a {
+      color: #1f5d90;
+    }
+
+    @media (max-width: 980px) {
+      .athens-hero,
+      .athens-grid,
+      .athens-exhibit-shell,
+      .athens-plan-grid,
+      .athens-pepper-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .athens-topbar-title { display: none; }
+      .athens-card-body,
+      .athens-section,
+      .athens-lab,
+      .athens-pepper { padding: 1.05rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="athens-topbar">
+    <div class="athens-topbar-inner">
+      <a href="../steam-lessons.html#module-systems">← Systems &amp; Society</a>
+      <div class="athens-topbar-title">Interactive Lesson Exhibit</div>
+      <a href="../index.html">ClassroomOS Home</a>
+    </div>
+  </header>
+
+  <main class="athens-shell">
+    <section class="athens-card athens-card-body athens-hero">
+      <div>
+        <p class="athens-eyebrow">Complex Systems &amp; Humanities · Art, Philosophy, Science</p>
+        <h1>The School of Athens</h1>
+        <p class="athens-lede">
+          Use Raphael's famous fresco as a map of human knowledge. Students move through the painting as if it were a museum exhibit, click thinkers to uncover short biographies, and ask how ideas spread through societies, institutions, and generations.
+        </p>
+        <div class="athens-chip-row" aria-label="Lesson tags">
+          <span class="athens-chip">Systems &amp; Society</span>
+          <span class="athens-chip">Interactive exhibit</span>
+          <span class="athens-chip">Philosophy + science history</span>
+          <span class="athens-chip">Grades 6-12 adaptable</span>
+        </div>
+        <div class="athens-big-idea">
+          <strong>Big Idea</strong>
+          <p>
+            Knowledge is a social system. Ideas do not change the world by themselves. They spread through teachers, books, debates, institutions, apprenticeships, and culture.
+          </p>
+        </div>
+      </div>
+
+      <div class="athens-hero-side">
+        <div class="athens-side-box">
+          <strong>Essential Question</strong>
+          <p>How do great ideas move from one person to an entire society?</p>
+        </div>
+        <div class="athens-side-box">
+          <strong>Students Will</strong>
+          <ul class="athens-side-list">
+            <li>identify major thinkers in the fresco</li>
+            <li>connect philosophy, mathematics, and science to social systems</li>
+            <li>compare Renaissance knowledge culture with modern media culture</li>
+            <li>build a short claim about who has the greatest long-term impact</li>
+          </ul>
+        </div>
+        <div class="athens-side-box">
+          <strong>Teacher Move</strong>
+          <p>
+            Treat the painting like a clickable hallway conversation across time. Students are not memorizing names only; they are tracing networks of influence.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="athens-card athens-section">
+      <h2>Interactive Exhibit</h2>
+      <p class="athens-section-intro">
+        Click a hotspot in the painting or choose a name from the gallery list. Each panel gives a short biography, why the figure matters, and what to notice in Raphael's composition. Some identities in the fresco are traditional or debated, so that uncertainty becomes part of the lesson too.
+      </p>
+
+      <div class="athens-exhibit-shell">
+        <div class="athens-painting-card">
+          <div class="athens-painting" id="athens-painting" role="img" aria-label="Interactive image of Raphael's School of Athens with clickable philosophers and scientists"></div>
+          <div class="athens-painting-caption">
+            <span>Raphael, <em>The School of Athens</em>, 1509-1511</span>
+            <span>Tip: start with Plato and Aristotle in the center.</span>
+          </div>
+        </div>
+
+        <div class="athens-panel">
+          <article class="athens-bio-panel" id="bio-panel" aria-live="polite">
+            <p class="athens-bio-kicker">Selected Figure</p>
+            <h3 id="bio-name">Plato</h3>
+            <p class="athens-bio-meta" id="bio-role">Philosopher · ideals, forms, justice</p>
+            <p class="athens-bio-summary" id="bio-summary"></p>
+            <h4>Impact on the world</h4>
+            <p class="athens-bio-impact" id="bio-impact"></p>
+            <h4>What to notice in the painting</h4>
+            <p class="athens-bio-lookfor" id="bio-lookfor"></p>
+            <div class="athens-bio-tag" id="bio-tag">Central figure</div>
+          </article>
+
+          <div class="athens-note">
+            <strong>Figure Gallery</strong>
+            <div class="athens-figure-list" id="figure-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="athens-footnote">
+        Classroom note: art historians agree on many major figures, but not every identity in the fresco. That ambiguity is useful because it shows how historians build interpretations from visual evidence rather than certainty alone.
+      </p>
+    </section>
+
+    <div class="athens-grid">
+      <section class="athens-card athens-lab">
+        <h2>Lesson Flow</h2>
+        <p class="athens-lab-intro">
+          This version works as a 45-60 minute class, or as the opening day of a longer humanities-science crossover mini-unit.
+        </p>
+
+        <div class="athens-plan-grid">
+          <article class="athens-plan-card">
+            <h3>1. Warm-Up · 5 minutes</h3>
+            <ul>
+              <li>Project the painting without names.</li>
+              <li>Ask: what kinds of people seem to be gathered here?</li>
+              <li>Ask: what clues make this feel like a place of learning?</li>
+            </ul>
+          </article>
+
+          <article class="athens-plan-card">
+            <h3>2. Explore · 20 minutes</h3>
+            <ul>
+              <li>Students click at least four figures.</li>
+              <li>Each student picks one thinker tied to math or science and one tied to philosophy or ethics.</li>
+              <li>They record the figure's main idea and one modern connection.</li>
+            </ul>
+          </article>
+
+          <article class="athens-plan-card">
+            <h3>3. Synthesize · 15 minutes</h3>
+            <ul>
+              <li>Small groups answer which figure had the biggest impact on society.</li>
+              <li>Groups must defend their answer with evidence from the biography panel.</li>
+              <li>Close with a short whole-class share-out.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <aside class="athens-card athens-section">
+        <h2>Discussion Prompts</h2>
+        <p class="athens-section-intro">These keep the conversation centered on systems, influence, and institutions instead of trivia.</p>
+
+        <div class="athens-discuss">
+          <strong>Try Asking</strong>
+          <ul class="athens-questions">
+            <li>Why would a Renaissance pope want a wall full of pagan thinkers in a Vatican room?</li>
+            <li>Which matters more: discovering an idea, or building a system that spreads it?</li>
+            <li>How are schools, libraries, and the internet similar to this painted gathering?</li>
+            <li>What happens when science and philosophy are separated from ethics?</li>
+          </ul>
+        </div>
+
+        <div class="athens-exit" style="margin-top:0.8rem;">
+          <strong>Exit Ticket</strong>
+          <p>
+            Choose one figure from the fresco and finish this sentence: “This person changed society because...” Then name one modern system that still carries that influence today.
+          </p>
+        </div>
+      </aside>
+    </div>
+
+    <section class="athens-card athens-pepper">
+      <h2>Sgt. Pepper Connection</h2>
+      <p class="athens-pepper-intro">
+        The Beatles' <em>Sgt. Pepper's Lonely Hearts Club Band</em> cover also gathers famous people from many times and fields into one crowded cultural “conversation.” That makes it a strong modern comparison piece for <em>The School of Athens</em>.
+      </p>
+
+      <div class="athens-pepper-grid">
+        <article class="athens-pepper-card">
+          <strong>Classroom-Friendly Interpretation</strong>
+          <p>
+            Like Raphael, the Beatles' cover turns a group portrait into an idea map. Instead of showing one classroom, it shows a collage of people whose work shaped how later generations think, question, imagine, and understand the world.
+          </p>
+        </article>
+
+        <article class="athens-pepper-card">
+          <strong>Good Comparison Question</strong>
+          <p>
+            If <em>The School of Athens</em> represents a Renaissance dream of organized knowledge, does <em>Sgt. Pepper</em> represent a 1960s dream of culture where music, psychology, politics, spirituality, and art all mix together?
+          </p>
+        </article>
+
+        <article class="athens-pepper-card">
+          <h3>Karl Marx</h3>
+          <p>
+            Marx helps students think about class, labor, power, and who benefits from economic systems. A simple classroom takeaway: ideas about money and work can shape whole societies, not just individual lives.
+          </p>
+        </article>
+
+        <article class="athens-pepper-card">
+          <h3>Sigmund Freud and Carl Jung</h3>
+          <p>
+            These two figures open a conversation about the inner world. In student-friendly terms, they remind us that human behavior is not only about rules and logic, but also emotions, symbols, memory, and identity.
+          </p>
+        </article>
+
+        <article class="athens-pepper-card">
+          <h3>Albert Einstein</h3>
+          <p>
+            Einstein represents the modern scientific imagination: curiosity, questioning old models, and changing how people understand space, time, and reality. He fits well beside Raphael's mathematicians and natural philosophers.
+          </p>
+        </article>
+
+        <article class="athens-pepper-card">
+          <h3>Sri Yukteswar</h3>
+          <p>
+            Sri Yukteswar can help students notice that knowledge traditions are not only Western or scientific. His presence on the cover invites a broader discussion about wisdom, spirituality, and different ways people search for truth.
+          </p>
+        </article>
+      </div>
+
+      <p class="athens-footnote">
+        Keep the interpretation brief and age-appropriate: the useful classroom move is not to turn the album cover into a biography quiz, but to compare how different eras build “all-star” pictures of cultural influence.
+      </p>
+    </section>
+
+    <section class="athens-card athens-section">
+      <h2>Teacher Notes and Sources</h2>
+      <p class="athens-section-intro">
+        The figure identifications below follow common classroom-friendly identifications used by art-history references, while noting that some figures remain debated.
+      </p>
+
+      <div class="athens-grid" style="grid-template-columns:minmax(0,1fr) minmax(320px,0.9fr);">
+        <div class="athens-note">
+          <strong>Teacher Notes</strong>
+          <ol class="athens-outline">
+            <li>Adapt by grade level: younger students can focus on “what ideas matter,” while older students can compare philosophical methods.</li>
+            <li>Connect directly to modern institutions such as universities, research labs, libraries, archives, museums, and search engines.</li>
+            <li>If students ask whether every label is certain, the honest answer is no. That is a strength of the lesson, not a weakness.</li>
+          </ol>
+        </div>
+
+        <div class="athens-source-box">
+          <strong>Sources</strong>
+          <ul class="athens-source-list">
+            <li><a href="https://en.wikipedia.org/wiki/The_School_of_Athens">Wikipedia: The School of Athens</a></li>
+            <li><a href="https://smarthistory.org/raphael-school-of-athens/">Smarthistory: Raphael, School of Athens</a></li>
+            <li><a href="https://en.wikipedia.org/wiki/Sgt._Pepper%27s_Lonely_Hearts_Club_Band#Cover_art">Wikipedia: Sgt. Pepper cover art</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const figures = [
+      {
+        id: "plato",
+        name: "Plato",
+        short: "Plato",
+        role: "Philosopher · ideals, forms, justice",
+        summary: "Plato was a student of Socrates and one of the most influential philosophers in history. He asked what is ultimately real, how societies should be organized, and how education shapes the soul.",
+        impact: "His ideas shaped political thought, ethics, metaphysics, and education for centuries. Through the Academy and later readers, Plato helped define the long conversation about truth, justice, and the purpose of schooling.",
+        lookfor: "Raphael places Plato at the center, gesturing upward. He traditionally represents the search for higher or ideal truths beyond the visible world.",
+        tag: "Central figure",
+        x: 47,
+        y: 39
+      },
+      {
+        id: "aristotle",
+        name: "Aristotle",
+        short: "Aristotle",
+        role: "Philosopher · observation, logic, ethics",
+        summary: "Aristotle studied under Plato but focused more on observing the natural world. He wrote on logic, biology, politics, ethics, rhetoric, and many other subjects.",
+        impact: "Aristotle's way of organizing knowledge influenced science, classification, formal logic, and education across Europe and the Islamic world. He helped turn reasoning into a system that could be taught and debated.",
+        lookfor: "He stands beside Plato, extending his hand more horizontally, a gesture often read as a sign of attention to practical life and the world around us.",
+        tag: "Central figure",
+        x: 53,
+        y: 40
+      },
+      {
+        id: "socrates",
+        name: "Socrates",
+        short: "Socrates",
+        role: "Philosopher · questioning, dialogue, ethics",
+        summary: "Socrates is famous for teaching through questions rather than lectures. He pushed people to examine their assumptions and to define their terms carefully.",
+        impact: "His method still shapes classroom discussion, law, ethics, and critical thinking. Socrates helped establish the idea that disciplined questioning is a path to wisdom.",
+        lookfor: "He appears on the left, counting points on his fingers while speaking to younger listeners. The pose captures him as a teacher in active dialogue.",
+        tag: "Common identification",
+        x: 26,
+        y: 42
+      },
+      {
+        id: "pythagoras",
+        name: "Pythagoras",
+        short: "Pythagoras",
+        role: "Mathematician and philosopher · number, harmony, proportion",
+        summary: "Pythagoras is associated with the relationship between mathematics, music, and cosmic order. In classroom terms, he represents the idea that hidden patterns can explain the world.",
+        impact: "His name is linked to geometry, musical ratios, and the belief that number underlies reality. That connection between math and order influenced later science and philosophy.",
+        lookfor: "He sits in the lower left, writing in a book while students gather around him. Smarthistory highlights him as a figure tied to harmony in music and mathematics.",
+        tag: "Math and music",
+        x: 18,
+        y: 73
+      },
+      {
+        id: "averroes",
+        name: "Averroes",
+        short: "Averroes",
+        role: "Philosopher and commentator · preserving and interpreting knowledge",
+        summary: "Averroes, an Andalusian scholar, became famous for his commentaries on Aristotle. He shows students that knowledge travels across languages, religions, and regions.",
+        impact: "His writings helped carry Greek philosophy into medieval intellectual life. He is a strong example of how transmission, translation, and commentary are part of civilization's knowledge system.",
+        lookfor: "Traditionally identified near Pythagoras in the lower left cluster, he reminds viewers that the history of ideas is global and interconnected.",
+        tag: "Knowledge transfer",
+        x: 24,
+        y: 69
+      },
+      {
+        id: "diogenes",
+        name: "Diogenes",
+        short: "Diogenes",
+        role: "Philosopher · simplicity, independence, criticism of social status",
+        summary: "Diogenes is remembered for rejecting luxury and mocking social pretension. He challenged people to ask whether society values what truly matters.",
+        impact: "He represents the tradition of using philosophy to question norms, wealth, and performance. In a systems lesson, he is a reminder that societies can be critiqued from the outside as well as reformed from within.",
+        lookfor: "He lies stretched across the steps in the middle foreground, physically separate from the tightly grouped scholars around him.",
+        tag: "Countercultural thinker",
+        x: 46,
+        y: 61
+      },
+      {
+        id: "heraclitus",
+        name: "Heraclitus",
+        short: "Heraclitus",
+        role: "Philosopher · change, flux, contradiction",
+        summary: "Heraclitus is associated with the idea that reality is always changing. He is often summarized by the thought that you cannot step into the same river twice.",
+        impact: "He gave later thinkers a language for change, instability, and becoming. That matters in systems thinking because complex systems are dynamic, not frozen.",
+        lookfor: "He sits alone in the foreground writing on a block of stone. Smarthistory notes that Raphael added him later and gave him features associated with Michelangelo.",
+        tag: "Change and flux",
+        x: 51,
+        y: 76
+      },
+      {
+        id: "hypatia",
+        name: "Hypatia (traditional, debated)",
+        short: "Hypatia",
+        role: "Mathematician and philosopher · scholarship, teaching, astronomy",
+        summary: "Some viewers traditionally identify a figure in the right foreground group as Hypatia of Alexandria, one of the best-known women of the ancient intellectual world. The identification is debated, which makes her a good entry point for discussing evidence and interpretation.",
+        impact: "Hypatia symbolizes the importance of women in the history of knowledge, and the way some contributions are preserved unevenly in the record. She opens a classroom conversation about visibility and exclusion in intellectual history.",
+        lookfor: "This is not a certain identification, but the debated figure is often discussed because she appears in the foreground and may glance outward toward the viewer.",
+        tag: "Debated identification",
+        x: 60,
+        y: 66
+      },
+      {
+        id: "euclid",
+        name: "Euclid",
+        short: "Euclid",
+        role: "Mathematician · geometry, proof, measure",
+        summary: "Euclid is associated with geometry and the idea that knowledge can be built step by step from definitions, axioms, and proofs. He turns reasoning into a structured system.",
+        impact: "Geometry influenced architecture, engineering, mapping, and scientific reasoning for centuries. Euclid stands for the practical power of mathematical thinking.",
+        lookfor: "On the lower right, he bends over a diagram while students lean in. Smarthistory describes him as a figure of geometry and practical measure.",
+        tag: "Geometry and proof",
+        x: 69,
+        y: 73
+      },
+      {
+        id: "ptolemy",
+        name: "Ptolemy",
+        short: "Ptolemy",
+        role: "Astronomer and geographer · mapping Earth and sky",
+        summary: "Ptolemy became one of the best-known ancient authorities on geography and astronomy. He represents the human effort to model the cosmos and organize knowledge spatially.",
+        impact: "His work shaped mapmaking and astronomy for centuries. Even when later science corrected some of his conclusions, his models remained historically important because systems of knowledge often persist long after they are challenged.",
+        lookfor: "He appears at the lower right with his back turned, holding a globe, linking the painting to astronomy, geography, and the measurable world.",
+        tag: "Astronomy and maps",
+        x: 80,
+        y: 75
+      },
+      {
+        id: "zoroaster",
+        name: "Zoroaster",
+        short: "Zoroaster",
+        role: "Thinker associated with the heavens · cosmic order",
+        summary: "Zoroaster is traditionally identified as one of the figures holding a celestial sphere. In classroom use, he broadens the conversation from Greek philosophy to wider traditions of wisdom and cosmology.",
+        impact: "He helps students see that systems of thought often connect morality, cosmic order, and human life. He also reminds us that Renaissance artists folded many traditions into one imagined scene.",
+        lookfor: "He stands near Ptolemy in the right foreground, paired with a celestial sphere that contrasts with the earthly globe.",
+        tag: "Cosmos and worldview",
+        x: 76,
+        y: 73
+      },
+      {
+        id: "raphael",
+        name: "Raphael (self-portrait)",
+        short: "Raphael",
+        role: "Artist · knowledge, perspective, Renaissance humanism",
+        summary: "Raphael places himself in the painting, suggesting that the artist is not just a craftsperson but a thinker participating in the life of ideas.",
+        impact: "That move reflects a Renaissance shift in status for artists and helps explain why art can be a tool for organizing, teaching, and debating knowledge. The painting itself becomes part of the system it depicts.",
+        lookfor: "Smarthistory notes that Raphael appears among the astronomers on the right, looking out at the viewer in a dark cap.",
+        tag: "Artist in the conversation",
+        x: 86,
+        y: 71
+      }
+    ];
+
+    const painting = document.getElementById("athens-painting");
+    const figureList = document.getElementById("figure-list");
+    const bioName = document.getElementById("bio-name");
+    const bioRole = document.getElementById("bio-role");
+    const bioSummary = document.getElementById("bio-summary");
+    const bioImpact = document.getElementById("bio-impact");
+    const bioLookfor = document.getElementById("bio-lookfor");
+    const bioTag = document.getElementById("bio-tag");
+
+    let activeId = null;
+
+    function renderBio(figure) {
+      bioName.textContent = figure.name;
+      bioRole.textContent = figure.role;
+      bioSummary.textContent = figure.summary;
+      bioImpact.textContent = figure.impact;
+      bioLookfor.textContent = figure.lookfor;
+      bioTag.textContent = figure.tag;
+    }
+
+    function setActive(id) {
+      activeId = id;
+      document.querySelectorAll(".athens-hotspot").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.id === id);
+      });
+      document.querySelectorAll(".athens-figure-btn").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.id === id);
+      });
+      const figure = figures.find((item) => item.id === id);
+      if (figure) renderBio(figure);
+    }
+
+    figures.forEach((figure) => {
+      const hotspot = document.createElement("button");
+      hotspot.type = "button";
+      hotspot.className = "athens-hotspot";
+      hotspot.dataset.id = figure.id;
+      hotspot.dataset.short = figure.short;
+      hotspot.style.left = figure.x + "%";
+      hotspot.style.top = figure.y + "%";
+      hotspot.setAttribute("aria-label", "Open biography for " + figure.name);
+      hotspot.addEventListener("click", () => setActive(figure.id));
+      painting.appendChild(hotspot);
+
+      const listButton = document.createElement("button");
+      listButton.type = "button";
+      listButton.className = "athens-figure-btn";
+      listButton.dataset.id = figure.id;
+      listButton.innerHTML = "<strong>" + figure.name + "</strong><span>" + figure.role + "</span>";
+      listButton.addEventListener("click", () => setActive(figure.id));
+      figureList.appendChild(listButton);
+    });
+
+    setActive("plato");
+  </script>
+</body>
+</html>
