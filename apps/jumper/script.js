@@ -586,3 +586,5 @@ function equipSkin(skin){ localStorage.setItem('lb_equipped', skin); applySkin(s
 
 function applySkin(skin){ const mapping = {gold:'#ffd700', white:'#ffffff', black:'#000000', green:'#2ecc71', camo:'#6b8e23'}; player.color = mapping[skin] || '#2ecc71'; player.skin = (skin === 'camo') ? 'camo' : 'solid'; localStorage.setItem('lb_equipped', skin); }
 
+// Start the game loop
+loop();
