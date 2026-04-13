@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxonomy Lab | Animalia Domain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="assets/animal-data.js"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        body { overflow: hidden; }
+        main { animation: fadeIn 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col overflow-hidden text-slate-900">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-emerald-950 text-white p-5 flex justify-between items-center shadow-lg shrink-0 border-b-4 border-emerald-600">
+        <div class="flex items-center gap-4">
+            <a href="index.html" class="text-emerald-400 hover:text-white transition flex items-center gap-2 font-bold text-sm">
+                <i class="fas fa-chevron-left"></i> Hub
+            </a>
+            <span class="text-xs text-slate-400 border-l border-slate-600 pl-4">Advanced Lab</span>
+        </div>
+        <div class="flex gap-8 text-sm font-bold">
+            <button onclick="setView('explorer')" id="btn-exp" class="text-emerald-400 border-b-2 border-emerald-400 pb-2 hover:text-white transition">
+                <i class="fas fa-magnifying-glass mr-2"></i> Explorer
+            </button>
+            <button onclick="setView('compare')" id="btn-comp" class="text-slate-400 hover:text-emerald-400 pb-2 transition">
+                <i class="fas fa-table mr-2"></i> Comparison
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar: Phylum Navigation -->
+        <aside class="w-80 bg-white border-r-2 border-slate-200 overflow-y-auto p-6 shrink-0 shadow-sm">
+            <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] mb-6 flex items-center gap-2">
+                <i class="fas fa-sitemap text-emerald-600"></i> Select Phylum
+            </h3>
+            <nav id="sidebar-nav" class="space-y-3">
+                <!-- Dynamically populated by JavaScript -->
+            </nav>
+            <div class="mt-8 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                <p class="text-xs text-emerald-800 font-medium">
+                    <i class="fas fa-info-circle mr-2"></i> Click any phylum to view detailed information and key facts.
+                </p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main id="view-port" class="flex-1 overflow-y-auto p-10 bg-slate-50">
+            <!-- Content dynamically loaded here -->
+        </main>
+    </div>
+
+    <script>
+        let currentPhylum = "Chordata";
+        let activeView = "explorer";
+
+        /**
+         * Switch between Explorer and Comparison views
+         */
+        function setView(view) {
+            activeView = view;
+            render();
+
+            // Update button styling
+            document.getElementById('btn-exp').className = view === 'explorer'
+                ? 'text-emerald-400 border-b-2 border-emerald-400 pb-2 hover:text-white transition'
+                : 'text-slate-400 hover:text-emerald-400 pb-2 transition';
+            document.getElementById('btn-comp').className = view === 'compare'
+                ? 'text-emerald-400 border-b-2 border-emerald-400 pb-2 hover:text-white transition'
+                : 'text-slate-400 hover:text-emerald-400 pb-2 transition';
+        }
+
+        /**
+         * Main render function - updates sidebar and main content
+         */
+        function render() {
+            const sidebar = document.getElementById('sidebar-nav');
+            const mainArea = document.getElementById('view-port');
+            const data = ANIMAL_KINGDOM_DATA.phyla;
+
+            // === SIDEBAR RENDERING ===
+            sidebar.innerHTML = Object.keys(data).map(key => {
+                const phylum = data[key];
+                return `
+                    <button onclick="currentPhylum='${key}'; render();"
+                        class="w-full text-left p-4 rounded-2xl transition-all duration-200 group ${
+                            currentPhylum === key
+                            ? 'bg-emerald-600 text-white shadow-lg translate-x-1'
+                            : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-100'
+                        }">
+                        <div class="text-xs opacity-70 font-bold uppercase tracking-wider group-hover:opacity-100">${phylum.commonName}</div>
+                        <div class="font-black text-lg mt-1">${key}</div>
+                    </button>
+                `;
+            }).join('');
+
+            // === MAIN CONTENT RENDERING ===
+            if (activeView === 'explorer') {
+                renderExplorerView(mainArea);
+            } else {
+                renderComparisonView(mainArea);
+            }
+        }
+
+        /**
+         * Render the Explorer view (detailed phylum information)
+         */
+        function renderExplorerView(container) {
+            const phylum = ANIMAL_KINGDOM_DATA.phyla[currentPhylum];
+
+            const html = `
+                <div class="max-w-5xl mx-auto animate-fadeIn">
+                    <!-- Phylum Header Card -->
+                    <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden mb-8">
+                        <div class="bg-gradient-to-r from-emerald-600 to-emerald-700 p-12 text-white">
+                            <h2 class="text-5xl font-black mb-2 uppercase tracking-tight">${currentPhylum}</h2>
+                            <p class="text-emerald-100 text-xl italic font-medium">"${phylum.commonName}"</p>
+                        </div>
+
+                        <div class="p-10 space-y-8">
+                            <!-- Description -->
+                            <div>
+                                <p class="text-lg text-slate-700 leading-relaxed border-l-4 border-emerald-500 pl-5">
+                                    ${phylum.description}
+                                </p>
+                            </div>
+
+                            <!-- Key Characteristics Grid -->
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <!-- Traits -->
+                                <div>
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+                                        <i class="fas fa-dna text-emerald-600"></i> Diagnostic Traits
+                                    </h4>
+                                    <div class="flex flex-col gap-3">
+                                        ${phylum.traits.map(trait => `
+                                            <div class="flex items-start gap-3 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                                                <i class="fas fa-check-circle text-emerald-600 mt-0.5 flex-shrink-0"></i>
+                                                <span class="font-bold text-emerald-900">${trait}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <!-- Body Plan Features -->
+                                <div class="space-y-4">
+                                    <div>
+                                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            <i class="fas fa-sitemap text-emerald-600"></i> Body Plan
+                                        </h4>
+                                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                            <div class="flex justify-between mb-3 pb-3 border-b border-slate-200">
+                                                <span class="font-bold text-slate-600">Symmetry:</span>
+                                                <span class="font-black text-emerald-700">${phylum.symmetry}</span>
+                                            </div>
+                                            <div class="flex justify-between mb-3 pb-3 border-b border-slate-200">
+                                                <span class="font-bold text-slate-600">Skeleton:</span>
+                                                <span class="font-black text-emerald-700">${phylum.skeleton}</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="font-bold text-slate-600">Movement:</span>
+                                                <span class="font-black text-emerald-700">${phylum.movement}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Examples -->
+                                    <div>
+                                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            <i class="fas fa-leaf text-emerald-600"></i> Representative Species
+                                        </h4>
+                                        <div class="space-y-2">
+                                            ${phylum.examples.map(example => `
+                                                <div class="flex items-center gap-2 p-2 bg-slate-100 rounded border border-slate-200 font-bold text-slate-700">
+                                                    <i class="fas fa-star text-amber-400 flex-shrink-0"></i> ${example}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Key Fact Box -->
+                            <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6">
+                                <h4 class="text-sm font-black text-amber-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <i class="fas fa-lightbulb text-amber-600"></i> Did You Know?
+                                </h4>
+                                <p class="text-lg text-amber-900 font-medium leading-relaxed italic">
+                                    "${phylum.keyFact}"
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        /**
+         * Render the Comparison view (cross-phylum matrix)
+         */
+        function renderComparisonView(container) {
+            const data = ANIMAL_KINGDOM_DATA.phyla;
+            const phyla = Object.keys(data);
+
+            const html = `
+                <div class="max-w-6xl mx-auto animate-fadeIn">
+                    <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+                        <!-- Header -->
+                        <div class="bg-emerald-600 p-8 text-white">
+                            <h2 class="text-3xl font-black uppercase">Phylum Comparison Matrix</h2>
+                            <p class="text-emerald-100 mt-2">Compare anatomical and structural features across major phyla</p>
+                        </div>
+
+                        <!-- Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b-2 border-slate-200">
+                                        <th class="p-6 text-xs font-black text-slate-400 uppercase tracking-wider">Feature</th>
+                                        ${phyla.map(p => `
+                                            <th class="p-6 text-sm font-black text-emerald-800 uppercase tracking-wider text-center min-w-[200px]">${p}</th>
+                                        `).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                        <td class="p-6 font-bold text-slate-900">Symmetry</td>
+                                        ${phyla.map(p => `<td class="p-6 text-center text-slate-700 font-medium">${data[p].symmetry}</td>`).join('')}
+                                    </tr>
+                                    <tr class="border-b border-slate-100 hover:bg-slate-50 bg-slate-50">
+                                        <td class="p-6 font-bold text-slate-900">Skeleton Type</td>
+                                        ${phyla.map(p => `<td class="p-6 text-center text-slate-700 font-medium">${data[p].skeleton}</td>`).join('')}
+                                    </tr>
+                                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                        <td class="p-6 font-bold text-slate-900">Movement Style</td>
+                                        ${phyla.map(p => `<td class="p-6 text-center text-slate-700 font-medium">${data[p].movement}</td>`).join('')}
+                                    </tr>
+                                    <tr class="border-b border-slate-100 hover:bg-slate-50 bg-slate-50">
+                                        <td class="p-6 font-bold text-slate-900">Key Traits</td>
+                                        ${phyla.map(p => `<td class="p-6"><div class="flex flex-wrap gap-2 justify-center">${data[p].traits.slice(0, 2).map(t => `<span class="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded">${t}</span>`).join('')}</div></td>`).join('')}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Footer Note -->
+                        <div class="bg-slate-50 p-6 border-t border-slate-200">
+                            <p class="text-sm text-slate-600 italic">
+                                <i class="fas fa-note-sticky mr-2 text-emerald-600"></i>
+                                This matrix highlights major structural differences. Use the Explorer view to learn detailed facts about each phylum.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', render);
+    </script>
+
+</body>
+</html>
