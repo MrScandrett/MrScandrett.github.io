@@ -1,0 +1,1946 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Probability Simulator · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Mathematics Lesson 04 - run virtual coin flips, dice rolls, and card draws to explore probability, relative frequency, and the law of large numbers." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #f59e0b; --ll-tab-active: #f59e0b; --ll-tab-active-bg: rgba(245,158,11,0.12); }
+    .ps-page { padding-bottom: 3.5rem; }
+
+    .ps-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .ps-hero h1 { max-width: 20ch; margin-left: 0; margin-right: 0; font-size: clamp(1.7rem, 4vw, 2.55rem); }
+    .ps-hero-meta {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem;
+      margin: 0.5rem 0 0.7rem; font-size: 0.82rem; color: #64748b;
+    }
+    .ps-hero-meta .dot {
+      width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45;
+      display: inline-block; vertical-align: middle;
+    }
+    .ps-lede { max-width: 70ch; margin: 0; color: #3f4f65; font-size: 0.98rem; line-height: 1.66; }
+    .ps-back-link { display: inline-block; margin-top: 0.85rem; font-size: 0.84rem; font-weight: 700; color: #d97706; text-decoration: none; }
+    .ps-back-link:hover { text-decoration: underline; }
+    [data-theme="night"] .ps-lede { color: rgba(245,245,247,0.72); }
+
+    .ps-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #f59e0b);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .ps-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .ps-card h3 { margin: 0.95rem 0 0.3rem; font-size: 0.98rem; letter-spacing: -0.01em; }
+    .ps-card p { margin: 0 0 0.65rem; color: #3f4f65; font-size: 0.89rem; line-height: 1.65; }
+    .ps-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .ps-card { background: var(--white, #2c2c2e); }
+    [data-theme="night"] .ps-card p { color: rgba(245,245,247,0.73); }
+
+    .ps-launch-grid,
+    .ps-band-grid,
+    .ps-sequence-grid,
+    .ps-assessment-grid,
+    .ps-vocab-grid,
+    .ps-extension-grid {
+      display: grid;
+      gap: 0.8rem;
+      margin-top: 0.85rem;
+    }
+    .ps-launch-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
+    .ps-band-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .ps-sequence-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .ps-assessment-grid,
+    .ps-vocab-grid,
+    .ps-extension-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    @media (max-width: 760px) {
+      .ps-launch-grid { grid-template-columns: 1fr; }
+    }
+
+    .ps-panel,
+    .ps-band-card,
+    .ps-sequence-card,
+    .ps-assessment-card,
+    .ps-vocab-card,
+    .ps-extension-card {
+      background: var(--surface, #f5f5f7);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      padding: 0.95rem 1rem;
+    }
+    [data-theme="night"] .ps-panel,
+    [data-theme="night"] .ps-band-card,
+    [data-theme="night"] .ps-sequence-card,
+    [data-theme="night"] .ps-assessment-card,
+    [data-theme="night"] .ps-vocab-card,
+    [data-theme="night"] .ps-extension-card {
+      background: rgba(255,255,255,0.04);
+    }
+    .ps-mini-title {
+      margin: 0 0 0.55rem;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b7280;
+    }
+    .ps-checklist,
+    .ps-step-list,
+    .ps-note-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+    .ps-checklist li,
+    .ps-step-list li,
+    .ps-note-list li {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: #3f4f65;
+    }
+    [data-theme="night"] .ps-checklist li,
+    [data-theme="night"] .ps-step-list li,
+    [data-theme="night"] .ps-note-list li { color: rgba(245,245,247,0.72); }
+    .ps-checklist li::before,
+    .ps-step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 0.02rem;
+    }
+    .ps-checklist li::before { content: "\2713"; background: #22c55e; }
+    .ps-step-num { background: #f59e0b; }
+
+    .ps-band-tag,
+    .ps-sequence-time,
+    .ps-vocab-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.45rem;
+    }
+    .ps-band-tag { background: rgba(245,158,11,0.12); color: #a16207; }
+    .ps-sequence-time { background: rgba(59,130,246,0.12); color: #1d4ed8; }
+    .ps-vocab-tag { background: rgba(16,185,129,0.14); color: #047857; }
+    .ps-band-card strong,
+    .ps-sequence-card strong,
+    .ps-assessment-card strong,
+    .ps-vocab-card strong,
+    .ps-extension-card strong {
+      display: block;
+      margin-bottom: 0.28rem;
+      font-size: 0.95rem;
+    }
+    .ps-band-card p,
+    .ps-sequence-card p,
+    .ps-assessment-card p,
+    .ps-vocab-card p,
+    .ps-extension-card p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #4b5563;
+    }
+    [data-theme="night"] .ps-band-card p,
+    [data-theme="night"] .ps-sequence-card p,
+    [data-theme="night"] .ps-assessment-card p,
+    [data-theme="night"] .ps-vocab-card p,
+    [data-theme="night"] .ps-extension-card p { color: rgba(245,245,247,0.68); }
+
+    .ps-callout {
+      background: linear-gradient(135deg, rgba(245,158,11,0.09), rgba(251,191,36,0.05));
+      border: 1px solid rgba(245,158,11,0.24);
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+      margin: 0.85rem 0;
+    }
+    .ps-callout strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #a16207;
+    }
+    .ps-callout p { margin: 0; }
+
+    .ps-lab {
+      background: linear-gradient(135deg, #1b1304 0%, #2b1d07 52%, #4b3209 100%);
+      border-radius: 20px;
+      padding: 1.55rem 1.35rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 22px 55px rgba(0,0,0,0.28);
+      border: 1px solid rgba(245,158,11,0.22);
+    }
+    .ps-lab h2 { color: #fff7ed; margin: 0 0 0.25rem; font-size: 1.25rem; }
+    .ps-lab > p { color: rgba(255,247,237,0.68); font-size: 0.86rem; margin: 0 0 1.1rem; line-height: 1.65; }
+    .ps-lab-badge {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      background: rgba(245,158,11,0.16); border: 1px solid rgba(245,158,11,0.34);
+      border-radius: 999px; padding: 0.24rem 0.75rem; margin-bottom: 0.75rem;
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #fcd34d;
+    }
+    .ps-lab-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 860px) {
+      .ps-lab-grid { grid-template-columns: 1fr; }
+    }
+    .ps-controls,
+    .ps-results {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 1rem;
+      backdrop-filter: blur(10px);
+    }
+    .ps-controls label,
+    .ps-results-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,247,237,0.56);
+      margin-bottom: 0.35rem;
+    }
+    .ps-select,
+    .ps-range {
+      width: 100%;
+    }
+    .ps-select {
+      padding: 0.62rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid rgba(245,158,11,0.28);
+      background: rgba(0,0,0,0.28);
+      color: #fff7ed;
+      font: inherit;
+      outline: none;
+    }
+    .ps-range-wrap { margin-bottom: 0.85rem; }
+    .ps-range-meta {
+      display: flex; justify-content: space-between; gap: 0.7rem;
+      margin-top: 0.35rem; font-size: 0.76rem; color: rgba(255,247,237,0.58);
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .ps-range {
+      accent-color: #f59e0b;
+    }
+    .ps-button-row {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-top: 0.9rem;
+    }
+    .ps-btn {
+      border: none;
+      border-radius: 10px;
+      padding: 0.65rem 0.95rem;
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.14s ease, opacity 0.14s ease, background 0.14s ease;
+    }
+    .ps-btn:hover { transform: translateY(-1px); }
+    .ps-btn-primary { background: #f59e0b; color: #1c1203; }
+    .ps-btn-secondary { background: rgba(255,255,255,0.08); color: #fff7ed; border: 1px solid rgba(255,255,255,0.12); }
+    .ps-btn-chip {
+      background: rgba(245,158,11,0.12);
+      color: #fde68a;
+      border: 1px solid rgba(245,158,11,0.24);
+      padding: 0.45rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .ps-model-note {
+      margin-top: 0.8rem;
+      padding: 0.75rem 0.85rem;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,247,237,0.72);
+      font-size: 0.8rem;
+      line-height: 1.58;
+    }
+    .ps-model-note strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,247,237,0.5);
+    }
+    .ps-visual-stage {
+      position: relative;
+      min-height: 230px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 45%), linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.14));
+      margin-bottom: 0.95rem;
+      padding: 1rem;
+      overflow: hidden;
+    }
+    .ps-stage-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.8rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .ps-stage-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,247,237,0.45);
+    }
+    .ps-stage-status {
+      font-size: 0.8rem;
+      color: rgba(255,247,237,0.86);
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .ps-stage-display {
+      min-height: 135px;
+      display: grid;
+      place-items: center;
+    }
+    .ps-stage-note {
+      margin-top: 0.8rem;
+      padding: 0.7rem 0.8rem;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,247,237,0.7);
+      font-size: 0.79rem;
+      line-height: 1.55;
+    }
+    .ps-mode-row {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      margin-top: 0.9rem;
+    }
+    .ps-mode-btn {
+      flex: 1 1 120px;
+      border-radius: 10px;
+      padding: 0.62rem 0.82rem;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,247,237,0.88);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.81rem;
+      font-weight: 700;
+      transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+    }
+    .ps-mode-btn:hover { transform: translateY(-1px); }
+    .ps-mode-btn.is-active {
+      background: rgba(245,158,11,0.18);
+      border-color: rgba(245,158,11,0.32);
+      color: #fde68a;
+    }
+    .ps-source-row {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      margin: 0.8rem 0 0.5rem;
+    }
+    .ps-source-btn {
+      flex: 1 1 140px;
+      border-radius: 10px;
+      padding: 0.58rem 0.78rem;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,247,237,0.88);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .ps-source-btn.is-active {
+      background: rgba(245,158,11,0.18);
+      border-color: rgba(245,158,11,0.32);
+      color: #fde68a;
+    }
+    .ps-custom-panel {
+      margin-top: 0.8rem;
+      padding: 0.9rem;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: none;
+    }
+    .ps-custom-panel.is-active { display: block; }
+    .ps-custom-head {
+      margin-bottom: 0.7rem;
+      color: rgba(255,247,237,0.72);
+      font-size: 0.8rem;
+      line-height: 1.55;
+    }
+    .ps-custom-grid {
+      display: grid;
+      gap: 0.55rem;
+    }
+    .ps-custom-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 92px 40px;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .ps-custom-input,
+    .ps-custom-select {
+      width: 100%;
+      padding: 0.55rem 0.65rem;
+      border-radius: 9px;
+      border: 1px solid rgba(245,158,11,0.24);
+      background: rgba(0,0,0,0.24);
+      color: #fff7ed;
+      font: inherit;
+      outline: none;
+    }
+    .ps-custom-input[type="number"] { font-family: "IBM Plex Mono", monospace; }
+    .ps-remove-row {
+      width: 40px;
+      height: 40px;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,247,237,0.88);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+    }
+    .ps-remove-row:disabled { opacity: 0.35; cursor: default; }
+    .ps-custom-actions {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+    }
+    .ps-custom-mini {
+      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.7rem;
+    }
+    .ps-radio-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .ps-radio-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.42rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,247,237,0.82);
+      font-size: 0.78rem;
+    }
+    .ps-radio-chip input { accent-color: #f59e0b; }
+    .ps-custom-feedback {
+      margin-top: 0.75rem;
+      padding: 0.7rem 0.8rem;
+      border-radius: 12px;
+      background: rgba(14,165,233,0.08);
+      border: 1px solid rgba(14,165,233,0.18);
+      color: #dbeafe;
+      font-size: 0.78rem;
+      line-height: 1.55;
+    }
+
+    .ps-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.7rem;
+      margin-bottom: 0.9rem;
+    }
+    .ps-metric {
+      background: rgba(0,0,0,0.24);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 0.75rem 0.8rem;
+    }
+    .ps-metric-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,247,237,0.48);
+      margin-bottom: 0.22rem;
+    }
+    .ps-metric-value {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff7ed;
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    .ps-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-bottom: 0.95rem;
+    }
+    .ps-bar-row {
+      display: grid;
+      grid-template-columns: 90px minmax(0, 1fr) 78px;
+      gap: 0.65rem;
+      align-items: center;
+    }
+    @media (max-width: 520px) {
+      .ps-bar-row { grid-template-columns: 70px minmax(0, 1fr) 62px; }
+    }
+    .ps-bar-label,
+    .ps-bar-value {
+      font-size: 0.8rem;
+      color: rgba(255,247,237,0.82);
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .ps-bar-track {
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .ps-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #f59e0b, #fde68a);
+      border-radius: inherit;
+      transition: width 0.25s ease;
+    }
+    .ps-bar-fill-expected {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: transparent;
+    }
+    .ps-bar-fill-expected::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: var(--expected-left, 50%);
+      width: 2px;
+      background: rgba(96,165,250,0.85);
+      box-shadow: 0 0 0 1px rgba(96,165,250,0.18);
+    }
+    .ps-bar-stack {
+      position: relative;
+      height: 100%;
+    }
+
+    .ps-table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .ps-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      color: #fff7ed;
+    }
+    .ps-table th,
+    .ps-table td {
+      padding: 0.58rem 0.7rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .ps-table th {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,247,237,0.55);
+      background: rgba(255,255,255,0.04);
+    }
+    .ps-table tr:last-child td { border-bottom: none; }
+
+    .ps-trend {
+      margin-top: 0.9rem;
+      padding: 0.85rem 0.95rem;
+      border-radius: 12px;
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.24);
+      color: #dcfce7;
+      font-size: 0.84rem;
+      line-height: 1.58;
+    }
+    .ps-graph-wrap {
+      margin: 0.95rem 0 0.2rem;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+    }
+    .ps-graph {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .ps-graph-caption {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      padding: 0.55rem 0.75rem 0.65rem;
+      font-size: 0.74rem;
+      color: rgba(255,247,237,0.58);
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .ps-legend-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-right: 0.7rem;
+    }
+    .ps-legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .ps-legend-swatch.expected { background: #60a5fa; }
+    .ps-legend-swatch.observed { background: #f59e0b; }
+    .ps-coin {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 35% 35%, #fde68a, #f59e0b 58%, #b45309 100%);
+      color: #261607;
+      font-weight: 900;
+      font-size: 1.05rem;
+      letter-spacing: 0.04em;
+      box-shadow: inset 0 0 0 4px rgba(255,255,255,0.28), 0 16px 34px rgba(0,0,0,0.28);
+    }
+    .ps-card-reveal {
+      width: 120px;
+      height: 162px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fffaf0, #fde68a);
+      color: #24160a;
+      box-shadow: 0 18px 36px rgba(0,0,0,0.32);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0.85rem;
+      font-weight: 800;
+    }
+    .ps-card-reveal .minor { font-size: 0.78rem; opacity: 0.7; }
+    .ps-card-reveal .major { font-size: 1.55rem; }
+    .ps-weather-chip {
+      min-width: 170px;
+      border-radius: 18px;
+      padding: 1rem 1.15rem;
+      background: linear-gradient(135deg, rgba(59,130,246,0.22), rgba(14,165,233,0.12));
+      border: 1px solid rgba(125,211,252,0.24);
+      text-align: center;
+      box-shadow: 0 16px 34px rgba(0,0,0,0.2);
+    }
+    .ps-weather-chip .icon { font-size: 2rem; margin-bottom: 0.35rem; }
+    .ps-weather-chip .label { font-size: 1rem; font-weight: 800; color: #e0f2fe; }
+    .ps-dice-wrap {
+      display: flex;
+      gap: 0.85rem;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .ps-die-face {
+      width: 86px;
+      height: 86px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fff7ed, #fed7aa);
+      color: #1f1309;
+      display: grid;
+      place-items: center;
+      font-size: 2rem;
+      font-weight: 900;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.28);
+    }
+    .ps-dice-sum {
+      font-family: "IBM Plex Mono", monospace;
+      color: #fde68a;
+      font-size: 0.95rem;
+      text-align: center;
+      width: 100%;
+    }
+    .ps-spinner-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .ps-spinner-svg {
+      width: min(220px, 72vw);
+      height: auto;
+      filter: drop-shadow(0 16px 34px rgba(0,0,0,0.26));
+    }
+    .ps-marble-scene {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .ps-bag {
+      width: 170px;
+      min-height: 110px;
+      border-radius: 24px 24px 30px 30px;
+      padding: 0.85rem 0.8rem 1rem;
+      background: linear-gradient(180deg, #7c2d12, #431407);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.35rem;
+      align-items: flex-end;
+      position: relative;
+      box-shadow: 0 18px 36px rgba(0,0,0,0.28);
+    }
+    .ps-bag::before {
+      content: "";
+      position: absolute;
+      top: -10px;
+      left: 18px;
+      right: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: #92400e;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .ps-marble {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      box-shadow: inset -5px -5px 10px rgba(0,0,0,0.15), inset 4px 4px 10px rgba(255,255,255,0.18);
+    }
+    .ps-marble.selected {
+      transform: translateY(-10px) scale(1.12);
+      outline: 2px solid rgba(255,255,255,0.52);
+    }
+    .ps-stage-animate { animation: ps-pop-in 600ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .ps-spin-animate { animation: ps-spin-in 1100ms cubic-bezier(0.16, 1, 0.3, 1); transform-origin: center center; }
+    .ps-roll-animate { animation: ps-roll-in 850ms cubic-bezier(0.22, 1, 0.36, 1); }
+    @keyframes ps-pop-in {
+      0% { opacity: 0; transform: translateY(18px) scale(0.86); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes ps-spin-in {
+      0% { opacity: 0; transform: rotate(-540deg) scale(0.6); }
+      100% { opacity: 1; transform: rotate(0deg) scale(1); }
+    }
+    @keyframes ps-roll-in {
+      0% { opacity: 0; transform: translateY(-10px) rotate(-24deg) scale(0.75); }
+      65% { transform: translateY(6px) rotate(7deg) scale(1.04); }
+      100% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+    }
+
+    .ps-question-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.8rem;
+    }
+    .ps-question {
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.18);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #3f4f65;
+    }
+    [data-theme="night"] .ps-question { color: rgba(245,245,247,0.75); }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ps-page">
+          <section class="hero ps-hero">
+            <p class="eyebrow">Mathematics · Lesson 04</p>
+            <h1>Probability Simulator</h1>
+            <div class="ps-hero-meta">
+              <span>Probability</span>
+              <span class="dot"></span>
+              <span>Statistics</span>
+              <span class="dot"></span>
+              <span>Relative Frequency</span>
+              <span class="dot"></span>
+              <span>Law of Large Numbers</span>
+            </div>
+            <p class="ps-lede">Probability often feels surprising because small samples are noisy. This lesson turns chance into something students can see. By running many virtual coin flips, dice rolls, and card draws, they compare what should happen in theory with what actually happens in practice, and watch experimental probability settle toward expected probability over time.</p>
+            <a class="ps-back-link" href="../steam-lessons.html#module-math">&larr; Back to Mathematics</a>
+          </section>
+
+          <section class="ps-card" style="--card-accent:#f59e0b;">
+            <h2>Lesson Launchpad</h2>
+            <p>This lesson is built to work as a fast middle school introduction, a high school statistics warm-up, or a hands-on intervention for students who confuse a short run of outcomes with true probability. The simulator does the repetition for them so class time can focus on noticing patterns, making claims, and defending them with data.</p>
+            <div class="ps-launch-grid">
+              <div class="ps-panel">
+                <p class="ps-mini-title">Students Should Leave Able To</p>
+                <ul class="ps-checklist">
+                  <li>distinguish theoretical probability from experimental probability.</li>
+                  <li>explain why small samples can look unfair even when a process is fair.</li>
+                  <li>use repeated trials to argue for the law of large numbers.</li>
+                  <li>read percentages, fractions, and counts from a simulation summary.</li>
+                </ul>
+              </div>
+              <div class="ps-panel">
+                <p class="ps-mini-title">5-Minute Start</p>
+                <ol class="ps-step-list">
+                  <li><span class="ps-step-num">1</span><span>Ask students whether 10 coin flips should always split into 5 heads and 5 tails.</span></li>
+                  <li><span class="ps-step-num">2</span><span>Run 10 flips, then 100, then 1000, and have students compare the percentages.</span></li>
+                  <li><span class="ps-step-num">3</span><span>Introduce the phrase "closer in the long run, not guaranteed in the short run."</span></li>
+                </ol>
+              </div>
+            </div>
+            <div class="ps-band-grid">
+              <article class="ps-band-card">
+                <span class="ps-band-tag">Grades 4-5</span>
+                <strong>Chance Noticer</strong>
+                <p>Use coins and colored suit categories. Focus on more likely, less likely, equally likely, and simple fractions like 1/2 and 1/4.</p>
+              </article>
+              <article class="ps-band-card">
+                <span class="ps-band-tag">Grades 6-8</span>
+                <strong>Data Interpreter</strong>
+                <p>Compare theoretical and experimental probability, calculate percentages, and explain why samples of 10 and 1000 tell different stories.</p>
+              </article>
+              <article class="ps-band-card">
+                <span class="ps-band-tag">Grades 9-12</span>
+                <strong>Statistical Thinker</strong>
+                <p>Discuss convergence, sample size, bias, independence, and why simulation is useful when an experiment is slow, expensive, or impractical.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="ps-lab" aria-labelledby="ps-lab-title">
+            <div class="ps-lab-badge">Interactive Lab</div>
+            <h2 id="ps-lab-title">Run the Probability Simulator</h2>
+            <p>Choose an experiment, set the number of trials, and compare the observed results to the expected probabilities. Use the checkpoint table to show students how the data stabilizes as the sample gets larger.</p>
+            <div class="ps-lab-grid">
+              <div class="ps-controls">
+                <label for="ps-experiment">Experiment</label>
+                <div class="ps-source-row" aria-label="Model source">
+                  <button id="ps-source-preset" class="ps-source-btn is-active" type="button">Preset experiments</button>
+                  <button id="ps-source-custom" class="ps-source-btn" type="button">Custom model</button>
+                </div>
+                <select id="ps-experiment" class="ps-select">
+                  <optgroup label="Fair Simple Events">
+                    <option value="coin">Coin flips</option>
+                    <option value="die">Dice rolls</option>
+                    <option value="card-suit">Card suit draws</option>
+                    <option value="card-red">Card draw: red card</option>
+                  </optgroup>
+                  <optgroup label="Unequal Events">
+                    <option value="biased-coin">Loaded coin</option>
+                    <option value="spinner-equal">Equal spinner</option>
+                    <option value="spinner-unequal">Unequal spinner</option>
+                    <option value="marbles">Marble bag</option>
+                    <option value="weather">Weather model</option>
+                  </optgroup>
+                  <optgroup label="Compound Events">
+                    <option value="two-dice-sum">Two dice sums</option>
+                    <option value="card-face">Card draw: face card</option>
+                  </optgroup>
+                </select>
+
+                <div id="ps-custom-panel" class="ps-custom-panel">
+                  <div class="ps-custom-head">
+                    Build a discrete probability space using outcome labels and whole-number weights. The simulator normalizes the weights for you, then uses the same engine as the preset experiments.
+                  </div>
+                  <div id="ps-custom-grid" class="ps-custom-grid"></div>
+                  <div class="ps-custom-actions">
+                    <button id="ps-add-outcome" class="ps-btn ps-btn-secondary" type="button">Add outcome</button>
+                  </div>
+                  <div class="ps-custom-mini">
+                    <div>
+                      <label for="ps-custom-tracked">Tracked event</label>
+                      <select id="ps-custom-tracked" class="ps-custom-select"></select>
+                    </div>
+                    <div>
+                      <label>Visualization</label>
+                      <div class="ps-radio-row">
+                        <label class="ps-radio-chip"><input type="radio" name="ps-custom-visual" value="coin" /> Coin</label>
+                        <label class="ps-radio-chip"><input type="radio" name="ps-custom-visual" value="spinner" checked /> Spinner</label>
+                        <label class="ps-radio-chip"><input type="radio" name="ps-custom-visual" value="marbles" /> Marble Bag</label>
+                      </div>
+                    </div>
+                    <div class="ps-custom-actions">
+                      <button id="ps-apply-custom" class="ps-btn ps-btn-primary" type="button">Apply model</button>
+                    </div>
+                  </div>
+                  <div id="ps-custom-feedback" class="ps-custom-feedback">
+                    Start with two to six outcomes. Integer weights like `3` and `7` work better than typing decimal probabilities.
+                  </div>
+                </div>
+
+                <div class="ps-range-wrap">
+                  <label for="ps-trials">Number of trials</label>
+                  <input id="ps-trials" class="ps-range" type="range" min="10" max="5000" step="10" value="1000" />
+                  <div class="ps-range-meta">
+                    <span>Short run: 10</span>
+                    <strong id="ps-trials-readout">1000 trials</strong>
+                    <span>Long run: 5000</span>
+                  </div>
+                </div>
+
+                <div class="ps-button-row">
+                  <button id="ps-run" class="ps-btn ps-btn-primary" type="button">Run many trials</button>
+                  <button id="ps-watch" class="ps-btn ps-btn-secondary" type="button">Watch one trial</button>
+                  <button id="ps-reset" class="ps-btn ps-btn-secondary" type="button">Reset</button>
+                </div>
+
+                <div class="ps-mode-row" aria-label="Lab mode">
+                  <button id="ps-mode-watch" class="ps-mode-btn" type="button">Watch one trial</button>
+                  <button id="ps-mode-many" class="ps-mode-btn is-active" type="button">Run many trials</button>
+                </div>
+
+                <div class="ps-button-row" aria-label="Quick presets">
+                  <button class="ps-btn-chip" type="button" data-exp="coin" data-trials="10">10 coin flips</button>
+                  <button class="ps-btn-chip" type="button" data-exp="coin" data-trials="1000">1000 coin flips</button>
+                  <button class="ps-btn-chip" type="button" data-exp="spinner-unequal" data-trials="800">Unequal spinner</button>
+                  <button class="ps-btn-chip" type="button" data-exp="marbles" data-trials="600">Marble bag</button>
+                  <button class="ps-btn-chip" type="button" data-exp="two-dice-sum" data-trials="720">Two dice sums</button>
+                  <button class="ps-btn-chip" type="button" data-exp="biased-coin" data-trials="1000">Loaded coin</button>
+                </div>
+
+                <div id="ps-model-note" class="ps-model-note">
+                  <strong>Current model</strong>
+                  A fair coin has two equally likely outcomes, so heads is expected about half the time in the long run.
+                </div>
+
+                <div class="ps-callout">
+                  <strong>Teacher move</strong>
+                  <p>Before clicking run, have students predict whether the experiment will look "fair." Afterward, ask whether their claim is based on counts, percentages, or both.</p>
+                </div>
+              </div>
+
+              <div class="ps-results">
+                <div class="ps-visual-stage">
+                  <div class="ps-stage-meta">
+                    <div class="ps-stage-label">Simulation reveal</div>
+                    <div id="ps-stage-status" class="ps-stage-status">Ready</div>
+                  </div>
+                  <div id="ps-stage-display" class="ps-stage-display" aria-live="polite"></div>
+                  <div id="ps-stage-note" class="ps-stage-note">The engine decides the result first. The animation only reveals that already-chosen outcome.</div>
+                </div>
+
+                <div class="ps-metrics">
+                  <div class="ps-metric">
+                    <div class="ps-metric-label">Tracked event</div>
+                    <div class="ps-metric-value" id="ps-event-name">Heads</div>
+                  </div>
+                  <div class="ps-metric">
+                    <div class="ps-metric-label">Expected</div>
+                    <div class="ps-metric-value" id="ps-expected">50.0%</div>
+                  </div>
+                  <div class="ps-metric">
+                    <div class="ps-metric-label">Observed</div>
+                    <div class="ps-metric-value" id="ps-observed">--</div>
+                  </div>
+                  <div class="ps-metric">
+                    <div class="ps-metric-label">Difference</div>
+                    <div class="ps-metric-value" id="ps-difference">--</div>
+                  </div>
+                </div>
+
+                <div class="ps-results-label">Outcome Distribution</div>
+                <div id="ps-bars" class="ps-bars" aria-live="polite"></div>
+
+                <div class="ps-results-label">Convergence Graph</div>
+                <div class="ps-graph-wrap">
+                  <svg id="ps-graph" class="ps-graph" viewBox="0 0 620 230" role="img" aria-label="Observed event rate compared with expected probability over time"></svg>
+                  <div class="ps-graph-caption">
+                    <div>
+                      <span class="ps-legend-chip"><span class="ps-legend-swatch expected"></span>Expected probability</span>
+                      <span class="ps-legend-chip"><span class="ps-legend-swatch observed"></span>Observed rate</span>
+                    </div>
+                    <div id="ps-graph-caption-text">Short runs wobble more. Larger samples usually settle closer to the expected line.</div>
+                  </div>
+                </div>
+
+                <div class="ps-results-label">Checkpoint Comparison</div>
+                <div class="ps-table-wrap">
+                  <table class="ps-table">
+                    <thead>
+                      <tr>
+                        <th>Trials</th>
+                        <th>Observed event rate</th>
+                        <th>Gap from expected</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ps-checkpoints"></tbody>
+                  </table>
+                </div>
+
+                <div id="ps-trend" class="ps-trend">Run a simulation to see how experimental probability changes as the sample grows.</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ps-card" style="--card-accent:#3b82f6;">
+            <h2>Teach the Math</h2>
+            <p><strong>Theoretical probability</strong> is what mathematics predicts before we experiment. For a fair coin, the probability of heads is 1/2. For a fair six-sided die, the probability of rolling a 6 is 1/6. For a draw where each suit is equally likely, the probability of hearts is 1/4.</p>
+            <p><strong>Experimental probability</strong> is what actually happened in your trials. If heads appears 47 times out of 100 coin flips, the experimental probability is 47/100, or 47%.</p>
+            <div class="ps-callout">
+              <strong>Core idea</strong>
+              <p>The law of large numbers says that as the number of trials gets larger, the experimental results tend to move closer to the theoretical probability. It does not say the results become perfect, and it does not say short runs have to look balanced.</p>
+            </div>
+            <div class="ps-vocab-grid">
+              <article class="ps-vocab-card">
+                <span class="ps-vocab-tag">Vocabulary</span>
+                <strong>Trial</strong>
+                <p>One single attempt in an experiment, like one flip or one roll.</p>
+              </article>
+              <article class="ps-vocab-card">
+                <span class="ps-vocab-tag">Vocabulary</span>
+                <strong>Relative frequency</strong>
+                <p>The fraction or percent of times an outcome appears in the data collected so far.</p>
+              </article>
+              <article class="ps-vocab-card">
+                <span class="ps-vocab-tag">Vocabulary</span>
+                <strong>Independent event</strong>
+                <p>One result does not change the probability of the next result in the same model.</p>
+              </article>
+              <article class="ps-vocab-card">
+                <span class="ps-vocab-tag">Misconception</span>
+                <strong>"It is overdue"</strong>
+                <p>A streak does not force the next outcome to compensate. That is the gambler's fallacy.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="ps-card" style="--card-accent:#8b5cf6;">
+            <h2>Suggested Lesson Sequence</h2>
+            <p>This structure fits a 40 to 50 minute period, but it can also expand into a two-day lesson by giving groups different experiments and requiring a short written claim backed by simulation data.</p>
+            <div class="ps-sequence-grid">
+              <article class="ps-sequence-card">
+                <span class="ps-sequence-time">5 min</span>
+                <strong>Hook</strong>
+                <p>Ask: "If I flip a coin 10 times, should I expect exactly 5 heads?" Let students commit to a prediction before seeing any data.</p>
+              </article>
+              <article class="ps-sequence-card">
+                <span class="ps-sequence-time">10 min</span>
+                <strong>Model</strong>
+                <p>Run the simulator at 10, 100, and 1000 trials. Compare the observed rate at each checkpoint and name the pattern out loud.</p>
+              </article>
+              <article class="ps-sequence-card">
+                <span class="ps-sequence-time">15 min</span>
+                <strong>Partner Investigation</strong>
+                <p>Pairs choose one experiment and complete a claim-evidence-reasoning response using counts, percentages, and the checkpoint table.</p>
+              </article>
+              <article class="ps-sequence-card">
+                <span class="ps-sequence-time">10 min</span>
+                <strong>Discussion</strong>
+                <p>Compare groups. Which experiment looked most stable early? Which needed more trials? Why do percentages matter more than raw counts?</p>
+              </article>
+              <article class="ps-sequence-card">
+                <span class="ps-sequence-time">5 min</span>
+                <strong>Exit Ticket</strong>
+                <p>Students explain why a fair process can produce uneven short-run data and how larger samples help.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="ps-card" style="--card-accent:#10b981;">
+            <h2>Discussion Prompts and Teacher Notes</h2>
+            <p>Use these questions to keep the lesson focused on reasoning, not just button clicking. Students should make a claim before the run, revise after the data, and connect what they saw to a probability principle.</p>
+            <div class="ps-question-grid">
+              <div class="ps-question">What looks more convincing: 6 heads in 10 flips, or 510 heads in 1000 flips? Why?</div>
+              <div class="ps-question">If two classes run the same simulation, should their counts match exactly? Should their percentages be close?</div>
+              <div class="ps-question">Why does a difference of 5 feel huge in 10 trials but tiny in 1000 trials?</div>
+              <div class="ps-question">How is simulation useful when a real experiment would take too long or cost too much?</div>
+            </div>
+            <div class="ps-callout">
+              <strong>Instructional note</strong>
+              <p>If students say the simulator is "wrong" because the outcomes are not perfectly balanced, redirect them to percentages and sample size. The tension between fairness and variation is the whole lesson.</p>
+            </div>
+          </section>
+
+          <section class="ps-card" style="--card-accent:#ef4444;">
+            <h2>Assessment and Extension</h2>
+            <div class="ps-assessment-grid">
+              <article class="ps-assessment-card">
+                <strong>Quick formative check</strong>
+                <p>Show 8 heads in 10 flips and ask whether the coin must be unfair. Students should answer no and justify using sample size.</p>
+              </article>
+              <article class="ps-assessment-card">
+                <strong>Written response</strong>
+                <p>"How did the simulation support the law of large numbers? Use one exact percentage from your run as evidence."</p>
+              </article>
+              <article class="ps-assessment-card">
+                <strong>Extension task</strong>
+                <p>Have students design a new experiment such as a spinner, raffle, or weather model and predict its long-run behavior before coding it.</p>
+              </article>
+            </div>
+            <div class="ps-extension-grid">
+              <article class="ps-extension-card">
+                <strong>Science connection</strong>
+                <p>Connect to genetics, radioactive decay, or particle detection where outcomes are probabilistic but patterns emerge over many observations.</p>
+              </article>
+              <article class="ps-extension-card">
+                <strong>Computer science connection</strong>
+                <p>Introduce simulation as a tool when direct calculation is hard, especially in AI, games, and Monte Carlo methods.</p>
+              </article>
+              <article class="ps-extension-card">
+                <strong>Data literacy connection</strong>
+                <p>Discuss why polls and surveys need enough responses, and why small samples can create misleading headlines.</p>
+              </article>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var SVG_NS = 'http://www.w3.org/2000/svg';
+
+      function weightedSample(weights) {
+        var roll = Math.random();
+        var total = 0;
+        for (var i = 0; i < weights.length; i += 1) {
+          total += weights[i];
+          if (roll < total) return i;
+        }
+        return weights.length - 1;
+      }
+
+      function createExperiment(definition) {
+        var outcomes = definition.outcomes.map(function (outcome, index) {
+          return {
+            key: outcome.key,
+            label: outcome.label,
+            weight: outcome.weight,
+            color: outcome.color || '#f59e0b',
+            index: index,
+            icon: outcome.icon || '',
+            short: outcome.short || outcome.label,
+            meta: outcome.meta || {}
+          };
+        });
+
+        var trackedIndex = outcomes.findIndex(function (outcome) {
+          return outcome.key === definition.trackedEvent;
+        });
+
+        return {
+          id: definition.id,
+          label: definition.label,
+          family: definition.family,
+          description: definition.description,
+          modelNote: definition.modelNote || definition.description,
+          replacementNote: definition.replacementNote || '',
+          outcomes: outcomes,
+          trackedEvent: definition.trackedEvent,
+          trackedIndex: trackedIndex < 0 ? 0 : trackedIndex,
+          expectedProbability: definition.expectedProbability,
+          runTrial: definition.runTrial || function () {
+            return { outcomeIndex: weightedSample(outcomes.map(function (outcome) { return outcome.weight; })) };
+          }
+        };
+      }
+
+      var experiments = {
+        coin: createExperiment({
+          id: 'coin',
+          label: 'Coin flips',
+          family: 'binary',
+          trackedEvent: 'heads',
+          expectedProbability: 0.5,
+          description: 'A fair coin has two equally likely outcomes, so heads is expected about half the time in the long run.',
+          outcomes: [
+            { key: 'heads', label: 'Heads', weight: 0.5, color: '#f59e0b', short: 'H' },
+            { key: 'tails', label: 'Tails', weight: 0.5, color: '#cbd5e1', short: 'T' }
+          ]
+        }),
+        die: createExperiment({
+          id: 'die',
+          label: 'Dice rolls',
+          family: 'rolling',
+          trackedEvent: '6',
+          expectedProbability: 1 / 6,
+          description: 'A fair die gives each face the same probability, but one chosen face like 6 still appears only about one sixth of the time.',
+          outcomes: ['1', '2', '3', '4', '5', '6'].map(function (face, index) {
+            return { key: face, label: face, weight: 1 / 6, color: index === 5 ? '#f59e0b' : '#94a3b8', meta: { face: face } };
+          })
+        }),
+        'card-suit': createExperiment({
+          id: 'card-suit',
+          label: 'Card suit draws',
+          family: 'draw',
+          trackedEvent: 'hearts',
+          expectedProbability: 0.25,
+          description: 'Each suit is equally likely in this model, so hearts should settle near one quarter of all draws.',
+          modelNote: 'This card model uses draws with replacement, so each trial starts fresh and the probabilities stay constant from one draw to the next.',
+          outcomes: [
+            { key: 'hearts', label: 'Hearts', weight: 0.25, color: '#ef4444', short: '♥', meta: { symbol: '♥' } },
+            { key: 'diamonds', label: 'Diamonds', weight: 0.25, color: '#fb7185', short: '♦', meta: { symbol: '♦' } },
+            { key: 'clubs', label: 'Clubs', weight: 0.25, color: '#cbd5e1', short: '♣', meta: { symbol: '♣' } },
+            { key: 'spades', label: 'Spades', weight: 0.25, color: '#94a3b8', short: '♠', meta: { symbol: '♠' } }
+          ]
+        }),
+        'card-red': createExperiment({
+          id: 'card-red',
+          label: 'Card draw: red card',
+          family: 'binary',
+          trackedEvent: 'red',
+          expectedProbability: 0.5,
+          description: 'A standard deck has 26 red cards and 26 black cards, so the long-run rate should move toward one half.',
+          modelNote: 'This card model also uses replacement, so the denominator stays 52 every time and the expected probability remains fixed.',
+          outcomes: [
+            { key: 'red', label: 'Red', weight: 0.5, color: '#ef4444', short: 'Red' },
+            { key: 'black', label: 'Black', weight: 0.5, color: '#94a3b8', short: 'Black' }
+          ]
+        }),
+        'card-face': createExperiment({
+          id: 'card-face',
+          label: 'Card draw: face card',
+          family: 'binary',
+          trackedEvent: 'face',
+          expectedProbability: 12 / 52,
+          description: 'There are 12 face cards in a 52-card deck, so this event is less common than many students first expect.',
+          modelNote: 'Face card draws are modeled with replacement here, which keeps each trial independent and makes the long-run pattern easier to compare.',
+          outcomes: [
+            { key: 'face', label: 'Face card', weight: 12 / 52, color: '#8b5cf6', short: 'JQK' },
+            { key: 'not-face', label: 'Not face card', weight: 40 / 52, color: '#cbd5e1', short: 'Other' }
+          ]
+        }),
+        'biased-coin': createExperiment({
+          id: 'biased-coin',
+          label: 'Loaded coin',
+          family: 'binary',
+          trackedEvent: 'heads',
+          expectedProbability: 0.6,
+          description: 'This coin is not fair: heads has a 60% chance, so the simulator helps students see how bias changes the expected rate.',
+          outcomes: [
+            { key: 'heads', label: 'Heads', weight: 0.6, color: '#f59e0b', short: 'H' },
+            { key: 'tails', label: 'Tails', weight: 0.4, color: '#cbd5e1', short: 'T' }
+          ]
+        }),
+        'spinner-equal': createExperiment({
+          id: 'spinner-equal',
+          label: 'Equal spinner',
+          family: 'rotational',
+          trackedEvent: 'red',
+          expectedProbability: 0.25,
+          description: 'An equal spinner gives each color the same share, making it a strong visual model for one-fourth probabilities.',
+          outcomes: [
+            { key: 'red', label: 'Red', weight: 0.25, color: '#ef4444' },
+            { key: 'blue', label: 'Blue', weight: 0.25, color: '#3b82f6' },
+            { key: 'green', label: 'Green', weight: 0.25, color: '#22c55e' },
+            { key: 'yellow', label: 'Yellow', weight: 0.25, color: '#eab308' }
+          ]
+        }),
+        'spinner-unequal': createExperiment({
+          id: 'spinner-unequal',
+          label: 'Unequal spinner',
+          family: 'rotational',
+          trackedEvent: 'red',
+          expectedProbability: 0.5,
+          description: 'This spinner is weighted by slice size: red is one half, blue one fourth, and green and yellow one eighth each.',
+          outcomes: [
+            { key: 'red', label: 'Red', weight: 0.5, color: '#ef4444' },
+            { key: 'blue', label: 'Blue', weight: 0.25, color: '#3b82f6' },
+            { key: 'green', label: 'Green', weight: 0.125, color: '#22c55e' },
+            { key: 'yellow', label: 'Yellow', weight: 0.125, color: '#eab308' }
+          ]
+        }),
+        marbles: createExperiment({
+          id: 'marbles',
+          label: 'Marble bag',
+          family: 'draw-set',
+          trackedEvent: 'red',
+          expectedProbability: 0.5,
+          description: 'This bag models draws with replacement from 3 red, 2 blue, and 1 green marble, linking fractions and ratios to chance.',
+          modelNote: 'The marbles are drawn with replacement in this lesson version, so the probabilities stay fixed while students focus on relative frequency.',
+          outcomes: [
+            { key: 'red', label: 'Red', weight: 3 / 6, color: '#ef4444' },
+            { key: 'blue', label: 'Blue', weight: 2 / 6, color: '#3b82f6' },
+            { key: 'green', label: 'Green', weight: 1 / 6, color: '#22c55e' }
+          ]
+        }),
+        weather: createExperiment({
+          id: 'weather',
+          label: 'Weather model',
+          family: 'binary',
+          trackedEvent: 'sunny',
+          expectedProbability: 0.5,
+          description: 'A simple forecast model shows how probability can describe real-world systems, not just games or cards.',
+          outcomes: [
+            { key: 'sunny', label: 'Sunny', weight: 0.5, color: '#f59e0b', icon: '☀️' },
+            { key: 'cloudy', label: 'Cloudy', weight: 0.3, color: '#94a3b8', icon: '☁️' },
+            { key: 'rainy', label: 'Rainy', weight: 0.2, color: '#38bdf8', icon: '🌧️' }
+          ]
+        }),
+        'two-dice-sum': createExperiment({
+          id: 'two-dice-sum',
+          label: 'Two dice sums',
+          family: 'rolling-pair',
+          trackedEvent: '7',
+          expectedProbability: 6 / 36,
+          description: 'Two-dice sums are not equally likely. Seven has the most combinations, which makes it a powerful lesson in compound probability.',
+          outcomes: ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map(function (sum) {
+            var counts = { '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 5, '9': 4, '10': 3, '11': 2, '12': 1 };
+            return { key: sum, label: sum, weight: counts[sum] / 36, color: sum === '7' ? '#f59e0b' : '#cbd5e1', meta: { sum: sum } };
+          }),
+          runTrial: function () {
+            var first = Math.floor(Math.random() * 6) + 1;
+            var second = Math.floor(Math.random() * 6) + 1;
+            return { outcomeIndex: (first + second) - 2, meta: { dice: [first, second], sum: first + second } };
+          }
+        })
+      };
+
+      var experimentSelect = document.getElementById('ps-experiment');
+      var trialsInput = document.getElementById('ps-trials');
+      var trialsReadout = document.getElementById('ps-trials-readout');
+      var sourcePresetBtn = document.getElementById('ps-source-preset');
+      var sourceCustomBtn = document.getElementById('ps-source-custom');
+      var customPanel = document.getElementById('ps-custom-panel');
+      var customGrid = document.getElementById('ps-custom-grid');
+      var customTrackedSelect = document.getElementById('ps-custom-tracked');
+      var customFeedback = document.getElementById('ps-custom-feedback');
+      var addOutcomeBtn = document.getElementById('ps-add-outcome');
+      var applyCustomBtn = document.getElementById('ps-apply-custom');
+      var runBtn = document.getElementById('ps-run');
+      var watchBtn = document.getElementById('ps-watch');
+      var resetBtn = document.getElementById('ps-reset');
+      var modeWatchBtn = document.getElementById('ps-mode-watch');
+      var modeManyBtn = document.getElementById('ps-mode-many');
+      var eventName = document.getElementById('ps-event-name');
+      var expectedNode = document.getElementById('ps-expected');
+      var observedNode = document.getElementById('ps-observed');
+      var differenceNode = document.getElementById('ps-difference');
+      var barsNode = document.getElementById('ps-bars');
+      var checkpointsNode = document.getElementById('ps-checkpoints');
+      var trendNode = document.getElementById('ps-trend');
+      var modelNoteNode = document.getElementById('ps-model-note');
+      var stageDisplayNode = document.getElementById('ps-stage-display');
+      var stageStatusNode = document.getElementById('ps-stage-status');
+      var stageNoteNode = document.getElementById('ps-stage-note');
+      var graphNode = document.getElementById('ps-graph');
+      var graphCaptionNode = document.getElementById('ps-graph-caption-text');
+      var currentMode = 'many';
+      var currentSource = 'preset';
+      var currentCustomExperiment = null;
+      var customOutcomeId = 0;
+
+      function formatPercent(value) {
+        return (value * 100).toFixed(1) + '%';
+      }
+
+      function formatGap(value) {
+        var sign = value > 0 ? '+' : '';
+        return sign + (value * 100).toFixed(1) + ' pts';
+      }
+
+      function getConfig() {
+        return currentSource === 'custom' && currentCustomExperiment ? currentCustomExperiment : experiments[experimentSelect.value];
+      }
+
+      function updateReadout() {
+        trialsReadout.textContent = Number(trialsInput.value).toLocaleString() + ' trials';
+      }
+
+      function setMode(mode) {
+        currentMode = mode;
+        modeWatchBtn.classList.toggle('is-active', mode === 'watch');
+        modeManyBtn.classList.toggle('is-active', mode === 'many');
+      }
+
+      function setSource(source) {
+        currentSource = source;
+        sourcePresetBtn.classList.toggle('is-active', source === 'preset');
+        sourceCustomBtn.classList.toggle('is-active', source === 'custom');
+        customPanel.classList.toggle('is-active', source === 'custom');
+        experimentSelect.disabled = source === 'custom';
+      }
+
+      function createCustomRow(label, weight) {
+        customOutcomeId += 1;
+        var row = document.createElement('div');
+        row.className = 'ps-custom-row';
+        row.dataset.rowId = String(customOutcomeId);
+        row.innerHTML =
+          '<input class="ps-custom-input ps-custom-label" type="text" maxlength="18" placeholder="Outcome label" value="' + label + '" />' +
+          '<input class="ps-custom-input ps-custom-weight" type="number" min="1" step="1" value="' + weight + '" />' +
+          '<button class="ps-remove-row" type="button" aria-label="Remove outcome">-</button>';
+        customGrid.appendChild(row);
+      }
+
+      function getCustomRows() {
+        return Array.prototype.slice.call(customGrid.querySelectorAll('.ps-custom-row'));
+      }
+
+      function syncCustomTrackedOptions() {
+        var rows = getCustomRows();
+        var previous = customTrackedSelect.value;
+        customTrackedSelect.innerHTML = '';
+        rows.forEach(function (row, index) {
+          var labelInput = row.querySelector('.ps-custom-label');
+          var option = document.createElement('option');
+          option.value = String(index);
+          option.textContent = labelInput.value.trim() || ('Outcome ' + (index + 1));
+          customTrackedSelect.appendChild(option);
+        });
+        if (previous && Number(previous) < rows.length) {
+          customTrackedSelect.value = previous;
+        }
+        rows.forEach(function (row) {
+          row.querySelector('.ps-remove-row').disabled = rows.length <= 2;
+        });
+      }
+
+      function setCustomFeedback(message, tone) {
+        customFeedback.textContent = message;
+        customFeedback.style.background = tone === 'error' ? 'rgba(239,68,68,0.10)' : 'rgba(14,165,233,0.08)';
+        customFeedback.style.borderColor = tone === 'error' ? 'rgba(239,68,68,0.22)' : 'rgba(14,165,233,0.18)';
+        customFeedback.style.color = tone === 'error' ? '#fee2e2' : '#dbeafe';
+      }
+
+      function getSelectedCustomVisual() {
+        var checked = document.querySelector('input[name="ps-custom-visual"]:checked');
+        return checked ? checked.value : 'spinner';
+      }
+
+      function buildCustomExperiment() {
+        var rows = getCustomRows();
+        var outcomes = [];
+        var trackedIndex = Number(customTrackedSelect.value || 0);
+        var visual = getSelectedCustomVisual();
+
+        if (rows.length < 2) {
+          setCustomFeedback('Add at least two outcomes before applying a custom model.', 'error');
+          return null;
+        }
+
+        for (var i = 0; i < rows.length; i += 1) {
+          var label = rows[i].querySelector('.ps-custom-label').value.trim();
+          var weight = Number(rows[i].querySelector('.ps-custom-weight').value);
+          if (!label) {
+            setCustomFeedback('Every outcome needs a label so students can interpret the event space clearly.', 'error');
+            return null;
+          }
+          if (!Number.isFinite(weight) || weight <= 0 || Math.floor(weight) !== weight) {
+            setCustomFeedback('Use whole-number weights like 3 and 7 instead of decimals or zeros.', 'error');
+            return null;
+          }
+          outcomes.push({
+            key: 'custom-' + i,
+            label: label,
+            weight: weight,
+            color: ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#8b5cf6', '#f97316', '#06b6d4', '#f43f5e'][i % 8],
+            short: label.slice(0, 10)
+          });
+        }
+
+        if (visual === 'coin' && outcomes.length !== 2) {
+          setCustomFeedback('Coin visualization works only with exactly two outcomes. Use spinner or marble bag for three or more.', 'error');
+          return null;
+        }
+
+        var totalWeight = outcomes.reduce(function (sum, outcome) { return sum + outcome.weight; }, 0);
+        var normalized = outcomes.map(function (outcome) {
+          return {
+            key: outcome.key,
+            label: outcome.label,
+            weight: outcome.weight / totalWeight,
+            color: outcome.color,
+            short: outcome.short
+          };
+        });
+
+        var family = visual === 'coin' ? 'binary' : (visual === 'marbles' ? 'draw-set' : 'rotational');
+        var trackedKey = normalized[Math.max(0, Math.min(trackedIndex, normalized.length - 1))].key;
+        var trackedOutcome = normalized[Math.max(0, Math.min(trackedIndex, normalized.length - 1))];
+
+        return createExperiment({
+          id: 'custom-model',
+          label: 'Custom model',
+          family: family,
+          trackedEvent: trackedKey,
+          expectedProbability: trackedOutcome.weight,
+          description: 'Student-defined model built from weighted outcomes.',
+          modelNote: 'This custom model was built from whole-number weights. The simulator converts them into probabilities by dividing each weight by the total weight.'
+            + ' Tracked event: ' + trackedOutcome.label + ' = ' + rows[Math.max(0, Math.min(trackedIndex, rows.length - 1))].querySelector('.ps-custom-weight').value + '/' + totalWeight + '.',
+          outcomes: normalized
+        });
+      }
+
+      function checkpointTargets(trials) {
+        var seeds = [10, 20, 50, 100, 250, 500, 1000, 2500, 5000];
+        var seen = {};
+        var values = [];
+        seeds.forEach(function (n) {
+          if (n <= trials && !seen[n]) {
+            seen[n] = true;
+            values.push(n);
+          }
+        });
+        if (!seen[trials]) values.push(trials);
+        return values;
+      }
+
+      function simulateTrials(config, trials) {
+        var counts = new Array(config.outcomes.length).fill(0);
+        var eventHits = 0;
+        var targets = checkpointTargets(trials);
+        var targetIndex = 0;
+        var checkpoints = [];
+        var eventSeries = [];
+        var representativeTrial = null;
+
+        for (var i = 1; i <= trials; i += 1) {
+          var trial = config.runTrial();
+          counts[trial.outcomeIndex] += 1;
+          if (trial.outcomeIndex === config.trackedIndex) eventHits += 1;
+
+          var observed = eventHits / i;
+          eventSeries.push({ trial: i, observed: observed });
+          representativeTrial = { outcomeIndex: trial.outcomeIndex, meta: trial.meta || {} };
+
+          if (i === targets[targetIndex]) {
+            checkpoints.push({ trial: i, observed: observed });
+            targetIndex += 1;
+          }
+        }
+
+        return {
+          config: config,
+          trials: trials,
+          counts: counts,
+          observed: eventHits / trials,
+          checkpoints: checkpoints,
+          eventSeries: eventSeries,
+          representativeTrial: representativeTrial
+        };
+      }
+
+      function createSvgNode(tag, attrs) {
+        var node = document.createElementNS(SVG_NS, tag);
+        Object.keys(attrs).forEach(function (key) {
+          node.setAttribute(key, attrs[key]);
+        });
+        return node;
+      }
+
+      function sampleSeriesForGraph(series) {
+        if (series.length <= 120) return series;
+        var sampled = [];
+        var step = Math.ceil(series.length / 120);
+        for (var i = 0; i < series.length; i += step) sampled.push(series[i]);
+        if (sampled[sampled.length - 1].trial !== series[series.length - 1].trial) {
+          sampled.push(series[series.length - 1]);
+        }
+        return sampled;
+      }
+
+      function renderGraph(series, expectedProbability) {
+        graphNode.innerHTML = '';
+        var width = 620;
+        var height = 230;
+        var padding = { top: 18, right: 18, bottom: 30, left: 38 };
+        var chartWidth = width - padding.left - padding.right;
+        var chartHeight = height - padding.top - padding.bottom;
+        var sampled = sampleSeriesForGraph(series);
+
+        [0, 0.25, 0.5, 0.75, 1].forEach(function (tick) {
+          var y = padding.top + chartHeight - (tick * chartHeight);
+          graphNode.appendChild(createSvgNode('line', {
+            x1: padding.left, y1: y, x2: width - padding.right, y2: y,
+            stroke: 'rgba(255,255,255,0.08)', 'stroke-width': 1
+          }));
+          var label = createSvgNode('text', {
+            x: 10, y: y + 4, fill: 'rgba(255,247,237,0.45)', 'font-size': 10, 'font-family': 'IBM Plex Mono, monospace'
+          });
+          label.textContent = Math.round(tick * 100) + '%';
+          graphNode.appendChild(label);
+        });
+
+        graphNode.appendChild(createSvgNode('line', {
+          x1: padding.left, y1: height - padding.bottom, x2: width - padding.right, y2: height - padding.bottom,
+          stroke: 'rgba(255,255,255,0.16)', 'stroke-width': 1.2
+        }));
+        graphNode.appendChild(createSvgNode('line', {
+          x1: padding.left, y1: padding.top, x2: padding.left, y2: height - padding.bottom,
+          stroke: 'rgba(255,255,255,0.16)', 'stroke-width': 1.2
+        }));
+
+        var expectedY = padding.top + chartHeight - (expectedProbability * chartHeight);
+        graphNode.appendChild(createSvgNode('line', {
+          x1: padding.left, y1: expectedY, x2: width - padding.right, y2: expectedY,
+          stroke: '#60a5fa', 'stroke-width': 2, 'stroke-dasharray': '5 5'
+        }));
+
+        if (!sampled.length) return;
+
+        var points = sampled.map(function (point, index) {
+          var x = padding.left + ((sampled.length === 1 ? 1 : index / (sampled.length - 1)) * chartWidth);
+          var y = padding.top + chartHeight - (point.observed * chartHeight);
+          return x + ',' + y;
+        }).join(' ');
+
+        graphNode.appendChild(createSvgNode('polyline', {
+          points: points,
+          fill: 'none',
+          stroke: '#f59e0b',
+          'stroke-width': 3,
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round'
+        }));
+      }
+
+      function renderAnimation(config, trialData, mode) {
+        var outcome = config.outcomes[trialData.outcomeIndex];
+        stageDisplayNode.innerHTML = '';
+
+        if (config.family === 'binary') {
+          if (config.id.indexOf('card') === 0) {
+            var card = document.createElement('div');
+            card.className = 'ps-card-reveal ps-stage-animate';
+            card.style.color = outcome.color;
+            card.innerHTML = '<div class="minor">Draw result</div><div class="major">' + outcome.short + '</div><div class="minor">' + outcome.label + '</div>';
+            stageDisplayNode.appendChild(card);
+          } else if (config.id === 'weather') {
+            var weather = document.createElement('div');
+            weather.className = 'ps-weather-chip ps-stage-animate';
+            weather.innerHTML = '<div class="icon">' + outcome.icon + '</div><div class="label">' + outcome.label + '</div>';
+            stageDisplayNode.appendChild(weather);
+          } else {
+            var coin = document.createElement('div');
+            coin.className = 'ps-coin ps-spin-animate';
+            coin.textContent = outcome.label;
+            stageDisplayNode.appendChild(coin);
+          }
+        } else if (config.family === 'rolling') {
+          var dieWrap = document.createElement('div');
+          dieWrap.className = 'ps-dice-wrap';
+          var die = document.createElement('div');
+          die.className = 'ps-die-face ps-roll-animate';
+          die.textContent = outcome.meta.face || outcome.label;
+          dieWrap.appendChild(die);
+          stageDisplayNode.appendChild(dieWrap);
+        } else if (config.family === 'rolling-pair') {
+          var pairWrap = document.createElement('div');
+          pairWrap.className = 'ps-dice-wrap';
+          var first = document.createElement('div');
+          first.className = 'ps-die-face ps-roll-animate';
+          first.textContent = trialData.meta.dice[0];
+          var second = document.createElement('div');
+          second.className = 'ps-die-face ps-roll-animate';
+          second.textContent = trialData.meta.dice[1];
+          var sum = document.createElement('div');
+          sum.className = 'ps-dice-sum';
+          sum.textContent = 'Sum = ' + trialData.meta.sum;
+          pairWrap.appendChild(first);
+          pairWrap.appendChild(second);
+          pairWrap.appendChild(sum);
+          stageDisplayNode.appendChild(pairWrap);
+        } else if (config.family === 'rotational') {
+          var spinnerWrap = document.createElement('div');
+          spinnerWrap.className = 'ps-spinner-wrap';
+          var svg = createSvgNode('svg', { viewBox: '0 0 220 220', class: 'ps-spinner-svg ps-spin-animate' });
+          var start = -Math.PI / 2;
+          config.outcomes.forEach(function (slice) {
+            var end = start + (Math.PI * 2 * slice.weight);
+            var x1 = 110 + 86 * Math.cos(start);
+            var y1 = 110 + 86 * Math.sin(start);
+            var x2 = 110 + 86 * Math.cos(end);
+            var y2 = 110 + 86 * Math.sin(end);
+            var largeArc = (end - start) > Math.PI ? 1 : 0;
+            svg.appendChild(createSvgNode('path', {
+              d: 'M110,110 L' + x1 + ',' + y1 + ' A86,86 0 ' + largeArc + ' 1 ' + x2 + ',' + y2 + ' Z',
+              fill: slice.color,
+              stroke: 'rgba(255,255,255,0.3)',
+              'stroke-width': 1.5
+            }));
+            start = end;
+          });
+          svg.appendChild(createSvgNode('circle', { cx: 110, cy: 110, r: 18, fill: '#fff7ed', stroke: 'rgba(0,0,0,0.18)' }));
+          svg.appendChild(createSvgNode('polygon', { points: '110,8 101,28 119,28', fill: '#fff7ed' }));
+          spinnerWrap.appendChild(svg);
+          var label = document.createElement('div');
+          label.className = 'ps-stage-status';
+          label.textContent = 'Pointer landed on ' + outcome.label;
+          spinnerWrap.appendChild(label);
+          stageDisplayNode.appendChild(spinnerWrap);
+        } else if (config.family === 'draw-set') {
+          var scene = document.createElement('div');
+          scene.className = 'ps-marble-scene';
+          var bag = document.createElement('div');
+          bag.className = 'ps-bag';
+          config.outcomes.forEach(function (item) {
+            var count = Math.round(item.weight * 6);
+            for (var i = 0; i < count; i += 1) {
+              var marble = document.createElement('div');
+              marble.className = 'ps-marble' + (item.key === outcome.key && i === 0 ? ' selected ps-stage-animate' : '');
+              marble.style.background = item.color;
+              bag.appendChild(marble);
+            }
+          });
+          scene.appendChild(bag);
+          var marbleLabel = document.createElement('div');
+          marbleLabel.className = 'ps-stage-status';
+          marbleLabel.textContent = 'Selected marble: ' + outcome.label;
+          scene.appendChild(marbleLabel);
+          stageDisplayNode.appendChild(scene);
+        }
+
+        stageStatusNode.textContent = mode === 'watch' ? 'One trial revealed' : 'Representative trial revealed';
+        stageNoteNode.textContent = mode === 'watch'
+          ? 'This single animation shows one already-chosen result. Use it for prediction, discussion, and noticing how noisy short runs can be.'
+          : 'For long runs, the simulator computes every result first, then shows one representative reveal while the graph and summaries carry the statistical meaning.';
+      }
+
+      function renderResults(summary, mode) {
+        var config = summary.config;
+        eventName.textContent = config.outcomes[config.trackedIndex].label;
+        expectedNode.textContent = formatPercent(config.expectedProbability);
+        observedNode.textContent = formatPercent(summary.observed);
+        differenceNode.textContent = formatGap(summary.observed - config.expectedProbability);
+        modelNoteNode.innerHTML = '<strong>Current model</strong>' + config.modelNote;
+
+        renderAnimation(config, summary.representativeTrial, mode);
+
+        barsNode.innerHTML = '';
+        summary.counts.forEach(function (count, index) {
+          var outcome = config.outcomes[index];
+          var row = document.createElement('div');
+          row.className = 'ps-bar-row';
+
+          var label = document.createElement('div');
+          label.className = 'ps-bar-label';
+          label.textContent = outcome.label;
+
+          var track = document.createElement('div');
+          track.className = 'ps-bar-track';
+          var stack = document.createElement('div');
+          stack.className = 'ps-bar-stack';
+          var expected = document.createElement('div');
+          expected.className = 'ps-bar-fill-expected';
+          expected.style.setProperty('--expected-left', (outcome.weight * 100).toFixed(1) + '%');
+          var fill = document.createElement('div');
+          fill.className = 'ps-bar-fill';
+          fill.style.width = ((count / summary.trials) * 100).toFixed(1) + '%';
+          fill.style.background = 'linear-gradient(90deg, ' + outcome.color + ', #fde68a)';
+          stack.appendChild(expected);
+          stack.appendChild(fill);
+          track.appendChild(stack);
+
+          var value = document.createElement('div');
+          value.className = 'ps-bar-value';
+          value.textContent = count + ' (' + formatPercent(count / summary.trials) + ')';
+
+          row.appendChild(label);
+          row.appendChild(track);
+          row.appendChild(value);
+          barsNode.appendChild(row);
+        });
+
+        renderGraph(summary.eventSeries, config.expectedProbability);
+        graphCaptionNode.textContent = mode === 'watch'
+          ? 'With one trial, the observed line can only jump to 0% or 100%.'
+          : 'As the number of trials grows, the observed line usually oscillates less and drifts toward the expected line.';
+
+        checkpointsNode.innerHTML = '';
+        summary.checkpoints.forEach(function (point) {
+          var row = document.createElement('tr');
+          var trialCell = document.createElement('td');
+          var observedCell = document.createElement('td');
+          var gapCell = document.createElement('td');
+          trialCell.textContent = point.trial.toLocaleString();
+          observedCell.textContent = formatPercent(point.observed);
+          gapCell.textContent = formatGap(point.observed - config.expectedProbability);
+          row.appendChild(trialCell);
+          row.appendChild(observedCell);
+          row.appendChild(gapCell);
+          checkpointsNode.appendChild(row);
+        });
+
+        var firstObserved = summary.checkpoints.length ? summary.checkpoints[0].observed : summary.observed;
+        var finalGap = Math.abs(summary.observed - config.expectedProbability);
+        var firstGap = Math.abs(firstObserved - config.expectedProbability);
+        var trend = finalGap <= firstGap
+          ? 'This run supports the law of large numbers: the gap from expected probability narrowed as the sample grew.'
+          : 'This run still shows noise, but compare the early checkpoints with the final line: larger samples usually give a steadier estimate than smaller ones.';
+
+        if (mode === 'watch') {
+          trend = 'A single trial is not enough to estimate a probability well. One outcome can feel dramatic, but it tells you almost nothing by itself about the long-run pattern.';
+        }
+
+        trendNode.textContent = trend + ' Final observed rate for ' + config.outcomes[config.trackedIndex].label.toLowerCase() + ' was ' + formatPercent(summary.observed) + ' compared with an expected rate of ' + formatPercent(config.expectedProbability) + '.';
+      }
+
+      function renderEmptyState() {
+        var config = getConfig();
+        eventName.textContent = config.outcomes[config.trackedIndex].label;
+        expectedNode.textContent = formatPercent(config.expectedProbability);
+        observedNode.textContent = '--';
+        differenceNode.textContent = '--';
+        modelNoteNode.innerHTML = '<strong>Current model</strong>' + config.modelNote;
+        barsNode.innerHTML = '';
+        checkpointsNode.innerHTML = '<tr><td colspan="3">Run a simulation to fill in the table.</td></tr>';
+        trendNode.textContent = 'Run a simulation to see how experimental probability changes as the sample grows.';
+        stageStatusNode.textContent = 'Ready';
+        stageDisplayNode.innerHTML = '';
+        stageNoteNode.textContent = 'The engine decides the result first. The animation only reveals that already-chosen outcome.';
+        renderGraph([], config.expectedProbability);
+        graphCaptionNode.textContent = 'Short runs wobble more. Larger samples usually settle closer to the expected line.';
+      }
+
+      function runSimulation(modeOverride) {
+        var mode = modeOverride || currentMode;
+        var config = getConfig();
+        var trials = mode === 'watch' ? 1 : Number(trialsInput.value);
+        renderResults(simulateTrials(config, trials), mode);
+      }
+
+      document.querySelectorAll('.ps-btn-chip').forEach(function (button) {
+        button.addEventListener('click', function () {
+          setSource('preset');
+          experimentSelect.value = button.getAttribute('data-exp');
+          trialsInput.value = button.getAttribute('data-trials');
+          updateReadout();
+          runSimulation(currentMode);
+        });
+      });
+
+      experimentSelect.addEventListener('change', function () {
+        setSource('preset');
+        renderEmptyState();
+      });
+      trialsInput.addEventListener('input', updateReadout);
+      sourcePresetBtn.addEventListener('click', function () {
+        setSource('preset');
+        renderEmptyState();
+      });
+      sourceCustomBtn.addEventListener('click', function () {
+        setSource('custom');
+        if (!currentCustomExperiment) {
+          currentCustomExperiment = buildCustomExperiment();
+        }
+        renderEmptyState();
+      });
+      addOutcomeBtn.addEventListener('click', function () {
+        if (getCustomRows().length >= 8) {
+          setCustomFeedback('Keep the custom model to eight outcomes or fewer so the visualization stays readable.', 'error');
+          return;
+        }
+        createCustomRow('', 1);
+        syncCustomTrackedOptions();
+        setCustomFeedback('Added a new outcome row. Integer weights make the long-run ratios easier to interpret.', 'info');
+      });
+      customGrid.addEventListener('input', function (event) {
+        if (event.target.classList.contains('ps-custom-label')) syncCustomTrackedOptions();
+      });
+      customGrid.addEventListener('click', function (event) {
+        if (!event.target.classList.contains('ps-remove-row')) return;
+        var row = event.target.closest('.ps-custom-row');
+        if (row && getCustomRows().length > 2) {
+          row.remove();
+          syncCustomTrackedOptions();
+          setCustomFeedback('Outcome removed. Recheck the tracked event before applying the model.', 'info');
+        }
+      });
+      applyCustomBtn.addEventListener('click', function () {
+        var model = buildCustomExperiment();
+        if (!model) return;
+        currentCustomExperiment = model;
+        setSource('custom');
+        setCustomFeedback('Custom model applied. Now the simulator is running your probability space instead of a preset.', 'info');
+        renderEmptyState();
+        runSimulation(currentMode);
+      });
+      runBtn.addEventListener('click', function () {
+        setMode('many');
+        runSimulation('many');
+      });
+      watchBtn.addEventListener('click', function () {
+        setMode('watch');
+        runSimulation('watch');
+      });
+      modeWatchBtn.addEventListener('click', function () { setMode('watch'); });
+      modeManyBtn.addEventListener('click', function () { setMode('many'); });
+      resetBtn.addEventListener('click', function () {
+        trialsInput.value = 1000;
+        experimentSelect.value = 'coin';
+        setMode('many');
+        setSource('preset');
+        updateReadout();
+        renderEmptyState();
+      });
+
+      createCustomRow('Heads', 1);
+      createCustomRow('Tails', 1);
+      syncCustomTrackedOptions();
+      currentCustomExperiment = buildCustomExperiment();
+      updateReadout();
+      setMode('many');
+      setSource('preset');
+      renderEmptyState();
+      runSimulation('many');
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
