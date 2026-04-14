@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quantum Qubits · Interactive Bloch Sphere Lab</title>
+  <meta name="description" content="Explore quantum qubits with an interactive Bloch sphere. Rotate quantum states, apply quantum gates, and visualize superposition and measurement probabilities." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      color: #e6f2ff;
+      background:
+        radial-gradient(1100px 540px at 10% -10%, rgba(69, 201, 255, 0.16), transparent 54%),
+        radial-gradient(900px 480px at 100% 0%, rgba(101, 120, 255, 0.16), transparent 50%),
+        linear-gradient(180deg, #06111c 0%, #091626 48%, #0d1020 100%);
+    }
+    .quantum-shell {
+      width: min(1380px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.15rem 0 2.2rem;
+    }
+    .quantum-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(14px) saturate(145%);
+      background: rgba(7, 14, 25, 0.84);
+      border-bottom: 1px solid rgba(135, 198, 255, 0.14);
+    }
+    .quantum-topbar-inner {
+      width: min(1380px, calc(100% - 2rem));
+      min-height: 54px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .quantum-topbar a {
+      color: #b8ddff;
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+    .quantum-topbar a:hover { color: #ffffff; }
+    .quantum-brand {
+      color: #eff8ff;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .quantum-hero {
+      display: grid;
+      gap: 0.85rem;
+      max-width: 860px;
+      padding: 1rem 0 1.2rem;
+    }
+    .quantum-hero h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4.5vw, 3.4rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      color: #ffffff;
+    }
+    .quantum-hero p {
+      margin: 0;
+      color: rgba(228, 241, 255, 0.8);
+      line-height: 1.7;
+      max-width: 74ch;
+    }
+    .quantum-eyebrow,
+    .quantum-pill {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      min-height: 1.9rem;
+      padding: 0.3rem 0.78rem;
+      border-radius: 999px;
+      border: 1px solid rgba(145, 220, 255, 0.22);
+      background: rgba(9, 20, 34, 0.72);
+      color: #bcefff;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .quantum-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.24fr) minmax(310px, 0.88fr);
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 1040px) {
+      .quantum-layout { grid-template-columns: 1fr; }
+    }
+    .quantum-card,
+    .quantum-info-card {
+      border-radius: 24px;
+      border: 1px solid rgba(136, 196, 255, 0.16);
+      background: rgba(8, 16, 30, 0.76);
+      box-shadow: 0 24px 48px rgba(2, 8, 16, 0.28);
+      backdrop-filter: blur(14px);
+    }
+    .quantum-card { overflow: hidden; }
+    .quantum-stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      min-height: 560px;
+    }
+    @media (max-width: 860px) {
+      .quantum-stage { grid-template-columns: 1fr; }
+    }
+    .quantum-canvas-panel {
+      position: relative;
+      min-height: 360px;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(117, 206, 255, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(6, 25, 44, 0.94), rgba(6, 14, 28, 0.98));
+      border-right: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    @media (max-width: 860px) {
+      .quantum-canvas-panel {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      }
+    }
+    .quantum-canvas-head {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 2;
+      display: grid;
+      gap: 0.45rem;
+      pointer-events: none;
+    }
+    .quantum-canvas-head p {
+      margin: 0;
+      max-width: 30ch;
+      color: rgba(220, 238, 255, 0.72);
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+    #blochCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 560px;
+    }
+    .quantum-controls {
+      padding: 1rem;
+      display: grid;
+      gap: 0.95rem;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(123, 118, 255, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(8, 14, 26, 0.96), rgba(10, 16, 28, 0.98));
+    }
+    .quantum-controls h2,
+    .quantum-info-card h2,
+    .quantum-info-card h3 {
+      margin: 0;
+      color: #f4fbff;
+      letter-spacing: -0.02em;
+    }
+    .quantum-controls p,
+    .quantum-info-card p,
+    .quantum-info-card li {
+      color: rgba(225, 239, 255, 0.8);
+      line-height: 1.65;
+    }
+    .quantum-controls p {
+      margin: 0;
+      font-size: 0.88rem;
+    }
+    .quantum-group {
+      display: grid;
+      gap: 0.6rem;
+      padding: 0.9rem;
+      border-radius: 18px;
+      border: 1px solid rgba(136, 196, 255, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .quantum-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #d7eeff;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .quantum-value {
+      color: #7fe3ff;
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: #58d8ff;
+    }
+    .quantum-button-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .quantum-button-grid button,
+    .quantum-actions button {
+      border: 1px solid rgba(132, 199, 255, 0.18);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(23, 62, 99, 0.86), rgba(11, 29, 47, 0.9));
+      color: #edf8ff;
+      padding: 0.72rem 0.76rem;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+    .quantum-button-grid button:hover,
+    .quantum-actions button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(140, 232, 255, 0.42);
+      background: linear-gradient(180deg, rgba(35, 85, 134, 0.92), rgba(11, 33, 52, 0.92));
+    }
+    .quantum-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .quantum-readout { display: grid; gap: 0.6rem; }
+    .quantum-metric {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 0.55rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      font-size: 0.86rem;
+    }
+    .quantum-metric strong {
+      color: #ffffff;
+      font-size: 0.95rem;
+      text-align: right;
+    }
+    .quantum-probabilities { display: grid; gap: 0.6rem; }
+    .quantum-prob-bar {
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      height: 12px;
+    }
+    .quantum-prob-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #6ddcff, #88a7ff);
+      width: 50%;
+      transition: width 0.2s ease;
+    }
+    .quantum-status {
+      margin: 0;
+      padding: 0.8rem 0.9rem;
+      border-radius: 16px;
+      background: rgba(123, 118, 255, 0.12);
+      border: 1px solid rgba(145, 168, 255, 0.16);
+      color: #eef3ff;
+      font-size: 0.84rem;
+    }
+    .quantum-info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    @media (max-width: 980px) {
+      .quantum-info-grid { grid-template-columns: 1fr; }
+    }
+    .quantum-info-card { padding: 1rem; }
+    .quantum-info-card ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .quantum-footer-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    @media (max-width: 980px) {
+      .quantum-footer-grid { grid-template-columns: 1fr; }
+    }
+    .quantum-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .quantum-table th,
+    .quantum-table td {
+      padding: 0.6rem 0;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      vertical-align: top;
+    }
+    .quantum-table th {
+      color: #9edfff;
+      font-size: 0.74rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+    .quantum-note {
+      color: rgba(205, 230, 255, 0.68);
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="quantum-topbar">
+    <div class="quantum-topbar-inner">
+      <a class="quantum-brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav aria-label="Primary">
+        <a href="../index.html">Home</a>
+        <a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a>
+        <a href="../showcase.html">Showcase</a>
+        <a href="../about.html">About</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main-content" class="quantum-shell">
+    <section class="quantum-hero">
+      <span class="quantum-eyebrow">Physics · Modern Quantum Computing · Quantum Mechanics</span>
+      <h1>Quantum Qubits: Understanding Superposition Through the Bloch Sphere</h1>
+      <p>The <strong>qubit</strong> is the fundamental unit of quantum computing—a quantum two-state system that can exist in <strong>superposition</strong>, blending 0 and 1 simultaneously. The <strong>Bloch sphere</strong> is a elegant 3D map that visualizes a qubit&rsquo;s state. In this lab, students rotate quantum states, apply gates, and discover how phase information—invisible to classical measurement but essential to quantum algorithms—shapes the qubit&rsquo;s behavior.</p>
+      <span class="quantum-pill">Starter idea: the arrow shows the qubit&rsquo;s state right now</span>
+    </section>
+
+    <section class="quantum-layout" aria-label="Bloch sphere lab">
+      <article class="quantum-card">
+        <div class="quantum-stage">
+          <section class="quantum-canvas-panel">
+            <div class="quantum-canvas-head">
+              <span class="quantum-pill">Interactive Bloch Sphere</span>
+              <p>North pole = |0⟩, south pole = |1⟩. The arrow&rsquo;s height sets measurement chances, and its twist around the sphere tracks relative phase.</p>
+            </div>
+            <canvas id="blochCanvas" width="840" height="600" aria-label="Bloch sphere visualization"></canvas>
+          </section>
+
+          <section class="quantum-controls">
+            <div>
+              <h2>State Controls</h2>
+              <p>Use the sliders to move the qubit directly, then compare that with standard quantum gates.</p>
+            </div>
+
+            <div class="quantum-group">
+              <label class="quantum-label" for="thetaSlider"><span>Polar Angle θ</span><span id="thetaValue" class="quantum-value">90°</span></label>
+              <input id="thetaSlider" type="range" min="0" max="180" step="1" value="90" />
+              <label class="quantum-label" for="phiSlider"><span>Azimuth φ</span><span id="phiValue" class="quantum-value">0°</span></label>
+              <input id="phiSlider" type="range" min="0" max="360" step="1" value="0" />
+            </div>
+
+            <div class="quantum-group">
+              <h3>Preset States</h3>
+              <div class="quantum-button-grid">
+                <button type="button" data-preset="zero">|0⟩</button>
+                <button type="button" data-preset="one">|1⟩</button>
+                <button type="button" data-preset="plus">|+⟩</button>
+                <button type="button" data-preset="minus">|-⟩</button>
+                <button type="button" data-preset="iplus">|i+⟩</button>
+                <button type="button" data-preset="iminus">|i-⟩</button>
+              </div>
+            </div>
+
+            <div class="quantum-group">
+              <h3>Apply Gates</h3>
+              <div class="quantum-button-grid">
+                <button type="button" data-gate="x">X</button>
+                <button type="button" data-gate="y">Y</button>
+                <button type="button" data-gate="z">Z</button>
+                <button type="button" data-gate="h">H</button>
+                <button type="button" data-gate="s">S</button>
+                <button type="button" data-gate="t">T</button>
+              </div>
+              <p class="quantum-note">X flips north to south, Z twists phase, and H turns a basis state into a balanced superposition.</p>
+            </div>
+
+            <div class="quantum-group quantum-readout">
+              <h3>Qubit Readout</h3>
+              <div class="quantum-metric"><span>State Vector</span><strong id="stateVector">|ψ⟩ = 0.707|0⟩ + 0.707e<sup>i0°</sup>|1⟩</strong></div>
+              <div class="quantum-metric"><span>Bloch Coordinates</span><strong id="blochCoords">(x, y, z) = (1.000, 0.000, 0.000)</strong></div>
+              <div class="quantum-probabilities">
+                <div class="quantum-metric"><span>Measure 0</span><strong id="probZero">50.0%</strong></div>
+                <div class="quantum-prob-bar" aria-hidden="true"><div id="probZeroBar" class="quantum-prob-fill"></div></div>
+                <div class="quantum-metric"><span>Measure 1</span><strong id="probOne">50.0%</strong></div>
+                <div class="quantum-prob-bar" aria-hidden="true"><div id="probOneBar" class="quantum-prob-fill"></div></div>
+              </div>
+              <div class="quantum-actions">
+                <button id="measureButton" type="button">Measure Once</button>
+                <button id="resetButton" type="button">Reset to |+⟩</button>
+              </div>
+              <p id="measureStatus" class="quantum-status" aria-live="polite">Balanced superposition loaded. Right now the qubit has a 50/50 chance of collapsing to |0⟩ or |1⟩.</p>
+            </div>
+          </section>
+        </div>
+      </article>
+
+      <aside class="quantum-info-card">
+        <h2>Teacher Lens</h2>
+        <p>This lesson works well as a first bridge between classical bits and quantum information. Students do not need full linear algebra first. The goal is conceptual fluency: <strong>state</strong>, <strong>superposition</strong>, <strong>phase</strong>, <strong>gate</strong>, and <strong>measurement</strong>.</p>
+        <table class="quantum-table" aria-label="Quick teaching guide">
+          <thead>
+            <tr><th>Term</th><th>Student-Friendly Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Qubit</td><td>A quantum two-state system that can be in a blend of 0 and 1 before measurement.</td></tr>
+            <tr><td>Bloch sphere</td><td>A map that turns one qubit&rsquo;s state into a direction in 3D space.</td></tr>
+            <tr><td>Phase</td><td>A hidden angle that does not change basic 0/1 odds by itself, but matters when gates interact states.</td></tr>
+            <tr><td>Measurement</td><td>The step that forces the qubit to give a classical result, either 0 or 1.</td></tr>
+          </tbody>
+        </table>
+      </aside>
+    </section>
+
+    <section class="quantum-info-grid">
+      <article class="quantum-info-card">
+        <h3>Why the Bloch Sphere?</h3>
+        <p>A qubit&rsquo;s state is a vector in a 2D complex space, but the <strong>Bloch sphere</strong> maps that onto a simple 3D surface. This visualization reveals how <strong>superposition</strong> (the arrow's height) and <strong>phase</strong> (its rotation around the axis) work together. By manipulating the sphere, students build intuition for why quantum gates are rotations and why measurement always yields a classical 0 or 1.</p>
+      </article>
+      <article class="quantum-info-card">
+        <h3>What Students Should Notice</h3>
+        <ul>
+          <li>Moving up and down the sphere changes the probability of measuring 0 or 1.</li>
+          <li>Moving around the equator changes phase more than probability.</li>
+          <li>Quantum gates are rotations, not just on/off switches.</li>
+        </ul>
+      </article>
+      <article class="quantum-info-card">
+        <h3>Fast Lab Prompts</h3>
+        <ul>
+          <li>Start at |0⟩. What does X do to the arrow and to the probabilities?</li>
+          <li>Compare |+⟩ and |i+⟩. Why are the probabilities the same even though the state changes?</li>
+          <li>Apply H twice. What happens and what does that suggest about reversible computing?</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="quantum-footer-grid">
+      <article class="quantum-info-card">
+        <h2>Suggested Exit Ticket</h2>
+        <p>Ask students to explain the difference between these two ideas in one paragraph: <strong>a qubit before measurement</strong> and <strong>a bit after measurement</strong>. Strong answers should mention superposition, probability, and the fact that measurement produces a classical result.</p>
+      </article>
+      <article class="quantum-info-card">
+        <h2>Connection to CS</h2>
+        <p>Students already know a classical bit can only be 0 or 1. This page adds one new mental model: a quantum operation is often best imagined as a <strong>rotation of a state</strong>. That idea prepares them for later units on gates, algorithms, and error correction.</p>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const thetaSlider = document.getElementById("thetaSlider");
+      const phiSlider = document.getElementById("phiSlider");
+      const thetaValue = document.getElementById("thetaValue");
+      const phiValue = document.getElementById("phiValue");
+      const stateVector = document.getElementById("stateVector");
+      const blochCoords = document.getElementById("blochCoords");
+      const probZero = document.getElementById("probZero");
+      const probOne = document.getElementById("probOne");
+      const probZeroBar = document.getElementById("probZeroBar");
+      const probOneBar = document.getElementById("probOneBar");
+      const measureStatus = document.getElementById("measureStatus");
+      const canvas = document.getElementById("blochCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const state = { theta: Math.PI / 2, phi: 0 };
+
+      function complex(re, im) { return { re, im }; }
+      function toComplex(value) { return typeof value === "number" ? complex(value, 0) : value; }
+      function cis(angle) { return complex(Math.cos(angle), Math.sin(angle)); }
+      function add(a, b) { return complex(a.re + b.re, a.im + b.im); }
+      function mul(a, b) { return complex(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re); }
+      function magnitudeSquared(a) { return a.re * a.re + a.im * a.im; }
+      function normalizeState(alpha, beta) {
+        const norm = Math.sqrt(magnitudeSquared(alpha) + magnitudeSquared(beta)) || 1;
+        return [complex(alpha.re / norm, alpha.im / norm), complex(beta.re / norm, beta.im / norm)];
+      }
+      function stateFromAngles(theta, phi) {
+        const alpha = complex(Math.cos(theta / 2), 0);
+        const beta = mul(cis(phi), complex(Math.sin(theta / 2), 0));
+        return [alpha, beta];
+      }
+      function anglesFromState(alpha, beta) {
+        const p1 = Math.min(1, Math.max(0, magnitudeSquared(beta)));
+        const theta = 2 * Math.asin(Math.sqrt(p1));
+        const phaseAlpha = Math.atan2(alpha.im, alpha.re);
+        const phaseBeta = Math.atan2(beta.im, beta.re);
+        let phi = phaseBeta - phaseAlpha;
+        while (phi < 0) phi += Math.PI * 2;
+        while (phi >= Math.PI * 2) phi -= Math.PI * 2;
+        return { theta, phi };
+      }
+      function formatPercent(value) { return (value * 100).toFixed(1) + "%"; }
+      function formatSigned(value) { return (value >= 0 ? "+" : "") + value.toFixed(3); }
+      function formatComplex(value) {
+        const re = Math.abs(value.re) < 0.0005 ? 0 : value.re;
+        const im = Math.abs(value.im) < 0.0005 ? 0 : value.im;
+        if (im === 0) return re.toFixed(3);
+        if (re === 0) return im.toFixed(3) + "i";
+        return re.toFixed(3) + (im >= 0 ? "+" : "") + im.toFixed(3) + "i";
+      }
+
+      const gateMatrices = {
+        x: [[0, 1], [1, 0]],
+        y: [[complex(0, 0), complex(0, -1)], [complex(0, 1), complex(0, 0)]],
+        z: [[1, 0], [0, -1]],
+        h: [[1 / Math.sqrt(2), 1 / Math.sqrt(2)], [1 / Math.sqrt(2), -1 / Math.sqrt(2)]],
+        s: [[1, 0], [0, complex(0, 1)]],
+        t: [[1, 0], [0, cis(Math.PI / 4)]]
+      };
+
+      function setAngles(theta, phi) {
+        state.theta = theta;
+        state.phi = phi;
+        thetaSlider.value = Math.round(theta * 180 / Math.PI);
+        phiSlider.value = Math.round(phi * 180 / Math.PI);
+        update();
+      }
+
+      function applyGate(name) {
+        const gate = gateMatrices[name];
+        const [alpha, beta] = stateFromAngles(state.theta, state.phi);
+        const a0 = toComplex(gate[0][0]);
+        const a1 = toComplex(gate[0][1]);
+        const b0 = toComplex(gate[1][0]);
+        const b1 = toComplex(gate[1][1]);
+        const nextAlpha = add(mul(a0, alpha), mul(a1, beta));
+        const nextBeta = add(mul(b0, alpha), mul(b1, beta));
+        const [normAlpha, normBeta] = normalizeState(nextAlpha, nextBeta);
+        const next = anglesFromState(normAlpha, normBeta);
+        setAngles(next.theta, next.phi);
+        measureStatus.textContent = "Applied gate " + name.toUpperCase() + ". Watch the arrow rotate, then compare the probabilities with the phase change.";
+      }
+
+      function setPreset(name) {
+        const presets = {
+          zero: { theta: 0, phi: 0, label: "Loaded |0⟩, the north pole state." },
+          one: { theta: Math.PI, phi: 0, label: "Loaded |1⟩, the south pole state." },
+          plus: { theta: Math.PI / 2, phi: 0, label: "Loaded |+⟩, a balanced superposition on the x-axis." },
+          minus: { theta: Math.PI / 2, phi: Math.PI, label: "Loaded |-⟩, balanced probabilities with opposite phase on the x-axis." },
+          iplus: { theta: Math.PI / 2, phi: Math.PI / 2, label: "Loaded |i+⟩, balanced probabilities with positive phase on the y-axis." },
+          iminus: { theta: Math.PI / 2, phi: 3 * Math.PI / 2, label: "Loaded |i-⟩, balanced probabilities with negative phase on the y-axis." }
+        };
+        const preset = presets[name];
+        if (!preset) return;
+        setAngles(preset.theta, preset.phi);
+        measureStatus.textContent = preset.label;
+      }
+
+      function measure() {
+        const p1 = Math.sin(state.theta / 2) ** 2;
+        const result = Math.random() < p1 ? 1 : 0;
+        setAngles(result === 0 ? 0 : Math.PI, 0);
+        measureStatus.textContent = "Measurement result: |" + result + "⟩. The qubit collapsed to a classical state after the measurement.";
+      }
+
+      function project(point, cx, cy, scale) {
+        const camera = 3.6;
+        const depth = camera / (camera - point.z);
+        return { x: cx + point.x * scale * depth, y: cy - point.y * scale * depth };
+      }
+
+      function drawSphere(vector) {
+        const width = canvas.width;
+        const height = canvas.height;
+        const cx = width * 0.48;
+        const cy = height * 0.55;
+        const radius = Math.min(width, height) * 0.24;
+        ctx.clearRect(0, 0, width, height);
+
+        const bg = ctx.createLinearGradient(0, 0, 0, height);
+        bg.addColorStop(0, "rgba(7, 18, 32, 0.1)");
+        bg.addColorStop(1, "rgba(7, 18, 32, 0.24)");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        const glow = ctx.createRadialGradient(0, -radius * 0.2, radius * 0.2, 0, 0, radius * 1.15);
+        glow.addColorStop(0, "rgba(103, 214, 255, 0.22)");
+        glow.addColorStop(1, "rgba(103, 214, 255, 0.02)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(196, 228, 255, 0.14)";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius, radius * 0.34, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(202, 234, 255, 0.26)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(132, 198, 255, 0.2)";
+        ctx.beginPath();
+        ctx.moveTo(0, -radius);
+        ctx.lineTo(0, radius);
+        ctx.moveTo(-radius, 0);
+        ctx.lineTo(radius, 0);
+        ctx.stroke();
+        ctx.restore();
+
+        const axisLength = radius * 1.22;
+        const xTip = project({ x: axisLength, y: 0, z: 0 }, cx, cy, 1);
+        const yTip = project({ x: 0, y: axisLength, z: 0 }, cx, cy, 1);
+        const zTip = project({ x: 0, y: 0, z: axisLength }, cx, cy, 1);
+        const zBottom = project({ x: 0, y: 0, z: -axisLength }, cx, cy, 1);
+
+        function axisLine(to, label, color) {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(to.x, to.y);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = color;
+          ctx.font = "700 16px Inter, system-ui, sans-serif";
+          ctx.fillText(label, to.x + 8, to.y + 4);
+        }
+
+        axisLine(xTip, "x", "#7fe3ff");
+        axisLine(yTip, "y", "#9db8ff");
+        axisLine(zTip, "|0⟩", "#b8ffdb");
+        axisLine(zBottom, "|1⟩", "#ffd1a6");
+
+        const tip = project({ x: vector.x * radius, y: vector.y * radius, z: vector.z * radius }, cx, cy, 1);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(tip.x, tip.y);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(tip.x, tip.y, 9, 0, Math.PI * 2);
+        ctx.fillStyle = "#6ff2ff";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.8)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.setLineDash([8, 7]);
+        ctx.moveTo(tip.x, tip.y);
+        ctx.lineTo(tip.x, cy);
+        ctx.strokeStyle = "rgba(166, 202, 255, 0.45)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "rgba(233, 245, 255, 0.92)";
+        ctx.font = "700 17px Inter, system-ui, sans-serif";
+        ctx.fillText("θ = " + vector.thetaDeg + "°", 22, 42);
+        ctx.fillText("φ = " + vector.phiDeg + "°", 22, 68);
+        ctx.font = "600 14px Inter, system-ui, sans-serif";
+        ctx.fillStyle = "rgba(215, 232, 255, 0.72)";
+        ctx.fillText("Rotate the arrow to change amplitudes and phase.", 22, height - 28);
+      }
+
+      function update() {
+        const thetaDeg = Math.round(state.theta * 180 / Math.PI);
+        const phiDeg = Math.round(state.phi * 180 / Math.PI);
+        const x = Math.sin(state.theta) * Math.cos(state.phi);
+        const y = Math.sin(state.theta) * Math.sin(state.phi);
+        const z = Math.cos(state.theta);
+        const alpha = complex(Math.cos(state.theta / 2), 0);
+        const beta = mul(cis(state.phi), complex(Math.sin(state.theta / 2), 0));
+        const p0 = magnitudeSquared(alpha);
+        const p1 = magnitudeSquared(beta);
+
+        thetaValue.textContent = thetaDeg + "°";
+        phiValue.textContent = phiDeg + "°";
+        stateVector.innerHTML = "|ψ⟩ = " + formatComplex(alpha) + "|0⟩ + " + Math.abs(Math.sin(state.theta / 2)).toFixed(3) + "e<sup>i" + phiDeg + "°</sup>|1⟩";
+        blochCoords.textContent = "(x, y, z) = (" + formatSigned(x) + ", " + formatSigned(y) + ", " + formatSigned(z) + ")";
+        probZero.textContent = formatPercent(p0);
+        probOne.textContent = formatPercent(p1);
+        probZeroBar.style.width = (p0 * 100).toFixed(1) + "%";
+        probOneBar.style.width = (p1 * 100).toFixed(1) + "%";
+        drawSphere({ x, y, z, thetaDeg, phiDeg });
+      }
+
+      thetaSlider.addEventListener("input", function () {
+        state.theta = Number(thetaSlider.value) * Math.PI / 180;
+        update();
+      });
+      phiSlider.addEventListener("input", function () {
+        state.phi = Number(phiSlider.value) * Math.PI / 180;
+        update();
+      });
+      document.querySelectorAll("[data-preset]").forEach(function (button) {
+        button.addEventListener("click", function () { setPreset(button.dataset.preset); });
+      });
+      document.querySelectorAll("[data-gate]").forEach(function (button) {
+        button.addEventListener("click", function () { applyGate(button.dataset.gate); });
+      });
+      document.getElementById("measureButton").addEventListener("click", measure);
+      document.getElementById("resetButton").addEventListener("click", function () { setPreset("plus"); });
+
+      update();
+    })();
+  </script>
+</body>
+</html>
