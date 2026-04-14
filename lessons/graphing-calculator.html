@@ -18,6 +18,12 @@
     .gc-canvas-wrap { max-height: calc(100dvh - 120px); aspect-ratio: 4/3; }
     /* ── Page ─────────────────────────────────────────────── */
     .gc-page { padding-bottom: 3.5rem; }
+    .gc-page-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-height: calc(100dvh - 150px);
+    }
 
     /* ── Hero ─────────────────────────────────────────────── */
     .gc-hero { padding: 0.4rem 0 1.35rem; text-align: left; }
@@ -30,6 +36,12 @@
     }
     .gc-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
     .gc-lede { max-width: 68ch; font-size: clamp(0.95rem, 1.6vw, 1.05rem); color: var(--text-muted, #6e6e73); margin: 0 0 1rem; line-height: 1.65; }
+    .gc-hook-strip {
+      margin: 0 0 0.9rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text, #1d1d1f);
+    }
     .gc-back-link { font-size: 0.82rem; font-weight: 600; color: var(--accent, #007aff); text-decoration: none; }
     .gc-back-link:hover { text-decoration: underline; }
 
@@ -373,6 +385,7 @@
       width: 100%;
       accent-color: #007aff;
     }
+    .gc-slider-card { display: block; }
     .gc-slider-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -485,6 +498,433 @@
       line-height: 1.55;
       color: var(--text-muted, #4a4a51);
     }
+    .gc-detail-section { display: none; }
+    .gc-focus-shell {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 0;
+      gap: 0;
+      align-items: start;
+      min-height: min(76dvh, 920px);
+    }
+    .gc-workstage {
+      min-height: min(76dvh, 920px);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .gc-dock {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      display: flex;
+      gap: 0.55rem;
+      z-index: 50;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: min(92vw, 380px);
+    }
+    .gc-dock-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      border: 1px solid rgba(0,122,255,0.16);
+      background: rgba(255,255,255,0.92);
+      color: var(--text, #1d1d1f);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(12px);
+    }
+    .gc-dock-btn.is-active,
+    .gc-dock-btn:hover {
+      border-color: #007aff;
+      color: #007aff;
+      transform: translateY(-1px);
+    }
+    .gc-sidepanel {
+      position: fixed;
+      top: 92px;
+      right: 18px;
+      width: min(380px, calc(100vw - 24px));
+      max-height: calc(100dvh - 170px);
+      overflow: auto;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(0,122,255,0.14);
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.18);
+      backdrop-filter: blur(14px);
+      z-index: 49;
+      display: none;
+    }
+    .gc-sidepanel.is-open { display: block; }
+    .gc-sidepanel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.95rem 1rem 0.7rem;
+      border-bottom: 1px solid var(--line, #d2d2d7);
+      position: sticky;
+      top: 0;
+      background: inherit;
+      z-index: 2;
+    }
+    .gc-sidepanel-head h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+    .gc-panel-close {
+      border: none;
+      background: transparent;
+      color: var(--text-muted, #6e6e73);
+      font-size: 1.15rem;
+      cursor: pointer;
+    }
+    .gc-sidepanel-body { padding: 0.95rem 1rem 1rem; }
+    .gc-mini-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .gc-mini-card {
+      background: var(--surface, #f5f5f7);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      padding: 0.9rem 0.95rem;
+    }
+    .gc-mini-card h4 {
+      margin: 0 0 0.3rem;
+      font-size: 0.92rem;
+    }
+    .gc-mini-card p {
+      margin: 0;
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+    .gc-picker-row,
+    .gc-achievement-list,
+    .gc-mission-list,
+    .gc-overlay-list,
+    .gc-hook-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .gc-picker-btn,
+    .gc-achievement-btn,
+    .gc-mission-launch,
+    .gc-overlay-btn,
+    .gc-hook-btn {
+      width: 100%;
+      text-align: left;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      border-radius: 12px;
+      padding: 0.72rem 0.82rem;
+      cursor: pointer;
+      font: inherit;
+    }
+    .gc-picker-btn strong,
+    .gc-achievement-btn strong,
+    .gc-mission-launch strong,
+    .gc-overlay-btn strong,
+    .gc-hook-btn strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.86rem;
+    }
+    .gc-picker-btn span,
+    .gc-achievement-btn span,
+    .gc-mission-launch span,
+    .gc-overlay-btn span,
+    .gc-hook-btn span {
+      display: block;
+      font-size: 0.79rem;
+      line-height: 1.45;
+      color: var(--text-muted, #5c5c62);
+    }
+    .gc-mission-prompt {
+      margin-top: 0.7rem;
+      padding: 0.8rem 0.9rem;
+      border-radius: 12px;
+      background: rgba(0,122,255,0.08);
+      border: 1px solid rgba(0,122,255,0.12);
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+    .gc-tip-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.7rem;
+    }
+    .gc-term-btn {
+      border: 1px solid rgba(0,122,255,0.18);
+      background: rgba(0,122,255,0.06);
+      color: #007aff;
+      border-radius: 999px;
+      padding: 0.36rem 0.7rem;
+      font-size: 0.77rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .gc-tooltip {
+      margin-top: 0.7rem;
+      padding: 0.8rem 0.9rem;
+      border-radius: 12px;
+      background: #0d0d14;
+      color: #f5f5f7;
+      display: none;
+    }
+    .gc-tooltip.is-open { display: block; }
+    .gc-tooltip strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 0.85rem;
+    }
+    .gc-tooltip p {
+      margin: 0;
+      font-size: 0.81rem;
+      line-height: 1.55;
+    }
+    .gc-elevator {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-top: -0.1rem;
+    }
+    .gc-elevator p {
+      margin: 0;
+      font-size: 0.84rem;
+      color: var(--text-muted, #5c5c62);
+      max-width: 60ch;
+    }
+    .gc-reveal-btn {
+      border: 1px solid rgba(0,122,255,0.18);
+      background: rgba(0,122,255,0.06);
+      color: #007aff;
+      border-radius: 999px;
+      padding: 0.42rem 0.8rem;
+      font-size: 0.79rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .gc-action-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      margin: 0 0 0.95rem;
+    }
+    .gc-action-input {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .gc-action-input input {
+      flex: 1 1 220px;
+      min-width: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.86rem;
+      padding: 0.58rem 0.7rem;
+      border-radius: 10px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+    }
+    .gc-action-row-label {
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted, #6e6e73);
+      margin: 0 0 0.12rem;
+    }
+    .gc-action-pills {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .gc-action-pill {
+      border: 1px solid rgba(0,122,255,0.18);
+      background: rgba(0,122,255,0.06);
+      color: #007aff;
+      border-radius: 999px;
+      padding: 0.42rem 0.74rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .gc-ti-shell {
+      display: grid;
+      grid-template-columns: minmax(320px, 410px) minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+      margin-bottom: 1rem;
+    }
+    .gc-ti-body {
+      background: linear-gradient(180deg, #2e3343 0%, #1f2430 100%);
+      border-radius: 26px;
+      padding: 1rem;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 24px 50px rgba(0,0,0,0.24);
+      color: #f5f7fb;
+    }
+    .gc-ti-brand {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(245,247,251,0.72);
+    }
+    .gc-ti-badge {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 0.25rem 0.55rem;
+      font-weight: 800;
+    }
+    .gc-ti-screen {
+      background: linear-gradient(180deg, #dfe7c8 0%, #c6d1aa 100%);
+      color: #1b2815;
+      border-radius: 14px;
+      padding: 0.85rem 0.9rem;
+      border: 3px solid rgba(19,29,13,0.18);
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.12);
+      min-height: 204px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .gc-ti-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+    }
+    .gc-ti-status-bits {
+      display: flex;
+      gap: 0.38rem;
+      flex-wrap: wrap;
+    }
+    .gc-ti-bit {
+      padding: 0.12rem 0.35rem;
+      border-radius: 999px;
+      background: rgba(27,40,21,0.08);
+      font-weight: 700;
+    }
+    .gc-ti-view-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+    .gc-ti-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.83rem;
+      line-height: 1.55;
+      min-height: 112px;
+      white-space: pre-wrap;
+    }
+    .gc-ti-entry {
+      margin-top: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      background: rgba(27,40,21,0.08);
+      border-radius: 10px;
+      padding: 0.5rem 0.55rem;
+      min-height: 2.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+    .gc-ti-entry-label {
+      font-weight: 800;
+      opacity: 0.78;
+    }
+    .gc-ti-keypad {
+      margin-top: 0.95rem;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+    .gc-ti-key {
+      border: none;
+      border-radius: 12px;
+      padding: 0.7rem 0.25rem;
+      min-height: 50px;
+      background: linear-gradient(180deg, #eef1f7 0%, #bfc6d4 100%);
+      color: #19202d;
+      font: 700 0.78rem/1 Inter, sans-serif;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.65), 0 8px 14px rgba(0,0,0,0.18);
+    }
+    .gc-ti-key.dark {
+      background: linear-gradient(180deg, #5a6172 0%, #3c4252 100%);
+      color: #f5f7fb;
+    }
+    .gc-ti-key.blue {
+      background: linear-gradient(180deg, #6db4ff 0%, #2e7fe7 100%);
+      color: #fff;
+    }
+    .gc-ti-key.gold {
+      background: linear-gradient(180deg, #ffd36e 0%, #e1a01d 100%);
+      color: #221b07;
+    }
+    .gc-ti-key.wide {
+      grid-column: span 2;
+    }
+    .gc-ti-minihelp {
+      margin-top: 0.75rem;
+      font-size: 0.76rem;
+      line-height: 1.5;
+      color: rgba(245,247,251,0.72);
+    }
+    .gc-graph-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .gc-table-panel {
+      background: var(--surface, #f5f5f7);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      padding: 0.85rem 0.95rem;
+      display: none;
+    }
+    .gc-table-panel.is-open { display: block; }
+    .gc-table-panel h3 {
+      margin: 0 0 0.45rem;
+      font-size: 0.94rem;
+    }
+    .gc-table-grid {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.77rem;
+    }
+    .gc-table-grid th,
+    .gc-table-grid td {
+      padding: 0.32rem 0.38rem;
+      border-bottom: 1px solid var(--line, #d2d2d7);
+      text-align: left;
+    }
+    .gc-table-grid tr:last-child td { border-bottom: none; }
 
     /* Layout: canvas left, controls right */
     .gc-layout {
@@ -772,6 +1212,11 @@
     [data-theme="night"] .gc-hook-card p,
     [data-theme="night"] .gc-data-card p,
     [data-theme="night"] .gc-link-card span,
+    [data-theme="night"] .gc-picker-btn span,
+    [data-theme="night"] .gc-achievement-btn span,
+    [data-theme="night"] .gc-mission-launch span,
+    [data-theme="night"] .gc-overlay-btn span,
+    [data-theme="night"] .gc-hook-btn span,
     [data-theme="night"] .gc-mission-note,
     [data-theme="night"] .gc-mission-btn span,
     [data-theme="night"] .gc-input-help,
@@ -781,6 +1226,22 @@
     [data-theme="night"] .gc-data-status { color: rgba(245,245,247,0.72); }
     [data-theme="night"] .gc-control-value,
     [data-theme="night"] .gc-toggle { color: #f5f5f7; }
+    [data-theme="night"] .gc-action-input input {
+      background: #2c2c2e;
+      border-color: #3a3a3c;
+      color: #f5f5f7;
+    }
+    [data-theme="night"] .gc-sidepanel,
+    [data-theme="night"] .gc-dock-btn,
+    [data-theme="night"] .gc-picker-btn,
+    [data-theme="night"] .gc-achievement-btn,
+    [data-theme="night"] .gc-mission-launch,
+    [data-theme="night"] .gc-overlay-btn,
+    [data-theme="night"] .gc-hook-btn,
+    [data-theme="night"] .gc-mini-card { background: rgba(28,28,30,0.96); border-color: #3a3a3c; color: #f5f5f7; }
+    [data-theme="night"] .gc-sidepanel-head { border-color: #3a3a3c; }
+    [data-theme="night"] .gc-tooltip { background: #111119; }
+    [data-theme="night"] .gc-elevator p { color: rgba(245,245,247,0.72); }
 
     /* ── Responsive ───────────────────────────────────────── */
     @media (max-width: 480px) {
@@ -791,6 +1252,20 @@
     }
     @media (max-width: 920px) {
       .gc-model-grid { grid-template-columns: 1fr; }
+      .gc-ti-shell { grid-template-columns: 1fr; }
+      .gc-dock {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+      }
+      .gc-sidepanel {
+        top: auto;
+        right: 12px;
+        left: 12px;
+        bottom: 74px;
+        width: auto;
+        max-height: min(60dvh, 520px);
+      }
     }
   </style>
 </head>
@@ -819,6 +1294,7 @@
   <div class="ll-stage">
   <div class="ll-sim">
   <main id="main-content" class="gc-page">
+    <div class="gc-page-shell">
 
     <!-- ── Hero ──────────────────────────────────────────── -->
     <section class="hero gc-hero">
@@ -833,12 +1309,37 @@
         <span class="dot"></span>
         <span>Graphing</span>
       </div>
-      <p class="gc-lede">Every equation tells a story. When you plot it on a coordinate plane, the numbers become a shape — a line, a curve, a wave. In this lesson you'll learn to read those shapes and use an interactive graphing calculator to explore them yourself.</p>
+      <p class="gc-hook-strip">Plot first. Then investigate what changed.</p>
+      <p class="gc-lede">Use the calculator immediately, notice a pattern, and open help only when you need an explanation.</p>
       <a class="gc-back-link" href="../steam-lessons.html#module-math">&larr; Back to Mathematics</a>
     </section>
 
+    <section class="gc-card gc-detail-section" style="--gc-accent:#0a84ff;">
+      <h2>Why Graphs Matter</h2>
+      <p>Students often meet graphs as pictures to decode. The deeper idea is stronger: a graph is a model. It compresses a relationship so you can see structure, make predictions, and test whether your equation matches reality.</p>
+      <div class="gc-anchor-quote">
+        <p><strong>A graph is not a picture.</strong><br />It is a <strong>compressed truth</strong> about a system.</p>
+      </div>
+      <div class="gc-anchor-grid">
+        <article class="gc-anchor-card">
+          <strong>Motion becomes parabolas</strong>
+          <p>A tossed ball rises, slows, turns, and falls. One curve captures the whole story, including the highest point and when it lands.</p>
+        </article>
+        <article class="gc-anchor-card">
+          <strong>Sound becomes sine waves</strong>
+          <p>Pitch, rhythm, and vibration repeat in patterns. A wave graph lets students see repetition instead of just hearing it.</p>
+        </article>
+        <article class="gc-anchor-card">
+          <strong>Growth becomes exponentials</strong>
+          <p>Populations, money, and spread can accelerate. A graph makes that changing rate visible before a table ever feels intuitive.</p>
+        </article>
+      </div>
+    </section>
+
     <!-- ── Lesson launchpad ─────────────────────────────── -->
-    <section class="gc-card" style="--gc-accent:#30b0c7;">
+    <div class="gc-focus-shell">
+    <div class="gc-workstage">
+    <section class="gc-card gc-detail-section" style="--gc-accent:#30b0c7;">
       <h2>Lesson Launchpad</h2>
       <p>To make this work across K&ndash;12, the lesson should start visual, stay hands-on, and scale upward into explanation and modeling. For primary learners, use the graph cards and mission buttons as a shape-matching activity; for older students, push toward coefficient analysis and real-world modeling.</p>
       <div class="gc-launch-grid">
@@ -1074,7 +1575,39 @@
     ════════════════════════════════════════════════════ -->
     <section class="gc-calc" id="gc-calculator">
       <h2>Graphing Calculator</h2>
+      <div class="gc-elevator">
+        <p>Graph first, then reveal support only when you need it. Type an equation, drag a slider, or launch a mission to make the math move before you explain it.</p>
+        <button class="gc-reveal-btn" id="gc-open-help" type="button">Open quick help</button>
+      </div>
       <p class="gc-calc-desc">Type an equation in terms of x, press <strong>Plot</strong> (or Enter), and it appears on the graph. Pan by dragging, zoom with scroll or the +/− buttons, and hover to read coordinates. The input now accepts more natural student typing like <code>2x + 1</code>, <code>y = x^2</code>, <code>|x|</code>, and <code>(x+1)(x-1)</code>.</p>
+
+      <div class="gc-action-row">
+        <div>
+          <p class="gc-action-row-label">Quick Plot</p>
+          <div class="gc-action-input">
+            <input id="gc-hero-input" type="text" placeholder="Type an equation like x^2, 2x+1, or sin(x)" autocomplete="off" spellcheck="false" />
+            <button class="gc-add-btn" id="gc-hero-plot-btn" type="button">Plot</button>
+          </div>
+        </div>
+        <div>
+          <p class="gc-action-row-label">Presets</p>
+          <div class="gc-action-pills">
+            <button class="gc-action-pill" type="button" data-hero-preset="x">y = x</button>
+            <button class="gc-action-pill" type="button" data-hero-preset="2*x+1">y = 2x + 1</button>
+            <button class="gc-action-pill" type="button" data-hero-preset="x^2">y = x²</button>
+            <button class="gc-action-pill" type="button" data-hero-preset="sin(x)">sin(x)</button>
+          </div>
+        </div>
+        <div>
+          <p class="gc-action-row-label">Missions</p>
+          <div class="gc-action-pills">
+            <button class="gc-action-pill" type="button" data-hero-mission="slope">Compare Slopes</button>
+            <button class="gc-action-pill" type="button" data-hero-mission="shift">Shift a Line</button>
+            <button class="gc-action-pill" type="button" data-hero-mission="wave">Wave Lab</button>
+            <button class="gc-action-pill" type="button" id="gc-hero-help-btn">Help</button>
+          </div>
+        </div>
+      </div>
 
       <div class="gc-mission-panel">
         <p class="gc-sidebar-label">Try These First</p>
@@ -1099,10 +1632,219 @@
         </div>
       </div>
 
-      <div class="gc-layout">
+      <div class="gc-model-studio" id="gc-model-studio">
+        <div class="gc-model-studio-head">
+          <div>
+            <p class="gc-sidebar-label">Modeling Studio</p>
+            <p>Use sliders to feel the math, lock every variable except one, and watch the graph explain itself with live annotations. Manual plotting still works below, but this layer turns the page into a guided pattern lab.</p>
+          </div>
+          <button class="gc-export-btn" id="gc-export-btn" type="button">Save graph as PNG</button>
+        </div>
 
-        <!-- Canvas side -->
-        <div>
+        <div class="gc-model-grid">
+          <div class="gc-model-panel">
+            <div class="gc-control-group">
+              <div class="gc-control-label"><span>Difficulty mode</span></div>
+              <div class="gc-chip-row" id="gc-mode-chips">
+                <button class="gc-chip is-active" type="button" data-mode="beginner">Beginner</button>
+                <button class="gc-chip" type="button" data-mode="intermediate">Intermediate</button>
+                <button class="gc-chip" type="button" data-mode="advanced">Advanced</button>
+              </div>
+            </div>
+
+            <div class="gc-control-group">
+              <div class="gc-control-label"><span>Function family</span></div>
+              <div class="gc-chip-row" id="gc-family-chips">
+                <button class="gc-chip is-active" type="button" data-family="linear">Line</button>
+                <button class="gc-chip" type="button" data-family="quadratic">Parabola</button>
+                <button class="gc-chip" type="button" data-family="trig">Wave</button>
+                <button class="gc-chip" type="button" data-family="data">Data</button>
+              </div>
+            </div>
+
+            <div class="gc-control-group">
+              <div class="gc-control-label"><span>Cause-and-effect lock</span></div>
+              <div class="gc-chip-row" id="gc-lock-chips">
+                <button class="gc-chip is-active" type="button" data-lock="none">Change anything</button>
+                <button class="gc-chip" type="button" data-lock="m">Only slope</button>
+                <button class="gc-chip" type="button" data-lock="b">Only intercept</button>
+                <button class="gc-chip" type="button" data-lock="a">Only amplitude</button>
+                <button class="gc-chip" type="button" data-lock="f">Only frequency</button>
+              </div>
+              <p class="gc-lock-note" id="gc-lock-note">Open exploration mode. Students can compare several changes at once.</p>
+            </div>
+
+            <div class="gc-control-group">
+              <div class="gc-slider-grid" id="gc-slider-groups">
+                <label class="gc-slider-card" data-families="linear">
+                  <div class="gc-control-label"><span>Slope (m)</span><span class="gc-control-value" id="gc-value-linear-m">1</span></div>
+                  <input class="gc-slider" id="gc-slider-linear-m" type="range" min="-5" max="5" step="0.1" value="1" />
+                </label>
+                <label class="gc-slider-card" data-families="linear">
+                  <div class="gc-control-label"><span>Intercept (b)</span><span class="gc-control-value" id="gc-value-linear-b">0</span></div>
+                  <input class="gc-slider" id="gc-slider-linear-b" type="range" min="-8" max="8" step="0.1" value="0" />
+                </label>
+
+                <label class="gc-slider-card" data-families="quadratic">
+                  <div class="gc-control-label"><span>Stretch / flip (a)</span><span class="gc-control-value" id="gc-value-quadratic-a">1</span></div>
+                  <input class="gc-slider" id="gc-slider-quadratic-a" type="range" min="-3" max="3" step="0.1" value="1" />
+                </label>
+                <label class="gc-slider-card" data-families="quadratic">
+                  <div class="gc-control-label"><span>Vertex x (h)</span><span class="gc-control-value" id="gc-value-quadratic-h">0</span></div>
+                  <input class="gc-slider" id="gc-slider-quadratic-h" type="range" min="-6" max="6" step="0.1" value="0" />
+                </label>
+                <label class="gc-slider-card" data-families="quadratic">
+                  <div class="gc-control-label"><span>Vertex y (k)</span><span class="gc-control-value" id="gc-value-quadratic-k">0</span></div>
+                  <input class="gc-slider" id="gc-slider-quadratic-k" type="range" min="-6" max="6" step="0.1" value="0" />
+                </label>
+
+                <label class="gc-slider-card" data-families="trig">
+                  <div class="gc-control-label"><span>Amplitude (a)</span><span class="gc-control-value" id="gc-value-trig-a">1</span></div>
+                  <input class="gc-slider" id="gc-slider-trig-a" type="range" min="0.2" max="5" step="0.1" value="1" />
+                </label>
+                <label class="gc-slider-card" data-families="trig">
+                  <div class="gc-control-label"><span>Frequency</span><span class="gc-control-value" id="gc-value-trig-f">1</span></div>
+                  <input class="gc-slider" id="gc-slider-trig-f" type="range" min="0.5" max="4" step="0.1" value="1" />
+                </label>
+                <label class="gc-slider-card" data-families="trig">
+                  <div class="gc-control-label"><span>Vertical shift</span><span class="gc-control-value" id="gc-value-trig-k">0</span></div>
+                  <input class="gc-slider" id="gc-slider-trig-k" type="range" min="-4" max="4" step="0.1" value="0" />
+                </label>
+              </div>
+            </div>
+
+            <div class="gc-control-group">
+              <div class="gc-control-label"><span>Active domain</span></div>
+              <div class="gc-slider-grid">
+                <label>
+                  <div class="gc-range-label"><span>Start x</span><span class="gc-control-value" id="gc-value-domain-min">-10</span></div>
+                  <input class="gc-slider" id="gc-domain-min" type="range" min="-10" max="9" step="1" value="-10" />
+                </label>
+                <label>
+                  <div class="gc-range-label"><span>End x</span><span class="gc-control-value" id="gc-value-domain-max">10</span></div>
+                  <input class="gc-slider" id="gc-domain-max" type="range" min="-9" max="10" step="1" value="10" />
+                </label>
+              </div>
+              <p class="gc-domain-note">Outside this interval, the modeling function fades out so students can see that equations can have limits as well as shapes.</p>
+            </div>
+
+            <div class="gc-control-group">
+              <div class="gc-control-label"><span>Live overlays</span></div>
+              <div class="gc-toggle-row">
+                <label class="gc-toggle"><input id="gc-toggle-annotations" type="checkbox" checked /> Show annotations</label>
+                <label class="gc-toggle"><input id="gc-toggle-intersections" type="checkbox" checked /> Show intersections</label>
+                <label class="gc-toggle"><input id="gc-toggle-animate" type="checkbox" /> Animate point</label>
+                <label class="gc-toggle"><input id="gc-toggle-invalid" type="checkbox" checked /> Shade invalid region</label>
+              </div>
+            </div>
+
+            <div class="gc-generated-eq" id="gc-generated-eq">y = x</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:0.9rem;">
+            <div class="gc-insight-panel">
+              <h3>What this change means</h3>
+              <p id="gc-insight-summary">Slope changes how fast the line rises or falls for every step to the right.</p>
+              <ul class="gc-insight-list" id="gc-insight-list">
+                <li>The highlighted point marks the y-intercept.</li>
+                <li>The triangle shows rise over run, so students can see slope instead of only computing it.</li>
+              </ul>
+            </div>
+
+            <div class="gc-data-panel">
+              <h3>Import Real Data</h3>
+              <p>Paste <code>x,y</code> pairs, one per line, then graph the data as points and a connected trend. This is the bridge from simulation to interpretation.</p>
+              <textarea id="gc-data-input" spellcheck="false" aria-label="Data points input">1,0.50
+2,0.50
+5,0.60
+10,0.70
+20,0.60
+50,0.54
+100,0.51</textarea>
+              <div class="gc-data-actions">
+                <button class="gc-data-btn primary" id="gc-import-data-btn" type="button">Import data</button>
+                <button class="gc-data-btn" id="gc-load-probability-btn" type="button">Load coin-flip sample</button>
+                <button class="gc-data-btn" id="gc-clear-data-btn" type="button">Clear data graph</button>
+              </div>
+              <div class="gc-data-status" id="gc-data-status">Sample convergence data is ready to import.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gc-ti-shell">
+        <div class="gc-ti-body">
+          <div class="gc-ti-brand">
+            <span>Classic Graphing Calculator</span>
+            <span class="gc-ti-badge">TI-inspired</span>
+          </div>
+          <div class="gc-ti-screen" id="gc-ti-screen">
+            <div class="gc-ti-status">
+              <div class="gc-ti-status-bits">
+                <span class="gc-ti-bit" id="gc-ti-bit-second">2nd</span>
+                <span class="gc-ti-bit" id="gc-ti-bit-alpha">Alpha</span>
+                <span class="gc-ti-bit" id="gc-ti-bit-angle">Deg</span>
+                <span class="gc-ti-bit" id="gc-ti-bit-mode">Home</span>
+              </div>
+              <span id="gc-ti-history-label">Ready</span>
+            </div>
+            <div class="gc-ti-view-title" id="gc-ti-view-title">HOME</div>
+            <div class="gc-ti-display" id="gc-ti-display">Use the keys to enter an expression, switch screens, or send Y1 to the graph.</div>
+            <div class="gc-ti-entry">
+              <span class="gc-ti-entry-label" id="gc-ti-entry-label">Input</span>
+              <span id="gc-ti-entry-text"></span>
+            </div>
+          </div>
+          <div class="gc-ti-keypad" id="gc-ti-keypad">
+            <button class="gc-ti-key gold" type="button" data-ti-key="SECOND">2nd</button>
+            <button class="gc-ti-key gold" type="button" data-ti-key="ALPHA">Alpha</button>
+            <button class="gc-ti-key dark" type="button" data-ti-key="MODE">Mode</button>
+            <button class="gc-ti-key dark" type="button" data-ti-key="DEL">Del</button>
+            <button class="gc-ti-key dark" type="button" data-ti-key="CLEAR">Clear</button>
+
+            <button class="gc-ti-key blue" type="button" data-ti-key="Y=">Y=</button>
+            <button class="gc-ti-key blue" type="button" data-ti-key="WINDOW">Window</button>
+            <button class="gc-ti-key blue" type="button" data-ti-key="ZOOM">Zoom</button>
+            <button class="gc-ti-key blue" type="button" data-ti-key="TRACE">Trace</button>
+            <button class="gc-ti-key blue" type="button" data-ti-key="GRAPH">Graph</button>
+
+            <button class="gc-ti-key dark" type="button" data-ti-key="TABLE">Table</button>
+            <button class="gc-ti-key" type="button" data-ti-key="(">(</button>
+            <button class="gc-ti-key" type="button" data-ti-key=")">)</button>
+            <button class="gc-ti-key" type="button" data-ti-key="^">x^y</button>
+            <button class="gc-ti-key" type="button" data-ti-key="/">÷</button>
+
+            <button class="gc-ti-key" type="button" data-ti-key="sin(">sin</button>
+            <button class="gc-ti-key" type="button" data-ti-key="cos(">cos</button>
+            <button class="gc-ti-key" type="button" data-ti-key="log(">log</button>
+            <button class="gc-ti-key" type="button" data-ti-key="X">X,T,θ,n</button>
+            <button class="gc-ti-key" type="button" data-ti-key="*">×</button>
+
+            <button class="gc-ti-key" type="button" data-ti-key="7">7</button>
+            <button class="gc-ti-key" type="button" data-ti-key="8">8</button>
+            <button class="gc-ti-key" type="button" data-ti-key="9">9</button>
+            <button class="gc-ti-key" type="button" data-ti-key="-">−</button>
+            <button class="gc-ti-key wide dark" type="button" data-ti-key="ENTER">Enter</button>
+
+            <button class="gc-ti-key" type="button" data-ti-key="4">4</button>
+            <button class="gc-ti-key" type="button" data-ti-key="5">5</button>
+            <button class="gc-ti-key" type="button" data-ti-key="6">6</button>
+            <button class="gc-ti-key" type="button" data-ti-key="+">+</button>
+
+            <button class="gc-ti-key" type="button" data-ti-key="1">1</button>
+            <button class="gc-ti-key" type="button" data-ti-key="2">2</button>
+            <button class="gc-ti-key" type="button" data-ti-key="3">3</button>
+            <button class="gc-ti-key" type="button" data-ti-key=".">.</button>
+            <button class="gc-ti-key dark wide" type="button" data-ti-key="HOME">Home</button>
+
+            <button class="gc-ti-key wide" type="button" data-ti-key="0">0</button>
+            <button class="gc-ti-key" type="button" data-ti-key="pi">π</button>
+            <button class="gc-ti-key" type="button" data-ti-key=",">,</button>
+          </div>
+          <p class="gc-ti-minihelp">Phase-1 feel, real graph engine underneath: `Y=` edits the active function, `WINDOW` changes bounds, `TABLE` reveals values, and `GRAPH` sends the expression to the canvas.</p>
+        </div>
+
+        <div class="gc-graph-stack">
           <div class="gc-canvas-wrap">
             <canvas id="gc-canvas"></canvas>
             <div class="gc-coords-display" id="gc-coords">x: —  y: —</div>
@@ -1112,56 +1854,150 @@
               <button class="gc-zoom-btn" id="gc-zoom-reset" aria-label="Reset view" title="Reset view" style="font-size:0.72rem;width:36px;">↺</button>
             </div>
           </div>
+
+          <div class="gc-table-panel" id="gc-table-panel">
+            <h3>Table of Values</h3>
+            <table class="gc-table-grid">
+              <thead>
+                <tr><th>x</th><th>y</th></tr>
+              </thead>
+              <tbody id="gc-table-body">
+                <tr><td colspan="2">Press <strong>TABLE</strong> to generate values from the current focus function.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div><!-- /ti shell -->
 
-        <!-- Sidebar — hidden in layout mode; controls moved to ll-panel -->
-        <div class="gc-sidebar gc-sidebar-in-page">
-
-          <!-- Input -->
-          <div>
-            <p class="gc-sidebar-label">Add equation</p>
-            <div class="gc-input-row">
-              <span class="gc-fn-label">y =</span>
-              <input class="gc-eq-input" id="gc-eq-input" type="text" placeholder="2x + 1 or y = x^2" autocomplete="off" spellcheck="false" aria-describedby="gc-input-help gc-parse-error" />
-            </div>
-            <p class="gc-input-help" id="gc-input-help">Try <code>2x+1</code>, <code>|x|</code>, <code>sqrt(x)</code>, or <code>(x+1)(x-1)</code>.</p>
-            <div class="gc-parse-error" id="gc-parse-error" aria-live="polite"></div>
-            <button class="gc-add-btn" id="gc-add-btn" style="margin-top:0.4rem;width:100%;">Plot →</button>
-          </div>
-
-          <!-- Presets -->
-          <div>
-            <p class="gc-sidebar-label">Quick presets</p>
-            <div class="gc-presets" id="gc-presets">
-              <button class="gc-preset-btn" data-eq="x">y = x</button>
-              <button class="gc-preset-btn" data-eq="2*x + 1">y = 2x + 1</button>
-              <button class="gc-preset-btn" data-eq="x^2">y = x²</button>
-              <button class="gc-preset-btn" data-eq="x^2 - 4">y = x² − 4</button>
-              <button class="gc-preset-btn" data-eq="x^3 - 3*x">y = x³ − 3x</button>
-              <button class="gc-preset-btn" data-eq="sin(x)">y = sin(x)</button>
-              <button class="gc-preset-btn" data-eq="cos(x)">y = cos(x)</button>
-              <button class="gc-preset-btn" data-eq="abs(x)">y = |x|</button>
-              <button class="gc-preset-btn" data-eq="sqrt(x)">y = √x</button>
-              <button class="gc-preset-btn" data-eq="1/x">y = 1/x</button>
-              <button class="gc-preset-btn" data-eq="2^x">y = 2ˣ</button>
-            </div>
-          </div>
-
-          <!-- Plotted functions list -->
-          <div>
-            <p class="gc-sidebar-label">Plotted functions</p>
-            <div class="gc-fn-list" id="gc-fn-list">
-              <span style="font-size:0.78rem;color:var(--text-muted,#6e6e73);">None yet — add one above.</span>
-            </div>
-            <button class="gc-clear-btn" id="gc-clear-btn" style="margin-top:0.5rem;">Clear all</button>
-          </div>
-
-        </div><!-- /sidebar -->
-      </div><!-- /layout -->
+      <div class="gc-layout" style="display:none;">
+        <div></div>
+      </div>
     </section>
 
+    <div class="gc-dock" aria-label="Graphing quick tools">
+      <button class="gc-dock-btn" type="button" data-panel="help" title="Quick help">?</button>
+      <button class="gc-dock-btn" type="button" data-panel="functions" title="Function picker">F</button>
+      <button class="gc-dock-btn" type="button" data-panel="missions" title="Mission lab">M</button>
+      <button class="gc-dock-btn" type="button" data-panel="goals" title="Achievement goals">G</button>
+      <button class="gc-dock-btn" type="button" data-panel="settings" title="Overlay settings">S</button>
+      <button class="gc-dock-btn" type="button" data-panel="quiz" title="Quick check">Q</button>
+    </div>
+
+    <aside class="gc-sidepanel" id="gc-sidepanel" aria-live="polite">
+      <div class="gc-sidepanel-head">
+        <h3 id="gc-sidepanel-title">Quick Help</h3>
+        <button class="gc-panel-close" id="gc-panel-close" type="button" aria-label="Close quick panel">×</button>
+      </div>
+      <div class="gc-sidepanel-body">
+        <section class="gc-panel-view" data-panel-view="help">
+          <div class="gc-mini-stack">
+            <div class="gc-mini-card">
+              <h4>Tap a term</h4>
+              <p>Definitions stay hidden until they answer a question. Each term gives one visual idea, not a paragraph dump.</p>
+              <div class="gc-tip-cloud">
+                <button class="gc-term-btn" type="button" data-term="slope">slope</button>
+                <button class="gc-term-btn" type="button" data-term="intercept">intercept</button>
+                <button class="gc-term-btn" type="button" data-term="vertex">vertex</button>
+                <button class="gc-term-btn" type="button" data-term="period">period</button>
+              </div>
+              <div class="gc-tooltip" id="gc-term-tooltip">
+                <strong id="gc-term-title">slope</strong>
+                <p id="gc-term-body"></p>
+              </div>
+            </div>
+            <div class="gc-mini-card">
+              <h4>Real-world hooks</h4>
+              <div class="gc-hook-list">
+                <button class="gc-hook-btn" type="button" data-hook-family="quadratic">
+                  <strong>⚽ Motion → parabola</strong>
+                  <span>Use the vertex to show peak height and the intercepts to show launch and landing moments.</span>
+                </button>
+                <button class="gc-hook-btn" type="button" data-hook-family="trig">
+                  <strong>🎵 Sound → sine wave</strong>
+                  <span>Amplitude maps to loudness and frequency maps to how quickly the pattern repeats.</span>
+                </button>
+                <button class="gc-hook-btn" type="button" data-hook-family="linear">
+                  <strong>📈 Constant growth → line</strong>
+                  <span>Linear graphs show steady change per step, which is why slope matters so much.</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="gc-panel-view" data-panel-view="functions" hidden>
+          <div class="gc-mini-card">
+            <h4>Visual function picker</h4>
+            <div class="gc-picker-row">
+              <button class="gc-picker-btn" type="button" data-picker-family="linear"><strong>Line</strong><span>Constant rate of change</span></button>
+              <button class="gc-picker-btn" type="button" data-picker-family="quadratic"><strong>Parabola</strong><span>Turning point and symmetry</span></button>
+              <button class="gc-picker-btn" type="button" data-picker-family="trig"><strong>Wave</strong><span>Repeating oscillation</span></button>
+              <button class="gc-picker-btn" type="button" data-preset-eq="2^x"><strong>Exponential</strong><span>Growth that accelerates</span></button>
+              <button class="gc-picker-btn" type="button" data-preset-eq="1/x"><strong>Rational</strong><span>Visible limits and asymptotes</span></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="gc-panel-view" data-panel-view="missions" hidden>
+          <div class="gc-mini-card">
+            <h4>Mission system</h4>
+            <div class="gc-mission-list">
+              <button class="gc-mission-launch" type="button" data-mission="slope"><strong>▶ Slope Lab</strong><span>Lock the graph to slope and ask: what changed?</span></button>
+              <button class="gc-mission-launch" type="button" data-mission="shift"><strong>▶ Shift Lab</strong><span>Freeze slope and test vertical movement only.</span></button>
+              <button class="gc-mission-launch" type="button" data-mission="wave"><strong>▶ Wave Lab</strong><span>Separate amplitude from frequency.</span></button>
+            </div>
+            <div class="gc-mission-prompt" id="gc-mission-prompt">Launch a mission to load the graph, lock the variables, and show one guiding question.</div>
+          </div>
+        </section>
+
+        <section class="gc-panel-view" data-panel-view="goals" hidden>
+          <div class="gc-mini-card">
+            <h4>Achievement goals</h4>
+            <div class="gc-achievement-list">
+              <button class="gc-achievement-btn" type="button" data-achievement="slope"><strong>🏆 Read a slope</strong><span>Highlights the rise/run triangle and the coefficient that controls it.</span></button>
+              <button class="gc-achievement-btn" type="button" data-achievement="shift"><strong>🏆 Predict a shift</strong><span>Shows how the same graph moves when only the intercept changes.</span></button>
+              <button class="gc-achievement-btn" type="button" data-achievement="wave"><strong>🏆 Explain a wave</strong><span>Points students to amplitude and period instead of generic “it wiggles.”</span></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="gc-panel-view" data-panel-view="settings" hidden>
+          <div class="gc-mini-stack">
+            <div class="gc-mini-card">
+              <h4>Overlay toggles</h4>
+              <div class="gc-overlay-list">
+                <button class="gc-overlay-btn" type="button" data-overlay-target="gc-toggle-annotations"><strong>Show concept overlays</strong><span>Turns intercepts, triangles, vertices, and period markers on or off.</span></button>
+                <button class="gc-overlay-btn" type="button" data-overlay-target="gc-toggle-intersections"><strong>Show intersections</strong><span>Marks where two graphs meet so solving visually becomes easier.</span></button>
+                <button class="gc-overlay-btn" type="button" data-overlay-target="gc-toggle-animate"><strong>Animate point</strong><span>Moves one point along the curve to connect graphs to time and motion.</span></button>
+                <button class="gc-overlay-btn" type="button" data-overlay-target="gc-toggle-invalid"><strong>Shade invalid region</strong><span>Makes domain limits visible instead of just naming them.</span></button>
+              </div>
+            </div>
+            <div class="gc-mini-card">
+              <h4>Teacher mode</h4>
+              <p>Use the panel to stage one visual idea at a time, then close it again so the graph retakes center stage.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="gc-panel-view" data-panel-view="quiz" hidden>
+          <div class="gc-mini-card">
+            <h4>Quick check</h4>
+            <p>The full quiz stays hidden until you want it. Use this as a reminder to test understanding after students have already graphed and compared.</p>
+            <div class="gc-achievement-list" style="margin-top:0.7rem;">
+              <button class="gc-achievement-btn" type="button" id="gc-open-full-quiz">
+                <strong>Open detailed quiz</strong>
+                <span>Reveal the longer assessment section below when you are ready for written confirmation.</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
+    </div>
+    </div>
+
     <!-- ── Guided Explorations ────────────────────────────── -->
-    <section class="gc-card" style="--gc-accent:#af52de;">
+    <section class="gc-card gc-detail-section" style="--gc-accent:#af52de;">
       <h2>Guided Explorations</h2>
       <p>Use the calculator above to investigate these questions. Each one reveals something important about how functions behave.</p>
       <ol class="gc-explore-list">
@@ -1189,7 +2025,7 @@
     </section>
 
     <!-- ── STEAM studio ─────────────────────────────────── -->
-    <section class="gc-card" style="--gc-accent:#ff375f;">
+    <section class="gc-card gc-detail-section" style="--gc-accent:#ff375f;">
       <h2>STEAM Studio Challenges</h2>
       <p>Once students can read the graphs, move quickly into making something, modeling something, or explaining something. That shift is what makes the lesson feel authentically STEAM.</p>
       <div class="gc-steam-grid">
@@ -1216,8 +2052,27 @@
       </div>
     </section>
 
+    <section class="gc-card gc-detail-section" style="--gc-accent:#ff9500;">
+      <h2>Connect This to Other Lessons</h2>
+      <p>This calculator works best as a hub. Students should be able to leave one lesson with data or a model idea and continue the reasoning here.</p>
+      <div class="gc-link-list">
+        <a class="gc-link-card" href="../lessons/probability-simulator.html">
+          <strong>Graph probability results</strong>
+          <span>Run trials in the Probability Simulator, copy the convergence data, and import it here to see experimental probability settle toward expectation.</span>
+        </a>
+        <a class="gc-link-card" href="../lessons/graphing-calculator.html#gc-model-studio">
+          <strong>Model motion and waves</strong>
+          <span>Use the line, parabola, and wave controls to connect slope, vertex, amplitude, and period to physical systems.</span>
+        </a>
+        <a class="gc-link-card" href="../steam-lessons.html">
+          <strong>Branch into STEAM builds</strong>
+          <span>Use the same graphing engine for sound, architecture, coding patterns, and design challenges across the lesson ecosystem.</span>
+        </a>
+      </div>
+    </section>
+
     <!-- ── Key Vocabulary ─────────────────────────────────── -->
-    <section class="gc-card" style="--gc-accent:#30b0c7;">
+    <section class="gc-card gc-detail-section" style="--gc-accent:#30b0c7;">
       <h2>Key Vocabulary</h2>
       <div class="gc-vocab-grid">
         <div class="gc-vocab-chip">
@@ -1256,7 +2111,7 @@
     </section>
 
     <!-- ── Quick Check ────────────────────────────────────── -->
-    <section class="gc-quiz">
+    <section class="gc-quiz gc-detail-section">
       <h2>Quick Check</h2>
       <div class="gc-quiz-toolbar">
         <p class="gc-quiz-score" id="gc-quiz-score" aria-live="polite">0 / 4 correct · 4 to go</p>
@@ -1309,6 +2164,7 @@
 
     </section>
 
+    </div>
   </main>
   </div><!-- /ll-sim -->
 
@@ -1618,6 +2474,27 @@
     const COLORS = ['#007aff', '#ff3b30', '#34c759', '#ff9500', '#af52de', '#30b0c7', '#ff375f'];
     let fns = []; // { expr, color }
     let colorIdx = 0;
+    const MODEL_FN_ID = 'gc-model';
+    const DATA_FN_ID = 'gc-data';
+    const PROBABILITY_SAMPLE = [
+      [1, 0.5], [2, 0.5], [5, 0.6], [10, 0.7], [20, 0.6], [50, 0.54], [100, 0.51]
+    ];
+    const AUTO_IMPORT_KEY = 'classroomos-graph-data';
+    const modelState = {
+      mode: 'beginner',
+      family: 'linear',
+      lock: 'none',
+      linear: { m: 1, b: 0 },
+      quadratic: { a: 1, h: 0, k: 0 },
+      trig: { a: 1, f: 1, k: 0 },
+      domain: { min: -10, max: 10 },
+      annotations: true,
+      intersections: true,
+      animate: false,
+      invalid: true,
+      animationPhase: 0,
+      dataPoints: []
+    };
 
     // Dragging
     let dragging = false;
@@ -1664,6 +2541,11 @@
 
       // Plot functions
       fns.forEach(fn => plotFn(fn));
+
+      if (modelState.invalid) drawDomainShading();
+      if (modelState.annotations) drawFocusAnnotations();
+      if (modelState.intersections) drawIntersections();
+      if (modelState.animate) drawAnimatedPoint();
 
       // Trace crosshair
       if (tracePos) drawTrace(tracePos.cx, tracePos.cy);
@@ -1763,6 +2645,11 @@
     }
 
     function plotFn(fn) {
+      if (fn.kind === 'data') {
+        plotDataFn(fn);
+        return;
+      }
+
       const W = canvas.width;
       const steps = W * 2;
       const xRange = view.xMax - view.xMin;
@@ -1805,6 +2692,42 @@
       ctx.shadowBlur = 0;
     }
 
+    function plotDataFn(fn) {
+      const points = Array.isArray(fn.points) ? fn.points : [];
+      if (!points.length) return;
+
+      ctx.strokeStyle = fn.color;
+      ctx.fillStyle = fn.color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.shadowColor = fn.color + '44';
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+
+      points.forEach((point, index) => {
+        const cx = toCanvasX(point.x);
+        const cy = toCanvasY(point.y);
+        if (index === 0) ctx.moveTo(cx, cy);
+        else ctx.lineTo(cx, cy);
+      });
+
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      points.forEach(point => {
+        const cx = toCanvasX(point.x);
+        const cy = toCanvasY(point.y);
+        ctx.beginPath();
+        ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+        ctx.fillStyle = fn.color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.25;
+        ctx.stroke();
+      });
+    }
+
     function drawTrace(cx, cy) {
       const wx = toWorldX(cx);
       const W  = canvas.width, H = canvas.height;
@@ -1819,7 +2742,7 @@
 
       // Dots on each curve at this x
       fns.forEach(fn => {
-        const wy = evalExpr(fn.expr, wx);
+        const wy = evaluateFnAt(fn, wx);
         if (isNaN(wy)) return;
         const fcy = toCanvasY(wy);
         if (fcy < -10 || fcy > H + 10) return;
@@ -1836,6 +2759,256 @@
 
     function round4(n) {
       return Math.abs(n) < 1e-9 ? 0 : parseFloat(n.toPrecision(4));
+    }
+
+    function formatNumber(n) {
+      const rounded = round4(n);
+      return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+    }
+
+    function withSign(n) {
+      return n < 0 ? `- ${formatNumber(Math.abs(n))}` : `+ ${formatNumber(n)}`;
+    }
+
+    function evaluateFnAt(fn, x) {
+      if (!fn) return NaN;
+      if (fn.domain && (x < fn.domain.min || x > fn.domain.max)) return NaN;
+      if (fn.kind === 'data') return interpolateDataY(fn.points || [], x);
+      return evalExpr(fn.expr, x);
+    }
+
+    function interpolateDataY(points, x) {
+      if (!points || points.length < 2) return NaN;
+      if (x < points[0].x || x > points[points.length - 1].x) return NaN;
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i];
+        const b = points[i + 1];
+        if (x >= a.x && x <= b.x) {
+          const t = (x - a.x) / (b.x - a.x || 1);
+          return a.y + (b.y - a.y) * t;
+        }
+      }
+      return NaN;
+    }
+
+    function getFnById(id) {
+      return fns.find(fn => fn.id === id) || null;
+    }
+
+    function getFocusFn() {
+      return getFnById(MODEL_FN_ID) || getFnById(DATA_FN_ID) || fns[0] || null;
+    }
+
+    function drawPoint(wx, wy, color, radius) {
+      const cx = toCanvasX(wx);
+      const cy = toCanvasY(wy);
+      if (!isFinite(cx) || !isFinite(cy)) return;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius || 5, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    function drawLabel(text, cx, cy, color, align) {
+      ctx.save();
+      ctx.font = `600 ${Math.max(10, Math.min(12, canvas.width * 0.017))}px Inter, sans-serif`;
+      ctx.textAlign = align || 'left';
+      ctx.textBaseline = 'middle';
+      const metrics = ctx.measureText(text);
+      const padX = 6;
+      const padY = 4;
+      const width = metrics.width + padX * 2;
+      const height = 22;
+      const x = align === 'right' ? cx - width : cx;
+      ctx.fillStyle = 'rgba(13,13,20,0.82)';
+      roundRect(ctx, x, cy - height / 2, width, height, 8);
+      ctx.fill();
+      ctx.fillStyle = color;
+      ctx.fillText(text, x + padX, cy);
+      ctx.restore();
+    }
+
+    function roundRect(context, x, y, w, h, r) {
+      context.beginPath();
+      context.moveTo(x + r, y);
+      context.arcTo(x + w, y, x + w, y + h, r);
+      context.arcTo(x + w, y + h, x, y + h, r);
+      context.arcTo(x, y + h, x, y, r);
+      context.arcTo(x, y, x + w, y, r);
+      context.closePath();
+    }
+
+    function drawDomainShading() {
+      const focus = getFnById(MODEL_FN_ID);
+      if (!focus || !focus.domain) return;
+      const min = Math.max(view.xMin, focus.domain.min);
+      const max = Math.min(view.xMax, focus.domain.max);
+      const leftX = toCanvasX(min);
+      const rightX = toCanvasX(max);
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      if (focus.domain.min > view.xMin) ctx.fillRect(0, 0, Math.max(0, leftX), canvas.height);
+      if (focus.domain.max < view.xMax) ctx.fillRect(Math.min(canvas.width, rightX), 0, Math.max(0, canvas.width - rightX), canvas.height);
+      ctx.restore();
+    }
+
+    function drawFocusAnnotations() {
+      const focus = getFocusFn();
+      if (!focus) return;
+
+      if (focus.id === MODEL_FN_ID && focus.meta && focus.meta.family === 'linear') {
+        drawLinearAnnotations(focus);
+      } else if (focus.id === MODEL_FN_ID && focus.meta && focus.meta.family === 'quadratic') {
+        drawQuadraticAnnotations(focus);
+      } else if (focus.id === MODEL_FN_ID && focus.meta && focus.meta.family === 'trig') {
+        drawTrigAnnotations(focus);
+      } else if (focus.id === DATA_FN_ID) {
+        drawDataAnnotations(focus);
+      }
+    }
+
+    function drawLinearAnnotations(fn) {
+      const m = fn.meta.params.m;
+      const b = fn.meta.params.b;
+      const x0 = 0;
+      const y0 = b;
+      const x1 = 1;
+      const y1 = m + b;
+
+      drawPoint(x0, y0, '#34c759', 5);
+      drawLabel(`y-int (0, ${formatNumber(y0)})`, toCanvasX(x0) + 10, toCanvasY(y0) - 16, '#34c759');
+
+      ctx.save();
+      ctx.strokeStyle = '#af52de';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(x0), toCanvasY(y0));
+      ctx.lineTo(toCanvasX(x1), toCanvasY(y0));
+      ctx.lineTo(toCanvasX(x1), toCanvasY(y1));
+      ctx.stroke();
+      ctx.restore();
+
+      drawLabel(`run 1`, toCanvasX(0.5) - 18, toCanvasY(y0) + 18, '#af52de');
+      drawLabel(`rise ${formatNumber(m)}`, toCanvasX(x1) + 10, toCanvasY((y0 + y1) / 2), '#af52de');
+    }
+
+    function drawQuadraticAnnotations(fn) {
+      const h = fn.meta.params.h;
+      const k = fn.meta.params.k;
+      drawPoint(h, k, '#ff9500', 5.5);
+      drawLabel(`vertex (${formatNumber(h)}, ${formatNumber(k)})`, toCanvasX(h) + 10, toCanvasY(k) - 16, '#ff9500');
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,149,0,0.55)';
+      ctx.lineWidth = 1.25;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(h), 0);
+      ctx.lineTo(toCanvasX(h), canvas.height);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawTrigAnnotations(fn) {
+      const amplitude = fn.meta.params.a;
+      const frequency = fn.meta.params.f;
+      const offset = fn.meta.params.k;
+      const period = (2 * Math.PI) / frequency;
+      const xStart = Math.max(fn.domain ? fn.domain.min : view.xMin, view.xMin);
+      const xEnd = Math.min(xStart + period, view.xMax);
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(48,176,199,0.8)';
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(xStart), toCanvasY(offset));
+      ctx.lineTo(toCanvasX(xEnd), toCanvasY(offset));
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(xStart), toCanvasY(offset));
+      ctx.lineTo(toCanvasX(xStart), toCanvasY(offset + amplitude));
+      ctx.stroke();
+      ctx.restore();
+
+      drawPoint(xStart, offset + amplitude, '#30b0c7', 5);
+      drawLabel(`amplitude ${formatNumber(amplitude)}`, toCanvasX(xStart) + 10, toCanvasY(offset + amplitude) - 16, '#30b0c7');
+      drawLabel(`period ${formatNumber(period)}`, toCanvasX((xStart + xEnd) / 2) - 22, toCanvasY(offset) + 18, '#30b0c7');
+    }
+
+    function drawDataAnnotations(fn) {
+      const points = fn.points || [];
+      if (!points.length) return;
+      const last = points[points.length - 1];
+      drawLabel(`latest (${formatNumber(last.x)}, ${formatNumber(last.y)})`, toCanvasX(last.x) + 10, toCanvasY(last.y) - 16, fn.color);
+    }
+
+    function findIntersectionsBetween(fnA, fnB) {
+      const results = [];
+      if (!fnA || !fnB) return results;
+      const start = Math.max(view.xMin, fnA.domain ? fnA.domain.min : view.xMin, fnB.domain ? fnB.domain.min : view.xMin);
+      const end = Math.min(view.xMax, fnA.domain ? fnA.domain.max : view.xMax, fnB.domain ? fnB.domain.max : view.xMax);
+      const steps = 1200;
+      let prevX = start;
+      let prevDiff = evaluateFnAt(fnA, prevX) - evaluateFnAt(fnB, prevX);
+
+      for (let i = 1; i <= steps; i++) {
+        const x = start + ((end - start) * i / steps);
+        const diff = evaluateFnAt(fnA, x) - evaluateFnAt(fnB, x);
+        if (isNaN(prevDiff) || isNaN(diff)) {
+          prevX = x;
+          prevDiff = diff;
+          continue;
+        }
+        if (Math.abs(diff) < 1e-3 || prevDiff === 0 || diff * prevDiff < 0) {
+          const ratio = Math.abs(prevDiff) + Math.abs(diff);
+          const rootX = ratio ? (prevX * Math.abs(diff) + x * Math.abs(prevDiff)) / ratio : x;
+          const rootY = evaluateFnAt(fnA, rootX);
+          if (isFinite(rootY) && !results.some(pt => Math.abs(pt.x - rootX) < 0.08 && Math.abs(pt.y - rootY) < 0.08)) {
+            results.push({ x: rootX, y: rootY });
+          }
+        }
+        prevX = x;
+        prevDiff = diff;
+      }
+      return results.slice(0, 6);
+    }
+
+    function drawIntersections() {
+      if (fns.length < 2) return;
+      const intersections = findIntersectionsBetween(fns[0], fns[1]);
+      intersections.forEach((point, index) => {
+        drawPoint(point.x, point.y, '#f5f5f7', 4.8);
+        drawLabel(`intersection ${index + 1}: (${formatNumber(point.x)}, ${formatNumber(point.y)})`, toCanvasX(point.x) + 10, toCanvasY(point.y) - 16, '#f5f5f7');
+      });
+    }
+
+    function drawAnimatedPoint() {
+      const focus = getFocusFn();
+      if (!focus) return;
+      const min = focus.domain ? focus.domain.min : view.xMin;
+      const max = focus.domain ? focus.domain.max : view.xMax;
+      const span = Math.max(0.1, max - min);
+      const wx = min + (modelState.animationPhase % 1) * span;
+      const wy = evaluateFnAt(focus, wx);
+      if (!isFinite(wy)) return;
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(wx), toCanvasY(0));
+      ctx.lineTo(toCanvasX(wx), toCanvasY(wy));
+      ctx.stroke();
+      ctx.restore();
+
+      drawPoint(wx, wy, '#ffffff', 5);
+      drawLabel(`moving point`, toCanvasX(wx) + 10, toCanvasY(wy) - 16, '#ffffff');
     }
 
     /* ─── Zoom helpers ──────────────────────────────────── */
@@ -1941,7 +3114,18 @@
     });
 
     /* ─── Function management ───────────────────────────── */
-    function addFn(expr) {
+    function nextColor() {
+      const color = COLORS[colorIdx % COLORS.length];
+      colorIdx++;
+      return color;
+    }
+
+    function syncColorIndex() {
+      colorIdx = fns.length % COLORS.length;
+    }
+
+    function addFn(expr, options) {
+      const opts = options || {};
       if (fns.length >= COLORS.length) {
         showError('Max 7 functions. Clear some first.');
         return false;
@@ -1950,24 +3134,72 @@
         showError('Could not parse that expression. Try 2x+1, |x|, sqrt(x), or (x+1)(x-1).');
         return false;
       }
-      const color = COLORS[colorIdx % COLORS.length];
-      colorIdx++;
-      fns.push({ expr, color });
+      const fn = {
+        id: opts.id || ('fn-' + Date.now() + '-' + Math.random().toString(16).slice(2, 7)),
+        expr,
+        color: opts.color || nextColor(),
+        kind: 'expr',
+        domain: opts.domain || null,
+        meta: opts.meta || null
+      };
+      if (opts.id) fns = fns.filter(existing => existing.id !== opts.id);
+      fns.push(fn);
       clearError();
       renderFnList();
       draw();
       return true;
     }
 
-    function removeFn(idx) {
-      fns.splice(idx, 1);
+    function upsertExpressionFn(id, expr, options) {
+      const opts = options || {};
+      if (!validateExpr(expr)) return false;
+      const existing = getFnById(id);
+      const color = opts.color || (existing && existing.color) || nextColor();
+      const fn = {
+        id,
+        expr,
+        color,
+        kind: 'expr',
+        domain: opts.domain || null,
+        meta: opts.meta || null
+      };
+      fns = fns.filter(item => item.id !== id);
+      fns.unshift(fn);
       renderFnList();
+      draw();
+      return true;
+    }
+
+    function upsertDataFn(points, options) {
+      const opts = options || {};
+      if (!points.length) return false;
+      const existing = getFnById(DATA_FN_ID);
+      const color = opts.color || (existing && existing.color) || '#ff9500';
+      fns = fns.filter(item => item.id !== DATA_FN_ID);
+      fns.push({
+        id: DATA_FN_ID,
+        kind: 'data',
+        color,
+        points,
+        meta: { family: 'data', label: opts.label || 'Imported data' }
+      });
+      renderFnList();
+      draw();
+      return true;
+    }
+
+    function removeFn(idx) {
+      const removed = fns[idx];
+      fns.splice(idx, 1);
+      if (removed && removed.id === MODEL_FN_ID) updateModelFunction();
+      renderFnList();
+      syncColorIndex();
       draw();
     }
 
     function clearAll() {
       fns = [];
-      colorIdx = 0;
+      syncColorIndex();
       renderFnList();
       draw();
     }
@@ -1981,30 +3213,38 @@
     }
 
     function renderFnList() {
-      const list = document.getElementById('gc-fn-list');
-      if (!list) return;
-      if (fns.length === 0) {
-        list.innerHTML = '<span style="font-size:0.78rem;color:var(--text-muted,#6e6e73);">None yet — add one above.</span>';
-        return;
-      }
-      list.innerHTML = '';
-      fns.forEach((fn, i) => {
-        const item = document.createElement('div');
-        item.className = 'gc-fn-item';
-        const swatch = document.createElement('span');
-        swatch.className = 'gc-fn-swatch';
-        swatch.style.background = fn.color;
-        const label = document.createElement('span');
-        label.className = 'gc-fn-expr';
-        label.title = 'y = ' + fn.expr;
-        label.textContent = 'y = ' + fn.expr;
-        const del = document.createElement('button');
-        del.className = 'gc-fn-remove';
-        del.setAttribute('aria-label', 'Remove ' + fn.expr);
-        del.textContent = '✕';
-        del.addEventListener('click', () => removeFn(i));
-        item.append(swatch, label, del);
-        list.appendChild(item);
+      const lists = [
+        document.getElementById('gc-fn-list'),
+        document.getElementById('gc-panel-fn-list')
+      ].filter(Boolean);
+
+      lists.forEach(list => {
+        if (fns.length === 0) {
+          list.innerHTML = '<span style="font-size:0.78rem;color:var(--text-muted,#6e6e73);">None yet — add one above.</span>';
+          return;
+        }
+        list.innerHTML = '';
+        fns.forEach((fn, i) => {
+          const item = document.createElement('div');
+          item.className = 'gc-fn-item';
+          const swatch = document.createElement('span');
+          swatch.className = 'gc-fn-swatch';
+          swatch.style.background = fn.color;
+          const label = document.createElement('span');
+          label.className = 'gc-fn-expr';
+          const text = fn.kind === 'data'
+            ? (fn.meta && fn.meta.label ? fn.meta.label : 'Imported data')
+            : 'y = ' + fn.expr;
+          label.title = text;
+          label.textContent = text;
+          const del = document.createElement('button');
+          del.className = 'gc-fn-remove';
+          del.setAttribute('aria-label', 'Remove ' + text);
+          del.textContent = '✕';
+          del.addEventListener('click', () => removeFn(i));
+          item.append(swatch, label, del);
+          list.appendChild(item);
+        });
       });
     }
 
@@ -2067,14 +3307,813 @@
       });
     }
 
+    window.gcPlotExpression = function (expr) {
+      return addFn(expr);
+    };
+    window.gcClearGraphFunctions = function () {
+      clearAll();
+    };
+
+    /* ─── Modeling studio ───────────────────────────────── */
+    const sliderConfig = {
+      linear: {
+        m: document.getElementById('gc-slider-linear-m'),
+        b: document.getElementById('gc-slider-linear-b')
+      },
+      quadratic: {
+        a: document.getElementById('gc-slider-quadratic-a'),
+        h: document.getElementById('gc-slider-quadratic-h'),
+        k: document.getElementById('gc-slider-quadratic-k')
+      },
+      trig: {
+        a: document.getElementById('gc-slider-trig-a'),
+        f: document.getElementById('gc-slider-trig-f'),
+        k: document.getElementById('gc-slider-trig-k')
+      }
+    };
+
+    const valueLabels = {
+      'linear-m': document.getElementById('gc-value-linear-m'),
+      'linear-b': document.getElementById('gc-value-linear-b'),
+      'quadratic-a': document.getElementById('gc-value-quadratic-a'),
+      'quadratic-h': document.getElementById('gc-value-quadratic-h'),
+      'quadratic-k': document.getElementById('gc-value-quadratic-k'),
+      'trig-a': document.getElementById('gc-value-trig-a'),
+      'trig-f': document.getElementById('gc-value-trig-f'),
+      'trig-k': document.getElementById('gc-value-trig-k'),
+      'domain-min': document.getElementById('gc-value-domain-min'),
+      'domain-max': document.getElementById('gc-value-domain-max')
+    };
+
+    const generatedEqEl = document.getElementById('gc-generated-eq');
+    const lockNoteEl = document.getElementById('gc-lock-note');
+    const insightSummaryEl = document.getElementById('gc-insight-summary');
+    const insightListEl = document.getElementById('gc-insight-list');
+    const dataInputEl = document.getElementById('gc-data-input');
+    const dataStatusEl = document.getElementById('gc-data-status');
+    const missionPromptEl = document.getElementById('gc-mission-prompt');
+    const termTooltipEl = document.getElementById('gc-term-tooltip');
+    const termTitleEl = document.getElementById('gc-term-title');
+    const termBodyEl = document.getElementById('gc-term-body');
+    const dockEl = document.querySelector('.gc-dock');
+    const sidepanelEl = document.getElementById('gc-sidepanel');
+    const sidepanelTitleEl = document.getElementById('gc-sidepanel-title');
+
+    const termDefinitions = {
+      slope: {
+        title: 'Slope',
+        body: 'Slope is rise over run. Change x by 1 and watch how much y changes. The dashed triangle on the graph makes that rate visible.'
+      },
+      intercept: {
+        title: 'Intercept',
+        body: 'An intercept is where the graph crosses an axis. For lines, the y-intercept is the start value when x = 0.'
+      },
+      vertex: {
+        title: 'Vertex',
+        body: 'The vertex is the highest or lowest point of a parabola. Move it and the whole parabola follows that turning point.'
+      },
+      period: {
+        title: 'Period',
+        body: 'The period is one full repeat of a wave. When frequency goes up, the period gets shorter and the wave repeats faster.'
+      }
+    };
+
+    const panelTitles = {
+      help: 'Quick Help',
+      functions: 'Function Picker',
+      missions: 'Mission Lab',
+      goals: 'Achievements',
+      settings: 'Overlay Settings',
+      quiz: 'Quick Check'
+    };
+
+    const missionConfigs = {
+      slope: {
+        family: 'linear',
+        lock: 'm',
+        prompt: 'What changed when only slope moved? Look for steepness, not vertical shifting.',
+        values: { m: 2, b: 0 }
+      },
+      shift: {
+        family: 'linear',
+        lock: 'b',
+        prompt: 'What changed when only the intercept moved? Notice the line slides without changing steepness.',
+        values: { m: 1, b: 3 }
+      },
+      wave: {
+        family: 'trig',
+        lock: 'f',
+        prompt: 'What changed when only frequency moved? Watch how tightly the wave repeats.',
+        values: { a: 1, f: 2, k: 0 }
+      }
+    };
+
+    const achievementConfigs = {
+      slope: { family: 'linear', lock: 'm', mode: 'beginner', values: { m: 3, b: 1 } },
+      shift: { family: 'linear', lock: 'b', mode: 'beginner', values: { m: 1, b: -3 } },
+      wave: { family: 'trig', lock: 'none', mode: 'beginner', values: { a: 2, f: 1, k: 0 } }
+    };
+    const calculatorState = {
+      screen: 'home',
+      entry: '',
+      second: false,
+      alpha: false,
+      equations: ['x', '', ''],
+      history: ['Ready for input.'],
+      window: { xmin: -10, xmax: 10, ymin: -7.5, ymax: 7.5 },
+      tableRows: []
+    };
+    const tiViewTitleEl = document.getElementById('gc-ti-view-title');
+    const tiDisplayEl = document.getElementById('gc-ti-display');
+    const tiEntryLabelEl = document.getElementById('gc-ti-entry-label');
+    const tiEntryTextEl = document.getElementById('gc-ti-entry-text');
+    const tiHistoryLabelEl = document.getElementById('gc-ti-history-label');
+    const tiModeBitEl = document.getElementById('gc-ti-bit-mode');
+    const tiSecondBitEl = document.getElementById('gc-ti-bit-second');
+    const tiAlphaBitEl = document.getElementById('gc-ti-bit-alpha');
+    const tablePanelEl = document.getElementById('gc-table-panel');
+    const tableBodyEl = document.getElementById('gc-table-body');
+
+    function setActiveChip(containerId, attr, value) {
+      const parent = document.getElementById(containerId);
+      if (!parent) return;
+      parent.querySelectorAll('.gc-chip').forEach(btn => {
+        btn.classList.toggle('is-active', btn.dataset[attr] === value);
+      });
+    }
+
+    function updateSliderVisibility() {
+      const mode = modelState.mode;
+      document.querySelectorAll('#gc-slider-groups [data-families]').forEach(card => {
+        const families = (card.getAttribute('data-families') || '').split(/\s+/);
+        const matchesFamily = families.includes(modelState.family);
+        let visible = matchesFamily;
+        if (modelState.family === 'quadratic' && mode === 'beginner' && /quadratic-(h|k)/.test(card.querySelector('input').id)) visible = false;
+        if (modelState.family === 'trig' && mode === 'beginner' && /trig-k/.test(card.querySelector('input').id)) visible = false;
+        card.hidden = !visible;
+      });
+    }
+
+    function applyLockState() {
+      const lock = modelState.lock;
+      Object.entries(sliderConfig).forEach(([family, controls]) => {
+        Object.entries(controls).forEach(([key, input]) => {
+          if (!input) return;
+          const lockApplies = (
+            (lock === 'm' && family === 'linear' && key === 'm') ||
+            (lock === 'b' && family === 'linear' && key === 'b') ||
+            (lock === 'a' && ((family === 'trig' && key === 'a') || (family === 'quadratic' && key === 'a'))) ||
+            (lock === 'f' && family === 'trig' && key === 'f')
+          );
+          input.disabled = lock !== 'none' && !lockApplies;
+        });
+      });
+
+      const notes = {
+        none: 'Open exploration mode. Students can compare several changes at once.',
+        m: 'Only slope moves now, so students can isolate steepness without confusing it with shifting.',
+        b: 'Only the intercept moves now, so students can see that the line slides without changing steepness.',
+        a: 'Only amplitude or vertical stretch changes now, so students can isolate height and compression.',
+        f: 'Only frequency changes now, so students can track how fast the pattern repeats.'
+      };
+      if (lockNoteEl) lockNoteEl.textContent = notes[lock] || notes.none;
+    }
+
+    function buildModelExpression() {
+      if (modelState.family === 'linear') {
+        const { m, b } = modelState.linear;
+        return `${formatNumber(m)}*x ${withSign(b)}`;
+      }
+      if (modelState.family === 'quadratic') {
+        const { a, h, k } = modelState.quadratic;
+        return `${formatNumber(a)}*(x - (${formatNumber(h)}))^2 ${withSign(k)}`;
+      }
+      if (modelState.family === 'trig') {
+        const { a, f, k } = modelState.trig;
+        return `${formatNumber(a)}*sin(${formatNumber(f)}*x) ${withSign(k)}`;
+      }
+      return null;
+    }
+
+    function updateInsightPanel() {
+      if (!insightSummaryEl || !insightListEl) return;
+
+      let summary = '';
+      let bullets = [];
+      if (modelState.family === 'linear') {
+        summary = `Slope ${formatNumber(modelState.linear.m)} means y changes by ${formatNumber(modelState.linear.m)} for every 1 step in x, while the intercept ${formatNumber(modelState.linear.b)} controls where the line crosses the y-axis.`;
+        bullets = [
+          'The green point marks the y-intercept, so students can see the graph start value directly.',
+          'The dashed triangle shows rise over run instead of leaving slope as an abstract ratio.',
+          'Lock `b` to prove that changing intercept slides the line without changing steepness.'
+        ];
+      } else if (modelState.family === 'quadratic') {
+        summary = `The coefficient ${formatNumber(modelState.quadratic.a)} controls whether the parabola opens up or down and how tightly it bends, while (${formatNumber(modelState.quadratic.h)}, ${formatNumber(modelState.quadratic.k)}) sets the vertex.`;
+        bullets = [
+          'The orange point marks the vertex, the graph’s highest or lowest point.',
+          'The dashed symmetry line helps students connect the shape to its center.',
+          'A negative a-value flips the parabola and a larger absolute value makes it narrower.'
+        ];
+      } else if (modelState.family === 'trig') {
+        const period = round4((2 * Math.PI) / modelState.trig.f);
+        summary = `Amplitude ${formatNumber(modelState.trig.a)} controls wave height, frequency ${formatNumber(modelState.trig.f)} controls how fast it repeats, and the period is about ${formatNumber(period)}.`;
+        bullets = [
+          'The turquoise marker shows the top of one wave cycle.',
+          'The dashed horizontal measure shows one full period.',
+          'Lock frequency to feel repetition speed without changing height.'
+        ];
+      } else {
+        summary = 'Data mode turns observations into a graph so students can connect simulation, measurement, and interpretation.';
+        bullets = [
+          'Imported points stay visible as dots, not just as a smooth line.',
+          'Use convergence data from probability lessons to show long-run behavior.',
+          'Students can compare real data with a modeled function by plotting both together.'
+        ];
+      }
+
+      insightSummaryEl.textContent = summary;
+      insightListEl.innerHTML = bullets.map(item => `<li>${item}</li>`).join('');
+    }
+
+    function updateGeneratedEquation() {
+      if (!generatedEqEl) return;
+      if (modelState.family === 'data') {
+        generatedEqEl.textContent = 'Data mode: plot measured points and compare them against other functions.';
+        return;
+      }
+      const expr = buildModelExpression();
+      generatedEqEl.textContent = 'y = ' + expr;
+    }
+
+    function updateModelFunction() {
+      updateSliderVisibility();
+      applyLockState();
+      updateGeneratedEquation();
+      updateInsightPanel();
+
+      Object.entries(valueLabels).forEach(([key, node]) => {
+        if (!node) return;
+        const parts = key.split('-');
+        if (key === 'domain-min') node.textContent = formatNumber(modelState.domain.min);
+        else if (key === 'domain-max') node.textContent = formatNumber(modelState.domain.max);
+        else node.textContent = formatNumber(modelState[parts[0]][parts[1]]);
+      });
+
+      if (modelState.family === 'data') {
+        fns = fns.filter(fn => fn.id !== MODEL_FN_ID);
+        renderFnList();
+        draw();
+        return;
+      }
+
+      const expr = buildModelExpression();
+      upsertExpressionFn(MODEL_FN_ID, expr, {
+        color: '#007aff',
+        domain: { min: modelState.domain.min, max: modelState.domain.max },
+        meta: {
+          family: modelState.family,
+          params: modelState[modelState.family]
+        }
+      });
+    }
+
+    function setMode(mode) {
+      modelState.mode = mode;
+      setActiveChip('gc-mode-chips', 'mode', mode);
+      updateModelFunction();
+    }
+
+    function setFamily(family) {
+      modelState.family = family;
+      setActiveChip('gc-family-chips', 'family', family);
+      updateModelFunction();
+    }
+
+    function setLock(lock) {
+      modelState.lock = lock;
+      setActiveChip('gc-lock-chips', 'lock', lock);
+      updateModelFunction();
+    }
+
+    function applyFamilyValues(family, values) {
+      if (!family || !values || !modelState[family]) return;
+      Object.entries(values).forEach(([key, value]) => {
+        modelState[family][key] = value;
+        const input = sliderConfig[family] && sliderConfig[family][key];
+        if (input) input.value = value;
+      });
+      updateModelFunction();
+    }
+
+    function openPanel(panelName) {
+      if (!sidepanelEl) return;
+      sidepanelEl.classList.add('is-open');
+      if (sidepanelTitleEl) sidepanelTitleEl.textContent = panelTitles[panelName] || 'Quick Panel';
+      document.querySelectorAll('.gc-panel-view').forEach(view => {
+        view.hidden = view.dataset.panelView !== panelName;
+      });
+      document.querySelectorAll('.gc-dock-btn').forEach(btn => {
+        btn.classList.toggle('is-active', btn.dataset.panel === panelName);
+      });
+      sidepanelEl.dataset.openPanel = panelName;
+    }
+
+    function closePanel() {
+      if (!sidepanelEl) return;
+      sidepanelEl.classList.remove('is-open');
+      delete sidepanelEl.dataset.openPanel;
+      document.querySelectorAll('.gc-dock-btn').forEach(btn => btn.classList.remove('is-active'));
+    }
+
+    function showTerm(term) {
+      const def = termDefinitions[term];
+      if (!def || !termTooltipEl || !termTitleEl || !termBodyEl) return;
+      termTitleEl.textContent = def.title;
+      termBodyEl.textContent = def.body;
+      termTooltipEl.classList.add('is-open');
+    }
+
+    function launchMission(name) {
+      const config = missionConfigs[name];
+      if (!config) return;
+      setMode('beginner');
+      setFamily(config.family);
+      setLock(config.lock);
+      applyFamilyValues(config.family, config.values);
+      if (missionPromptEl) missionPromptEl.textContent = config.prompt;
+      openPanel('missions');
+    }
+
+    function triggerAchievement(name) {
+      const config = achievementConfigs[name];
+      if (!config) return;
+      setMode(config.mode);
+      setFamily(config.family);
+      setLock(config.lock);
+      applyFamilyValues(config.family, config.values);
+      openPanel('goals');
+    }
+
+    function syncWindowFromView() {
+      calculatorState.window = {
+        xmin: round4(view.xMin),
+        xmax: round4(view.xMax),
+        ymin: round4(view.yMin),
+        ymax: round4(view.yMax)
+      };
+    }
+
+    function applyWindowToView() {
+      view.xMin = calculatorState.window.xmin;
+      view.xMax = calculatorState.window.xmax;
+      view.yMin = calculatorState.window.ymin;
+      view.yMax = calculatorState.window.ymax;
+      draw();
+    }
+
+    function setCalculatorMessage(message) {
+      calculatorState.history.unshift(message);
+      calculatorState.history = calculatorState.history.slice(0, 6);
+      renderCalculatorScreen();
+    }
+
+    function renderCalculatorScreen() {
+      if (!tiDisplayEl || !tiEntryTextEl || !tiViewTitleEl || !tiEntryLabelEl) return;
+
+      const screen = calculatorState.screen;
+      tiViewTitleEl.textContent = screen.toUpperCase();
+      if (tiModeBitEl) tiModeBitEl.textContent = screen === 'y=' ? 'Y=' : screen.charAt(0).toUpperCase() + screen.slice(1);
+      if (tiSecondBitEl) tiSecondBitEl.style.opacity = calculatorState.second ? '1' : '0.38';
+      if (tiAlphaBitEl) tiAlphaBitEl.style.opacity = calculatorState.alpha ? '1' : '0.38';
+      if (tiHistoryLabelEl) tiHistoryLabelEl.textContent = calculatorState.history[0] || 'Ready';
+
+      let display = '';
+      let label = 'Input';
+      let entry = calculatorState.entry;
+
+      if (screen === 'home') {
+        display = calculatorState.history.slice(0, 4).join('\n');
+        label = 'Home';
+      } else if (screen === 'y=') {
+        display = calculatorState.equations.map((eq, index) => `Y${index + 1}=${eq || ''}`).join('\n');
+        label = 'Y1';
+        entry = calculatorState.equations[0];
+      } else if (screen === 'window') {
+        const w = calculatorState.window;
+        display = `Xmin=${formatNumber(w.xmin)}\nXmax=${formatNumber(w.xmax)}\nYmin=${formatNumber(w.ymin)}\nYmax=${formatNumber(w.ymax)}`;
+        label = 'xmin,xmax,ymin,ymax';
+        entry = calculatorState.entry || `${formatNumber(w.xmin)},${formatNumber(w.xmax)},${formatNumber(w.ymin)},${formatNumber(w.ymax)}`;
+      } else if (screen === 'graph') {
+        display = `Graphing Y1=${calculatorState.equations[0] || ' '}\nWindow X:[${formatNumber(view.xMin)}, ${formatNumber(view.xMax)}]\nWindow Y:[${formatNumber(view.yMin)}, ${formatNumber(view.yMax)}]`;
+        label = 'Graph';
+        entry = calculatorState.equations[0];
+      } else if (screen === 'table') {
+        display = 'Table mode uses the current focus function and the current graph window.';
+        label = 'Table';
+      } else if (screen === 'mode') {
+        display = 'Angle: Degree\nInterface: TI-inspired\nGraph engine: live canvas';
+        label = 'Mode';
+        entry = '';
+      }
+
+      tiDisplayEl.textContent = display;
+      tiEntryLabelEl.textContent = label;
+      tiEntryTextEl.textContent = entry || ' ';
+    }
+
+    function setCalculatorScreen(screen) {
+      calculatorState.screen = screen;
+      if (screen !== 'table') tablePanelEl?.classList.remove('is-open');
+      renderCalculatorScreen();
+    }
+
+    function upsertCalculatorY1() {
+      const expr = calculatorState.equations[0].trim();
+      if (!expr) return false;
+      const ok = upsertExpressionFn('gc-y1', expr, {
+        color: '#ff3b30',
+        meta: { family: 'calculator', source: 'Y1' }
+      });
+      if (ok) setCalculatorMessage(`Graphed Y1 = ${expr}`);
+      else setCalculatorMessage('Y1 could not be graphed.');
+      return ok;
+    }
+
+    function evaluateHomeEntry() {
+      const expr = calculatorState.entry.trim();
+      if (!expr) return;
+      if (/[xX]/.test(expr)) {
+        addFn(expr);
+        setCalculatorMessage(`Plotted ${expr}`);
+      } else {
+        const value = evalExpr(expr, 0);
+        setCalculatorMessage(isNaN(value) ? 'Expression could not be evaluated.' : `${expr} = ${formatNumber(value)}`);
+      }
+      calculatorState.entry = '';
+      renderCalculatorScreen();
+    }
+
+    function commitWindowEntry() {
+      const values = calculatorState.entry.split(',').map(part => parseFloat(part.trim()));
+      if (values.length !== 4 || values.some(value => !isFinite(value))) {
+        setCalculatorMessage('Window expects xmin,xmax,ymin,ymax');
+        return;
+      }
+      calculatorState.window = { xmin: values[0], xmax: values[1], ymin: values[2], ymax: values[3] };
+      applyWindowToView();
+      calculatorState.entry = '';
+      setCalculatorMessage('Window updated.');
+    }
+
+    function buildTableRows() {
+      const focus = getFnById('gc-y1') || getFocusFn();
+      if (!focus || !tableBodyEl) return;
+      const rows = [];
+      const start = Math.ceil(view.xMin);
+      const end = Math.floor(view.xMax);
+      for (let x = start; x <= Math.min(end, start + 10); x++) {
+        const y = evaluateFnAt(focus, x);
+        rows.push({ x, y: isNaN(y) ? 'undef' : formatNumber(y) });
+      }
+      calculatorState.tableRows = rows;
+      tableBodyEl.innerHTML = rows.map(row => `<tr><td>${row.x}</td><td>${row.y}</td></tr>`).join('');
+    }
+
+    function handleCalculatorKey(key) {
+      if (key === 'SECOND') {
+        calculatorState.second = !calculatorState.second;
+        renderCalculatorScreen();
+        return;
+      }
+      if (key === 'ALPHA') {
+        calculatorState.alpha = !calculatorState.alpha;
+        renderCalculatorScreen();
+        return;
+      }
+      if (key === 'Y=' || key === 'WINDOW' || key === 'GRAPH' || key === 'TABLE' || key === 'MODE' || key === 'HOME') {
+        const target = key === 'Y=' ? 'y=' : key.toLowerCase();
+        if (target === 'graph') {
+          syncWindowFromView();
+          upsertCalculatorY1();
+        }
+        if (target === 'table') {
+          buildTableRows();
+          tablePanelEl?.classList.add('is-open');
+        }
+        setCalculatorScreen(target);
+        return;
+      }
+      if (key === 'ZOOM') {
+        Object.assign(view, DEFAULT_VIEW);
+        syncWindowFromView();
+        setCalculatorMessage('Zoom reset to default window.');
+        setCalculatorScreen('graph');
+        return;
+      }
+      if (key === 'TRACE') {
+        modelState.animate = !modelState.animate;
+        const animateToggle = document.getElementById('gc-toggle-animate');
+        if (animateToggle) animateToggle.checked = modelState.animate;
+        draw();
+        setCalculatorMessage(modelState.animate ? 'Trace animation on.' : 'Trace animation off.');
+        setCalculatorScreen('graph');
+        return;
+      }
+      if (key === 'CLEAR') {
+        calculatorState.entry = '';
+        if (calculatorState.screen === 'y=') calculatorState.equations[0] = '';
+        renderCalculatorScreen();
+        return;
+      }
+      if (key === 'DEL') {
+        if (calculatorState.screen === 'y=') calculatorState.equations[0] = calculatorState.equations[0].slice(0, -1);
+        else calculatorState.entry = calculatorState.entry.slice(0, -1);
+        renderCalculatorScreen();
+        return;
+      }
+      if (key === 'ENTER') {
+        if (calculatorState.screen === 'home') evaluateHomeEntry();
+        else if (calculatorState.screen === 'y=') {
+          upsertCalculatorY1();
+          setCalculatorScreen('graph');
+        } else if (calculatorState.screen === 'window') {
+          commitWindowEntry();
+        }
+        return;
+      }
+
+      const value = key === 'pi' ? 'pi' : key;
+      if (calculatorState.screen === 'y=') calculatorState.equations[0] += value;
+      else calculatorState.entry += value;
+      renderCalculatorScreen();
+    }
+
+    function parseDataPoints(text) {
+      return String(text || '')
+        .split(/\n+/)
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map(line => line.split(',').map(part => parseFloat(part.trim())))
+        .filter(parts => parts.length >= 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1]))
+        .sort((a, b) => a[0] - b[0])
+        .map(parts => ({ x: parts[0], y: parts[1] }));
+    }
+
+    function setDataStatus(text, tone) {
+      if (!dataStatusEl) return;
+      dataStatusEl.textContent = text;
+      dataStatusEl.style.color = tone === 'error' ? '#ff3b30' : tone === 'success' ? '#34c759' : 'var(--text-muted, #5c5c62)';
+    }
+
+    function importDataPoints(text, label) {
+      const points = parseDataPoints(text);
+      if (!points.length) {
+        setDataStatus('No valid points found. Use one x,y pair per line.', 'error');
+        return;
+      }
+      modelState.dataPoints = points;
+      setFamily('data');
+      upsertDataFn(points, { label: label || 'Imported data' });
+      setDataStatus(`Imported ${points.length} data point${points.length === 1 ? '' : 's'} and connected them on the graph.`, 'success');
+      const xValues = points.map(point => point.x);
+      const yValues = points.map(point => point.y);
+      view.xMin = Math.min(DEFAULT_VIEW.xMin, Math.min.apply(null, xValues) - 1);
+      view.xMax = Math.max(DEFAULT_VIEW.xMax, Math.max.apply(null, xValues) + 1);
+      view.yMin = Math.min(DEFAULT_VIEW.yMin, Math.min.apply(null, yValues) - 1);
+      view.yMax = Math.max(DEFAULT_VIEW.yMax, Math.max.apply(null, yValues) + 1);
+      draw();
+    }
+
+    function tryAutoImportData() {
+      try {
+        const raw = window.localStorage.getItem(AUTO_IMPORT_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.points)) {
+          const points = parsed.points
+            .filter(point => point && Number.isFinite(point.x) && Number.isFinite(point.y))
+            .map(point => ({ x: point.x, y: point.y }));
+          if (points.length) {
+            if (dataInputEl) dataInputEl.value = points.map(point => `${point.x},${point.y}`).join('\n');
+            importDataPoints(points.map(point => `${point.x},${point.y}`).join('\n'), parsed.label || 'Imported lesson data');
+          }
+        }
+      } catch (error) {
+        // Ignore malformed cross-lesson payloads.
+      }
+    }
+
+    Object.entries(sliderConfig).forEach(([family, controls]) => {
+      Object.entries(controls).forEach(([key, input]) => {
+        if (!input) return;
+        input.addEventListener('input', function () {
+          modelState[family][key] = parseFloat(input.value);
+          updateModelFunction();
+        });
+      });
+    });
+
+    const domainMinInput = document.getElementById('gc-domain-min');
+    const domainMaxInput = document.getElementById('gc-domain-max');
+    if (domainMinInput) {
+      domainMinInput.addEventListener('input', function () {
+        const nextMin = parseFloat(domainMinInput.value);
+        modelState.domain.min = Math.min(nextMin, modelState.domain.max - 1);
+        domainMinInput.value = modelState.domain.min;
+        updateModelFunction();
+      });
+    }
+    if (domainMaxInput) {
+      domainMaxInput.addEventListener('input', function () {
+        const nextMax = parseFloat(domainMaxInput.value);
+        modelState.domain.max = Math.max(nextMax, modelState.domain.min + 1);
+        domainMaxInput.value = modelState.domain.max;
+        updateModelFunction();
+      });
+    }
+
+    document.getElementById('gc-mode-chips')?.addEventListener('click', function (e) {
+      const btn = e.target.closest('.gc-chip[data-mode]');
+      if (!btn) return;
+      setMode(btn.dataset.mode);
+    });
+
+    document.getElementById('gc-family-chips')?.addEventListener('click', function (e) {
+      const btn = e.target.closest('.gc-chip[data-family]');
+      if (!btn) return;
+      setFamily(btn.dataset.family);
+    });
+
+    document.getElementById('gc-lock-chips')?.addEventListener('click', function (e) {
+      const btn = e.target.closest('.gc-chip[data-lock]');
+      if (!btn) return;
+      setLock(btn.dataset.lock);
+    });
+
+    document.getElementById('gc-toggle-annotations')?.addEventListener('change', function (e) {
+      modelState.annotations = e.target.checked;
+      draw();
+    });
+    document.getElementById('gc-toggle-intersections')?.addEventListener('change', function (e) {
+      modelState.intersections = e.target.checked;
+      draw();
+    });
+    document.getElementById('gc-toggle-animate')?.addEventListener('change', function (e) {
+      modelState.animate = e.target.checked;
+      draw();
+    });
+    document.getElementById('gc-toggle-invalid')?.addEventListener('change', function (e) {
+      modelState.invalid = e.target.checked;
+      draw();
+    });
+
+    document.getElementById('gc-import-data-btn')?.addEventListener('click', function () {
+      importDataPoints(dataInputEl ? dataInputEl.value : '', 'Imported data');
+    });
+
+    document.getElementById('gc-load-probability-btn')?.addEventListener('click', function () {
+      const text = PROBABILITY_SAMPLE.map(point => point.join(',')).join('\n');
+      if (dataInputEl) dataInputEl.value = text;
+      importDataPoints(text, 'Coin flip convergence');
+    });
+
+    document.getElementById('gc-clear-data-btn')?.addEventListener('click', function () {
+      fns = fns.filter(fn => fn.id !== DATA_FN_ID);
+      modelState.dataPoints = [];
+      renderFnList();
+      draw();
+      setDataStatus('Data graph cleared. Your manual functions and slider model are still available.', 'info');
+    });
+
+    document.getElementById('gc-export-btn')?.addEventListener('click', function () {
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = 'graphing-calculator.png';
+      link.click();
+    });
+
+    dockEl?.addEventListener('click', function (e) {
+      const btn = e.target.closest('.gc-dock-btn');
+      if (!btn) return;
+      const panel = btn.dataset.panel;
+      if (sidepanelEl && sidepanelEl.dataset.openPanel === panel && sidepanelEl.classList.contains('is-open')) {
+        closePanel();
+        return;
+      }
+      openPanel(panel);
+    });
+
+    document.getElementById('gc-panel-close')?.addEventListener('click', closePanel);
+    document.getElementById('gc-open-help')?.addEventListener('click', function () {
+      openPanel('help');
+    });
+    document.getElementById('gc-hero-help-btn')?.addEventListener('click', function () {
+      openPanel('help');
+    });
+
+    const heroInput = document.getElementById('gc-hero-input');
+    const heroPlotBtn = document.getElementById('gc-hero-plot-btn');
+    heroPlotBtn?.addEventListener('click', function () {
+      const expr = heroInput?.value.trim();
+      if (!expr) return;
+      addFn(expr);
+      if (heroInput) heroInput.value = '';
+    });
+    heroInput?.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      heroPlotBtn?.click();
+    });
+
+    document.querySelectorAll('[data-hero-preset]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        addFn(btn.dataset.heroPreset);
+      });
+    });
+    document.querySelectorAll('[data-hero-mission]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        launchMission(btn.dataset.heroMission);
+      });
+    });
+
+    document.querySelector('[data-panel-view="help"]')?.addEventListener('click', function (e) {
+      const termBtn = e.target.closest('.gc-term-btn');
+      if (termBtn) {
+        showTerm(termBtn.dataset.term);
+        return;
+      }
+      const hookBtn = e.target.closest('.gc-hook-btn');
+      if (hookBtn) {
+        setMode('beginner');
+        setFamily(hookBtn.dataset.hookFamily);
+        openPanel('help');
+      }
+    });
+
+    document.querySelector('[data-panel-view="functions"]')?.addEventListener('click', function (e) {
+      const btn = e.target.closest('.gc-picker-btn');
+      if (!btn) return;
+      if (btn.dataset.pickerFamily) {
+        setFamily(btn.dataset.pickerFamily);
+        setLock('none');
+      } else if (btn.dataset.presetEq) {
+        addFn(btn.dataset.presetEq);
+      }
+    });
+
+    document.querySelector('[data-panel-view="missions"]')?.addEventListener('click', function (e) {
+      const btn = e.target.closest('.gc-mission-launch');
+      if (!btn) return;
+      launchMission(btn.dataset.mission);
+    });
+
+    document.querySelector('[data-panel-view="goals"]')?.addEventListener('click', function (e) {
+      const btn = e.target.closest('.gc-achievement-btn');
+      if (!btn) return;
+      triggerAchievement(btn.dataset.achievement);
+    });
+
+    document.querySelector('[data-panel-view="settings"]')?.addEventListener('click', function (e) {
+      const btn = e.target.closest('.gc-overlay-btn');
+      if (!btn) return;
+      const target = document.getElementById(btn.dataset.overlayTarget);
+      if (!target) return;
+      target.checked = !target.checked;
+      target.dispatchEvent(new Event('change'));
+    });
+
+    document.getElementById('gc-open-full-quiz')?.addEventListener('click', function () {
+      document.querySelector('.gc-quiz')?.classList.remove('gc-detail-section');
+      closePanel();
+      document.querySelector('.gc-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closePanel();
+    });
+
+    document.getElementById('gc-ti-keypad')?.addEventListener('click', function (e) {
+      const btn = e.target.closest('.gc-ti-key');
+      if (!btn) return;
+      handleCalculatorKey(btn.dataset.tiKey);
+    });
+
+    function animateFrame() {
+      modelState.animationPhase = (modelState.animationPhase + 0.0035) % 1;
+      if (modelState.animate) draw();
+      window.requestAnimationFrame(animateFrame);
+    }
+
     /* ─── Init ──────────────────────────────────────────── */
     const ro = window.ResizeObserver ? new ResizeObserver(resizeCanvas) : null;
     if (ro) ro.observe(canvas.parentElement);
     else    window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Seed with one friendly default
-    addFn('x');
+    updateModelFunction();
+    syncWindowFromView();
+    renderCalculatorScreen();
+    tryAutoImportData();
+    window.requestAnimationFrame(animateFrame);
 
     /* ═══════════════════════════════════════════════════════
        QUICK CHECK QUIZ
@@ -2167,6 +4206,17 @@
         if (e.key === 'Enter') panelAddBtn.click();
       });
     }
+    else if (panelAddBtn && panelInput && window.gcPlotExpression) {
+      panelAddBtn.addEventListener('click', function () {
+        var expr = panelInput.value.trim();
+        if (!expr) return;
+        window.gcPlotExpression(expr);
+        panelInput.value = '';
+      });
+      panelInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') panelAddBtn.click();
+      });
+    }
 
     /* Panel clear button */
     var panelClearBtn  = document.getElementById('gc-panel-clear-btn');
@@ -2177,6 +4227,11 @@
         syncFnList();
       });
     }
+    else if (panelClearBtn && window.gcClearGraphFunctions) {
+      panelClearBtn.addEventListener('click', function () {
+        window.gcClearGraphFunctions();
+      });
+    }
 
     /* Panel preset chips → fire ll:preset and also plot via in-page */
     document.addEventListener('ll:preset', function (e) {
@@ -2185,6 +4240,9 @@
         inPageInput.value = vals.eq;
         inPageBtn.click();
         setTimeout(syncFnList, 50);
+      }
+      else if (vals && vals.eq && window.gcPlotExpression) {
+        window.gcPlotExpression(vals.eq);
       }
     });
 
