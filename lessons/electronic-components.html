@@ -175,6 +175,45 @@
       display: grid;
       gap: 0.7rem;
     }
+    .ec-resistor-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+      padding: 1rem 1rem 0;
+    }
+    .ec-band-tabs {
+      display: inline-flex;
+      gap: 0.35rem;
+      padding: 0.28rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.06);
+      border: 1px solid var(--line, #d2d2d7);
+    }
+    .ec-band-tab {
+      border: none;
+      background: transparent;
+      color: #475569;
+      padding: 0.45rem 0.78rem;
+      border-radius: 999px;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .ec-band-tab.is-active {
+      background: #ffffff;
+      color: #007aff;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+    .ec-band-help {
+      font-size: 0.79rem;
+      color: #64748b;
+    }
     .ec-field label {
       display: block;
       margin-bottom: 0.22rem;
@@ -199,6 +238,32 @@
       grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
       gap: 0.55rem;
       padding: 0 1rem 1rem;
+    }
+    .ec-resistor-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.85rem;
+    }
+    .ec-summary-tile {
+      border: 1px solid rgba(203, 213, 225, 0.22);
+      border-radius: 12px;
+      padding: 0.8rem 0.9rem;
+      background: rgba(255,255,255,0.08);
+    }
+    .ec-summary-tile strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #cbd5e1;
+    }
+    .ec-summary-tile span {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #f8fafc;
     }
     .ec-band-chip {
       display: flex;
@@ -255,6 +320,19 @@
     .ec-component-card h3 {
       margin: 0 0 0.28rem;
       font-size: 1rem;
+    }
+    .ec-component-media {
+      margin: 0.2rem 0 0.75rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .ec-component-media img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
     }
     .ec-component-tag {
       display: inline-block;
@@ -423,9 +501,17 @@
 
           <section class="ec-card" style="--ec-accent:#34c759;">
             <h2>Resistor Color Code Guide</h2>
-            <p>Most through-hole resistors use four bands. The first two bands give the first two digits, the third band is the multiplier, and the fourth band is the tolerance. A resistor with <strong>red, red, brown, gold</strong> is <strong>220 Ω ±5%</strong>.</p>
+            <p>This upgraded analyzer blends our classroom lesson with the best ideas from a modern resistor-band simulator. You can now decode <strong>4-band, 5-band, and 6-band</strong> resistors, compare beginner parts with precision parts, and watch the decoded meaning update live.</p>
 
             <div class="ec-resistor-shell">
+              <div class="ec-resistor-toolbar">
+                <div class="ec-band-tabs" role="tablist" aria-label="Resistor band count">
+                  <button class="ec-band-tab is-active" type="button" data-band-count="4" aria-selected="true">4 Bands</button>
+                  <button class="ec-band-tab" type="button" data-band-count="5" aria-selected="false">5 Bands</button>
+                  <button class="ec-band-tab" type="button" data-band-count="6" aria-selected="false">6 Bands</button>
+                </div>
+                <div class="ec-band-help" id="resistor-help">Most classroom resistors are 4-band parts.</div>
+              </div>
               <div class="ec-resistor-top">
                 <div class="ec-resistor-display">
                   <svg viewBox="0 0 620 180" aria-label="Resistor with four colored bands">
@@ -436,33 +522,33 @@
                     <rect x="290" y="42" width="18" height="96" fill="#ef4444" id="band-2"></rect>
                     <rect x="335" y="42" width="18" height="96" fill="#92400e" id="band-3"></rect>
                     <rect x="395" y="42" width="18" height="96" fill="#d4af37" id="band-4"></rect>
-                    <text x="310" y="28" text-anchor="middle" fill="#cbd5e1" font-family="Inter,sans-serif" font-size="16" font-weight="700">4-Band Resistor</text>
+                    <rect x="420" y="42" width="14" height="96" fill="#7c4a21" id="band-5" style="display:none;"></rect>
+                    <rect x="442" y="42" width="12" height="96" fill="#2563eb" id="band-6" style="display:none;"></rect>
+                    <text x="310" y="28" text-anchor="middle" fill="#cbd5e1" font-family="Inter,sans-serif" font-size="16" font-weight="700" id="resistor-title">4-Band Resistor</text>
                   </svg>
                   <div class="ec-resistor-readout">
                     <span class="ec-resistor-value" id="resistor-value">220 Ω</span>
                     <span class="ec-resistor-meta" id="resistor-meta">digits 22 × 10</span>
                     <span class="ec-resistor-meta" id="resistor-tolerance">tolerance ±5%</span>
                   </div>
+                  <div class="ec-resistor-summary">
+                    <div class="ec-summary-tile">
+                      <strong>Decoded Bands</strong>
+                      <span id="resistor-band-labels">Red • Red • Brown • Gold</span>
+                    </div>
+                    <div class="ec-summary-tile">
+                      <strong>Precision Note</strong>
+                      <span id="resistor-ppm">Standard classroom resistor</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="ec-resistor-controls">
-                  <div class="ec-field">
-                    <label for="band1-select">Band 1</label>
-                    <select id="band1-select"></select>
-                  </div>
-                  <div class="ec-field">
-                    <label for="band2-select">Band 2</label>
-                    <select id="band2-select"></select>
-                  </div>
-                  <div class="ec-field">
-                    <label for="multiplier-select">Multiplier</label>
-                    <select id="multiplier-select"></select>
-                  </div>
-                  <div class="ec-field">
-                    <label for="tolerance-select">Tolerance</label>
-                    <select id="tolerance-select"></select>
-                  </div>
-                </div>
+                <div class="ec-resistor-controls" id="resistor-controls"></div>
+              </div>
+
+              <div class="ec-callout" style="margin:0 1rem 1rem;">
+                <strong>Band Meanings</strong>
+                In 4-band mode the first two bands are digits. In 5-band and 6-band mode the first three bands are digits. The last band is tolerance, and the 6th band adds temperature coefficient in ppm per degree C.
               </div>
 
               <div class="ec-resistor-legend" id="resistor-legend"></div>
@@ -514,6 +600,9 @@
               <article class="ec-component-card">
                 <span class="ec-component-tag">Light Emitting Diode</span>
                 <h3>LED</h3>
+                <div class="ec-component-media">
+                  <img src="../assets/thumbs/LED.jpg" alt="LED example" />
+                </div>
                 <p>An LED allows current to flow in one direction and glows when current passes through it. It is a diode designed to emit light.</p>
                 <ul class="ec-component-list">
                   <li><strong>How to spot it:</strong> clear or colored plastic bulb with two leads.</li>
@@ -526,6 +615,9 @@
               <article class="ec-component-card">
                 <span class="ec-component-tag">Polarized Capacitor</span>
                 <h3>Electrolytic Capacitor</h3>
+                <div class="ec-component-media">
+                  <img src="../assets/thumbs/electrolyriccapacitor.jpg" alt="Electrolytic capacitor example" />
+                </div>
                 <p>An electrolytic capacitor stores charge and is useful when you need larger capacitance values for smoothing or timing.</p>
                 <ul class="ec-component-list">
                   <li><strong>How to spot it:</strong> cylindrical can with printed stripe.</li>
@@ -538,6 +630,9 @@
               <article class="ec-component-card">
                 <span class="ec-component-tag">Non-Polarized Capacitor</span>
                 <h3>Ceramic Capacitor</h3>
+                <div class="ec-component-media">
+                  <img src="../assets/thumbs/ceramiccapacitor.jpg" alt="Ceramic capacitor example" />
+                </div>
                 <p>Ceramic capacitors store small amounts of charge and are often used for filtering noise and stabilizing voltage.</p>
                 <ul class="ec-component-list">
                   <li><strong>How to spot it:</strong> small disk, bead, or tiny rectangular package.</li>
@@ -550,6 +645,9 @@
               <article class="ec-component-card">
                 <span class="ec-component-tag">One-Way Current</span>
                 <h3>Diode</h3>
+                <div class="ec-component-media">
+                  <img src="../assets/thumbs/Diodes.jpg" alt="Diode example" />
+                </div>
                 <p>A regular diode acts like a one-way valve for current. It is used for rectification, polarity protection, and signal steering.</p>
                 <ul class="ec-component-list">
                   <li><strong>How to spot it:</strong> small cylinder or glass body with a band near one end.</li>
@@ -562,6 +660,9 @@
               <article class="ec-component-card">
                 <span class="ec-component-tag">Electronic Switch</span>
                 <h3>Transistor</h3>
+                <div class="ec-component-media">
+                  <img src="../assets/thumbs/transistor.jpg" alt="Transistor example" />
+                </div>
                 <p>A transistor uses a small signal to control a larger current. It can work as a switch or as an amplifier.</p>
                 <ul class="ec-component-list">
                   <li><strong>How to spot it:</strong> usually a black half-cylinder package with three legs.</li>
@@ -574,6 +675,9 @@
               <article class="ec-component-card">
                 <span class="ec-component-tag">Momentary Input</span>
                 <h3>Button</h3>
+                <div class="ec-component-media">
+                  <img src="../assets/thumbs/buttoncomponent.jpg" alt="Pushbutton component example" />
+                </div>
                 <p>A pushbutton opens or closes a connection only while it is being pressed, making it a simple manual input device.</p>
                 <ul class="ec-component-list">
                   <li><strong>How to spot it:</strong> small square tactile switch with four legs.</li>
@@ -586,6 +690,9 @@
               <article class="ec-component-card">
                 <span class="ec-component-tag">Light Sensor</span>
                 <h3>Photoresistor</h3>
+                <div class="ec-component-media">
+                  <img src="../assets/thumbs/photoresistor.jpg" alt="Photoresistor example" />
+                </div>
                 <p>A photoresistor, or LDR, changes resistance based on the amount of light hitting it. More light usually means lower resistance.</p>
                 <ul class="ec-component-list">
                   <li><strong>How to spot it:</strong> round disk face with a zig-zag pattern on top.</li>
@@ -805,7 +912,7 @@
 
   <script>
     (function () {
-      const digits = [
+      const resistorColors = [
         { key: 'black', label: 'Black', value: 0, color: '#111111' },
         { key: 'brown', label: 'Brown', value: 1, color: '#7c4a21' },
         { key: 'red', label: 'Red', value: 2, color: '#dc2626' },
@@ -825,25 +932,64 @@
         { key: 'orange', label: 'Orange ×1k', value: 1000, color: '#f97316' },
         { key: 'yellow', label: 'Yellow ×10k', value: 10000, color: '#facc15' },
         { key: 'green', label: 'Green ×100k', value: 100000, color: '#16a34a' },
-        { key: 'blue', label: 'Blue ×1M', value: 1000000, color: '#2563eb' }
+        { key: 'blue', label: 'Blue ×1M', value: 1000000, color: '#2563eb' },
+        { key: 'violet', label: 'Violet ×10M', value: 10000000, color: '#7c3aed' },
+        { key: 'gray', label: 'Gray ×100M', value: 100000000, color: '#94a3b8' },
+        { key: 'white', label: 'White ×1G', value: 1000000000, color: '#f8fafc' },
+        { key: 'gold', label: 'Gold ×0.1', value: 0.1, color: '#d4af37' },
+        { key: 'silver', label: 'Silver ×0.01', value: 0.01, color: '#c0c0c0' }
       ];
 
       const tolerances = [
         { key: 'gold', label: 'Gold ±5%', value: 5, color: '#d4af37' },
         { key: 'silver', label: 'Silver ±10%', value: 10, color: '#c0c0c0' },
-        { key: 'brown', label: 'Brown ±1%', value: 1, color: '#7c4a21' }
+        { key: 'brown', label: 'Brown ±1%', value: 1, color: '#7c4a21' },
+        { key: 'red', label: 'Red ±2%', value: 2, color: '#dc2626' },
+        { key: 'green', label: 'Green ±0.5%', value: 0.5, color: '#16a34a' },
+        { key: 'blue', label: 'Blue ±0.25%', value: 0.25, color: '#2563eb' },
+        { key: 'violet', label: 'Violet ±0.1%', value: 0.1, color: '#7c3aed' },
+        { key: 'gray', label: 'Gray ±0.05%', value: 0.05, color: '#94a3b8' }
+      ];
+      const ppmOptions = [
+        { key: 'brown', label: 'Brown 100 ppm/°C', value: 100, color: '#7c4a21' },
+        { key: 'red', label: 'Red 50 ppm/°C', value: 50, color: '#dc2626' },
+        { key: 'orange', label: 'Orange 15 ppm/°C', value: 15, color: '#f97316' },
+        { key: 'yellow', label: 'Yellow 25 ppm/°C', value: 25, color: '#facc15' },
+        { key: 'blue', label: 'Blue 10 ppm/°C', value: 10, color: '#2563eb' },
+        { key: 'violet', label: 'Violet 5 ppm/°C', value: 5, color: '#7c3aed' }
       ];
 
-      const band1Select = document.getElementById('band1-select');
-      const band2Select = document.getElementById('band2-select');
-      const multiplierSelect = document.getElementById('multiplier-select');
-      const toleranceSelect = document.getElementById('tolerance-select');
+      const defaultBandSets = {
+        4: ['red', 'red', 'brown', 'gold'],
+        5: ['brown', 'black', 'black', 'red', 'brown'],
+        6: ['brown', 'black', 'black', 'red', 'brown', 'blue']
+      };
+      const bandLayouts = {
+        4: ['245', '290', '335', '395'],
+        5: ['230', '270', '310', '350', '405'],
+        6: ['220', '255', '290', '325', '388', '425']
+      };
+      const bandHelp = {
+        4: 'Most classroom resistors are 4-band parts.',
+        5: '5-band resistors add a third significant digit for more precise values.',
+        6: '6-band resistors add temperature coefficient data for precision circuits.'
+      };
+
+      const bandTabs = document.querySelectorAll('.ec-band-tab');
+      const controlsWrap = document.getElementById('resistor-controls');
       const legend = document.getElementById('resistor-legend');
       const valueEl = document.getElementById('resistor-value');
       const metaEl = document.getElementById('resistor-meta');
       const toleranceEl = document.getElementById('resistor-tolerance');
+      const bandLabelsEl = document.getElementById('resistor-band-labels');
+      const ppmEl = document.getElementById('resistor-ppm');
+      const helpEl = document.getElementById('resistor-help');
+      const titleEl = document.getElementById('resistor-title');
+      let bandCount = 4;
+      let bands = defaultBandSets[4].slice();
 
       function fillSelect(select, items, selectedKey) {
+        select.innerHTML = '';
         items.forEach(function (item) {
           const option = document.createElement('option');
           option.value = item.key;
@@ -858,9 +1004,11 @@
       }
 
       function formatResistance(value) {
-        if (value >= 1000000) return (value / 1000000) + ' MΩ';
-        if (value >= 1000) return (value / 1000) + ' kΩ';
-        return value + ' Ω';
+        if (value >= 1000000000) return (value / 1000000000).toFixed(2).replace(/\.00$/, '') + ' GΩ';
+        if (value >= 1000000) return (value / 1000000).toFixed(2).replace(/\.00$/, '') + ' MΩ';
+        if (value >= 1000) return (value / 1000).toFixed(2).replace(/\.00$/, '') + ' kΩ';
+        if (value < 1) return value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + ' Ω';
+        return value.toFixed(2).replace(/\.00$/, '') + ' Ω';
       }
 
       function setBand(id, color) {
@@ -894,34 +1042,129 @@
         });
       }
 
+      function getRoleLabel(index) {
+        if (bandCount === 4) {
+          if (index < 2) return 'Band ' + (index + 1);
+          if (index === 2) return 'Multiplier';
+          return 'Tolerance';
+        }
+        if (bandCount === 5) {
+          if (index < 3) return 'Band ' + (index + 1);
+          if (index === 3) return 'Multiplier';
+          return 'Tolerance';
+        }
+        if (index < 3) return 'Band ' + (index + 1);
+        if (index === 3) return 'Multiplier';
+        if (index === 4) return 'Tolerance';
+        return 'Temp Coefficient';
+      }
+
+      function getBandOptions(index) {
+        if (bandCount === 4) {
+          if (index < 2) return resistorColors;
+          if (index === 2) return multipliers;
+          return tolerances;
+        }
+        if (bandCount === 5) {
+          if (index < 3) return resistorColors;
+          if (index === 3) return multipliers;
+          return tolerances;
+        }
+        if (index < 3) return resistorColors;
+        if (index === 3) return multipliers;
+        if (index === 4) return tolerances;
+        return ppmOptions;
+      }
+
+      function updateBandLayout() {
+        const positions = bandLayouts[bandCount];
+        for (let i = 1; i <= 6; i++) {
+          const bandEl = document.getElementById('band-' + i);
+          if (!bandEl) continue;
+          if (i <= bandCount) {
+            bandEl.style.display = 'block';
+            bandEl.setAttribute('x', positions[i - 1]);
+          } else {
+            bandEl.style.display = 'none';
+          }
+        }
+        titleEl.textContent = bandCount + '-Band Resistor';
+        helpEl.textContent = bandHelp[bandCount];
+      }
+
+      function renderControls() {
+        controlsWrap.innerHTML = '';
+        bands.forEach(function (selectedKey, index) {
+          const field = document.createElement('div');
+          field.className = 'ec-field';
+          const label = document.createElement('label');
+          const select = document.createElement('select');
+          label.setAttribute('for', 'resistor-select-' + index);
+          label.textContent = getRoleLabel(index);
+          select.id = 'resistor-select-' + index;
+          fillSelect(select, getBandOptions(index), selectedKey);
+          select.addEventListener('change', function () {
+            bands[index] = select.value;
+            updateResistor();
+          });
+          field.appendChild(label);
+          field.appendChild(select);
+          controlsWrap.appendChild(field);
+        });
+      }
+
       function updateResistor() {
-        const band1 = findByKey(digits, band1Select.value);
-        const band2 = findByKey(digits, band2Select.value);
-        const multiplier = findByKey(multipliers, multiplierSelect.value);
-        const tolerance = findByKey(tolerances, toleranceSelect.value);
-        const digitsValue = (band1.value * 10) + band2.value;
-        const resistance = digitsValue * multiplier.value;
-
-        setBand('band-1', band1.color);
-        setBand('band-2', band2.color);
-        setBand('band-3', multiplier.color);
-        setBand('band-4', tolerance.color);
-
+        const sigBands = bandCount === 4 ? 2 : 3;
+        let digitsValue = '';
+        for (let i = 0; i < sigBands; i++) {
+          const digit = findByKey(resistorColors, bands[i]);
+          digitsValue += digit.value;
+          setBand('band-' + (i + 1), digit.color);
+        }
+        const multiplier = findByKey(multipliers, bands[sigBands]);
+        const tolerance = findByKey(tolerances, bands[sigBands + 1]);
+        const resistance = Number(digitsValue) * multiplier.value;
+        setBand('band-' + (sigBands + 1), multiplier.color);
+        setBand('band-' + (sigBands + 2), tolerance.color);
+        if (bandCount === 6) {
+          const ppm = findByKey(ppmOptions, bands[5]);
+          setBand('band-6', ppm.color);
+          ppmEl.textContent = ppm.value + ' ppm/°C temperature coefficient';
+        } else if (bandCount === 5) {
+          ppmEl.textContent = 'Precision resistor with tighter band coding';
+        } else {
+          ppmEl.textContent = 'Standard classroom resistor';
+        }
         valueEl.textContent = formatResistance(resistance);
         metaEl.textContent = 'digits ' + digitsValue + ' × ' + multiplier.value.toLocaleString();
         toleranceEl.textContent = 'tolerance ±' + tolerance.value + '%';
+        bandLabelsEl.textContent = bands.map(function (key) {
+          const item = findByKey(resistorColors, key) || findByKey(multipliers, key) || findByKey(tolerances, key) || findByKey(ppmOptions, key);
+          return item ? item.label.split(' ')[0] : key;
+        }).join(' • ');
       }
 
-      fillSelect(band1Select, digits, 'red');
-      fillSelect(band2Select, digits, 'red');
-      fillSelect(multiplierSelect, multipliers, 'brown');
-      fillSelect(toleranceSelect, tolerances, 'gold');
-      renderLegend();
-      updateResistor();
+      function setBandCount(nextCount) {
+        bandCount = nextCount;
+        bands = defaultBandSets[nextCount].slice();
+        bandTabs.forEach(function (tab) {
+          const isActive = Number(tab.dataset.bandCount) === nextCount;
+          tab.classList.toggle('is-active', isActive);
+          tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        updateBandLayout();
+        renderControls();
+        updateResistor();
+      }
 
-      [band1Select, band2Select, multiplierSelect, toleranceSelect].forEach(function (select) {
-        select.addEventListener('change', updateResistor);
+      bandTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          setBandCount(Number(tab.dataset.bandCount));
+        });
       });
+
+      renderLegend();
+      setBandCount(4);
 
       document.querySelectorAll('.ec-question').forEach(function (question) {
         const answer = question.dataset.answer;
