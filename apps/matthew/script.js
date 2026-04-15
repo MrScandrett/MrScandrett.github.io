@@ -8,6 +8,12 @@ const ingredientDefs = {
   Pepper: { cost: 3, type: "topping" },
 };
 
+const drinkDefs = {
+  Cola: { tipBonus: 2 },
+  Lemonade: { tipBonus: 2 },
+  Water: { tipBonus: 1 },
+};
+
 const upgrades = {
   fast_oven: { cost: 20, label: "Fast Oven", desc: "Bake meter moves faster" },
   cozy_tables: { cost: 24, label: "Cozy Tables", desc: "+$1 tip on perfect orders" },
@@ -53,6 +59,9 @@ const state = {
     eta: 0,
   },
   ownedUpgrades: [],
+  drinkStation: {
+    prepared: null,
+  },
 };
 
 const ui = {
@@ -73,6 +82,11 @@ const ui = {
   timerFill: document.getElementById("timerFill"),
   orderLabel: document.getElementById("orderLabel"),
   orderTicket: document.getElementById("orderTicket"),
+  drinkRequest: document.getElementById("drinkRequest"),
+  drinkPrepared: document.getElementById("drinkPrepared"),
+  drinkButtons: document.getElementById("drinkButtons"),
+  clearDrinkBtn: document.getElementById("clearDrinkBtn"),
+  drinkCupLiquid: document.getElementById("drinkCupLiquid"),
   queue: document.getElementById("queue"),
   openBtn: document.getElementById("openBtn"),
   pauseBtn: document.getElementById("pauseBtn"),
@@ -113,6 +127,11 @@ function shuffle(arr) {
   return out;
 }
 
+function pickDrinkForOrder() {
+  if (Math.random() >= 0.45) return null;
+  return randFrom(Object.keys(drinkDefs));
+}
+
 function makeOrder() {
   const toppingPool = ["Pepperoni", "Olive", "Mushroom", "Pepper"];
   const toppingCount = 1 + Math.floor(Math.random() * 3);
@@ -121,6 +140,7 @@ function makeOrder() {
     sauce: true,
     cheese: true,
     toppings: shuffle(toppingPool).slice(0, toppingCount),
+    drink: pickDrinkForOrder(),
   };
 }
 
@@ -211,12 +231,70 @@ function renderTicket() {
 
   ui.orderLabel.textContent = "Customer order:";
   const rows = ["Dough", "Sauce", "Cheese", ...state.currentOrder.toppings];
+  if (state.currentOrder.drink) rows.push(`Drink: ${state.currentOrder.drink}`);
   for (const item of rows) {
     const row = document.createElement("div");
     row.className = "ticket-item";
     row.textContent = item;
     ui.orderTicket.appendChild(row);
   }
+}
+
+function renderDrinkStation() {
+  if (!ui.drinkButtons) return;
+
+  const requested = state.currentOrder?.drink || "None";
+  const prepared = state.drinkStation.prepared || "None";
+  ui.drinkRequest.textContent = requested;
+  ui.drinkPrepared.textContent = prepared;
+
+  if (ui.drinkCupLiquid) {
+    const liquidType = state.drinkStation.prepared ? state.drinkStation.prepared.toLowerCase() : "none";
+    ui.drinkCupLiquid.className = `cup-liquid ${liquidType}`;
+  }
+
+  ui.drinkButtons.innerHTML = "";
+  for (const name of Object.keys(drinkDefs)) {
+    const btn = document.createElement("button");
+    btn.className = `drink-btn${state.drinkStation.prepared === name ? " active" : ""}`;
+    btn.textContent = `Pour ${name}`;
+    btn.disabled = !state.dayOpen || !state.currentOrder;
+    btn.addEventListener("click", () => prepareDrink(name));
+    ui.drinkButtons.appendChild(btn);
+  }
+
+  ui.clearDrinkBtn.disabled = !state.dayOpen || !state.currentOrder || !state.drinkStation.prepared;
+}
+
+function prepareDrink(name) {
+  if (!state.dayOpen || !state.currentOrder || !drinkDefs[name]) return;
+  state.drinkStation.prepared = name;
+  renderDrinkStation();
+}
+
+function clearPreparedDrink() {
+  state.drinkStation.prepared = null;
+  renderDrinkStation();
+}
+
+function scoreDrink() {
+  if (!state.currentOrder?.drink) {
+    return { tipDelta: 0, repDelta: 0, note: "" };
+  }
+
+  if (!state.drinkStation.prepared) {
+    return { tipDelta: -2, repDelta: -1, note: ", no drink" };
+  }
+
+  if (state.drinkStation.prepared === state.currentOrder.drink) {
+    return {
+      tipDelta: drinkDefs[state.currentOrder.drink].tipBonus,
+      repDelta: 1,
+      note: `, + ${state.currentOrder.drink}`,
+    };
+  }
+
+  return { tipDelta: -1, repDelta: -1, note: ", wrong drink" };
 }
 
 function renderIngredients() {
@@ -336,6 +414,7 @@ function startOrder() {
     return;
   }
   resetPizza();
+  state.drinkStation.prepared = null;
   const dayPressure = Math.min(18, state.day * 1.2);
   const repRelief = state.reputation >= 70 ? 3 : 0;
   state.timerMax = clamp(60 - dayPressure + repRelief, 35, 62);
@@ -344,6 +423,7 @@ function startOrder() {
   ui.clearBtn.disabled = false;
   ui.bakeBtn.disabled = false;
   renderTicket();
+  renderDrinkStation();
   renderPizza();
   renderHud();
   saveGame();
@@ -378,6 +458,7 @@ function scorePizza() {
 
 function servePizza() {
   const result = scorePizza();
+  const drink = scoreDrink();
 
   if (!result.ok) {
     state.combo = 0;
@@ -388,11 +469,11 @@ function servePizza() {
     if (result.perfect) state.combo += 1;
     else state.combo = 0;
     const comboBonus = Math.min(8, state.combo);
-    const tip = (result.perfect ? 2 : 0) + (hasUpgrade("cozy_tables") ? 1 : 0) + comboBonus;
+    const tip = Math.max(0, (result.perfect ? 2 : 0) + (hasUpgrade("cozy_tables") ? 1 : 0) + comboBonus + drink.tipDelta);
     state.money += base + tip;
     state.served += 1;
-    state.reputation = clamp(state.reputation + (result.perfect ? 3 : 1), 0, 100);
-    setStatus(`Served. +$${base}${tip ? ` +$${tip} tip` : ""}${state.combo ? ` (Combo ${state.combo}x)` : ""}`, "good");
+    state.reputation = clamp(state.reputation + (result.perfect ? 3 : 1) + drink.repDelta, 0, 100);
+    setStatus(`Served. +$${base}${tip ? ` +$${tip} tip` : ""}${drink.note}${state.combo ? ` (Combo ${state.combo}x)` : ""}`, "good");
   }
 
   startOrder();
@@ -417,9 +498,11 @@ function endDay() {
 
   state.currentOrder = null;
   state.combo = 0;
+  state.drinkStation.prepared = null;
   resetPizza();
   renderPizza();
   renderTicket();
+  renderDrinkStation();
   renderHud();
   renderIngredients();
   renderShop();
@@ -574,6 +657,9 @@ function bind() {
     resetPizza();
     renderPizza();
   });
+  if (ui.clearDrinkBtn) {
+    ui.clearDrinkBtn.addEventListener("click", clearPreparedDrink);
+  }
   ui.bakeBtn.addEventListener("click", () => {
     if (!state.dayOpen) return;
     if (!state.pizza.hasCheese) {
@@ -605,6 +691,7 @@ function init() {
   renderIngredients();
   renderPizza();
   renderTicket();
+  renderDrinkStation();
   renderShop();
   renderDeliveryShop();
   renderDeliveryStatus();
