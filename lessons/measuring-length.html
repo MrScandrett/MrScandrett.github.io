@@ -69,34 +69,246 @@
       color: #fcd34d; margin-bottom: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase;
     }
 
-    /* Slider track */
+    /* Scale controls */
+    .ml-scale-toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1rem;
+    }
+    .ml-scale-mode-tabs { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .ml-scale-mode-btn {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px; padding: 0.45rem 0.8rem; color: rgba(255,255,255,0.72);
+      font-size: 0.76rem; font-weight: 700; cursor: pointer; transition: all 0.25s ease;
+    }
+    .ml-scale-mode-btn.active { color: #08111d; background: var(--scale-accent, #f59e0b); border-color: transparent; }
+    .ml-scale-instrument-note { font-size: 0.76rem; color: rgba(255,255,255,0.48); max-width: 34ch; }
     .ml-scale-slider-wrap { margin-bottom: 1rem; }
     .ml-scale-slider {
-      width: 100%; accent-color: #f59e0b; cursor: pointer;
-      height: 6px;
+      width: 100%; accent-color: var(--scale-accent, #f59e0b); cursor: pointer; height: 6px;
     }
     .ml-scale-labels { display: flex; justify-content: space-between; font-size: 0.68rem; color: rgba(255,255,255,0.3); margin-top: 0.2rem; font-family: 'IBM Plex Mono', monospace; }
 
     /* Main display */
     .ml-scale-display {
       background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px; padding: 1.2rem 1.4rem; margin-bottom: 1rem;
-      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+      border-radius: 18px; padding: 1.2rem 1.25rem; margin-bottom: 1rem;
+      display: grid; grid-template-columns: minmax(280px, 1.35fr) minmax(240px, 1fr); gap: 1rem;
+      transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
     }
-    @media (max-width: 500px) { .ml-scale-display { grid-template-columns: 1fr; } }
-    .ml-scale-main { display: flex; flex-direction: column; gap: 0.3rem; }
-    .ml-scale-name { font-size: 1.05rem; font-weight: 800; color: #fcd34d; line-height: 1.2; }
-    .ml-scale-category { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.4); }
-    .ml-scale-meters { font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem; color: #34d399; margin-top: 0.4rem; }
-    .ml-scale-desc { font-size: 0.82rem; color: rgba(255,255,255,0.6); line-height: 1.6; }
-    .ml-scale-comparisons { display: flex; flex-direction: column; gap: 0.4rem; }
-    .ml-scale-cmp { font-size: 0.8rem; color: rgba(255,255,255,0.5); padding: 0.3rem 0.6rem; background: rgba(255,255,255,0.04); border-radius: 7px; }
-    .ml-scale-cmp strong { color: rgba(255,255,255,0.8); }
+    @media (max-width: 880px) { .ml-scale-display { grid-template-columns: 1fr; } }
+    .ml-scale-visual {
+      position: relative; min-height: 350px; overflow: hidden; border-radius: 16px;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), transparent 42%),
+        linear-gradient(180deg, rgba(10,16,31,0.94), rgba(8,12,24,0.98));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 0 50px rgba(0,0,0,0.26);
+    }
+    .ml-scale-visual::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        linear-gradient(to bottom, rgba(255,255,255,0.07), transparent 16%, transparent 84%, rgba(255,255,255,0.04)),
+        repeating-linear-gradient(to right, rgba(255,255,255,0.05), rgba(255,255,255,0.05) 1px, transparent 1px, transparent 40px);
+      opacity: 0.24; pointer-events: none;
+    }
+    .ml-scale-visual[data-theme-scene="quantum"]::before {
+      background:
+        repeating-linear-gradient(to right, rgba(124,58,237,0.16), rgba(124,58,237,0.16) 1px, transparent 1px, transparent 28px),
+        repeating-linear-gradient(to bottom, rgba(59,130,246,0.1), rgba(59,130,246,0.1) 1px, transparent 1px, transparent 24px);
+      opacity: 0.45;
+    }
+    .ml-scale-visual[data-theme-scene="cosmic"]::before {
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.6) 0 1px, transparent 2px),
+        radial-gradient(circle at 78% 25%, rgba(255,255,255,0.45) 0 1px, transparent 2px),
+        radial-gradient(circle at 35% 80%, rgba(255,255,255,0.52) 0 1px, transparent 2px),
+        linear-gradient(to bottom, rgba(255,255,255,0.06), transparent 18%, transparent 84%, rgba(255,255,255,0.04));
+      opacity: 0.5;
+      background-size: 160px 160px, 220px 220px, 200px 200px, auto;
+    }
+    .ml-scale-lane {
+      position: absolute; left: 7%; right: 7%; top: 50%; height: 4px;
+      transform: translateY(-50%); border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.62), transparent);
+      box-shadow: 0 0 18px rgba(255,255,255,0.18);
+    }
+    .ml-scale-object {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: var(--object-w, 48px); height: var(--object-h, 48px); opacity: 0.98;
+      transition: width 0.45s ease, height 0.45s ease, background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, border-radius 0.35s ease;
+    }
+    .ml-scale-object::before, .ml-scale-object::after { content: ''; position: absolute; inset: 0; }
+    .ml-scale-object[data-shape="dot"] {
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.96), var(--accent-soft, rgba(245,158,11,0.85)) 55%, transparent 72%);
+      box-shadow: 0 0 28px rgba(255,255,255,0.25);
+    }
+    .ml-scale-object[data-shape="ring"] {
+      border-radius: 50%; border: 2px solid var(--accent-soft, rgba(245,158,11,0.82));
+      background: radial-gradient(circle, rgba(255,255,255,0.18) 0 24%, transparent 26%);
+      box-shadow: 0 0 24px rgba(255,255,255,0.12);
+    }
+    .ml-scale-object[data-shape="human"] {
+      width: 56px; height: 150px; background: transparent;
+    }
+    .ml-scale-object[data-shape="human"]::before {
+      inset: auto; left: 50%; top: 14px; width: 28px; height: 28px; transform: translateX(-50%);
+      border-radius: 50%; background: linear-gradient(180deg, rgba(255,255,255,0.96), var(--accent-soft, rgba(245,158,11,0.82)));
+    }
+    .ml-scale-object[data-shape="human"]::after {
+      left: 50%; top: 42px; width: 42px; height: 96px; transform: translateX(-50%);
+      background: linear-gradient(180deg, var(--accent-soft, rgba(245,158,11,0.92)), rgba(255,255,255,0.25));
+      clip-path: polygon(36% 0, 64% 0, 76% 28%, 100% 44%, 84% 52%, 70% 40%, 66% 78%, 82% 100%, 64% 100%, 50% 82%, 36% 100%, 18% 100%, 34% 78%, 30% 40%, 16% 52%, 0 44%, 24% 28%);
+      border-radius: 18px;
+    }
+    .ml-scale-object[data-shape="mountain"] {
+      width: 190px; height: 112px; background: linear-gradient(180deg, rgba(255,255,255,0.14), transparent 20%);
+      clip-path: polygon(0 100%, 18% 68%, 34% 86%, 54% 30%, 70% 62%, 82% 48%, 100% 100%);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.28);
+    }
+    .ml-scale-object[data-shape="globe"] {
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 34% 30%, rgba(255,255,255,0.9), transparent 18%),
+        radial-gradient(circle at 45% 58%, rgba(34,197,94,0.72), transparent 24%),
+        radial-gradient(circle at 70% 46%, rgba(16,185,129,0.7), transparent 18%),
+        linear-gradient(180deg, rgba(59,130,246,0.92), rgba(14,116,144,0.88));
+      box-shadow: 0 0 34px rgba(59,130,246,0.28);
+    }
+    .ml-scale-object[data-shape="orbits"] {
+      width: 220px; height: 220px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,205,86,0.92) 0 12%, transparent 14%);
+      box-shadow: 0 0 32px rgba(255,205,86,0.26);
+    }
+    .ml-scale-object[data-shape="orbits"]::before {
+      inset: 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%;
+      box-shadow: 0 0 0 26px rgba(255,255,255,0.08), 0 0 0 56px rgba(255,255,255,0.05), 0 0 0 88px rgba(255,255,255,0.03);
+    }
+    .ml-scale-object[data-shape="spiral"] {
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(255,255,255,0.95) 0 8%, transparent 10%),
+        conic-gradient(from 0deg, rgba(245,158,11,0.82), rgba(255,255,255,0.2), rgba(59,130,246,0.76), rgba(245,158,11,0.82));
+      filter: blur(0.2px);
+      box-shadow: 0 0 38px rgba(255,255,255,0.16);
+    }
+    .ml-scale-object[data-shape="web"] {
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(255,255,255,0.2) 0 38%, transparent 39%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), transparent 68%);
+      border: 1px solid rgba(255,255,255,0.28);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08), 0 0 46px rgba(255,255,255,0.12);
+    }
+    .ml-scale-object[data-shape="web"]::before {
+      inset: 10%; border-radius: 50%;
+      border: 1px dashed rgba(255,255,255,0.18);
+    }
+    .ml-scale-object[data-shape="strand"] {
+      width: 180px; height: 28px; background: transparent;
+    }
+    .ml-scale-object[data-shape="strand"]::before,
+    .ml-scale-object[data-shape="strand"]::after {
+      top: 0; bottom: 0; width: 48%; border-radius: 999px;
+      border: 3px solid var(--accent-soft, rgba(16,185,129,0.72));
+    }
+    .ml-scale-object[data-shape="strand"]::before { left: 0; transform: skewY(18deg); }
+    .ml-scale-object[data-shape="strand"]::after { right: 0; transform: skewY(-18deg); }
+    .ml-scale-object[data-shape="line"] {
+      width: 200px; height: 10px; border-radius: 999px;
+      background: linear-gradient(90deg, transparent, var(--accent-soft, rgba(245,158,11,0.85)), transparent);
+      box-shadow: 0 0 24px rgba(255,255,255,0.14);
+    }
+    .ml-scale-ghosts, .ml-scale-markers {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+    .ml-scale-ghost, .ml-scale-marker {
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .ml-scale-ghost {
+      width: var(--ghost-w, 24px); height: var(--ghost-h, 24px); border-radius: 50%;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); opacity: var(--ghost-o, 0.45);
+      box-shadow: 0 0 18px rgba(255,255,255,0.08);
+    }
+    .ml-scale-marker {
+      display: flex; flex-direction: column; align-items: center; gap: 0.3rem; color: rgba(255,255,255,0.5); font-size: 0.68rem;
+      opacity: 0.9;
+    }
+    .ml-scale-marker::before {
+      content: ''; width: 1px; height: 34px; background: linear-gradient(180deg, rgba(255,255,255,0.3), transparent);
+    }
+    .ml-scale-marker span { font-family: 'IBM Plex Mono', monospace; }
+    .ml-scale-camera {
+      position: absolute; left: 1rem; right: 1rem; bottom: 0.9rem; display: flex; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap;
+      font-size: 0.72rem; color: rgba(255,255,255,0.58);
+    }
+    .ml-scale-camera-chip {
+      padding: 0.32rem 0.58rem; border-radius: 999px; background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.08); font-family: 'IBM Plex Mono', monospace;
+    }
+    .ml-scale-panel { display: flex; flex-direction: column; gap: 0.75rem; }
+    .ml-scale-main { display: flex; flex-direction: column; gap: 0.35rem; }
+    .ml-scale-storyline {
+      font-size: 0.86rem; color: rgba(255,255,255,0.88); line-height: 1.55;
+      padding: 0.7rem 0.9rem; border-radius: 12px; background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .ml-scale-name { font-size: 1.15rem; font-weight: 800; color: var(--scale-accent, #fcd34d); line-height: 1.2; transition: color 0.3s ease; }
+    .ml-scale-category { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.46); }
+    .ml-scale-meters, .ml-scale-math { font-family: 'IBM Plex Mono', monospace; font-size: 0.84rem; color: #8bf7c5; }
+    .ml-scale-math { display: flex; flex-direction: column; gap: 0.22rem; color: rgba(209,250,229,0.7); }
+    .ml-scale-desc { font-size: 0.84rem; color: rgba(255,255,255,0.66); line-height: 1.68; }
+    .ml-scale-anchor-grid, .ml-scale-comparisons { display: grid; gap: 0.55rem; }
+    .ml-scale-anchor-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+    .ml-scale-anchor, .ml-scale-cmp, .ml-scale-application {
+      padding: 0.65rem 0.75rem; background: rgba(255,255,255,0.05); border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .ml-scale-anchor-label {
+      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.42); margin-bottom: 0.2rem;
+    }
+    .ml-scale-anchor-value { font-size: 0.82rem; color: rgba(255,255,255,0.86); line-height: 1.45; }
+    .ml-scale-cmp { font-size: 0.8rem; color: rgba(255,255,255,0.62); line-height: 1.5; transform: translateY(0); transition: opacity 0.3s ease, transform 0.3s ease; }
+    .ml-scale-cmp strong { color: rgba(255,255,255,0.9); }
+    .ml-scale-application { font-size: 0.8rem; color: rgba(255,255,255,0.68); }
+    .ml-scale-subhead {
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); margin: 0.2rem 0 0;
+    }
 
     /* Logarithmic bar */
-    .ml-scale-bar-wrap { position: relative; height: 36px; background: rgba(255,255,255,0.04); border-radius: 8px; overflow: hidden; margin-bottom: 0.5rem; }
-    .ml-scale-bar-fill { height: 100%; background: linear-gradient(90deg, #1d4ed8, #f59e0b); border-radius: 8px; transition: width 0.3s ease; }
-    .ml-scale-bar-label { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.5); }
+    .ml-scale-bar-wrap { position: relative; height: 36px; background: rgba(255,255,255,0.04); border-radius: 10px; overflow: hidden; margin-bottom: 0.75rem; }
+    .ml-scale-bar-fill { height: 100%; background: linear-gradient(90deg, #1d4ed8, var(--scale-accent, #f59e0b)); border-radius: 10px; transition: width 0.3s ease, background 0.3s ease; }
+    .ml-scale-bar-label { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.62); }
+
+    /* Compare / powers / story modes */
+    .ml-scale-mode-panel[hidden] { display: none; }
+    .ml-scale-compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; margin-bottom: 0.8rem; }
+    @media (max-width: 560px) { .ml-scale-compare-grid { grid-template-columns: 1fr; } }
+    .ml-scale-select {
+      width: 100%; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 10px; padding: 0.65rem 0.75rem; font-size: 0.84rem; outline: none;
+    }
+    .ml-scale-compare-card, .ml-scale-power-card {
+      padding: 0.95rem 1rem; border-radius: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    }
+    .ml-scale-compare-ratio { font-size: 1.15rem; font-weight: 800; color: var(--scale-accent, #fcd34d); }
+    .ml-scale-compare-line, .ml-scale-power-line { font-size: 0.82rem; color: rgba(255,255,255,0.68); line-height: 1.55; }
+    .ml-scale-power-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0; }
+    .ml-scale-power-btn {
+      background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 0.5rem 0.8rem; cursor: pointer; font-size: 0.8rem; font-weight: 700;
+      transition: all 0.22s ease;
+    }
+    .ml-scale-power-btn:hover { border-color: var(--scale-accent, #f59e0b); color: var(--scale-accent, #fcd34d); }
+    .ml-scale-story-steps { display: grid; gap: 0.55rem; }
+    .ml-scale-story-step {
+      display: flex; justify-content: space-between; gap: 0.8rem; align-items: center; padding: 0.65rem 0.8rem;
+      border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.22s ease;
+    }
+    .ml-scale-story-step.active { border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.1); color: #fff; }
+    .ml-scale-story-step span:last-child { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: rgba(255,255,255,0.45); }
 
     /* Neighbor nav */
     .ml-scale-nav { display: flex; gap: 0.5rem; }
@@ -342,7 +554,17 @@
           <section class="ml-scale-lab" aria-label="Scale of the universe length explorer">
             <div class="ml-scale-badge">Interactive Scale Explorer</div>
             <h2>From the Planck Length to the Observable Universe</h2>
-            <p>Use the slider to travel across 61 orders of magnitude — the full range of lengths humans have ever measured or theorized about. Each step is a factor of 10.</p>
+            <p>Move the instrument through powers of ten and watch the scene, anchors, and math layer shift with it. This is built as a camera through scale, not just a list of facts.</p>
+
+            <div class="ml-scale-toolbar">
+              <div class="ml-scale-mode-tabs" role="tablist" aria-label="Scale learning modes">
+                <button class="ml-scale-mode-btn active" id="ml-mode-explorer" data-mode="explorer" type="button">Explorer</button>
+                <button class="ml-scale-mode-btn" id="ml-mode-compare" data-mode="compare" type="button">Compare</button>
+                <button class="ml-scale-mode-btn" id="ml-mode-powers" data-mode="powers" type="button">Powers of 10</button>
+                <button class="ml-scale-mode-btn" id="ml-mode-story" data-mode="story" type="button">Story Mode</button>
+              </div>
+              <div class="ml-scale-instrument-note" id="ml-scale-note">Camera state: quantum scale. Nearby landmarks fade in as you travel outward.</div>
+            </div>
 
             <div class="ml-scale-slider-wrap">
               <input type="range" class="ml-scale-slider" id="ml-scale-slider" min="0" max="27" value="0" aria-label="Scale from Planck length to observable universe">
@@ -359,13 +581,68 @@
             </div>
 
             <div class="ml-scale-display">
-              <div class="ml-scale-main">
-                <div class="ml-scale-category" id="ml-scale-cat">Quantum Physics</div>
-                <div class="ml-scale-name" id="ml-scale-name">Planck Length</div>
-                <div class="ml-scale-meters" id="ml-scale-meters">1.616 × 10⁻³⁵ m</div>
-                <div class="ml-scale-desc" id="ml-scale-desc">The smallest meaningful length in physics. Below this scale, our current understanding of space and time breaks down entirely. Named after physicist Max Planck.</div>
+              <div class="ml-scale-visual" id="ml-scale-visual" data-theme-scene="quantum">
+                <div class="ml-scale-lane"></div>
+                <div class="ml-scale-markers" id="ml-scale-markers"></div>
+                <div class="ml-scale-ghosts" id="ml-scale-ghosts"></div>
+                <div class="ml-scale-object" id="ml-scale-object" data-shape="dot" aria-hidden="true"></div>
+                <div class="ml-scale-camera">
+                  <div class="ml-scale-camera-chip" id="ml-scale-camera">Zoom 10⁻³⁵</div>
+                  <div class="ml-scale-camera-chip" id="ml-scale-context">Anchor: Planck Length</div>
+                </div>
               </div>
-              <div class="ml-scale-comparisons" id="ml-scale-cmps"></div>
+
+              <div class="ml-scale-panel">
+                <div class="ml-scale-main">
+                  <div class="ml-scale-category" id="ml-scale-cat">Quantum Physics</div>
+                  <div class="ml-scale-name" id="ml-scale-name">Planck Length</div>
+                  <div class="ml-scale-meters" id="ml-scale-meters">1.616 × 10⁻³⁵ m</div>
+                  <div class="ml-scale-math" id="ml-scale-math"></div>
+                  <div class="ml-scale-storyline" id="ml-scale-storyline">At this zoom, even a proton would feel enormous.</div>
+                  <div class="ml-scale-desc" id="ml-scale-desc">The smallest meaningful length in physics. Below this scale, our current understanding of space and time breaks down entirely. Named after physicist Max Planck.</div>
+                </div>
+
+                <div class="ml-scale-mode-panel" id="ml-scale-panel-explorer">
+                  <div class="ml-scale-subhead">Anchored Reference Objects</div>
+                  <div class="ml-scale-anchor-grid" id="ml-scale-anchors"></div>
+                  <div class="ml-scale-subhead">Nearby Comparisons</div>
+                  <div class="ml-scale-comparisons" id="ml-scale-cmps"></div>
+                  <div class="ml-scale-subhead">Where This Scale Matters</div>
+                  <div class="ml-scale-application" id="ml-scale-application"></div>
+                </div>
+
+                <div class="ml-scale-mode-panel" id="ml-scale-panel-compare" hidden>
+                  <div class="ml-scale-compare-grid">
+                    <select class="ml-scale-select" id="ml-scale-compare-a" aria-label="First object to compare"></select>
+                    <select class="ml-scale-select" id="ml-scale-compare-b" aria-label="Second object to compare"></select>
+                  </div>
+                  <div class="ml-scale-compare-card">
+                    <div class="ml-scale-compare-ratio" id="ml-scale-compare-ratio"></div>
+                    <div class="ml-scale-compare-line" id="ml-scale-compare-fit"></div>
+                    <div class="ml-scale-compare-line" id="ml-scale-compare-exp"></div>
+                    <div class="ml-scale-compare-line" id="ml-scale-compare-note"></div>
+                  </div>
+                </div>
+
+                <div class="ml-scale-mode-panel" id="ml-scale-panel-powers" hidden>
+                  <div class="ml-scale-power-card">
+                    <div class="ml-scale-power-line" id="ml-scale-power-current"></div>
+                    <div class="ml-scale-power-line" id="ml-scale-power-prefix"></div>
+                    <div class="ml-scale-power-line" id="ml-scale-power-direction"></div>
+                  </div>
+                  <div class="ml-scale-power-controls">
+                    <button class="ml-scale-power-btn" type="button" data-power-action="down">÷10</button>
+                    <button class="ml-scale-power-btn" type="button" data-power-action="up">×10</button>
+                    <button class="ml-scale-power-btn" type="button" data-power-jump="-6">Jump to 10⁻⁶</button>
+                    <button class="ml-scale-power-btn" type="button" data-power-jump="3">Jump to 10³</button>
+                    <button class="ml-scale-power-btn" type="button" data-power-jump="26">Jump to 10²⁶</button>
+                  </div>
+                </div>
+
+                <div class="ml-scale-mode-panel" id="ml-scale-panel-story" hidden>
+                  <div class="ml-scale-story-steps" id="ml-scale-story-steps"></div>
+                </div>
+              </div>
             </div>
 
             <div class="ml-scale-nav">
@@ -789,98 +1066,234 @@
   <script>
   (function () {
     const scales = [
-      { name: 'Planck Length',        cat: 'Quantum Physics',     exp: -35, mantissa: 1.616,
-        desc: 'The smallest meaningful length in physics. Below this scale, space and time as we know them cease to have meaning. Named after Max Planck.',
-        cmps: ['10²⁰ times smaller than a proton','The scale where quantum gravity effects dominate','Cannot be directly observed by any instrument'] },
-      { name: 'Quark',                cat: 'Particle Physics',    exp: -18, mantissa: 1,
-        desc: 'The building blocks of protons and neutrons. Quarks are so small they cannot be isolated — they are always bound together inside hadrons.',
-        cmps: ['~10¹⁷ times smaller than an atom','Held together by the strong nuclear force','Discovered in experiments at SLAC in 1968'] },
-      { name: 'Proton / Neutron',     cat: 'Particle Physics',    exp: -15, mantissa: 1,
-        desc: 'The nucleus of a hydrogen atom is a single proton — about 1 femtometer across. Protons and neutrons are made of three quarks each.',
-        cmps: ['~100,000 times smaller than an atom','The scale explored at CERN\'s LHC','Rutherford discovered the nucleus in 1911'] },
-      { name: 'DNA Double Helix Width', cat: 'Molecular Biology', exp: -9,  mantissa: 2,
-        desc: 'The width of a DNA strand — 2 nanometers. DNA is so thin that all the DNA in a single human cell, stretched out, would be about 2 meters long.',
-        cmps: ['~2 nm wide','Visible only with electron microscopes','Structure discovered by Watson & Crick in 1953'] },
-      { name: 'Bacterium',            cat: 'Biology',             exp: -6,  mantissa: 2,
-        desc: 'A typical bacterium is 1–10 micrometers long. A human hair is about 70 micrometers wide — and roughly 10–70 bacteria could fit across it.',
-        cmps: ['Visible under a light microscope','~1,000× smaller than a sand grain','The first living things on Earth ~3.8 billion years ago'] },
-      { name: 'Human Hair Width',     cat: 'Biology',             exp: -5,  mantissa: 7,
-        desc: 'A human hair is roughly 70 micrometers in diameter — invisible to the naked eye in cross-section but used as a comparison scale in microscopy.',
-        cmps: ['About 70 μm across','~10× wider than a bacterium','Visible but hard to see without magnification'] },
-      { name: 'Ant',                  cat: 'Biology',             exp: -3,  mantissa: 1,
-        desc: 'A common ant is about 1–2 mm long. Ants can carry up to 50 times their own body weight — a feat that scales of size make possible.',
-        cmps: ['~1,000 ants = 1 meter','Visible to the naked eye','Antennae sense the world at millimeter precision'] },
-      { name: 'Human Hand',           cat: 'Human Scale',         exp: -1,  mantissa: 2,
-        desc: 'The average adult hand is about 18–20 cm from wrist to middle fingertip — the basis of the ancient cubit (elbow to fingertip ≈ 45 cm).',
-        cmps: ['The origin of "handbreadth" = 4 fingers','1 hand = 4 inches in horse measurement','Our first and most natural measuring tool'] },
-      { name: 'Average Human Height', cat: 'Human Scale',         exp: 0,   mantissa: 1.7,
-        desc: 'The global average adult height is about 1.7 meters. The meter was originally defined as 1/10,000,000 of the distance from pole to equator.',
-        cmps: ['~1,760 humans stacked = 1 mile high','Our height fits ~6 times in a fathom','The reference scale for most everyday measurements'] },
-      { name: 'Blue Whale',           cat: 'Biology',             exp: 1,   mantissa: 3,
-        desc: 'The blue whale, the largest animal ever known to have lived, reaches up to 30 meters — longer than two school buses end to end.',
-        cmps: ['Weighs up to 200 tonnes','Heart the size of a small car','Tongue weighs as much as an elephant'] },
-      { name: 'Eiffel Tower',         cat: 'Engineering',         exp: 2,   mantissa: 3.3,
-        desc: 'The Eiffel Tower stands 330 meters tall including its antenna. Its height was the world record for 41 years after its construction in 1889.',
-        cmps: ['330 m / 1,083 ft tall','Made of 7,300 tonnes of iron','Shrinks ~6 inches in cold weather'] },
-      { name: 'Mount Everest',        cat: 'Geography',           exp: 3,   mantissa: 8.849,
-        desc: 'Earth\'s highest point above sea level at 8,849 meters. First measured precisely by the Great Trigonometric Survey of India in 1856.',
-        cmps: ['8,849 m / 29,032 ft above sea level','Height remeasured in 2020 using GPS','Commercial flights cruise ~10,000 m above this'] },
-      { name: 'Earth\'s Diameter',   cat: 'Planetary Science',   exp: 7,   mantissa: 1.27,
-        desc: 'Earth\'s diameter is about 12,742 km. Eratosthenes estimated Earth\'s circumference to within 2% accuracy using shadow angles around 240 BC.',
-        cmps: ['12,742 km in diameter','40,075 km circumference at the equator','Eratosthenes\' estimate was remarkably accurate'] },
-      { name: 'Distance to the Moon', cat: 'Astronomy',           exp: 8,   mantissa: 3.84,
-        desc: 'The Moon is on average 384,400 km away. NASA\'s Lunar Laser Ranging experiment (using Apollo retroreflectors) measures this to centimeter accuracy.',
-        cmps: ['~1.28 light-seconds away','384,400 km average','Retroreflectors measure it to ±1 cm today'] },
-      { name: 'Distance to the Sun',  cat: 'Astronomy',           exp: 11,  mantissa: 1.5,
-        desc: 'One Astronomical Unit (AU) — 149.6 million km. Light takes about 8 minutes 20 seconds to travel from the Sun to Earth.',
-        cmps: ['= 1 Astronomical Unit (AU)','Light travel time: ~8 min 20 sec','Earth orbits at ~30 km/s to stay at this distance'] },
-      { name: 'Diameter of the Solar System', cat: 'Astronomy',  exp: 13,  mantissa: 1.2,
-        desc: 'The Solar System extends to the Oort Cloud — roughly 100,000 AU from the Sun. The heliosphere boundary (where solar wind stops) is ~123 AU.',
-        cmps: ['Voyager 1 crossed the heliopause in 2012','~123 AU to the edge of the heliosphere','Light takes ~6.3 hours to reach Pluto'] },
-      { name: 'Nearest Star (Proxima Centauri)', cat: 'Astronomy', exp: 16, mantissa: 4.02,
-        desc: 'The nearest star to our Sun is 4.24 light-years away. It would take Voyager 1 (at its current speed) over 73,000 years to reach it.',
-        cmps: ['4.24 light-years away','~268,770 AU from Earth','No human-made object has come remotely close'] },
-      { name: 'Milky Way Diameter',   cat: 'Cosmology',           exp: 21,  mantissa: 9.46,
-        desc: 'Our galaxy is roughly 100,000 light-years in diameter, containing 200–400 billion stars. Light from the far edge set out before Homo sapiens evolved.',
-        cmps: ['~100,000 light-years across','200–400 billion stars','Our Sun is ~26,000 light-years from the center'] },
-      { name: 'Distance to Andromeda', cat: 'Cosmology',          exp: 22,  mantissa: 2.37,
-        desc: 'The Andromeda Galaxy — the nearest large galaxy to the Milky Way — is 2.537 million light-years away. On a clear night it\'s visible to the naked eye.',
-        cmps: ['~2.5 million light-years away','Contains ~1 trillion stars','Will collide with the Milky Way in ~4.5 billion years'] },
-      { name: 'Hubble Deep Field Depth', cat: 'Cosmology',        exp: 25,  mantissa: 1.2,
-        desc: 'The Hubble Deep Field captured galaxies 13 billion light-years away — objects whose light left before Earth even existed, revealing the ancient universe.',
-        cmps: ['~13 billion light-years deep','Contains over 3,000 galaxies in a tiny sky patch','Light left these galaxies ~13 billion years ago'] },
-      { name: 'Observable Universe',  cat: 'Cosmology',           exp: 26,  mantissa: 8.8,
-        desc: 'The farthest we can possibly observe — about 93 billion light-years in diameter. Beyond this, light hasn\'t had time to reach us since the Big Bang.',
-        cmps: ['93 billion light-years in diameter','Contains ~2 trillion galaxies','Edge set by the age of the universe × speed of light'] },
+      { name: 'Planck Length', cat: 'Quantum Physics', exp: -35, mantissa: 1.616, theme: '#8b5cf6', scene: 'quantum', shape: 'dot', size: { w: 26, h: 26 }, familiar: 'A proton would feel absurdly gigantic here.', wow: 'About 10²⁰ times smaller than a proton.', application: 'This is the edge of theories about quantum gravity and spacetime itself.', story: 'At this zoom, a proton is impossibly huge compared to the Planck scale.', desc: 'The smallest meaningful length in physics. Below this scale, space and time as we know them cease to have meaning. Named after Max Planck.', cmps: ['10²⁰ times smaller than a proton','The scale where quantum gravity effects dominate','Cannot be directly observed by any instrument'] },
+      { name: 'Quark', cat: 'Particle Physics', exp: -18, mantissa: 1, theme: '#6366f1', scene: 'quantum', shape: 'dot', size: { w: 34, h: 34 }, familiar: 'Smaller than anything any optical tool can ever show you.', wow: 'Roughly 10¹⁷ times smaller than an atom.', application: 'Particle accelerators probe this realm by smashing matter at extreme energies.', story: 'You are inside the hidden architecture of protons and neutrons.', desc: 'The building blocks of protons and neutrons. Quarks are so small they cannot be isolated — they are always bound together inside hadrons.', cmps: ['~10¹⁷ times smaller than an atom','Held together by the strong nuclear force','Discovered in experiments at SLAC in 1968'] },
+      { name: 'Proton / Neutron', cat: 'Particle Physics', exp: -15, mantissa: 1, theme: '#3b82f6', scene: 'quantum', shape: 'ring', size: { w: 74, h: 74 }, familiar: 'Atoms are still about 100,000 times wider than this.', wow: 'The Large Hadron Collider explores events at this scale.', application: 'Nuclear physics, particle beams, and the structure of atoms live here.', story: 'At this zoom, the nucleus of an atom becomes a place, not an idea.', desc: 'The nucleus of a hydrogen atom is a single proton — about 1 femtometer across. Protons and neutrons are made of three quarks each.', cmps: ['~100,000 times smaller than an atom','The scale explored at CERN\'s LHC','Rutherford discovered the nucleus in 1911'] },
+      { name: 'DNA Double Helix Width', cat: 'Molecular Biology', exp: -9, mantissa: 2, theme: '#14b8a6', scene: 'micro', shape: 'strand', size: { w: 170, h: 34 }, familiar: 'A human hair is about 35,000 DNA widths across.', wow: 'Every cell hides meters of DNA folded into a tiny nucleus.', application: 'Biotechnology, genetics, and nanoscience all work in this range.', story: 'You are now at the scale where the ladder of DNA has measurable width.', desc: 'The width of a DNA strand — 2 nanometers. DNA is so thin that all the DNA in a single human cell, stretched out, would be about 2 meters long.', cmps: ['~2 nm wide','Visible only with electron microscopes','Structure discovered by Watson & Crick in 1953'] },
+      { name: 'Bacterium', cat: 'Biology', exp: -6, mantissa: 2, theme: '#22c55e', scene: 'micro', shape: 'line', size: { w: 120, h: 18 }, familiar: 'About 35 bacteria could line up across one human hair.', wow: 'A human is about a million times larger.', application: 'This is the scale of cells, microbes, and light microscope work.', story: 'You are now at the scale where cells become visible under microscopes.', desc: 'A typical bacterium is 1–10 micrometers long. A human hair is about 70 micrometers wide — and roughly 10–70 bacteria could fit across it.', cmps: ['Visible under a light microscope','~1,000× smaller than a sand grain','The first living things on Earth ~3.8 billion years ago'] },
+      { name: 'Human Hair Width', cat: 'Biology', exp: -5, mantissa: 7, theme: '#84cc16', scene: 'micro', shape: 'line', size: { w: 200, h: 16 }, familiar: 'A hair is around 70 micrometers wide.', wow: 'A hair is about 100,000 nanometers wide.', application: 'Microscopy often uses hair, fibers, and grains of pollen as familiar anchors.', story: 'This is a threshold where invisible life starts to connect to the everyday world.', desc: 'A human hair is roughly 70 micrometers in diameter — invisible to the naked eye in cross-section but used as a comparison scale in microscopy.', cmps: ['About 70 μm across','~10× wider than a bacterium','Visible but hard to see without magnification'] },
+      { name: 'Ant', cat: 'Biology', exp: -3, mantissa: 1, theme: '#f59e0b', scene: 'everyday', shape: 'line', size: { w: 116, h: 22 }, familiar: 'About 1,000 ants lined up would stretch one meter.', wow: 'Scale is why ants can lift so much relative to their mass.', application: 'This is the world of insects, grains, and precise small-object measurement.', story: 'You have reached the scale of creatures small enough to fit on a fingertip.', desc: 'A common ant is about 1–2 mm long. Ants can carry up to 50 times their own body weight — a feat that scales of size make possible.', cmps: ['~1,000 ants = 1 meter','Visible to the naked eye','Antennae sense the world at millimeter precision'] },
+      { name: 'Human Hand', cat: 'Human Scale', exp: -1, mantissa: 2, theme: '#f97316', scene: 'everyday', shape: 'line', size: { w: 190, h: 26 }, familiar: 'The hand gave rise to handbreadths, palms, and cubits.', wow: 'Horse height is still measured in hands today.', application: 'Body-based units connect ancient measuring practice to modern standard units.', story: 'This is the scale where your own body becomes a measuring instrument.', desc: 'The average adult hand is about 18–20 cm from wrist to middle fingertip — the basis of the ancient cubit (elbow to fingertip ≈ 45 cm).', cmps: ['The origin of "handbreadth" = 4 fingers','1 hand = 4 inches in horse measurement','Our first and most natural measuring tool'] },
+      { name: 'Average Human Height', cat: 'Human Scale', exp: 0, mantissa: 1.7, theme: '#fb7185', scene: 'everyday', shape: 'human', size: { w: 56, h: 150 }, familiar: 'Think pencil, desk, door, person.', wow: 'Earth is roughly 10⁷ times wider than a human.', application: 'Architecture, sports, and most daily measurements are centered on this scale.', story: 'You are standing at the human reference scale for almost all everyday measurement.', desc: 'The global average adult height is about 1.7 meters. The meter was originally defined as 1/10,000,000 of the distance from pole to equator.', cmps: ['~1,760 humans stacked = 1 mile high','Our height fits ~6 times in a fathom','The reference scale for most everyday measurements'] },
+      { name: 'Blue Whale', cat: 'Biology', exp: 1, mantissa: 3, theme: '#06b6d4', scene: 'everyday', shape: 'line', size: { w: 240, h: 32 }, familiar: 'Longer than two school buses parked end to end.', wow: 'Its heart is about the size of a small car.', application: 'Large animal biology stretches the everyday scale into surprising territory.', story: 'Now the familiar meter becomes a building block for creatures the size of buses.', desc: 'The blue whale, the largest animal ever known to have lived, reaches up to 30 meters — longer than two school buses end to end.', cmps: ['Weighs up to 200 tonnes','Heart the size of a small car','Tongue weighs as much as an elephant'] },
+      { name: 'Eiffel Tower', cat: 'Engineering', exp: 2, mantissa: 3.3, theme: '#eab308', scene: 'everyday', shape: 'line', size: { w: 230, h: 18 }, familiar: 'A skyscraper-scale landmark measured in hundreds of meters.', wow: 'Iron expands and shrinks enough to change its height seasonally.', application: 'Surveying, engineering, and city planning often work across this scale.', story: 'Human-made structures now dominate the frame.', desc: 'The Eiffel Tower stands 330 meters tall including its antenna. Its height was the world record for 41 years after its construction in 1889.', cmps: ['330 m / 1,083 ft tall','Made of 7,300 tonnes of iron','Shrinks ~6 inches in cold weather'] },
+      { name: 'Mount Everest', cat: 'Geography', exp: 3, mantissa: 8.849, theme: '#f97316', scene: 'terrain', shape: 'mountain', size: { w: 220, h: 128 }, familiar: 'A mountain skyline replaces city blocks here.', wow: 'Jetliners cruise only a little higher than Everest.', application: 'Topographic maps, GPS surveying, and geography become the key tools.', story: 'This is the scale where landscapes, not buildings, become the reference.', desc: 'Earth\'s highest point above sea level at 8,849 meters. First measured precisely by the Great Trigonometric Survey of India in 1856.', cmps: ['8,849 m / 29,032 ft above sea level','Height remeasured in 2020 using GPS','Commercial flights cruise ~10,000 m above this'] },
+      { name: 'Earth\'s Diameter', cat: 'Planetary Science', exp: 7, mantissa: 1.27, theme: '#38bdf8', scene: 'planetary', shape: 'globe', size: { w: 180, h: 180 }, familiar: 'A human is tiny enough to vanish completely at this zoom.', wow: 'Earth is about 10⁷ times wider than a person.', application: 'Global mapping, satellite orbits, and climate systems all use this scale.', story: 'The whole planet fits inside the frame.', desc: 'Earth\'s diameter is about 12,742 km. Eratosthenes estimated Earth\'s circumference to within 2% accuracy using shadow angles around 240 BC.', cmps: ['12,742 km in diameter','40,075 km circumference at the equator','Eratosthenes\' estimate was remarkably accurate'] },
+      { name: 'Distance to the Moon', cat: 'Astronomy', exp: 8, mantissa: 3.84, theme: '#cbd5e1', scene: 'planetary', shape: 'line', size: { w: 240, h: 14 }, familiar: 'Light needs about 1.28 seconds to cross this gap.', wow: 'Laser ranging can still measure it to about a centimeter.', application: 'Orbital mechanics and laser ranging make this scale measurable.', story: 'Earth and Moon stop feeling adjacent and start feeling dramatically separated.', desc: 'The Moon is on average 384,400 km away. NASA\'s Lunar Laser Ranging experiment (using Apollo retroreflectors) measures this to centimeter accuracy.', cmps: ['~1.28 light-seconds away','384,400 km average','Retroreflectors measure it to ±1 cm today'] },
+      { name: 'Distance to the Sun', cat: 'Astronomy', exp: 11, mantissa: 1.5, theme: '#fbbf24', scene: 'planetary', shape: 'line', size: { w: 250, h: 12 }, familiar: 'This is one Astronomical Unit, the yardstick of our Solar System.', wow: 'Sunlight takes about 8 minutes 20 seconds to arrive.', application: 'Planetary science uses AU as the natural unit here.', story: 'You are now using sunlight time and orbital motion as measuring tools.', desc: 'One Astronomical Unit (AU) — 149.6 million km. Light takes about 8 minutes 20 seconds to travel from the Sun to Earth.', cmps: ['= 1 Astronomical Unit (AU)','Light travel time: ~8 min 20 sec','Earth orbits at ~30 km/s to stay at this distance'] },
+      { name: 'Diameter of the Solar System', cat: 'Astronomy', exp: 13, mantissa: 1.2, theme: '#f59e0b', scene: 'planetary', shape: 'orbits', size: { w: 220, h: 220 }, familiar: 'Planet orbits become rings in a much larger system.', wow: 'Voyager 1 needed decades just to cross the heliosphere.', application: 'Telescope observations and spacecraft trajectories both matter at this scale.', story: 'The Solar System becomes a structure of orbits and long travel times.', desc: 'The Solar System extends to the Oort Cloud — roughly 100,000 AU from the Sun. The heliosphere boundary (where solar wind stops) is ~123 AU.', cmps: ['Voyager 1 crossed the heliopause in 2012','~123 AU to the edge of the heliosphere','Light takes ~6.3 hours to reach Pluto'] },
+      { name: 'Nearest Star (Proxima Centauri)', cat: 'Astronomy', exp: 16, mantissa: 4.02, theme: '#a78bfa', scene: 'cosmic', shape: 'line', size: { w: 260, h: 10 }, familiar: 'Interstellar space is mostly emptiness, not stars packed together.', wow: 'Voyager 1 would need over 73,000 years to arrive.', application: 'Light-years become the necessary language of distance here.', story: 'You have crossed from our Solar System into the true emptiness between stars.', desc: 'The nearest star to our Sun is 4.24 light-years away. It would take Voyager 1 (at its current speed) over 73,000 years to reach it.', cmps: ['4.24 light-years away','~268,770 AU from Earth','No human-made object has come remotely close'] },
+      { name: 'Milky Way Diameter', cat: 'Cosmology', exp: 21, mantissa: 9.46, theme: '#8b5cf6', scene: 'cosmic', shape: 'spiral', size: { w: 220, h: 220 }, familiar: 'Our Sun is just one star far from the galactic center.', wow: 'The Milky Way contains hundreds of billions of stars.', application: 'Radio astronomy and galactic mapping operate across this scale.', story: 'A galaxy becomes a visible disk of structure, not just a smear of light.', desc: 'Our galaxy is roughly 100,000 light-years in diameter, containing 200–400 billion stars. Light from the far edge set out before Homo sapiens evolved.', cmps: ['~100,000 light-years across','200–400 billion stars','Our Sun is ~26,000 light-years from the center'] },
+      { name: 'Distance to Andromeda', cat: 'Cosmology', exp: 22, mantissa: 2.37, theme: '#7c3aed', scene: 'cosmic', shape: 'line', size: { w: 260, h: 12 }, familiar: 'Galaxies themselves become the comparison objects.', wow: 'Andromeda contains about a trillion stars.', application: 'Extragalactic astronomy uses redshift, brightness, and long-baseline observations here.', story: 'The nearest large galaxy is still so far away that naked-eye light left millions of years ago.', desc: 'The Andromeda Galaxy — the nearest large galaxy to the Milky Way — is 2.537 million light-years away. On a clear night it\'s visible to the naked eye.', cmps: ['~2.5 million light-years away','Contains ~1 trillion stars','Will collide with the Milky Way in ~4.5 billion years'] },
+      { name: 'Hubble Deep Field Depth', cat: 'Cosmology', exp: 25, mantissa: 1.2, theme: '#ec4899', scene: 'cosmic', shape: 'web', size: { w: 230, h: 230 }, familiar: 'A tiny patch of sky holds thousands of galaxies.', wow: 'The light started traveling before Earth existed.', application: 'Deep-field astronomy turns time itself into a distance-measuring tool.', story: 'You are looking so far that distance also means seeing deep into the past.', desc: 'The Hubble Deep Field captured galaxies 13 billion light-years away — objects whose light left before Earth even existed, revealing the ancient universe.', cmps: ['~13 billion light-years deep','Contains over 3,000 galaxies in a tiny sky patch','Light left these galaxies ~13 billion years ago'] },
+      { name: 'Observable Universe', cat: 'Cosmology', exp: 26, mantissa: 8.8, theme: '#f472b6', scene: 'cosmic', shape: 'web', size: { w: 250, h: 250 }, familiar: 'Galaxies become points in a cosmic web.', wow: 'The observable universe contains roughly 2 trillion galaxies.', application: 'Cosmology uses background radiation, expansion, and relativity at this range.', story: 'This is the widest frame we can ever observe: the cosmic horizon itself.', desc: 'The farthest we can possibly observe — about 93 billion light-years in diameter. Beyond this, light hasn\'t had time to reach us since the Big Bang.', cmps: ['93 billion light-years in diameter','Contains ~2 trillion galaxies','Edge set by the age of the universe × speed of light'] },
     ];
 
+    const storySequence = ['Planck Length', 'Proton / Neutron', 'Bacterium', 'Ant', 'Average Human Height', 'Eiffel Tower', 'Mount Everest', 'Earth\'s Diameter', 'Diameter of the Solar System', 'Milky Way Diameter', 'Observable Universe'];
+    const metricPrefixes = {
+      '-15': 'femto-',
+      '-12': 'pico-',
+      '-9': 'nano-',
+      '-6': 'micro-',
+      '-3': 'milli-',
+      '-2': 'centi-',
+      '-1': 'deci-',
+      '0': 'base meter',
+      '3': 'kilo-',
+      '6': 'mega-',
+      '9': 'giga-',
+      '12': 'tera-'
+    };
+
     const slider = document.getElementById('ml-scale-slider');
-    const bar    = document.getElementById('ml-scale-bar');
+    const bar = document.getElementById('ml-scale-bar');
     const barLbl = document.getElementById('ml-scale-bar-label');
-    const catEl  = document.getElementById('ml-scale-cat');
+    const catEl = document.getElementById('ml-scale-cat');
     const nameEl = document.getElementById('ml-scale-name');
-    const mtrEl  = document.getElementById('ml-scale-meters');
+    const mtrEl = document.getElementById('ml-scale-meters');
+    const mathEl = document.getElementById('ml-scale-math');
     const descEl = document.getElementById('ml-scale-desc');
+    const storyEl = document.getElementById('ml-scale-storyline');
     const cmpsEl = document.getElementById('ml-scale-cmps');
+    const anchorsEl = document.getElementById('ml-scale-anchors');
+    const applicationEl = document.getElementById('ml-scale-application');
     const prevBtn = document.getElementById('ml-scale-prev');
     const nextBtn = document.getElementById('ml-scale-next');
+    const noteEl = document.getElementById('ml-scale-note');
+    const visualEl = document.getElementById('ml-scale-visual');
+    const objectEl = document.getElementById('ml-scale-object');
+    const ghostsEl = document.getElementById('ml-scale-ghosts');
+    const markersEl = document.getElementById('ml-scale-markers');
+    const cameraEl = document.getElementById('ml-scale-camera');
+    const contextEl = document.getElementById('ml-scale-context');
+    const compareAEl = document.getElementById('ml-scale-compare-a');
+    const compareBEl = document.getElementById('ml-scale-compare-b');
+    const compareRatioEl = document.getElementById('ml-scale-compare-ratio');
+    const compareFitEl = document.getElementById('ml-scale-compare-fit');
+    const compareExpEl = document.getElementById('ml-scale-compare-exp');
+    const compareNoteEl = document.getElementById('ml-scale-compare-note');
+    const powerCurrentEl = document.getElementById('ml-scale-power-current');
+    const powerPrefixEl = document.getElementById('ml-scale-power-prefix');
+    const powerDirectionEl = document.getElementById('ml-scale-power-direction');
+    const storyStepsEl = document.getElementById('ml-scale-story-steps');
+    const modeButtons = Array.from(document.querySelectorAll('.ml-scale-mode-btn'));
+    const modePanels = {
+      explorer: document.getElementById('ml-scale-panel-explorer'),
+      compare: document.getElementById('ml-scale-panel-compare'),
+      powers: document.getElementById('ml-scale-panel-powers'),
+      story: document.getElementById('ml-scale-panel-story')
+    };
+
+    let activeMode = 'explorer';
 
     slider.max = scales.length - 1;
+
+    function toMeters(s) {
+      return s.mantissa * Math.pow(10, s.exp);
+    }
 
     function formatSci(mantissa, exp) {
       if (exp === 0 && mantissa < 100) return `${mantissa} m`;
       return `${mantissa} × 10<sup>${exp}</sup> m`;
     }
 
+    function formatPower(exp) {
+      return `10<sup>${exp}</sup>`;
+    }
+
+    function buildAnchors(scale) {
+      return [
+        { label: 'Main Object', value: scale.name },
+        { label: 'Familiar Anchor', value: scale.familiar },
+        { label: 'Wow Comparison', value: scale.wow }
+      ];
+    }
+
+    function buildGhosts(index) {
+      const neighbors = [index - 1, index + 1, index - 2].filter(i => i >= 0 && i < scales.length);
+      ghostsEl.innerHTML = neighbors.map((i, offset) => {
+        const left = 26 + (offset * 22) + ((i > index) ? 26 : 0);
+        const opacity = i === index - 1 || i === index + 1 ? 0.42 : 0.22;
+        const width = Math.max(20, Math.min(110, scales[i].size.w * 0.66));
+        const height = Math.max(20, Math.min(110, scales[i].size.h * 0.66));
+        return `<div class="ml-scale-ghost" style="left:${left}%;--ghost-w:${width}px;--ghost-h:${height}px;--ghost-o:${opacity}" title="${scales[i].name}"></div>`;
+      }).join('');
+    }
+
+    function buildMarkers(index) {
+      const positions = [0, Math.round((scales.length - 1) / 2), scales.length - 1];
+      markersEl.innerHTML = positions.map((i) => {
+        const left = (i / (scales.length - 1)) * 100;
+        const activeStyle = i === index ? ' color: rgba(255, 255, 255, 0.95);' : '';
+        return `<div class="ml-scale-marker" style="left:${left}%;${activeStyle}"><span>${scales[i].name}</span></div>`;
+      }).join('');
+
+      if (positions.includes(index)) {
+        return;
+      }
+
+      const active = document.createElement('div');
+      active.className = 'ml-scale-marker';
+      active.style.left = `${(index / (scales.length - 1)) * 100}%`;
+      active.innerHTML = `<span>${scales[index].name}</span>`;
+      active.style.color = 'rgba(255,255,255,0.95)';
+      markersEl.appendChild(active);
+    }
+
+    function updateScene(scale, index) {
+      visualEl.dataset.themeScene = scale.scene;
+      visualEl.style.setProperty('--scale-accent', scale.theme);
+      objectEl.dataset.shape = scale.shape;
+      objectEl.style.setProperty('--object-w', `${scale.size.w}px`);
+      objectEl.style.setProperty('--object-h', `${scale.size.h}px`);
+      objectEl.style.setProperty('--accent-soft', scale.theme);
+      cameraEl.innerHTML = `Zoom ${formatPower(scale.exp)}`;
+      contextEl.textContent = `Anchor: ${scale.name}`;
+      noteEl.textContent = `Camera state: ${scale.scene} scale. ${scale.story}`;
+      buildGhosts(index);
+      buildMarkers(index);
+    }
+
+    function updateExplorer(scale) {
+      anchorsEl.innerHTML = buildAnchors(scale).map((anchor) => `
+        <div class="ml-scale-anchor">
+          <div class="ml-scale-anchor-label">${anchor.label}</div>
+          <div class="ml-scale-anchor-value">${anchor.value}</div>
+        </div>
+      `).join('');
+      cmpsEl.innerHTML = scale.cmps.map((c) => `<div class="ml-scale-cmp">${c}</div>`).join('');
+      applicationEl.textContent = scale.application;
+    }
+
+    function setMode(mode) {
+      activeMode = mode;
+      modeButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
+      Object.keys(modePanels).forEach((key) => {
+        modePanels[key].hidden = key !== mode;
+      });
+    }
+
+    function findNearestByExponent(targetExp) {
+      return scales.reduce((best, scale, index) => {
+        const score = Math.abs(scale.exp - targetExp);
+        if (!best || score < best.score) return { index, score };
+        return best;
+      }, null).index;
+    }
+
+    function updateCompare() {
+      const a = scales[parseInt(compareAEl.value, 10)];
+      const b = scales[parseInt(compareBEl.value, 10)];
+      const metersA = toMeters(a);
+      const metersB = toMeters(b);
+      const larger = metersA >= metersB ? a : b;
+      const smaller = larger === a ? b : a;
+      const ratio = toMeters(larger) / toMeters(smaller);
+      const expDiff = Math.abs(a.exp - b.exp);
+      compareRatioEl.textContent = `${larger.name} is about ${ratio.toExponential(2)} times larger than ${smaller.name}.`;
+      compareFitEl.textContent = `About ${ratio.toLocaleString(undefined, { maximumFractionDigits: ratio >= 100 ? 0 : 2 })} ${smaller.name.toLowerCase()}s fit across one ${larger.name.toLowerCase()}.`;
+      compareExpEl.innerHTML = `Difference in powers of ten: ${formatPower(expDiff)}.`;
+      compareNoteEl.textContent = `${a.name} lives at ${a.mantissa} × 10^${a.exp} m, while ${b.name} lives at ${b.mantissa} × 10^${b.exp} m.`;
+    }
+
+    function updatePowers(scale) {
+      powerCurrentEl.innerHTML = `${scale.name} sits near ${formatPower(scale.exp)} meters.`;
+      powerPrefixEl.textContent = `Metric connection: ${metricPrefixes[String(scale.exp)] || 'no common classroom prefix at this exact step'}.`;
+      powerDirectionEl.textContent = 'Use ×10 and ÷10 to feel how one power-of-ten jump changes the camera, object, and reference world.';
+    }
+
+    function renderStorySteps(currentName) {
+      storyStepsEl.innerHTML = storySequence.map((name) => {
+        const idx = scales.findIndex((scale) => scale.name === name);
+        const scale = scales[idx];
+        const active = name === currentName ? ' active' : '';
+        return `<button type="button" class="ml-scale-story-step${active}" data-story-index="${idx}">
+          <span>${scale.name}</span>
+          <span>${scale.mantissa} × 10^${scale.exp} m</span>
+        </button>`;
+      }).join('');
+    }
+
     function update() {
       const i = parseInt(slider.value, 10);
       const s = scales[i];
-      catEl.textContent  = s.cat;
+      document.querySelector('.ml-scale-lab').style.setProperty('--scale-accent', s.theme);
+      catEl.textContent = s.cat;
       nameEl.textContent = s.name;
-      mtrEl.innerHTML    = formatSci(s.mantissa, s.exp);
+      mtrEl.innerHTML = formatSci(s.mantissa, s.exp);
+      mathEl.innerHTML = `
+        <span>Scientific notation: ${s.mantissa} × 10<sup>${s.exp}</sup> m</span>
+        <span>Order of magnitude: 10<sup>${s.exp}</sup></span>
+        <span>Metric prefix: ${metricPrefixes[String(s.exp)] || 'custom scale marker'}</span>
+      `;
+      storyEl.textContent = s.story;
       descEl.textContent = s.desc;
-      cmpsEl.innerHTML   = s.cmps.map(c => `<div class="ml-scale-cmp">${c}</div>`).join('');
-      const pct = ((i) / (scales.length - 1)) * 100;
+      updateExplorer(s);
+      updateScene(s, i);
+      updateCompare();
+      updatePowers(s);
+      renderStorySteps(s.name);
+      const pct = (i / (scales.length - 1)) * 100;
       bar.style.width = pct + '%';
       barLbl.textContent = `${i + 1} / ${scales.length}`;
       prevBtn.disabled = i === 0;
@@ -893,7 +1306,37 @@
       update();
     };
 
+    compareAEl.innerHTML = scales.map((scale, index) => `<option value="${index}">${scale.name}</option>`).join('');
+    compareBEl.innerHTML = scales.map((scale, index) => `<option value="${index}">${scale.name}</option>`).join('');
+    compareAEl.value = String(scales.findIndex((scale) => scale.name === 'Average Human Height'));
+    compareBEl.value = String(scales.findIndex((scale) => scale.name === 'Bacterium'));
+
     slider.addEventListener('input', update);
+    compareAEl.addEventListener('change', updateCompare);
+    compareBEl.addEventListener('change', updateCompare);
+    modeButtons.forEach((btn) => {
+      btn.addEventListener('click', function () {
+        setMode(btn.dataset.mode);
+      });
+    });
+    document.querySelectorAll('.ml-scale-power-btn').forEach((btn) => {
+      btn.addEventListener('click', function () {
+        if (btn.dataset.powerAction === 'up') window.mlScaleStep(1);
+        if (btn.dataset.powerAction === 'down') window.mlScaleStep(-1);
+        if (btn.dataset.powerJump) {
+          slider.value = findNearestByExponent(parseInt(btn.dataset.powerJump, 10));
+          update();
+        }
+      });
+    });
+    storyStepsEl.addEventListener('click', function (event) {
+      const target = event.target.closest('[data-story-index]');
+      if (!target) return;
+      slider.value = target.dataset.storyIndex;
+      update();
+    });
+
+    setMode(activeMode);
     update();
   })();
   </script>

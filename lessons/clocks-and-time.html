@@ -1233,6 +1233,13 @@
     const sdLeft = document.getElementById('ct-sundial-gnomon-left');
     const sdRight = document.getElementById('ct-sundial-gnomon-right');
 
+    const hgTop = document.getElementById('ct-hg-top-sand');
+    const hgBot = document.getElementById('ct-hg-bot-sand');
+    const hgStream = document.getElementById('ct-hg-stream');
+    const wcTop = document.getElementById('ct-wc-top-water');
+    const wcBot = document.getElementById('ct-wc-bot-water');
+    const wcDrip = document.getElementById('ct-wc-drip');
+
       // Draw 60 minute and hour markers on the clock face
     const markerGroup = document.getElementById('ct-hour-markers');
       for (let i = 0; i < 60; i++) {
@@ -1268,161 +1275,198 @@
       }
     }
 
-    function rotateHand(el, cx, cy, angle, x2raw, y2raw) {
-      const rad = (angle - 90) * (Math.PI / 180);
-      const len = Math.hypot(x2raw - cx, y2raw - cy);
-      el.setAttribute('transform', `rotate(${angle}, ${cx}, ${cy})`);
-    }
-
     const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-    function tick() {
-      const now = new Date();
-      const h  = now.getHours();
-      const m  = now.getMinutes();
-      const s  = now.getSeconds();
-      const ms = now.getMilliseconds();
-
-      // Degrees for each hand
-      const secDeg  = (s + ms / 1000) * 6;
-      const minDeg  = (m + s / 60) * 6;
-      const hourDeg = ((h % 12) + m / 60) * 30;
-
-      // Rotate via transform
-      hourHand.setAttribute('transform', `rotate(${hourDeg}, 100, 100)`);
-      minHand.setAttribute('transform',  `rotate(${minDeg},  100, 100)`);
-      secHand.setAttribute('transform',  `rotate(${secDeg},  100, 100)`);
-
-      // Digital display
-      const hd = String(h).padStart(2, '0');
-      const md = String(m).padStart(2, '0');
-      const sd = String(s).padStart(2, '0');
-      digitalEl.textContent = `${hd}:${md}:${sd}`;
-
-      // Date
-      dateEl.textContent = `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
-
-      // Readouts
-      hrVal.textContent = String(h % 12 || 12).padStart(2, '0');
-      mnVal.textContent = md;
-      scVal.textContent = sd;
-
-      // Obelisk dynamic shadow & sun
-      if (obeliskSun && obeliskShadow && oLeftBase) {
-        const dayHours = h + m / 60 + s / 3600;
-        if (dayHours >= 6 && dayHours <= 18) {
-          const progress = (dayHours - 6) / 12; 
-          const sunAngle = Math.PI - (progress * Math.PI); 
-
-          const sunX = Math.cos(sunAngle) * 45;
-          const sunY = 18 - Math.sin(sunAngle) * 55;
-          obeliskSun.setAttribute('cx', sunX.toFixed(2));
-          obeliskSun.setAttribute('cy', sunY.toFixed(2));
-          obeliskSun.setAttribute('opacity', '1');
-
-          const shadowLen = 35 / Math.max(0.15, Math.sin(sunAngle)); 
-          const shadowX = -Math.cos(sunAngle) * shadowLen;
-          const shadowY = 18 - Math.sin(sunAngle) * 8; 
-          const clampedX = Math.max(-45, Math.min(45, shadowX));
-          
-          obeliskShadow.setAttribute('points', `-4,18 4,18 ${clampedX.toFixed(2)},${shadowY.toFixed(2)}`);
-          obeliskShadow.setAttribute('opacity', Math.min(1, Math.sin(sunAngle) * 2.5).toFixed(2));
-
-          if (sunAngle > Math.PI / 2) {
-            oLeftBase.setAttribute('fill', '#cbd5e1');
-            oLeftTop.setAttribute('fill', '#f8fafc');
-            oRightBase.setAttribute('fill', '#64748b');
-            oRightTop.setAttribute('fill', '#94a3b8');
-          } else {
-            oLeftBase.setAttribute('fill', '#64748b');
-            oLeftTop.setAttribute('fill', '#94a3b8');
-            oRightBase.setAttribute('fill', '#cbd5e1');
-            oRightTop.setAttribute('fill', '#f8fafc');
-          }
-        } else {
-          obeliskSun.setAttribute('opacity', '0');
-          obeliskShadow.setAttribute('opacity', '0');
-          oLeftBase.setAttribute('fill', '#334155');
-          oLeftTop.setAttribute('fill', '#475569');
-          oRightBase.setAttribute('fill', '#334155');
-          oRightTop.setAttribute('fill', '#475569');
+    function makeWorldState() {
+      return {
+        location: 'Local',
+        latitude: 40.7,
+        weather: 'clear',
+        precisionMode: 'standard',
+        simSpeed: 1,
+        activePanel: 0,
+        lastTimestamp: null,
+        deltaMs: 0,
+        simulatedNow: new Date(),
+        clock: {
+          mode: 'live',
+          driftSeconds: 0,
+          powerSource: 'quartz'
         }
-      }
-
-      // Sundial dynamic shadow & lighting
-      if (sundialShadow && sdLeft && sdRight) {
-        const dayHours = h + m / 60 + s / 3600;
-        if (dayHours >= 6 && dayHours <= 18) {
-          const progress = (dayHours - 6) / 12; 
-          const sunAngle = Math.PI - (progress * Math.PI); 
-
-          const shadowLen = 35 / Math.max(0.2, Math.sin(sunAngle)); 
-          const shadowX = 50 - Math.cos(sunAngle) * shadowLen;
-          const shadowY = 70 - Math.sin(sunAngle) * 16; 
-          
-          sundialShadow.setAttribute('points', `47,70 53,70 ${shadowX.toFixed(2)},${shadowY.toFixed(2)}`);
-          sundialShadow.setAttribute('opacity', Math.min(1, Math.sin(sunAngle) * 2).toFixed(2));
-
-          if (sunAngle > Math.PI / 2) {
-            sdLeft.setAttribute('fill', '#cbd5e1');
-            sdRight.setAttribute('fill', '#64748b');
-          } else {
-            sdLeft.setAttribute('fill', '#64748b');
-            sdRight.setAttribute('fill', '#cbd5e1');
-          }
-        } else {
-          sundialShadow.setAttribute('opacity', '0');
-          sdLeft.setAttribute('fill', '#334155');
-          sdRight.setAttribute('fill', '#475569');
-        }
-      }
-
-      // Hourglass dynamic sand trickling (60 second cycle)
-      const hgTop = document.getElementById('ct-hg-top-sand');
-      const hgBot = document.getElementById('ct-hg-bot-sand');
-      const hgStream = document.getElementById('ct-hg-stream');
-
-      if (hgTop && hgBot && hgStream) {
-        const progress = (s + ms / 1000) / 60;
-        
-        hgTop.setAttribute('y', (6 + 13 * progress).toFixed(2));
-        hgTop.setAttribute('height', (13 * (1 - progress)).toFixed(2));
-        
-        hgBot.setAttribute('y', (34 - 13 * progress).toFixed(2));
-        hgBot.setAttribute('height', (13 * progress).toFixed(2));
-        
-        hgStream.setAttribute('stroke-dashoffset', -(ms / 50).toFixed(2));
-        hgStream.setAttribute('opacity', progress > 0.995 ? '0' : '1');
-      }
-
-      // Water clock dripping and filling (60 second cycle)
-      const wcTop = document.getElementById('ct-wc-top-water');
-      const wcBot = document.getElementById('ct-wc-bot-water');
-      const wcDrip = document.getElementById('ct-wc-drip');
-
-      if (wcTop && wcBot && wcDrip) {
-        const progress = (s + ms / 1000) / 60;
-        
-        // Drain top vessel (from y=6 down to 18)
-        wcTop.setAttribute('y', (6 + 12 * progress).toFixed(2));
-        wcTop.setAttribute('height', (12 * (1 - progress)).toFixed(2));
-        
-        // Fill bottom vessel (from y=38 up to 26)
-        wcBot.setAttribute('y', (38 - 12 * progress).toFixed(2));
-        wcBot.setAttribute('height', (12 * progress).toFixed(2));
-        
-        // Falling drip every second (from y=18 to y=26)
-        const secProgress = ms / 1000;
-        wcDrip.setAttribute('cy', (18 + 8 * secProgress).toFixed(2));
-        // Fade out drip near the bottom or when cycle finishes
-        wcDrip.setAttribute('opacity', progress > 0.995 ? '0' : (secProgress > 0.9 ? ((1 - secProgress) * 8).toFixed(2) : '0.8'));
-      }
-
-      requestAnimationFrame(tick);
+      };
     }
 
-    requestAnimationFrame(tick);
+    const worldState = makeWorldState();
+    window.ctClockLabState = worldState;
+
+    function getClockReadings(now) {
+      return {
+        h: now.getHours(),
+        m: now.getMinutes(),
+        s: now.getSeconds(),
+        ms: now.getMilliseconds()
+      };
+    }
+
+    function updateWorldState(timestamp) {
+      if (worldState.lastTimestamp == null) {
+        worldState.lastTimestamp = timestamp;
+      }
+
+      const rawDelta = timestamp - worldState.lastTimestamp;
+      worldState.deltaMs = Math.min(rawDelta, 100);
+      worldState.lastTimestamp = timestamp;
+      worldState.simulatedNow = new Date(Date.now());
+    }
+
+    const simulators = [
+      {
+        id: 'analog',
+        update(state) {
+          const now = state.simulatedNow;
+          const { h, m, s, ms } = getClockReadings(now);
+          const secDeg  = (s + ms / 1000) * 6;
+          const minDeg  = (m + s / 60) * 6;
+          const hourDeg = ((h % 12) + m / 60) * 30;
+
+          hourHand.setAttribute('transform', `rotate(${hourDeg}, 100, 100)`);
+          minHand.setAttribute('transform', `rotate(${minDeg}, 100, 100)`);
+          secHand.setAttribute('transform', `rotate(${secDeg}, 100, 100)`);
+
+          hrVal.textContent = String(h % 12 || 12).padStart(2, '0');
+          mnVal.textContent = String(m).padStart(2, '0');
+          scVal.textContent = String(s).padStart(2, '0');
+        }
+      },
+      {
+        id: 'digital',
+        update(state) {
+          const now = state.simulatedNow;
+          const { h, m, s } = getClockReadings(now);
+          digitalEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          dateEl.textContent = `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+        }
+      },
+      {
+        id: 'obelisk',
+        update(state) {
+          if (!obeliskSun || !obeliskShadow || !oLeftBase) return;
+
+          const now = state.simulatedNow;
+          const dayHours = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+
+          if (dayHours >= 6 && dayHours <= 18) {
+            const progress = (dayHours - 6) / 12;
+            const sunAngle = Math.PI - (progress * Math.PI);
+            const sunX = Math.cos(sunAngle) * 45;
+            const sunY = 18 - Math.sin(sunAngle) * 55;
+            const shadowLen = 35 / Math.max(0.15, Math.sin(sunAngle));
+            const shadowX = -Math.cos(sunAngle) * shadowLen;
+            const shadowY = 18 - Math.sin(sunAngle) * 8;
+            const clampedX = Math.max(-45, Math.min(45, shadowX));
+
+            obeliskSun.setAttribute('cx', sunX.toFixed(2));
+            obeliskSun.setAttribute('cy', sunY.toFixed(2));
+            obeliskSun.setAttribute('opacity', '1');
+            obeliskShadow.setAttribute('points', `-4,18 4,18 ${clampedX.toFixed(2)},${shadowY.toFixed(2)}`);
+            obeliskShadow.setAttribute('opacity', Math.min(1, Math.sin(sunAngle) * 2.5).toFixed(2));
+
+            if (sunAngle > Math.PI / 2) {
+              oLeftBase.setAttribute('fill', '#cbd5e1');
+              oLeftTop.setAttribute('fill', '#f8fafc');
+              oRightBase.setAttribute('fill', '#64748b');
+              oRightTop.setAttribute('fill', '#94a3b8');
+            } else {
+              oLeftBase.setAttribute('fill', '#64748b');
+              oLeftTop.setAttribute('fill', '#94a3b8');
+              oRightBase.setAttribute('fill', '#cbd5e1');
+              oRightTop.setAttribute('fill', '#f8fafc');
+            }
+          } else {
+            obeliskSun.setAttribute('opacity', '0');
+            obeliskShadow.setAttribute('opacity', '0');
+            oLeftBase.setAttribute('fill', '#334155');
+            oLeftTop.setAttribute('fill', '#475569');
+            oRightBase.setAttribute('fill', '#334155');
+            oRightTop.setAttribute('fill', '#475569');
+          }
+        }
+      },
+      {
+        id: 'sundial',
+        update(state) {
+          if (!sundialShadow || !sdLeft || !sdRight) return;
+
+          const now = state.simulatedNow;
+          const dayHours = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+
+          if (dayHours >= 6 && dayHours <= 18) {
+            const progress = (dayHours - 6) / 12;
+            const sunAngle = Math.PI - (progress * Math.PI);
+            const shadowLen = 35 / Math.max(0.2, Math.sin(sunAngle));
+            const shadowX = 50 - Math.cos(sunAngle) * shadowLen;
+            const shadowY = 70 - Math.sin(sunAngle) * 16;
+
+            sundialShadow.setAttribute('points', `47,70 53,70 ${shadowX.toFixed(2)},${shadowY.toFixed(2)}`);
+            sundialShadow.setAttribute('opacity', Math.min(1, Math.sin(sunAngle) * 2).toFixed(2));
+
+            if (sunAngle > Math.PI / 2) {
+              sdLeft.setAttribute('fill', '#cbd5e1');
+              sdRight.setAttribute('fill', '#64748b');
+            } else {
+              sdLeft.setAttribute('fill', '#64748b');
+              sdRight.setAttribute('fill', '#cbd5e1');
+            }
+          } else {
+            sundialShadow.setAttribute('opacity', '0');
+            sdLeft.setAttribute('fill', '#334155');
+            sdRight.setAttribute('fill', '#475569');
+          }
+        }
+      },
+      {
+        id: 'water-clock',
+        update(state) {
+          if (!wcTop || !wcBot || !wcDrip) return;
+
+          const now = state.simulatedNow;
+          const progress = (now.getSeconds() + now.getMilliseconds() / 1000) / 60;
+          const secProgress = now.getMilliseconds() / 1000;
+
+          wcTop.setAttribute('y', (6 + 12 * progress).toFixed(2));
+          wcTop.setAttribute('height', (12 * (1 - progress)).toFixed(2));
+          wcBot.setAttribute('y', (38 - 12 * progress).toFixed(2));
+          wcBot.setAttribute('height', (12 * progress).toFixed(2));
+          wcDrip.setAttribute('cy', (18 + 8 * secProgress).toFixed(2));
+          wcDrip.setAttribute('opacity', progress > 0.995 ? '0' : (secProgress > 0.9 ? ((1 - secProgress) * 8).toFixed(2) : '0.8'));
+        }
+      },
+      {
+        id: 'hourglass',
+        update(state) {
+          if (!hgTop || !hgBot || !hgStream) return;
+
+          const now = state.simulatedNow;
+          const progress = (now.getSeconds() + now.getMilliseconds() / 1000) / 60;
+
+          hgTop.setAttribute('y', (6 + 13 * progress).toFixed(2));
+          hgTop.setAttribute('height', (13 * (1 - progress)).toFixed(2));
+          hgBot.setAttribute('y', (34 - 13 * progress).toFixed(2));
+          hgBot.setAttribute('height', (13 * progress).toFixed(2));
+          hgStream.setAttribute('stroke-dashoffset', String(-(now.getMilliseconds() / 50).toFixed(2)));
+          hgStream.setAttribute('opacity', progress > 0.995 ? '0' : '1');
+        }
+      }
+    ];
+
+    function runClockLabFrame(timestamp) {
+      updateWorldState(timestamp);
+      simulators.forEach((simulator) => simulator.update(worldState));
+      requestAnimationFrame(runClockLabFrame);
+    }
+
+    requestAnimationFrame(runClockLabFrame);
   })();
   </script>
 
@@ -1441,6 +1485,9 @@
       panels[index].classList.add('active');
       dots[index].classList.add('active');
       currentIndex = index;
+      if (window.ctClockLabState) {
+        window.ctClockLabState.activePanel = index;
+      }
     }
 
     if (prevBtn && nextBtn) {
