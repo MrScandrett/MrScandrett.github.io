@@ -1,7 +1,35 @@
 @import url('https://fonts.cdnfonts.com/css/chicago-2');
 @import url('https://fonts.cdnfonts.com/css/univers');
 
-:root {
+/* =========================================================
+   SEMANTIC TOKEN SYSTEM — CANONICAL LAYER
+
+   Architecture:
+   1. Foundation: legacy tokens (--bg, --text, --muted, etc.)
+   2. Bridge: semantic aliases (--text-primary, --surface-panel, etc.)
+   3. Themes: override all of the above with values
+   4. Components: consume ONLY semantic tokens, never hardcode
+
+   Selectors (canonical):
+   - :root (fallback)
+   - html[data-lighting="..."] (day/night system preference)
+   - html[data-theme="..."] (flavor themes: sakura, cherry, etc.)
+   - html[data-site-theme="..."] (temporary compatibility alias only)
+
+   Migration path:
+   - old: components hardcode colors per theme (broken)
+   - new: themes define variables, components consume them
+   ========================================================= */
+
+/* =========================================================
+   PHASE 0: DAY MODE (morning/day/dusk)
+   ========================================================= */
+
+:root,
+html[data-lighting="morning"],
+html[data-lighting="day"],
+html[data-lighting="dusk"] {
+  /* Legacy foundation (keep for backwards compat) */
   --bg: #f5f5f7;
   --text: #1d1d1f;
   --muted: #6e6e73;
@@ -24,39 +52,75 @@
   --theme-accent-strong: #005ec3;
   --theme-accent-soft: rgba(0, 113, 227, 0.12);
 
-  /* Launchpad Animation System */
+  /* Launchpad Animation (preserve as-is) */
   --lp-card-radius: 24px;
   --lp-transition-snappy: 140ms cubic-bezier(0.2, 0, 0, 1);
   --lp-transition-fluid: 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --lp-specular-highlight: inset 0 1px 1px rgba(255, 255, 255, 0.15);
   --lp-gutter-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+
+  /* ============= NEW: SEMANTIC TOKEN CONTRACT ============= */
+
+  /* Text hierarchy */
+  --text-primary: #1d1d1f;
+  --text-secondary: #434349;
+  --text-muted: #6e6e73;
+  --text-subtle: #8a8a91;
+  --text-inverse: #ffffff;
+  --text-on-accent: #ffffff;
+
+  /* Surface hierarchy (page depth) */
+  --surface-page: #f5f5f7;
+  --surface-page-alt: #eef2f7;
+  --surface-panel: rgba(255, 255, 255, 0.92);
+  --surface-panel-alt: rgba(248, 250, 252, 0.95);
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(255, 255, 255, 0.82);
+
+  /* Borders & dividers */
+  --border-subtle: rgba(210, 210, 215, 0.5);
+  --border-default: #d2d2d7;
+  --border-strong: rgba(160, 160, 168, 0.95);
+  --divider: rgba(210, 210, 215, 0.5);
+
+  /* Brand / interactive accent */
+  --accent: #0071e3;
+  --accent-hover: #005ec3;
+  --accent-active: #004da1;
+  --accent-soft: rgba(0, 113, 227, 0.12);
+  --accent-strong: #005ec3;
+  --accent-glow: rgba(0, 113, 227, 0.22);
+  --focus-ring: rgba(0, 113, 227, 0.34);
+
+  /* State & utility */
+  --shadow-color: rgba(0, 0, 0, 0.12);
+  --success: #1f8f5f;
+  --warning: #b7791f;
+  --danger: #c23b3b;
+  --info: #0071e3;
+
+  /* ============= BACKWARDS COMPAT ALIASES ============= */
+  /* Old code can use these; new code should use semantic tokens above */
+  --bg-default: var(--surface-page);
+  --panel-bg: var(--surface-panel);
+  --panel-bg-alt: var(--surface-panel-alt);
+  --card-bg: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-muted: var(--text-muted);
+  --line-soft: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
 }
 
-html[data-lighting="morning"],
-html[data-lighting="day"],
-html[data-lighting="dusk"] {
-  --bg: #f5f5f7;
-  --text: #1d1d1f;
-  --muted: #6e6e73;
-  --line: #d2d2d7;
-  --white: #ffffff;
-  --page-wash:
-    radial-gradient(1200px 600px at -10% -10%, rgba(0, 113, 227, 0.10), transparent 50%),
-    radial-gradient(900px 420px at 110% 0%, rgba(120, 180, 255, 0.12), transparent 45%);
-  --header-bg: rgba(245, 245, 247, 0.86);
-  --header-border: rgba(210, 210, 215, 0.8);
-  --nav-ink: #3a3a3c;
-  --nav-ink-strong: #111111;
-  --nav-hover-bg: rgba(0, 0, 0, 0.06);
-  --surface-1: rgba(255, 255, 255, 0.92);
-  --surface-2: rgba(248, 250, 252, 0.95);
-  --theme-accent: #0071e3;
-  --theme-accent-strong: #005ec3;
-  --theme-accent-soft: rgba(0, 113, 227, 0.12);
-  --shadow: 0 12px 34px rgba(0, 0, 0, 0.08);
-}
+/* =========================================================
+   PHASE 1: NIGHT MODE
+   ========================================================= */
 
 html[data-lighting="night"] {
+  /* Legacy foundation */
   --bg: #1c1c1e;
   --text: #f5f5f7;
   --muted: #98989d;
@@ -76,6 +140,619 @@ html[data-lighting="night"] {
   --theme-accent-strong: #8ec0ff;
   --theme-accent-soft: rgba(105, 168, 255, 0.16);
   --shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+
+  /* NEW: SEMANTIC TOKEN CONTRACT (dark mode overrides) */
+  --text-primary: #f5f5f7;
+  --text-secondary: #dddde4;
+  --text-muted: #98989d;
+  --text-subtle: #b3b3ba;
+  --text-inverse: #111111;
+  --text-on-accent: #08111d;
+
+  --surface-page: #1c1c1e;
+  --surface-page-alt: #16171a;
+  --surface-panel: rgba(33, 34, 38, 0.94);
+  --surface-panel-alt: rgba(26, 27, 31, 0.96);
+  --surface-elevated: #2a2b30;
+  --surface-overlay: rgba(20, 21, 24, 0.82);
+
+  --border-subtle: rgba(95, 95, 102, 0.45);
+  --border-default: #3a3a3c;
+  --border-strong: rgba(120, 120, 128, 0.95);
+  --divider: rgba(95, 95, 102, 0.45);
+
+  --accent: #69a8ff;
+  --accent-hover: #8ec0ff;
+  --accent-active: #b9d7ff;
+  --accent-soft: rgba(105, 168, 255, 0.16);
+  --accent-strong: #8ec0ff;
+  --accent-glow: rgba(105, 168, 255, 0.28);
+  --focus-ring: rgba(142, 192, 255, 0.4);
+
+  --shadow-color: rgba(0, 0, 0, 0.45);
+  --success: #4dbd87;
+  --warning: #e0a84b;
+  --danger: #f06a6a;
+  --info: #69a8ff;
+
+  /* BACKWARDS COMPAT */
+  --bg-default: var(--surface-page);
+  --panel-bg: var(--surface-panel);
+  --panel-bg-alt: var(--surface-panel-alt);
+  --card-bg: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-muted: var(--text-muted);
+  --line-soft: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
+}
+
+/* =========================================================
+   PHASE 2: FLAVOR THEMES
+
+   Rules:
+   1. Use canonical selector: html[data-theme="..."]
+   2. Keep legacy alias for migration: html[data-site-theme="..."]
+   3. Only override token values, never component styles
+   4. Every theme must provide complete token set
+   ========================================================= */
+
+/* --------- SAKURA (rewritten: variables only) --------- */
+
+html[data-theme="sakura"],
+html[data-site-theme="sakura"] {
+  /* Legacy foundation */
+  --bg: #fff6f8;
+  --text: #341822;
+  --muted: #7d5f69;
+  --line: #efc6d3;
+  --header-bg: rgba(255, 246, 248, 0.9);
+  --header-border: rgba(239, 198, 211, 0.92);
+  --nav-ink: #9a4160;
+  --nav-ink-strong: #6f1f3c;
+  --surface-1: rgba(255, 252, 253, 0.95);
+  --surface-2: rgba(255, 243, 247, 0.98);
+  --theme-accent: #e05a8d;
+  --theme-accent-strong: #b83f6e;
+  --theme-accent-soft: rgba(224, 90, 141, 0.14);
+  --page-wash:
+    radial-gradient(980px 520px at 50% 100%, rgba(255, 133, 178, 0.22), transparent 56%),
+    radial-gradient(1200px 600px at -10% -10%, rgba(255, 196, 219, 0.3), transparent 52%),
+    radial-gradient(900px 420px at 110% 0%, rgba(255, 231, 241, 0.38), transparent 45%);
+
+  /* NEW: SEMANTIC TOKEN CONTRACT */
+  --text-primary: #341822;
+  --text-secondary: #5d3a48;
+  --text-muted: #7d5f69;
+  --text-subtle: #9b7d87;
+  --text-inverse: #ffffff;
+  --text-on-accent: #ffffff;
+
+  --surface-page: #fff6f8;
+  --surface-page-alt: #fff0f4;
+  --surface-panel: rgba(255, 252, 253, 0.95);
+  --surface-panel-alt: rgba(255, 243, 247, 0.98);
+  --surface-elevated: #fffdfd;
+  --surface-overlay: rgba(255, 248, 250, 0.82);
+
+  --border-subtle: rgba(224, 90, 141, 0.18);
+  --border-default: rgba(224, 90, 141, 0.28);
+  --border-strong: rgba(184, 63, 110, 0.42);
+  --divider: rgba(224, 90, 141, 0.18);
+
+  --accent: #e05a8d;
+  --accent-hover: #b83f6e;
+  --accent-active: #982b56;
+  --accent-soft: rgba(224, 90, 141, 0.14);
+  --accent-strong: #8b224c;
+  --accent-glow: rgba(224, 90, 141, 0.22);
+  --focus-ring: rgba(224, 90, 141, 0.36);
+
+  --shadow-color: rgba(224, 90, 141, 0.15);
+  --success: #4a8f5f;
+  --warning: #c4843a;
+  --danger: #d85050;
+  --info: #e05a8d;
+
+  /* BACKWARDS COMPAT */
+  --bg-default: var(--surface-page);
+  --panel-bg: var(--surface-panel);
+  --panel-bg-alt: var(--surface-panel-alt);
+  --card-bg: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-muted: var(--text-muted);
+  --line-soft: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
+}
+
+/* --------- CHERRY (already correct, but make explicit) --------- */
+
+html[data-theme="cherry"],
+html[data-site-theme="cherry"] {
+  --bg: #fff2f4;
+  --text: #31141e;
+  --muted: #77515f;
+  --line: #edc4cf;
+  --header-bg: rgba(255, 243, 246, 0.9);
+  --header-border: rgba(227, 181, 194, 0.92);
+  --nav-ink: #8f294a;
+  --nav-ink-strong: #66132e;
+  --surface-1: rgba(255, 251, 252, 0.94);
+  --surface-2: rgba(255, 241, 244, 0.98);
+  --theme-accent: #c61f4d;
+  --theme-accent-strong: #990f36;
+  --theme-accent-soft: rgba(198, 31, 77, 0.14);
+  --page-wash:
+    radial-gradient(1200px 600px at -10% -10%, rgba(235, 94, 133, 0.22), transparent 50%),
+    radial-gradient(900px 420px at 110% 0%, rgba(255, 196, 212, 0.28), transparent 45%);
+
+  --text-primary: #31141e;
+  --text-secondary: #554149;
+  --text-muted: #77515f;
+  --text-subtle: #956d7d;
+  --text-inverse: #ffffff;
+  --text-on-accent: #ffffff;
+
+  --surface-page: #fff2f4;
+  --surface-page-alt: #ffebef;
+  --surface-panel: rgba(255, 251, 252, 0.94);
+  --surface-panel-alt: rgba(255, 241, 244, 0.98);
+  --surface-elevated: #fffcfd;
+  --surface-overlay: rgba(255, 245, 248, 0.82);
+
+  --border-subtle: rgba(198, 31, 77, 0.18);
+  --border-default: rgba(198, 31, 77, 0.28);
+  --border-strong: rgba(153, 15, 54, 0.42);
+  --divider: rgba(198, 31, 77, 0.18);
+
+  --accent: #c61f4d;
+  --accent-hover: #990f36;
+  --accent-active: #7a0827;
+  --accent-soft: rgba(198, 31, 77, 0.14);
+  --accent-strong: #8b0632;
+  --accent-glow: rgba(198, 31, 77, 0.22);
+  --focus-ring: rgba(198, 31, 77, 0.36);
+
+  --shadow-color: rgba(198, 31, 77, 0.15);
+  --success: #4a8f5f;
+  --warning: #c4843a;
+  --danger: #d85050;
+  --info: #c61f4d;
+
+  --bg-default: var(--surface-page);
+  --panel-bg: var(--surface-panel);
+  --panel-bg-alt: var(--surface-panel-alt);
+  --card-bg: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-muted: var(--text-muted);
+  --line-soft: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
+}
+
+/* --------- OBSIDIAN (already correct, make explicit) --------- */
+
+html[data-theme="obsidian"],
+html[data-site-theme="obsidian"] {
+  --bg: #101214;
+  --text: #edf0f4;
+  --muted: #9aa3ad;
+  --line: #2f353c;
+  --header-bg: rgba(14, 16, 19, 0.9);
+  --header-border: rgba(47, 53, 60, 0.92);
+  --nav-ink: #cad1d8;
+  --nav-ink-strong: #ffffff;
+  --surface-1: rgba(24, 27, 31, 0.94);
+  --surface-2: rgba(16, 18, 20, 0.98);
+  --theme-accent: #8aa2bb;
+  --theme-accent-strong: #b7c9dc;
+  --theme-accent-soft: rgba(138, 162, 187, 0.14);
+  --page-wash:
+    radial-gradient(1200px 600px at -10% -10%, rgba(115, 128, 145, 0.18), transparent 50%),
+    radial-gradient(900px 420px at 110% 0%, rgba(61, 70, 81, 0.22), transparent 45%);
+
+  --text-primary: #edf0f4;
+  --text-secondary: #d0d4db;
+  --text-muted: #9aa3ad;
+  --text-subtle: #7d8692;
+  --text-inverse: #111111;
+  --text-on-accent: #0d1117;
+
+  --surface-page: #101214;
+  --surface-page-alt: #0a0c0e;
+  --surface-panel: rgba(24, 27, 31, 0.94);
+  --surface-panel-alt: rgba(16, 18, 20, 0.98);
+  --surface-elevated: #1c2229;
+  --surface-overlay: rgba(16, 18, 20, 0.82);
+
+  --border-subtle: rgba(138, 162, 187, 0.2);
+  --border-default: rgba(138, 162, 187, 0.28);
+  --border-strong: rgba(110, 130, 155, 0.45);
+  --divider: rgba(138, 162, 187, 0.2);
+
+  --accent: #8aa2bb;
+  --accent-hover: #b7c9dc;
+  --accent-active: #c7d5e5;
+  --accent-soft: rgba(138, 162, 187, 0.14);
+  --accent-strong: #a8b8cc;
+  --accent-glow: rgba(138, 162, 187, 0.24);
+  --focus-ring: rgba(183, 201, 220, 0.4);
+
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --success: #5fc894;
+  --warning: #d9a85f;
+  --danger: #e08686;
+  --info: #8aa2bb;
+
+  --bg-default: var(--surface-page);
+  --panel-bg: var(--surface-panel);
+  --panel-bg-alt: var(--surface-panel-alt);
+  --card-bg: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-muted: var(--text-muted);
+  --line-soft: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
+}
+
+/* --------- MAHOGANY (already correct, make explicit) --------- */
+
+html[data-theme="mahogany"],
+html[data-site-theme="mahogany"] {
+  --bg: #211310;
+  --text: #f6eee9;
+  --muted: #c4a79a;
+  --line: #5a3327;
+  --header-bg: rgba(30, 18, 15, 0.9);
+  --header-border: rgba(90, 51, 39, 0.94);
+  --nav-ink: #e4cbc1;
+  --nav-ink-strong: #fff7f2;
+  --surface-1: rgba(43, 25, 20, 0.94);
+  --surface-2: rgba(30, 18, 15, 0.98);
+  --theme-accent: #da845a;
+  --theme-accent-strong: #f0a47c;
+  --theme-accent-soft: rgba(218, 132, 90, 0.16);
+  --page-wash:
+    radial-gradient(1200px 600px at -10% -10%, rgba(155, 84, 55, 0.24), transparent 50%),
+    radial-gradient(900px 420px at 110% 0%, rgba(88, 45, 29, 0.28), transparent 45%);
+
+  --text-primary: #f6eee9;
+  --text-secondary: #ddd2c9;
+  --text-muted: #c4a79a;
+  --text-subtle: #a68b7f;
+  --text-inverse: #111111;
+  --text-on-accent: #0d0a07;
+
+  --surface-page: #211310;
+  --surface-page-alt: #19110d;
+  --surface-panel: rgba(43, 25, 20, 0.94);
+  --surface-panel-alt: rgba(30, 18, 15, 0.98);
+  --surface-elevated: #352419;
+  --surface-overlay: rgba(30, 18, 15, 0.82);
+
+  --border-subtle: rgba(218, 132, 90, 0.2);
+  --border-default: rgba(218, 132, 90, 0.3);
+  --border-strong: rgba(180, 100, 60, 0.45);
+  --divider: rgba(218, 132, 90, 0.2);
+
+  --accent: #da845a;
+  --accent-hover: #f0a47c;
+  --accent-active: #f5b895;
+  --accent-soft: rgba(218, 132, 90, 0.16);
+  --accent-strong: #e89a6f;
+  --accent-glow: rgba(218, 132, 90, 0.26);
+  --focus-ring: rgba(240, 164, 124, 0.42);
+
+  --shadow-color: rgba(0, 0, 0, 0.45);
+  --success: #5fc894;
+  --warning: #d9a85f;
+  --danger: #e08686;
+  --info: #da845a;
+
+  --bg-default: var(--surface-page);
+  --panel-bg: var(--surface-panel);
+  --panel-bg-alt: var(--surface-panel-alt);
+  --card-bg: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-muted: var(--text-muted);
+  --line-soft: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
+}
+
+/* --------- KIWI / EMERALD (already correct, make explicit) --------- */
+
+html[data-theme="kiwi"],
+html[data-theme="emerald"],
+html[data-site-theme="kiwi"],
+html[data-site-theme="emerald"] {
+  --bg: #f0fff4;
+  --text: #1a3a2a;
+  --muted: #4f725c;
+  --line: #9ee3b7;
+  --header-bg: rgba(251, 255, 252, 0.92);
+  --header-border: rgba(56, 155, 101, 0.5);
+  --nav-ink: #427053;
+  --nav-ink-strong: #1a3a2a;
+  --surface-1: rgba(255, 255, 255, 0.96);
+  --surface-2: rgba(246, 255, 249, 0.99);
+  --theme-accent: #50db82;
+  --theme-accent-strong: #389b65;
+  --theme-accent-soft: rgba(80, 219, 130, 0.2);
+  --page-wash:
+    radial-gradient(980px 520px at 50% 100%, rgba(80, 219, 130, 0.22), transparent 56%),
+    radial-gradient(1200px 600px at -10% -10%, rgba(169, 255, 209, 0.32), transparent 52%),
+    radial-gradient(900px 420px at 110% 0%, rgba(226, 255, 236, 0.4), transparent 45%);
+
+  --text-primary: #1a3a2a;
+  --text-secondary: #345844;
+  --text-muted: #4f725c;
+  --text-subtle: #6a8f7a;
+  --text-inverse: #ffffff;
+  --text-on-accent: #ffffff;
+
+  --surface-page: #f0fff4;
+  --surface-page-alt: #e8fbf2;
+  --surface-panel: rgba(255, 255, 255, 0.96);
+  --surface-panel-alt: rgba(246, 255, 249, 0.99);
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(250, 255, 252, 0.82);
+
+  --border-subtle: rgba(80, 219, 130, 0.18);
+  --border-default: rgba(80, 219, 130, 0.28);
+  --border-strong: rgba(56, 155, 101, 0.42);
+  --divider: rgba(80, 219, 130, 0.18);
+
+  --accent: #50db82;
+  --accent-hover: #389b65;
+  --accent-active: #276b49;
+  --accent-soft: rgba(80, 219, 130, 0.2);
+  --accent-strong: #2a8f56;
+  --accent-glow: rgba(80, 219, 130, 0.24);
+  --focus-ring: rgba(80, 219, 130, 0.38);
+
+  --shadow-color: rgba(80, 219, 130, 0.12);
+  --success: #50db82;
+  --warning: #c4843a;
+  --danger: #d85050;
+  --info: #0071e3;
+
+  --bg-default: var(--surface-page);
+  --panel-bg: var(--surface-panel);
+  --panel-bg-alt: var(--surface-panel-alt);
+  --card-bg: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-muted: var(--text-muted);
+  --line-soft: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
+}
+
+/* --------- HONEY (rewritten: variables only) --------- */
+
+html[data-theme="honey"],
+html[data-theme="topaz"],
+html[data-site-theme="honey"],
+html[data-site-theme="topaz"] {
+  --bg: #fff9e3;
+  --text: #5c3c00;
+  --muted: #8a6412;
+  --line: #ffd86a;
+  --header-bg: rgba(255, 252, 244, 0.92);
+  --header-border: rgba(244, 169, 0, 0.56);
+  --nav-ink: #8a6200;
+  --nav-ink-strong: #5c3c00;
+  --surface-1: rgba(255, 255, 255, 0.96);
+  --surface-2: rgba(255, 251, 235, 0.99);
+  --theme-accent: #ffb900;
+  --theme-accent-strong: #f4a900;
+  --theme-accent-soft: rgba(244, 169, 0, 0.2);
+  --page-wash:
+    radial-gradient(980px 520px at 50% 100%, rgba(255, 215, 0, 0.24), transparent 56%),
+    radial-gradient(1200px 600px at -10% -10%, rgba(255, 247, 173, 0.32), transparent 52%),
+    radial-gradient(900px 420px at 110% 0%, rgba(255, 243, 190, 0.42), transparent 45%);
+
+  --text-primary: #5c3c00;
+  --text-secondary: #7a5710;
+  --text-muted: #8a6412;
+  --text-subtle: #a0771d;
+  --text-inverse: #ffffff;
+  --text-on-accent: #000000;
+
+  --surface-page: #fff9e3;
+  --surface-page-alt: #fff3cc;
+  --surface-panel: rgba(255, 255, 255, 0.96);
+  --surface-panel-alt: rgba(255, 251, 235, 0.99);
+  --surface-elevated: #fffef9;
+  --surface-overlay: rgba(255, 254, 245, 0.82);
+
+  --border-subtle: rgba(244, 169, 0, 0.18);
+  --border-default: rgba(244, 169, 0, 0.28);
+  --border-strong: rgba(212, 134, 0, 0.42);
+  --divider: rgba(244, 169, 0, 0.18);
+
+  --accent: #ffb900;
+  --accent-hover: #f4a900;
+  --accent-active: #d99700;
+  --accent-soft: rgba(244, 169, 0, 0.2);
+  --accent-strong: #e09800;
+  --accent-glow: rgba(244, 169, 0, 0.26);
+  --focus-ring: rgba(244, 169, 0, 0.4);
+
+  --shadow-color: rgba(244, 169, 0, 0.14);
+  --success: #4a8f5f;
+  --warning: #ffb900;
+  --danger: #d85050;
+  --info: #ffb900;
+
+  --bg-default: var(--surface-page);
+  --panel-bg: var(--surface-panel);
+  --panel-bg-alt: var(--surface-panel-alt);
+  --card-bg: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-muted: var(--text-muted);
+  --line-soft: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
+}
+
+/* --------- VAPORWAVE (rewritten: variables only) --------- */
+
+html[data-theme="vaporwave"],
+html[data-site-theme="vaporwave"] {
+  --bg: #050505;
+  --text: #ffffff;
+  --muted: #9ae9f7;
+  --line: rgba(255, 0, 255, 0.44);
+  --header-bg: rgba(0, 0, 0, 0.9);
+  --header-border: rgba(255, 0, 255, 0.66);
+  --nav-ink: #8af7ff;
+  --nav-ink-strong: #ffffff;
+  --surface-1: rgba(0, 0, 0, 0.88);
+  --surface-2: rgba(10, 0, 22, 0.96);
+  --theme-accent: #ff00ff;
+  --theme-accent-strong: #00ffff;
+  --theme-accent-soft: rgba(255, 0, 255, 0.22);
+  --page-wash:
+    radial-gradient(980px 520px at 50% 100%, rgba(255, 255, 0, 0.18), transparent 50%),
+    radial-gradient(1200px 600px at -10% -10%, rgba(255, 0, 255, 0.18), transparent 52%),
+    radial-gradient(900px 420px at 110% 0%, rgba(0, 255, 255, 0.16), transparent 42%);
+
+  --text-primary: #ffffff;
+  --text-secondary: #d9e9ff;
+  --text-muted: #9ae9f7;
+  --text-subtle: #6dd4e8;
+  --text-inverse: #050505;
+  --text-on-accent: #000000;
+
+  --surface-page: #050505;
+  --surface-page-alt: #0a0a0a;
+  --surface-panel: rgba(0, 0, 0, 0.88);
+  --surface-panel-alt: rgba(10, 0, 22, 0.96);
+  --surface-elevated: #1a0033;
+  --surface-overlay: rgba(10, 0, 22, 0.82);
+
+  --border-subtle: rgba(255, 0, 255, 0.2);
+  --border-default: rgba(255, 0, 255, 0.44);
+  --border-strong: rgba(0, 255, 255, 0.6);
+  --divider: rgba(255, 0, 255, 0.2);
+
+  --accent: #ff00ff;
+  --accent-hover: #00ffff;
+  --accent-active: #00e6ff;
+  --accent-soft: rgba(255, 0, 255, 0.22);
+  --accent-strong: #00ffff;
+  --accent-glow: rgba(255, 0, 255, 0.3);
+  --focus-ring: rgba(0, 255, 255, 0.5);
+
+  --shadow-color: rgba(0, 0, 0, 0.8);
+  --success: #00ff00;
+  --warning: #ffff00;
+  --danger: #ff0066;
+  --info: #ff00ff;
+
+  --bg-default: var(--surface-page);
+  --panel-bg: var(--surface-panel);
+  --panel-bg-alt: var(--surface-panel-alt);
+  --card-bg: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-muted: var(--text-muted);
+  --line-soft: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
+}
+
+/* --------- DIAMOND (rewritten: variables only) --------- */
+
+html[data-theme="diamond"],
+html[data-site-theme="diamond"] {
+  --bg: #f5fbff;
+  --text: #182a34;
+  --muted: #617985;
+  --line: #c9e0ec;
+  --header-bg: rgba(244, 252, 255, 0.9);
+  --header-border: rgba(196, 222, 236, 0.94);
+  --nav-ink: #3d6678;
+  --nav-ink-strong: #193847;
+  --surface-1: rgba(255, 255, 255, 0.94);
+  --surface-2: rgba(241, 251, 255, 0.98);
+  --theme-accent: #3da3db;
+  --theme-accent-strong: #1e87c2;
+  --theme-accent-soft: rgba(61, 163, 219, 0.14);
+  --page-wash:
+    radial-gradient(1200px 600px at -10% -10%, rgba(159, 220, 255, 0.24), transparent 50%),
+    radial-gradient(900px 420px at 110% 0%, rgba(218, 244, 255, 0.32), transparent 45%);
+
+  --text-primary: #182a34;
+  --text-secondary: #3a4d57;
+  --text-muted: #617985;
+  --text-subtle: #7f8f9a;
+  --text-inverse: #ffffff;
+  --text-on-accent: #ffffff;
+
+  --surface-page: #f5fbff;
+  --surface-page-alt: #eef6fb;
+  --surface-panel: rgba(255, 255, 255, 0.94);
+  --surface-panel-alt: rgba(241, 251, 255, 0.98);
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(250, 254, 255, 0.82);
+
+  --border-subtle: rgba(61, 163, 219, 0.18);
+  --border-default: rgba(61, 163, 219, 0.28);
+  --border-strong: rgba(30, 135, 194, 0.42);
+  --divider: rgba(61, 163, 219, 0.18);
+
+  --accent: #3da3db;
+  --accent-hover: #1e87c2;
+  --accent-active: #1565a0;
+  --accent-soft: rgba(61, 163, 219, 0.14);
+  --accent-strong: #2a95cc;
+  --accent-glow: rgba(61, 163, 219, 0.24);
+  --focus-ring: rgba(61, 163, 219, 0.38);
+
+  --shadow-color: rgba(61, 163, 219, 0.12);
+  --success: #4a8f5f;
+  --warning: #c4843a;
+  --danger: #d85050;
+  --info: #3da3db;
+
+  --bg-default: var(--surface-page);
+  --panel-bg: var(--surface-panel);
+  --panel-bg-alt: var(--surface-panel-alt);
+  --card-bg: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-muted: var(--text-muted);
+  --line-soft: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
 }
 
 * {
@@ -110,8 +787,8 @@ body {
   left: 1rem;
   top: 1rem;
   z-index: 200;
-  background: #fff;
-  color: #000;
+  background: var(--surface-elevated);
+  color: var(--text-primary);
   padding: 0.5rem 0.7rem;
   border-radius: 8px;
 }
@@ -159,7 +836,7 @@ body {
 }
 
 .brand-os {
-  color: #4aa8ff;
+  color: var(--theme-accent);
   font-style: normal;
 }
 

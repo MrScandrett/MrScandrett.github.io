@@ -244,7 +244,7 @@
     <div id="cp-modal">
       <div id="cp-input-wrap">
         <span id="cp-search-icon" aria-hidden="true">⌕</span>
-        <input id="cp-input" type="text" placeholder="Search lessons, topics, pages…" autocomplete="off" spellcheck="false" />
+        <input id="cp-input" type="text" placeholder="Search lessons, topics, pages…" autocomplete="off" spellcheck="false" aria-label="Search lessons, topics, and pages" />
         <button id="cp-clear" aria-label="Clear search">✕</button>
       </div>
       <div id="cp-results" role="listbox" aria-label="Search results"></div>

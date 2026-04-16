@@ -1720,6 +1720,99 @@ function initQwertyKeyboard() {
   window.addEventListener('keyup', handleQwertyKeyUp);
 }
 
+// ───── Chord Theory ─────
+const CHORD_FORMULAS = {
+  major:     [0, 4, 7],
+  minor:     [0, 3, 7],
+  diminished: [0, 3, 6],
+  augmented:  [0, 4, 8],
+  dom7:      [0, 4, 7, 10],
+  maj7:      [0, 4, 7, 11],
+  min7:      [0, 3, 7, 10],
+  minmaj7:   [0, 3, 7, 11],
+  sus2:      [0, 2, 7],
+  sus4:      [0, 5, 7],
+};
+
+const CHORD_DESCRIPTIONS = {
+  major:     'Bright, happy. Root + Major 3rd (4 semitones) + Perfect 5th (7 semitones)',
+  minor:     'Sad, dark. Root + Minor 3rd (3 semitones) + Perfect 5th (7 semitones)',
+  diminished: 'Tense, unstable. Root + Minor 3rd (3) + Diminished 5th (6 semitones)',
+  augmented:  'Dreamlike, unresolved. Root + Major 3rd (4) + Augmented 5th (8 semitones)',
+  dom7:      'Tension + resolution. Major triad + Minor 7th (10 semitones). Pulls toward the next chord.',
+  maj7:      'Sophisticated, dreamy. Major triad + Major 7th (11 semitones)',
+  min7:      'Soulful, mellow. Minor triad + Minor 7th (10 semitones)',
+  minmaj7:   'Rare, sophisticated. Minor triad + Major 7th (11 semitones)',
+  sus2:      'Suspended, unresolved. Replace the 3rd with a 2nd',
+  sus4:      'Suspended, unresolved. Replace the 3rd with a 4th',
+};
+
+const INTERVAL_NAMES = {
+  0: 'Root',
+  2: 'Major 2nd',
+  3: 'Minor 3rd',
+  4: 'Major 3rd',
+  5: 'Perfect 4th',
+  6: 'Diminished 5th',
+  7: 'Perfect 5th',
+  8: 'Augmented 5th',
+  10: 'Minor 7th',
+  11: 'Major 7th',
+};
+
+function buildChordTheoryUI() {
+  const rootSelect = document.getElementById('chordRoot');
+  const typeSelect = document.getElementById('chordType');
+  const playBtn = document.getElementById('playChordBtn');
+
+  function updateChordDisplay() {
+    const root = parseInt(rootSelect.value);
+    const type = typeSelect.value;
+    const intervals = CHORD_FORMULAS[type];
+
+    const rootName = NOTE_NAMES[root];
+    const typeLabel = typeSelect.options[typeSelect.selectedIndex].text.split('(')[0].trim();
+    const chordName = `${rootName} ${typeLabel}`;
+
+    const chordNotes = intervals.map(iv => root + iv);
+    const noteNames = chordNotes.map(n => NOTE_NAMES[n % 12]).join(' – ');
+
+    const intervalNames = intervals
+      .map(iv => `${INTERVAL_NAMES[iv]} (${iv})`)
+      .join(' · ');
+
+    document.getElementById('chordDisplayName').textContent = chordName;
+    document.getElementById('chordDisplayNotes').textContent = noteNames;
+    document.getElementById('chordDisplayIntervals').textContent = intervalNames;
+  }
+
+  function playChord() {
+    const root = parseInt(rootSelect.value);
+    const type = typeSelect.value;
+    const intervals = CHORD_FORMULAS[type];
+
+    const midiRoot = Math.max(36, Math.min(60 + root, 72));
+    const chordNotes = intervals.map(iv => midiRoot + iv);
+
+    const rootName = NOTE_NAMES[root];
+    const typeLabel = typeSelect.options[typeSelect.selectedIndex].text.split('(')[0].trim();
+
+    // Play all notes simultaneously
+    chordNotes.forEach(note => {
+      os_triggerNote(note, 0.6, {
+        duration: 2.5,
+        hudLabel: `${rootName} ${typeLabel}`,
+      });
+    });
+  }
+
+  rootSelect.addEventListener('change', updateChordDisplay);
+  typeSelect.addEventListener('change', updateChordDisplay);
+  playBtn.addEventListener('click', playChord);
+
+  updateChordDisplay();
+}
+
 window.os_triggerNote = os_triggerNote;
 window.os_releaseNote = os_releaseNote;
 
@@ -1731,5 +1824,6 @@ initModularPatchbay();
 initCircleOfFifths();
 initTheoryMap();
 initQwertyKeyboard();
+buildChordTheoryUI();
 readAdsr();   // set initial display values from slider defaults
 setStatus();
