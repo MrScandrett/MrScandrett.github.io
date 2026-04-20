@@ -4,7 +4,7 @@
 const MODELS_DATA_URL = "/data/museum-models.json";
 const GRID_COLS = 3;
 const GRID_SPACING = 4;          // meters between model centers
-const TARGET_HEIGHT = 1.0;       // normalize every model to ~1m tall
+const TARGET_HEIGHT = 0.18;      // normalize every model to ~18cm tall
 const PEDESTAL_HEIGHT = 0.4;     // pedestal rises 0.4m off the ground
 const PEDESTAL_RADIUS = 0.55;
 const LABEL_HEIGHT_OFFSET = 0.35;
@@ -22,6 +22,8 @@ const vrToggleBtn = document.getElementById("vr-toggle");
 
 let models = [];
 let currentSelectedEntity = null;
+let raycaster;
+let mouseVector = new THREE.Vector2();
 
 const artifactLabels = {
   artifact: "🏺 Artifact",
@@ -152,33 +154,32 @@ function renderModels() {
 }
 
 // Measure the loaded mesh, compute a uniform scale so the model is TARGET_HEIGHT tall,
-// and recenter it horizontally above the pedestal.
+// and recenter it on its own pedestal.
 function fitModelToHeight(modelEntity, model, wrapper) {
   const mesh = modelEntity.getObject3D("mesh");
   if (!mesh) return;
 
   const box = new THREE.Box3().setFromObject(mesh);
   const size = new THREE.Vector3();
-  const center = new THREE.Vector3();
   box.getSize(size);
-  box.getCenter(center);
   const currentHeight = size.y || 1;
   const scale = TARGET_HEIGHT / currentHeight;
 
-  // Respect optional per-model multiplier to under/over-size special items (e.g. a truly large monument).
   const multiplier = typeof model.scaleMultiplier === "number" ? model.scaleMultiplier : 1;
   const finalScale = scale * multiplier;
-
   modelEntity.setAttribute("scale", `${finalScale} ${finalScale} ${finalScale}`);
 
-  // After scaling, recenter so the model sits centered on the pedestal with its base at pedestal top.
+  // Re-measure after scaling. Use wrapper's world position to convert world-space
+  // box coords into local offsets — without this, all models collapse to world origin.
   const newBox = new THREE.Box3().setFromObject(mesh);
-  const newMin = newBox.min;
   const newCenter = new THREE.Vector3();
   newBox.getCenter(newCenter);
-  const offsetX = -newCenter.x;
-  const offsetZ = -newCenter.z;
-  const offsetY = PEDESTAL_HEIGHT - newMin.y;
+  const wrapperPos = new THREE.Vector3();
+  wrapper.object3D.getWorldPosition(wrapperPos);
+
+  const offsetX = -(newCenter.x - wrapperPos.x);
+  const offsetZ = -(newCenter.z - wrapperPos.z);
+  const offsetY = PEDESTAL_HEIGHT - newBox.min.y;
   modelEntity.setAttribute("position", `${offsetX} ${offsetY} ${offsetZ}`);
 }
 
@@ -214,12 +215,38 @@ document.addEventListener("click", (e) => {
   closeInfoPanel();
 });
 
+// Click-to-move: raycast from camera to floor and teleport player.
+document.addEventListener("click", (e) => {
+  const canvas = scene.canvas;
+  if (!canvas) return;
+
+  mouseVector.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouseVector.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+  if (!raycaster) raycaster = new THREE.Raycaster();
+  const camera = scene.camera;
+  raycaster.setFromCamera(mouseVector, camera);
+
+  const ground = document.getElementById("ground");
+  if (!ground) return;
+  const groundMesh = ground.getObject3D("mesh");
+  if (!groundMesh) return;
+
+  const intersects = raycaster.intersectObject(groundMesh);
+  if (intersects.length > 0) {
+    const point = intersects[0].point;
+    const cameraEntity = document.querySelector("a-camera");
+    const currentPos = cameraEntity.getAttribute("position");
+    cameraEntity.setAttribute("position", `${point.x} ${currentPos.y} ${point.z}`);
+  }
+});
+
 // Keyboard shortcuts.
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeInfoPanel();
   if (e.key === "r" || e.key === "R") {
     const cameraEntity = document.querySelector("a-camera");
-    cameraEntity.setAttribute("position", "0 1.6 8");
+    cameraEntity.setAttribute("position", "0 1.6 6");
     cameraEntity.setAttribute("rotation", "0 0 0");
   }
 });
