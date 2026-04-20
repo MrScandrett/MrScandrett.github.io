@@ -966,6 +966,121 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
             <a-entity id="left-hand" laser-controls="hand: left" raycaster="objects: .vr-ui-target"></a-entity>
             <a-entity id="right-hand" laser-controls="hand: right" raycaster="objects: .vr-ui-target"></a-entity>
 
+            <!-- VR HUD -->
+            <a-entity
+              id="vr-ui-panel"
+              visible="false"
+              position="0 3.05 -4.15"
+              rotation="-8 0 0">
+              <a-plane
+                width="4.6"
+                height="1.7"
+                color="#090b1f"
+                opacity="0.78"
+                material="shader: flat; transparent: true; side: double">
+              </a-plane>
+
+              <a-text
+                value="BREAKOUT VR"
+                align="center"
+                color="#c8b8ff"
+                width="4.2"
+                position="0 0.53 0.03">
+              </a-text>
+
+              <a-text
+                value="SCORE"
+                align="left"
+                color="#8be9fd"
+                width="2.3"
+                position="-1.75 0.22 0.03">
+              </a-text>
+              <a-text
+                id="vr-score-text"
+                value="0"
+                align="left"
+                color="#ffffff"
+                width="2.5"
+                position="-1.75 -0.03 0.03">
+              </a-text>
+
+              <a-text
+                value="STATUS"
+                align="left"
+                color="#ffb86c"
+                width="2.3"
+                position="0.3 0.22 0.03">
+              </a-text>
+              <a-text
+                id="vr-status-text"
+                value="Ready"
+                align="left"
+                color="#ffffff"
+                width="2.5"
+                position="0.3 -0.03 0.03">
+              </a-text>
+
+              <a-box
+                id="vr-button-start"
+                class="vr-ui-target"
+                data-button="start"
+                position="-1.35 -0.6 0.05"
+                width="1.1"
+                height="0.34"
+                depth="0.08"
+                color="#132950"
+                material="emissive: #00d4ff; emissiveIntensity: 0.12">
+                <a-text
+                  id="vr-button-start-label"
+                  value="Start Game"
+                  align="center"
+                  color="#f8fbff"
+                  width="2.6"
+                  position="0 0 0.07">
+                </a-text>
+              </a-box>
+
+              <a-box
+                id="vr-button-reset"
+                class="vr-ui-target"
+                data-button="reset"
+                position="0 -0.6 0.05"
+                width="1.1"
+                height="0.34"
+                depth="0.08"
+                color="#3f2d10"
+                material="emissive: #ffb86c; emissiveIntensity: 0.12">
+                <a-text
+                  id="vr-button-reset-label"
+                  value="Reset"
+                  align="center"
+                  color="#f8fbff"
+                  width="2.6"
+                  position="0 0 0.07">
+                </a-text>
+              </a-box>
+
+              <a-box
+                id="vr-button-exit"
+                class="vr-ui-target"
+                data-button="exit"
+                position="1.35 -0.6 0.05"
+                width="1.1"
+                height="0.34"
+                depth="0.08"
+                color="#4d1424"
+                material="emissive: #ff79c6; emissiveIntensity: 0.12">
+                <a-text
+                  id="vr-button-exit-label"
+                  value="Exit VR"
+                  align="center"
+                  color="#f8fbff"
+                  width="2.6"
+                  position="0 0 0.07">
+                </a-text>
+              </a-box>
+            </a-entity>
+
             <!-- Game boundary walls -->
             <a-plane position="0 3 -5" rotation="0 0 0" width="8" height="6" color="#1a3a5c" opacity="0.3"></a-plane>
 
@@ -1025,11 +1140,11 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
         </div>
       </div>
 
-      <div class="vr-breakout-foot">
+      <div class="vr-breakout-foot" id="vr-breakout-foot">
         <div class="vr-breakout-actions">
           <button id="vr-game-start" class="vr-sim-btn" style="flex: 1; min-width: 140px;">▶ Start Game</button>
           <button id="vr-game-reset" class="vr-sim-btn" style="flex: 1; min-width: 140px;">↻ Reset</button>
-          <button id="vr-game-fullscreen" class="vr-sim-btn vr-ui-target" style="flex: 1; min-width: 140px;">⛶ Enter VR</button>
+          <button id="vr-game-fullscreen" class="vr-sim-btn" style="flex: 1; min-width: 140px;">⛶ Enter VR</button>
         </div>
         <p class="vr-breakout-note">
           <strong>Desktop:</strong> Move with ← →, A/D, or by sliding your mouse across the game window.
@@ -1611,8 +1726,12 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
     var ball = document.getElementById('ball');
     var paddle = document.getElementById('paddle');
     var container = document.getElementById('vr-breakout-container');
+    var foot = document.getElementById('vr-breakout-foot');
     var scoreEl = document.getElementById('vr-breakout-score');
     var statusEl = document.getElementById('vr-breakout-status');
+    var vrPanel = document.getElementById('vr-ui-panel');
+    var vrScoreText = document.getElementById('vr-score-text');
+    var vrStatusText = document.getElementById('vr-status-text');
     var brickIds = [];
     var keys = {};
     var rafId = 0;
@@ -1644,6 +1763,33 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
       reset: document.getElementById('vr-game-reset'),
       fullscreen: document.getElementById('vr-game-fullscreen')
     };
+    var vrButtons = {
+      start: document.getElementById('vr-button-start'),
+      reset: document.getElementById('vr-button-reset'),
+      exit: document.getElementById('vr-button-exit')
+    };
+    var vrButtonStyles = {
+      start: {
+        idleColor: '#132950',
+        hoverColor: '#1d4b78',
+        emissive: '#00d4ff',
+        label: document.getElementById('vr-button-start-label')
+      },
+      reset: {
+        idleColor: '#3f2d10',
+        hoverColor: '#6b4918',
+        emissive: '#ffb86c',
+        label: document.getElementById('vr-button-reset-label')
+      },
+      exit: {
+        idleColor: '#4d1424',
+        hoverColor: '#7a1f39',
+        emissive: '#ff79c6',
+        label: document.getElementById('vr-button-exit-label')
+      }
+    };
+    var hoveredVrButton = null;
+    var hoveredCounts = new WeakMap();
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -1652,22 +1798,134 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
     function setScore(nextScore) {
       score = nextScore;
       if (scoreEl) scoreEl.textContent = String(score);
+      if (vrScoreText) vrScoreText.setAttribute('value', String(score));
     }
 
     function setStatus(text) {
       if (statusEl) statusEl.textContent = text;
+      if (vrStatusText) vrStatusText.setAttribute('value', text);
     }
 
     function setState(nextState) {
       state = nextState;
       if (state === 'running') {
         buttons.start.textContent = '⏸ Pause Game';
+        if (vrButtonStyles.start.label) vrButtonStyles.start.label.setAttribute('value', 'Pause Game');
       } else if (state === 'paused') {
         buttons.start.textContent = '▶ Resume Game';
+        if (vrButtonStyles.start.label) vrButtonStyles.start.label.setAttribute('value', 'Resume Game');
       } else {
         buttons.start.textContent = '▶ Start Game';
+        if (vrButtonStyles.start.label) vrButtonStyles.start.label.setAttribute('value', 'Start Game');
       }
     }
+
+    function setVrPanelVisible(isVisible) {
+      if (vrPanel) vrPanel.setAttribute('visible', !!isVisible);
+      if (foot) foot.style.display = isVisible ? 'none' : '';
+    }
+
+    function setVrButtonActive(buttonEl, isActive) {
+      if (!buttonEl) return;
+      var key = buttonEl.dataset.button;
+      var style = vrButtonStyles[key];
+      if (!style) return;
+
+      buttonEl.setAttribute('color', isActive ? style.hoverColor : style.idleColor);
+      buttonEl.setAttribute(
+        'material',
+        'emissive: ' + style.emissive + '; emissiveIntensity: ' + (isActive ? 0.5 : 0.12)
+      );
+
+      if (style.label) {
+        style.label.setAttribute('color', isActive ? '#0a0820' : '#f8fbff');
+      }
+    }
+
+    function updateHoveredButton(buttonEl, delta) {
+      if (!buttonEl) return;
+      var nextCount = Math.max((hoveredCounts.get(buttonEl) || 0) + delta, 0);
+      hoveredCounts.set(buttonEl, nextCount);
+      setVrButtonActive(buttonEl, nextCount > 0);
+      if (nextCount > 0) {
+        hoveredVrButton = buttonEl;
+      } else if (hoveredVrButton === buttonEl) {
+        hoveredVrButton = null;
+      }
+    }
+
+    function pulseVrButton(buttonEl) {
+      if (!buttonEl) return;
+      setVrButtonActive(buttonEl, true);
+      window.setTimeout(function() {
+        var count = hoveredCounts.get(buttonEl) || 0;
+        setVrButtonActive(buttonEl, count > 0);
+      }, 160);
+    }
+
+    function invokeVrAction(action) {
+      if (action === 'start') {
+        startGame();
+        return;
+      }
+
+      if (action === 'reset') {
+        stopLoop();
+        setState('ready');
+        resetRound();
+        return;
+      }
+
+      if (action === 'exit') {
+        if (scene.is('vr-mode')) {
+          scene.exitVR();
+        }
+      }
+    }
+
+    function bindVrButton(buttonEl) {
+      if (!buttonEl) return;
+
+      setVrButtonActive(buttonEl, false);
+
+      buttonEl.addEventListener('raycaster-intersected', function() {
+        updateHoveredButton(buttonEl, 1);
+      });
+
+      buttonEl.addEventListener('raycaster-intersected-cleared', function() {
+        updateHoveredButton(buttonEl, -1);
+      });
+
+      buttonEl.addEventListener('mouseenter', function() {
+        updateHoveredButton(buttonEl, 1);
+      });
+
+      buttonEl.addEventListener('mouseleave', function() {
+        updateHoveredButton(buttonEl, -1);
+      });
+
+      buttonEl.addEventListener('click', function() {
+        pulseVrButton(buttonEl);
+        invokeVrAction(buttonEl.dataset.button);
+      });
+    }
+
+    Object.keys(vrButtons).forEach(function(key) {
+      bindVrButton(vrButtons[key]);
+    });
+
+    ['left-hand', 'right-hand'].forEach(function(id) {
+      var hand = document.getElementById(id);
+      if (!hand) return;
+
+      ['triggerdown', 'abuttondown', 'xbuttondown'].forEach(function(eventName) {
+        hand.addEventListener(eventName, function() {
+          if (!hoveredVrButton) return;
+          pulseVrButton(hoveredVrButton);
+          invokeVrAction(hoveredVrButton.dataset.button);
+        });
+      });
+    });
 
     function updatePaddleVisual() {
       paddle.setAttribute('position', { x: paddleX, y: BOUNDS.paddleY, z: -5 });
@@ -1719,6 +1977,7 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
       setState('ready');
       setStatus(statusText);
       buttons.start.textContent = buttonText;
+      if (vrButtonStyles.start.label) vrButtonStyles.start.label.setAttribute('value', buttonText.replace(/^[^A-Za-z]+/, '').trim() || 'Start Game');
     }
 
     function destroyBrick(brick, ballPos) {
@@ -1890,12 +2149,19 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
     });
 
     scene.addEventListener('enter-vr', function() {
+      setVrPanelVisible(true);
       setStatus(state === 'running' ? 'VR Active' : 'Ready for VR');
       buttons.fullscreen.textContent = '⛶ Exit VR';
     });
 
     scene.addEventListener('exit-vr', function() {
       controls.vrAxis = 0;
+      hoveredVrButton = null;
+      Object.keys(vrButtons).forEach(function(key) {
+        hoveredCounts.set(vrButtons[key], 0);
+        setVrButtonActive(vrButtons[key], false);
+      });
+      setVrPanelVisible(false);
       setStatus(state === 'running' ? 'In Play' : 'Ready');
       buttons.fullscreen.textContent = '⛶ Enter VR';
     });
@@ -1931,6 +2197,7 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
       }
     });
 
+    setVrPanelVisible(false);
     resetRound();
   })();
   </script>
