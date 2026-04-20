@@ -4,328 +4,171 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Virtual Reality Museum · Mr. Scandrett's ClassroomOS</title>
-    <meta name="description" content="Explore the Virtual Reality Museum. View 3D artifacts, landmarks, and animals at human scale in VR, AR, and desktop browsers." />
-    <meta name="theme-color" content="#1f2937" />
-
+    <meta
+      name="description"
+      content="Explore the Virtual Reality Museum. View 3D artifacts, landmarks, and animals at human scale in VR, AR, and desktop browsers."
+    />
+    <meta name="theme-color" content="#0b1324" />
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      html, body {
-        width: 100%;
-        height: 100%;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        background: #1f2937;
-        color: #fff;
-      }
-
-      a-scene {
-        width: 100%;
-        height: 100%;
-      }
-
-      #vr-toggle {
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        padding: 12px 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        z-index: 10;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s;
-      }
-
-      #vr-toggle:hover {
-        transform: scale(1.05);
-      }
-
-      #vr-toggle:active {
-        transform: scale(0.95);
-      }
-
-      #info-panel {
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        max-width: 350px;
-        background: rgba(31, 41, 55, 0.95);
-        padding: 20px;
-        border-radius: 8px;
-        border-left: 4px solid #667eea;
-        z-index: 20;
-        backdrop-filter: blur(8px);
-        display: none;
-      }
-
-      #info-panel.show {
-        display: block;
-      }
-
-      #info-panel h2 {
-        margin-bottom: 8px;
-        font-size: 18px;
-        color: #667eea;
-      }
-
-      #info-panel .student {
-        font-size: 14px;
-        color: #9ca3af;
-        margin-bottom: 8px;
-      }
-
-      #info-panel .description {
-        font-size: 13px;
-        line-height: 1.5;
-        color: #d1d5db;
-      }
-
-      #info-panel .type {
-        display: inline-block;
-        margin-top: 12px;
-        padding: 4px 8px;
-        background: rgba(102, 126, 234, 0.2);
-        border-radius: 4px;
-        font-size: 12px;
-        color: #667eea;
-        font-weight: 500;
-      }
-
-      #navigation-help {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: rgba(31, 41, 55, 0.95);
-        padding: 15px 20px;
-        border-radius: 8px;
-        font-size: 13px;
-        color: #d1d5db;
-        z-index: 20;
-        max-width: 280px;
-        backdrop-filter: blur(8px);
-      }
-
-      #navigation-help h3 {
-        color: #667eea;
-        margin-bottom: 10px;
-        font-size: 14px;
-      }
-
-      #navigation-help p {
-        margin: 6px 0;
-        line-height: 1.4;
-      }
-
-      #upload-button {
-        position: fixed;
-        bottom: 30px;
-        left: 30px;
-        padding: 12px 20px;
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        z-index: 10;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        text-decoration: none;
-        display: inline-block;
-        transition: transform 0.2s;
-      }
-
-      #upload-button:hover {
-        transform: scale(1.05);
-      }
-
-      #upload-button:active {
-        transform: scale(0.95);
-      }
-
-      .loading {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        text-align: center;
-        z-index: 30;
-      }
-
-      .loading-spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid rgba(255, 255, 255, 0.2);
-        border-top: 4px solid white;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 20px;
-      }
-
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-
-      .loading p {
-        color: #d1d5db;
-        font-size: 14px;
-      }
-
-      .empty-museum {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        text-align: center;
-        z-index: 25;
-        color: #d1d5db;
-      }
-
-      .empty-museum h2 {
-        font-size: 24px;
-        margin-bottom: 10px;
-        color: #667eea;
-      }
-
-      .empty-museum p {
-        margin-bottom: 20px;
-      }
-
-      .empty-museum a {
-        display: inline-block;
-        padding: 10px 20px;
-        background: #667eea;
-        color: white;
-        text-decoration: none;
-        border-radius: 6px;
-        transition: background 0.2s;
-      }
-
-      .empty-museum a:hover {
-        background: #5a67d8;
-      }
-
-      /* Mobile adjustments */
-      @media (max-width: 768px) {
-        #info-panel {
-          max-width: 100%;
-          left: 10px;
-          right: 10px;
-          top: 10px;
-        }
-
-        #navigation-help {
-          max-width: 100%;
-          right: 10px;
-          top: 10px;
-          font-size: 12px;
-          padding: 10px 15px;
-        }
-
-        #vr-toggle,
-        #upload-button {
-          padding: 10px 16px;
-          font-size: 12px;
-          bottom: 20px;
-        }
-
-        #upload-button {
-          left: 20px;
-        }
-
-        #vr-toggle {
-          right: 20px;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="./viewer.css?v=4" />
   </head>
-
   <body>
-    <!-- A-Frame scene -->
-    <a-scene physics="gravity: 0; debug: false" background="color: #0f172a" fog="type: linear; color: #0f172a; near: 20; far: 60">
-      <!-- Museum sky (deep neutral) -->
-      <a-sky color="#1e293b"></a-sky>
+    <div class="museum-shell">
+      <header class="museum-topbar">
+        <div>
+          <p class="museum-kicker">Immersive Gallery</p>
+          <h1>Virtual Reality Museum</h1>
+          <p class="museum-subtitle">
+            Browse student artifacts, animals, and landmarks in a curated 3D museum. Filter by section, inspect sources, and jump into VR when WebXR is available.
+          </p>
+        </div>
+        <div class="museum-actions">
+          <a href="/lessons/virtual-reality-museum-upload.html" class="museum-button museum-button-secondary">Upload Model</a>
+          <button id="vr-toggle" class="museum-button museum-button-primary" type="button">Enter VR</button>
+        </div>
+      </header>
 
-      <!-- Lighting: soft ambient + directional key + warm fill -->
-      <a-light type="ambient" color="#cbd5e1" intensity="0.5"></a-light>
-      <a-light type="directional" color="#fff" intensity="0.7" position="8 15 6" light="castShadow: true"></a-light>
-      <a-light type="point" color="#fbbf24" intensity="0.3" position="0 6 0" light="distance: 20; decay: 2"></a-light>
+      <main class="museum-layout">
+        <aside class="museum-sidebar">
+          <section class="museum-panel">
+            <h2>Browse Collection</h2>
+            <div class="museum-controls">
+              <label class="museum-label" for="museum-search">Search</label>
+              <input id="museum-search" class="museum-input" type="search" placeholder="Search title, student, type..." />
 
-      <!-- Marble-look gallery floor -->
-      <a-plane
-        id="ground"
-        position="0 0 0"
-        rotation="-90 0 0"
-        width="100"
-        height="100"
-        color="#e2e8f0"
-        material="roughness: 0.5; metalness: 0.1"
-        shadow="cast: false; receive: true"
-      ></a-plane>
+              <label class="museum-label" for="museum-sort">Sort</label>
+              <select id="museum-sort" class="museum-select">
+                <option value="title-asc">Title A–Z</option>
+                <option value="date-desc">Newest first</option>
+                <option value="student-asc">Student A–Z</option>
+                <option value="type-asc">Artifact type</option>
+              </select>
+            </div>
 
-      <!-- Subtle floor accent -->
-      <a-entity position="0 0.01 0" rotation="-90 0 0">
-        <a-plane width="100" height="100" color="#94a3b8" opacity="0.15"></a-plane>
-      </a-entity>
+            <div class="museum-filter-row" id="museum-filters" aria-label="Artifact type filters">
+              <button class="museum-chip active" type="button" data-filter="all">All Models</button>
+              <button class="museum-chip" type="button" data-filter="animal">Animals</button>
+              <button class="museum-chip" type="button" data-filter="artifact">Artifacts</button>
+              <button class="museum-chip" type="button" data-filter="landmark">Landmarks</button>
+              <button class="museum-chip" type="button" data-filter="other">Other</button>
+            </div>
 
-      <!-- Camera positioned at human eye height (1.6m) -->
-      <a-camera position="0 1.6 6" look-controls wasd-controls="acceleration: 50">
-        <a-cursor color="#667eea" fuse="true" fuseTimeout="2000"></a-cursor>
-      </a-camera>
+            <div class="museum-stats">
+              <span id="museum-count">0 models</span>
+              <span id="museum-active-filter">All sections</span>
+            </div>
 
-      <!-- Model container for dynamically loaded models -->
-      <a-entity id="model-container" position="0 0 0"></a-entity>
-    </a-scene>
+            <div id="museum-card-list" class="museum-card-list" aria-live="polite"></div>
+            <div id="museum-empty-list" class="museum-empty-list" hidden>
+              <h3>No matching models</h3>
+              <p>Try another section, a shorter search, or a different sort.</p>
+            </div>
+          </section>
+        </aside>
 
-    <!-- Info panel for selected model -->
-    <div id="info-panel">
-      <h2 id="model-title">Museum</h2>
-      <div class="student" id="model-student"></div>
-      <div class="description" id="model-description"></div>
-      <span class="type" id="model-type"></span>
+        <section class="museum-stage">
+          <div class="museum-stage-frame">
+            <div id="loading" class="museum-loading">
+              <div class="museum-spinner" aria-hidden="true"></div>
+              <p>Loading museum collection...</p>
+            </div>
+
+            <div id="empty-museum" class="museum-empty" hidden>
+              <h2>No artifacts in the museum yet</h2>
+              <p>Upload the first model to start the collection.</p>
+              <a href="/lessons/virtual-reality-museum-upload.html" class="museum-button museum-button-primary">Upload a Model</a>
+            </div>
+
+            <div class="museum-overlay museum-help">
+              <h2>Desktop + VR</h2>
+              <p><strong>Desktop:</strong> Drag to look, WASD to move, click a card to focus a model.</p>
+              <p><strong>VR:</strong> Use your headset's Enter VR flow and controller locomotion.</p>
+              <p><strong>Reset:</strong> Press <kbd>R</kbd> to reset your camera.</p>
+            </div>
+
+            <div class="museum-overlay museum-banner" id="museum-banner">
+              <span id="museum-banner-text">Preparing the gallery...</span>
+            </div>
+
+            <a-scene
+              embedded
+              renderer="colorManagement: true; antialias: true"
+              background="color: #09101d"
+              fog="type: linear; color: #09101d; near: 16; far: 52"
+            >
+              <a-assets id="museum-assets"></a-assets>
+
+              <a-sky color="#132238"></a-sky>
+              <a-light type="ambient" color="#dbeafe" intensity="0.58"></a-light>
+              <a-light type="directional" color="#ffffff" intensity="0.88" position="4 10 7"></a-light>
+              <a-light type="point" color="#38bdf8" intensity="0.4" position="0 4 1"></a-light>
+              <a-light type="point" color="#f59e0b" intensity="0.18" position="0 3 -10"></a-light>
+
+              <a-plane
+                id="ground"
+                position="0 0 0"
+                rotation="-90 0 0"
+                width="120"
+                height="120"
+                color="#dbe7f5"
+                material="roughness: 0.56; metalness: 0.08"
+                shadow="cast: false; receive: true"
+              ></a-plane>
+
+              <a-entity position="0 0.01 0" rotation="-90 0 0">
+                <a-plane width="120" height="120" color="#94a3b8" opacity="0.13"></a-plane>
+              </a-entity>
+
+              <a-entity id="rig" position="0 1.6 7">
+                <a-camera look-controls wasd-controls="acceleration: 28">
+                  <a-cursor color="#60a5fa" fuse="false"></a-cursor>
+                </a-camera>
+              </a-entity>
+
+              <a-entity id="model-container"></a-entity>
+            </a-scene>
+          </div>
+        </section>
+
+        <aside class="museum-details">
+          <section class="museum-panel" id="info-panel">
+            <p class="museum-detail-kicker" id="model-type">Select a model</p>
+            <h2 id="model-title">Virtual Reality Museum</h2>
+            <p class="museum-detail-meta" id="model-student">Choose a card to inspect details.</p>
+            <p class="museum-detail-date" id="model-date"></p>
+            <p class="museum-detail-description" id="model-description">
+              The collection includes sample models plus student uploads. Metadata, section filters, and attribution all appear here when you select an entry.
+            </p>
+            <button id="model-description-toggle" class="museum-text-toggle" type="button" hidden>Show full description</button>
+
+            <dl class="museum-meta-grid">
+              <div>
+                <dt>Source</dt>
+                <dd id="model-source">—</dd>
+              </div>
+              <div>
+                <dt>License</dt>
+                <dd id="model-license">—</dd>
+              </div>
+              <div>
+                <dt>Scale Multiplier</dt>
+                <dd id="model-scale">—</dd>
+              </div>
+              <div>
+                <dt>Model ID</dt>
+                <dd id="model-id">—</dd>
+              </div>
+            </dl>
+
+            <div class="museum-link-row">
+              <a id="model-source-link" class="museum-inline-link" href="#" target="_blank" rel="noreferrer noopener" hidden>Open source attribution</a>
+              <a id="model-file-link" class="museum-inline-link" href="#" target="_blank" rel="noreferrer noopener" hidden>Open model file</a>
+            </div>
+          </section>
+        </aside>
+      </main>
     </div>
 
-    <!-- Navigation help -->
-    <div id="navigation-help">
-      <h3>🧭 Navigation</h3>
-      <p><strong>Desktop:</strong> WASD to move, mouse to look</p>
-      <p><strong>Mobile:</strong> Touch to move, gyro to look</p>
-      <p><strong>VR:</strong> Use controllers to teleport</p>
-      <p style="margin-top: 10px; font-size: 12px; color: #6b7280;">
-        Click a model to see details
-      </p>
-    </div>
-
-    <!-- Upload button -->
-    <a href="/lessons/virtual-reality-museum-upload.html" id="upload-button">➕ Add Your Model</a>
-
-    <!-- VR toggle button -->
-    <button id="vr-toggle">🥽 Enter VR</button>
-
-    <!-- Loading indicator -->
-    <div class="loading" id="loading">
-      <div class="loading-spinner"></div>
-      <p>Loading Museum...</p>
-    </div>
-
-    <!-- Empty museum message -->
-    <div class="empty-museum" id="empty-museum" style="display: none;">
-      <h2>Virtual Reality Museum</h2>
-      <p>No artifacts yet.</p>
-      <a href="/lessons/virtual-reality-museum-upload.html">Be the first to upload!</a>
-    </div>
-
-    <script src="./viewer.js?v=3"></script>
+    <script src="./viewer.js?v=4"></script>
   </body>
 </html>

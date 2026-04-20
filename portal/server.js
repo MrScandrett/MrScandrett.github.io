@@ -219,6 +219,10 @@ function normalizeUsername(value) {
   return sanitizeSlug(String(value || "").replace(/[_.]/g, "-"), "").slice(0, 24);
 }
 
+function normalizeModelSlug(value) {
+  return sanitizeSlug(String(value || ""), "model");
+}
+
 function readJson(file, fallback) {
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -706,6 +710,13 @@ async function handleUploadModel(req, res) {
   if (!["artifact", "landmark", "animal", "other"].includes(artifactType)) {
     throw new Error("Invalid artifact type.");
   }
+  const source = String(parsed.fields.source || "").trim() || "Student upload";
+  const sourceUrl = String(parsed.fields.sourceUrl || "").trim();
+  const license = String(parsed.fields.license || "").trim() || "Not specified";
+  const scaleMultiplier = Number(parsed.fields.scaleMultiplier || "1");
+  if (!Number.isFinite(scaleMultiplier) || scaleMultiplier < 0.1 || scaleMultiplier > 5) {
+    throw new Error("Scale multiplier must be between 0.1 and 5.");
+  }
 
   const glbFile = parsed.files.glbFile;
   if (!glbFile) throw new Error("Missing GLB file.");
@@ -713,7 +724,9 @@ async function handleUploadModel(req, res) {
   if (glbFile.data.length > MAX_MODEL_BYTES) throw new Error("Model file exceeds 50MB limit.");
 
   const timestamp = Date.now();
-  const filename = `${timestamp}-${studentName}-${modelTitle.replace(/\s+/g, "-").toLowerCase()}.glb`;
+  const titleSlug = normalizeModelSlug(modelTitle);
+  const randomSuffix = Math.random().toString(36).slice(2, 8);
+  const filename = `${timestamp}-${studentName}-${titleSlug}.glb`;
   const modelPath = path.join(MUSEUM_MODELS_DIR, filename);
   const modelUrl = `apps/virtual-reality-museum/models/${filename}`;
 
@@ -721,7 +734,7 @@ async function handleUploadModel(req, res) {
     fs.writeFileSync(modelPath, glbFile.data);
 
     const museumData = JSON.parse(fs.readFileSync(MUSEUM_DATA_FILE, "utf8"));
-    const modelId = `${timestamp}-${studentName}-${modelTitle.replace(/\s+/g, "-").toLowerCase()}`;
+    const modelId = `${artifactType}-${timestamp}-${randomSuffix}`;
     const entry = {
       id: modelId,
       title: modelTitle,
@@ -729,7 +742,10 @@ async function handleUploadModel(req, res) {
       description,
       artifact_type: artifactType,
       file: modelUrl,
-      scale: 1.0,
+      source,
+      source_url: sourceUrl,
+      license,
+      scaleMultiplier,
       date_uploaded: new Date().toISOString().split("T")[0],
     };
     museumData.models.push(entry);

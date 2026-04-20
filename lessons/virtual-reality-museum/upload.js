@@ -54,6 +54,11 @@ function validateFile(file) {
   return true;
 }
 
+function validateScaleMultiplier(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0.1 && parsed <= 5;
+}
+
 function checkGlbSignature(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -139,9 +144,27 @@ uploadForm.addEventListener("submit", async (e) => {
   const studentName = document.getElementById("studentName").value.trim();
   const modelTitle = document.getElementById("modelTitle").value.trim();
   const description = document.getElementById("description").value.trim();
+  const source = document.getElementById("source").value.trim();
+  const sourceUrl = document.getElementById("sourceUrl").value.trim();
+  const license = document.getElementById("license").value.trim();
+  const scaleMultiplier = document.getElementById("scaleMultiplier").value.trim();
 
   if (!studentName || !modelTitle || !description) {
     alert("Please fill in all required fields.");
+    return;
+  }
+
+  if (sourceUrl) {
+    try {
+      new URL(sourceUrl);
+    } catch {
+      alert("Please enter a valid Source URL.");
+      return;
+    }
+  }
+
+  if (!validateScaleMultiplier(scaleMultiplier)) {
+    alert("Scale multiplier must be between 0.1 and 5.");
     return;
   }
 
@@ -156,6 +179,10 @@ uploadForm.addEventListener("submit", async (e) => {
     formData.append("modelTitle", modelTitle);
     formData.append("description", description);
     formData.append("artifact", artifactType);
+    formData.append("source", source);
+    formData.append("sourceUrl", sourceUrl);
+    formData.append("license", license);
+    formData.append("scaleMultiplier", scaleMultiplier);
     formData.append("glbFile", file);
 
     const xhr = new XMLHttpRequest();
@@ -164,6 +191,7 @@ uploadForm.addEventListener("submit", async (e) => {
       if (e.lengthComputable) {
         const percentComplete = (e.loaded / e.total) * 100;
         progressFill.style.width = percentComplete + "%";
+        progressFill.classList.add("uploading");
         progressText.textContent = `Uploading... ${Math.round(percentComplete)}%`;
       }
     });
@@ -171,6 +199,7 @@ uploadForm.addEventListener("submit", async (e) => {
     xhr.addEventListener("load", () => {
       if (xhr.status === 200) {
         uploadProgress.style.display = "none";
+        progressFill.classList.remove("uploading");
         // Show success message and redirect after a delay
         const response = xhr.responseText;
         document.body.innerHTML = response;
@@ -184,6 +213,7 @@ uploadForm.addEventListener("submit", async (e) => {
 
     xhr.addEventListener("error", () => {
       uploadProgress.style.display = "none";
+      progressFill.classList.remove("uploading");
       submitBtn.disabled = false;
       alert("Upload failed. Please try again.");
     });
@@ -192,6 +222,7 @@ uploadForm.addEventListener("submit", async (e) => {
     xhr.send(formData);
   } catch (err) {
     uploadProgress.style.display = "none";
+    progressFill.classList.remove("uploading");
     submitBtn.disabled = false;
     alert(`Error: ${err.message}`);
   }
