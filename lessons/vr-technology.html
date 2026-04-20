@@ -7,6 +7,7 @@
   <meta name="description" content="Fabrication Lesson 02 — explore stereoscopic vision, binaural audio, and how VR headsets trick your brain, then implement VR in your own games." />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <style>
     /* ── page chrome ── */
     body {
@@ -443,6 +444,97 @@
 
     /* ── ear bar live update ── */
     .vr-ear-bar { transition: height 0.05s linear; }
+
+    /* ── breakout panel ── */
+    .vr-breakout-card {
+      border: 1px solid rgba(0,212,255,0.22);
+      background: linear-gradient(160deg, #0d1b3e 0%, #1a0533 100%);
+      padding: 0;
+      overflow: hidden;
+    }
+    .vr-breakout-head,
+    .vr-breakout-foot {
+      padding-inline: 2.2rem;
+    }
+    .vr-breakout-head { padding-top: 2rem; }
+    .vr-breakout-stage {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      margin: 1.4rem 0;
+      padding: 0 2.2rem;
+      box-sizing: border-box;
+    }
+    .vr-breakout-container {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      border-radius: 20px;
+      border: 1px solid rgba(111,76,255,0.3);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(0,212,255,0.12), transparent 45%),
+        linear-gradient(180deg, #0a0820 0%, #071322 100%);
+      box-shadow: inset 0 0 40px rgba(0, 212, 255, 0.08);
+    }
+    .vr-breakout-overlay {
+      position: absolute;
+      top: 0.9rem;
+      left: calc(2.2rem + 0.9rem);
+      right: calc(2.2rem + 0.9rem);
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .vr-breakout-chip {
+      padding: 0.42rem 0.72rem;
+      border-radius: 999px;
+      border: 1px solid rgba(200,184,255,0.2);
+      background: rgba(8, 14, 30, 0.72);
+      backdrop-filter: blur(10px);
+      color: #dce8ff;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+    .vr-breakout-overlay strong {
+      color: #fff;
+      letter-spacing: normal;
+      margin-left: 0.35rem;
+    }
+    .vr-breakout-actions {
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      margin-top: 1.2rem;
+    }
+    .vr-breakout-note {
+      font-size: 0.88rem;
+      color: rgba(210,230,255,0.76);
+      margin: 1rem 0 0;
+      line-height: 1.6;
+    }
+    .vr-breakout-note strong { color: #ffffff; }
+
+    @media (max-width: 720px) {
+      .vr-breakout-head,
+      .vr-breakout-foot { padding-inline: 1rem; }
+      .vr-breakout-stage { padding: 0 1rem; }
+      .vr-breakout-overlay {
+        left: calc(1rem + 0.6rem);
+        right: calc(1rem + 0.6rem);
+        top: 0.6rem;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .vr-breakout-chip {
+        font-size: 0.68rem;
+        letter-spacing: 0.04em;
+      }
+    }
   </style>
 </head>
 <body>
@@ -833,6 +925,116 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
     sphere.position.x = Math.<span class="c-fn">sin</span>(time * <span class="c-n">0.001</span>) * <span class="c-n">2</span>;   <span class="c-c">// orbit the player</span>
     renderer.<span class="c-fn">render</span>(scene, camera);
 });</pre>
+      </div>
+    </div>
+
+    <!-- ══ BREAKOUT VR GAME ══ -->
+    <div class="vr-card vr-breakout-card">
+      <div class="vr-breakout-head">
+        <p class="vr-section-label" style="color:#00d4ff">04.5 — Interactive VR Game Demo</p>
+        <h2 style="color:#c8b8ff;">Breakout — A VR Arcade Classic</h2>
+        <p style="color: rgba(210,230,255,0.8);">Play a polished A-Frame Breakout mini-game inside the lesson. It works on desktop with keyboard or mouse, and in a headset with WebXR controls, so students can connect the VR concepts they just learned to a real interactive scene.</p>
+      </div>
+
+      <div class="vr-breakout-stage">
+        <div class="vr-breakout-overlay" aria-hidden="true">
+          <div class="vr-breakout-chip">Score <strong id="vr-breakout-score">0</strong></div>
+          <div class="vr-breakout-chip">Status <strong id="vr-breakout-status">Ready</strong></div>
+        </div>
+        <div id="vr-breakout-container" class="vr-breakout-container">
+          <a-scene
+            id="breakout-scene"
+            embedded
+            vr-mode-ui="enabled: true"
+            renderer="colorManagement: true; antialias: true"
+            style="width: 100%; height: 100%;">
+
+            <!-- Sky -->
+            <a-sky color="#0a0820"></a-sky>
+
+            <!-- Lighting -->
+            <a-light type="ambient" color="#fff" intensity="0.6"></a-light>
+            <a-light type="directional" color="#fff" intensity="0.8" position="5 10 7"></a-light>
+            <a-light type="point" color="#00d4ff" intensity="0.5" position="0 1.5 -3"></a-light>
+
+            <!-- Camera + cursor -->
+            <a-entity camera look-controls wasd-controls position="0 0.6 0">
+              <a-cursor color="#00d4ff" fuse="true" fuse-timeout="500"></a-cursor>
+            </a-entity>
+
+            <!-- VR controllers -->
+            <a-entity id="left-hand" laser-controls="hand: left" raycaster="objects: .vr-ui-target"></a-entity>
+            <a-entity id="right-hand" laser-controls="hand: right" raycaster="objects: .vr-ui-target"></a-entity>
+
+            <!-- Game boundary walls -->
+            <a-plane position="0 3 -5" rotation="0 0 0" width="8" height="6" color="#1a3a5c" opacity="0.3"></a-plane>
+
+            <!-- Top wall -->
+            <a-box position="0 3.5 -5" width="8.4" height="0.2" depth="0.2" color="#ff6bdf" material="emissive: #ff6bdf; emissiveIntensity: 0.45"></a-box>
+
+            <!-- Left wall -->
+            <a-box position="-4.3 1.5 -5" width="0.2" height="5" depth="0.2" color="#ff6bdf" material="emissive: #ff6bdf; emissiveIntensity: 0.35"></a-box>
+
+            <!-- Right wall -->
+            <a-box position="4.3 1.5 -5" width="0.2" height="5" depth="0.2" color="#ff6bdf" material="emissive: #ff6bdf; emissiveIntensity: 0.35"></a-box>
+
+            <!-- Paddle (player controlled) -->
+            <a-box
+              id="paddle"
+              position="0 -1.4 -5"
+              width="1.2"
+              height="0.2"
+              depth="0.2"
+              color="#00d4ff"
+              material="emissive: #00d4ff; emissiveIntensity: 0.5">
+            </a-box>
+
+            <!-- Ball -->
+            <a-sphere
+              id="ball"
+              position="0 -0.8 -5"
+              radius="0.15"
+              color="#50fa7b"
+              material="emissive: #50fa7b; emissiveIntensity: 0.6">
+            </a-sphere>
+
+            <!-- Bricks row 1 -->
+            <a-box id="brick-0" position="-3.2 2.5 -5" width="0.8" height="0.3" depth="0.2" color="#ff79c6" material="emissive: #ff79c6; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-1" position="-2 2.5 -5" width="0.8" height="0.3" depth="0.2" color="#ff79c6" material="emissive: #ff79c6; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-2" position="-0.8 2.5 -5" width="0.8" height="0.3" depth="0.2" color="#ff79c6" material="emissive: #ff79c6; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-3" position="0.8 2.5 -5" width="0.8" height="0.3" depth="0.2" color="#ff79c6" material="emissive: #ff79c6; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-4" position="2 2.5 -5" width="0.8" height="0.3" depth="0.2" color="#ff79c6" material="emissive: #ff79c6; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-5" position="3.2 2.5 -5" width="0.8" height="0.3" depth="0.2" color="#ff79c6" material="emissive: #ff79c6; emissiveIntensity: 0.3"></a-box>
+
+            <!-- Bricks row 2 -->
+            <a-box id="brick-6" position="-3.2 1.9 -5" width="0.8" height="0.3" depth="0.2" color="#ffb86c" material="emissive: #ffb86c; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-7" position="-2 1.9 -5" width="0.8" height="0.3" depth="0.2" color="#ffb86c" material="emissive: #ffb86c; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-8" position="-0.8 1.9 -5" width="0.8" height="0.3" depth="0.2" color="#ffb86c" material="emissive: #ffb86c; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-9" position="0.8 1.9 -5" width="0.8" height="0.3" depth="0.2" color="#ffb86c" material="emissive: #ffb86c; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-10" position="2 1.9 -5" width="0.8" height="0.3" depth="0.2" color="#ffb86c" material="emissive: #ffb86c; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-11" position="3.2 1.9 -5" width="0.8" height="0.3" depth="0.2" color="#ffb86c" material="emissive: #ffb86c; emissiveIntensity: 0.3"></a-box>
+
+            <!-- Bricks row 3 -->
+            <a-box id="brick-12" position="-3.2 1.3 -5" width="0.8" height="0.3" depth="0.2" color="#50fa7b" material="emissive: #50fa7b; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-13" position="-2 1.3 -5" width="0.8" height="0.3" depth="0.2" color="#50fa7b" material="emissive: #50fa7b; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-14" position="-0.8 1.3 -5" width="0.8" height="0.3" depth="0.2" color="#50fa7b" material="emissive: #50fa7b; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-15" position="0.8 1.3 -5" width="0.8" height="0.3" depth="0.2" color="#50fa7b" material="emissive: #50fa7b; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-16" position="2 1.3 -5" width="0.8" height="0.3" depth="0.2" color="#50fa7b" material="emissive: #50fa7b; emissiveIntensity: 0.3"></a-box>
+            <a-box id="brick-17" position="3.2 1.3 -5" width="0.8" height="0.3" depth="0.2" color="#50fa7b" material="emissive: #50fa7b; emissiveIntensity: 0.3"></a-box>
+          </a-scene>
+        </div>
+      </div>
+
+      <div class="vr-breakout-foot">
+        <div class="vr-breakout-actions">
+          <button id="vr-game-start" class="vr-sim-btn" style="flex: 1; min-width: 140px;">▶ Start Game</button>
+          <button id="vr-game-reset" class="vr-sim-btn" style="flex: 1; min-width: 140px;">↻ Reset</button>
+          <button id="vr-game-fullscreen" class="vr-sim-btn vr-ui-target" style="flex: 1; min-width: 140px;">⛶ Enter VR</button>
+        </div>
+        <p class="vr-breakout-note">
+          <strong>Desktop:</strong> Move with ← →, A/D, or by sliding your mouse across the game window.
+          <strong> VR:</strong> Press <strong>Enter VR</strong>, then move the paddle with the right thumbstick. The ball launches from the center and speeds up slightly as rallies get longer.
+        </p>
       </div>
     </div>
 
@@ -1397,5 +1599,341 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
   </script>
 
   <script src="../assets/js/classroom-animations.js"></script>
+
+  <!-- ══════════════════════════════════════════════════
+       BREAKOUT VR GAME LOGIC
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function() {
+    var scene = document.getElementById('breakout-scene');
+    if (!scene) return;
+
+    var ball = document.getElementById('ball');
+    var paddle = document.getElementById('paddle');
+    var container = document.getElementById('vr-breakout-container');
+    var scoreEl = document.getElementById('vr-breakout-score');
+    var statusEl = document.getElementById('vr-breakout-status');
+    var brickIds = [];
+    var keys = {};
+    var rafId = 0;
+    var lastTime = 0;
+    var score = 0;
+    var bricksRemaining = 0;
+    var state = 'ready';
+    var paddleX = 0;
+    var mouseX = 0.5;
+    var mouseActive = false;
+    var ballVelocity = { x: 0, y: 0 };
+    var controls = { left: false, right: false, vrAxis: 0 };
+    var BOUNDS = {
+      left: -3.85,
+      right: 3.85,
+      top: 3.15,
+      bottom: -2.35,
+      paddleY: -1.4,
+      paddleHalfWidth: 0.72,
+      ballRadius: 0.15
+    };
+
+    for (var brickIndex = 0; brickIndex < 18; brickIndex++) {
+      brickIds.push('brick-' + brickIndex);
+    }
+
+    var buttons = {
+      start: document.getElementById('vr-game-start'),
+      reset: document.getElementById('vr-game-reset'),
+      fullscreen: document.getElementById('vr-game-fullscreen')
+    };
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function setScore(nextScore) {
+      score = nextScore;
+      if (scoreEl) scoreEl.textContent = String(score);
+    }
+
+    function setStatus(text) {
+      if (statusEl) statusEl.textContent = text;
+    }
+
+    function setState(nextState) {
+      state = nextState;
+      if (state === 'running') {
+        buttons.start.textContent = '⏸ Pause Game';
+      } else if (state === 'paused') {
+        buttons.start.textContent = '▶ Resume Game';
+      } else {
+        buttons.start.textContent = '▶ Start Game';
+      }
+    }
+
+    function updatePaddleVisual() {
+      paddle.setAttribute('position', { x: paddleX, y: BOUNDS.paddleY, z: -5 });
+    }
+
+    function updateBallVisual(position) {
+      ball.setAttribute('position', { x: position.x, y: position.y, z: -5 });
+    }
+
+    function getBallPosition() {
+      var pos = ball.getAttribute('position');
+      return { x: pos.x, y: pos.y };
+    }
+
+    function resetBricks() {
+      bricksRemaining = brickIds.length;
+      brickIds.forEach(function(id) {
+        var brick = document.getElementById(id);
+        if (brick) {
+          brick.setAttribute('visible', true);
+          brick.dataset.destroyed = '';
+        }
+      });
+    }
+
+    function resetRound() {
+      paddleX = 0;
+      mouseX = 0.5;
+      mouseActive = false;
+      controls.vrAxis = 0;
+      ballVelocity.x = 3.1;
+      ballVelocity.y = 4.45;
+      setScore(0);
+      resetBricks();
+      updatePaddleVisual();
+      updateBallVisual({ x: 0, y: -0.82 });
+      setStatus('Ready');
+    }
+
+    function stopLoop() {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+    }
+
+    function endGame(statusText, buttonText) {
+      stopLoop();
+      setState('ready');
+      setStatus(statusText);
+      buttons.start.textContent = buttonText;
+    }
+
+    function destroyBrick(brick, ballPos) {
+      brick.dataset.destroyed = '1';
+      brick.setAttribute('visible', false);
+      bricksRemaining -= 1;
+      setScore(score + 10);
+
+      var brickPos = brick.getAttribute('position');
+      var offsetX = ballPos.x - brickPos.x;
+      var offsetY = ballPos.y - brickPos.y;
+
+      if (Math.abs(offsetX) > Math.abs(offsetY)) {
+        ballVelocity.x *= -1;
+      } else {
+        ballVelocity.y *= -1;
+      }
+
+      ballVelocity.x *= 1.015;
+      ballVelocity.y *= 1.015;
+
+      if (bricksRemaining <= 0) {
+        endGame('You Win', '★ Play Again');
+      } else {
+        setStatus('Brick Cleared');
+      }
+    }
+
+    function updatePaddlePosition(dt) {
+      var moveDir = 0;
+      if (controls.left && !controls.right) moveDir = -1;
+      if (controls.right && !controls.left) moveDir = 1;
+      if (Math.abs(controls.vrAxis) > 0.14) moveDir += controls.vrAxis;
+
+      var targetX = paddleX;
+      if (mouseActive) {
+        targetX = (mouseX - 0.5) * 7.2;
+      } else if (moveDir !== 0) {
+        targetX += moveDir * dt * 5.8;
+      }
+
+      paddleX = clamp(targetX, -3.15, 3.15);
+      updatePaddleVisual();
+    }
+
+    function updateBallPosition(dt) {
+      var pos = getBallPosition();
+      pos.x += ballVelocity.x * dt;
+      pos.y += ballVelocity.y * dt;
+
+      if (pos.x <= BOUNDS.left + BOUNDS.ballRadius) {
+        pos.x = BOUNDS.left + BOUNDS.ballRadius;
+        ballVelocity.x = Math.abs(ballVelocity.x);
+      }
+      if (pos.x >= BOUNDS.right - BOUNDS.ballRadius) {
+        pos.x = BOUNDS.right - BOUNDS.ballRadius;
+        ballVelocity.x = -Math.abs(ballVelocity.x);
+      }
+      if (pos.y >= BOUNDS.top - BOUNDS.ballRadius) {
+        pos.y = BOUNDS.top - BOUNDS.ballRadius;
+        ballVelocity.y = -Math.abs(ballVelocity.y);
+      }
+
+      if (pos.y <= BOUNDS.bottom) {
+        updateBallVisual(pos);
+        endGame('Game Over', '✦ Try Again');
+        return;
+      }
+
+      var paddleBandTop = BOUNDS.paddleY + 0.18 + BOUNDS.ballRadius;
+      var paddleBandBottom = BOUNDS.paddleY - 0.18 - BOUNDS.ballRadius;
+      if (
+        ballVelocity.y < 0 &&
+        pos.y >= paddleBandBottom &&
+        pos.y <= paddleBandTop &&
+        Math.abs(pos.x - paddleX) <= BOUNDS.paddleHalfWidth
+      ) {
+        var impactOffset = clamp((pos.x - paddleX) / BOUNDS.paddleHalfWidth, -1, 1);
+        pos.y = paddleBandTop;
+        ballVelocity.y = Math.abs(ballVelocity.y) * 1.02;
+        ballVelocity.x += impactOffset * 1.55;
+        ballVelocity.x = clamp(ballVelocity.x, -6.8, 6.8);
+        setStatus('Rally');
+      }
+
+      for (var i = 0; i < brickIds.length; i++) {
+        var brick = document.getElementById(brickIds[i]);
+        if (!brick || brick.dataset.destroyed === '1') continue;
+
+        var brickPos = brick.getAttribute('position');
+        if (
+          Math.abs(pos.x - brickPos.x) <= 0.55 &&
+          Math.abs(pos.y - brickPos.y) <= 0.27
+        ) {
+          destroyBrick(brick, pos);
+          break;
+        }
+      }
+
+      updateBallVisual(pos);
+    }
+
+    function tick(time) {
+      if (state !== 'running') return;
+      if (!lastTime) lastTime = time;
+
+      var dt = Math.min((time - lastTime) / 1000, 0.025);
+      lastTime = time;
+
+      updatePaddlePosition(dt);
+      updateBallPosition(dt);
+
+      if (state === 'running') {
+        rafId = requestAnimationFrame(tick);
+      }
+    }
+
+    function startGame() {
+      if (state === 'running') {
+        stopLoop();
+        setState('paused');
+        setStatus('Paused');
+        return;
+      }
+
+      if (state === 'ready') {
+        resetRound();
+      }
+
+      setState('running');
+      setStatus('In Play');
+      lastTime = 0;
+      rafId = requestAnimationFrame(tick);
+    }
+
+    window.addEventListener('keydown', function(e) {
+      var key = e.key.toLowerCase();
+      keys[key] = true;
+      controls.left = !!(keys.arrowleft || keys.a);
+      controls.right = !!(keys.arrowright || keys.d);
+
+      if (key === ' ' && buttons.start) {
+        e.preventDefault();
+        startGame();
+      }
+    });
+
+    window.addEventListener('keyup', function(e) {
+      var key = e.key.toLowerCase();
+      keys[key] = false;
+      controls.left = !!(keys.arrowleft || keys.a);
+      controls.right = !!(keys.arrowright || keys.d);
+    });
+
+    container.addEventListener('mousemove', function(e) {
+      var rect = container.getBoundingClientRect();
+      mouseX = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+      mouseActive = true;
+    });
+
+    container.addEventListener('mouseleave', function() {
+      mouseActive = false;
+    });
+
+    scene.addEventListener('axismove', function(event) {
+      var axis = event.detail && event.detail.axis;
+      if (!axis || !axis.length) return;
+      controls.vrAxis = clamp(axis[2] || axis[0] || 0, -1, 1);
+    });
+
+    scene.addEventListener('enter-vr', function() {
+      setStatus(state === 'running' ? 'VR Active' : 'Ready for VR');
+      buttons.fullscreen.textContent = '⛶ Exit VR';
+    });
+
+    scene.addEventListener('exit-vr', function() {
+      controls.vrAxis = 0;
+      setStatus(state === 'running' ? 'In Play' : 'Ready');
+      buttons.fullscreen.textContent = '⛶ Enter VR';
+    });
+
+    buttons.start.addEventListener('click', startGame);
+
+    buttons.reset.addEventListener('click', function() {
+      stopLoop();
+      setState('ready');
+      resetRound();
+    });
+
+    buttons.fullscreen.addEventListener('click', function() {
+      if (scene.is('vr-mode')) {
+        scene.exitVR();
+        return;
+      }
+
+      if (typeof scene.enterVR === 'function') {
+        scene.enterVR().catch(function() {
+          setStatus('VR Unavailable');
+        });
+      } else {
+        setStatus('VR Unsupported');
+      }
+    });
+
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden && state === 'running') {
+        stopLoop();
+        setState('paused');
+        setStatus('Paused');
+      }
+    });
+
+    resetRound();
+  })();
+  </script>
+
 </body>
 </html>
