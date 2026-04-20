@@ -789,6 +789,12 @@
       display: none !important;
     }
 
+    /* PG: hide teacher-only and remove tiles in student mode; visible in teacher mode */
+    body:not([data-app-mode="teacher"]) .app-link[data-pg-status="teacher"],
+    body:not([data-app-mode="teacher"]) .app-link[data-pg-status="remove"] {
+      display: none !important;
+    }
+
     .applications-page .library-section .app-link {
       justify-content: flex-start;
       min-height: 7.25rem;
@@ -4807,6 +4813,62 @@
       const libraryGradeButtons = Array.from(document.querySelectorAll("[data-library-grade-mode]"));
       const libraryTiles = Array.from(document.querySelectorAll(".library-section .app-link"));
       const compactAppLinks = Array.from(document.querySelectorAll(".library-section .app-link[href]"));
+
+      // Parental Guidance registry — keyed by CSS class suffix (app-link-{key})
+      // status: "approved" | "guidance" | "gate" | "teacher" | "remove"
+      // minGrade: "k2" | "35" | "68" | "912" | "teacher"
+      const PG = {
+        artstation:         { status: "remove",   minGrade: "teacher" },
+        windows93:          { status: "teacher",  minGrade: "teacher" },
+        emulatorjs:         { status: "teacher",  minGrade: "teacher" },
+        v86:                { status: "teacher",  minGrade: "teacher" },
+        osgl:               { status: "teacher",  minGrade: "teacher" },
+        githubopensourcegames: { status: "teacher", minGrade: "teacher" },
+        googlelabs:         { status: "teacher",  minGrade: "teacher" },
+        anthropicconsole:   { status: "teacher",  minGrade: "teacher" },
+        openaiplatform:     { status: "teacher",  minGrade: "teacher" },
+        openaiplayground:   { status: "teacher",  minGrade: "teacher" },
+        gpts:               { status: "teacher",  minGrade: "teacher" },
+        ninite:             { status: "teacher",  minGrade: "teacher" },
+        omniverse:          { status: "teacher",  minGrade: "teacher" },
+        heavym:             { status: "teacher",  minGrade: "teacher" },
+        madmapper:          { status: "teacher",  minGrade: "teacher" },
+        sora:               { status: "guidance", minGrade: "912" },
+        chatgpt:            { status: "guidance", minGrade: "68" },
+        chatgptsearch:      { status: "guidance", minGrade: "68" },
+        dalle:              { status: "guidance", minGrade: "68" },
+        gemini:             { status: "guidance", minGrade: "68" },
+        claude:             { status: "guidance", minGrade: "68" },
+        googleaimode:       { status: "guidance", minGrade: "68" },
+        freeciv:            { status: "guidance", minGrade: "68" },
+        timeguessr:         { status: "guidance", minGrade: "68" },
+        danball:            { status: "guidance", minGrade: "68" },
+        freesound:          { status: "guidance", minGrade: "68" },
+        opengameart:        { status: "guidance", minGrade: "68" },
+        craftpix:           { status: "guidance", minGrade: "68" },
+        printables:         { status: "guidance", minGrade: "68" },
+        kapwing:            { status: "guidance", minGrade: "68" },
+      };
+      const GRADE_ORDER = ["k2", "35", "68", "912"];
+      function pgGradeMet(minGrade, currentLevel) {
+        if (minGrade === "teacher") return false;
+        return GRADE_ORDER.indexOf(currentLevel) >= GRADE_ORDER.indexOf(minGrade);
+      }
+      function getPgKey(tile) {
+        for (const cls of tile.classList) {
+          if (cls.startsWith("app-link-")) return cls.slice("app-link-".length);
+        }
+        return null;
+      }
+      // Mark tiles with data-pg for CSS and accessibility
+      libraryTiles.forEach((tile) => {
+        const key = getPgKey(tile);
+        const pg = key ? PG[key] : null;
+        if (pg) {
+          tile.dataset.pgStatus = pg.status;
+          tile.dataset.pgMinGrade = pg.minGrade;
+        }
+      });
       const launcherClusters = Array.from(document.querySelectorAll("#app-launcher .applications-cluster"));
       const manualAppIcons = {
         scratch: "https://scratch.mit.edu/favicon.ico",
@@ -5181,9 +5243,18 @@
           const tileGrades = (tile.dataset.grade || "").split(",").filter(Boolean);
           const gradeMatch = state.libraryGradeMode === "all" || tileGrades.length === 0 || tileGrades.includes(state.level);
           const textMatch = !query || (fuseMatchSet ? fuseMatchSet.has(tile) : tile.dataset.librarySearch.includes(query));
-          const visible = groupMatch && gradeMatch && textMatch;
+          // PG enforcement: hide teacher-only and remove-status tools in student mode
+          const pgStatus = tile.dataset.pgStatus;
+          const pgMinGrade = tile.dataset.pgMinGrade;
+          const isStudentMode = state.mode !== "teacher";
+          const pgBlocked = isStudentMode && (
+            pgStatus === "remove" ||
+            pgStatus === "teacher" ||
+            (pgMinGrade && pgMinGrade !== "teacher" && !pgGradeMet(pgMinGrade, state.level))
+          );
+          const visible = groupMatch && gradeMatch && textMatch && !pgBlocked;
           tile.hidden = !visible;
-          tile.dataset.gradeHidden = String(!gradeMatch);
+          tile.dataset.gradeHidden = String(!gradeMatch || pgBlocked);
           if (visible) matches += 1;
         });
 
