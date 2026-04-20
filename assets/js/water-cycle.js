@@ -1,652 +1,646 @@
-// ========================================
-// WATER CYCLE LESSON PAGE - JAVASCRIPT
-// ========================================
-
-// ========== INITIALIZATION ==========
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 document.addEventListener('DOMContentLoaded', () => {
-    initStageSelector();
-    initSimulation();
+    const stageController = initStageSelector();
+    initCycleHero(stageController);
+    initPhaseExplorer();
+    initDistributionChart();
+    initSimulation(stageController);
+    initTranspirationExplorer();
     initQuiz();
+    initScavengerHunt();
+    initContentsToggle();
+    initKeyboardNavigation();
 });
-
-let resizeTimeout;
-window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        if (window.drawSimulationInstance) window.drawSimulationInstance();
-    }, 100);
-});
-
-// ========== STAGE SELECTOR LOGIC ==========
 
 function initStageSelector() {
-    const stageButtons = document.querySelectorAll('.stage-btn');
-
-    stageButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const stageNumber = button.getAttribute('data-stage');
-
-            // Remove active class from all buttons
-            stageButtons.forEach(btn => btn.classList.remove('active'));
-
-            // Add active class to clicked button
-            button.classList.add('active');
-
-            // Hide all stage explanations
-            document.querySelectorAll('.stage-explanation').forEach(exp => {
-                exp.style.display = 'none';
-            });
-
-            // Show selected stage explanation
-            const selectedStage = document.getElementById(`stage-${stageNumber}`);
-            if (selectedStage) {
-                selectedStage.style.display = 'block';
-            }
-        });
-    });
-}
-
-// ========== SIMULATION LOGIC ==========
-
-function initSimulation() {
-    const canvas = document.getElementById('simulation-canvas');
-    const sunStrengthSlider = document.getElementById('sun-strength-slider');
-    const sunStrengthValue = document.getElementById('sun-strength-value');
-    const temperatureSlider = document.getElementById('temperature-slider');
-    const temperatureValue = document.getElementById('temperature-value');
-    const groundwaterToggle = document.getElementById('groundwater-toggle');
-    const plantsToggle = document.getElementById('plants-toggle');
-    const rainBtn = document.getElementById('rain-btn');
-    const animateBtn = document.getElementById('animate-btn');
-    const resetBtn = document.getElementById('reset-btn');
-
-    // Initial simulation state
-    let simulationState = {
-        sunStrength: 50,
-        temperature: 20,
-        showGroundwater: false,
-        showPlants: false,
-        isAnimating: false,
-        isRaining: false
-    };
-
-    // Update display values on slider changes
-    sunStrengthSlider.addEventListener('input', (e) => {
-        simulationState.sunStrength = parseInt(e.target.value);
-        sunStrengthValue.textContent = simulationState.sunStrength;
-        drawSimulation();
-    });
-
-    temperatureSlider.addEventListener('input', (e) => {
-        simulationState.temperature = parseInt(e.target.value);
-        temperatureValue.textContent = simulationState.temperature;
-        drawSimulation();
-    });
-
-    groundwaterToggle.addEventListener('change', (e) => {
-        simulationState.showGroundwater = e.target.checked;
-        drawSimulation();
-    });
-
-    plantsToggle.addEventListener('change', (e) => {
-        simulationState.showPlants = e.target.checked;
-        drawSimulation();
-    });
-
-    rainBtn.addEventListener('click', () => {
-        if (!simulationState.isRaining) {
-            startRain();
-        }
-    });
-
-    animateBtn.addEventListener('click', () => {
-        if (!simulationState.isAnimating) {
-            animateCycle();
-        }
-    });
-
-    resetBtn.addEventListener('click', () => {
-        sunStrengthSlider.value = 50;
-        simulationState.sunStrength = 50;
-        sunStrengthValue.textContent = '50';
-        temperatureSlider.value = 20;
-        simulationState.temperature = 20;
-        temperatureValue.textContent = '20';
-        groundwaterToggle.checked = false;
-        simulationState.showGroundwater = false;
-        plantsToggle.checked = false;
-        simulationState.showPlants = false;
-        canvas.innerHTML = '';
-        drawSimulation();
-    });
-
-    function drawSimulation() {
-        window.drawSimulationInstance = drawSimulation;
-        canvas.innerHTML = '';
-
-        const width = canvas.clientWidth || 600;
-        const height = canvas.clientHeight || 450;
-
-        // Draw sky background (gradient based on temperature)
-        const skyColor = simulationState.temperature > 25 ? '#FFE4B5' : '#87CEEB';
-        const sky = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        sky.setAttribute('width', width);
-        sky.setAttribute('height', height * 0.6);
-        sky.setAttribute('fill', skyColor);
-        canvas.appendChild(sky);
-
-        // Draw ground
-        const groundColor = simulationState.showGroundwater ? '#D2B48C' : '#8B7355';
-        const ground = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        ground.setAttribute('y', height * 0.6);
-        ground.setAttribute('width', width);
-        ground.setAttribute('height', height * 0.4);
-        ground.setAttribute('fill', groundColor);
-        canvas.appendChild(ground);
-
-        // Draw sun
-        const sunOpacity = 0.4 + (simulationState.sunStrength / 100) * 0.6;
-        const sun = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        sun.setAttribute('cx', width - 80);
-        sun.setAttribute('cy', 60);
-        sun.setAttribute('r', '30');
-        sun.setAttribute('fill', '#FFD700');
-        sun.setAttribute('opacity', sunOpacity);
-        canvas.appendChild(sun);
-
-        // Draw sun rays
-        for (let i = 0; i < 8; i++) {
-            const angle = (i / 8) * Math.PI * 2;
-            const x1 = width - 80 + Math.cos(angle) * 45;
-            const y1 = 60 + Math.sin(angle) * 45;
-            const x2 = width - 80 + Math.cos(angle) * 60;
-            const y2 = 60 + Math.sin(angle) * 60;
-
-            const ray = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            ray.setAttribute('x1', x1);
-            ray.setAttribute('y1', y1);
-            ray.setAttribute('x2', x2);
-            ray.setAttribute('y2', y2);
-            ray.setAttribute('stroke', '#FFA500');
-            ray.setAttribute('stroke-width', '2');
-            ray.setAttribute('opacity', sunOpacity * 0.6);
-            canvas.appendChild(ray);
-        }
-
-        // Draw ocean/water at bottom left
-        const ocean = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        ocean.setAttribute('x', '20');
-        ocean.setAttribute('y', height * 0.55);
-        ocean.setAttribute('width', width * 0.35);
-        ocean.setAttribute('height', height * 0.45);
-        ocean.setAttribute('fill', '#1E90FF');
-        ocean.setAttribute('opacity', '0.7');
-        canvas.appendChild(ocean);
-
-        // Evaporation arrows (from water)
-        const evaporationCount = Math.ceil(simulationState.sunStrength / 20);
-        for (let i = 0; i < evaporationCount; i++) {
-            const startX = 50 + i * (width * 0.08);
-            const startY = height * 0.55;
-            const endX = startX + 20;
-            const endY = height * 0.2;
-
-            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            const pathData = `M ${startX} ${startY} Q ${startX + 15} ${(startY + endY) / 2}, ${endX} ${endY}`;
-            arrow.setAttribute('d', pathData);
-            arrow.setAttribute('stroke', '#87CEEB');
-            arrow.setAttribute('stroke-width', '2');
-            arrow.setAttribute('fill', 'none');
-            arrow.setAttribute('stroke-dasharray', '5,5');
-            arrow.setAttribute('opacity', '0.6');
-            canvas.appendChild(arrow);
-
-            // Arrow head
-            const arrowHead = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-            arrowHead.setAttribute('points', `${endX},${endY} ${endX - 5},${endY + 8} ${endX + 5},${endY + 8}`);
-            arrowHead.setAttribute('fill', '#87CEEB');
-            arrowHead.setAttribute('opacity', '0.6');
-            canvas.appendChild(arrowHead);
-        }
-
-        // Draw clouds
-        const cloudCount = 2 + Math.ceil(simulationState.sunStrength / 30);
-        for (let i = 0; i < cloudCount; i++) {
-            const cloudX = 100 + i * (width * 0.25);
-            const cloudY = 80 + simulationState.temperature / 5;
-
-            // Cloud body
-            const cloud = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-            cloud.setAttribute('cx', cloudX);
-            cloud.setAttribute('cy', cloudY);
-            cloud.setAttribute('rx', '40');
-            cloud.setAttribute('ry', '25');
-            cloud.setAttribute('fill', '#FFFFFF');
-            cloud.setAttribute('opacity', Math.min(0.95, 0.6 + simulationState.sunStrength / 150));
-            canvas.appendChild(cloud);
-
-            // Cloud puffs
-            const puff1 = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-            puff1.setAttribute('cx', cloudX - 25);
-            puff1.setAttribute('cy', cloudY - 5);
-            puff1.setAttribute('rx', '25');
-            puff1.setAttribute('ry', '20');
-            puff1.setAttribute('fill', '#FFFFFF');
-            puff1.setAttribute('opacity', Math.min(0.95, 0.6 + simulationState.sunStrength / 150));
-            canvas.appendChild(puff1);
-
-            const puff2 = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-            puff2.setAttribute('cx', cloudX + 25);
-            puff2.setAttribute('cy', cloudY - 5);
-            puff2.setAttribute('rx', '25');
-            puff2.setAttribute('ry', '20');
-            puff2.setAttribute('fill', '#FFFFFF');
-            puff2.setAttribute('opacity', Math.min(0.95, 0.6 + simulationState.sunStrength / 150));
-            canvas.appendChild(puff2);
-        }
-
-        // Draw precipitation if raining
-        if (simulationState.isRaining) {
-            drawRaindrops(width);
-        }
-
-        // Draw plants (if toggled)
-        if (simulationState.showPlants) {
-            drawPlants(height);
-        }
-
-        // Draw groundwater (if toggled)
-        if (simulationState.showGroundwater) {
-            drawGroundwater(width, height);
-        }
-
-        // Draw mountain
-        const mountain = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-        mountain.setAttribute('points', `${width * 0.6},${height * 0.6} ${width * 0.75},${height * 0.35} ${width * 0.95},${height * 0.6}`);
-        mountain.setAttribute('fill', '#A0826D');
-        mountain.setAttribute('opacity', '0.8');
-        canvas.appendChild(mountain);
-
-        // Draw river
-        const river = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        river.setAttribute('d', `M ${width * 0.75} ${height * 0.35} Q ${width * 0.65} ${height * 0.45}, ${width * 0.35} ${height * 0.58}`);
-        river.setAttribute('stroke', '#1E90FF');
-        river.setAttribute('stroke-width', '8');
-        river.setAttribute('fill', 'none');
-        river.setAttribute('opacity', '0.6');
-        canvas.appendChild(river);
-
-        // Temperature indicator
-        const tempLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        tempLabel.setAttribute('x', '10');
-        tempLabel.setAttribute('y', '25');
-        tempLabel.setAttribute('font-size', '12');
-        tempLabel.setAttribute('fill', '#333');
-        tempLabel.textContent = `Temp: ${simulationState.temperature}°C`;
-        canvas.appendChild(tempLabel);
-
-        // Sun strength indicator
-        const sunLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        sunLabel.setAttribute('x', width - 120);
-        sunLabel.setAttribute('y', '25');
-        sunLabel.setAttribute('font-size', '12');
-        sunLabel.setAttribute('fill', '#333');
-        sunLabel.textContent = `Sun: ${simulationState.sunStrength}%`;
-        canvas.appendChild(sunLabel);
-    }
-
-    function drawRaindrops(width) {
-        const cloudCount = 2 + Math.ceil(simulationState.sunStrength / 30);
-        for (let i = 0; i < cloudCount; i++) {
-            const cloudX = 100 + i * (width * 0.25);
-            const raindropCount = 4 + Math.ceil(simulationState.temperature / 10);
-            for (let j = 0; j < raindropCount; j++) {
-                const rainX = cloudX - 30 + Math.random() * 60;
-                const rainY = 100 + j * 20;
-
-                const drop = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                drop.setAttribute('x1', rainX);
-                drop.setAttribute('y1', rainY);
-                drop.setAttribute('x2', rainX - 3);
-                drop.setAttribute('y2', rainY + 15);
-                drop.setAttribute('stroke', '#1E90FF');
-                drop.setAttribute('stroke-width', '2');
-                drop.setAttribute('opacity', '0.7');
-                canvas.appendChild(drop);
-            }
-        }
-    }
-
-    function drawPlants(height) {
-        const plantPositions = [250, 350, 450];
-        plantPositions.forEach(plantX => {
-            // Stem
-            const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            stem.setAttribute('x1', plantX);
-            stem.setAttribute('y1', height * 0.95);
-            stem.setAttribute('x2', plantX);
-            stem.setAttribute('y2', height * 0.75);
-            stem.setAttribute('stroke', '#228B22');
-            stem.setAttribute('stroke-width', '3');
-            canvas.appendChild(stem);
-
-            // Leaves
-            const leaf1 = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-            leaf1.setAttribute('cx', plantX - 15);
-            leaf1.setAttribute('cy', height * 0.85);
-            leaf1.setAttribute('rx', '12');
-            leaf1.setAttribute('ry', '20');
-            leaf1.setAttribute('fill', '#228B22');
-            leaf1.setAttribute('opacity', '0.8');
-            canvas.appendChild(leaf1);
-
-            const leaf2 = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-            leaf2.setAttribute('cx', plantX + 15);
-            leaf2.setAttribute('cy', height * 0.82);
-            leaf2.setAttribute('rx', '12');
-            leaf2.setAttribute('ry', '20');
-            leaf2.setAttribute('fill', '#228B22');
-            leaf2.setAttribute('opacity', '0.8');
-            canvas.appendChild(leaf2);
-
-            // Water vapor from leaves (transpiration)
-            const vaporArrow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            vaporArrow.setAttribute('d', `M ${plantX} ${height * 0.72} Q ${plantX + 10} ${height * 0.65}, ${plantX + 5} ${height * 0.55}`);
-            vaporArrow.setAttribute('stroke', '#87CEEB');
-            vaporArrow.setAttribute('stroke-width', '1.5');
-            vaporArrow.setAttribute('fill', 'none');
-            vaporArrow.setAttribute('stroke-dasharray', '3,3');
-            vaporArrow.setAttribute('opacity', '0.5');
-            canvas.appendChild(vaporArrow);
-        });
-    }
-
-    function drawGroundwater(width, height) {
-        // Draw soil layers
-        const layerHeight = 15;
-        const startY = height * 0.85;
-        for (let layer = 0; layer < 4; layer++) {
-            const y = startY + layer * layerHeight;
-            // Soil particles
-            const numParticles = Math.floor(width / 40);
-            for (let i = 0; i < numParticles; i++) {
-                const x = 20 + i * (width / numParticles);
-                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle.setAttribute('cx', x);
-                circle.setAttribute('cy', y);
-                circle.setAttribute('r', '2');
-                circle.setAttribute('fill', '#8B7355');
-                circle.setAttribute('opacity', '0.4');
-                canvas.appendChild(circle);
-            }
-        }
-
-        // Draw groundwater layer at bottom
-        const gwLayer = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        gwLayer.setAttribute('x', '20');
-        gwLayer.setAttribute('y', height * 0.88);
-        gwLayer.setAttribute('width', width - 40);
-        gwLayer.setAttribute('height', height * 0.1);
-        gwLayer.setAttribute('fill', '#4A90E2');
-        gwLayer.setAttribute('opacity', '0.3');
-        canvas.appendChild(gwLayer);
-
-        // Label
-        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        label.setAttribute('x', width / 2);
-        label.setAttribute('y', height * 0.92);
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('font-size', '10');
-        label.setAttribute('fill', '#0066CC');
-        label.textContent = 'Groundwater';
-        canvas.appendChild(label);
-    }
-
-    function startRain() {
-        simulationState.isRaining = true;
-        rainBtn.disabled = true;
-        rainBtn.textContent = 'Raining...';
-
-        drawSimulation();
-
-        setTimeout(() => {
-            simulationState.isRaining = false;
-            rainBtn.disabled = false;
-            rainBtn.textContent = 'Start Rain';
-            drawSimulation();
-        }, 3000);
-    }
-
-    function animateCycle() {
-        simulationState.isAnimating = true;
-        animateBtn.disabled = true;
-
-        // Flash the canvas to show animation
-        const originalHTML = canvas.innerHTML;
-
-        const flashElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        flashElement.setAttribute('width', '100%');
-        flashElement.setAttribute('height', '100%');
-        flashElement.setAttribute('fill', 'white');
-        flashElement.setAttribute('opacity', '0.3');
-        canvas.appendChild(flashElement);
-
-        setTimeout(() => {
-            flashElement.style.transition = 'opacity 0.8s ease';
-            flashElement.setAttribute('opacity', '0');
-
-            setTimeout(() => {
-                simulationState.isAnimating = false;
-                animateBtn.disabled = false;
-                flashElement.remove();
-                drawSimulation();
-            }, 800);
-        }, 500);
-    }
-
-    // Initial draw
-    drawSimulation();
-}
-
-// ========== QUIZ LOGIC ==========
-
-function initQuiz() {
-    const quizQuestions = [
-        {
-            question: 'Which process describes water turning from liquid to gas?',
-            answers: [
-                { text: 'Condensation', correct: false },
-                { text: 'Evaporation', correct: true },
-                { text: 'Precipitation', correct: false },
-                { text: 'Infiltration', correct: false }
-            ]
-        },
-        {
-            question: 'What provides energy for the water cycle to work?',
-            answers: [
-                { text: 'The Moon', correct: false },
-                { text: 'Wind', correct: false },
-                { text: 'The Sun', correct: true },
-                { text: 'Ocean currents', correct: false }
-            ]
-        },
-        {
-            question: 'What percentage of Earth\'s water is in the oceans?',
-            answers: [
-                { text: 'About 50%', correct: false },
-                { text: 'About 75%', correct: false },
-                { text: 'About 97%', correct: true },
-                { text: 'About 99%', correct: false }
-            ]
-        },
-        {
-            question: 'Which stage happens when water soaks into the soil?',
-            answers: [
-                { text: 'Evaporation', correct: false },
-                { text: 'Condensation', correct: false },
-                { text: 'Collection', correct: false },
-                { text: 'Infiltration', correct: true }
-            ]
-        },
-        {
-            question: 'What is the process called when plants release water vapor?',
-            answers: [
-                { text: 'Evaporation', correct: false },
-                { text: 'Transpiration', correct: true },
-                { text: 'Precipitation', correct: false },
-                { text: 'Condensation', correct: false }
-            ]
-        },
-        {
-            question: 'At what temperature does water freeze into ice?',
-            answers: [
-                { text: '10°C', correct: false },
-                { text: '0°C', correct: true },
-                { text: '50°C', correct: false },
-                { text: '100°C', correct: false }
-            ]
-        },
-        {
-            question: 'Where is most of Earth\'s freshwater stored?',
-            answers: [
-                { text: 'In lakes and rivers', correct: false },
-                { text: 'In the atmosphere', correct: false },
-                { text: 'In glaciers and ice', correct: true },
-                { text: 'In oceans', correct: false }
-            ]
-        },
-        {
-            question: 'What is water stored beneath Earth\'s surface called?',
-            answers: [
-                { text: 'Surface water', correct: false },
-                { text: 'Groundwater', correct: true },
-                { text: 'Atmospheric water', correct: false },
-                { text: 'Precipitation', correct: false }
-            ]
-        }
+    const buttons = Array.from(document.querySelectorAll('.stage-btn'));
+    const explanations = Array.from(document.querySelectorAll('.stage-explanation'));
+    const stageData = [
+        { name: 'Evaporation', state: 'Liquid to gas', temp: 'Heating above 100°C', transition: 'Water warms and becomes vapor.' },
+        { name: 'Condensation', state: 'Gas to liquid', temp: 'Cooling from 110°C to 95°C', transition: 'Water vapor cools into droplets.' },
+        { name: 'Precipitation', state: 'Liquid or ice falling', temp: 'Cloud droplets cool and grow heavy', transition: 'Water falls as rain, snow, sleet, or hail.' },
+        { name: 'Collection', state: 'Liquid water stored', temp: 'Stable surface temperatures', transition: 'Water gathers in rivers, lakes, and oceans.' },
+        { name: 'Infiltration', state: 'Liquid moving underground', temp: 'Cooling in shaded soil', transition: 'Water sinks into soil and aquifers.' },
+        { name: 'Transpiration', state: 'Liquid to gas in plants', temp: 'Leaf warming drives vapor release', transition: 'Plants return water vapor to the air.' }
     ];
 
-    let currentQuestion = 0;
-    let score = 0;
-    let answered = false;
+    let activeIndex = 0;
 
-    const quizQuestionsContainer = document.getElementById('quiz-questions');
-    const quizResultsContainer = document.getElementById('quiz-results');
-
-    function displayQuestion() {
-        quizQuestionsContainer.innerHTML = '';
-        const q = quizQuestions[currentQuestion];
-
-        const questionDiv = document.createElement('div');
-        questionDiv.className = 'quiz-question';
-
-        const questionTitle = document.createElement('h4');
-        questionTitle.textContent = `Question ${currentQuestion + 1} of ${quizQuestions.length}`;
-        questionDiv.appendChild(questionTitle);
-
-        const questionText = document.createElement('p');
-        questionText.textContent = q.question;
-        questionDiv.appendChild(questionText);
-
-        const answerOptionsDiv = document.createElement('div');
-        answerOptionsDiv.className = 'answer-options';
-
-        q.answers.forEach((answer, index) => {
-            const answerBtn = document.createElement('button');
-            answerBtn.className = 'answer-btn';
-            answerBtn.textContent = answer.text;
-            answerBtn.onclick = () => selectAnswer(index, answer.correct);
-            answerOptionsDiv.appendChild(answerBtn);
+    function activate(index, focus = false) {
+        activeIndex = (index + stageData.length) % stageData.length;
+        buttons.forEach((button, buttonIndex) => button.classList.toggle('active', buttonIndex === activeIndex));
+        explanations.forEach((explanation, expIndex) => {
+            explanation.style.display = expIndex === activeIndex ? 'block' : 'none';
         });
-
-        questionDiv.appendChild(answerOptionsDiv);
-        quizQuestionsContainer.appendChild(questionDiv);
-        answered = false;
-    }
-
-    function selectAnswer(index, isCorrect) {
-        if (answered) return;
-        answered = true;
-
-        const buttons = document.querySelectorAll('.answer-btn');
-        buttons.forEach((btn, i) => {
-            if (i === index) {
-                if (isCorrect) {
-                    btn.classList.add('correct');
-                    score++;
-                } else {
-                    btn.classList.add('incorrect');
-                }
-            }
-            btn.disabled = true;
-        });
-
-        // Move to next question after delay
-        setTimeout(() => {
-            currentQuestion++;
-            if (currentQuestion < quizQuestions.length) {
-                displayQuestion();
-            } else {
-                showResults();
-            }
-        }, 1500);
-    }
-
-    function showResults() {
-        quizQuestionsContainer.style.display = 'none';
-        quizResultsContainer.style.display = 'block';
-
-        const percentage = Math.round((score / quizQuestions.length) * 100);
-        const scoreMessage = document.getElementById('score-message');
-
-        if (percentage === 100) {
-            scoreMessage.textContent = `Perfect! You scored ${score}/${quizQuestions.length}! 💧`;
-        } else if (percentage >= 85) {
-            scoreMessage.textContent = `Excellent! You scored ${score}/${quizQuestions.length}! Great understanding! 🌊`;
-        } else if (percentage >= 70) {
-            scoreMessage.textContent = `Good job! You scored ${score}/${quizQuestions.length}. Review the page to learn more! 📚`;
-        } else {
-            scoreMessage.textContent = `You scored ${score}/${quizQuestions.length}. Reread the lesson and try again! 💪`;
+        if (focus) {
+            document.getElementById('how')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+        document.dispatchEvent(new CustomEvent('watercycle:stagechange', {
+            detail: { index: activeIndex, ...stageData[activeIndex] }
+        }));
     }
 
-    const retakeBtn = document.getElementById('retake-quiz-btn');
-    if (retakeBtn) {
-        retakeBtn.addEventListener('click', () => {
-            currentQuestion = 0;
-            score = 0;
-            quizQuestionsContainer.style.display = 'block';
-            quizResultsContainer.style.display = 'none';
-            displayQuestion();
-        });
-    }
+    buttons.forEach((button, index) => {
+        button.addEventListener('click', () => activate(index));
+    });
 
-    // Display first question
-    displayQuestion();
+    document.getElementById('stage-focus-btn')?.addEventListener('click', () => activate(activeIndex, true));
+    activate(0);
+
+    return {
+        getActiveIndex: () => activeIndex,
+        getStageData: (index = activeIndex) => stageData[index],
+        activate
+    };
 }
 
-// ========== ACCESSIBILITY: KEYBOARD NAVIGATION ==========
+function initCycleHero(stageController) {
+    const canvas = document.getElementById('cycle-hero-canvas');
+    const playPauseBtn = document.getElementById('cycle-play-pause-btn');
+    const prevBtn = document.getElementById('cycle-prev-btn');
+    const nextBtn = document.getElementById('cycle-next-btn');
+    const stageReadout = document.getElementById('cycle-stage-readout');
+    const stateReadout = document.getElementById('cycle-state-readout');
+    const tempReadout = document.getElementById('cycle-temp-readout');
+    if (!canvas) return;
 
-document.addEventListener('keydown', (e) => {
-    // Allow Tab navigation to work normally
-    if (e.key === 'Tab') {
-        return;
-    }
+    const stageNodes = [
+        { x: 130, y: 300, label: 'Evaporation', color: '#1e90ff' },
+        { x: 240, y: 100, label: 'Condensation', color: '#ffffff' },
+        { x: 410, y: 120, label: 'Precipitation', color: '#d8f1ff' },
+        { x: 555, y: 300, label: 'Collection', color: '#1e90ff' },
+        { x: 420, y: 335, label: 'Infiltration', color: '#5aa9e6' },
+        { x: 280, y: 260, label: 'Transpiration', color: '#ffffff' }
+    ];
 
-    // Allow arrow keys to navigate stage buttons
-    const activeStagebtn = document.querySelector('.stage-btn.active');
-    if (activeStagebtn && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
-        const allBtns = Array.from(document.querySelectorAll('.stage-btn'));
-        const currentIndex = allBtns.indexOf(activeStagebtn);
-        let nextIndex;
+    let activeIndex = 0;
+    let playing = true;
+    let loopId = null;
+    let particle = null;
 
-        if (e.key === 'ArrowRight') {
-            nextIndex = (currentIndex + 1) % allBtns.length;
-        } else {
-            nextIndex = (currentIndex - 1 + allBtns.length) % allBtns.length;
+    function render() {
+        canvas.innerHTML = '';
+        canvas.appendChild(svg('rect', { x: 0, y: 0, width: 760, height: 420, fill: '#dff4ff' }));
+        canvas.appendChild(svg('rect', { x: 0, y: 320, width: 760, height: 100, fill: '#c5b28f', opacity: 0.8 }));
+        canvas.appendChild(svg('rect', { x: 0, y: 290, width: 215, height: 130, fill: '#1e90ff', opacity: 0.72 }));
+        canvas.appendChild(svg('circle', { cx: 650, cy: 75, r: 42, fill: '#ffd54f' }));
+        canvas.appendChild(svg('polygon', { points: '500,320 590,145 700,320', fill: '#9d846f' }));
+        canvas.appendChild(svg('path', { d: 'M 590 148 Q 515 220 430 310', stroke: '#2f9df4', 'stroke-width': 8, fill: 'none', opacity: 0.75 }));
+        canvas.appendChild(svg('ellipse', { cx: 260, cy: 90, rx: 60, ry: 32, fill: '#fff', opacity: 0.95 }));
+        canvas.appendChild(svg('ellipse', { cx: 305, cy: 102, rx: 68, ry: 36, fill: '#fff', opacity: 0.9 }));
+        canvas.appendChild(svg('ellipse', { cx: 225, cy: 106, rx: 50, ry: 28, fill: '#fff', opacity: 0.92 }));
+        canvas.appendChild(svg('ellipse', { cx: 290, cy: 255, rx: 58, ry: 78, fill: '#4caf50', opacity: 0.85 }));
+        canvas.appendChild(svg('rect', { x: 283, y: 250, width: 14, height: 90, fill: '#6b4f2b' }));
+
+        stageNodes.forEach((node, index) => {
+            const group = svg('g');
+            const ring = svg('circle', {
+                cx: node.x, cy: node.y, r: index === activeIndex ? 30 : 24,
+                fill: node.color, stroke: index === activeIndex ? '#0c5a94' : '#7aa7c7', 'stroke-width': index === activeIndex ? 5 : 2
+            });
+            const label = svg('text', { x: node.x, y: node.y + 50, 'text-anchor': 'middle', 'font-size': 14, fill: '#184768', 'font-weight': 700 }, node.label);
+            group.append(ring, label);
+            canvas.appendChild(group);
+        });
+
+        for (let i = 0; i < stageNodes.length; i += 1) {
+            const current = stageNodes[i];
+            const next = stageNodes[(i + 1) % stageNodes.length];
+            canvas.appendChild(svg('path', {
+                d: `M ${current.x} ${current.y} Q ${(current.x + next.x) / 2} ${(current.y + next.y) / 2 - 55} ${next.x} ${next.y}`,
+                stroke: '#7dc9ff', 'stroke-width': 4, fill: 'none', 'stroke-dasharray': '10 8', opacity: 0.9
+            }));
         }
 
-        allBtns[nextIndex].click();
+        const active = stageController.getStageData(activeIndex);
+        stageReadout.textContent = active.name;
+        stateReadout.textContent = active.state;
+        tempReadout.textContent = active.temp;
+        particle = svg('circle', { cx: stageNodes[activeIndex].x, cy: stageNodes[activeIndex].y, r: 10, fill: activeIndex === 2 ? '#bfe6ff' : activeIndex === 1 || activeIndex === 5 ? '#ffffff' : '#1e90ff', stroke: '#0a4a79', 'stroke-width': 2 });
+        canvas.appendChild(particle);
     }
-});
+
+    function animateBetweenStages(fromIndex, toIndex) {
+        render();
+        const start = stageNodes[fromIndex];
+        const end = stageNodes[toIndex];
+        if (!particle) return;
+        particle.animate([
+            { transform: `translate(${start.x - start.x}px, ${start.y - start.y}px)` },
+            { transform: `translate(${end.x - start.x}px, ${end.y - start.y}px)` }
+        ], { duration: 900, easing: 'ease-in-out' });
+    }
+
+    function setStage(index, animate = false) {
+        const previous = activeIndex;
+        activeIndex = (index + stageNodes.length) % stageNodes.length;
+        stageController.activate(activeIndex);
+        if (animate) animateBetweenStages(previous, activeIndex);
+        render();
+    }
+
+    function startLoop() {
+        clearInterval(loopId);
+        loopId = setInterval(() => {
+            if (!playing) return;
+            setStage(activeIndex + 1, true);
+        }, 2600);
+    }
+
+    playPauseBtn?.addEventListener('click', () => {
+        playing = !playing;
+        playPauseBtn.textContent = playing ? 'Pause Loop' : 'Resume Loop';
+    });
+    prevBtn?.addEventListener('click', () => setStage(activeIndex - 1, true));
+    nextBtn?.addEventListener('click', () => setStage(activeIndex + 1, true));
+
+    document.addEventListener('watercycle:stagechange', (event) => {
+        activeIndex = event.detail.index;
+        render();
+    });
+
+    render();
+    startLoop();
+}
+
+function initPhaseExplorer() {
+    drawPhaseChangeDiagram();
+    animateMolecules();
+}
+
+function drawPhaseChangeDiagram() {
+    const canvas = document.getElementById('phase-change-canvas');
+    if (!canvas) return;
+    canvas.innerHTML = '';
+    canvas.appendChild(svg('rect', { x: 0, y: 0, width: 640, height: 280, fill: '#f7fcff' }));
+    const states = [
+        { x: 100, label: 'Solid', color: '#bfe6ff', sub: 'Below 0°C' },
+        { x: 320, label: 'Liquid', color: '#1e90ff', sub: '0°C to 100°C' },
+        { x: 540, label: 'Gas', color: '#ffffff', sub: 'Above 100°C' }
+    ];
+    states.forEach((state) => {
+        canvas.appendChild(svg('circle', { cx: state.x, cy: 95, r: 46, fill: state.color, stroke: '#0f6bb4', 'stroke-width': 3 }));
+        canvas.appendChild(svg('text', { x: state.x, y: 101, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: '#12456f' }, state.label));
+        canvas.appendChild(svg('text', { x: state.x, y: 155, 'text-anchor': 'middle', 'font-size': 13, fill: '#4d6a82' }, state.sub));
+    });
+    const arrows = [
+        [145, 95, 275, 95, 'Melting'],
+        [365, 95, 495, 95, 'Evaporation'],
+        [495, 128, 365, 128, 'Condensation'],
+        [275, 128, 145, 128, 'Freezing']
+    ];
+    arrows.forEach(([x1, y1, x2, y2, label]) => {
+        canvas.appendChild(svg('line', { x1, y1, x2, y2, stroke: '#63b3ed', 'stroke-width': 6, 'marker-end': 'url(#phaseArrow)' }));
+        canvas.appendChild(svg('text', { x: (x1 + x2) / 2, y: y1 - 12, 'text-anchor': 'middle', 'font-size': 12, fill: '#0f6bb4', 'font-weight': 700 }, label));
+    });
+    const defs = svg('defs');
+    const marker = svg('marker', { id: 'phaseArrow', markerWidth: 10, markerHeight: 10, refX: 9, refY: 3, orient: 'auto' });
+    marker.appendChild(svg('polygon', { points: '0 0, 10 3, 0 6', fill: '#63b3ed' }));
+    defs.appendChild(marker);
+    canvas.appendChild(defs);
+
+    canvas.appendChild(svg('rect', { x: 575, y: 20, width: 22, height: 220, rx: 10, fill: '#e8f4fb', stroke: '#89b7d6' }));
+    canvas.appendChild(svg('rect', { x: 578, y: 75, width: 16, height: 140, rx: 8, fill: '#ff7b54', opacity: 0.85 }));
+    canvas.appendChild(svg('text', { x: 605, y: 35, 'font-size': 12, fill: '#1c496d' }, 'Thermometer'));
+    ['-10°C', '0°C', '50°C', '100°C'].forEach((label, index) => {
+        canvas.appendChild(svg('text', { x: 605, y: 225 - index * 48, 'font-size': 11, fill: '#577089' }, label));
+    });
+}
+
+function animateMolecules() {
+    const canvas = document.getElementById('molecule-canvas');
+    if (!canvas) return;
+    canvas.innerHTML = '';
+    canvas.appendChild(svg('rect', { x: 0, y: 0, width: 360, height: 180, fill: '#ffffff' }));
+    ['Solid', 'Liquid', 'Gas'].forEach((label, column) => {
+        canvas.appendChild(svg('text', { x: 60 + column * 120, y: 20, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: '#1d4f77' }, label));
+    });
+
+    const particles = [];
+    const zones = [
+        { x: 20, y: 30, w: 80, h: 120, jitter: 2 },
+        { x: 140, y: 30, w: 80, h: 120, jitter: 8 },
+        { x: 260, y: 30, w: 80, h: 120, jitter: 18 }
+    ];
+    zones.forEach((zone, zoneIndex) => {
+        for (let i = 0; i < 7; i += 1) {
+            const circle = svg('circle', {
+                cx: zone.x + 18 + (i % 3) * 20,
+                cy: zone.y + 18 + Math.floor(i / 3) * 24,
+                r: 7,
+                fill: zoneIndex === 0 ? '#bfe6ff' : zoneIndex === 1 ? '#1e90ff' : '#ffffff',
+                stroke: '#0f6bb4',
+                'stroke-width': 2
+            });
+            canvas.appendChild(circle);
+            particles.push({ node: circle, baseX: Number(circle.getAttribute('cx')), baseY: Number(circle.getAttribute('cy')), zone });
+        }
+    });
+
+    function tick() {
+        particles.forEach((particle) => {
+            const offsetX = (Math.random() - 0.5) * particle.zone.jitter;
+            const offsetY = (Math.random() - 0.5) * particle.zone.jitter;
+            particle.node.setAttribute('cx', `${particle.baseX + offsetX}`);
+            particle.node.setAttribute('cy', `${particle.baseY + offsetY}`);
+        });
+        requestAnimationFrame(tick);
+    }
+    tick();
+}
+
+function initDistributionChart() {
+    const canvas = document.getElementById('distribution-chart');
+    const tooltip = document.getElementById('distribution-tooltip');
+    if (!canvas) return;
+    let zoomFreshwater = false;
+    const earthWater = [
+        { label: 'Oceans', value: 97, color: '#1e90ff', target: '#simulation' },
+        { label: 'Glaciers & Ice', value: 2, color: '#bfe6ff', target: '#states' },
+        { label: 'Freshwater', value: 1, color: '#74c0fc', target: '#vocabulary' }
+    ];
+    const freshwater = [
+        { label: 'Groundwater', value: 68, color: '#3d8bd9', target: '#scavenger' },
+        { label: 'Glaciers', value: 30, color: '#cdefff', target: '#states' },
+        { label: 'Lakes & Rivers', value: 2, color: '#8dd3ff', target: '#where' }
+    ];
+
+    function render() {
+        const data = zoomFreshwater ? freshwater : earthWater;
+        canvas.innerHTML = '';
+        const cx = 170;
+        const cy = 160;
+        const radius = 110;
+        let startAngle = -Math.PI / 2;
+        data.forEach((slice) => {
+            const sweep = (slice.value / 100) * Math.PI * 2;
+            const path = describeArcSlice(cx, cy, radius, startAngle, startAngle + sweep);
+            const node = svg('path', { d: path, fill: slice.color, class: 'distribution-chart-slice' });
+            node.addEventListener('mouseenter', () => {
+                tooltip.textContent = `${slice.label}: ${slice.value}${zoomFreshwater ? '% of freshwater' : "% of Earth's water"}`;
+            });
+            node.addEventListener('click', () => {
+                document.querySelector(slice.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            canvas.appendChild(node);
+            const labelAngle = startAngle + sweep / 2;
+            canvas.appendChild(svg('text', {
+                x: cx + Math.cos(labelAngle) * 72,
+                y: cy + Math.sin(labelAngle) * 72,
+                'text-anchor': 'middle',
+                'font-size': 12,
+                fill: '#12456f',
+                'font-weight': 700
+            }, `${slice.label}\n${slice.value}%`));
+            startAngle += sweep;
+        });
+        canvas.appendChild(svg('circle', { cx, cy, r: 52, fill: '#ffffff' }));
+        canvas.appendChild(svg('text', { x: cx, y: cy - 6, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: '#144f7d' }, zoomFreshwater ? 'Freshwater' : 'Earth Water'));
+        canvas.appendChild(svg('text', { x: cx, y: cy + 18, 'text-anchor': 'middle', 'font-size': 12, fill: '#517089' }, zoomFreshwater ? 'Zoomed View' : 'Global View'));
+    }
+
+    document.getElementById('freshwater-zoom-btn')?.addEventListener('click', () => {
+        zoomFreshwater = true;
+        render();
+    });
+    document.getElementById('distribution-reset-btn')?.addEventListener('click', () => {
+        zoomFreshwater = false;
+        render();
+    });
+    document.querySelectorAll('.distribution-jump').forEach((button) => {
+        button.addEventListener('click', () => {
+            document.querySelector(button.dataset.jumpTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+    render();
+}
+
+function initSimulation(stageController) {
+    const canvas = document.getElementById('simulation-canvas');
+    if (!canvas) return;
+    const state = {
+        sun: 65,
+        temperature: 24,
+        humidity: 55,
+        season: 'Summer',
+        playing: true
+    };
+    const el = {
+        sun: document.getElementById('sun-strength-slider'),
+        temp: document.getElementById('temperature-slider'),
+        humidity: document.getElementById('humidity-slider'),
+        season: document.getElementById('season-selector'),
+        sunValue: document.getElementById('sun-strength-value'),
+        tempValue: document.getElementById('temperature-value'),
+        humidityValue: document.getElementById('humidity-value'),
+        toggle: document.getElementById('animate-btn'),
+        reset: document.getElementById('reset-btn'),
+        atmosphere: document.getElementById('metric-atmosphere'),
+        oceans: document.getElementById('metric-oceans'),
+        underground: document.getElementById('metric-underground')
+    };
+
+    const particles = Array.from({ length: 18 }, (_, index) => ({ offset: index / 18, stage: index % 6 }));
+    let frame = 0;
+
+    function updateReadouts() {
+        el.sunValue.textContent = `${state.sun}`;
+        el.tempValue.textContent = `${state.temperature}`;
+        el.humidityValue.textContent = `${state.humidity}`;
+        const atmosphere = Math.max(4, Math.min(20, Math.round(state.humidity / 6 + state.temperature / 12)));
+        const underground = Math.max(12, Math.min(30, Math.round(24 - state.sun / 10 + (state.season === 'Spring' ? 4 : state.season === 'Winter' ? 6 : 0))));
+        const oceans = 100 - atmosphere - underground;
+        el.atmosphere.textContent = `${atmosphere}%`;
+        el.oceans.textContent = `${oceans}%`;
+        el.underground.textContent = `${underground}%`;
+    }
+
+    function render() {
+        canvas.innerHTML = '';
+        canvas.appendChild(svg('rect', { x: 0, y: 0, width: 720, height: 420, fill: state.temperature > 28 ? '#ffe8c2' : '#dff4ff' }));
+        canvas.appendChild(svg('rect', { x: 0, y: 305, width: 720, height: 115, fill: '#c4b08b' }));
+        canvas.appendChild(svg('rect', { x: 0, y: 278, width: 220, height: 142, fill: '#1e90ff', opacity: 0.78 }));
+        canvas.appendChild(svg('circle', { cx: 610, cy: 70, r: 40, fill: seasonSunColor(state.season) }));
+        canvas.appendChild(svg('ellipse', { cx: 255, cy: 95, rx: 68 + state.humidity / 5, ry: 34, fill: '#ffffff', opacity: 0.86 }));
+        canvas.appendChild(svg('ellipse', { cx: 330, cy: 108, rx: 70, ry: 38, fill: '#ffffff', opacity: 0.9 }));
+        canvas.appendChild(svg('polygon', { points: '460,305 540,135 665,305', fill: '#9d846f' }));
+        canvas.appendChild(svg('path', { d: 'M 540 142 Q 455 220 355 292', stroke: '#2f9df4', 'stroke-width': 8, fill: 'none' }));
+        canvas.appendChild(svg('ellipse', { cx: 280, cy: 240, rx: 60, ry: 80, fill: '#4caf50', opacity: 0.85 }));
+        canvas.appendChild(svg('rect', { x: 273, y: 238, width: 14, height: 82, fill: '#6b4f2b' }));
+        canvas.appendChild(svg('rect', { x: 380, y: 336, width: 200, height: 32, fill: '#6aaee6', opacity: 0.65 }));
+
+        const stageIndex = stageController.getActiveIndex();
+        const precipitationStrength = Math.max(0, state.humidity + (state.season === 'Spring' ? 10 : state.season === 'Winter' ? 8 : 0) - state.sun / 2);
+        if (precipitationStrength > 25) {
+            for (let i = 0; i < Math.round(precipitationStrength / 8); i += 1) {
+                const x = 250 + i * 22;
+                canvas.appendChild(svg('line', { x1: x, y1: 145, x2: x - 6, y2: 210, stroke: state.temperature < 0 ? '#bfe6ff' : '#1e90ff', 'stroke-width': 3, opacity: 0.7 }));
+            }
+        }
+
+        particles.forEach((particle, index) => {
+            const position = cycleSimulationPoint((frame / 180 + particle.offset) % 1);
+            canvas.appendChild(svg('circle', {
+                cx: position.x,
+                cy: position.y,
+                r: 5,
+                fill: position.state === 'gas' ? '#ffffff' : position.state === 'ice' ? '#bfe6ff' : '#1e90ff',
+                stroke: '#0a4a79',
+                'stroke-width': 1.5
+            }));
+            if (index === 0 && stageIndex !== undefined) {
+                canvas.appendChild(svg('text', { x: position.x + 10, y: position.y - 8, 'font-size': 12, fill: '#12456f', 'font-weight': 700 }, stageController.getStageData(stageIndex).name));
+            }
+        });
+
+        updateReadouts();
+    }
+
+    function tick() {
+        if (state.playing) frame += 1 + state.sun / 100 + state.temperature / 80;
+        render();
+        requestAnimationFrame(tick);
+    }
+
+    [['input', el.sun, 'sun'], ['input', el.temp, 'temperature'], ['input', el.humidity, 'humidity'], ['change', el.season, 'season']].forEach(([type, node, key]) => {
+        node?.addEventListener(type, (event) => {
+            state[key] = type === 'change' ? event.target.value : Number(event.target.value);
+            render();
+        });
+    });
+    el.toggle?.addEventListener('click', () => {
+        state.playing = !state.playing;
+        el.toggle.textContent = state.playing ? 'Pause Cycle' : 'Resume Cycle';
+    });
+    el.reset?.addEventListener('click', () => {
+        state.sun = 65;
+        state.temperature = 24;
+        state.humidity = 55;
+        state.season = 'Summer';
+        state.playing = true;
+        el.sun.value = '65';
+        el.temp.value = '24';
+        el.humidity.value = '55';
+        el.season.value = 'Summer';
+        el.toggle.textContent = 'Pause Cycle';
+        render();
+    });
+
+    tick();
+}
+
+function initTranspirationExplorer() {
+    const canvas = document.getElementById('transpiration-canvas');
+    if (!canvas) return;
+    canvas.innerHTML = '';
+    canvas.appendChild(svg('rect', { x: 0, y: 0, width: 560, height: 280, fill: '#f7fcff' }));
+    canvas.appendChild(svg('rect', { x: 0, y: 180, width: 560, height: 100, fill: '#c4b08b' }));
+    canvas.appendChild(svg('ellipse', { cx: 240, cy: 110, rx: 78, ry: 94, fill: '#4caf50', opacity: 0.85 }));
+    canvas.appendChild(svg('rect', { x: 230, y: 112, width: 18, height: 94, fill: '#6b4f2b' }));
+    ['170,205 115,255', '240,205 205,260', '245,205 285,260', '310,205 360,252'].forEach((points) => {
+        canvas.appendChild(svg('line', { x1: points.split(' ')[0].split(',')[0], y1: points.split(' ')[0].split(',')[1], x2: points.split(' ')[1].split(',')[0], y2: points.split(' ')[1].split(',')[1], stroke: '#6b4f2b', 'stroke-width': 3 }));
+    });
+    for (let i = 0; i < 8; i += 1) {
+        canvas.appendChild(svg('circle', { cx: 150 + i * 25, cy: 245 - (i % 2) * 12, r: 5, fill: '#1e90ff', opacity: 0.8 }));
+        canvas.appendChild(svg('circle', { cx: 215 + i * 18, cy: 80 - (i % 3) * 10, r: 5, fill: '#ffffff', opacity: 0.9 }));
+    }
+    canvas.appendChild(svg('path', { d: 'M 165 242 Q 215 180 240 130 Q 260 90 280 50', stroke: '#2f9df4', 'stroke-width': 4, fill: 'none', 'stroke-dasharray': '8 6' }));
+    canvas.appendChild(svg('text', { x: 55, y: 250, 'font-size': 13, fill: '#12456f', 'font-weight': 700 }, 'Roots absorb water'));
+    canvas.appendChild(svg('text', { x: 295, y: 130, 'font-size': 13, fill: '#12456f', 'font-weight': 700 }, 'Water travels upward'));
+    canvas.appendChild(svg('text', { x: 335, y: 45, 'font-size': 13, fill: '#12456f', 'font-weight': 700 }, 'Leaves release vapor'));
+}
+
+function initQuiz() {
+    const questions = [
+        ['Which process turns liquid water into vapor?', ['Condensation', 'Evaporation', 'Collection', 'Infiltration'], 1, 'Evaporation happens when liquid water gains enough energy to become vapor.'],
+        ['What powers the water cycle?', ['The Moon', 'Earth’s core', 'The Sun', 'Wind alone'], 2, 'Solar energy heats water and drives evaporation and weather patterns.'],
+        ['How much of Earth’s water is in the oceans?', ['50%', '75%', '97%', '99.9%'], 2, 'About 97% of Earth’s water is saltwater in the oceans.'],
+        ['Which stage describes water soaking into soil?', ['Collection', 'Infiltration', 'Precipitation', 'Transpiration'], 1, 'Infiltration is the movement of water into soil and underground layers.'],
+        ['What do plants release during transpiration?', ['Liquid water', 'Ice crystals', 'Water vapor', 'Salt'], 2, 'Plants release water vapor from tiny openings in their leaves.'],
+        ['At what temperature does water freeze?', ['0°C', '32°C', '50°C', '100°C'], 0, 'Water freezes at 0°C under standard conditions.'],
+        ['Where is most freshwater stored?', ['Oceans', 'Glaciers and ice', 'Atmosphere', 'Rivers'], 1, 'Most freshwater is locked up in glaciers and ice.'],
+        ['What is water beneath Earth’s surface called?', ['Runoff', 'Precipitation', 'Groundwater', 'Vapor'], 2, 'Groundwater is stored beneath the surface in soil and rock.']
+    ];
+    const container = document.getElementById('quiz-questions');
+    const results = document.getElementById('quiz-results');
+    const scoreCounter = document.getElementById('quiz-score-counter');
+    const progressLabel = document.getElementById('quiz-progress-label');
+    const progressBar = document.getElementById('quiz-progress-bar');
+    const scoreMessage = document.getElementById('score-message');
+    const retake = document.getElementById('retake-quiz-btn');
+    let current = 0;
+    let score = 0;
+    let locked = false;
+
+    function updateMeta() {
+        scoreCounter.textContent = `${score}/${questions.length} correct`;
+        progressLabel.textContent = current < questions.length ? `Question ${current + 1} of ${questions.length}` : 'Quiz complete';
+        progressBar.style.width = `${(current / questions.length) * 100}%`;
+    }
+
+    function renderQuestion() {
+        const [question, answers, correctIndex, explanation] = questions[current];
+        container.innerHTML = '';
+        const card = document.createElement('div');
+        card.className = 'quiz-question';
+        card.innerHTML = `<h4>Question ${current + 1}</h4><p>${question}</p>`;
+        const options = document.createElement('div');
+        options.className = 'answer-options';
+        const feedback = document.createElement('p');
+        feedback.className = 'distribution-tooltip';
+        feedback.hidden = true;
+        answers.forEach((answer, index) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'answer-btn';
+            button.textContent = answer;
+            button.addEventListener('click', () => {
+                if (locked) return;
+                locked = true;
+                const correct = index === correctIndex;
+                if (correct) score += 1;
+                [...options.children].forEach((child, childIndex) => {
+                    child.disabled = true;
+                    if (childIndex === correctIndex) child.classList.add('correct');
+                    if (childIndex === index && !correct) child.classList.add('incorrect');
+                });
+                feedback.hidden = false;
+                feedback.textContent = `${correct ? 'Correct.' : 'Not quite.'} ${explanation}`;
+                updateMeta();
+                setTimeout(() => {
+                    current += 1;
+                    locked = false;
+                    if (current < questions.length) {
+                        renderQuestion();
+                        updateMeta();
+                    } else {
+                        container.style.display = 'none';
+                        results.style.display = 'block';
+                        progressBar.style.width = '100%';
+                        scoreMessage.textContent = score >= 7 ? `Excellent: ${score}/${questions.length}.` : `You scored ${score}/${questions.length}. Review the animation and try again.`;
+                    }
+                }, 1600);
+            });
+            options.appendChild(button);
+        });
+        card.append(options, feedback);
+        container.appendChild(card);
+    }
+
+    retake?.addEventListener('click', () => {
+        current = 0;
+        score = 0;
+        results.style.display = 'none';
+        container.style.display = 'block';
+        renderQuestion();
+        updateMeta();
+    });
+
+    renderQuestion();
+    updateMeta();
+}
+
+function initScavengerHunt() {
+    const validators = [
+        { test: (v) => includesAll(v, ['evaporation', 'condensation', 'precipitation', 'collection', 'infiltration', 'transpiration']), text: 'The six stages are evaporation, condensation, precipitation, collection, infiltration, and transpiration.' },
+        { test: (v) => v.includes('heat') || v.includes('energy') || v.includes('evaporation'), text: 'The Sun provides energy that heats water and drives the cycle.' },
+        { test: (v) => v.includes('97') && (v.includes('1') || v.includes('fresh')), text: 'About 97% is in oceans and about 1% is accessible freshwater.' },
+        { test: (v) => v.includes('plants') && (v.includes('water bodies') || v.includes('ocean') || v.includes('lake')), text: 'Evaporation comes from water surfaces; transpiration comes from plants.' },
+        { test: (v) => v.includes('cool') && (v.includes('droplet') || v.includes('liquid')), text: 'Condensation happens when vapor cools and forms liquid droplets.' },
+        { test: (v) => v.includes('underground') && (v.includes('fresh') || v.includes('important') || v.includes('drinking')), text: 'Groundwater is underground stored water and an important freshwater supply.' }
+    ];
+    const scoreCounter = document.getElementById('hunt-score-counter');
+    const progressLabel = document.getElementById('hunt-progress-label');
+    const progressBar = document.getElementById('hunt-progress-bar');
+    const correct = new Set();
+
+    document.querySelectorAll('[data-hunt-check]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const index = Number(button.dataset.huntCheck);
+            const input = document.querySelector(`.hunt-input[data-hunt="${index}"]`);
+            const feedback = document.getElementById(`hunt-feedback-${index}`);
+            const value = (input?.value || '').toLowerCase();
+            const ok = validators[index].test(value);
+            if (ok) correct.add(index);
+            feedback.className = `hunt-feedback ${ok ? 'correct' : 'incorrect'}`;
+            feedback.textContent = `${ok ? 'Correct.' : 'Try again.'} ${validators[index].text}`;
+            scoreCounter.textContent = `${correct.size}/6 correct`;
+            progressLabel.textContent = correct.size === 6 ? 'All scavenger clues solved' : `Solved ${correct.size} of 6`;
+            progressBar.style.width = `${(correct.size / 6) * 100}%`;
+        });
+    });
+    document.querySelectorAll('[data-hint-target]').forEach((button) => {
+        button.addEventListener('click', () => {
+            document.querySelector(button.dataset.hintTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+}
+
+function initContentsToggle() {
+    const toggle = document.getElementById('toc-toggle');
+    const toc = document.getElementById('water-cycle-toc');
+    if (!toggle || !toc) return;
+    toggle.addEventListener('click', () => {
+        const expanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!expanded));
+        toc.classList.toggle('is-open', !expanded);
+    });
+}
+
+function initKeyboardNavigation() {
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        const buttons = Array.from(document.querySelectorAll('.stage-btn'));
+        const activeIndex = buttons.findIndex((button) => button.classList.contains('active'));
+        if (activeIndex === -1) return;
+        const next = event.key === 'ArrowRight' ? activeIndex + 1 : activeIndex - 1;
+        buttons[(next + buttons.length) % buttons.length].click();
+    });
+}
+
+function cycleSimulationPoint(t) {
+    const points = [
+        { x: 110, y: 300, state: 'liquid' },
+        { x: 260, y: 110, state: 'gas' },
+        { x: 340, y: 110, state: 'gas' },
+        { x: 430, y: 200, state: 'liquid' },
+        { x: 465, y: 340, state: 'liquid' },
+        { x: 280, y: 235, state: 'gas' },
+        { x: 110, y: 300, state: 'liquid' }
+    ];
+    const scaled = t * (points.length - 1);
+    const index = Math.floor(scaled);
+    const local = scaled - index;
+    const a = points[index];
+    const b = points[index + 1];
+    return {
+        x: a.x + (b.x - a.x) * local,
+        y: a.y + (b.y - a.y) * local,
+        state: b.state
+    };
+}
+
+function seasonSunColor(season) {
+    return season === 'Winter' ? '#ffe08a' : season === 'Fall' ? '#ffb35c' : season === 'Spring' ? '#ffd86a' : '#ffd54f';
+}
+
+function describeArcSlice(cx, cy, r, start, end) {
+    const startX = cx + r * Math.cos(start);
+    const startY = cy + r * Math.sin(start);
+    const endX = cx + r * Math.cos(end);
+    const endY = cy + r * Math.sin(end);
+    const largeArc = end - start > Math.PI ? 1 : 0;
+    return `M ${cx} ${cy} L ${startX} ${startY} A ${r} ${r} 0 ${largeArc} 1 ${endX} ${endY} Z`;
+}
+
+function svg(tag, attrs = {}, text = '') {
+    const node = document.createElementNS(SVG_NS, tag);
+    Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+    if (text) node.textContent = text;
+    return node;
+}
+
+function includesAll(value, parts) {
+    return parts.every((part) => value.includes(part));
+}

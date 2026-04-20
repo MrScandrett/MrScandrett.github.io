@@ -79,6 +79,11 @@
                     <button class="step-btn" data-step="4">Colors Separate</button>
                 </div>
 
+                <div class="diagram-toolbar">
+                    <button type="button" id="step-light-path-btn" class="sim-button">Show Light Path</button>
+                    <p class="diagram-toolbar-note">Hover over a diagram to reveal labels and use the button to animate the light path for the active step.</p>
+                </div>
+
                 <div class="step-display">
                     <div class="step-explanation" id="step-1" style="display: block;">
                         <h3>Step 1: Sunlight Enters</h3>
@@ -89,7 +94,7 @@
                         <p>
                             The process of light bending as it enters a new material is called <strong>refraction</strong>.
                         </p>
-                        <svg class="step-diagram" viewBox="0 0 200 180">
+                        <svg class="step-diagram interactive-diagram" data-step-diagram="1" viewBox="0 0 200 180">
                             <defs>
                                 <radialGradient id="dropGradient" cx="50%" cy="50%">
                                     <stop offset="0%" style="stop-color:#E8F4F8;stop-opacity:1" />
@@ -125,7 +130,7 @@
                             Here's the key: different colors bend at slightly different angles. Red bends the least, while violet bends the most.
                             This is the beginning of color separation.
                         </p>
-                        <svg class="step-diagram" viewBox="0 0 200 180">
+                        <svg class="step-diagram interactive-diagram" data-step-diagram="2" viewBox="0 0 200 180">
                             <defs>
                                 <radialGradient id="dropGradient2" cx="50%" cy="50%">
                                     <stop offset="0%" style="stop-color:#E8F4F8;stop-opacity:1" />
@@ -173,7 +178,7 @@
                         <p>
                             This reflection is crucial. Without it, the light wouldn't be directed back toward your eyes at the right angle.
                         </p>
-                        <svg class="step-diagram" viewBox="0 0 200 180">
+                        <svg class="step-diagram interactive-diagram" data-step-diagram="3" viewBox="0 0 200 180">
                             <defs>
                                 <radialGradient id="dropGradient3" cx="50%" cy="50%">
                                     <stop offset="0%" style="stop-color:#E8F4F8;stop-opacity:1" />
@@ -220,7 +225,7 @@
                             Millions of raindrops do this at the same time. Each droplet sends light of one particular color toward your eyes at a specific angle.
                             Red light exits at about 42°, while violet exits at about 40°. That's why you always see red on the outside and violet on the inside.
                         </p>
-                        <svg class="step-diagram" viewBox="0 0 220 160">
+                        <svg class="step-diagram interactive-diagram" data-step-diagram="4" viewBox="0 0 220 160">
                             <defs>
                                 <radialGradient id="dropGradient4" cx="50%" cy="50%">
                                     <stop offset="0%" style="stop-color:#E8F4F8;stop-opacity:1" />
@@ -284,7 +289,8 @@
 
                 <div class="diagram-container">
                     <h4>The Geometry of a Rainbow</h4>
-                    <svg class="geometry-svg" viewBox="0 0 300 280" aria-label="Diagram showing sun, observer, and rainbow arc">
+                    <button type="button" class="diagram-action" data-diagram-action="geometry">Show Light Path</button>
+                    <svg class="geometry-svg interactive-diagram" data-diagram="geometry" viewBox="0 0 300 280" aria-label="Diagram showing sun, observer, and rainbow arc">
                         <defs>
                             <linearGradient id="rainbowArc" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <stop offset="0%" style="stop-color:#FF0000;stop-opacity:1" />
@@ -402,7 +408,8 @@
 
                 <div class="diagram-container">
                     <h4>Primary vs. Secondary Rainbow</h4>
-                    <svg class="double-rainbow-svg" viewBox="0 0 400 300" aria-label="Comparison of primary and secondary rainbows">
+                    <button type="button" class="diagram-action" data-diagram-action="double">Show Light Path</button>
+                    <svg class="double-rainbow-svg interactive-diagram" data-diagram="double" viewBox="0 0 400 300" aria-label="Comparison of primary and secondary rainbows">
                         <defs>
                             <linearGradient id="primary-bow" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <stop offset="0%" style="stop-color:#FF0000;stop-opacity:1" />
@@ -462,12 +469,31 @@
                 and watch the light path animate through a raindrop.
             </p>
 
+            <div class="lesson-breadcrumb" aria-label="Lesson progress">
+                <span class="breadcrumb-chip active">Observe</span>
+                <span class="breadcrumb-chip">Model</span>
+                <span class="breadcrumb-chip">Check</span>
+                <span class="breadcrumb-chip">Apply</span>
+            </div>
+
             <div class="simulation-container">
                 <div class="controls-panel">
                     <div class="control-group">
                         <label for="sun-height-slider">Sun Height: <span id="sun-height-value">45</span>°</label>
                         <input type="range" id="sun-height-slider" min="0" max="90" value="45">
                         <small>Lower = more dramatic rainbow</small>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="observer-position-slider">Observer Position: <span id="observer-position-value">20</span>%</label>
+                        <input type="range" id="observer-position-slider" min="5" max="45" value="20">
+                        <small>Move the observer and watch the bow follow the new viewpoint.</small>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="rain-density-slider">Rain Density: <span id="rain-density-value">55</span>%</label>
+                        <input type="range" id="rain-density-slider" min="10" max="100" value="55">
+                        <small>More droplets make the arc look fuller and brighter.</small>
                     </div>
 
                     <div class="control-group">
@@ -488,11 +514,28 @@
                         <button id="animate-btn" class="sim-button">Animate Light Path</button>
                         <button id="reset-btn" class="sim-button reset">Reset</button>
                     </div>
+
+                    <div class="simulation-readouts">
+                        <div class="readout-card">
+                            <strong>Primary angle</strong>
+                            <span id="primary-angle-readout">42° red, 40° violet</span>
+                        </div>
+                        <div class="readout-card">
+                            <strong>Secondary angle</strong>
+                            <span id="secondary-angle-readout">50-53° reversed colors</span>
+                        </div>
+                    </div>
                 </div>
 
-                <svg id="simulation-canvas" class="simulation-svg" viewBox="0 0 500 400" aria-label="Interactive rainbow simulation">
-                    <!-- Canvas for simulation - populated by JavaScript -->
-                </svg>
+                <div class="simulation-stage">
+                    <svg id="simulation-canvas" class="simulation-svg" viewBox="0 0 500 400" aria-label="Interactive rainbow simulation">
+                        <!-- Canvas for simulation - populated by JavaScript -->
+                    </svg>
+                    <div class="color-legend" aria-label="Color and angle legend">
+                        <h4>Color Angle Legend</h4>
+                        <div id="color-legend-items" class="color-legend-items"></div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -538,6 +581,15 @@
             <p>Test your understanding with this short quiz. Choose the best answer for each question.</p>
 
             <div class="quiz-container">
+                <div class="quiz-progress">
+                    <div class="quiz-progress-top">
+                        <span id="quiz-score-counter">0/7 correct</span>
+                        <span id="quiz-progress-label">Question 1 of 7</span>
+                    </div>
+                    <div class="progress-track" aria-hidden="true">
+                        <div id="quiz-progress-bar" class="progress-fill"></div>
+                    </div>
+                </div>
                 <div id="quiz-questions"></div>
                 <div id="quiz-results" class="quiz-results" style="display: none;">
                     <h3>Quiz Complete!</h3>
@@ -552,35 +604,80 @@
             <h2>Scavenger Hunt Challenge</h2>
             <p>Use the information from this page to answer the questions below. Great for classroom activities!</p>
 
+            <div class="quiz-progress scavenger-progress">
+                <div class="quiz-progress-top">
+                    <span id="scavenger-score-counter">0/5 correct</span>
+                    <span id="scavenger-progress-label">Start with Challenge 1</span>
+                </div>
+                <div class="progress-track" aria-hidden="true">
+                    <div id="scavenger-progress-bar" class="progress-fill"></div>
+                </div>
+            </div>
+
             <div class="scavenger-hunt">
                 <div class="hunt-item">
                     <h4>🔍 Challenge 1</h4>
                     <p><strong>Question:</strong> What are the four main processes that create a rainbow? List them in order.</p>
                     <p class="hint">Hint: They start with "S," "B," "B," and "C."</p>
+                    <input class="hunt-input" data-hunt="0" type="text" placeholder="Type your answer here">
+                    <button type="button" class="hunt-check-btn sim-button" data-hunt-check="0">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-0" aria-live="polite"></p>
                 </div>
 
                 <div class="hunt-item">
                     <h4>🔍 Challenge 2</h4>
                     <p><strong>Question:</strong> What position must the Sun be in for you to see a rainbow?</p>
                     <p class="hint">Hint: Look at the geometry diagram in the "Why Is the Rainbow Curved?" section.</p>
+                    <input class="hunt-input" data-hunt="1" type="text" placeholder="Type your answer here">
+                    <button type="button" class="hunt-check-btn sim-button" data-hunt-check="1">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-1" aria-live="polite"></p>
                 </div>
 
                 <div class="hunt-item">
                     <h4>🔍 Challenge 3</h4>
                     <p><strong>Question:</strong> Why is a secondary rainbow dimmer than a primary rainbow?</p>
                     <p class="hint">Hint: Think about how many times light reflects inside the raindrop.</p>
+                    <input class="hunt-input" data-hunt="2" type="text" placeholder="Type your answer here">
+                    <button type="button" class="hunt-check-btn sim-button" data-hunt-check="2">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-2" aria-live="polite"></p>
                 </div>
 
                 <div class="hunt-item">
                     <h4>🔍 Challenge 4</h4>
                     <p><strong>Question:</strong> Which color of the rainbow bends the MOST when entering a raindrop?</p>
                     <p class="hint">Hint: Check the "What Is the Color Order?" section and think about which is on the inside of a primary rainbow.</p>
+                    <input class="hunt-input" data-hunt="3" type="text" placeholder="Type your answer here">
+                    <button type="button" class="hunt-check-btn sim-button" data-hunt-check="3">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-3" aria-live="polite"></p>
                 </div>
 
                 <div class="hunt-item">
                     <h4>🔍 Challenge 5</h4>
                     <p><strong>Question:</strong> If the secondary rainbow's colors are reversed, which color is on the outside of the secondary rainbow?</p>
                     <p class="hint">Hint: It's the opposite of what you see in a primary rainbow.</p>
+                    <input class="hunt-input" data-hunt="4" type="text" placeholder="Type your answer here">
+                    <button type="button" class="hunt-check-btn sim-button" data-hunt-check="4">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-4" aria-live="polite"></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="real-life" class="content-section">
+            <h2>Rainbows in Real Life</h2>
+            <p>Try using the lesson ideas outdoors. Real observations help students connect the model to what they notice in the sky.</p>
+
+            <div class="wonder-cards">
+                <div class="wonder-card">
+                    <h4>After Rain Showers</h4>
+                    <p>Look for sunlight breaking through behind you while light rain still falls ahead. That is the classic rainbow setup.</p>
+                </div>
+                <div class="wonder-card">
+                    <h4>Water Spray</h4>
+                    <p>Garden hoses, sprinklers, and waterfalls can make mini rainbows. Adjust your position until the colors snap into view.</p>
+                </div>
+                <div class="wonder-card">
+                    <h4>Observation Journal</h4>
+                    <p>Record Sun height, weather, direction faced, and whether a secondary rainbow appeared. That mirrors how scientists document sky observations.</p>
                 </div>
             </div>
         </section>
@@ -645,7 +742,8 @@
         </section>
 
         <!-- TABLE OF CONTENTS (STICKY) -->
-        <nav class="table-of-contents">
+        <button type="button" class="toc-toggle" id="toc-toggle" aria-expanded="false" aria-controls="rainbow-toc">Contents</button>
+        <nav class="table-of-contents" id="rainbow-toc">
             <h3>Contents</h3>
             <ul>
                 <li><a href="#what">What Is a Rainbow?</a></li>
@@ -657,6 +755,7 @@
                 <li><a href="#vocabulary">Vocabulary</a></li>
                 <li><a href="#quiz">Quick Check</a></li>
                 <li><a href="#scavenger">Scavenger Hunt</a></li>
+                <li><a href="#real-life">Real Life</a></li>
                 <li><a href="#wonder">Wonder Zone</a></li>
             </ul>
         </nav>

@@ -90,6 +90,35 @@
         <section id="how" class="wc-card">
             <h2>How Does the Water Cycle Work?</h2>
 
+            <div class="cycle-hero">
+                <div class="cycle-hero-copy">
+                    <h3>Animated Water Cycle</h3>
+                    <p>Follow one water molecule as it moves through all six stages. Pause the loop, step forward or backward, and compare how temperature and state change at each stop.</p>
+                    <div class="cycle-controls">
+                        <button type="button" class="sim-button" id="cycle-play-pause-btn">Pause Loop</button>
+                        <button type="button" class="sim-button" id="cycle-prev-btn">Previous Stage</button>
+                        <button type="button" class="sim-button" id="cycle-next-btn">Next Stage</button>
+                    </div>
+                    <div class="cycle-readouts">
+                        <div class="cycle-readout">
+                            <strong>Current stage</strong>
+                            <span id="cycle-stage-readout">Evaporation</span>
+                        </div>
+                        <div class="cycle-readout">
+                            <strong>Water state</strong>
+                            <span id="cycle-state-readout">Liquid to gas</span>
+                        </div>
+                        <div class="cycle-readout">
+                            <strong>Temperature</strong>
+                            <span id="cycle-temp-readout">Heating above 100°C</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="cycle-hero-visual">
+                    <svg id="cycle-hero-canvas" class="cycle-hero-svg" viewBox="0 0 760 420" aria-label="Animated six-stage water cycle diagram"></svg>
+                </div>
+            </div>
+
             <div class="stages-container">
                 <div class="stages-buttons">
                     <button class="stage-btn active" data-stage="1">Evaporation</button>
@@ -98,6 +127,11 @@
                     <button class="stage-btn" data-stage="4">Collection</button>
                     <button class="stage-btn" data-stage="5">Infiltration</button>
                     <button class="stage-btn" data-stage="6">Transpiration</button>
+                </div>
+
+                <div class="stage-toolbar">
+                    <button type="button" class="sim-button" id="stage-focus-btn">Focus This Stage</button>
+                    <p class="stage-toolbar-note">Click any stage button to jump the hero diagram, compare before/after states, and zoom to that part of the cycle.</p>
                 </div>
 
                 <div class="stage-display">
@@ -326,6 +360,24 @@
                     Understanding these states helps explain what happens to water as it moves through the cycle.
                 </p>
 
+                <div class="states-explorer">
+                    <div class="phase-panel">
+                        <h3>Phase Change Explorer</h3>
+                        <svg id="phase-change-canvas" class="phase-change-svg" viewBox="0 0 640 280" aria-label="Interactive phase change diagram and thermometer"></svg>
+                    </div>
+                    <div class="molecule-panel">
+                        <div class="molecule-card">
+                            <h4>Molecular Motion</h4>
+                            <svg id="molecule-canvas" class="molecule-svg" viewBox="0 0 360 180" aria-label="Animated molecular movement for solid, liquid, and gas"></svg>
+                        </div>
+                        <div class="example-strip">
+                            <div class="example-chip">Solid: Ice cube</div>
+                            <div class="example-chip">Liquid: Cup of water</div>
+                            <div class="example-chip">Gas: Steam</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="states-grid">
                     <div class="state-card">
                         <h4>Solid (Ice)</h4>
@@ -458,6 +510,22 @@
                     lakes, and rivers. Plants and animals also hold water. Understanding where water is helps us use this precious resource wisely.
                 </p>
 
+                <div class="distribution-explorer">
+                    <div class="distribution-panel">
+                        <div class="distribution-toolbar">
+                            <button type="button" class="sim-button" id="freshwater-zoom-btn">Zoom in on Freshwater</button>
+                            <button type="button" class="sim-button reset" id="distribution-reset-btn">Show Full Earth Water</button>
+                        </div>
+                        <svg id="distribution-chart" class="distribution-chart" viewBox="0 0 420 320" aria-label="Interactive water distribution pie chart"></svg>
+                        <p id="distribution-tooltip" class="distribution-tooltip">Hover or tap a slice to see details.</p>
+                    </div>
+                    <div class="distribution-links">
+                        <button type="button" class="distribution-jump" data-jump-target="#simulation">Oceans: 97%</button>
+                        <button type="button" class="distribution-jump" data-jump-target="#states">Glaciers & Ice: 2%</button>
+                        <button type="button" class="distribution-jump" data-jump-target="#scavenger">Freshwater: ~1%</button>
+                    </div>
+                </div>
+
                 <div class="water-distribution">
                     <div class="distribution-item">
                         <div class="icon-circle" style="background: linear-gradient(135deg, #1E90FF, #4A90E2);">🌊</div>
@@ -507,8 +575,66 @@
         <!-- INTERACTIVE SIMULATION -->
         <section id="simulation" class="wc-card">
             <h2>See It in Action</h2>
-            <p>Use the side panel controls to explore how the water cycle works. Adjust sun strength, temperature, and toggle features to see how different conditions affect evaporation, cloud formation, and precipitation.</p>
-            <svg id="simulation-canvas" class="simulation-svg" aria-label="Interactive water cycle simulation"></svg>
+            <p>Adjust the environment and watch the cycle respond in real time. Stronger sunlight speeds evaporation, humidity boosts cloud formation, and seasons change how quickly water moves through the system.</p>
+            <div class="simulation-container">
+                <div class="controls-panel">
+                    <div class="control-group">
+                        <label for="sun-strength-slider">Sun Strength: <span id="sun-strength-value">65</span>%</label>
+                        <input type="range" id="sun-strength-slider" min="0" max="100" value="65">
+                    </div>
+                    <div class="control-group">
+                        <label for="temperature-slider">Temperature: <span id="temperature-value">24</span>°C</label>
+                        <input type="range" id="temperature-slider" min="-10" max="40" value="24">
+                    </div>
+                    <div class="control-group">
+                        <label for="humidity-slider">Humidity: <span id="humidity-value">55</span>%</label>
+                        <input type="range" id="humidity-slider" min="0" max="100" value="55">
+                    </div>
+                    <div class="control-group">
+                        <label for="season-selector">Season</label>
+                        <select id="season-selector" class="season-selector">
+                            <option>Spring</option>
+                            <option selected>Summer</option>
+                            <option>Fall</option>
+                            <option>Winter</option>
+                        </select>
+                    </div>
+                    <div class="button-group">
+                        <button id="animate-btn" class="sim-button">Pause Cycle</button>
+                        <button id="reset-btn" class="sim-button reset">Reset</button>
+                    </div>
+                    <div class="simulation-metrics">
+                        <div class="metric-card"><strong>Atmosphere</strong><span id="metric-atmosphere">6%</span></div>
+                        <div class="metric-card"><strong>Oceans</strong><span id="metric-oceans">74%</span></div>
+                        <div class="metric-card"><strong>Underground</strong><span id="metric-underground">20%</span></div>
+                    </div>
+                </div>
+                <div class="simulation-stage">
+                    <svg id="simulation-canvas" class="simulation-svg" viewBox="0 0 720 420" aria-label="Interactive water cycle simulation"></svg>
+                </div>
+            </div>
+        </section>
+
+        <section id="transpiration-explorer" class="wc-card">
+            <h2>Transpiration Explorer</h2>
+            <p>Trace water from roots to leaves and back into the atmosphere. Plants are active participants in the water cycle, not just passengers.</p>
+            <div class="transpiration-layout">
+                <svg id="transpiration-canvas" class="transpiration-svg" viewBox="0 0 560 280" aria-label="Plant cross-section showing transpiration"></svg>
+                <div class="transpiration-notes">
+                    <div class="cycle-readout">
+                        <strong>Roots</strong>
+                        <span>Absorb liquid water from soil.</span>
+                    </div>
+                    <div class="cycle-readout">
+                        <strong>Stem</strong>
+                        <span>Moves water upward through tiny tubes.</span>
+                    </div>
+                    <div class="cycle-readout">
+                        <strong>Leaves</strong>
+                        <span>Release vapor through stomata into the air.</span>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- VOCABULARY SECTION -->
@@ -563,6 +689,13 @@
             <p>Test your understanding of the water cycle with these questions. Choose the best answer for each.</p>
 
             <div class="quiz-container">
+                <div class="quiz-progress">
+                    <div class="quiz-progress-top">
+                        <span id="quiz-score-counter">0/8 correct</span>
+                        <span id="quiz-progress-label">Question 1 of 8</span>
+                    </div>
+                    <div class="progress-track"><div id="quiz-progress-bar" class="progress-fill"></div></div>
+                </div>
                 <div id="quiz-questions"></div>
                 <div id="quiz-results" class="quiz-results" style="display: none;">
                     <h3>Quiz Complete!</h3>
@@ -577,41 +710,73 @@
             <h2>Scavenger Hunt Challenge</h2>
             <p>Use the information from this page to answer these questions. Great for classroom activities!</p>
 
+            <div class="quiz-progress">
+                <div class="quiz-progress-top">
+                    <span id="hunt-score-counter">0/6 correct</span>
+                    <span id="hunt-progress-label">Follow the hints to verify each answer</span>
+                </div>
+                <div class="progress-track"><div id="hunt-progress-bar" class="progress-fill"></div></div>
+            </div>
+
             <div class="scavenger-hunt">
                 <div class="hunt-item">
                     <h4>🔍 Challenge 1</h4>
                     <p><strong>Question:</strong> List the six main stages of the water cycle in order.</p>
                     <p class="hint">Hint: They start with E, C, P, C, I, and T.</p>
+                    <button type="button" class="hint-btn" data-hint-target="#how">Reveal Relevant Section</button>
+                    <input type="text" class="hunt-input" data-hunt="0" placeholder="Type your answer">
+                    <button type="button" class="sim-button hunt-check-btn" data-hunt-check="0">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-0"></p>
                 </div>
 
                 <div class="hunt-item">
                     <h4>🔍 Challenge 2</h4>
                     <p><strong>Question:</strong> What role does the Sun play in the water cycle?</p>
                     <p class="hint">Hint: Check the "Sun Powers the Cycle" section.</p>
+                    <button type="button" class="hint-btn" data-hint-target="#sun">Reveal Relevant Section</button>
+                    <input type="text" class="hunt-input" data-hunt="1" placeholder="Type your answer">
+                    <button type="button" class="sim-button hunt-check-btn" data-hunt-check="1">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-1"></p>
                 </div>
 
                 <div class="hunt-item">
                     <h4>🔍 Challenge 3</h4>
                     <p><strong>Question:</strong> How much of Earth's water is in the oceans? What percentage is freshwater?</p>
                     <p class="hint">Hint: Look at the "Where Water Goes" section.</p>
+                    <button type="button" class="hint-btn" data-hint-target="#where">Reveal Relevant Section</button>
+                    <input type="text" class="hunt-input" data-hunt="2" placeholder="Type your answer">
+                    <button type="button" class="sim-button hunt-check-btn" data-hunt-check="2">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-2"></p>
                 </div>
 
                 <div class="hunt-item">
                     <h4>🔍 Challenge 4</h4>
                     <p><strong>Question:</strong> What is the difference between evaporation and transpiration?</p>
                     <p class="hint">Hint: One comes from water bodies, the other from living things.</p>
+                    <button type="button" class="hint-btn" data-hint-target="#transpiration-explorer">Reveal Relevant Section</button>
+                    <input type="text" class="hunt-input" data-hunt="3" placeholder="Type your answer">
+                    <button type="button" class="sim-button hunt-check-btn" data-hunt-check="3">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-3"></p>
                 </div>
 
                 <div class="hunt-item">
                     <h4>🔍 Challenge 5</h4>
                     <p><strong>Question:</strong> Describe what happens to water during condensation. What causes it?</p>
                     <p class="hint">Hint: It's the opposite of evaporation. Think about temperature.</p>
+                    <button type="button" class="hint-btn" data-hint-target="#states">Reveal Relevant Section</button>
+                    <input type="text" class="hunt-input" data-hunt="4" placeholder="Type your answer">
+                    <button type="button" class="sim-button hunt-check-btn" data-hunt-check="4">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-4"></p>
                 </div>
 
                 <div class="hunt-item">
                     <h4>🔍 Challenge 6</h4>
                     <p><strong>Question:</strong> What is groundwater, and why is it important?</p>
                     <p class="hint">Hint: Check the vocabulary and "Where Water Goes" sections.</p>
+                    <button type="button" class="hint-btn" data-hint-target="#vocabulary">Reveal Relevant Section</button>
+                    <input type="text" class="hunt-input" data-hunt="5" placeholder="Type your answer">
+                    <button type="button" class="sim-button hunt-check-btn" data-hunt-check="5">Check Answer</button>
+                    <p class="hunt-feedback" id="hunt-feedback-5"></p>
                 </div>
             </div>
         </section>
@@ -675,7 +840,8 @@
         </section>
 
         <!-- TABLE OF CONTENTS (STICKY) -->
-        <nav class="table-of-contents">
+        <button type="button" class="toc-toggle" id="toc-toggle" aria-expanded="false" aria-controls="water-cycle-toc">Contents</button>
+        <nav class="table-of-contents" id="water-cycle-toc">
             <h3>Contents</h3>
             <ul>
                 <li><a href="#what">What Is It?</a></li>
@@ -684,6 +850,7 @@
                 <li><a href="#sun">Sun Powers It</a></li>
                 <li><a href="#where">Where Water Goes</a></li>
                 <li><a href="#simulation">Simulation</a></li>
+                <li><a href="#transpiration-explorer">Transpiration Explorer</a></li>
                 <li><a href="#vocabulary">Vocabulary</a></li>
                 <li><a href="#quiz">Quick Check</a></li>
                 <li><a href="#scavenger">Scavenger Hunt</a></li>
