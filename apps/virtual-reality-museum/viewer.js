@@ -241,13 +241,24 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// Keyboard shortcuts.
+// Keyboard shortcuts and camera rotation.
+const cameraRotationSpeed = 2; // degrees per keypress
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeInfoPanel();
   if (e.key === "r" || e.key === "R") {
     const cameraEntity = document.querySelector("a-camera");
     cameraEntity.setAttribute("position", "0 1.6 6");
     cameraEntity.setAttribute("rotation", "0 0 0");
+  }
+  if (e.key === "q" || e.key === "Q") {
+    const cameraEntity = document.querySelector("a-camera");
+    const rot = cameraEntity.getAttribute("rotation");
+    cameraEntity.setAttribute("rotation", `${rot.x} ${rot.y + cameraRotationSpeed} ${rot.z}`);
+  }
+  if (e.key === "e" || e.key === "E") {
+    const cameraEntity = document.querySelector("a-camera");
+    const rot = cameraEntity.getAttribute("rotation");
+    cameraEntity.setAttribute("rotation", `${rot.x} ${rot.y - cameraRotationSpeed} ${rot.z}`);
   }
 });
 
