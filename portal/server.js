@@ -23,6 +23,9 @@ const ALLOW_REMOTE_PORTAL = /^(1|true|yes)$/i.test(String(process.env.ALLOW_REMO
 const ACCESS_MODE = ALLOW_REMOTE_PORTAL ? "remote-enabled" : "local-only";
 
 const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
+const MAX_MODEL_BYTES = 50 * 1024 * 1024;
+const MUSEUM_MODELS_DIR = path.join(path.join(ROOT_DIR, "apps"), "virtual-reality-museum", "models");
+const MUSEUM_DATA_FILE = path.join(ROOT_DIR, "data", "museum-models.json");
 const OPEN_SESSION = Object.freeze({
   username: "portal",
   role: "teacher",
@@ -33,10 +36,16 @@ function ensureDirs() {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   fs.mkdirSync(path.join(ROOT_DIR, "assets", "thumbs"), { recursive: true });
   fs.mkdirSync(path.join(ROOT_DIR, "assets", "heroes"), { recursive: true });
+  fs.mkdirSync(MUSEUM_MODELS_DIR, { recursive: true });
 
   if (!fs.existsSync(HUB_DATA_FILE)) {
     fs.mkdirSync(path.dirname(HUB_DATA_FILE), { recursive: true });
     fs.writeFileSync(HUB_DATA_FILE, JSON.stringify({ projects: [] }, null, 2));
+  }
+
+  if (!fs.existsSync(MUSEUM_DATA_FILE)) {
+    fs.mkdirSync(path.dirname(MUSEUM_DATA_FILE), { recursive: true });
+    fs.writeFileSync(MUSEUM_DATA_FILE, JSON.stringify({ models: [] }, null, 2));
   }
 
   if (!fs.existsSync(PUBLISH_SCRIPT)) {
@@ -391,6 +400,13 @@ function hasZipSignature(buf) {
   return buf.length > 4 && buf[0] === 0x50 && buf[1] === 0x4b;
 }
 
+function hasGlbSignature(buf) {
+  // GLB files start with 'glTF' magic number (0x46546C67)
+  return buf.length >= 12 &&
+         buf[0] === 0x67 && buf[1] === 0x6c &&
+         buf[2] === 0x54 && buf[3] === 0x46;
+}
+
 function findProjectRoot(dir) {
   const rootIndex = path.join(dir, "index.html");
   if (fs.existsSync(rootIndex)) {
@@ -669,6 +685,77 @@ async function handleUpload(req, res) {
   }
 }
 
+async function handleUploadModel(req, res) {
+  const contentType = req.headers["content-type"] || "";
+  if (!/multipart\/form-data/i.test(contentType)) {
+    throw new Error("Expected multipart form upload.");
+  }
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  const boundary = ((boundaryMatch && (boundaryMatch[1] || boundaryMatch[2])) || "").trim();
+  if (!boundary) throw new Error("Missing upload boundary.");
+
+  const body = await readBody(req, MAX_MODEL_BYTES);
+  const parsed = parseMultipart(body, boundary);
+
+  const studentName = normalizeUsername(parsed.fields.studentName || "") || "student";
+  const modelTitle = String(parsed.fields.modelTitle || "").trim();
+  if (!modelTitle) throw new Error("Model title is required.");
+
+  const description = String(parsed.fields.description || "").trim() || "Uploaded via Virtual Reality Museum.";
+  const artifactType = String(parsed.fields.artifact || "artifact").trim();
+  if (!["artifact", "landmark", "animal", "other"].includes(artifactType)) {
+    throw new Error("Invalid artifact type.");
+  }
+
+  const glbFile = parsed.files.glbFile;
+  if (!glbFile) throw new Error("Missing GLB file.");
+  if (!hasGlbSignature(glbFile.data)) throw new Error("Uploaded file is not a valid GLB.");
+  if (glbFile.data.length > MAX_MODEL_BYTES) throw new Error("Model file exceeds 50MB limit.");
+
+  const timestamp = Date.now();
+  const filename = `${timestamp}-${studentName}-${modelTitle.replace(/\s+/g, "-").toLowerCase()}.glb`;
+  const modelPath = path.join(MUSEUM_MODELS_DIR, filename);
+  const modelUrl = `apps/virtual-reality-museum/models/${filename}`;
+
+  try {
+    fs.writeFileSync(modelPath, glbFile.data);
+
+    const museumData = JSON.parse(fs.readFileSync(MUSEUM_DATA_FILE, "utf8"));
+    const modelId = `${timestamp}-${studentName}-${modelTitle.replace(/\s+/g, "-").toLowerCase()}`;
+    const entry = {
+      id: modelId,
+      title: modelTitle,
+      student: studentName,
+      description,
+      artifact_type: artifactType,
+      file: modelUrl,
+      scale: 1.0,
+      date_uploaded: new Date().toISOString().split("T")[0],
+    };
+    museumData.models.push(entry);
+    fs.writeFileSync(MUSEUM_DATA_FILE, JSON.stringify(museumData, null, 2));
+
+    const notes = [
+      `[MUSEUM] Model uploaded successfully`,
+      `[MUSEUM] Student: ${studentName}`,
+      `[MUSEUM] Title: ${modelTitle}`,
+      `[MUSEUM] Type: ${artifactType}`,
+      `[MUSEUM] File: ${filename}`,
+      `[MUSEUM] Model ID: ${modelId}`,
+    ];
+
+    const links = [
+      { label: "Virtual Reality Museum", url: "/apps/virtual-reality-museum/" },
+      { label: "Upload Another", url: "/lessons/virtual-reality-museum-upload.html" },
+    ];
+
+    sendHtml(res, 200, renderResult("Museum Model Uploaded", notes, links));
+  } catch (err) {
+    fs.rmSync(modelPath, { force: true });
+    throw err;
+  }
+}
+
 async function handle(req, res) {
   if (rejectIfRemote(req, res)) return;
 
@@ -699,6 +786,11 @@ async function handle(req, res) {
 
   if (req.method === "POST" && req.url === "/upload") {
     await handleUpload(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/upload-model") {
+    await handleUploadModel(req, res);
     return;
   }
 

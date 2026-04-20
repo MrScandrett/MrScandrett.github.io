@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Virtual Reality Museum Upload · Mr. Scandrett's ClassroomOS</title>
+    <meta name="description" content="Upload your 3D model to the Virtual Reality Museum. Create artifacts at human scale for all students to explore in VR, AR, and desktop browsers." />
+    <meta name="theme-color" content="#1f2937" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+    <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+    <link rel="stylesheet" href="./virtual-reality-museum/upload.css" />
+
+    <style>
+      :root {
+        --accent-color: #7c3aed;
+        --accent-light: #edd5ff;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .upload-form {
+        max-width: 600px;
+        margin: 2rem auto;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #1f2937;
+      }
+
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-family: inherit;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: var(--accent-color);
+      }
+
+      .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+      }
+
+      .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+
+      .file-input-label {
+        display: block;
+        padding: 1.5rem;
+        border: 2px dashed #d1d5db;
+        border-radius: 0.5rem;
+        text-align: center;
+        cursor: pointer;
+        background: #f9fafb;
+        transition: all 0.2s;
+      }
+
+      .file-input-label:hover {
+        border-color: var(--accent-color);
+        background: var(--accent-light);
+      }
+
+      .file-input-label.has-file {
+        border-color: var(--accent-color);
+        background: var(--accent-light);
+      }
+
+      #glbFile {
+        display: none;
+      }
+
+      .file-name {
+        font-weight: 500;
+        color: #1f2937;
+        margin-top: 0.5rem;
+      }
+
+      .file-size {
+        font-size: 0.875rem;
+        color: #6b7280;
+      }
+
+      .file-error {
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+      }
+
+      .file-warning {
+        color: #d97706;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+      }
+
+      button[type="submit"] {
+        width: 100%;
+        padding: 1rem;
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      button[type="submit"]:hover {
+        background: #6d28d9;
+      }
+
+      button[type="submit"]:disabled {
+        background: #d1d5db;
+        cursor: not-allowed;
+      }
+
+      .upload-progress {
+        display: none;
+        margin-top: 1rem;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--accent-color);
+        width: 0%;
+        transition: width 0.3s;
+      }
+
+      .progress-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.5rem;
+      }
+
+      .info-box {
+        background: #f0f9ff;
+        border-left: 4px solid #0284c7;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 0.25rem;
+      }
+
+      .info-box h3 {
+        margin-top: 0;
+        color: #0c4a6e;
+      }
+
+      .info-box ul {
+        margin: 0;
+        padding-left: 1.5rem;
+        font-size: 0.875rem;
+      }
+
+      .artifact-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .artifact-option {
+        padding: 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .artifact-option input {
+        display: none;
+      }
+
+      .artifact-option input:checked + label {
+        background: var(--accent-color);
+        color: white;
+      }
+
+      .artifact-option label {
+        display: block;
+        cursor: pointer;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+
+  <body class="theme-liquid-woodland theme-steam">
+    <header class="site-header">
+      <nav>
+        <a href="../" title="ClassroomOS Home">🏠 Home</a>
+        <a href="../#steam-lessons">📚 STEAM Lessons</a>
+        <a href="../apps/">🎨 Showcase</a>
+        <a href="https://www.youtube.com/user/MrScandrett" target="_blank" rel="noreferrer">📺 Video Library</a>
+        <a href="../assets/ClassroomOS-Resource-Library.pdf" target="_blank" rel="noreferrer">📖 Library</a>
+        <a href="https://github.com/MrScandrett/ClassroomOS" target="_blank" rel="noreferrer">💻 GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main-content" class="lesson-page">
+      <section class="hero">
+        <p class="eyebrow">Art & Visualization · 3D Museum Curation</p>
+        <h1>Virtual Reality Museum Upload</h1>
+        <div class="meta">
+          <span>3D Modeling</span><span class="dot"></span>
+          <span>Artifact Research</span><span class="dot"></span>
+          <span>Immersive XR</span>
+        </div>
+        <p class="lede">
+          Upload your 3D scans, prints, or models to the Virtual Reality Museum. Explore historical artifacts, landmarks, and living things at human scale in immersive VR, AR, and desktop environments.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Your Assignment</h2>
+        <p>
+          Find, create, or 3D-print an artifact, landmark, or animal that interests you. Convert it to a GLB file using tools like Blender or specialized scanning software. Upload it here with a title, description, and artifact type. Your model will be added to the shared Virtual Reality Museum for all students to explore.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Artifact Ideas</h2>
+        <ul>
+          <li><strong>Historical Artifacts:</strong> Ancient pottery, coins, tools, sculptures from museums</li>
+          <li><strong>Landmarks:</strong> Famous buildings, monuments, natural formations</li>
+          <li><strong>Living Things:</strong> Insects, dinosaurs, organisms scanned or photographed</li>
+          <li><strong>Cultural Objects:</strong> Masks, ceremonial items, musical instruments</li>
+          <li><strong>Archaeological Finds:</strong> Fossils, archaeological dig finds, reconstructed objects</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>How to Create a GLB File</h2>
+        <div class="info-box">
+          <h3>Using Blender (Free & Recommended)</h3>
+          <ol>
+            <li>Open or import your 3D model in Blender</li>
+            <li>Select the model in the outliner</li>
+            <li>Go to File → Export As → glTF Binary (.glb)</li>
+            <li>Choose a filename (e.g., "greek-amphora.glb")</li>
+            <li>Click "Export glTF Binary"</li>
+          </ol>
+        </div>
+        <div class="info-box">
+          <h3>Using Photogrammetry Apps</h3>
+          <ul>
+            <li><strong>Meshroom (Free):</strong> Create 3D models from photos</li>
+            <li><strong>Polycam:</strong> Mobile app for 3D scanning via phone</li>
+            <li><strong>Capture One:</strong> Professional 3D reconstruction</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Upload Your Model</h2>
+        <form class="upload-form" id="uploadForm">
+          <div class="info-box">
+            <h3>File Requirements</h3>
+            <ul>
+              <li>Format: GLB (glTF Binary)</li>
+              <li>Maximum size: 50 MB</li>
+              <li>Recommended polygon count: under 500k triangles for smooth VR performance</li>
+              <li>All textures and materials must be embedded in the GLB file</li>
+            </ul>
+          </div>
+
+          <div class="form-group">
+            <label for="studentName">Your Name *</label>
+            <input type="text" id="studentName" name="studentName" placeholder="e.g., Evan" required />
+          </div>
+
+          <div class="form-group">
+            <label for="modelTitle">Model Title *</label>
+            <input type="text" id="modelTitle" name="modelTitle" placeholder="e.g., Greek Amphora, Eiffel Tower" required />
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description *</label>
+            <textarea id="description" name="description" placeholder="Describe your artifact: its history, significance, where you found the reference..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Artifact Type *</label>
+            <div class="artifact-types">
+              <div class="artifact-option">
+                <input type="radio" id="type-artifact" name="artifact" value="artifact" checked />
+                <label for="type-artifact">🏺 Artifact</label>
+              </div>
+              <div class="artifact-option">
+                <input type="radio" id="type-landmark" name="artifact" value="landmark" />
+                <label for="type-landmark">🏛️ Landmark</label>
+              </div>
+              <div class="artifact-option">
+                <input type="radio" id="type-animal" name="artifact" value="animal" />
+                <label for="type-animal">🦖 Animal</label>
+              </div>
+              <div class="artifact-option">
+                <input type="radio" id="type-other" name="artifact" value="other" />
+                <label for="type-other">✨ Other</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>GLB File *</label>
+            <div class="file-input-wrapper">
+              <label for="glbFile" class="file-input-label" id="fileLabel">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
+                <div>Click to select GLB file or drag and drop</div>
+              </label>
+              <input type="file" id="glbFile" name="glbFile" accept=".glb,model/gltf-binary" required />
+              <div class="file-name" id="fileName"></div>
+              <div class="file-size" id="fileSize"></div>
+              <div class="file-error" id="fileError"></div>
+              <div class="file-warning" id="fileWarning"></div>
+            </div>
+          </div>
+
+          <div class="upload-progress" id="uploadProgress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Uploading...</div>
+          </div>
+
+          <button type="submit" id="submitBtn">Upload to Museum</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>View the Museum</h2>
+        <p>
+          Once your model is uploaded, visit the <a href="../apps/virtual-reality-museum/">Virtual Reality Museum</a> to see your creation alongside other students' artifacts. You can explore in VR on Meta Quest 3, in AR on your phone, or navigate with your mouse on desktop.
+        </p>
+      </section>
+    </main>
+
+    <script src="../assets/js/nav-mobile.js"></script>
+    <script src="./virtual-reality-museum/upload.js"></script>
+  </body>
+</html>
