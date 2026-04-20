@@ -3,10 +3,11 @@
 
 const MODELS_DATA_URL = "/data/museum-models.json";
 const GRID_COLS = 3;
-const GRID_SPACING = 6;          // meters between model centers
-const TARGET_HEIGHT = 1.8;       // normalize every model to ~1.8m tall
-const PEDESTAL_HEIGHT = 0.5;     // pedestal rises 0.5m off the ground
-const LABEL_HEIGHT_OFFSET = 0.6; // label plaque sits this far above scaled model top
+const GRID_SPACING = 4;          // meters between model centers
+const TARGET_HEIGHT = 1.0;       // normalize every model to ~1m tall
+const PEDESTAL_HEIGHT = 0.4;     // pedestal rises 0.4m off the ground
+const PEDESTAL_RADIUS = 0.55;
+const LABEL_HEIGHT_OFFSET = 0.35;
 
 const scene = document.querySelector("a-scene");
 const modelContainer = document.getElementById("model-container");
@@ -83,24 +84,23 @@ function renderModels() {
     // Pedestal: a short cylinder that the artifact rests on.
     const pedestal = document.createElement("a-cylinder");
     pedestal.setAttribute("position", `0 ${PEDESTAL_HEIGHT / 2} 0`);
-    pedestal.setAttribute("radius", "1");
+    pedestal.setAttribute("radius", PEDESTAL_RADIUS);
     pedestal.setAttribute("height", PEDESTAL_HEIGHT);
     pedestal.setAttribute("color", "#3b4252");
     pedestal.setAttribute("material", "roughness: 0.4; metalness: 0.2");
     pedestal.setAttribute("shadow", "cast: true; receive: true");
     wrapper.appendChild(pedestal);
 
-    // Thin plaque band on the pedestal showing the title.
+    // Thin plaque on the pedestal front showing the title.
     const plaque = document.createElement("a-entity");
-    plaque.setAttribute("position", `0 ${PEDESTAL_HEIGHT + 0.02} 0.95`);
-    plaque.setAttribute("rotation", "0 0 0");
-    plaque.setAttribute("geometry", "primitive: plane; width: 1.6; height: 0.35");
+    plaque.setAttribute("position", `0 ${PEDESTAL_HEIGHT * 0.55} ${PEDESTAL_RADIUS + 0.005}`);
+    plaque.setAttribute("geometry", "primitive: plane; width: 0.7; height: 0.18");
     plaque.setAttribute("material", "color: #1f2937; opacity: 0.9");
     const plaqueText = document.createElement("a-entity");
     plaqueText.setAttribute("position", "0 0 0.01");
     plaqueText.setAttribute(
       "text",
-      `value: ${model.title}\\nby ${model.student}; align: center; width: 2.4; color: #f9fafb; baseline: center; anchor: center`
+      `value: ${model.title}\nby ${model.student}; align: center; width: 0.95; color: #f9fafb; baseline: center; anchor: center; wrapCount: 22`
     );
     plaque.appendChild(plaqueText);
     wrapper.appendChild(plaque);
@@ -129,19 +129,19 @@ function renderModels() {
 
     wrapper.appendChild(modelEntity);
 
-    // Hovering billboard label above the model (added on fit).
+    // Hovering billboard label above the model.
     const label = document.createElement("a-entity");
     label.setAttribute("class", "model-label");
     label.setAttribute("position", `0 ${PEDESTAL_HEIGHT + TARGET_HEIGHT + LABEL_HEIGHT_OFFSET} 0`);
     label.setAttribute("billboard", "");
     const labelBg = document.createElement("a-entity");
-    labelBg.setAttribute("geometry", "primitive: plane; width: 1.8; height: 0.35");
+    labelBg.setAttribute("geometry", "primitive: plane; width: 0.9; height: 0.18");
     labelBg.setAttribute("material", "color: #111827; opacity: 0.85");
     const labelText = document.createElement("a-entity");
     labelText.setAttribute("position", "0 0 0.01");
     labelText.setAttribute(
       "text",
-      `value: ${artifactLabels[model.artifact_type] || "✨"}  ·  ${model.title}; align: center; width: 2.6; color: #fff; baseline: center; anchor: center`
+      `value: ${artifactLabels[model.artifact_type] || "✨"} ${model.title}; align: center; width: 1.2; color: #fff; baseline: center; anchor: center; wrapCount: 26`
     );
     labelBg.appendChild(labelText);
     label.appendChild(labelBg);
