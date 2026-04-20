@@ -1,10 +1,12 @@
 // Virtual Reality Museum Viewer Script
-// Loads models from museum-models.json and renders them in A-Frame
+// Loads models from museum-models.json and renders them at consistent human scale in A-Frame.
 
 const MODELS_DATA_URL = "/data/museum-models.json";
-const GRID_COLS = 4;
-const GRID_SPACING = 2.5;
-const MODEL_MAX_HEIGHT = 2.5;
+const GRID_COLS = 3;
+const GRID_SPACING = 6;          // meters between model centers
+const TARGET_HEIGHT = 1.8;       // normalize every model to ~1.8m tall
+const PEDESTAL_HEIGHT = 0.5;     // pedestal rises 0.5m off the ground
+const LABEL_HEIGHT_OFFSET = 0.6; // label plaque sits this far above scaled model top
 
 const scene = document.querySelector("a-scene");
 const modelContainer = document.getElementById("model-container");
@@ -18,9 +20,8 @@ const emptyMuseum = document.getElementById("empty-museum");
 const vrToggleBtn = document.getElementById("vr-toggle");
 
 let models = [];
-let currentSelectedModel = null;
+let currentSelectedEntity = null;
 
-// Artifact type labels with emojis
 const artifactLabels = {
   artifact: "🏺 Artifact",
   landmark: "🏛️ Landmark",
@@ -28,13 +29,21 @@ const artifactLabels = {
   other: "✨ Other",
 };
 
-// Fetch museum models data
+// Register a simple billboard component so labels always face the camera.
+if (!AFRAME.components.billboard) {
+  AFRAME.registerComponent("billboard", {
+    tick() {
+      const cam = scene.camera;
+      if (!cam) return;
+      this.el.object3D.lookAt(cam.getWorldPosition(new THREE.Vector3()));
+    },
+  });
+}
+
 async function loadModels() {
   try {
     const response = await fetch(MODELS_DATA_URL);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch models: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Failed to fetch models: ${response.status}`);
     const data = await response.json();
     models = data.models || [];
     loadingIndicator.style.display = "none";
@@ -43,7 +52,6 @@ async function loadModels() {
       emptyMuseum.style.display = "block";
       return;
     }
-
     renderModels();
   } catch (err) {
     console.error("Error loading models:", err);
@@ -51,181 +59,173 @@ async function loadModels() {
   }
 }
 
-// Render models in grid layout
+function gridPosition(index) {
+  const col = index % GRID_COLS;
+  const row = Math.floor(index / GRID_COLS);
+  const x = col * GRID_SPACING - ((GRID_COLS - 1) * GRID_SPACING) / 2;
+  const z = -row * GRID_SPACING;
+  return { x, z };
+}
+
 function renderModels() {
-  // Clear container
   while (modelContainer.children.length > 0) {
     modelContainer.removeChild(modelContainer.children[0]);
   }
 
   models.forEach((model, index) => {
-    const gridX = (index % GRID_COLS) * GRID_SPACING - ((GRID_COLS - 1) * GRID_SPACING) / 2;
-    const gridZ = Math.floor(index / GRID_COLS) * GRID_SPACING;
+    const { x, z } = gridPosition(index);
 
-    // Create wrapper for model positioning
-    const modelWrapper = document.createElement("a-entity");
-    modelWrapper.setAttribute("position", `${gridX} 0 ${gridZ}`);
-    modelWrapper.setAttribute("class", "model-wrapper");
+    // Wrapper at grid position.
+    const wrapper = document.createElement("a-entity");
+    wrapper.setAttribute("position", `${x} 0 ${z}`);
+    wrapper.setAttribute("class", "model-wrapper");
 
-    // Create model entity with GLTF loader
+    // Pedestal: a short cylinder that the artifact rests on.
+    const pedestal = document.createElement("a-cylinder");
+    pedestal.setAttribute("position", `0 ${PEDESTAL_HEIGHT / 2} 0`);
+    pedestal.setAttribute("radius", "1");
+    pedestal.setAttribute("height", PEDESTAL_HEIGHT);
+    pedestal.setAttribute("color", "#3b4252");
+    pedestal.setAttribute("material", "roughness: 0.4; metalness: 0.2");
+    pedestal.setAttribute("shadow", "cast: true; receive: true");
+    wrapper.appendChild(pedestal);
+
+    // Thin plaque band on the pedestal showing the title.
+    const plaque = document.createElement("a-entity");
+    plaque.setAttribute("position", `0 ${PEDESTAL_HEIGHT + 0.02} 0.95`);
+    plaque.setAttribute("rotation", "0 0 0");
+    plaque.setAttribute("geometry", "primitive: plane; width: 1.6; height: 0.35");
+    plaque.setAttribute("material", "color: #1f2937; opacity: 0.9");
+    const plaqueText = document.createElement("a-entity");
+    plaqueText.setAttribute("position", "0 0 0.01");
+    plaqueText.setAttribute(
+      "text",
+      `value: ${model.title}\\nby ${model.student}; align: center; width: 2.4; color: #f9fafb; baseline: center; anchor: center`
+    );
+    plaque.appendChild(plaqueText);
+    wrapper.appendChild(plaque);
+
+    // GLTF model — positioned on top of the pedestal. Real scale set after load.
     const modelEntity = document.createElement("a-gltf-model");
     modelEntity.setAttribute("id", `model-${model.id}`);
     modelEntity.setAttribute("src", model.file);
-    modelEntity.setAttribute("position", "0 0 0");
-    modelEntity.setAttribute("scale", getModelScale(model));
+    modelEntity.setAttribute("position", `0 ${PEDESTAL_HEIGHT} 0`);
+    modelEntity.setAttribute("scale", "0.01 0.01 0.01"); // start tiny; replaced on load
     modelEntity.setAttribute("shadow", "cast: true; receive: false");
+    modelEntity.setAttribute("class", "museum-model clickable");
 
-    // Add click handler for model selection
+    // Once the GLB loads, measure its bounding box and normalize scale.
+    modelEntity.addEventListener("model-loaded", () => {
+      fitModelToHeight(modelEntity, model, wrapper);
+    });
+    modelEntity.addEventListener("model-error", (e) => {
+      console.warn("Model failed:", model.id, e.detail);
+    });
+
     modelEntity.addEventListener("click", (e) => {
       e.stopPropagation();
       selectModel(model, modelEntity);
     });
 
-    // Create info label above model
+    wrapper.appendChild(modelEntity);
+
+    // Hovering billboard label above the model (added on fit).
     const label = document.createElement("a-entity");
-    label.setAttribute("position", "0 2.8 0");
-    label.setAttribute("text", `value: ${model.title}; align: center; width: 5; color: #1f2937; wrapCount: 20`);
-    label.setAttribute("scale", "1 1 1");
+    label.setAttribute("class", "model-label");
+    label.setAttribute("position", `0 ${PEDESTAL_HEIGHT + TARGET_HEIGHT + LABEL_HEIGHT_OFFSET} 0`);
+    label.setAttribute("billboard", "");
+    const labelBg = document.createElement("a-entity");
+    labelBg.setAttribute("geometry", "primitive: plane; width: 1.8; height: 0.35");
+    labelBg.setAttribute("material", "color: #111827; opacity: 0.85");
+    const labelText = document.createElement("a-entity");
+    labelText.setAttribute("position", "0 0 0.01");
+    labelText.setAttribute(
+      "text",
+      `value: ${artifactLabels[model.artifact_type] || "✨"}  ·  ${model.title}; align: center; width: 2.6; color: #fff; baseline: center; anchor: center`
+    );
+    labelBg.appendChild(labelText);
+    label.appendChild(labelBg);
+    wrapper.appendChild(label);
 
-    // Create student name below model
-    const studentLabel = document.createElement("a-entity");
-    studentLabel.setAttribute("position", "0 2.5 0");
-    studentLabel.setAttribute("text", `value: by ${model.student}; align: center; width: 5; color: #6b7280; wrapCount: 20`);
-    studentLabel.setAttribute("scale", "0.8 0.8 0.8");
-
-    modelWrapper.appendChild(modelEntity);
-    modelWrapper.appendChild(label);
-    modelWrapper.appendChild(studentLabel);
-    modelContainer.appendChild(modelWrapper);
+    modelContainer.appendChild(wrapper);
   });
 }
 
-// Calculate scale to fit model within max height
-function getModelScale(model) {
-  // Default scale of 1
-  // Models can be pre-scaled in the data if needed
-  const scale = model.scale || 1;
-  return `${scale} ${scale} ${scale}`;
+// Measure the loaded mesh, compute a uniform scale so the model is TARGET_HEIGHT tall,
+// and recenter it horizontally above the pedestal.
+function fitModelToHeight(modelEntity, model, wrapper) {
+  const mesh = modelEntity.getObject3D("mesh");
+  if (!mesh) return;
+
+  const box = new THREE.Box3().setFromObject(mesh);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+  const currentHeight = size.y || 1;
+  const scale = TARGET_HEIGHT / currentHeight;
+
+  // Respect optional per-model multiplier to under/over-size special items (e.g. a truly large monument).
+  const multiplier = typeof model.scaleMultiplier === "number" ? model.scaleMultiplier : 1;
+  const finalScale = scale * multiplier;
+
+  modelEntity.setAttribute("scale", `${finalScale} ${finalScale} ${finalScale}`);
+
+  // After scaling, recenter so the model sits centered on the pedestal with its base at pedestal top.
+  const newBox = new THREE.Box3().setFromObject(mesh);
+  const newMin = newBox.min;
+  const newCenter = new THREE.Vector3();
+  newBox.getCenter(newCenter);
+  const offsetX = -newCenter.x;
+  const offsetZ = -newCenter.z;
+  const offsetY = PEDESTAL_HEIGHT - newMin.y;
+  modelEntity.setAttribute("position", `${offsetX} ${offsetY} ${offsetZ}`);
 }
 
-// Select and display model info
 function selectModel(model, entity) {
-  currentSelectedModel = model;
+  if (currentSelectedEntity) currentSelectedEntity.classList.remove("model-selected");
+  currentSelectedEntity = entity;
+  entity.classList.add("model-selected");
 
-  // Update info panel
   infoPanelTitle.textContent = model.title;
   infoPanelStudent.textContent = `by ${model.student}`;
   infoPanelDescription.textContent = model.description;
   infoPanelType.textContent = artifactLabels[model.artifact_type] || "✨ Object";
-
-  // Show info panel
   infoPanel.classList.add("show");
-
-  // Visual feedback - highlight selected model
-  // Remove highlight from previous
-  document.querySelectorAll(".model-selected").forEach((el) => {
-    el.classList.remove("model-selected");
-  });
-
-  // Add highlight to current
-  entity.classList.add("model-selected");
-
-  // Optional: Animate camera to look at model
-  focusOnModel(model);
 }
 
-// Animate camera to focus on selected model
-function focusOnModel(model) {
-  const modelIndex = models.indexOf(model);
-  if (modelIndex === -1) return;
-
-  const gridX = (modelIndex % GRID_COLS) * GRID_SPACING - ((GRID_COLS - 1) * GRID_SPACING) / 2;
-  const gridZ = Math.floor(modelIndex / GRID_COLS) * GRID_SPACING;
-
-  // Calculate camera position to look at model
-  const cameraEntity = document.querySelector("a-camera");
-  const currentPos = cameraEntity.getAttribute("position");
-
-  // Smooth camera movement (optional - can be expanded with more animation)
-  const targetX = gridX;
-  const targetY = 1.6;
-  const targetZ = gridZ + 3;
-
-  // For now, just a simple position update
-  // Full smooth animation would require more complex tweening
-  cameraEntity.setAttribute("position", `${targetX} ${targetY} ${targetZ}`);
+function closeInfoPanel() {
+  infoPanel.classList.remove("show");
+  if (currentSelectedEntity) {
+    currentSelectedEntity.classList.remove("model-selected");
+    currentSelectedEntity = null;
+  }
 }
 
-// VR mode toggle
+// VR toggle (clicks A-Frame's built-in enter-VR button).
 vrToggleBtn.addEventListener("click", () => {
   const vrButton = document.querySelector(".a-enter-vr-button");
-  if (vrButton) {
-    vrButton.click();
-  }
+  if (vrButton) vrButton.click();
 });
 
-// Close info panel when clicking background
+// Close info panel when clicking empty scene area.
 document.addEventListener("click", (e) => {
-  if (
-    e.target === document.body ||
-    (e.target.tagName === "A-SCENE" && !e.target.closest(".model-wrapper"))
-  ) {
-    infoPanel.classList.remove("show");
-    currentSelectedModel = null;
-  }
+  if (e.target.closest(".museum-model") || e.target.closest("#info-panel")) return;
+  closeInfoPanel();
 });
 
-// Handle model loading errors
-scene.addEventListener("model-loaded", (e) => {
-  console.log("Model loaded:", e.detail);
-});
-
-scene.addEventListener("model-error", (e) => {
-  console.error("Model error:", e.detail);
-});
-
-// Graceful fallback for GLTF loading
-const originalSetAttribute = Element.prototype.setAttribute;
-Element.prototype.setAttribute = function (name, value) {
-  if (name === "src" && this.tagName === "A-GLTF-MODEL") {
-    // Add fallback handling for model loading
-    this.addEventListener("model-error", () => {
-      console.warn("Failed to load model:", value);
-      // Could add a placeholder mesh here
-    });
-  }
-  return originalSetAttribute.call(this, name, value);
-};
-
-// Initialize on scene loaded
-scene.addEventListener("loaded", () => {
-  console.log("A-Frame scene loaded");
-  loadModels();
-});
-
-// Also try loading models immediately in case scene is already loaded
-if (scene.hasLoaded) {
-  loadModels();
-}
-
-// Keyboard shortcuts
+// Keyboard shortcuts.
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    infoPanel.classList.remove("show");
-  }
+  if (e.key === "Escape") closeInfoPanel();
   if (e.key === "r" || e.key === "R") {
-    // Reset camera to home position
     const cameraEntity = document.querySelector("a-camera");
-    cameraEntity.setAttribute("position", "0 1.6 5");
+    cameraEntity.setAttribute("position", "0 1.6 8");
+    cameraEntity.setAttribute("rotation", "0 0 0");
   }
 });
 
-// Mobile orientation support
-window.addEventListener("orientationchange", () => {
-  // Refresh models on orientation change
-  if (models.length > 0) {
-    renderModels();
-  }
-});
+// Initialize.
+if (scene.hasLoaded) loadModels();
+else scene.addEventListener("loaded", loadModels);
 
 console.log("Museum Viewer initialized");
