@@ -10,207 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
-  <style>
-    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #8b5cf6; --ll-tab-active: #8b5cf6; --ll-tab-active-bg: rgba(139,92,246,0.12); }
-
-    .rc-page { padding-bottom: 3.5rem; }
-
-    .rc-hero { padding: 0.4rem 0 1.3rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
-    .rc-hero h1 { max-width: 30ch; margin: 0 auto; font-size: clamp(1.55rem,3.5vw,2.3rem); }
-    .rc-hero-meta { display:flex; flex-wrap:wrap; align-items:center; justify-content: center; gap:0.4rem 0.7rem; margin:0.5rem 0 0; font-size:0.82rem; color:#64748b; }
-    .rc-hero-meta .dot { width:3px; height:3px; border-radius:50%; background:currentColor; opacity:.4; display:inline-block; vertical-align:middle; }
-    .rc-lede { margin:0.65rem auto 0; max-width:68ch; color:#3f4f65; font-size:0.96rem; line-height:1.62; }
-    [data-theme="night"] .rc-lede { color:rgba(245,245,247,.7); }
-
-    .rc-card {
-      background:var(--white,#fff); border:1px solid var(--line,#d2d2d7);
-      border-left:3.5px solid var(--card-accent,#8b5cf6);
-      border-radius:var(--radius,18px); box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,.08));
-      padding:1.2rem 1.4rem; margin-bottom:1rem;
-    }
-    .rc-card h2 { margin:0 0 .55rem; font-size:1.2rem; letter-spacing:-.02em; }
-    .rc-card h3 { margin:.9rem 0 .3rem; font-size:1rem; }
-    .rc-card p  { margin:0 0 .6rem; color:#3f4f65; font-size:.88rem; line-height:1.65; }
-    .rc-card p:last-child { margin-bottom:0; }
-    [data-theme="night"] .rc-card { background:#2c2c2e; }
-    [data-theme="night"] .rc-card p { color:rgba(245,245,247,.72); }
-
-    .rc-sep { height:1px; background:linear-gradient(to right,transparent,rgba(139,92,246,.3),transparent); margin:1.1rem 0; }
-
-    .rc-fact-row { display:flex; flex-wrap:wrap; gap:.5rem; margin:.7rem 0; }
-    .rc-fact {
-      display:inline-flex; align-items:center;
-      background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.22);
-      border-radius:20px; padding:.25rem .7rem; font-size:.78rem; font-weight:600; color:#6d28d9;
-    }
-    [data-theme="night"] .rc-fact { color:#c4b5fd; background:rgba(139,92,246,.15); }
-
-    /* ── Cube Lab ─────────────────────────────────── */
-    .rc-lab {
-      background:linear-gradient(135deg,#0d0015 0%,#1a0533 50%,#0d0015 100%);
-      border-radius:18px; padding:1.6rem 1.4rem; margin-bottom:1rem;
-      border:1px solid rgba(139,92,246,.25);
-      box-shadow:0 0 60px rgba(139,92,246,.12);
-    }
-    .rc-lab-head { text-align:center; margin-bottom:1.2rem; }
-    .rc-lab-badge {
-      display:inline-flex; align-items:center; gap:.4rem;
-      background:rgba(139,92,246,.2); border:1px solid rgba(139,92,246,.45);
-      border-radius:20px; padding:.25rem .75rem; font-size:.75rem;
-      color:#c4b5fd; margin-bottom:.6rem; letter-spacing:.04em; text-transform:uppercase;
-    }
-    .rc-live-dot { width:7px; height:7px; border-radius:50%; background:#22c55e; animation:rc-pulse 1.4s ease-in-out infinite; }
-    @keyframes rc-pulse { 0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)} 70%{box-shadow:0 0 0 6px rgba(34,197,94,0)} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0)} }
-    .rc-lab-head h2 { color:#fff; margin:0 0 .25rem; font-size:1.2rem; }
-    .rc-lab-head p  { color:rgba(255,255,255,.5); font-size:.83rem; margin:0; }
-
-    .rc-canvas-wrap {
-      border-radius:12px; overflow:hidden; background:#08000f;
-      border:1px solid rgba(139,92,246,.2); cursor:grab;
-      touch-action:none;
-    }
-    .rc-canvas-wrap:active { cursor:grabbing; }
-    #rc-canvas { display:block; width:100%; height:320px; }
-
-    /* move controls */
-    .rc-move-groups {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 1.2rem auto 0; max-width: 540px; width: 100%;
-    }
-    @media(max-width:500px){ .rc-move-groups { grid-template-columns: repeat(2, 1fr); } }
-    .rc-move-group {
-      display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
-      background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.15);
-      border-radius: 12px; padding: 0.6rem; text-align: center;
-    }
-    .rc-move-group span {
-      font-size: 0.8rem; font-weight: 800; color: #a78bfa;
-      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.2rem;
-    }
-    .rc-move-group-btns {
-      display: flex; gap: 0.4rem; width: 100%; justify-content: center;
-    }
-    .rc-move-btn {
-      flex: 1;
-      display: flex; justify-content: center; align-items: center;
-      background:rgba(139,92,246,.12); border:1px solid rgba(139,92,246,.3);
-      border-radius:8px; padding:.5rem 0; color:#c4b5fd;
-      font-size:1.2rem; font-weight:700; font-family:'IBM Plex Mono',monospace;
-      cursor:pointer; transition:all .15s;
-    }
-    .rc-move-btn:hover { background:rgba(139,92,246,.3); color:#fff; }
-    .rc-move-btn:disabled { opacity:.3; cursor:default; }
-
-    .rc-action-row { display:flex; flex-wrap:wrap; gap:.8rem; margin-top:1.2rem; align-items:center; justify-content:center; }
-    .rc-action-btn {
-      border:none; border-radius:10px; padding:.6rem 1.2rem;
-      font-size:.9rem; font-weight:700; cursor:pointer; transition:all .18s;
-    }
-    .rc-btn-scramble { background:#f59e0b; color:#000; }
-    .rc-btn-scramble:hover { background:#d97706; }
-    .rc-btn-solve   { background:#8b5cf6; color:#fff; }
-    .rc-btn-solve:hover { background:#7c3aed; }
-    .rc-btn-reset   { background:rgba(255,255,255,.08); color:rgba(255,255,255,.7); border:1px solid rgba(255,255,255,.15); }
-    .rc-btn-reset:hover { background:rgba(255,255,255,.15); }
-    .rc-action-btn:disabled { opacity:.4; cursor:default; }
-
-    .rc-status {
-      font-family:'IBM Plex Mono',monospace; font-size:.9rem;
-      color:rgba(255,255,255,.45); width: 100%; text-align: center; margin: 0.4rem 0 0 0;
-    }
-    .rc-status span { color:#a78bfa; font-weight:600; }
-
-    /* solution display */
-    .rc-solution-wrap { margin-top:.8rem; display:none; }
-    .rc-solution-wrap h3 { color:rgba(255,255,255,.7); font-size:.85rem; margin:0 0 .4rem; }
-    .rc-solution-moves {
-      display:flex; flex-wrap:wrap; gap:.3rem;
-    }
-    .rc-sol-move {
-      font-family:'IBM Plex Mono',monospace; font-size:.8rem; font-weight:700;
-      padding:.2rem .5rem; border-radius:6px; background:rgba(139,92,246,.15);
-      border:1px solid rgba(139,92,246,.3); color:#c4b5fd;
-      transition:background .2s, color .2s;
-    }
-    .rc-sol-move.done { background:rgba(34,197,94,.15); border-color:rgba(34,197,94,.4); color:#86efac; }
-    .rc-sol-move.current { background:rgba(245,158,11,.25); border-color:#f59e0b; color:#fcd34d; }
-
-    /* ── Notation table ───────────────────────────── */
-    .rc-notation-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:.55rem; margin:.8rem 0; }
-    .rc-notation-card {
-      border-radius:10px; padding:.65rem .8rem;
-      border:1px solid rgba(255,255,255,.07);
-    }
-    .rc-notation-card .nc-symbol { font-family:'IBM Plex Mono',monospace; font-size:1.1rem; font-weight:800; color:#fff; }
-    .rc-notation-card .nc-name   { font-size:.72rem; color:rgba(255,255,255,.4); margin:.1rem 0 .25rem; text-transform:uppercase; letter-spacing:.05em; }
-    .rc-notation-card .nc-desc  { font-size:.78rem; color:rgba(255,255,255,.55); line-height:1.5; }
-
-    /* ── Algorithm display ────────────────────────── */
-    .rc-algo-box {
-      background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(59,130,246,.08));
-      border:1px solid rgba(139,92,246,.2); border-radius:12px;
-      padding:.9rem 1.1rem; margin:.7rem 0;
-    }
-    .rc-algo-box .algo-name { font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; color:#8b5cf6; font-weight:700; margin-bottom:.3rem; }
-    .rc-algo-box .algo-moves { font-family:'IBM Plex Mono',monospace; font-size:.95rem; font-weight:700; color:#1d1d1f; letter-spacing:.05em; }
-    [data-theme="night"] .rc-algo-box .algo-moves { color:#e9d5ff; }
-    .rc-algo-box .algo-desc { font-size:.82rem; color:#3f4f65; margin-top:.35rem; }
-    [data-theme="night"] .rc-algo-box .algo-desc { color:rgba(245,245,247,.6); }
-
-    /* ── Permutation calc ─────────────────────────── */
-    .rc-perm-display {
-      background:linear-gradient(135deg,#0a0f1e,#1e0533);
-      border:1px solid rgba(139,92,246,.25); border-radius:14px;
-      padding:1.1rem 1.4rem; margin:.8rem 0; text-align:center;
-    }
-    .rc-perm-number {
-      font-family:'IBM Plex Mono',monospace; font-size:clamp(1rem,3vw,1.5rem);
-      font-weight:900; color:#c4b5fd; letter-spacing:.02em; line-height:1.3;
-      word-break:break-all;
-    }
-    .rc-perm-label { font-size:.78rem; color:rgba(255,255,255,.4); margin-top:.35rem; }
-
-    /* ── Group axioms ─────────────────────────────── */
-    .rc-group-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:.65rem; margin:.8rem 0; }
-    .rc-group-card {
-      background:rgba(139,92,246,.06); border:1px solid rgba(139,92,246,.18);
-      border-radius:12px; padding:.8rem 1rem;
-    }
-    .rc-group-card h3 { font-size:.9rem; margin:0 0 .3rem; color:#6d28d9; }
-    [data-theme="night"] .rc-group-card h3 { color:#c4b5fd; }
-    .rc-group-card p { font-size:.81rem; color:#3f4f65; margin:0; line-height:1.6; }
-    [data-theme="night"] .rc-group-card p { color:rgba(245,245,247,.65); }
-
-    /* ── Practice ─────────────────────────────────── */
-    .rc-score-bar { margin-bottom:.8rem; font-size:.85rem; color:#3f4f65; font-weight:600; }
-    [data-theme="night"] .rc-score-bar { color:rgba(245,245,247,.65); }
-    .rc-practice { display:flex; flex-direction:column; gap:.8rem; }
-    .rc-problem {
-      background:rgba(139,92,246,.04); border:1px solid rgba(139,92,246,.18);
-      border-radius:12px; padding:.85rem 1rem; transition:border-color .3s,background .3s;
-    }
-    .rc-problem p { margin:0 0 .5rem; font-size:.88rem; color:#3f4f65; font-weight:500; }
-    [data-theme="night"] .rc-problem p { color:rgba(245,245,247,.8); }
-    .rc-problem.solved { background:rgba(34,197,94,.06); border-color:rgba(34,197,94,.3); }
-    .rc-problem-input-row { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
-    .rc-ans-input {
-      border:1.5px solid #cbd5e1; border-radius:8px; padding:.35rem .7rem;
-      font-size:.88rem; width:140px; outline:none; background:#fff; transition:border-color .2s;
-    }
-    [data-theme="night"] .rc-ans-input { background:#1c1c1e; color:#f5f5f7; border-color:#3a3a3c; }
-    .rc-check-btn {
-      background:#8b5cf6; color:#fff; border:none; border-radius:8px;
-      padding:.35rem .85rem; font-size:.85rem; font-weight:700; cursor:pointer; transition:background .2s;
-    }
-    .rc-check-btn:hover { background:#7c3aed; }
-    .rc-feedback { font-size:.82rem; font-weight:600; }
-    .rc-feedback.correct { color:#22c55e; }
-    .rc-feedback.wrong   { color:#ef4444; }
-    .rc-hint { display:none; margin-top:.4rem; padding:.4rem .7rem; background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.25); border-radius:7px; font-size:.8rem; color:#92400e; }
-    .rc-hint.visible { display:block; }
-    [data-theme="night"] .rc-hint { color:#fcd34d; }
-    @keyframes rc-shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
-    .rc-shake { animation:rc-shake .4s ease; }
-  </style>
+  <link rel="stylesheet" href="../assets/css/lessons/rubiks-cube-math.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -374,8 +174,8 @@
               arrangements are physically reachable without breaking the cube apart):
             </p>
             
-            <div class="rc-algo-box" style="text-align: center; border-color: rgba(239,68,68,0.3); background: linear-gradient(135deg,rgba(239,68,68,0.08),rgba(239,68,68,0.02)); margin-top: 1rem;">
-              <div class="algo-moves" style="font-size: 1.15rem; color: #ef4444;">(8! × 3⁷ × 12! × 2¹¹) / 12</div>
+            <div class="rc-algo-box rc-algo-box--count">
+              <div class="algo-moves algo-moves--count">(8! × 3⁷ × 12! × 2¹¹) / 12</div>
               <div class="algo-desc">Total Valid Permutations</div>
             </div>
             
@@ -408,7 +208,7 @@
               excluding centers). This is a branch of abstract algebra that studies symmetry.
             </p>
 
-            <div class="rc-callout" style="border-left-color: #8b5cf6; background: rgba(139,92,246,0.08);">
+            <div class="rc-callout rc-callout--purple">
               <strong>What Makes Something a Group?</strong>
               A group is a set with an operation (here: "apply move after move") that satisfies four axioms. The Rubik's Cube perfectly demonstrates all of them:
             </div>
@@ -419,15 +219,15 @@
               </div>
               <div class="rc-group-card">
                 <div class="rc-axiom-head"><span class="rc-axiom-num">2</span> <strong>Associativity</strong></div>
-                <p>The order of grouping doesn't change the result: <code style="color:#8b5cf6; font-weight:600;">(A·B)·C = A·(B·C)</code>. Applying three moves is the same regardless of which two you group together first.</p>
+                <p>The order of grouping doesn't change the result: <code class="rc-code-accent">(A·B)·C = A·(B·C)</code>. Applying three moves is the same regardless of which two you group together first.</p>
               </div>
               <div class="rc-group-card">
                 <div class="rc-axiom-head"><span class="rc-axiom-num">3</span> <strong>Identity</strong></div>
-                <p>There exists a "do nothing" move — the solved state. Applying it changes nothing. In math notation this is often written as <code style="color:#8b5cf6; font-weight:600;">e</code> or <code style="color:#8b5cf6; font-weight:600;">I</code>.</p>
+                <p>There exists a "do nothing" move — the solved state. Applying it changes nothing. In math notation this is often written as <code class="rc-code-accent">e</code> or <code class="rc-code-accent">I</code>.</p>
               </div>
               <div class="rc-group-card">
                 <div class="rc-axiom-head"><span class="rc-axiom-num">4</span> <strong>Inverse</strong></div>
-                <p>Every move has a reverse. <code style="color:#8b5cf6; font-weight:600;">U</code> followed by <code style="color:#8b5cf6; font-weight:600;">U'</code> returns to the original state. Every scramble can be exactly unscrambled.</p>
+                <p>Every move has a reverse. <code class="rc-code-accent">U</code> followed by <code class="rc-code-accent">U'</code> returns to the original state. Every scramble can be exactly unscrambled.</p>
               </div>
             </div>
 
@@ -457,33 +257,33 @@
               and infinite precision.
             </p>
 
-            <div class="rc-notation-grid" style="background:linear-gradient(135deg,#0f0020,#0a0015);border-radius:12px;padding:.9rem;">
-              <div class="rc-notation-card" style="background:rgba(255,255,255,.04);">
+            <div class="rc-notation-grid rc-notation-grid--dark">
+              <div class="rc-notation-card rc-notation-card--dark">
                 <div class="nc-symbol">U / U'</div>
                 <div class="nc-name">Up</div>
                 <div class="nc-desc">Top face clockwise / counterclockwise</div>
               </div>
-              <div class="rc-notation-card" style="background:rgba(255,255,255,.04);">
+              <div class="rc-notation-card rc-notation-card--dark">
                 <div class="nc-symbol">D / D'</div>
                 <div class="nc-name">Down</div>
                 <div class="nc-desc">Bottom face clockwise / counterclockwise</div>
               </div>
-              <div class="rc-notation-card" style="background:rgba(255,255,255,.04);">
+              <div class="rc-notation-card rc-notation-card--dark">
                 <div class="nc-symbol">R / R'</div>
                 <div class="nc-name">Right</div>
                 <div class="nc-desc">Right face clockwise / counterclockwise</div>
               </div>
-              <div class="rc-notation-card" style="background:rgba(255,255,255,.04);">
+              <div class="rc-notation-card rc-notation-card--dark">
                 <div class="nc-symbol">L / L'</div>
                 <div class="nc-name">Left</div>
                 <div class="nc-desc">Left face clockwise / counterclockwise</div>
               </div>
-              <div class="rc-notation-card" style="background:rgba(255,255,255,.04);">
+              <div class="rc-notation-card rc-notation-card--dark">
                 <div class="nc-symbol">F / F'</div>
                 <div class="nc-name">Front</div>
                 <div class="nc-desc">Front face clockwise / counterclockwise</div>
               </div>
-              <div class="rc-notation-card" style="background:rgba(255,255,255,.04);">
+              <div class="rc-notation-card rc-notation-card--dark">
                 <div class="nc-symbol">2 suffix</div>
                 <div class="nc-name">Double</div>
                 <div class="nc-desc">U2 = turn the face 180° (two quarter turns)</div>
