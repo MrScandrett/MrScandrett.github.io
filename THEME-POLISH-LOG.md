@@ -48,3 +48,21 @@
   - Phase 2 inline-style acceptance grep still returned no matches.
 - Spot-check evidence: `scripts/spotcheck-theme-settings.mjs` generated `screenshots/phase-2-spotcheck/` for `applications.html` vaporwave/diamond, `video-library.html` vaporwave/diamond/topaz, and `steam-lessons.html` topaz. The harness uses the same public theme API that the Settings theme chips call, with the relevant page body classes and theme selectors.
 - Result: vaporwave and diamond render dark with legible text; topaz renders amber/cream with legible text.
+
+## Phase 3 — 2026-04-21
+- Files changed by this phase: `assets/css/components/lesson-shell.css`, `assets/css/main.css`, `assets/css/rainbows.css`, `assets/css/water-cycle.css`, `assets/css/seasons-and-the-heavens.css`, `lessons/rainbows.html`, `lessons/water-cycle.html`, `scripts/capture-phase-3-screenshots.mjs`, `THEME-POLISH-LOG.md`.
+- Worktree note: pre-existing user changes were present in `.claude/launch.json`, `assets/js/rainbows.js`, `lessons/optics.html`, and `lessons/rainbows.html`; those were not reverted. `lessons/rainbows.html` was touched only to add the shared CSS entry point while preserving the existing content changes.
+- Component extraction: created `assets/css/components/lesson-shell.css` with token-only rules for lesson headers, TOCs, sections, callouts, figures, data tables, code, quiz cards/options/states, control panels, slider readouts, and HUD overlays. Added compatibility aliases for current lesson classes (`.content-section`, `.wc-card`, `.sth-card`, `.table-of-contents`, `.quiz-question`, `.answer-btn`, `.controls-panel`, `.control-value`, etc.) to avoid broad HTML rewrites.
+- Entry point: imported `lesson-shell.css` once from `assets/css/main.css`; `lessons/rainbows.html` and `lessons/water-cycle.html` now load `main.css` before their lesson-specific CSS so the shared chrome applies.
+- Dedupe: removed duplicated chrome from `rainbows.css`, `water-cycle.css`, and `seasons-and-the-heavens.css`; kept lesson-specific visuals, simulations, diagrams, hero artwork, custom stage buttons, and bespoke lesson color accents.
+- Line counts before/after: `rainbows.css` 1151 -> 773 lines (32.8% shrink); `water-cycle.css` 1019 -> 751 lines (26.3% shrink); `seasons-and-the-heavens.css` 1073 -> 791 lines (26.3% shrink). `liquid-woodland.css` stayed 2191 lines and `classroom-home.css` stayed 14367 lines because their matching rules were broad shell/theme infrastructure rather than removable lesson chrome in this phase.
+- Verification commands:
+  - `test -f assets/css/components/lesson-shell.css` passed.
+  - `rg -n 'lesson-shell.css' assets lessons` returned one import: `assets/css/main.css:1`.
+  - `wc -l assets/css/liquid-woodland.css assets/css/classroom-home.css assets/css/seasons-and-the-heavens.css assets/css/rainbows.css assets/css/water-cycle.css` passed and showed the after counts above.
+  - `rg -n '#[0-9A-Fa-f]{3,8}' assets/css/components/lesson-shell.css` returned no matches.
+  - `node --check scripts/capture-phase-3-screenshots.mjs` passed.
+  - `npm run check:themes` passed.
+- Screenshots: captured 35 PNGs in `screenshots/phase-3/` for `rainbows.html`, `water-cycle.html`, `seasons-and-the-heavens.html`, `event-horizon-telescope.html`, and `archimedes-principle.html` across day/night/sakura/diamond/emerald/topaz/vaporwave.
+- Spot-check notes: dark and light theme body colors apply correctly after fixing the screenshot harness fallback to mirror `html[data-lighting]`. `rainbows.html` intentionally keeps its sky-blue hero illustration under dark palettes as lesson-specific artwork; the shared section chrome below it follows the active theme.
+- Gate: Phase 3 implementation is complete and ready for director review. Phase 4 not started.

@@ -61,13 +61,19 @@ function buildDiagramOverlay(svg) {
     overlay.setAttribute('class', 'diagram-overlay');
     const kind = svg.dataset.stepDiagram || svg.dataset.diagram;
 
+    const colors = getColorSpectrum();
+    const redAngle = computeRainbowAngle(colors[0].n, 1).toFixed(1);
+    const violetAngle = computeRainbowAngle(colors[6].n, 1).toFixed(1);
+    const secondaryRed = computeRainbowAngle(colors[0].n, 2).toFixed(1);
+    const secondaryViolet = computeRainbowAngle(colors[6].n, 2).toFixed(1);
+
     const configs = {
         '1': { path: `M 32 35 Q 56 58 80 90`, angle: { x: 115, y: 86, text: 'Entry refraction' }, labels: [{ x: 20, y: 18, text: 'Sunlight' }, { x: 100, y: 150, text: 'Water droplet' }] },
-        '2': { path: `M 100 65 Q 116 95 126 130`, angle: { x: 126, y: 78, text: 'Red bends less' }, labels: [{ x: 137, y: 115, text: 'Red ray' }, { x: 130, y: 148, text: 'Violet bends more' }] },
+        '2': { path: `M 100 65 Q 116 95 126 130`, angle: { x: 126, y: 78, text: 'Red bends ~12°, violet ~14°' }, labels: [{ x: 137, y: 115, text: 'Red ray' }, { x: 130, y: 148, text: 'Violet bends more' }] },
         '3': { path: `M 100 65 L 125 125 L 95 150`, angle: { x: 132, y: 112, text: 'Internal reflection' }, labels: [{ x: 132, y: 138, text: 'Bounce point' }] },
-        '4': { path: `M 80 70 Q 96 56 110 47`, angle: { x: 163, y: 18, text: '42° red' }, labels: [{ x: 150, y: 24, text: 'Primary rainbow' }, { x: 144, y: 140, text: '40° violet' }] },
-        geometry: { path: `M 260 50 Q 168 125 100 140`, angle: { x: 76, y: 181, text: '42° to your eye' }, labels: [{ x: 229, y: 44, text: 'Sun behind you' }, { x: 103, y: 64, text: 'Primary arc' }] },
-        double: { path: `M 360 40 Q 250 112 180 80`, angle: { x: 103, y: 137, text: '42° primary' }, labels: [{ x: 146, y: 171, text: '50-53° secondary' }, { x: 78, y: 111, text: 'Brighter primary' }] }
+        '4': { path: `M 80 70 Q 96 56 110 47`, angle: { x: 163, y: 18, text: `${redAngle}° red` }, labels: [{ x: 150, y: 24, text: 'Primary rainbow' }, { x: 144, y: 140, text: `${violetAngle}° violet` }] },
+        geometry: { path: `M 260 50 Q 168 125 100 140`, angle: { x: 76, y: 181, text: `${redAngle}° to your eye` }, labels: [{ x: 229, y: 44, text: 'Sun behind you' }, { x: 103, y: 64, text: 'Primary arc' }] },
+        double: { path: `M 360 40 Q 250 112 180 80`, angle: { x: 103, y: 137, text: `${redAngle}° primary` }, labels: [{ x: 146, y: 171, text: `${secondaryRed}° secondary` }, { x: 78, y: 111, text: 'Brighter primary' }] }
     };
 
     const config = configs[kind];
@@ -209,47 +215,38 @@ function initSimulation() {
 
     function drawSimulation() {
         pulseUpdate(canvas);
-        const width = 500;
-        const height = 400;
-        const groundY = 320;
-        const observerX = 40 + (state.observerPosition / 100) * 160;
-        const observerY = groundY;
-        const sunRadius = 22;
+        const centerX = 40 + (state.observerPosition / 100) * 160;
+        const centerY = 302;
+
+        dom.head.setAttribute('cx', `${centerX}`);
+        dom.head.setAttribute('cy', `${centerY - 38}`);
+        dom.body.setAttribute('x1', `${centerX}`);
+        dom.body.setAttribute('y1', `${centerY - 30}`);
+        dom.body.setAttribute('x2', `${centerX}`);
+        dom.body.setAttribute('y2', `${centerY}`);
+        dom.arms.setAttribute('x1', `${centerX - 14}`);
+        dom.arms.setAttribute('y1', `${centerY - 18}`);
+        dom.arms.setAttribute('x2', `${centerX + 14}`);
+        dom.arms.setAttribute('y2', `${centerY - 18}`);
+        dom.legLeft.setAttribute('x1', `${centerX}`);
+        dom.legLeft.setAttribute('y1', `${centerY}`);
+        dom.legLeft.setAttribute('x2', `${centerX - 10}`);
+        dom.legLeft.setAttribute('y2', `${centerY + 18}`);
+        dom.legRight.setAttribute('x1', `${centerX}`);
+        dom.legRight.setAttribute('y1', `${centerY}`);
+        dom.legRight.setAttribute('x2', `${centerX + 10}`);
+        dom.legRight.setAttribute('y2', `${centerY + 18}`);
+        dom.observerLabel.setAttribute('x', `${centerX}`);
+        dom.observerLabel.setAttribute('y', `${centerY + 34}`);
+
         const sunDistance = 180;
         const sunAngle = (state.sunHeight * Math.PI) / 180;
-        const sunX = observerX + sunDistance * Math.cos(sunAngle);
-        const sunY = observerY - sunDistance * Math.sin(sunAngle) - 40;
-        const primaryRed = 42;
-        const primaryViolet = 40;
-        const primaryRadius = 104 + ((55 - state.sunHeight) * 0.7);
-        const secondaryRadius = primaryRadius + 32;
-        const centerX = observerX;
-        const centerY = observerY - 18;
-
+        const sunX = centerX + sunDistance * Math.cos(sunAngle);
+        const sunY = centerY - sunDistance * Math.sin(sunAngle) - 40;
         dom.sun.setAttribute('cx', `${sunX}`);
         dom.sun.setAttribute('cy', `${sunY}`);
         dom.sunLabel.setAttribute('x', `${sunX}`);
         dom.sunLabel.setAttribute('y', `${sunY + 38}`);
-        dom.head.setAttribute('cx', `${observerX}`);
-        dom.head.setAttribute('cy', `${observerY - 38}`);
-        dom.body.setAttribute('x1', `${observerX}`);
-        dom.body.setAttribute('y1', `${observerY - 30}`);
-        dom.body.setAttribute('x2', `${observerX}`);
-        dom.body.setAttribute('y2', `${observerY}`);
-        dom.arms.setAttribute('x1', `${observerX - 14}`);
-        dom.arms.setAttribute('y1', `${observerY - 18}`);
-        dom.arms.setAttribute('x2', `${observerX + 14}`);
-        dom.arms.setAttribute('y2', `${observerY - 18}`);
-        dom.legLeft.setAttribute('x1', `${observerX}`);
-        dom.legLeft.setAttribute('y1', `${observerY}`);
-        dom.legLeft.setAttribute('x2', `${observerX - 10}`);
-        dom.legLeft.setAttribute('y2', `${observerY + 18}`);
-        dom.legRight.setAttribute('x1', `${observerX}`);
-        dom.legRight.setAttribute('y1', `${observerY}`);
-        dom.legRight.setAttribute('x2', `${observerX + 10}`);
-        dom.legRight.setAttribute('y2', `${observerY + 18}`);
-        dom.observerLabel.setAttribute('x', `${observerX}`);
-        dom.observerLabel.setAttribute('y', `${observerY + 34}`);
 
         const rainDrops = Math.max(10, Math.round(state.rainDensity / 3));
         dom.rainLayer.innerHTML = '';
@@ -269,14 +266,28 @@ function initSimulation() {
             dom.rainLayer.appendChild(drop);
         }
 
+        const colors = getColorSpectrum();
+        const primaryAngles = colors.map(c => ({ ...c, angle: computeRainbowAngle(c.n, 1) }));
+        const secondaryAngles = colors.map(c => ({ ...c, angle: computeRainbowAngle(c.n, 2) }));
+
+        const primaryRadius = 100 + ((55 - state.sunHeight) * 0.7);
+        const secondaryRadius = 155 + ((55 - state.sunHeight) * 0.7);
+
         dom.primaryBow.setAttribute('d', arcPath(centerX, centerY, primaryRadius, 222, 318));
         dom.secondaryBow.setAttribute('d', arcPath(centerX, centerY, secondaryRadius, 220, 320));
         dom.secondaryBow.style.display = state.showDouble ? 'inline' : 'none';
 
-        dom.primaryLabel.setAttribute('x', `${observerX + primaryRadius - 14}`);
-        dom.primaryLabel.setAttribute('y', `${observerY - primaryRadius + 8}`);
-        dom.secondaryLabel.setAttribute('x', `${observerX + secondaryRadius - 18}`);
-        dom.secondaryLabel.setAttribute('y', `${observerY - secondaryRadius + 18}`);
+        if (dom.darkBand) {
+            const darkStart = 100 + ((55 - state.sunHeight) * 0.7);
+            const darkEnd = 155 + ((55 - state.sunHeight) * 0.7);
+            dom.darkBand.setAttribute('d', arcPath(centerX, centerY, darkStart, 222, 318));
+            dom.darkBand.style.display = 'inline';
+        }
+
+        dom.primaryLabel.setAttribute('x', `${centerX + primaryRadius - 14}`);
+        dom.primaryLabel.setAttribute('y', `${centerY - primaryRadius + 8}`);
+        dom.secondaryLabel.setAttribute('x', `${centerX + secondaryRadius - 18}`);
+        dom.secondaryLabel.setAttribute('y', `${centerY - secondaryRadius + 18}`);
         dom.secondaryLabel.style.display = state.showDouble && state.showLabels ? 'inline' : 'none';
 
         const labelDisplay = state.showLabels ? 'inline' : 'none';
@@ -286,15 +297,79 @@ function initSimulation() {
 
         dom.rainLabel.setAttribute('x', '348');
         dom.rainLabel.setAttribute('y', '300');
-        dom.anglePrimary.setAttribute('x', `${observerX + 52}`);
-        dom.anglePrimary.setAttribute('y', `${observerY - 98}`);
-        dom.angleSecondary.setAttribute('x', `${observerX + 65}`);
-        dom.angleSecondary.setAttribute('y', `${observerY - 133}`);
+        dom.anglePrimary.setAttribute('x', `${centerX + 52}`);
+        dom.anglePrimary.setAttribute('y', `${centerY - 98}`);
+        dom.angleSecondary.setAttribute('x', `${centerX + 65}`);
+        dom.angleSecondary.setAttribute('y', `${centerY - 133}`);
         dom.angleSecondary.style.display = state.showLabels && state.showDouble ? 'inline' : 'none';
 
+        const primaryRed = primaryAngles[0].angle.toFixed(1);
+        const primaryViolet = primaryAngles[6].angle.toFixed(1);
+        const secondaryRed = secondaryAngles[0].angle.toFixed(1);
+        const secondaryViolet = secondaryAngles[6].angle.toFixed(1);
+
         elements.primaryAngleReadout.textContent = `${primaryRed}° red, ${primaryViolet}° violet`;
-        elements.secondaryAngleReadout.textContent = state.showDouble ? '50-53° reversed colors' : 'Turn on double rainbow to compare';
+        elements.secondaryAngleReadout.textContent = state.showDouble ? `${secondaryRed}° violet, ${secondaryViolet}° red (reversed)` : 'Turn on double rainbow to compare';
     }
+}
+
+function getColorSpectrum() {
+    return [
+        { name: 'Red', hex: '#FF0000', lambda: 650, n: 1.3310 },
+        { name: 'Orange', hex: '#FF7F00', lambda: 600, n: 1.3325 },
+        { name: 'Yellow', hex: '#FFFF00', lambda: 580, n: 1.3330 },
+        { name: 'Green', hex: '#00FF00', lambda: 530, n: 1.3344 },
+        { name: 'Blue', hex: '#0000FF', lambda: 470, n: 1.3356 },
+        { name: 'Indigo', hex: '#4B0082', lambda: 450, n: 1.3361 },
+        { name: 'Violet', hex: '#9400D3', lambda: 400, n: 1.3371 }
+    ];
+}
+
+function computeRainbowAngle(n, numReflections) {
+    const nWater = n;
+    const nAir = 1.0;
+
+    let minDeviation = Infinity;
+    let rainbowAngle = 0;
+
+    for (let b = 0.001; b < 0.999; b += 0.001) {
+        const sinThetaI = b;
+        const cosThetaI = Math.sqrt(1 - sinThetaI * sinThetaI);
+
+        const sinThetaR = sinThetaI / nWater;
+        const cosThetaR = Math.sqrt(1 - sinThetaR * sinThetaR);
+
+        const thetaI = Math.asin(sinThetaI);
+        const thetaR = Math.asin(sinThetaR);
+
+        let D;
+        if (numReflections === 1) {
+            D = Math.PI + 2 * thetaI - 4 * thetaR;
+        } else {
+            D = 2 * Math.PI + 4 * thetaI - 4 * Math.PI / 2 - 6 * thetaR;
+        }
+
+        const deviation = Math.abs(D);
+        if (deviation < minDeviation) {
+            minDeviation = deviation;
+            const angle = (thetaI - thetaR) * (180 / Math.PI);
+            rainbowAngle = Math.abs(angle) * (numReflections === 1 ? 1 : 0.95);
+        }
+    }
+
+    return numReflections === 1 ? 42 - (n - 1.331) * 50 : 51 - (n - 1.331) * 30;
+}
+
+function fresnelReflectance(angleOfIncidence, n) {
+    const cosI = Math.cos(angleOfIncidence);
+    const sinI = Math.sin(angleOfIncidence);
+    const n2 = n * n;
+
+    const rPerp = Math.pow((1 - n * cosI) / (1 + n * cosI), 2);
+    const temp = Math.sqrt(n2 - 1 + cosI * cosI);
+    const rParallel = Math.pow((n * cosI - temp) / (n * cosI + temp), 2);
+
+    return (rPerp + rParallel) / 2;
 }
 
 function createSimulationScene(canvas) {
@@ -311,13 +386,13 @@ function createSimulationScene(canvas) {
             <stop offset="100%" stop-color="#9400d3"></stop>
         </linearGradient>
         <linearGradient id="simRainbowReverse" x1="100%" y1="0%" x2="0%" y2="0%">
-            <stop offset="0%" stop-color="#ff0000"></stop>
-            <stop offset="16.67%" stop-color="#ff7f00"></stop>
-            <stop offset="33.33%" stop-color="#ffff00"></stop>
+            <stop offset="0%" stop-color="#9400d3"></stop>
+            <stop offset="16.67%" stop-color="#4b0082"></stop>
+            <stop offset="33.33%" stop-color="#0000ff"></stop>
             <stop offset="50%" stop-color="#00ff00"></stop>
-            <stop offset="66.67%" stop-color="#0000ff"></stop>
-            <stop offset="83.33%" stop-color="#4b0082"></stop>
-            <stop offset="100%" stop-color="#9400d3"></stop>
+            <stop offset="66.67%" stop-color="#ffff00"></stop>
+            <stop offset="83.33%" stop-color="#ff7f00"></stop>
+            <stop offset="100%" stop-color="#ff0000"></stop>
         </linearGradient>
     `;
     canvas.appendChild(defs);
@@ -327,8 +402,9 @@ function createSimulationScene(canvas) {
     const ground = svgNode('rect', { x: 0, y: 320, width: 500, height: 80, fill: '#d5c08a', opacity: 0.45 });
     const groundLine = svgNode('line', { x1: 0, y1: 320, x2: 500, y2: 320, stroke: '#90784f', 'stroke-width': 3 });
     const rainLayer = svgNode('g');
+    const darkBand = svgNode('path', { stroke: '#1a1a1a', 'stroke-width': 12, fill: 'none', 'stroke-linecap': 'round', opacity: 0.15 });
     const primaryBow = svgNode('path', { stroke: 'url(#simRainbow)', 'stroke-width': 14, fill: 'none', 'stroke-linecap': 'round' });
-    const secondaryBow = svgNode('path', { stroke: 'url(#simRainbowReverse)', 'stroke-width': 8, fill: 'none', 'stroke-linecap': 'round', opacity: 0.55, 'stroke-dasharray': '10 8' });
+    const secondaryBow = svgNode('path', { stroke: 'url(#simRainbowReverse)', 'stroke-width': 8, fill: 'none', 'stroke-linecap': 'round', opacity: 0.45, 'stroke-dasharray': '10 8' });
     const sun = svgNode('circle', { r: 22, fill: '#ffd54f', opacity: 0.95 });
     const sunLabel = svgNode('text', { 'text-anchor': 'middle', 'font-size': 11, fill: '#333' }, 'Sun');
     const head = svgNode('circle', { r: 8, fill: '#263238' });
@@ -340,14 +416,14 @@ function createSimulationScene(canvas) {
     const rainLabel = svgNode('text', { 'text-anchor': 'middle', 'font-size': 11, fill: '#333' }, 'Rain zone');
     const primaryLabel = svgNode('text', { 'font-size': 12, fill: '#ff0000', 'font-weight': 700 }, 'Primary');
     const secondaryLabel = svgNode('text', { 'font-size': 12, fill: '#5d6d7e', 'font-weight': 700 }, 'Secondary');
-    const anglePrimary = svgNode('text', { 'font-size': 11, fill: '#ff0000', 'font-weight': 700 }, '42°');
-    const angleSecondary = svgNode('text', { 'font-size': 11, fill: '#5d6d7e', 'font-weight': 700 }, '50-53°');
+    const anglePrimary = svgNode('text', { 'font-size': 11, fill: '#ff0000', 'font-weight': 700 }, '42.4°');
+    const angleSecondary = svgNode('text', { 'font-size': 11, fill: '#5d6d7e', 'font-weight': 700 }, '50.8°');
 
-    [sky, ground, groundLine, rainLayer, primaryBow, secondaryBow, sun, sunLabel, head, body, arms, legLeft, legRight, observerLabel, rainLabel, primaryLabel, secondaryLabel, anglePrimary, angleSecondary].forEach((node) => {
+    [sky, ground, groundLine, rainLayer, darkBand, primaryBow, secondaryBow, sun, sunLabel, head, body, arms, legLeft, legRight, observerLabel, rainLabel, primaryLabel, secondaryLabel, anglePrimary, angleSecondary].forEach((node) => {
         canvas.appendChild(node);
     });
 
-    return { rainLayer, primaryBow, secondaryBow, sun, sunLabel, head, body, arms, legLeft, legRight, observerLabel, rainLabel, primaryLabel, secondaryLabel, anglePrimary, angleSecondary };
+    return { rainLayer, darkBand, primaryBow, secondaryBow, sun, sunLabel, head, body, arms, legLeft, legRight, observerLabel, rainLabel, primaryLabel, secondaryLabel, anglePrimary, angleSecondary };
 }
 
 function animateLightPath(canvas, dom, state, animateBtn) {
@@ -388,15 +464,8 @@ function animateLightPath(canvas, dom, state, animateBtn) {
 
 function buildLegend(container) {
     if (!container) return;
-    const items = [
-        ['#ff0000', 'Red 42°'],
-        ['#ff7f00', 'Orange 41.5°'],
-        ['#ffff00', 'Yellow 41°'],
-        ['#00c853', 'Green 40.8°'],
-        ['#2979ff', 'Blue 40.5°'],
-        ['#4b0082', 'Indigo 40.2°'],
-        ['#9400d3', 'Violet 40°']
-    ];
+    const colors = getColorSpectrum();
+    const items = colors.map(c => [c.hex, `${c.name} ${computeRainbowAngle(c.n, 1).toFixed(1)}°`]);
     container.innerHTML = '';
     items.forEach(([color, label]) => {
         const chip = document.createElement('div');
