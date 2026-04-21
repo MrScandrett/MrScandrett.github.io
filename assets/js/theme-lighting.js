@@ -5,6 +5,7 @@
   var VALID_THEMES = ["day", "night", "sakura", "diamond", "emerald", "topaz", "vaporwave"];
   var currentTheme = null;
   var CHANGE_EVENT = "classroomos:lightingchange";
+  var isApplyingTheme = false;
 
   function isThemeIndependent() {
     var htmlScope = document.documentElement && document.documentElement.dataset.themeScope;
@@ -80,6 +81,7 @@
   }
 
   function applyTheme(theme) {
+    isApplyingTheme = true;
     if (isThemeIndependent()) {
       document.documentElement.removeAttribute("data-theme");
       document.documentElement.removeAttribute("data-theme-mode");
@@ -95,10 +97,14 @@
         document.body.removeAttribute("data-lighting-mode");
       }
       currentTheme = null;
+      isApplyingTheme = false;
       return theme;
     }
 
-    if (!document.body) return theme;
+    if (!document.body) {
+      isApplyingTheme = false;
+      return theme;
+    }
 
     var lighting = getLightingForTheme(theme);
     var mode = getMode();
@@ -118,7 +124,42 @@
 
     currentTheme = theme;
     emitChange(theme);
+    isApplyingTheme = false;
     return theme;
+  }
+
+  function mirrorHtmlThemeAttributes() {
+    if (isApplyingTheme || !document.body || isThemeIndependent()) return;
+
+    var html = document.documentElement;
+    var theme = html.dataset.theme;
+    var lighting = html.dataset.lighting;
+
+    if (!theme && lighting) {
+      theme = lighting === "night" ? "night" : "day";
+    }
+
+    if (!theme) return;
+
+    theme = normalizeTheme(theme);
+    lighting = getLightingForTheme(theme);
+
+    var mode = html.dataset.themeMode || getMode();
+
+    if (html.dataset.theme !== theme) html.dataset.theme = theme;
+    if (html.dataset.lighting !== lighting) html.dataset.lighting = lighting;
+    if (html.getAttribute("data-site-theme") !== theme) html.setAttribute("data-site-theme", theme);
+    if (html.getAttribute("data-site-theme-mode") !== mode) html.setAttribute("data-site-theme-mode", mode);
+    if (html.style.colorScheme !== (lighting === "night" ? "dark" : "light")) {
+      html.style.colorScheme = lighting === "night" ? "dark" : "light";
+    }
+
+    if (document.body.dataset.theme !== theme) document.body.dataset.theme = theme;
+    if (document.body.dataset.lighting !== lighting) document.body.dataset.lighting = lighting;
+    if (document.body.dataset.themeMode !== mode) document.body.dataset.themeMode = mode;
+    if (document.body.dataset.lightingMode !== mode) document.body.dataset.lightingMode = mode;
+
+    currentTheme = theme;
   }
 
   function sync() {
@@ -171,6 +212,13 @@
   } else {
     sync();
     highlightBrandOS();
+  }
+
+  if (typeof MutationObserver === "function") {
+    new MutationObserver(mirrorHtmlThemeAttributes).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme", "data-lighting"]
+    });
   }
 
   window.addEventListener("storage", function (event) {

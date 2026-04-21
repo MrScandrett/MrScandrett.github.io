@@ -7,8 +7,8 @@
   <meta name="description" content="Launch classroom apps like Scratch, Tinkercad, Clever, and Code.org." />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <script src="assets/js/theme-lighting.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7/dist/fuse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/fuse.js@7/dist/fuse.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     :root {
       /* Galaxy Color System (from Google AI Studio integration) */
@@ -26,8 +26,11 @@
       /* Galaxy Panel Colors */
       --panel-bg: rgba(10, 20, 35, 0.66);
       --panel-border: rgba(148, 183, 255, 0.12);
-      --text-main: #f5f9ff;
-      --text-muted: rgba(196, 214, 243, 0.84);
+      --app-text-main: var(--text-strong, #f5f9ff);
+      --app-text-body: var(--text-body, #f5f9ff);
+      --app-text-muted: var(--text-muted, rgba(196, 214, 243, 0.84));
+      --text-main: var(--app-text-main);
+      --text-muted: var(--app-text-muted);
       --applications-sticky-stack: 116px;
     }
 
@@ -49,10 +52,10 @@
       flex-wrap: wrap;
       gap: 0.5rem;
       padding: 0.85rem 1.5rem;
-      background: rgba(255, 255, 255, 0.72);
+      background: color-mix(in srgb, var(--surface-1) 82%, transparent);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(25, 49, 77, 0.1);
+      border-bottom: 1px solid var(--border-subtle);
       position: sticky;
       top: 56px;
       z-index: 20;
@@ -64,9 +67,9 @@
       gap: 0.45rem;
       padding: 0.55rem 1.2rem;
       border-radius: 20px;
-      border: 1px solid rgba(25, 49, 77, 0.14);
-      background: rgba(255, 255, 255, 0.82);
-      color: #19314d;
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-1);
+      color: var(--text-body);
       font: inherit;
       font-size: 0.9rem;
       font-weight: 600;
@@ -77,15 +80,15 @@
     .app-tab:hover {
       transform: translateY(-1px);
       box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
-      border-color: rgba(25, 49, 77, 0.22);
+      border-color: var(--border-strong);
     }
 
     .app-tab[aria-selected="true"],
     .app-tab.is-active {
-      background: linear-gradient(180deg, rgba(0, 113, 227, 0.16), rgba(0, 113, 227, 0.08));
-      border-color: rgba(0, 113, 227, 0.4);
+      background: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
+      border-color: var(--accent);
       box-shadow: 0 10px 24px rgba(0, 113, 227, 0.14);
-      color: #003d82;
+      color: var(--text-strong);
     }
 
     .app-tab-icon { font-size: 1rem; }
@@ -96,9 +99,9 @@
       gap: 0.55rem;
       padding: 0.55rem 0.9rem;
       border-radius: 999px;
-      border: 1px solid rgba(25, 49, 77, 0.14);
-      background: rgba(9, 24, 43, 0.92);
-      color: #eef6ff;
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-3);
+      color: var(--text-body);
       font: inherit;
       font-size: 0.88rem;
       font-weight: 700;
@@ -110,7 +113,7 @@
     .app-command-trigger:hover,
     .app-command-trigger:focus-visible {
       transform: translateY(-1px);
-      background: rgba(12, 31, 56, 0.96);
+      background: var(--surface-2);
       box-shadow: 0 16px 34px rgba(5, 12, 24, 0.24);
     }
 
@@ -128,7 +131,7 @@
       color: rgba(238, 246, 255, 0.82);
       font-size: 0.76rem;
       font-weight: 700;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: var(--font-mono);
     }
 
     .app-command-backdrop {
@@ -2129,18 +2132,25 @@
     }
 
     .ai-modal-btn-secondary {
-      background: rgba(25, 49, 77, 0.07);
-      color: #19314d;
-      border: 1px solid rgba(25, 49, 77, 0.14);
+      background: var(--surface-2);
+      color: var(--text-body);
+      border: 1px solid var(--border-subtle);
     }
 
     .ai-modal-btn-secondary:hover {
-      background: rgba(25, 49, 77, 0.12);
+      background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+    }
+
+    .ai-pledge-note {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin: 1.5rem 0 0 0;
+      line-height: 1.6;
     }
 
     .ai-awareness-progress {
       font-size: 0.85rem;
-      color: #999;
+      color: var(--text-muted);
       margin-top: 1rem;
       text-align: center;
     }
@@ -2190,7 +2200,7 @@
         </div>
       </div>
 
-      <p style="font-size: 0.9rem; color: #666; margin: 1.5rem 0 0 0; line-height: 1.6;">
+      <p class="ai-pledge-note">
         <strong>This is serious.</strong> AI technology has real environmental consequences. Your actions matter. By using these tools thoughtfully, you're making a choice to minimize waste and respect the planet. Now that you've read this, make sure you actually understand and believe these pledges before clicking access.
       </p>
 
