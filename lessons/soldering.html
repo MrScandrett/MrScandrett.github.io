@@ -1,0 +1,952 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Soldering · Mr. Scandrett's ClassroomOS</title>
+  <meta
+    name="description"
+    content="Engineering lesson on soldering — how to solder correctly, why soldering is used in electronics, common soldering tools, safety, and alternatives like breadboards and wire connectors."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .sm-page {
+      width: min(100%, 1180px);
+      margin: 0 auto;
+      padding: 1rem clamp(1rem, 3vw, 1.6rem) 1.5rem;
+    }
+    .ll-viewport { --ll-panel-w: 310px; }
+
+    .sm-hero {
+      position: relative;
+      overflow: hidden;
+      margin: 0 0 1rem;
+      padding: clamp(1.1rem, 3vw, 1.7rem);
+      border: 1px solid color-mix(in srgb, var(--line, #d2d2d7) 80%, transparent);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(255,149,0,0.18), transparent 34%),
+        linear-gradient(135deg, rgba(255,255,255,0.94), rgba(255,248,235,0.88));
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      text-align: left;
+    }
+    .sm-hero-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(250px, 0.85fr);
+      gap: clamp(1rem, 3vw, 1.6rem);
+      align-items: center;
+    }
+    .sm-hero-copy { min-width: 0; }
+    .sm-hero h1 {
+      max-width: 18ch;
+      margin-left: 0;
+      margin-right: 0;
+      font-size: clamp(1.7rem, 4vw, 2.55rem);
+    }
+    .sm-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.55rem;
+      margin: 0.55rem 0 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+    }
+    .sm-hero-meta .dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: currentColor;
+      align-self: center;
+    }
+    .sm-lede {
+      max-width: 72ch;
+      margin: 0 0 0.95rem;
+      color: #415266;
+      font-size: 0.97rem;
+      line-height: 1.68;
+    }
+    .sm-back-link {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent, #007aff);
+      text-decoration: none;
+    }
+    .sm-back-link:hover { text-decoration: underline; }
+    .sm-feature-panel {
+      border: 1px solid color-mix(in srgb, var(--line, #d2d2d7) 78%, transparent);
+      border-radius: 16px;
+      background:
+        linear-gradient(135deg, rgba(255,149,0,0.14), transparent 36%),
+        rgba(255,255,255,0.82);
+      padding: 0.9rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
+    }
+    .sm-feature-panel img {
+      display: block;
+      width: 100%;
+      height: clamp(150px, 24vw, 220px);
+      object-fit: contain;
+      border-radius: 12px;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,149,0,0.18), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,235,0.92));
+      padding: 0.85rem;
+    }
+    .sm-feature-kicker {
+      margin: 0.7rem 0 0.35rem;
+      color: #64748b;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .sm-feature-panel strong {
+      display: block;
+      color: var(--text, #1d1d1f);
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+    .sm-feature-panel small {
+      display: block;
+      margin-top: 0.25rem;
+      color: #415266;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+    .sm-signal-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.45rem;
+      margin-top: 0.75rem;
+    }
+    .sm-signal-strip span {
+      min-width: 0;
+      border: 1px solid rgba(255,149,0,0.22);
+      border-radius: 10px;
+      background: rgba(255,149,0,0.08);
+      color: #7a4500;
+      padding: 0.45rem 0.5rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .sm-card,
+    .sm-quiz {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--sm-accent, #007aff);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.35rem 1.55rem;
+      margin-bottom: 1rem;
+    }
+    .sm-quiz { border-left-color: #ff375f; }
+    .sm-card h2,
+    .sm-quiz h2 {
+      margin: 0 0 0.55rem;
+      font-size: clamp(1.08rem, 2vw, 1.28rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .sm-card h3 {
+      margin: 0.95rem 0 0.35rem;
+      font-size: 0.98rem;
+    }
+    .sm-card p,
+    .sm-quiz p {
+      margin: 0 0 0.7rem;
+      color: #415266;
+      font-size: 0.9rem;
+      line-height: 1.66;
+    }
+    [data-theme="night"] .sm-card p,
+    [data-theme="night"] .sm-quiz p,
+    [data-theme="night"] .sm-lede {
+      color: rgba(245,245,247,0.74);
+    }
+
+    .sm-callout {
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      margin: 0.8rem 0;
+      font-size: 0.84rem;
+      line-height: 1.62;
+    }
+    .sm-callout strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+    }
+    .sm-callout.warn {
+      background: rgba(255,149,0,0.12);
+      border-left: 3px solid #ff9500;
+    }
+    .sm-callout.info {
+      background: rgba(0,122,255,0.08);
+      border-left: 3px solid #007aff;
+    }
+    .sm-callout.danger {
+      background: rgba(255,59,48,0.10);
+      border-left: 3px solid #ff3b30;
+    }
+
+    .sm-overview-grid,
+    .sm-category-grid,
+    .sm-project-grid,
+    .sm-trouble-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.85rem;
+    }
+    .sm-overview-card,
+    .sm-category-card,
+    .sm-project-card,
+    .sm-trouble-card {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      padding: 0.95rem 1rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,247,250,0.94));
+    }
+    .sm-overview-card strong,
+    .sm-project-card strong,
+    .sm-trouble-card strong {
+      display: block;
+      margin-bottom: 0.24rem;
+      font-size: 0.9rem;
+    }
+    .sm-overview-card small,
+    .sm-project-card small,
+    .sm-trouble-card small {
+      display: block;
+      color: #64748b;
+      font-size: 0.8rem;
+      line-height: 1.56;
+    }
+    .sm-category-card h3 {
+      margin: 0 0 0.2rem;
+      font-size: 0.98rem;
+    }
+    .sm-tool-thumb {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      margin: 0.55rem 0 0.7rem;
+      overflow: hidden;
+      border: 1px solid rgba(255,149,0,0.18);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,235,0.92));
+    }
+    .sm-tool-thumb img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      padding: 0.45rem;
+    }
+    .sm-process-figure {
+      margin: 0.95rem 0 1rem;
+      overflow: hidden;
+      border: 1px solid rgba(255,149,0,0.18);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,235,0.92));
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+    }
+    .sm-process-figure img {
+      display: block;
+      width: 100%;
+      max-height: 360px;
+      object-fit: contain;
+      object-position: center;
+      padding: 0.75rem;
+    }
+    .sm-process-figure figcaption {
+      margin: 0;
+      padding: 0.72rem 0.9rem;
+      border-top: 1px solid rgba(255,149,0,0.16);
+      color: #64748b;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+    .sm-category-count {
+      display: inline-block;
+      margin-bottom: 0.6rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(0,122,255,0.1);
+      color: #007aff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .sm-list {
+      margin: 0;
+      padding-left: 1rem;
+      color: #415266;
+      font-size: 0.83rem;
+      line-height: 1.58;
+    }
+    .sm-list li + li { margin-top: 0.28rem; }
+
+    .sm-steps {
+      margin: 0.85rem 0 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: step-counter;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .sm-steps li {
+      counter-increment: step-counter;
+      display: grid;
+      grid-template-columns: 2rem 1fr;
+      gap: 0.6rem;
+      align-items: start;
+      font-size: 0.88rem;
+      color: #415266;
+      line-height: 1.58;
+    }
+    .sm-steps li::before {
+      content: counter(step-counter);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      background: rgba(255,149,0,0.14);
+      color: #c46200;
+      font-size: 0.76rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .sm-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.8rem;
+      font-size: 0.84rem;
+    }
+    .sm-table th,
+    .sm-table td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.62rem 0.65rem;
+      border-bottom: 1px solid var(--line, #d2d2d7);
+    }
+    .sm-table th {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+    }
+    .sm-table tr:last-child td { border-bottom: none; }
+
+    .sm-question { margin-bottom: 1.1rem; }
+    .sm-question:last-child { margin-bottom: 0; }
+    .sm-question p {
+      margin: 0 0 0.5rem;
+      font-size: 0.91rem;
+      font-weight: 700;
+    }
+    .sm-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .sm-option {
+      padding: 0.48rem 0.75rem;
+      border-radius: 9px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+      font: inherit;
+      font-size: 0.86rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .sm-option:hover:not(:disabled) { border-color: #007aff; }
+    .sm-option.is-correct {
+      background: #34c75914;
+      border-color: #34c759;
+      color: #248a3d;
+    }
+    .sm-option.is-wrong {
+      background: #ff3b3014;
+      border-color: #ff3b30;
+      color: #c0392b;
+    }
+    .sm-q-feedback {
+      min-height: 1rem;
+      margin-top: 0.35rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #64748b;
+    }
+    @media (max-width: 820px) {
+      .sm-hero-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="sm-page">
+
+          <!-- Hero -->
+          <section class="hero sm-hero">
+            <div class="sm-hero-layout">
+              <div class="sm-hero-copy">
+                <p class="eyebrow">Engineering · Electronics</p>
+                <h1>Soldering</h1>
+                <div class="sm-hero-meta">
+                  <span>Electronics</span><span class="dot"></span>
+                  <span>Fabrication</span><span class="dot"></span>
+                  <span>Safety</span><span class="dot"></span>
+                  <span>Hands-On</span>
+                </div>
+                <p class="sm-lede">Soldering is the fundamental skill that turns loose wires and components into a circuit that stays together forever. This lesson covers why we solder, how to do it correctly, the tools involved, and the situations where a soldering alternative is a smarter choice.</p>
+                <a class="sm-back-link" href="../steam-lessons.html#module-engineering">&larr; Back to Engineering</a>
+              </div>
+              <aside class="sm-feature-panel" aria-label="Soldering iron tip detail">
+                <img src="../assets/thumbs/solderingiron.jpg" alt="Soldering iron used for electronics work" />
+                <p class="sm-feature-kicker">Core Tool</p>
+                <strong>The Soldering Iron</strong>
+                <small>A temperature-controlled iron melts solder onto a joint, bonding metal surfaces permanently when it cools.</small>
+                <div class="sm-signal-strip" aria-label="Soldering iron parts">
+                  <span>Iron</span>
+                  <span>Solder</span>
+                  <span>Flux</span>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <!-- Why We Solder -->
+          <section class="sm-card" style="--sm-accent:#ff9500;">
+            <h2>Why We Solder</h2>
+            <p>Electronics need reliable electrical connections. Touching two wires together is not enough — movement, vibration, or corrosion will break the contact over time. Soldering permanently bonds conductors using a metal alloy that melts at a low temperature, flows into the joint, and hardens into a mechanically and electrically solid connection.</p>
+
+            <div class="sm-overview-grid">
+              <div class="sm-overview-card">
+                <strong>Permanent bond</strong>
+                <small>Solder creates a metallic bond that resists vibration and mechanical stress far better than tape or twist connections.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Low electrical resistance</strong>
+                <small>A good solder joint conducts electricity almost as well as the wire itself, minimizing voltage drop and heat at the connection.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Industry standard</strong>
+                <small>Every PCB in every phone, computer, and appliance uses soldered joints. Learning to solder is learning how modern electronics are actually made.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Repairability</strong>
+                <small>Unlike glued or crimped joints, soldered connections can be re-melted and reworked with the same iron, making repairs possible.</small>
+              </div>
+            </div>
+          </section>
+
+          <!-- What Is Solder -->
+          <section class="sm-card" style="--sm-accent:#007aff;">
+            <h2>What Is Solder?</h2>
+            <p>Solder is a low-melting-point metal alloy that acts as the glue between two conductors. It melts when heated, wets the metal surfaces, and solidifies into a joint when cooled. Most solder used in electronics today is a tin-silver-copper alloy (lead-free) or the older tin-lead alloy.</p>
+
+            <table class="sm-table" aria-label="Solder types comparison">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Composition</th>
+                  <th>Melting Point</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Tin-Lead (60/40)</td>
+                  <td>60% tin, 40% lead</td>
+                  <td>~183 °C (361 °F)</td>
+                  <td>Easier to work with; restricted in commercial products in many countries due to toxicity</td>
+                </tr>
+                <tr>
+                  <td>Lead-Free (SAC305)</td>
+                  <td>96.5% tin, 3% silver, 0.5% copper</td>
+                  <td>~217 °C (423 °F)</td>
+                  <td>Industry and classroom standard today; requires a slightly hotter iron</td>
+                </tr>
+                <tr>
+                  <td>Rosin-Core</td>
+                  <td>Any alloy with embedded flux</td>
+                  <td>Varies by alloy</td>
+                  <td>Flux is built in to clean and improve wetting — the most common type for beginners</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="sm-callout info">
+              <strong>What Is Flux?</strong>
+              Flux is a chemical cleaning agent inside the solder wire. It removes oxide from metal surfaces so the molten solder can bond properly. Without flux, solder beads up rather than flowing smoothly. The smoke you see when soldering is burning flux — not solder itself.
+            </div>
+          </section>
+
+          <!-- Tools -->
+          <section class="sm-card" style="--sm-accent:#34c759;">
+            <h2>Soldering Tools</h2>
+            <p>A complete soldering setup has more than just an iron. Knowing what each tool does helps students work safely and get better joints.</p>
+
+            <div class="sm-category-grid">
+              <article class="sm-category-card">
+                <span class="sm-category-count">Essential</span>
+                <h3>Soldering Iron</h3>
+                <ul class="sm-list">
+                  <li>Heats the joint — not the solder directly</li>
+                  <li>Temperature-controlled irons are best (300–370 °C for lead-free)</li>
+                  <li>Pencil-style irons are standard for through-hole work</li>
+                  <li>Tips come in different shapes: conical, chisel, bevel</li>
+                </ul>
+              </article>
+
+              <article class="sm-category-card">
+                <span class="sm-category-count">Essential</span>
+                <h3>Solder Wire</h3>
+                <figure class="sm-tool-thumb">
+                  <img src="../assets/thumbs/solderingWIRE.jpg" alt="Spool of solder wire for electronics work" />
+                </figure>
+                <ul class="sm-list">
+                  <li>0.6 mm–0.8 mm diameter is ideal for most school projects</li>
+                  <li>Rosin-core (flux-core) is easiest for beginners</li>
+                  <li>Lead-free SAC305 is the modern classroom standard</li>
+                  <li>Feed solder to the joint, not to the tip</li>
+                </ul>
+              </article>
+
+              <article class="sm-category-card">
+                <span class="sm-category-count">Essential</span>
+                <h3>Tip Cleaner</h3>
+                <figure class="sm-tool-thumb">
+                  <img src="../assets/thumbs/solderingCLEANING.jpg" alt="Soldering iron tip cleaner for removing oxidation" />
+                </figure>
+                <ul class="sm-list">
+                  <li>Brass wire ball — preferred over wet sponge; doesn't cool the tip</li>
+                  <li>Wet cellulose sponge — also works, damp not dripping</li>
+                  <li>Clean the tip before and after every joint</li>
+                  <li>A shiny, silvery tip transfers heat well; a black crusty tip does not</li>
+                </ul>
+              </article>
+
+              <article class="sm-category-card">
+                <span class="sm-category-count">Safety</span>
+                <h3>Fume Extractor</h3>
+                <figure class="sm-tool-thumb">
+                  <img src="../assets/thumbs/solderingFUMEextractor.jpg" alt="Fume extractor for soldering work" />
+                </figure>
+                <ul class="sm-list">
+                  <li>Pulls flux smoke away from the face</li>
+                  <li>Position the intake 2–5 cm from the work</li>
+                  <li>Do not rely on an open window alone in an enclosed room</li>
+                  <li>Always solder in a ventilated area</li>
+                </ul>
+              </article>
+
+              <article class="sm-category-card">
+                <span class="sm-category-count">Helpful</span>
+                <h3>Third Hand / PCB Holder</h3>
+                <figure class="sm-tool-thumb">
+                  <img src="../assets/thumbs/solderingARMS.jpg" alt="Helping hands soldering holder with adjustable arms" />
+                </figure>
+                <ul class="sm-list">
+                  <li>Holds the board still while both hands are occupied</li>
+                  <li>Clips, helping hands, or vises all work</li>
+                  <li>Prevents burns from touching a moving board</li>
+                </ul>
+              </article>
+
+              <article class="sm-category-card">
+                <span class="sm-category-count">Rework</span>
+                <h3>Desoldering Tools</h3>
+                <ul class="sm-list">
+                  <li>Solder wick (braid) — absorbs molten solder by capillary action</li>
+                  <li>Solder sucker (pump) — vacuum pulls solder up after melting</li>
+                  <li>Hot air station — reworks surface-mount components</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <!-- How to Solder -->
+          <section class="sm-card" style="--sm-accent:#af52de;">
+            <h2>How to Solder: Step by Step</h2>
+            <p>Good soldering technique is about heat transfer, not just melting metal. Follow these steps every time for a reliable joint.</p>
+
+            <div class="sm-callout danger">
+              <strong>Safety First</strong>
+              A soldering iron tip runs at 300–400 °C — hot enough to cause a serious burn instantly and to ignite paper or fabric. Never set an iron down without returning it to its stand. Wear safety glasses. Keep hair and loose clothing back. Always assume the iron is hot.
+            </div>
+
+            <figure class="sm-process-figure">
+              <img src="../assets/thumbs/HOWTOSOLDER.jpeg" alt="Step-by-step guide showing how to solder a component lead to a circuit board" />
+              <figcaption>Heat the pad and component lead together, feed solder into the heated joint, then let it cool without moving.</figcaption>
+            </figure>
+
+            <ol class="sm-steps">
+              <li>Tin the iron tip by melting a small amount of fresh solder onto it until it is shiny silver. Wipe on the brass cleaner. A tinned tip transfers heat quickly and evenly.</li>
+              <li>Insert the component lead through the PCB hole. Bend it slightly on the underside so it stays in place when you let go.</li>
+              <li>Touch the tip simultaneously to the component lead and the copper pad for 2–3 seconds to heat both surfaces evenly.</li>
+              <li>Feed rosin-core solder to the joint — not to the iron — until solder flows around the pad and up the lead. Use just enough to fill the joint.</li>
+              <li>Remove the solder wire first, then the iron. Hold the component still for 5–10 seconds while the joint solidifies. Do not blow on it.</li>
+              <li>Inspect: a good joint is shiny (with lead-free solder, slightly matte is normal), volcano-shaped, and surrounds the pad fully. A dull, grainy, or blobby joint is a cold solder joint — re-heat it.</li>
+              <li>Trim the excess lead with flush-cut wire clippers. Clip close to the solder, but not through the joint itself.</li>
+            </ol>
+
+            <div class="sm-callout warn">
+              <strong>Cold Solder Joints</strong>
+              If the iron or pad is not hot enough, solder will not bond — it just sits on top. A cold joint looks lumpy or dull grey and has high resistance. Always reheat cold joints rather than adding more solder on top.
+            </div>
+          </section>
+
+          <!-- Reading a Joint -->
+          <section class="sm-card" style="--sm-accent:#30b0c7;">
+            <h2>Reading a Solder Joint</h2>
+            <p>Learning to judge a joint by appearance is one of the most valuable skills in electronics. A joint tells you whether it will last or fail.</p>
+
+            <table class="sm-table" aria-label="Solder joint quality guide">
+              <thead>
+                <tr>
+                  <th>Appearance</th>
+                  <th>What It Means</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Shiny, volcano-shaped, wets pad and lead</td>
+                  <td>Good joint — solid electrical and mechanical bond</td>
+                  <td>Trim the lead and move on</td>
+                </tr>
+                <tr>
+                  <td>Dull, grainy, or lumpy</td>
+                  <td>Cold solder joint — pad or lead was not hot enough</td>
+                  <td>Reheat for 2–3 s and let it flow; do not add more solder</td>
+                </tr>
+                <tr>
+                  <td>Ball sitting on top, not wetting pad</td>
+                  <td>Solder did not bond — surfaces may be dirty or iron too cool</td>
+                  <td>Clean pad with flux, reheat, and re-solder</td>
+                </tr>
+                <tr>
+                  <td>Bridging between two pads</td>
+                  <td>Solder bridge — short circuit between two connections</td>
+                  <td>Use solder wick or a pump to remove the bridge, then re-solder</td>
+                </tr>
+                <tr>
+                  <td>Too little solder — pin visible inside hole</td>
+                  <td>Insufficient solder — joint may be mechanically weak</td>
+                  <td>Reheat and add a small amount of fresh solder</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- Alternatives -->
+          <section class="sm-card" style="--sm-accent:#5856d6;">
+            <h2>Alternatives to Soldering</h2>
+            <p>Soldering is not always the right choice — especially when you are prototyping, learning, or need to be able to change the circuit later. These alternatives are widely used and valid engineering decisions.</p>
+
+            <div class="sm-overview-grid">
+              <div class="sm-overview-card">
+                <strong>Breadboard</strong>
+                <small>Push-fit prototyping boards that need no tools at all. Components and jumper wires plug in and out instantly. Ideal for testing circuit ideas before committing to a PCB. Not suitable for permanent or portable projects — connections loosen under vibration.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Screw Terminals</strong>
+                <small>A clamping block that grips a stripped wire end when a screw is tightened. Common in power wiring and speaker connections. Completely re-usable and requires only a screwdriver. Not practical for miniature or surface-mount electronics.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Wire Connectors (Dupont / JST)</strong>
+                <small>Crimp-on plastic connectors that click together. Used on hobbyist boards like Arduino to keep connections tidy and detachable. Crimping requires a specific tool but the result is clean, reliable, and swap-able.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Conductive Adhesive / Epoxy</strong>
+                <small>Silver-loaded glue that conducts electricity when cured. Used on flexible PCBs and repairs where heat would damage the substrate. Slower and weaker than solder, but useful when soldering is impossible.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Wire Nuts / Wago Clamps</strong>
+                <small>Household wiring connections that twist or clamp wires together inside a plastic housing. Too large for PCB work but appropriate for mains-voltage or power supply wiring where soldering is restricted by code.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Conductive Thread</strong>
+                <small>Metal-coated thread used in e-textiles and wearables where flexible, washable connections are needed. Can be stitched through fabric and tied rather than soldered. Resistance is much higher than wire.</small>
+              </div>
+            </div>
+
+            <table class="sm-table" aria-label="When to solder vs alternatives">
+              <thead>
+                <tr>
+                  <th>Situation</th>
+                  <th>Best Choice</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Prototyping / testing a circuit idea</td>
+                  <td>Breadboard</td>
+                  <td>Fast, reversible, no heat required</td>
+                </tr>
+                <tr>
+                  <td>Final, permanent PCB build</td>
+                  <td>Soldering</td>
+                  <td>Lowest resistance, most reliable bond</td>
+                </tr>
+                <tr>
+                  <td>Connecting modules with headers</td>
+                  <td>Dupont jumper wires</td>
+                  <td>Easy to swap and rearrange without rework</td>
+                </tr>
+                <tr>
+                  <td>Power wiring inside an enclosure</td>
+                  <td>Screw terminals or Wago clamps</td>
+                  <td>Code-compliant, no torch or iron needed</td>
+                </tr>
+                <tr>
+                  <td>Wearable / e-textile project</td>
+                  <td>Conductive thread or snap connectors</td>
+                  <td>Survives flexing and washing; no hard solder points on fabric</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- Common Mistakes -->
+          <section class="sm-card" style="--sm-accent:#ff3b30;">
+            <h2>Common Beginner Mistakes</h2>
+            <div class="sm-trouble-grid">
+              <div class="sm-trouble-card">
+                <strong>Heating the solder, not the joint</strong>
+                <small>Solder should melt when it touches the hot pad and lead — not when it touches the iron tip. Touching solder to the tip produces a cold joint.</small>
+              </div>
+              <div class="sm-trouble-card">
+                <strong>Moving the joint before it cools</strong>
+                <small>Solder solidifies in 5–10 seconds. Bumping the joint while it is still liquid creates a grainy cold solder joint with higher resistance.</small>
+              </div>
+              <div class="sm-trouble-card">
+                <strong>Using too much solder</strong>
+                <small>Excess solder can bridge adjacent pads and cause short circuits. A thin, smooth layer that covers the pad is enough.</small>
+              </div>
+              <div class="sm-trouble-card">
+                <strong>A dirty or un-tinned tip</strong>
+                <small>A black oxidized tip transfers heat poorly and produces bad joints. Tin the tip at the start and clean it before every joint.</small>
+              </div>
+              <div class="sm-trouble-card">
+                <strong>Skipping ventilation</strong>
+                <small>Flux fumes irritate the respiratory system. Always use a fume extractor or work near open ventilation. Never solder in a sealed room.</small>
+              </div>
+              <div class="sm-trouble-card">
+                <strong>Wrong iron temperature</strong>
+                <small>Too cool and the solder won't flow; too hot and you lift pads off the PCB or burn component leads. 320–350 °C is a good starting range for lead-free solder.</small>
+              </div>
+            </div>
+          </section>
+
+          <!-- Quiz -->
+          <section class="sm-quiz">
+            <h2>Quick Check</h2>
+
+            <div class="sm-question" data-answer="b" data-explanation="The iron heats the joint (the pad and lead together). Solder should then be fed to the joint, not melted on the iron tip, so it flows properly and bonds to both surfaces.">
+              <p>1. Where should you apply solder during a through-hole joint?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">Directly onto the iron tip</button>
+                <button class="sm-option" data-choice="b">To the joint where the pad and lead meet</button>
+                <button class="sm-option" data-choice="c">Onto the component body</button>
+                <button class="sm-option" data-choice="d">Anywhere — it doesn't matter</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="sm-question" data-answer="c" data-explanation="A cold solder joint forms when the pad or lead was not hot enough before solder was applied. It looks dull or lumpy and has higher resistance than a proper joint. The fix is to reheat — not add more solder.">
+              <p>2. What does a cold solder joint look like, and what causes it?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">Shiny and smooth — caused by too much flux</button>
+                <button class="sm-option" data-choice="b">A large ball — caused by using too little solder</button>
+                <button class="sm-option" data-choice="c">Dull and lumpy — caused by insufficient heat at the joint</button>
+                <button class="sm-option" data-choice="d">Bright green — caused by oxidized copper</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="sm-question" data-answer="a" data-explanation="A breadboard uses push-fit connections with no heat or tools required, making it perfect for prototyping circuits that need to be changed or tested quickly. It is not suitable for permanent builds.">
+              <p>3. Which connection method is best when you are testing a circuit idea and expect to change it?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">Breadboard with jumper wires</button>
+                <button class="sm-option" data-choice="b">Soldering to a PCB</button>
+                <button class="sm-option" data-choice="c">Conductive epoxy</button>
+                <button class="sm-option" data-choice="d">Wire nut</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="sm-question" data-answer="d" data-explanation="Flux is a chemical cleaning agent inside rosin-core solder. It burns off oxidation on the metal surfaces so solder can bond properly. Without flux, solder beads up and does not wet the pad or lead.">
+              <p>4. What is the purpose of flux in soldering?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">To lower the melting temperature of the metal</button>
+                <button class="sm-option" data-choice="b">To add color so you can see the joint clearly</button>
+                <button class="sm-option" data-choice="c">To make the joint waterproof after cooling</button>
+                <button class="sm-option" data-choice="d">To remove oxide from metal surfaces so solder bonds properly</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="sm-question" data-answer="b" data-explanation="A solder bridge is a blob of solder connecting two pads or leads that should be separate — creating a short circuit. Use solder wick or a solder sucker to remove the bridge, then inspect again.">
+              <p>5. You notice solder connecting two adjacent pads that should be separate. What is this called, and how do you fix it?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">A cold joint — add more solder to fill the gap</button>
+                <button class="sm-option" data-choice="b">A solder bridge — remove it with solder wick or a solder sucker</button>
+                <button class="sm-option" data-choice="c">A through-hole — this is normal for dual-layer PCBs</button>
+                <button class="sm-option" data-choice="d">A flux residue — clean it with water</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+          </section>
+
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="sm-outline">Outline</button>
+            <button class="ll-tab" aria-selected="false" data-pane="sm-notes">Notes</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="sm-outline">
+            <span class="ll-label">This Module Covers</span>
+            <div class="ll-info">
+              <strong>Why we solder</strong>
+              Permanent, low-resistance electrical connections that survive vibration and time.
+            </div>
+            <div class="ll-info">
+              <strong>Types of solder</strong>
+              Tin-lead vs. lead-free SAC305, and the role of rosin-core flux.
+            </div>
+            <div class="ll-info">
+              <strong>Tools of the trade</strong>
+              Iron, solder wire, tip cleaner, fume extractor, third hand, and desoldering tools.
+            </div>
+            <div class="ll-info">
+              <strong>Step-by-step technique</strong>
+              Heat the joint, feed solder to the joint, let it cool undisturbed, then inspect.
+            </div>
+            <div class="ll-info">
+              <strong>Reading a joint</strong>
+              How to tell a good joint from a cold joint or solder bridge.
+            </div>
+            <div class="ll-info">
+              <strong>Alternatives</strong>
+              Breadboards, screw terminals, crimp connectors, conductive thread, and when to choose each.
+            </div>
+          </div>
+          <div class="ll-pane" id="sm-notes">
+            <div class="ll-info">
+              <strong>Heat the joint, not the solder</strong>
+              Touch the tip to the pad and lead together; feed solder to that junction — never melt solder on the tip.
+            </div>
+            <div class="ll-info">
+              <strong>Tin and clean your tip</strong>
+              A shiny silver tip transfers heat efficiently. A black tip wastes time and produces bad joints.
+            </div>
+            <div class="ll-info">
+              <strong>Cold joints fail</strong>
+              Dull or lumpy — reheat until solder flows smoothly. Do not add more solder on top.
+            </div>
+            <div class="ll-info">
+              <strong>Ventilation is mandatory</strong>
+              Flux fumes are an irritant. Use a fume extractor and work in a ventilated space.
+            </div>
+            <div class="ll-info">
+              <strong>Breadboard first</strong>
+              Prototype on a breadboard, confirm the circuit works, then solder the final build.
+            </div>
+            <div class="ll-info">
+              <strong>Lead-free needs more heat</strong>
+              SAC305 melts at ~217 °C vs ~183 °C for 60/40. Set the iron to 320–350 °C.
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      document.querySelectorAll('.sm-question').forEach(function (question) {
+        const answer = question.dataset.answer;
+        const explanation = question.dataset.explanation;
+        const feedback = question.querySelector('.sm-q-feedback');
+        const options = question.querySelectorAll('.sm-option');
+
+        options.forEach(function (option) {
+          option.addEventListener('click', function () {
+            if (option.disabled) return;
+            options.forEach(function (item) {
+              item.disabled = true;
+              item.classList.remove('is-correct', 'is-wrong');
+              if (item.dataset.choice === answer) item.classList.add('is-correct');
+            });
+            if (option.dataset.choice !== answer) option.classList.add('is-wrong');
+            if (option.dataset.choice === answer) {
+              feedback.textContent = 'Correct. ' + explanation;
+              feedback.style.color = '#248a3d';
+            } else {
+              feedback.textContent = 'Not quite. ' + explanation;
+              feedback.style.color = '#c0392b';
+            }
+          });
+        });
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

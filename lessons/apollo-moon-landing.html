@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How America Got to the Moon · Mr. Scandrett's ClassroomOS</title>
+  <meta
+    name="description"
+    content="The science, math, people, and computers behind the Apollo 11 moon landing — orbital mechanics, trajectory math, Katherine Johnson, and why the Apollo Guidance Computer had less memory than a modern key fob."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .sm-page {
+      width: min(100%, 1180px);
+      margin: 0 auto;
+      padding: 1rem clamp(1rem, 3vw, 1.6rem) 1.5rem;
+    }
+    .ll-viewport { --ll-panel-w: 310px; }
+
+    /* ── Hero ── */
+    .sm-hero {
+      position: relative;
+      overflow: hidden;
+      margin: 0 0 1rem;
+      padding: clamp(1.1rem, 3vw, 1.7rem);
+      border: 1px solid color-mix(in srgb, var(--line, #d2d2d7) 80%, transparent);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 90% 10%, rgba(100,116,255,0.22), transparent 36%),
+        radial-gradient(circle at 10% 90%, rgba(255,204,0,0.14), transparent 36%),
+        linear-gradient(135deg, rgba(8,8,28,0.96), rgba(18,18,60,0.92));
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.22));
+      text-align: left;
+    }
+    .sm-hero h1,
+    .sm-hero .eyebrow { color: #f5f5f7; }
+    .sm-hero-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(250px, 0.85fr);
+      gap: clamp(1rem, 3vw, 1.6rem);
+      align-items: center;
+    }
+    .sm-hero-copy { min-width: 0; }
+    .sm-hero h1 {
+      max-width: 22ch;
+      margin-left: 0;
+      margin-right: 0;
+      font-size: clamp(1.7rem, 4vw, 2.55rem);
+    }
+    .sm-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.55rem;
+      margin: 0.55rem 0 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(245,245,247,0.6);
+    }
+    .sm-hero-meta .dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: currentColor;
+      align-self: center;
+    }
+    .sm-lede {
+      max-width: 72ch;
+      margin: 0 0 0.95rem;
+      color: rgba(245,245,247,0.76);
+      font-size: 0.97rem;
+      line-height: 1.68;
+    }
+    .sm-back-link {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #ffcc00;
+      text-decoration: none;
+    }
+    .sm-back-link:hover { text-decoration: underline; }
+
+    .sm-feature-panel {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(8px);
+      padding: 0.9rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .sm-feature-emoji {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: clamp(150px, 24vw, 220px);
+      border-radius: 12px;
+      background: radial-gradient(circle at 40% 30%, rgba(100,116,255,0.3), transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(255,204,0,0.2), transparent 40%),
+                  rgba(8,8,28,0.8);
+      font-size: 5rem;
+    }
+    .sm-feature-kicker {
+      margin: 0.7rem 0 0.35rem;
+      color: rgba(245,245,247,0.5);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .sm-feature-panel strong {
+      display: block;
+      color: #f5f5f7;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+    .sm-feature-panel small {
+      display: block;
+      margin-top: 0.25rem;
+      color: rgba(245,245,247,0.62);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+    .sm-signal-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.45rem;
+      margin-top: 0.75rem;
+    }
+    .sm-signal-strip span {
+      min-width: 0;
+      border: 1px solid rgba(255,204,0,0.22);
+      border-radius: 10px;
+      background: rgba(255,204,0,0.1);
+      color: #ffcc00;
+      padding: 0.45rem 0.5rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Cards ── */
+    .sm-card,
+    .sm-quiz {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--sm-accent, #007aff);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+      padding: 1.35rem 1.55rem;
+      margin-bottom: 1rem;
+    }
+    .sm-quiz { border-left-color: #ff375f; }
+    .sm-card h2, .sm-quiz h2 {
+      margin: 0 0 0.55rem;
+      font-size: clamp(1.08rem, 2vw, 1.28rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .sm-card h3 { margin: 0.95rem 0 0.35rem; font-size: 0.98rem; }
+    .sm-card p, .sm-quiz p {
+      margin: 0 0 0.7rem;
+      color: #415266;
+      font-size: 0.9rem;
+      line-height: 1.66;
+    }
+    [data-theme="night"] .sm-card p,
+    [data-theme="night"] .sm-quiz p,
+    [data-theme="night"] .sm-lede { color: rgba(245,245,247,0.74); }
+
+    /* ── Callouts ── */
+    .sm-callout {
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      margin: 0.8rem 0;
+      font-size: 0.84rem;
+      line-height: 1.62;
+    }
+    .sm-callout strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+    }
+    .sm-callout.warn  { background: rgba(255,149,0,0.12);  border-left: 3px solid #ff9500; }
+    .sm-callout.info  { background: rgba(0,122,255,0.08);  border-left: 3px solid #007aff; }
+    .sm-callout.gold  { background: rgba(255,204,0,0.12);  border-left: 3px solid #ffcc00; }
+    .sm-callout.space {
+      background: linear-gradient(135deg, rgba(18,18,60,0.06), rgba(100,116,255,0.06));
+      border-left: 3px solid #6474ff;
+    }
+
+    /* ── Grids ── */
+    .sm-overview-grid,
+    .sm-category-grid,
+    .sm-project-grid,
+    .sm-trouble-grid,
+    .sm-people-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.85rem;
+    }
+    .sm-overview-card,
+    .sm-category-card,
+    .sm-project-card,
+    .sm-trouble-card {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      padding: 0.95rem 1rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,247,250,0.94));
+    }
+    .sm-overview-card strong,
+    .sm-project-card strong,
+    .sm-trouble-card strong { display: block; margin-bottom: 0.24rem; font-size: 0.9rem; }
+    .sm-overview-card small,
+    .sm-project-card small,
+    .sm-trouble-card small { display: block; color: #64748b; font-size: 0.8rem; line-height: 1.56; }
+    .sm-card-thumb {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      margin: 0 0 0.65rem;
+      overflow: hidden;
+      border: 1px solid rgba(255,149,0,0.2);
+      border-radius: 12px;
+      background: #101426;
+    }
+    .sm-card-thumb img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+    .sm-rocket-figure {
+      margin: 0.95rem 0 1rem;
+      overflow: hidden;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(8,18,38,0.96), rgba(28,38,58,0.94));
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+    }
+    .sm-rocket-figure img {
+      display: block;
+      width: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      object-position: center;
+      padding: 0.75rem;
+    }
+    .sm-rocket-figure figcaption {
+      margin: 0;
+      padding: 0.72rem 0.9rem;
+      border-top: 1px solid rgba(255,255,255,0.14);
+      color: rgba(245,245,247,0.78);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+    .sm-category-card h3 { margin: 0 0 0.2rem; font-size: 0.98rem; }
+    .sm-category-count {
+      display: inline-block;
+      margin-bottom: 0.6rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(0,122,255,0.1);
+      color: #007aff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ── People cards ── */
+    .sm-person-card {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      padding: 1rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,247,250,0.94));
+    }
+    .sm-person-role {
+      display: inline-block;
+      margin-bottom: 0.45rem;
+      padding: 0.18rem 0.48rem;
+      border-radius: 999px;
+      background: rgba(100,116,255,0.1);
+      color: #3a3fcf;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .sm-person-card strong { display: block; font-size: 0.95rem; margin-bottom: 0.2rem; }
+    .sm-person-card p { margin: 0; color: #415266; font-size: 0.82rem; line-height: 1.55; }
+
+    /* ── Timeline ── */
+    .sm-timeline {
+      margin: 0.85rem 0 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .sm-timeline li {
+      display: grid;
+      grid-template-columns: 5.5rem 1.5rem 1fr;
+      gap: 0 0.6rem;
+      align-items: start;
+      padding-bottom: 1rem;
+      position: relative;
+    }
+    .sm-timeline li:last-child { padding-bottom: 0; }
+    .sm-tl-date {
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #64748b;
+      text-align: right;
+      padding-top: 0.1rem;
+      letter-spacing: 0.02em;
+    }
+    .sm-tl-dot-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .sm-tl-dot {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 50%;
+      background: var(--sm-accent, #6474ff);
+      flex-shrink: 0;
+      margin-top: 0.18rem;
+    }
+    .sm-tl-line {
+      flex: 1;
+      width: 2px;
+      background: color-mix(in srgb, var(--sm-accent, #6474ff) 30%, transparent);
+      margin-top: 0.2rem;
+    }
+    .sm-timeline li:last-child .sm-tl-line { display: none; }
+    .sm-tl-body {
+      display: grid;
+      grid-template-columns: 1fr 130px;
+      grid-template-rows: auto 1fr;
+      column-gap: 0.7rem;
+    }
+    .sm-tl-body strong { grid-column: 1; grid-row: 1; display: block; font-size: 0.88rem; margin-bottom: 0.25rem; }
+    .sm-tl-body small  { grid-column: 1; grid-row: 2; display: block; color: #64748b; font-size: 0.8rem; line-height: 1.52; align-self: start; }
+    .sm-tl-thumb {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      margin: 0;
+      overflow: hidden;
+      border: 1px solid rgba(100,116,255,0.18);
+      border-radius: 10px;
+      background: #101426;
+      align-self: start;
+    }
+    .sm-tl-thumb img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+    }
+
+    /* ── Math block ── */
+    .sm-math-block {
+      margin: 0.75rem 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(8,8,28,0.04), rgba(100,116,255,0.05));
+      border: 1px solid rgba(100,116,255,0.16);
+      padding: 0.9rem 1rem;
+    }
+    .sm-math-label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6474ff;
+    }
+    .sm-math-eq {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1d1d1f;
+      letter-spacing: 0.02em;
+    }
+    .sm-math-desc {
+      display: block;
+      margin-top: 0.4rem;
+      font-size: 0.8rem;
+      color: #415266;
+      line-height: 1.55;
+    }
+
+    /* ── Spec bar ── */
+    .sm-spec-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.6rem;
+      margin-top: 0.85rem;
+    }
+    .sm-spec-item {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 0.75rem 0.85rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,247,250,0.96));
+    }
+    .sm-spec-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 0.2rem;
+    }
+    .sm-spec-value {
+      display: block;
+      font-size: 1.18rem;
+      font-weight: 800;
+      color: var(--text, #1d1d1f);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .sm-spec-sub {
+      display: block;
+      font-size: 0.74rem;
+      color: #64748b;
+      margin-top: 0.15rem;
+      line-height: 1.38;
+    }
+
+    /* ── Comparison table chip ── */
+    .chip {
+      display: inline-block;
+      padding: 0.15rem 0.42rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+    .chip-old { background: rgba(100,116,255,0.12); color: #3a3fcf; }
+    .chip-new { background: rgba(52,199,89,0.12); color: #248a3d; }
+
+    /* ── Lists ── */
+    .sm-list {
+      margin: 0;
+      padding-left: 1rem;
+      color: #415266;
+      font-size: 0.83rem;
+      line-height: 1.58;
+    }
+    .sm-list li + li { margin-top: 0.28rem; }
+
+    /* ── Table ── */
+    .sm-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.8rem;
+      font-size: 0.84rem;
+    }
+    .sm-table th, .sm-table td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.62rem 0.65rem;
+      border-bottom: 1px solid var(--line, #d2d2d7);
+    }
+    .sm-table th {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+    }
+    .sm-table tr:last-child td { border-bottom: none; }
+
+    /* ── Quiz ── */
+    .sm-question { margin-bottom: 1.1rem; }
+    .sm-question:last-child { margin-bottom: 0; }
+    .sm-question p { margin: 0 0 0.5rem; font-size: 0.91rem; font-weight: 700; }
+    .sm-options { display: flex; flex-direction: column; gap: 0.4rem; }
+    .sm-option {
+      padding: 0.48rem 0.75rem;
+      border-radius: 9px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      background: var(--surface, #f5f5f7);
+      color: var(--text, #1d1d1f);
+      font: inherit;
+      font-size: 0.86rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .sm-option:hover:not(:disabled) { border-color: #007aff; }
+    .sm-option.is-correct { background: #34c75914; border-color: #34c759; color: #248a3d; }
+    .sm-option.is-wrong   { background: #ff3b3014; border-color: #ff3b30; color: #c0392b; }
+    .sm-q-feedback { min-height: 1rem; margin-top: 0.35rem; font-size: 0.82rem; font-weight: 700; color: #64748b; }
+
+    @media (max-width: 820px) {
+      .sm-hero-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="sm-page">
+
+          <!-- ── Hero ── -->
+          <section class="hero sm-hero">
+            <div class="sm-hero-layout">
+              <div class="sm-hero-copy">
+                <p class="eyebrow">Science &amp; Engineering · Space History</p>
+                <h1>How America Got to the Moon</h1>
+                <div class="sm-hero-meta">
+                  <span>Apollo 11</span><span class="dot"></span>
+                  <span>Orbital Mechanics</span><span class="dot"></span>
+                  <span>Computing</span><span class="dot"></span>
+                  <span>Human Computers</span>
+                </div>
+                <p class="sm-lede">In July 1969, humans walked on the Moon for the first time — the result of nearly a decade of engineering, physics, mathematics, and the work of hundreds of thousands of people. This lesson covers the mission, the science, the people who did the math by hand, and why the computer on board had less memory than the cheapest toy you own today.</p>
+                <a class="sm-back-link" href="../steam-lessons.html#module-space">&larr; Back to Cosmology &amp; Planetary Science</a>
+              </div>
+              <aside class="sm-feature-panel" aria-label="Apollo 11 mission">
+                <div class="sm-feature-emoji" aria-hidden="true">🌕</div>
+                <p class="sm-feature-kicker">Apollo 11 · July 20, 1969</p>
+                <strong>"The Eagle has landed."</strong>
+                <small>Commander Neil Armstrong's words to Mission Control after touching down in the Sea of Tranquility, 238,855 miles from Earth.</small>
+                <div class="sm-signal-strip" aria-label="Mission legs">
+                  <span>Launch</span>
+                  <span>Transit</span>
+                  <span>Landing</span>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <!-- ── Timeline: The Race to the Moon ── -->
+          <section class="sm-card" style="--sm-accent:#6474ff;">
+            <h2>The Race to the Moon</h2>
+            <p>The Apollo program did not begin in a vacuum. It was born out of Cold War competition, national pride, and a direct challenge from President Kennedy. Here is how a decade of work made July 20, 1969 possible.</p>
+
+            <ul class="sm-timeline">
+              <li>
+                <span class="sm-tl-date">Oct 1957</span>
+                <div class="sm-tl-dot-col"><div class="sm-tl-dot"></div><div class="sm-tl-line"></div></div>
+                <div class="sm-tl-body">
+                  <strong>Sputnik shocks the world</strong>
+                  <figure class="sm-tl-thumb">
+                    <img src="../assets/thumbs/sputnik17.jpg" alt="Sputnik satellite in orbit" />
+                  </figure>
+                  <small>The Soviet Union launches the first artificial satellite. The United States realizes it is behind in the space race and immediately accelerates its own program.</small>
+                </div>
+              </li>
+              <li>
+                <span class="sm-tl-date">Apr 1961</span>
+                <div class="sm-tl-dot-col"><div class="sm-tl-dot"></div><div class="sm-tl-line"></div></div>
+                <div class="sm-tl-body">
+                  <strong>Yuri Gagarin orbits Earth</strong>
+                  <figure class="sm-tl-thumb">
+                    <img src="../assets/thumbs/yurigagarin.jpg" alt="Portrait of Yuri Gagarin" />
+                  </figure>
+                  <small>Soviet cosmonaut Yuri Gagarin becomes the first human in space, orbiting Earth once in 108 minutes. The pressure on NASA intensifies.</small>
+                </div>
+              </li>
+              <li>
+                <span class="sm-tl-date">May 1961</span>
+                <div class="sm-tl-dot-col"><div class="sm-tl-dot"></div><div class="sm-tl-line"></div></div>
+                <div class="sm-tl-body">
+                  <strong>Kennedy's challenge</strong>
+                  <figure class="sm-tl-thumb">
+                    <img src="../assets/thumbs/JFKmoonmission.jpg" alt="President John F. Kennedy speaking about the Moon mission" />
+                  </figure>
+                  <small>President Kennedy addresses Congress: "I believe that this nation should commit itself to achieving the goal, before this decade is out, of landing a man on the Moon and returning him safely to the Earth." NASA now has a deadline.</small>
+                </div>
+              </li>
+              <li>
+                <span class="sm-tl-date">1961–1966</span>
+                <div class="sm-tl-dot-col"><div class="sm-tl-dot"></div><div class="sm-tl-line"></div></div>
+                <div class="sm-tl-body">
+                  <strong>Mercury &amp; Gemini programs</strong>
+                  <figure class="sm-tl-thumb">
+                    <img src="../assets/thumbs/mercurygeminiapollo.jpg" alt="Mercury Gemini and Apollo spacecraft progression" />
+                  </figure>
+                  <small>Mercury puts Americans in orbit. Gemini proves the skills needed for the Moon: spacewalking, orbital rendezvous, and long-duration flight. Each mission is a stepping stone.</small>
+                </div>
+              </li>
+              <li>
+                <span class="sm-tl-date">Jan 1967</span>
+                <div class="sm-tl-dot-col"><div class="sm-tl-dot" style="background:#ff3b30;"></div><div class="sm-tl-line"></div></div>
+                <div class="sm-tl-body">
+                  <strong>Apollo 1 tragedy</strong>
+                  <figure class="sm-tl-thumb">
+                    <img src="../assets/thumbs/apollo1.jpg" alt="Apollo 1 crew portrait" />
+                  </figure>
+                  <small>A cabin fire during a launch rehearsal kills astronauts Gus Grissom, Ed White, and Roger Chaffee. NASA spends 18 months redesigning the spacecraft. The loss makes every subsequent mission possible — the program learns from catastrophe.</small>
+                </div>
+              </li>
+              <li>
+                <span class="sm-tl-date">Dec 1968</span>
+                <div class="sm-tl-dot-col"><div class="sm-tl-dot"></div><div class="sm-tl-line"></div></div>
+                <div class="sm-tl-body">
+                  <strong>Apollo 8: humans reach the Moon</strong>
+                  <figure class="sm-tl-thumb">
+                    <img src="../assets/thumbs/apollo8.jpg" alt="Apollo 8 spacecraft orbiting the Moon" />
+                  </figure>
+                  <small>Frank Borman, Jim Lovell, and Bill Anders become the first humans to orbit the Moon and photograph Earth rising over the lunar horizon. The photo, "Earthrise," becomes one of the most influential images ever taken.</small>
+                </div>
+              </li>
+              <li>
+                <span class="sm-tl-date">Jul 1969</span>
+                <div class="sm-tl-dot-col"><div class="sm-tl-dot" style="background:#ffcc00;"></div><div class="sm-tl-line"></div></div>
+                <div class="sm-tl-body">
+                  <strong>Apollo 11: humans land on the Moon</strong>
+                  <figure class="sm-tl-thumb">
+                    <img src="../assets/thumbs/Apollo11.jpg" alt="Apollo 11 astronaut on the lunar surface" />
+                  </figure>
+                  <small>Neil Armstrong and Buzz Aldrin land on the Sea of Tranquility. Armstrong steps onto the surface at 10:56 PM EDT on July 20. Michael Collins orbits overhead in the Command Module. They collect 47.5 pounds of lunar rock and return safely on July 24.</small>
+                </div>
+              </li>
+            </ul>
+          </section>
+
+          <!-- ── The Mission: How It Actually Worked ── -->
+          <section class="sm-card" style="--sm-accent:#ff9500;">
+            <h2>The Mission: How Apollo 11 Actually Worked</h2>
+            <p>Going to the Moon was not a single flight — it was a carefully choreographed sequence of burns, separations, and rendezvous maneuvers, each one needing to work perfectly or the crew would not come home.</p>
+
+            <figure class="sm-rocket-figure">
+              <img src="../assets/thumbs/saturnV.jpg" alt="Saturn V rocket standing on the launch pad" />
+              <figcaption>Saturn V was the launch vehicle that lifted Apollo 11 from Earth before the spacecraft separated and continued toward the Moon.</figcaption>
+            </figure>
+
+            <div class="sm-overview-grid">
+              <div class="sm-overview-card">
+                <strong>Saturn V rocket</strong>
+                <small>The most powerful rocket ever flown. 363 feet tall, 6.2 million pounds of thrust at liftoff — enough to push 310,000 lb of spacecraft off the ground and out of the atmosphere in about 12 minutes. It burned through 20 tons of fuel per second.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Trans-Lunar Injection (TLI)</strong>
+                <figure class="sm-card-thumb">
+                  <img src="../assets/thumbs/TLI.png" alt="Diagram of Apollo 11 trans-lunar injection trajectory" />
+                </figure>
+                <small>Once in Earth orbit, the third stage engine fired again for about 6 minutes, accelerating the spacecraft to 24,500 mph — enough to escape Earth's gravity well and coast most of the way to the Moon.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Lunar Orbit Insertion (LOI)</strong>
+                <small>After a 3-day coast, the Service Module engine fired in the opposite direction, slowing the spacecraft enough for lunar gravity to capture it into orbit around the Moon.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Powered Descent</strong>
+                <small>The Lunar Module separated and fired its descent engine, slowing from 3,700 mph orbital speed to zero over 12 minutes — threading a narrow corridor that if missed by too little meant crashing, and by too much meant skipping back to space.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Ascent and rendezvous</strong>
+                <small>After 21 hours on the surface, the ascent stage engine fired and had to reach exactly the right orbit to dock with Collins in the Command Module. There was no rescue mission — this had to work.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Reentry</strong>
+                <small>The Command Module hit Earth's atmosphere at 25,000 mph. The heat shield absorbed temperatures of 5,000 °F — hotter than the surface of the Sun. Parachutes slowed the capsule to 20 mph before splashdown in the Pacific Ocean.</small>
+              </div>
+            </div>
+
+            <div class="sm-callout gold">
+              <strong>How Far Is the Moon?</strong>
+              The Moon is an average of 238,855 miles (384,400 km) from Earth. Light takes 1.3 seconds to travel that distance. Apollo 11 took about 76 hours to make the trip — roughly 3 days of coasting through empty space before entering lunar orbit.
+            </div>
+          </section>
+
+          <!-- ── The Physics ── -->
+          <section class="sm-card" style="--sm-accent:#34c759;">
+            <h2>The Physics That Made It Possible</h2>
+            <p>Apollo relied on physics that Isaac Newton worked out in 1687. Every maneuver — from launch to splashdown — was governed by just a few fundamental laws applied to an extraordinary situation.</p>
+
+            <h3>Newton's Laws of Motion</h3>
+            <div class="sm-math-block">
+              <span class="sm-math-label">First Law — Inertia</span>
+              <span class="sm-math-eq">An object in motion stays in motion unless acted on by a force.</span>
+              <span class="sm-math-desc">In space there is no air resistance. Once the spacecraft coasted to the Moon, it kept moving without any engine. The engines only fired to change direction or speed.</span>
+            </div>
+            <div class="sm-math-block">
+              <span class="sm-math-label">Second Law — F = ma</span>
+              <span class="sm-math-eq">Force = Mass × Acceleration</span>
+              <span class="sm-math-desc">Every engine burn had a precise duration calculated from this equation. Engineers knew the engine's thrust (Force) and the spacecraft's mass, so they could calculate exactly how much velocity the burn would add.</span>
+            </div>
+            <div class="sm-math-block">
+              <span class="sm-math-label">Third Law — Action &amp; Reaction</span>
+              <span class="sm-math-eq">For every action there is an equal and opposite reaction.</span>
+              <span class="sm-math-desc">Rocket engines work entirely on this principle — burning exhaust gases push backward, so the rocket accelerates forward. No air is needed. This is why rockets work in the vacuum of space.</span>
+            </div>
+
+            <h3>The Rocket Equation (Tsiolkovsky)</h3>
+            <div class="sm-math-block">
+              <span class="sm-math-label">Tsiolkovsky Rocket Equation</span>
+              <span class="sm-math-eq">Δv = v<sub style="font-size:0.7em;">e</sub> × ln(m<sub style="font-size:0.7em;">0</sub> / m<sub style="font-size:0.7em;">f</sub>)</span>
+              <span class="sm-math-desc">This tells engineers how much velocity change (Δv) a rocket can achieve given its exhaust speed and how much propellant it burns. The brutal truth: most of a rocket's mass is fuel. Saturn V at launch was 85% propellant by weight. The payload that reached the Moon was less than 4% of the original liftoff mass.</span>
+            </div>
+
+            <h3>Orbital Mechanics</h3>
+            <div class="sm-math-block">
+              <span class="sm-math-label">Circular Orbit Speed</span>
+              <span class="sm-math-eq">v = √(GM / r)</span>
+              <span class="sm-math-desc">The speed needed to maintain a circular orbit depends on the planet's mass (M) and the orbit's radius (r). Lower orbits are faster; higher orbits are slower. The Moon orbits Earth at about 2,288 mph — the Lunar Module had to match that speed exactly to dock.</span>
+            </div>
+
+            <div class="sm-callout space">
+              <strong>Why You Aim Ahead of the Moon</strong>
+              The Moon moves about 2,288 mph in its orbit. A direct shot at where the Moon is now would miss — by the time the spacecraft arrived 3 days later, the Moon would be somewhere else entirely. Trajectory planners aimed at where the Moon would be 76 hours in the future. Getting this calculation wrong by a fraction of a degree could miss the Moon by thousands of miles.
+            </div>
+
+            <h3>Key Numbers from Apollo 11</h3>
+            <div class="sm-spec-bar">
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">Launch Speed</span>
+                <span class="sm-spec-value">24,500</span>
+                <span class="sm-spec-sub">mph to escape Earth's gravity</span>
+              </div>
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">Reentry Speed</span>
+                <span class="sm-spec-value">25,000</span>
+                <span class="sm-spec-sub">mph hitting Earth's atmosphere</span>
+              </div>
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">Reentry Heat</span>
+                <span class="sm-spec-value">5,000 °F</span>
+                <span class="sm-spec-sub">hotter than the Sun's surface</span>
+              </div>
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">Distance</span>
+                <span class="sm-spec-value">238,855</span>
+                <span class="sm-spec-sub">miles to the Moon (average)</span>
+              </div>
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">Transit Time</span>
+                <span class="sm-spec-value">76 hrs</span>
+                <span class="sm-spec-sub">Earth to lunar orbit</span>
+              </div>
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">Rocket Height</span>
+                <span class="sm-spec-value">363 ft</span>
+                <span class="sm-spec-sub">taller than the Statue of Liberty</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── The People Who Did the Math ── -->
+          <section class="sm-card" style="--sm-accent:#af52de;">
+            <h2>The People Who Did the Math</h2>
+            <p>Behind every mission was an enormous team. Before digital computers could be fully trusted, a group of mathematicians — mostly women, many of them Black women — calculated trajectories, orbital paths, and abort scenarios by hand. They were called <strong>human computers</strong>.</p>
+
+            <div class="sm-people-grid">
+              <div class="sm-person-card">
+                <span class="sm-person-role">Human Computer · Mathematician</span>
+                <strong>Katherine Johnson</strong>
+                <p>Calculated the trajectory for Alan Shepard's first American spaceflight, and then for Apollo 11. When NASA switched to electronic computers for John Glenn's orbital flight in 1962, Glenn refused to launch until Johnson personally re-verified the computer's numbers by hand. Her calculations were that trusted. She worked at NASA for 33 years and received the Presidential Medal of Freedom in 2015.</p>
+              </div>
+              <div class="sm-person-card">
+                <span class="sm-person-role">Human Computer · Supervisor</span>
+                <strong>Dorothy Vaughan</strong>
+                <p>Became NASA's first Black supervisor in 1949, leading the West Area Computing unit at Langley. When electronic computers arrived, she taught herself and her team FORTRAN programming before NASA management even realized the transition was coming — making her unit indispensable. She is a founder of American aerospace computing.</p>
+              </div>
+              <div class="sm-person-card">
+                <span class="sm-person-role">Human Computer · Engineer</span>
+                <strong>Mary Jackson</strong>
+                <p>NASA's first Black female engineer. She analyzed data from wind tunnel experiments and flight tests, and fought — literally petitioned a court — to be allowed to take advanced engineering courses at a segregated school. She later moved into management specifically to help other women and minorities advance at NASA.</p>
+              </div>
+              <div class="sm-person-card">
+                <span class="sm-person-role">Software Engineer</span>
+                <strong>Margaret Hamilton</strong>
+                <p>Led the team that wrote the flight software for the Apollo Guidance Computer. She coined the term "software engineering" because she wanted the discipline to be taken as seriously as hardware engineering. During Apollo 11's final landing, her team's priority-scheduling code saved the mission by shedding lower-priority tasks when the computer overloaded — the famous "1202 alarm" — allowing the landing to continue.</p>
+              </div>
+              <div class="sm-person-card">
+                <span class="sm-person-role">Flight Director</span>
+                <strong>Gene Kranz</strong>
+                <p>NASA Flight Director for Apollo 11 and later Apollo 13. Made hundreds of real-time decisions during descent and landing. His rule for Mission Control — "Tough and competent" — was the standard for everyone in the room. He famously declared "Failure is not an option" when engineers worked to bring the Apollo 13 crew home alive.</p>
+              </div>
+              <div class="sm-person-card">
+                <span class="sm-person-role">Rocket Engineer</span>
+                <strong>Wernher von Braun</strong>
+                <p>Chief architect of the Saturn V rocket. Led the team at NASA's Marshall Space Flight Center that designed, tested, and refined the rocket that made the Moon landing possible. The Saturn V flew 13 times and never lost a crew — an extraordinary record for the most powerful rocket ever built.</p>
+              </div>
+            </div>
+
+            <div class="sm-callout info">
+              <strong>Scale of the Apollo Program</strong>
+              At its peak, the Apollo program employed more than 400,000 engineers, scientists, and technicians across NASA and its contractors. The computing workload they managed with pencils, slide rules, mechanical calculators, and eventually early mainframe computers would barely challenge a modern spreadsheet.
+            </div>
+          </section>
+
+          <!-- ── The Apollo Guidance Computer ── -->
+          <section class="sm-card" style="--sm-accent:#30b0c7;">
+            <h2>The Apollo Guidance Computer</h2>
+            <p>The Apollo Guidance Computer (AGC) was one of the most revolutionary machines ever built — not because it was powerful, but because it was small enough to fly. It was the first computer to use integrated circuits (silicon chips) instead of vacuum tubes, and it fit inside a spacecraft cockpit. It also had less computing power than almost anything with a battery today.</p>
+
+            <div class="sm-spec-bar">
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">Clock Speed</span>
+                <span class="sm-spec-value">2.048</span>
+                <span class="sm-spec-sub">MHz — your phone runs at ~3,000 MHz</span>
+              </div>
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">RAM (Erasable)</span>
+                <span class="sm-spec-value">4 KB</span>
+                <span class="sm-spec-sub">your phone has ~6,000,000 KB of RAM</span>
+              </div>
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">ROM (Fixed)</span>
+                <span class="sm-spec-value">72 KB</span>
+                <span class="sm-spec-sub">one low-resolution photo today is ~3,000 KB</span>
+              </div>
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">Weight</span>
+                <span class="sm-spec-value">70 lb</span>
+                <span class="sm-spec-sub">your phone weighs less than half a pound</span>
+              </div>
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">Power Draw</span>
+                <span class="sm-spec-value">55 W</span>
+                <span class="sm-spec-sub">about the same as a light bulb</span>
+              </div>
+              <div class="sm-spec-item">
+                <span class="sm-spec-label">Integrated Circuits</span>
+                <span class="sm-spec-value">4,100</span>
+                <span class="sm-spec-sub">chips; a modern phone has billions of transistors</span>
+              </div>
+            </div>
+
+            <h3>How the Memory Was Actually Used</h3>
+            <p>The AGC had two types of memory. ROM (Read-Only Memory) was woven by hand — thin copper wires threaded through or around tiny magnetic cores, literally "core rope memory." Each wire represented a 0 or a 1. This memory was permanent; it held the navigation and control programs. It could not be changed in flight.</p>
+            <p>RAM (Random Access Memory) — called erasable memory — was only 4,096 15-bit words. That is 4 kilobytes. Everything the computer needed to track in real time: the spacecraft's position, velocity, attitude, fuel levels, and abort modes, had to fit in that space. Margaret Hamilton's team spent years compressing code to make it fit.</p>
+
+            <div class="sm-callout warn">
+              <strong>The 1202 Alarm — Software That Saved Apollo 11</strong>
+              During the final 3 minutes of powered descent, the guidance computer started throwing a "1202 program alarm." The crew had accidentally left a radar switch on, flooding the computer with extra data. The AGC was overloading. Hamilton's priority-scheduling system recognized that landing was more important than the radar jobs, dropped the low-priority tasks, and restarted the critical navigation loop. Mission Control — because they had studied exactly this scenario in training — told Armstrong to continue. The software saved the landing.
+            </div>
+
+            <h3>How It Compares to Everyday Technology</h3>
+            <table class="sm-table" aria-label="AGC vs modern device comparison">
+              <thead>
+                <tr>
+                  <th>Device</th>
+                  <th>Year</th>
+                  <th>RAM</th>
+                  <th>Clock Speed</th>
+                  <th>Comparison</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Apollo Guidance Computer</td>
+                  <td>1969</td>
+                  <td>4 KB</td>
+                  <td>2 MHz</td>
+                  <td><span class="chip chip-old">Baseline</span></td>
+                </tr>
+                <tr>
+                  <td>Nintendo Game Boy (1989)</td>
+                  <td>1989</td>
+                  <td>8 KB</td>
+                  <td>4 MHz</td>
+                  <td><span class="chip chip-new">2× more RAM</span></td>
+                </tr>
+                <tr>
+                  <td>Modern smart key fob</td>
+                  <td>2020s</td>
+                  <td>~64 KB</td>
+                  <td>~16 MHz</td>
+                  <td><span class="chip chip-new">16× more RAM</span></td>
+                </tr>
+                <tr>
+                  <td>Arduino Uno</td>
+                  <td>2010s</td>
+                  <td>2 KB</td>
+                  <td>16 MHz</td>
+                  <td><span class="chip chip-old">Less RAM, 8× faster</span></td>
+                </tr>
+                <tr>
+                  <td>Raspberry Pi Zero</td>
+                  <td>2015</td>
+                  <td>512,000 KB</td>
+                  <td>1,000 MHz</td>
+                  <td><span class="chip chip-new">125,000× more RAM</span></td>
+                </tr>
+                <tr>
+                  <td>Modern smartphone</td>
+                  <td>2024</td>
+                  <td>~6,000,000 KB</td>
+                  <td>~3,200 MHz</td>
+                  <td><span class="chip chip-new">1.5 billion× more RAM</span></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="sm-callout space">
+              <strong>What This Really Means</strong>
+              A single emoji in a text message — stored as a Unicode character — takes up about 4 bytes of memory. The entire Apollo Guidance Computer had room for roughly 1,000 emojis worth of working memory. The people who programmed it had to be so precise, so efficient, that every single byte had a purpose. Today's software engineers have billions of times more space and still sometimes run out of memory.
+            </div>
+          </section>
+
+          <!-- ── Lessons From Apollo ── -->
+          <section class="sm-card" style="--sm-accent:#ff375f;">
+            <h2>What Apollo Taught the World</h2>
+            <p>The Moon program left behind more than footprints. It changed computing, engineering culture, materials science, and our understanding of Earth itself.</p>
+
+            <div class="sm-project-grid">
+              <div class="sm-project-card">
+                <strong>Integrated circuits went mainstream</strong>
+                <small>NASA's demand for reliable, miniaturized chips drove the semiconductor industry to scale. The price of integrated circuits dropped 90% between 1962 and 1968, making the personal computer revolution possible a decade later.</small>
+              </div>
+              <div class="sm-project-card">
+                <strong>Software engineering was born</strong>
+                <small>Margaret Hamilton's insistence that software be designed, tested, and documented like hardware engineering created the discipline as we know it. Every line of code in every app today traces a lineage back to those principles.</small>
+              </div>
+              <div class="sm-project-card">
+                <strong>Earth seen from space</strong>
+                <small>The photograph "Earthrise" taken by Apollo 8's crew in 1968 showed Earth as a fragile sphere in the void. Many historians credit it with launching the modern environmental movement — the first Earth Day followed in 1970.</small>
+              </div>
+              <div class="sm-project-card">
+                <strong>Diversity built the mission</strong>
+                <small>The human computers at NASA — many of them Black women working in segregated facilities — proved that mathematical talent has no demographic. Their contributions were hidden for decades and are only now being widely recognized.</small>
+              </div>
+              <div class="sm-project-card">
+                <strong>Fail-safe thinking</strong>
+                <small>Apollo engineers invented redundancy as a design philosophy — every critical system had a backup. This mindset now appears in aviation, medicine, nuclear power, and the internet's own packet-routing architecture.</small>
+              </div>
+              <div class="sm-project-card">
+                <strong>45+ kg of Moon rock</strong>
+                <small>Apollo missions brought back 842 pounds (382 kg) of lunar samples. They confirmed the Moon formed from debris after a Mars-sized object struck early Earth, and they are still being studied today — revealing new science 55 years later.</small>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Quiz ── -->
+          <section class="sm-quiz">
+            <h2>Quick Check</h2>
+
+            <div class="sm-question" data-answer="b" data-explanation="President Kennedy challenged the nation in May 1961, shortly after Soviet cosmonaut Yuri Gagarin became the first human in space. Kennedy set the goal of landing on the Moon before the end of the 1960s.">
+              <p>1. What event prompted President Kennedy to challenge the nation to reach the Moon?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">The Soviet Union testing an atomic bomb</button>
+                <button class="sm-option" data-choice="b">Soviet cosmonaut Yuri Gagarin becoming the first human in space</button>
+                <button class="sm-option" data-choice="c">The United States losing a satellite launch</button>
+                <button class="sm-option" data-choice="d">The invention of the Saturn V rocket</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="sm-question" data-answer="c" data-explanation="Katherine Johnson calculated the trajectories for Mercury and Apollo missions. John Glenn specifically asked her to verify the electronic computer's numbers by hand before his 1962 orbital flight — he trusted her calculations over the machine.">
+              <p>2. Why did astronaut John Glenn insist Katherine Johnson personally verify the computer's numbers before his 1962 orbital flight?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">The computer had never been used before</button>
+                <button class="sm-option" data-choice="b">NASA regulations required a human to check every calculation</button>
+                <button class="sm-option" data-choice="c">He trusted her mathematical accuracy more than the electronic computer</button>
+                <button class="sm-option" data-choice="d">The computer was broken and she was the only replacement</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="sm-question" data-answer="d" data-explanation="The Apollo Guidance Computer had only 4 KB of RAM — about the size of a very small text file today. Your smartphone has roughly 6,000,000 KB (6 GB) of RAM, which is about 1.5 billion times more.">
+              <p>3. How much RAM (erasable working memory) did the Apollo Guidance Computer have?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">1 GB — the same as an early smartphone</button>
+                <button class="sm-option" data-choice="b">64 KB — similar to a key fob</button>
+                <button class="sm-option" data-choice="c">512 KB — similar to a Raspberry Pi</button>
+                <button class="sm-option" data-choice="d">4 KB — less than a single emoji stored 1,000 times over</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="sm-question" data-answer="a" data-explanation="The 1202 alarm triggered because an extra radar system flooded the computer with data. Margaret Hamilton's priority-scheduling code recognized that landing navigation was more critical, dropped the lower-priority tasks, and restarted the essential programs — saving the mission.">
+              <p>4. What was the 1202 program alarm during Apollo 11's landing, and what saved the mission?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">A computer overload caused by an extra radar; Hamilton's priority software dropped low-priority tasks and kept landing navigation running</button>
+                <button class="sm-option" data-choice="b">A fuel warning that triggered an abort; Mission Control manually guided the lander down</button>
+                <button class="sm-option" data-choice="c">A navigation error caused by a typo; Katherine Johnson corrected it from the ground in real time</button>
+                <button class="sm-option" data-choice="d">A power failure; the crew switched to backup batteries and landed manually</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="sm-question" data-answer="b" data-explanation="Rockets work on Newton's Third Law — exhaust gases are expelled backward with great force, and the equal and opposite reaction pushes the rocket forward. No air is needed; the exhaust pushing against itself is enough.">
+              <p>5. Which of Newton's Laws explains how a rocket engine works in the vacuum of space?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">First Law — objects in motion stay in motion</button>
+                <button class="sm-option" data-choice="b">Third Law — every action has an equal and opposite reaction</button>
+                <button class="sm-option" data-choice="c">Second Law — force equals mass times acceleration</button>
+                <button class="sm-option" data-choice="d">The Law of Gravity — Earth's gravity pulls the rocket upward</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+
+            <div class="sm-question" data-answer="c" data-explanation="Dorothy Vaughan taught herself and her entire computing unit FORTRAN before NASA management had even finished transitioning to electronic computers. This made her team indispensable and ensured they kept their jobs and influence through the transition.">
+              <p>6. What did Dorothy Vaughan do when NASA began transitioning from human computers to electronic computers?</p>
+              <div class="sm-options" role="group">
+                <button class="sm-option" data-choice="a">She retired rather than learn the new technology</button>
+                <button class="sm-option" data-choice="b">She lobbied NASA to keep using human computers for accuracy</button>
+                <button class="sm-option" data-choice="c">She taught herself FORTRAN and trained her entire team before the transition was complete</button>
+                <button class="sm-option" data-choice="d">She transferred to a different department that still used manual calculation</button>
+              </div>
+              <div class="sm-q-feedback" aria-live="polite"></div>
+            </div>
+          </section>
+
+        </main>
+      </div>
+
+      <!-- ── Sidebar ── -->
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="sm-outline">Outline</button>
+            <button class="ll-tab" aria-selected="false" data-pane="sm-notes">Notes</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="sm-outline">
+            <span class="ll-label">This Module Covers</span>
+            <div class="ll-info">
+              <strong>The race to the Moon</strong>
+              Sputnik → Kennedy's challenge → Mercury → Gemini → Apollo, including the Apollo 1 tragedy.
+            </div>
+            <div class="ll-info">
+              <strong>How the mission worked</strong>
+              Saturn V, Trans-Lunar Injection, Lunar Orbit Insertion, powered descent, rendezvous, and reentry.
+            </div>
+            <div class="ll-info">
+              <strong>The physics</strong>
+              Newton's three laws, the Tsiolkovsky rocket equation, and orbital mechanics.
+            </div>
+            <div class="ll-info">
+              <strong>The people</strong>
+              Katherine Johnson, Dorothy Vaughan, Mary Jackson, Margaret Hamilton, Gene Kranz, and the 400,000-person team.
+            </div>
+            <div class="ll-info">
+              <strong>The Apollo Guidance Computer</strong>
+              4 KB of RAM, core rope memory, and how the 1202 alarm was handled by software.
+            </div>
+            <div class="ll-info">
+              <strong>Apollo's legacy</strong>
+              Integrated circuits, software engineering, environmental awareness, and diversity.
+            </div>
+          </div>
+          <div class="ll-pane" id="sm-notes">
+            <div class="ll-info">
+              <strong>Aim ahead of the Moon</strong>
+              The Moon is always moving. Trajectories targeted where the Moon would be 76 hours in the future, not where it was at launch.
+            </div>
+            <div class="ll-info">
+              <strong>4 KB to the Moon and back</strong>
+              The entire AGC had 4 KB of working memory. A single photo on your phone is thousands of times larger.
+            </div>
+            <div class="ll-info">
+              <strong>Human computers were essential</strong>
+              Katherine Johnson's hand calculations were trusted over the electronic computer. Accuracy came from people first.
+            </div>
+            <div class="ll-info">
+              <strong>Software saved Apollo 11</strong>
+              The 1202 alarm during landing was handled automatically by priority-scheduling code written by Margaret Hamilton's team — without it, the mission would have aborted.
+            </div>
+            <div class="ll-info">
+              <strong>85% fuel by weight</strong>
+              Saturn V was mostly propellant. The payload that reached the Moon was less than 4% of the rocket's mass at liftoff.
+            </div>
+            <div class="ll-info">
+              <strong>Newton's laws, no exceptions</strong>
+              Every single maneuver from liftoff to splashdown followed the same three laws of motion Newton published in 1687.
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      document.querySelectorAll('.sm-question').forEach(function (question) {
+        const answer = question.dataset.answer;
+        const explanation = question.dataset.explanation;
+        const feedback = question.querySelector('.sm-q-feedback');
+        const options = question.querySelectorAll('.sm-option');
+
+        options.forEach(function (option) {
+          option.addEventListener('click', function () {
+            if (option.disabled) return;
+            options.forEach(function (item) {
+              item.disabled = true;
+              item.classList.remove('is-correct', 'is-wrong');
+              if (item.dataset.choice === answer) item.classList.add('is-correct');
+            });
+            if (option.dataset.choice !== answer) option.classList.add('is-wrong');
+            if (option.dataset.choice === answer) {
+              feedback.textContent = 'Correct. ' + explanation;
+              feedback.style.color = '#248a3d';
+            } else {
+              feedback.textContent = 'Not quite. ' + explanation;
+              feedback.style.color = '#c0392b';
+            }
+          });
+        });
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
