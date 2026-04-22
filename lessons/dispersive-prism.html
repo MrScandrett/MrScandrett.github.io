@@ -662,6 +662,16 @@
             <div class="ll-param-ends"><span>narrow</span><span>wide</span></div>
           </div>
           <hr class="ll-hr">
+          <span class="ll-label">Glass Material</span>
+          <div class="ll-param">
+            <div class="ll-param-label">
+              <span>Material</span>
+              <span class="ll-val" id="material-val" aria-live="polite">Crown Glass</span>
+            </div>
+            <input type="range" id="prism-material" class="prism-range" min="0" max="2" step="1" value="0" style="width:100%" />
+            <div class="ll-param-ends"><span>Crown</span><span>Diamond</span></div>
+          </div>
+          <hr class="ll-hr">
           <span class="ll-label">Second Prism</span>
           <div class="ll-param">
             <div class="ll-param-label">
@@ -672,13 +682,41 @@
             <div class="ll-param-ends"><span>off</span><span>on</span></div>
           </div>
           <hr class="ll-hr">
+          <span class="ll-label">Laser &amp; Diagnostics</span>
+          <div class="ll-param">
+            <div class="ll-param-label">
+              <span>Laser Mode</span>
+              <span class="ll-val" id="laser-mode-val" aria-live="polite">off</span>
+            </div>
+            <input type="range" id="laser-mode" class="prism-range" min="0" max="1" step="1" value="0" style="width:100%" />
+            <div class="ll-param-ends"><span>off</span><span>on</span></div>
+          </div>
+          <div class="ll-param" id="wavelength-param" style="opacity:0.35;pointer-events:none">
+            <div class="ll-param-label">
+              <span>Wavelength</span>
+              <span class="ll-val" id="wavelength-val" aria-live="polite">550 nm</span>
+            </div>
+            <input type="range" id="laser-wavelength" class="prism-range" min="390" max="700" step="5" value="550" style="width:100%" />
+            <div class="ll-param-ends"><span>390 nm</span><span>700 nm</span></div>
+          </div>
+          <div class="ll-param">
+            <div class="ll-param-label">
+              <span>Show Normals</span>
+              <span class="ll-val" id="show-normals-val" aria-live="polite">off</span>
+            </div>
+            <input type="range" id="show-normals" class="prism-range" min="0" max="1" step="1" value="0" style="width:100%" />
+            <div class="ll-param-ends"><span>off</span><span>on</span></div>
+          </div>
+          <hr class="ll-hr">
           <button type="button" class="prism-reset" id="prism-reset" style="width:100%">Reset to Defaults</button>
         </div>
 
         <div class="ll-pane" id="prism-pane-guide">
           <div class="ll-info"><strong>Newton's Discovery (1666)</strong>Newton used a prism to prove that white light is composed of all visible colours, not that the prism adds colour.</div>
-          <div class="ll-info"><strong>Dispersion</strong>Different wavelengths refract at different angles. Violet light bends most (~60.9°), red least (~60.1°) in glass.</div>
-          <div class="ll-info"><strong>Snell's Law</strong>n&#x2081; sin &#x03B8;&#x2081; = n&#x2082; sin &#x03B8;&#x2082;. The refractive index n varies with wavelength — this causes the spectrum to spread.</div>
+          <div class="ll-info"><strong>Dispersion</strong>Different wavelengths refract at different angles. Violet light bends most, red least. The difference in bending is called the <em>angular dispersion</em>.</div>
+          <div class="ll-info"><strong>Snell's Law</strong>n&#x2081; sin &#x03B8;&#x2081; = n&#x2082; sin &#x03B8;&#x2082;. Enable <em>Show Normals</em> to see the incidence angle (&#x03B8;&#x1D62;) and refraction angle (&#x03B8;&#x1D63;) at each surface.</div>
+          <div class="ll-info"><strong>Glass Material</strong>Crown glass (n ≈ 1.52), flint glass (n ≈ 1.62), and diamond (n ≈ 2.42) have different dispersive powers. Flint and diamond spread the spectrum much wider.</div>
+          <div class="ll-info"><strong>Laser Mode</strong>Pick a single wavelength to isolate one colour. The HUD shows the refractive index n(λ) and total deviation angle δ for that wavelength.</div>
           <div class="ll-info"><strong>Second Prism</strong>Enable the recombining prism to reproduce Newton's <em>experimentum crucis</em> — dispersed colours converge back to white light.</div>
         </div>
 
@@ -702,16 +740,24 @@
       var ctx    = canvas.getContext('2d');
       var W = canvas.width, H = canvas.height;
 
-      var beamAngleEl  = document.getElementById('beam-angle');
-      var prismRotEl   = document.getElementById('prism-rotation');
-      var beamWidthEl  = document.getElementById('beam-width');
-      var secondPrismEl= document.getElementById('second-prism');
-      var beamAngleVal = document.getElementById('beam-angle-val');
-      var prismRotVal  = document.getElementById('prism-rotation-val');
-      var beamWidthVal = document.getElementById('beam-width-val');
+      var beamAngleEl    = document.getElementById('beam-angle');
+      var prismRotEl     = document.getElementById('prism-rotation');
+      var beamWidthEl    = document.getElementById('beam-width');
+      var secondPrismEl  = document.getElementById('second-prism');
+      var beamAngleVal   = document.getElementById('beam-angle-val');
+      var prismRotVal    = document.getElementById('prism-rotation-val');
+      var beamWidthVal   = document.getElementById('beam-width-val');
       var secondPrismVal = document.getElementById('second-prism-val');
-      var materialEl = document.getElementById('prism-material');
-      var resetBtn = document.getElementById('prism-reset');
+      var materialEl     = document.getElementById('prism-material');
+      var materialValEl  = document.getElementById('material-val');
+      var laserModeEl    = document.getElementById('laser-mode');
+      var laserModeValEl = document.getElementById('laser-mode-val');
+      var laserWlEl      = document.getElementById('laser-wavelength');
+      var laserWlValEl   = document.getElementById('wavelength-val');
+      var wavelengthParamEl = document.getElementById('wavelength-param');
+      var showNormalsEl  = document.getElementById('show-normals');
+      var showNormalsValEl = document.getElementById('show-normals-val');
+      var resetBtn       = document.getElementById('prism-reset');
 
       function nmToRGB(wavelength) {
         var r, g, b, factor;
@@ -766,9 +812,17 @@
         diamond: { A: 2.417, B: 0.0114 }
       };
 
+      var MAT_KEYS  = ['crown', 'flint', 'diamond'];
+      var MAT_NAMES = ['Crown Glass', 'Flint Glass', 'Diamond'];
+
+      function currentMat() {
+        var idx = materialEl ? clamp(parseInt(materialEl.value), 0, 2) : 0;
+        return MATERIALS[MAT_KEYS[idx]] || MATERIALS.crown;
+      }
+
       function refractiveIndex(nm) {
         var um = nm / 1000;
-        var mat = MATERIALS[materialEl ? materialEl.value : 'crown'] || MATERIALS.crown;
+        var mat = currentMat();
         return mat.A + (mat.B / (um * um));
       }
 
@@ -917,6 +971,83 @@
         ctx.restore();
       }
 
+      function drawNormals(hitPt, edgeNormal, inDir, refractedDir, exitPt, exitEdgeNormal, exitInDir, exitOutDir) {
+        ctx.save();
+        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+
+        // entry normal line
+        var nLen = 55;
+        ctx.beginPath();
+        ctx.moveTo(hitPt.x + edgeNormal.x * nLen,  hitPt.y + edgeNormal.y * nLen);
+        ctx.lineTo(hitPt.x - edgeNormal.x * nLen,  hitPt.y - edgeNormal.y * nLen);
+        ctx.stroke();
+
+        // exit normal line
+        if (exitPt) {
+          ctx.beginPath();
+          ctx.moveTo(exitPt.x + exitEdgeNormal.x * nLen, exitPt.y + exitEdgeNormal.y * nLen);
+          ctx.lineTo(exitPt.x - exitEdgeNormal.x * nLen, exitPt.y - exitEdgeNormal.y * nLen);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        // angle of incidence at entry
+        var cosI = clamp(dot(scale(inDir, -1), edgeNormal), -1, 1);
+        var thetaI = (Math.acos(cosI) * 180 / Math.PI).toFixed(1);
+
+        // angle of refraction at entry
+        var cosR = refractedDir ? clamp(dot(refractedDir, scale(edgeNormal, -1)), -1, 1) : 1;
+        var thetaR = refractedDir ? (Math.acos(cosR) * 180 / Math.PI).toFixed(1) : '—';
+
+        ctx.font = '500 10px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(200,230,255,0.75)';
+        var lx = hitPt.x + 7, ly = hitPt.y - 16;
+        ctx.fillText('θᵢ = ' + thetaI + '°', lx, ly);
+        ctx.fillText('θᵣ = ' + thetaR + '°', lx, ly + 13);
+
+        // angle labels at exit face
+        if (exitPt && exitOutDir) {
+          var cosE1 = clamp(dot(scale(exitInDir, -1), exitEdgeNormal), -1, 1);
+          var cosE2 = clamp(dot(exitOutDir, exitEdgeNormal), -1, 1);
+          var tE1 = (Math.acos(cosE1) * 180 / Math.PI).toFixed(1);
+          var tE2 = (Math.acos(cosE2) * 180 / Math.PI).toFixed(1);
+          ctx.fillText('θᵢ = ' + tE1 + '°', exitPt.x + 7, exitPt.y - 16);
+          ctx.fillText('θᵣ = ' + tE2 + '°', exitPt.x + 7, exitPt.y - 3);
+        }
+        ctx.restore();
+      }
+
+      function drawDeviationArc(beamDir, exitDir, exitPt) {
+        // Draw an arc from exit point showing angular deviation δ
+        var aIn  = Math.atan2(beamDir.y, beamDir.x);
+        var aOut = Math.atan2(exitDir.y, exitDir.x);
+        var delta = Math.abs(aOut - aIn) * 180 / Math.PI;
+        if (delta > 180) delta = 360 - delta;
+
+        var arcR = 38;
+        var arcCx = exitPt.x, arcCy = exitPt.y;
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,200,80,0.55)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        // draw arc between incoming and outgoing ray angles
+        var a1 = Math.min(aIn, aOut), a2 = Math.max(aIn, aOut);
+        ctx.arc(arcCx, arcCy, arcR, a1, a2);
+        ctx.stroke();
+
+        // delta label
+        var midA = (a1 + a2) / 2;
+        ctx.fillStyle = 'rgba(255,200,80,0.85)';
+        ctx.font = '600 10px Inter, sans-serif';
+        ctx.fillText('δ = ' + delta.toFixed(1) + '°',
+          arcCx + (arcR + 6) * Math.cos(midA) - 10,
+          arcCy + (arcR + 6) * Math.sin(midA) + 4);
+        ctx.restore();
+      }
+
       function draw() {
         ctx.clearRect(0, 0, W, H);
 
@@ -927,7 +1058,7 @@
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, W, H);
 
-        // Draw volumetric dust particles
+        // dust particles
         ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
         dust.forEach(function(d) {
           d.x += d.vx; d.y += d.vy;
@@ -942,15 +1073,28 @@
         var prismRot   = parseInt(prismRotEl.value);
         var beamW      = parseInt(beamWidthEl.value);
         var hasSecond  = parseInt(secondPrismEl.value) === 1;
+        var matIdx     = materialEl ? clamp(parseInt(materialEl.value), 0, 2) : 0;
+        var laserMode  = laserModeEl ? parseInt(laserModeEl.value) === 1 : false;
+        var laserNm    = laserWlEl   ? parseInt(laserWlEl.value) : 550;
+        var showNorms  = showNormalsEl ? parseInt(showNormalsEl.value) === 1 : false;
 
-        beamAngleVal.textContent = beamAngle + '°';
-        prismRotVal.textContent  = (prismRot >= 0 ? '+' : '') + prismRot + '°';
-        beamWidthVal.textContent = beamW === 1 ? 'narrow' : beamW === 2 ? 'medium' : 'wide';
+        // update labels
+        beamAngleVal.textContent   = beamAngle + '°';
+        prismRotVal.textContent    = (prismRot >= 0 ? '+' : '') + prismRot + '°';
+        beamWidthVal.textContent   = beamW === 1 ? 'narrow' : beamW === 2 ? 'medium' : 'wide';
         secondPrismVal.textContent = hasSecond ? 'on' : 'off';
+        if (materialValEl) materialValEl.textContent = MAT_NAMES[matIdx];
+        if (laserModeValEl) laserModeValEl.textContent = laserMode ? 'on' : 'off';
+        if (laserWlValEl)   laserWlValEl.textContent   = laserNm + ' nm';
+        if (showNormalsValEl) showNormalsValEl.textContent = showNorms ? 'on' : 'off';
+        if (wavelengthParamEl) {
+          wavelengthParamEl.style.opacity = laserMode ? '1' : '0.35';
+          wavelengthParamEl.style.pointerEvents = laserMode ? '' : 'none';
+        }
 
         var beamWidthPx = [2, 5, 10][beamW - 1];
 
-        // ── Prism geometry (equilateral, apex angle 60°) ──
+        // ── Prism geometry (equilateral, apex 60°) ──
         var cx1 = W * 0.36, cy1 = H * 0.5;
         var prismSize = H * 0.38;
         var rotR = toRad(prismRot);
@@ -993,14 +1137,18 @@
         var hitLeft = intersectRayPolygon(beamOrigin, beamDir, edges1, -1);
         var beamEnd = hitLeft ? hitLeft.point : toBounds(beamOrigin, beamDir);
 
+        // incoming beam — white or single colour in laser mode
+        var incomingColor = laserMode
+          ? (function(){ var c = nmToRGB(laserNm); return 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',0.9)'; }())
+          : 'rgba(255,255,255,0.9)';
         drawRay(beamOrigin, beamEnd, 'rgba(255,255,255,0.7)', beamWidthPx + 4, 0.15, 24);
-        drawRay(beamOrigin, beamEnd, 'rgba(255,255,255,0.9)', beamWidthPx + 1, 0.9, 12);
+        drawRay(beamOrigin, beamEnd, incomingColor, beamWidthPx + 1, 0.9, 12);
 
         ctx.fillStyle = 'rgba(200,200,220,0.5)';
         ctx.font = '500 11px Inter, sans-serif';
-        ctx.fillText('white light', 12, beamOrigin.y - 10);
+        ctx.fillText(laserMode ? laserNm + ' nm laser' : 'white light', 12, beamOrigin.y - 10);
 
-        // Second prism geometry (inverted, placed to the right)
+        // ── Second prism ──
         var cx2 = W * 0.67, cy2 = H * 0.5;
         var p2, edges2;
         if (hasSecond) {
@@ -1010,7 +1158,6 @@
           p2 = [p2TopLeft, p2TopRight, p2ApexBottom];
           drawPrism(p2, 0.9);
           edges2 = buildEdges(p2);
-
           ctx.fillStyle = 'rgba(150,190,255,0.35)';
           ctx.font = '500 11px Inter, sans-serif';
           ctx.fillText('recombining prism', cx2 - 52, cy2 + prismSize * 0.6 + 20);
@@ -1033,69 +1180,101 @@
         var dirSum = vec(0, 0);
         var whiteCount = 0;
 
-        SPECTRUM.forEach(function (s) {
+        // choose rays to render: full spectrum or single wavelength
+        var toRender = laserMode
+          ? (function(){ var c = nmToRGB(laserNm); return [{ nm: laserNm, r: c.r, g: c.g, b: c.b }]; }())
+          : SPECTRUM;
+
+        // for normals, capture data from the representative ray
+        var normData = null;
+        // for laser HUD
+        var laserHUD = null;
+
+        toRender.forEach(function(s, si) {
           var n = refractiveIndex(s.nm);
           var color = 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',0.88)';
+          var rayAlpha = laserMode ? 0.95 : 0.88;
+          var rayWidth = laserMode ? beamWidthPx + 1 : beamWidthPx;
+          var glowAmt  = laserMode ? 18 : 12;
 
           var insideDir = refract(beamDir, edges1[hitLeft.edge].nOut, 1.0, n);
           if (!insideDir) return;
 
           var insideTrace = traceInside(hitLeft.point, insideDir, edges1, hitLeft.edge, n, 1.0);
-          if (insideTrace.segments.length) {
-            insideTrace.segments.forEach(function(seg) {
-              drawRay(seg.from, seg.to, color, Math.max(1, beamWidthPx * 0.55), 0.35, 4);
-            });
-          }
+          insideTrace.segments.forEach(function(seg) {
+            drawRay(seg.from, seg.to, color, Math.max(1, beamWidthPx * 0.55), 0.35, 4);
+          });
           if (!insideTrace.exit) return;
 
           var exitPoint = insideTrace.exit.point;
           var exitDir = insideTrace.exit.dir;
 
+          // capture normals data from middle spectrum ray or laser ray
+          var isMidRay = laserMode || si === Math.floor(toRender.length / 2);
+          if (isMidRay) {
+            normData = {
+              hitPt: hitLeft.point, entryNormal: edges1[hitLeft.edge].nOut,
+              insideDir: insideDir,
+              exitPt: exitPoint, exitNormal: insideTrace.exit ? edges1[insideTrace.exit && insideTrace.exit.edgeIdx !== undefined ? insideTrace.exit.edgeIdx : 0] : null,
+              exitDir: exitDir
+            };
+          }
+
           if (hasSecond && edges2) {
             var hitP2 = intersectRayPolygon(offsetPoint(exitPoint, exitDir), exitDir, edges2, -1);
             var toP2 = hitP2 ? hitP2.point : toBounds(exitPoint, exitDir);
-            drawRay(exitPoint, toP2, color, beamWidthPx, 0.8, 10);
+            drawRay(exitPoint, toP2, color, rayWidth, 0.8, 10);
 
             if (hitP2) {
               var insideDir2 = refract(exitDir, edges2[hitP2.edge].nOut, 1.0, n);
               if (insideDir2) {
                 var insideTrace2 = traceInside(hitP2.point, insideDir2, edges2, hitP2.edge, n, 1.0);
-                if (insideTrace2.segments.length) {
-                  insideTrace2.segments.forEach(function(seg) {
-                    drawRay(seg.from, seg.to, color, Math.max(1, beamWidthPx * 0.5), 0.35, 4);
-                  });
-                }
+                insideTrace2.segments.forEach(function(seg) {
+                  drawRay(seg.from, seg.to, color, Math.max(1, beamWidthPx * 0.5), 0.35, 4);
+                });
                 if (insideTrace2.exit) {
                   var exitPoint2 = insideTrace2.exit.point;
-                  var exitDir2 = insideTrace2.exit.dir;
+                  var exitDir2   = insideTrace2.exit.dir;
                   var end2 = toBounds(exitPoint2, exitDir2);
-                  drawRay(exitPoint2, end2, color, beamWidthPx, 0.6, 8);
+                  drawRay(exitPoint2, end2, color, rayWidth, 0.6, 8);
                   whiteSum = add(whiteSum, exitPoint2);
-                  dirSum = add(dirSum, exitDir2);
+                  dirSum   = add(dirSum, exitDir2);
                   whiteCount += 1;
                 }
               }
             }
           } else {
             var rayEnd = toBounds(exitPoint, exitDir);
-            drawRay(exitPoint, rayEnd, color, beamWidthPx, 0.85, 12);
-            if (rayEnd.x > W - 80) {
+            drawRay(exitPoint, rayEnd, color, rayWidth, rayAlpha, glowAmt);
+
+            // edge labels (spectrum mode)
+            if (!laserMode && rayEnd.x > W - 80) {
               ctx.save();
               ctx.fillStyle = color;
               ctx.font = '600 10px Inter, sans-serif';
-              if (i === 0 || i === SPECTRUM.length - 1) {
+              if (si === 0 || si === toRender.length - 1) {
                 ctx.globalAlpha = 0.9;
-                var angle = Math.atan2(exitDir.y, exitDir.x) * 180 / Math.PI;
-                ctx.fillText(s.nm + 'nm (' + angle.toFixed(1) + '°)', W - 78, rayEnd.y + 4);
-              } else if(s.nm % 40 === 0) {
+                var ang = Math.atan2(exitDir.y, exitDir.x) * 180 / Math.PI;
+                ctx.fillText(s.nm + 'nm (' + ang.toFixed(1) + '°)', W - 78, rayEnd.y + 4);
+              } else if (s.nm % 40 === 0) {
                 ctx.globalAlpha = 0.2;
-                ctx.fillText(s.label, W - 78, rayEnd.y + 4);
+                ctx.fillText(s.nm + 'nm', W - 78, rayEnd.y + 4);
               }
               ctx.restore();
+            }
+
+            // laser mode: collect HUD data and draw deviation arc
+            if (laserMode) {
+              var devIn  = Math.atan2(beamDir.y,  beamDir.x)  * 180 / Math.PI;
+              var devOut = Math.atan2(exitDir.y, exitDir.x) * 180 / Math.PI;
+              var devDelta = Math.abs(devOut - devIn); if (devDelta > 180) devDelta = 360 - devDelta;
+              laserHUD = { nm: s.nm, n: n.toFixed(4), delta: devDelta.toFixed(1) };
+              drawDeviationArc(beamDir, exitDir, exitPoint);
             }
           }
         });
 
+        // ── recombined white light ──
         if (hasSecond && whiteCount > 0) {
           var avgPoint = scale(whiteSum, 1 / whiteCount);
           var avgDir = norm(scale(dirSum, 1 / whiteCount));
@@ -1111,6 +1290,49 @@
           ctx.fillText('white light', whiteEnd.x - 64, whiteEnd.y + 4);
         }
 
+        // ── normals overlay ──
+        if (showNorms && normData) {
+          // find the exit edge normal from the exit point by re-intersecting
+          var exitEdgeNormalVec = null;
+          var exitInsideDirForNorm = null;
+          var testInsideDir = refract(beamDir, edges1[hitLeft.edge].nOut, 1.0, refractiveIndex(laserMode ? laserNm : 550));
+          if (testInsideDir) {
+            var testTrace = traceInside(hitLeft.point, testInsideDir, edges1, hitLeft.edge, refractiveIndex(laserMode ? laserNm : 550), 1.0);
+            if (testTrace.exit) {
+              // find which edge was exited
+              var exitHit = intersectRayPolygon(offsetPoint(hitLeft.point, testInsideDir), testInsideDir, edges1, hitLeft.edge);
+              if (exitHit) {
+                exitEdgeNormalVec = edges1[exitHit.edge].nOut;
+                exitInsideDirForNorm = testInsideDir;
+              }
+            }
+          }
+          drawNormals(
+            normData.hitPt, normData.entryNormal, beamDir, normData.insideDir,
+            normData.exitPt, exitEdgeNormalVec || normData.entryNormal,
+            normData.insideDir, normData.exitDir
+          );
+        }
+
+        // ── laser HUD ──
+        if (laserMode && laserHUD && !hasSecond) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(0,0,0,0.58)';
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(12, H - 66, 192, 56, 9) : (function(){ ctx.rect(12, H - 66, 192, 56); }());
+          ctx.fill();
+
+          var hudColor = (function(){ var c = nmToRGB(laserNm); return 'rgb(' + c.r + ',' + c.g + ',' + c.b + ')'; }());
+          ctx.fillStyle = hudColor;
+          ctx.font = '700 11px Inter, sans-serif';
+          ctx.fillText('λ = ' + laserHUD.nm + ' nm', 22, H - 47);
+          ctx.fillStyle = 'rgba(255,255,255,0.82)';
+          ctx.font = '500 10px Inter, sans-serif';
+          ctx.fillText('n(λ) = ' + laserHUD.n + '  (' + MAT_NAMES[matIdx] + ')', 22, H - 32);
+          ctx.fillText('deviation δ = ' + laserHUD.delta + '°', 22, H - 18);
+          ctx.restore();
+        }
+
         ctx.fillStyle = 'rgba(150,190,255,0.4)';
         ctx.font = '500 11px Inter, sans-serif';
         ctx.fillText('glass prism', cx1 - 28, cy1 + prismSize * 0.55);
@@ -1123,7 +1345,10 @@
           prismRotEl.value = 0;
           beamWidthEl.value = 1;
           secondPrismEl.value = 0;
-          if (materialEl) materialEl.value = 'crown';
+          if (materialEl) materialEl.value = 0;
+          if (laserModeEl) laserModeEl.value = 0;
+          if (laserWlEl)   laserWlEl.value = 550;
+          if (showNormalsEl) showNormalsEl.value = 0;
         });
       }
 
@@ -1175,15 +1400,16 @@
 
     // ── Preset handler for ll-panel preset chips ──
     document.addEventListener('ll:preset', function(e) {
+      // beam-angle, prism-rotation, beam-width, second-prism, prism-material, laser-mode, laser-wavelength, show-normals
       var presets = {
-        white:  { 'beam-angle': 30, 'prism-rotation':  0, 'beam-width': 2, 'second-prism': 0 },
-        red:    { 'beam-angle': 45, 'prism-rotation': 10, 'beam-width': 1, 'second-prism': 0 },
-        violet: { 'beam-angle': 15, 'prism-rotation': -8, 'beam-width': 1, 'second-prism': 0 },
-        narrow: { 'beam-angle': 30, 'prism-rotation':  0, 'beam-width': 1, 'second-prism': 1 }
+        white:  { 'beam-angle': 30, 'prism-rotation':  0, 'beam-width': 2, 'second-prism': 0, 'prism-material': 0, 'laser-mode': 0, 'laser-wavelength': 550, 'show-normals': 0 },
+        red:    { 'beam-angle': 45, 'prism-rotation': 10, 'beam-width': 1, 'second-prism': 0, 'prism-material': 0, 'laser-mode': 1, 'laser-wavelength': 660, 'show-normals': 0 },
+        violet: { 'beam-angle': 15, 'prism-rotation': -8, 'beam-width': 1, 'second-prism': 0, 'prism-material': 0, 'laser-mode': 1, 'laser-wavelength': 410, 'show-normals': 0 },
+        narrow: { 'beam-angle': 30, 'prism-rotation':  0, 'beam-width': 1, 'second-prism': 1, 'prism-material': 0, 'laser-mode': 0, 'laser-wavelength': 550, 'show-normals': 0 }
       };
       var p = presets[e.detail.name];
       if (!p) return;
-      ['beam-angle', 'prism-rotation', 'beam-width', 'second-prism'].forEach(function(id) {
+      ['beam-angle', 'prism-rotation', 'beam-width', 'second-prism', 'prism-material', 'laser-mode', 'laser-wavelength', 'show-normals'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el && p[id] !== undefined) {
           el.value = p[id];
