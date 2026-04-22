@@ -295,7 +295,7 @@
 
   function getLightingForTheme(theme) {
     var normalized = normalizeTheme(theme);
-    return (normalized === "night" || normalized === "diamond" || normalized === "vaporwave") ? "night" : "day";
+    return (normalized === "night" || normalized === "vaporwave") ? "night" : "day";
   }
 
   function ensureLightingApi() {

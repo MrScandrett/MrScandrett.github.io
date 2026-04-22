@@ -30,7 +30,7 @@
   }
 
   function getLightingForTheme(theme) {
-    return (theme === "night" || theme === "diamond" || theme === "vaporwave") ? "night" : "day";
+    return (theme === "night" || theme === "vaporwave") ? "night" : "day";
   }
 
   function readStorage(key) {

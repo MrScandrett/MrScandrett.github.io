@@ -27,7 +27,7 @@ for (const pagePath of pages) {
       if (window.ClassroomOSThemeLighting) {
         window.ClassroomOSThemeLighting.setTheme(nextTheme);
       } else {
-        const lighting = (nextTheme === "night" || nextTheme === "diamond" || nextTheme === "vaporwave") ? "night" : "day";
+        const lighting = (nextTheme === "night" || nextTheme === "vaporwave") ? "night" : "day";
         document.documentElement.dataset.theme = nextTheme;
         document.documentElement.dataset.lighting = lighting;
         document.documentElement.setAttribute("data-site-theme", nextTheme);
