@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Rock Cycle · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Earth Science lesson on the rock cycle, igneous, sedimentary, metamorphic rocks, weathering, erosion, heat, pressure, melting, and cooling." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .rock-page {
+      --igneous: #d85b3f;
+      --sedimentary: #c89a55;
+      --metamorphic: #6d73b8;
+      --magma: #ef7d22;
+      --earth: #24351f;
+      padding: 1rem clamp(1rem, 3vw, 2rem) 0;
+      color: #182235;
+    }
+
+    .rock-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1.08fr);
+      gap: 1rem;
+      align-items: stretch;
+      margin-bottom: 1rem;
+    }
+
+    .rock-panel,
+    .rock-cycle-card,
+    .rock-card {
+      border: 1px solid var(--border-subtle, #d6dbe6);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--surface-1, #fff) 90%, transparent);
+      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+    }
+
+    .rock-panel {
+      padding: clamp(1rem, 2.6vw, 1.6rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .rock-eyebrow {
+      margin: 0 0 0.45rem;
+      color: #8a4b21;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .rock-hero h1 {
+      margin: 0;
+      max-width: 11ch;
+      color: #111827;
+      font-size: clamp(2.2rem, 5.5vw, 4.6rem);
+      line-height: 0.94;
+      letter-spacing: 0;
+    }
+
+    .rock-lede {
+      max-width: 64ch;
+      margin: 0.9rem 0 0;
+      color: #43536b;
+      font-size: 0.98rem;
+      line-height: 1.66;
+    }
+
+    .rock-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 1rem;
+    }
+
+    .rock-meta span {
+      border: 1px solid rgba(216, 91, 63, 0.35);
+      border-radius: 999px;
+      background: rgba(216, 91, 63, 0.1);
+      color: #9a3412;
+      padding: 0.28rem 0.62rem;
+      font-size: 0.73rem;
+      font-weight: 800;
+    }
+
+    .rock-cycle-card {
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 16% 18%, rgba(216, 91, 63, 0.24), transparent 24%),
+        radial-gradient(circle at 82% 20%, rgba(109, 115, 184, 0.2), transparent 24%),
+        linear-gradient(145deg, #1c2618, #111827);
+      color: #f8fafc;
+      padding: 0.9rem;
+    }
+
+    .rock-cycle-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .rock-cycle-head strong {
+      font-size: 0.86rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .rock-cycle-head small {
+      color: rgba(248, 250, 252, 0.72);
+      text-align: right;
+      line-height: 1.4;
+    }
+
+    .rock-diagram {
+      position: relative;
+      min-height: 330px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 13px;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        rgba(3, 7, 18, 0.34);
+      background-size: 28px 28px;
+      overflow: hidden;
+    }
+
+    .rock-node {
+      position: absolute;
+      width: min(34%, 180px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 14px;
+      padding: 0.8rem;
+      color: #fff;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
+      transition: transform 0.16s, box-shadow 0.16s;
+    }
+
+    .rock-node:hover,
+    .rock-node.is-active {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 38px rgba(0, 0, 0, 0.32), 0 0 0 3px rgba(255, 255, 255, 0.16);
+    }
+
+    .rock-node strong {
+      display: block;
+      font-size: 0.95rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .rock-node small {
+      display: block;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 0.72rem;
+      line-height: 1.35;
+    }
+
+    .rock-node--magma { left: 50%; top: 7%; transform: translateX(-50%); background: linear-gradient(135deg, #ef7d22, #b91c1c); }
+    .rock-node--igneous { right: 6%; top: 35%; background: linear-gradient(135deg, #d85b3f, #7f1d1d); }
+    .rock-node--sediment { left: 50%; bottom: 6%; transform: translateX(-50%); background: linear-gradient(135deg, #c89a55, #7c4a17); }
+    .rock-node--metamorphic { left: 6%; top: 35%; background: linear-gradient(135deg, #6d73b8, #3730a3); }
+
+    .rock-arrow {
+      position: absolute;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .rock-arrow--cool { right: 33%; top: 24%; transform: rotate(35deg); }
+    .rock-arrow--weather { right: 31%; bottom: 27%; transform: rotate(118deg); }
+    .rock-arrow--pressure { left: 31%; bottom: 27%; transform: rotate(213deg); }
+    .rock-arrow--melt { left: 33%; top: 24%; transform: rotate(310deg); }
+
+    .rock-readout {
+      min-height: 5.2rem;
+      margin-top: 0.7rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.85rem;
+      color: rgba(248, 250, 252, 0.88);
+      line-height: 1.55;
+      font-size: 0.84rem;
+    }
+
+    .rock-readout h2 {
+      margin: 0 0 0.35rem;
+      color: #fff;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+
+    .rock-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .rock-card {
+      padding: 1rem;
+    }
+
+    .rock-card h2,
+    .rock-card h3 {
+      margin: 0 0 0.55rem;
+      color: #111827;
+      letter-spacing: 0;
+    }
+
+    .rock-card h2 { font-size: 1.15rem; }
+    .rock-card h3 { font-size: 0.98rem; }
+
+    .rock-card p,
+    .rock-card li {
+      color: #43536b;
+      font-size: 0.88rem;
+      line-height: 1.62;
+    }
+
+    .rock-card p { margin: 0 0 0.65rem; }
+    .rock-card ul { margin: 0.45rem 0 0; padding-left: 1.1rem; }
+
+    .rock-wide { grid-column: span 2; }
+    .rock-full { grid-column: 1 / -1; }
+
+    .rock-facts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+
+    .rock-fact {
+      border: 1px solid rgba(36, 53, 31, 0.22);
+      border-radius: 12px;
+      background: rgba(36, 53, 31, 0.07);
+      padding: 0.75rem;
+    }
+
+    .rock-fact strong {
+      display: block;
+      color: #365314;
+      font-size: 0.82rem;
+      margin-bottom: 0.22rem;
+    }
+
+    .rock-fact small {
+      display: block;
+      color: #526178;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .rock-note {
+      border-left: 3px solid #d85b3f;
+      border-radius: 10px;
+      background: rgba(216, 91, 63, 0.1);
+      padding: 0.75rem 0.85rem;
+      color: #43536b;
+      font-size: 0.84rem;
+      line-height: 1.58;
+    }
+
+    .rock-quiz {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .rock-q {
+      border: 1px solid var(--border-subtle, #d6dbe6);
+      border-radius: 12px;
+      padding: 0.75rem;
+    }
+
+    .rock-q label {
+      display: block;
+      margin-bottom: 0.42rem;
+      color: #27395c;
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+
+    .rock-q select {
+      width: 100%;
+      border: 1px solid var(--border-subtle, #d6dbe6);
+      border-radius: 9px;
+      padding: 0.48rem 0.58rem;
+      color: #192335;
+      background: #fff;
+      font: inherit;
+      font-size: 0.82rem;
+    }
+
+    .rock-panel-button {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      background: #365314;
+      color: #fff;
+      padding: 0.52rem 0.7rem;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.16s, background 0.16s;
+      margin-bottom: 0.45rem;
+    }
+
+    .rock-panel-button:hover {
+      background: #25390e;
+      transform: translateY(-1px);
+    }
+
+    .rock-panel-button.is-active {
+      background: #f6b73c;
+      color: #21180f;
+    }
+
+    .rock-feedback {
+      min-height: 1.2rem;
+      margin-top: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .rock-ok { color: #16724e; }
+    .rock-try { color: #9a3412; }
+
+    .site-footer { margin-top: 1.2rem; }
+
+    @media (max-width: 980px) {
+      .rock-hero,
+      .rock-grid {
+        grid-template-columns: 1fr;
+      }
+      .rock-wide { grid-column: auto; }
+      .rock-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      .rock-page { padding: 0.75rem 0.75rem 0; }
+      .rock-diagram { min-height: 420px; }
+      .rock-node { width: 42%; }
+      .rock-node--magma { top: 5%; }
+      .rock-node--igneous { right: 4%; top: 36%; }
+      .rock-node--sediment { bottom: 5%; }
+      .rock-node--metamorphic { left: 4%; top: 36%; }
+      .rock-facts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="rock-page">
+          <section class="rock-hero">
+            <div class="rock-panel">
+              <p class="rock-eyebrow">Earth Science · Lesson 08</p>
+              <h1>The Rock Cycle</h1>
+              <p class="rock-lede">Rocks are not permanent objects. They are snapshots in a slow planetary recycling system driven by heat, pressure, water, weathering, erosion, melting, cooling, and plate tectonics.</p>
+              <div class="rock-meta" aria-label="Lesson topics">
+                <span>Igneous</span>
+                <span>Sedimentary</span>
+                <span>Metamorphic</span>
+                <span>Weathering</span>
+                <span>Plate Tectonics</span>
+              </div>
+            </div>
+
+            <div class="rock-cycle-card">
+              <div class="rock-cycle-head">
+                <strong>Cycle Model</strong>
+                <small>Click each rock type or process to trace the pathway.</small>
+              </div>
+              <div class="rock-diagram">
+                <button class="rock-node rock-node--magma is-active" type="button" data-rock="magma">
+                  <strong>Magma</strong>
+                  <small>Molten rock beneath the surface</small>
+                </button>
+                <button class="rock-node rock-node--igneous" type="button" data-rock="igneous">
+                  <strong>Igneous</strong>
+                  <small>Formed by cooling and crystallizing</small>
+                </button>
+                <button class="rock-node rock-node--sediment" type="button" data-rock="sedimentary">
+                  <strong>Sedimentary</strong>
+                  <small>Built from compacted sediments</small>
+                </button>
+                <button class="rock-node rock-node--metamorphic" type="button" data-rock="metamorphic">
+                  <strong>Metamorphic</strong>
+                  <small>Changed by heat and pressure</small>
+                </button>
+                <div class="rock-arrow rock-arrow--cool">→</div>
+                <div class="rock-arrow rock-arrow--weather">→</div>
+                <div class="rock-arrow rock-arrow--pressure">→</div>
+                <div class="rock-arrow rock-arrow--melt">→</div>
+              </div>
+              <div class="rock-readout" id="rock-readout"></div>
+            </div>
+          </section>
+
+          <section class="rock-grid">
+            <article class="rock-card rock-wide">
+              <h2>What Is the Rock Cycle?</h2>
+              <p>The rock cycle is the set of processes that transform rocks from one type into another. It does not move in only one direction. Igneous rock can weather into sediment, sedimentary rock can metamorphose, metamorphic rock can melt, and any exposed rock can be broken down by weathering and erosion.</p>
+              <p>The cycle is powered by two main engines: Earth's internal heat, which drives melting, metamorphism, and plate tectonics; and solar energy plus gravity, which drive weathering, erosion, transport, and deposition at the surface.</p>
+              <div class="rock-facts" aria-label="Rock cycle processes">
+                <div class="rock-fact">
+                  <strong>Cooling</strong>
+                  <small>Magma or lava solidifies into igneous rock.</small>
+                </div>
+                <div class="rock-fact">
+                  <strong>Weathering</strong>
+                  <small>Rock breaks into sediment through water, ice, wind, roots, and chemistry.</small>
+                </div>
+                <div class="rock-fact">
+                  <strong>Compaction</strong>
+                  <small>Buried sediments squeeze together and cement into sedimentary rock.</small>
+                </div>
+                <div class="rock-fact">
+                  <strong>Metamorphism</strong>
+                  <small>Heat and pressure change rock without fully melting it.</small>
+                </div>
+              </div>
+            </article>
+
+            <article class="rock-card">
+              <h2>Igneous Rocks</h2>
+              <p>Igneous rocks form when molten rock cools. If magma cools slowly underground, large crystals can grow, as in granite. If lava cools quickly at the surface, crystals are small or glassy, as in basalt or obsidian.</p>
+            </article>
+
+            <article class="rock-card">
+              <h2>Sedimentary Rocks</h2>
+              <p>Sedimentary rocks form from particles, minerals, shells, or dissolved material deposited in layers. Over time, pressure compacts the layers and minerals cement the grains together. Sandstone, limestone, and shale are common examples.</p>
+            </article>
+
+            <article class="rock-card">
+              <h2>Metamorphic Rocks</h2>
+              <p>Metamorphic rocks form when existing rock is changed by heat, pressure, or chemically active fluids. Limestone can become marble; shale can become slate; granite can become gneiss.</p>
+            </article>
+
+            <article class="rock-card rock-wide">
+              <h2>Why Plate Tectonics Matters</h2>
+              <p>Plate boundaries act like rock-cycle machines. At divergent boundaries, magma rises and forms new igneous crust. At convergent boundaries, rocks are buried, squeezed, metamorphosed, melted, and recycled into volcanoes. Mountain building lifts rocks high enough for weathering to attack them.</p>
+              <div class="rock-note"><strong>Big idea:</strong> A rock's type tells a story about the environment where it formed.</div>
+            </article>
+
+            <article class="rock-card">
+              <h2>Field Clues</h2>
+              <ul>
+                <li><strong>Crystals:</strong> often point to igneous or metamorphic formation.</li>
+                <li><strong>Layers:</strong> often indicate sedimentary deposition.</li>
+                <li><strong>Foliation:</strong> bands or sheets from pressure in metamorphic rock.</li>
+                <li><strong>Fossils:</strong> usually found in sedimentary rock.</li>
+              </ul>
+            </article>
+
+            <article class="rock-card rock-wide">
+              <h2>Practice Check</h2>
+              <div class="rock-quiz">
+                <div class="rock-q">
+                  <label for="rock-q1">1. Which rock type forms from cooled magma or lava?</label>
+                  <select id="rock-q1">
+                    <option value="">Choose an answer</option>
+                    <option value="igneous">Igneous</option>
+                    <option value="sedimentary">Sedimentary</option>
+                    <option value="metamorphic">Metamorphic</option>
+                  </select>
+                </div>
+                <div class="rock-q">
+                  <label for="rock-q2">2. What process changes rock with heat and pressure without fully melting it?</label>
+                  <select id="rock-q2">
+                    <option value="">Choose an answer</option>
+                    <option value="weathering">Weathering</option>
+                    <option value="metamorphism">Metamorphism</option>
+                    <option value="deposition">Deposition</option>
+                  </select>
+                </div>
+                <button type="button" class="rock-panel-button" id="rock-check">Check Answers</button>
+                <div class="rock-feedback" id="rock-feedback" aria-live="polite"></div>
+              </div>
+            </article>
+
+            <article class="rock-card">
+              <h2>Class Challenge</h2>
+              <p>Choose a rock sample or photo. Identify three clues: texture, layering or foliation, and possible minerals. Then explain the rock-cycle path that could have produced it.</p>
+            </article>
+          </section>
+
+          <footer class="site-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+          </footer>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="rock-pane-process">Processes</button>
+            <button class="ll-tab" aria-selected="false" data-pane="rock-pane-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="rock-pane-process">
+            <span class="ll-label">Jump to Part</span>
+            <button class="rock-panel-button is-active" type="button" data-rock-jump="magma">Magma</button>
+            <button class="rock-panel-button" type="button" data-rock-jump="igneous">Igneous Rock</button>
+            <button class="rock-panel-button" type="button" data-rock-jump="sedimentary">Sedimentary Rock</button>
+            <button class="rock-panel-button" type="button" data-rock-jump="metamorphic">Metamorphic Rock</button>
+            <hr class="ll-hr">
+            <div class="ll-readouts">
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Selected</span>
+                <span class="ll-readout-val" id="rock-selected">Magma</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Engine</span>
+                <span class="ll-readout-val">Heat</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ll-pane" id="rock-pane-guide">
+            <div class="ll-info"><strong>Igneous</strong>Forms from cooled magma underground or lava at the surface.</div>
+            <div class="ll-info"><strong>Sedimentary</strong>Forms from deposited material that is compacted and cemented.</div>
+            <div class="ll-info"><strong>Metamorphic</strong>Forms when existing rock changes under heat and pressure.</div>
+            <div class="ll-info"><strong>Cycle</strong>Any rock can change into another type if the right process acts on it long enough.</div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
+    </div>
+  </div>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      var parts = {
+        magma: {
+          title: "Magma",
+          engine: "Heat",
+          text: "Magma is molten rock below Earth's surface. When it cools and crystallizes, it becomes igneous rock. If it erupts as lava, it can cool quickly into fine-grained rock."
+        },
+        igneous: {
+          title: "Igneous Rock",
+          engine: "Cooling",
+          text: "Igneous rock forms from cooled magma or lava. It can weather into sediment, be buried and metamorphosed, or melt again deep inside Earth."
+        },
+        sedimentary: {
+          title: "Sedimentary Rock",
+          engine: "Compaction",
+          text: "Sedimentary rock forms when sediment is deposited, compacted, and cemented. It often preserves layers, ripple marks, mud cracks, and fossils."
+        },
+        metamorphic: {
+          title: "Metamorphic Rock",
+          engine: "Pressure",
+          text: "Metamorphic rock forms when existing rock is changed by heat and pressure without completely melting. Its minerals can recrystallize and form bands or foliation."
+        }
+      };
+
+      function setPart(key) {
+        var part = parts[key];
+        document.getElementById("rock-readout").innerHTML = "<h2>" + part.title + "</h2><strong>Primary process:</strong> " + part.engine + "<br>" + part.text;
+        document.getElementById("rock-selected").textContent = part.title.split(" ")[0];
+        document.querySelectorAll("[data-rock], [data-rock-jump]").forEach(function (el) {
+          var target = el.dataset.rock || el.dataset.rockJump;
+          el.classList.toggle("is-active", target === key);
+        });
+      }
+
+      document.querySelectorAll("[data-rock], [data-rock-jump]").forEach(function (el) {
+        el.addEventListener("click", function () {
+          setPart(el.dataset.rock || el.dataset.rockJump);
+        });
+      });
+
+      document.querySelectorAll(".ll-tab").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          var panel = tab.closest(".ll-panel");
+          panel.querySelectorAll(".ll-tab").forEach(function (other) {
+            other.setAttribute("aria-selected", other === tab ? "true" : "false");
+          });
+          panel.querySelectorAll(".ll-pane").forEach(function (pane) {
+            pane.classList.toggle("ll-active", pane.id === tab.dataset.pane);
+          });
+        });
+      });
+
+      document.querySelector(".ll-panel-close").addEventListener("click", function () {
+        document.querySelector(".ll-panel").setAttribute("aria-hidden", "true");
+      });
+
+      document.querySelector(".ll-open-btn").addEventListener("click", function () {
+        document.querySelector(".ll-panel").setAttribute("aria-hidden", "false");
+      });
+
+      document.getElementById("rock-check").addEventListener("click", function () {
+        var score = 0;
+        if (document.getElementById("rock-q1").value === "igneous") score += 1;
+        if (document.getElementById("rock-q2").value === "metamorphism") score += 1;
+        var feedback = document.getElementById("rock-feedback");
+        feedback.className = "rock-feedback " + (score === 2 ? "rock-ok" : "rock-try");
+        feedback.textContent = score === 2 ? "Correct. You have the core transformations." : score + "/2 correct. Revisit igneous formation and metamorphism, then try again.";
+      });
+
+      setPart("magma");
+    }());
+  </script>
+</body>
+</html>

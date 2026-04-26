@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Asteroid Belt · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Space Science lesson on the asteroid belt between Mars and Jupiter, Ceres, Kirkwood gaps, meteorites, and why the belt never became a planet." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .belt-page {
+      --space: #07101f;
+      --space-2: #121f32;
+      --rock: #c99b66;
+      --ice: #9ed7ff;
+      --mars: #d35d3f;
+      --jupiter: #e8c087;
+      padding: 1rem clamp(1rem, 3vw, 2rem) 0;
+      color: #192335;
+    }
+
+    .belt-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 1fr);
+      gap: 1rem;
+      margin-bottom: 1rem;
+      align-items: stretch;
+    }
+
+    .belt-panel,
+    .belt-card,
+    .belt-lab {
+      border: 1px solid var(--border-subtle, #d6dbe6);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--surface-1, #fff) 90%, transparent);
+      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+    }
+
+    .belt-panel {
+      padding: clamp(1rem, 2.5vw, 1.6rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .belt-eyebrow {
+      margin: 0 0 0.45rem;
+      color: #9a4a22;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .belt-hero h1 {
+      margin: 0;
+      max-width: 12ch;
+      color: #111b2d;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .belt-lede {
+      margin: 0.85rem 0 0;
+      max-width: 64ch;
+      color: #43536b;
+      line-height: 1.65;
+      font-size: 0.98rem;
+    }
+
+    .belt-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 1rem;
+    }
+
+    .belt-meta span {
+      border: 1px solid rgba(201, 155, 102, 0.4);
+      border-radius: 999px;
+      background: rgba(201, 155, 102, 0.12);
+      color: #8a4b21;
+      padding: 0.28rem 0.62rem;
+      font-size: 0.73rem;
+      font-weight: 800;
+    }
+
+    .belt-lab {
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(211, 93, 63, 0.22), transparent 22%),
+        radial-gradient(circle at 82% 78%, rgba(232, 192, 135, 0.18), transparent 28%),
+        linear-gradient(145deg, var(--space), var(--space-2));
+      color: #f8fafc;
+      padding: 0.85rem;
+    }
+
+    .belt-lab-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      align-items: center;
+      margin-bottom: 0.65rem;
+    }
+
+    .belt-lab-head strong {
+      font-size: 0.86rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .belt-lab-head small {
+      max-width: 24ch;
+      color: rgba(248, 250, 252, 0.72);
+      line-height: 1.4;
+      text-align: right;
+    }
+
+    .belt-canvas-wrap {
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 12px;
+      background: #050914;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+    }
+
+    #belt-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    .belt-readout {
+      min-height: 2.4rem;
+      margin-top: 0.65rem;
+      color: rgba(248, 250, 252, 0.84);
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+
+    .belt-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .belt-card {
+      padding: 1rem;
+    }
+
+    .belt-card h2,
+    .belt-card h3 {
+      margin: 0 0 0.55rem;
+      color: #111b2d;
+      letter-spacing: 0;
+    }
+
+    .belt-card h2 {
+      font-size: 1.15rem;
+    }
+
+    .belt-card h3 {
+      font-size: 0.98rem;
+    }
+
+    .belt-card p,
+    .belt-card li {
+      color: #43536b;
+      font-size: 0.88rem;
+      line-height: 1.62;
+    }
+
+    .belt-card p {
+      margin: 0 0 0.65rem;
+    }
+
+    .belt-card ul {
+      margin: 0.45rem 0 0;
+      padding-left: 1.1rem;
+    }
+
+    .belt-wide {
+      grid-column: span 2;
+    }
+
+    .belt-facts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+
+    .belt-fact {
+      border: 1px solid rgba(201, 155, 102, 0.28);
+      border-radius: 12px;
+      background: rgba(201, 155, 102, 0.09);
+      padding: 0.72rem;
+    }
+
+    .belt-fact strong {
+      display: block;
+      color: #6e3b1b;
+      font-size: 0.83rem;
+      margin-bottom: 0.24rem;
+    }
+
+    .belt-fact small {
+      display: block;
+      color: #526178;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .belt-note {
+      border-left: 3px solid #c99b66;
+      border-radius: 10px;
+      background: rgba(201, 155, 102, 0.12);
+      padding: 0.75rem 0.85rem;
+      color: #43536b;
+      font-size: 0.84rem;
+      line-height: 1.58;
+    }
+
+    .belt-quiz {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .belt-q {
+      border: 1px solid var(--border-subtle, #d6dbe6);
+      border-radius: 12px;
+      padding: 0.75rem;
+    }
+
+    .belt-q label {
+      display: block;
+      margin-bottom: 0.42rem;
+      color: #27395c;
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+
+    .belt-q select {
+      width: 100%;
+      border: 1px solid var(--border-subtle, #d6dbe6);
+      border-radius: 9px;
+      padding: 0.48rem 0.58rem;
+      color: #192335;
+      background: #fff;
+      font: inherit;
+      font-size: 0.82rem;
+    }
+
+    .belt-button {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      background: #9a4a22;
+      color: #fff;
+      padding: 0.5rem 0.7rem;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.16s, background 0.16s;
+      margin-bottom: 0.45rem;
+    }
+
+    .belt-button:hover {
+      background: #783917;
+      transform: translateY(-1px);
+    }
+
+    .belt-button.is-active {
+      background: #e8c087;
+      color: #21180f;
+    }
+
+    .belt-feedback {
+      min-height: 1.2rem;
+      margin-top: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .belt-ok {
+      color: #16724e;
+    }
+
+    .belt-try {
+      color: #9a4a22;
+    }
+
+    .site-footer {
+      margin-top: 1.2rem;
+    }
+
+    @media (max-width: 980px) {
+      .belt-hero,
+      .belt-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .belt-wide {
+        grid-column: auto;
+      }
+
+      .belt-facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .belt-page {
+        padding: 0.75rem 0.75rem 0;
+      }
+
+      .belt-hero h1 {
+        font-size: clamp(2rem, 15vw, 3.15rem);
+      }
+
+      .belt-facts {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="belt-page">
+          <section class="belt-hero">
+            <div class="belt-panel">
+              <p class="belt-eyebrow">Space Science · Lesson 09</p>
+              <h1>The Asteroid Belt</h1>
+              <p class="belt-lede">Between Mars and Jupiter is a broad ring of rocky leftovers from the early Solar System. It is not a crowded movie-style danger zone. It is mostly empty space, shaped by gravity, collisions, and Jupiter's enormous influence.</p>
+              <div class="belt-meta" aria-label="Lesson topics">
+                <span>Mars to Jupiter</span>
+                <span>Ceres</span>
+                <span>Kirkwood Gaps</span>
+                <span>Meteorites</span>
+              </div>
+            </div>
+
+            <div class="belt-lab">
+              <div class="belt-lab-head">
+                <strong>Orbital Belt Lab</strong>
+                <small>Click named objects or change the view in the side panel.</small>
+              </div>
+              <div class="belt-canvas-wrap">
+                <canvas id="belt-canvas" aria-label="Top-down model of the asteroid belt between Mars and Jupiter"></canvas>
+              </div>
+              <div class="belt-readout" id="belt-readout">The main asteroid belt sits roughly between 2.1 and 3.3 astronomical units from the Sun.</div>
+            </div>
+          </section>
+
+          <section class="belt-grid">
+            <article class="belt-card belt-wide">
+              <h2>What Is the Asteroid Belt?</h2>
+              <p>The asteroid belt is a region of millions of rocky and metallic bodies orbiting the Sun between Mars and Jupiter. Most are small, irregular fragments, but a few are large enough to be worlds in their own right.</p>
+              <p>The belt is not the remains of an exploded planet. It is mostly material that never successfully became a planet because Jupiter's gravity stirred up the region, making collisions too fast and disruptive for easy growth.</p>
+              <div class="belt-facts" aria-label="Asteroid belt facts">
+                <div class="belt-fact">
+                  <strong>2.1-3.3 AU</strong>
+                  <small>The densest part of the main belt lies beyond Mars and inside Jupiter.</small>
+                </div>
+                <div class="belt-fact">
+                  <strong>Ceres</strong>
+                  <small>The largest object in the belt and classified as a dwarf planet.</small>
+                </div>
+                <div class="belt-fact">
+                  <strong>Mostly Empty</strong>
+                  <small>Spacecraft cross the belt safely because objects are widely separated.</small>
+                </div>
+                <div class="belt-fact">
+                  <strong>Old Material</strong>
+                  <small>Asteroids preserve clues from the Solar System's formation.</small>
+                </div>
+              </div>
+            </article>
+
+            <article class="belt-card">
+              <h2>Why Did Jupiter Matter?</h2>
+              <p>Jupiter's gravity creates resonances, places where an asteroid's orbit lines up repeatedly with Jupiter's orbit. These repeated tugs can stretch or destabilize an asteroid's path.</p>
+              <p>The result is a set of sparse zones called <strong>Kirkwood gaps</strong>, visible when astronomers plot asteroid distances from the Sun.</p>
+            </article>
+
+            <article class="belt-card">
+              <h2>Ceres, Vesta, Pallas, Hygiea</h2>
+              <p>Ceres alone contains about a quarter of the belt's mass. Vesta has a giant impact basin and has sent meteorites to Earth. Pallas and Hygiea are also among the largest bodies in the belt.</p>
+              <p>These objects are not just rubble. They are small worlds with histories written in craters, minerals, ice, and impact scars.</p>
+            </article>
+
+            <article class="belt-card">
+              <h2>Asteroids, Meteoroids, Meteors, Meteorites</h2>
+              <ul>
+                <li><strong>Asteroid:</strong> a rocky object orbiting the Sun.</li>
+                <li><strong>Meteoroid:</strong> a smaller piece traveling through space.</li>
+                <li><strong>Meteor:</strong> the bright streak as it burns in an atmosphere.</li>
+                <li><strong>Meteorite:</strong> a piece that reaches the ground.</li>
+              </ul>
+            </article>
+
+            <article class="belt-card belt-wide">
+              <h2>Practice Check</h2>
+              <div class="belt-quiz">
+                <div class="belt-q">
+                  <label for="belt-q1">1. Where is the main asteroid belt located?</label>
+                  <select id="belt-q1">
+                    <option value="">Choose an answer</option>
+                    <option value="inner">Between Mercury and Venus</option>
+                    <option value="main">Between Mars and Jupiter</option>
+                    <option value="outer">Beyond Neptune</option>
+                  </select>
+                </div>
+                <div class="belt-q">
+                  <label for="belt-q2">2. Why did the belt not form one large planet?</label>
+                  <select id="belt-q2">
+                    <option value="">Choose an answer</option>
+                    <option value="jupiter">Jupiter's gravity stirred the region and disrupted growth.</option>
+                    <option value="air">There was too much air resistance.</option>
+                    <option value="moon">Earth's Moon swept up all the material.</option>
+                  </select>
+                </div>
+                <button type="button" class="belt-button" id="belt-check">Check Answers</button>
+                <div class="belt-feedback" id="belt-feedback" aria-live="polite"></div>
+              </div>
+            </article>
+
+            <article class="belt-card">
+              <h2>Real-World Connection</h2>
+              <p>NASA's Dawn mission orbited Vesta and Ceres, turning tiny points of light into mapped worlds. Missions like OSIRIS-REx and Hayabusa2 show why asteroid samples matter: they let scientists study ancient Solar System material in laboratories on Earth.</p>
+              <div class="belt-note"><strong>Big idea:</strong> Asteroids are small, but they preserve an enormous history.</div>
+            </article>
+          </section>
+
+          <footer class="site-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+          </footer>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="belt-pane-view">View</button>
+            <button class="ll-tab" aria-selected="false" data-pane="belt-pane-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="belt-pane-view">
+            <span class="ll-label">Focus Object</span>
+            <button class="belt-button is-active" type="button" data-focus="belt">Main Belt</button>
+            <button class="belt-button" type="button" data-focus="ceres">Ceres</button>
+            <button class="belt-button" type="button" data-focus="vesta">Vesta</button>
+            <button class="belt-button" type="button" data-focus="gaps">Kirkwood Gaps</button>
+            <hr class="ll-hr">
+            <div class="ll-param">
+              <label class="ll-param-label" for="belt-speed">Orbit speed <span class="ll-val" id="belt-speed-val">1.0x</span></label>
+              <input id="belt-speed" type="range" min="0" max="40" value="10" />
+              <div class="ll-param-ends"><span>Paused</span><span>Fast</span></div>
+            </div>
+            <div class="ll-param">
+              <label class="ll-param-label" for="belt-density">Asteroid density <span class="ll-val" id="belt-density-val">220</span></label>
+              <input id="belt-density" type="range" min="80" max="360" value="220" />
+              <div class="ll-param-ends"><span>Simple</span><span>Dense</span></div>
+            </div>
+            <div class="ll-param">
+              <label class="ll-param-label" for="belt-gaps"><span>Show Kirkwood gaps</span></label>
+              <input id="belt-gaps" type="checkbox" checked />
+            </div>
+            <div class="ll-readouts">
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Region</span>
+                <span class="ll-readout-val">2.1-3.3 AU</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Largest</span>
+                <span class="ll-readout-val">Ceres</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ll-pane" id="belt-pane-guide">
+            <div class="ll-info"><strong>AU</strong>One astronomical unit is the average Earth-Sun distance.</div>
+            <div class="ll-info"><strong>Main Belt</strong>The rocky belt between Mars and Jupiter, not the Kuiper Belt beyond Neptune.</div>
+            <div class="ll-info"><strong>Kirkwood Gaps</strong>Underpopulated orbital distances caused by gravitational resonances with Jupiter.</div>
+            <div class="ll-info"><strong>Dwarf Planet</strong>Ceres is massive enough to be round, but it has not cleared its orbital neighborhood.</div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
+    </div>
+  </div>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      var canvas = document.getElementById("belt-canvas");
+      var ctx = canvas.getContext("2d");
+      var asteroids = [];
+      var density = 220;
+      var speed = 1;
+      var time = 0;
+      var showGaps = true;
+      var focus = "belt";
+      var hitTargets = [];
+      var raf = null;
+
+      var bodies = {
+        ceres: { name: "Ceres", au: 2.77, angle: 0.85, color: "#d9c0a0", info: "Ceres is the largest asteroid-belt object and a dwarf planet with signs of water-rich minerals." },
+        vesta: { name: "Vesta", au: 2.36, angle: 2.25, color: "#e7a95f", info: "Vesta has a huge impact basin. Some meteorites found on Earth likely came from Vesta." },
+        pallas: { name: "Pallas", au: 2.77, angle: 4.1, color: "#b7c4d8", info: "Pallas is one of the largest belt objects and has a tilted, unusual orbit." },
+        hygiea: { name: "Hygiea", au: 3.14, angle: 5.35, color: "#a68f7c", info: "Hygiea is a large, dark asteroid in the outer main belt." }
+      };
+
+      function makeAsteroids() {
+        asteroids = [];
+        for (var i = 0; i < density; i += 1) {
+          var seed = (i * 9301 + 49297) % 233280;
+          var rand = seed / 233280;
+          var au = 2.1 + ((i * 37) % 120) / 120 * 1.22;
+          var gapPenalty = Math.min(Math.abs(au - 2.5), Math.abs(au - 2.82), Math.abs(au - 2.95));
+          if (showGaps && gapPenalty < 0.035 && i % 3 !== 0) continue;
+          asteroids.push({
+            au: au,
+            angle: rand * Math.PI * 2,
+            size: 1.1 + ((i * 17) % 7) * 0.22,
+            speed: 0.65 / Math.pow(au, 1.5),
+            tint: i % 5
+          });
+        }
+      }
+
+      function sizeCanvas() {
+        var rect = canvas.getBoundingClientRect();
+        var scale = window.devicePixelRatio || 1;
+        canvas.width = Math.max(1, Math.round(rect.width * scale));
+        canvas.height = Math.max(1, Math.round(rect.height * scale));
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        draw();
+      }
+
+      function orbitRadius(au, maxR) {
+        return (au / 5.3) * maxR;
+      }
+
+      function drawOrbit(cx, cy, r, color, dash) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        if (dash) ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawBody(cx, cy, x, y, radius, color, label) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = radius * 3;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        if (label) {
+          ctx.fillStyle = "rgba(248, 250, 252, 0.86)";
+          ctx.font = "700 12px Inter, sans-serif";
+          ctx.fillText(label, x + radius + 6, y - radius - 2);
+        }
+      }
+
+      function draw() {
+        var rect = canvas.getBoundingClientRect();
+        var w = rect.width;
+        var h = rect.height;
+        var cx = w / 2;
+        var cy = h / 2;
+        var maxR = Math.min(w, h) * 0.48;
+        hitTargets = [];
+
+        var gradient = ctx.createRadialGradient(cx, cy, 8, cx, cy, Math.max(w, h));
+        gradient.addColorStop(0, "#172b4d");
+        gradient.addColorStop(1, "#050914");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = "#ffd978";
+        ctx.shadowColor = "#ffd978";
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "rgba(255,255,255,0.72)";
+        ctx.font = "800 11px Inter, sans-serif";
+        ctx.fillText("Sun", cx + 14, cy + 4);
+
+        var marsR = orbitRadius(1.52, maxR);
+        var innerR = orbitRadius(2.1, maxR);
+        var outerR = orbitRadius(3.3, maxR);
+        var jupiterR = orbitRadius(5.2, maxR);
+        drawOrbit(cx, cy, marsR, "rgba(211, 93, 63, 0.46)");
+        drawOrbit(cx, cy, innerR, "rgba(201, 155, 102, 0.34)", true);
+        drawOrbit(cx, cy, outerR, "rgba(201, 155, 102, 0.34)", true);
+        drawOrbit(cx, cy, jupiterR, "rgba(232, 192, 135, 0.48)");
+
+        if (showGaps) {
+          [2.5, 2.82, 2.95].forEach(function (au) {
+            drawOrbit(cx, cy, orbitRadius(au, maxR), "rgba(45, 212, 191, 0.42)", true);
+          });
+        }
+
+        asteroids.forEach(function (rock) {
+          var angle = rock.angle + time * rock.speed;
+          var r = orbitRadius(rock.au, maxR);
+          var x = cx + Math.cos(angle) * r;
+          var y = cy + Math.sin(angle) * r;
+          ctx.fillStyle = rock.tint === 0 ? "#d7b083" : rock.tint === 1 ? "#9c8875" : "#c99b66";
+          ctx.globalAlpha = focus === "gaps" ? 0.58 : 0.86;
+          ctx.beginPath();
+          ctx.arc(x, y, rock.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+        var marsAngle = time * 0.28 + 3.2;
+        drawBody(cx, cy, cx + Math.cos(marsAngle) * marsR, cy + Math.sin(marsAngle) * marsR, 5, "#d35d3f", "Mars");
+        var jAngle = time * 0.08 + 0.2;
+        drawBody(cx, cy, cx + Math.cos(jAngle) * jupiterR, cy + Math.sin(jAngle) * jupiterR, 8, "#e8c087", "Jupiter");
+
+        Object.keys(bodies).forEach(function (key) {
+          var body = bodies[key];
+          var angle = body.angle + time * (0.38 / Math.pow(body.au, 1.5));
+          var r = orbitRadius(body.au, maxR);
+          var x = cx + Math.cos(angle) * r;
+          var y = cy + Math.sin(angle) * r;
+          var isFocus = focus === key;
+          drawBody(cx, cy, x, y, isFocus ? 8 : 5, body.color, body.name);
+          hitTargets.push({ key: key, x: x, y: y, r: 14 });
+        });
+      }
+
+      function tick() {
+        time += speed * 0.018;
+        draw();
+        raf = requestAnimationFrame(tick);
+      }
+
+      function setFocus(next) {
+        focus = next;
+        document.querySelectorAll("[data-focus]").forEach(function (btn) {
+          btn.classList.toggle("is-active", btn.dataset.focus === next);
+        });
+        var readout = document.getElementById("belt-readout");
+        if (next === "belt") readout.textContent = "The main belt is a broad, mostly empty region of rocky objects between Mars and Jupiter.";
+        if (next === "gaps") readout.textContent = "Kirkwood gaps are underpopulated distances where Jupiter's repeated gravitational tugs destabilize asteroid orbits.";
+        if (bodies[next]) readout.textContent = bodies[next].info;
+        draw();
+      }
+
+      document.querySelectorAll("[data-focus]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          setFocus(btn.dataset.focus);
+        });
+      });
+
+      document.getElementById("belt-speed").addEventListener("input", function (event) {
+        speed = Number(event.target.value) / 10;
+        document.getElementById("belt-speed-val").textContent = speed.toFixed(1) + "x";
+      });
+
+      document.getElementById("belt-density").addEventListener("input", function (event) {
+        density = Number(event.target.value);
+        document.getElementById("belt-density-val").textContent = String(density);
+        makeAsteroids();
+        draw();
+      });
+
+      document.getElementById("belt-gaps").addEventListener("change", function (event) {
+        showGaps = event.target.checked;
+        makeAsteroids();
+        draw();
+      });
+
+      canvas.addEventListener("click", function (event) {
+        var rect = canvas.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+        var found = hitTargets.find(function (target) {
+          return Math.hypot(target.x - x, target.y - y) <= target.r;
+        });
+        if (found) setFocus(found.key);
+      });
+
+      document.querySelectorAll(".ll-tab").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          var panel = tab.closest(".ll-panel");
+          panel.querySelectorAll(".ll-tab").forEach(function (other) {
+            other.setAttribute("aria-selected", other === tab ? "true" : "false");
+          });
+          panel.querySelectorAll(".ll-pane").forEach(function (pane) {
+            pane.classList.toggle("ll-active", pane.id === tab.dataset.pane);
+          });
+        });
+      });
+
+      document.querySelector(".ll-panel-close").addEventListener("click", function () {
+        document.querySelector(".ll-panel").setAttribute("aria-hidden", "true");
+      });
+
+      document.querySelector(".ll-open-btn").addEventListener("click", function () {
+        document.querySelector(".ll-panel").setAttribute("aria-hidden", "false");
+      });
+
+      document.getElementById("belt-check").addEventListener("click", function () {
+        var score = 0;
+        if (document.getElementById("belt-q1").value === "main") score += 1;
+        if (document.getElementById("belt-q2").value === "jupiter") score += 1;
+        var feedback = document.getElementById("belt-feedback");
+        feedback.className = "belt-feedback " + (score === 2 ? "belt-ok" : "belt-try");
+        feedback.textContent = score === 2 ? "Correct. The belt's location and Jupiter's role are locked in." : score + "/2 correct. Revisit the location and Jupiter section, then try again.";
+      });
+
+      window.addEventListener("resize", sizeCanvas);
+      makeAsteroids();
+      sizeCanvas();
+      tick();
+      window.addEventListener("beforeunload", function () {
+        if (raf) cancelAnimationFrame(raf);
+      });
+    }());
+  </script>
+</body>
+</html>

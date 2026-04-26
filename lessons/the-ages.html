@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Ages · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Systems & Societies lesson tracing human civilization from the Stone Age to the modern day, with science-grounded hypotheses about future ages to come." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .ages-page {
+      --ink: #172033;
+      --muted: #4e5f78;
+      --bronze: #b7793d;
+      --iron: #64748b;
+      --electric: #2563eb;
+      --future: #0f766e;
+      padding: 1rem clamp(1rem, 3vw, 2rem) 0;
+      color: var(--ink);
+    }
+
+    .ages-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.05fr);
+      gap: 1rem;
+      align-items: stretch;
+      margin-bottom: 1rem;
+    }
+
+    .ages-panel,
+    .ages-timeline-card,
+    .ages-card {
+      border: 1px solid var(--border-subtle, #d8dee8);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--surface-1, #fff) 90%, transparent);
+      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+    }
+
+    .ages-panel {
+      padding: clamp(1rem, 2.6vw, 1.65rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .ages-eyebrow {
+      margin: 0 0 0.45rem;
+      color: #8a4b21;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .ages-hero h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 6vw, 5rem);
+      line-height: 0.92;
+      letter-spacing: 0;
+      color: #111827;
+    }
+
+    .ages-lede {
+      max-width: 62ch;
+      margin: 0.9rem 0 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.66;
+    }
+
+    .ages-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 1rem;
+    }
+
+    .ages-meta span {
+      border: 1px solid rgba(183, 121, 61, 0.35);
+      border-radius: 999px;
+      background: rgba(183, 121, 61, 0.11);
+      color: #8a4b21;
+      padding: 0.28rem 0.62rem;
+      font-size: 0.73rem;
+      font-weight: 800;
+    }
+
+    .ages-timeline-card {
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 14% 18%, rgba(183, 121, 61, 0.22), transparent 24%),
+        radial-gradient(circle at 86% 20%, rgba(37, 99, 235, 0.18), transparent 24%),
+        linear-gradient(145deg, #111827, #1e293b);
+      color: #f8fafc;
+      padding: 0.9rem;
+    }
+
+    .ages-map-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .ages-map-head strong {
+      font-size: 0.86rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .ages-map-head small {
+      color: rgba(248, 250, 252, 0.72);
+      text-align: right;
+      line-height: 1.4;
+    }
+
+    .ages-band {
+      position: relative;
+      display: grid;
+      gap: 0.5rem;
+      padding: 0.7rem;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 13px;
+      background: rgba(3, 7, 18, 0.35);
+    }
+
+    .ages-track {
+      position: relative;
+      height: 58px;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #8b5e34, #a16207, #4b5563, #1d4ed8, #0f766e);
+      overflow: hidden;
+    }
+
+    .ages-marker {
+      position: absolute;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      background: #f6b73c;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.15);
+      transition: left 0.25s ease;
+    }
+
+    .ages-era-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+
+    .ages-era-btn,
+    .ages-action {
+      border: 0;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.55rem 0.6rem;
+      text-align: left;
+      transition: background 0.16s, transform 0.16s;
+    }
+
+    .ages-era-btn:hover,
+    .ages-action:hover {
+      background: rgba(255, 255, 255, 0.22);
+      transform: translateY(-1px);
+    }
+
+    .ages-era-btn.is-active {
+      background: #f6b73c;
+      color: #21180f;
+    }
+
+    .ages-readout {
+      min-height: 6.5rem;
+      margin-top: 0.7rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.85rem;
+      color: rgba(248, 250, 252, 0.88);
+      line-height: 1.55;
+      font-size: 0.84rem;
+    }
+
+    .ages-readout h2 {
+      margin: 0 0 0.35rem;
+      color: #fff;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+
+    .ages-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .ages-card {
+      padding: 1rem;
+    }
+
+    .ages-card h2,
+    .ages-card h3 {
+      margin: 0 0 0.55rem;
+      color: #111827;
+      letter-spacing: 0;
+    }
+
+    .ages-card h2 {
+      font-size: 1.15rem;
+    }
+
+    .ages-card h3 {
+      font-size: 0.98rem;
+    }
+
+    .ages-card p,
+    .ages-card li {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.62;
+    }
+
+    .ages-card p {
+      margin: 0 0 0.65rem;
+    }
+
+    .ages-card ul {
+      margin: 0.45rem 0 0;
+      padding-left: 1.1rem;
+    }
+
+    .ages-wide {
+      grid-column: span 2;
+    }
+
+    .ages-full {
+      grid-column: 1 / -1;
+    }
+
+    .ages-facts,
+    .ages-future-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+
+    .ages-fact,
+    .ages-future {
+      border: 1px solid rgba(37, 99, 235, 0.22);
+      border-radius: 12px;
+      background: rgba(37, 99, 235, 0.07);
+      padding: 0.75rem;
+    }
+
+    .ages-future {
+      border-color: rgba(15, 118, 110, 0.26);
+      background: rgba(15, 118, 110, 0.08);
+    }
+
+    .ages-fact strong,
+    .ages-future strong {
+      display: block;
+      margin-bottom: 0.22rem;
+      color: #1e3a8a;
+      font-size: 0.82rem;
+    }
+
+    .ages-future strong {
+      color: #0f766e;
+    }
+
+    .ages-fact small,
+    .ages-future small {
+      display: block;
+      color: #526178;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .ages-note {
+      border-left: 3px solid #0f766e;
+      border-radius: 10px;
+      background: rgba(15, 118, 110, 0.1);
+      padding: 0.75rem 0.85rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.58;
+    }
+
+    .ages-quiz {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .ages-q {
+      border: 1px solid var(--border-subtle, #d8dee8);
+      border-radius: 12px;
+      padding: 0.75rem;
+    }
+
+    .ages-q label {
+      display: block;
+      margin-bottom: 0.42rem;
+      color: #27395c;
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+
+    .ages-q select {
+      width: 100%;
+      border: 1px solid var(--border-subtle, #d8dee8);
+      border-radius: 9px;
+      padding: 0.48rem 0.58rem;
+      color: #192335;
+      background: #fff;
+      font: inherit;
+      font-size: 0.82rem;
+    }
+
+    .ages-panel-button {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      background: #334155;
+      color: #fff;
+      padding: 0.52rem 0.7rem;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.16s, background 0.16s;
+      margin-bottom: 0.45rem;
+    }
+
+    .ages-panel-button:hover {
+      background: #1e293b;
+      transform: translateY(-1px);
+    }
+
+    .ages-panel-button.is-active {
+      background: #f6b73c;
+      color: #21180f;
+    }
+
+    .ages-feedback {
+      min-height: 1.2rem;
+      margin-top: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .ages-ok {
+      color: #0f766e;
+    }
+
+    .ages-try {
+      color: #9a4a22;
+    }
+
+    .site-footer {
+      margin-top: 1.2rem;
+    }
+
+    @media (max-width: 980px) {
+      .ages-hero,
+      .ages-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .ages-wide {
+        grid-column: auto;
+      }
+
+      .ages-facts,
+      .ages-future-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .ages-page {
+        padding: 0.75rem 0.75rem 0;
+      }
+
+      .ages-era-buttons,
+      .ages-facts,
+      .ages-future-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ages-page">
+          <section class="ages-hero">
+            <div class="ages-panel">
+              <p class="ages-eyebrow">Systems &amp; Societies · Lesson 07</p>
+              <h1>The Ages</h1>
+              <p class="ages-lede">Human civilization is a story of tools, energy, information, and cooperation. Each age changes what people can build, how societies organize, and what problems become possible to solve or dangerous to ignore.</p>
+              <div class="ages-meta" aria-label="Lesson topics">
+                <span>Stone to Steel</span>
+                <span>Agriculture</span>
+                <span>Industry</span>
+                <span>Digital Society</span>
+                <span>Future Science</span>
+              </div>
+            </div>
+
+            <div class="ages-timeline-card">
+              <div class="ages-map-head">
+                <strong>Human Civilization Timeline</strong>
+                <small>Select an age to see its core system change.</small>
+              </div>
+              <div class="ages-band">
+                <div class="ages-track" aria-hidden="true">
+                  <div class="ages-marker" id="ages-marker"></div>
+                </div>
+                <div class="ages-era-buttons" id="ages-era-buttons"></div>
+              </div>
+              <div class="ages-readout" id="ages-readout"></div>
+            </div>
+          </section>
+
+          <section class="ages-grid">
+            <article class="ages-card ages-wide">
+              <h2>How to Read the Ages</h2>
+              <p>An “age” is not a perfect worldwide switch. Stone tools, farming, writing, iron, factories, computers, and satellites all spread unevenly. Different communities can live with different technologies at the same time.</p>
+              <p>Still, these labels are useful because they mark changes in the dominant systems humans use: materials, food production, labor, energy, communication, transportation, and knowledge storage.</p>
+              <div class="ages-facts" aria-label="Systems that change across ages">
+                <div class="ages-fact">
+                  <strong>Materials</strong>
+                  <small>Stone, bronze, iron, steel, silicon, composites, engineered biology.</small>
+                </div>
+                <div class="ages-fact">
+                  <strong>Energy</strong>
+                  <small>Muscle, fire, water, coal, oil, electricity, renewables, nuclear.</small>
+                </div>
+                <div class="ages-fact">
+                  <strong>Information</strong>
+                  <small>Speech, symbols, writing, printing, radio, internet, machine intelligence.</small>
+                </div>
+                <div class="ages-fact">
+                  <strong>Organization</strong>
+                  <small>Bands, villages, cities, empires, nation-states, networks, planetary systems.</small>
+                </div>
+              </div>
+            </article>
+
+            <article class="ages-card">
+              <h2>Stone Age</h2>
+              <p>For most of human history, people used stone, bone, wood, fire, language, and shared memory to survive. Hunting, gathering, migration, art, ritual, and toolmaking shaped flexible societies.</p>
+              <p>The late Stone Age brought agriculture in several regions, creating food surpluses that could support villages, specialization, and permanent architecture.</p>
+            </article>
+
+            <article class="ages-card">
+              <h2>Bronze and Iron Ages</h2>
+              <p>Metallurgy transformed tools, weapons, trade, and political power. Bronze required long-distance access to copper and tin; iron eventually became more widespread and reshaped farming and warfare.</p>
+              <p>Writing, law codes, money, roads, ships, and cities turned local communities into complex civilizations.</p>
+            </article>
+
+            <article class="ages-card">
+              <h2>Classical to Medieval Worlds</h2>
+              <p>Empires, religions, universities, legal traditions, guilds, and trade routes carried knowledge across continents. The period was not a pause between inventions; it developed mathematics, optics, medicine, architecture, agriculture, and navigation.</p>
+            </article>
+
+            <article class="ages-card">
+              <h2>Scientific, Industrial, and Modern Ages</h2>
+              <p>The Scientific Revolution made experiment and mathematics central to knowledge. The Industrial Age turned heat engines, factories, and fossil fuels into a new economic system.</p>
+              <p>The modern era adds electricity, antibiotics, aviation, nuclear physics, spaceflight, computing, global finance, mass media, and the internet.</p>
+            </article>
+
+            <article class="ages-card ages-wide">
+              <h2>Modern Day: The Information Age</h2>
+              <p>Today, civilization runs on networks: electrical grids, supply chains, satellites, databases, schools, hospitals, markets, media systems, and code. The computer is not only a tool; it is infrastructure for almost every other tool.</p>
+              <p>This creates enormous power and enormous fragility. A modern society can sequence genomes, land spacecraft, and coordinate global science, while also depending on minerals, energy, trust, cybersecurity, and ecological stability.</p>
+              <div class="ages-note"><strong>Systems idea:</strong> Progress is not just “better gadgets.” It is the reorganization of society around new constraints and new possibilities.</div>
+            </article>
+
+            <article class="ages-card ages-full">
+              <h2>Hypothesized Ages to Come Through Science</h2>
+              <p>Future ages are not guaranteed. They are hypotheses based on active scientific and engineering directions. Each would require breakthroughs, ethical choices, and social institutions strong enough to use power wisely.</p>
+              <div class="ages-future-grid">
+                <div class="ages-future">
+                  <strong>AI and Automation Age</strong>
+                  <small>Machine intelligence handles more planning, design, translation, tutoring, diagnosis, and physical work.</small>
+                </div>
+                <div class="ages-future">
+                  <strong>Biotechnology Age</strong>
+                  <small>Gene editing, synthetic biology, regenerative medicine, and bio-manufacturing reshape health and materials.</small>
+                </div>
+                <div class="ages-future">
+                  <strong>Clean Energy Age</strong>
+                  <small>Advanced solar, storage, geothermal, fission, and possibly fusion reduce dependence on fossil carbon.</small>
+                </div>
+                <div class="ages-future">
+                  <strong>Spacefaring Age</strong>
+                  <small>Reusable rockets, lunar industry, asteroid resources, and Mars science expand civilization beyond Earth.</small>
+                </div>
+                <div class="ages-future">
+                  <strong>Climate Restoration Age</strong>
+                  <small>Human systems move from damage control toward carbon removal, ecosystem repair, and resilient cities.</small>
+                </div>
+                <div class="ages-future">
+                  <strong>Quantum Information Age</strong>
+                  <small>Quantum sensors, secure communication, and specialized computation change measurement and simulation.</small>
+                </div>
+                <div class="ages-future">
+                  <strong>Neurotechnology Age</strong>
+                  <small>Brain-computer interfaces and cognitive medicine raise deep questions about identity and agency.</small>
+                </div>
+                <div class="ages-future">
+                  <strong>Planetary Stewardship Age</strong>
+                  <small>Civilization learns to manage global risks as one connected Earth system.</small>
+                </div>
+              </div>
+            </article>
+
+            <article class="ages-card ages-wide">
+              <h2>Practice Check</h2>
+              <div class="ages-quiz">
+                <div class="ages-q">
+                  <label for="ages-q1">1. Why are the “ages” not exact dates that apply everywhere at once?</label>
+                  <select id="ages-q1">
+                    <option value="">Choose an answer</option>
+                    <option value="uneven">Technologies spread unevenly, and different societies can overlap in time.</option>
+                    <option value="random">Historians invented them randomly.</option>
+                    <option value="single">Every society changed technology on the same day.</option>
+                  </select>
+                </div>
+                <div class="ages-q">
+                  <label for="ages-q2">2. Which system change best describes the Industrial Age?</label>
+                  <select id="ages-q2">
+                    <option value="">Choose an answer</option>
+                    <option value="steam">Factories, heat engines, fossil fuels, and mechanized production.</option>
+                    <option value="stone">Only stone tools and hunting bands.</option>
+                    <option value="future">Brain-computer interfaces and asteroid mining.</option>
+                  </select>
+                </div>
+                <button type="button" class="ages-panel-button" id="ages-check">Check Answers</button>
+                <div class="ages-feedback" id="ages-feedback" aria-live="polite"></div>
+              </div>
+            </article>
+
+            <article class="ages-card">
+              <h2>Discussion Prompt</h2>
+              <p>Pick one future age. What invention would have to become reliable? What new job might appear? What danger would society have to regulate?</p>
+              <div class="ages-note"><strong>Challenge:</strong> A powerful future is not automatically a wise future.</div>
+            </article>
+          </section>
+
+          <footer class="site-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+          </footer>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="ages-pane-map">Map</button>
+            <button class="ll-tab" aria-selected="false" data-pane="ages-pane-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ages-pane-map">
+            <span class="ll-label">Jump to Age</span>
+            <div id="ages-panel-buttons"></div>
+            <hr class="ll-hr">
+            <div class="ll-readouts">
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Selected</span>
+                <span class="ll-readout-val" id="ages-selected">Stone</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Lens</span>
+                <span class="ll-readout-val">Systems</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ll-pane" id="ages-pane-guide">
+            <div class="ll-info"><strong>Age</strong>A broad historical label for a dominant material, energy source, information system, or social organization.</div>
+            <div class="ll-info"><strong>Overlap</strong>Ages are not clean worldwide boxes. New systems emerge while old systems continue.</div>
+            <div class="ll-info"><strong>Complexity</strong>More powerful systems need more coordination, trust, maintenance, and shared rules.</div>
+            <div class="ll-info"><strong>Future Ages</strong>Speculative, not certain. Science opens pathways; society chooses how to walk them.</div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
+    </div>
+  </div>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      var eras = [
+        { key: "stone", name: "Stone Age", pos: 4, range: "c. 3.3 million BCE-3300 BCE", system: "Stone tools, fire, language, migration, art, and survival knowledge.", shift: "Human culture becomes cumulative: each generation can inherit and improve tools and stories." },
+        { key: "agricultural", name: "Agricultural Age", pos: 19, range: "c. 10,000 BCE onward", system: "Farming, herding, storage, villages, irrigation, and food surplus.", shift: "Settled life supports specialization, property, population growth, and new forms of inequality." },
+        { key: "bronze", name: "Bronze Age", pos: 32, range: "c. 3300-1200 BCE", system: "Metallurgy, writing, cities, trade networks, law codes, and early states.", shift: "Civilization becomes record-keeping: power can be stored in documents, walls, armies, and accounts." },
+        { key: "iron", name: "Iron Age", pos: 44, range: "c. 1200 BCE onward", system: "Stronger tools, wider agriculture, empires, coins, roads, and classical knowledge traditions.", shift: "Durable metal and large institutions expand what societies can farm, build, conquer, and govern." },
+        { key: "scientific", name: "Scientific Age", pos: 61, range: "c. 1500s-1700s", system: "Experiment, measurement, mathematics, telescopes, microscopes, and reproducible knowledge.", shift: "Knowledge becomes a method: claims are tested against evidence instead of protected by authority alone." },
+        { key: "industrial", name: "Industrial Age", pos: 73, range: "c. 1760s-1900s", system: "Steam power, factories, railroads, fossil fuels, steel, mass production, and urban labor.", shift: "Energy from machines multiplies human work and reorganizes economies around production speed." },
+        { key: "modern", name: "Modern Day", pos: 86, range: "1900s-present", system: "Electricity, medicine, aviation, nuclear physics, spaceflight, computing, internet, and global systems.", shift: "Information and energy networks connect civilization into one fast, fragile planetary system." },
+        { key: "future", name: "Future Ages", pos: 97, range: "Hypothesized", system: "AI, biotechnology, clean energy, space industry, quantum tools, climate restoration, and neurotechnology.", shift: "The next age may be defined less by one invention and more by whether humanity can govern powerful science wisely." }
+      ];
+
+      var active = eras[0].key;
+      var marker = document.getElementById("ages-marker");
+      var readout = document.getElementById("ages-readout");
+      var eraButtons = document.getElementById("ages-era-buttons");
+      var panelButtons = document.getElementById("ages-panel-buttons");
+
+      function makeButton(era, className) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = className;
+        btn.dataset.age = era.key;
+        btn.textContent = era.name;
+        btn.addEventListener("click", function () { setEra(era.key); });
+        return btn;
+      }
+
+      eras.forEach(function (era) {
+        eraButtons.appendChild(makeButton(era, "ages-era-btn"));
+        panelButtons.appendChild(makeButton(era, "ages-panel-button"));
+      });
+
+      function setEra(key) {
+        active = key;
+        var era = eras.find(function (item) { return item.key === key; });
+        marker.style.left = era.pos + "%";
+        readout.innerHTML = "<h2>" + era.name + "</h2><strong>" + era.range + "</strong><br>" + era.system + "<br><br><strong>System shift:</strong> " + era.shift;
+        document.getElementById("ages-selected").textContent = era.name.split(" ")[0];
+        document.querySelectorAll("[data-age]").forEach(function (btn) {
+          btn.classList.toggle("is-active", btn.dataset.age === key);
+        });
+      }
+
+      document.querySelectorAll(".ll-tab").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          var panel = tab.closest(".ll-panel");
+          panel.querySelectorAll(".ll-tab").forEach(function (other) {
+            other.setAttribute("aria-selected", other === tab ? "true" : "false");
+          });
+          panel.querySelectorAll(".ll-pane").forEach(function (pane) {
+            pane.classList.toggle("ll-active", pane.id === tab.dataset.pane);
+          });
+        });
+      });
+
+      document.querySelector(".ll-panel-close").addEventListener("click", function () {
+        document.querySelector(".ll-panel").setAttribute("aria-hidden", "true");
+      });
+
+      document.querySelector(".ll-open-btn").addEventListener("click", function () {
+        document.querySelector(".ll-panel").setAttribute("aria-hidden", "false");
+      });
+
+      document.getElementById("ages-check").addEventListener("click", function () {
+        var score = 0;
+        if (document.getElementById("ages-q1").value === "uneven") score += 1;
+        if (document.getElementById("ages-q2").value === "steam") score += 1;
+        var feedback = document.getElementById("ages-feedback");
+        feedback.className = "ages-feedback " + (score === 2 ? "ages-ok" : "ages-try");
+        feedback.textContent = score === 2 ? "Correct. You are reading history as changing systems." : score + "/2 correct. Revisit overlap and the Industrial Age, then try again.";
+      });
+
+      setEra(active);
+    }());
+  </script>
+</body>
+</html>
