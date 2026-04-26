@@ -533,7 +533,7 @@
       <div class="ll-sim">
         <header class="pd-hero">
     <h1>Pangaea and Continental Drift</h1>
-    <p>Scrub through 240 million years of plate motion and watch a simplified classroom reconstruction of how one supercontinent broke apart into the landmasses we know today. The goal is not perfect cartography. The goal is to see the big tectonic story clearly.</p>
+    <p>Scrub through 240 million years of plate motion using local GPlates-derived reconstruction frames. Between scientific snapshots, the lesson blends nearby frames so the breakup of Pangaea feels smooth while keeping the big tectonic story clear.</p>
   </header>
 
   <main id="main-content" class="pd-wrap">
@@ -563,10 +563,10 @@
           <div class="pd-stage-summary" id="stageSummary">Most major landmasses are locked together in a single supercontinent. The Atlantic Ocean has not opened yet, and the southern continents still travel as a connected group.</div>
         </div>
 
-        <canvas id="driftMap" width="1000" height="600" aria-label="Timelapse map of continental drift based on GPlates scientific reconstruction data"></canvas>
+        <canvas id="driftMap" width="1000" height="600" aria-label="Timelapse map of continental drift based on local GPlates scientific reconstruction snapshots"></canvas>
         <div id="mapLoading" class="pd-map-loading">
           <div class="pd-load-spinner"></div>
-          <span>Loading GPlates reconstruction data…</span>
+          <span>Loading local GPlates reconstruction frames…</span>
         </div>
         <span class="pd-attribution" aria-hidden="true">EarthByte · MULLER2019 · CC-BY</span>
 
@@ -618,7 +618,7 @@
           <li>North America and Eurasia are part of the same broad northern mass.</li>
           <li>India, Australia, and Antarctica remain grouped in the south.</li>
         </ul>
-        <p class="pd-mini-note" id="guideNote">This is a simplified classroom reconstruction. Real paleogeographic maps are more detailed, but the plate-motion pattern is the same: joined, rifting, widening oceans, and collisions.</p>
+        <p class="pd-mini-note" id="guideNote">This is a simplified classroom reconstruction. The displayed coastlines come from scientific GPlates snapshots; the smooth motion between them is an educational visual blend, not a fully physical plate model.</p>
       </section>
 
       <section class="pd-panel-card">
@@ -683,17 +683,17 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="../assets/js/classroom-animations.js"></script>
   <script src="../assets/js/lesson-layout.js"></script>
+  <script src="../assets/geodata/pangaea/pangaea-simple-data.js"></script>
   <script>
-    // ─── GPlates Real-Data Continental Drift ─────────────────────────────────
+    // ─── GPlates Snapshot Continental Drift ──────────────────────────────────
     // Coastline polygons: EarthByte Group, University of Sydney
     // Model: MULLER2019 (0-250 Ma), CC-BY 4.0
-    // Exact timesteps are requested from GPlates at runtime, with local
-    // pre-fetched lesson snapshots kept as a fallback if the API is unavailable.
+    // The lesson ships local simplified keyframes for reliability and speed.
+    // Intermediate times cross-fade adjacent scientific snapshots as a classroom
+    // interpolation. That avoids hundreds of network calls while preserving the
+    // correct large-scale sequence: assembled, rifting, ocean opening, collision.
     // ─────────────────────────────────────────────────────────────────────────
 
-    const RECONSTRUCTION_MODEL = 'MULLER2019';
-    const GPLATES_URL = t =>
-      `https://gws.gplates.org/reconstruct/coastlines/?time=${t}&model=${RECONSTRUCTION_MODEL}`;
     const LOCAL_GEODATA_URL = t =>
       `../assets/geodata/pangaea/coastlines_${t}ma_simple.json`;
 
@@ -707,7 +707,7 @@
         summary: 'Most major landmasses are locked together in a single supercontinent. The Atlantic Ocean has not opened yet, and the southern continents still travel as a connected group.',
         ocean: 'No Atlantic Ocean yet', motion: 'Supercontinent still joined',
         guide: ['Africa and South America are still locked together.', 'North America and Eurasia are part of the same broad northern mass.', 'India, Australia, and Antarctica remain grouped in the south.'],
-        note: 'Shapes here are real tectonic plate polygons from the MULLER2019 model (EarthByte, CC-BY). This reconstruction is designed for the last 250 million years, making it a stronger match for a Pangaea-to-today lesson.' },
+        note: 'Shapes here are scientific coastline reconstruction snapshots from the MULLER2019 model (EarthByte, CC-BY). The smooth in-between motion is a classroom blend between nearby snapshots.' },
       { time: 200, title: 'Rifting begins',
         summary: 'Heat and stretching start cracking the supercontinent. North America edges away from Africa and Eurasia, but the pieces still sit much closer together than they do today.',
         ocean: 'Atlantic rift beginning', motion: 'First major splits',
@@ -745,63 +745,173 @@
     const ctx          = canvas.getContext('2d');
     const mapLoadingEl = document.getElementById('mapLoading');
 
-    const projection = d3.geoNaturalEarth1().scale(155).translate([500, 302]);
-    const pathGen    = d3.geoPath().projection(projection).context(ctx);
+    const HAS_D3 = typeof d3 !== 'undefined';
+    const projection = HAS_D3 ? d3.geoNaturalEarth1().scale(155).translate([500, 302]) : null;
+    const pathGen    = HAS_D3 ? d3.geoPath().projection(projection).context(ctx) : drawGeoJSONPath;
     const SPHERE     = { type: 'Sphere' };
-    const graticule  = d3.geoGraticule().step([30, 30])();
+    const graticule  = HAS_D3 ? d3.geoGraticule().step([30, 30])() : null;
 
-    // ─── GPlates fetch ────────────────────────────────────────────────────────
+    function projectLonLat(coord) {
+      const lon = coord[0];
+      const lat = coord[1];
+      return [
+        ((lon + 180) / 360) * 1000,
+        ((90 - lat) / 180) * 600
+      ];
+    }
+
+    function traceRing(ring) {
+      let started = false;
+      let previous = null;
+      ring.forEach(coord => {
+        const point = projectLonLat(coord);
+        if (!started || (previous && Math.abs(point[0] - previous[0]) > 500)) {
+          ctx.moveTo(point[0], point[1]);
+          started = true;
+        } else {
+          ctx.lineTo(point[0], point[1]);
+        }
+        previous = point;
+      });
+    }
+
+    function drawGeoJSONPath(geojson) {
+      if (!geojson) return;
+      const features = geojson.type === 'FeatureCollection' ? geojson.features : [geojson];
+      features.forEach(feature => {
+        const geometry = feature.type === 'Feature' ? feature.geometry : feature;
+        if (!geometry || !geometry.coordinates) return;
+        if (geometry.type === 'Polygon') {
+          geometry.coordinates.forEach(traceRing);
+        } else if (geometry.type === 'MultiPolygon') {
+          geometry.coordinates.forEach(poly => poly.forEach(traceRing));
+        } else if (geometry.type === 'LineString') {
+          traceRing(geometry.coordinates);
+        } else if (geometry.type === 'MultiLineString') {
+          geometry.coordinates.forEach(traceRing);
+        }
+      });
+    }
+
+    const drawableGeoCache = new WeakMap();
+
+    function planarRingArea(ring) {
+      let area = 0;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+        area += (ring[j][0] * ring[i][1]) - (ring[i][0] * ring[j][1]);
+      }
+      return Math.abs(area / 2);
+    }
+
+    function featureLooksPlanetSized(feature) {
+      if (!feature || !feature.geometry) return true;
+
+      if (HAS_D3 && d3.geoArea(feature) > Math.PI * 2) {
+        return true;
+      }
+
+      const geometry = feature.geometry;
+      const rings = [];
+      if (geometry.type === 'Polygon') {
+        rings.push(...geometry.coordinates);
+      } else if (geometry.type === 'MultiPolygon') {
+        geometry.coordinates.forEach(poly => rings.push(...poly));
+      }
+
+      return rings.some(ring => planarRingArea(ring) > 54000);
+    }
+
+    function drawableGeoJSON(geojson) {
+      if (!geojson || geojson.type !== 'FeatureCollection') return geojson;
+      if (drawableGeoCache.has(geojson)) return drawableGeoCache.get(geojson);
+      const filtered = {
+        type: 'FeatureCollection',
+        features: geojson.features.filter(feature => !featureLooksPlanetSized(feature))
+      };
+      drawableGeoCache.set(geojson, filtered);
+      return filtered;
+    }
+
+    // ─── Local GPlates keyframe loading ───────────────────────────────────────
     function normalizeReconstructionTime(time) {
       return Math.max(0, Math.min(240, Math.round(time)));
     }
 
-    async function fetchLocalFallback(time) {
-      const res = await fetch(LOCAL_GEODATA_URL(time));
-      if (!res.ok) throw new Error(`Local fallback HTTP ${res.status} for ${time} Ma`);
-      return res.json();
+    function nearestKeyframeTime(time) {
+      const target = normalizeReconstructionTime(time);
+      return KEYFRAME_TIMES.reduce((best, t) =>
+        Math.abs(t - target) < Math.abs(best - target) ? t : best, KEYFRAME_TIMES[0]);
     }
 
-    async function fetchCoastlines(time) {
-      const roundedTime = normalizeReconstructionTime(time);
-      if (geoCache[roundedTime]) return geoCache[roundedTime];
-      if (geoRequests[roundedTime]) return geoRequests[roundedTime];
+    function getBoundingKeyframes(time) {
+      const target = normalizeReconstructionTime(time);
+      const sorted = KEYFRAME_TIMES.slice().sort((a, b) => b - a);
+      let older = sorted[0];
+      let newer = sorted[sorted.length - 1];
 
-      geoRequests[roundedTime] = (async () => {
-        try {
-          const res = await fetch(GPLATES_URL(roundedTime));
-          if (!res.ok) throw new Error(`GPlates HTTP ${res.status} for ${roundedTime} Ma`);
-          geoCache[roundedTime] = await res.json();
-        } catch (apiErr) {
-          if (!KEYFRAME_TIMES.includes(roundedTime)) throw apiErr;
-          geoCache[roundedTime] = await fetchLocalFallback(roundedTime);
+      for (let i = 0; i < sorted.length - 1; i += 1) {
+        if (target <= sorted[i] && target >= sorted[i + 1]) {
+          older = sorted[i];
+          newer = sorted[i + 1];
+          break;
         }
-        return geoCache[roundedTime];
+      }
+
+      if (target >= sorted[0]) return { older: sorted[0], newer: sorted[0], mix: 0 };
+      if (target <= sorted[sorted.length - 1]) return { older: sorted[sorted.length - 1], newer: sorted[sorted.length - 1], mix: 0 };
+
+      const span = older - newer || 1;
+      return { older, newer, mix: clamp((older - target) / span, 0, 1) };
+    }
+
+    async function fetchLocalKeyframe(time) {
+      const keyframeTime = nearestKeyframeTime(time);
+      if (geoCache[keyframeTime]) return geoCache[keyframeTime];
+      if (window.PANGAEA_COASTLINES && window.PANGAEA_COASTLINES[keyframeTime]) {
+        geoCache[keyframeTime] = window.PANGAEA_COASTLINES[keyframeTime];
+        return geoCache[keyframeTime];
+      }
+      if (geoRequests[keyframeTime]) return geoRequests[keyframeTime];
+
+      geoRequests[keyframeTime] = (async () => {
+      const res = await fetch(LOCAL_GEODATA_URL(keyframeTime));
+      if (!res.ok) throw new Error(`Local reconstruction HTTP ${res.status} for ${keyframeTime} Ma`);
+      geoCache[keyframeTime] = await res.json();
+      return geoCache[keyframeTime];
       })();
 
       try {
-        return await geoRequests[roundedTime];
+        return await geoRequests[keyframeTime];
       } finally {
-        delete geoRequests[roundedTime];
+        delete geoRequests[keyframeTime];
       }
+    }
+
+    async function fetchCoastlines(time) {
+      return fetchLocalKeyframe(time);
     }
 
     async function preloadFrames() {
       mapLoadingEl.style.display = 'flex';
       try {
-        await Promise.all(KEYFRAME_TIMES.map(fetchCoastlines));
+        await Promise.all(KEYFRAME_TIMES.map(fetchLocalKeyframe));
         mapLoadingEl.style.display = 'none';
         renderMap(state.time);
       } catch (err) {
         mapLoadingEl.innerHTML =
-          '<span class="pd-load-error">Could not load reconstruction data. Check the GPlates connection and reload the page.</span>';
-        console.error('GPlates load error:', err);
+          '<span class="pd-load-error">Could not load local reconstruction frames. Check the geodata files and reload the page.</span>';
+        console.error('Local reconstruction load error:', err);
       }
     }
 
     // ─── Drawing helpers ──────────────────────────────────────────────────────
     function drawBackground() {
       ctx.beginPath();
-      pathGen(SPHERE);
+      if (HAS_D3) {
+        pathGen(SPHERE);
+      } else {
+        ctx.rect(0, 0, 1000, 600);
+      }
       const bg = ctx.createRadialGradient(500, 260, 20, 500, 260, 340);
       bg.addColorStop(0, '#0d2e45');
       bg.addColorStop(1, '#071b2b');
@@ -814,17 +924,34 @@
 
     function drawGraticule() {
       ctx.beginPath();
-      pathGen(graticule);
+      if (HAS_D3) {
+        pathGen(graticule);
+      } else {
+        for (let lon = -150; lon <= 180; lon += 30) {
+          const top = projectLonLat([lon, 85]);
+          const bottom = projectLonLat([lon, -85]);
+          ctx.moveTo(top[0], top[1]);
+          ctx.lineTo(bottom[0], bottom[1]);
+        }
+        for (let lat = -60; lat <= 60; lat += 30) {
+          const left = projectLonLat([-180, lat]);
+          const right = projectLonLat([180, lat]);
+          ctx.moveTo(left[0], left[1]);
+          ctx.lineTo(right[0], right[1]);
+        }
+      }
       ctx.strokeStyle = 'rgba(255,255,255,0.052)';
       ctx.lineWidth = 0.55;
       ctx.stroke();
     }
 
-    function drawCoastlines(geojson) {
-      if (!geojson) return;
+    function drawCoastlines(geojson, alpha = 1, lineAlpha = 0.42) {
+      const drawable = drawableGeoJSON(geojson);
+      if (!drawable) return;
       ctx.save();
+      ctx.globalAlpha = alpha;
       ctx.beginPath();
-      pathGen(geojson);
+      pathGen(drawable);
 
       const landFill = ctx.createLinearGradient(0, 90, 0, 560);
       landFill.addColorStop(0, '#95b77e');
@@ -835,12 +962,12 @@
       ctx.shadowColor = 'rgba(5, 12, 18, 0.26)';
       ctx.shadowBlur = 10;
       ctx.shadowOffsetY = 2;
-      ctx.fill();
+      ctx.fill('evenodd');
 
       ctx.shadowColor = 'transparent';
       ctx.beginPath();
-      pathGen(geojson);
-      ctx.strokeStyle = 'rgba(233, 244, 228, 0.42)';
+      pathGen(drawable);
+      ctx.strokeStyle = `rgba(233, 244, 228, ${lineAlpha})`;
       ctx.lineWidth = 0.85;
       ctx.stroke();
       ctx.restore();
@@ -848,61 +975,92 @@
 
     // ─── Map render ───────────────────────────────────────────────────────────
     let renderedMapTime = null;
-    let renderedGeoJSON = null;
+    let renderedKeyframePair = '';
     let activeMapRequest = 0;
+    let mapRenderQueued = false;
 
-    function warmNearbyCoastlines(time) {
-      [time - 1, time + 1].forEach(t => {
-        if (t < 0 || t > 240 || geoCache[t] || geoRequests[t]) return;
-        fetchCoastlines(t).catch(() => {});
+    function queueMapRender(time) {
+      state.pendingMapTime = normalizeReconstructionTime(time);
+      if (mapRenderQueued) return;
+      mapRenderQueued = true;
+      requestAnimationFrame(() => {
+        mapRenderQueued = false;
+        renderMapNow(state.pendingMapTime);
       });
     }
 
     function renderMap(time) {
+      queueMapRender(time);
+    }
+
+    function renderMapNow(time) {
       ctx.clearRect(0, 0, 1000, 600);
       drawBackground();
       drawGraticule();
 
       const exactTime = normalizeReconstructionTime(time);
-      if (renderedMapTime === exactTime && renderedGeoJSON) {
-        drawCoastlines(renderedGeoJSON);
+      const pair = getBoundingKeyframes(exactTime);
+      const pairKey = `${pair.older}-${pair.newer}`;
+
+      if (renderedMapTime === exactTime && renderedKeyframePair === pairKey) {
+        drawBlendedCoastlines(pair);
         return;
       }
 
-      const cached = geoCache[exactTime];
-      if (cached) {
+      if (geoCache[pair.older] && geoCache[pair.newer]) {
         renderedMapTime = exactTime;
-        renderedGeoJSON = cached;
+        renderedKeyframePair = pairKey;
         mapLoadingEl.style.display = 'none';
-        drawCoastlines(cached);
-        warmNearbyCoastlines(exactTime);
+        drawBlendedCoastlines(pair);
         return;
       }
 
-      if (renderedGeoJSON) {
-        drawCoastlines(renderedGeoJSON);
+      const nearest = geoCache[nearestKeyframeTime(exactTime)];
+      if (nearest) {
+        drawCoastlines(nearest, 0.96, 0.35);
       } else {
         mapLoadingEl.style.display = 'flex';
       }
 
       const requestId = ++activeMapRequest;
-      fetchCoastlines(exactTime)
-        .then(geojson => {
+      Promise.all([fetchCoastlines(pair.older), fetchCoastlines(pair.newer)])
+        .then(() => {
           if (requestId !== activeMapRequest) return;
-          if (normalizeReconstructionTime(state.time) !== exactTime) return;
+          if (normalizeReconstructionTime(state.time) !== exactTime) {
+            renderMap(state.time);
+            return;
+          }
           renderedMapTime = exactTime;
-          renderedGeoJSON = geojson;
+          renderedKeyframePair = pairKey;
           mapLoadingEl.style.display = 'none';
-          renderMap(state.time);
-          warmNearbyCoastlines(exactTime);
+          renderMapNow(state.time);
         })
         .catch(err => {
           if (requestId !== activeMapRequest) return;
           mapLoadingEl.innerHTML =
-            '<span class="pd-load-error">Could not load reconstruction data. Check the GPlates connection and reload the page.</span>';
+            '<span class="pd-load-error">Could not load local reconstruction frames. Check the geodata files and reload the page.</span>';
           mapLoadingEl.style.display = 'flex';
-          console.error('GPlates load error:', err);
+          console.error('Local reconstruction load error:', err);
         });
+    }
+
+    function drawBlendedCoastlines(pair) {
+      const olderGeo = geoCache[pair.older];
+      const newerGeo = geoCache[pair.newer];
+      if (!olderGeo || !newerGeo) return;
+
+      if (pair.older === pair.newer || pair.mix <= 0.02) {
+        drawCoastlines(olderGeo);
+        return;
+      }
+
+      if (pair.mix >= 0.98) {
+        drawCoastlines(newerGeo);
+        return;
+      }
+
+      drawCoastlines(olderGeo, 1 - pair.mix * 0.72, 0.28);
+      drawCoastlines(newerGeo, 0.35 + pair.mix * 0.65, 0.36);
     }
 
     // ─── Narrative render ─────────────────────────────────────────────────────
@@ -927,31 +1085,39 @@
         Math.abs(f.time - time) < Math.abs(best.time - time) ? f : best, frames[0]);
     }
 
+    let lastNarrativeRounded = null;
+    let lastNarrativeFrameTime = null;
+
     function renderNarrative(time) {
       const frame    = getNarrativeFrame(time);
       const rounded  = Math.round(time);
       const timeText = rounded === 0 ? 'Today' : `${rounded} million years ago`;
 
-      timeBadge.textContent     = timeText;
-      stageBadge.textContent    = frame.title;
-      stageSummary.textContent  = frame.summary;
-      timeLabel.textContent     = rounded === 0 ? 'Today' : `${rounded} Ma`;
-      readoutTime.textContent   = timeText;
-      readoutStage.textContent  = frame.title;
-      readoutOcean.textContent  = frame.ocean;
-      readoutMotion.textContent = frame.motion;
-      guideTitle.textContent    = frame.title;
-      guideNote.textContent     = frame.note;
+      if (lastNarrativeRounded !== rounded) {
+        timeBadge.textContent   = timeText;
+        timeLabel.textContent   = rounded === 0 ? 'Today' : `${rounded} Ma`;
+        readoutTime.textContent = timeText;
+        lastNarrativeRounded = rounded;
+      }
 
-      guideList.innerHTML = '';
-      frame.guide.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item;
-        guideList.appendChild(li);
-      });
+      if (lastNarrativeFrameTime !== frame.time) {
+        stageBadge.textContent      = frame.title;
+        stageSummary.textContent    = frame.summary;
+        readoutStage.textContent    = frame.title;
+        readoutOcean.textContent    = frame.ocean;
+        readoutMotion.textContent   = frame.motion;
+        guideTitle.textContent      = frame.title;
+        guideNote.textContent       = frame.note;
+        guideList.replaceChildren(...frame.guide.map(item => {
+          const li = document.createElement('li');
+          li.textContent = item;
+          return li;
+        }));
 
-      keyframeButtons.forEach(btn =>
-        btn.classList.toggle('is-active', Math.abs(Number(btn.dataset.time) - frame.time) < 0.5));
+        keyframeButtons.forEach(btn =>
+          btn.classList.toggle('is-active', Math.abs(Number(btn.dataset.time) - frame.time) < 0.5));
+        lastNarrativeFrameTime = frame.time;
+      }
     }
 
     function render(time) {
