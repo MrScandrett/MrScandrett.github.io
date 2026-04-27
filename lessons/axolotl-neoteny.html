@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <script type="module" src="../assets/js/vendor/model-viewer.min.js"></script>
   <style>
     body.axo-page {
       font-family: "Manrope", system-ui, sans-serif;
@@ -136,9 +137,10 @@
       border-radius: 24px;
       border: 1px solid rgba(40, 150, 142, 0.18);
       background:
-        linear-gradient(180deg, rgba(75, 204, 190, 0.18), transparent 36%),
-        radial-gradient(circle at 45% 75%, rgba(37, 145, 137, 0.18), transparent 34%),
-        linear-gradient(180deg, #e8fbfa 0%, #c5ece8 100%);
+        linear-gradient(180deg, rgba(75, 204, 190, 0.24), transparent 36%),
+        radial-gradient(circle at 48% 52%, rgba(32, 132, 137, 0.32), transparent 34%),
+        radial-gradient(circle at 45% 75%, rgba(37, 145, 137, 0.2), transparent 34%),
+        linear-gradient(180deg, #d9f6f2 0%, #a9ddd8 100%);
     }
 
     .axo-waterline {
@@ -168,6 +170,46 @@
       width: min(470px, 86%);
       transform: translate(-50%, -50%);
       filter: drop-shadow(0 22px 28px rgba(43, 111, 112, 0.16));
+    }
+
+    .axo-model-viewer {
+      position: absolute;
+      inset: 2.6rem 0.5rem 6.8rem;
+      width: calc(100% - 1rem);
+      height: calc(100% - 9.4rem);
+      --poster-color: transparent;
+      background: transparent;
+      filter: drop-shadow(0 22px 28px rgba(43, 111, 112, 0.16));
+    }
+
+    .axo-model-viewer::part(default-progress-bar) {
+      background-color: #16877e;
+    }
+
+    .axo-model-viewer .axo-model-fallback {
+      display: none;
+    }
+
+    .axo-model-viewer:not(:defined) .axo-model-fallback {
+      display: block;
+    }
+
+    .axo-model-fallback {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 20rem;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.86);
+      color: #34595d;
+      padding: 0.85rem;
+      text-align: center;
+    }
+
+    .axo-model-fallback a {
+      color: #14786f;
+      font-weight: 800;
     }
 
     .axo-hotspot {
@@ -216,6 +258,21 @@
     .axo-callout p {
       margin: 0;
       font-size: 0.92rem;
+    }
+
+    .axo-model-credit {
+      position: absolute;
+      right: 1.1rem;
+      bottom: 0.35rem;
+      z-index: 2;
+      margin: 0;
+      color: rgba(39, 94, 96, 0.78);
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .axo-model-credit a {
+      color: #14786f;
     }
 
     .axo-grid {
@@ -558,36 +615,28 @@
         <span class="axo-bubble" aria-hidden="true"></span>
         <span class="axo-bubble" aria-hidden="true"></span>
         <span class="axo-bubble" aria-hidden="true"></span>
-        <svg class="axo-animal" viewBox="0 0 620 360" role="img" aria-label="Illustrated axolotl with external gills, tail fin, and limbs">
-          <defs>
-            <linearGradient id="axoBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#ffd1df" />
-              <stop offset="54%" stop-color="#ffabc5" />
-              <stop offset="100%" stop-color="#f681a5" />
-            </linearGradient>
-            <linearGradient id="axoFinGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#ffb8cf" stop-opacity="0.95" />
-              <stop offset="100%" stop-color="#f37ea2" stop-opacity="0.72" />
-            </linearGradient>
-          </defs>
-          <path d="M333 168 C418 118, 523 125, 579 176 C519 231, 410 235, 330 196 Z" fill="url(#axoFinGrad)" opacity="0.82" />
-          <path d="M566 176 C602 153, 614 132, 618 100 C625 142, 623 204, 610 250 C604 222, 592 196, 566 176 Z" fill="#f27fa2" opacity="0.74" />
-          <ellipse cx="282" cy="184" rx="168" ry="72" fill="url(#axoBodyGrad)" />
-          <circle cx="164" cy="165" r="75" fill="url(#axoBodyGrad)" />
-          <path d="M119 120 C82 86, 54 76, 28 82 C53 101, 74 128, 96 166" fill="none" stroke="#eb5f8b" stroke-width="10" stroke-linecap="round" />
-          <path d="M124 154 C80 144, 49 151, 21 173 C57 179, 83 185, 108 198" fill="none" stroke="#eb5f8b" stroke-width="10" stroke-linecap="round" />
-          <path d="M127 198 C91 223, 72 247, 64 279 C93 262, 116 238, 141 212" fill="none" stroke="#eb5f8b" stroke-width="10" stroke-linecap="round" />
-          <path d="M207 126 C230 102, 253 98, 275 112" fill="none" stroke="#f49bb5" stroke-width="15" stroke-linecap="round" />
-          <path d="M220 235 C251 258, 284 257, 313 233" fill="none" stroke="#e8759a" stroke-width="15" stroke-linecap="round" />
-          <path d="M261 244 C270 262, 281 277, 298 288" fill="none" stroke="#d95f89" stroke-width="8" stroke-linecap="round" />
-          <path d="M226 239 C217 258, 204 269, 187 275" fill="none" stroke="#d95f89" stroke-width="8" stroke-linecap="round" />
-          <circle cx="141" cy="154" r="8" fill="#12343b" />
-          <circle cx="188" cy="154" r="8" fill="#12343b" />
-          <path d="M148 190 C166 202, 184 201, 200 190" fill="none" stroke="#bd4f76" stroke-width="6" stroke-linecap="round" />
-          <path d="M70 104 C88 105, 101 114, 111 130" fill="none" stroke="#ffc4d5" stroke-width="4" stroke-linecap="round" />
-          <path d="M62 165 C84 164, 102 171, 116 184" fill="none" stroke="#ffc4d5" stroke-width="4" stroke-linecap="round" />
-          <path d="M100 245 C113 229, 127 218, 145 212" fill="none" stroke="#ffc4d5" stroke-width="4" stroke-linecap="round" />
-        </svg>
+        <model-viewer
+          class="axo-model-viewer"
+          src="../assets/models/axolotl.glb"
+          alt="Interactive 3D model of an axolotl."
+          camera-controls
+          touch-action="pan-y"
+          interaction-prompt="auto"
+          auto-rotate
+          auto-rotate-delay="1400"
+          rotation-per-second="18deg"
+          shadow-intensity="0.55"
+          environment-image="neutral"
+          environment-intensity="1.4"
+          exposure="1"
+          camera-orbit="35deg 72deg 72%"
+          camera-target="0m 0m 0m"
+          field-of-view="26deg">
+          <div class="axo-model-fallback">
+            Your browser cannot display the interactive model.
+            <a href="../assets/models/axolotl.glb">Open the GLB file instead</a>.
+          </div>
+        </model-viewer>
         <button class="axo-hotspot" type="button" data-part="gills" aria-label="Explain external gills">1</button>
         <button class="axo-hotspot" type="button" data-part="tail" aria-label="Explain tail fin">2</button>
         <button class="axo-hotspot" type="button" data-part="limbs" aria-label="Explain regenerative limbs">3</button>
@@ -595,6 +644,9 @@
           <strong>Click a numbered feature</strong>
           <p>Use the axolotl's body to gather evidence: juvenile traits can be useful adult adaptations.</p>
         </div>
+        <p class="axo-model-credit">
+          3D model: <a href="https://sketchfab.com/3d-models/axolotl-8f3849a57d594233bfe3c92b1db6145e">Axolotl</a> by varin, CC BY 4.0
+        </p>
       </div>
     </section>
 
