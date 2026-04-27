@@ -24,9 +24,9 @@
 
     .ages-hero {
       display: grid;
-      grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.05fr);
+      grid-template-columns: 1fr;
       gap: 1rem;
-      align-items: stretch;
+      align-items: start;
       margin-bottom: 1rem;
     }
 
@@ -41,9 +41,10 @@
 
     .ages-panel {
       padding: clamp(1rem, 2.6vw, 1.65rem);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+      display: grid;
+      grid-template-columns: minmax(220px, 0.42fr) minmax(0, 0.58fr);
+      gap: clamp(1rem, 3vw, 2rem);
+      align-items: center;
     }
 
     .ages-eyebrow {
@@ -57,15 +58,15 @@
 
     .ages-hero h1 {
       margin: 0;
-      font-size: clamp(2.4rem, 6vw, 5rem);
+      font-size: clamp(2.2rem, 5vw, 4.5rem);
       line-height: 0.92;
       letter-spacing: 0;
       color: #111827;
     }
 
     .ages-lede {
-      max-width: 62ch;
-      margin: 0.9rem 0 0;
+      max-width: 72ch;
+      margin: 0;
       color: var(--muted);
       font-size: 0.98rem;
       line-height: 1.66;
@@ -75,7 +76,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 0.45rem;
-      margin-top: 1rem;
+      margin-top: 0.8rem;
     }
 
     .ages-meta span {
@@ -95,7 +96,7 @@
         radial-gradient(circle at 86% 20%, rgba(37, 99, 235, 0.18), transparent 24%),
         linear-gradient(145deg, #111827, #1e293b);
       color: #f8fafc;
-      padding: 0.9rem;
+      padding: clamp(0.9rem, 2vw, 1.15rem);
     }
 
     .ages-map-head {
@@ -118,6 +119,38 @@
       line-height: 1.4;
     }
 
+    .ages-scale-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.45rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .ages-scale-btn {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(248, 250, 252, 0.88);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.74rem;
+      font-weight: 800;
+      padding: 0.52rem 0.6rem;
+      text-align: center;
+      transition: background 0.16s, border-color 0.16s, transform 0.16s;
+    }
+
+    .ages-scale-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .ages-scale-btn.is-active {
+      border-color: rgba(246, 183, 60, 0.8);
+      background: #f6b73c;
+      color: #21180f;
+    }
+
     .ages-band {
       position: relative;
       display: grid;
@@ -130,10 +163,45 @@
 
     .ages-track {
       position: relative;
-      height: 58px;
+      height: 104px;
       border-radius: 12px;
       background: linear-gradient(90deg, #8b5e34, #a16207, #4b5563, #1d4ed8, #0f766e);
       overflow: hidden;
+    }
+
+    .ages-track::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.11) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+      background-size: 9.09% 100%, 100% 50%;
+      pointer-events: none;
+      opacity: 0.72;
+    }
+
+    .ages-track-segment {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.2);
+      transition: left 0.28s ease, width 0.28s ease, opacity 0.28s ease;
+    }
+
+    .ages-track-segment span {
+      position: absolute;
+      left: 0.45rem;
+      right: 0.45rem;
+      bottom: 0.45rem;
+      overflow: hidden;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.66rem;
+      font-weight: 800;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+      white-space: nowrap;
     }
 
     .ages-marker {
@@ -149,9 +217,94 @@
       transition: left 0.25s ease;
     }
 
+    .ages-marker::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 2px;
+      height: 98px;
+      background: rgba(255, 255, 255, 0.56);
+      transform: translate(-50%, -50%);
+      z-index: -1;
+    }
+
+    .ages-tick {
+      position: absolute;
+      top: 0.42rem;
+      bottom: 0.42rem;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.42);
+      transform: translateX(-50%);
+    }
+
+    .ages-tick span {
+      position: absolute;
+      top: 0;
+      left: 0.28rem;
+      width: max-content;
+      max-width: 8.4rem;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.64rem;
+      font-weight: 800;
+      line-height: 1.15;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+    }
+
+    .ages-faith-layer {
+      position: relative;
+      min-height: 92px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .ages-faith-layer::before {
+      content: "Christian history";
+      position: absolute;
+      left: 0.65rem;
+      top: 0.55rem;
+      color: rgba(248, 250, 252, 0.76);
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .ages-faith-event {
+      position: absolute;
+      top: 2rem;
+      width: 1px;
+      height: 2.75rem;
+      background: rgba(251, 191, 36, 0.72);
+      transform: translateX(-50%);
+    }
+
+    .ages-faith-event span {
+      position: absolute;
+      top: 0;
+      left: 0.35rem;
+      width: max-content;
+      max-width: 9rem;
+      border: 1px solid rgba(251, 191, 36, 0.34);
+      border-radius: 999px;
+      background: rgba(24, 20, 9, 0.58);
+      color: #fff8df;
+      padding: 0.22rem 0.45rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .ages-faith-event.is-late span {
+      left: auto;
+      right: 0.35rem;
+    }
+
     .ages-era-buttons {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.45rem;
     }
 
@@ -182,7 +335,7 @@
     }
 
     .ages-readout {
-      min-height: 6.5rem;
+      min-height: 5.75rem;
       margin-top: 0.7rem;
       border-radius: 12px;
       background: rgba(255, 255, 255, 0.1);
@@ -190,6 +343,17 @@
       color: rgba(248, 250, 252, 0.88);
       line-height: 1.55;
       font-size: 0.84rem;
+    }
+
+    .ages-scale-readout {
+      margin-top: 0.65rem;
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.7rem 0.8rem;
+      color: rgba(248, 250, 252, 0.82);
+      font-size: 0.76rem;
+      font-weight: 700;
+      line-height: 1.48;
     }
 
     .ages-readout h2 {
@@ -300,6 +464,11 @@
       line-height: 1.58;
     }
 
+    .ages-faith-note {
+      border-left-color: #b7793d;
+      background: rgba(183, 121, 61, 0.12);
+    }
+
     .ages-quiz {
       display: grid;
       gap: 0.65rem;
@@ -376,8 +545,11 @@
     }
 
     @media (max-width: 980px) {
-      .ages-hero,
       .ages-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .ages-panel {
         grid-template-columns: 1fr;
       }
 
@@ -431,29 +603,39 @@
         <main id="main-content" class="ages-page">
           <section class="ages-hero">
             <div class="ages-panel">
-              <p class="ages-eyebrow">Systems &amp; Societies · Lesson 07</p>
-              <h1>The Ages</h1>
-              <p class="ages-lede">Human civilization is a story of tools, energy, information, and cooperation. Each age changes what people can build, how societies organize, and what problems become possible to solve or dangerous to ignore.</p>
-              <div class="ages-meta" aria-label="Lesson topics">
-                <span>Stone to Steel</span>
-                <span>Agriculture</span>
-                <span>Industry</span>
-                <span>Digital Society</span>
-                <span>Future Science</span>
+              <div>
+                <p class="ages-eyebrow">Systems &amp; Societies · Lesson 07</p>
+                <h1>The Ages</h1>
+              </div>
+              <div>
+                <p class="ages-lede">Human civilization is a story of tools, energy, information, and cooperation. Each age changes what people can build, how societies organize, and what problems become possible to solve or dangerous to ignore.</p>
+                <div class="ages-meta" aria-label="Lesson topics">
+                  <span>Stone to Steel</span>
+                  <span>Agriculture</span>
+                  <span>Industry</span>
+                  <span>Digital Society</span>
+                  <span>Future Science</span>
+                </div>
               </div>
             </div>
 
             <div class="ages-timeline-card">
               <div class="ages-map-head">
                 <strong>Human Civilization Timeline</strong>
-                <small>Select an age to see its core system change.</small>
+                <small>Select an age, then switch scales to see why recent history feels so compressed.</small>
+              </div>
+              <div class="ages-scale-controls" aria-label="Timeline scale">
+                <button type="button" class="ages-scale-btn is-active" data-scale="story">Readable Story</button>
+                <button type="button" class="ages-scale-btn" data-scale="compressed">Deep-Time Scale</button>
               </div>
               <div class="ages-band">
                 <div class="ages-track" aria-hidden="true">
                   <div class="ages-marker" id="ages-marker"></div>
                 </div>
+                <div class="ages-faith-layer" id="ages-faith-layer" aria-label="Christian history milestones"></div>
                 <div class="ages-era-buttons" id="ages-era-buttons"></div>
               </div>
+              <div class="ages-scale-readout" id="ages-scale-readout"></div>
               <div class="ages-readout" id="ages-readout"></div>
             </div>
           </section>
@@ -481,6 +663,12 @@
                   <small>Bands, villages, cities, empires, nation-states, networks, planetary systems.</small>
                 </div>
               </div>
+            </article>
+
+            <article class="ages-card">
+              <h2>Christian History Lens</h2>
+              <p>Christian history begins inside the Roman world during the Iron/Classical period, then spreads through preaching, persecution, councils, monasteries, manuscripts, art, education, missions, reform movements, and global churches.</p>
+              <div class="ages-note ages-faith-note"><strong>History lens:</strong> Christianity is both a faith tradition and a major historical force that shaped law, learning, calendars, art, care for the poor, political power, reform, conflict, and community life.</div>
             </article>
 
             <article class="ages-card">
@@ -591,7 +779,7 @@
         </main>
       </div>
 
-      <aside class="ll-panel" aria-hidden="false">
+      <aside class="ll-panel" aria-hidden="true">
         <div class="ll-panel-head">
           <div class="ll-tabs">
             <button class="ll-tab" aria-selected="true" data-pane="ages-pane-map">Map</button>
@@ -620,6 +808,7 @@
             <div class="ll-info"><strong>Age</strong>A broad historical label for a dominant material, energy source, information system, or social organization.</div>
             <div class="ll-info"><strong>Overlap</strong>Ages are not clean worldwide boxes. New systems emerge while old systems continue.</div>
             <div class="ll-info"><strong>Complexity</strong>More powerful systems need more coordination, trust, maintenance, and shared rules.</div>
+            <div class="ll-info"><strong>Christian History</strong>A historical lens for tracing how Christianity emerged, spread, organized, reformed, globalized, and responded to new technologies.</div>
             <div class="ll-info"><strong>Future Ages</strong>Speculative, not certain. Science opens pathways; society chooses how to walk them.</div>
           </div>
         </div>
@@ -635,21 +824,63 @@
   <script>
     (function () {
       var eras = [
-        { key: "stone", name: "Stone Age", pos: 4, range: "c. 3.3 million BCE-3300 BCE", system: "Stone tools, fire, language, migration, art, and survival knowledge.", shift: "Human culture becomes cumulative: each generation can inherit and improve tools and stories." },
-        { key: "agricultural", name: "Agricultural Age", pos: 19, range: "c. 10,000 BCE onward", system: "Farming, herding, storage, villages, irrigation, and food surplus.", shift: "Settled life supports specialization, property, population growth, and new forms of inequality." },
-        { key: "bronze", name: "Bronze Age", pos: 32, range: "c. 3300-1200 BCE", system: "Metallurgy, writing, cities, trade networks, law codes, and early states.", shift: "Civilization becomes record-keeping: power can be stored in documents, walls, armies, and accounts." },
-        { key: "iron", name: "Iron Age", pos: 44, range: "c. 1200 BCE onward", system: "Stronger tools, wider agriculture, empires, coins, roads, and classical knowledge traditions.", shift: "Durable metal and large institutions expand what societies can farm, build, conquer, and govern." },
-        { key: "scientific", name: "Scientific Age", pos: 61, range: "c. 1500s-1700s", system: "Experiment, measurement, mathematics, telescopes, microscopes, and reproducible knowledge.", shift: "Knowledge becomes a method: claims are tested against evidence instead of protected by authority alone." },
-        { key: "industrial", name: "Industrial Age", pos: 73, range: "c. 1760s-1900s", system: "Steam power, factories, railroads, fossil fuels, steel, mass production, and urban labor.", shift: "Energy from machines multiplies human work and reorganizes economies around production speed." },
-        { key: "modern", name: "Modern Day", pos: 86, range: "1900s-present", system: "Electricity, medicine, aviation, nuclear physics, spaceflight, computing, internet, and global systems.", shift: "Information and energy networks connect civilization into one fast, fragile planetary system." },
-        { key: "future", name: "Future Ages", pos: 97, range: "Hypothesized", system: "AI, biotechnology, clean energy, space industry, quantum tools, climate restoration, and neurotechnology.", shift: "The next age may be defined less by one invention and more by whether humanity can govern powerful science wisely." }
+        { key: "stone", name: "Stone Age", storyPos: 4, compressedPos: 8, storyStart: 0, storyWidth: 16, compressedStart: 0, compressedWidth: 72, range: "c. 3.3 million BCE-3300 BCE", system: "Stone tools, fire, language, migration, art, and survival knowledge.", shift: "Human culture becomes cumulative: each generation can inherit and improve tools and stories.", christian: "Christian history has not begun yet, but the lesson can still compare how early humans used symbol, ritual, burial, art, and shared memory to ask meaning-making questions." },
+        { key: "agricultural", name: "Agricultural Age", storyPos: 19, compressedPos: 76, storyStart: 16, storyWidth: 14, compressedStart: 72, compressedWidth: 9, range: "c. 10,000 BCE onward", system: "Farming, herding, storage, villages, irrigation, and food surplus.", shift: "Settled life supports specialization, property, population growth, and new forms of inequality.", christian: "Christianity later grows from the Jewish world, whose scriptures, festivals, law, prophecy, temple worship, exile, and covenant ideas formed in agricultural kingdoms and empires." },
+        { key: "bronze", name: "Bronze Age", storyPos: 32, compressedPos: 84, storyStart: 30, storyWidth: 12, compressedStart: 81, compressedWidth: 4.5, range: "c. 3300-1200 BCE", system: "Metallurgy, writing, cities, trade networks, law codes, and early states.", shift: "Civilization becomes record-keeping: power can be stored in documents, walls, armies, and accounts.", christian: "This era helps students understand the ancient Near Eastern setting behind many biblical backgrounds: cities, writing systems, law codes, temples, trade, kingship, and empire." },
+        { key: "iron", name: "Iron Age", storyPos: 44, compressedPos: 89, storyStart: 42, storyWidth: 14, compressedStart: 85.5, compressedWidth: 4.5, range: "c. 1200 BCE onward", system: "Stronger tools, wider agriculture, empires, coins, roads, and classical knowledge traditions.", shift: "Durable metal and large institutions expand what societies can farm, build, conquer, and govern.", christian: "Jesus of Nazareth lived in Roman Judea in the first century. Early Christianity spread through Jewish communities, Greek-speaking cities, Roman roads, letters, house churches, and missionary networks." },
+        { key: "scientific", name: "Scientific Age", storyPos: 61, compressedPos: 93.5, storyStart: 56, storyWidth: 12, compressedStart: 90, compressedWidth: 3, range: "c. 1500s-1700s", system: "Experiment, measurement, mathematics, telescopes, microscopes, and reproducible knowledge.", shift: "Knowledge becomes a method: claims are tested against evidence instead of protected by authority alone.", christian: "Christian Europe experienced the Renaissance, Reformation, printing of Bibles, new denominations, and debates about Scripture, authority, astronomy, education, and natural philosophy." },
+        { key: "industrial", name: "Industrial Age", storyPos: 73, compressedPos: 96, storyStart: 68, storyWidth: 12, compressedStart: 93, compressedWidth: 3, range: "c. 1760s-1900s", system: "Steam power, factories, railroads, fossil fuels, steel, mass production, and urban labor.", shift: "Energy from machines multiplies human work and reorganizes economies around production speed.", christian: "Industrial society reshaped Christian life through urban churches, Sunday schools, hymn publishing, social reform movements, global missions, abolitionist activism, hospitals, and debates over labor and poverty." },
+        { key: "modern", name: "Modern Day", storyPos: 86, compressedPos: 98, storyStart: 80, storyWidth: 12, compressedStart: 96, compressedWidth: 2, range: "1900s-present", system: "Electricity, medicine, aviation, nuclear physics, spaceflight, computing, internet, and global systems.", shift: "Information and energy networks connect civilization into one fast, fragile planetary system.", christian: "Christianity is now a global tradition with major communities across Africa, Latin America, Asia, Europe, North America, and Oceania, using radio, television, translation, schools, relief work, and digital media." },
+        { key: "future", name: "Future Ages", storyPos: 97, compressedPos: 99.2, storyStart: 92, storyWidth: 8, compressedStart: 98, compressedWidth: 2, range: "Hypothesized", system: "AI, biotechnology, clean energy, space industry, quantum tools, climate restoration, and neurotechnology.", shift: "The next age may be defined less by one invention and more by whether humanity can govern powerful science wisely.", christian: "Future Christian questions may include human dignity, artificial intelligence, genetic power, creation care, space settlement, poverty, peace, religious freedom, and wise use of technology." }
       ];
 
+      var christianEvents = [
+        { label: "Jesus", storyPos: 45, compressedPos: 89.4, row: 0 },
+        { label: "Paul's letters", storyPos: 47, compressedPos: 89.7, row: 1, hideCompressed: true },
+        { label: "Edict of Milan", storyPos: 50, compressedPos: 89.9, row: 0, hideCompressed: true },
+        { label: "Nicaea", storyPos: 51, compressedPos: 90.1, row: 1 },
+        { label: "Great Schism", storyPos: 56, compressedPos: 91.5, row: 0 },
+        { label: "Printing Bible", storyPos: 60, compressedPos: 92.6, row: 1, hideCompressed: true },
+        { label: "Reformation", storyPos: 63, compressedPos: 93.2, row: 1 },
+        { label: "Global church", storyPos: 87, compressedPos: 98.2, row: 0 }
+      ];
+
+      var scales = {
+        story: {
+          label: "Readable Story",
+          note: "Readable Story spreads the ages apart so students can click and compare them in sequence. It is useful for cause-and-effect, but it does not show true duration.",
+          ticks: [
+            { label: "Early humans", pos: 3 },
+            { label: "Farming", pos: 19 },
+            { label: "Cities", pos: 32 },
+            { label: "Factories", pos: 73 },
+            { label: "Networks", pos: 86 },
+            { label: "Possible futures", pos: 97 }
+          ]
+        },
+        compressed: {
+          label: "Deep-Time Scale",
+          note: "Deep-Time Scale compresses millions of years into one band. The main lesson is scale: most human history happened before cities, factories, electricity, and the internet.",
+          ticks: [
+            { label: "3.3m BCE", pos: 0 },
+            { label: "10k BCE", pos: 72 },
+            { label: "3300 BCE", pos: 81 },
+            { label: "1500s", pos: 90 },
+            { label: "1760s", pos: 93 },
+            { label: "Today", pos: 98 }
+          ]
+        }
+      };
+
       var active = eras[0].key;
+      var activeScale = "story";
       var marker = document.getElementById("ages-marker");
       var readout = document.getElementById("ages-readout");
+      var scaleReadout = document.getElementById("ages-scale-readout");
       var eraButtons = document.getElementById("ages-era-buttons");
       var panelButtons = document.getElementById("ages-panel-buttons");
+      var track = document.querySelector(".ages-track");
+      var faithLayer = document.getElementById("ages-faith-layer");
 
       function makeButton(era, className) {
         var btn = document.createElement("button");
@@ -666,16 +897,75 @@
         panelButtons.appendChild(makeButton(era, "ages-panel-button"));
       });
 
+      function clearTrack() {
+        track.querySelectorAll(".ages-track-segment, .ages-tick").forEach(function (item) {
+          item.remove();
+        });
+      }
+
+      function drawTrack() {
+        var scale = scales[activeScale];
+        clearTrack();
+        eras.forEach(function (era) {
+          var segment = document.createElement("div");
+          var start = era[activeScale + "Start"];
+          var width = era[activeScale + "Width"];
+          segment.className = "ages-track-segment";
+          segment.style.left = start + "%";
+          segment.style.width = width + "%";
+          segment.style.opacity = width < 3 ? "0.55" : "1";
+          segment.innerHTML = "<span>" + era.name.replace(" Age", "") + "</span>";
+          track.insertBefore(segment, marker);
+        });
+        scale.ticks.forEach(function (tick) {
+          var item = document.createElement("div");
+          item.className = "ages-tick";
+          item.style.left = tick.pos + "%";
+          item.innerHTML = "<span>" + tick.label + "</span>";
+          track.insertBefore(item, marker);
+        });
+        scaleReadout.textContent = scale.note;
+        faithLayer.innerHTML = "";
+        christianEvents.forEach(function (event) {
+          if (activeScale === "compressed" && event.hideCompressed) return;
+          var item = document.createElement("div");
+          item.className = "ages-faith-event";
+          item.style.left = event[activeScale + "Pos"] + "%";
+          item.style.top = (event.row ? 3.25 : 2) + "rem";
+          item.classList.toggle("is-late", event[activeScale + "Pos"] > 94);
+          var label = document.createElement("span");
+          label.textContent = event.label;
+          item.appendChild(label);
+          faithLayer.appendChild(item);
+        });
+      }
+
       function setEra(key) {
         active = key;
         var era = eras.find(function (item) { return item.key === key; });
-        marker.style.left = era.pos + "%";
-        readout.innerHTML = "<h2>" + era.name + "</h2><strong>" + era.range + "</strong><br>" + era.system + "<br><br><strong>System shift:</strong> " + era.shift;
+        marker.style.left = era[activeScale + "Pos"] + "%";
+        readout.innerHTML = "<h2>" + era.name + "</h2><strong>" + era.range + "</strong><br>" + era.system + "<br><br><strong>System shift:</strong> " + era.shift + "<br><br><strong>Christian history:</strong> " + era.christian;
         document.getElementById("ages-selected").textContent = era.name.split(" ")[0];
         document.querySelectorAll("[data-age]").forEach(function (btn) {
           btn.classList.toggle("is-active", btn.dataset.age === key);
         });
       }
+
+      function setScale(scale) {
+        activeScale = scale;
+        document.querySelectorAll("[data-scale]").forEach(function (btn) {
+          btn.classList.toggle("is-active", btn.dataset.scale === scale);
+          btn.setAttribute("aria-pressed", btn.dataset.scale === scale ? "true" : "false");
+        });
+        drawTrack();
+        setEra(active);
+      }
+
+      document.querySelectorAll("[data-scale]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          setScale(btn.dataset.scale);
+        });
+      });
 
       document.querySelectorAll(".ll-tab").forEach(function (tab) {
         tab.addEventListener("click", function () {
@@ -706,7 +996,7 @@
         feedback.textContent = score === 2 ? "Correct. You are reading history as changing systems." : score + "/2 correct. Revisit overlap and the Industrial Age, then try again.";
       });
 
-      setEra(active);
+      setScale(activeScale);
     }());
   </script>
 </body>
