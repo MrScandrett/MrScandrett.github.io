@@ -395,6 +395,144 @@
     }
     .ec-component-list li + li { margin-top: 0.32rem; }
 
+    .ec-bench {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(250px, 0.72fr);
+      gap: 1rem;
+      margin-top: 0.85rem;
+      align-items: stretch;
+    }
+    .ec-bench-stage {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255,149,0,0.16), transparent 32%),
+        linear-gradient(180deg, #f8fbff 0%, #edf4fb 100%);
+      padding: 1rem;
+      min-height: 342px;
+      display: grid;
+      gap: 0.85rem;
+      align-content: start;
+    }
+    .ec-bench-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.38rem;
+    }
+    .ec-bench-tab {
+      min-height: 42px;
+      border: 1px solid rgba(15,23,42,0.12);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.78);
+      color: #475569;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .ec-bench-tab.is-active {
+      background: #0f172a;
+      color: #f8fafc;
+      border-color: #0f172a;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.18);
+    }
+    .ec-bench-visual {
+      border: 1px solid rgba(15,23,42,0.12);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.78);
+      padding: 0.85rem;
+    }
+    .ec-bench-visual svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 220px;
+    }
+    .ec-bench-note {
+      border-left: 3px solid var(--ec-accent, #007aff);
+      padding-left: 0.75rem;
+    }
+    .ec-bench-note strong {
+      display: block;
+      margin-bottom: 0.18rem;
+      font-size: 0.94rem;
+    }
+    .ec-bench-note span {
+      display: block;
+      color: #415266;
+      font-size: 0.84rem;
+      line-height: 1.58;
+    }
+    .ec-toolbox {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.86);
+      padding: 1rem;
+      display: grid;
+      gap: 0.85rem;
+      align-content: start;
+    }
+    .ec-toolbox h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+    .ec-mini-meter {
+      border-radius: 14px;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 0.85rem;
+    }
+    .ec-mini-meter strong {
+      display: block;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #cbd5e1;
+      margin-bottom: 0.2rem;
+    }
+    .ec-mini-meter span {
+      display: block;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .ec-cap-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+    }
+    .ec-cap-row input {
+      width: 100%;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.62rem 0.75rem;
+      font: inherit;
+      font-size: 0.9rem;
+      color: var(--text, #1d1d1f);
+      background: var(--white, #fff);
+    }
+    .ec-cap-row button {
+      border: none;
+      border-radius: 10px;
+      padding: 0.62rem 0.78rem;
+      background: #007aff;
+      color: #fff;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .ec-tool-list {
+      margin: 0;
+      padding-left: 1rem;
+      color: #415266;
+      font-size: 0.82rem;
+      line-height: 1.58;
+    }
+    .ec-tool-list li + li { margin-top: 0.28rem; }
+
     .ec-trouble-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -476,6 +614,8 @@
     @media (max-width: 920px) {
       .ec-resistor-top { grid-template-columns: 1fr; }
       .ec-symbol-panel { grid-template-columns: 1fr; }
+      .ec-bench { grid-template-columns: 1fr; }
+      .ec-bench-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -885,6 +1025,45 @@
             </div>
           </section>
 
+          <section class="ec-card" style="--ec-accent:#ff375f;">
+            <h2>Polarity and Placement Bench</h2>
+            <p>Reading a part is only half the job. Use this bench to rehearse the physical clue that tells you which way the component belongs on a breadboard.</p>
+
+            <div class="ec-bench">
+              <div class="ec-bench-stage">
+                <div class="ec-bench-tabs" role="tablist" aria-label="Component placement examples">
+                  <button class="ec-bench-tab is-active" type="button" data-bench-part="led" aria-selected="true">LED</button>
+                  <button class="ec-bench-tab" type="button" data-bench-part="capacitor" aria-selected="false">Capacitor</button>
+                  <button class="ec-bench-tab" type="button" data-bench-part="diode" aria-selected="false">Diode</button>
+                  <button class="ec-bench-tab" type="button" data-bench-part="button" aria-selected="false">Button</button>
+                </div>
+                <div class="ec-bench-visual" id="bench-visual" aria-live="polite"></div>
+                <div class="ec-bench-note">
+                  <strong id="bench-title">LED: longer lead goes toward positive</strong>
+                  <span id="bench-copy">The short lead and flat edge mark the cathode. Put a resistor in series so the LED does not pull too much current.</span>
+                </div>
+              </div>
+
+              <div class="ec-toolbox">
+                <h3>Ceramic Capacitor Code Decoder</h3>
+                <p>Many tiny capacitors use a three-digit code. The first two digits are the value, and the third digit tells how many zeros to add in picofarads.</p>
+                <div class="ec-cap-row">
+                  <input id="cap-code" value="104" inputmode="numeric" maxlength="3" aria-label="Capacitor code" />
+                  <button type="button" id="cap-decode">Decode</button>
+                </div>
+                <div class="ec-mini-meter">
+                  <strong>Decoded Value</strong>
+                  <span id="cap-result">100 nF</span>
+                </div>
+                <ul class="ec-tool-list">
+                  <li><code>104</code> means 10 followed by 4 zeros: 100,000 pF.</li>
+                  <li><code>103</code> means 10,000 pF, which is 10 nF.</li>
+                  <li><code>221</code> means 220 pF.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
           <section class="ec-card" style="--ec-accent:#af52de;">
             <h2>Compare the Parts</h2>
             <p>Use this table when sorting parts from a mixed electronics kit.</p>
@@ -1163,6 +1342,29 @@
       let bandCount = 4;
       let bands = defaultBandSets[4].slice();
 
+      const benchExamples = {
+        led: {
+          title: 'LED: longer lead goes toward positive',
+          copy: 'The short lead and flat edge mark the cathode. Put a resistor in series so the LED does not pull too much current.',
+          svg: '<svg viewBox="0 0 620 230" role="img" aria-label="LED placement diagram"><rect x="42" y="72" width="536" height="118" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"></rect><g fill="#e2e8f0"><rect x="80" y="94" width="38" height="12" rx="6"></rect><rect x="80" y="122" width="38" height="12" rx="6"></rect><rect x="80" y="150" width="38" height="12" rx="6"></rect><rect x="502" y="94" width="38" height="12" rx="6"></rect><rect x="502" y="122" width="38" height="12" rx="6"></rect><rect x="502" y="150" width="38" height="12" rx="6"></rect></g><path d="M238 54 C250 20 300 20 314 54 C324 79 306 104 276 104 C246 104 228 79 238 54Z" fill="#ff453a" opacity="0.9" stroke="#b91c1c" stroke-width="3"></path><path d="M260 103 L260 160" stroke="#475569" stroke-width="5" stroke-linecap="round"></path><path d="M294 103 L294 178" stroke="#475569" stroke-width="5" stroke-linecap="round"></path><path d="M294 178 L344 178 L344 150" fill="none" stroke="#475569" stroke-width="5" stroke-linecap="round"></path><text x="245" y="204" fill="#64748b" font-size="16" font-weight="800" font-family="Inter,sans-serif">short cathode</text><text x="342" y="140" fill="#007aff" font-size="16" font-weight="800" font-family="Inter,sans-serif">long anode +</text><path d="M382 136 h96" stroke="#007aff" stroke-width="6" stroke-linecap="round"></path><path d="M469 122 l20 14 -20 14" fill="none" stroke="#007aff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
+        },
+        capacitor: {
+          title: 'Electrolytic capacitor: stripe marks negative',
+          copy: 'The body stripe points to the negative lead. If it is reversed, power off and fix the orientation before testing again.',
+          svg: '<svg viewBox="0 0 620 230" role="img" aria-label="Electrolytic capacitor polarity diagram"><rect x="52" y="78" width="516" height="92" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"></rect><rect x="232" y="36" width="132" height="142" rx="26" fill="#2563eb" stroke="#1d4ed8" stroke-width="3"></rect><rect x="250" y="40" width="26" height="134" rx="8" fill="#dbeafe"></rect><text x="263" y="88" fill="#1d4ed8" font-size="28" font-weight="800" font-family="Inter,sans-serif">-</text><text x="263" y="128" fill="#1d4ed8" font-size="28" font-weight="800" font-family="Inter,sans-serif">-</text><path d="M276 178 L276 206" stroke="#475569" stroke-width="5" stroke-linecap="round"></path><path d="M332 178 L332 206" stroke="#475569" stroke-width="5" stroke-linecap="round"></path><text x="215" y="224" fill="#64748b" font-size="16" font-weight="800" font-family="Inter,sans-serif">negative stripe</text><text x="342" y="224" fill="#007aff" font-size="16" font-weight="800" font-family="Inter,sans-serif">positive lead</text><circle cx="456" cy="58" r="20" fill="#ff3b30"></circle><path d="M446 48 l20 20 M466 48 l-20 20" stroke="#fff" stroke-width="5" stroke-linecap="round"></path></svg>'
+        },
+        diode: {
+          title: 'Diode: the painted band is the cathode',
+          copy: 'Match the physical band to the cathode bar in the schematic. Reversing it can block the branch completely.',
+          svg: '<svg viewBox="0 0 620 230" role="img" aria-label="Diode band direction diagram"><rect x="54" y="86" width="512" height="74" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"></rect><path d="M112 123 H232" stroke="#64748b" stroke-width="9" stroke-linecap="round"></path><rect x="232" y="94" width="156" height="58" rx="29" fill="#f8fafc" stroke="#94a3b8" stroke-width="3"></rect><rect x="342" y="94" width="18" height="58" rx="4" fill="#0f172a"></rect><path d="M388 123 H508" stroke="#64748b" stroke-width="9" stroke-linecap="round"></path><path d="M162 48 H452" stroke="#007aff" stroke-width="6" stroke-linecap="round"></path><path d="M438 34 l22 14 -22 14" fill="none" stroke="#007aff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path><text x="226" y="190" fill="#64748b" font-size="16" font-weight="800" font-family="Inter,sans-serif">anode</text><text x="330" y="190" fill="#0f172a" font-size="16" font-weight="800" font-family="Inter,sans-serif">cathode band</text></svg>'
+        },
+        button: {
+          title: 'Button: straddle the breadboard center gap',
+          copy: 'Two legs on each side are already connected internally. Place the switch across the center gap so pressing joins two separate nodes.',
+          svg: '<svg viewBox="0 0 620 230" role="img" aria-label="Button straddling breadboard center gap"><rect x="70" y="52" width="480" height="132" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"></rect><rect x="296" y="52" width="28" height="132" fill="#e2e8f0"></rect><g fill="#cbd5e1"><circle cx="118" cy="86" r="7"></circle><circle cx="166" cy="86" r="7"></circle><circle cx="214" cy="86" r="7"></circle><circle cx="406" cy="86" r="7"></circle><circle cx="454" cy="86" r="7"></circle><circle cx="502" cy="86" r="7"></circle><circle cx="118" cy="148" r="7"></circle><circle cx="166" cy="148" r="7"></circle><circle cx="214" cy="148" r="7"></circle><circle cx="406" cy="148" r="7"></circle><circle cx="454" cy="148" r="7"></circle><circle cx="502" cy="148" r="7"></circle></g><rect x="246" y="74" width="128" height="86" rx="18" fill="#111827"></rect><circle cx="310" cy="117" r="28" fill="#334155" stroke="#64748b" stroke-width="4"></circle><path d="M262 74 V54 M358 74 V54 M262 160 V184 M358 160 V184" stroke="#475569" stroke-width="7" stroke-linecap="round"></path><text x="232" y="214" fill="#007aff" font-size="16" font-weight="800" font-family="Inter,sans-serif">legs bridge the gap</text></svg>'
+        }
+      };
+
       function fillSelect(select, items, selectedKey) {
         select.innerHTML = '';
         items.forEach(function (item) {
@@ -1340,6 +1542,46 @@
 
       renderLegend();
       setBandCount(4);
+
+      const benchVisual = document.getElementById('bench-visual');
+      const benchTitle = document.getElementById('bench-title');
+      const benchCopy = document.getElementById('bench-copy');
+      document.querySelectorAll('.ec-bench-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          const example = benchExamples[tab.dataset.benchPart];
+          document.querySelectorAll('.ec-bench-tab').forEach(function (item) {
+            const active = item === tab;
+            item.classList.toggle('is-active', active);
+            item.setAttribute('aria-selected', active ? 'true' : 'false');
+          });
+          benchVisual.innerHTML = example.svg;
+          benchTitle.textContent = example.title;
+          benchCopy.textContent = example.copy;
+        });
+      });
+      benchVisual.innerHTML = benchExamples.led.svg;
+
+      const capCode = document.getElementById('cap-code');
+      const capDecode = document.getElementById('cap-decode');
+      const capResult = document.getElementById('cap-result');
+      function formatCapacitance(pf) {
+        if (pf >= 1000000) return (pf / 1000000).toFixed(2).replace(/\.00$/, '') + ' uF';
+        if (pf >= 1000) return (pf / 1000).toFixed(2).replace(/\.00$/, '') + ' nF';
+        return pf.toLocaleString() + ' pF';
+      }
+      function decodeCapacitor() {
+        const code = capCode.value.replace(/\D/g, '').slice(0, 3);
+        capCode.value = code;
+        if (code.length !== 3) {
+          capResult.textContent = 'Enter 3 digits';
+          return;
+        }
+        const base = Number(code.slice(0, 2));
+        const zeros = Number(code[2]);
+        capResult.textContent = formatCapacitance(base * Math.pow(10, zeros));
+      }
+      capDecode.addEventListener('click', decodeCapacitor);
+      capCode.addEventListener('input', decodeCapacitor);
 
       document.querySelectorAll('.ec-question').forEach(function (question) {
         const answer = question.dataset.answer;
