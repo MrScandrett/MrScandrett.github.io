@@ -256,7 +256,7 @@
       min-height: 92px;
       border-radius: 12px;
       background: rgba(255, 255, 255, 0.08);
-      overflow: hidden;
+      overflow: visible;
     }
 
     .ages-faith-layer::before {
@@ -300,6 +300,59 @@
     .ages-faith-event.is-late span {
       left: auto;
       right: 0.35rem;
+    }
+
+    @keyframes faith-artifact-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.6), 0 0 7px 2px rgba(251,191,36,0.25); }
+      50%      { box-shadow: 0 0 0 4px rgba(251,191,36,0), 0 0 13px 4px rgba(251,191,36,0.15); }
+    }
+
+    .ages-faith-artifact-node {
+      position: absolute;
+      bottom: 0.55rem;
+      width: 11px;
+      height: 11px;
+      background: #fbbf24;
+      border: 2px solid rgba(255,255,255,0.85);
+      border-radius: 2px;
+      transform: translateX(-50%) rotate(45deg);
+      cursor: pointer;
+      z-index: 10;
+      transition: transform 0.18s, background 0.18s;
+      animation: faith-artifact-pulse 3s ease-in-out infinite;
+    }
+
+    .ages-faith-artifact-node:hover,
+    .ages-faith-artifact-node.is-open {
+      background: #fff;
+      transform: translateX(-50%) rotate(45deg) scale(1.3);
+      animation: none;
+      box-shadow: 0 0 0 5px rgba(251,191,36,0.35), 0 0 18px 6px rgba(251,191,36,0.4);
+    }
+
+    .ages-faith-artifact-node::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: calc(100% + 9px);
+      left: 50%;
+      transform: translateX(-50%) rotate(-45deg);
+      white-space: nowrap;
+      background: rgba(24,15,3,0.92);
+      color: #fbbf24;
+      font-size: 0.6rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 0.2rem 0.48rem;
+      border-radius: 999px;
+      border: 1px solid rgba(251,191,36,0.45);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s;
+    }
+
+    .ages-faith-artifact-node:hover::after,
+    .ages-faith-artifact-node.is-open::after {
+      opacity: 1;
     }
 
     .ages-era-buttons {
@@ -540,6 +593,167 @@
       color: #9a4a22;
     }
 
+    /* ── Artifact tech-tree nodes ─────────────────────────── */
+    .ages-artifact-layer {
+      position: relative;
+      height: 0;
+      margin-top: -0.5rem;
+      margin-bottom: -0.5rem;
+      pointer-events: none;
+    }
+
+    .ages-artifact-layer > * {
+      pointer-events: auto;
+    }
+
+    @keyframes artifact-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(246,183,60,0.55), 0 0 8px 2px rgba(246,183,60,0.28); }
+      50%      { box-shadow: 0 0 0 5px rgba(246,183,60,0), 0 0 14px 5px rgba(246,183,60,0.18); }
+    }
+
+    .ages-artifact-node {
+      position: absolute;
+      top: -52px;
+      width: 14px;
+      height: 14px;
+      background: #f6b73c;
+      border: 2px solid rgba(255,255,255,0.9);
+      border-radius: 3px;
+      transform: translateX(-50%) rotate(45deg);
+      cursor: pointer;
+      z-index: 10;
+      transition: transform 0.18s, background 0.18s, width 0.18s, height 0.18s;
+      animation: artifact-pulse 2.8s ease-in-out infinite;
+    }
+
+    .ages-artifact-node:hover,
+    .ages-artifact-node.is-open {
+      background: #fff;
+      width: 18px;
+      height: 18px;
+      transform: translateX(-50%) rotate(45deg) scale(1.25);
+      animation: none;
+      box-shadow: 0 0 0 6px rgba(246,183,60,0.35), 0 0 22px 8px rgba(246,183,60,0.4);
+    }
+
+    .ages-artifact-node::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%) rotate(-45deg);
+      white-space: nowrap;
+      background: rgba(10,18,36,0.88);
+      color: #f6b73c;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 0.22rem 0.52rem;
+      border-radius: 999px;
+      border: 1px solid rgba(246,183,60,0.4);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s;
+    }
+
+    .ages-artifact-node:hover::after,
+    .ages-artifact-node.is-open::after {
+      opacity: 1;
+    }
+
+    /* ── Artifact tooltip overlay ──────────────────────────── */
+    .ages-artifact-tooltip {
+      position: fixed;
+      z-index: 1000;
+      width: 360px;
+      border-radius: 14px;
+      background: #0d1526;
+      border: 1px solid rgba(246,183,60,0.45);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(246,183,60,0.12);
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px) scale(0.97);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .ages-artifact-tooltip.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    .ages-artifact-tooltip-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.7rem 0.8rem 0.5rem;
+    }
+
+    .ages-artifact-tooltip-title {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #f6b73c;
+      margin: 0 0 0.18rem;
+      line-height: 1.2;
+    }
+
+    .ages-artifact-tooltip-date {
+      font-size: 0.72rem;
+      color: rgba(248,250,252,0.62);
+      margin: 0;
+    }
+
+    .ages-artifact-tooltip-note {
+      font-size: 0.74rem;
+      color: rgba(248,250,252,0.78);
+      line-height: 1.52;
+      padding: 0 0.8rem 0.6rem;
+      margin: 0;
+    }
+
+    .ages-artifact-tooltip-close {
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.1);
+      border: 0;
+      border-radius: 50%;
+      color: #fff;
+      cursor: pointer;
+      width: 22px;
+      height: 22px;
+      font-size: 0.7rem;
+      line-height: 22px;
+      text-align: center;
+      transition: background 0.15s;
+    }
+
+    .ages-artifact-tooltip-close:hover { background: rgba(255,255,255,0.2); }
+
+    .ages-artifact-tooltip-frame {
+      border: none;
+      display: block;
+      width: 100%;
+      height: 280px;
+    }
+
+    .ages-artifact-tooltip-credit {
+      margin: 0;
+      padding: 0.38rem 0.7rem;
+      font-size: 0.68rem;
+      color: rgba(248,250,252,0.48);
+      text-align: right;
+      background: rgba(0,0,0,0.3);
+    }
+
+    .ages-artifact-tooltip-credit a {
+      color: #1CAAD9;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .ages-artifact-tooltip-credit a:hover { text-decoration: underline; }
+
     .site-footer {
       margin-top: 1.2rem;
     }
@@ -632,6 +846,7 @@
                 <div class="ages-track" aria-hidden="true">
                   <div class="ages-marker" id="ages-marker"></div>
                 </div>
+                <div class="ages-artifact-layer" id="ages-artifact-layer" aria-label="Artifact nodes"></div>
                 <div class="ages-faith-layer" id="ages-faith-layer" aria-label="Christian history milestones"></div>
                 <div class="ages-era-buttons" id="ages-era-buttons"></div>
               </div>
@@ -675,6 +890,7 @@
               <h2>Stone Age</h2>
               <p>For most of human history, people used stone, bone, wood, fire, language, and shared memory to survive. Hunting, gathering, migration, art, ritual, and toolmaking shaped flexible societies.</p>
               <p>The late Stone Age brought agriculture in several regions, creating food surpluses that could support villages, specialization, and permanent architecture.</p>
+              <div class="ages-note" style="margin-top:0.6rem;font-size:0.78rem;">&#x25C6; Three artifacts are pinned to the timeline above — hover the gold diamonds to explore <em>Homo erectus</em>, the <em>Jōmon pottery shard</em>, and <em>Stonehenge</em> in 3D.</div>
             </article>
 
             <article class="ages-card">
@@ -692,6 +908,7 @@
               <h2>Scientific, Industrial, and Modern Ages</h2>
               <p>The Scientific Revolution made experiment and mathematics central to knowledge. The Industrial Age turned heat engines, factories, and fossil fuels into a new economic system.</p>
               <p>The modern era adds electricity, antibiotics, aviation, nuclear physics, spaceflight, computing, global finance, mass media, and the internet.</p>
+              <div class="ages-note" style="margin-top:0.6rem;font-size:0.78rem;">&#x25C6; The <em>1903 Wright Flyer</em> is pinned to the timeline above — hover the gold diamond to explore it in 3D.</div>
             </article>
 
             <article class="ages-card ages-wide">
@@ -809,6 +1026,11 @@
             <div class="ll-info"><strong>Overlap</strong>Ages are not clean worldwide boxes. New systems emerge while old systems continue.</div>
             <div class="ll-info"><strong>Complexity</strong>More powerful systems need more coordination, trust, maintenance, and shared rules.</div>
             <div class="ll-info"><strong>Christian History</strong>A historical lens for tracing how Christianity emerged, spread, organized, reformed, globalized, and responded to new technologies.</div>
+            <div class="ll-info"><strong>&#x25C6; Ten Commandments</strong>Given to Moses at Sinai (c. 1440 BCE), these stone tablets are the foundational law of the covenant between God and Israel. They shaped Jewish ethics, Christian moral theology, and Western legal tradition — and were housed inside the Ark of the Covenant. Tap the amber diamond on the Christian history band to explore in 3D.</div>
+            <div class="ll-info"><strong>&#x25C6; Tabernacle</strong>The portable wilderness sanctuary at the center of Israelite worship (c. 1440–1400 BCE) — its design described in extraordinary detail in Exodus. It established the blueprint for sacred space and priestly worship, and prefigured the Temple in Jerusalem. Tap the amber diamond on the Christian history band to explore it in 3D.</div>
+            <div class="ll-info"><strong>&#x25C6; Ark of the Covenant</strong>The gold-covered chest housing the tablets of the Law, placed at the heart of the Tabernacle. It represented God's direct presence with Israel. Carried into battle, enshrined in the Temple — its fate after the Babylonian conquest remains unknown. Tap the amber diamond nearby to explore in 3D.</div>
+            <div class="ll-info"><strong>&#x25C6; Creation of Adam</strong>Michelangelo's Sistine Chapel fresco (1508–1512), commissioned by Pope Julius II. Painted at the peak of the Renaissance, it fuses Christian theology with classical humanism. A defining artifact of how the Scientific Age and Christian art collided and collaborated. Tap the amber diamond on the Christian history band to explore in 3D.</div>
+            <div class="ll-info"><strong>&#x25C6; Dead Sea Scrolls</strong>Written by the Essene community at Qumran (c. 250 BCE–68 CE), these are the oldest known manuscripts of the Hebrew Bible — predating the next oldest by 1,000 years. They illuminate the Jewish world from which Jesus and early Christianity emerged. Tap the amber diamond on the Christian history band to explore Qumran in 3D.</div>
             <div class="ll-info"><strong>Future Ages</strong>Speculative, not certain. Science opens pathways; society chooses how to walk them.</div>
           </div>
         </div>
@@ -818,6 +1040,23 @@
         <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
       </button>
     </div>
+  </div>
+
+  <div id="ages-artifact-tooltip" class="ages-artifact-tooltip" role="dialog" aria-modal="false" aria-hidden="true">
+    <div class="ages-artifact-tooltip-head">
+      <div>
+        <p class="ages-artifact-tooltip-title" id="att-title"></p>
+        <p class="ages-artifact-tooltip-date" id="att-date"></p>
+      </div>
+      <button class="ages-artifact-tooltip-close" id="att-close" aria-label="Close artifact">&#x2715;</button>
+    </div>
+    <p class="ages-artifact-tooltip-note" id="att-note"></p>
+    <iframe id="att-frame" class="ages-artifact-tooltip-frame" frameborder="0"
+      allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true"
+      allow="autoplay; fullscreen; xr-spatial-tracking"
+      xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share
+      src="about:blank"></iframe>
+    <p class="ages-artifact-tooltip-credit" id="att-credit"></p>
   </div>
 
   <script src="../assets/js/nav-mobile.js"></script>
@@ -872,6 +1111,202 @@
         }
       };
 
+      var faithArtifacts = [
+        {
+          key: "ten-commandments",
+          label: "Ten Commandments",
+          date: "c. 1440 BCE",
+          note: "Given to Moses at Sinai, the Ten Commandments are the foundational moral law of the covenant between God and Israel. Engraved on stone tablets and stored inside the Ark of the Covenant, they shaped Jewish ethics, Christian moral theology, and Western legal tradition. They mark the moment a people received a written code to govern not just behavior but identity.",
+          storyPos: 40,
+          compressedPos: 86.2,
+          sketchfabId: "e4db17dc5378493cbd86d30ee5823a8f",
+          credit: '<a href="https://sketchfab.com/3d-models/ten-commandments-e4db17dc5378493cbd86d30ee5823a8f" target="_blank" rel="nofollow">Ten Commandments</a> by <a href="https://sketchfab.com/bluehat_yellow" target="_blank" rel="nofollow">PortalMaker</a> on Sketchfab'
+        },
+        {
+          key: "tabernacle",
+          label: "The Tabernacle",
+          date: "c. 1440–1400 BCE",
+          note: "The portable sanctuary described in Exodus — a tent-shrine at the center of the Israelite camp during the wilderness period. Its design, described in extraordinary detail in the Torah, established the blueprint for sacred space, priestly worship, and the presence of God among the people. It preceded and informed the later Temple in Jerusalem.",
+          storyPos: 41,
+          compressedPos: 86.5,
+          sketchfabId: "57e4cd4ad59a45c78c8e1b81c7c23d9b",
+          credit: '<a href="https://sketchfab.com/3d-models/tabernacle-57e4cd4ad59a45c78c8e1b81c7c23d9b" target="_blank" rel="nofollow">Tabernacle</a> by <a href="https://sketchfab.com/gbraendlein" target="_blank" rel="nofollow">bibel-in-3d.de</a> on Sketchfab'
+        },
+        {
+          key: "ark-of-covenant",
+          label: "Ark of the Covenant",
+          date: "c. 1440–1400 BCE",
+          note: "The gold-covered chest described in Exodus housing the stone tablets of the Law, Aaron's rod, and manna. Carried before Israel in battle and placed at the heart of the Tabernacle, it represented the direct presence and covenant of God with his people. Its location after the Babylonian conquest remains unknown.",
+          storyPos: 42,
+          compressedPos: 86.8,
+          sketchfabId: "36ff060fe3df41b4b123899bef2e4224",
+          credit: '<a href="https://sketchfab.com/3d-models/ark-of-the-covenant-36ff060fe3df41b4b123899bef2e4224" target="_blank" rel="nofollow">Ark of the Covenant</a> by <a href="https://sketchfab.com/benjtm" target="_blank" rel="nofollow">B</a> on Sketchfab'
+        },
+        {
+          key: "khachkar",
+          label: "Armenian Khachkar",
+          date: "c. 10th–13th centuries",
+          note: "A free-standing stone cross-memorial from Haghpat Monastery (UNESCO World Heritage site) in Armenia, ornately carved on three sides with crosses, iconography, and inscription. Khachkars are unique to Armenian Christian culture — they mark graves, commemorate the dead, and serve as pilgrimage sites. This particular stone, the Amenaprktich (the Saviour), has survived centuries of weathering and cultural pressure, a testament to Armenian Christian identity and resilience.",
+          storyPos: 57,
+          compressedPos: 91.8,
+          sketchfabId: "731f6fe01d6d434eac9ab70110824a97",
+          credit: '<a href="https://sketchfab.com/3d-models/armenian-khachkar-stone-memorial-731f6fe01d6d434eac9ab70110824a97" target="_blank" rel="nofollow">Armenian Khachkar Stone Memorial</a> by <a href="https://sketchfab.com/USF_digital" target="_blank" rel="nofollow">University of South Florida Libraries</a> on Sketchfab'
+        },
+        {
+          key: "creation-of-adam",
+          label: "Creation of Adam",
+          date: "1508–1512",
+          note: "Michelangelo's fresco on the Sistine Chapel ceiling, commissioned by Pope Julius II. Painted at the peak of the Renaissance, it fuses Christian theology with classical humanism — depicting the moment God breathes life into Adam. It remains one of the most reproduced religious images in history, and a defining artifact of how the Scientific Age and Christian art collided and collaborated.",
+          storyPos: 61,
+          compressedPos: 92.7,
+          sketchfabId: "4d1727c7b83e4e6284bbadb63dbb537e",
+          credit: '<a href="https://sketchfab.com/3d-models/the-creation-of-adam-4d1727c7b83e4e6284bbadb63dbb537e" target="_blank" rel="nofollow">The Creation of Adam</a> by <a href="https://sketchfab.com/norgeotloic" target="_blank" rel="nofollow">Loïc Norgeot</a> on Sketchfab'
+        },
+        {
+          key: "qumran",
+          label: "Dead Sea Scrolls",
+          date: "c. 250 BCE–68 CE",
+          note: "Written by the Essene community at Qumran near the Dead Sea, these scrolls include the oldest known manuscripts of the Hebrew Bible — predating the next oldest by 1,000 years. Discovered in 1947, they transformed our understanding of Second Temple Judaism and the world in which Jesus and early Christianity emerged.",
+          storyPos: 46,
+          compressedPos: 89.2,
+          sketchfabId: "53104a66fce148f5bac6691be748bd4d",
+          credit: '<a href="https://sketchfab.com/3d-models/qumran-53104a66fce148f5bac6691be748bd4d" target="_blank" rel="nofollow">QUMRAN</a> by <a href="https://sketchfab.com/Davide.Specchi" target="_blank" rel="nofollow">Davide Specchi</a> on Sketchfab'
+        }
+      ];
+
+      var artifacts = [
+        {
+          key: "homo-erectus",
+          label: "Homo erectus",
+          date: "c. 1.5 million BCE",
+          note: "One of the earliest members of the genus Homo — walked upright, made Acheulean stone tools, and likely used fire. A direct ancestor of modern humans.",
+          storyPos: 2,
+          compressedPos: 33,
+          sketchfabId: "50f908557cfc410c899112e62414c208",
+          credit: '<a href="https://sketchfab.com/3d-models/homo-erectus-50f908557cfc410c899112e62414c208" target="_blank" rel="nofollow">Homo erectus</a> by <a href="https://sketchfab.com/GVALS" target="_blank" rel="nofollow">GVALS</a> on Sketchfab'
+        },
+        {
+          key: "lascaux",
+          label: "Lascaux Cave Art",
+          date: "c. 17,000 BCE",
+          note: "Painted deep inside a French cave, these detailed animal images — aurochs, horses, deer — show early humans closely studying and recording animal behavior. Scholars see this as evidence of the cognitive shift that preceded domestication and animal husbandry.",
+          storyPos: 10,
+          compressedPos: 68,
+          sketchfabId: "e1cbeeedc6114edaa15f4ad53b6733f6",
+          credit: '<a href="https://sketchfab.com/3d-models/lascaux-e1cbeeedc6114edaa15f4ad53b6733f6" target="_blank" rel="nofollow">Lascaux</a> by <a href="https://sketchfab.com/geoffreymarchal" target="_blank" rel="nofollow">Geoffrey Marchal</a> on Sketchfab'
+        },
+        {
+          key: "gobekli-tepe",
+          label: "Göbekli Tepe",
+          date: "c. 9,600 BCE",
+          note: "The world's oldest known temple complex, carved from limestone by hunter-gatherers in southeastern Turkey — before agriculture, before pottery, before cities. Its massive T-shaped pillars with animal reliefs challenge the assumption that monumental architecture requires farming surpluses. Some scholars argue the ritual site came first, and that the need to feed its builders may have driven the invention of agriculture.",
+          storyPos: 12,
+          compressedPos: 69,
+          sketchfabId: "db47d31a2aed448ca47c644636828681",
+          credit: '<a href="https://sketchfab.com/3d-models/gobekli-tepe-db47d31a2aed448ca47c644636828681" target="_blank" rel="nofollow">Göbekli Tepe</a> by <a href="https://sketchfab.com/mbarngrover" target="_blank" rel="nofollow">mbarngrover</a> on Sketchfab'
+        },
+        {
+          key: "joomon-pottery",
+          label: "Jōmon Pottery",
+          date: "c. 14,000–10,000 BCE",
+          note: "Among the earliest known pottery on Earth — handmade, low-fired clay used for boiling food in Neolithic Japan. A leap in how humans processed nutrition.",
+          storyPos: 13,
+          compressedPos: 70,
+          sketchfabId: "7f2a1972a7a14ff9a57aae34778695ca",
+          credit: '<a href="https://sketchfab.com/3d-models/shard-of-pottery-7f2a1972a7a14ff9a57aae34778695ca" target="_blank" rel="nofollow">土器片 shard of pottery</a> by <a href="https://sketchfab.com/Matsudo_Museum" target="_blank" rel="nofollow">Matsudo Museum</a> on Sketchfab'
+        },
+        {
+          key: "otzi",
+          label: "Ötzi the Iceman",
+          date: "c. 3,300 BCE",
+          note: "Preserved in Alpine ice for 5,300 years, Ötzi carries a snapshot of Chalcolithic technology: a copper-bladed axe, flint tools, a longbow, woven grass cloak, leather shoes stuffed with insulation, and medicinal herbs. He stands at the exact hinge between the Stone and Bronze Ages.",
+          storyPos: 29,
+          compressedPos: 80.5,
+          sketchfabId: "ee1f18c378b341b09dd1eff9d682a331",
+          credit: '<a href="https://sketchfab.com/3d-models/otzi-the-iceman-prehistoric-man-scan-ee1f18c378b341b09dd1eff9d682a331" target="_blank" rel="nofollow">OTZI, THE ICEMAN. PREHISTORIC MAN SCAN</a> by <a href="https://sketchfab.com/jesusmolina" target="_blank" rel="nofollow">jesusmolina</a> on Sketchfab'
+        },
+        {
+          key: "stonehenge",
+          label: "Stonehenge",
+          date: "c. 3,000–2,500 BCE",
+          note: "Neolithic monument in England — a feat of organized labor, celestial alignment, and ceremonial architecture built without metal tools.",
+          storyPos: 15,
+          compressedPos: 71.5,
+          sketchfabId: "7e7febabef2045a68755cc39c8c7c91f",
+          credit: '<a href="https://sketchfab.com/3d-models/stonehenge-england-vr-7e7febabef2045a68755cc39c8c7c91f" target="_blank" rel="nofollow">Stonehenge England – VR</a> by <a href="https://sketchfab.com/gsxn" target="_blank" rel="nofollow">GSXNet</a> on Sketchfab'
+        },
+        {
+          key: "sumerian-axe",
+          label: "Sumerian Axe",
+          date: "c. 2,500–2,300 BCE",
+          note: "Cast from copper or bronze in Mesopotamia — the world's first cities. The Sumerians developed metallurgy alongside writing, law codes, and trade networks. This axe represents the leap from stone tools to metal: a harder edge, a longer reach, and a weapon that required smelting, molds, and specialist labor.",
+          storyPos: 34,
+          compressedPos: 82,
+          sketchfabId: "fe13319f250c4223892c1a0c4501a0d6",
+          credit: '<a href="https://sketchfab.com/3d-models/sumerian-axe-fe13319f250c4223892c1a0c4501a0d6" target="_blank" rel="nofollow">Sumerian Axe</a> by <a href="https://sketchfab.com/milacetious" target="_blank" rel="nofollow">Milacetious</a> on Sketchfab'
+        },
+        {
+          key: "royal-game-ur",
+          label: "Royal Game of Ur",
+          date: "c. 2,600 BCE",
+          note: "The oldest known board game, excavated from the Royal Tombs of Ur in Mesopotamia. Its rules were later decoded from a Babylonian clay tablet. Evidence that Bronze Age civilization had not only cities, writing, and law — but leisure, competition, and structured play. A reminder that being human has always included games.",
+          storyPos: 35,
+          compressedPos: 82.8,
+          sketchfabId: "c2f8505c147f47c587ef11940f2ab131",
+          credit: '<a href="https://sketchfab.com/3d-models/the-royal-game-of-ur-c2f8505c147f47c587ef11940f2ab131" target="_blank" rel="nofollow">The Royal Game Of Ur</a> by <a href="https://sketchfab.com/magikos-fakos" target="_blank" rel="nofollow">Greektoys.org</a> on Sketchfab'
+        },
+        {
+          key: "shadoof",
+          label: "Shadoof",
+          date: "c. 2,000 BCE",
+          note: "A counterweighted lever used to lift water from rivers and canals onto fields. One of the earliest machines to multiply human labor through mechanical advantage — it extended the reach of Bronze Age agriculture far beyond the floodplain and is still in use today in parts of Egypt and India.",
+          storyPos: 36,
+          compressedPos: 83.5,
+          sketchfabId: "a5353d8a3b134c3fa0fdb6c54dcc2efd",
+          credit: '<a href="https://sketchfab.com/3d-models/shadoof-a5353d8a3b134c3fa0fdb6c54dcc2efd" target="_blank" rel="nofollow">Shadoof</a> by <a href="https://sketchfab.com/lukus1" target="_blank" rel="nofollow">lukus1</a> on Sketchfab'
+        },
+        {
+          key: "great-pyramid",
+          label: "Great Pyramid of Giza",
+          date: "c. 2,560 BCE",
+          note: "Built during the Fourth Dynasty of the Old Kingdom, the Great Pyramid required coordinating tens of thousands of workers, precision surveying, quarrying 2.3 million stone blocks, and a supply chain spanning hundreds of miles. It is the most enduring evidence of what Bronze Age state organization could achieve.",
+          storyPos: 33,
+          compressedPos: 82.5,
+          sketchfabId: "4a251113722f4d969b6cf2ca5f35c502",
+          credit: '<a href="https://sketchfab.com/3d-models/the-great-pyramid-of-giza-4a251113722f4d969b6cf2ca5f35c502" target="_blank" rel="nofollow">The Great Pyramid of Giza</a> by <a href="https://sketchfab.com/ianicolo" target="_blank" rel="nofollow">ianicolo</a> on Sketchfab'
+        },
+        {
+          key: "rosetta-stone",
+          label: "Rosetta Stone",
+          date: "196 BCE",
+          note: "A priestly decree carved in three scripts — hieroglyphic, Demotic, and Greek — it became the key that unlocked ancient Egyptian writing in 1822. It sits at the height of Hellenistic civilization, when Greek, Egyptian, and Near Eastern knowledge systems overlapped along the Nile.",
+          storyPos: 48,
+          compressedPos: 87.5,
+          sketchfabId: "1e03509704a3490e99a173e53b93e282",
+          credit: '<a href="https://sketchfab.com/3d-models/the-rosetta-stone-1e03509704a3490e99a173e53b93e282" target="_blank" rel="nofollow">The Rosetta Stone</a> by <a href="https://sketchfab.com/britishmuseum" target="_blank" rel="nofollow">The British Museum</a> on Sketchfab'
+        },
+        {
+          key: "printing-press",
+          label: "Printing Press",
+          date: "c. 1440s",
+          note: "Gutenberg's movable-type press made books cheap and fast to reproduce — accelerating the Reformation, Scientific Revolution, and mass literacy across Europe.",
+          storyPos: 59,
+          compressedPos: 92.4,
+          sketchfabId: "c85a06b8f2f44f9da446dc1006bcdb1a",
+          credit: '<a href="https://sketchfab.com/3d-models/the-worlds-first-printing-press-c85a06b8f2f44f9da446dc1006bcdb1a" target="_blank" rel="nofollow">The world\'s first Printing Press</a> by <a href="https://sketchfab.com/michaelmirn" target="_blank" rel="nofollow">Michael Mirn</a> on Sketchfab'
+        },
+        {
+          key: "wright-flyer",
+          label: "Wright Flyer",
+          date: "1903",
+          note: "First powered, controlled airplane flight — 12 seconds at Kitty Hawk, North Carolina. Redefined what the modern age could become.",
+          storyPos: 75,
+          compressedPos: 96.4,
+          sketchfabId: "13f5f10eec1745c5a6e42638a3340d2c",
+          credit: '<a href="https://sketchfab.com/3d-models/1903-wright-flyer-13f5f10eec1745c5a6e42638a3340d2c" target="_blank" rel="nofollow">1903 Wright Flyer</a> by <a href="https://sketchfab.com/byrikardo" target="_blank" rel="nofollow">byrikardo3D</a> on Sketchfab'
+        }
+      ];
+
       var active = eras[0].key;
       var activeScale = "story";
       var marker = document.getElementById("ages-marker");
@@ -881,6 +1316,11 @@
       var panelButtons = document.getElementById("ages-panel-buttons");
       var track = document.querySelector(".ages-track");
       var faithLayer = document.getElementById("ages-faith-layer");
+      var artifactLayer = document.getElementById("ages-artifact-layer");
+      var tooltip = document.getElementById("ages-artifact-tooltip");
+      var attFrame = document.getElementById("att-frame");
+      var openNode = null;
+      var loadedArtifacts = {};
 
       function makeButton(era, className) {
         var btn = document.createElement("button");
@@ -925,7 +1365,9 @@
           track.insertBefore(item, marker);
         });
         scaleReadout.textContent = scale.note;
+        drawArtifacts();
         faithLayer.innerHTML = "";
+
         christianEvents.forEach(function (event) {
           if (activeScale === "compressed" && event.hideCompressed) return;
           var item = document.createElement("div");
@@ -938,7 +1380,110 @@
           item.appendChild(label);
           faithLayer.appendChild(item);
         });
+        drawFaithArtifacts();
       }
+
+      function positionTooltip(node) {
+        var rect = node.getBoundingClientRect();
+        var tw = 360;
+        var margin = 10;
+        var left = rect.left + rect.width / 2 - tw / 2;
+        left = Math.max(margin, Math.min(left, window.innerWidth - tw - margin));
+        var top = rect.top - 8;
+        tooltip.style.left = left + "px";
+        if (top - tooltip.offsetHeight - 12 < margin) {
+          tooltip.style.top = (rect.bottom + 10) + "px";
+          tooltip.style.bottom = "auto";
+        } else {
+          tooltip.style.top = "auto";
+          tooltip.style.bottom = (window.innerHeight - rect.top + 10) + "px";
+        }
+      }
+
+      function openArtifact(artifact, node) {
+        if (openNode && openNode !== node) openNode.classList.remove("is-open");
+        openNode = node;
+        node.classList.add("is-open");
+        document.getElementById("att-title").textContent = artifact.label;
+        document.getElementById("att-date").textContent = artifact.date;
+        document.getElementById("att-note").textContent = artifact.note;
+        document.getElementById("att-credit").innerHTML = artifact.credit;
+        if (!loadedArtifacts[artifact.key]) {
+          attFrame.src = "https://sketchfab.com/models/" + artifact.sketchfabId + "/embed?autospin=0.3&autostart=1&ui_theme=dark&ui_infos=0&ui_watermark=0";
+          loadedArtifacts[artifact.key] = true;
+        } else if (attFrame.dataset.loaded !== artifact.key) {
+          attFrame.src = "https://sketchfab.com/models/" + artifact.sketchfabId + "/embed?autospin=0.3&autostart=1&ui_theme=dark&ui_infos=0&ui_watermark=0";
+        }
+        attFrame.dataset.loaded = artifact.key;
+        tooltip.setAttribute("aria-hidden", "false");
+        tooltip.classList.add("is-visible");
+        positionTooltip(node);
+      }
+
+      function closeTooltip() {
+        tooltip.classList.remove("is-visible");
+        tooltip.setAttribute("aria-hidden", "true");
+        if (openNode) { openNode.classList.remove("is-open"); openNode = null; }
+      }
+
+      function drawFaithArtifacts() {
+        faithArtifacts.forEach(function (artifact) {
+          var node = document.createElement("button");
+          node.type = "button";
+          node.className = "ages-faith-artifact-node";
+          node.setAttribute("aria-label", "View artifact: " + artifact.label + " (" + artifact.date + ")");
+          node.dataset.label = artifact.label;
+          node.style.left = artifact[activeScale + "Pos"] + "%";
+          node.addEventListener("click", function (e) {
+            e.stopPropagation();
+            if (tooltip.classList.contains("is-visible") && openNode === node) {
+              closeTooltip();
+            } else {
+              openArtifact(artifact, node);
+            }
+          });
+          faithLayer.appendChild(node);
+        });
+      }
+
+      function drawArtifacts() {
+        artifactLayer.innerHTML = "";
+        var trackRect = track.getBoundingClientRect();
+        artifacts.forEach(function (artifact) {
+          var node = document.createElement("button");
+          node.type = "button";
+          node.className = "ages-artifact-node";
+          node.setAttribute("aria-label", "View artifact: " + artifact.label + " (" + artifact.date + ")");
+          node.dataset.label = artifact.label;
+          var pos = artifact[activeScale + "Pos"];
+          node.style.left = pos + "%";
+          node.addEventListener("click", function (e) {
+            e.stopPropagation();
+            if (tooltip.classList.contains("is-visible") && openNode === node) {
+              closeTooltip();
+            } else {
+              openArtifact(artifact, node);
+            }
+          });
+          artifactLayer.appendChild(node);
+        });
+      }
+
+      document.getElementById("att-close").addEventListener("click", closeTooltip);
+      document.addEventListener("click", function (e) {
+        if (tooltip.classList.contains("is-visible") &&
+            !tooltip.contains(e.target) &&
+            !e.target.classList.contains("ages-artifact-node") &&
+            !e.target.classList.contains("ages-faith-artifact-node")) {
+          closeTooltip();
+        }
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeTooltip();
+      });
+      window.addEventListener("resize", function () {
+        if (openNode && tooltip.classList.contains("is-visible")) positionTooltip(openNode);
+      });
 
       function setEra(key) {
         active = key;
