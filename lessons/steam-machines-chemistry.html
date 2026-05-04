@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chemistry of Steam Machines · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Chemistry Lesson 05 - connect combustion, phase changes, gas pressure, corrosion, and water treatment to steam engines and the social changes they made possible." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 282px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 32ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 70ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#007aff); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .steam-equation { display: grid; gap: 0.65rem; margin: 0.8rem 0; }
+    .steam-equation-line { border: 1px solid rgba(0,122,255,0.25); background: linear-gradient(135deg,rgba(0,122,255,0.09),rgba(52,199,89,0.05)); border-radius: 14px; padding: 0.9rem 1rem; text-align: center; }
+    .steam-formula { display: block; color: #007aff; font-weight: 800; font-size: clamp(1.1rem,3vw,1.55rem); letter-spacing: 0; margin-bottom: 0.35rem; }
+    .steam-note { color: #64748b; font-size: 0.8rem; line-height: 1.5; }
+
+    .concept-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .concept-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; background: rgba(0,0,0,0.02); }
+    .concept-card strong { display: block; font-size: 0.84rem; margin-bottom: 0.25rem; color: var(--text,#1d1d1f); }
+    .concept-card small { display: block; color: #64748b; font-size: 0.77rem; line-height: 1.5; }
+    [data-theme="night"] .concept-card { background: rgba(255,255,255,0.04); }
+    @media (max-width: 540px) { .concept-grid { grid-template-columns: 1fr; } }
+
+    .cl-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; color: #3f4f65; }
+    .cl-callout.blue { background: rgba(0,122,255,0.08); border-left: 3px solid #007aff; }
+    .cl-callout.green { background: rgba(52,199,89,0.1); border-left: 3px solid #34c759; }
+    .cl-callout.orange { background: rgba(255,149,0,0.1); border-left: 3px solid #ff9500; }
+    [data-theme="night"] .cl-callout { color: rgba(245,245,247,0.72); }
+    .cl-callout strong { color: var(--text,#1d1d1f); }
+
+    .canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
+    [data-theme="night"] .canvas-wrap { background: #1c1c1e; }
+    #steam-canvas { width: 100%; height: 300px; display: block; }
+
+    .readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .readout { background: rgba(255,255,255,0.06); }
+    .readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .readout-val { font-size: 1rem; font-weight: 700; color: #007aff; }
+    @media (max-width: 540px) { .readouts { grid-template-columns: 1fr; } }
+
+    .timeline { display: grid; gap: 0.7rem; margin: 0.8rem 0; }
+    .timeline-item { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.8rem; border-top: 1px solid var(--line,#d2d2d7); padding-top: 0.7rem; }
+    .timeline-item:first-child { border-top: 0; padding-top: 0; }
+    .timeline-year { color: #ff9500; font-weight: 800; font-size: 0.85rem; }
+    .timeline-copy { color: #3f4f65; font-size: 0.84rem; line-height: 1.6; }
+    [data-theme="night"] .timeline-copy { color: rgba(245,245,247,0.72); }
+    @media (max-width: 540px) { .timeline-item { grid-template-columns: 1fr; gap: 0.2rem; } }
+
+    .practice .problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .practice .problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: #3f4f65; line-height: 1.6; }
+    [data-theme="night"] .practice .problem p { color: rgba(245,245,247,0.72); }
+    .problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 160px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .check-btn { background: #007aff; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .check-btn:hover { background: #0065d4; }
+    .feedback { font-size: 0.82rem; font-weight: 600; }
+    .feedback.ok { color: #34c759; }
+    .feedback.err { color: #ff3b30; }
+    .hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy, .diff-mid, .diff-hard { border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; }
+    .diff-mid { background: rgba(255,149,0,0.15); color: #c07000; }
+    .diff-hard { background: rgba(255,59,48,0.12); color: #c0392b; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+        <section class="hero cl-hero">
+          <p class="eyebrow">Chemistry · Lesson 05</p>
+          <h1>The Chemistry Behind Steam Machines</h1>
+          <div class="cl-hero-meta">
+            <span>Combustion</span><span class="dot"></span>
+            <span>Phase Change</span><span class="dot"></span>
+            <span>Gas Pressure</span><span class="dot"></span>
+            <span>Industrial Society</span>
+          </div>
+          <p class="cl-lede">Steam machines turned heat into motion, but the engine only worked because chemists and engineers learned how fuel releases energy, how water changes phase, how gases push on surfaces, and how metals survive hot water, oxygen, and pressure.</p>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#007aff;">
+          <h2>Learning Goals</h2>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <strong>Explain the chemical energy source</strong>
+              <small>Describe how burning coal, wood, or oil releases heat through oxidation.</small>
+            </div>
+            <div class="concept-card">
+              <strong>Connect phase change to pressure</strong>
+              <small>Show why liquid water expanding into steam can push pistons and turbines.</small>
+            </div>
+            <div class="concept-card">
+              <strong>Identify chemical risks</strong>
+              <small>Explain scale, corrosion, air pollution, and boiler explosions as chemistry problems.</small>
+            </div>
+            <div class="concept-card">
+              <strong>Evaluate social impact</strong>
+              <small>Link steam power to factories, railroads, mining, cities, labor, and environmental change.</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#ff9500;">
+          <h2>Core Chemistry</h2>
+          <p>A steam machine begins with <strong>combustion</strong>. Fuel reacts with oxygen, converting chemical potential energy into thermal energy. That heat flows into water in a boiler. Once enough energy is absorbed, water molecules overcome intermolecular attractions and become steam.</p>
+          <div class="steam-equation">
+            <div class="steam-equation-line">
+              <span class="steam-formula">C + O<sub>2</sub> &rarr; CO<sub>2</sub> + heat</span>
+              <span class="steam-note">A simplified model of burning carbon-rich coal. Real coal also contains hydrogen, sulfur, minerals, and impurities.</span>
+            </div>
+            <div class="steam-equation-line">
+              <span class="steam-formula">H<sub>2</sub>O(l) + heat &rarr; H<sub>2</sub>O(g)</span>
+              <span class="steam-note">Vaporization breaks many intermolecular attractions, so steam stores a large amount of energy as latent heat.</span>
+            </div>
+            <div class="steam-equation-line">
+              <span class="steam-formula">PV = nRT</span>
+              <span class="steam-note">Heating steam increases particle motion. In a sealed boiler, more temperature and vapor can mean more pressure.</span>
+            </div>
+          </div>
+          <div class="cl-callout orange">
+            <strong>Key insight:</strong> Steam machines are not "powered by water" in the fuel sense. They are powered by chemical energy from fuel. Water is the working fluid that carries heat and transfers force.
+          </div>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Interactive Steam Cycle</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Adjust the burner and water level. Watch heat create steam pressure, push the piston, and reveal the tradeoff between useful work and chemical risk.</p>
+          <div class="canvas-wrap">
+            <canvas id="steam-canvas" aria-label="Steam engine chemistry simulator showing burner heat, boiler water, steam pressure, and piston motion"></canvas>
+          </div>
+          <div class="readouts">
+            <div class="readout"><span class="readout-label">Boiler Temp</span><span class="readout-val" id="st-temp">25 C</span></div>
+            <div class="readout"><span class="readout-label">Pressure</span><span class="readout-val" id="st-pressure">1.0 atm</span></div>
+            <div class="readout"><span class="readout-label">Engine</span><span class="readout-val" id="st-status">Warming</span></div>
+          </div>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#34c759;">
+          <h2>Why Chemistry Made Steam Safer</h2>
+          <p>Early steam engines were dangerous because pressure, heat, metal fatigue, and impure water were poorly understood. Better chemistry turned steam from an unpredictable hazard into a controllable technology.</p>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <strong>Water hardness and scale</strong>
+              <small>Calcium and magnesium ions form solid deposits. Scale insulates boiler walls, causing overheating and failure.</small>
+            </div>
+            <div class="concept-card">
+              <strong>Corrosion</strong>
+              <small>Iron reacts with oxygen and water to form rust. Dissolved oxygen, acidity, and salts speed the damage.</small>
+            </div>
+            <div class="concept-card">
+              <strong>Fuel impurities</strong>
+              <small>Sulfur in coal burns to sulfur dioxide, which can form acidic pollution and corrode equipment.</small>
+            </div>
+            <div class="concept-card">
+              <strong>Materials chemistry</strong>
+              <small>Stronger steels, better alloys, and chemical water treatment helped boilers hold pressure more reliably.</small>
+            </div>
+          </div>
+          <div class="cl-callout green">
+            <strong>Modern connection:</strong> Power plants still use steam cycles. Today, chemistry controls fuel quality, emissions, cooling water, corrosion, and turbine deposits.
+          </div>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#ff2d55;">
+          <h2>Impact on Society</h2>
+          <p>Understanding steam chemistry helped people build engines that could do work at a scale muscles, wind, and water wheels could not. That changed where people lived, how goods moved, and how labor was organized.</p>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-year">Factories</div>
+              <div class="timeline-copy">Steam engines made production less dependent on rivers. Mills and factories could cluster near workers, fuel, ports, and rail lines.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-year">Railroads</div>
+              <div class="timeline-copy">Steam locomotives compressed distance. Food, raw materials, mail, and people moved faster, linking regional economies into national markets.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-year">Mining</div>
+              <div class="timeline-copy">Steam pumps removed water from mines, allowing deeper coal extraction. That created a feedback loop: more coal powered more engines.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-year">Cities</div>
+              <div class="timeline-copy">Industrial jobs pulled populations into cities. This produced new opportunities, but also overcrowding, pollution, and harsh working conditions.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-year">Environment</div>
+              <div class="timeline-copy">Combustion powered industrial growth while releasing soot, sulfur compounds, carbon dioxide, and other pollutants. The benefits and costs arrived together.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="cl-card practice" style="--card-accent:#007aff;">
+          <h2>Practice Questions</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Use the lesson ideas: combustion releases heat, phase change stores energy, gas pressure does mechanical work, and chemistry manages risk.</p>
+
+          <div class="problem">
+            <p><span class="diff-easy">Easy</span>1. In a coal-fired steam engine, what is the main chemical process that releases heat?</p>
+            <div class="problem-row">
+              <select class="ans-input" id="ans-1">
+                <option value="">Choose...</option>
+                <option value="freezing">Freezing</option>
+                <option value="combustion">Combustion</option>
+                <option value="filtration">Filtration</option>
+              </select>
+              <button class="check-btn" onclick="checkChoice(1,'combustion')">Check</button>
+              <span class="feedback" id="fb-1"></span>
+            </div>
+            <div class="hint" id="hint-1">Hint: Fuel reacts with oxygen and releases thermal energy.</div>
+          </div>
+
+          <div class="problem">
+            <p><span class="diff-easy">Easy</span>2. What does water become when it absorbs enough heat in the boiler?</p>
+            <div class="problem-row">
+              <select class="ans-input" id="ans-2">
+                <option value="">Choose...</option>
+                <option value="steam">Steam</option>
+                <option value="salt">Salt</option>
+                <option value="limestone">Limestone</option>
+              </select>
+              <button class="check-btn" onclick="checkChoice(2,'steam')">Check</button>
+              <span class="feedback" id="fb-2"></span>
+            </div>
+            <div class="hint" id="hint-2">Hint: This is the liquid-to-gas phase change called vaporization.</div>
+          </div>
+
+          <div class="problem">
+            <p><span class="diff-mid">Medium</span>3. Why can mineral scale make a boiler dangerous?</p>
+            <div class="problem-row">
+              <select class="ans-input" id="ans-3" style="width:220px;">
+                <option value="">Choose...</option>
+                <option value="insulates">It insulates metal and causes overheating</option>
+                <option value="cools">It cools the boiler too quickly</option>
+                <option value="lubricates">It lubricates the piston</option>
+              </select>
+              <button class="check-btn" onclick="checkChoice(3,'insulates')">Check</button>
+              <span class="feedback" id="fb-3"></span>
+            </div>
+            <div class="hint" id="hint-3">Hint: Deposits block heat transfer from metal into water.</div>
+          </div>
+
+          <div class="problem">
+            <p><span class="diff-mid">Medium</span>4. According to PV = nRT, what usually happens to pressure in a sealed boiler when steam temperature rises?</p>
+            <div class="problem-row">
+              <select class="ans-input" id="ans-4">
+                <option value="">Choose...</option>
+                <option value="increase">It increases</option>
+                <option value="decrease">It decreases</option>
+                <option value="zero">It becomes zero</option>
+              </select>
+              <button class="check-btn" onclick="checkChoice(4,'increase')">Check</button>
+              <span class="feedback" id="fb-4"></span>
+            </div>
+            <div class="hint" id="hint-4">Hint: Hotter particles collide with the container more energetically.</div>
+          </div>
+
+          <div class="problem">
+            <p><span class="diff-hard">Challenge</span>5. In one sentence, explain one benefit and one cost steam power brought to society.</p>
+            <div class="problem-row">
+              <input class="ans-input" id="ans-5" style="width:min(100%,360px);" placeholder="Type your sentence" />
+              <button class="check-btn" onclick="checkSentence()">Check</button>
+              <span class="feedback" id="fb-5"></span>
+            </div>
+            <div class="hint" id="hint-5">Try including one word like railroads, factories, mining, jobs, pollution, safety, cities, labor, or emissions.</div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Steam machine lesson controls">
+      <div class="ll-panel-inner">
+        <div class="ll-card">
+          <h3>Burner Intensity</h3>
+          <label class="ll-control">
+            <span class="ll-label">Fuel combustion rate</span>
+            <input id="burner" type="range" min="0" max="100" value="48" />
+          </label>
+        </div>
+
+        <div class="ll-card">
+          <h3>Water Level</h3>
+          <label class="ll-control">
+            <span class="ll-label">Boiler fill level</span>
+            <input id="water-level" type="range" min="20" max="90" value="62" />
+          </label>
+        </div>
+
+        <div class="ll-card">
+          <h3>Chemistry Checks</h3>
+          <div class="ll-info"><strong>Combustion</strong>Fuel plus oxygen releases heat and produces new substances.</div>
+          <div class="ll-info"><strong>Phase Change</strong>Water absorbs latent heat as it becomes steam.</div>
+          <div class="ll-info"><strong>Pressure</strong>Steam molecules collide with the boiler and piston walls.</div>
+          <div class="ll-info"><strong>Water Treatment</strong>Removing minerals and oxygen reduces scale and corrosion.</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('steam-canvas');
+  const ctx = canvas.getContext('2d');
+  const burner = document.getElementById('burner');
+  const waterLevel = document.getElementById('water-level');
+  const tempOut = document.getElementById('st-temp');
+  const pressureOut = document.getElementById('st-pressure');
+  const statusOut = document.getElementById('st-status');
+  let t = 0;
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function roundedRect(x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function draw() {
+    t += 0.018;
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+    const burn = Number(burner.value) / 100;
+    const water = Number(waterLevel.value) / 100;
+    const temp = 25 + burn * 205 - (water - 0.2) * 18;
+    const boiling = temp > 100;
+    const steamFactor = boiling ? Math.min(1, (temp - 100) / 115) : 0;
+    const pressure = 1 + steamFactor * (0.9 + burn * 5.1) * (1.08 - water * 0.45);
+    const work = Math.max(0, pressure - 1.2);
+    const piston = Math.sin(t * (1.2 + work * 2.8)) * (8 + work * 11);
+
+    ctx.clearRect(0, 0, W, H);
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#eef6ff');
+    bg.addColorStop(0.58, '#f8fbf7');
+    bg.addColorStop(1, '#fff4e5');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    const boilerX = W * 0.12;
+    const boilerY = H * 0.18;
+    const boilerW = W * 0.38;
+    const boilerH = H * 0.54;
+    const fireY = boilerY + boilerH + 12;
+
+    ctx.fillStyle = '#5f6b7a';
+    roundedRect(boilerX, boilerY, boilerW, boilerH, 26);
+    ctx.fill();
+    ctx.strokeStyle = '#2f3a46';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    const waterH = boilerH * water;
+    ctx.save();
+    roundedRect(boilerX + 8, boilerY + 8, boilerW - 16, boilerH - 16, 20);
+    ctx.clip();
+    ctx.fillStyle = 'rgba(0,122,255,0.75)';
+    ctx.fillRect(boilerX + 8, boilerY + boilerH - waterH, boilerW - 16, waterH - 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.46)';
+    for (let i = 0; i < 24; i++) {
+      const bx = boilerX + 22 + ((i * 29 + t * 42) % (boilerW - 44));
+      const by = boilerY + boilerH - 18 - ((i * 17 + t * 32) % Math.max(24, waterH - 22));
+      const r = 1.4 + (i % 3);
+      ctx.beginPath();
+      ctx.arc(bx, by, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (boiling) {
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      for (let i = 0; i < 18; i++) {
+        const sx = boilerX + 26 + ((i * 23 + t * 58) % (boilerW - 52));
+        const sy = boilerY + 20 + ((i * 11 + t * 18) % Math.max(22, boilerH - waterH - 18));
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2 + steamFactor * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    ctx.fillStyle = '#22303d';
+    ctx.font = '700 12px Inter, sans-serif';
+    ctx.fillText('Boiler', boilerX + 18, boilerY + 22);
+    ctx.fillStyle = '#e96b1d';
+    for (let i = 0; i < 7; i++) {
+      const flameH = 18 + burn * 34 + Math.sin(t * 8 + i) * 5;
+      const fx = boilerX + 28 + i * (boilerW - 56) / 6;
+      ctx.beginPath();
+      ctx.moveTo(fx, fireY);
+      ctx.quadraticCurveTo(fx - 10, fireY - flameH * 0.55, fx, fireY - flameH);
+      ctx.quadraticCurveTo(fx + 12, fireY - flameH * 0.55, fx, fireY);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#ffcc00';
+    ctx.fillRect(boilerX + 18, fireY + 2, boilerW - 36, 7);
+
+    const pipeY = boilerY + boilerH * 0.32;
+    ctx.strokeStyle = '#596575';
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(boilerX + boilerW - 2, pipeY);
+    ctx.lineTo(W * 0.67, pipeY);
+    ctx.stroke();
+    ctx.strokeStyle = '#d9e2ec';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(boilerX + boilerW + 4, pipeY);
+    ctx.lineTo(W * 0.66, pipeY);
+    ctx.stroke();
+
+    const cylX = W * 0.66;
+    const cylY = H * 0.30;
+    const cylW = W * 0.24;
+    const cylH = H * 0.25;
+    ctx.fillStyle = '#7b8794';
+    roundedRect(cylX, cylY, cylW, cylH, 14);
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const px = cylX + 22 + piston;
+    ctx.fillStyle = '#f8fafc';
+    roundedRect(px, cylY + 12, 20, cylH - 24, 6);
+    ctx.fill();
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(px + 20, cylY + cylH / 2 - 4, W * 0.18, 8);
+
+    const wheelX = W * 0.86;
+    const wheelY = H * 0.73;
+    const wheelR = Math.min(W, H) * 0.08;
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(wheelX, wheelY, wheelR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+      const a = t * (1 + work) + i * Math.PI / 3;
+      ctx.beginPath();
+      ctx.moveTo(wheelX, wheelY);
+      ctx.lineTo(wheelX + Math.cos(a) * wheelR, wheelY + Math.sin(a) * wheelR);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(px + W * 0.18, cylY + cylH / 2);
+    ctx.lineTo(wheelX + Math.cos(t * (1 + work)) * wheelR, wheelY + Math.sin(t * (1 + work)) * wheelR);
+    ctx.stroke();
+
+    ctx.fillStyle = pressure > 4.6 ? '#ff3b30' : pressure > 3.2 ? '#ff9500' : '#34c759';
+    roundedRect(W * 0.56, H * 0.12, W * 0.32, 30, 8);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = '800 12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(pressure > 4.6 ? 'High pressure risk' : pressure > 3.2 ? 'Useful power' : 'Building steam', W * 0.72, H * 0.12 + 20);
+    ctx.textAlign = 'left';
+
+    tempOut.textContent = Math.round(temp) + ' C';
+    pressureOut.textContent = pressure.toFixed(1) + ' atm';
+    statusOut.textContent = pressure > 4.6 ? 'Risk' : pressure > 2.1 ? 'Working' : 'Warming';
+    statusOut.style.color = pressure > 4.6 ? '#ff3b30' : pressure > 2.1 ? '#34c759' : '#007aff';
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  draw();
+})();
+
+function checkChoice(n, correct) {
+  const ans = document.getElementById('ans-' + n);
+  const fb = document.getElementById('fb-' + n);
+  const hint = document.getElementById('hint-' + n);
+  const ok = ans.value === correct;
+  fb.textContent = ok ? 'Correct' : 'Try again';
+  fb.className = 'feedback ' + (ok ? 'ok' : 'err');
+  hint.style.display = ok ? 'none' : 'block';
+}
+
+function checkSentence() {
+  const value = document.getElementById('ans-5').value.toLowerCase();
+  const fb = document.getElementById('fb-5');
+  const hint = document.getElementById('hint-5');
+  const benefitWords = ['railroad', 'factory', 'factories', 'transport', 'goods', 'jobs', 'mining', 'power', 'production', 'travel'];
+  const costWords = ['pollution', 'emission', 'emissions', 'labor', 'safety', 'explosion', 'coal', 'crowding', 'carbon', 'smoke'];
+  const hasBenefit = benefitWords.some(word => value.includes(word));
+  const hasCost = costWords.some(word => value.includes(word));
+  const ok = hasBenefit && hasCost && value.length > 28;
+  fb.textContent = ok ? 'Strong answer' : 'Add one benefit and one cost';
+  fb.className = 'feedback ' + (ok ? 'ok' : 'err');
+  hint.style.display = ok ? 'none' : 'block';
+}
+</script>
+</body>
+</html>

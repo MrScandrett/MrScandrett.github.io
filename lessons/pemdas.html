@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PEMDAS &amp; Order of Operations · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Mathematics lesson on PEMDAS and the order of operations with worked examples, guided practice, and an interactive answer checker." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #0ea5e9; --ll-tab-active: #0ea5e9; --ll-tab-active-bg: rgba(14,165,233,0.12); }
+    .pem-page { padding-bottom: 3.5rem; }
+    .pem-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .pem-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .pem-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .pem-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .pem-lede { max-width: 70ch; margin: 0.7rem 0 0; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .pem-lede { color: rgba(245,245,247,0.72); }
+
+    .pem-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #0ea5e9);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    [data-theme="night"] .pem-card { background: var(--white, #2c2c2e); }
+    .pem-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .pem-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .pem-card p { margin: 0 0 0.62rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .pem-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .pem-card p { color: rgba(245,245,247,0.72); }
+
+    .pem-order {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin: 0.85rem 0 0.2rem;
+    }
+    .pem-order-step {
+      min-height: 116px;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.8rem;
+      background: rgba(14,165,233,0.055);
+      display: grid;
+      align-content: start;
+      gap: 0.3rem;
+    }
+    [data-theme="night"] .pem-order-step { background: rgba(255,255,255,0.045); }
+    .pem-letter { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--step-color, #0ea5e9); color: #fff; font-weight: 900; }
+    .pem-order-step strong { font-size: 0.84rem; }
+    .pem-order-step small { color: #64748b; font-size: 0.74rem; line-height: 1.45; }
+
+    .pem-rule {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.85rem;
+    }
+    .pem-rule-box {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.85rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-theme="night"] .pem-rule-box { background: rgba(255,255,255,0.04); }
+    .pem-rule-box strong { display: block; margin-bottom: 0.25rem; font-size: 0.86rem; }
+    .pem-rule-box span { color: #64748b; font-size: 0.8rem; line-height: 1.5; display: block; }
+
+    .pem-example {
+      margin-top: 0.85rem;
+      border: 1px solid rgba(14,165,233,0.22);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(14,165,233,0.045);
+    }
+    .pem-example-row {
+      display: grid;
+      grid-template-columns: 1.15fr 2fr;
+      gap: 1rem;
+      padding: 0.72rem 0.9rem;
+      border-bottom: 1px solid rgba(14,165,233,0.16);
+      align-items: start;
+    }
+    .pem-example-row:last-child { border-bottom: 0; }
+    .pem-math {
+      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text, #1d1d1f);
+      letter-spacing: 0;
+    }
+    .pem-note { color: #3f4f65; font-size: 0.82rem; line-height: 1.5; }
+    [data-theme="night"] .pem-note { color: rgba(245,245,247,0.72); }
+
+    .pem-activity {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 1rem;
+      align-items: start;
+      margin-top: 0.85rem;
+    }
+    .pem-workspace {
+      min-height: 250px;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 1rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-theme="night"] .pem-workspace { background: rgba(255,255,255,0.04); }
+    .pem-expression { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(1.3rem, 3.5vw, 2rem); font-weight: 800; letter-spacing: 0; margin-bottom: 0.8rem; }
+    .pem-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+    .pem-choice {
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 9px;
+      padding: 0.62rem 0.7rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      font: 700 0.9rem Inter, sans-serif;
+      cursor: pointer;
+      text-align: left;
+    }
+    [data-theme="night"] .pem-choice { background: rgba(255,255,255,0.04); }
+    .pem-choice:hover, .pem-choice:focus { border-color: #0ea5e9; outline: none; }
+    .pem-choice.correct { border-color: #16a34a; background: rgba(22,163,74,0.12); }
+    .pem-choice.wrong { border-color: #dc2626; background: rgba(220,38,38,0.1); }
+    .pem-feedback {
+      min-height: 2.2rem;
+      margin-top: 0.8rem;
+      color: #3f4f65;
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+    [data-theme="night"] .pem-feedback { color: rgba(245,245,247,0.72); }
+    .pem-side {
+      display: grid;
+      gap: 0.7rem;
+    }
+    .pem-score {
+      border-radius: 12px;
+      border: 1px solid rgba(14,165,233,0.22);
+      background: rgba(14,165,233,0.08);
+      padding: 0.9rem;
+    }
+    .pem-score strong { display: block; font-size: 1.55rem; line-height: 1; }
+    .pem-score span { color: #64748b; font-size: 0.8rem; }
+    .pem-next {
+      border: 0;
+      border-radius: 9px;
+      padding: 0.68rem 0.8rem;
+      background: #0ea5e9;
+      color: #fff;
+      font: 800 0.86rem Inter, sans-serif;
+      cursor: pointer;
+    }
+    .pem-next:hover { filter: brightness(0.96); }
+
+    .pem-practice { display: grid; gap: 0.72rem; margin-top: 0.85rem; }
+    .pem-practice-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 0.55rem;
+      align-items: center;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.75rem;
+      background: rgba(0,0,0,0.03);
+    }
+    [data-theme="night"] .pem-practice-item { background: rgba(255,255,255,0.04); }
+    .pem-practice-item input {
+      width: 82px;
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      padding: 0.42rem 0.55rem;
+      background: var(--white, #fff);
+      color: var(--text, #1d1d1f);
+      font: 700 0.88rem Inter, sans-serif;
+    }
+    [data-theme="night"] .pem-practice-item input { background: rgba(255,255,255,0.04); }
+    .pem-check {
+      border: 0;
+      border-radius: 8px;
+      padding: 0.47rem 0.7rem;
+      background: #334155;
+      color: #fff;
+      font: 800 0.8rem Inter, sans-serif;
+      cursor: pointer;
+    }
+    .pem-mini-feedback { min-width: 7ch; font-size: 0.8rem; font-weight: 800; }
+    .pem-mini-feedback.ok { color: #16a34a; }
+    .pem-mini-feedback.no { color: #dc2626; }
+
+    .pem-exit ul { margin: 0.65rem 0 0; padding-left: 1.15rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    [data-theme="night"] .pem-exit ul { color: rgba(245,245,247,0.72); }
+
+    @media (max-width: 900px) {
+      .pem-order { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .pem-activity { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .pem-order, .pem-rule, .pem-options { grid-template-columns: 1fr; }
+      .pem-example-row, .pem-practice-item { grid-template-columns: 1fr; }
+      .pem-practice-item input { width: 100%; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="pem-page">
+        <section class="hero pem-hero">
+          <p class="eyebrow">Mathematics · Lesson 08</p>
+          <h1>PEMDAS &amp; Order of Operations</h1>
+          <div class="pem-hero-meta">
+            <span>Parentheses</span><span class="dot"></span>
+            <span>Exponents</span><span class="dot"></span>
+            <span>Multiply or divide left to right</span><span class="dot"></span>
+            <span>Add or subtract left to right</span>
+          </div>
+          <p class="pem-lede">PEMDAS is the shared agreement mathematicians use so one expression has one answer. In this lesson, students learn the order, practice the tricky left-to-right parts, and check their reasoning with immediate feedback.</p>
+        </section>
+
+        <section class="pem-card" style="--card-accent:#0ea5e9;">
+          <h2>Learning Target</h2>
+          <p><strong>I can evaluate numerical expressions using the order of operations.</strong></p>
+          <p>By the end of the lesson, students should be able to explain why <span class="pem-math">8 - 2 + 5</span> is solved left to right, why multiplication does not always happen before division, and why parentheses can change the entire value of an expression.</p>
+        </section>
+
+        <section class="pem-card" style="--card-accent:#2563eb;">
+          <h2>The PEMDAS Order</h2>
+          <p>PEMDAS names the order, but two pairs share the same priority. Multiplication and division are solved left to right. Addition and subtraction are also solved left to right.</p>
+          <div class="pem-order" aria-label="PEMDAS order">
+            <div class="pem-order-step" style="--step-color:#2563eb;"><span class="pem-letter">P</span><strong>Parentheses</strong><small>Do grouping symbols first: ( ), [ ], or fraction bars.</small></div>
+            <div class="pem-order-step" style="--step-color:#7c3aed;"><span class="pem-letter">E</span><strong>Exponents</strong><small>Evaluate powers such as 3<sup>2</sup> or 2<sup>4</sup>.</small></div>
+            <div class="pem-order-step" style="--step-color:#0891b2;"><span class="pem-letter">M</span><strong>Multiply</strong><small>Same level as division; move left to right.</small></div>
+            <div class="pem-order-step" style="--step-color:#0f766e;"><span class="pem-letter">D</span><strong>Divide</strong><small>Same level as multiplication; move left to right.</small></div>
+            <div class="pem-order-step" style="--step-color:#ca8a04;"><span class="pem-letter">A</span><strong>Add</strong><small>Same level as subtraction; move left to right.</small></div>
+            <div class="pem-order-step" style="--step-color:#dc2626;"><span class="pem-letter">S</span><strong>Subtract</strong><small>Same level as addition; move left to right.</small></div>
+          </div>
+          <div class="pem-rule">
+            <div class="pem-rule-box"><strong>Important rule 1</strong><span>Multiplication and division are a tie. Solve whichever appears first from left to right.</span></div>
+            <div class="pem-rule-box"><strong>Important rule 2</strong><span>Addition and subtraction are a tie. Solve whichever appears first from left to right.</span></div>
+          </div>
+        </section>
+
+        <section class="pem-card" style="--card-accent:#7c3aed;">
+          <h2>Worked Example</h2>
+          <p>Evaluate <span class="pem-math">6 + 3 &times; (8 - 4)<sup>2</sup> / 2</span>.</p>
+          <div class="pem-example">
+            <div class="pem-example-row"><div class="pem-math">6 + 3 &times; (8 - 4)<sup>2</sup> / 2</div><div class="pem-note">Start with the original expression.</div></div>
+            <div class="pem-example-row"><div class="pem-math">6 + 3 &times; 4<sup>2</sup> / 2</div><div class="pem-note">Parentheses first: 8 - 4 = 4.</div></div>
+            <div class="pem-example-row"><div class="pem-math">6 + 3 &times; 16 / 2</div><div class="pem-note">Exponents next: 4<sup>2</sup> = 16.</div></div>
+            <div class="pem-example-row"><div class="pem-math">6 + 48 / 2</div><div class="pem-note">Multiply and divide from left to right. First, 3 &times; 16 = 48.</div></div>
+            <div class="pem-example-row"><div class="pem-math">6 + 24</div><div class="pem-note">Then divide: 48 / 2 = 24.</div></div>
+            <div class="pem-example-row"><div class="pem-math">30</div><div class="pem-note">Add last: 6 + 24 = 30.</div></div>
+          </div>
+        </section>
+
+        <section class="pem-card" style="--card-accent:#16a34a;">
+          <h2>Interactive Check</h2>
+          <p>Choose the correct value. Use the feedback to catch which PEMDAS step needs attention.</p>
+          <div class="pem-activity">
+            <div class="pem-workspace">
+              <div class="pem-expression" id="pem-expression">18 / 3 &times; 2</div>
+              <div class="pem-options" id="pem-options"></div>
+              <div class="pem-feedback" id="pem-feedback" aria-live="polite">Solve multiplication and division from left to right.</div>
+            </div>
+            <div class="pem-side">
+              <div class="pem-score"><strong id="pem-score">0/0</strong><span>correct this round</span></div>
+              <button class="pem-next" type="button" id="pem-next">Next Problem</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="pem-card" style="--card-accent:#f59e0b;">
+          <h2>Guided Practice</h2>
+          <p>Evaluate each expression. Type the final value only.</p>
+          <div class="pem-practice">
+            <div class="pem-practice-item" data-answer="17"><span class="pem-math">5 + 2 &times; 6</span><input type="number" aria-label="Answer for 5 plus 2 times 6" /><button class="pem-check" type="button">Check</button><span class="pem-mini-feedback"></span></div>
+            <div class="pem-practice-item" data-answer="22"><span class="pem-math">30 - 12 / 3 &times; 2</span><input type="number" aria-label="Answer for 30 minus 12 divided by 3 times 2" /><button class="pem-check" type="button">Check</button><span class="pem-mini-feedback"></span></div>
+            <div class="pem-practice-item" data-answer="49"><span class="pem-math">(4 + 3)<sup>2</sup></span><input type="number" aria-label="Answer for open parenthesis 4 plus 3 close parenthesis squared" /><button class="pem-check" type="button">Check</button><span class="pem-mini-feedback"></span></div>
+            <div class="pem-practice-item" data-answer="14"><span class="pem-math">2 + 3 &times; 4<sup>2</sup> / 4</span><input type="number" aria-label="Answer for 2 plus 3 times 4 squared divided by 4" /><button class="pem-check" type="button">Check</button><span class="pem-mini-feedback"></span></div>
+          </div>
+        </section>
+
+        <section class="pem-card pem-exit" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <p>Students answer these in complete sentences or with shown work.</p>
+          <ul>
+            <li>Why does <span class="pem-math">18 / 3 &times; 2</span> equal 12 instead of 3?</li>
+            <li>Create two expressions using the numbers 2, 3, and 4. One expression should equal 14, and one should equal 20.</li>
+            <li>Explain one PEMDAS mistake you know how to avoid now.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="PEMDAS panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">PEMDAS</span>
+          <div class="ll-info"><strong>P</strong> Parentheses or grouping symbols.</div>
+          <div class="ll-info"><strong>E</strong> Exponents.</div>
+          <div class="ll-info"><strong>MD</strong> Multiply or divide from left to right.</div>
+          <div class="ll-info"><strong>AS</strong> Add or subtract from left to right.</div>
+          <span class="ll-label">Common Trap</span>
+          <div class="ll-info"><strong>18 / 3 &times; 2</strong> Division comes first because it appears first from the left, so the value is 12.</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> Ask students to solve 8 - 2 + 5 and compare answers.</div>
+          <div class="ll-info"><strong>Mini lesson</strong> Emphasize that MD and AS are ties.</div>
+          <div class="ll-info"><strong>Practice</strong> Require students to write one line per operation.</div>
+          <div class="ll-info"><strong>Check</strong> Use the exit ticket to look for left-to-right reasoning.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      const problems = [
+        { expression: '18 / 3 x 2', answer: 12, choices: [3, 6, 12, 18], feedback: 'Division and multiplication are tied. Move left to right: 18 / 3 = 6, then 6 x 2 = 12.' },
+        { expression: '4 + 5 x 3', answer: 19, choices: [27, 19, 15, 23], feedback: 'Multiply before adding: 5 x 3 = 15, then 4 + 15 = 19.' },
+        { expression: '(7 + 2) x 4', answer: 36, choices: [15, 28, 36, 32], feedback: 'Parentheses come first: 7 + 2 = 9, then 9 x 4 = 36.' },
+        { expression: '20 - 6 / 2', answer: 17, choices: [7, 17, 10, 14], feedback: 'Divide before subtracting: 6 / 2 = 3, then 20 - 3 = 17.' },
+        { expression: '3 + 2^3 x 5', answer: 43, choices: [125, 43, 55, 35], feedback: 'Exponents before multiplication: 2^3 = 8, then 8 x 5 = 40, then 3 + 40 = 43.' }
+      ];
+
+      const expression = document.getElementById('pem-expression');
+      const options = document.getElementById('pem-options');
+      const feedback = document.getElementById('pem-feedback');
+      const score = document.getElementById('pem-score');
+      const next = document.getElementById('pem-next');
+      let index = 0;
+      let correct = 0;
+      let attempted = 0;
+      let locked = false;
+
+      function renderProblem() {
+        const item = problems[index % problems.length];
+        locked = false;
+        expression.textContent = item.expression;
+        options.innerHTML = '';
+        feedback.textContent = 'Solve the expression, then choose the correct value.';
+        item.choices.forEach(function (choice) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'pem-choice';
+          button.textContent = choice;
+          button.addEventListener('click', function () {
+            if (locked) return;
+            locked = true;
+            attempted += 1;
+            if (choice === item.answer) {
+              correct += 1;
+              button.classList.add('correct');
+              feedback.textContent = 'Correct. ' + item.feedback;
+            } else {
+              button.classList.add('wrong');
+              Array.prototype.forEach.call(options.children, function (option) {
+                if (Number(option.textContent) === item.answer) option.classList.add('correct');
+              });
+              feedback.textContent = 'Not quite. ' + item.feedback;
+            }
+            score.textContent = correct + '/' + attempted;
+          });
+          options.appendChild(button);
+        });
+        score.textContent = correct + '/' + attempted;
+      }
+
+      next.addEventListener('click', function () {
+        index += 1;
+        renderProblem();
+      });
+      renderProblem();
+
+      document.querySelectorAll('.pem-practice-item').forEach(function (item) {
+        const input = item.querySelector('input');
+        const button = item.querySelector('.pem-check');
+        const feedbackNode = item.querySelector('.pem-mini-feedback');
+        button.addEventListener('click', function () {
+          const expected = Number(item.getAttribute('data-answer'));
+          const actual = Number(input.value);
+          feedbackNode.className = 'pem-mini-feedback';
+          if (actual === expected) {
+            feedbackNode.textContent = 'Correct';
+            feedbackNode.classList.add('ok');
+          } else {
+            feedbackNode.textContent = 'Try again';
+            feedbackNode.classList.add('no');
+          }
+        });
+        input.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter') button.click();
+        });
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
