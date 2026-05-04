@@ -1350,6 +1350,128 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* ── Difficulty dot on recipe spines ─────── */
+    .book[data-diff]::after {
+      content: '';
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .book[data-diff="beginner"]::after {
+      background: #4cd964;
+      box-shadow: 0 0 5px rgba(76, 217, 100, 0.6);
+    }
+    .book[data-diff="intermediate"]::after {
+      background: #ff9f0a;
+      box-shadow: 0 0 5px rgba(255, 159, 10, 0.6);
+    }
+    .book[data-diff="advanced"]::after {
+      background: #ff3b30;
+      box-shadow: 0 0 5px rgba(255, 59, 48, 0.6);
+    }
+
+    /* Legend for difficulty dots */
+    .recipe-diff-legend {
+      display: flex;
+      gap: 1.1rem;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.68rem;
+      color: rgba(244, 233, 220, 0.7);
+    }
+    .recipe-diff-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .recipe-diff-legend i {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .recipe-diff-legend i.d-beg { background: #4cd964; box-shadow: 0 0 4px rgba(76,217,100,0.7); }
+    .recipe-diff-legend i.d-int { background: #ff9f0a; box-shadow: 0 0 4px rgba(255,159,10,0.7); }
+    .recipe-diff-legend i.d-adv { background: #ff3b30; box-shadow: 0 0 4px rgba(255,59,48,0.7); }
+
+    /* ── Library Entry Cards ─────────────────── */
+    .lib-entry-section { padding-top: 0; padding-bottom: 2.4rem; }
+
+    .lib-search-bar {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.55rem 0.85rem; border-radius: 12px;
+      border: 1px solid rgba(255,226,180,0.16); background: rgba(255,255,255,0.05);
+      margin-bottom: 1.2rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); cursor: text;
+    }
+    .lib-search-bar .lib-search-icon  { font-size: 0.88rem; color: rgba(255,229,202,0.72); flex-shrink: 0; }
+    .lib-search-bar .lib-search-input {
+      flex: 1; border: 0; outline: 0; background: transparent;
+      color: #f7ecdb; font: inherit; font-size: 0.84rem; font-weight: 600;
+    }
+    .lib-search-bar .lib-search-input::placeholder { color: rgba(244,233,220,0.42); }
+    .lib-search-bar .lib-search-stats { font-size: 0.68rem; color: rgba(244,233,220,0.6); white-space: nowrap; }
+
+    .lib-entry-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;
+    }
+    @media (max-width: 580px) { .lib-entry-grid { gap: 0.65rem; } }
+    .lib-entry-grid.is-compact { grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+    @media (max-width: 640px) { .lib-entry-grid.is-compact { grid-template-columns: repeat(2, 1fr); } }
+
+    .lib-entry-card {
+      appearance: none; border: 1.5px solid rgba(255,226,180,0.1); border-radius: 16px;
+      background: rgba(20,14,10,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      cursor: pointer; text-align: left; padding: 1.6rem 1.8rem 1.4rem;
+      min-height: 170px; display: flex; flex-direction: column; gap: 0.2rem;
+      transition: border-color 0.18s, background 0.18s, transform 0.2s cubic-bezier(0.34,1.45,0.64,1), box-shadow 0.18s;
+      position: relative; overflow: hidden;
+    }
+    .lib-entry-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 30% 40%, var(--ec-glow, transparent), transparent 62%);
+      opacity: 0; transition: opacity 0.24s; pointer-events: none;
+    }
+    .lib-entry-card:hover::before, .lib-entry-card.is-active::before { opacity: 1; }
+    .lib-entry-card:hover {
+      transform: translateY(-4px); box-shadow: 0 16px 44px rgba(0,0,0,0.38);
+      border-color: rgba(255,226,180,0.28);
+    }
+    .lib-entry-card.is-active {
+      border-color: var(--ec-accent, rgba(255,200,110,0.55));
+      background: rgba(28,17,10,0.85); transform: none;
+      box-shadow: 0 0 0 1px var(--ec-accent, rgba(255,200,110,0.2)), 0 18px 48px rgba(0,0,0,0.42);
+    }
+    .entry-icon    { font-size: 1.75rem; line-height: 1; margin-bottom: 0.45rem; display: block; }
+    .entry-heading { font-size: clamp(1.1rem, 2.2vw, 1.4rem); font-weight: 800; color: #fff5e9; margin: 0; line-height: 1.1; }
+    .entry-desc    { font-size: 0.77rem; color: rgba(244,233,220,0.62); margin: 0.22rem 0 0; line-height: 1.5; }
+    .entry-count   {
+      margin-top: auto; padding-top: 0.9rem; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--ec-accent-text, rgba(255,210,140,0.7));
+    }
+
+    .lib-entry-grid.is-compact .lib-entry-card {
+      min-height: auto; padding: 0.7rem 0.95rem; flex-direction: row; align-items: center; gap: 0.5rem; border-radius: 10px;
+    }
+    .lib-entry-grid.is-compact .entry-icon    { font-size: 1.05rem; margin-bottom: 0; }
+    .lib-entry-grid.is-compact .entry-heading { font-size: 0.8rem; }
+    .lib-entry-grid.is-compact .entry-desc,
+    .lib-entry-grid.is-compact .entry-count   { display: none; }
+
+    .lib-entry-card[data-room="classics"] { --ec-glow: rgba(196,142,40,0.18); --ec-accent: rgba(210,160,60,0.6); --ec-accent-text: rgba(255,218,140,0.82); }
+    .lib-entry-card[data-room="nasa"]     { --ec-glow: rgba(40,100,200,0.18); --ec-accent: rgba(60,130,220,0.55); --ec-accent-text: rgba(140,195,255,0.82); }
+    .lib-entry-card[data-room="recipes"]  { --ec-glow: rgba(180,70,0,0.18); --ec-accent: rgba(200,90,20,0.55); --ec-accent-text: rgba(255,180,120,0.82); }
+    .lib-entry-card[data-room="manuals"]  { --ec-glow: rgba(80,40,160,0.18); --ec-accent: rgba(110,60,200,0.55); --ec-accent-text: rgba(190,160,255,0.82); }
+
+    /* Override lib-room-divider — not needed in progressive-disclosure layout */
+    .lib-room-divider { display: none !important; }
   </style>
 </head>
 <body class="library-page">
@@ -1382,40 +1504,47 @@
     <section class="hero recipe-catalog-hero">
       <p class="eyebrow">ClassroomOS</p>
       <h1 class="reveal">Library</h1>
-      <p class="library-hero-lead">68 titles across four collections — classic science fiction, NASA science, project recipes, and software user manuals. Hover any book spine to preview it.</p>
+      <p class="library-hero-lead">Where ideas become reality.</p>
     </section>
 
-    <!-- ══ Library Directory Nav ════════════════ -->
-    <section class="section" style="padding-top:0; padding-bottom:0;">
-      <nav class="lib-directory" aria-label="Jump to library section">
-        <span class="lib-directory-label">Library</span>
-        <a class="lib-dir-tab" href="#section-classics">
-          📚 Time-Traveler Classics
-          <span class="lib-dir-count">14</span>
-        </a>
-        <a class="lib-dir-tab" href="#section-nasa">
-          🚀 NASA Resources
-          <span class="lib-dir-count">14</span>
-        </a>
-        <a class="lib-dir-tab" href="#section-recipes">
-          🔧 Project Recipes
-          <span class="lib-dir-count">21</span>
-        </a>
-        <a class="lib-dir-tab" href="#section-manuals">
-          📖 User Manuals
-          <span class="lib-dir-count">18</span>
-        </a>
-        <label class="lib-directory-search" for="librarySearch">
-          <span class="lib-search-icon">⌕</span>
-          <input class="lib-search-input" id="librarySearch" type="search" placeholder="Search titles, authors, tags, or manuals..." autocomplete="off" />
-        </label>
-        <span class="lib-search-stats" id="librarySearchStats">68 visible</span>
-        <span class="lib-dir-hint">Hover any spine to preview</span>
-      </nav>
+    <!-- ══ Library Entry ════════════════════════ -->
+    <section class="section lib-entry-section">
+      <label class="lib-search-bar" for="librarySearch">
+        <span class="lib-search-icon">⌕</span>
+        <input class="lib-search-input" id="librarySearch" type="search" placeholder="Search across all collections… (press /)" autocomplete="off" />
+        <span class="lib-search-stats" id="librarySearchStats">69 titles</span>
+      </label>
+
+      <div class="lib-entry-grid" id="libEntryGrid">
+        <button class="lib-entry-card" type="button" data-room="classics">
+          <span class="entry-icon">📚</span>
+          <h2 class="entry-heading">Imagination</h2>
+          <p class="entry-desc">Classic sci-fi that preceded real technology — all free to read.</p>
+          <span class="entry-count">15 titles · Free</span>
+        </button>
+        <button class="lib-entry-card" type="button" data-room="nasa">
+          <span class="entry-icon">🚀</span>
+          <h2 class="entry-heading">Reality</h2>
+          <p class="entry-desc">NASA science books and activity packs, released free for classrooms.</p>
+          <span class="entry-count">14 titles · NASA Public Domain</span>
+        </button>
+        <button class="lib-entry-card" type="button" data-room="recipes">
+          <span class="entry-icon">🔧</span>
+          <h2 class="entry-heading">Build</h2>
+          <p class="entry-desc">Project recipes across five pathways — robots, electronics, games, 3D, challenges.</p>
+          <span class="entry-count">22 project recipes</span>
+        </button>
+        <button class="lib-entry-card" type="button" data-room="manuals">
+          <span class="entry-icon">📖</span>
+          <h2 class="entry-heading">Master</h2>
+          <p class="entry-desc">Official documentation for every tool used in this classroom.</p>
+          <span class="entry-count">18 manuals · Official Docs</span>
+        </button>
+      </div>
     </section>
 
     <!-- ══ STEAM Time-Traveler Library ══════════ -->
-    <section class="section lib-anchor" id="section-classics">
+    <section class="section lib-anchor" id="section-classics" hidden>
       <div class="lib-room-header">
         <div class="lib-room-eyebrow">
           <span class="lib-room-num">Room I</span>
@@ -1645,7 +1774,7 @@
     <div class="lib-room-divider" aria-hidden="true">Next Room</div>
 
     <!-- ══ NASA Resources ════════════════════════ -->
-    <section class="section lib-anchor" id="section-nasa">
+    <section class="section lib-anchor" id="section-nasa" hidden>
       <div class="lib-room-header">
         <div class="lib-room-header-row">
           <div>
@@ -1734,7 +1863,7 @@
           </div>
 
         </div><!-- /shelf-row 1 -->
-        <div class="shelf-board"></div>
+        <div class="shelf-board"><span class="shelf-label">🔭 Activity &amp; Coloring Books</span></div>
         <div class="shelf-spacer"></div>
 
         <!-- ── Shelf 2 · Science Reading (8) ─── -->
@@ -1829,7 +1958,7 @@
           </div>
 
         </div><!-- /shelf-row 2 -->
-        <div class="shelf-board"></div>
+        <div class="shelf-board"><span class="shelf-label">📡 Science &amp; Astrophysics Reading</span></div>
 
       </div><!-- /bookcase -->
       <div class="bookcase-base"></div>
@@ -1839,7 +1968,7 @@
     <div class="lib-room-divider" aria-hidden="true">Next Room</div>
 
     <!-- ══ Project Recipes ════════════════════════ -->
-    <section class="section lib-anchor" id="section-recipes">
+    <section class="section lib-anchor" id="section-recipes" hidden>
       <div class="lib-room-header">
         <div class="lib-room-eyebrow">
           <span class="lib-room-num">Room III</span>
@@ -1858,257 +1987,301 @@
         <button type="button" data-rfilter="challenge">Challenges</button>
       </div>
       <div class="book-filter-stats" id="recipe-stats" aria-live="polite">Showing 22 recipes</div>
+      <div class="recipe-diff-legend" aria-label="Difficulty key">
+        <span><i class="d-beg"></i> Beginner</span>
+        <span><i class="d-int"></i> Intermediate</span>
+        <span><i class="d-adv"></i> Advanced</span>
+      </div>
 
-      <div class="bookcase-flex" id="recipe-bookcase" aria-label="Project recipe bookcase">
+      <div class="bookcase" id="recipe-bookcase" aria-label="Project recipe bookcase">
 
-        <!-- ── Robots ──── -->
-        <div class="book" style="width:38px; height:185px; --sc:#b84400;" data-rtags="robots beginner">
-          <div class="book-spine"><span class="book-spine-label">Maze Bot</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Robots · Beginner · 45–60 min</p>
-            <p class="book-popup-title">LEGO Mindstorms Maze Bot</p>
-            <p class="book-popup-author">Mr. Scandrett · Team Build</p>
-            <p class="book-popup-desc">Build a robot that drives forward, detects walls with sensors, and turns its way out of a maze autonomously.</p>
-            <span class="book-popup-cta">Needs: Mindstorms kit, distance sensor, laptop</span>
-          </div>
-        </div>
+        <!-- ── Robots shelf ──── -->
+        <div class="recipe-shelf-group" data-spathway="robots">
+          <div class="shelf-row">
 
-        <div class="book" style="width:40px; height:200px; --sc:#882800;" data-rtags="robots intermediate">
-          <div class="book-spine"><span class="book-spine-label">Servo Radar</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Robots · Intermediate · 60–75 min</p>
-            <p class="book-popup-title">Arduino Servo Radar</p>
-            <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
-            <p class="book-popup-desc">Sweep an ultrasonic sensor on a servo across a room and map object distances like a working mini radar station.</p>
-            <span class="book-popup-cta">Needs: Arduino, servo, ultrasonic sensor, wires</span>
-          </div>
-        </div>
+            <div class="book" style="width:38px; height:185px; --sc:#b84400;" data-rtags="robots beginner" data-diff="beginner">
+              <div class="book-spine"><span class="book-spine-label">Maze Bot</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Robots · Beginner · 45–60 min</p>
+                <p class="book-popup-title">LEGO Mindstorms Maze Bot</p>
+                <p class="book-popup-author">Mr. Scandrett · Team Build</p>
+                <p class="book-popup-desc">Build a robot that drives forward, detects walls with sensors, and turns its way out of a maze autonomously.</p>
+                <span class="book-popup-cta">Needs: Mindstorms kit, distance sensor, laptop</span>
+              </div>
+            </div>
 
-        <div class="book" style="width:42px; height:215px; --sc:#601400;" data-rtags="robots advanced">
-          <div class="book-spine"><span class="book-spine-label">Camera Rover</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Robots · Advanced · 90+ min</p>
-            <p class="book-popup-title">Raspberry Pi Camera Rover</p>
-            <p class="book-popup-author">Mr. Scandrett · Teacher Help</p>
-            <p class="book-popup-desc">Combine motors, a Pi camera, and remote control into a rover that streams live video as it explores the room.</p>
-            <span class="book-popup-cta">Needs: Raspberry Pi, camera, motor driver, battery</span>
-          </div>
-        </div>
+            <div class="book" style="width:40px; height:200px; --sc:#882800;" data-rtags="robots intermediate" data-diff="intermediate">
+              <div class="book-spine"><span class="book-spine-label">Servo Radar</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Robots · Intermediate · 60–75 min</p>
+                <p class="book-popup-title">Arduino Servo Radar</p>
+                <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
+                <p class="book-popup-desc">Sweep an ultrasonic sensor on a servo across a room and map object distances like a working mini radar station.</p>
+                <span class="book-popup-cta">Needs: Arduino, servo, ultrasonic sensor, wires</span>
+              </div>
+            </div>
 
-        <div class="book" style="width:40px; height:208px; --sc:#703000;" data-rtags="robots intermediate">
-          <div class="book-spine"><span class="book-spine-label">Line Follower</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Robots · Intermediate · Tinkercad Build</p>
-            <p class="book-popup-title">Line-Following Robot (LM393)</p>
-            <p class="book-popup-author">Tinkercad · Circuit Project Example</p>
-            <p class="book-popup-desc">Study a line-following robot build that uses LM393-style sensing to track a path, combining motors, sensors, and control logic into an autonomous robot system.</p>
-            <a class="book-popup-cta" href="https://www.tinkercad.com/things/330TZcC8RzO-line-following-robot-lm393" target="_blank" rel="noreferrer">Open Project ↗</a>
-          </div>
-        </div>
+            <div class="book" style="width:42px; height:215px; --sc:#601400;" data-rtags="robots advanced" data-diff="advanced">
+              <div class="book-spine"><span class="book-spine-label">Camera Rover</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Robots · Advanced · 90+ min</p>
+                <p class="book-popup-title">Raspberry Pi Camera Rover</p>
+                <p class="book-popup-author">Mr. Scandrett · Teacher Help</p>
+                <p class="book-popup-desc">Combine motors, a Pi camera, and remote control into a rover that streams live video as it explores the room.</p>
+                <span class="book-popup-cta">Needs: Raspberry Pi, camera, motor driver, battery</span>
+              </div>
+            </div>
 
-        <!-- ── Electronics ──── -->
-        <div class="book" style="width:36px; height:175px; --sc:#7a5800;" data-rtags="electronics beginner">
-          <div class="book-spine"><span class="book-spine-label">Blink + Signal</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Electronics · Beginner · 20–30 min</p>
-            <p class="book-popup-title">Blink + Signal Codes</p>
-            <p class="book-popup-author">Mr. Scandrett · Best First Project</p>
-            <p class="book-popup-desc">Start with a blinking LED and evolve it into a programmable coded signal system — the perfect first electronics build.</p>
-            <span class="book-popup-cta">Needs: Arduino, LED, resistor, breadboard</span>
-          </div>
-        </div>
+            <div class="book" style="width:40px; height:208px; --sc:#703000;" data-rtags="robots intermediate" data-diff="intermediate">
+              <div class="book-spine"><span class="book-spine-label">Line Follower</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Robots · Intermediate · Tinkercad Build</p>
+                <p class="book-popup-title">Line-Following Robot (LM393)</p>
+                <p class="book-popup-author">Tinkercad · Circuit Project Example</p>
+                <p class="book-popup-desc">Study a line-following robot build that uses LM393-style sensing to track a path, combining motors, sensors, and control logic into an autonomous robot system.</p>
+                <a class="book-popup-cta" href="https://www.tinkercad.com/things/330TZcC8RzO-line-following-robot-lm393" target="_blank" rel="noreferrer">Open Project ↗</a>
+              </div>
+            </div>
 
-        <div class="book" style="width:40px; height:192px; --sc:#604200;" data-rtags="electronics intermediate">
-          <div class="book-spine"><span class="book-spine-label">Sensor Station</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Electronics · Intermediate · 45–60 min</p>
-            <p class="book-popup-title">Sensor Station</p>
-            <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
-            <p class="book-popup-desc">Read temperature, light, or distance data from real sensors and turn it into a live dashboard that reacts to the world around it.</p>
-            <span class="book-popup-cta">Needs: Arduino, one sensor, breadboard, USB</span>
-          </div>
-        </div>
+          </div><!-- /shelf-row robots -->
+          <div class="shelf-board"><span class="shelf-label">🤖 Robots</span></div>
+          <div class="shelf-spacer"></div>
+        </div><!-- /recipe-shelf-group robots -->
 
-        <div class="book" style="width:38px; height:185px; --sc:#483000;" data-rtags="electronics intermediate">
-          <div class="book-spine"><span class="book-spine-label">Servo Arm</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Electronics · Intermediate · 35–50 min</p>
-            <p class="book-popup-title">Servo Challenge Arm</p>
-            <p class="book-popup-author">Mr. Scandrett · Fast Win</p>
-            <p class="book-popup-desc">Program a servo motor to sweep, pause, aim, and sort objects at precise angles — a hands-on intro to physical motion control.</p>
-            <span class="book-popup-cta">Needs: Arduino, servo motor, jumper wires</span>
-          </div>
-        </div>
+        <!-- ── Electronics shelf ──── -->
+        <div class="recipe-shelf-group" data-spathway="electronics">
+          <div class="shelf-row">
 
-        <div class="book" style="width:42px; height:205px; --sc:#5a4200;" data-rtags="electronics intermediate">
-          <div class="book-spine"><span class="book-spine-label">Slot Machine</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Electronics · Intermediate · Tinkercad Build</p>
-            <p class="book-popup-title">Arduino Slot Machine</p>
-            <p class="book-popup-author">Tinkercad · Circuit Project Example</p>
-            <p class="book-popup-desc">Explore a working Arduino slot machine build to study circuit layout, programmed randomness, and how inputs and outputs combine into an interactive game.</p>
-            <a class="book-popup-cta" href="https://www.tinkercad.com/things/88DdZTpK1BZ-" target="_blank" rel="noreferrer">Open Project ↗</a>
-          </div>
-        </div>
+            <div class="book" style="width:36px; height:175px; --sc:#7a5800;" data-rtags="electronics beginner" data-diff="beginner">
+              <div class="book-spine"><span class="book-spine-label">Blink + Signal</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Electronics · Beginner · 20–30 min</p>
+                <p class="book-popup-title">Blink + Signal Codes</p>
+                <p class="book-popup-author">Mr. Scandrett · Best First Project</p>
+                <p class="book-popup-desc">Start with a blinking LED and evolve it into a programmable coded signal system — the perfect first electronics build.</p>
+                <span class="book-popup-cta">Needs: Arduino, LED, resistor, breadboard</span>
+              </div>
+            </div>
 
-        <div class="book" style="width:40px; height:210px; --sc:#4f3600;" data-rtags="electronics intermediate">
-          <div class="book-spine"><span class="book-spine-label">LCD Game</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Electronics · Intermediate · Tinkercad Build</p>
-            <p class="book-popup-title">Arduino LCD Game</p>
-            <p class="book-popup-author">Tinkercad · Circuit Project Example</p>
-            <p class="book-popup-desc">Open a complete Arduino LCD game project to study display wiring, button input, and the code structure behind a simple playable screen-based build.</p>
-            <a class="book-popup-cta" href="https://www.tinkercad.com/things/gaz1QouqksT-arduino-lcd-game" target="_blank" rel="noreferrer">Open Project ↗</a>
-          </div>
-        </div>
+            <div class="book" style="width:40px; height:192px; --sc:#604200;" data-rtags="electronics intermediate" data-diff="intermediate">
+              <div class="book-spine"><span class="book-spine-label">Sensor Station</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Electronics · Intermediate · 45–60 min</p>
+                <p class="book-popup-title">Sensor Station</p>
+                <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
+                <p class="book-popup-desc">Read temperature, light, or distance data from real sensors and turn it into a live dashboard that reacts to the world around it.</p>
+                <span class="book-popup-cta">Needs: Arduino, one sensor, breadboard, USB</span>
+              </div>
+            </div>
 
-        <div class="book" style="width:44px; height:218px; --sc:#3f2a00;" data-rtags="electronics advanced">
-          <div class="book-spine"><span class="book-spine-label">Kalman Radar</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Electronics · Advanced · Tinkercad Build</p>
-            <p class="book-popup-title">Kalman-Enhanced Ultrasonic Radar</p>
-            <p class="book-popup-author">Tinkercad · Circuit Project Example</p>
-            <p class="book-popup-desc">Explore an advanced ultrasonic radar build that combines distance sensing, scanning motion, and Kalman filtering to smooth noisy data into clearer readings.</p>
-            <a class="book-popup-cta" href="https://www.tinkercad.com/things/7kQgTeDa8EL-kalman-enhanced-ultrasonic-radar" target="_blank" rel="noreferrer">Open Project ↗</a>
-          </div>
-        </div>
+            <div class="book" style="width:38px; height:185px; --sc:#483000;" data-rtags="electronics intermediate" data-diff="intermediate">
+              <div class="book-spine"><span class="book-spine-label">Servo Arm</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Electronics · Intermediate · 35–50 min</p>
+                <p class="book-popup-title">Servo Challenge Arm</p>
+                <p class="book-popup-author">Mr. Scandrett · Fast Win</p>
+                <p class="book-popup-desc">Program a servo motor to sweep, pause, aim, and sort objects at precise angles — a hands-on intro to physical motion control.</p>
+                <span class="book-popup-cta">Needs: Arduino, servo motor, jumper wires</span>
+              </div>
+            </div>
 
-        <div class="book" style="width:46px; height:220px; --sc:#5b4600;" data-rtags="electronics advanced">
-          <div class="book-spine"><span class="book-spine-label">Solar Tracker</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Electronics · Advanced · Tinkercad Build</p>
-            <p class="book-popup-title">Solar Tracker: Optimization of Solar Energy Capture</p>
-            <p class="book-popup-author">Tinkercad · Circuit Project Example</p>
-            <p class="book-popup-desc">Study a solar-tracking system that combines sensors, motion control, and energy-focused design to keep a panel aligned for stronger light capture.</p>
-            <a class="book-popup-cta" href="https://www.tinkercad.com/things/5vU78JIiOxI-" target="_blank" rel="noreferrer">Open Project ↗</a>
-          </div>
-        </div>
+            <div class="book" style="width:42px; height:205px; --sc:#5a4200;" data-rtags="electronics intermediate" data-diff="intermediate">
+              <div class="book-spine"><span class="book-spine-label">Slot Machine</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Electronics · Intermediate · Tinkercad Build</p>
+                <p class="book-popup-title">Arduino Slot Machine</p>
+                <p class="book-popup-author">Tinkercad · Circuit Project Example</p>
+                <p class="book-popup-desc">Explore a working Arduino slot machine build to study circuit layout, programmed randomness, and how inputs and outputs combine into an interactive game.</p>
+                <a class="book-popup-cta" href="https://www.tinkercad.com/things/88DdZTpK1BZ-" target="_blank" rel="noreferrer">Open Project ↗</a>
+              </div>
+            </div>
 
-        <div class="book" style="width:43px; height:214px; --sc:#6a4d00;" data-rtags="electronics intermediate">
-          <div class="book-spine"><span class="book-spine-label">Shared Build</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Electronics · Intermediate · Tinkercad Build</p>
-            <p class="book-popup-title">Shared Tinkercad Circuit Build</p>
-            <p class="book-popup-author">Tinkercad · Remix Project Example</p>
-            <p class="book-popup-desc">Open a shared Tinkercad circuit build to inspect the component layout, wiring choices, and code, then remix it into your own improved version inside Tinkercad.</p>
-            <a class="book-popup-cta" href="https://www.tinkercad.com/things/84a17dOXNUy/editel?sharecode=3CQP966Cg8FBBZDUnuO2GVaJnzq9NHkyifsqDgQMTs8" target="_blank" rel="noreferrer">Open Project ↗</a>
-          </div>
-        </div>
+            <div class="book" style="width:40px; height:210px; --sc:#4f3600;" data-rtags="electronics intermediate" data-diff="intermediate">
+              <div class="book-spine"><span class="book-spine-label">LCD Game</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Electronics · Intermediate · Tinkercad Build</p>
+                <p class="book-popup-title">Arduino LCD Game</p>
+                <p class="book-popup-author">Tinkercad · Circuit Project Example</p>
+                <p class="book-popup-desc">Open a complete Arduino LCD game project to study display wiring, button input, and the code structure behind a simple playable screen-based build.</p>
+                <a class="book-popup-cta" href="https://www.tinkercad.com/things/gaz1QouqksT-arduino-lcd-game" target="_blank" rel="noreferrer">Open Project ↗</a>
+              </div>
+            </div>
 
-        <!-- ── Game Dev ──── -->
-        <div class="book" style="width:40px; height:180px; --sc:#1a5a30;" data-rtags="gamedev beginner">
-          <div class="book-spine"><span class="book-spine-label">Clicker Prototype</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Game Dev · Beginner · 25–40 min</p>
-            <p class="book-popup-title">Clicker Prototype</p>
-            <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
-            <p class="book-popup-desc">Build a simple game loop from scratch where clicks earn points, trigger upgrades, and create satisfying feedback loops.</p>
-            <span class="book-popup-cta">Needs: HTML, CSS, JavaScript, text editor</span>
-          </div>
-        </div>
+            <div class="book" style="width:44px; height:218px; --sc:#3f2a00;" data-rtags="electronics advanced" data-diff="advanced">
+              <div class="book-spine"><span class="book-spine-label">Kalman Radar</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Electronics · Advanced · Tinkercad Build</p>
+                <p class="book-popup-title">Kalman-Enhanced Ultrasonic Radar</p>
+                <p class="book-popup-author">Tinkercad · Circuit Project Example</p>
+                <p class="book-popup-desc">Explore an advanced ultrasonic radar build that combines distance sensing, scanning motion, and Kalman filtering to smooth noisy data into clearer readings.</p>
+                <a class="book-popup-cta" href="https://www.tinkercad.com/things/7kQgTeDa8EL-kalman-enhanced-ultrasonic-radar" target="_blank" rel="noreferrer">Open Project ↗</a>
+              </div>
+            </div>
 
-        <div class="book" style="width:38px; height:196px; --sc:#0e3a1e;" data-rtags="gamedev intermediate">
-          <div class="book-spine"><span class="book-spine-label">Platformer Room</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Game Dev · Intermediate · 60–75 min</p>
-            <p class="book-popup-title">Platformer Room</p>
-            <p class="book-popup-author">Mr. Scandrett · Team Build</p>
-            <p class="book-popup-desc">Design one tight platformer level with solid movement, hazards, collectibles, and a clear win state the player can actually reach.</p>
-            <span class="book-popup-cta">Needs: Scratch, JavaScript, or a class engine</span>
-          </div>
-        </div>
+            <div class="book" style="width:46px; height:220px; --sc:#5b4600;" data-rtags="electronics advanced" data-diff="advanced">
+              <div class="book-spine"><span class="book-spine-label">Solar Tracker</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Electronics · Advanced · Tinkercad Build</p>
+                <p class="book-popup-title">Solar Tracker: Optimization of Solar Energy Capture</p>
+                <p class="book-popup-author">Tinkercad · Circuit Project Example</p>
+                <p class="book-popup-desc">Study a solar-tracking system that combines sensors, motion control, and energy-focused design to keep a panel aligned for stronger light capture.</p>
+                <a class="book-popup-cta" href="https://www.tinkercad.com/things/5vU78JIiOxI-" target="_blank" rel="noreferrer">Open Project ↗</a>
+              </div>
+            </div>
 
-        <div class="book" style="width:44px; height:212px; --sc:#0a2414;" data-rtags="gamedev advanced">
-          <div class="book-spine"><span class="book-spine-label">Boss Fight</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Game Dev · Advanced · 90+ min</p>
-            <p class="book-popup-title">Arcade Boss Fight</p>
-            <p class="book-popup-author">Mr. Scandrett · Capstone Build</p>
-            <p class="book-popup-desc">Design a full boss battle with attack phases, health systems, player telegraphing, and a polished victory screen.</p>
-            <span class="book-popup-cta">Needs: Scratch, Godot, or JS canvas</span>
-          </div>
-        </div>
+            <div class="book" style="width:43px; height:214px; --sc:#6a4d00;" data-rtags="electronics intermediate" data-diff="intermediate">
+              <div class="book-spine"><span class="book-spine-label">Shared Build</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Electronics · Intermediate · Tinkercad Build</p>
+                <p class="book-popup-title">Shared Tinkercad Circuit Build</p>
+                <p class="book-popup-author">Tinkercad · Remix Project Example</p>
+                <p class="book-popup-desc">Open a shared Tinkercad circuit build to inspect the component layout, wiring choices, and code, then remix it into your own improved version inside Tinkercad.</p>
+                <a class="book-popup-cta" href="https://www.tinkercad.com/things/84a17dOXNUy/editel?sharecode=3CQP966Cg8FBBZDUnuO2GVaJnzq9NHkyifsqDgQMTs8" target="_blank" rel="noreferrer">Open Project ↗</a>
+              </div>
+            </div>
 
-        <!-- ── 3D Design ──── -->
-        <div class="book" style="width:36px; height:182px; --sc:#3a1060;" data-rtags="design beginner">
-          <div class="book-spine"><span class="book-spine-label">Low-Poly Desk</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">3D Design · Beginner · 40–55 min</p>
-            <p class="book-popup-title">Blender Low-Poly Desk Setup</p>
-            <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
-            <p class="book-popup-desc">Model a complete desk scene with monitor, keyboard, and lamp using only basic shapes — the perfect Blender starter project.</p>
-            <span class="book-popup-cta">Needs: Blender, mouse, reference image</span>
-          </div>
-        </div>
+          </div><!-- /shelf-row electronics -->
+          <div class="shelf-board"><span class="shelf-label">⚡ Electronics</span></div>
+          <div class="shelf-spacer"></div>
+        </div><!-- /recipe-shelf-group electronics -->
 
-        <div class="book" style="width:38px; height:190px; --sc:#6a2e00;" data-rtags="design beginner">
-          <div class="book-spine"><span class="book-spine-label">Simon Project</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">3D Design · Beginner · Tinkercad Build</p>
-            <p class="book-popup-title">Simon Successful Project</p>
-            <p class="book-popup-author">Tinkercad · Student Project Example</p>
-            <p class="book-popup-desc">Study a completed Tinkercad build to see how a Simon-style project comes together through shapes, layout, and clean design choices.</p>
-            <a class="book-popup-cta" href="https://www.tinkercad.com/things/6UFs8U5EcpN-simon-succesful-project" target="_blank" rel="noreferrer">Open Project ↗</a>
-          </div>
-        </div>
+        <!-- ── Game Dev shelf ──── -->
+        <div class="recipe-shelf-group" data-spathway="gamedev">
+          <div class="shelf-row">
 
-        <div class="book" style="width:40px; height:198px; --sc:#581880;" data-rtags="design intermediate">
-          <div class="book-spine"><span class="book-spine-label">Character Turntable</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">3D Design · Intermediate · 60–80 min</p>
-            <p class="book-popup-title">Character Turntable</p>
-            <p class="book-popup-author">Mr. Scandrett · Portfolio Build</p>
-            <p class="book-popup-desc">Design a stylized character or robot and render a clean 360° rotating showcase video — portfolio-ready from day one.</p>
-            <span class="book-popup-cta">Needs: Blender, concept sketch, render settings</span>
-          </div>
-        </div>
+            <div class="book" style="width:40px; height:180px; --sc:#1a5a30;" data-rtags="gamedev beginner" data-diff="beginner">
+              <div class="book-spine"><span class="book-spine-label">Clicker Prototype</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Game Dev · Beginner · 25–40 min</p>
+                <p class="book-popup-title">Clicker Prototype</p>
+                <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
+                <p class="book-popup-desc">Build a simple game loop from scratch where clicks earn points, trigger upgrades, and create satisfying feedback loops.</p>
+                <span class="book-popup-cta">Needs: HTML, CSS, JavaScript, text editor</span>
+              </div>
+            </div>
 
-        <div class="book" style="width:42px; height:215px; --sc:#3a0a5a;" data-rtags="design advanced">
-          <div class="book-spine"><span class="book-spine-label">Future Classroom</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">3D Design · Advanced · 90+ min</p>
-            <p class="book-popup-title">Challenge Scene: Future Classroom</p>
-            <p class="book-popup-author">Mr. Scandrett · Story Build</p>
-            <p class="book-popup-desc">Build a full 3D environment imagining what a future classroom looks like — with lighting, scale, and visual storytelling.</p>
-            <span class="book-popup-cta">Needs: Blender, planning sketch, references</span>
-          </div>
-        </div>
+            <div class="book" style="width:38px; height:196px; --sc:#0e3a1e;" data-rtags="gamedev intermediate" data-diff="intermediate">
+              <div class="book-spine"><span class="book-spine-label">Platformer Room</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Game Dev · Intermediate · 60–75 min</p>
+                <p class="book-popup-title">Platformer Room</p>
+                <p class="book-popup-author">Mr. Scandrett · Team Build</p>
+                <p class="book-popup-desc">Design one tight platformer level with solid movement, hazards, collectibles, and a clear win state the player can actually reach.</p>
+                <span class="book-popup-cta">Needs: Scratch, JavaScript, or a class engine</span>
+              </div>
+            </div>
 
-        <!-- ── Challenges ──── -->
-        <div class="book" style="width:38px; height:178px; --sc:#8a0a1a;" data-rtags="challenge beginner">
-          <div class="book-spine"><span class="book-spine-label">Paper Tower Sprint</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Challenges · Beginner · 20 min</p>
-            <p class="book-popup-title">Paper Tower Sprint</p>
-            <p class="book-popup-author">Mr. Scandrett · Team Build</p>
-            <p class="book-popup-desc">Build the tallest freestanding tower possible using only limited paper and a strict time constraint. Iteration required.</p>
-            <span class="book-popup-cta">Needs: paper, scissors, timer, ruler</span>
-          </div>
-        </div>
+            <div class="book" style="width:44px; height:212px; --sc:#0a2414;" data-rtags="gamedev advanced" data-diff="advanced">
+              <div class="book-spine"><span class="book-spine-label">Boss Fight</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Game Dev · Advanced · 90+ min</p>
+                <p class="book-popup-title">Arcade Boss Fight</p>
+                <p class="book-popup-author">Mr. Scandrett · Capstone Build</p>
+                <p class="book-popup-desc">Design a full boss battle with attack phases, health systems, player telegraphing, and a polished victory screen.</p>
+                <span class="book-popup-cta">Needs: Scratch, Godot, or JS canvas</span>
+              </div>
+            </div>
 
-        <div class="book" style="width:40px; height:193px; --sc:#680814;" data-rtags="challenge intermediate">
-          <div class="book-spine"><span class="book-spine-label">Rubber Band Racer</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Challenges · Intermediate · 45–60 min</p>
-            <p class="book-popup-title">Rubber Band Vehicle Distance Test</p>
-            <p class="book-popup-author">Mr. Scandrett · Team Build</p>
-            <p class="book-popup-desc">Build a lightweight vehicle and race it for maximum distance using stored elastic energy. Alignment and friction are your enemies.</p>
-            <span class="book-popup-cta">Needs: cardboard, axles, wheels, rubber band, tape</span>
-          </div>
-        </div>
+          </div><!-- /shelf-row gamedev -->
+          <div class="shelf-board"><span class="shelf-label">🎮 Game Dev</span></div>
+          <div class="shelf-spacer"></div>
+        </div><!-- /recipe-shelf-group gamedev -->
 
-        <div class="book" style="width:36px; height:206px; --sc:#4a020e;" data-rtags="challenge advanced">
-          <div class="book-spine"><span class="book-spine-label">Egg Drop</span></div>
-          <div class="book-popup">
-            <p class="book-popup-tag">Challenges · Advanced · 75–90 min</p>
-            <p class="book-popup-title">Egg Drop Engineering Brief</p>
-            <p class="book-popup-author">Mr. Scandrett · Teacher Help</p>
-            <p class="book-popup-desc">Protect an egg from a major drop using only approved materials and one design plan. Engineering at its most dramatic — and most delicious when wrong.</p>
-            <span class="book-popup-cta">Needs: egg, cushioning materials, test plan</span>
-          </div>
-        </div>
+        <!-- ── 3D Design shelf ──── -->
+        <div class="recipe-shelf-group" data-spathway="design">
+          <div class="shelf-row">
 
-      </div><!-- /bookcase-flex -->
+            <div class="book" style="width:36px; height:182px; --sc:#3a1060;" data-rtags="design beginner" data-diff="beginner">
+              <div class="book-spine"><span class="book-spine-label">Low-Poly Desk</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">3D Design · Beginner · 40–55 min</p>
+                <p class="book-popup-title">Blender Low-Poly Desk Setup</p>
+                <p class="book-popup-author">Mr. Scandrett · Solo Build</p>
+                <p class="book-popup-desc">Model a complete desk scene with monitor, keyboard, and lamp using only basic shapes — the perfect Blender starter project.</p>
+                <span class="book-popup-cta">Needs: Blender, mouse, reference image</span>
+              </div>
+            </div>
+
+            <div class="book" style="width:38px; height:190px; --sc:#6a2e00;" data-rtags="design beginner" data-diff="beginner">
+              <div class="book-spine"><span class="book-spine-label">Simon Project</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">3D Design · Beginner · Tinkercad Build</p>
+                <p class="book-popup-title">Simon Successful Project</p>
+                <p class="book-popup-author">Tinkercad · Student Project Example</p>
+                <p class="book-popup-desc">Study a completed Tinkercad build to see how a Simon-style project comes together through shapes, layout, and clean design choices.</p>
+                <a class="book-popup-cta" href="https://www.tinkercad.com/things/6UFs8U5EcpN-simon-succesful-project" target="_blank" rel="noreferrer">Open Project ↗</a>
+              </div>
+            </div>
+
+            <div class="book" style="width:40px; height:198px; --sc:#581880;" data-rtags="design intermediate" data-diff="intermediate">
+              <div class="book-spine"><span class="book-spine-label">Character Turntable</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">3D Design · Intermediate · 60–80 min</p>
+                <p class="book-popup-title">Character Turntable</p>
+                <p class="book-popup-author">Mr. Scandrett · Portfolio Build</p>
+                <p class="book-popup-desc">Design a stylized character or robot and render a clean 360° rotating showcase video — portfolio-ready from day one.</p>
+                <span class="book-popup-cta">Needs: Blender, concept sketch, render settings</span>
+              </div>
+            </div>
+
+            <div class="book" style="width:42px; height:215px; --sc:#3a0a5a;" data-rtags="design advanced" data-diff="advanced">
+              <div class="book-spine"><span class="book-spine-label">Future Classroom</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">3D Design · Advanced · 90+ min</p>
+                <p class="book-popup-title">Challenge Scene: Future Classroom</p>
+                <p class="book-popup-author">Mr. Scandrett · Story Build</p>
+                <p class="book-popup-desc">Build a full 3D environment imagining what a future classroom looks like — with lighting, scale, and visual storytelling.</p>
+                <span class="book-popup-cta">Needs: Blender, planning sketch, references</span>
+              </div>
+            </div>
+
+          </div><!-- /shelf-row design -->
+          <div class="shelf-board"><span class="shelf-label">📐 3D Design</span></div>
+          <div class="shelf-spacer"></div>
+        </div><!-- /recipe-shelf-group design -->
+
+        <!-- ── Challenges shelf ──── -->
+        <div class="recipe-shelf-group" data-spathway="challenge">
+          <div class="shelf-row">
+
+            <div class="book" style="width:38px; height:178px; --sc:#8a0a1a;" data-rtags="challenge beginner" data-diff="beginner">
+              <div class="book-spine"><span class="book-spine-label">Paper Tower Sprint</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Challenges · Beginner · 20 min</p>
+                <p class="book-popup-title">Paper Tower Sprint</p>
+                <p class="book-popup-author">Mr. Scandrett · Team Build</p>
+                <p class="book-popup-desc">Build the tallest freestanding tower possible using only limited paper and a strict time constraint. Iteration required.</p>
+                <span class="book-popup-cta">Needs: paper, scissors, timer, ruler</span>
+              </div>
+            </div>
+
+            <div class="book" style="width:40px; height:193px; --sc:#680814;" data-rtags="challenge intermediate" data-diff="intermediate">
+              <div class="book-spine"><span class="book-spine-label">Rubber Band Racer</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Challenges · Intermediate · 45–60 min</p>
+                <p class="book-popup-title">Rubber Band Vehicle Distance Test</p>
+                <p class="book-popup-author">Mr. Scandrett · Team Build</p>
+                <p class="book-popup-desc">Build a lightweight vehicle and race it for maximum distance using stored elastic energy. Alignment and friction are your enemies.</p>
+                <span class="book-popup-cta">Needs: cardboard, axles, wheels, rubber band, tape</span>
+              </div>
+            </div>
+
+            <div class="book" style="width:36px; height:206px; --sc:#4a020e;" data-rtags="challenge advanced" data-diff="advanced">
+              <div class="book-spine"><span class="book-spine-label">Egg Drop</span></div>
+              <div class="book-popup">
+                <p class="book-popup-tag">Challenges · Advanced · 75–90 min</p>
+                <p class="book-popup-title">Egg Drop Engineering Brief</p>
+                <p class="book-popup-author">Mr. Scandrett · Teacher Help</p>
+                <p class="book-popup-desc">Protect an egg from a major drop using only approved materials and one design plan. Engineering at its most dramatic — and most delicious when wrong.</p>
+                <span class="book-popup-cta">Needs: egg, cushioning materials, test plan</span>
+              </div>
+            </div>
+
+          </div><!-- /shelf-row challenge -->
+          <div class="shelf-board"><span class="shelf-label">🏆 Challenges</span></div>
+        </div><!-- /recipe-shelf-group challenge -->
+
+      </div><!-- /bookcase -->
       <div class="bookcase-base"></div>
       <p class="shelf-hint">Hover a spine to preview the brief · Filter buttons above narrow the shelf</p>
     </section>
@@ -2116,7 +2289,7 @@
     <div class="lib-room-divider" aria-hidden="true">Next Room</div>
 
     <!-- ══ User Manuals ══════════════════════════ -->
-    <section class="section lib-anchor" id="section-manuals">
+    <section class="section lib-anchor" id="section-manuals" hidden>
       <div class="lib-room-header">
         <div class="lib-room-eyebrow">
           <span class="lib-room-num">Room IV</span>
@@ -2359,7 +2532,7 @@
     </section>
 
     <!-- ══ Student Recipe Template ════════════════ -->
-    <section class="section">
+    <section class="section" data-room-extra="recipes" hidden>
       <div class="section-head reveal">
         <h2>Student Recipe Template</h2>
         <p>Use this structure when you submit a build idea so every project reads clearly for the next student.</p>
@@ -2519,6 +2692,61 @@
             { label: 'Inspector', text: 'Adjust properties without writing code first.' },
             { label: 'Signals', text: 'Connect events like button clicks or collisions.' },
             { label: 'Play current scene', text: 'Test one part of the game quickly.' }
+          ]
+        },
+        'QLab User Manual': {
+          subtitle: 'QLab in five moves',
+          why: 'QLab rewards a clear mental model of cues and groups. Once students understand the cue stack, everything else makes sense.',
+          items: [
+            { label: 'Cue list', text: 'Every show is a list of cues that play in sequence.' },
+            { label: 'Space bar', text: 'GO — advance to the next cue during playback.' },
+            { label: 'Cue types', text: 'Audio, Video, Fade, Wait, Group — pick the right tool.' },
+            { label: 'Group cue', text: 'Wrap cues together to fire them as one unit.' },
+            { label: 'Inspector', text: 'Set timing, level, targets, and loops per cue here.' }
+          ]
+        },
+        'HeavyM Help Center': {
+          subtitle: 'HeavyM setup in five steps',
+          why: 'HeavyM projects feel magical once the output surface is correctly mapped — that first mapping step is the one students need to get right.',
+          items: [
+            { label: 'Add surface', text: 'Define the physical shape you are projecting onto.' },
+            { label: 'Warp corners', text: 'Drag corner handles to align the projection to the surface edge.' },
+            { label: 'Add layer', text: 'Stack visual effects and generative patterns on each surface.' },
+            { label: 'MIDI / OSC', text: 'Connect a controller to trigger effects live during performance.' },
+            { label: 'Fullscreen output', text: 'Route the output window to your projector display.' }
+          ]
+        },
+        'Ableton Live Manual': {
+          subtitle: 'Ableton Live quick start',
+          why: 'Live has two views that confuse new users. Understanding Session vs Arrangement upfront prevents most of the early frustration.',
+          items: [
+            { label: 'Session View', text: 'Loop-based grid for improvisation and live performance.' },
+            { label: 'Arrangement View', text: 'Timeline-based view for recording a finished track.' },
+            { label: 'Clip', text: 'A loop or recording — the basic unit of music in Live.' },
+            { label: 'Tab key', text: 'Toggle between Session View and Arrangement View.' },
+            { label: 'Warp', text: 'Stretch audio to match project tempo without changing pitch.' }
+          ]
+        },
+        'GameMaker Manual': {
+          subtitle: 'GameMaker essentials',
+          why: 'GameMaker\'s event-action model is its superpower. Once students see events as triggers and actions as responses, GML code flows naturally.',
+          items: [
+            { label: 'Object', text: 'The building block — everything in the game is an object.' },
+            { label: 'Event', text: 'Triggers when something happens (Create, Step, Collision, etc.).' },
+            { label: 'Room', text: 'The space where objects are placed and the game runs.' },
+            { label: 'Step event', text: 'Runs every frame — home for movement and game logic.' },
+            { label: 'instance_create_layer()', text: 'Spawn a new object into the game world at runtime.' }
+          ]
+        },
+        'Unity Manual': {
+          subtitle: 'Unity first session',
+          why: 'Unity\'s hierarchy + inspector workflow unlocks quickly once students stop fearing the interface and focus on GameObjects and components.',
+          items: [
+            { label: 'GameObject', text: 'Every thing in the scene is a GameObject.' },
+            { label: 'Component', text: 'Attach behaviors (Rigidbody, Collider, Script) to GameObjects.' },
+            { label: 'Inspector', text: 'Select any object to view and edit its components here.' },
+            { label: 'Play button', text: 'Test the game inside the editor — Escape exits play mode.' },
+            { label: 'Transform', text: 'Every GameObject has Position, Rotation, and Scale.' }
           ]
         }
       };
@@ -2697,9 +2925,54 @@
         closeAllBooks();
       });
 
+      /* ── Entry card progressive disclosure ──────── */
+      var entryGrid     = document.getElementById('libEntryGrid');
+      var libRooms      = Array.from(document.querySelectorAll('.lib-anchor'));
+      var extraSections = Array.from(document.querySelectorAll('[data-room-extra]'));
+      var entryCardEls  = Array.from(document.querySelectorAll('.lib-entry-card'));
+      var activeRoomId  = null;
+
+      function openRoom(roomId) {
+        activeRoomId = roomId;
+        if (entryGrid) entryGrid.classList.add('is-compact');
+        libRooms.forEach(function (s) { s.hidden = s.id !== 'section-' + roomId; });
+        extraSections.forEach(function (s) { s.hidden = s.dataset.roomExtra !== roomId; });
+        entryCardEls.forEach(function (c) { c.classList.toggle('is-active', c.dataset.room === roomId); });
+        var target = document.getElementById('section-' + roomId);
+        if (target) setTimeout(function () { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+      }
+
+      function closeAllRooms() {
+        activeRoomId = null;
+        if (entryGrid) entryGrid.classList.remove('is-compact');
+        libRooms.forEach(function (s) { s.hidden = true; });
+        extraSections.forEach(function (s) { s.hidden = true; });
+        entryCardEls.forEach(function (c) { c.classList.remove('is-active'); });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      entryCardEls.forEach(function (card) {
+        card.addEventListener('click', function () {
+          if (card.classList.contains('is-active')) { closeAllRooms(); }
+          else { openRoom(card.dataset.room); }
+        });
+      });
+
       if (searchInput) {
         searchInput.addEventListener('input', function () {
-          applyArchiveSearch(searchInput.value);
+          var q = searchInput.value;
+          if (q && q.trim()) {
+            /* Show all rooms so search results are visible */
+            if (entryGrid) entryGrid.classList.remove('is-compact');
+            libRooms.forEach(function (s) { s.hidden = false; });
+            extraSections.forEach(function (s) { s.hidden = false; });
+            entryCardEls.forEach(function (c) { c.classList.remove('is-active'); });
+          } else {
+            /* Restore previous room or close all */
+            if (activeRoomId) { openRoom(activeRoomId); }
+            else { libRooms.forEach(function (s) { s.hidden = true; }); extraSections.forEach(function (s) { s.hidden = true; }); }
+          }
+          applyArchiveSearch(q);
         });
       }
       applyArchiveSearch('');
@@ -2784,6 +3057,22 @@
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && readerBackdrop && readerBackdrop.classList.contains('is-open')) {
           closeReader();
+          return;
+        }
+        /* / focuses the search bar; Escape clears and blurs it */
+        if (e.key === '/' && document.activeElement !== searchInput && !e.metaKey && !e.ctrlKey) {
+          var tag = document.activeElement && document.activeElement.tagName;
+          if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+            e.preventDefault();
+            if (searchInput) { searchInput.focus(); searchInput.select(); }
+          }
+        }
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+          searchInput.value = '';
+          applyArchiveSearch('');
+          searchInput.blur();
+          if (activeRoomId) { openRoom(activeRoomId); }
+          else { libRooms.forEach(function (s) { s.hidden = true; }); extraSections.forEach(function (s) { s.hidden = true; }); }
         }
       });
 
@@ -2875,6 +3164,11 @@
           book.hidden = !match;
           if (!match) syncPopupState(book, false);
           if (match) count++;
+        });
+        /* Hide shelf groups that have no visible books */
+        document.querySelectorAll('#recipe-bookcase .recipe-shelf-group').forEach(function (group) {
+          var hasVisible = Array.from(group.querySelectorAll('.book')).some(function (b) { return !b.hidden; });
+          group.hidden = !hasVisible;
         });
         if (statsEl) {
           statsEl.textContent = 'Showing ' + count + ' recipe' + (count === 1 ? '' : 's');

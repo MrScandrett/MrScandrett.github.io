@@ -11162,6 +11162,43 @@ a.go-output-card:hover {
   box-shadow: 0 12px 38px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.22);
 }
 
+.math-fibonacci-tile {
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
+  background:
+    linear-gradient(170deg, rgba(3,18,10,0.05) 0%, rgba(3,18,10,0.9) 100%),
+    radial-gradient(circle at 20% 22%, rgba(16,185,129,0.32), transparent 38%),
+    radial-gradient(circle at 82% 70%, rgba(14,165,233,0.20), transparent 36%),
+    radial-gradient(circle at 52% 8%, rgba(250,204,21,0.12), transparent 28%),
+    #03120a;
+  border: 1px solid rgba(16,185,129,0.25);
+  color: #fff;
+}
+
+.math-fibonacci-tile::before {
+  content: '1,1,2,3,5';
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: rgba(110,231,183,0.14);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.math-fibonacci-tile > * { position: relative; z-index: 1; }
+.math-fibonacci-tile .tile-kicker { color: rgba(110,231,183,0.9); font-weight: 700; }
+.math-fibonacci-tile strong { color: #fff; }
+.math-fibonacci-tile small  { color: rgba(220,255,240,0.68); }
+
+.math-fibonacci-tile:hover {
+  border-color: rgba(16,185,129,0.58);
+  box-shadow: 0 12px 38px rgba(0,0,0,0.6), 0 0 0 1px rgba(16,185,129,0.22);
+}
+
 /* ── Chemistry module ───────────────────────────── */
 
 .chemistry-banner {
@@ -14476,4 +14513,69 @@ html[data-theme="diamond"] .home-widget--weather .home-weather-shell {
     transform: translate(var(--dx), var(--dy)) scale(0);
     opacity: 0;
   }
+}
+
+/* =========================================================
+   BELOW-FOLD PANEL UNIFICATION
+   Problem: VOTD (warm cream), Schedule (light white), and
+   Weather (near-opaque dark navy) are three completely
+   different visual languages in adjacent columns.
+   Fix: shared container borders, rounded inner shells,
+   softened weather opacity, section divider above grid.
+   ========================================================= */
+
+/* Section divider above the grid */
+.homepage-grid {
+  position: relative;
+  padding-top: 2.5rem;
+}
+
+.homepage-grid::before {
+  content: "DAILY CONTEXT";
+  position: absolute;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted, #8a8a91);
+  white-space: nowrap;
+}
+
+/* Shared container: consistent border depth */
+.sidepanel-component {
+  border-color: var(--border-default, rgba(210, 210, 215, 0.75));
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.07),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* VOTD: round the inner parchment so it fits its rounded wrapper */
+.home-widget--votd .votd-immersion-container {
+  border-radius: 12px;
+}
+
+/* Weather: soften opacity and give the inner shell its own radius
+   so it reads as glass-dark, not a void */
+.home-widget--weather .home-weather-shell {
+  background: linear-gradient(
+    160deg,
+    rgba(8, 18, 32, 0.82) 0%,
+    rgba(14, 26, 46, 0.76) 100%
+  );
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(143, 212, 255, 0.12);
+}
+
+/* Night mode: keep weather readable at reduced opacity */
+html[data-lighting="night"] .home-widget--weather .home-weather-shell {
+  background: linear-gradient(
+    160deg,
+    rgba(4, 10, 20, 0.88) 0%,
+    rgba(10, 18, 34, 0.84) 100%
+  );
 }
