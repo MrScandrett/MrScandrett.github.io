@@ -1,0 +1,977 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Physics of Music · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson 14 — from the first musical scales to equal temperament: harmonics, resonance, ratios, tuning systems, and the ancient idea of the music of the spheres." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .music-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; --ll-accent: #14b8a6; --ll-tab-active: #14b8a6; --ll-tab-active-bg: rgba(20,184,166,0.12); }
+    .music-hero { padding: 0.4rem 0 1.3rem; }
+    .music-hero h1 { max-width: 34ch; margin: 0; font-size: clamp(1.55rem,3.5vw,2.35rem); letter-spacing: -0.03em; }
+    .music-meta { display:flex; flex-wrap:wrap; gap:0.4rem 0.7rem; margin:0.55rem 0 0; font-size:0.82rem; color:#64748b; }
+    .music-meta .dot { width:3px; height:3px; border-radius:50%; background:currentColor; opacity:0.42; display:inline-block; align-self:center; }
+    .music-lede { margin:0.7rem 0 0; max-width:72ch; color:#3f4f65; font-size:0.96rem; line-height:1.62; }
+    [data-theme="night"] .music-lede { color:rgba(245,245,247,0.72); }
+    .music-card { background:var(--white,#fff); border:1px solid var(--line,#d2d2d7); border-left:3.5px solid var(--card-accent,#14b8a6); border-radius:var(--radius,18px); box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding:1.2rem 1.4rem; margin-bottom:1rem; }
+    [data-theme="night"] .music-card { background:#2c2c2e; }
+    .music-card h2 { margin:0 0 0.55rem; font-size:1.2rem; letter-spacing:-0.02em; }
+    .music-card h3 { margin:0.95rem 0 0.32rem; font-size:1rem; }
+    .music-card p, .music-card li { color:#3f4f65; font-size:0.88rem; line-height:1.65; margin:0 0 0.6rem; }
+    [data-theme="night"] .music-card p, [data-theme="night"] .music-card li { color:rgba(245,245,247,0.72); }
+    .music-card p:last-child { margin-bottom:0; }
+    .music-card ul { margin:0.4rem 0 0; padding-left:1.35rem; }
+    .music-callout { border-radius:12px; padding:0.85rem 1rem; margin:0.8rem 0; font-size:0.84rem; line-height:1.6; background:rgba(20,184,166,0.1); border-left:3px solid #14b8a6; }
+    .music-formula { display:grid; gap:0.25rem; text-align:center; margin:0.85rem 0; padding:1rem; border-radius:14px; border:1px solid rgba(20,184,166,0.25); background:linear-gradient(135deg,rgba(20,184,166,0.08),rgba(99,102,241,0.06)); }
+    .music-formula strong { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:clamp(1rem,2.5vw,1.35rem); color:var(--text,#1d1d1f); }
+    .music-formula span { font-size:0.8rem; color:#64748b; }
+    .music-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0.7rem; margin:0.85rem 0; }
+    .music-mini { border:1px solid var(--line,#d2d2d7); border-radius:12px; padding:0.82rem; background:rgba(20,184,166,0.04); }
+    [data-theme="night"] .music-mini { background:rgba(20,184,166,0.08); }
+    .music-mini strong { display:block; font-size:0.86rem; margin-bottom:0.2rem; color:var(--text,#1d1d1f); }
+    .music-mini small { display:block; font-size:0.78rem; line-height:1.5; color:#64748b; }
+    [data-theme="night"] .music-mini strong { color:#f8fafc; }
+    .music-lab { border-radius:20px; overflow:hidden; margin:0.9rem 0; border:1px solid rgba(148,163,184,0.2); background:radial-gradient(circle at 20% 0%,rgba(20,184,166,0.22),transparent 45%),linear-gradient(180deg,#0f172a,#020617); color:#e2e8f0; box-shadow:0 18px 44px rgba(2,6,23,0.26); }
+    .music-stage { padding:1rem; }
+    #music-canvas, #interference-canvas { width:100%; height:260px; display:block; border-radius:14px; background:rgba(0,0,0,0.24); border:1px solid rgba(255,255,255,0.08); }
+    .music-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0.7rem; padding:0 1rem 1rem; }
+    .music-control { display:flex; flex-direction:column; gap:0.35rem; }
+    .music-control label { font-size:0.68rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:#94a3b8; }
+    .music-control input, .music-control select { accent-color:#14b8a6; border:1px solid rgba(255,255,255,0.14); border-radius:10px; background:rgba(15,23,42,0.72); color:#f8fafc; padding:0.4rem 0.55rem; font:inherit; font-size:0.84rem; }
+    .music-readouts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0.65rem; padding:1rem; border-top:1px solid rgba(148,163,184,0.14); background:rgba(2,6,23,0.72); }
+    .music-stat { border:1px solid rgba(148,163,184,0.16); border-radius:12px; padding:0.75rem; background:rgba(15,23,42,0.62); }
+    .music-stat span { display:block; font-size:0.64rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:#94a3b8; margin-bottom:0.25rem; }
+    .music-stat strong { color:#f8fafc; font-size:0.94rem; }
+    .music-lab-title { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; padding:1rem 1rem 0; }
+    .music-lab-title h3 { margin:0; color:#f8fafc; font-size:1.05rem; }
+    .music-lab-title p { margin:0.25rem 0 0; color:#94a3b8; font-size:0.8rem; line-height:1.45; max-width:68ch; }
+    .music-panel-actions { display:flex; flex-wrap:wrap; gap:0.5rem; }
+    .music-dark-btn { border:1px solid rgba(255,255,255,0.16); border-radius:10px; padding:0.45rem 0.7rem; background:rgba(15,23,42,0.76); color:#f8fafc; font-weight:800; font-size:0.8rem; cursor:pointer; }
+    .music-dark-btn:hover, .music-dark-btn.active { background:#14b8a6; border-color:#5eead4; color:#042f2e; }
+    .music-scope-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; padding:1rem; }
+    .music-scope-pane { min-width:0; }
+    .music-scope-pane canvas { width:100%; height:220px; display:block; border-radius:14px; background:#020617; border:1px solid rgba(255,255,255,0.08); }
+    .music-pane-label { display:flex; justify-content:space-between; gap:0.75rem; color:#94a3b8; font-size:0.68rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.35rem; }
+    .music-mode-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:0.6rem; padding:0 1rem 1rem; }
+    .music-mode-btn { border:1px solid rgba(148,163,184,0.18); border-radius:12px; background:rgba(15,23,42,0.64); color:#e2e8f0; padding:0.65rem; text-align:left; cursor:pointer; font:inherit; }
+    .music-mode-btn strong { display:block; font-size:0.78rem; margin-bottom:0.2rem; }
+    .music-mode-btn small { display:block; color:#94a3b8; font-size:0.68rem; line-height:1.35; }
+    .music-mode-btn:hover, .music-mode-btn.active { border-color:#5eead4; background:rgba(20,184,166,0.18); }
+    .music-equation-art { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin:0.85rem 0; }
+    .music-equation-card { border:1px solid rgba(20,184,166,0.22); border-radius:14px; padding:0.9rem; background:linear-gradient(135deg,rgba(20,184,166,0.08),rgba(14,165,233,0.06)); }
+    .music-equation-card strong { display:block; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:1.05rem; margin-bottom:0.3rem; color:var(--text,#1d1d1f); }
+    .music-equation-card svg { width:100%; height:92px; display:block; }
+    .music-timeline { display:grid; gap:0.55rem; margin:0.85rem 0; }
+    .music-era { display:grid; grid-template-columns:130px 1fr; gap:0.75rem; align-items:start; border:1px solid var(--line,#d2d2d7); border-radius:12px; padding:0.75rem; }
+    .music-era time { font-weight:800; color:#14b8a6; font-size:0.82rem; }
+    .music-era strong { display:block; font-size:0.86rem; margin-bottom:0.15rem; }
+    .music-era small { display:block; color:#64748b; line-height:1.45; }
+    .music-instrument-grid, .music-experiment-grid, .music-bio-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0.7rem; margin:0.85rem 0; }
+    .music-cutaway, .music-experiment, .music-bio { border:1px solid var(--line,#d2d2d7); border-radius:12px; padding:0.85rem; background:rgba(15,23,42,0.03); }
+    [data-theme="night"] .music-cutaway, [data-theme="night"] .music-experiment, [data-theme="night"] .music-bio { background:rgba(255,255,255,0.04); }
+    .music-icon { font-size:1.45rem; margin-bottom:0.25rem; }
+    .music-cutaway strong, .music-experiment strong, .music-bio strong { display:block; font-size:0.86rem; margin-bottom:0.22rem; }
+    .music-cutaway small, .music-experiment small, .music-bio small { display:block; color:#64748b; font-size:0.76rem; line-height:1.48; }
+    .music-prediction { border:1px solid rgba(245,158,11,0.28); border-radius:14px; padding:0.9rem; margin:0.85rem 0; background:rgba(245,158,11,0.08); }
+    .music-prediction h3 { margin-top:0; }
+    .music-predict-buttons { display:flex; flex-wrap:wrap; gap:0.5rem; margin:0.5rem 0; }
+    .music-predict-buttons button { border:1px solid rgba(245,158,11,0.35); border-radius:9px; padding:0.38rem 0.65rem; background:var(--white,#fff); color:var(--text,#1d1d1f); font-weight:700; cursor:pointer; }
+    .music-predict-buttons button:hover { background:#f59e0b; color:#111827; }
+    .music-answer { min-height:1.4rem; font-size:0.82rem; font-weight:700; color:#b45309; }
+    .music-sim-note { margin:0.7rem 1rem 1rem; color:#94a3b8; font-size:0.76rem; line-height:1.45; }
+    .music-practice .music-problem { border:1px solid var(--line,#d2d2d7); border-radius:12px; padding:0.9rem 1rem; margin-bottom:0.7rem; }
+    .music-row { display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; }
+    .music-input { width:116px; border:1px solid var(--line,#d2d2d7); border-radius:8px; padding:0.35rem 0.6rem; background:var(--white,#fff); color:var(--text,#1d1d1f); }
+    .music-btn { border:0; border-radius:8px; padding:0.38rem 0.85rem; background:#14b8a6; color:white; font-weight:700; cursor:pointer; }
+    .music-feedback { font-size:0.82rem; font-weight:700; }
+    .music-feedback.ok { color:#16a34a; }
+    .music-feedback.err { color:#dc2626; }
+    .music-hint { display:none; margin-top:0.4rem; font-size:0.78rem; color:#64748b; }
+    .diff-easy { background:rgba(52,199,89,0.15); color:#248a3d; border-radius:5px; padding:0.1rem 0.4rem; font-size:0.72rem; font-weight:700; margin-right:0.4rem; }
+    .diff-mid { background:rgba(255,149,0,0.15); color:#c07000; border-radius:5px; padding:0.1rem 0.4rem; font-size:0.72rem; font-weight:700; margin-right:0.4rem; }
+    @media (max-width:720px) {
+      .ll-viewport { --ll-drawer-h: 16vh; }
+      .ll-panel { overflow-y:auto; }
+      .ll-panel .ll-panel-section:nth-of-type(2) { display:none; }
+      .ll-panel .ll-tab { padding:0.32rem 0.45rem; font-size:0.58rem; letter-spacing:0.05em; }
+      .music-grid, .music-controls, .music-readouts, .music-scope-grid, .music-mode-grid, .music-equation-art, .music-instrument-grid, .music-experiment-grid, .music-bio-grid { grid-template-columns:1fr; }
+      .music-era { grid-template-columns:1fr; }
+      #music-canvas, #interference-canvas { height:220px; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="music-page">
+        <section class="hero music-hero">
+          <p class="eyebrow">Physics · Lesson 14</p>
+          <h1>Physics of Music</h1>
+          <div class="music-meta">
+            <span>Oscillation</span><span class="dot"></span>
+            <span>Harmonics</span><span class="dot"></span>
+            <span>Scales &amp; Ratios</span><span class="dot"></span>
+            <span>Equal Temperament</span>
+          </div>
+          <p class="music-lede">Music is not separate from physics. It is physics made audible: vibrating strings, pulsing air pressure, resonance, number ratios, and repeating patterns. From the first scales to equal temperament, humans have been tuning matter until the universe sounds organized.</p>
+        </section>
+
+        <section class="music-card" style="--card-accent:#f59e0b;">
+          <h2>From Noise to Notes</h2>
+          <p>Sound begins as an oscillation. A string, reed, drumhead, vocal fold, or speaker cone moves back and forth, compressing and rarefying the air. Your ear turns those pressure waves into nerve signals, and your brain hears pitch, loudness, and tone color.</p>
+          <div class="music-formula" role="img" aria-label="Frequency equals wave speed divided by wavelength">
+            <strong>f = v / lambda</strong>
+            <span>frequency is cycles per second; wavelength is the distance from crest to crest</span>
+          </div>
+          <div class="music-equation-art" aria-label="Wave equations shown as geometry">
+            <div class="music-equation-card">
+              <strong>f = v / lambda</strong>
+              <svg viewBox="0 0 320 92" role="img" aria-label="A sine wave with wavelength marked">
+                <path d="M10 48 C35 10, 65 10, 90 48 S145 86, 170 48 S225 10, 250 48 S295 86, 310 48" fill="none" stroke="#14b8a6" stroke-width="5" />
+                <path d="M90 76 L250 76" stroke="#f59e0b" stroke-width="3" />
+                <path d="M90 68 L90 84 M250 68 L250 84" stroke="#f59e0b" stroke-width="3" />
+                <text x="152" y="69" text-anchor="middle" fill="#64748b" font-size="14" font-weight="700">lambda</text>
+              </svg>
+            </div>
+            <div class="music-equation-card">
+              <strong>L = n(lambda / 2)</strong>
+              <svg viewBox="0 0 320 92" role="img" aria-label="A fixed string divided into three standing wave loops">
+                <path d="M20 46 L300 46" stroke="#94a3b8" stroke-width="2" />
+                <path d="M20 46 C66 6, 113 6, 160 46 S253 86, 300 46" fill="none" stroke="#6366f1" stroke-width="5" />
+                <circle cx="20" cy="46" r="6" fill="#f8fafc" /><circle cx="160" cy="46" r="5" fill="#f59e0b" /><circle cx="300" cy="46" r="6" fill="#f8fafc" />
+                <text x="160" y="82" text-anchor="middle" fill="#64748b" font-size="14" font-weight="700">whole string length L fits half-waves</text>
+              </svg>
+            </div>
+          </div>
+          <p>Pitch mostly follows <strong>frequency</strong>. A 440 Hz A vibrates 440 times per second. Loudness follows <strong>amplitude</strong>. Timbre, the reason a flute and guitar can play the same note but sound different, comes from the mixture of harmonics riding on top of the fundamental frequency.</p>
+        </section>
+
+        <section class="music-card" style="--card-accent:#22c55e;">
+          <h2>See Sound: Oscilloscope and Spectrum Analyzer</h2>
+          <p>Waveform shape is timbre made visible. A sine wave sounds pure because it has one strong frequency. A square wave sounds hollow because it emphasizes odd harmonics. A sawtooth sounds buzzy because it contains a full harmonic stack. Noise looks chaotic because its energy is spread across many frequencies.</p>
+          <div class="music-lab">
+            <div class="music-lab-title">
+              <div>
+                <h3>Live Audio Workbench</h3>
+                <p>Choose a waveform, press play, and compare the oscilloscope shape with the frequency peaks. The microphone mode draws your real room sound when browser permission is available.</p>
+              </div>
+              <div class="music-panel-actions">
+                <button class="music-dark-btn" id="audio-play">Play</button>
+                <button class="music-dark-btn" id="audio-stop">Stop</button>
+                <button class="music-dark-btn" id="audio-mic">Mic Input</button>
+              </div>
+            </div>
+            <div class="music-mode-grid" role="group" aria-label="Waveform choices">
+              <button class="music-mode-btn active" data-wave="sine"><strong>Sine</strong><small>pure tone, flute-like</small></button>
+              <button class="music-mode-btn" data-wave="square"><strong>Square</strong><small>odd harmonics</small></button>
+              <button class="music-mode-btn" data-wave="sawtooth"><strong>Sawtooth</strong><small>full harmonic stack</small></button>
+              <button class="music-mode-btn" data-wave="triangle"><strong>Triangle</strong><small>soft odd harmonics</small></button>
+              <button class="music-mode-btn" data-wave="noise"><strong>Noise</strong><small>chaotic frequencies</small></button>
+            </div>
+            <div class="music-scope-grid">
+              <div class="music-scope-pane">
+                <div class="music-pane-label"><span>Oscilloscope</span><span id="scope-label">sine</span></div>
+                <canvas id="scope-canvas" aria-label="Oscilloscope waveform display"></canvas>
+              </div>
+              <div class="music-scope-pane">
+                <div class="music-pane-label"><span>Spectrum</span><span>frequency peaks</span></div>
+                <canvas id="spectrum-canvas" aria-label="Frequency spectrum analyzer display"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="music-callout"><strong>Fourier bridge:</strong> the oscilloscope shows pressure changing through time. The spectrum analyzer shows the same sound broken into frequency ingredients.</div>
+        </section>
+
+        <section class="music-card" style="--card-accent:#14b8a6;">
+          <h2>Harmonics: The Hidden Chord Inside One Note</h2>
+          <p>A stretched string does not only vibrate as one whole piece. It can also vibrate in halves, thirds, fourths, and more. These standing-wave patterns create the <strong>harmonic series</strong>.</p>
+          <div class="music-grid">
+            <div class="music-mini"><strong>1st harmonic</strong><small>The fundamental. The whole string vibrates once: f.</small></div>
+            <div class="music-mini"><strong>2nd harmonic</strong><small>Two vibrating segments. Frequency doubles: 2f, an octave above.</small></div>
+            <div class="music-mini"><strong>3rd harmonic</strong><small>Three segments. Frequency triples: 3f, related to the perfect fifth.</small></div>
+            <div class="music-mini"><strong>4th harmonic</strong><small>Four segments. Frequency quadruples: 4f, two octaves above.</small></div>
+          </div>
+          <div class="music-callout"><strong>Standing wave rule:</strong> a string fixed at both ends can hold only wavelengths that fit exactly: L = n(lambda/2). That one constraint is why instruments produce stable notes instead of random sliding noise.</div>
+        </section>
+
+        <section class="music-card" style="--card-accent:#6366f1;">
+          <h2>Harmonic String Lab</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Change the string length, tension, and harmonic number. The lab shows how a musical note is a physical standing wave.</p>
+          <div class="music-formula" role="img" aria-label="String frequency equals harmonic number divided by two times length times square root of tension divided by linear density">
+            <strong>f_n = n / (2L) x sqrt(T / mu)</strong>
+            <span>L = vibrating length, T = tension, mu = string mass per metre</span>
+          </div>
+          <div class="music-lab">
+            <div class="music-stage">
+              <canvas id="music-canvas" aria-label="Standing wave harmonics on a vibrating string"></canvas>
+            </div>
+            <div class="music-controls">
+              <div class="music-control">
+                <label for="music-length">String length</label>
+                <input id="music-length" type="range" min="40" max="100" value="70" />
+              </div>
+              <div class="music-control">
+                <label for="music-tension">Tension</label>
+                <input id="music-tension" type="range" min="40" max="160" value="100" />
+              </div>
+              <div class="music-control">
+                <label for="music-harmonic">Harmonic</label>
+                <select id="music-harmonic">
+                  <option value="1">1 - fundamental</option>
+                  <option value="2">2 - octave</option>
+                  <option value="3">3 - fifth color</option>
+                  <option value="4">4 - two octaves</option>
+                  <option value="5">5 - major third color</option>
+                  <option value="6">6 - bright overtone</option>
+                </select>
+              </div>
+            </div>
+            <div class="music-readouts">
+              <div class="music-stat"><span>Fundamental</span><strong id="music-r-f0">220 Hz</strong></div>
+              <div class="music-stat"><span>Selected</span><strong id="music-r-fn">220 Hz</strong></div>
+              <div class="music-stat"><span>Wavelength</span><strong id="music-r-wave">140 cm</strong></div>
+              <div class="music-stat"><span>Pattern</span><strong id="music-r-pattern">1 loop</strong></div>
+            </div>
+            <p class="music-sim-note" id="music-string-note">Model assumes a 0.005 kg/m string. Frequency rises with sqrt(tension) and falls in direct proportion to string length.</p>
+          </div>
+          <div class="music-prediction">
+            <h3>Predict, Test, Correct</h3>
+            <p>If the same string is shortened to half its length while tension stays the same, what should happen to the fundamental frequency?</p>
+            <div class="music-predict-buttons">
+              <button onclick="musicPredict('half-low')">It halves</button>
+              <button onclick="musicPredict('half-high')">It doubles</button>
+              <button onclick="musicPredict('same')">It stays the same</button>
+            </div>
+            <div class="music-answer" id="music-predict-answer"></div>
+          </div>
+        </section>
+
+        <section class="music-card" style="--card-accent:#ef4444;">
+          <h2>Scales: Ratios You Can Hear</h2>
+          <p>Ancient musicians noticed that simple frequency ratios sound especially stable. An octave is 2:1. A perfect fifth is 3:2. A perfect fourth is 4:3. These ratios were central to Pythagorean tuning, where a scale is built by stacking fifths.</p>
+          <p>But there is a catch: twelve pure fifths do not land exactly on seven pure octaves. The small mismatch is the <strong>Pythagorean comma</strong>. Tuning is therefore not only discovery; it is compromise.</p>
+          <h3>Equal temperament</h3>
+          <p>Modern pianos usually use <strong>12-tone equal temperament</strong>. The octave is divided into twelve equal frequency steps. Each semitone multiplies frequency by the same number:</p>
+          <div class="music-formula" role="img" aria-label="Equal temperament semitone ratio is the twelfth root of two">
+            <strong>semitone ratio = 2^(1/12) ~= 1.05946</strong>
+            <span>after 12 steps: (2^(1/12))^12 = 2, exactly one octave</span>
+          </div>
+          <p>Equal temperament slightly detunes the pure ratios so that instruments can play in every key. It trades perfect local purity for global freedom.</p>
+          <div class="music-lab">
+            <div class="music-lab-title">
+              <div>
+                <h3>Comparative Listening</h3>
+                <p>Each button plays two notes together. Listen for smoothness, roughness, and beating as the ratios shift.</p>
+              </div>
+            </div>
+            <div class="music-mode-grid">
+              <button class="music-mode-btn" onclick="playInterval(3/2,'Pure fifth')"><strong>Pure fifth</strong><small>3:2, very stable</small></button>
+              <button class="music-mode-btn" onclick="playInterval(Math.pow(2,7/12),'Equal fifth')"><strong>Equal fifth</strong><small>12-TET compromise</small></button>
+              <button class="music-mode-btn" onclick="playInterval(81/64,'Pythagorean third')"><strong>Pythagorean</strong><small>bright stacked fifths</small></button>
+              <button class="music-mode-btn" onclick="playInterval(5/4,'Just third')"><strong>Just intonation</strong><small>simple 5:4 ratio</small></button>
+              <button class="music-mode-btn" onclick="playBeating()"><strong>Beating</strong><small>440 Hz vs 444 Hz</small></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="music-card" style="--card-accent:#f97316;">
+          <h2>Interference and Resonance</h2>
+          <p>When two waves overlap, they add. Crest plus crest makes constructive interference. Crest plus trough makes destructive interference. Resonance happens when a system is driven near its natural frequency, so energy builds instead of canceling away.</p>
+          <div class="music-lab">
+            <div class="music-lab-title">
+              <div>
+                <h3>Two-Wave Interference and Resonance Game</h3>
+                <p>Move the phase slider to turn addition into cancellation. Then hunt for the resonant frequency where the response meter grows largest.</p>
+              </div>
+            </div>
+            <div class="music-stage">
+              <canvas id="interference-canvas" aria-label="Two wave interference visualizer"></canvas>
+            </div>
+            <div class="music-controls">
+              <div class="music-control"><label for="phase-slider">Phase</label><input id="phase-slider" type="range" min="0" max="628" value="0" /></div>
+              <div class="music-control"><label for="drive-slider">Drive frequency</label><input id="drive-slider" type="range" min="100" max="700" value="260" /></div>
+              <div class="music-control"><label>Resonance response</label><strong id="resonance-readout" style="color:#f8fafc;">0%</strong></div>
+            </div>
+            <p class="music-sim-note">Orange curve uses the driven oscillator response A = 1 / sqrt((1 - r^2)^2 + (2 zeta r)^2), with r = drive frequency / natural frequency.</p>
+          </div>
+          <div class="music-grid">
+            <div class="music-mini"><strong>Sympathetic vibration</strong><small>One tuned object can make another vibrate without touching it, like an open guitar string responding to a matching note.</small></div>
+            <div class="music-mini"><strong>Feedback</strong><small>A microphone hears a speaker, sends that signal back into the speaker, and resonance grows into a squeal.</small></div>
+            <div class="music-mini"><strong>Room acoustics</strong><small>Walls reflect waves. Some frequencies build up, some cancel, and every room gets its own tone color.</small></div>
+            <div class="music-mini"><strong>EQ</strong><small>Equalizers reshape the spectrum by boosting or cutting selected frequency bands.</small></div>
+          </div>
+        </section>
+
+        <section class="music-card" style="--card-accent:#0ea5e9;">
+          <h2>Real Instrument Physics</h2>
+          <div class="music-instrument-grid">
+            <div class="music-cutaway"><div class="music-icon">🎸</div><strong>Guitar string</strong><small>Length, tension, and mass set the pitch; the wooden body amplifies the air motion.</small></div>
+            <div class="music-cutaway"><div class="music-icon">🎹</div><strong>Piano hammer</strong><small>A felt hammer strikes a string, then escapes so the string can ring freely.</small></div>
+            <div class="music-cutaway"><div class="music-icon">🎺</div><strong>Brass column</strong><small>Lips buzz into a tube. Valves change tube length and select standing air waves.</small></div>
+            <div class="music-cutaway"><div class="music-icon">🎷</div><strong>Reed oscillation</strong><small>A reed opens and closes rapidly, chopping airflow into pressure pulses.</small></div>
+            <div class="music-cutaway"><div class="music-icon">🥁</div><strong>Drum membrane</strong><small>A circular skin vibrates in complex two-dimensional modes, not just one line.</small></div>
+            <div class="music-cutaway"><div class="music-icon">🗣</div><strong>Vocal folds</strong><small>Air pressure from lungs drives folds into self-sustaining oscillation; mouth shape filters the spectrum.</small></div>
+          </div>
+        </section>
+
+        <section class="music-card" style="--card-accent:#84cc16;">
+          <h2>Touchable Experiments</h2>
+          <div class="music-experiment-grid">
+            <div class="music-experiment"><strong>Rubber band shoebox guitar</strong><small>Stretch bands over a box. Change length and tension, then predict pitch changes before plucking.</small></div>
+            <div class="music-experiment"><strong>Water glass resonance</strong><small>Tap glasses with different water levels and compare pitch using your ears or a phone analyzer.</small></div>
+            <div class="music-experiment"><strong>Tuning fork in water</strong><small>Strike a fork and dip it in water to reveal invisible vibration as splashes.</small></div>
+            <div class="music-experiment"><strong>Straw pan flute</strong><small>Cut straws to different lengths. Shorter air columns produce higher notes.</small></div>
+            <div class="music-experiment"><strong>Desk-edge ruler</strong><small>Let more or less ruler hang off the desk. Predict pitch before flicking it.</small></div>
+            <div class="music-experiment"><strong>Phone spectrum activity</strong><small>Use a spectrum analyzer app to compare voice, whistle, clap, instrument, and room noise.</small></div>
+          </div>
+        </section>
+
+        <section class="music-card" style="--card-accent:#ec4899;">
+          <h2>Music in the Body</h2>
+          <div class="music-bio-grid">
+            <div class="music-bio"><strong>Cochlea map</strong><small>The inner ear is tonotopic: high frequencies peak near the base, low frequencies deeper inside.</small></div>
+            <div class="music-bio"><strong>Beating</strong><small>Close frequencies interfere slowly, creating a pulsing loud-soft pattern your brain notices.</small></div>
+            <div class="music-bio"><strong>Dissonance</strong><small>Roughness often comes from partials that are close enough to beat but not close enough to fuse.</small></div>
+            <div class="music-bio"><strong>Binaural effects</strong><small>Your brain compares timing and loudness between ears to locate sound in space.</small></div>
+            <div class="music-bio"><strong>Bass feels physical</strong><small>Low frequencies have long wavelengths and can move enough air to be felt through the body.</small></div>
+            <div class="music-bio"><strong>Psychoacoustics</strong><small>Hearing is not a microphone. The brain predicts, groups, masks, and interprets sound.</small></div>
+          </div>
+        </section>
+
+        <section class="music-card" style="--card-accent:#a855f7;">
+          <h2>History: Music Technology as Physics Knowledge</h2>
+          <div class="music-timeline">
+            <div class="music-era"><time>c. 500 BCE</time><div><strong>Pythagoras</strong><small>Simple ratios connect string length, pitch, and consonance.</small></div></div>
+            <div class="music-era"><time>Middle Ages</time><div><strong>Gregorian chant</strong><small>Modal systems organize melody before modern major-minor harmony.</small></div></div>
+            <div class="music-era"><time>1700s</time><div><strong>Bach and well temperament</strong><small>Keyboard tuning becomes flexible enough to move through every key.</small></div></div>
+            <div class="music-era"><time>1800s</time><div><strong>Helmholtz acoustics</strong><small>Resonators and physiology connect tone color, hearing, and harmonic content.</small></div></div>
+            <div class="music-era"><time>1800s</time><div><strong>Fourier analysis</strong><small>Complex waves can be decomposed into simple sine components.</small></div></div>
+            <div class="music-era"><time>1900s</time><div><strong>Analog synthesis</strong><small>Oscillators, filters, and envelopes turn circuits into instruments.</small></div></div>
+            <div class="music-era"><time>Late 1900s</time><div><strong>Digital sampling</strong><small>Sound becomes data: recorded, chopped, stretched, and transformed.</small></div></div>
+            <div class="music-era"><time>Today</time><div><strong>DAWs and FFTs</strong><small>Modern studios display waveforms and spectra as everyday creative tools.</small></div></div>
+          </div>
+        </section>
+
+        <section class="music-card" style="--card-accent:#8b5cf6;">
+          <h2>Music of the Spheres</h2>
+          <p>The ancient phrase <strong>music of the spheres</strong> did not mean planets literally made audible songs in space. It meant the cosmos seemed to obey the same deep logic as music: proportion, cycle, resonance, and ordered motion.</p>
+          <p>That idea still has scientific descendants. Planets orbit periodically. Atoms absorb and emit only certain frequencies. Stars ring with pressure waves that reveal their interiors. Gravitational waves are spacetime oscillations. Quantum fields are often described through modes, frequencies, and vibrations.</p>
+          <div class="music-grid">
+            <div class="music-mini"><strong>Pulsars</strong><small>Rapidly spinning neutron stars produce clock-like pulses that can be shifted into audible rhythms.</small></div>
+            <div class="music-mini"><strong>Black hole sonification</strong><small>X-ray and telescope data can be mapped into pitch and loudness so patterns become listenable.</small></div>
+            <div class="music-mini"><strong>Stellar oscillations</strong><small>Asteroseismology studies star vibrations to infer size, age, and interior structure.</small></div>
+            <div class="music-mini"><strong>Gravitational wave chirps</strong><small>Merging black holes create a rising frequency sweep as spacetime itself oscillates.</small></div>
+          </div>
+          <div class="music-callout"><strong>Big idea:</strong> the universe is full of oscillators. Music is one human-scale doorway into a much larger pattern: nature stores, moves, and transforms energy through waves.</div>
+        </section>
+
+        <section class="music-card" style="--card-accent:#0ea5e9;">
+          <h2>Practice Problems</h2>
+          <div class="music-practice">
+            <div class="music-problem">
+              <p><span class="diff-easy">Easy</span>1. A note at 220 Hz is raised one octave. What is the new frequency?</p>
+              <div class="music-row">
+                <input type="number" class="music-input" id="music-ans-1" placeholder="Hz" />
+                <button class="music-btn" onclick="musicCheck(1,440,0.5)">Check</button>
+                <span class="music-feedback" id="music-fb-1"></span>
+              </div>
+              <div class="music-hint" id="music-hint-1">An octave has a 2:1 ratio, so double 220 Hz.</div>
+            </div>
+            <div class="music-problem">
+              <p><span class="diff-easy">Easy</span>2. A perfect fifth above 200 Hz has ratio 3:2. What frequency is it?</p>
+              <div class="music-row">
+                <input type="number" class="music-input" id="music-ans-2" placeholder="Hz" />
+                <button class="music-btn" onclick="musicCheck(2,300,0.5)">Check</button>
+                <span class="music-feedback" id="music-fb-2"></span>
+              </div>
+              <div class="music-hint" id="music-hint-2">Multiply 200 by 3/2.</div>
+            </div>
+            <div class="music-problem">
+              <p><span class="diff-mid">Medium</span>3. In equal temperament, one semitone multiplies frequency by about 1.05946. About what is one semitone above 440 Hz?</p>
+              <div class="music-row">
+                <input type="number" class="music-input" id="music-ans-3" placeholder="Hz" />
+                <button class="music-btn" onclick="musicCheck(3,466.16,0.5)">Check</button>
+                <span class="music-feedback" id="music-fb-3"></span>
+              </div>
+              <div class="music-hint" id="music-hint-3">440 x 1.05946 = about 466.16 Hz.</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson controls">
+      <div class="ll-panel-section">
+        <span class="ll-panel-label">Sections</span>
+        <button class="ll-tab active" data-ll-target="0">Sound</button>
+        <button class="ll-tab" data-ll-target="1">Scope</button>
+        <button class="ll-tab" data-ll-target="2">Harmonics</button>
+        <button class="ll-tab" data-ll-target="3">String Lab</button>
+        <button class="ll-tab" data-ll-target="4">Tuning</button>
+        <button class="ll-tab" data-ll-target="5">Resonance</button>
+        <button class="ll-tab" data-ll-target="6">Instruments</button>
+        <button class="ll-tab" data-ll-target="7">Experiments</button>
+        <button class="ll-tab" data-ll-target="8">Body</button>
+        <button class="ll-tab" data-ll-target="9">History</button>
+        <button class="ll-tab" data-ll-target="10">Spheres</button>
+        <button class="ll-tab" data-ll-target="11">Practice</button>
+      </div>
+      <div class="ll-panel-section">
+        <span class="ll-panel-label">Big Ideas</span>
+        <p class="ll-panel-note">Vibration becomes sound. Simple ratios become consonance. Equal temperament is an engineered compromise that lets music move freely through keys.</p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function() {
+  let audioCtx = null;
+  let sourceNode = null;
+  let gainNode = null;
+  let analyser = null;
+  let micStream = null;
+  let noiseTimer = null;
+  let activeWave = 'sine';
+  const scopeCanvas = document.getElementById('scope-canvas');
+  const spectrumCanvas = document.getElementById('spectrum-canvas');
+  const scopeCtx = scopeCanvas.getContext('2d');
+  const spectrumCtx = spectrumCanvas.getContext('2d');
+  const scopeLabel = document.getElementById('scope-label');
+  const waveButtons = Array.from(document.querySelectorAll('[data-wave]'));
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.78;
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0.16;
+      gainNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function stopAudio() {
+    if (sourceNode) {
+      try { sourceNode.stop && sourceNode.stop(); } catch (e) {}
+      try { sourceNode.disconnect(); } catch (e) {}
+      sourceNode = null;
+    }
+    if (noiseTimer) {
+      clearInterval(noiseTimer);
+      noiseTimer = null;
+    }
+    if (micStream) {
+      micStream.getTracks().forEach((track) => track.stop());
+      micStream = null;
+    }
+  }
+
+  function makeNoiseNode(ctx) {
+    const bufferSize = 2 * ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    noise.loop = true;
+    return noise;
+  }
+
+  function harmonicAmplitudes(wave) {
+    const amps = [];
+    for (let n = 1; n <= 16; n++) {
+      let amp = 0;
+      if (wave === 'sine') amp = n === 1 ? 1 : 0;
+      if (wave === 'square') amp = n % 2 ? 1 / n : 0;
+      if (wave === 'sawtooth') amp = 1 / n;
+      if (wave === 'triangle') amp = n % 2 ? 1 / (n * n) : 0;
+      amps.push({ harmonic: n, amp });
+    }
+    return amps;
+  }
+
+  function playWave(wave) {
+    ensureAudio();
+    stopAudio();
+    activeWave = wave;
+    scopeLabel.textContent = wave;
+    if (wave === 'noise') {
+      sourceNode = makeNoiseNode(audioCtx);
+    } else {
+      sourceNode = audioCtx.createOscillator();
+      sourceNode.type = wave;
+      sourceNode.frequency.value = 220;
+    }
+    sourceNode.connect(gainNode);
+    sourceNode.start();
+  }
+
+  async function useMic() {
+    ensureAudio();
+    stopAudio();
+    scopeLabel.textContent = 'microphone';
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Microphone API unavailable');
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      sourceNode = audioCtx.createMediaStreamSource(micStream);
+      sourceNode.connect(analyser);
+    } catch (error) {
+      scopeLabel.textContent = 'mic unavailable';
+    }
+  }
+
+  function sizeCanvas(c, ctx) {
+    const rect = c.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    c.width = Math.max(1, Math.round(rect.width * dpr));
+    c.height = Math.max(1, Math.round(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function drawScopeFallback(ctx, w, h, wave) {
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+      const p = x / w;
+      let y = Math.sin(p * Math.PI * 4);
+      if (wave === 'square') y = y >= 0 ? 0.72 : -0.72;
+      if (wave === 'sawtooth') y = 2 * (p * 4 - Math.floor(0.5 + p * 4));
+      if (wave === 'triangle') y = (2 / Math.PI) * Math.asin(Math.sin(p * Math.PI * 4));
+      if (wave === 'noise') y = Math.sin(x * 19.17) * Math.sin(x * 0.71);
+      const py = h * 0.5 + y * h * 0.32;
+      if (x === 0) ctx.moveTo(x, py);
+      else ctx.lineTo(x, py);
+    }
+    ctx.stroke();
+  }
+
+  function drawGrid(ctx, w, h, axisY) {
+    ctx.strokeStyle = 'rgba(148,163,184,0.16)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= w; x += Math.max(40, w / 8)) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= h; y += Math.max(36, h / 5)) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(226,232,240,0.32)';
+    ctx.beginPath();
+    ctx.moveTo(0, axisY);
+    ctx.lineTo(w, axisY);
+    ctx.stroke();
+  }
+
+  function drawTriggeredWaveform(timeData, w, h) {
+    const center = 128;
+    let start = 0;
+    for (let i = 1; i < timeData.length - 1; i++) {
+      if (timeData[i - 1] < center && timeData[i] >= center && timeData[i + 1] > timeData[i]) {
+        start = i;
+        break;
+      }
+    }
+    const usable = Math.min(timeData.length - start, Math.floor(timeData.length * 0.55));
+    scopeCtx.beginPath();
+    for (let i = 0; i < usable; i++) {
+      const x = i / (usable - 1) * w;
+      const normalized = (timeData[start + i] - 128) / 128;
+      const y = h * 0.5 + normalized * h * 0.38;
+      if (i === 0) scopeCtx.moveTo(x, y);
+      else scopeCtx.lineTo(x, y);
+    }
+    scopeCtx.stroke();
+  }
+
+  function drawLogSpectrum(freqData, w, h) {
+    const minHz = 40;
+    const maxHz = 8000;
+    const sampleRate = audioCtx ? audioCtx.sampleRate : 44100;
+    const nyquist = sampleRate / 2;
+    const bars = 92;
+    for (let i = 0; i < bars; i++) {
+      const a = i / bars;
+      const b = (i + 1) / bars;
+      const lowHz = minHz * Math.pow(maxHz / minHz, a);
+      const highHz = minHz * Math.pow(maxHz / minHz, b);
+      const lowBin = Math.max(0, Math.floor(lowHz / nyquist * freqData.length));
+      const highBin = Math.min(freqData.length - 1, Math.ceil(highHz / nyquist * freqData.length));
+      let peak = 0;
+      for (let j = lowBin; j <= highBin; j++) peak = Math.max(peak, freqData[j]);
+      const val = Math.pow(peak / 255, 0.72);
+      const bh = val * (h - 34);
+      spectrumCtx.fillStyle = `hsl(${174 + val * 42}, 82%, ${40 + val * 28}%)`;
+      spectrumCtx.fillRect(i * w / bars, h - bh - 18, Math.max(1, w / bars - 2), bh);
+    }
+    spectrumCtx.fillStyle = '#94a3b8';
+    spectrumCtx.font = '700 10px Inter, sans-serif';
+    [
+      [100, '100 Hz'],
+      [1000, '1 kHz'],
+      [5000, '5 kHz']
+    ].forEach(([hz, label]) => {
+      const x = Math.log(hz / minHz) / Math.log(maxHz / minHz) * w;
+      spectrumCtx.fillText(label, x + 3, h - 4);
+      spectrumCtx.fillRect(x, h - 18, 1, 5);
+    });
+  }
+
+  function drawIdealSpectrum(w, h, wave) {
+    if (wave === 'noise') {
+      for (let i = 0; i < 96; i++) {
+        const pseudo = (Math.sin(i * 78.233) * 43758.5453) % 1;
+        const val = 0.28 + Math.abs(pseudo) * 0.62;
+        spectrumCtx.fillStyle = '#5eead4';
+        spectrumCtx.fillRect(i * w / 96, h - val * (h - 34) - 18, Math.max(1, w / 96 - 2), val * (h - 34));
+      }
+      return;
+    }
+    harmonicAmplitudes(wave).forEach(({ harmonic, amp }) => {
+      if (!amp) return;
+      const x = harmonic / 17 * w;
+      const bh = Math.min(1, amp) * (h - 36);
+      spectrumCtx.fillStyle = harmonic === 1 ? '#f59e0b' : '#5eead4';
+      spectrumCtx.fillRect(x, h - bh - 18, 10, bh);
+      spectrumCtx.fillStyle = '#94a3b8';
+      spectrumCtx.font = '700 10px Inter, sans-serif';
+      spectrumCtx.fillText(`${harmonic}f`, x - 2, h - 4);
+    });
+  }
+
+  function drawAudioPanels() {
+    sizeCanvas(scopeCanvas, scopeCtx);
+    sizeCanvas(spectrumCanvas, spectrumCtx);
+    const sw = scopeCanvas.clientWidth;
+    const sh = scopeCanvas.clientHeight;
+    const fw = spectrumCanvas.clientWidth;
+    const fh = spectrumCanvas.clientHeight;
+    scopeCtx.clearRect(0, 0, sw, sh);
+    spectrumCtx.clearRect(0, 0, fw, fh);
+    scopeCtx.fillStyle = '#020617';
+    spectrumCtx.fillStyle = '#020617';
+    scopeCtx.fillRect(0, 0, sw, sh);
+    spectrumCtx.fillRect(0, 0, fw, fh);
+    drawGrid(scopeCtx, sw, sh, sh / 2);
+    scopeCtx.strokeStyle = '#5eead4';
+    scopeCtx.lineWidth = 3;
+
+    if (analyser && audioCtx) {
+      const timeData = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(timeData);
+      drawTriggeredWaveform(timeData, sw, sh);
+      const freqData = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(freqData);
+      drawLogSpectrum(freqData, fw, fh);
+    } else {
+      drawScopeFallback(scopeCtx, sw, sh, activeWave);
+      drawIdealSpectrum(fw, fh, activeWave);
+    }
+    spectrumCtx.fillStyle = '#94a3b8';
+    spectrumCtx.font = '700 11px Inter, sans-serif';
+    spectrumCtx.fillText(analyser && audioCtx ? 'log frequency axis' : 'ideal harmonic amplitudes', 10, 16);
+    spectrumCtx.fillText('level', Math.max(90, fw * 0.72), 16);
+    requestAnimationFrame(drawAudioPanels);
+  }
+
+  waveButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      waveButtons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeWave = btn.dataset.wave;
+      scopeLabel.textContent = activeWave;
+      if (sourceNode) playWave(activeWave);
+    });
+  });
+  document.getElementById('audio-play').addEventListener('click', () => playWave(activeWave));
+  document.getElementById('audio-stop').addEventListener('click', stopAudio);
+  document.getElementById('audio-mic').addEventListener('click', useMic);
+  drawAudioPanels();
+
+  const canvas = document.getElementById('music-canvas');
+  const ctx = canvas.getContext('2d');
+  const length = document.getElementById('music-length');
+  const tension = document.getElementById('music-tension');
+  const harmonic = document.getElementById('music-harmonic');
+  const rF0 = document.getElementById('music-r-f0');
+  const rFn = document.getElementById('music-r-fn');
+  const rWave = document.getElementById('music-r-wave');
+  const rPattern = document.getElementById('music-r-pattern');
+  let t = 0;
+
+  function size() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function draw() {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    const L = Number(length.value) / 100;
+    const T = Number(tension.value);
+    const n = Number(harmonic.value);
+    const mu = 0.005;
+    const waveSpeed = Math.sqrt(T / mu);
+    const f0 = waveSpeed / (2 * L);
+    const fn = f0 * n;
+    const wavelength = (2 * L / n) * 100;
+    const left = 38;
+    const right = w - 38;
+    const mid = h * 0.52;
+    const amp = Math.min(46, h * 0.22) / Math.sqrt(n);
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#020617';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(148,163,184,0.25)';
+    ctx.lineWidth = 1;
+    for (let y = 36; y < h; y += 42) {
+      ctx.beginPath();
+      ctx.moveTo(20, y);
+      ctx.lineTo(w - 20, y);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = 'rgba(20,184,166,0.28)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i <= n; i++) {
+      const x = left + (right - left) * (i / n);
+      ctx.beginPath();
+      ctx.moveTo(x, mid - amp - 22);
+      ctx.lineTo(x, mid + amp + 22);
+      ctx.stroke();
+      ctx.fillStyle = i === 0 || i === n ? '#f8fafc' : '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(x, mid, i === 0 || i === n ? 5 : 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    for (let i = 0; i <= 220; i++) {
+      const p = i / 220;
+      const x = left + (right - left) * p;
+      const y = mid + Math.sin(p * Math.PI * n) * Math.cos(t * 0.045 * n) * amp;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = '#5eead4';
+    ctx.lineWidth = 4;
+    ctx.shadowColor = 'rgba(45,212,191,0.65)';
+    ctx.shadowBlur = 14;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = 'rgba(226,232,240,0.72)';
+    ctx.font = '700 12px Inter, sans-serif';
+    ctx.fillText('fixed end', left - 24, mid + 30);
+    ctx.fillText('fixed end', right - 28, mid + 30);
+    ctx.fillText(`T = ${T.toFixed(0)} N`, left, 26);
+    ctx.fillText(`mu = ${mu.toFixed(3)} kg/m`, left + 90, 26);
+    ctx.fillText(`v = ${waveSpeed.toFixed(0)} m/s`, left + 225, 26);
+
+    rF0.textContent = `${Math.round(f0)} Hz`;
+    rFn.textContent = `${Math.round(fn)} Hz`;
+    rWave.textContent = `${Math.round(wavelength)} cm`;
+    rPattern.textContent = `${n} ${n === 1 ? 'loop' : 'loops'}`;
+
+    t += 1;
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', size);
+  size();
+  draw();
+
+  const interferenceCanvas = document.getElementById('interference-canvas');
+  const interferenceCtx = interferenceCanvas.getContext('2d');
+  const phaseSlider = document.getElementById('phase-slider');
+  const driveSlider = document.getElementById('drive-slider');
+  const resonanceReadout = document.getElementById('resonance-readout');
+  const NATURAL_FREQ = 432;
+  const DAMPING = 0.08;
+
+  function oscillatorResponse(freq) {
+    const r = freq / NATURAL_FREQ;
+    const denominator = Math.sqrt((1 - r * r) ** 2 + (2 * DAMPING * r) ** 2);
+    const peak = 1 / (2 * DAMPING);
+    return Math.min(1, (1 / denominator) / peak);
+  }
+
+  function drawInterference() {
+    sizeCanvas(interferenceCanvas, interferenceCtx);
+    const w = interferenceCanvas.clientWidth;
+    const h = interferenceCanvas.clientHeight;
+    const phase = Number(phaseSlider.value) / 100;
+    const drive = Number(driveSlider.value);
+    const response = oscillatorResponse(drive);
+    const topH = h * 0.55;
+    const bottomTop = h * 0.62;
+    const bottomH = h * 0.3;
+    interferenceCtx.clearRect(0, 0, w, h);
+    interferenceCtx.fillStyle = '#020617';
+    interferenceCtx.fillRect(0, 0, w, h);
+    interferenceCtx.strokeStyle = 'rgba(148,163,184,0.22)';
+    interferenceCtx.beginPath();
+    interferenceCtx.moveTo(0, topH / 2);
+    interferenceCtx.lineTo(w, topH / 2);
+    interferenceCtx.moveTo(0, bottomTop + bottomH);
+    interferenceCtx.lineTo(w, bottomTop + bottomH);
+    interferenceCtx.stroke();
+    function wave(color, offset, amp) {
+      interferenceCtx.beginPath();
+      for (let x = 0; x < w; x++) {
+        const y = topH / 2 + Math.sin(x * 0.035 + offset + t * 0.035) * amp;
+        if (x === 0) interferenceCtx.moveTo(x, y);
+        else interferenceCtx.lineTo(x, y);
+      }
+      interferenceCtx.strokeStyle = color;
+      interferenceCtx.lineWidth = 2;
+      interferenceCtx.stroke();
+    }
+    wave('rgba(96,165,250,0.75)', 0, 32);
+    wave('rgba(248,113,113,0.75)', phase, 32);
+    interferenceCtx.beginPath();
+    for (let x = 0; x < w; x++) {
+      const y1 = Math.sin(x * 0.035 + t * 0.035);
+      const y2 = Math.sin(x * 0.035 + phase + t * 0.035);
+      const y = topH / 2 + (y1 + y2) * 24;
+      if (x === 0) interferenceCtx.moveTo(x, y);
+      else interferenceCtx.lineTo(x, y);
+    }
+    interferenceCtx.strokeStyle = '#f59e0b';
+    interferenceCtx.lineWidth = 4;
+    interferenceCtx.stroke();
+
+    interferenceCtx.beginPath();
+    for (let x = 0; x < w; x++) {
+      const freq = 100 + (x / w) * 600;
+      const amp = oscillatorResponse(freq);
+      const y = bottomTop + bottomH - amp * bottomH;
+      if (x === 0) interferenceCtx.moveTo(x, y);
+      else interferenceCtx.lineTo(x, y);
+    }
+    interferenceCtx.strokeStyle = '#f59e0b';
+    interferenceCtx.lineWidth = 3;
+    interferenceCtx.stroke();
+    const driveX = ((drive - 100) / 600) * w;
+    const driveY = bottomTop + bottomH - response * bottomH;
+    interferenceCtx.fillStyle = '#5eead4';
+    interferenceCtx.beginPath();
+    interferenceCtx.arc(driveX, driveY, 6, 0, Math.PI * 2);
+    interferenceCtx.fill();
+    interferenceCtx.fillStyle = '#94a3b8';
+    interferenceCtx.font = '700 11px Inter, sans-serif';
+    interferenceCtx.fillText('wave addition: blue + red = orange', 12, 18);
+    interferenceCtx.fillText(`resonance curve, natural frequency ${NATURAL_FREQ} Hz`, 12, bottomTop - 8);
+    resonanceReadout.textContent = `${Math.round(response * 100)}% at ${drive} Hz`;
+    requestAnimationFrame(drawInterference);
+  }
+  drawInterference();
+
+  window.musicCheck = function(n, answer, tol) {
+    const input = document.getElementById(`music-ans-${n}`);
+    const fb = document.getElementById(`music-fb-${n}`);
+    const hint = document.getElementById(`music-hint-${n}`);
+    const value = parseFloat(input.value);
+    if (Number.isNaN(value)) {
+      fb.textContent = 'Enter a number.';
+      fb.className = 'music-feedback err';
+      return;
+    }
+    if (Math.abs(value - answer) <= tol) {
+      fb.textContent = 'Correct.';
+      fb.className = 'music-feedback ok';
+    } else {
+      fb.textContent = 'Try again.';
+      fb.className = 'music-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+
+  window.musicPredict = function(choice) {
+    const answer = document.getElementById('music-predict-answer');
+    if (choice === 'half-high') {
+      answer.textContent = 'Correct. Frequency is inversely proportional to string length, so half the length gives twice the frequency.';
+    } else {
+      answer.textContent = 'Not quite. Shorter string means shorter wavelength; with the same wave speed, frequency rises. Half length gives double frequency.';
+    }
+  };
+
+  window.playInterval = function(ratio, label) {
+    ensureAudio();
+    const now = audioCtx.currentTime;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.12, now + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 2.2);
+    g.connect(analyser);
+    [220, 220 * ratio].forEach((freq) => {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(g);
+      osc.start(now);
+      osc.stop(now + 2.25);
+    });
+    scopeLabel.textContent = label;
+  };
+
+  window.playBeating = function() {
+    ensureAudio();
+    const now = audioCtx.currentTime;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.12, now + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 3.2);
+    g.connect(analyser);
+    [440, 444].forEach((freq) => {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(g);
+      osc.start(now);
+      osc.stop(now + 3.25);
+    });
+    scopeLabel.textContent = 'beating';
+  };
+})();
+</script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
