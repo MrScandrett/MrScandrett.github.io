@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chess: Origins and How to Play · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Learn where chess came from, how the board is set up, how each piece moves, and the core goal of checkmate." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── Theme tokens ────────────────────────────────────────── */
+    .ll-viewport {
+      --ll-panel-w: 310px;
+      --ll-accent: #0f766e;
+      --ll-tab-active: #0d9488;
+      --ll-tab-active-bg: rgba(13, 148, 136, 0.12);
+    }
+
+    /* ── Sim background ──────────────────────────────────────── */
+    .ll-sim {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.90), rgba(245,248,250,0.96)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cpath d='M16 0v96M48 0v96M80 0v96M0 16h96M0 48h96M0 80h96' stroke='%23c7d2de' stroke-width='1' opacity='.26'/%3E%3C/svg%3E");
+    }
+
+    /* ── Page scaffold ───────────────────────────────────────── */
+    .ch-page {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 1rem 3rem;
+    }
+
+    /* ── Hero ────────────────────────────────────────────────── */
+    .ch-hero { padding: 0.5rem 0 1.4rem; }
+    .ch-hero h1 { font-size: clamp(1.55rem, 3.5vw, 2.35rem); margin: 0.25rem 0 0.5rem; }
+    .ch-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.65rem;
+      margin: 0.55rem 0 0;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+    .ch-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; display: inline-block; align-self: center; }
+    .ch-lede { margin: 0.7rem 0 0; max-width: 70ch; color: #3f4f65; font-size: 0.95rem; line-height: 1.6; }
+
+    /* ── Card ────────────────────────────────────────────────── */
+    .ch-card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-left: 3.5px solid var(--ch-accent, #0f766e);
+      border-radius: 16px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+      padding: 1.2rem 1.35rem;
+      margin-bottom: 1rem;
+    }
+    .ch-card h2 { margin: 0 0 0.5rem; font-size: 1.2rem; }
+    .ch-card h3 { margin: 0.8rem 0 0.25rem; font-size: 1rem; }
+    .ch-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .ch-card p:last-child { margin-bottom: 0; }
+
+    /* ── Section label ───────────────────────────────────────── */
+    .ch-section-label {
+      display: inline-block;
+      margin-bottom: 0.35rem;
+      font-weight: 900;
+      color: #0f766e;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+    }
+
+    /* ── Intro grid ──────────────────────────────────────────── */
+    .ch-intro-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(270px, 0.85fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    /* ── Origin fact list ────────────────────────────────────── */
+    .ch-fact-list {
+      margin: 0.5rem 0 0;
+      padding-left: 1.1rem;
+      color: #3f4f65;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+    .ch-fact-list li { margin-bottom: 0.35rem; }
+
+    /* ── Setup rank ──────────────────────────────────────────── */
+    .ch-setup { display: grid; gap: 0.65rem; margin-top: 0.75rem; }
+    .ch-rank {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 0.65rem;
+      align-items: center;
+      padding: 0.6rem 0.75rem;
+      border-radius: 10px;
+      background: #f7fafc;
+      border: 1px solid #e3eaf1;
+    }
+    .ch-rank strong { color: #18212f; font-size: 0.85rem; }
+    .ch-pieces {
+      font-size: clamp(1.2rem, 3.2vw, 1.75rem);
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+
+    /* ── Lab grid ────────────────────────────────────────────── */
+    .ch-lab-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    /* ── Board ───────────────────────────────────────────────── */
+    .ch-board-wrap { display: grid; gap: 0.65rem; justify-items: center; }
+    .ch-board {
+      width: min(100%, 520px);
+      aspect-ratio: 1 / 1;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      border: 7px solid #4b3324;
+      border-radius: 8px;
+      box-shadow: 0 18px 40px rgba(24,33,47,0.22);
+      overflow: hidden;
+      background: #4b3324;
+    }
+    .ch-square {
+      border: 0;
+      display: grid;
+      place-items: center;
+      font-size: clamp(1.1rem, 5vw, 2.7rem);
+      color: #101827;
+      position: relative;
+      cursor: pointer;
+      min-width: 0;
+      min-height: 0;
+      transition: background 80ms ease;
+    }
+    .ch-square.light { background: #f0d9b5; }
+    .ch-square.dark  { background: #b58863; color: #fff8ec; }
+    .ch-square.origin { outline: 4px solid rgba(13, 148, 136, 0.82); outline-offset: -4px; }
+    .ch-square.move::after {
+      content: "";
+      width: 30%;
+      aspect-ratio: 1/1;
+      border-radius: 50%;
+      background: rgba(13, 148, 136, 0.52);
+      box-shadow: 0 0 0 8px rgba(13, 148, 136, 0.1);
+    }
+    .ch-square.capture::after {
+      content: "";
+      position: absolute;
+      inset: 12%;
+      border: 4px solid rgba(220, 38, 38, 0.64);
+      border-radius: 50%;
+    }
+    .ch-square.light:hover:not(.origin) { background: #e8d0a8; }
+    .ch-square.dark:hover:not(.origin)  { background: #a07850; }
+
+    .ch-caption {
+      margin: 0;
+      color: #56657a;
+      font-size: 0.88rem;
+      text-align: center;
+      max-width: 520px;
+      line-height: 1.55;
+    }
+
+    /* ── Piece selector ──────────────────────────────────────── */
+    .ch-piece-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.45rem;
+      margin: 0.65rem 0 0;
+    }
+    .ch-piece-btn {
+      border: 1px solid #cdd6e0;
+      background: #fff;
+      border-radius: 10px;
+      min-height: 52px;
+      color: #18212f;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15rem;
+      transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+    }
+    .ch-piece-btn:hover {
+      transform: translateY(-1px);
+      border-color: #0f766e;
+      background: #f0fdfa;
+    }
+    .ch-piece-btn[aria-pressed="true"] {
+      background: #ccfbf1;
+      border-color: #0d9488;
+      color: #134e4a;
+    }
+    .ch-piece-btn span { font-size: 1.5rem; line-height: 1; }
+    .ch-piece-btn small { font-size: 0.7rem; font-weight: 700; }
+
+    .ch-reset-btn {
+      width: 100%;
+      margin-top: 0.85rem;
+      border: 1px solid #cdd6e0;
+      background: #fff;
+      border-radius: 10px;
+      min-height: 40px;
+      color: #18212f;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: border-color 150ms, background 150ms;
+    }
+    .ch-reset-btn:hover { border-color: #0f766e; background: #f0fdfa; }
+
+    /* ── Move count badge ────────────────────────────────────── */
+    .ch-move-stat {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .ch-stat {
+      flex: 1;
+      background: rgba(13,148,136,0.07);
+      border: 1px solid rgba(13,148,136,0.2);
+      border-radius: 8px;
+      padding: 0.45rem 0.6rem;
+      text-align: center;
+    }
+    .ch-stat-n { display: block; font-size: 1.15rem; font-weight: 800; color: #0f766e; font-variant-numeric: tabular-nums; }
+    .ch-stat-l { display: block; font-size: 0.67rem; color: #56657a; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.1rem; }
+
+    /* ── Rules grid ──────────────────────────────────────────── */
+    .ch-rules-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    /* ── History grid ────────────────────────────────────────── */
+    .ch-history-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    /* ── Special moves ───────────────────────────────────────── */
+    .ch-special-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 0.75rem;
+    }
+    .ch-special {
+      border: 1px solid #e3eaf1;
+      border-radius: 12px;
+      padding: 0.85rem 0.9rem;
+      background: rgba(13,148,136,0.04);
+    }
+    .ch-special strong { display: block; font-size: 0.88rem; margin-bottom: 0.2rem; color: #0f5c55; }
+    .ch-special small  { display: block; color: #56657a; font-size: 0.78rem; line-height: 1.55; }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    .ch-lesson-footer {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #dde3ea;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 860px) {
+      .ch-intro-grid, .ch-lab-grid { grid-template-columns: 1fr; }
+      .ch-history-grid { grid-template-columns: repeat(2, 1fr); }
+      .ch-rules-grid, .ch-special-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px) {
+      .ch-piece-grid { grid-template-columns: repeat(2, 1fr); }
+      .ch-rules-grid, .ch-special-grid { grid-template-columns: 1fr; }
+      .ch-history-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <main class="ll-sim" id="main-content">
+        <div class="ch-page">
+
+          <!-- ── Hero ─────────────────────────────────────── -->
+          <section class="ch-hero">
+            <p class="eyebrow">Strategy Games · History · How to Play</p>
+            <h1>Chess: Origins and How to Play</h1>
+            <div class="ch-meta">
+              <span>Origins in India</span><span class="dot"></span>
+              <span>Six Piece Types</span><span class="dot"></span>
+              <span>Checkmate Win Condition</span>
+            </div>
+            <p class="ch-lede">Trace chess from ancient India to the modern board, then use the interactive lab to explore piece movement, captures, check, and the goal of checkmate.</p>
+          </section>
+
+          <!-- ── Origin & Setup ────────────────────────────── -->
+          <div class="ch-intro-grid">
+            <article class="ch-card" style="--ch-accent:#0f766e;">
+              <span class="ch-section-label">History</span>
+              <h2>The Short Origin Story</h2>
+              <p>Chess began as a war-and-strategy game in ancient India, then changed as it traveled across continents and centuries.</p>
+              <ul class="ch-fact-list">
+                <li><strong>India — c. 6th century CE:</strong> An ancestor called <em>chaturanga</em> appears, representing infantry, cavalry, elephants, and chariots.</li>
+                <li><strong>Persia:</strong> The game becomes <em>shatranj</em>. The words <em>check</em> and <em>checkmate</em> descend from Persian and Arabic roots.</li>
+                <li><strong>Islamic world &amp; Europe:</strong> The game spreads along trade, scholarship, and conquest routes over several centuries.</li>
+                <li><strong>Late medieval Europe:</strong> The queen and bishop gain long-range movement, creating the fast, tactical game we play today.</li>
+              </ul>
+            </article>
+
+            <article class="ch-card" style="--ch-accent:#0d9488;">
+              <span class="ch-section-label">Board Setup</span>
+              <h2>Starting Position</h2>
+              <div class="ch-setup">
+                <div class="ch-rank">
+                  <strong>Back rank</strong>
+                  <div class="ch-pieces" aria-label="Rook knight bishop queen king bishop knight rook">♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜</div>
+                </div>
+                <div class="ch-rank">
+                  <strong>Pawns</strong>
+                  <div class="ch-pieces" aria-label="Eight pawns">♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟</div>
+                </div>
+              </div>
+              <p style="margin-top:0.75rem;">White's queen starts on a light square. Black's queen starts on a dark square. Memory trick: <strong>queen on her own color</strong>. The board corner nearest White's right hand is always a light square.</p>
+            </article>
+          </div>
+
+          <!-- ── Piece Movement Lab ─────────────────────────── -->
+          <section class="ch-card" style="--ch-accent:#0369a1; margin-top:1rem;">
+            <span class="ch-section-label">Interactive Lab</span>
+            <h2>Piece Movement Lab</h2>
+            <p>Pick a piece, then click any square to reposition it. Green dots show legal moves. Red rings show capture squares.</p>
+
+            <div class="ch-lab-grid" style="margin-top:0.9rem;">
+              <div class="ch-board-wrap">
+                <div class="ch-board" id="ch-board" role="grid" aria-label="Interactive chess movement board"></div>
+                <p class="ch-caption" id="ch-caption">The queen combines rook and bishop: any number of squares straight or diagonal.</p>
+              </div>
+
+              <aside>
+                <h3 style="margin:0 0 0.4rem; font-size:0.95rem;">Choose a Piece</h3>
+                <div class="ch-piece-grid" id="ch-piece-selector" aria-label="Choose a chess piece">
+                  <button class="ch-piece-btn" type="button" data-piece="queen"  aria-pressed="true"><span>♕</span><small>Queen</small></button>
+                  <button class="ch-piece-btn" type="button" data-piece="king"   aria-pressed="false"><span>♔</span><small>King</small></button>
+                  <button class="ch-piece-btn" type="button" data-piece="rook"   aria-pressed="false"><span>♖</span><small>Rook</small></button>
+                  <button class="ch-piece-btn" type="button" data-piece="bishop" aria-pressed="false"><span>♗</span><small>Bishop</small></button>
+                  <button class="ch-piece-btn" type="button" data-piece="knight" aria-pressed="false"><span>♘</span><small>Knight</small></button>
+                  <button class="ch-piece-btn" type="button" data-piece="pawn"   aria-pressed="false"><span>♙</span><small>Pawn</small></button>
+                </div>
+
+                <div class="ch-move-stat">
+                  <div class="ch-stat">
+                    <span class="ch-stat-n" id="ch-move-count">—</span>
+                    <span class="ch-stat-l">Reachable Squares</span>
+                  </div>
+                  <div class="ch-stat">
+                    <span class="ch-stat-n" id="ch-capture-count">—</span>
+                    <span class="ch-stat-l">Capture Squares</span>
+                  </div>
+                </div>
+
+                <button class="ch-reset-btn" id="ch-reset" type="button">Reset to Center</button>
+
+                <div style="margin-top:1rem; background:#f7fafc; border:1px solid #e3eaf1; border-radius:10px; padding:0.7rem 0.8rem;">
+                  <strong style="display:block; font-size:0.75rem; font-weight:800; color:#0f766e; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem;">Goal of the Game</strong>
+                  <p style="margin:0; font-size:0.82rem; color:#3f4f65; line-height:1.55;">Checkmate: the enemy king is under attack and has no legal escape. Capturing pieces helps, but checkmate is the only real win.</p>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <!-- ── How a Turn Works ──────────────────────────── -->
+          <section class="ch-card" style="--ch-accent:#7c3aed; margin-top:0.15rem;">
+            <span class="ch-section-label">Rules</span>
+            <h2>How a Turn Works</h2>
+            <p>White moves first. Players alternate. Each turn is one legal move by one piece.</p>
+            <div class="ch-rules-grid" style="margin-top:0.75rem;">
+              <div style="border:1px solid #e3eaf1; border-radius:12px; padding:0.9rem; background:rgba(124,58,237,0.04);">
+                <strong style="display:block; font-size:0.85rem; color:#6d28d9; margin-bottom:0.3rem;">1 · Move</strong>
+                <p style="margin:0; font-size:0.82rem; color:#3f4f65; line-height:1.55;">Move one piece legally. Pieces cannot jump over each other — except the knight, which is the unique exception.</p>
+              </div>
+              <div style="border:1px solid #e3eaf1; border-radius:12px; padding:0.9rem; background:rgba(124,58,237,0.04);">
+                <strong style="display:block; font-size:0.85rem; color:#6d28d9; margin-bottom:0.3rem;">2 · Capture</strong>
+                <p style="margin:0; font-size:0.82rem; color:#3f4f65; line-height:1.55;">Move onto an enemy piece's square to capture it. Pawns move forward but capture diagonally — the most unusual rule.</p>
+              </div>
+              <div style="border:1px solid #e3eaf1; border-radius:12px; padding:0.9rem; background:rgba(124,58,237,0.04);">
+                <strong style="display:block; font-size:0.85rem; color:#6d28d9; margin-bottom:0.3rem;">3 · Protect the King</strong>
+                <p style="margin:0; font-size:0.82rem; color:#3f4f65; line-height:1.55;">You may never leave your own king in check. If attacked, you must move the king, block the attack, or capture the attacker.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Special Moves ─────────────────────────────── -->
+          <section class="ch-card" style="--ch-accent:#ea580c; margin-top:0.15rem;">
+            <span class="ch-section-label">Special Rules</span>
+            <h2>Three Moves Worth Knowing</h2>
+            <p>These special cases come up in almost every game. Knowing them early prevents surprises.</p>
+            <div class="ch-special-grid">
+              <div class="ch-special">
+                <strong>Castling</strong>
+                <small>The king and rook move in a single turn — the king slides two squares toward a rook, and the rook jumps to the other side. Used to protect the king and activate the rook. Only legal if neither piece has moved yet, and the king is not in check.</small>
+              </div>
+              <div class="ch-special">
+                <strong>En Passant</strong>
+                <small>When a pawn uses its two-square first move to land beside an enemy pawn, the enemy pawn may capture it as if it had only moved one square. The capture must happen immediately on the next turn or the right expires.</small>
+              </div>
+              <div class="ch-special">
+                <strong>Promotion</strong>
+                <small>When a pawn reaches the far edge of the board it becomes any piece the player chooses — almost always a queen. Promotion is a powerful threat that shapes endgame strategy.</small>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Chess Across Time ─────────────────────────── -->
+          <section class="ch-card" style="--ch-accent:#0f766e; margin-top:0.15rem;">
+            <span class="ch-section-label">Timeline</span>
+            <h2>Chess Across Time</h2>
+            <p>The board stayed recognizable for fifteen centuries. The rules evolved into a faster, sharper game.</p>
+            <div class="ch-history-grid" style="margin-top:0.75rem;">
+              <div style="border-top:3.5px solid #0f766e; border:1px solid #dde3ea; border-top-width:3.5px; border-top-color:#0f766e; border-radius:0 0 12px 12px; padding:0.85rem;">
+                <small style="display:block; font-weight:800; color:#0f766e; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:0.35rem;">c. 6th century</small>
+                <strong style="display:block; margin-bottom:0.25rem;">Chaturanga</strong>
+                <p style="margin:0; font-size:0.82rem; color:#3f4f65; line-height:1.55;">An Indian war game with infantry, cavalry, elephants, chariots, and a ruler — echoed in today's six piece types.</p>
+              </div>
+              <div style="border-top:3.5px solid #0f766e; border:1px solid #dde3ea; border-top-width:3.5px; border-top-color:#0f766e; border-radius:0 0 12px 12px; padding:0.85rem;">
+                <small style="display:block; font-weight:800; color:#0f766e; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:0.35rem;">7th–10th centuries</small>
+                <strong style="display:block; margin-bottom:0.25rem;">Shatranj</strong>
+                <p style="margin:0; font-size:0.82rem; color:#3f4f65; line-height:1.55;">Persian and Arabic scholars preserve, study, and spread the game. The words <em>check</em> and <em>checkmate</em> enter European languages.</p>
+              </div>
+              <div style="border-top:3.5px solid #0f766e; border:1px solid #dde3ea; border-top-width:3.5px; border-top-color:#0f766e; border-radius:0 0 12px 12px; padding:0.85rem;">
+                <small style="display:block; font-weight:800; color:#0f766e; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:0.35rem;">15th century</small>
+                <strong style="display:block; margin-bottom:0.25rem;">Modern Power</strong>
+                <p style="margin:0; font-size:0.82rem; color:#3f4f65; line-height:1.55;">The queen and bishop gain long-range movement, making attacks far quicker and the opening phase much more critical.</p>
+              </div>
+              <div style="border-top:3.5px solid #0f766e; border:1px solid #dde3ea; border-top-width:3.5px; border-top-color:#0f766e; border-radius:0 0 12px 12px; padding:0.85rem;">
+                <small style="display:block; font-weight:800; color:#0f766e; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:0.35rem;">19th century onward</small>
+                <strong style="display:block; margin-bottom:0.25rem;">Standard Play</strong>
+                <p style="margin:0; font-size:0.82rem; color:#3f4f65; line-height:1.55;">Clocks, tournaments, world championships, and eventually computer chess shape the modern game and its global community.</p>
+              </div>
+            </div>
+          </section>
+
+          <footer class="site-footer ch-lesson-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+          </footer>
+
+        </div><!-- .ch-page -->
+      </main>
+
+      <!-- ── Side Panel ──────────────────────────────────────── -->
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs" role="tablist" aria-label="Lesson panel">
+            <button class="ll-tab" role="tab" aria-selected="true"  data-pane="ch-pane-guide">Guide</button>
+            <button class="ll-tab" role="tab" aria-selected="false" data-pane="ch-pane-vocab">Vocab</button>
+            <button class="ll-tab" role="tab" aria-selected="false" data-pane="ch-pane-tips">Tips</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ch-pane-guide">
+            <div class="ll-info">
+              <strong>Lesson objective</strong>
+              Students can trace chess's broad historical path and demonstrate the legal movement for all six piece types.
+            </div>
+            <div class="ll-info">
+              <strong>Quick setup check</strong>
+              The corner nearest White's right hand is a light square. Queens start on their own color — white queen on light, black queen on dark.
+            </div>
+            <div class="ll-info">
+              <strong>Discussion prompt</strong>
+              Why did giving the queen and bishop long-range movement make chess faster and more tactical? What trade-off did that create?
+            </div>
+            <div class="ll-info">
+              <strong>Lab extension</strong>
+              Challenge students to find the piece that can reach the most squares from the center, then compare center vs. corner positions.
+            </div>
+          </div>
+
+          <div class="ll-pane" id="ch-pane-vocab">
+            <div class="ll-info"><strong>Check</strong>The king is under direct attack by at least one enemy piece.</div>
+            <div class="ll-info"><strong>Checkmate</strong>The king is in check and has no legal move to escape. The game ends.</div>
+            <div class="ll-info"><strong>Stalemate</strong>A player has no legal move but the king is not in check. The game is a draw.</div>
+            <div class="ll-info"><strong>Castling</strong>A single-turn king-and-rook swap used to improve king safety and develop the rook.</div>
+            <div class="ll-info"><strong>Promotion</strong>A pawn reaching the far rank may become any piece — almost always a queen.</div>
+            <div class="ll-info"><strong>En passant</strong>A special pawn capture available immediately after an opponent's two-square pawn advance.</div>
+            <div class="ll-info"><strong>Pin</strong>A piece that cannot move without exposing a more valuable piece behind it to attack.</div>
+          </div>
+
+          <div class="ll-pane" id="ch-pane-tips">
+            <div class="ll-info">
+              <strong>Control the center</strong>
+              Pieces placed near the center squares e4, d4, e5, d5 control more of the board and limit the opponent's options.
+            </div>
+            <div class="ll-info">
+              <strong>Develop early</strong>
+              Move knights and bishops off the back rank in the first several moves. A piece on the starting square does nothing.
+            </div>
+            <div class="ll-info">
+              <strong>Castle early</strong>
+              The king is vulnerable in the center. Castle within the first ten moves to keep it safe and connect the rooks.
+            </div>
+            <div class="ll-info">
+              <strong>Piece values</strong>
+              As a rough guide: pawn = 1, knight ≈ 3, bishop ≈ 3, rook ≈ 5, queen ≈ 9. Two bishops together are often worth slightly more.
+            </div>
+            <div class="ll-info">
+              <strong>Knights before bishops</strong>
+              Knights need a fixed number of moves to go anywhere. Bishops are fast but need open diagonals — develop knights first.
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
+
+    </div><!-- .ll-stage -->
+  </div><!-- .ll-viewport -->
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+    const board    = document.getElementById('ch-board');
+    const selector = document.getElementById('ch-piece-selector');
+    const caption  = document.getElementById('ch-caption');
+    const resetBtn = document.getElementById('ch-reset');
+    const moveCount    = document.getElementById('ch-move-count');
+    const captureCount = document.getElementById('ch-capture-count');
+
+    const pieces = {
+      queen:  { symbol: '♕', text: 'The queen combines rook and bishop: any number of squares straight or diagonal. Most powerful piece.' },
+      king:   { symbol: '♔', text: 'The king moves one square in any direction. The whole game turns on keeping this piece safe.' },
+      rook:   { symbol: '♖', text: 'The rook moves any number of squares horizontally or vertically. Most powerful on open files.' },
+      bishop: { symbol: '♗', text: 'The bishop moves any number of squares diagonally and always stays on one color.' },
+      knight: { symbol: '♘', text: 'The knight moves in an L: two squares one way, one sideways. The only piece that can jump over others.' },
+      pawn:   { symbol: '♙', text: 'The pawn moves forward one square. From its starting row it may move two. Captures diagonally forward.' }
+    };
+
+    let activePiece = 'queen';
+    let origin = { row: 3, col: 3 };
+
+    function onStartRow(row) {
+      return row === 6; // white pawn starting rank
+    }
+
+    function canMove(piece, row, col) {
+      const dr = row - origin.row;
+      const dc = col - origin.col;
+      const adr = Math.abs(dr);
+      const adc = Math.abs(dc);
+      if (dr === 0 && dc === 0) return false;
+      if (piece === 'queen')  return dr === 0 || dc === 0 || adr === adc;
+      if (piece === 'king')   return adr <= 1 && adc <= 1;
+      if (piece === 'rook')   return dr === 0 || dc === 0;
+      if (piece === 'bishop') return adr === adc;
+      if (piece === 'knight') return (adr === 2 && adc === 1) || (adr === 1 && adc === 2);
+      if (piece === 'pawn') {
+        if (dc !== 0) return false;
+        if (dr === -1) return true;
+        if (dr === -2 && onStartRow(origin.row)) return true;
+        return false;
+      }
+      return false;
+    }
+
+    function canCapture(piece, row, col) {
+      const dr = row - origin.row;
+      const dc = col - origin.col;
+      const adr = Math.abs(dr);
+      const adc = Math.abs(dc);
+      if (piece === 'pawn') return dr === -1 && adc === 1;
+      if (!canMove(piece, row, col)) return false;
+      // limit capture indicators so they don't flood the board
+      if (piece === 'queen'  || piece === 'rook' || piece === 'bishop')
+        return adr <= 3 && adc <= 3;
+      return true;
+    }
+
+    function countSquares() {
+      let moves = 0, caps = 0;
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (canMove(activePiece, r, c)) moves++;
+          if (canCapture(activePiece, r, c)) caps++;
+        }
+      }
+      return { moves, caps };
+    }
+
+    function renderBoard() {
+      board.innerHTML = '';
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const sq = document.createElement('button');
+          sq.type = 'button';
+          sq.className = `ch-square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+          sq.setAttribute('role', 'gridcell');
+          sq.setAttribute('aria-label', `${String.fromCharCode(97 + col)}${8 - row}`);
+
+          if (row === origin.row && col === origin.col) {
+            sq.classList.add('origin');
+            sq.textContent = pieces[activePiece].symbol;
+          } else if (canCapture(activePiece, row, col)) {
+            sq.classList.add('capture');
+          } else if (canMove(activePiece, row, col)) {
+            sq.classList.add('move');
+          }
+
+          sq.addEventListener('click', () => {
+            origin = { row, col };
+            renderBoard();
+          });
+          board.appendChild(sq);
+        }
+      }
+      caption.textContent = pieces[activePiece].text;
+
+      const { moves, caps } = countSquares();
+      moveCount.textContent    = moves;
+      captureCount.textContent = caps;
+    }
+
+    selector.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-piece]');
+      if (!btn) return;
+      activePiece = btn.dataset.piece;
+      selector.querySelectorAll('[data-piece]').forEach(b => {
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+      renderBoard();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      origin = activePiece === 'pawn' ? { row: 6, col: 3 } : { row: 3, col: 3 };
+      renderBoard();
+    });
+
+    renderBoard();
+  })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
