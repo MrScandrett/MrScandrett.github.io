@@ -296,6 +296,14 @@
     document.body.style.overflow = '';
   }
 
+  window.ClassroomOSCommandPalette = {
+    open: open,
+    close: close,
+    toggle: function () {
+      isOpen ? close() : open();
+    }
+  };
+
   // ── Search ──────────────────────────────────────────────────────
   function score(item, q) {
     var t = item.title.toLowerCase();
