@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thermodynamics · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Explore thermodynamics with an interactive heat engine, particle model, laws of thermodynamics, efficiency, entropy, and practice problems." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .td-page { padding-bottom: 0; }
+    .ll-viewport {
+      --ll-panel-w: 300px;
+      --ll-panel-bg: rgba(17, 24, 39, 0.98);
+      --ll-panel-border: rgba(251, 146, 60, 0.2);
+      --ll-tab-active-bg: rgba(251, 146, 60, 0.18);
+      --ll-tab-active: #fed7aa;
+    }
+    .td-hero { padding: 0.45rem 0 1.25rem; }
+    .td-hero h1 { max-width: 28ch; margin-left: 0; font-size: clamp(1.6rem, 3.6vw, 2.45rem); }
+    .td-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .td-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; display: inline-block; align-self: center; }
+    .td-lede { margin: 0.7rem 0 0; max-width: 72ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .td-lede { color: rgba(245,245,247,0.72); }
+
+    .td-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--td-accent, #f97316);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.35rem;
+      margin-bottom: 1rem;
+    }
+    [data-theme="night"] .td-card { background: #2c2c2e; }
+    .td-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; }
+    .td-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; }
+    .td-card p { margin: 0 0 0.65rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .td-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .td-card p { color: rgba(245,245,247,0.74); }
+
+    .td-law-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.72rem; margin-top: 0.8rem; }
+    .td-law {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 0.85rem;
+      background: rgba(249, 115, 22, 0.055);
+    }
+    .td-law strong { display: block; font-size: 0.86rem; margin-bottom: 0.22rem; color: #9a3412; }
+    [data-theme="night"] .td-law strong { color: #fed7aa; }
+    .td-law small { display: block; color: #64748b; font-size: 0.78rem; line-height: 1.5; }
+
+    .td-feynman-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 0.75rem; margin-top: 0.85rem; }
+    .td-feynman-demo { border: 1px solid rgba(249,115,22,0.25); border-radius: 14px; padding: 0.9rem; background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(20,184,166,0.06)); }
+    .td-feynman-demo strong { display: block; margin-bottom: 0.3rem; color: #9a3412; font-size: 0.9rem; }
+    .td-feynman-demo small { display: block; color: #52647c; font-size: 0.78rem; line-height: 1.55; }
+    [data-theme="night"] .td-feynman-demo strong { color: #fed7aa; }
+    [data-theme="night"] .td-feynman-demo small { color: rgba(245,245,247,0.7); }
+
+    .td-formula-box {
+      background: linear-gradient(135deg, rgba(249,115,22,0.11), rgba(14,165,233,0.07));
+      border: 1px solid rgba(249,115,22,0.28);
+      border-radius: 14px;
+      padding: 1rem 1.15rem;
+      margin: 0.85rem 0;
+      text-align: center;
+    }
+    .td-formula { display: block; color: #ea580c; font-size: clamp(1.2rem, 3.5vw, 1.75rem); font-weight: 800; margin-bottom: 0.45rem; }
+    .td-formula-note { color: #52647c; font-size: 0.8rem; line-height: 1.5; }
+    [data-theme="night"] .td-formula-note { color: rgba(245,245,247,0.68); }
+
+    .td-sim-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(230px, 0.75fr); gap: 0.85rem; align-items: stretch; }
+    .td-canvas-wrap { min-height: 340px; border: 1px solid var(--line, #d2d2d7); border-radius: 14px; overflow: hidden; background: #111827; }
+    #td-canvas { width: 100%; height: 100%; min-height: 340px; display: block; }
+    .td-readouts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0.55rem; }
+    .td-readout { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.7rem; background: rgba(0,0,0,0.035); }
+    [data-theme="night"] .td-readout { background: rgba(255,255,255,0.06); }
+    .td-readout span { display: block; color: #64748b; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.25rem; }
+    .td-readout strong { display: block; color: #f97316; font-size: 1.02rem; font-variant-numeric: tabular-nums; }
+    .td-mode-note { border-radius: 12px; padding: 0.85rem; margin-top: 0.65rem; background: rgba(14,165,233,0.09); border: 1px solid rgba(14,165,233,0.23); color: #36546b; font-size: 0.82rem; line-height: 1.55; }
+    [data-theme="night"] .td-mode-note { color: rgba(245,245,247,0.72); }
+
+    .td-steps { display: grid; gap: 0.62rem; margin-top: 0.75rem; }
+    .td-step { display: grid; grid-template-columns: 2.1rem 1fr; gap: 0.7rem; align-items: start; }
+    .td-step b { width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; background: #f97316; color: white; font-size: 0.82rem; }
+    .td-step strong { display: block; font-size: 0.88rem; margin-bottom: 0.12rem; }
+    .td-step small { display: block; color: #64748b; font-size: 0.78rem; line-height: 1.5; }
+
+    .td-practice .td-problem { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .td-problem p { margin-bottom: 0.55rem; }
+    .td-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .td-input { border: 1px solid var(--line, #d2d2d7); border-radius: 8px; padding: 0.36rem 0.6rem; width: 110px; background: var(--white, #fff); color: var(--text, #1d1d1f); }
+    .td-btn { background: #f97316; color: #fff; border: 0; border-radius: 8px; padding: 0.38rem 0.78rem; font-weight: 700; cursor: pointer; }
+    .td-btn:hover { background: #c2410c; }
+    .td-feedback { font-size: 0.82rem; font-weight: 700; }
+    .td-feedback.ok { color: #16a34a; }
+    .td-feedback.err { color: #dc2626; }
+    .td-hint { display: none; color: #64748b; font-size: 0.78rem; margin-top: 0.4rem; }
+    .td-badge { border-radius: 5px; padding: 0.1rem 0.42rem; font-size: 0.72rem; font-weight: 800; margin-right: 0.4rem; }
+    .td-badge.easy { background: rgba(34,197,94,0.14); color: #15803d; }
+    .td-badge.mid { background: rgba(249,115,22,0.14); color: #c2410c; }
+    .td-badge.hard { background: rgba(220,38,38,0.11); color: #b91c1c; }
+
+    .td-panel-block { margin-bottom: 1.05rem; }
+    .td-panel-block label { display: flex; justify-content: space-between; gap: 0.75rem; color: rgba(245,245,247,0.8); font-size: 0.8rem; margin-bottom: 0.35rem; }
+    .td-panel-block output { color: #fed7aa; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .td-panel-help { color: rgba(245,245,247,0.62); font-size: 0.78rem; line-height: 1.55; margin: 0.3rem 0 0; }
+    .td-select {
+      width: 100%;
+      border: 1px solid rgba(251,146,60,0.25);
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      border-radius: 10px;
+      padding: 0.45rem 0.55rem;
+    }
+
+    @media (max-width: 780px) {
+      .td-law-grid,
+      .td-sim-grid,
+      .td-feynman-grid { grid-template-columns: 1fr; }
+      .td-canvas-wrap,
+      #td-canvas { min-height: 300px; }
+    }
+    @media (max-width: 520px) {
+      .td-readouts { grid-template-columns: 1fr; }
+      .td-card { padding: 1rem; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="td-page">
+        <section class="hero td-hero">
+          <p class="eyebrow">Physics · Advanced Systems</p>
+          <h1>Thermodynamics</h1>
+          <div class="td-meta">
+            <span>Heat and Work</span><span class="dot"></span>
+            <span>Temperature and Entropy</span><span class="dot"></span>
+            <span>Engines and Refrigerators</span>
+          </div>
+          <p class="td-lede">Thermodynamics is the science of energy moving through matter. It explains why engines can do work, why refrigerators need power, why hot coffee cools down, and why no machine can turn every bit of heat into useful motion.</p>
+        </section>
+
+        <section class="td-card" style="--td-accent:#f97316;">
+          <h2>The Big Idea</h2>
+          <p>Temperature tells us the average motion of particles. Heat is energy transferred because of a temperature difference. Work is energy transferred by organized pushes, pulls, compression, or expansion. Thermodynamics connects all three.</p>
+          <div class="td-formula-box" role="img" aria-label="First law of thermodynamics, change in internal energy equals heat added to the system minus work done by the system">
+            <span class="td-formula">ΔU = Q - W</span>
+            <span class="td-formula-note"><strong>ΔU</strong> is change in internal energy, <strong>Q</strong> is heat added to the system, and <strong>W</strong> is work done by the system.</span>
+          </div>
+          <p>If heat enters a gas and the gas expands to push a piston, some energy stays as particle motion and some leaves as useful work. That accounting rule is the first law.</p>
+        </section>
+
+        <section class="td-card" style="--td-accent:#14b8a6;">
+          <h2>Feynman's Shortcut: Skip the Hidden Machinery</h2>
+          <p>Feynman's thermodynamics lecture begins with a surprising example: stretch a rubber band and it warms; let it relax quickly and it cools. Heat the stretched band and it pulls harder. The molecular details are tangled, but thermodynamics can still predict relationships between heat, work, temperature, and force.</p>
+          <div class="td-feynman-grid">
+            <div class="td-feynman-demo">
+              <strong>Rubber band engine</strong>
+              <small>Heating one side of a wheel made of rubber-band spokes makes those bands contract more strongly. The imbalance can turn the wheel, even though the engine is wonderfully inefficient.</small>
+            </div>
+            <div class="td-feynman-demo">
+              <strong>The lesson</strong>
+              <small>Thermodynamics is powerful because it constrains what any material can do. Rubber, steam, alcohol, or gas may have different internal stories, but no cyclic engine can beat the same reversible limit.</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="td-card" style="--td-accent:#0ea5e9;">
+          <h2>Interactive Heat Engine</h2>
+          <p>Use the controls to change the hot reservoir, cold reservoir, and working gas. The simulator shows particle speed, heat flow, work output, rejected heat, and the theoretical Carnot efficiency limit.</p>
+          <div class="td-sim-grid">
+            <div class="td-canvas-wrap">
+              <canvas id="td-canvas" aria-label="Interactive thermodynamics heat engine and particle model"></canvas>
+            </div>
+            <div>
+              <div class="td-readouts">
+                <div class="td-readout"><span>Efficiency</span><strong id="td-eff">0%</strong></div>
+                <div class="td-readout"><span>Work Output</span><strong id="td-work">0 J</strong></div>
+                <div class="td-readout"><span>Heat Rejected</span><strong id="td-rejected">0 J</strong></div>
+                <div class="td-readout"><span>Particle Energy</span><strong id="td-energy">0%</strong></div>
+              </div>
+              <div class="td-mode-note" id="td-note">Heat flows from the hot side into the working gas. Some becomes work; the rest must be rejected to the cold side.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="td-card" style="--td-accent:#22c55e;">
+          <h2>The Four Laws</h2>
+          <div class="td-law-grid">
+            <div class="td-law">
+              <strong>Zeroth Law: temperature can be compared</strong>
+              <small>If A is in thermal equilibrium with B, and B with C, then A and C are also in equilibrium. This makes thermometers possible.</small>
+            </div>
+            <div class="td-law">
+              <strong>First Law: energy is conserved</strong>
+              <small>Energy changes form, but the total bookkeeping still balances: heat in can become internal energy, work, or both.</small>
+            </div>
+            <div class="td-law">
+              <strong>Second Law: entropy tends to increase</strong>
+              <small>Heat naturally spreads from hot to cold. Perfectly converting heat into work is impossible because some energy becomes unavailable.</small>
+            </div>
+            <div class="td-law">
+              <strong>Third Law: absolute zero is unreachable</strong>
+              <small>As temperature approaches 0 K, a perfect crystal approaches minimum entropy. Real processes cannot reach absolute zero in finite steps.</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="td-card" style="--td-accent:#a855f7;">
+          <h2>How a Heat Engine Works</h2>
+          <div class="td-steps">
+            <div class="td-step">
+              <b>1</b>
+              <div><strong>Absorb heat from a hot reservoir</strong><small>Fuel, sunlight, steam, or combustion raises the energy of the working fluid.</small></div>
+            </div>
+            <div class="td-step">
+              <b>2</b>
+              <div><strong>Convert some heat into work</strong><small>The working fluid expands, spins a turbine, pushes a piston, or drives another mechanical load.</small></div>
+            </div>
+            <div class="td-step">
+              <b>3</b>
+              <div><strong>Reject waste heat to a cold reservoir</strong><small>The engine must dump some energy so the cycle can reset and run again.</small></div>
+            </div>
+            <div class="td-step">
+              <b>4</b>
+              <div><strong>Repeat the cycle</strong><small>Real engines lose extra energy to friction, turbulence, sound, exhaust, and imperfect heat transfer.</small></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="td-card" style="--td-accent:#0f766e;">
+          <h2>Carnot's Limit</h2>
+          <p>A reversible engine is the ideal engine: no friction, no turbulence, and no heat transfer across a large temperature jump. Each step can be reversed by an infinitesimal change. Feynman emphasizes that this ideal is not mainly about building a perfect machine; it is a measuring stick for every possible machine.</p>
+          <div class="td-formula-box" role="img" aria-label="For a reversible engine, heat divided by absolute temperature is the same for the hot and cold reservoirs">
+            <span class="td-formula">Q<sub>hot</sub> / T<sub>hot</sub> = Q<sub>cold</sub> / T<sub>cold</sub></span>
+            <span class="td-formula-note">For a reversible cycle, the heat exchanged at each reservoir balances when divided by absolute temperature. That is the doorway to entropy.</span>
+          </div>
+          <p>Because <strong>W = Q<sub>hot</sub> - Q<sub>cold</sub></strong>, the best possible efficiency is <strong>1 - T<sub>cold</sub>/T<sub>hot</sub></strong>. A colder cold side or hotter hot side raises the ceiling, but reaching 100% would require a cold reservoir at absolute zero.</p>
+        </section>
+
+        <section class="td-card td-practice" style="--td-accent:#ef4444;">
+          <h2>Practice Problems</h2>
+          <div class="td-problem">
+            <p><span class="td-badge easy">Easy</span>1. A system absorbs 120 J of heat and does 45 J of work. What is ΔU?</p>
+            <div class="td-row">
+              <input class="td-input" type="number" id="tdans-1" placeholder="J" />
+              <button class="td-btn" onclick="tdCheck(1,75,1)">Check</button>
+              <span class="td-feedback" id="tdfb-1"></span>
+            </div>
+            <div class="td-hint" id="tdhint-1">Hint: ΔU = Q - W = 120 - 45 = 75 J.</div>
+          </div>
+          <div class="td-problem">
+            <p><span class="td-badge mid">Medium</span>2. A heat engine absorbs 500 J and outputs 150 J of work. What is its efficiency as a percent?</p>
+            <div class="td-row">
+              <input class="td-input" type="number" id="tdans-2" placeholder="%" />
+              <button class="td-btn" onclick="tdCheck(2,30,1)">Check</button>
+              <span class="td-feedback" id="tdfb-2"></span>
+            </div>
+            <div class="td-hint" id="tdhint-2">Hint: efficiency = W / Qhot = 150 / 500 = 0.30 = 30%.</div>
+          </div>
+          <div class="td-problem">
+            <p><span class="td-badge hard">Challenge</span>3. A perfect engine runs between 600 K and 300 K. What is its maximum Carnot efficiency?</p>
+            <div class="td-row">
+              <input class="td-input" type="number" id="tdans-3" placeholder="%" />
+              <button class="td-btn" onclick="tdCheck(3,50,1)">Check</button>
+              <span class="td-feedback" id="tdfb-3"></span>
+            </div>
+            <div class="td-hint" id="tdhint-3">Hint: e = 1 - Tcold/Thot = 1 - 300/600 = 0.50 = 50%.</div>
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="td-pane-controls">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="td-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="td-pane-controls">
+          <div class="td-panel-block">
+            <label for="td-hot">Hot reservoir <output id="td-hot-val">700 K</output></label>
+            <input type="range" id="td-hot" min="330" max="1000" value="700" />
+          </div>
+          <div class="td-panel-block">
+            <label for="td-cold">Cold reservoir <output id="td-cold-val">300 K</output></label>
+            <input type="range" id="td-cold" min="120" max="650" value="300" />
+          </div>
+          <div class="td-panel-block">
+            <label for="td-heat">Heat input <output id="td-heat-val">600 J</output></label>
+            <input type="range" id="td-heat" min="100" max="1200" value="600" step="10" />
+          </div>
+          <div class="td-panel-block">
+            <label for="td-friction">Real-world losses <output id="td-friction-val">18%</output></label>
+            <input type="range" id="td-friction" min="0" max="50" value="18" />
+            <p class="td-panel-help">Losses represent friction, heat leaks, turbulence, and imperfect materials.</p>
+          </div>
+          <div class="td-panel-block">
+            <label for="td-mode">Model</label>
+            <select class="td-select" id="td-mode">
+              <option value="engine">Heat engine</option>
+              <option value="refrigerator">Refrigerator</option>
+              <option value="particles">Particle motion</option>
+            </select>
+          </div>
+        </div>
+        <div class="ll-pane" id="td-pane-guide">
+          <span class="ll-label">Key Vocabulary</span>
+          <p><strong>Heat:</strong> energy transfer caused by a temperature difference.</p>
+          <p><strong>Work:</strong> organized energy transfer through force and motion.</p>
+          <p><strong>Internal energy:</strong> microscopic kinetic and potential energy inside matter.</p>
+          <p><strong>Entropy:</strong> a measure of energy spreading out and becoming less available for useful work.</p>
+          <span class="ll-label">Teacher Prompt</span>
+          <p>Ask students why a bigger temperature difference makes a better engine, then have them find settings where the engine looks powerful but inefficient.</p>
+        </div>
+      </div>
+      <button class="ll-panel-toggle" aria-expanded="true" aria-label="Toggle lesson panel">Controls</button>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('td-canvas');
+  const ctx = canvas.getContext('2d');
+  const els = {
+    hot: document.getElementById('td-hot'),
+    cold: document.getElementById('td-cold'),
+    heat: document.getElementById('td-heat'),
+    friction: document.getElementById('td-friction'),
+    mode: document.getElementById('td-mode'),
+    hotVal: document.getElementById('td-hot-val'),
+    coldVal: document.getElementById('td-cold-val'),
+    heatVal: document.getElementById('td-heat-val'),
+    frictionVal: document.getElementById('td-friction-val'),
+    eff: document.getElementById('td-eff'),
+    work: document.getElementById('td-work'),
+    rejected: document.getElementById('td-rejected'),
+    energy: document.getElementById('td-energy'),
+    note: document.getElementById('td-note')
+  };
+
+  const particles = Array.from({ length: 42 }, (_, i) => ({
+    x: 0.2 + (i % 7) * 0.1,
+    y: 0.18 + Math.floor(i / 7) * 0.12,
+    vx: Math.sin(i * 9.7) * 0.004,
+    vy: Math.cos(i * 5.3) * 0.004
+  }));
+
+  let phase = 0;
+
+  function state() {
+    let hot = Number(els.hot.value);
+    let cold = Number(els.cold.value);
+    if (cold >= hot - 20) {
+      cold = hot - 20;
+      els.cold.value = cold;
+    }
+    const heat = Number(els.heat.value);
+    const losses = Number(els.friction.value) / 100;
+    const carnot = Math.max(0, 1 - cold / hot);
+    const realEff = Math.max(0, carnot * (1 - losses));
+    const work = heat * realEff;
+    return {
+      hot,
+      cold,
+      heat,
+      losses,
+      carnot,
+      realEff,
+      work,
+      rejected: heat - work,
+      energy: Math.min(1, hot / 1000),
+      mode: els.mode.value
+    };
+  }
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const nextWidth = Math.max(1, Math.floor(rect.width * dpr));
+    const nextHeight = Math.max(1, Math.floor(rect.height * dpr));
+    if (canvas.width !== nextWidth) canvas.width = nextWidth;
+    if (canvas.height !== nextHeight) canvas.height = nextHeight;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function arrow(x1, y1, x2, y2, color, label) {
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 13 * Math.cos(angle - 0.55), y2 - 13 * Math.sin(angle - 0.55));
+    ctx.lineTo(x2 - 13 * Math.cos(angle + 0.55), y2 - 13 * Math.sin(angle + 0.55));
+    ctx.closePath();
+    ctx.fill();
+    ctx.font = '700 12px Inter, sans-serif';
+    ctx.fillText(label, (x1 + x2) / 2 - 18, (y1 + y2) / 2 - 10);
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawParticles(x, y, w, h, s) {
+    const speed = 0.55 + s.energy * 2.2;
+    particles.forEach((p, i) => {
+      p.x += p.vx * speed;
+      p.y += p.vy * speed;
+      if (p.x < 0.08 || p.x > 0.92) p.vx *= -1;
+      if (p.y < 0.1 || p.y > 0.9) p.vy *= -1;
+      const px = x + p.x * w;
+      const py = y + p.y * h;
+      const hue = 195 + s.energy * 35 + Math.sin(phase + i) * 8;
+      ctx.fillStyle = `hsl(${hue} 90% ${58 + s.energy * 12}%)`;
+      ctx.beginPath();
+      ctx.arc(px, py, 3 + s.energy * 2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function drawEngine(w, h, s) {
+    const cx = w * 0.5;
+    const top = 34;
+    const boxW = Math.min(250, w * 0.5);
+    const boxH = Math.min(150, h * 0.38);
+    const boxX = cx - boxW / 2;
+    const boxY = h * 0.33;
+
+    const hotGrad = ctx.createLinearGradient(0, 0, w, 0);
+    hotGrad.addColorStop(0, '#7f1d1d');
+    hotGrad.addColorStop(1, '#f97316');
+    ctx.fillStyle = hotGrad;
+    roundRect(28, top, w - 56, 42, 13);
+    ctx.fill();
+    ctx.fillStyle = '#fff7ed';
+    ctx.font = '800 14px Inter, sans-serif';
+    ctx.fillText(`Hot reservoir ${s.hot} K`, 44, top + 26);
+
+    const coldGrad = ctx.createLinearGradient(0, 0, w, 0);
+    coldGrad.addColorStop(0, '#0369a1');
+    coldGrad.addColorStop(1, '#22d3ee');
+    ctx.fillStyle = coldGrad;
+    roundRect(28, h - 76, w - 56, 42, 13);
+    ctx.fill();
+    ctx.fillStyle = '#ecfeff';
+    ctx.fillText(`Cold reservoir ${s.cold} K`, 44, h - 50);
+
+    ctx.fillStyle = '#1f2937';
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    roundRect(boxX, boxY, boxW, boxH, 16);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#e5e7eb';
+    ctx.font = '800 15px Inter, sans-serif';
+    ctx.fillText(s.mode === 'refrigerator' ? 'Heat Pump' : 'Working Gas', boxX + 18, boxY + 28);
+    drawParticles(boxX + 14, boxY + 42, boxW - 28, boxH - 56, s);
+
+    const pulse = Math.sin(phase * 2) * 0.5 + 0.5;
+    if (s.mode === 'refrigerator') {
+      arrow(cx, h - 86, cx, boxY + boxH + 8, '#38bdf8', 'heat lifted');
+      arrow(cx, boxY - 8, cx, 88, '#fb923c', 'heat dumped');
+      arrow(boxX + boxW + 15, boxY + boxH / 2, w - 42, boxY + boxH / 2, '#a78bfa', 'work in');
+    } else {
+      arrow(cx, 82, cx, boxY - 8, '#fb923c', 'Q hot');
+      arrow(cx, boxY + boxH + 8, cx, h - 88, '#38bdf8', 'Q cold');
+      arrow(boxX + boxW + 15, boxY + boxH / 2, w - 42, boxY + boxH / 2, '#22c55e', 'work');
+    }
+
+    ctx.strokeStyle = `rgba(34,197,94,${0.18 + pulse * 0.32})`;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(w - 58, boxY + boxH / 2, 18 + pulse * 10, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  function drawParticleMode(w, h, s) {
+    const pad = 34;
+    const chamberW = w - pad * 2;
+    const chamberH = h - 112;
+    const x = pad;
+    const y = 54;
+    ctx.fillStyle = '#111827';
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+    roundRect(x, y, chamberW, chamberH, 18);
+    ctx.fill();
+    ctx.stroke();
+    drawParticles(x + 10, y + 10, chamberW - 20, chamberH - 20, s);
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = '800 16px Inter, sans-serif';
+    ctx.fillText('Particle model of temperature', x, 28);
+    ctx.font = '500 13px Inter, sans-serif';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillText('Higher temperature means faster average particle motion.', x, h - 38);
+
+    const barW = chamberW * s.energy;
+    ctx.fillStyle = '#f97316';
+    roundRect(x, h - 74, barW, 12, 6);
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    roundRect(x, h - 74, chamberW, 12, 6);
+    ctx.stroke();
+  }
+
+  function render() {
+    const s = state();
+    resize();
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+    ctx.clearRect(0, 0, w, h);
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, '#0f172a');
+    bg.addColorStop(0.55, '#111827');
+    bg.addColorStop(1, '#312e81');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    if (s.mode === 'particles') {
+      drawParticleMode(w, h, s);
+    } else {
+      drawEngine(w, h, s);
+    }
+
+    els.hotVal.textContent = `${s.hot} K`;
+    els.coldVal.textContent = `${s.cold} K`;
+    els.heatVal.textContent = `${s.heat} J`;
+    els.frictionVal.textContent = `${Math.round(s.losses * 100)}%`;
+    els.eff.textContent = `${Math.round(s.realEff * 100)}%`;
+    els.work.textContent = `${Math.round(s.work)} J`;
+    els.rejected.textContent = `${Math.round(s.rejected)} J`;
+    els.energy.textContent = `${Math.round(s.energy * 100)}%`;
+
+    if (s.mode === 'refrigerator') {
+      els.note.textContent = 'A refrigerator reverses the natural direction of heat flow by spending work to move heat from cold to hot.';
+    } else if (s.mode === 'particles') {
+      els.note.textContent = 'Particles do not all move at the same speed, but temperature tracks their average kinetic energy.';
+    } else {
+      els.note.textContent = `The Carnot limit is ${Math.round(s.carnot * 100)}%; real losses lower this model to ${Math.round(s.realEff * 100)}%.`;
+    }
+
+    phase += 0.018 + s.energy * 0.028;
+    requestAnimationFrame(render);
+  }
+
+  Object.values(els).forEach((el) => {
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT')) {
+      el.addEventListener('input', () => {});
+    }
+  });
+  window.addEventListener('resize', resize);
+  render();
+
+  window.tdCheck = function (n, ans, tol) {
+    const input = document.getElementById(`tdans-${n}`);
+    const fb = document.getElementById(`tdfb-${n}`);
+    const hint = document.getElementById(`tdhint-${n}`);
+    const val = Number(input.value);
+    if (!Number.isFinite(val)) {
+      fb.textContent = 'Enter a number.';
+      fb.className = 'td-feedback err';
+      return;
+    }
+    if (Math.abs(val - ans) <= tol) {
+      fb.textContent = 'Correct.';
+      fb.className = 'td-feedback ok';
+      hint.style.display = 'none';
+    } else {
+      fb.textContent = 'Try again.';
+      fb.className = 'td-feedback err';
+      hint.style.display = 'block';
+    }
+  };
+})();
+</script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>

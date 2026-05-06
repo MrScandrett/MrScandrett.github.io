@@ -11,23 +11,33 @@
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
-    .cl-page { padding-bottom: 0; }
+    .cl-page { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; padding-bottom: 0; }
     .ll-viewport { --ll-panel-w: 282px; }
+    body.steam-night {
+      color-scheme: dark;
+      --white: #141b27;
+      --text: #f5f5f7;
+      --line: rgba(255,255,255,0.12);
+      background:
+        radial-gradient(1100px 600px at 50% -8%, rgba(72,118,198,0.18), transparent 58%),
+        radial-gradient(920px 560px at 88% 8%, rgba(34,84,162,0.12), transparent 58%),
+        linear-gradient(180deg, #101725 0%, #09101a 42%, #060b12 100%);
+    }
 
     .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
     .cl-hero h1 { max-width: 32ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
     .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
     .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
     .cl-lede { margin: 0.65rem 0 0; max-width: 70ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
-    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+    body.steam-night .cl-lede { color: rgba(245,245,247,0.7); }
 
     .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#007aff); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
     .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
     .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
     .cl-card p { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
     .cl-card p:last-child { margin-bottom: 0; }
-    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
-    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+    body.steam-night .cl-card { background: var(--white,#2c2c2e); }
+    body.steam-night .cl-card p { color: rgba(245,245,247,0.72); }
 
     .steam-equation { display: grid; gap: 0.65rem; margin: 0.8rem 0; }
     .steam-equation-line { border: 1px solid rgba(0,122,255,0.25); background: linear-gradient(135deg,rgba(0,122,255,0.09),rgba(52,199,89,0.05)); border-radius: 14px; padding: 0.9rem 1rem; text-align: center; }
@@ -38,23 +48,36 @@
     .concept-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; background: rgba(0,0,0,0.02); }
     .concept-card strong { display: block; font-size: 0.84rem; margin-bottom: 0.25rem; color: var(--text,#1d1d1f); }
     .concept-card small { display: block; color: #64748b; font-size: 0.77rem; line-height: 1.5; }
-    [data-theme="night"] .concept-card { background: rgba(255,255,255,0.04); }
+    body.steam-night .concept-card { background: rgba(255,255,255,0.04); }
     @media (max-width: 540px) { .concept-grid { grid-template-columns: 1fr; } }
+
+    .atom-flow { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 0.65rem; margin: 0.8rem 0; }
+    .atom-step { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; background: rgba(0,122,255,0.055); }
+    .atom-step b { display: block; color: var(--text,#1d1d1f); font-size: 0.82rem; margin-bottom: 0.25rem; }
+    .atom-step span { color: #64748b; display: block; font-size: 0.77rem; line-height: 1.5; }
+    body.steam-night .atom-step { background: rgba(0,122,255,0.08); }
+    @media (max-width: 820px) { .atom-flow { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+    @media (max-width: 540px) { .atom-flow { grid-template-columns: 1fr; } }
 
     .cl-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; color: #3f4f65; }
     .cl-callout.blue { background: rgba(0,122,255,0.08); border-left: 3px solid #007aff; }
     .cl-callout.green { background: rgba(52,199,89,0.1); border-left: 3px solid #34c759; }
     .cl-callout.orange { background: rgba(255,149,0,0.1); border-left: 3px solid #ff9500; }
-    [data-theme="night"] .cl-callout { color: rgba(245,245,247,0.72); }
+    body.steam-night .cl-callout { color: rgba(245,245,247,0.72); }
     .cl-callout strong { color: var(--text,#1d1d1f); }
+    .engine-limit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.7rem; margin: 0.85rem 0; }
+    .engine-limit-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem; background: rgba(88,86,214,0.055); }
+    .engine-limit-card strong { display: block; font-size: 0.84rem; margin-bottom: 0.25rem; }
+    .engine-limit-card small { display: block; color: #64748b; font-size: 0.77rem; line-height: 1.5; }
+    body.steam-night .engine-limit-card { background: rgba(255,255,255,0.04); }
 
     .canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
-    [data-theme="night"] .canvas-wrap { background: #1c1c1e; }
+    body.steam-night .canvas-wrap { background: #1c1c1e; }
     #steam-canvas { width: 100%; height: 300px; display: block; }
 
     .readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
     .readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
-    [data-theme="night"] .readout { background: rgba(255,255,255,0.06); }
+    body.steam-night .readout { background: rgba(255,255,255,0.06); }
     .readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
     .readout-val { font-size: 1rem; font-weight: 700; color: #007aff; }
     @media (max-width: 540px) { .readouts { grid-template-columns: 1fr; } }
@@ -64,12 +87,12 @@
     .timeline-item:first-child { border-top: 0; padding-top: 0; }
     .timeline-year { color: #ff9500; font-weight: 800; font-size: 0.85rem; }
     .timeline-copy { color: #3f4f65; font-size: 0.84rem; line-height: 1.6; }
-    [data-theme="night"] .timeline-copy { color: rgba(245,245,247,0.72); }
+    body.steam-night .timeline-copy { color: rgba(245,245,247,0.72); }
     @media (max-width: 540px) { .timeline-item { grid-template-columns: 1fr; gap: 0.2rem; } }
 
     .practice .problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
     .practice .problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: #3f4f65; line-height: 1.6; }
-    [data-theme="night"] .practice .problem p { color: rgba(245,245,247,0.72); }
+    body.steam-night .practice .problem p { color: rgba(245,245,247,0.72); }
     .problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
     .ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 160px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
     .check-btn { background: #007aff; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
@@ -82,9 +105,17 @@
     .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; }
     .diff-mid { background: rgba(255,149,0,0.15); color: #c07000; }
     .diff-hard { background: rgba(255,59,48,0.12); color: #c0392b; }
+    .ll-panel { --ll-panel-bg: var(--white,#fff); }
+    body.steam-night .ll-panel { --ll-panel-bg: #141b27; --ll-panel-border: rgba(255,255,255,0.12); }
+    .ll-panel-inner { display: grid; gap: 0.75rem; }
+    .ll-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; background: rgba(255,255,255,0.64); padding: 0.85rem; }
+    body.steam-night .ll-card { background: rgba(255,255,255,0.045); }
+    .ll-card h3 { margin: 0 0 0.55rem; font-size: 0.9rem; }
+    .ll-control { display: grid; gap: 0.45rem; }
+    @media (max-width: 540px) { .engine-limit { grid-template-columns: 1fr; } }
   </style>
 </head>
-<body class="theme-liquid-woodland theme-steam">
+<body class="theme-liquid-woodland theme-steam steam-night" data-theme="night" data-lighting="night">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
 <div class="ll-viewport">
@@ -133,6 +164,10 @@
               <small>Show why liquid water expanding into steam can push pistons and turbines.</small>
             </div>
             <div class="concept-card">
+              <strong>Use the atomic hypothesis</strong>
+              <small>Explain heat, boiling, pressure, and condensation as changes in molecular motion.</small>
+            </div>
+            <div class="concept-card">
               <strong>Identify chemical risks</strong>
               <small>Explain scale, corrosion, air pollution, and boiler explosions as chemistry problems.</small>
             </div>
@@ -162,6 +197,32 @@
           </div>
           <div class="cl-callout orange">
             <strong>Key insight:</strong> Steam machines are not "powered by water" in the fuel sense. They are powered by chemical energy from fuel. Water is the working fluid that carries heat and transfers force.
+          </div>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#4dd8ef;">
+          <h2>Atoms in Motion: The Steam Story</h2>
+          <p>Feynman's atomic picture gives this lesson its smallest useful map: matter is built from tiny particles that are always moving, attract at modest distances, and resist being squeezed too close. A steam engine becomes easier to understand when every visible event is translated into molecular motion.</p>
+          <div class="atom-flow">
+            <div class="atom-step">
+              <b>Fuel burns</b>
+              <span>Carbon-rich fuel and oxygen rearrange into new molecules, releasing energy into nearby particles.</span>
+            </div>
+            <div class="atom-step">
+              <b>Water jiggles faster</b>
+              <span>Heating increases molecular motion until attractions can no longer hold every molecule in the liquid.</span>
+            </div>
+            <div class="atom-step">
+              <b>Steam pushes</b>
+              <span>Fast vapor molecules collide with walls and pistons; our instruments read the average push as pressure.</span>
+            </div>
+            <div class="atom-step">
+              <b>The cycle resets</b>
+              <span>Cooling slows molecules, condensation returns vapor to liquid, and the engine can repeat the process.</span>
+            </div>
+          </div>
+          <div class="cl-callout blue">
+            <strong>STEAM interpolation:</strong> Chemistry explains the rearranged atoms in combustion and corrosion; physics explains pressure, heat flow, and work; engineering turns those ideas into boilers, pistons, valves, condensers, and safety rules.
           </div>
         </section>
 
@@ -201,6 +262,24 @@
           </div>
           <div class="cl-callout green">
             <strong>Modern connection:</strong> Power plants still use steam cycles. Today, chemistry controls fuel quality, emissions, cooling water, corrosion, and turbine deposits.
+          </div>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#5856d6;">
+          <h2>Feynman's Engine Question</h2>
+          <p>Feynman frames steam engines the way Carnot did: the important question is not only which fluid boils, but how much work any engine can get from heat moving between a hot boiler and a cooler condenser. Chemistry chooses fuels, water treatment, and materials; thermodynamics sets the upper limit.</p>
+          <div class="engine-limit">
+            <div class="engine-limit-card">
+              <strong>Working fluid is not destiny</strong>
+              <small>Steam, alcohol vapor, or another fluid can carry heat through a cycle. A reversible engine's best efficiency depends on reservoir temperatures, not on mechanical cleverness alone.</small>
+            </div>
+            <div class="engine-limit-card">
+              <strong>Condensers matter</strong>
+              <small>Rejecting heat to a cooler place lets the cycle reset. Without a cold reservoir, heat at one uniform temperature cannot be completely turned into work.</small>
+            </div>
+          </div>
+          <div class="cl-callout blue">
+            <strong>Bridge to physics:</strong> The ideal limit is <strong>efficiency = 1 - T<sub>cold</sub>/T<sub>hot</sub></strong>. Real steam machines fall below it because heat leaks, friction, turbulence, corrosion, and imperfect combustion add losses.
           </div>
         </section>
 
@@ -308,36 +387,57 @@
       </main>
     </div>
 
-    <aside class="ll-panel" aria-label="Steam machine lesson controls">
-      <div class="ll-panel-inner">
-        <div class="ll-card">
-          <h3>Burner Intensity</h3>
-          <label class="ll-control">
-            <span class="ll-label">Fuel combustion rate</span>
-            <input id="burner" type="range" min="0" max="100" value="48" />
-          </label>
+    <aside class="ll-panel" aria-label="Steam machine lesson controls" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" type="button" aria-selected="true" data-pane="steam-controls">Controls</button>
+          <button class="ll-tab" type="button" aria-selected="false" data-pane="steam-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" type="button" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="steam-controls" aria-hidden="false">
+          <div class="ll-panel-inner">
+            <div class="ll-card">
+              <h3>Burner Intensity</h3>
+              <label class="ll-control">
+                <span class="ll-label">Fuel combustion rate</span>
+                <input id="burner" type="range" min="0" max="100" value="48" />
+              </label>
+            </div>
+
+            <div class="ll-card">
+              <h3>Water Level</h3>
+              <label class="ll-control">
+                <span class="ll-label">Boiler fill level</span>
+                <input id="water-level" type="range" min="20" max="90" value="62" />
+              </label>
+            </div>
+          </div>
         </div>
 
-        <div class="ll-card">
-          <h3>Water Level</h3>
-          <label class="ll-control">
-            <span class="ll-label">Boiler fill level</span>
-            <input id="water-level" type="range" min="20" max="90" value="62" />
-          </label>
-        </div>
-
-        <div class="ll-card">
-          <h3>Chemistry Checks</h3>
-          <div class="ll-info"><strong>Combustion</strong>Fuel plus oxygen releases heat and produces new substances.</div>
-          <div class="ll-info"><strong>Phase Change</strong>Water absorbs latent heat as it becomes steam.</div>
-          <div class="ll-info"><strong>Pressure</strong>Steam molecules collide with the boiler and piston walls.</div>
-          <div class="ll-info"><strong>Water Treatment</strong>Removing minerals and oxygen reduces scale and corrosion.</div>
+        <div class="ll-pane" id="steam-guide" aria-hidden="true">
+          <div class="ll-panel-inner">
+            <div class="ll-card">
+              <h3>Chemistry Checks</h3>
+              <div class="ll-info"><strong>Combustion</strong>Fuel plus oxygen releases heat and produces new substances.</div>
+              <div class="ll-info"><strong>Phase Change</strong>Water absorbs latent heat as it becomes steam.</div>
+              <div class="ll-info"><strong>Atomic Motion</strong>Heating makes molecules move faster; cooling slows them and favors condensation.</div>
+              <div class="ll-info"><strong>Pressure</strong>Steam molecules collide with the boiler and piston walls.</div>
+              <div class="ll-info"><strong>Water Treatment</strong>Removing minerals and oxygen reduces scale and corrosion.</div>
+            </div>
+          </div>
         </div>
       </div>
     </aside>
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
   </div>
 </div>
 
+<script src="../assets/js/nav-mobile.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
 <script>
 (() => {
   const canvas = document.getElementById('steam-canvas');
@@ -383,9 +483,10 @@
 
     ctx.clearRect(0, 0, W, H);
     const bg = ctx.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, '#eef6ff');
-    bg.addColorStop(0.58, '#f8fbf7');
-    bg.addColorStop(1, '#fff4e5');
+    const night = document.body.classList.contains('steam-night') || document.body.dataset.theme === 'night' || document.body.dataset.lighting === 'night';
+    bg.addColorStop(0, night ? '#0f172a' : '#eef6ff');
+    bg.addColorStop(0.58, night ? '#111827' : '#f8fbf7');
+    bg.addColorStop(1, night ? '#1f2937' : '#fff4e5');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 

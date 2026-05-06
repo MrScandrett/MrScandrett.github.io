@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Entropy · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson - Entropy: explore microstates, probability, heat flow, information, and the Second Law of Thermodynamics with an interactive mixing lab." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .en-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 286px; }
+    .en-hero { padding: 0.4rem 0 1.3rem; }
+    .en-hero h1 { max-width: 30ch; margin-left: 0; font-size: clamp(1.7rem, 4vw, 2.45rem); }
+    .en-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .en-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; }
+    .en-lede { margin: 0.65rem 0 0; max-width: 72ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .en-lede { color: rgba(245,245,247,0.72); }
+    .en-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#ff6b35); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .en-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .en-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .en-card p { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .en-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .en-card { background: #2c2c2e; }
+    [data-theme="night"] .en-card p { color: rgba(245,245,247,0.72); }
+    .en-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; margin: 0.85rem 0; }
+    .en-mini { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem; background: rgba(0,0,0,0.02); }
+    .en-mini strong { display: block; margin-bottom: 0.25rem; color: var(--text,#1d1d1f); font-size: 0.84rem; }
+    .en-mini small { display: block; color: #64748b; font-size: 0.77rem; line-height: 1.5; }
+    [data-theme="night"] .en-mini { background: rgba(255,255,255,0.04); }
+    .en-formula { display: grid; gap: 0.6rem; margin: 0.8rem 0; }
+    .en-formula-line { border: 1px solid rgba(255,107,53,0.28); background: linear-gradient(135deg,rgba(255,107,53,0.1),rgba(48,209,88,0.05)); border-radius: 14px; padding: 0.95rem 1rem; text-align: center; }
+    .en-symbol { display: block; color: #e85d2a; font-family: "JetBrains Mono", monospace; font-size: clamp(1.08rem, 3vw, 1.55rem); font-weight: 800; margin-bottom: 0.35rem; }
+    .en-note { color: #64748b; font-size: 0.79rem; line-height: 1.5; }
+    .en-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; color: #3f4f65; font-size: 0.84rem; line-height: 1.6; background: rgba(255,107,53,0.1); border-left: 3px solid #ff6b35; }
+    [data-theme="night"] .en-callout { color: rgba(245,245,247,0.74); }
+    .en-carnot-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem; margin: 0.85rem 0; }
+    .en-carnot-step { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; background: rgba(0,122,255,0.055); }
+    .en-carnot-step b { display: block; width: 1.8rem; height: 1.8rem; border-radius: 50%; margin-bottom: 0.45rem; background: #007aff; color: #fff; display: grid; place-items: center; font-size: 0.78rem; }
+    .en-carnot-step strong { display: block; font-size: 0.84rem; margin-bottom: 0.25rem; }
+    .en-carnot-step small { display: block; color: #64748b; font-size: 0.77rem; line-height: 1.5; }
+    [data-theme="night"] .en-carnot-step { background: rgba(255,255,255,0.04); }
+    .en-lab { border: 1px solid rgba(148,163,184,0.22); border-radius: 18px; overflow: hidden; margin: 0.9rem 0; background: radial-gradient(circle at top, #18253a 0%, #07111f 58%, #030712 100%); color: #e5edf7; }
+    .en-canvas-wrap { position: relative; min-height: 360px; }
+    #entropy-canvas { width: 100%; height: 360px; display: block; }
+    .en-readouts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.55rem; padding: 0.85rem; border-top: 1px solid rgba(148,163,184,0.18); background: rgba(3,7,18,0.82); }
+    .en-readout { border: 1px solid rgba(148,163,184,0.2); border-radius: 12px; padding: 0.62rem 0.7rem; background: rgba(15,23,42,0.74); }
+    .en-readout span { display: block; color: #94a3b8; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.24rem; }
+    .en-readout strong { color: #fff7ed; font-size: 1rem; }
+    .en-controls { display: grid; gap: 0.85rem; }
+    .en-control label { display: flex; justify-content: space-between; gap: 0.8rem; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.36rem; }
+    .en-control output { color: #ff6b35; font-weight: 800; }
+    .en-control input[type="range"] { width: 100%; }
+    .en-btn-row { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+    .en-btn { border: 1px solid rgba(148,163,184,0.26); border-radius: 10px; padding: 0.55rem 0.8rem; background: rgba(255,255,255,0.86); color: #172033; font: inherit; font-size: 0.8rem; font-weight: 800; cursor: pointer; }
+    .en-btn:hover, .en-btn:focus-visible { border-color: rgba(255,107,53,0.62); outline: none; }
+    .en-practice .en-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .en-problem p { margin-bottom: 0.55rem; font-size: 0.88rem; color: #3f4f65; line-height: 1.6; }
+    [data-theme="night"] .en-problem p { color: rgba(245,245,247,0.72); }
+    .en-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .en-answer { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 150px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .en-check { background: #ff6b35; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 700; cursor: pointer; }
+    .en-feedback { font-size: 0.82rem; font-weight: 700; }
+    .en-feedback.ok { color: #34c759; }
+    .en-feedback.err { color: #ff3b30; }
+    .en-hint { display: none; margin-top: 0.4rem; color: #64748b; font-size: 0.78rem; }
+    .diff-easy, .diff-mid, .diff-hard { border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 800; margin-right: 0.4rem; }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; }
+    .diff-mid { background: rgba(255,149,0,0.15); color: #c07000; }
+    .diff-hard { background: rgba(255,59,48,0.12); color: #c0392b; }
+    @media (max-width: 720px) {
+      .en-grid, .en-readouts, .en-carnot-strip { grid-template-columns: 1fr; }
+      #entropy-canvas { height: 320px; }
+      .en-canvas-wrap { min-height: 320px; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="en-page">
+          <section class="hero en-hero">
+            <p class="eyebrow">Physics · Thermodynamics</p>
+            <h1>Entropy</h1>
+            <div class="en-meta">
+              <span>Second Law</span><span class="dot"></span>
+              <span>Microstates</span><span class="dot"></span>
+              <span>Heat Flow</span><span class="dot"></span>
+              <span>Information</span>
+            </div>
+            <p class="en-lede">Entropy measures how many microscopic arrangements can produce the same visible situation. Ordered states are rare. Mixed, spread-out states are common. That simple probability idea explains why heat flows, why perfume spreads through a room, and why every real machine wastes some energy.</p>
+          </section>
+
+          <section class="en-card" style="--card-accent:#ff6b35;">
+            <h2>Learning Goals</h2>
+            <div class="en-grid">
+              <div class="en-mini"><strong>Define entropy</strong><small>Connect entropy to multiplicity: the number of possible microstates behind one macrostate.</small></div>
+              <div class="en-mini"><strong>Explain spontaneous change</strong><small>Predict why isolated systems tend to move toward more probable, more mixed arrangements.</small></div>
+              <div class="en-mini"><strong>Use the Second Law</strong><small>Describe why total entropy increases in real processes, even when local order appears.</small></div>
+              <div class="en-mini"><strong>Connect physics to information</strong><small>Compare thermal entropy with uncertainty, compression, and information patterns.</small></div>
+            </div>
+          </section>
+
+          <section class="en-card" style="--card-accent:#30d158;">
+            <h2>Entropy is a Counting Problem</h2>
+            <p>A neat row of particles on the left side of a box can happen, but there are very few ways to arrange it. A mixed box has far more possible particle arrangements. When particles move randomly, they are much more likely to land in one of the many mixed arrangements than in one of the rare ordered ones.</p>
+            <div class="en-formula">
+              <div class="en-formula-line">
+                <span class="en-symbol">S = k ln W</span>
+                <span class="en-note">Boltzmann's idea: entropy S grows with W, the number of microstates. k is Boltzmann's constant.</span>
+              </div>
+              <div class="en-formula-line">
+                <span class="en-symbol">&Delta;S = Q / T</span>
+                <span class="en-note">For reversible heat transfer, entropy change equals heat added divided by absolute temperature.</span>
+              </div>
+            </div>
+            <div class="en-callout"><strong>Key idea:</strong> Entropy is not just "mess." It is probability, energy spreading, and missing information all pointing at the same deep pattern.</div>
+          </section>
+
+          <section class="en-card" style="--card-accent:#007aff;">
+            <h2>Feynman's Thermodynamic Route</h2>
+            <p>Feynman builds entropy from ideal heat engines before turning it into a general state variable. In a reversible engine, heat taken from a hot reservoir and heat delivered to a cold reservoir are not equal, but their ratios to absolute temperature are equal.</p>
+            <div class="en-formula">
+              <div class="en-formula-line">
+                <span class="en-symbol">Q<sub>1</sub>/T<sub>1</sub> = Q<sub>2</sub>/T<sub>2</sub></span>
+                <span class="en-note">This comes from Carnot's reversible engine argument: every reversible engine between the same two temperatures has the same best possible performance.</span>
+              </div>
+            </div>
+            <div class="en-carnot-strip">
+              <div class="en-carnot-step"><b>1</b><strong>Reversible heat flow</strong><small>Heat crosses only between objects at almost the same temperature, so a tiny change can reverse the direction.</small></div>
+              <div class="en-carnot-step"><b>2</b><strong>Cycle returns home</strong><small>The working substance finishes where it started, so any remaining change belongs to the reservoirs and surroundings.</small></div>
+              <div class="en-carnot-step"><b>3</b><strong>Entropy balances</strong><small>The amount <strong>Q/T</strong> absorbed equals the amount delivered. In an irreversible process, the total increases.</small></div>
+            </div>
+          </section>
+
+          <section class="en-card" style="--card-accent:#5856d6;">
+            <h2>Interactive Mixing Lab</h2>
+            <p style="font-size:0.84rem;color:#64748b;">Start with separated particles, then let random motion mix them. The entropy score rises as the box becomes harder to describe with a simple pattern.</p>
+            <div class="en-lab">
+              <div class="en-canvas-wrap">
+                <canvas id="entropy-canvas" aria-label="Entropy mixing simulation with particles moving from ordered to mixed states"></canvas>
+              </div>
+              <div class="en-readouts">
+                <div class="en-readout"><span>Entropy Score</span><strong id="en-score">0.00</strong></div>
+                <div class="en-readout"><span>Mixing</span><strong id="en-mix">0%</strong></div>
+                <div class="en-readout"><span>Temperature</span><strong id="en-temp">1.0x</strong></div>
+                <div class="en-readout"><span>State</span><strong id="en-state">Ordered</strong></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="en-card" style="--card-accent:#007aff;">
+            <h2>Where Entropy Shows Up</h2>
+            <div class="en-grid">
+              <div class="en-mini"><strong>Heat flow</strong><small>Thermal energy spreads from hotter matter to colder matter because there are vastly more spread-out energy arrangements.</small></div>
+              <div class="en-mini"><strong>Engines</strong><small>No heat engine can convert every bit of heat into useful work. Some energy must disperse into the surroundings.</small></div>
+              <div class="en-mini"><strong>Life</strong><small>Living things build local order by taking in energy and exporting more entropy to their environment.</small></div>
+              <div class="en-mini"><strong>Data</strong><small>In information theory, entropy measures uncertainty. A random message is harder to compress than a repeated pattern.</small></div>
+            </div>
+          </section>
+
+          <section class="en-card" style="--card-accent:#ff9500;">
+            <h2>Practice Problems</h2>
+            <div class="en-practice">
+              <div class="en-problem">
+                <p><span class="diff-easy">Easy</span>1. Which state usually has higher entropy: ten particles separated by color, or ten particles mixed together?</p>
+                <div class="en-problem-row">
+                  <select class="en-answer" id="enans-1">
+                    <option value="">Choose...</option>
+                    <option value="separated">Separated</option>
+                    <option value="mixed">Mixed</option>
+                  </select>
+                  <button class="en-check" onclick="enCheckText(1,'mixed')">Check</button>
+                  <span class="en-feedback" id="enfb-1"></span>
+                </div>
+                <div class="en-hint" id="enhint-1">Hint: there are more ways to be mixed than to be neatly separated.</div>
+              </div>
+              <div class="en-problem">
+                <p><span class="diff-mid">Medium</span>2. A reversible process adds 600 J of heat at 300 K. What is &Delta;S in J/K?</p>
+                <div class="en-problem-row">
+                  <input type="number" class="en-answer" id="enans-2" step="0.1" placeholder="J/K" />
+                  <button class="en-check" onclick="enCheckNumber(2,2,0.05)">Check</button>
+                  <span class="en-feedback" id="enfb-2"></span>
+                </div>
+                <div class="en-hint" id="enhint-2">Hint: &Delta;S = Q/T = 600/300.</div>
+              </div>
+              <div class="en-problem">
+                <p><span class="diff-hard">Hard</span>3. If system A has W = 10 microstates and system B has W = 1,000 microstates, which has larger entropy?</p>
+                <div class="en-problem-row">
+                  <select class="en-answer" id="enans-3">
+                    <option value="">Choose...</option>
+                    <option value="a">System A</option>
+                    <option value="b">System B</option>
+                    <option value="same">Same entropy</option>
+                  </select>
+                  <button class="en-check" onclick="enCheckText(3,'b')">Check</button>
+                  <span class="en-feedback" id="enfb-3"></span>
+                </div>
+                <div class="en-hint" id="enhint-3">Hint: S = k ln W, so larger W means larger entropy.</div>
+              </div>
+            </div>
+          </section>
+
+          <p><a href="../steam-lessons.html#module-physics">Back to Physics</a></p>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-label="Entropy controls">
+        <div class="ll-panel-inner">
+          <h2>Entropy Lab</h2>
+          <p>Change the random motion, reset the box, or freeze the current state to compare ordered and mixed arrangements.</p>
+          <div class="en-controls">
+            <div class="en-control">
+              <label for="en-temp-slider">Temperature <output id="en-temp-val">1.0x</output></label>
+              <input id="en-temp-slider" type="range" min="0" max="30" value="10" />
+            </div>
+            <div class="en-control">
+              <label for="en-particles-slider">Particles <output id="en-particles-val">70</output></label>
+              <input id="en-particles-slider" type="range" min="20" max="120" value="70" step="10" />
+            </div>
+            <div class="en-btn-row">
+              <button class="en-btn" type="button" id="en-run">Pause</button>
+              <button class="en-btn" type="button" id="en-reset">Reset Order</button>
+              <button class="en-btn" type="button" id="en-random">Randomize</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
+    </div>
+  </div>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+    const canvas = document.getElementById('entropy-canvas');
+    const ctx = canvas.getContext('2d');
+    const tempSlider = document.getElementById('en-temp-slider');
+    const particlesSlider = document.getElementById('en-particles-slider');
+    const runBtn = document.getElementById('en-run');
+    const resetBtn = document.getElementById('en-reset');
+    const randomBtn = document.getElementById('en-random');
+    const scoreEl = document.getElementById('en-score');
+    const mixEl = document.getElementById('en-mix');
+    const tempEl = document.getElementById('en-temp');
+    const stateEl = document.getElementById('en-state');
+    const tempVal = document.getElementById('en-temp-val');
+    const particlesVal = document.getElementById('en-particles-val');
+    let particles = [];
+    let running = true;
+    let frame = 0;
+
+    function temperature() {
+      return Number(tempSlider.value) / 10;
+    }
+
+    function resize() {
+      const width = canvas.offsetWidth || 640;
+      const height = window.matchMedia('(max-width: 720px)').matches ? 320 : 360;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function makeParticles(randomize) {
+      resize();
+      const count = Number(particlesSlider.value);
+      const half = Math.floor(count / 2);
+      particles = [];
+      for (let i = 0; i < count; i++) {
+        const side = i < half ? 'left' : 'right';
+        const color = side === 'left' ? '#38bdf8' : '#fb7185';
+        const xBase = side === 'left' ? canvas.width * 0.25 : canvas.width * 0.75;
+        const x = randomize ? Math.random() * canvas.width : xBase + (Math.random() - 0.5) * canvas.width * 0.28;
+        const y = randomize ? Math.random() * canvas.height : 34 + Math.random() * (canvas.height - 68);
+        particles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 1.6,
+          vy: (Math.random() - 0.5) * 1.6,
+          color,
+          side
+        });
+      }
+      particlesVal.textContent = count;
+    }
+
+    function measureMixing() {
+      if (!particles.length) return { mix: 0, entropy: 0 };
+      let leftBlue = 0, leftRed = 0, rightBlue = 0, rightRed = 0;
+      particles.forEach((p) => {
+        const left = p.x < canvas.width / 2;
+        if (left && p.side === 'left') leftBlue++;
+        if (left && p.side === 'right') leftRed++;
+        if (!left && p.side === 'left') rightBlue++;
+        if (!left && p.side === 'right') rightRed++;
+      });
+      const leftTotal = leftBlue + leftRed || 1;
+      const rightTotal = rightBlue + rightRed || 1;
+      const leftMixed = 1 - Math.abs(leftBlue - leftRed) / leftTotal;
+      const rightMixed = 1 - Math.abs(rightBlue - rightRed) / rightTotal;
+      const mix = Math.max(0, Math.min(1, (leftMixed + rightMixed) / 2));
+      const entropy = Math.max(0, Math.log2(1 + mix * particles.length));
+      return { mix, entropy };
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = 'rgba(148,163,184,0.12)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 20);
+      ctx.lineTo(canvas.width / 2, canvas.height - 20);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function step() {
+      const t = temperature();
+      if (running) {
+        particles.forEach((p) => {
+          p.vx += (Math.random() - 0.5) * 0.08 * t;
+          p.vy += (Math.random() - 0.5) * 0.08 * t;
+          const speed = Math.hypot(p.vx, p.vy) || 1;
+          const max = 0.55 + t * 1.55;
+          if (speed > max) {
+            p.vx = (p.vx / speed) * max;
+            p.vy = (p.vy / speed) * max;
+          }
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 8 || p.x > canvas.width - 8) p.vx *= -1;
+          if (p.y < 8 || p.y > canvas.height - 8) p.vy *= -1;
+          p.x = Math.max(8, Math.min(canvas.width - 8, p.x));
+          p.y = Math.max(8, Math.min(canvas.height - 8, p.y));
+        });
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#07111f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      particles.forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      });
+
+      const measurement = measureMixing();
+      scoreEl.textContent = measurement.entropy.toFixed(2);
+      mixEl.textContent = Math.round(measurement.mix * 100) + '%';
+      tempEl.textContent = t.toFixed(1) + 'x';
+      tempVal.textContent = t.toFixed(1) + 'x';
+      stateEl.textContent = measurement.mix > 0.7 ? 'Mixed' : measurement.mix > 0.35 ? 'Transition' : 'Ordered';
+      frame++;
+      requestAnimationFrame(step);
+    }
+
+    tempSlider.addEventListener('input', () => {
+      tempVal.textContent = temperature().toFixed(1) + 'x';
+    });
+    particlesSlider.addEventListener('input', () => makeParticles(false));
+    runBtn.addEventListener('click', () => {
+      running = !running;
+      runBtn.textContent = running ? 'Pause' : 'Run';
+    });
+    resetBtn.addEventListener('click', () => makeParticles(false));
+    randomBtn.addEventListener('click', () => makeParticles(true));
+    window.addEventListener('resize', () => makeParticles(false));
+    makeParticles(false);
+    step();
+
+    window.enCheckNumber = function (n, ans, tol) {
+      const val = parseFloat(document.getElementById('enans-' + n).value);
+      const fb = document.getElementById('enfb-' + n);
+      const hint = document.getElementById('enhint-' + n);
+      if (Number.isNaN(val)) {
+        fb.textContent = 'Enter a number.';
+        fb.className = 'en-feedback err';
+        return;
+      }
+      if (Math.abs(val - ans) <= tol) {
+        fb.textContent = 'Correct!';
+        fb.className = 'en-feedback ok';
+      } else {
+        fb.textContent = 'Try again.';
+        fb.className = 'en-feedback err';
+        hint.style.display = 'block';
+      }
+    };
+
+    window.enCheckText = function (n, ans) {
+      const el = document.getElementById('enans-' + n);
+      const fb = document.getElementById('enfb-' + n);
+      const hint = document.getElementById('enhint-' + n);
+      if (el.value === ans) {
+        fb.textContent = 'Correct!';
+        fb.className = 'en-feedback ok';
+      } else {
+        fb.textContent = 'Try again.';
+        fb.className = 'en-feedback err';
+        hint.style.display = 'block';
+      }
+    };
+  })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
