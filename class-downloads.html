@@ -4,11 +4,620 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Class Downloads · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Install class apps and download starter packs, templates, and weekly class files from one place." />
+  <meta name="description" content="Install class apps and download starter packs, templates, guides, and weekly class files from one searchable ClassroomOS hub." />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <script src="assets/js/theme-lighting.js"></script>
+  <style>
+    :root {
+      --kit-bg: #0b0f14;
+      --kit-panel: #101720;
+      --kit-panel-2: #131d29;
+      --kit-text: #f4f7fb;
+      --kit-muted: #aab8c8;
+      --kit-line: rgba(184, 199, 219, 0.22);
+      --kit-accent: #66b3ff;
+      --kit-accent-2: #7ee0b7;
+      --kit-warn: #ffd166;
+      --kit-danger: #ff7a90;
+      --kit-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+      --kit-radius: 8px;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body.downloads-page {
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(10, 15, 22, 0.82), rgba(10, 15, 22, 0.98)),
+        radial-gradient(circle at 18% 8%, rgba(102, 179, 255, 0.18), transparent 32%),
+        radial-gradient(circle at 88% 0%, rgba(126, 224, 183, 0.14), transparent 26%),
+        var(--kit-bg);
+      color: var(--kit-text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .downloads-page a {
+      color: inherit;
+    }
+
+    .downloads-page :focus-visible {
+      outline: 3px solid var(--kit-warn);
+      outline-offset: 3px;
+    }
+
+    .downloads-shell {
+      width: min(1240px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 30px 0 56px;
+    }
+
+    .downloads-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+      gap: 18px;
+      align-items: start;
+      min-height: 310px;
+    }
+
+    .downloads-head,
+    .downloads-controls,
+    .downloads-priority,
+    .downloads-browser,
+    .downloads-card,
+    .downloads-empty {
+      border: 1px solid var(--kit-line);
+      border-radius: var(--kit-radius);
+      background: color-mix(in srgb, var(--kit-panel) 92%, transparent);
+      box-shadow: var(--kit-shadow);
+    }
+
+    .downloads-head {
+      padding: clamp(22px, 4vw, 42px);
+      display: grid;
+      align-content: center;
+      gap: 18px;
+      min-height: 310px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .downloads-head::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(102, 179, 255, 0.12), transparent 58%),
+        repeating-linear-gradient(90deg, transparent 0 18px, rgba(255, 255, 255, 0.025) 18px 19px);
+      pointer-events: none;
+    }
+
+    .downloads-head > * {
+      position: relative;
+    }
+
+    .downloads-kicker,
+    .downloads-count,
+    .downloads-card-type,
+    .downloads-section-kicker {
+      margin: 0;
+      color: var(--kit-accent-2);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .downloads-title {
+      max-width: 780px;
+      margin: 0;
+      color: var(--kit-text);
+      font-size: clamp(2.2rem, 6vw, 5.1rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .downloads-lede {
+      max-width: 760px;
+      margin: 0;
+      color: var(--kit-muted);
+      font-size: clamp(1rem, 1.8vw, 1.18rem);
+      line-height: 1.55;
+    }
+
+    .downloads-quick {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .downloads-quick a,
+    .downloads-mode,
+    .downloads-cat,
+    .downloads-clear {
+      min-height: 42px;
+      border: 1px solid var(--kit-line);
+      border-radius: var(--kit-radius);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--kit-text);
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0.64rem 0.84rem;
+    }
+
+    .downloads-quick a:hover,
+    .downloads-mode:hover,
+    .downloads-cat:hover,
+    .downloads-clear:hover {
+      border-color: var(--kit-accent);
+      background: rgba(102, 179, 255, 0.12);
+    }
+
+    .downloads-side {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 18px;
+    }
+
+    .downloads-controls {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .downloads-search-label {
+      display: grid;
+      gap: 8px;
+      color: var(--kit-muted);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+
+    .downloads-search {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid var(--kit-line);
+      border-radius: var(--kit-radius);
+      background: #05080c;
+      color: var(--kit-text);
+      font: inherit;
+      font-size: 1rem;
+      padding: 0 0.9rem;
+    }
+
+    .downloads-search::placeholder {
+      color: #7f8da0;
+    }
+
+    .downloads-modes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .downloads-mode[aria-pressed="true"] {
+      border-color: var(--kit-accent);
+      background: var(--kit-accent);
+      color: #06111d;
+    }
+
+    .downloads-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .downloads-stat {
+      border: 1px solid var(--kit-line);
+      border-radius: var(--kit-radius);
+      background: rgba(255, 255, 255, 0.045);
+      padding: 10px;
+    }
+
+    .downloads-stat strong {
+      display: block;
+      color: var(--kit-text);
+      font-size: 1.45rem;
+      line-height: 1;
+    }
+
+    .downloads-stat span {
+      display: block;
+      margin-top: 4px;
+      color: var(--kit-muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .downloads-priority {
+      padding: 16px;
+      display: grid;
+      align-content: start;
+      gap: 12px;
+      max-height: 340px;
+      overflow: auto;
+      background:
+        linear-gradient(135deg, rgba(255, 209, 102, 0.14), transparent 52%),
+        color-mix(in srgb, var(--kit-panel-2) 94%, transparent);
+    }
+
+    .downloads-priority h2,
+    .downloads-browser h2 {
+      margin: 0;
+      color: var(--kit-text);
+      font-size: 1.18rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .downloads-priority-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .downloads-main-grid {
+      display: grid;
+      grid-template-columns: 238px minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+      align-items: start;
+    }
+
+    .downloads-sidebar {
+      position: sticky;
+      top: 78px;
+      border: 1px solid var(--kit-line);
+      border-radius: var(--kit-radius);
+      background: color-mix(in srgb, var(--kit-panel) 92%, transparent);
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .downloads-sidebar h2 {
+      margin: 4px 4px 8px;
+      font-size: 0.86rem;
+      color: var(--kit-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .downloads-cat {
+      width: 100%;
+      justify-content: space-between;
+      min-height: 40px;
+      padding-inline: 10px;
+      text-align: left;
+    }
+
+    .downloads-cat[aria-pressed="true"] {
+      border-color: var(--kit-accent-2);
+      background: rgba(126, 224, 183, 0.14);
+      color: var(--kit-text);
+    }
+
+    .downloads-cat small {
+      color: var(--kit-muted);
+      font-weight: 900;
+    }
+
+    .downloads-browser {
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .downloads-browser-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .downloads-browser-head p {
+      margin: 5px 0 0;
+      color: var(--kit-muted);
+      line-height: 1.45;
+    }
+
+    .downloads-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+      gap: 12px;
+    }
+
+    .downloads-card {
+      min-width: 0;
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
+      box-shadow: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .downloads-card[data-priority="true"] {
+      border-color: rgba(255, 209, 102, 0.58);
+    }
+
+    .downloads-card-head {
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .downloads-icon {
+      width: 46px;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--kit-line);
+      border-radius: var(--kit-radius);
+      background: rgba(255, 255, 255, 0.07);
+      font-size: 1.45rem;
+    }
+
+    .downloads-card h3 {
+      margin: 2px 0 0;
+      color: var(--kit-text);
+      font-size: 1.08rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .downloads-card p {
+      margin: 0;
+      color: var(--kit-muted);
+      line-height: 1.45;
+    }
+
+    .downloads-meta,
+    .downloads-platforms,
+    .downloads-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .downloads-badge {
+      border: 1px solid var(--kit-line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.055);
+      color: var(--kit-text);
+      font-size: 0.72rem;
+      font-weight: 900;
+      padding: 0.26rem 0.48rem;
+      white-space: nowrap;
+    }
+
+    .downloads-badge--platform {
+      border-color: rgba(126, 224, 183, 0.42);
+      color: #b9ffe3;
+    }
+
+    .downloads-page .downloads-action {
+      min-height: 44px;
+      border: 1px solid var(--kit-accent);
+      border-radius: var(--kit-radius);
+      background: var(--kit-accent);
+      color: #06111d !important;
+      font-weight: 950;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.7rem 0.9rem;
+      width: 100%;
+    }
+
+    .downloads-action:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .downloads-empty {
+      grid-column: 1 / -1;
+      padding: 26px;
+      text-align: center;
+      box-shadow: none;
+    }
+
+    .downloads-empty strong {
+      display: block;
+      color: var(--kit-text);
+      font-size: 1.2rem;
+      margin-bottom: 6px;
+    }
+
+    .downloads-empty p {
+      margin: 0 auto 14px;
+      max-width: 46rem;
+      color: var(--kit-muted);
+    }
+
+    /* Arcade/Game Engine variation */
+    body.downloads-page[data-downloads-mode="arcade"] {
+      --kit-bg: #07070c;
+      --kit-panel: #171226;
+      --kit-panel-2: #211637;
+      --kit-text: #fff9e8;
+      --kit-muted: #d2c6ef;
+      --kit-line: rgba(255, 255, 255, 0.18);
+      --kit-accent: #00f0ff;
+      --kit-accent-2: #ff4fd8;
+      --kit-warn: #fff15c;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(255, 79, 216, 0.26), transparent 30%),
+        radial-gradient(circle at 86% 10%, rgba(0, 240, 255, 0.2), transparent 26%),
+        linear-gradient(180deg, #090814, #10101f 55%, #07070c);
+    }
+
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-head,
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-controls,
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-priority,
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-sidebar,
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-browser,
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-card {
+      border-width: 2px;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.22), 0 18px 0 rgba(0, 0, 0, 0.26);
+    }
+
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-title,
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-browser h2,
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-priority h2 {
+      text-shadow: 0 0 18px rgba(0, 240, 255, 0.36);
+    }
+
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-card {
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-card:hover {
+      transform: translateY(-5px) scale(1.01);
+      border-color: var(--kit-accent);
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.18), 0 22px 0 rgba(0, 0, 0, 0.28);
+    }
+
+    body.downloads-page[data-downloads-mode="arcade"] .downloads-section-kicker::before {
+      content: "Quest Log / ";
+      color: var(--kit-warn);
+    }
+
+    /* Focus Terminal variation */
+    body.downloads-page[data-downloads-mode="terminal"] {
+      --kit-bg: #000;
+      --kit-panel: #030704;
+      --kit-panel-2: #050b06;
+      --kit-text: #e8ffe2;
+      --kit-muted: #96bf8c;
+      --kit-line: rgba(123, 255, 92, 0.46);
+      --kit-accent: #9cff6a;
+      --kit-accent-2: #ffd166;
+      --kit-warn: #ffd166;
+      --kit-radius: 0;
+      background: #000;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    body.downloads-page[data-downloads-mode="terminal"] .downloads-head::before {
+      background: repeating-linear-gradient(180deg, rgba(156, 255, 106, 0.04) 0 1px, transparent 1px 6px);
+    }
+
+    body.downloads-page[data-downloads-mode="terminal"] .downloads-title::before {
+      content: "./";
+      color: var(--kit-accent);
+    }
+
+    body.downloads-page[data-downloads-mode="terminal"] .downloads-cat::before {
+      content: "cd ";
+      color: var(--kit-accent-2);
+    }
+
+    body.downloads-page[data-downloads-mode="terminal"] .downloads-action::before {
+      content: "run ";
+      margin-right: 0.4ch;
+    }
+
+    body.downloads-page[data-downloads-mode="terminal"] .downloads-card {
+      grid-template-rows: auto auto auto;
+    }
+
+    body.downloads-page[data-downloads-mode="terminal"] .downloads-card p,
+    body.downloads-page[data-downloads-mode="terminal"] .downloads-tags,
+    body.downloads-page[data-downloads-mode="terminal"] .downloads-card-type {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .downloads-shell {
+        width: min(100% - 20px, 720px);
+        padding-top: 16px;
+      }
+
+      .downloads-hero,
+      .downloads-main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .downloads-side {
+        grid-template-rows: auto;
+      }
+
+      .downloads-sidebar {
+        position: static;
+      }
+
+      .downloads-sidebar nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scroll-snap-type: x proximity;
+      }
+
+      .downloads-cat {
+        min-width: max-content;
+        scroll-snap-align: start;
+      }
+
+      .downloads-browser-head {
+        align-items: start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .downloads-shell {
+        width: min(100% - 14px, 480px);
+      }
+
+      .downloads-head,
+      .downloads-controls,
+      .downloads-priority,
+      .downloads-browser {
+        padding: 12px;
+      }
+
+      .downloads-priority {
+        max-height: none;
+      }
+
+      .downloads-modes,
+      .downloads-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .downloads-card-head {
+        grid-template-columns: 40px minmax(0, 1fr);
+      }
+
+      .downloads-icon {
+        width: 40px;
+        font-size: 1.2rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
-<body class="downloads-page">
+<body class="downloads-page" data-downloads-mode="ide">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <header class="site-header">
@@ -29,793 +638,424 @@
     </div>
   </header>
 
-  <main id="main-content" class="downloads-main">
-    <section class="downloads-hero">
-      <div class="downloads-hero-copy">
-        <p class="eyebrow">Class Files</p>
-        <h1 class="reveal">Get What You Need</h1>
-        <p class="downloads-hero-lede">Install the apps used in class, grab starter packs, and open weekly project files from one place instead of hunting through tabs and folders.</p>
-        <div class="downloads-hero-actions">
-          <a class="downloads-chip-link is-primary" href="#downloads-browser" data-set-view="files">Browse Files</a>
-          <a class="downloads-chip-link" href="#downloads-browser" data-set-view="apps">Open Apps</a>
-        </div>
-        <div class="downloads-hero-stats" aria-label="Downloads overview">
-          <article class="downloads-stat">
-            <strong id="downloads-stat-files">0</strong>
-            <span>Files Ready</span>
-          </article>
-          <article class="downloads-stat">
-            <strong id="downloads-stat-starters">0</strong>
-            <span>Starter Packs</span>
-          </article>
-          <article class="downloads-stat">
-            <strong id="downloads-stat-apps">0</strong>
-            <span>Apps Linked</span>
-          </article>
+  <main id="main-content" class="downloads-shell">
+    <section class="downloads-hero" aria-labelledby="downloads-title">
+      <div class="downloads-head">
+        <p class="downloads-kicker">Starter Kit / Class Downloads</p>
+        <h1 class="downloads-title" id="downloads-title">Class Downloads</h1>
+        <p class="downloads-lede">Find today&apos;s required file, install the right software, or grab a clean starter template without digging through email, drives, or old tabs.</p>
+        <div class="downloads-quick" aria-label="Quick actions">
+          <a href="#downloads-browser" data-quick-filter="__priority">Start Here</a>
+          <a href="#downloads-browser" data-quick-filter="VR Setup">VR Setup</a>
+          <a href="#downloads-browser" data-quick-filter="Coding">Coding</a>
         </div>
       </div>
 
-      <aside class="downloads-hero-panel">
-        <p class="downloads-panel-kicker">Start Here</p>
-        <h2>Fast classroom setup</h2>
-        <ol class="downloads-panel-list">
-          <li>Choose <strong>Starter Packs</strong> if you need a ready-to-edit project folder.</li>
-          <li>Choose <strong>Apps</strong> if class software is missing on your computer.</li>
-          <li>Use the guide button when you need setup or publishing help after the download.</li>
-        </ol>
+      <div class="downloads-side">
+        <section class="downloads-controls" aria-label="Downloads controls">
+          <label class="downloads-search-label" for="downloads-search">
+            Search everything
+            <input class="downloads-search" id="downloads-search" type="search" autocomplete="off" placeholder="godot, vr, mac, starter..." />
+          </label>
+
+          <div class="downloads-modes" aria-label="Interface style">
+            <button class="downloads-mode" type="button" data-mode="ide" aria-pressed="true">IDE</button>
+            <button class="downloads-mode" type="button" data-mode="arcade" aria-pressed="false">Arcade</button>
+            <button class="downloads-mode" type="button" data-mode="terminal" aria-pressed="false">Terminal</button>
+          </div>
+
+          <div class="downloads-stats" aria-label="Catalog summary">
+            <div class="downloads-stat"><strong id="stat-total">0</strong><span>Total</span></div>
+            <div class="downloads-stat"><strong id="stat-priority">0</strong><span>Start Here</span></div>
+            <div class="downloads-stat"><strong id="stat-platforms">0</strong><span>Platforms</span></div>
+          </div>
+        </section>
+
+        <section class="downloads-priority" aria-labelledby="priority-title">
+          <p class="downloads-section-kicker">Today&apos;s Class Files</p>
+          <h2 id="priority-title">Start Here</h2>
+          <div class="downloads-priority-list" id="priority-list" aria-live="polite"></div>
+        </section>
+      </div>
+    </section>
+
+    <div class="downloads-main-grid">
+      <aside class="downloads-sidebar" aria-label="Category filters">
+        <h2>Categories</h2>
+        <nav id="category-list" aria-label="Download categories"></nav>
       </aside>
-    </section>
 
-    <section class="downloads-command" id="downloads-browser" aria-label="Downloads browser">
-      <div class="downloads-command-top">
-        <div class="downloads-tabs" role="tablist" aria-label="Catalog views">
-          <button class="downloads-tab is-active" type="button" data-view="all" role="tab" aria-selected="true">All</button>
-          <button class="downloads-tab" type="button" data-view="files" role="tab" aria-selected="false">Files</button>
-          <button class="downloads-tab" type="button" data-view="apps" role="tab" aria-selected="false">Apps</button>
-          <button class="downloads-tab" type="button" data-view="starter" role="tab" aria-selected="false">Starter Packs</button>
+      <section class="downloads-browser" id="downloads-browser" aria-labelledby="browser-title">
+        <div class="downloads-browser-head">
+          <div>
+            <p class="downloads-section-kicker">Resource Browser</p>
+            <h2 id="browser-title">Browse Everything</h2>
+            <p id="downloads-status" aria-live="polite">Loading resources...</p>
+          </div>
+          <button class="downloads-clear" type="button" id="clear-filters">Clear Filters</button>
         </div>
-
-        <label class="downloads-search-wrap" for="downloads-search">
-          <span>Search</span>
-          <input id="downloads-search" type="search" placeholder="Search apps, files, or categories" />
-        </label>
-      </div>
-
-      <div class="downloads-filter-row" id="downloads-filter-row" aria-label="Category filters"></div>
-      <p class="downloads-results" id="downloads-results">Loading downloads...</p>
-    </section>
-
-    <section class="section downloads-featured-section" id="downloads-featured-section">
-      <div class="section-head">
-        <h2>Start Here This Week</h2>
-        <p>One featured file to get students moving fast.</p>
-      </div>
-      <div id="downloads-featured" aria-live="polite">
-        <div class="downloads-featured-card downloads-skeleton-card" aria-hidden="true"></div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <h2>Browse Everything</h2>
-        <p>Apps, starter packs, and class downloads in one searchable catalog.</p>
-      </div>
-
-      <div class="downloads-catalog-grid" id="downloads-catalog" aria-live="polite" aria-label="Downloads catalog" aria-busy="true">
-        <div class="downloads-catalog-card downloads-skeleton-card" aria-hidden="true"></div>
-        <div class="downloads-catalog-card downloads-skeleton-card" aria-hidden="true"></div>
-        <div class="downloads-catalog-card downloads-skeleton-card" aria-hidden="true"></div>
-        <div class="downloads-catalog-card downloads-skeleton-card" aria-hidden="true"></div>
-      </div>
-    </section>
+        <div class="downloads-grid" id="downloads-grid" aria-live="polite"></div>
+      </section>
+    </div>
   </main>
 
   <footer class="site-footer">
-    <p>Mr. Scandrett's ClassroomOS - <a href="https://github.com/MrScandrett" target="_blank" rel="noreferrer">GitHub</a></p>
+    <p>Mr. Scandrett&apos;s ClassroomOS - <a href="https://github.com/MrScandrett" target="_blank" rel="noreferrer">GitHub</a></p>
   </footer>
 
   <script>
-    (async function () {
-      const APPS = [
-        {
-          id: "vscode",
-          kind: "app",
-          icon: "💻",
-          name: "VS Code",
-          summary: "Flexible code editor for web projects, Python, JavaScript, and classroom publishing work.",
-          category: "Code Editor",
-          module: "Coding and Web",
-          detail: "Best for editing HTML, CSS, JavaScript, Python, and project folders used across class units.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "Coding", "Recommended"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://code.visualstudio.com/download"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "fusion-360",
-          kind: "app",
-          icon: "🧱",
-          name: "Fusion 360",
-          summary: "3D CAD and engineering software for parts, prototypes, and fabrication planning.",
-          category: "3D CAD",
-          module: "Engineering",
-          detail: "Best for mechanical design, product builds, and classroom prototyping.",
-          platform: "Windows / Mac",
-          tags: ["Official", "Modeling", "Fabrication"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://www.autodesk.com/products/fusion-360/personal"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "blender",
-          kind: "app",
-          icon: "🌀",
-          name: "Blender",
-          summary: "Free 3D modeling and animation software for scenes, rendering, and game assets.",
-          category: "3D Modeling",
-          module: "Design",
-          detail: "Best for environments, character assets, animation, and rendering.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "Animation", "Rendering"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://www.blender.org/download/"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "godot",
-          kind: "app",
-          icon: "🕶️",
-          name: "Godot Engine",
-          summary: "Game engine for 2D, 3D, and VR projects, including the class VR starter template.",
-          category: "Game Development",
-          module: "VR Game Design",
-          detail: "Best for opening the VR starter project, building interactive scenes, and exporting student games.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "VR", "Game Dev"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://godotengine.org/download"
-          },
-          secondaryAction: {
-            label: "Browse VR Files",
-            href: "class-downloads.html#downloads-browser"
-          }
-        },
-        {
-          id: "paint-net",
-          kind: "app",
-          icon: "🎨",
-          name: "Paint.NET",
-          summary: "Simple image editing software for sprites, textures, posters, and thumbnail cleanup.",
-          category: "Image Editing",
-          module: "Art and Design",
-          detail: "Best for quick edits, transparent PNG work, and texture cleanup.",
-          platform: "Windows",
-          tags: ["Official", "Graphics", "Sprites"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://www.getpaint.net/download.html"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "krita",
-          kind: "app",
-          icon: "🖌️",
-          name: "Krita",
-          summary: "Digital painting software for concept art, textures, storyboards, and stylus-based illustration.",
-          category: "Digital Painting",
-          module: "Art and Design",
-          detail: "Best for drawing, environment concept art, character sheets, and game texture creation.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "Art", "Textures"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://krita.org/en/download/"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "inkscape",
-          kind: "app",
-          icon: "✒️",
-          name: "Inkscape",
-          summary: "Vector graphics software for logos, SVG artwork, diagrams, and fabrication-ready layouts.",
-          category: "Vector Art",
-          module: "Design",
-          detail: "Best for SVG creation, laser-style layouts, and clean scalable graphics.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "SVG", "Fabrication"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://inkscape.org/download/"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "gimp",
-          kind: "app",
-          icon: "🧰",
-          name: "GIMP",
-          summary: "Full image editing software for photo cleanup, compositing, texture prep, and poster work.",
-          category: "Image Editing",
-          module: "Art and Design",
-          detail: "Best for more advanced image editing tasks than Paint.NET, especially layered image work.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "Graphics", "Photo Editing"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://www.gimp.org/downloads/"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "audacity",
-          kind: "app",
-          icon: "🎙️",
-          name: "Audacity",
-          summary: "Audio recording and editing software for narration, sound effects, podcasts, and game audio.",
-          category: "Audio",
-          module: "Media",
-          detail: "Best for voice recording, trimming clips, and lightweight audio cleanup.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "Recording", "Editing"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://www.audacityteam.org/download/"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "obs-studio",
-          kind: "app",
-          icon: "🎥",
-          name: "OBS Studio",
-          summary: "Screen recording and capture software for demos, tutorials, walkthroughs, and portfolio videos.",
-          category: "Video Capture",
-          module: "Media",
-          detail: "Best for recording gameplay, narrating projects, and making polished student showcase videos.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "Recording", "Presentation"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://obsproject.com/download"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "thonny",
-          kind: "app",
-          icon: "🐍",
-          name: "Thonny",
-          summary: "Beginner-friendly Python editor for coding, automation, sensors, and physical computing projects.",
-          category: "Python",
-          module: "Coding and Web",
-          detail: "Best for students starting Python, especially when paired with electronics or STEM problem solving.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "Python", "Beginner"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://thonny.org/"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "processing",
-          kind: "app",
-          icon: "🧪",
-          name: "Processing",
-          summary: "Creative coding environment for generative art, simulations, and interactive visual projects.",
-          category: "Creative Coding",
-          module: "Coding and Web",
-          detail: "Best for visuals, computational art, simple simulations, and coding-focused STEAM explorations.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "Creative Coding", "STEM"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://processing.org/download"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "arduino-ide",
-          kind: "app",
-          icon: "🤖",
-          name: "Arduino IDE",
-          summary: "Programming environment for microcontrollers, robotics, sensors, and electronics builds.",
-          category: "Electronics",
-          module: "Engineering",
-          detail: "Best for coding boards, testing sensors, and building hands-on physical computing projects.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "Robotics", "Microcontrollers"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://www.arduino.cc/en/software"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "kicad",
-          kind: "app",
-          icon: "🔌",
-          name: "KiCad",
-          summary: "Electronics design software for circuit schematics, PCB layouts, and engineering documentation.",
-          category: "Electronics",
-          module: "Engineering",
-          detail: "Best for students designing boards, documenting circuits, and learning electronics workflows.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "PCB", "Circuits"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://www.kicad.org/download/"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "cura",
-          kind: "app",
-          icon: "🖨️",
-          name: "UltiMaker Cura",
-          summary: "3D printing slicer for preparing models, supports, and print settings before fabrication.",
-          category: "3D Printing",
-          module: "Engineering",
-          detail: "Best for taking finished 3D models and preparing them for classroom 3D printers.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "Slicer", "Fabrication"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://ultimaker.com/software/ultimaker-cura"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "freecad",
-          kind: "app",
-          icon: "📐",
-          name: "FreeCAD",
-          summary: "Free parametric CAD software for engineering sketches, parts, and technical design work.",
-          category: "3D CAD",
-          module: "Engineering",
-          detail: "Best as a free CAD option for precise modeling, measurements, and mechanical design practice.",
-          platform: "Windows / Mac / Linux",
-          tags: ["Official", "CAD", "Engineering"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://www.freecad.org/downloads.php"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        },
-        {
-          id: "scratch-desktop",
-          kind: "app",
-          icon: "🧩",
-          name: "Scratch Desktop",
-          summary: "Offline block coding tool for beginner programmers, quick prototypes, and entry-level STEAM projects.",
-          category: "Coding Basics",
-          module: "Coding and Web",
-          detail: "Best for younger students or quick logic-building activities before moving into text-based coding.",
-          platform: "Windows / Mac",
-          tags: ["Official", "Beginner", "Block Coding"],
-          primaryAction: {
-            label: "Open Download Page",
-            href: "https://scratch.mit.edu/download"
-          },
-          secondaryAction: {
-            label: "Applications Hub",
-            href: "applications.html"
-          }
-        }
-      ];
+    const classData = [
+      {
+        id: "project-starter-pack",
+        title: "Project Development Starter Pack",
+        description: "Ready-to-code HTML, CSS, and JavaScript files already linked together. Unzip, open in VS Code, and start building.",
+        type: "starter",
+        category: "Coding",
+        priority: true,
+        tags: ["starter", "html", "css", "javascript", "web", "publishing"],
+        platforms: ["Windows", "Mac", "Chromebook", "Web"],
+        icon: "PK",
+        actionLabel: "Download Starter Pack",
+        url: "downloads/project-starter-pack.zip"
+      },
+      {
+        id: "vr-demo-master",
+        title: "VR Demo - Godot 4 Starter Project",
+        description: "Ready-to-run Godot 4 VR project with scene, scripts, materials, and OpenXR setup included.",
+        type: "starter",
+        category: "VR Setup",
+        priority: true,
+        tags: ["starter", "godot", "vr", "openxr", "gdscript", "quest"],
+        platforms: ["Windows", "Mac"],
+        icon: "VR",
+        actionLabel: "Download VR Template",
+        url: "downloads/vr-demo-master.zip"
+      },
+      {
+        id: "publish-tutorial",
+        title: "GitHub Pages Publishing Guide",
+        description: "Step-by-step classroom guide for editing a project folder and publishing it on GitHub Pages.",
+        type: "guide",
+        category: "Coding",
+        priority: true,
+        tags: ["guide", "github", "pages", "publishing", "html", "css"],
+        platforms: ["Chromebook", "Web", "Windows", "Mac"],
+        icon: "GH",
+        actionLabel: "Open Guide",
+        url: "tutorial/index.html"
+      },
+      {
+        id: "godot-461-windows",
+        title: "Godot 4.6.1 for Windows",
+        description: "Official Godot editor download for opening the VR starter project on Windows classroom machines.",
+        type: "software",
+        category: "VR Setup",
+        priority: false,
+        tags: ["godot", "engine", "vr", "openxr", "game development"],
+        platforms: ["Windows"],
+        icon: "G4",
+        actionLabel: "Download Windows Build",
+        url: "https://github.com/godotengine/godot/releases/download/4.6.1-stable/Godot_v4.6.1-stable_win64.exe.zip"
+      },
+      {
+        id: "godot-461-mac",
+        title: "Godot 4.6.1 for Mac",
+        description: "Official Godot editor download for opening the VR starter project on macOS.",
+        type: "software",
+        category: "VR Setup",
+        priority: false,
+        tags: ["godot", "engine", "vr", "openxr", "game development"],
+        platforms: ["Mac"],
+        icon: "G4",
+        actionLabel: "Download Mac Build",
+        url: "https://github.com/godotengine/godot/releases/download/4.6.1-stable/Godot_v4.6.1-stable_macos.universal.zip"
+      },
+      {
+        id: "godot-export-templates",
+        title: "Godot Export Templates",
+        description: "Install these when you are ready to package a playable Godot build instead of only editing the project.",
+        type: "template",
+        category: "VR Setup",
+        priority: false,
+        tags: ["godot", "export", "template", "build", "game development"],
+        platforms: ["Windows", "Mac"],
+        icon: "EX",
+        actionLabel: "Download Templates",
+        url: "https://github.com/godotengine/godot/releases/download/4.6.1-stable/Godot_v4.6.1-stable_export_templates.tpz"
+      },
+      {
+        id: "vscode",
+        title: "Visual Studio Code",
+        description: "Flexible code editor for HTML, CSS, JavaScript, Python, and project folders used across class.",
+        type: "software",
+        category: "Coding",
+        priority: false,
+        tags: ["vscode", "editor", "html", "css", "javascript", "python"],
+        platforms: ["Windows", "Mac", "Web"],
+        icon: "VS",
+        actionLabel: "Open Download Page",
+        url: "https://code.visualstudio.com/download"
+      },
+      {
+        id: "arduino-ide",
+        title: "Arduino IDE",
+        description: "Programming environment for microcontrollers, robotics, sensors, and electronics builds.",
+        type: "software",
+        category: "Electronics",
+        priority: false,
+        tags: ["arduino", "robotics", "microcontroller", "sensors", "circuits"],
+        platforms: ["Windows", "Mac", "Web"],
+        icon: "AR",
+        actionLabel: "Open Download Page",
+        url: "https://www.arduino.cc/en/software"
+      },
+      {
+        id: "obs-studio",
+        title: "OBS Studio",
+        description: "Screen recording and capture software for demos, tutorials, walkthroughs, and portfolio videos.",
+        type: "software",
+        category: "Media",
+        priority: false,
+        tags: ["obs", "recording", "video", "presentation", "showcase"],
+        platforms: ["Windows", "Mac"],
+        icon: "OB",
+        actionLabel: "Open Download Page",
+        url: "https://obsproject.com/download"
+      },
+      {
+        id: "blender",
+        title: "Blender",
+        description: "Free 3D modeling and animation software for scenes, rendering, and game assets.",
+        type: "software",
+        category: "3D CAD",
+        priority: false,
+        tags: ["blender", "3d", "modeling", "animation", "assets"],
+        platforms: ["Windows", "Mac"],
+        icon: "BL",
+        actionLabel: "Open Download Page",
+        url: "https://www.blender.org/download/"
+      },
+      {
+        id: "tinkercad",
+        title: "Tinkercad Classroom CAD",
+        description: "Browser-based CAD workspace for quick parts, prototypes, classroom 3D design, and circuits practice.",
+        type: "software",
+        category: "3D CAD",
+        priority: false,
+        tags: ["tinkercad", "cad", "3d", "circuits", "browser"],
+        platforms: ["Chromebook", "Web", "Windows", "Mac"],
+        icon: "TC",
+        actionLabel: "Open Tinkercad",
+        url: "https://www.tinkercad.com/"
+      },
+      {
+        id: "scratch-desktop",
+        title: "Scratch Desktop",
+        description: "Offline block coding tool for beginner programmers, quick prototypes, and entry-level STEAM projects.",
+        type: "software",
+        category: "Coding",
+        priority: false,
+        tags: ["scratch", "blocks", "games", "starter", "coding basics"],
+        platforms: ["Windows", "Mac", "Web"],
+        icon: "SC",
+        actionLabel: "Open Download Page",
+        url: "https://scratch.mit.edu/download"
+      }
+    ];
 
-      const state = {
-        view: "all",
-        category: "all",
-        query: "",
-        items: [],
-        filesUnavailable: false
-      };
+    const state = {
+      category: "All",
+      query: "",
+      priorityOnly: false,
+      mode: "ide"
+    };
 
-      const tabButtons = Array.from(document.querySelectorAll(".downloads-tab"));
-      const quickViewLinks = Array.from(document.querySelectorAll("[data-set-view]"));
-      const filterRow = document.getElementById("downloads-filter-row");
-      const resultsEl = document.getElementById("downloads-results");
-      const catalogEl = document.getElementById("downloads-catalog");
-      const featuredSection = document.getElementById("downloads-featured-section");
-      const featuredEl = document.getElementById("downloads-featured");
-      const searchInput = document.getElementById("downloads-search");
-      const statFiles = document.getElementById("downloads-stat-files");
-      const statStarters = document.getElementById("downloads-stat-starters");
-      const statApps = document.getElementById("downloads-stat-apps");
+    const categoryList = document.getElementById("category-list");
+    const grid = document.getElementById("downloads-grid");
+    const priorityList = document.getElementById("priority-list");
+    const searchInput = document.getElementById("downloads-search");
+    const statusEl = document.getElementById("downloads-status");
+    const clearButton = document.getElementById("clear-filters");
+    const modeButtons = Array.from(document.querySelectorAll(".downloads-mode"));
+    const quickFilters = Array.from(document.querySelectorAll("[data-quick-filter]"));
+    const statTotal = document.getElementById("stat-total");
+    const statPriority = document.getElementById("stat-priority");
+    const statPlatforms = document.getElementById("stat-platforms");
 
-      function createNode(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text !== undefined) node.textContent = text;
-        return node;
+    function isExternal(url) {
+      return /^https?:\/\//i.test(url);
+    }
+
+    function unique(items) {
+      return Array.from(new Set(items));
+    }
+
+    function matchesSearch(item) {
+      if (!state.query) return true;
+      const searchable = [
+        item.title,
+        item.description,
+        item.type,
+        item.category,
+        item.platforms.join(" "),
+        item.tags.join(" ")
+      ].join(" ").toLowerCase();
+      return searchable.includes(state.query);
+    }
+
+    function filteredItems() {
+      return classData
+        .filter((item) => !state.priorityOnly || item.priority)
+        .filter((item) => state.category === "All" || item.category === state.category)
+        .filter(matchesSearch)
+        .sort((a, b) => Number(b.priority) - Number(a.priority) || a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
+    }
+
+    function createEl(tag, className, text) {
+      const element = document.createElement(tag);
+      if (className) element.className = className;
+      if (text !== undefined) element.textContent = text;
+      return element;
+    }
+
+    function renderCard(item, context) {
+      const card = createEl("article", "downloads-card");
+      card.dataset.priority = String(item.priority);
+      card.dataset.type = item.type;
+
+      const head = createEl("div", "downloads-card-head");
+      const icon = createEl("span", "downloads-icon", item.icon);
+      icon.setAttribute("aria-hidden", "true");
+      const titleWrap = createEl("div");
+      titleWrap.appendChild(createEl("p", "downloads-card-type", item.type + " / " + item.category));
+      titleWrap.appendChild(createEl("h3", "", item.title));
+      head.appendChild(icon);
+      head.appendChild(titleWrap);
+
+      const description = createEl("p", "", item.description);
+      const platforms = createEl("div", "downloads-platforms");
+      item.platforms.forEach((platform) => platforms.appendChild(createEl("span", "downloads-badge downloads-badge--platform", platform)));
+
+      const tags = createEl("div", "downloads-tags");
+      unique([item.category, item.type].concat(item.tags)).slice(0, context === "priority" ? 4 : 6).forEach((tag) => {
+        tags.appendChild(createEl("span", "downloads-badge", tag));
+      });
+
+      const action = createEl("a", "downloads-action", item.actionLabel);
+      action.href = item.url;
+      if (!isExternal(item.url) && item.url.startsWith("downloads/")) action.setAttribute("download", "");
+      if (isExternal(item.url)) {
+        action.target = "_blank";
+        action.rel = "noreferrer";
       }
 
-      function formatDate(iso) {
-        if (!iso) return "";
-        const date = new Date(iso + "T12:00:00");
-        return date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        });
-      }
+      card.appendChild(head);
+      card.appendChild(description);
+      card.appendChild(platforms);
+      card.appendChild(tags);
+      card.appendChild(action);
+      return card;
+    }
 
-      function iconForFile(filename) {
-        if (!filename) return "📄";
-        const cleanName = filename.split("?")[0];
-        const ext = cleanName.split(".").pop().toLowerCase();
-        const map = {
-          zip: "📦",
-          txt: "📄",
-          pdf: "📕",
-          png: "🖼️",
-          jpg: "🖼️",
-          jpeg: "🖼️",
-          svg: "🖼️",
-          html: "🌐",
-          css: "🎨",
-          js: "⚙️"
-        };
-        return map[ext] || "📄";
-      }
-
-      function isExternal(href) {
-        return /^https?:\/\//i.test(href);
-      }
-
-      function isStarter(item) {
-        const haystack = [item.name, item.category].concat(item.tags || []).join(" ").toLowerCase();
-        return haystack.includes("starter");
-      }
-
-      function normalizeFiles(list) {
-        return list.map((item, index) => ({
-          id: item.id || item.file || item.downloadUrl || "file-" + index,
-          kind: "file",
-          icon: iconForFile(item.file || item.downloadUrl),
-          name: item.name,
-          summary: item.summary || item.description || "Class download",
-          detail: item.description || item.summary || "Class download",
-          category: item.category || item.tag || "Download",
-          module: item.module || "Class Files",
-          platform: item.sizeLabel || "",
-          tags: [item.tag, item.module].concat(item.tools || []).filter(Boolean),
-          date: item.date || "",
-          featured: Boolean(item.featured),
-          featuredLabel: item.featuredLabel || "Featured Download",
-          primaryAction: {
-            label: item.actionLabel || "Download File",
-            href: item.downloadUrl || ("downloads/" + item.file),
-            download: item.download !== undefined ? Boolean(item.download) : !item.downloadUrl
-          },
-          secondaryAction: item.guideUrl ? {
-            label: item.guideLabel || "Open Guide",
-            href: item.guideUrl
-          } : null
-        }));
-      }
-
-      function updateStats() {
-        const files = state.items.filter((item) => item.kind === "file");
-        statFiles.textContent = String(files.length);
-        statStarters.textContent = String(files.filter(isStarter).length);
-        statApps.textContent = String(state.items.filter((item) => item.kind === "app").length);
-      }
-
-      function tabItems() {
-        if (state.view === "files") {
-          return state.items.filter((item) => item.kind === "file");
-        }
-        if (state.view === "apps") {
-          return state.items.filter((item) => item.kind === "app");
-        }
-        if (state.view === "starter") {
-          return state.items.filter((item) => item.kind === "file" && isStarter(item));
-        }
-        return state.items.slice();
-      }
-
-      function matchesQuery(item) {
-        if (!state.query) return true;
-        const haystack = [
-          item.name,
-          item.summary,
-          item.detail,
-          item.category,
-          item.module,
-          item.platform,
-          (item.tags || []).join(" ")
-        ].join(" ").toLowerCase();
-        return haystack.includes(state.query);
-      }
-
-      function visibleItems() {
-        return sortedItems(
-          tabItems()
-            .filter((item) => state.category === "all" || item.category === state.category)
-            .filter(matchesQuery)
-        );
-      }
-
-      function sortedItems(items) {
-        return items.slice().sort((a, b) => {
-          const aFeatured = a.featured ? 0 : 1;
-          const bFeatured = b.featured ? 0 : 1;
-          if (aFeatured !== bFeatured) return aFeatured - bFeatured;
-          if (a.kind !== b.kind) return a.kind === "file" ? -1 : 1;
-          if (a.date && b.date && a.date !== b.date) {
-            return new Date(b.date) - new Date(a.date);
-          }
-          return a.name.localeCompare(b.name);
-        });
-      }
-
-      function categoryOptions() {
-        const options = Array.from(new Set(tabItems().map((item) => item.category))).sort((a, b) => a.localeCompare(b));
-        return options;
-      }
-
-      function setView(view) {
-        state.view = view;
-        state.category = "all";
-        tabButtons.forEach((button) => {
-          const active = button.dataset.view === view;
-          button.classList.toggle("is-active", active);
-          button.setAttribute("aria-selected", active ? "true" : "false");
-        });
-        render();
-      }
-
-      function renderCategoryFilters() {
-        const options = categoryOptions();
-        filterRow.innerHTML = "";
-
-        const allButton = createNode("button", "downloads-filter" + (state.category === "all" ? " is-active" : ""), "All Categories");
-        allButton.type = "button";
-        allButton.addEventListener("click", () => {
-          state.category = "all";
+    function renderCategories() {
+      const counts = classData.reduce((acc, item) => {
+        acc[item.category] = (acc[item.category] || 0) + 1;
+        return acc;
+      }, {});
+      const categories = ["All"].concat(Object.keys(counts).sort((a, b) => a.localeCompare(b)));
+      categoryList.innerHTML = "";
+      categories.forEach((category) => {
+        const button = createEl("button", "downloads-cat");
+        button.type = "button";
+        button.setAttribute("aria-pressed", String(state.category === category && !state.priorityOnly));
+        button.dataset.category = category;
+        button.appendChild(createEl("span", "", category));
+        button.appendChild(createEl("small", "", category === "All" ? classData.length : counts[category]));
+        button.addEventListener("click", () => {
+          state.category = category;
+          state.priorityOnly = false;
           render();
         });
-        filterRow.appendChild(allButton);
+        categoryList.appendChild(button);
+      });
+    }
 
-        if (!options.includes(state.category)) {
-          state.category = "all";
-        }
+    function renderPriority() {
+      priorityList.innerHTML = "";
+      classData.filter((item) => item.priority).forEach((item) => {
+        priorityList.appendChild(renderCard(item, "priority"));
+      });
+    }
 
-        options.forEach((option) => {
-          const button = createNode("button", "downloads-filter" + (state.category === option ? " is-active" : ""), option);
-          button.type = "button";
-          button.addEventListener("click", () => {
-            state.category = option;
-            render();
-          });
-          filterRow.appendChild(button);
-        });
-      }
-
-      function buildPills(item, kindClass, limit) {
-        const pills = [];
-        const seen = new Set();
-        [item.kind === "file" ? "File" : "App", item.category, item.module, item.platform].concat(item.tags || []).forEach((value) => {
-          if (!value || seen.has(value)) return;
-          seen.add(value);
-          pills.push(value);
-        });
-        return pills.slice(0, limit).map((text) => {
-          const pill = createNode("span", "downloads-pill " + kindClass, text);
-          return pill;
-        });
-      }
-
-      function appendActionLink(container, action, variant) {
-        if (!action) return;
-        const link = createNode("a", "downloads-btn " + variant, action.label);
-        link.href = action.href;
-        if (action.download) link.setAttribute("download", "");
-        if (isExternal(action.href)) {
-          link.target = "_blank";
-          link.rel = "noreferrer";
-        }
-        container.appendChild(link);
-      }
-
-      function buildFeaturedCard(item) {
-        const card = createNode("article", "downloads-featured-card");
-        const body = createNode("div");
-        const side = createNode("div", "downloads-featured-side");
-        const kindClass = item.kind === "file" ? "is-file" : "is-app";
-
-        body.appendChild(createNode("p", "downloads-featured-kicker", item.featuredLabel || "Featured Download"));
-        body.appendChild(createNode("h3", "downloads-featured-title", item.name));
-        body.appendChild(createNode("p", "downloads-featured-copy", item.detail || item.summary));
-
-        const pills = createNode("div", "downloads-meta-pills");
-        buildPills(item, kindClass, 5).forEach((pill) => pills.appendChild(pill));
-        body.appendChild(pills);
-
-        const actions = createNode("div", "downloads-featured-actions");
-        appendActionLink(actions, item.primaryAction, "downloads-btn--primary");
-        appendActionLink(actions, item.secondaryAction, "downloads-btn--secondary");
-
-        if (item.date) {
-          side.appendChild(createNode("p", "downloads-card-date", "Updated " + formatDate(item.date)));
-        }
-        side.appendChild(actions);
-
-        card.appendChild(body);
-        card.appendChild(side);
-        return card;
-      }
-
-      function buildCatalogCard(item) {
-        const card = createNode("article", "downloads-catalog-card reveal downloads-catalog-card--" + item.kind);
-        const header = createNode("div", "downloads-card-header");
-        const icon = createNode("span", "downloads-card-icon", item.icon);
-        icon.setAttribute("aria-hidden", "true");
-
-        const titleWrap = createNode("div");
-        titleWrap.appendChild(createNode("p", "downloads-card-kicker", item.kind === "file" ? item.category : "App Download"));
-        titleWrap.appendChild(createNode("h3", "downloads-card-title", item.name));
-
-        header.appendChild(icon);
-        header.appendChild(titleWrap);
-
-        const summary = createNode("p", "downloads-card-summary", item.summary);
-        const pills = createNode("div", "downloads-meta-pills");
-        const kindClass = item.kind === "file" ? "is-file" : "is-app";
-        buildPills(item, kindClass, 4).forEach((pill) => pills.appendChild(pill));
-
-        const footer = createNode("div", "downloads-card-footer");
-        const dateText = item.date ? "Updated " + formatDate(item.date) : item.detail;
-        footer.appendChild(createNode("p", "downloads-card-date", dateText));
-
-        const actions = createNode("div", "downloads-card-actions");
-        appendActionLink(actions, item.primaryAction, "downloads-btn--primary");
-        appendActionLink(actions, item.secondaryAction, "downloads-btn--secondary");
-        footer.appendChild(actions);
-
-        card.appendChild(header);
-        card.appendChild(summary);
-        card.appendChild(pills);
-        card.appendChild(footer);
-        return card;
-      }
-
-      function renderFeatured(items) {
-        const files = items.filter((item) => item.kind === "file");
-        const featured = files.find((item) => item.featured) || files[0];
-        if (!featured || state.view === "apps") {
-          featuredSection.hidden = true;
-          return;
-        }
-
-        featuredSection.hidden = false;
-        featuredEl.innerHTML = "";
-        featuredEl.appendChild(buildFeaturedCard(featured));
-      }
-
-      function renderCatalog(items) {
-        catalogEl.innerHTML = "";
-        catalogEl.removeAttribute("aria-busy");
-
-        if (!items.length) {
-          const empty = createNode("div", "downloads-empty");
-          empty.appendChild(createNode("strong", "", "No matches right now"));
-          empty.appendChild(createNode("p", "", "Try a different view, clear the search, or switch back to All to see the full catalog."));
-          catalogEl.appendChild(empty);
-          return;
-        }
-
+    function renderGrid() {
+      const items = filteredItems();
+      grid.innerHTML = "";
+      if (!items.length) {
+        const empty = createEl("div", "downloads-empty");
+        empty.appendChild(createEl("strong", "", "No downloads match this search."));
+        empty.appendChild(createEl("p", "", "Try a shorter search, choose All, or clear filters to get back to the full starter kit."));
+        const reset = createEl("button", "downloads-clear", "Reset Browser");
+        reset.type = "button";
+        reset.addEventListener("click", clearFilters);
+        empty.appendChild(reset);
+        grid.appendChild(empty);
+      } else {
         const fragment = document.createDocumentFragment();
-        items.forEach((item) => fragment.appendChild(buildCatalogCard(item)));
-        catalogEl.appendChild(fragment);
+        items.forEach((item) => fragment.appendChild(renderCard(item, "browser")));
+        grid.appendChild(fragment);
       }
+      const label = state.priorityOnly ? "priority resources" : state.category === "All" ? "resources" : state.category + " resources";
+      statusEl.textContent = "Showing " + items.length + " " + label + ". Search checks titles, descriptions, type, category, platforms, and tags.";
+    }
 
-      function renderResults(items) {
-        const labelMap = {
-          all: "all items",
-          files: "files",
-          apps: "apps",
-          starter: "starter packs"
-        };
-        let text = "Showing " + items.length + " " + (items.length === 1 ? "item" : "items") + " in " + labelMap[state.view] + ".";
-        if (state.filesUnavailable) {
-          text += " File downloads are temporarily unavailable, but app links are still live.";
-        }
-        resultsEl.textContent = text;
-      }
+    function updateStats() {
+      statTotal.textContent = String(classData.length);
+      statPriority.textContent = String(classData.filter((item) => item.priority).length);
+      statPlatforms.textContent = String(unique(classData.flatMap((item) => item.platforms)).length);
+    }
 
-      function render() {
-        renderCategoryFilters();
-        updateStats();
-        const items = visibleItems();
-        renderResults(items);
-        renderFeatured(items);
-        renderCatalog(items);
-      }
+    function clearFilters() {
+      state.category = "All";
+      state.query = "";
+      state.priorityOnly = false;
+      searchInput.value = "";
+      render();
+      searchInput.focus();
+    }
 
-      tabButtons.forEach((button) => {
-        button.addEventListener("click", () => setView(button.dataset.view));
-      });
+    function render() {
+      document.body.dataset.downloadsMode = state.mode;
+      modeButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.mode === state.mode)));
+      renderCategories();
+      renderGrid();
+      updateStats();
+    }
 
-      quickViewLinks.forEach((link) => {
-        link.addEventListener("click", () => setView(link.dataset.setView));
-      });
-
-      searchInput.addEventListener("input", (event) => {
-        state.query = event.target.value.trim().toLowerCase();
+    modeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.mode = button.dataset.mode;
         render();
       });
+    });
 
-      try {
-        const response = await fetch("downloads/manifest.json");
-        if (!response.ok) throw new Error("manifest fetch failed");
-        const data = await response.json();
-        const files = Array.isArray(data.downloads) ? normalizeFiles(data.downloads) : [];
-        state.items = sortedItems(files.concat(APPS));
-      } catch (error) {
-        state.filesUnavailable = true;
-        state.items = sortedItems(APPS.slice());
-      }
+    quickFilters.forEach((link) => {
+      link.addEventListener("click", () => {
+        const filter = link.dataset.quickFilter;
+        state.priorityOnly = filter === "__priority";
+        state.category = state.priorityOnly ? "All" : filter;
+        render();
+      });
+    });
 
-      render();
-    }());
+    searchInput.addEventListener("input", (event) => {
+      state.query = event.target.value.trim().toLowerCase();
+      renderGrid();
+    });
+
+    clearButton.addEventListener("click", clearFilters);
+    renderPriority();
+    render();
+    window.addEventListener("load", () => searchInput.focus());
   </script>
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
