@@ -1,0 +1,2073 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Baloney Detection Kit · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description"
+    content="A K–12 lesson on critical thinking, cognitive bias, and epistemology — using Sagan's Baloney Detection Kit, the Book of Daniel, and modern media to examine what kind of mind a healthy society requires." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ─── BDK colour tokens ─── */
+    :root {
+      color-scheme: dark;
+      --bdk-bg:      #0d1117;
+      --bdk-panel:   rgba(18, 24, 36, 0.97);
+      --bdk-line:    rgba(240, 192, 64, 0.16);
+      --bdk-ink:     #f0e8d8;
+      --bdk-muted:   #c4bbb0;
+      --bdk-dim:     #7a7060;
+      --bdk-amber:   #f0c040;
+      --bdk-amber2:  #e8a020;
+      --bdk-teal:    #4ecdc4;
+      --bdk-red:     #ff6b6b;
+      --bdk-violet:  #a78bfa;
+      --bdk-gold:    #ffd700;
+      --ll-panel-w: 360px;
+      --ll-panel-bg: rgba(13, 17, 26, 0.98);
+      --ll-panel-border: rgba(240, 192, 64, 0.13);
+      --ll-tab-active-bg: rgba(240, 192, 64, 0.13);
+      --ll-tab-active: #f5d870;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--bdk-ink);
+      background:
+        radial-gradient(900px 500px at 5% 0%,  rgba(240,192,64,0.09), transparent 55%),
+        radial-gradient(700px 400px at 95% 10%, rgba(78,205,196,0.05), transparent 50%),
+        linear-gradient(180deg, #0d1117 0%, #080c12 100%);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    body:has(.ll-viewport) { min-height: 0; }
+
+    /* ── Topbar ─────────────────────────────────────────────── */
+    .bdk-topbar {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(16px) saturate(130%);
+      background: rgba(10, 13, 20, 0.90);
+      border-bottom: 1px solid rgba(240,192,64,0.12);
+    }
+    .bdk-topbar-inner {
+      width: min(1220px, calc(100% - 2rem));
+      margin: 0 auto;
+      min-height: 54px;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 1rem;
+    }
+    .bdk-topbar a {
+      color: #f5d880; text-decoration: none;
+      font-size: 0.83rem; font-weight: 700; letter-spacing: 0.02em;
+    }
+    .bdk-topbar a:hover { color: #ffe9a0; }
+    .bdk-topbar-title {
+      color: #f5ead0; font-size: 0.9rem; font-weight: 800;
+      letter-spacing: -0.01em; text-align: center;
+    }
+
+    /* ── Sim: override ll-sim scroll so only tool-area scrolls ── */
+    .ll-sim.bdk-sim-area {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(720px 420px at 14% 2%, rgba(240,192,64,0.09), transparent 56%),
+        radial-gradient(760px 420px at 92% 10%, rgba(78,205,196,0.06), transparent 52%),
+        var(--bdk-bg);
+    }
+
+    /* ── Sim header ─────────────────────────────────────────── */
+    .bdk-sim-header {
+      flex-shrink: 0; padding: 0.8rem 1rem 0.7rem;
+      border-bottom: 1px solid rgba(240,192,64,0.1);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+    }
+    .bdk-sim-header h1 {
+      margin: 0; font-size: clamp(1.05rem, 2.2vw, 1.5rem); font-weight: 900;
+      color: #fff5e0; letter-spacing: -0.02em;
+    }
+    .bdk-sim-header p { margin: 0.2rem 0 0; font-size: 0.78rem; color: var(--bdk-muted); line-height: 1.45; }
+    .bdk-header-copy { min-width: 0; }
+    .bdk-header-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(78,205,196,0.22);
+      background: rgba(78,205,196,0.07);
+      color: #c8fff8;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ── Claim selector bar ─────────────────────────────────── */
+    .bdk-claim-bar {
+      flex-shrink: 0; padding: 0.55rem 0.9rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;
+    }
+    .bdk-claim-bar-label {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--bdk-amber);
+      white-space: nowrap; margin-right: 0.15rem;
+    }
+    .bdk-claim-btn {
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      color: var(--bdk-muted); border-radius: 999px;
+      padding: 0.3rem 0.65rem;
+      font: inherit; font-size: 0.72rem; font-weight: 700;
+      cursor: pointer; transition: all 0.14s;
+    }
+    .bdk-claim-btn:hover { border-color: rgba(240,192,64,0.28); color: #f5e8d0; }
+    .bdk-claim-btn.active {
+      background: rgba(240,192,64,0.13);
+      border-color: rgba(240,192,64,0.34); color: #fff4d0;
+    }
+    .bdk-claim-btn.is-verified:hover  { border-color: rgba(78,205,196,0.32); }
+    .bdk-claim-btn.is-verified.active {
+      background: rgba(78,205,196,0.11);
+      border-color: rgba(78,205,196,0.38); color: #d0fff8;
+    }
+    .bdk-claim-btn:focus-visible,
+    .bdk-reveal-btn:focus-visible,
+    .bdk-nav-btn:focus-visible,
+    .bdk-restart-btn:focus-visible,
+    .bdk-grade-btn:focus-visible,
+    .ll-tab:focus-visible,
+    .ll-panel-close:focus-visible,
+    .ll-open-btn:focus-visible {
+      outline: 2px solid rgba(78,205,196,0.85);
+      outline-offset: 2px;
+    }
+
+    /* ── Active claim card ──────────────────────────────────── */
+    .bdk-claim-card {
+      flex-shrink: 0; margin: 0.6rem 0.9rem 0;
+      border-radius: 8px; border: 1px solid rgba(240,192,64,0.14);
+      background:
+        linear-gradient(90deg, rgba(240,192,64,0.11), transparent 44%),
+        rgba(255,255,255,0.025);
+      padding: 0.8rem 0.95rem;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+    }
+    .bdk-claim-card.is-baloney {
+      border-color: rgba(255,107,107,0.18);
+      background: linear-gradient(135deg, rgba(255,107,107,0.05), rgba(255,255,255,0.02));
+    }
+    .bdk-claim-card.is-verified {
+      border-color: rgba(78,205,196,0.2);
+      background: linear-gradient(135deg, rgba(78,205,196,0.07), rgba(255,255,255,0.02));
+    }
+    .bdk-claim-kicker {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--bdk-amber); margin: 0 0 0.3rem;
+    }
+    .is-baloney .bdk-claim-kicker { color: var(--bdk-red); }
+    .is-verified .bdk-claim-kicker { color: var(--bdk-teal); }
+    .bdk-claim-text {
+      font-size: clamp(0.9rem, 1.8vw, 1.08rem); line-height: 1.58;
+      color: #f5ead0; margin: 0 0 0; font-style: italic;
+    }
+    .bdk-claim-warning {
+      display: none; margin-top: 0.45rem; font-size: 0.76rem;
+      color: #f5d870; line-height: 1.5;
+      padding: 0.35rem 0.6rem; border-radius: 8px;
+      background: rgba(240,192,64,0.07); border: 1px solid rgba(240,192,64,0.14);
+    }
+
+    /* ── Tool runner area ───────────────────────────────────── */
+    .bdk-tool-area {
+      flex: 1; overflow-y: auto; min-height: 0;
+      padding: 0.65rem 0.9rem; display: flex;
+      flex-direction: column; gap: 0.6rem;
+    }
+    .bdk-readouts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      flex-shrink: 0;
+    }
+    .bdk-readout {
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      padding: 0.62rem 0.7rem;
+      min-width: 0;
+    }
+    .bdk-readout span {
+      display: block;
+      color: var(--bdk-dim);
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      margin-bottom: 0.18rem;
+    }
+    .bdk-readout strong {
+      display: block;
+      color: #f8edd5;
+      font-size: 0.88rem;
+      font-weight: 900;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    /* Progress pips */
+    .bdk-pips { display: flex; gap: 0.28rem; flex-wrap: wrap; }
+    .bdk-pip {
+      flex: 1; min-width: 22px; height: 6px; border-radius: 3px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.06);
+      cursor: pointer; transition: background 0.2s;
+    }
+    .bdk-pip.pip-active { background: var(--bdk-amber); border-color: var(--bdk-amber2); }
+    .bdk-pip.pip-pass   { background: rgba(78,205,196,0.55); border-color: rgba(78,205,196,0.4); }
+    .bdk-pip.pip-fail   { background: rgba(255,107,107,0.55); border-color: rgba(255,107,107,0.4); }
+
+    /* Tool card */
+    .bdk-tool-card {
+      border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018));
+      padding: 1rem 1.05rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .bdk-tool-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--bdk-amber), rgba(78,205,196,0.5));
+      opacity: 0.8;
+    }
+    .bdk-tool-num-row {
+      display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem;
+    }
+    .bdk-tool-num {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center;
+      background: rgba(240,192,64,0.13); border: 1px solid rgba(240,192,64,0.22);
+      color: #f5d870; font-size: 0.84rem; font-weight: 900;
+    }
+    .bdk-tool-name { font-size: 0.95rem; font-weight: 800; color: #f5ead0; }
+    .bdk-tool-question {
+      font-size: 0.85rem; line-height: 1.65;
+      color: var(--bdk-muted); margin: 0 0 0.6rem;
+    }
+    .bdk-reveal-btn {
+      width: 100%; padding: 0.62rem 1rem;
+      border-radius: 12px; border: 1px solid rgba(240,192,64,0.22);
+      background: rgba(240,192,64,0.09); color: #f5e0b0;
+      font: inherit; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; transition: all 0.14s; text-align: center;
+    }
+    .bdk-reveal-btn:hover { background: rgba(240,192,64,0.16); color: #fff4d0; }
+    .bdk-reveal-btn::after {
+      content: "";
+      display: inline-block;
+      width: 0.45rem;
+      height: 0.45rem;
+      margin-left: 0.5rem;
+      border-top: 2px solid currentColor;
+      border-right: 2px solid currentColor;
+      transform: rotate(45deg) translateY(-1px);
+      opacity: 0.75;
+    }
+    .bdk-tool-result {
+      display: none; margin-top: 0.5rem; border-radius: 12px;
+      padding: 0.65rem 0.85rem; font-size: 0.82rem; line-height: 1.62;
+    }
+    .bdk-tool-result.show-result { display: block; }
+    .bdk-tool-result.res-pass {
+      border: 1px solid rgba(78,205,196,0.28);
+      background: rgba(78,205,196,0.07); color: #c8f8f0;
+    }
+    .bdk-tool-result.res-fail {
+      border: 1px solid rgba(255,107,107,0.25);
+      background: rgba(255,107,107,0.06); color: #fde0de;
+    }
+    .bdk-result-label {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; margin-bottom: 0.22rem; display: block;
+    }
+    .res-pass .bdk-result-label { color: #4ecdc4; }
+    .res-fail .bdk-result-label { color: #ff8888; }
+
+    /* Nav row */
+    .bdk-nav-row {
+      display: flex; gap: 0.45rem;
+      justify-content: space-between; align-items: center;
+    }
+    .bdk-nav-btn {
+      border: 1px solid rgba(255,255,255,0.11);
+      background: rgba(255,255,255,0.04);
+      color: var(--bdk-muted); border-radius: 10px;
+      padding: 0.46rem 0.85rem;
+      font: inherit; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; transition: all 0.13s;
+    }
+    .bdk-nav-btn:hover:not(:disabled) { border-color: rgba(240,192,64,0.26); color: #f5e0b0; }
+    .bdk-nav-btn:disabled { opacity: 0.32; cursor: default; }
+    .bdk-nav-btn.btn-primary {
+      background: rgba(240,192,64,0.13);
+      border-color: rgba(240,192,64,0.28); color: #f5d870;
+    }
+    .bdk-nav-btn.btn-primary:hover:not(:disabled) { background: rgba(240,192,64,0.2); }
+    .bdk-tool-counter { font-size: 0.74rem; color: var(--bdk-dim); font-weight: 700; }
+
+    /* Verdict */
+    .bdk-verdict {
+      display: none; border-radius: 8px; padding: 1rem;
+    }
+    .bdk-verdict.show-verdict { display: block; }
+    .bdk-verdict.v-baloney {
+      border: 1px solid rgba(255,107,107,0.26);
+      background: rgba(255,107,107,0.06);
+    }
+    .bdk-verdict.v-verified {
+      border: 1px solid rgba(78,205,196,0.26);
+      background: rgba(78,205,196,0.07);
+    }
+    .bdk-verdict-word {
+      font-size: 1.5rem; font-weight: 900;
+      letter-spacing: -0.02em; margin: 0 0 0.3rem;
+    }
+    .v-baloney .bdk-verdict-word { color: #ff8888; }
+    .v-verified .bdk-verdict-word { color: #4ecdc4; }
+    .bdk-verdict p { margin: 0; font-size: 0.84rem; line-height: 1.62; color: var(--bdk-muted); }
+
+    /* Occam box */
+    .bdk-occam-box {
+      display: none; border-radius: 8px;
+      border: 1px solid rgba(78,205,196,0.17);
+      background: rgba(78,205,196,0.05); padding: 0.9rem 1rem;
+    }
+    .bdk-occam-box.show-occam { display: block; }
+    .bdk-occam-lbl {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--bdk-teal); margin: 0 0 0.25rem;
+    }
+    .bdk-occam-box h3 { margin: 0 0 0.3rem; font-size: 0.94rem; color: #d0faf4; font-weight: 800; }
+    .bdk-occam-box p  { margin: 0; font-size: 0.82rem; color: var(--bdk-muted); line-height: 1.62; }
+
+    /* ── Baloney / foundation meters ───────────────────────── */
+    .bdk-meter-area {
+      flex-shrink: 0; padding: 0.45rem 0.9rem 0.6rem;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      background: rgba(7,10,15,0.42);
+    }
+    .bdk-meter-row {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 0.35rem;
+    }
+    .bdk-meter-lbl { font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bdk-amber); }
+    .bdk-meter-pct { font-size: 0.73rem; font-weight: 800; color: var(--bdk-amber); }
+    .bdk-meter-track {
+      height: 9px; border-radius: 5px;
+      background: rgba(255,255,255,0.07); overflow: hidden;
+    }
+    .bdk-meter-fill {
+      height: 100%; border-radius: 5px; width: 0%;
+      transition: width 0.4s ease, background 0.4s ease;
+      background: var(--bdk-red);
+    }
+    .bdk-meter-fill.fill-low  { background: linear-gradient(90deg, #f0c040, #e8a020); }
+    .bdk-meter-fill.fill-high { background: linear-gradient(90deg, #ff8888, #ff4444); }
+
+    .bdk-found-row {
+      display: flex; gap: 0.5rem; margin-top: 0.45rem; align-items: center;
+    }
+    .bdk-found-lbl {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--bdk-dim); white-space: nowrap;
+    }
+    .bdk-found-track {
+      flex: 1; height: 7px; border-radius: 4px;
+      background: rgba(255,255,255,0.06); overflow: hidden;
+    }
+    .bdk-found-fill {
+      height: 100%; border-radius: 4px; width: 0%;
+      transition: width 0.5s ease;
+      background: linear-gradient(90deg, #4ecdc4, #2ed8cc);
+    }
+    .bdk-found-word { font-size: 0.71rem; font-weight: 800; color: var(--bdk-teal); white-space: nowrap; min-width: 50px; text-align: right; }
+
+    #bdk-viewport {
+      --ll-panel-bg: rgba(13, 17, 26, 0.98);
+      --ll-panel-border: rgba(240, 192, 64, 0.13);
+      --ll-tab-color: #a69b8a;
+      --ll-tab-active-bg: rgba(240, 192, 64, 0.13);
+      --ll-tab-active: #f5d870;
+      --ll-toggle-bg: rgba(18, 24, 36, 0.96);
+      --text-strong: #fff3df;
+      --text-body: #c4bbb0;
+      --text-muted: #9a907f;
+      --nav-hover-bg: rgba(255,255,255,0.06);
+      --surface-1: rgba(13, 17, 26, 0.98);
+      --surface-2: rgba(255,255,255,0.035);
+      --border-subtle: rgba(240, 192, 64, 0.13);
+    }
+    #bdk-viewport .ll-panel {
+      background:
+        radial-gradient(420px 260px at 0% 0%, rgba(240,192,64,0.05), transparent 60%),
+        var(--ll-panel-bg);
+      color: var(--bdk-muted);
+    }
+    #bdk-viewport .ll-panel-head {
+      background: rgba(8, 11, 17, 0.62);
+    }
+    #bdk-viewport .ll-label {
+      color: #a69b8a;
+    }
+    #bdk-viewport .ll-tab[aria-selected="true"] {
+      color: #ffe5a0;
+    }
+    #bdk-viewport .ll-panel-close {
+      color: #a69b8a;
+      background: rgba(255,255,255,0.055);
+    }
+
+    .bdk-evidence-log {
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.024);
+      padding: 0.75rem 0.85rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+    .bdk-log-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      color: #f5ead0;
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .bdk-log-title span:last-child {
+      color: var(--bdk-dim);
+      font-variant-numeric: tabular-nums;
+    }
+    .bdk-log-list {
+      display: grid;
+      gap: 0.35rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .bdk-log-list li {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 0.45rem;
+      align-items: start;
+      color: var(--bdk-muted);
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+    .bdk-log-mark {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 0.67rem;
+      font-weight: 900;
+      margin-top: 0.05rem;
+    }
+    .bdk-log-mark.pass { color: #041514; background: var(--bdk-teal); }
+    .bdk-log-mark.fail { color: #210606; background: var(--bdk-red); }
+    .bdk-log-empty {
+      color: var(--bdk-dim);
+      font-size: 0.76rem;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* ── Panel lesson / activity content ────────────────────── */
+    .bdk-head     { margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; color: #fff3df; }
+    .bdk-sub      { margin: 0 0 0.8rem; color: var(--bdk-muted); font-size: 0.83rem; line-height: 1.7; }
+
+    .bdk-scripture {
+      border-radius: 13px; border-left: 3px solid var(--bdk-gold);
+      background: rgba(255,215,0,0.05); padding: 0.75rem 0.9rem; margin-bottom: 0.65rem;
+    }
+    .bdk-scripture-ref {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--bdk-gold); margin: 0 0 0.18rem;
+    }
+    .bdk-scripture p { margin: 0; font-size: 0.84rem; line-height: 1.65; color: #f8f0dc; font-style: italic; }
+
+    .bdk-callout {
+      border-radius: 13px; padding: 0.75rem 0.9rem; margin-bottom: 0.65rem;
+    }
+    .bdk-callout.ca-amber  { border: 1px solid rgba(240,192,64,0.2);  background: rgba(240,192,64,0.06); }
+    .bdk-callout.ca-teal   { border: 1px solid rgba(78,205,196,0.18); background: rgba(78,205,196,0.05); }
+    .bdk-callout.ca-red    { border: 1px solid rgba(255,107,107,0.18);background: rgba(255,107,107,0.05); }
+    .bdk-callout.ca-violet { border: 1px solid rgba(167,139,250,0.18);background: rgba(167,139,250,0.05); }
+    .bdk-callout-lbl {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; margin: 0 0 0.2rem;
+    }
+    .ca-amber  .bdk-callout-lbl { color: var(--bdk-amber); }
+    .ca-teal   .bdk-callout-lbl { color: var(--bdk-teal);  }
+    .ca-red    .bdk-callout-lbl { color: var(--bdk-red);   }
+    .ca-violet .bdk-callout-lbl { color: var(--bdk-violet);}
+    .bdk-callout p { margin: 0; font-size: 0.82rem; line-height: 1.62; color: var(--bdk-muted); }
+    .bdk-callout strong { color: #f5ead0; }
+
+    .bdk-mini-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.5rem; margin-bottom: 0.75rem;
+    }
+    .bdk-mini-card {
+      border-radius: 12px; border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.025); padding: 0.75rem 0.85rem;
+    }
+    .bdk-mini-card h4 { margin: 0 0 0.18rem; font-size: 0.83rem; font-weight: 800; color: #f0e0c0; }
+    .bdk-mini-card p  { margin: 0; font-size: 0.76rem; color: var(--bdk-muted); line-height: 1.55; }
+
+    /* Daniel / Writing on the Wall */
+    .bdk-daniel {
+      border-radius: 16px;
+      border: 1px solid rgba(255,215,0,0.16);
+      background: linear-gradient(135deg, rgba(255,215,0,0.06), rgba(240,192,64,0.02));
+      padding: 0.95rem 1rem; margin-bottom: 0.75rem;
+    }
+    .bdk-daniel-lbl {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--bdk-gold); margin: 0 0 0.22rem;
+    }
+    .bdk-daniel h3 { margin: 0 0 0.4rem; font-size: 0.94rem; color: #f8f0d0; font-weight: 800; }
+    .bdk-daniel p { margin: 0 0 0.4rem; font-size: 0.82rem; color: var(--bdk-muted); line-height: 1.65; }
+    .bdk-daniel p:last-child { margin-bottom: 0; }
+    .bdk-daniel strong { color: #f8ead0; }
+
+    .bdk-mene-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.45rem 0; }
+    .bdk-mene {
+      border-radius: 10px; border: 1px solid rgba(255,215,0,0.18);
+      background: rgba(255,215,0,0.05); padding: 0.42rem 0.72rem;
+    }
+    .bdk-mene-word    { font-size: 0.84rem; font-weight: 900; color: #ffd700; letter-spacing: 0.04em; }
+    .bdk-mene-meaning { font-size: 0.72rem; color: var(--bdk-muted); margin-top: 0.08rem; }
+
+    /* Bias grid */
+    .bdk-bias-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      gap: 0.45rem; margin-bottom: 0.75rem;
+    }
+    .bdk-bias-card {
+      border-radius: 12px; border: 1px solid rgba(167,139,250,0.14);
+      background: rgba(167,139,250,0.04); padding: 0.65rem 0.8rem;
+    }
+    .bdk-bias-name { font-size: 0.8rem; font-weight: 800; color: #d4bcff; margin: 0 0 0.13rem; }
+    .bdk-bias-def  { font-size: 0.74rem; color: var(--bdk-muted); line-height: 1.5; margin: 0; }
+
+    .bdk-pattern-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .bdk-pattern-card {
+      border-radius: 8px;
+      border: 1px solid rgba(240,192,64,0.12);
+      background: rgba(255,255,255,0.026);
+      padding: 0.7rem 0.8rem;
+    }
+    .bdk-pattern-card h4 {
+      margin: 0 0 0.18rem;
+      color: #f3dfb8;
+      font-size: 0.8rem;
+      font-weight: 900;
+    }
+    .bdk-pattern-card p {
+      margin: 0;
+      color: var(--bdk-muted);
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+    .bdk-pattern-rule {
+      border-radius: 8px;
+      border: 1px solid rgba(167,139,250,0.18);
+      background: rgba(167,139,250,0.05);
+      padding: 0.8rem 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+    .bdk-pattern-rule p {
+      margin: 0;
+      color: var(--bdk-muted);
+      font-size: 0.8rem;
+      line-height: 1.65;
+    }
+    .bdk-pattern-rule strong {
+      color: #f5ead0;
+    }
+
+    /* Discussion items */
+    .bdk-discuss {
+      border-radius: 12px; border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.025); padding: 0.65rem 0.8rem; margin-bottom: 0.45rem;
+    }
+    .bdk-discuss h4 { margin: 0 0 0.14rem; font-size: 0.83rem; font-weight: 800; color: #f0e0c0; }
+    .bdk-discuss p  { margin: 0; font-size: 0.77rem; color: var(--bdk-muted); line-height: 1.55; }
+
+    /* Occam explanation in lesson pane */
+    .bdk-occam-lesson {
+      border-radius: 14px; border: 1px solid rgba(78,205,196,0.16);
+      background: rgba(78,205,196,0.04); padding: 0.85rem 0.95rem; margin-bottom: 0.7rem;
+    }
+    .bdk-occam-lesson-lbl {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--bdk-teal); margin: 0 0 0.2rem;
+    }
+    .bdk-occam-lesson h3 { margin: 0 0 0.28rem; font-size: 0.92rem; color: #d0faf4; font-weight: 800; }
+    .bdk-occam-lesson p  { margin: 0; font-size: 0.81rem; color: var(--bdk-muted); line-height: 1.62; }
+
+    /* Closing card */
+    .bdk-closing {
+      border-radius: 16px;
+      border: 1px solid rgba(78,205,196,0.18);
+      background: linear-gradient(160deg, rgba(78,205,196,0.07), rgba(240,192,64,0.04));
+      padding: 1.1rem 1.2rem; text-align: center; margin-bottom: 0.8rem;
+    }
+    .bdk-closing-icon { font-size: 1.75rem; margin-bottom: 0.45rem; }
+    .bdk-closing h2   { margin: 0 0 0.45rem; font-size: 1.05rem; font-weight: 800; color: #fff3df; letter-spacing: -0.01em; }
+    .bdk-closing p    { margin: 0 0 0.4rem; font-size: 0.84rem; line-height: 1.65; color: var(--bdk-muted); max-width: 55ch; margin-left: auto; margin-right: auto; }
+    .bdk-closing p:last-child { margin-bottom: 0; }
+    .bdk-closing strong { color: #f5ead0; }
+
+    /* Tool ref list (Controls pane) */
+    .bdk-tool-refs { display: grid; gap: 0.42rem; }
+    .bdk-tool-ref {
+      border-radius: 12px; border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.025); padding: 0.6rem 0.75rem;
+      display: grid; grid-template-columns: 26px 1fr; gap: 0.55rem; align-items: start;
+    }
+    .bdk-tool-ref-num {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center;
+      background: rgba(240,192,64,0.11); border: 1px solid rgba(240,192,64,0.2);
+      color: #f5d870; font-size: 0.74rem; font-weight: 900;
+    }
+    .bdk-tool-ref h4 { margin: 0 0 0.1rem; font-size: 0.82rem; font-weight: 800; color: #f0e0c0; }
+    .bdk-tool-ref p  { margin: 0; font-size: 0.75rem; color: var(--bdk-muted); line-height: 1.5; }
+
+    /* Reflect textarea */
+    .bdk-reflect-ta {
+      width: 100%; min-height: 100px; border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      color: var(--bdk-ink); padding: 0.72rem 0.9rem;
+      font: inherit; font-size: 0.87rem; line-height: 1.6;
+      resize: vertical; outline: none; margin-bottom: 0.3rem;
+    }
+    .bdk-reflect-ta:focus { border-color: rgba(240,192,64,0.3); }
+    .bdk-reflect-ta::placeholder { color: #5c5548; }
+    .bdk-reflect-note { margin: 0 0 0.8rem; color: var(--bdk-dim); font-size: 0.72rem; }
+
+    /* Grade gating */
+    [data-grade] { display: none; }
+    .grade-all  [data-grade="all"],
+    .grade-all  [data-grade="k2"],
+    .grade-all  [data-grade="35"],
+    .grade-all  [data-grade="68"],
+    .grade-all  [data-grade="912"] { display: block; }
+    .grade-k2   [data-grade="all"],
+    .grade-k2   [data-grade="k2"]  { display: block; }
+    .grade-35   [data-grade="all"],
+    .grade-35   [data-grade="35"]  { display: block; }
+    .grade-68   [data-grade="all"],
+    .grade-68   [data-grade="68"]  { display: block; }
+    .grade-912  [data-grade="all"],
+    .grade-912  [data-grade="912"] { display: block; }
+
+    /* Grade bar */
+    .bdk-grade-bar { display: flex; flex-wrap: wrap; gap: 0.32rem; margin-bottom: 0.5rem; }
+    .bdk-grade-btn {
+      border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03);
+      color: var(--bdk-muted); border-radius: 999px; padding: 0.32rem 0.7rem;
+      font: inherit; font-size: 0.76rem; font-weight: 700; cursor: pointer; transition: all 0.13s;
+    }
+    .bdk-grade-btn:hover { border-color: rgba(240,192,64,0.26); color: #f5e0b0; }
+    .bdk-grade-btn.active {
+      background: rgba(240,192,64,0.13); border-color: rgba(240,192,64,0.3); color: #fff4d0;
+    }
+
+    /* Reset/restart button */
+    .bdk-restart-btn {
+      width: 100%; padding: 0.5rem; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+      color: var(--bdk-dim); font: inherit; font-size: 0.76rem; font-weight: 700;
+      cursor: pointer; transition: all 0.13s; margin-top: 0.3rem;
+    }
+    .bdk-restart-btn:hover { border-color: rgba(240,192,64,0.2); color: var(--bdk-muted); }
+
+    @media (min-width: 980px) {
+      .bdk-tool-area {
+        padding: 0.8rem 1rem;
+      }
+      .bdk-tool-card,
+      .bdk-evidence-log,
+      .bdk-verdict,
+      .bdk-occam-box {
+        max-width: 820px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .bdk-sim-header {
+        grid-template-columns: 1fr;
+        gap: 0.55rem;
+      }
+      .bdk-header-badge {
+        justify-self: start;
+      }
+      .bdk-readouts {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.35rem;
+      }
+      .bdk-readout {
+        padding: 0.48rem 0.5rem;
+      }
+      .bdk-readout span {
+        font-size: 0.55rem;
+      }
+      .bdk-readout strong {
+        font-size: 0.74rem;
+      }
+      .bdk-topbar-title {
+        display: none;
+      }
+      .bdk-claim-bar {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+      }
+      .bdk-claim-bar::-webkit-scrollbar {
+        display: none;
+      }
+      .bdk-claim-btn {
+        flex: 0 0 auto;
+      }
+    }
+
+    /* ── Readable field-notebook remaster ───────────────────── */
+    :root {
+      --bdk-bg: #f4f0e7;
+      --bdk-panel: #fffaf0;
+      --bdk-line: rgba(92, 76, 47, 0.18);
+      --bdk-ink: #2f2a22;
+      --bdk-muted: #5f574c;
+      --bdk-dim: #817769;
+      --bdk-amber: #9a6500;
+      --bdk-amber2: #c78a11;
+      --bdk-teal: #0d7a72;
+      --bdk-red: #b73939;
+      --bdk-violet: #6d55b6;
+      --bdk-gold: #9a6500;
+      --ll-panel-w: min(430px, 36vw);
+      --ll-drawer-h: 56vh;
+    }
+
+    body {
+      color: var(--bdk-ink);
+      background:
+        linear-gradient(90deg, rgba(13,122,114,0.06) 0 1px, transparent 1px 100%),
+        linear-gradient(180deg, rgba(154,101,0,0.07) 0 1px, transparent 1px 100%),
+        linear-gradient(180deg, #fbf7ee 0%, #efe8d9 100%);
+      background-size: 36px 36px, 36px 36px, auto;
+      font-size: 17px;
+    }
+
+    .bdk-topbar {
+      background: rgba(255, 251, 242, 0.94);
+      border-bottom: 1px solid rgba(92, 76, 47, 0.18);
+      box-shadow: 0 8px 24px rgba(71, 55, 30, 0.08);
+    }
+    .bdk-topbar a,
+    .bdk-topbar-title {
+      color: #4b3920;
+    }
+    .bdk-topbar a:hover {
+      color: #0d7a72;
+    }
+
+    .ll-sim.bdk-sim-area {
+      overflow-y: auto;
+      background:
+        radial-gradient(900px 520px at 0% -10%, rgba(13,122,114,0.10), transparent 54%),
+        radial-gradient(880px 520px at 100% 0%, rgba(154,101,0,0.12), transparent 50%),
+        rgba(250, 246, 237, 0.94);
+    }
+    .bdk-tool-area {
+      overflow: visible;
+      flex: initial;
+      padding: 1rem clamp(1rem, 2.2vw, 1.6rem) 1.2rem;
+      gap: 0.9rem;
+    }
+    .bdk-sim-header {
+      padding: 1.25rem clamp(1rem, 2.3vw, 1.7rem) 1.05rem;
+      background: rgba(255, 251, 242, 0.58);
+      border-bottom: 1px solid rgba(92, 76, 47, 0.13);
+    }
+    .bdk-sim-header h1 {
+      color: #2c2418;
+      font-size: clamp(1.45rem, 3vw, 2.35rem);
+      letter-spacing: -0.02em;
+    }
+    .bdk-sim-header p {
+      color: #5f574c;
+      font-size: 0.98rem;
+      max-width: 78ch;
+    }
+    .bdk-header-badge {
+      border-color: rgba(13,122,114,0.28);
+      background: #e9f5f2;
+      color: #075d57;
+      min-height: 2.25rem;
+    }
+    .bdk-claim-bar {
+      padding: 0.9rem clamp(1rem, 2.2vw, 1.6rem);
+      gap: 0.5rem;
+      background: rgba(255, 251, 242, 0.62);
+      border-bottom: 1px solid rgba(92, 76, 47, 0.12);
+    }
+    .bdk-claim-btn {
+      background: #fffaf0;
+      border-color: rgba(92, 76, 47, 0.18);
+      color: #4e463a;
+      padding: 0.48rem 0.78rem;
+      font-size: 0.82rem;
+      box-shadow: 0 2px 8px rgba(71, 55, 30, 0.05);
+    }
+    .bdk-claim-btn.active {
+      background: #fff0c9;
+      border-color: rgba(154,101,0,0.38);
+      color: #4c3306;
+    }
+    .bdk-claim-btn.is-verified.active {
+      background: #ddf3ef;
+      color: #075d57;
+      border-color: rgba(13,122,114,0.34);
+    }
+    .bdk-claim-card,
+    .bdk-tool-card,
+    .bdk-readout,
+    .bdk-evidence-log,
+    .bdk-verdict,
+    .bdk-occam-box,
+    .bdk-restart-btn {
+      background: rgba(255, 252, 246, 0.94);
+      border-color: rgba(92, 76, 47, 0.16);
+      box-shadow: 0 10px 28px rgba(71, 55, 30, 0.08);
+    }
+    .bdk-claim-card {
+      margin: 1rem clamp(1rem, 2.2vw, 1.6rem) 0;
+      padding: 1.1rem 1.2rem;
+    }
+    .bdk-claim-card.is-baloney {
+      background: linear-gradient(135deg, rgba(183,57,57,0.06), rgba(255,252,246,0.96));
+      border-color: rgba(183,57,57,0.20);
+    }
+    .bdk-claim-card.is-verified {
+      background: linear-gradient(135deg, rgba(13,122,114,0.08), rgba(255,252,246,0.96));
+      border-color: rgba(13,122,114,0.22);
+    }
+    .bdk-claim-text {
+      color: #2f2a22;
+      font-size: clamp(1.02rem, 2vw, 1.28rem);
+      line-height: 1.65;
+    }
+    .bdk-claim-warning {
+      color: #5b321d;
+      background: #fff0dd;
+      border-color: rgba(183,88,36,0.24);
+      font-size: 0.88rem;
+    }
+    .bdk-readouts {
+      gap: 0.75rem;
+    }
+    .bdk-readout {
+      padding: 0.82rem 0.9rem;
+    }
+    .bdk-readout span,
+    .bdk-log-title span:last-child,
+    .bdk-meter-lbl,
+    .bdk-found-lbl {
+      color: #817769;
+    }
+    .bdk-readout strong,
+    .bdk-tool-name,
+    .bdk-log-title,
+    .bdk-closing h2,
+    .bdk-head {
+      color: #2f2a22;
+    }
+    .bdk-pip {
+      height: 8px;
+      background: rgba(92, 76, 47, 0.14);
+      border-color: rgba(92, 76, 47, 0.10);
+    }
+    .bdk-tool-card {
+      padding: 1.25rem 1.35rem;
+      max-width: 920px;
+    }
+    .bdk-tool-num {
+      color: #5d3f08;
+      background: #fff0c9;
+      border-color: rgba(154,101,0,0.28);
+    }
+    .bdk-tool-question,
+    .bdk-log-empty,
+    .bdk-occam-box p,
+    .bdk-verdict p {
+      color: #5f574c;
+      font-size: 0.96rem;
+    }
+    .bdk-reveal-btn,
+    .bdk-nav-btn.btn-primary {
+      background: #fff0c9;
+      color: #4c3306;
+      border-color: rgba(154,101,0,0.28);
+    }
+    .bdk-nav-btn,
+    .bdk-restart-btn {
+      color: #5f574c;
+      background: rgba(255,252,246,0.82);
+      border-color: rgba(92, 76, 47, 0.14);
+    }
+    .bdk-tool-result.res-fail {
+      background: #fff0f0;
+      color: #582020;
+      border-color: rgba(183,57,57,0.25);
+    }
+    .bdk-tool-result.res-pass {
+      background: #e9f7f4;
+      color: #0b514d;
+      border-color: rgba(13,122,114,0.24);
+    }
+    .bdk-meter-area {
+      background: rgba(255, 251, 242, 0.86);
+      border-top: 1px solid rgba(92, 76, 47, 0.14);
+      padding: 0.75rem clamp(1rem, 2.2vw, 1.6rem) 0.9rem;
+    }
+    .bdk-meter-track,
+    .bdk-found-track {
+      background: rgba(92, 76, 47, 0.12);
+    }
+    #bdk-viewport {
+      --ll-panel-bg: #fffaf0;
+      --ll-panel-border: rgba(92, 76, 47, 0.17);
+      --ll-tab-color: #756b5e;
+      --ll-tab-active-bg: #fff0c9;
+      --ll-tab-active: #5d3f08;
+      --ll-toggle-bg: #fffaf0;
+      --text-strong: #2f2a22;
+      --text-body: #5f574c;
+      --text-muted: #756b5e;
+      --nav-hover-bg: rgba(154,101,0,0.10);
+      --surface-1: #fffaf0;
+      --surface-2: #f7efe2;
+      --border-subtle: rgba(92, 76, 47, 0.17);
+    }
+    #bdk-viewport .ll-panel {
+      background:
+        linear-gradient(180deg, rgba(13,122,114,0.05), transparent 220px),
+        #fffaf0;
+      color: #5f574c;
+    }
+    #bdk-viewport .ll-panel-head {
+      background: rgba(255, 246, 225, 0.86);
+    }
+    #bdk-viewport .ll-panel-body {
+      padding: 1.1rem 1.1rem 2rem;
+    }
+    #bdk-viewport .ll-label {
+      color: #817769;
+      font-size: 0.68rem;
+      margin-top: 1.1rem;
+    }
+    #bdk-viewport .ll-tab[aria-selected="true"] {
+      color: #4c3306;
+    }
+    #bdk-viewport .ll-panel-close {
+      color: #756b5e;
+      background: rgba(92,76,47,0.08);
+    }
+    .bdk-tool-ref,
+    .bdk-callout,
+    .bdk-scripture,
+    .bdk-daniel,
+    .bdk-mini-card,
+    .bdk-bias-card,
+    .bdk-pattern-card,
+    .bdk-pattern-rule,
+    .bdk-discuss,
+    .bdk-occam-lesson,
+    .bdk-closing {
+      background: rgba(255, 252, 246, 0.88);
+      border-color: rgba(92, 76, 47, 0.14);
+      box-shadow: 0 4px 16px rgba(71, 55, 30, 0.04);
+    }
+    .bdk-callout.ca-amber,
+    .bdk-scripture,
+    .bdk-daniel {
+      background: #fff4d8;
+      border-color: rgba(154,101,0,0.18);
+    }
+    .bdk-callout.ca-teal,
+    .bdk-occam-lesson,
+    .bdk-closing {
+      background: #eaf6f2;
+      border-color: rgba(13,122,114,0.18);
+    }
+    .bdk-callout.ca-red {
+      background: #fff0f0;
+      border-color: rgba(183,57,57,0.18);
+    }
+    .bdk-callout.ca-violet,
+    .bdk-pattern-rule,
+    .bdk-bias-card {
+      background: #f1edfb;
+      border-color: rgba(109,85,182,0.18);
+    }
+    .bdk-head {
+      font-size: 1.25rem;
+    }
+    .bdk-sub,
+    .bdk-callout p,
+    .bdk-scripture p,
+    .bdk-daniel p,
+    .bdk-mini-card p,
+    .bdk-bias-def,
+    .bdk-pattern-card p,
+    .bdk-pattern-rule p,
+    .bdk-discuss p,
+    .bdk-occam-lesson p,
+    .bdk-closing p,
+    .bdk-tool-ref p {
+      color: #5f574c;
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+    .bdk-callout strong,
+    .bdk-daniel strong,
+    .bdk-pattern-rule strong,
+    .bdk-closing strong,
+    .bdk-tool-ref h4,
+    .bdk-mini-card h4,
+    .bdk-discuss h4,
+    .bdk-pattern-card h4,
+    .bdk-occam-lesson h3,
+    .bdk-daniel h3 {
+      color: #2f2a22;
+    }
+    .bdk-reflect-ta {
+      background: #fffdf8;
+      color: #2f2a22;
+      border-color: rgba(92,76,47,0.18);
+      min-height: 150px;
+    }
+    .bdk-grade-btn {
+      background: #fffaf0;
+      color: #5f574c;
+      border-color: rgba(92,76,47,0.17);
+      padding: 0.45rem 0.78rem;
+    }
+    .bdk-grade-btn.active {
+      background: #fff0c9;
+      color: #4c3306;
+      border-color: rgba(154,101,0,0.30);
+    }
+
+    @media (min-width: 980px) {
+      .bdk-tool-card,
+      .bdk-evidence-log,
+      .bdk-verdict,
+      .bdk-occam-box {
+        max-width: 920px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        font-size: 16px;
+      }
+      .bdk-tool-area {
+        padding: 0.9rem;
+      }
+      .bdk-readouts {
+        grid-template-columns: 1fr;
+      }
+      .bdk-readout strong {
+        font-size: 0.92rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="ll-viewport ll-dark grade-68" id="bdk-viewport">
+
+  <nav class="bdk-topbar ll-topbar" aria-label="Lesson navigation">
+    <div class="bdk-topbar-inner">
+      <a href="../steam-lessons.html">← STEAM Lessons</a>
+      <span class="bdk-topbar-title">The Baloney Detection Kit</span>
+      <a href="../steam-lessons.html#module-systems">Systems &amp; Humanities</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage">
+
+    <!-- ══ MAIN SIM: Claim Analyzer ══════════════════════════ -->
+    <div class="ll-sim bdk-sim-area">
+
+      <div class="bdk-sim-header">
+        <div class="bdk-header-copy">
+          <h1>The Claim Analyzer</h1>
+          <p>Select a claim, run the seven tests, then weigh the evidence before you share or believe it.</p>
+        </div>
+        <div class="bdk-header-badge" id="bdk-header-badge">Investigation Mode</div>
+      </div>
+
+      <!-- Claim selector -->
+      <div class="bdk-claim-bar">
+        <span class="bdk-claim-bar-label">Claim:</span>
+        <button class="bdk-claim-btn active"      data-claim="0" type="button">Astrology</button>
+        <button class="bdk-claim-btn"             data-claim="1" type="button">Crystal Healing</button>
+        <button class="bdk-claim-btn"             data-claim="2" type="button">Cancer Conspiracy</button>
+        <button class="bdk-claim-btn"             data-claim="3" type="button">Stage Healer</button>
+        <button class="bdk-claim-btn is-verified" data-claim="4" type="button">John 9 ✓</button>
+        <button class="bdk-claim-btn"             data-claim="5" type="button">Disney Frozen?</button>
+        <button class="bdk-claim-btn"             data-claim="6" type="button">Scientific Racism</button>
+        <button class="bdk-claim-btn"             data-claim="7" type="button">Homeopathy</button>
+        <button class="bdk-claim-btn"             data-claim="8" type="button">Anti-Vax</button>
+        <button class="bdk-claim-btn"             data-claim="9" type="button">Perpetual Motion</button>
+        <button class="bdk-claim-btn"             data-claim="10" type="button">Cold Fusion</button>
+      </div>
+
+      <!-- Active claim display -->
+      <div class="bdk-claim-card is-baloney" id="bdk-claim-card">
+        <p class="bdk-claim-kicker" id="bdk-claim-kicker">Astrology</p>
+        <p class="bdk-claim-text"   id="bdk-claim-text"></p>
+        <p class="bdk-claim-warning" id="bdk-claim-warning"></p>
+      </div>
+
+      <!-- Tool runner -->
+      <div class="bdk-tool-area" id="bdk-tool-area">
+
+        <div class="bdk-readouts" aria-label="Claim status">
+          <div class="bdk-readout">
+            <span>Claim Type</span>
+            <strong id="bdk-readout-type">Baloney</strong>
+          </div>
+          <div class="bdk-readout">
+            <span>Tools Applied</span>
+            <strong id="bdk-readout-done">0 / 7</strong>
+          </div>
+          <div class="bdk-readout">
+            <span>Best Habit</span>
+            <strong id="bdk-readout-habit">Check first</strong>
+          </div>
+        </div>
+
+        <div class="bdk-pips" id="bdk-pips"></div>
+
+        <div class="bdk-tool-card" id="bdk-tool-card">
+          <div class="bdk-tool-num-row">
+            <div class="bdk-tool-num" id="bdk-tool-num">1</div>
+            <span class="bdk-tool-name" id="bdk-tool-name"></span>
+          </div>
+          <p class="bdk-tool-question" id="bdk-tool-question"></p>
+          <button class="bdk-reveal-btn" id="bdk-reveal-btn" type="button">Apply Tool →</button>
+          <div class="bdk-tool-result" id="bdk-tool-result">
+            <span class="bdk-result-label" id="bdk-result-label"></span>
+            <span id="bdk-result-note"></span>
+          </div>
+        </div>
+
+        <div class="bdk-nav-row">
+          <button class="bdk-nav-btn" id="bdk-prev" type="button" disabled>← Prev</button>
+          <span class="bdk-tool-counter" id="bdk-counter">Tool 1 of 7</span>
+          <button class="bdk-nav-btn btn-primary" id="bdk-next" type="button" disabled>Next →</button>
+        </div>
+
+        <div class="bdk-verdict" id="bdk-verdict">
+          <div class="bdk-verdict-word" id="bdk-verdict-word"></div>
+          <p id="bdk-verdict-note"></p>
+        </div>
+
+        <div class="bdk-occam-box" id="bdk-occam-box">
+          <p class="bdk-occam-lbl">Occam's Razor</p>
+          <h3>The Simplest Explanation</h3>
+          <p id="bdk-occam-text"></p>
+        </div>
+
+        <div class="bdk-evidence-log" aria-live="polite">
+          <div class="bdk-log-title">
+            <span>Evidence Log</span>
+            <span id="bdk-log-count">0 notes</span>
+          </div>
+          <ul class="bdk-log-list" id="bdk-log-list"></ul>
+          <p class="bdk-log-empty" id="bdk-log-empty">Apply a tool to start building the case.</p>
+        </div>
+
+        <button class="bdk-restart-btn" id="bdk-restart" type="button">↺ Reset this claim</button>
+
+      </div><!-- .bdk-tool-area -->
+
+      <!-- Baloney / Foundation meters -->
+      <div class="bdk-meter-area">
+        <div class="bdk-meter-row">
+          <span class="bdk-meter-lbl">Baloney Detected</span>
+          <span class="bdk-meter-pct" id="bdk-meter-pct">–</span>
+        </div>
+        <div class="bdk-meter-track">
+          <div class="bdk-meter-fill" id="bdk-meter-fill"></div>
+        </div>
+        <div class="bdk-found-row">
+          <span class="bdk-found-lbl">Foundation</span>
+          <div class="bdk-found-track">
+            <div class="bdk-found-fill" id="bdk-found-fill"></div>
+          </div>
+          <span class="bdk-found-word" id="bdk-found-word">–</span>
+        </div>
+      </div>
+
+    </div><!-- .ll-sim.bdk-sim-area -->
+
+    <!-- ══ PANEL: sidebar ══════════════════════════════════════ -->
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="pane-tools">Tools</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-lesson">Lesson</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-activity">Activity</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+
+      <div class="ll-panel-body">
+
+        <!-- ── TOOLS pane ── -->
+        <div class="ll-pane ll-active" id="pane-tools">
+
+          <span class="ll-label">The 7 Detection Tools</span>
+          <div class="bdk-tool-refs">
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">1</div>
+              <div><h4>Independent Confirmation</h4><p>Has someone with no stake in the claim verified it independently?</p></div>
+            </div>
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">2</div>
+              <div><h4>Open Debate</h4><p>Are competing explanations seriously considered, or is this the only option presented?</p></div>
+            </div>
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">3</div>
+              <div><h4>Authority Scrutiny</h4><p>Is authority being used to shut down questions? Real expertise invites scrutiny.</p></div>
+            </div>
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">4</div>
+              <div><h4>Occam's Razor</h4><p>What is the simplest explanation consistent with all known facts?</p></div>
+            </div>
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">5</div>
+              <div><h4>Falsifiability</h4><p>Could any evidence ever prove this claim wrong? If not, it is unfalsifiable — not science.</p></div>
+            </div>
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">6</div>
+              <div><h4>Quantification</h4><p>Are there real, measurable numbers — or just vague, impressive-sounding assertions?</p></div>
+            </div>
+            <div class="bdk-tool-ref">
+              <div class="bdk-tool-ref-num">7</div>
+              <div><h4>Cherry-Picking Check</h4><p>Is contrary evidence hidden or explained away? Hits remembered, misses forgotten?</p></div>
+            </div>
+          </div>
+
+          <hr class="ll-hr">
+          <span class="ll-label">Grade Band</span>
+          <div class="bdk-grade-bar">
+            <button class="bdk-grade-btn" data-band="k2">K–2</button>
+            <button class="bdk-grade-btn" data-band="35">3–5</button>
+            <button class="bdk-grade-btn active" data-band="68">6–8</button>
+            <button class="bdk-grade-btn" data-band="912">9–12</button>
+          </div>
+
+          <hr class="ll-hr">
+          <div class="bdk-scripture">
+            <p class="bdk-scripture-ref">1 Thessalonians 5:21</p>
+            <p>"Test everything; hold on to what is good."</p>
+          </div>
+          <div class="bdk-scripture">
+            <p class="bdk-scripture-ref">Proverbs 14:15</p>
+            <p>"A simple man believes anything, but a prudent man gives thought to his steps."</p>
+          </div>
+
+        </div><!-- #pane-tools -->
+
+        <!-- ── LESSON pane ── -->
+        <div class="ll-pane" id="pane-lesson">
+
+          <!-- K–2 -->
+          <div data-grade="k2">
+            <h3 class="bdk-head">Is It Real or Make-Believe?</h3>
+            <p class="bdk-sub">How do we know when something is true?</p>
+            <div class="bdk-callout ca-amber">
+              <p class="bdk-callout-lbl">Big Idea</p>
+              <p>Before we believe something, we can ask: <strong>Can someone else check it?</strong> God wants us to seek what is true and good.</p>
+            </div>
+            <div class="bdk-scripture">
+              <p class="bdk-scripture-ref">Matthew 7:24</p>
+              <p>"Everyone who hears these words of mine and puts them into practice is like a wise man who built his house on the rock."</p>
+            </div>
+            <div class="bdk-callout ca-teal">
+              <p class="bdk-callout-lbl">Think About It</p>
+              <p>If a friend said eating grass would make you fly, would you believe it? <strong>What could you do to find out if it was true?</strong></p>
+            </div>
+            <div class="bdk-callout ca-amber">
+              <p class="bdk-callout-lbl">Two Houses</p>
+              <p>One house was built on rock (it stood in the storm). One was built on sand (it fell). Building on truth is like building on rock.</p>
+            </div>
+          </div>
+
+          <!-- 3–5 -->
+          <div data-grade="35">
+            <h3 class="bdk-head">The Baloney Test</h3>
+            <p class="bdk-sub">Carl Sagan was a scientist who loved truth. He had a simple rule: <em>extraordinary claims require extraordinary evidence.</em></p>
+            <div class="bdk-scripture">
+              <p class="bdk-scripture-ref">Matthew 7:24–27 · The Two Houses</p>
+              <p>"The rain came down, the streams rose, and the winds blew and beat against that house; yet it did not fall, because it had its foundation on the rock."</p>
+            </div>
+            <div class="bdk-callout ca-amber">
+              <p class="bdk-callout-lbl">Astrology — Why It Fails</p>
+              <p>Stars are enormous, but <strong>they are incredibly far away</strong>. Mercury's gravity on Earth is weaker than a passing truck. Stars cannot "know" you exist or affect your day. Astrology fails the independent confirmation test.</p>
+            </div>
+            <div class="bdk-mini-grid">
+              <div class="bdk-mini-card"><h4>True Miracles</h4><p>When Jesus healed people in the Bible, multiple witnesses confirmed it — even enemies trying to disprove it.</p></div>
+              <div class="bdk-mini-card"><h4>False Healing</h4><p>Stage faith healers never allow doctors to examine patients before or after. Real miracles welcome checking.</p></div>
+              <div class="bdk-mini-card"><h4>Science</h4><p>Science works because <em>anyone can check the results</em>. That accountability is what makes it reliable.</p></div>
+            </div>
+            <div class="bdk-scripture">
+              <p class="bdk-scripture-ref">Proverbs 18:17</p>
+              <p>"The first to plead his cause seems right, until his neighbor comes and examines him."</p>
+            </div>
+          </div>
+
+          <!-- 6–8 -->
+          <div data-grade="68">
+            <h3 class="bdk-head">Epistemology: How Do We Know What We Know?</h3>
+            <p class="bdk-sub">In a world of viral content and instant headlines, knowing <em>how</em> to evaluate information is more valuable than knowing any single fact.</p>
+
+            <div class="bdk-daniel">
+              <p class="bdk-daniel-lbl">Daniel 5 — The Writing on the Wall</p>
+              <h3>King Belshazzar Was Found Wanting</h3>
+              <p>Belshazzar threw a feast using the sacred vessels from God's temple, worshipping false gods. A hand appeared and wrote on the wall. Only Daniel could read it:</p>
+              <div class="bdk-mene-row">
+                <div class="bdk-mene"><div class="bdk-mene-word">MENE</div><div class="bdk-mene-meaning">Numbered — your days are counted</div></div>
+                <div class="bdk-mene"><div class="bdk-mene-word">TEKEL</div><div class="bdk-mene-meaning">Weighed — found wanting</div></div>
+                <div class="bdk-mene"><div class="bdk-mene-word">PERES</div><div class="bdk-mene-meaning">Divided — kingdom falls</div></div>
+              </div>
+              <p>Belshazzar refused to weigh what was real. He trusted power and pleasure over truth. <strong>That same night, the kingdom fell to Persia.</strong></p>
+              <p>A society built on unchosen beliefs and unexamined claims is always one crisis away from collapse.</p>
+            </div>
+
+            <div class="bdk-callout ca-amber">
+              <p class="bdk-callout-lbl">Cognitive Bias</p>
+              <p>Our brains have built-in shortcuts. <strong>Confirmation bias</strong> makes us seek information confirming what we already believe. <strong>The bandwagon effect</strong> makes millions believing something feel like proof. These are normal — but dangerous when unchecked.</p>
+            </div>
+
+            <div class="bdk-callout ca-teal">
+              <p class="bdk-callout-lbl">Biblical Miracles vs. False Faith Healers</p>
+              <p>Jesus healed a man born blind in John 9. His neighbors confirmed it. His parents confirmed it. The Pharisees — hostile investigators — could not disprove it. <strong>Biblical testimony gives public, historical reasons to trust what happened.</strong> Stage faith healers reject scrutiny, hide failures, and blame the sick when cures don't come. These are fundamentally different.</p>
+            </div>
+
+            <div class="bdk-callout ca-violet">
+              <p class="bdk-callout-lbl">Faith Is Not a Lab Trick</p>
+              <p>"You shall not put the Lord your God to the test" means we do not demand that God prove Himself on our terms. <strong>God is not an object to be manipulated or a force we can summon for demonstration.</strong> Faith is not blind; it rests on what God has already revealed. But it refuses to turn trust into a transaction.</p>
+            </div>
+
+            <div class="bdk-callout ca-red">
+              <p class="bdk-callout-lbl">We Use What We Don't Understand</p>
+              <p>Carl Sagan noted: <em>"We've arranged a civilization based on science and technology in which nobody understands anything about science and technology."</em> We use antibiotics, GPS, and smartphones — but almost none of us could build or explain any of them. <strong>Dependence without understanding is vulnerability.</strong></p>
+            </div>
+
+            <div class="bdk-scripture">
+              <p class="bdk-scripture-ref">John 14:6</p>
+              <p>"I am the way, the truth, and the life." — Jesus identifies Himself with truth itself. Seeking truth is not an enemy of faith; it is an expression of it.</p>
+            </div>
+          </div>
+
+          <!-- 9–12 -->
+          <div data-grade="912">
+            <h3 class="bdk-head">What Kind of Mind Does a Healthy Society Require?</h3>
+            <p class="bdk-sub">The health of civilization depends on the quality of thinking in its citizens. Poor epistemology is not just an individual failure — it is a civilizational risk.</p>
+
+            <div class="bdk-daniel">
+              <p class="bdk-daniel-lbl">Daniel 5 — Epistemic Failure at the State Level</p>
+              <h3>The Belshazzar Problem</h3>
+              <p>Belshazzar knew of Nebuchadnezzar's humbling (Daniel 5:22). He had access to truth and chose to ignore it. His epistemology was: power confers truth; the present confers permanence.</p>
+              <p>Daniel's indictment was <strong>epistemic, not merely moral</strong>: Belshazzar had not humbled his heart to acknowledge reality as it is. The Babylonian Empire fell that night — not only because of military weakness, but because its leadership had lost the capacity to honestly evaluate its own situation.</p>
+              <p>Houses built on sand collapse when the rain comes. <strong>The rain always comes.</strong></p>
+            </div>
+
+            <div class="bdk-callout ca-violet">
+              <p class="bdk-callout-lbl">Epistemology</p>
+              <p><strong>Empiricism</strong> — we know through observation and evidence. <strong>Rationalism</strong> — we know through reason and logic. <strong>Revelation</strong> — we know through God's self-disclosure. A Christian epistemology holds all three in creative tension: faith and reason are not enemies. "Test everything" (1 Thess 5:21) is a biblical mandate, while "You shall not put the Lord your God to the test" warns us not to treat God as though He were beneath us, obligated to perform on demand.</p>
+            </div>
+
+            <div class="bdk-callout ca-teal">
+              <p class="bdk-callout-lbl">Category Clarity</p>
+              <p>Scripture is not pseudoscience because it is not pretending to be a laboratory mechanism. It operates in theological, moral, and historical domains. Its evidence is not "it works like a machine when commanded," but <strong>revelation received, historical durability, and consistent patterns of moral and social transformation</strong>. We don't test God because He isn't under us; He's over us. Faith doesn't coerce proof; it responds to revelation.</p>
+            </div>
+
+            <div class="bdk-callout ca-red">
+              <p class="bdk-callout-lbl">Modern Parallels to Belshazzar's Feast</p>
+              <p><strong>Algorithmic amplification</strong> promotes outrage because it drives engagement — not because it is true. <strong>Echo chambers</strong> produce the illusion of consensus. <strong>Deepfakes</strong> challenge visual evidence itself. We use technology we don't understand to believe things we haven't examined, sharing them to millions who won't check. Belshazzar's feast is now live-streamed — with ten billion witnesses.</p>
+            </div>
+
+            <div class="bdk-callout ca-amber">
+              <p class="bdk-callout-lbl">The Technology Gap &amp; Democratic Risk</p>
+              <p>Sagan's warning remains acute: a democracy requires citizens capable of evaluating evidence and resisting manipulation. When the gap between the complexity of our tools and our understanding of them becomes extreme, we become <strong>dependent serfs of our own technology</strong> — susceptible to any authoritative voice that claims to understand it for us. Athens executed Socrates. Rome traded senators for emperors. The pattern is not ancient history.</p>
+            </div>
+
+            <div class="bdk-callout ca-teal">
+              <p class="bdk-callout-lbl">What History Shows</p>
+              <p>The Enlightenment — which produced modern science, human rights frameworks, and representative government — was built on the premise that evidence and reason should constrain power. Societies that stop training citizens to think critically are societies already in decline. <strong>The firm foundation is not comfort or consensus. It is truth that has been tested and chosen.</strong></p>
+            </div>
+
+            <div class="bdk-scripture">
+              <p class="bdk-scripture-ref">John 8:32</p>
+              <p>"The truth will set you free." Truth is not a threat to the believer — it is the substance of what we believe.</p>
+            </div>
+            <div class="bdk-scripture">
+              <p class="bdk-scripture-ref">Matthew 7:24–27</p>
+              <p>"The rain came down, the streams rose, and the winds blew and beat against that house; yet it did not fall, because it had its foundation on the rock." The rock is not the absence of questions. It is truth tested and chosen.</p>
+            </div>
+          </div>
+
+          <!-- All grades -->
+          <div data-grade="all">
+            <div class="bdk-pattern-rule">
+              <p><strong>The same structure repeats:</strong> pseudoscience borrows scientific or professional language, avoids falsifiability, leans on authority or anecdote, resists correction, and attaches itself to power, identity, fear, or profit.</p>
+            </div>
+
+            <span class="ll-label">Historical Pattern Library</span>
+            <div class="bdk-pattern-grid">
+              <div class="bdk-pattern-card"><h4>Cryonics Rumors</h4><p>The Walt Disney frozen-body story used futuristic language and celebrity mystery, but Disney was cremated.</p></div>
+              <div class="bdk-pattern-card"><h4>Scientific Racism</h4><p>Modernity's darkest hours used measurements, charts, and credentials to dress racial hierarchy in false authority.</p></div>
+              <div class="bdk-pattern-card"><h4>Bloodletting</h4><p>For centuries, professional medicine defended a harmful treatment because the theory sounded authoritative.</p></div>
+              <div class="bdk-pattern-card"><h4>Homeopathy</h4><p>It uses medical language while relying on dilutions so extreme that no active ingredient remains.</p></div>
+              <div class="bdk-pattern-card"><h4>Anti-Vaccination</h4><p>Fear spreads through anecdotes faster than population-level risk data can correct it.</p></div>
+              <div class="bdk-pattern-card"><h4>Perpetual Motion</h4><p>Inventors promise unlimited energy while dodging conservation of energy and independent testing.</p></div>
+              <div class="bdk-pattern-card"><h4>Cold Fusion</h4><p>Room-temperature nuclear fusion claims collapsed when other labs could not reproduce the results.</p></div>
+              <div class="bdk-pattern-card"><h4>Phrenology</h4><p>Skull measurements were treated as a professional map of character and intelligence.</p></div>
+              <div class="bdk-pattern-card"><h4>Graphology</h4><p>Handwriting analysis often claims to reveal personality beyond what controlled evidence supports.</p></div>
+              <div class="bdk-pattern-card"><h4>Lysenkoism</h4><p>Political power overruled genetics, punished correction, and helped produce agricultural disaster.</p></div>
+              <div class="bdk-pattern-card"><h4>Deutsche Physik</h4><p>Nazi ideology attacked "Jewish physics" and tried to subordinate truth to racial identity.</p></div>
+            </div>
+
+            <div class="bdk-occam-lesson">
+              <p class="bdk-occam-lesson-lbl">Occam's Razor — William of Ockham</p>
+              <h3>Prefer the Simplest Explanation</h3>
+              <p>Named for William of Ockham (c. 1287–1347), a Christian friar and philosopher: when two explanations fit all the facts, prefer the simpler one. This does not mean the simple answer is always right — but you should not add unnecessary complexity without good reason. It is a built-in check against conspiracy thinking, which often requires elaborate, unprovable assumptions.</p>
+            </div>
+
+            <div class="bdk-closing">
+              <div class="bdk-closing-icon">🪨</div>
+              <h2>Build on the Rock</h2>
+              <p>A healthy society is built by people who <strong>love truth enough to test it</strong>. The Baloney Detection Kit is not cynicism — it is the <em>minimum standard of respect</em> we owe to truth, to one another, and to the God who is Truth itself.</p>
+              <p>The Writing on the Wall is still being written. The question is what will be found when we are weighed.</p>
+            </div>
+          </div>
+
+        </div><!-- #pane-lesson -->
+
+        <!-- ── ACTIVITY pane ── -->
+        <div class="ll-pane" id="pane-activity">
+
+          <span class="ll-label">Grade Band</span>
+          <div class="bdk-grade-bar">
+            <button class="bdk-grade-btn" data-band="k2">K–2</button>
+            <button class="bdk-grade-btn" data-band="35">3–5</button>
+            <button class="bdk-grade-btn active" data-band="68">6–8</button>
+            <button class="bdk-grade-btn" data-band="912">9–12</button>
+          </div>
+          <hr class="ll-hr">
+
+          <!-- K–2 -->
+          <div data-grade="k2">
+            <span class="ll-label">K–2 Discussion</span>
+            <div class="bdk-discuss"><h4>The True Story Test</h4><p>How do you know when a story is true? What questions could you ask to find out?</p></div>
+            <div class="bdk-discuss"><h4>Draw the Two Houses</h4><p>Draw one house on a rock and one on sand. What happens to each in a storm? How is thinking carefully like building on rock?</p></div>
+            <div class="bdk-discuss"><h4>Did Jesus Really Heal People?</h4><p>Yes! The Bible tells us many people <em>saw</em> Jesus heal sick people and were amazed. What does it tell us that Jesus healed in front of crowds?</p></div>
+          </div>
+
+          <!-- 3–5 -->
+          <div data-grade="35">
+            <span class="ll-label">3–5 Discussion</span>
+            <div class="bdk-discuss"><h4>Who Could Check?</h4><p>For each claim in the analyzer, ask: who else could verify this? How exactly would they check it?</p></div>
+            <div class="bdk-discuss"><h4>Astrology vs. Astronomy</h4><p>What is the difference between astrology (reading horoscopes) and astronomy (the science of planets)? Why does the difference matter?</p></div>
+            <div class="bdk-discuss"><h4>Jesus and Evidence</h4><p>When Jesus healed people in John 9, who saw it? What did the Pharisees do? What does their investigation tell us about how Jesus worked?</p></div>
+            <div class="bdk-discuss"><h4>Occam's Razor Practice</h4><p>Your pencil is missing. Option A: your sister took it. Option B: a spy organization stole it in the night. Which explanation needs fewer assumptions? Why is that important?</p></div>
+          </div>
+
+          <!-- 6–8 -->
+          <div data-grade="68">
+            <span class="ll-label">6–8 Discussion</span>
+            <div class="bdk-discuss"><h4>Found Wanting</h4><p>Belshazzar was "weighed and found wanting." What is the standard he was weighed against? What might that standard look like for a society today?</p></div>
+            <div class="bdk-discuss"><h4>Apply Occam's Razor</h4><p>Choose a conspiracy theory you have heard. What is the simplest explanation for the same facts? How many extra assumptions does the conspiracy require?</p></div>
+            <div class="bdk-discuss"><h4>Faith and Evidence</h4><p>How is receiving testimony different from demanding that God perform on command? Use John 9 and "You shall not put the Lord your God to the test" to support your answer.</p></div>
+            <div class="bdk-discuss"><h4>Social Media Echo Chambers</h4><p>If an algorithm shows you only content you already agree with, what happens to your thinking over time? How is this similar to Plato's cave?</p></div>
+            <div class="bdk-discuss"><h4>Pattern Spotting</h4><p>Pick two examples from the pattern library. How do both borrow professional language, resist correction, or attach to identity, fear, power, or profit?</p></div>
+          </div>
+
+          <!-- 9–12 -->
+          <div data-grade="912">
+            <span class="ll-label">9–12 Discussion</span>
+            <div class="bdk-discuss"><h4>Epistemic Foundation</h4><p>Sagan argued that a civilization that uses science without understanding it is dangerously fragile. What are two historical or contemporary examples where this gap had political consequences?</p></div>
+            <div class="bdk-discuss"><h4>The Weighed Society</h4><p>If Belshazzar's kingdom were weighed today using the criteria Daniel applied — honest acknowledgment of reality, humility before truth — what modern institution, movement, or ideology would be "found wanting"? Justify your case with evidence.</p></div>
+            <div class="bdk-discuss"><h4>Faith vs. Fideism</h4><p>Fideism treats faith as independent of reason. How does 1 Thessalonians 5:21 challenge that without turning God into an experiment we control?</p></div>
+            <div class="bdk-discuss"><h4>The Ethics of Sharing</h4><p>You reach 500 people online. You encounter a health claim that hasn't been independently confirmed. What is your ethical obligation before sharing it? How does Proverbs 18:17 apply?</p></div>
+            <div class="bdk-discuss"><h4>Dark Modernity</h4><p>Scientific racism, Lysenkoism, and Deutsche Physik all attached false science to power or identity. What warning do they give us about credentials without correction?</p></div>
+          </div>
+
+          <!-- All grades -->
+          <div data-grade="all">
+            <hr class="ll-hr">
+            <span class="ll-label">Personal Reflection</span>
+            <p style="font-size:0.79rem; color:var(--bdk-muted); margin:0 0 0.5rem; line-height:1.6;">Think of a time you believed something without fully checking it. What made you believe it? What would it look like to apply the Baloney Detection Kit next time?</p>
+            <textarea class="bdk-reflect-ta" placeholder="Write your reflection here…" aria-label="Personal reflection"></textarea>
+            <p class="bdk-reflect-note">Your reflection stays private on this device.</p>
+
+            <hr class="ll-hr">
+            <span class="ll-label">Cognitive Bias Library</span>
+            <div class="bdk-bias-grid">
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Confirmation Bias</p><p class="bdk-bias-def">We seek evidence confirming what we already believe and dismiss what doesn't fit.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Anecdotal Evidence</p><p class="bdk-bias-def">"My uncle tried it and felt better." One story is not data.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Post Hoc Fallacy</p><p class="bdk-bias-def">After this, therefore because of this. Sequence is not causation.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Appeal to Nature</p><p class="bdk-bias-def">"It's natural, so it's safe." Arsenic is natural. Penicillin is not.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Bandwagon Effect</p><p class="bdk-bias-def">Millions believe it, so it must be true. Millions once believed the earth was flat.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Appeal to Authority</p><p class="bdk-bias-def">An expert says it, so it must be true. Experts can be wrong — or bought.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Dunning-Kruger</p><p class="bdk-bias-def">Those with little knowledge often overestimate their expertise most.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">False Dilemma</p><p class="bdk-bias-def">Either you believe this or you believe nothing. Real arguments have more than two options.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Agency Detection</p><p class="bdk-bias-def">We see intentional actors behind complex events when chance and complexity are the actual cause.</p></div>
+              <div class="bdk-bias-card"><p class="bdk-bias-name">Proportionality Bias</p><p class="bdk-bias-def">Big events must have big causes. Sometimes they don't — which is why conspiracy theories thrive after tragedies.</p></div>
+            </div>
+          </div>
+
+        </div><!-- #pane-activity -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" id="bdk-open-panel" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
+
+<script>
+/* ═══════════════════════════════════════
+   CLAIM DATA
+═══════════════════════════════════════ */
+function patternClaim(config) {
+  const {
+    label,
+    category,
+    text,
+    warning = null,
+    simpler,
+    specific,
+    stakes,
+    correction,
+    occam,
+    verdictNote,
+    foundationScore = 4
+  } = config;
+
+  return {
+    label,
+    category,
+    type: 'baloney',
+    text,
+    warning,
+    tools: [
+      { name:'Independent Confirmation', q:'Have independent investigators reproduced or confirmed the claim?', pass:false, note:`No reliable independent confirmation supports this claim. ${specific}` },
+      { name:'Open Debate', q:'Are ordinary competing explanations seriously considered?', pass:false, note:`The claim tends to protect itself from ordinary explanations. ${simpler}` },
+      { name:'Authority Scrutiny', q:'Is professional language being used to invite testing or to end the conversation?', pass:false, note:`Scientific or professional language is doing too much work here. Credentials, jargon, or institutions are used as shields instead of openings for scrutiny.` },
+      { name:'Occam\'s Razor', q:'What explanation requires the fewest extra assumptions?', pass:false, note:occam },
+      { name:'Falsifiability', q:'What evidence would make supporters revise or abandon the claim?', pass:false, note:`The claim resists correction: ${correction}` },
+      { name:'Quantification', q:'Are the core effects measured clearly enough to test?', pass:false, note:'The key terms are vague, the measurements are missing or selective, or the claimed effect disappears when tested under controlled conditions.' },
+      { name:'Cherry-Picking Check', q:'Are failures, counterexamples, and failed replications included?', pass:false, note:`Failures are minimized while memorable anecdotes are elevated. ${stakes}` }
+    ],
+    occam,
+    verdict: 'BALONEY',
+    verdictNote,
+    foundationScore
+  };
+}
+
+const CLAIMS = [
+  {
+    label: 'Astrology', category: 'Astrology', type: 'baloney',
+    text: '"Mercury is in retrograde, so communication problems are inevitable this week."',
+    warning: null,
+    tools: [
+      { name:'Independent Confirmation', q:'Has anyone outside the original source — with no financial stake — verified this claim?', pass:false, note:'No controlled study has ever found a correlation between Mercury\'s orbital position and human communication errors. No independent body has confirmed this claim.' },
+      { name:'Open Debate', q:'Are competing explanations for communication problems taken seriously?', pass:false, note:'Astrologers never consider that miscommunication has countless mundane causes: stress, distraction, fatigue, or poor wording. No alternative is entertained.' },
+      { name:'Authority Scrutiny', q:'Does the source invite outside examination, or discourage questions?', pass:false, note:'Astrologers present themselves as specialists whose interpretive system is closed to outside review. Questioning the framework is framed as missing the point.' },
+      { name:'Occam\'s Razor', q:'What is the simplest explanation for communication problems this week?', pass:false, note:'Mercury\'s gravity on Earth is weaker than a truck driving past. Communication problems have hundreds of ordinary explanations that require no planetary involvement.' },
+      { name:'Falsifiability', q:'Is there any outcome that would prove astrology wrong?', pass:false, note:'When predictions fail, astrologers adjust interpretations rather than revise the system. A framework that cannot be disproven is not science — it is unfalsifiable belief.' },
+      { name:'Quantification', q:'Are error rates measured before and after Mercury retrograde with real data?', pass:false, note:'No. No rate of miscommunication is measured before and after. No mechanism is proposed. No data exists to examine.' },
+      { name:'Cherry-Picking Check', q:'Are periods of smooth communication during Mercury retrograde documented and studied?', pass:false, note:'Hits are remembered and shared. Misses are quietly forgotten. Believers remember the time Mercury was retrograde and things went wrong; they forget the times nothing bad happened.' }
+    ],
+    occam: 'Mercury\'s retrograde is an optical illusion — Earth passing it in orbit makes it appear to move backward. Mercury exerts less gravitational pull on your body than a nearby building does. Communication problems have abundant, entirely ordinary explanations.',
+    verdict: 'BALONEY',
+    verdictNote: 'Astrology fails every detection tool. It is unfalsifiable, unquantified, and survives only by selectively remembering hits and forgetting misses.',
+    foundationScore: 4
+  },
+  {
+    label: 'Crystal Healing', category: 'Pseudoscience', type: 'baloney',
+    text: '"This quartz crystal channels healing energy and can cure serious illness — hold it and believe."',
+    warning: null,
+    tools: [
+      { name:'Independent Confirmation', q:'Have researchers with no stake in crystals confirmed healing effects?', pass:false, note:'No peer-reviewed study has demonstrated that crystals produce measurable biological effects beyond placebo. Multiple clinical investigations have found none.' },
+      { name:'Open Debate', q:'Are conventional medical options seriously considered alongside crystals?', pass:false, note:'Crystal healing is typically presented as a replacement for medicine. This is dangerous when serious illness is involved.' },
+      { name:'Authority Scrutiny', q:'Do crystal healers invite independent medical examination of their results?', pass:false, note:'"The energy doesn\'t show up in lab tests" is a way of making the claim immune to examination. This is not humility — it is the design of an unfalsifiable claim.' },
+      { name:'Occam\'s Razor', q:'What is the simplest explanation for any improvement people report?', pass:false, note:'Placebo effect, natural disease progression, and confirmation bias fully explain positive reports without invoking crystals channeling energy through human tissue.' },
+      { name:'Falsifiability', q:'What evidence would prove crystal healing doesn\'t work?', pass:false, note:'"If you don\'t believe hard enough, it won\'t work" shifts the burden to the sick person and makes the claim completely immune to testing or failure.' },
+      { name:'Quantification', q:'Is there a proposed physical mechanism for healing that can be measured?', pass:false, note:'Quartz\'s one confirmed electrical property (piezoelectric) has no proposed pathway to biological healing. "Healing energy" is not defined, quantified, or measurable.' },
+      { name:'Cherry-Picking Check', q:'Are failures in crystal healing documented?', pass:false, note:'Success stories are shared widely. People who delayed cancer treatment for crystal therapy — including some who died — are not publicized by the people who sold the crystals.' }
+    ],
+    occam: 'Quartz is silicon dioxide. It has no known biological mechanism for interacting with human tissue. Any improvement is almost certainly the placebo effect, natural recovery, or regression to the mean — all well-documented phenomena that require no crystals.',
+    verdict: 'BALONEY',
+    verdictNote: 'Crystal healing substitutes wishful thinking for medicine. It fails every detection tool — and people have died by delaying real treatment to pursue it.',
+    foundationScore: 4
+  },
+  {
+    label: 'Cancer Conspiracy', category: 'Conspiracy Thinking', type: 'baloney',
+    text: '"Pharmaceutical companies have a cure for cancer but suppress it to protect their profits."',
+    warning: null,
+    tools: [
+      { name:'Independent Confirmation', q:'Has any independent journalist, foreign government, or scientist confirmed a suppressed cure?', pass:false, note:'Cancer research is conducted in dozens of competing nations with rival companies and institutions. No whistleblower, leaked document, or foreign investigation has ever confirmed a hidden cure.' },
+      { name:'Open Debate', q:'Is the simpler explanation — that cancer is genuinely hard to cure — considered?', pass:false, note:'Cancer is not one disease. It is hundreds of distinct genetic mutations. This biological complexity is never engaged. The conspiracy replaces hard reality with a simple villain.' },
+      { name:'Authority Scrutiny', q:'What credentials or evidence do those claiming the conspiracy offer?', pass:false, note:'The claim relies on wholesale distrust of tens of thousands of scientists across rival nations, without naming specific actors, documents, compounds, or dates.' },
+      { name:'Occam\'s Razor', q:'Which needs fewer assumptions: cancer is hard, or millions of scientists in competing countries maintain a perfect secret for decades?', pass:false, note:'The conspiracy requires: a coordinated agreement across rival nations and companies, zero whistleblowers over 50 years, and suppression of knowledge held by tens of thousands of people. This is extraordinarily complex. Cancer being hard to cure requires no such assumptions.' },
+      { name:'Falsifiability', q:'What evidence would convince you the conspiracy does not exist?', pass:false, note:'When cancer survival rates improve — and they have improved dramatically — this is reinterpreted as a small concession. Any counter-evidence is absorbed into the conspiracy. It cannot be falsified.' },
+      { name:'Quantification', q:'Which specific companies, compounds, and suppressed studies are named?', pass:false, note:'The claim is always general. No specific names, dates, compounds, or documentation are ever provided and verified. Vagueness is a feature, not a bug — it makes the claim impossible to examine.' },
+      { name:'Cherry-Picking Check', q:'Is the dramatic improvement in cancer survival rates over the past 50 years acknowledged?', pass:false, note:'5-year cancer survival rates have improved enormously since 1970 across many cancer types. This progress — inconvenient to the conspiracy narrative — is ignored or minimized.' }
+    ],
+    occam: 'Cancer is hundreds of different genetic diseases. Curing each requires understanding unique mutations. Progress is real but slow — because biology is genuinely difficult, not because of coordinated global suppression. A researcher who found a universal cure would win a Nobel Prize and be celebrated as one of history\'s greatest heroes.',
+    verdict: 'BALONEY',
+    verdictNote: 'Conspiracy thinking replaces complexity with a satisfying villain. It feels like insight — but prevents us from addressing actual problems in medical research, funding, and access.',
+    foundationScore: 7
+  },
+  {
+    label: 'Stage Healer', category: 'False Faith Healing', type: 'baloney',
+    text: '"This televangelist healer cures diseases on stage — believers are instantly healed by divine power."',
+    warning: 'Note: This is not a statement about whether God heals. This examines specific stage performers who exploit sick people for money without independent verification.',
+    tools: [
+      { name:'Independent Confirmation', q:'Do independent physicians examine patients before and after with medical records?', pass:false, note:'No independent medical verification is provided. No outside doctors examine patients. No medical records are shared or followed up weeks or months later.' },
+      { name:'Open Debate', q:'Are psychological and theatrical explanations for observed responses considered?', pass:false, note:'The emotional environment, adrenaline, pre-selected participants, and well-documented crowd psychology are never discussed as alternative explanations for what is observed.' },
+      { name:'Authority Scrutiny', q:'Can the healer\'s claims be examined without being labeled faithless or disrespectful?', pass:false, note:'Skepticism is framed as "lack of faith." This is the same mechanism bad scientists use to shield bad science — making the authority immune to accountability.' },
+      { name:'Occam\'s Razor', q:'What is the simpler explanation: miraculous healing, or stage techniques and crowd psychology?', pass:false, note:'Stage techniques including prior knowledge of attendees, emotional arousal, placebo effect, and pre-screened participants have been documented by researchers and investigators. These fully account for observations without invoking the miraculous.' },
+      { name:'Falsifiability', q:'If a healing fails, is the healer\'s power questioned — or the sick person\'s faith?', pass:false, note:'"You weren\'t healed because your faith was insufficient." This shifts all burden to the sick person, making the healer permanently unfalsifiable and unaccountable.' },
+      { name:'Quantification', q:'How many healings have been independently documented and medically followed up?', pass:false, note:'Multiple televangelist ministries have been investigated by journalists, governments, and medical researchers. Documented, medically verified, followed-up cases are essentially zero.' },
+      { name:'Cherry-Picking Check', q:'What happens to those not healed? Are their outcomes tracked and published?', pass:false, note:'Those who are not healed go home quietly. Cases of people who rejected medical treatment for children based on healing promises — with tragic results — are well-documented by investigators.' }
+    ],
+    occam: 'Stage techniques, emotional manipulation, and crowd psychology — thoroughly documented by researchers — fully explain what is observed at healing events. Contrast with Jesus: His healings were performed publicly, submitted to cross-examination by hostile witnesses, and recorded in multiple accounts. Jesus told the healed to show themselves to the priests for verification (Luke 17:14).',
+    verdict: 'BALONEY',
+    verdictNote: 'False faith healers exploit the sick and vulnerable. This is not what Jesus modeled. Biblical miracles welcomed investigation. Stage healers prohibit it.',
+    foundationScore: 4
+  },
+  {
+    label: 'John 9', category: 'Verified Historical Testimony', type: 'verified',
+    text: '"Jesus healed a man who had been blind since birth. His neighbors, parents, and hostile investigators all independently confirmed the healing." — John 9',
+    warning: null,
+    tools: [
+      { name:'Independent Confirmation', q:'Did multiple independent witnesses, with no coordination, confirm this healing?', pass:true, note:'The man\'s neighbors confirmed he was the same person they had known as blind. His parents confirmed he had been blind since birth. The Pharisees — hostile investigators with every motive to disprove it — confirmed they could not explain it away.' },
+      { name:'Open Debate', q:'Did opponents seriously try to find alternative explanations?', pass:true, note:'The Pharisees conducted a rigorous investigation. They summoned the man twice and his parents once. They attempted to argue the healer was a sinner and therefore the healing invalid. Their investigation failed to produce an alternative explanation.' },
+      { name:'Authority Scrutiny', q:'Was Jesus transparent about what He did, inviting verification?', pass:true, note:'Jesus told the man to wash at the Pool of Siloam — a public location with a verifiable act. He did not ask for blind acceptance. The result was physically observable and cross-examined.' },
+      { name:'Occam\'s Razor', q:'Given all the testimony, what is the simplest explanation consistent with all the evidence?', pass:true, note:'A man known to his community as blind from birth, confirmed by his parents, is suddenly able to see — examined by hostile authorities who attempted to disprove the healing and could not. Given the multi-source testimony, the event itself is the simplest consistent explanation.' },
+      { name:'Falsifiability', q:'Were there ways this could have been proven false?', pass:true, note:'Yes. If the man was faking blindness, his neighbors would have known. If it was a different man, his parents could have said so. If the healing was staged, the Pharisees — who desperately wanted to discredit Jesus — would have found the method. They did not.' },
+      { name:'Quantification', q:'Are specific, verifiable details given?', pass:true, note:'Specific: the Pool of Siloam (a real location, now archaeologically confirmed), neighbors who recognized him from childhood, parents summoned to testify independently, a man who gave consistent testimony under repeated hostile questioning.' },
+      { name:'Cherry-Picking Check', q:'Did investigators consider all evidence, including what contradicted the healing?', pass:true, note:'The Pharisees\' own admission — "We don\'t know how he can see" (John 9:21) — records their failure to explain it away. The account preserves the failure of hostile investigation, not just the success of the healing.' }
+    ],
+    occam: 'Given a man known to his community as blind from birth, confirmed by parents, examined by hostile investigators who could not explain it, and who gave consistent testimony under repeated cross-examination — the simplest explanation consistent with all independent testimony is that the healing occurred as described.',
+    verdict: 'VERIFIED',
+    verdictNote: 'This account passes every detection tool. Multiple independent witnesses, hostile cross-examination, specific verifiable details, and no successful counter-explanation from those who wanted one. This is the hallmark of credible historical testimony.',
+    foundationScore: 92
+  },
+  patternClaim({
+    label: 'Disney Frozen?', category: 'Cryonics Conspiracy',
+    text: '"Walt Disney was secretly cryonically frozen so future scientists could bring him back."',
+    specific: 'Disney died in 1966 and was cremated. The frozen-body story survives as a celebrity rumor, not as documented evidence.',
+    simpler: 'A famous person died, was cremated, and later became the subject of a futuristic urban legend.',
+    correction: 'contradictory records are treated as part of the cover-up or ignored because the story is more interesting than the paperwork.',
+    stakes: 'The claim attaches to celebrity mystery and our fear of death, which makes it emotionally sticky.',
+    occam: 'The simplest explanation is that Walt Disney died and was cremated, while cryonics rumors grew because Disney was associated with futurism, animation, and technological imagination.',
+    verdictNote: 'This is a classic rumor pattern: futuristic language, celebrity aura, no independent documentation, and a story too satisfying to die easily.'
+  }),
+  patternClaim({
+    label: 'Scientific Racism', category: 'Dark Modernity',
+    text: '"Human racial groups can be ranked scientifically by intelligence, moral worth, or fitness to rule."',
+    warning: 'This case examines a historically destructive pseudoscience. Its claims were used to justify oppression, eugenics, and genocide.',
+    specific: 'The measurements and categories were shaped by social prejudice, bad sampling, and political goals rather than neutral inquiry.',
+    simpler: 'Differences among people are better explained by genetics, environment, history, nutrition, education, and culture without inventing racial hierarchies of worth.',
+    correction: 'contrary evidence was dismissed because the claim was attached to empire, slavery, segregation, eugenics, and nationalist identity.',
+    stakes: 'This is pseudoscience fused with power. It borrowed charts and credentials to make cruelty look rational.',
+    occam: 'The simplest explanation is not that humanity is arranged in a hierarchy of worth. It is that biased societies created biased measurements to defend arrangements they already wanted.',
+    verdictNote: 'Scientific racism shows the darkest version of baloney: professional language used to bless power, identity, and violence while resisting moral and empirical correction.',
+    foundationScore: 1
+  }),
+  patternClaim({
+    label: 'Homeopathy', category: 'Medical Pseudoscience',
+    text: '"A remedy becomes more powerful the more it is diluted, even when no molecules of the original substance remain."',
+    specific: 'Controlled studies do not show effects beyond placebo, and extreme dilutions often contain no active ingredient.',
+    simpler: 'Placebo effects, regression to the mean, and natural recovery explain many positive stories without requiring water to remember vanished ingredients.',
+    correction: 'failed trials are explained away by saying the remedy was chosen incorrectly or the patient was not treated holistically enough.',
+    stakes: 'It uses medical language and can become profitable, especially when people distrust ordinary medicine.',
+    occam: 'The simplest explanation is that homeopathic benefits come from placebo, attention, time, and natural recovery, not from physically absent ingredients gaining power through dilution.',
+    verdictNote: 'Homeopathy borrows the tone of medicine while avoiding the central discipline of medicine: measurable effects that survive controlled testing.'
+  }),
+  patternClaim({
+    label: 'Anti-Vax', category: 'Health Misinformation',
+    text: '"Vaccines are more dangerous than the diseases they prevent, and public health agencies are hiding the truth."',
+    warning: 'This claim can cause real-world harm by reducing protection for children, elders, and medically vulnerable people.',
+    specific: 'Vaccine safety is tracked across huge populations by many independent systems. Rare risks exist, but they are measured against much larger disease risks.',
+    simpler: 'Anecdotes after vaccination can feel causal even when timing is coincidental. Population-level data is needed because individual stories cannot measure risk by themselves.',
+    correction: 'large safety datasets are dismissed as corrupt, while emotionally powerful anecdotes are treated as decisive proof.',
+    stakes: 'Fear for children, distrust of institutions, online identity, and profit from alternative products all reinforce the movement.',
+    occam: 'The simplest explanation is that vaccines, like all medical interventions, have measurable risks and much larger measurable benefits; conspiracy claims require a vast hidden coordination across countries, hospitals, researchers, and regulators.',
+    verdictNote: 'Anti-vaccination movements are a live example of anecdote defeating statistics when fear, identity, and mistrust become stronger than correction.',
+    foundationScore: 5
+  }),
+  patternClaim({
+    label: 'Perpetual Motion', category: 'Fraudulent Machines',
+    text: '"This machine produces endless energy without fuel, violating no laws because experts just do not understand it yet."',
+    specific: 'Independent tests do not show net energy production once hidden batteries, measurement errors, friction, and external inputs are controlled.',
+    simpler: 'Mis-measurement, concealed power, or misunderstanding energy accounting explains the demonstrations without overturning thermodynamics.',
+    correction: 'builders often refuse sealed, independent testing or claim that skeptical measurement interferes with the device.',
+    stakes: 'Unlimited energy promises attention, investment, fame, and sometimes fraud.',
+    occam: 'The simplest explanation is that conservation of energy still holds and the machine is powered by hidden input, error, or deception.',
+    verdictNote: 'Perpetual motion is baloney in machine form: dramatic demonstration, weak measurement, and refusal to submit to independent accounting.',
+    foundationScore: 2
+  }),
+  patternClaim({
+    label: 'Cold Fusion', category: 'Failed Replication',
+    text: '"Room-temperature nuclear fusion has been achieved on a tabletop, but mainstream science refuses to accept it."',
+    specific: 'The famous 1989 cold-fusion announcement failed when other laboratories could not reliably reproduce the claimed excess heat and nuclear signatures.',
+    simpler: 'Experimental error, measurement artifacts, and premature announcement explain the case better than a world-changing discovery that only appears inconsistently.',
+    correction: 'failed replications are recast as establishment resistance instead of evidence that the original claim was not reliable.',
+    stakes: 'The promise of clean, cheap energy gives the claim enormous emotional, financial, and political appeal.',
+    occam: 'The simplest explanation is that the original room-temperature fusion evidence was not strong enough: if tabletop fusion worked reliably, independent labs would reproduce it and the world would reorganize around it.',
+    verdictNote: 'Cold fusion is a useful caution: science is allowed to be surprising, but surprise must survive replication.',
+    foundationScore: 8
+  })
+];
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let activeClaim = 0;
+let activeTool  = 0;
+let revealed    = [];
+
+/* ═══════════════════════════════════════
+   ELEMENTS
+═══════════════════════════════════════ */
+const viewport    = document.getElementById('bdk-viewport');
+const headerBadge = document.getElementById('bdk-header-badge');
+const claimCard   = document.getElementById('bdk-claim-card');
+const claimKicker = document.getElementById('bdk-claim-kicker');
+const claimText   = document.getElementById('bdk-claim-text');
+const claimWarn   = document.getElementById('bdk-claim-warning');
+const pipsWrap    = document.getElementById('bdk-pips');
+const toolNum     = document.getElementById('bdk-tool-num');
+const toolName    = document.getElementById('bdk-tool-name');
+const toolQ       = document.getElementById('bdk-tool-question');
+const revealBtn   = document.getElementById('bdk-reveal-btn');
+const toolResult  = document.getElementById('bdk-tool-result');
+const resultLabel = document.getElementById('bdk-result-label');
+const resultNote  = document.getElementById('bdk-result-note');
+const prevBtn     = document.getElementById('bdk-prev');
+const nextBtn     = document.getElementById('bdk-next');
+const counter     = document.getElementById('bdk-counter');
+const verdictEl   = document.getElementById('bdk-verdict');
+const verdictWord = document.getElementById('bdk-verdict-word');
+const verdictNote = document.getElementById('bdk-verdict-note');
+const occamBox    = document.getElementById('bdk-occam-box');
+const occamText   = document.getElementById('bdk-occam-text');
+const restartBtn  = document.getElementById('bdk-restart');
+const meterFill   = document.getElementById('bdk-meter-fill');
+const meterPct    = document.getElementById('bdk-meter-pct');
+const foundFill   = document.getElementById('bdk-found-fill');
+const foundWord   = document.getElementById('bdk-found-word');
+const readoutType = document.getElementById('bdk-readout-type');
+const readoutDone = document.getElementById('bdk-readout-done');
+const readoutHabit = document.getElementById('bdk-readout-habit');
+const logList     = document.getElementById('bdk-log-list');
+const logEmpty    = document.getElementById('bdk-log-empty');
+const logCount    = document.getElementById('bdk-log-count');
+
+/* ═══════════════════════════════════════
+   LOAD CLAIM
+═══════════════════════════════════════ */
+function loadClaim(idx) {
+  activeClaim = idx;
+  activeTool  = 0;
+  revealed    = new Array(7).fill(false);
+
+  const c = CLAIMS[idx];
+
+  claimCard.className = 'bdk-claim-card is-' + c.type;
+  claimKicker.textContent = c.category;
+  claimText.textContent   = c.text;
+  headerBadge.textContent = c.type === 'verified' ? 'Testimony Check' : 'Skepticism Lab';
+  readoutType.textContent = c.type === 'verified' ? 'Credible testimony' : 'Needs evidence';
+  readoutHabit.textContent = c.type === 'verified' ? 'Cross-examine' : 'Check first';
+  if (c.warning) {
+    claimWarn.textContent    = c.warning;
+    claimWarn.style.display  = 'block';
+  } else {
+    claimWarn.style.display = 'none';
+  }
+
+  document.querySelectorAll('.bdk-claim-btn').forEach((b, i) =>
+    b.classList.toggle('active', i === idx)
+  );
+
+  verdictEl.className  = 'bdk-verdict';
+  occamBox.className   = 'bdk-occam-box';
+
+  buildPips();
+  renderTool();
+  updateMeters();
+  updateEvidenceLog();
+}
+
+/* ═══════════════════════════════════════
+   PIPS
+═══════════════════════════════════════ */
+function buildPips() {
+  pipsWrap.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'bdk-pip' + (i === 0 ? ' pip-active' : '');
+    pip.title = CLAIMS[activeClaim].tools[i].name;
+    pip.addEventListener('click', () => { activeTool = i; renderTool(); });
+    pipsWrap.appendChild(pip);
+  }
+}
+
+function refreshPips() {
+  pipsWrap.querySelectorAll('.bdk-pip').forEach((pip, i) => {
+    pip.className = 'bdk-pip';
+    if (i === activeTool) {
+      pip.classList.add('pip-active');
+    } else if (revealed[i]) {
+      pip.classList.add(CLAIMS[activeClaim].tools[i].pass ? 'pip-pass' : 'pip-fail');
+    }
+  });
+}
+
+/* ═══════════════════════════════════════
+   RENDER TOOL
+═══════════════════════════════════════ */
+function renderTool() {
+  const t = CLAIMS[activeClaim].tools[activeTool];
+
+  toolNum.textContent  = activeTool + 1;
+  toolName.textContent = t.name;
+  toolQ.textContent    = t.q;
+  counter.textContent  = `Tool ${activeTool + 1} of 7`;
+
+  prevBtn.disabled = activeTool === 0;
+
+  if (revealed[activeTool]) {
+    revealBtn.style.display = 'none';
+    toolResult.className = 'bdk-tool-result show-result ' + (t.pass ? 'res-pass' : 'res-fail');
+    resultLabel.textContent = t.pass ? 'PASSES ✓' : 'FAILS ✗';
+    resultNote.textContent  = t.note;
+    // Next available if not on last tool
+    nextBtn.disabled    = false;
+    nextBtn.textContent = activeTool < 6 ? 'Next →' : 'Done';
+    nextBtn.classList.add('btn-primary');
+  } else {
+    revealBtn.style.display = 'block';
+    toolResult.className = 'bdk-tool-result';
+    nextBtn.disabled = true;
+    nextBtn.textContent = 'Next →';
+  }
+
+  refreshPips();
+}
+
+/* ═══════════════════════════════════════
+   METERS
+═══════════════════════════════════════ */
+function updateMeters() {
+  const c = CLAIMS[activeClaim];
+  const done  = revealed.filter(Boolean).length;
+  readoutDone.textContent = `${done} / 7`;
+  if (done === 0) {
+    meterFill.style.width = '0%';
+    meterPct.textContent  = '–';
+    foundFill.style.width = '0%';
+    foundWord.textContent = '–';
+    return;
+  }
+  const fails  = revealed.reduce((n, r, i) => r && !c.tools[i].pass ? n + 1 : n, 0);
+  const passes = revealed.reduce((n, r, i) => r &&  c.tools[i].pass ? n + 1 : n, 0);
+  const pct    = Math.round(fails / done * 100);
+  const fPct   = Math.min(Math.round(c.foundationScore * passes / 7 * 1.08), 100);
+
+  meterFill.style.width = pct + '%';
+  meterFill.className   = 'bdk-meter-fill ' + (pct > 60 ? 'fill-high' : 'fill-low');
+  meterPct.textContent  = pct + '% baloney';
+
+  foundFill.style.width = fPct + '%';
+  foundWord.textContent =
+    fPct < 15 ? 'Sand' :
+    fPct < 40 ? 'Shifting' :
+    fPct < 70 ? 'Mixed' : 'Rock';
+}
+
+/* ═══════════════════════════════════════
+   EVIDENCE LOG
+═══════════════════════════════════════ */
+function updateEvidenceLog() {
+  const c = CLAIMS[activeClaim];
+  const entries = c.tools
+    .map((tool, i) => ({ tool, i }))
+    .filter(entry => revealed[entry.i]);
+
+  logList.innerHTML = '';
+  logEmpty.style.display = entries.length ? 'none' : 'block';
+  logCount.textContent = `${entries.length} ${entries.length === 1 ? 'note' : 'notes'}`;
+
+  entries.forEach(({ tool, i }) => {
+    const li = document.createElement('li');
+    const mark = document.createElement('span');
+    const text = document.createElement('span');
+    mark.className = 'bdk-log-mark ' + (tool.pass ? 'pass' : 'fail');
+    mark.textContent = tool.pass ? '✓' : '!';
+    text.textContent = `${i + 1}. ${tool.name}: ${tool.pass ? 'passes' : 'fails'}`;
+    li.append(mark, text);
+    logList.appendChild(li);
+  });
+}
+
+/* ═══════════════════════════════════════
+   VERDICT
+═══════════════════════════════════════ */
+function showVerdict() {
+  const c = CLAIMS[activeClaim];
+  verdictEl.className   = 'bdk-verdict show-verdict v-' + c.type;
+  verdictWord.textContent = c.verdict;
+  verdictNote.textContent = c.verdictNote;
+  occamBox.className    = 'bdk-occam-box show-occam';
+  occamText.textContent = c.occam;
+  // scroll verdict into view
+  verdictEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ═══════════════════════════════════════
+   EVENTS
+═══════════════════════════════════════ */
+revealBtn.addEventListener('click', () => {
+  revealed[activeTool] = true;
+  renderTool();
+  updateMeters();
+  updateEvidenceLog();
+  if (revealed.every(Boolean)) showVerdict();
+});
+
+nextBtn.addEventListener('click', () => {
+  if (activeTool < 6) {
+    activeTool++;
+    renderTool();
+  }
+});
+
+prevBtn.addEventListener('click', () => {
+  if (activeTool > 0) { activeTool--; renderTool(); }
+});
+
+restartBtn.addEventListener('click', () => loadClaim(activeClaim));
+
+document.querySelectorAll('.bdk-claim-btn').forEach((btn, i) =>
+  btn.addEventListener('click', () => loadClaim(i))
+);
+
+/* ═══════════════════════════════════════
+   GRADE BUTTONS (sync all instances)
+═══════════════════════════════════════ */
+document.querySelectorAll('.bdk-grade-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const band = btn.dataset.band;
+    // Update all grade buttons
+    document.querySelectorAll('.bdk-grade-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.band === band)
+    );
+    // Update viewport grade class
+    viewport.className = viewport.className.replace(/\bgrade-\S+/g, '').trim() + ' grade-' + band;
+  });
+});
+
+/* ═══════════════════════════════════════
+   PANEL TABS
+═══════════════════════════════════════ */
+document.querySelectorAll('.ll-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected', 'false'));
+    document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+    tab.setAttribute('aria-selected', 'true');
+    document.getElementById(tab.dataset.pane).classList.add('ll-active');
+  });
+});
+
+/* ── Panel open/close ── */
+const panel   = document.querySelector('.ll-panel');
+const closeBtn = document.querySelector('.ll-panel-close');
+const openBtn  = document.getElementById('bdk-open-panel');
+const mobilePanelQuery = window.matchMedia('(max-width: 680px)');
+
+function syncPanelForViewport(event) {
+  if (event.matches) {
+    panel.setAttribute('aria-hidden', 'true');
+  } else {
+    panel.setAttribute('aria-hidden', 'false');
+  }
+}
+
+syncPanelForViewport(mobilePanelQuery);
+mobilePanelQuery.addEventListener?.('change', syncPanelForViewport);
+closeBtn?.addEventListener('click', () => panel.setAttribute('aria-hidden', 'true'));
+openBtn?.addEventListener('click',  () => panel.setAttribute('aria-hidden', 'false'));
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+loadClaim(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,1911 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Feynman Foundation: Atoms &amp; the Rules of Reality · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson — Feynman's most important fact: everything is made of atoms. Explore the atomic hypothesis, energy, gravity, probability, and the scientific method through interactive simulations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── Base ───────────────────────────────────────── */
+    :root {
+      color-scheme: dark;
+      --atom-bg: #070a10;
+      --atom-panel: rgba(13, 18, 28, 0.82);
+      --atom-line: rgba(205, 218, 238, 0.13);
+      --atom-line-strong: rgba(205, 218, 238, 0.22);
+      --atom-text: #e8eef8;
+      --atom-muted: rgba(232, 238, 248, 0.68);
+      --atom-dim: rgba(232, 238, 248, 0.46);
+      --atom-cyan: #4dd8ef;
+      --atom-violet: #a995ff;
+      --atom-amber: #f6c35b;
+      --atom-green: #53d89b;
+      --atom-rose: #ff7a94;
+      --atom-radius: 8px;
+      --atom-shadow: 0 26px 70px rgba(0, 0, 0, 0.32);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, sans-serif;
+      color: var(--atom-text);
+      background:
+        linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(180deg, #080b12 0%, #0b1019 42%, #070a10 100%);
+      background-size: 38px 38px, 38px 38px, auto;
+      min-height: 100vh;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(110deg, rgba(77,216,239,0.10), transparent 30%),
+        linear-gradient(250deg, rgba(246,195,91,0.08), transparent 36%);
+      mask-image: linear-gradient(180deg, #000, transparent 80%);
+    }
+
+    .atom-shell {
+      width: min(1320px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1rem 0 4rem;
+      display: grid;
+      gap: 1rem;
+      position: relative;
+    }
+
+    /* ── Topbar ─────────────────────────────────────── */
+    .atom-topbar {
+      position: sticky; top: 0; z-index: 30;
+      backdrop-filter: blur(18px) saturate(150%);
+      background: rgba(7,10,16,0.86);
+      border-bottom: 1px solid var(--atom-line);
+    }
+    .atom-topbar-inner {
+      width: min(1320px, calc(100% - 2rem));
+      min-height: 56px;
+      margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .atom-topbar a { color: #c8d7f3; text-decoration: none; font-size: 0.83rem; font-weight: 700; }
+    .atom-topbar a:hover { color: #fff; }
+    .atom-brand { color: #f1f5ff; font-size: 0.93rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .atom-nav {
+      display: flex; align-items: center; gap: 0.25rem;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .atom-nav::-webkit-scrollbar { display: none; }
+    .atom-nav a {
+      display: inline-flex; align-items: center; min-height: 1.9rem;
+      padding: 0 0.6rem; border-radius: var(--atom-radius);
+      color: var(--atom-dim); white-space: nowrap;
+    }
+    .atom-nav a:hover { color: var(--atom-text); background: rgba(255,255,255,0.06); }
+    .atom-pills { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+    .atom-pill {
+      display: inline-flex; align-items: center; height: 1.75rem;
+      padding: 0 0.65rem; border-radius: var(--atom-radius);
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+      border: 1px solid rgba(169,149,255,0.36);
+      background: rgba(169,149,255,0.12); color: #d8d0ff;
+    }
+    .atom-pill.cyan { border-color: rgba(77,216,239,0.36); background: rgba(77,216,239,0.1); color: #9cecff; }
+    @media (max-width: 980px) { .atom-brand { display: none; } }
+    @media (max-width: 760px) {
+      .atom-nav { display: none; }
+      .atom-topbar-inner { min-height: 52px; }
+    }
+
+    /* ── Hero ───────────────────────────────────────── */
+    .atom-hero {
+      display: grid;
+      grid-template-columns: minmax(0,1.28fr) minmax(300px,0.72fr);
+      gap: 1rem; align-items: stretch;
+      min-height: min(560px, calc(100vh - 92px));
+    }
+    @media (max-width:720px) { .atom-hero { grid-template-columns: 1fr; } }
+
+    .atom-hero-copy {
+      border-radius: var(--atom-radius);
+      border: 1px solid var(--atom-line-strong);
+      background:
+        linear-gradient(120deg, rgba(77,216,239,0.10), transparent 42%),
+        linear-gradient(180deg, rgba(17,24,38,0.92), rgba(9,13,22,0.92));
+      box-shadow: var(--atom-shadow);
+      padding: clamp(1.25rem, 3vw, 2.4rem);
+      position: relative; overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .atom-hero-copy::before {
+      content: "";
+      position: absolute; right: -8rem; top: -8rem;
+      width: 24rem; height: 24rem;
+      border: 1px solid rgba(77,216,239,0.18);
+      border-radius: 50%;
+      box-shadow:
+        inset 0 0 0 78px transparent,
+        inset 0 0 0 79px rgba(246,195,91,0.12),
+        inset 0 0 0 142px transparent,
+        inset 0 0 0 143px rgba(169,149,255,0.12);
+      transform: rotate(-18deg) scaleX(1.45);
+      pointer-events: none;
+    }
+    .atom-eyebrow {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--atom-cyan); margin: 0 0 0.7rem;
+    }
+    .atom-hero-copy h1 {
+      margin: 0 0 0.7rem;
+      max-width: 12ch;
+      font-size: clamp(2.4rem, 7vw, 5.9rem);
+      line-height: 0.92; letter-spacing: -0.055em; color: #fff;
+    }
+    .atom-hero-copy h1 em { font-style: normal; color: var(--atom-amber); }
+    .atom-lede {
+      max-width: 74ch;
+      color: var(--atom-muted); font-size: clamp(0.95rem, 1.5vw, 1.06rem); line-height: 1.72; margin: 0 0 1.1rem;
+    }
+    .atom-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+    /* Feynman quote card */
+    .atom-quote-card {
+      border-radius: var(--atom-radius);
+      border: 1px solid rgba(246,195,91,0.24);
+      background:
+        linear-gradient(180deg, rgba(246,195,91,0.10), transparent 58%),
+        rgba(13,18,28,0.82);
+      padding: clamp(1.15rem, 2.2vw, 1.8rem);
+      display: flex; flex-direction: column; justify-content: center; gap: 0.9rem;
+      box-shadow: var(--atom-shadow);
+    }
+    .atom-quote-mark { font-size: 3rem; line-height: 0.8; color: var(--atom-amber); opacity: 0.65; }
+    .atom-quote-text {
+      font-size: clamp(0.92rem, 2vw, 1.12rem);
+      font-style: italic; line-height: 1.62;
+      color: #e0f2fe; margin: 0;
+    }
+    .atom-quote-attr {
+      font-size: 0.77rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--atom-amber); opacity: 0.9;
+    }
+
+    /* ── Section cards ──────────────────────────────── */
+    .atom-card {
+      border-radius: var(--atom-radius);
+      border: 1px solid var(--atom-line);
+      background: var(--atom-panel);
+      backdrop-filter: blur(10px);
+      padding: clamp(1.1rem, 2vw, 1.6rem);
+      scroll-margin-top: 76px;
+    }
+    .atom-card-accent-violet { border-left: 4px solid var(--atom-violet); }
+    .atom-card-accent-cyan   { border-left: 4px solid var(--atom-cyan); }
+    .atom-card-accent-green  { border-left: 4px solid var(--atom-green); }
+    .atom-card-accent-amber  { border-left: 4px solid var(--atom-amber); }
+    .atom-card-accent-rose   { border-left: 4px solid var(--atom-rose); }
+
+    .atom-kicker {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; margin: 0 0 0.45rem;
+    }
+    .atom-kicker.violet { color: var(--atom-violet); }
+    .atom-kicker.cyan   { color: var(--atom-cyan); }
+    .atom-kicker.green  { color: var(--atom-green); }
+    .atom-kicker.amber  { color: var(--atom-amber); }
+    .atom-kicker.rose   { color: var(--atom-rose); }
+
+    .atom-card h2 {
+      margin: 0 0 0.75rem;
+      font-size: clamp(1.2rem, 2.4vw, 1.65rem);
+      letter-spacing: -0.03em; color: #fff;
+    }
+    .atom-card h3 {
+      margin: 1rem 0 0.35rem;
+      font-size: 1.02rem; letter-spacing: -0.02em; color: #e0eaf8;
+    }
+    .atom-card p, .atom-card li {
+      color: var(--atom-muted); font-size: 0.92rem; line-height: 1.72; margin: 0 0 0.65rem;
+    }
+    .atom-card p:last-child { margin-bottom: 0; }
+    .atom-card ul { padding-left: 1.4rem; margin: 0.4rem 0 0.7rem; }
+    .atom-card li { margin-bottom: 0.35rem; }
+
+    /* two-col prose */
+    .atom-two-col {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    }
+    @media (max-width:620px) { .atom-two-col { grid-template-columns: 1fr; } }
+
+    /* ── Highlight boxes ────────────────────────────── */
+    .atom-highlight {
+      border-radius: var(--atom-radius); padding: 1rem 1.2rem; margin: 0.9rem 0;
+    }
+    .atom-highlight.violet {
+      background: rgba(169,149,255,0.10); border: 1px solid rgba(169,149,255,0.28);
+    }
+    .atom-highlight.cyan {
+      background: rgba(77,216,239,0.09); border: 1px solid rgba(77,216,239,0.26);
+    }
+    .atom-highlight.amber {
+      background: rgba(246,195,91,0.09); border: 1px solid rgba(246,195,91,0.26);
+    }
+    .atom-highlight.green {
+      background: rgba(83,216,155,0.08); border: 1px solid rgba(83,216,155,0.26);
+    }
+    .atom-highlight strong {
+      display: block; font-size: 0.76rem; font-weight: 800;
+      letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.35rem;
+    }
+    .atom-highlight.violet strong { color: var(--atom-violet); }
+    .atom-highlight.cyan   strong { color: var(--atom-cyan); }
+    .atom-highlight.amber  strong { color: var(--atom-amber); }
+    .atom-highlight.green  strong { color: var(--atom-green); }
+    .atom-highlight p { margin: 0; font-size: 0.88rem; color: rgba(232,238,248,0.82); line-height: 1.65; }
+
+    /* ── Concept chips ──────────────────────────────── */
+    .atom-chip-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(170px,1fr)); gap: 0.65rem;
+      margin: 0.85rem 0;
+    }
+    .atom-chip {
+      border-radius: var(--atom-radius); padding: 0.85rem 1rem;
+      border: 1px solid var(--atom-line);
+      background: rgba(255,255,255,0.035);
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .atom-chip:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(0,0,0,0.25); border-color: var(--atom-line-strong); }
+    .atom-chip .chip-icon {
+      width: 2.1rem; height: 2.1rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: var(--atom-radius);
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.05);
+      font-size: 1.15rem; margin-bottom: 0.55rem; line-height: 1;
+    }
+    .atom-chip .chip-title { font-size: 0.9rem; font-weight: 700; color: #f1f5ff; margin-bottom: 0.2rem; }
+    .atom-chip .chip-desc { font-size: 0.76rem; color: rgba(224,234,248,0.55); line-height: 1.45; }
+
+    /* ── Steps (Feynman method) ─────────────────────── */
+    .atom-steps { display: grid; gap: 0.7rem; margin: 0.85rem 0; }
+    .atom-step {
+      display: grid; grid-template-columns: 2.4rem 1fr; gap: 0.8rem;
+      align-items: start;
+    }
+    .atom-step-num {
+      width: 2.2rem; height: 2.2rem; border-radius: var(--atom-radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 800; flex-shrink: 0;
+      background: rgba(77,216,239,0.12); border: 1px solid rgba(77,216,239,0.3);
+      color: var(--atom-cyan);
+    }
+    .atom-step-body strong { display: block; color: #e0eaf8; font-size: 0.92rem; margin-bottom: 0.2rem; }
+    .atom-step-body p { margin: 0; color: rgba(224,234,248,0.62); font-size: 0.84rem; line-height: 1.55; }
+
+    /* ── Flow arrow ─────────────────────────────────── */
+    .atom-flow {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+      margin: 0.9rem 0; font-size: 0.84rem;
+    }
+    .atom-flow-node {
+      padding: 0.35rem 0.8rem; border-radius: var(--atom-radius);
+      border: 1px solid rgba(77,216,239,0.32);
+      background: rgba(77,216,239,0.10); color: #b6f3ff;
+      font-weight: 700; white-space: nowrap;
+    }
+    .atom-flow-arrow { color: rgba(224,234,248,0.35); font-size: 1.1rem; }
+
+    /* ── Canvas simulation containers ──────────────── */
+    .atom-sim {
+      border-radius: var(--atom-radius);
+      border: 1px solid var(--atom-line);
+      overflow: hidden;
+      background: #030912;
+      position: relative;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.24);
+      scroll-margin-top: 76px;
+    }
+    .atom-sim-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      flex-wrap: wrap; gap: 0.6rem;
+      padding: 1rem 1.2rem 0.75rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0));
+    }
+    .atom-sim-head-left { display: flex; flex-direction: column; gap: 0.2rem; }
+    .atom-sim-title { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .atom-sim-title.violet { color: var(--atom-violet); }
+    .atom-sim-title.cyan { color: var(--atom-cyan); }
+    .atom-sim-title.amber { color: var(--atom-amber); }
+    .atom-sim-sub { font-size: 0.79rem; color: rgba(224,234,248,0.5); }
+    .atom-sim canvas {
+      display: block; width: 100%;
+      background:
+        linear-gradient(rgba(255,255,255,0.026) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+        #030912;
+      background-size: 26px 26px;
+    }
+
+    .atom-sim-controls {
+      display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem;
+      padding: 0.8rem 1.2rem;
+      background: rgba(0,0,0,0.28); border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .atom-ctrl { display: flex; flex-direction: column; gap: 0.22rem; min-width: 120px; }
+    .atom-control-row { display: flex; align-items: flex-end; gap: 0.4rem; }
+    .atom-align-end { align-self: flex-end; }
+    .atom-ctrl label {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; color: rgba(224,234,248,0.5);
+    }
+    .atom-ctrl input[type="range"] {
+      accent-color: var(--atom-cyan); cursor: pointer; width: 100%;
+    }
+    .atom-ctrl select {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--atom-radius); color: #e0eaf8; padding: 0.28rem 0.5rem;
+      font-size: 0.82rem; cursor: pointer;
+    }
+    .atom-ctrl select option { background: #111827; }
+    .atom-ctrl-val {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.74rem; font-weight: 700; color: var(--atom-cyan);
+    }
+    .atom-btn {
+      padding: 0.46rem 0.9rem; border-radius: var(--atom-radius);
+      border: 1px solid rgba(77,216,239,0.42);
+      background: rgba(77,216,239,0.13); color: #a8f1ff;
+      font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      transition: background 0.14s;
+    }
+    .atom-btn:hover { background: rgba(77,216,239,0.22); }
+    .atom-btn.cyan-btn {
+      border-color: rgba(6,182,212,0.4); background: rgba(6,182,212,0.12); color: #67e8f9;
+    }
+    .atom-btn.cyan-btn:hover { background: rgba(6,182,212,0.24); }
+
+    /* sim readout strip */
+    .atom-readout {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      padding: 0.7rem 1.2rem;
+    }
+    .atom-readout-chip {
+      display: flex; flex-direction: column; gap: 0.1rem;
+      border-radius: var(--atom-radius); padding: 0.45rem 0.7rem;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.03);
+    }
+    .atom-readout-label {
+      font-size: 0.63rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(224,234,248,0.42);
+    }
+    .atom-readout-val {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.85rem; font-weight: 700; color: #e0eaf8;
+    }
+
+    /* ── AI Prompt Section ──────────────────────────── */
+    .atom-prompt-box {
+      border-radius: var(--atom-radius); padding: 1.1rem 1.3rem;
+      border: 1px solid rgba(6,182,212,0.28);
+      background: rgba(6,182,212,0.07);
+      margin-top: 0.85rem;
+    }
+    .atom-prompt-box pre {
+      margin: 0.6rem 0 0;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.8rem; color: #a5f3fc;
+      white-space: pre-wrap; word-break: break-word;
+      line-height: 1.6;
+    }
+    .atom-prompt-label {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #67e8f9;
+    }
+
+    /* ── Energy bar ─────────────────────────────────── */
+    .energy-bar-track {
+      height: 8px; border-radius: 999px;
+      background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 0.25rem;
+    }
+    .energy-bar-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--atom-violet), var(--atom-cyan));
+      transition: width 0.3s;
+    }
+
+    /* ── Invariant showcase ─────────────────────────── */
+    .atom-invariant-row {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
+      gap: 0.7rem; margin: 0.85rem 0;
+    }
+    .atom-invariant-item {
+      border-radius: var(--atom-radius); padding: 0.9rem 1rem;
+      border: 1px solid rgba(245,158,11,0.25);
+      background: rgba(245,158,11,0.07);
+    }
+    .atom-invariant-item .inv-label {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--atom-amber); margin-bottom: 0.3rem;
+    }
+    .atom-invariant-item .inv-from { font-size: 0.84rem; color: rgba(224,234,248,0.55); }
+    .atom-invariant-item .inv-arrow { color: var(--atom-amber); font-size: 1rem; }
+    .atom-invariant-item .inv-to { font-size: 0.84rem; color: rgba(224,234,248,0.85); font-weight: 600; }
+
+    /* ── Probability distribution bars ─────────────── */
+    .prob-bars {
+      display: flex; align-items: flex-end; gap: 4px;
+      height: 80px; padding: 0 0.2rem;
+    }
+    .prob-bar {
+      flex: 1; border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, var(--atom-cyan), #2975a0);
+      transition: height 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      min-height: 4px;
+    }
+
+    /* ── Gravity equation highlight ─────────────────── */
+    .atom-equation {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: var(--atom-amber); text-align: center;
+      padding: 1rem; letter-spacing: 0.04em;
+      border-radius: var(--atom-radius);
+      border: 1px solid rgba(246,195,91,0.22);
+      background: rgba(246,195,91,0.07);
+    }
+
+    /* ── Feynman method interactive ─────────────────── */
+    .feynman-step-row {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 0.65rem;
+      margin: 0.85rem 0;
+    }
+    @media (max-width:640px) { .feynman-step-row { grid-template-columns: 1fr 1fr; } }
+    .feynman-step-card {
+      border-radius: var(--atom-radius); padding: 1rem;
+      border: 1px solid var(--atom-line);
+      background: rgba(255,255,255,0.03);
+      text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.18s;
+    }
+    .feynman-step-card.active {
+      border-color: rgba(77,216,239,0.42);
+      background: rgba(77,216,239,0.12);
+      transform: translateY(-3px);
+    }
+    .feynman-step-card .fs-num {
+      font-size: 1.7rem; font-weight: 800; color: var(--atom-cyan); line-height: 1;
+    }
+    .feynman-step-card .fs-label {
+      font-size: 0.84rem; font-weight: 700; color: #e0eaf8; margin: 0.3rem 0 0.2rem;
+    }
+    .feynman-step-card .fs-icon { font-size: 1.5rem; }
+    .feynman-detail {
+      border-radius: var(--atom-radius); padding: 1.1rem 1.3rem; min-height: 5rem;
+      border: 1px solid rgba(77,216,239,0.28);
+      background: rgba(77,216,239,0.08);
+      font-size: 0.88rem; line-height: 1.65; color: rgba(224,234,248,0.8);
+      margin-top: 0.7rem;
+    }
+
+    /* ── Responsive gap helper ──────────────────────── */
+    .atom-two-sim {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    }
+    @media (max-width:720px) { .atom-two-sim { grid-template-columns: 1fr; } }
+    .atom-gap-sm { margin-top: 0.85rem; }
+    .atom-gap-md { margin-top: 1rem; }
+    .atom-gap-lg { margin-top: 1.1rem; }
+    .atom-footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--atom-dim);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--atom-line);
+      background: rgba(7,10,16,0.66);
+    }
+    .atom-footer a { color: var(--atom-cyan); text-decoration: none; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sticky topbar -->
+<div class="atom-topbar">
+  <div class="atom-topbar-inner">
+    <a href="../steam-lessons.html">← STEAM Lessons</a>
+    <span class="atom-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="atom-nav" aria-label="Lesson sections">
+      <a href="#atoms">Atoms</a>
+      <a href="#states">States</a>
+      <a href="#energy">Energy</a>
+      <a href="#gravity">Gravity</a>
+      <a href="#probability">Probability</a>
+      <a href="#method">Method</a>
+      <a href="#build">Build</a>
+    </nav>
+    <div class="atom-pills">
+      <span class="atom-pill">Physics</span>
+      <span class="atom-pill cyan">Feynman</span>
+    </div>
+  </div>
+</div>
+
+<div class="atom-shell">
+
+  <!-- ══ HERO ══════════════════════════════════════════ -->
+  <div class="atom-hero">
+    <div class="atom-hero-copy">
+      <p class="atom-eyebrow">Foundation of Reality · Physics &amp; Philosophy of Science</p>
+      <h1>Everything is made of <em>Atoms</em></h1>
+      <p class="atom-lede">
+        If civilization were forced to rebuild scientific knowledge from scratch with a single sentence,
+        Richard Feynman believed it would be this: all things are made of atoms — little particles in
+        perpetual motion, attracting when slightly apart, repelling when squeezed together.
+        From that one idea, nearly everything else follows.
+      </p>
+      <div class="atom-meta">
+        <span class="atom-pill">7 Big Ideas</span>
+        <span class="atom-pill cyan">6 Simulations</span>
+        <span class="atom-pill">K–12 · Any Level</span>
+      </div>
+    </div>
+
+    <div class="atom-quote-card">
+      <div class="atom-quote-mark">"</div>
+      <p class="atom-quote-text">
+        If, in some cataclysm, all of scientific knowledge were to be destroyed, and only one
+        sentence passed on to the next generation — what statement would contain the most information
+        in the fewest words? I believe it is the <em>atomic hypothesis:</em> that all things are made
+        of atoms — little particles that move around in perpetual motion.
+      </p>
+      <div class="atom-quote-attr">— Richard Feynman, Lectures on Physics, Vol. I (1963)</div>
+    </div>
+  </div>
+
+  <!-- ══ 1 · ATOMIC HYPOTHESIS ═════════════════════════ -->
+  <div class="atom-card atom-card-accent-violet" id="atoms">
+    <p class="atom-kicker violet">Idea 1 · The Atomic Hypothesis</p>
+    <h2>Everything is made of Atoms in Motion</h2>
+
+    <div class="atom-two-col">
+      <div>
+        <p>
+          Atoms are unimaginably small — about 0.1 nanometers across. A single grain of sand contains
+          roughly <strong>2 quintillion atoms</strong> (that's a 2 followed by 18 zeros). Yet every
+          solid, liquid, gas, and living thing you have ever encountered is built entirely from these
+          tiny particles and a handful of forces between them.
+        </p>
+        <p>
+          Every atom is built from three particles:
+        </p>
+        <ul>
+          <li><strong>Protons</strong> — positively charged; packed in the nucleus; give the atom its identity (element)</li>
+          <li><strong>Neutrons</strong> — no charge; stabilize the nucleus; same atomic family but different mass</li>
+          <li><strong>Electrons</strong> — negatively charged; orbit the nucleus in clouds; govern chemistry &amp; bonding</li>
+        </ul>
+        <div class="atom-highlight violet">
+          <strong>The Two Great Forces Inside an Atom</strong>
+          <p>
+            <strong>Attraction:</strong> opposite charges pull (proton ↔ electron). <strong>Repulsion:</strong>
+            like charges push apart. These two forces — acting at the scale of a billionth of a meter — are responsible
+            for every chemical reaction, every material property, and every biological process on Earth.
+          </p>
+        </div>
+      </div>
+      <div>
+        <div class="atom-chip-grid">
+          <div class="atom-chip">
+            <div class="chip-icon">🌡️</div>
+            <div class="chip-title">Temperature</div>
+            <div class="chip-desc">Average speed of atoms jiggling. Hot = fast. Cold = slow.</div>
+          </div>
+          <div class="atom-chip">
+            <div class="chip-icon">💨</div>
+            <div class="chip-title">Pressure</div>
+            <div class="chip-desc">Force of atoms hammering a surface millions of times per second.</div>
+          </div>
+          <div class="atom-chip">
+            <div class="chip-icon">🧊</div>
+            <div class="chip-title">Solid</div>
+            <div class="chip-desc">Atoms locked in place, vibrating but not escaping their neighbors.</div>
+          </div>
+          <div class="atom-chip">
+            <div class="chip-icon">💧</div>
+            <div class="chip-title">Liquid</div>
+            <div class="chip-desc">Atoms sliding past each other — close but free to roam.</div>
+          </div>
+          <div class="atom-chip">
+            <div class="chip-icon">☁️</div>
+            <div class="chip-title">Gas</div>
+            <div class="chip-desc">Atoms flying free, barely interacting until they collide.</div>
+          </div>
+          <div class="atom-chip">
+            <div class="chip-icon">🧪</div>
+            <div class="chip-title">Chemistry</div>
+            <div class="chip-desc">Electrons swapping between atoms, forming new bonds and releasing energy.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SIM 1 · ATOM MODEL ════════════════════════════ -->
+  <div class="atom-sim" id="atom-model">
+    <div class="atom-sim-head">
+      <div class="atom-sim-head-left">
+        <span class="atom-sim-title violet">⚛ Interactive Atom Model</span>
+        <span class="atom-sim-sub">Adjust protons to change the element · watch electron shells fill by Bohr rules</span>
+      </div>
+    </div>
+    <canvas id="atomCanvas" height="320"></canvas>
+    <div class="atom-sim-controls">
+      <div class="atom-ctrl">
+        <label>Protons <span class="atom-ctrl-val" id="protonLabel">6</span></label>
+        <input type="range" id="protonSlider" min="1" max="18" value="6" />
+      </div>
+      <div class="atom-ctrl">
+        <label>Speed</label>
+        <input type="range" id="atomSpeed" min="0.3" max="3" step="0.1" value="1" />
+      </div>
+      <div class="atom-control-row">
+        <span class="atom-readout-chip">
+          <span class="atom-readout-label">Element</span>
+          <span class="atom-readout-val" id="elementName">Carbon</span>
+        </span>
+        <span class="atom-readout-chip">
+          <span class="atom-readout-label">Electrons</span>
+          <span class="atom-readout-val" id="electronCount">6</span>
+        </span>
+        <span class="atom-readout-chip">
+          <span class="atom-readout-label">Shells</span>
+          <span class="atom-readout-val" id="shellCount">2</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SIM 2 · STATES OF MATTER ═════════════════════ -->
+  <div class="atom-sim" id="states">
+    <div class="atom-sim-head">
+      <div class="atom-sim-head-left">
+        <span class="atom-sim-title cyan">🧊 States of Matter Simulator</span>
+        <span class="atom-sim-sub">Same atoms — different speeds. Temperature decides the state.</span>
+      </div>
+    </div>
+    <canvas id="statesCanvas" height="280"></canvas>
+    <div class="atom-sim-controls">
+      <div class="atom-ctrl">
+        <label>Temperature <span class="atom-ctrl-val" id="tempLabel">50%</span></label>
+        <input type="range" id="tempSlider" min="1" max="100" value="50" />
+      </div>
+      <div class="atom-control-row">
+        <span class="atom-readout-chip">
+          <span class="atom-readout-label">State</span>
+          <span class="atom-readout-val" id="stateName">Liquid</span>
+        </span>
+        <span class="atom-readout-chip">
+          <span class="atom-readout-label">Avg Speed</span>
+          <span class="atom-readout-val" id="avgSpeed">—</span>
+        </span>
+        <span class="atom-readout-chip">
+          <span class="atom-readout-label">Pressure</span>
+          <span class="atom-readout-val" id="pressure">—</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 2 · FEYNMAN REDUCTIONISM ══════════════════════ -->
+  <div class="atom-card atom-card-accent-cyan">
+    <p class="atom-kicker cyan">Idea 2 · Feynman Reductionism</p>
+    <h2>Complex World → Simple Rules → Rich Emergence</h2>
+    <p>
+      Feynman's most powerful insight wasn't just that atoms exist — it was that <strong>the universe
+      builds staggering complexity from remarkably few rules</strong>. You don't need a different law
+      for every phenomenon. You need a handful of deep laws, and then you watch what emerges when you
+      apply them to billions of atoms over billions of years.
+    </p>
+
+    <div class="atom-flow">
+      <span class="atom-flow-node">A few forces</span>
+      <span class="atom-flow-arrow">→</span>
+      <span class="atom-flow-node">Trillions of atoms</span>
+      <span class="atom-flow-arrow">→</span>
+      <span class="atom-flow-node">Time</span>
+      <span class="atom-flow-arrow">→</span>
+      <span class="atom-flow-node">Stars, oceans, brains, music</span>
+    </div>
+
+    <div class="atom-two-col">
+      <div>
+        <h3>Physics is not about memorizing formulas</h3>
+        <p>
+          A physics student who only memorizes equations is like a musician who only memorizes note names
+          without understanding melody. Physics is about <strong>spotting the patterns underneath phenomena</strong> —
+          seeing the same invariant relationship whether you're watching a pendulum, an orbit, a heartbeat, or a market.
+        </p>
+        <p>
+          Motion is not a list of equations. It is the <em>unfolding of consistent rules across time</em>.
+          Once you see those rules, you can derive the equations — you don't need to memorize them.
+        </p>
+      </div>
+      <div>
+        <h3>The same patterns appear everywhere</h3>
+        <div class="atom-chip-grid">
+          <div class="atom-chip">
+            <div class="chip-icon">🏛️</div>
+            <div class="chip-title">Architecture</div>
+            <div class="chip-desc">Load paths follow force invariants. A Roman arch and a steel bridge obey the same rules.</div>
+          </div>
+          <div class="atom-chip">
+            <div class="chip-icon">🎵</div>
+            <div class="chip-title">Music</div>
+            <div class="chip-desc">Harmonic ratios, resonance, and wave superposition — pure physics made audible.</div>
+          </div>
+          <div class="atom-chip">
+            <div class="chip-icon">🌀</div>
+            <div class="chip-title">Spiral Galaxies</div>
+            <div class="chip-desc">The same spiral shape as a seashell: a single growth rule applied at every scale.</div>
+          </div>
+          <div class="atom-chip">
+            <div class="chip-icon">🧬</div>
+            <div class="chip-title">DNA</div>
+            <div class="chip-desc">Four letters — adenine, thymine, guanine, cytosine — encode every living thing.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="atom-highlight cyan">
+      <strong>Training Your Perception</strong>
+      <p>
+        The goal of studying physics is not to become a calculator — it's to <strong>train your perception</strong>
+        to spot the structures underneath phenomena. Once you see that a bouncing ball, a planetary orbit,
+        and a vibrating guitar string all share the same mathematical skeleton, you have learned something real
+        about the universe.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══ 3 · ENERGY ════════════════════════════════════ -->
+  <div class="atom-card atom-card-accent-amber" id="energy">
+    <p class="atom-kicker amber">Idea 3 · The Centerpiece — Energy</p>
+    <h2>Energy: The Universe's Bookkeeping Invariant</h2>
+
+    <p>
+      Here is something surprising: <strong>you never see energy directly</strong>. You see a rock fall,
+      a fire burn, a muscle contract — but you never see "energy" itself any more than you see "money"
+      flowing between bank accounts. What you see are <em>transformations</em>. Energy is the quantity
+      that stays the same across every transformation — the universe's way of keeping its books balanced.
+    </p>
+
+    <div class="atom-highlight amber">
+      <strong>The Big Idea in One Sentence</strong>
+      <p>
+        Energy is not a substance or a thing — it is a <strong>number that never changes</strong> as
+        it moves through different forms. When you track it carefully through a falling ball, a burning
+        log, or a living cell, the total always adds up to the same amount. That bookkeeping rule — the
+        conservation of energy — is one of the most powerful ideas in all of science.
+      </p>
+    </div>
+
+    <div class="atom-invariant-row">
+      <div class="atom-invariant-item">
+        <div class="inv-label">Example 1</div>
+        <div class="inv-from">Lifted rock (potential)</div>
+        <div class="inv-arrow">↓</div>
+        <div class="inv-to">Falling speed (kinetic)</div>
+      </div>
+      <div class="atom-invariant-item">
+        <div class="inv-label">Example 2</div>
+        <div class="inv-from">Chemical bonds (food)</div>
+        <div class="inv-arrow">↓</div>
+        <div class="inv-to">Muscle movement + heat</div>
+      </div>
+      <div class="atom-invariant-item">
+        <div class="inv-label">Example 3</div>
+        <div class="inv-from">Sunlight (photons)</div>
+        <div class="inv-arrow">↓</div>
+        <div class="inv-to">Sugar in leaves (chemical)</div>
+      </div>
+      <div class="atom-invariant-item">
+        <div class="inv-label">Example 4</div>
+        <div class="inv-from">Spinning generator</div>
+        <div class="inv-arrow">↓</div>
+        <div class="inv-to">Electric current → light</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SIM 3 · ENERGY TRANSFORMER ════════════════════ -->
+  <div class="atom-sim">
+    <div class="atom-sim-head">
+      <div class="atom-sim-head-left">
+        <span class="atom-sim-title amber">⚡ Energy Transformer</span>
+        <span class="atom-sim-sub">Drop the ball — watch energy move between forms. The total never changes.</span>
+      </div>
+      <button class="atom-btn" id="dropBtn">Drop Ball</button>
+    </div>
+    <canvas id="energyCanvas" height="260"></canvas>
+    <div class="atom-readout" id="energyReadout">
+      <span class="atom-readout-chip">
+        <span class="atom-readout-label">Potential</span>
+        <span class="atom-readout-val" id="eKE">100%</span>
+      </span>
+      <span class="atom-readout-chip">
+        <span class="atom-readout-label">Kinetic</span>
+        <span class="atom-readout-val" id="ePE">0%</span>
+      </span>
+      <span class="atom-readout-chip">
+        <span class="atom-readout-label">Heat (lost)</span>
+        <span class="atom-readout-val" id="eHeat">0%</span>
+      </span>
+      <span class="atom-readout-chip">
+        <span class="atom-readout-label">Total</span>
+        <span class="atom-readout-val" id="eTotal">100%</span>
+      </span>
+    </div>
+    <div class="atom-sim-controls">
+      <div class="atom-ctrl">
+        <label>Elasticity (bounce) <span class="atom-ctrl-val" id="elasLabel">85%</span></label>
+        <input type="range" id="elasticitySlider" min="10" max="99" value="85" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 4 · GRAVITY ═══════════════════════════════════ -->
+  <div class="atom-card atom-card-accent-amber" id="gravity">
+    <p class="atom-kicker amber">Idea 4 · Gravity</p>
+    <h2>One Simple Law — Massive Consequences</h2>
+
+    <div class="atom-equation">F = G · m₁ · m₂ / r²</div>
+
+    <div class="atom-two-col">
+      <div>
+        <p>
+          This is Newton's Law of Universal Gravitation. Every object in the universe pulls every other
+          object toward it with a force that:
+        </p>
+        <ul>
+          <li>Grows with the <strong>mass</strong> of both objects (more mass = stronger pull)</li>
+          <li>Shrinks with the <strong>square of the distance</strong> between them (twice as far = four times weaker)</li>
+        </ul>
+        <p>
+          That single inverse-square rule — nothing more — explains <strong>planetary orbits, ocean tides,
+          the shape of galaxies, the collapse of stars into black holes, and the trajectory of every
+          spacecraft ever launched</strong>.
+        </p>
+        <div class="atom-highlight amber">
+          <strong>Feynman's Key Lesson About Gravity</strong>
+          <p>
+            The law is simple. The outcomes are rich. That gap — between a tidy equation and the wild
+            complexity of orbits, tides, and gravitational chaos — is where physics lives.
+            Simple rules, iterated through time, produce the universe you see.
+          </p>
+        </div>
+      </div>
+      <div>
+        <h3>The Atom Mirrors the Solar System</h3>
+        <p>
+          Look at a hydrogen atom: one proton at the center, one electron orbiting it. The electron
+          doesn't follow the inverse-square gravitational law — it follows an inverse-square
+          <em>electrical</em> law (Coulomb's Law). But the mathematics is identical in form.
+        </p>
+        <p>
+          Niels Bohr used this analogy to build the first modern model of the atom. The universe
+          reuses its favorite patterns across scales: the same mathematical relationship governs
+          both the orbit of a planet around a star and the orbit of an electron around a nucleus.
+        </p>
+        <div class="atom-highlight cyan">
+          <strong>Coulomb's Law vs Newton's Law</strong>
+          <p>
+            Gravity: F = G·m₁·m₂ / r² &nbsp;|&nbsp; Electricity: F = k·q₁·q₂ / r²
+            <br/>Same shape. Different constants. Same idea.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SIM 4 · GRAVITY ORBIT ══════════════════════════ -->
+  <div class="atom-two-sim">
+    <div class="atom-sim">
+      <div class="atom-sim-head">
+        <div class="atom-sim-head-left">
+          <span class="atom-sim-title amber">🌍 Orbital Mechanics</span>
+          <span class="atom-sim-sub">Inverse-square gravity · adjust mass &amp; velocity</span>
+        </div>
+      </div>
+      <canvas id="orbitCanvas" height="300"></canvas>
+      <div class="atom-sim-controls">
+        <div class="atom-ctrl">
+          <label>Star Mass <span class="atom-ctrl-val" id="massLabel">1.0×</span></label>
+          <input type="range" id="massSlider" min="0.3" max="3" step="0.1" value="1" />
+        </div>
+        <div class="atom-ctrl">
+          <label>Init. Velocity <span class="atom-ctrl-val" id="velLabel">1.0×</span></label>
+          <input type="range" id="velSlider" min="0.4" max="1.8" step="0.05" value="1" />
+        </div>
+        <button class="atom-btn" id="resetOrbit">Reset</button>
+      </div>
+    </div>
+
+    <div class="atom-sim">
+      <div class="atom-sim-head">
+        <div class="atom-sim-head-left">
+          <span class="atom-sim-title violet">⚛ Hydrogen Atom (Bohr Model)</span>
+          <span class="atom-sim-sub">Coulomb's inverse-square law — same math as gravity</span>
+        </div>
+      </div>
+      <canvas id="bohrCanvas" height="300"></canvas>
+      <div class="atom-sim-controls">
+        <div class="atom-ctrl">
+          <label>Energy Level (n) <span class="atom-ctrl-val" id="bohrLabel">1</span></label>
+          <input type="range" id="bohrSlider" min="1" max="5" step="1" value="1" />
+        </div>
+        <span class="atom-readout-chip atom-align-end">
+          <span class="atom-readout-label">Radius (Bohr units)</span>
+          <span class="atom-readout-val" id="bohrRadius">1</span>
+        </span>
+        <span class="atom-readout-chip atom-align-end">
+          <span class="atom-readout-label">Energy (eV)</span>
+          <span class="atom-readout-val" id="bohrEnergy">-13.6</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 5 · PROBABILITY & UNCERTAINTY ═════════════════ -->
+  <div class="atom-card atom-card-accent-violet" id="probability">
+    <p class="atom-kicker violet">Idea 5 · Probability &amp; Uncertainty as Real Structure</p>
+    <h2>Randomness Isn't Ignorance — It's Built Into the System</h2>
+
+    <div class="atom-two-col">
+      <div>
+        <p>
+          When you heat a gas, individual atoms fly in every direction at wildly different speeds.
+          You cannot predict exactly where any single molecule will be one second from now.
+          But here is the profound insight: <strong>you don't need to</strong>.
+        </p>
+        <p>
+          Even though individual atoms are unpredictable, large <em>groups</em> of atoms follow
+          beautiful, precise statistical laws. The pressure a gas exerts on a wall, the temperature
+          at which water boils, the rate at which uranium decays — all of these are <strong>statistical
+          averages over countless random events</strong>. The certainty emerges from the chaos.
+        </p>
+        <div class="atom-highlight violet">
+          <strong>The Maxwell–Boltzmann Distribution</strong>
+          <p>
+            At any temperature, gas molecules don't all move at the same speed. They spread across a
+            bell-curve distribution. Raise the temperature and the curve flattens and shifts right —
+            more molecules reach higher speeds. Lower it and the curve sharpens. Pressure, volume,
+            and temperature are all just ways of describing this statistical spread.
+          </p>
+        </div>
+      </div>
+      <div>
+        <h3>The Bridge to Quantum Thinking</h3>
+        <p>
+          At human scales, probability feels like ignorance — "we don't know exactly where the ball is."
+          But at atomic scales, probability is the full story. An electron doesn't have a hidden position
+          you simply haven't measured yet. Before you measure it, its position genuinely doesn't exist
+          as a single value — it exists as a <strong>wave of probabilities</strong>.
+        </p>
+        <p>
+          This is the deepest weirdness of quantum mechanics, and it is why gas statistics are such an
+          important stepping stone. They teach you to be comfortable with probabilistic thinking before
+          certainty dissolves entirely at smaller scales.
+        </p>
+        <div class="atom-highlight green">
+          <strong>Scale &amp; Certainty</strong>
+          <p>
+            Large scale → statistics are sharp, behavior is predictable. <br/>
+            Small scale → statistics are fuzzy, uncertainty is fundamental. <br/>
+            Quantum mechanics is what happens when you take statistical thinking all the way down.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SIM 5 · GAS STATS ══════════════════════════════ -->
+  <div class="atom-sim">
+    <div class="atom-sim-head">
+      <div class="atom-sim-head-left">
+        <span class="atom-sim-title violet">🎲 Gas Molecule Statistics</span>
+        <span class="atom-sim-sub">Individual paths unpredictable · group behavior perfectly regular</span>
+      </div>
+    </div>
+    <canvas id="gasCanvas" height="300"></canvas>
+    <div class="atom-sim-controls">
+      <div class="atom-ctrl">
+        <label>Temperature <span class="atom-ctrl-val" id="gasTemp">300 K</span></label>
+        <input type="range" id="gasTempSlider" min="50" max="1200" value="300" />
+      </div>
+      <div class="atom-ctrl">
+        <label>Particles <span class="atom-ctrl-val" id="gasCount">60</span></label>
+        <input type="range" id="gasCountSlider" min="20" max="120" value="60" />
+      </div>
+      <div class="atom-control-row">
+        <span class="atom-readout-chip">
+          <span class="atom-readout-label">Avg Speed</span>
+          <span class="atom-readout-val" id="gasAvgSpd">—</span>
+        </span>
+        <span class="atom-readout-chip">
+          <span class="atom-readout-label">Wall Hits/s</span>
+          <span class="atom-readout-val" id="gasHits">—</span>
+        </span>
+        <span class="atom-readout-chip">
+          <span class="atom-readout-label">Pressure</span>
+          <span class="atom-readout-val" id="gasPressure">—</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 6 · SCIENTIFIC METHOD ══════════════════════════ -->
+  <div class="atom-card atom-card-accent-green" id="method">
+    <p class="atom-kicker green">Idea 6 · The Scientific Method — Feynman's Version</p>
+    <h2>Guess. Compute. Compare. Discard If Wrong.</h2>
+
+    <p>
+      Feynman famously simplified the scientific method to its absolute essence — stripping away the
+      bureaucratic version taught in textbooks and revealing what science <em>actually is</em>:
+      an honest, iterative conversation between imagination and reality.
+      Click each step to explore it.
+    </p>
+
+    <div class="feynman-step-row" id="feynmanSteps">
+      <div class="feynman-step-card" data-step="0">
+        <div class="fs-icon">💡</div>
+        <div class="fs-num">1</div>
+        <div class="fs-label">Guess</div>
+      </div>
+      <div class="feynman-step-card" data-step="1">
+        <div class="fs-icon">🧮</div>
+        <div class="fs-num">2</div>
+        <div class="fs-label">Compute Consequences</div>
+      </div>
+      <div class="feynman-step-card" data-step="2">
+        <div class="fs-icon">🔬</div>
+        <div class="fs-num">3</div>
+        <div class="fs-label">Compare with Experiment</div>
+      </div>
+      <div class="feynman-step-card" data-step="3">
+        <div class="fs-icon">🗑️</div>
+        <div class="fs-num">4</div>
+        <div class="fs-label">If Wrong — Discard</div>
+      </div>
+    </div>
+
+    <div class="feynman-detail" id="feynmanDetail">
+      Click a step above to explore Feynman's version of the scientific method.
+    </div>
+
+    <div class="atom-highlight green atom-gap-md">
+      <strong>Why This Matters for Atoms</strong>
+      <p>
+        The atomic hypothesis itself is a perfect case study. Ancient Greeks guessed that matter was
+        made of indivisible particles. Two thousand years later, chemists computed the consequences
+        (atomic weights, reaction ratios), compared with experiments, and found it fit perfectly.
+        The guess survived — and became the foundation of all modern science.
+      </p>
+    </div>
+
+    <div class="atom-two-col atom-gap-sm">
+      <div>
+        <h3>What Science Is NOT</h3>
+        <ul>
+          <li>Not about authority — "the textbook says so" is not evidence</li>
+          <li>Not about consensus — a thousand scientists agreeing doesn't make it true</li>
+          <li>Not about complexity — simpler explanations that fit the data beat complex ones</li>
+        </ul>
+      </div>
+      <div>
+        <h3>What Science IS</h3>
+        <ul>
+          <li>A method for discovering which guesses survive contact with reality</li>
+          <li>Temporary — all good science is willing to be overturned by better evidence</li>
+          <li>Cumulative — each generation builds on the tested results of the last</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 7 · TRY IT YOURSELF — AI SIMULATION ════════════ -->
+  <div class="atom-card atom-card-accent-cyan" id="build">
+    <p class="atom-kicker cyan">Idea 7 · Build Your Own · AI-Assisted Simulation</p>
+    <h2>Atomic Synthesis in Code — You Can Build This</h2>
+
+    <p>
+      Every simulation on this page was built with code — and you can build your own. Modern AI tools
+      (Claude, ChatGPT, Gemini) can translate your scientific description into working simulations.
+      You don't need to know how to code first. You need to understand the physics well enough to
+      describe it. That understanding is the skill.
+    </p>
+
+    <div class="atom-highlight cyan">
+      <strong>The Feynman Test for Understanding</strong>
+      <p>
+        If you can't explain it simply enough for a simulation to replicate it, you don't yet understand it.
+        Building simulations is one of the most honest tests of your own knowledge.
+      </p>
+    </div>
+
+    <h3>Try These AI Prompts</h3>
+    <p>Copy one of the prompts below into Claude or ChatGPT and ask it to write an HTML + JavaScript simulation:</p>
+
+    <div class="atom-prompt-box">
+      <div class="atom-prompt-label">Prompt 1 · States of Matter</div>
+      <pre>Build a self-contained HTML page with a canvas simulation showing atoms as colored circles.
+Add a temperature slider from 0 to 100. At low temperature, atoms should cluster tightly and
+vibrate in place (solid). At medium temperature, they should slide past each other (liquid).
+At high temperature, they should fly around freely and bounce off the walls (gas). Label
+each state. No external libraries — vanilla JavaScript only.</pre>
+    </div>
+
+    <div class="atom-prompt-box">
+      <div class="atom-prompt-label">Prompt 2 · Planetary Orbit</div>
+      <pre>Create a self-contained HTML + canvas simulation of orbital mechanics using Newton's
+inverse-square gravity law: F = G·m1·m2 / r². Place a large star at the center. Launch
+a planet tangentially and simulate its orbit using Euler integration. Add sliders for
+the star's mass and the planet's initial velocity. Show what happens when velocity is
+too high (escape trajectory) or too low (spiral inward). Vanilla JS only.</pre>
+    </div>
+
+    <div class="atom-prompt-box">
+      <div class="atom-prompt-label">Prompt 3 · Energy Conservation</div>
+      <pre>Build an HTML canvas simulation of a bouncing ball that shows energy conservation.
+The ball falls from the top and bounces off the floor. Display three live bar charts:
+potential energy (height), kinetic energy (speed), and heat lost (from inelastic bouncing).
+The sum of all three should always equal 100%. Add a "bounciness" slider that controls
+how much energy is lost per bounce. Vanilla JavaScript, no libraries.</pre>
+    </div>
+
+    <div class="atom-prompt-box">
+      <div class="atom-prompt-label">Prompt 4 · Maxwell–Boltzmann Distribution</div>
+      <pre>Simulate 100 gas molecules as circles bouncing in a box using vanilla HTML canvas.
+Give each molecule a random speed drawn from a Maxwell-Boltzmann distribution scaled by
+a temperature slider. Draw a live histogram on the right half of the canvas showing the
+current speed distribution. As temperature increases, show the histogram shifting and
+flattening. Label the most probable speed on the histogram.</pre>
+    </div>
+
+    <div class="atom-gap-lg">
+      <h3>What to Do With Your Simulation</h3>
+      <div class="atom-chip-grid">
+        <div class="atom-chip">
+          <div class="chip-icon">🔍</div>
+          <div class="chip-title">Verify It</div>
+          <div class="chip-desc">Does it match your intuition? Test every slider and edge case.</div>
+        </div>
+        <div class="atom-chip">
+          <div class="chip-icon">📝</div>
+          <div class="chip-title">Explain It</div>
+          <div class="chip-desc">Can you explain every line of the code? If not, ask the AI to explain it.</div>
+        </div>
+        <div class="atom-chip">
+          <div class="chip-icon">🔧</div>
+          <div class="chip-title">Break It</div>
+          <div class="chip-desc">Change a constant and predict what will happen. Were you right?</div>
+        </div>
+        <div class="atom-chip">
+          <div class="chip-icon">🚀</div>
+          <div class="chip-title">Extend It</div>
+          <div class="chip-desc">Add a feature the prompt didn't ask for. That's where real learning starts.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.atom-shell -->
+
+<!-- ══ SITE FOOTER ══ -->
+<footer class="site-footer atom-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">All Lessons</a>
+</footer>
+
+<!-- ══ SCRIPTS ══════════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────────────────────
+   SHARED UTILITIES
+───────────────────────────────────────────────────────── */
+function lerp(a, b, t) { return a + (b - a) * t; }
+function rand(min, max) { return Math.random() * (max - min) + min; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+/* ─────────────────────────────────────────────────────────
+   SIM 1 · ATOM MODEL
+───────────────────────────────────────────────────────── */
+(function () {
+  const cv = document.getElementById('atomCanvas');
+  const ctx = cv.getContext('2d');
+  const protonSlider = document.getElementById('protonSlider');
+  const speedSlider = document.getElementById('atomSpeed');
+  const elementName = document.getElementById('elementName');
+  const electronCount = document.getElementById('electronCount');
+  const shellCount = document.getElementById('shellCount');
+  const protonLabel = document.getElementById('protonLabel');
+
+  const ELEMENTS = ['H','He','Li','Be','B','C','N','O','F','Ne',
+                    'Na','Mg','Al','Si','P','S','Cl','Ar'];
+  const ENAMES = ['Hydrogen','Helium','Lithium','Beryllium','Boron','Carbon',
+                  'Nitrogen','Oxygen','Fluorine','Neon','Sodium','Magnesium',
+                  'Aluminum','Silicon','Phosphorus','Sulfur','Chlorine','Argon'];
+  const SHELL_CAP = [2, 8, 8];
+
+  let electrons = [];
+  let t = 0;
+
+  function buildElectrons(protons) {
+    electrons = [];
+    let remaining = protons;
+    for (let s = 0; s < SHELL_CAP.length && remaining > 0; s++) {
+      const count = Math.min(remaining, SHELL_CAP[s]);
+      const r = 55 + s * 38;
+      for (let e = 0; e < count; e++) {
+        electrons.push({
+          shell: s,
+          radius: r,
+          angleOffset: (e / count) * Math.PI * 2,
+          speed: 0.8 / (s + 1),
+          color: ['#67e8f9','#a78bfa','#34d399'][s]
+        });
+      }
+      remaining -= count;
+    }
+  }
+
+  function resize() {
+    const w = cv.parentElement.clientWidth;
+    cv.width = w; cv.height = 320;
+  }
+
+  function draw() {
+    const protons = Number(protonSlider.value);
+    const speed = Number(speedSlider.value);
+    t += 0.016 * speed;
+
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    const cx = cv.width / 2, cy = cv.height / 2;
+
+    // Glow bg
+    const grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, 120);
+    grd.addColorStop(0, 'rgba(124,58,237,0.12)');
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd; ctx.fillRect(0, 0, cv.width, cv.height);
+
+    // Shell rings
+    const shells = [...new Set(electrons.map(e => e.shell))];
+    shells.forEach(s => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 55 + s * 38, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 1; ctx.setLineDash([4, 4]); ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // Nucleus
+    const nucleusR = 14 + protons * 0.6;
+    const nGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, nucleusR);
+    nGrd.addColorStop(0, '#fde68a'); nGrd.addColorStop(0.5, '#f59e0b');
+    nGrd.addColorStop(1, '#d97706');
+    ctx.beginPath(); ctx.arc(cx, cy, nucleusR, 0, Math.PI * 2);
+    ctx.fillStyle = nGrd; ctx.fill();
+    ctx.fillStyle = '#1c1917';
+    ctx.font = `bold ${Math.max(9, nucleusR * 0.6)}px Inter,sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(ELEMENTS[protons - 1], cx, cy);
+
+    // Electrons
+    electrons.forEach(e => {
+      const angle = t * e.speed + e.angleOffset;
+      const ex = cx + Math.cos(angle) * e.radius;
+      const ey = cy + Math.sin(angle) * e.radius;
+      // Trail
+      ctx.beginPath();
+      ctx.arc(ex, ey, 5, 0, Math.PI * 2);
+      ctx.fillStyle = e.color + 'cc';
+      ctx.fill();
+      // Glow
+      const eg = ctx.createRadialGradient(ex, ey, 0, ex, ey, 10);
+      eg.addColorStop(0, e.color + '60'); eg.addColorStop(1, 'transparent');
+      ctx.fillStyle = eg;
+      ctx.beginPath(); ctx.arc(ex, ey, 10, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // Update labels
+    protonLabel.textContent = protons;
+    elementName.textContent = ENAMES[protons - 1];
+    electronCount.textContent = protons;
+    shellCount.textContent = shells.length;
+
+    requestAnimationFrame(draw);
+  }
+
+  protonSlider.addEventListener('input', () => buildElectrons(Number(protonSlider.value)));
+  window.addEventListener('resize', () => { resize(); buildElectrons(Number(protonSlider.value)); });
+  resize();
+  buildElectrons(6);
+  draw();
+})();
+
+/* ─────────────────────────────────────────────────────────
+   SIM 2 · STATES OF MATTER
+───────────────────────────────────────────────────────── */
+(function () {
+  const cv = document.getElementById('statesCanvas');
+  const ctx = cv.getContext('2d');
+  const tempSlider = document.getElementById('tempSlider');
+  const tempLabel = document.getElementById('tempLabel');
+  const stateName = document.getElementById('stateName');
+  const avgSpeedEl = document.getElementById('avgSpeed');
+  const pressureEl = document.getElementById('pressure');
+
+  const N = 64;
+  let particles = [];
+
+  function initParticles(W, H) {
+    particles = [];
+    const cols = 8, rows = 8;
+    for (let i = 0; i < N; i++) {
+      const row = Math.floor(i / cols), col = i % cols;
+      particles.push({
+        x: 40 + col * ((W - 80) / cols),
+        y: 40 + row * ((H - 80) / rows),
+        vx: rand(-0.5, 0.5), vy: rand(-0.5, 0.5),
+        hue: 180 + rand(-30, 30)
+      });
+    }
+  }
+
+  function resize() {
+    const w = cv.parentElement.clientWidth;
+    cv.width = w; cv.height = 280;
+    initParticles(w, 280);
+  }
+
+  let wallHits = 0, hitsAccum = 0, lastHitReset = Date.now();
+
+  function draw() {
+    const temp = Number(tempSlider.value) / 100;
+    const W = cv.width, H = cv.height;
+    const maxSpeed = temp * 4.5 + 0.1;
+
+    let state, stateColor;
+    if (temp < 0.3) { state = 'Solid'; stateColor = '#67e8f9'; }
+    else if (temp < 0.65) { state = 'Liquid'; stateColor = '#a78bfa'; }
+    else { state = 'Gas'; stateColor = '#34d399'; }
+
+    ctx.clearRect(0, 0, W, H);
+    const bgGrd = ctx.createLinearGradient(0,0,0,H);
+    bgGrd.addColorStop(0,'rgba(12,20,40,0.95)'); bgGrd.addColorStop(1,'rgba(4,8,20,0.98)');
+    ctx.fillStyle = bgGrd; ctx.fillRect(0,0,W,H);
+
+    // Border
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(10, 10, W - 20, H - 20);
+
+    // Update particles
+    let totalSpeed = 0;
+    particles.forEach(p => {
+      if (state === 'Solid') {
+        p.vx += rand(-0.3, 0.3) * temp * 0.5;
+        p.vy += rand(-0.3, 0.3) * temp * 0.5;
+        p.vx *= 0.85; p.vy *= 0.85;
+      } else if (state === 'Liquid') {
+        p.vx += rand(-0.5, 0.5) * temp;
+        p.vy += rand(-0.5, 0.5) * temp;
+        const spd = Math.hypot(p.vx, p.vy);
+        if (spd > maxSpeed) { p.vx *= maxSpeed / spd; p.vy *= maxSpeed / spd; }
+        // Cohesion
+        const centerX = W / 2, centerY = H / 2;
+        const dx = centerX - p.x, dy = centerY - p.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 80) { p.vx += dx / dist * 0.08; p.vy += dy / dist * 0.08; }
+      } else {
+        const spd = Math.hypot(p.vx, p.vy);
+        if (spd < 0.5) { p.vx = rand(-1,1); p.vy = rand(-1,1); }
+        if (spd > maxSpeed) { p.vx *= maxSpeed / spd; p.vy *= maxSpeed / spd; }
+        if (spd < maxSpeed * 0.5) { p.vx *= 1.05; p.vy *= 1.05; }
+      }
+
+      p.x += p.vx; p.y += p.vy;
+
+      if (p.x < 14) { p.x = 14; p.vx = Math.abs(p.vx); hitsAccum++; }
+      if (p.x > W - 14) { p.x = W - 14; p.vx = -Math.abs(p.vx); hitsAccum++; }
+      if (p.y < 14) { p.y = 14; p.vy = Math.abs(p.vy); }
+      if (p.y > H - 14) { p.y = H - 14; p.vy = -Math.abs(p.vy); }
+
+      totalSpeed += Math.hypot(p.vx, p.vy);
+
+      // Draw
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue},80%,70%,0.88)`;
+      ctx.fill();
+    });
+
+    const now = Date.now();
+    if (now - lastHitReset > 500) {
+      wallHits = hitsAccum * 2; hitsAccum = 0; lastHitReset = now;
+    }
+
+    tempLabel.textContent = Math.round(temp * 100) + '%';
+    stateName.textContent = state;
+    stateName.style.color = stateColor;
+    avgSpeedEl.textContent = (totalSpeed / N).toFixed(2) + ' u/s';
+    pressureEl.textContent = wallHits + ' hits/s';
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize(); draw();
+})();
+
+/* ─────────────────────────────────────────────────────────
+   SIM 3 · ENERGY TRANSFORMER (Bouncing Ball)
+───────────────────────────────────────────────────────── */
+(function () {
+  const cv = document.getElementById('energyCanvas');
+  const ctx = cv.getContext('2d');
+  const dropBtn = document.getElementById('dropBtn');
+  const elastSlider = document.getElementById('elasticitySlider');
+  const elasLabel = document.getElementById('elasLabel');
+  const eKE = document.getElementById('eKE');
+  const ePE = document.getElementById('ePE');
+  const eHeat = document.getElementById('eHeat');
+  const eTotal = document.getElementById('eTotal');
+
+  let ball = { x: 0, y: 0, vy: 0, r: 16 };
+  let dropped = false;
+  let heatLost = 0;
+  let totalEnergy = 100;
+
+  function resize() {
+    const w = cv.parentElement.clientWidth;
+    cv.width = w; cv.height = 260;
+    ball.x = w * 0.38; ball.y = 30; ball.vy = 0;
+  }
+
+  function reset() {
+    ball.y = 30; ball.vy = 0; dropped = false; heatLost = 0;
+    eKE.textContent = '100%'; ePE.textContent = '0%';
+    eHeat.textContent = '0%'; eTotal.textContent = '100%';
+  }
+
+  dropBtn.addEventListener('click', () => { dropped = true; });
+  elastSlider.addEventListener('input', () => {
+    elasLabel.textContent = elastSlider.value + '%';
+    reset();
+  });
+
+  const GRAVITY = 0.35;
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    const floor = H - 24;
+    const maxH = floor - 30 - ball.r;
+    const elast = Number(elastSlider.value) / 100;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#030912'; ctx.fillRect(0, 0, W, H);
+
+    if (dropped) {
+      ball.vy += GRAVITY;
+      ball.y += ball.vy;
+      if (ball.y + ball.r >= floor) {
+        ball.y = floor - ball.r;
+        const before = 0.5 * ball.vy * ball.vy;
+        ball.vy = -Math.abs(ball.vy) * elast;
+        const after = 0.5 * ball.vy * ball.vy;
+        heatLost += (before - after) / (maxH * GRAVITY * 2);
+        heatLost = clamp(heatLost, 0, 1);
+        if (Math.abs(ball.vy) < 0.5) { dropped = false; ball.vy = 0; }
+      }
+    }
+
+    const heightFrac = clamp((floor - ball.r - ball.y) / maxH, 0, 1);
+    const speedFrac = dropped ? clamp(Math.abs(ball.vy) / 12, 0, 1) : 0;
+    const ke = Math.round(speedFrac * 100 * (1 - heatLost));
+    const pe = Math.round(heightFrac * 100 * (1 - heatLost));
+    const heat = Math.round(heatLost * 100);
+    const total = clamp(pe + ke + heat, 0, 100);
+
+    // Energy bar track (right side)
+    const barX = W * 0.65, barW = W * 0.3, barY = 20, barH = H - 44;
+
+    function drawBar(x, y, w, h, frac, label, color) {
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.beginPath(); roundRect(ctx, x, y, w, h, 6); ctx.fill();
+      const fillH = h * frac;
+      ctx.fillStyle = color;
+      ctx.beginPath(); roundRect(ctx, x, y + h - fillH, w, fillH, 6); ctx.fill();
+      ctx.fillStyle = 'rgba(224,234,248,0.55)'; ctx.font = '10px Inter,sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText(label, x + w / 2, y + h + 14);
+    }
+
+    const bW = barW / 3 - 6;
+    drawBar(barX,           barY, bW, barH, pe / 100,   'PE',   'rgba(124,58,237,0.8)');
+    drawBar(barX + bW + 6,  barY, bW, barH, ke / 100,   'KE',   'rgba(6,182,212,0.8)');
+    drawBar(barX + bW * 2 + 12, barY, bW, barH, heat/100,'Heat','rgba(251,113,133,0.7)');
+
+    // Floor
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.fillRect(0, floor, W * 0.62, 2);
+
+    // Ball
+    const ballGrd = ctx.createRadialGradient(ball.x - 4, ball.y - 4, 2, ball.x, ball.y, ball.r);
+    ballGrd.addColorStop(0, '#a78bfa'); ballGrd.addColorStop(1, '#4f46e5');
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fillStyle = ballGrd; ctx.fill();
+
+    // Height indicator
+    if (!dropped || ball.vy < 0) {
+      ctx.beginPath(); ctx.setLineDash([3,3]);
+      ctx.moveTo(ball.x + ball.r + 4, ball.y);
+      ctx.lineTo(ball.x + ball.r + 4, floor);
+      ctx.strokeStyle = 'rgba(124,58,237,0.4)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    eKE.textContent = pe + '%';
+    ePE.textContent = ke + '%';
+    eHeat.textContent = heat + '%';
+    eTotal.textContent = total + '%';
+
+    requestAnimationFrame(draw);
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath();
+  }
+
+  window.addEventListener('resize', () => { resize(); reset(); });
+  resize(); draw();
+})();
+
+/* ─────────────────────────────────────────────────────────
+   SIM 4a · ORBITAL MECHANICS
+───────────────────────────────────────────────────────── */
+(function () {
+  const cv = document.getElementById('orbitCanvas');
+  const ctx = cv.getContext('2d');
+  const massSlider = document.getElementById('massSlider');
+  const velSlider = document.getElementById('velSlider');
+  const massLabel = document.getElementById('massLabel');
+  const velLabel = document.getElementById('velLabel');
+  const resetBtn = document.getElementById('resetOrbit');
+
+  let planet, trail = [];
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
+
+  function resetPlanet() {
+    const W = cv.width, H = cv.height;
+    const cx = W / 2, cy = H / 2;
+    const vel = Number(velSlider.value);
+    const r0 = 90;
+    planet = { x: cx + r0, y: cy, vx: 0, vy: -vel * 2.2 };
+    trail = [];
+  }
+
+  const G = 5000;
+  function step() {
+    const W = cv.width, H = cv.height;
+    const cx = W / 2, cy = H / 2;
+    const mass = Number(massSlider.value);
+    const dx = cx - planet.x, dy = cy - planet.y;
+    const dist2 = dx * dx + dy * dy;
+    const dist = Math.sqrt(dist2);
+    const force = G * mass / dist2;
+    planet.vx += (dx / dist) * force * 0.016;
+    planet.vy += (dy / dist) * force * 0.016;
+    planet.x += planet.vx * 0.016 * 60;
+    planet.y += planet.vy * 0.016 * 60;
+    trail.push({ x: planet.x, y: planet.y });
+    if (trail.length > 300) trail.shift();
+    if (dist > 500 || dist < 10) resetPlanet();
+  }
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.fillStyle = '#030912'; ctx.fillRect(0, 0, W, H);
+
+    // Stars
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    for (let i = 0; i < 40; i++) {
+      const sx = (i * 137.5 * W) % W, sy = (i * 97.3 * H) % H;
+      ctx.beginPath(); ctx.arc(sx % W, sy % H, 0.8, 0, Math.PI * 2); ctx.fill();
+    }
+
+    const mass = Number(massSlider.value);
+    const vel = Number(velSlider.value);
+    massLabel.textContent = mass.toFixed(1) + '×';
+    velLabel.textContent = vel.toFixed(2) + '×';
+
+    const cx = W / 2, cy = H / 2;
+    // Star
+    const starR = 12 + mass * 4;
+    const sg = ctx.createRadialGradient(cx, cy, 0, cx, cy, starR);
+    sg.addColorStop(0, '#fde68a'); sg.addColorStop(0.6, '#f59e0b'); sg.addColorStop(1, 'rgba(245,158,11,0)');
+    ctx.beginPath(); ctx.arc(cx, cy, starR, 0, Math.PI * 2);
+    ctx.fillStyle = sg; ctx.fill();
+
+    // Trail
+    if (trail.length > 2) {
+      ctx.beginPath(); ctx.moveTo(trail[0].x, trail[0].y);
+      trail.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.strokeStyle = 'rgba(167,139,250,0.35)'; ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // Planet
+    for (let s = 0; s < 4; s++) step();
+    const pg = ctx.createRadialGradient(planet.x - 2, planet.y - 2, 0, planet.x, planet.y, 8);
+    pg.addColorStop(0, '#67e8f9'); pg.addColorStop(1, '#0891b2');
+    ctx.beginPath(); ctx.arc(planet.x, planet.y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = pg; ctx.fill();
+
+    requestAnimationFrame(draw);
+  }
+
+  resetBtn.addEventListener('click', resetPlanet);
+  massSlider.addEventListener('input', resetPlanet);
+  velSlider.addEventListener('input', resetPlanet);
+  window.addEventListener('resize', () => { resize(); resetPlanet(); });
+  resize(); resetPlanet(); draw();
+})();
+
+/* ─────────────────────────────────────────────────────────
+   SIM 4b · BOHR ATOM
+───────────────────────────────────────────────────────── */
+(function () {
+  const cv = document.getElementById('bohrCanvas');
+  const ctx = cv.getContext('2d');
+  const slider = document.getElementById('bohrSlider');
+  const labelEl = document.getElementById('bohrLabel');
+  const radEl = document.getElementById('bohrRadius');
+  const enEl = document.getElementById('bohrEnergy');
+
+  let t = 0;
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
+
+  function draw() {
+    const n = Number(slider.value);
+    const r = n * n;
+    const energy = (-13.6 / (n * n)).toFixed(2);
+    labelEl.textContent = n; radEl.textContent = r; enEl.textContent = energy + ' eV';
+
+    const W = cv.width, H = cv.height;
+    ctx.fillStyle = '#030912'; ctx.fillRect(0, 0, W, H);
+
+    const cx = W / 2, cy = H / 2;
+    const scale = Math.min(W, H) * 0.38 / (n * n);
+
+    // All shells 1..n
+    for (let s = 1; s <= n; s++) {
+      const sr = s * s * scale;
+      ctx.beginPath(); ctx.arc(cx, cy, sr, 0, Math.PI * 2);
+      ctx.strokeStyle = s === n ? 'rgba(167,139,250,0.4)' : 'rgba(255,255,255,0.07)';
+      ctx.lineWidth = s === n ? 1.5 : 1;
+      ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // Nucleus (proton)
+    const pg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 14);
+    pg.addColorStop(0, '#fde68a'); pg.addColorStop(1, '#d97706');
+    ctx.beginPath(); ctx.arc(cx, cy, 13, 0, Math.PI * 2); ctx.fillStyle = pg; ctx.fill();
+    ctx.fillStyle = '#1c1917'; ctx.font = 'bold 10px Inter,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('p+', cx, cy);
+
+    // Electron on shell n
+    const orbR = r * scale;
+    const spd = 1.2 / (n * n);
+    t += 0.016 * 40 * spd;
+    const ex = cx + Math.cos(t) * orbR, ey = cy + Math.sin(t) * orbR;
+
+    // Electron glow
+    const eg = ctx.createRadialGradient(ex, ey, 0, ex, ey, 12);
+    eg.addColorStop(0, 'rgba(103,232,249,0.7)'); eg.addColorStop(1, 'transparent');
+    ctx.fillStyle = eg; ctx.beginPath(); ctx.arc(ex, ey, 12, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#67e8f9'; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 7px Inter,sans-serif';
+    ctx.fillText('e⁻', ex, ey);
+
+    // n label
+    ctx.fillStyle = 'rgba(167,139,250,0.8)'; ctx.font = 'bold 12px Inter,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`n = ${n}   r = ${r}a₀`, 12, 22);
+    ctx.fillText(`E = ${energy} eV`, 12, 40);
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize(); draw();
+})();
+
+/* ─────────────────────────────────────────────────────────
+   SIM 5 · GAS MOLECULE STATISTICS
+───────────────────────────────────────────────────────── */
+(function () {
+  const cv = document.getElementById('gasCanvas');
+  const ctx = cv.getContext('2d');
+  const tempSlider = document.getElementById('gasTempSlider');
+  const countSlider = document.getElementById('gasCountSlider');
+  const gasTempEl = document.getElementById('gasTemp');
+  const gasCountEl = document.getElementById('gasCount');
+  const gasAvgEl = document.getElementById('gasAvgSpd');
+  const gasHitsEl = document.getElementById('gasHits');
+  const gasPressEl = document.getElementById('gasPressure');
+
+  let molecules = [];
+  let hitCount = 0, hitAccum = 0, lastHit = Date.now();
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
+
+  function maxwellSpeed(temp) {
+    const u1 = Math.random(), u2 = Math.random(), u3 = Math.random();
+    const v = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    return Math.abs(v) * Math.sqrt(temp / 100) * 2.5 + 0.3;
+  }
+
+  function buildMolecules(N, temp) {
+    const W = cv.width, H = cv.height;
+    molecules = [];
+    for (let i = 0; i < N; i++) {
+      const spd = maxwellSpeed(temp);
+      const angle = Math.random() * Math.PI * 2;
+      molecules.push({
+        x: rand(14, W - 14), y: rand(14, H - 54),
+        vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd,
+        hue: 180 + rand(-60, 80)
+      });
+    }
+  }
+
+  function draw() {
+    const temp = Number(tempSlider.value);
+    const N = Number(countSlider.value);
+    gasTempEl.textContent = temp + ' K';
+    gasCountEl.textContent = N;
+
+    if (molecules.length !== N) buildMolecules(N, temp);
+
+    const W = cv.width, H = cv.height;
+    const boxH = H - 50;
+    ctx.fillStyle = '#030912'; ctx.fillRect(0, 0, W, H);
+
+    // Box
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(8, 8, W - 16, boxH - 8);
+
+    let totalSpd = 0;
+    const speeds = [];
+
+    molecules.forEach(m => {
+      const targetSpd = maxwellSpeed(temp);
+      const curSpd = Math.hypot(m.vx, m.vy);
+      const scale = lerp(curSpd, targetSpd, 0.005) / Math.max(curSpd, 0.01);
+      m.vx *= scale; m.vy *= scale;
+
+      m.x += m.vx; m.y += m.vy;
+      let hit = false;
+      if (m.x < 12) { m.x = 12; m.vx = Math.abs(m.vx); hit = true; }
+      if (m.x > W - 12) { m.x = W - 12; m.vx = -Math.abs(m.vx); hit = true; }
+      if (m.y < 12) { m.y = 12; m.vy = Math.abs(m.vy); }
+      if (m.y > boxH - 12) { m.y = boxH - 12; m.vy = -Math.abs(m.vy); }
+      if (hit) hitAccum++;
+
+      const spd = Math.hypot(m.vx, m.vy);
+      totalSpd += spd;
+      speeds.push(spd);
+
+      ctx.beginPath(); ctx.arc(m.x, m.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${m.hue},80%,70%,0.9)`; ctx.fill();
+    });
+
+    const now = Date.now();
+    if (now - lastHit > 400) {
+      hitCount = Math.round(hitAccum * 2.5); hitAccum = 0; lastHit = now;
+    }
+
+    // Histogram
+    const avgSpd = totalSpd / N;
+    const bins = 12; const binW = (W - 20) / bins;
+    const maxSpd = 10;
+    const counts = new Array(bins).fill(0);
+    speeds.forEach(s => { const b = clamp(Math.floor(s / maxSpd * bins), 0, bins - 1); counts[b]++; });
+    const maxCount = Math.max(...counts, 1);
+
+    const histY = boxH + 4, histH = 36;
+    counts.forEach((c, i) => {
+      const fillH = (c / maxCount) * histH;
+      const alpha = 0.35 + (i / bins) * 0.5;
+      ctx.fillStyle = `rgba(124,58,237,${alpha})`;
+      ctx.fillRect(10 + i * binW, histY + histH - fillH, binW - 2, fillH);
+    });
+    ctx.fillStyle = 'rgba(224,234,248,0.35)'; ctx.font = '9px Inter,sans-serif';
+    ctx.textAlign = 'left'; ctx.fillText('Speed distribution →', 10, histY - 2);
+
+    gasAvgEl.textContent = avgSpd.toFixed(2) + ' u/s';
+    gasHitsEl.textContent = hitCount;
+    gasPressEl.textContent = (hitCount * avgSpd * 0.01).toFixed(1) + ' Pa';
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); molecules = []; });
+  tempSlider.addEventListener('input', () => { molecules = []; });
+  countSlider.addEventListener('input', () => { molecules = []; });
+  resize(); draw();
+})();
+
+/* ─────────────────────────────────────────────────────────
+   FEYNMAN STEPS INTERACTIVE
+───────────────────────────────────────────────────────── */
+(function () {
+  const steps = document.querySelectorAll('.feynman-step-card');
+  const detail = document.getElementById('feynmanDetail');
+  const details = [
+    `<strong>Step 1: Guess (Form a Hypothesis)</strong><br><br>
+    Feynman called this a "guess" deliberately — to cut through the pretense that scientists arrive
+    at ideas through pure logic. Every scientific theory begins with imagination. Einstein imagined
+    riding a beam of light. Darwin imagined a common ancestor. Newton guessed that the force pulling
+    an apple also holds the moon. The guess has to be specific enough that you can test it. A guess
+    that can explain anything explains nothing.`,
+
+    `<strong>Step 2: Compute the Consequences</strong><br><br>
+    Once you have a hypothesis, you ask: if this were true, what would we observe? You use mathematics
+    to follow the logic of your guess all the way to predictions. "If atoms repel when compressed and
+    attract when stretched, then gases under pressure should behave like this, and liquids should have
+    surface tension like that." The math is not the guess — it's what your guess implies.`,
+
+    `<strong>Step 3: Compare with Experiment</strong><br><br>
+    This is where imagination meets reality. You run an experiment or make an observation, and you
+    check: does the world behave the way your guess predicted? Not approximately — precisely. This is
+    why measurement matters. "Nature cannot be fooled," as Feynman said after the Challenger disaster.
+    The experiment is the final judge, not the scientist, not the institution, not the textbook.`,
+
+    `<strong>Step 4: If Wrong — Discard</strong><br><br>
+    This is the most important step and the one most people find hardest. If your beautiful, elegant,
+    logically perfect theory disagrees with experiment — it's wrong. Period. Not "probably wrong" or
+    "wrong in edge cases." Wrong. Throw it out and guess again. Feynman considered this willingness
+    to discard beloved theories the core virtue of science — and the hardest one to practice.`
+  ];
+
+  steps.forEach(card => {
+    card.addEventListener('click', () => {
+      steps.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      detail.innerHTML = details[Number(card.dataset.step)];
+    });
+  });
+})();
+</script>
+</body>
+</html>

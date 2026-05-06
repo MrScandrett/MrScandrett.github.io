@@ -1,0 +1,832 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maglev Train Engineering · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Engineering Lesson 06 — tune a magnetic levitation train by balancing lift, air gap, payload, stability, and linear motor thrust." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    body.maglev-page {
+      font-family: "Inter", system-ui, sans-serif;
+      color: #10202f;
+      background:
+        radial-gradient(circle at 14% 12%, rgba(46, 204, 189, 0.18), transparent 28%),
+        radial-gradient(circle at 88% 18%, rgba(255, 201, 71, 0.18), transparent 26%),
+        linear-gradient(180deg, #f4fbff 0%, #eaf2f8 100%);
+    }
+
+    .maglev-page .site-header,
+    .maglev-page .site-footer {
+      background: rgba(245, 250, 254, 0.84);
+      backdrop-filter: blur(18px);
+    }
+
+    .maglev-shell {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .maglev-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .maglev-card,
+    .maglev-hero-copy,
+    .maglev-mission,
+    .maglev-lab {
+      border-radius: 24px;
+      border: 1px solid rgba(184, 203, 216, 0.92);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(246, 250, 252, 0.96));
+      box-shadow: 0 18px 42px rgba(14, 31, 46, 0.08);
+      padding: 1.25rem;
+    }
+
+    .maglev-hero-copy {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(16, 124, 145, 0.12), transparent 46%),
+        radial-gradient(circle at 86% 16%, rgba(255, 201, 71, 0.18), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 252, 0.96));
+    }
+
+    .maglev-eyebrow,
+    .maglev-kicker {
+      margin: 0 0 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #5d7183;
+    }
+
+    .maglev-hero-copy h1 {
+      margin: 0;
+      max-width: 11ch;
+      font-size: clamp(2rem, 4vw, 3.35rem);
+      line-height: 1.03;
+      letter-spacing: -0.04em;
+      color: #10202f;
+    }
+
+    .maglev-lede,
+    .maglev-card p,
+    .maglev-mission p,
+    .maglev-stage-note,
+    .maglev-tip small,
+    .maglev-step small,
+    .maglev-force small,
+    .maglev-theory li {
+      color: #486174;
+      line-height: 1.64;
+    }
+
+    .maglev-lede {
+      margin: 0.9rem 0 0;
+      max-width: 66ch;
+      font-size: 1.02rem;
+    }
+
+    .maglev-meta,
+    .maglev-dashboard,
+    .maglev-principles,
+    .maglev-steps,
+    .maglev-tips {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .maglev-meta {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-top: 1rem;
+    }
+
+    .maglev-meta span,
+    .maglev-status,
+    .maglev-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.8rem;
+      padding: 0.28rem 0.68rem;
+      border-radius: 999px;
+      border: 1px solid rgba(130, 158, 178, 0.32);
+      background: rgba(240, 248, 251, 0.92);
+      color: #24536b;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .maglev-mission {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+      background:
+        linear-gradient(140deg, rgba(16, 124, 145, 0.12), transparent 45%),
+        linear-gradient(180deg, rgba(248, 252, 254, 0.99), rgba(243, 248, 251, 0.96));
+    }
+
+    .maglev-mission-grid,
+    .maglev-principles,
+    .maglev-dashboard,
+    .maglev-steps,
+    .maglev-tips {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .maglev-stat,
+    .maglev-force,
+    .maglev-step,
+    .maglev-tip {
+      border-radius: 18px;
+      border: 1px solid rgba(169, 191, 207, 0.65);
+      background: rgba(248, 252, 254, 0.88);
+      padding: 0.9rem;
+    }
+
+    .maglev-stat strong,
+    .maglev-force strong,
+    .maglev-step strong,
+    .maglev-tip strong {
+      display: block;
+      color: #10202f;
+      margin-bottom: 0.3rem;
+    }
+
+    .maglev-stat span,
+    .maglev-force span {
+      display: block;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #0a7884;
+      margin-bottom: 0.25rem;
+    }
+
+    .maglev-lab-head {
+      display: flex;
+      gap: 1rem;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 1rem;
+    }
+
+    .maglev-lab-head h2,
+    .maglev-card h2 {
+      margin: 0;
+      font-size: clamp(1.35rem, 2vw, 2rem);
+      line-height: 1.12;
+      color: #10202f;
+      letter-spacing: -0.02em;
+    }
+
+    .maglev-lab-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(310px, 0.65fr);
+      gap: 1rem;
+    }
+
+    .maglev-stage {
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(140, 164, 181, 0.6);
+      background: #0c1a27;
+    }
+
+    .maglev-stage canvas {
+      display: block;
+      width: 100%;
+      height: 430px;
+    }
+
+    .maglev-stage-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin: 0;
+      padding: 0.9rem 1rem;
+      background: rgba(247, 251, 253, 0.96);
+      border-top: 1px solid rgba(169, 191, 207, 0.65);
+    }
+
+    .maglev-control-stack {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .maglev-control {
+      border-radius: 18px;
+      border: 1px solid rgba(169, 191, 207, 0.7);
+      background: rgba(248, 252, 254, 0.92);
+      padding: 0.9rem;
+    }
+
+    .maglev-control label {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.45rem;
+      color: #334b60;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .maglev-control input[type="range"] {
+      width: 100%;
+      accent-color: #0a7884;
+    }
+
+    .maglev-value,
+    .maglev-mono {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-weight: 800;
+      color: #0a7884;
+    }
+
+    .maglev-control p {
+      margin: 0.45rem 0 0;
+      color: #60788b;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .maglev-gauge {
+      display: grid;
+      gap: 0.35rem;
+      border-radius: 16px;
+      border: 1px solid rgba(169, 191, 207, 0.7);
+      background: rgba(248, 252, 254, 0.92);
+      padding: 0.85rem;
+    }
+
+    .maglev-gauge-head {
+      display: flex;
+      justify-content: space-between;
+      color: #334b60;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .maglev-gauge-track {
+      height: 0.6rem;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(188, 204, 216, 0.46);
+    }
+
+    .maglev-gauge-fill {
+      width: 50%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2ec4b6, #ffd166);
+      transition: width 0.18s ease;
+    }
+
+    .maglev-button {
+      border: 0;
+      border-radius: 16px;
+      padding: 0.9rem 1rem;
+      color: #071822;
+      background: linear-gradient(135deg, #ffd166, #2ec4b6);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 12px 28px rgba(10, 120, 132, 0.22);
+    }
+
+    .maglev-button:hover,
+    .maglev-button:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .maglev-theory {
+      margin: 0.6rem 0 0;
+      padding-left: 1.1rem;
+    }
+
+    .maglev-card p {
+      margin-bottom: 0;
+    }
+
+    .maglev-principles,
+    .maglev-dashboard,
+    .maglev-steps,
+    .maglev-tips {
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 980px) {
+      .maglev-hero,
+      .maglev-lab-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .maglev-meta,
+      .maglev-mission-grid,
+      .maglev-principles,
+      .maglev-dashboard,
+      .maglev-steps,
+      .maglev-tips {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .maglev-shell {
+        width: min(100% - 1rem, 1180px);
+      }
+
+      .maglev-card,
+      .maglev-hero-copy,
+      .maglev-mission,
+      .maglev-lab {
+        border-radius: 18px;
+        padding: 1rem;
+      }
+
+      .maglev-meta,
+      .maglev-mission-grid,
+      .maglev-principles,
+      .maglev-dashboard,
+      .maglev-steps,
+      .maglev-tips {
+        grid-template-columns: 1fr;
+      }
+
+      .maglev-lab-head,
+      .maglev-stage-note {
+        display: grid;
+      }
+
+      .maglev-stage canvas {
+        height: 360px;
+      }
+    }
+  </style>
+</head>
+<body class="maglev-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="maglev-shell">
+    <section class="maglev-hero">
+      <article class="maglev-hero-copy">
+        <p class="maglev-eyebrow">Engineering · Lesson 06</p>
+        <h1>Maglev Train Engineering</h1>
+        <p class="maglev-lede">Maglev trains replace wheel friction with carefully controlled magnetic forces. In this lesson, you will balance lift magnets, payload, air gap, and propulsion so a train floats smoothly above its guideway without scraping or bouncing out of control.</p>
+        <div class="maglev-meta">
+          <span>Levitation</span>
+          <span>Electromagnets</span>
+          <span>Linear motors</span>
+          <span>Control loops</span>
+        </div>
+        <p><a href="../steam-lessons.html#module-engineering">&larr; Back to Engineering</a></p>
+      </article>
+
+      <aside class="maglev-mission" aria-label="Maglev engineering mission">
+        <div>
+          <p class="maglev-kicker">Mission brief</p>
+          <h2>Keep the train floating</h2>
+          <p>Your prototype must hold a narrow air gap above the track. Too little lift and it scrapes. Too much lift and it oscillates. The engineering win is a stable, efficient hover with enough thrust to move passengers.</p>
+        </div>
+        <div class="maglev-mission-grid">
+          <div class="maglev-stat">
+            <strong>Target gap</strong>
+            <span>10 cm</span>
+            <small>The sweet spot between contact and unstable lift.</small>
+          </div>
+          <div class="maglev-stat">
+            <strong>System type</strong>
+            <span>EMS</span>
+            <small>Electromagnetic suspension attracts the vehicle toward the guideway.</small>
+          </div>
+          <div class="maglev-stat">
+            <strong>Main risk</strong>
+            <span>Control</span>
+            <small>Magnetic force changes quickly as distance changes.</small>
+          </div>
+          <div class="maglev-stat">
+            <strong>Goal</strong>
+            <span>Stable</span>
+            <small>Float, guide, and propel without wheel contact.</small>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="maglev-card">
+      <h2>Why maglev is an engineering problem</h2>
+      <p>A maglev train is not just a train with magnets taped underneath. It is a full system: lift magnets support the vehicle, guide magnets keep it centered, linear motors push it forward, sensors measure the gap, and feedback controls adjust current many times per second. The hardest part is not making magnets strong. The hardest part is making the forces predictable and stable.</p>
+      <div class="maglev-principles">
+        <article class="maglev-tip">
+          <strong>Levitation</strong>
+          <small>Magnetic force supports the train so wheels do not carry the load during high-speed travel.</small>
+        </article>
+        <article class="maglev-tip">
+          <strong>Guidance</strong>
+          <small>Side magnets help keep the train centered so the vehicle does not rub against the guideway.</small>
+        </article>
+        <article class="maglev-tip">
+          <strong>Propulsion</strong>
+          <small>A linear motor creates a moving magnetic field that pulls or pushes the train along the track.</small>
+        </article>
+        <article class="maglev-tip">
+          <strong>Feedback</strong>
+          <small>Sensors and controllers constantly adjust magnet current to hold a safe air gap.</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="maglev-lab">
+      <div class="maglev-lab-head">
+        <div>
+          <p class="maglev-kicker">Interactive lab</p>
+          <h2>Magnetic Suspension Tuner</h2>
+          <p class="maglev-lede">Tune the magnet current, payload, air gap target, and propulsion power. Watch the train respond as lift, stability, efficiency, and speed change together.</p>
+        </div>
+        <span class="maglev-status" id="maglev-status">Prototype ready</span>
+      </div>
+
+      <div class="maglev-lab-grid">
+        <div class="maglev-stage">
+          <canvas id="maglevCanvas" width="900" height="470" aria-label="Interactive maglev train simulation"></canvas>
+          <p class="maglev-stage-note">
+            <span id="maglev-stage-copy">Start by increasing magnet current until the train floats near the target gap.</span>
+            <span class="maglev-pill" id="maglev-mode">Air gap low</span>
+          </p>
+        </div>
+
+        <div class="maglev-control-stack">
+          <section class="maglev-control">
+            <label for="magnet-current">Magnet current <span class="maglev-value" id="current-label">62%</span></label>
+            <input id="magnet-current" type="range" min="25" max="100" step="1" value="62" />
+            <p>More current increases lift, but it also uses more energy and can make the vehicle harder to stabilize.</p>
+          </section>
+
+          <section class="maglev-control">
+            <label for="train-payload">Passenger load <span class="maglev-value" id="payload-label">38 t</span></label>
+            <input id="train-payload" type="range" min="20" max="70" step="1" value="38" />
+            <p>Heavier trains need stronger lift and more careful control to maintain the same gap.</p>
+          </section>
+
+          <section class="maglev-control">
+            <label for="target-gap">Target air gap <span class="maglev-value" id="gap-label">10 cm</span></label>
+            <input id="target-gap" type="range" min="6" max="16" step="1" value="10" />
+            <p>A larger gap gives clearance, but magnetic lift gets harder to control as distance increases.</p>
+          </section>
+
+          <section class="maglev-control">
+            <label for="propulsion-power">Linear motor thrust <span class="maglev-value" id="thrust-label">58%</span></label>
+            <input id="propulsion-power" type="range" min="20" max="100" step="1" value="58" />
+            <p>Propulsion moves the train forward. Levitation must remain stable while the vehicle accelerates.</p>
+          </section>
+
+          <div class="maglev-gauge">
+            <div class="maglev-gauge-head">
+              <span>Lift margin</span>
+              <span class="maglev-mono" id="lift-value">0%</span>
+            </div>
+            <div class="maglev-gauge-track"><div class="maglev-gauge-fill" id="lift-bar"></div></div>
+          </div>
+
+          <div class="maglev-gauge">
+            <div class="maglev-gauge-head">
+              <span>Stability</span>
+              <span class="maglev-mono" id="stability-value">0%</span>
+            </div>
+            <div class="maglev-gauge-track"><div class="maglev-gauge-fill" id="stability-bar"></div></div>
+          </div>
+
+          <button class="maglev-button" id="test-run" type="button">Run stability test</button>
+        </div>
+      </div>
+
+      <div class="maglev-dashboard">
+        <article class="maglev-force">
+          <strong>Actual gap</strong>
+          <span id="actual-gap">8.6 cm</span>
+          <small>How high the train is floating above the guideway right now.</small>
+        </article>
+        <article class="maglev-force">
+          <strong>Energy draw</strong>
+          <span id="energy-draw">52%</span>
+          <small>Relative power demanded by lift and propulsion systems.</small>
+        </article>
+        <article class="maglev-force">
+          <strong>Estimated speed</strong>
+          <span id="train-speed">220 km/h</span>
+          <small>Thrust improves speed only when the levitation system is stable.</small>
+        </article>
+        <article class="maglev-force">
+          <strong>Engineering verdict</strong>
+          <span id="verdict">Retune</span>
+          <small id="verdict-copy">Lift is close, but the train is not centered on the target gap yet.</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="maglev-card">
+      <h2>The engineering design loop</h2>
+      <p>Maglev design is a perfect example of systems engineering because one adjustment changes many parts of the machine at once. Engineers do not tune one variable and walk away. They test, measure, rebalance, and repeat.</p>
+      <div class="maglev-steps">
+        <article class="maglev-step">
+          <strong>1. Define the gap</strong>
+          <small>Choose the clearance the train must hold above the guideway during normal travel.</small>
+        </article>
+        <article class="maglev-step">
+          <strong>2. Estimate the load</strong>
+          <small>Passenger mass, vehicle mass, and safety margins determine how much lift is required.</small>
+        </article>
+        <article class="maglev-step">
+          <strong>3. Tune the magnets</strong>
+          <small>Current must be high enough to levitate, but controlled enough to avoid oscillation.</small>
+        </article>
+        <article class="maglev-step">
+          <strong>4. Test the whole system</strong>
+          <small>Levitation, guidance, propulsion, braking, and sensors must work together at speed.</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="maglev-card">
+      <h2>Key takeaways</h2>
+      <ul class="maglev-theory">
+        <li><strong>Maglev reduces rolling friction,</strong> but it does not remove air resistance or the need for energy.</li>
+        <li><strong>Electromagnets are adjustable,</strong> which makes feedback control possible.</li>
+        <li><strong>Small air-gap errors matter</strong> because magnetic force changes strongly with distance.</li>
+        <li><strong>Fast transportation is a systems problem:</strong> structure, electricity, controls, safety, and human needs all have to agree.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+  </footer>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById('maglevCanvas');
+      const ctx = canvas.getContext('2d');
+      const currentInput = document.getElementById('magnet-current');
+      const payloadInput = document.getElementById('train-payload');
+      const gapInput = document.getElementById('target-gap');
+      const thrustInput = document.getElementById('propulsion-power');
+      const currentLabel = document.getElementById('current-label');
+      const payloadLabel = document.getElementById('payload-label');
+      const gapLabel = document.getElementById('gap-label');
+      const thrustLabel = document.getElementById('thrust-label');
+      const liftValue = document.getElementById('lift-value');
+      const stabilityValue = document.getElementById('stability-value');
+      const liftBar = document.getElementById('lift-bar');
+      const stabilityBar = document.getElementById('stability-bar');
+      const actualGap = document.getElementById('actual-gap');
+      const energyDraw = document.getElementById('energy-draw');
+      const trainSpeed = document.getElementById('train-speed');
+      const verdict = document.getElementById('verdict');
+      const verdictCopy = document.getElementById('verdict-copy');
+      const status = document.getElementById('maglev-status');
+      const mode = document.getElementById('maglev-mode');
+      const stageCopy = document.getElementById('maglev-stage-copy');
+      const testRun = document.getElementById('test-run');
+
+      let phase = 0;
+      let pulse = 0;
+      let testing = false;
+      let testTimer = 0;
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function getState() {
+        const current = Number(currentInput.value);
+        const payload = Number(payloadInput.value);
+        const target = Number(gapInput.value);
+        const thrust = Number(thrustInput.value);
+        const liftCapacity = current * 0.92 + thrust * 0.05;
+        const loadDemand = payload * 1.42 + target * 1.8;
+        const liftMargin = liftCapacity - loadDemand;
+        const rawGap = target + liftMargin * 0.11;
+        const gap = clamp(rawGap, 2, 21);
+        const gapError = Math.abs(gap - target);
+        const currentPenalty = Math.max(0, current - 82) * 0.9;
+        const stability = clamp(100 - gapError * 18 - currentPenalty - Math.max(0, payload - 55) * 0.45, 0, 100);
+        const liftScore = clamp(50 + liftMargin * 2.1, 0, 100);
+        const energy = clamp(current * 0.68 + thrust * 0.32 + payload * 0.18, 0, 100);
+        const speed = Math.round((120 + thrust * 4.2) * (0.55 + stability / 220));
+
+        let verdictText = 'Retune';
+        let statusText = 'Prototype needs tuning';
+        let modeText = 'Gap unstable';
+        let copy = 'The train is not holding the target gap yet. Adjust current or payload until the hover settles.';
+        if (gap < target - 1.4) {
+          verdictText = 'Too low';
+          statusText = 'Scrape risk';
+          modeText = 'Air gap low';
+          copy = 'Lift is too weak for the load. Increase magnet current or reduce payload.';
+        } else if (gap > target + 1.8) {
+          verdictText = 'Too high';
+          statusText = 'Oscillation risk';
+          modeText = 'Overlift';
+          copy = 'The train is floating above the target gap. Reduce current before the suspension oscillates.';
+        } else if (stability >= 78 && energy <= 78) {
+          verdictText = 'Stable';
+          statusText = 'Smooth levitation';
+          modeText = 'Stable hover';
+          copy = 'The lift magnets are holding a clean air gap while the linear motor can accelerate the train.';
+        } else if (stability >= 65) {
+          verdictText = 'Works';
+          statusText = 'Operational, inefficient';
+          modeText = 'High energy';
+          copy = 'The train floats, but it is drawing more energy than ideal. Try lowering current while keeping the gap steady.';
+        }
+
+        return { current, payload, target, thrust, gap, liftScore, stability, energy, speed, verdictText, statusText, modeText, copy };
+      }
+
+      function updateReadout() {
+        const s = getState();
+        currentLabel.textContent = s.current + '%';
+        payloadLabel.textContent = s.payload + ' t';
+        gapLabel.textContent = s.target + ' cm';
+        thrustLabel.textContent = s.thrust + '%';
+        liftValue.textContent = Math.round(s.liftScore) + '%';
+        stabilityValue.textContent = Math.round(s.stability) + '%';
+        liftBar.style.width = s.liftScore + '%';
+        stabilityBar.style.width = s.stability + '%';
+        actualGap.textContent = s.gap.toFixed(1) + ' cm';
+        energyDraw.textContent = Math.round(s.energy) + '%';
+        trainSpeed.textContent = s.speed + ' km/h';
+        verdict.textContent = s.verdictText;
+        verdictCopy.textContent = s.copy;
+        status.textContent = testing ? 'Running stability test' : s.statusText;
+        mode.textContent = s.modeText;
+        stageCopy.textContent = testing ? 'Sensors are sampling the air gap while the vehicle accelerates.' : s.copy;
+      }
+
+      function drawTrain(s) {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const sky = ctx.createLinearGradient(0, 0, 0, h);
+        sky.addColorStop(0, '#0b1d2b');
+        sky.addColorStop(0.58, '#102b3e');
+        sky.addColorStop(1, '#09151f');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, w, h);
+
+        for (let i = 0; i < 70; i += 1) {
+          const x = (i * 67 + phase * 18) % (w + 80) - 40;
+          const y = 30 + (i * 41) % 130;
+          ctx.fillStyle = i % 3 === 0 ? 'rgba(255, 209, 102, 0.22)' : 'rgba(180, 232, 238, 0.18)';
+          ctx.fillRect(x, y, 2, 2);
+        }
+
+        const guideY = 330;
+        ctx.fillStyle = '#172b37';
+        ctx.fillRect(90, guideY, w - 180, 34);
+        ctx.fillStyle = '#263d4b';
+        ctx.fillRect(110, guideY + 8, w - 220, 10);
+        ctx.fillStyle = '#0a1118';
+        ctx.fillRect(110, guideY + 25, w - 220, 8);
+
+        for (let x = 130; x < w - 130; x += 60) {
+          const glow = 0.35 + Math.sin(phase * 3 + x * 0.03) * 0.18;
+          ctx.fillStyle = 'rgba(46, 196, 182, ' + glow + ')';
+          ctx.fillRect(x, guideY + 10, 36, 8);
+          ctx.fillStyle = 'rgba(255, 209, 102, 0.35)';
+          ctx.fillRect(x + 18, guideY + 23, 26, 5);
+        }
+
+        const gapPixels = s.gap * 4.7;
+        const bobble = Math.sin(phase * 5) * (5 - s.stability / 25);
+        const trainY = guideY - 92 - gapPixels + bobble;
+        const trainX = 180;
+        const trainW = 540;
+        const trainH = 86;
+
+        const levGlow = ctx.createLinearGradient(0, trainY + trainH, 0, guideY);
+        levGlow.addColorStop(0, 'rgba(46, 196, 182, 0.48)');
+        levGlow.addColorStop(0.6, 'rgba(46, 196, 182, 0.18)');
+        levGlow.addColorStop(1, 'rgba(46, 196, 182, 0)');
+        ctx.fillStyle = levGlow;
+        ctx.beginPath();
+        ctx.ellipse(trainX + trainW / 2, guideY - gapPixels * 0.45, trainW * 0.42, Math.max(18, gapPixels * 0.72), 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#dbe8ef';
+        ctx.beginPath();
+        ctx.moveTo(trainX + 38, trainY + trainH);
+        ctx.quadraticCurveTo(trainX - 14, trainY + trainH * 0.72, trainX + 28, trainY + 24);
+        ctx.quadraticCurveTo(trainX + 95, trainY - 10, trainX + 210, trainY);
+        ctx.lineTo(trainX + trainW - 90, trainY);
+        ctx.quadraticCurveTo(trainX + trainW + 34, trainY + 18, trainX + trainW - 8, trainY + trainH);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#0a7884';
+        ctx.beginPath();
+        ctx.moveTo(trainX + 55, trainY + 29);
+        ctx.quadraticCurveTo(trainX + 130, trainY + 10, trainX + 235, trainY + 17);
+        ctx.lineTo(trainX + trainW - 80, trainY + 17);
+        ctx.quadraticCurveTo(trainX + trainW - 35, trainY + 24, trainX + trainW - 28, trainY + 42);
+        ctx.lineTo(trainX + 76, trainY + 42);
+        ctx.closePath();
+        ctx.fill();
+
+        for (let x = trainX + 125; x < trainX + trainW - 125; x += 58) {
+          ctx.fillStyle = '#b8edf0';
+          ctx.fillRect(x, trainY + 22, 34, 16);
+        }
+
+        ctx.fillStyle = '#ffcf5a';
+        const tailPulse = 0.32 + pulse * 0.36;
+        ctx.fillRect(trainX + 70, trainY + trainH - 16, trainW - 140, 8);
+        ctx.fillStyle = 'rgba(255, 209, 102, ' + tailPulse + ')';
+        ctx.fillRect(trainX + 86, trainY + trainH - 12, trainW - 172, 18);
+
+        const gapTop = trainY + trainH + 6;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(trainX + trainW + 34, gapTop);
+        ctx.lineTo(trainX + trainW + 34, guideY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 18px Inter, sans-serif';
+        ctx.fillText('Air gap: ' + s.gap.toFixed(1) + ' cm', trainX + trainW + 52, (gapTop + guideY) / 2);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.82)';
+        ctx.font = '700 15px Inter, sans-serif';
+        ctx.fillText('Lift magnets', 128, guideY + 58);
+        ctx.fillText('Linear motor guideway', 568, guideY + 58);
+      }
+
+      function tick() {
+        const s = getState();
+        phase += 0.018 + s.speed / 70000;
+        pulse = 0.5 + Math.sin(phase * 8) * 0.5;
+        if (testing) {
+          testTimer -= 1;
+          if (testTimer <= 0) {
+            testing = false;
+          }
+        }
+        drawTrain(s);
+        updateReadout();
+        requestAnimationFrame(tick);
+      }
+
+      [currentInput, payloadInput, gapInput, thrustInput].forEach(function (input) {
+        input.addEventListener('input', updateReadout);
+      });
+
+      testRun.addEventListener('click', function () {
+        testing = true;
+        testTimer = 180;
+        status.textContent = 'Running stability test';
+      });
+
+      updateReadout();
+      tick();
+    }());
+  </script>
+</body>
+</html>

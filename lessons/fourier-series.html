@@ -1,0 +1,1407 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fourier Series &amp; Transform · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Mathematics Lesson 13 — decompose any wave into pure sine tones. Build square waves, triangle waves, and sawtooth waves by adding harmonics. Explore the Fourier Transform and its applications in sound, MRI, and image compression." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── Page tokens ─────────────────────────────────────── */
+    .ll-viewport {
+      --ll-panel-w: 300px;
+      --ll-accent: #f97316;
+      --ll-tab-active: #f97316;
+      --ll-tab-active-bg: rgba(249,115,22,0.12);
+    }
+
+    .four-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .four-hero { padding: 0.4rem 0 1.25rem; }
+    .four-hero h1 {
+      max-width: 28ch; margin: 0;
+      font-size: clamp(1.6rem, 3.7vw, 2.45rem);
+      letter-spacing: -0.03em;
+    }
+    .four-hero-meta {
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.4rem 0.7rem; margin: 0.55rem 0 0;
+      font-size: 0.82rem; color: #64748b;
+    }
+    .four-hero-meta .dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.45;
+    }
+    .four-lede {
+      margin: 0.7rem 0 0; max-width: 70ch;
+      color: #3f4f65; font-size: 0.96rem; line-height: 1.62;
+    }
+    [data-theme="night"] .four-lede { color: rgba(245,245,247,0.72); }
+
+    /* ── Card ────────────────────────────────────────────── */
+    .four-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid #f97316;
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    [data-theme="night"] .four-card { background: var(--white, #2c2c2e); }
+    .four-card h2 { margin: 0 0 0.55rem; font-size: 1.18rem; letter-spacing: -0.02em; }
+    .four-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
+    .four-card p, .four-card li {
+      color: #3f4f65; font-size: 0.88rem; line-height: 1.65; margin: 0 0 0.6rem;
+    }
+    [data-theme="night"] .four-card p,
+    [data-theme="night"] .four-card li { color: rgba(245,245,247,0.72); }
+    .four-card p:last-child { margin-bottom: 0; }
+    .four-card ul { padding-left: 1.4rem; margin: 0; }
+    .four-card li { margin-bottom: 0.4rem; }
+
+    .four-mono {
+      font-family: "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Formula box ─────────────────────────────────────── */
+    .four-formula {
+      display: grid; gap: 0.35rem;
+      margin: 0.85rem 0; padding: 1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(249,115,22,0.25);
+      background: linear-gradient(135deg, rgba(249,115,22,0.07), rgba(245,158,11,0.07));
+      text-align: center;
+    }
+    .four-formula strong {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: clamp(0.9rem, 2.2vw, 1.25rem);
+      color: var(--text, #1d1d1f);
+      line-height: 1.5;
+    }
+    .four-formula span { color: #64748b; font-size: 0.8rem; }
+
+    /* ── Harmonic grid (info cards) ──────────────────────── */
+    .four-harmonic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 0.6rem; margin: 0.85rem 0;
+    }
+    .four-harmonic-item {
+      border-radius: 12px;
+      border: 1px solid var(--line, #d2d2d7);
+      background: rgba(249,115,22,0.04);
+      padding: 0.7rem 0.85rem;
+    }
+    [data-theme="night"] .four-harmonic-item { background: rgba(249,115,22,0.08); }
+    .four-harmonic-item .h-label {
+      font-size: 0.72rem; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #f97316; margin-bottom: 0.3rem;
+    }
+    .four-harmonic-item .h-name {
+      font-size: 0.92rem; font-weight: 700;
+      color: var(--text, #1d1d1f); margin-bottom: 0.2rem;
+    }
+    .four-harmonic-item .h-desc { font-size: 0.78rem; color: #64748b; line-height: 1.4; }
+    [data-theme="night"] .four-harmonic-item .h-name { color: #f8fafc; }
+
+    /* ── Applications strip ──────────────────────────────── */
+    .four-app-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.65rem; margin: 0.85rem 0;
+    }
+    .four-app-chip {
+      display: flex; flex-direction: column; gap: 0.3rem;
+      border-radius: 14px;
+      border: 1px solid var(--line, #d2d2d7);
+      background: var(--white, #fff);
+      padding: 0.8rem 1rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    [data-theme="night"] .four-app-chip { background: #2c2c2e; }
+    .four-app-chip:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .four-app-chip .app-icon { font-size: 1.5rem; line-height: 1; }
+    .four-app-chip .app-title { font-size: 0.9rem; font-weight: 700; color: var(--text, #1d1d1f); }
+    .four-app-chip .app-desc { font-size: 0.76rem; color: #64748b; line-height: 1.45; }
+    [data-theme="night"] .four-app-chip .app-title { color: #f8fafc; }
+
+    /* ══════════════════════════════════════════════════════
+       INTERACTIVE LAB
+    ══════════════════════════════════════════════════════ */
+    .four-lab {
+      border-radius: 22px;
+      border: 1px solid rgba(148,163,184,0.18);
+      background:
+        radial-gradient(120% 90% at 8% 0%, rgba(249,115,22,0.22), transparent 48%),
+        radial-gradient(110% 90% at 92% 100%, rgba(245,158,11,0.16), transparent 44%),
+        linear-gradient(180deg, #0b1220 0%, #08111a 100%);
+      color: #e2e8f0;
+      padding: 1.3rem 1.4rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 18px 44px rgba(3,7,18,0.3);
+    }
+
+    .four-lab-head {
+      display: flex; justify-content: space-between;
+      gap: 1rem; align-items: flex-start;
+      flex-wrap: wrap; margin-bottom: 1.1rem;
+    }
+    .four-lab-kicker {
+      font-size: 0.72rem; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: #fb923c; margin-bottom: 0.3rem;
+    }
+    .four-lab h2 {
+      margin: 0; font-size: clamp(1.2rem, 2.5vw, 1.75rem);
+      letter-spacing: -0.03em; color: #f8fafc;
+    }
+    .four-lab-lede {
+      margin: 0.4rem 0 0; max-width: 64ch;
+      color: rgba(226,232,240,0.78); font-size: 0.88rem; line-height: 1.55;
+    }
+
+    /* controls row */
+    .four-controls {
+      display: flex; flex-wrap: wrap; gap: 0.7rem 1.1rem;
+      align-items: flex-end; margin-bottom: 1rem;
+    }
+    .four-ctrl-group { display: flex; flex-direction: column; gap: 0.3rem; min-width: 140px; }
+    .four-ctrl-group label {
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: rgba(226,232,240,0.65);
+    }
+    .four-ctrl-group select,
+    .four-ctrl-group input[type="range"] {
+      accent-color: #f97316;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 8px;
+      color: #f8fafc; padding: 0.35rem 0.55rem;
+      font-size: 0.84rem; width: 100%; cursor: pointer;
+    }
+    .four-ctrl-group select option { background: #1e2a3a; }
+    .four-ctrl-group input[type="range"] {
+      padding: 0; height: 4px; background: transparent;
+    }
+    .four-ctrl-val {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.78rem; color: #fb923c; font-weight: 700;
+      min-width: 2.5ch; text-align: right; align-self: center;
+      margin-left: 0.3rem;
+    }
+
+    .four-range-row { display: flex; align-items: center; gap: 0.4rem; }
+
+    /* canvas area */
+    .four-canvas-area {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.9rem;
+    }
+    .four-canvas-block { display: flex; flex-direction: column; gap: 0.35rem; }
+    .four-canvas-label {
+      font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(226,232,240,0.5);
+    }
+    .four-canvas-wrap {
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(0,0,0,0.25);
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100%; }
+
+    /* harmonic toggles */
+    .four-harmonics-row {
+      display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.9rem;
+    }
+    .four-h-toggle {
+      display: flex; align-items: center; gap: 0.35rem;
+      border-radius: 8px;
+      border: 1px solid rgba(249,115,22,0.3);
+      background: rgba(249,115,22,0.08);
+      padding: 0.3rem 0.65rem;
+      cursor: pointer;
+      font-size: 0.78rem; font-weight: 700;
+      color: rgba(226,232,240,0.75);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+    .four-h-toggle.active {
+      background: rgba(249,115,22,0.22);
+      border-color: #f97316;
+      color: #fed7aa;
+    }
+    .four-h-toggle .h-num { color: #fb923c; font-variant-numeric: tabular-nums; }
+
+    /* spectrum bars */
+    .four-spectrum {
+      display: flex; align-items: flex-end; gap: 5px;
+      height: 72px; margin-top: 0.85rem;
+      padding: 0.5rem 0.8rem 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .four-spec-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
+    .four-spec-bar {
+      width: 100%; border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, #fb923c, #f97316);
+      transition: height 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      min-height: 3px;
+    }
+    .four-spec-bar.muted { background: rgba(255,255,255,0.12); }
+    .four-spec-label { font-size: 0.65rem; color: rgba(226,232,240,0.4); font-weight: 700; }
+
+    /* convergence HUD */
+    .four-hud {
+      display: flex; gap: 1.2rem; flex-wrap: wrap;
+      margin-top: 0.9rem; padding-top: 0.8rem;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .four-hud-stat { display: flex; flex-direction: column; gap: 0.15rem; }
+    .four-hud-stat .s-val {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 1.3rem; font-weight: 700; color: #fb923c; line-height: 1;
+    }
+    .four-hud-stat .s-lbl { font-size: 0.7rem; color: rgba(226,232,240,0.5); letter-spacing: 0.06em; }
+
+    /* ── Bio portrait ────────────────────────────────────── */
+    .four-bio-row {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 1.1rem; align-items: start;
+      margin: 0.85rem 0;
+    }
+    .four-bio-portrait {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, #f97316, #fbbf24);
+      display: grid; place-items: center;
+      font-size: 2.2rem; flex-shrink: 0;
+    }
+    .four-bio-text { display: grid; gap: 0.3rem; }
+    .four-bio-name { font-size: 1rem; font-weight: 800; color: var(--text, #1d1d1f); }
+    [data-theme="night"] .four-bio-name { color: #f8fafc; }
+    .four-bio-dates { font-size: 0.78rem; color: #f97316; font-weight: 700; }
+    .four-bio-desc { font-size: 0.86rem; color: #3f4f65; line-height: 1.6; }
+    [data-theme="night"] .four-bio-desc { color: rgba(245,245,247,0.7); }
+
+    /* ── Transform explainer ─────────────────────────────── */
+    .four-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem; margin: 0.85rem 0;
+    }
+    @media (max-width: 520px) { .four-compare { grid-template-columns: 1fr; } }
+    .four-compare-box {
+      border-radius: 12px;
+      border: 1px solid var(--line, #d2d2d7);
+      padding: 0.85rem 1rem;
+      background: var(--white, #fff);
+    }
+    [data-theme="night"] .four-compare-box { background: rgba(255,255,255,0.04); }
+    .four-compare-box .cb-label {
+      font-size: 0.71rem; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #f97316; margin-bottom: 0.4rem;
+    }
+    .four-compare-box .cb-title {
+      font-size: 0.95rem; font-weight: 800;
+      color: var(--text, #1d1d1f); margin-bottom: 0.4rem;
+    }
+    [data-theme="night"] .four-compare-box .cb-title { color: #f8fafc; }
+    .four-compare-box p { font-size: 0.82rem; color: #3f4f65; line-height: 1.55; margin: 0; }
+    [data-theme="night"] .four-compare-box p { color: rgba(245,245,247,0.65); }
+
+    /* ── Gibbs callout ───────────────────────────────────── */
+    .four-callout {
+      border-radius: 12px;
+      background: rgba(249,115,22,0.07);
+      border: 1px solid rgba(249,115,22,0.22);
+      padding: 0.85rem 1rem;
+      font-size: 0.86rem; color: #3f4f65; line-height: 1.6;
+      margin: 0.85rem 0;
+    }
+    [data-theme="night"] .four-callout { color: rgba(245,245,247,0.72); }
+    .four-callout strong { color: #f97316; }
+
+    /* ── Quiz section ────────────────────────────────────── */
+    .four-quiz { margin-bottom: 1rem; }
+    .four-quiz h2 { margin: 0 0 0.55rem; font-size: 1.18rem; letter-spacing: -0.02em; }
+    .four-q { margin-bottom: 1rem; }
+    .four-q p { font-size: 0.9rem; font-weight: 700; color: var(--text, #1d1d1f); margin: 0 0 0.5rem; }
+    [data-theme="night"] .four-q p { color: #f8fafc; }
+    .four-options { display: grid; gap: 0.4rem; }
+    .four-opt {
+      display: flex; align-items: center; gap: 0.55rem;
+      border-radius: 10px; border: 1px solid var(--line, #d2d2d7);
+      background: var(--white, #fff); padding: 0.55rem 0.85rem;
+      cursor: pointer; font-size: 0.86rem; color: #3f4f65;
+      transition: border-color 0.15s, background 0.15s;
+      text-align: left;
+    }
+    [data-theme="night"] .four-opt { background: #2c2c2e; color: rgba(245,245,247,0.72); }
+    .four-opt:hover { border-color: #f97316; background: rgba(249,115,22,0.05); }
+    .four-opt.correct { border-color: #22c55e; background: rgba(34,197,94,0.08); color: #15803d; }
+    .four-opt.wrong   { border-color: #ef4444; background: rgba(239,68,68,0.07); color: #b91c1c; }
+    [data-theme="night"] .four-opt.correct { color: #4ade80; }
+    [data-theme="night"] .four-opt.wrong   { color: #f87171; }
+    .four-opt .opt-letter {
+      width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+      background: rgba(249,115,22,0.12); color: #f97316;
+      font-size: 0.78rem; font-weight: 800;
+      display: grid; place-items: center;
+    }
+    .four-opt.correct .opt-letter { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .four-opt.wrong   .opt-letter { background: rgba(239,68,68,0.12); color: #ef4444; }
+    .four-q-feedback {
+      margin-top: 0.4rem; font-size: 0.82rem; font-weight: 700;
+      min-height: 1.1em; color: #64748b;
+    }
+    .four-q-feedback.ok  { color: #16a34a; }
+    .four-q-feedback.err { color: #dc2626; }
+
+    /* ── Timeline strip ──────────────────────────────────── */
+    .four-timeline { display: grid; gap: 0; margin: 0.85rem 0; }
+    .four-tl-item {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 0 0.9rem;
+      align-items: start;
+    }
+    .four-tl-item + .four-tl-item { margin-top: 0.7rem; }
+    .four-tl-year {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.78rem; font-weight: 700;
+      color: #f97316; text-align: right; padding-top: 0.1rem;
+    }
+    .four-tl-body { border-left: 2px solid rgba(249,115,22,0.25); padding: 0 0 0.6rem 0.85rem; }
+    .four-tl-body strong { font-size: 0.88rem; color: var(--text, #1d1d1f); display: block; margin-bottom: 0.15rem; }
+    [data-theme="night"] .four-tl-body strong { color: #f8fafc; }
+    .four-tl-body span { font-size: 0.8rem; color: #64748b; line-height: 1.5; }
+    /* ── Remaster shell overrides ───────────────────────── */
+    html { scroll-behavior: smooth; }
+    body.four-page {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(900px 420px at 12% 0%, rgba(20,184,166,0.16), transparent 52%),
+        radial-gradient(760px 380px at 88% 8%, rgba(249,115,22,0.16), transparent 48%),
+        linear-gradient(180deg, #f8fafc 0%, #eef6f6 100%);
+      color: var(--text, #1d1d1f);
+    }
+    .four-page .ll-viewport {
+      --ll-panel-w: 310px;
+      --ll-accent: #f97316;
+      --ll-tab-active: #f97316;
+      --ll-tab-active-bg: rgba(249,115,22,0.14);
+      --ll-drawer-h: 42vh;
+    }
+    .four-page .ll-sim {
+      background:
+        linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(15,23,42,0.035) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+    .four-page .ll-content {
+      width: min(1060px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.15rem 0 2.3rem;
+    }
+    .four-page .four-hero {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(15,23,42,0.1);
+      border-radius: 8px;
+      padding: clamp(1.1rem, 3vw, 2rem);
+      margin: 0 0 1rem;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.92), rgba(240,253,250,0.88)),
+        radial-gradient(circle at 75% 16%, rgba(249,115,22,0.15), transparent 32%);
+      box-shadow: 0 18px 46px rgba(15,23,42,0.08);
+    }
+    .four-page .four-hero::after {
+      content: "sin(x) + sin(3x)/3 + sin(5x)/5";
+      position: absolute;
+      right: clamp(0.8rem, 4vw, 2.2rem);
+      bottom: 0.7rem;
+      max-width: 24ch;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: clamp(0.72rem, 1.6vw, 0.95rem);
+      line-height: 1.5;
+      color: rgba(15,23,42,0.36);
+      pointer-events: none;
+    }
+    .four-page .four-hero h1 {
+      max-width: 18ch;
+      font-size: clamp(2rem, 5.1vw, 4rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+    }
+    .four-page .four-lede {
+      max-width: 62ch;
+      font-size: clamp(0.96rem, 1.7vw, 1.08rem);
+    }
+    .four-page .four-card,
+    .four-page .four-lab {
+      border-radius: 8px;
+    }
+    .four-page .four-card {
+      border-left-width: 0;
+      box-shadow: 0 14px 38px rgba(15,23,42,0.07);
+    }
+    .four-page .four-card h2,
+    .four-page .four-lab h2 {
+      letter-spacing: -0.035em;
+    }
+    .four-page .four-lab {
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.12);
+      background:
+        linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(148,163,184,0.08) 1px, transparent 1px),
+        radial-gradient(840px 300px at 8% 0%, rgba(45,212,191,0.22), transparent 48%),
+        radial-gradient(720px 320px at 92% 10%, rgba(249,115,22,0.22), transparent 52%),
+        linear-gradient(180deg, #0b1220 0%, #07111d 100%);
+      background-size: 34px 34px, 34px 34px, auto, auto, auto;
+    }
+    .four-page .four-canvas-wrap,
+    .four-page .four-harmonic-item,
+    .four-page .four-app-chip,
+    .four-page .four-compare-box,
+    .four-page .four-opt,
+    .four-page .four-formula,
+    .four-page .four-callout {
+      border-radius: 8px;
+    }
+    .four-page .four-app-chip {
+      min-height: 142px;
+    }
+    .four-page .four-formula {
+      text-align: left;
+    }
+    .four-page .four-panel-note {
+      margin: 0 0 0.65rem;
+      font-size: 0.78rem;
+      line-height: 1.55;
+      color: var(--text-body, #3f4f65);
+    }
+    .four-page .four-mini-list {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: var(--text-body, #3f4f65);
+      font-size: 0.78rem;
+      line-height: 1.55;
+    }
+    .four-page .four-mini-list li { margin-bottom: 0.35rem; }
+    .four-page .four-panel-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.55rem 0.65rem;
+      margin-bottom: 0.45rem;
+      border: 1px solid var(--ll-panel-border);
+      border-radius: 8px;
+      background: var(--surface-2);
+      color: var(--text-strong);
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .four-page .site-footer {
+      margin-top: 1rem;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.74);
+    }
+    @media (max-width: 760px) {
+      .four-page .four-hero::after { display: none; }
+      .four-page .four-compare { grid-template-columns: 1fr; }
+      .four-page .four-bio-row { grid-template-columns: 1fr; }
+      .four-page .four-tl-item { grid-template-columns: 54px 1fr; }
+      .four-page .four-hud { gap: 0.8rem; }
+      .four-page .four-hud-stat .s-val { font-size: 1.05rem; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam four-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content">
+      <div class="ll-content">
+
+        <!-- Hero -->
+        <section id="intro" class="four-hero">
+          <h1>Fourier Series &amp; the Fourier Transform</h1>
+          <div class="four-hero-meta">
+            <span>Mathematics</span>
+            <span class="dot"></span>
+            <span>Lesson 13</span>
+            <span class="dot"></span>
+            <span>Waves &amp; Analysis</span>
+            <span class="dot"></span>
+            <span>~30 min</span>
+          </div>
+          <p class="four-lede">
+            Every sound you hear, every image on your screen, and every MRI scan in a hospital is secretly made of sine waves. Joseph Fourier discovered that any repeating wave — no matter how complex — can be built by adding up simple sine and cosine waves. This idea transformed mathematics, physics, and engineering.
+          </p>
+        </section>
+
+        <!-- Biography -->
+        <section id="fourier-bio" class="four-card">
+          <h2>👨‍🔬 Who Was Joseph Fourier?</h2>
+
+          <div class="four-bio-row">
+            <div class="four-bio-portrait">🌡️</div>
+            <div class="four-bio-text">
+              <div class="four-bio-name">Jean-Baptiste Joseph Fourier</div>
+              <div class="four-bio-dates">1768 – 1830 · French Mathematician &amp; Physicist</div>
+              <div class="four-bio-desc">
+                Fourier was born to a tailor in Auxerre, France, and orphaned at age nine. He rose to become a professor, accompanied Napoleon to Egypt, and eventually became one of the most influential mathematicians who ever lived.
+              </div>
+            </div>
+          </div>
+
+          <div class="four-timeline">
+            <div class="four-tl-item">
+              <div class="four-tl-year">1807</div>
+              <div class="four-tl-body">
+                <strong>On the Propagation of Heat in Solid Bodies</strong>
+                <span>Fourier submits a groundbreaking paper to the French Academy of Sciences showing that heat flow can be described by trigonometric series. Reviewers Lagrange and Laplace are skeptical.</span>
+              </div>
+            </div>
+            <div class="four-tl-item">
+              <div class="four-tl-year">1822</div>
+              <div class="four-tl-body">
+                <strong>Théorie analytique de la chaleur</strong>
+                <span>After fifteen years of refinement, he publishes his masterwork — <em>The Analytical Theory of Heat</em>. It introduces the Fourier Series and reshapes mathematical physics forever.</span>
+              </div>
+            </div>
+            <div class="four-tl-item">
+              <div class="four-tl-year">1965</div>
+              <div class="four-tl-body">
+                <strong>The Fast Fourier Transform (FFT)</strong>
+                <span>Cooley &amp; Tukey publish an algorithm that computes Fourier transforms millions of times faster. It becomes arguably the most important numerical algorithm of the 20th century.</span>
+              </div>
+            </div>
+            <div class="four-tl-item">
+              <div class="four-tl-year">Today</div>
+              <div class="four-tl-body">
+                <strong>Everywhere</strong>
+                <span>Fourier's ideas are in your phone's audio codec, your WiFi signal, every JPEG photograph, and every CT scanner and MRI machine on Earth.</span>
+              </div>
+            </div>
+          </div>
+
+          <p>
+            Fourier's key insight started with a humble problem: <strong>how does heat spread through a metal bar?</strong> To solve it, he needed to describe an arbitrary temperature distribution, which led him to ask: can <em>any</em> function be written as a sum of sines and cosines? The answer — yes — launched a revolution in mathematics that we still live inside today.
+          </p>
+        </section>
+
+        <!-- Fourier Series explanation -->
+        <section id="series" class="four-card">
+          <h2>🔊 What Is a Fourier Series?</h2>
+          <p>
+            A <strong>Fourier Series</strong> expresses a <em>periodic</em> function as an infinite sum of sine and cosine waves — each at a different frequency and amplitude. Think of it as musical harmony: a complex chord is really just multiple pure tones sounding at once.
+          </p>
+
+          <div class="four-formula">
+            <strong>f(x) = a₀/2 + Σ [ aₙ cos(nx) + bₙ sin(nx) ]</strong>
+            <span>where aₙ and bₙ are computed from the shape of f(x) using integration</span>
+          </div>
+
+          <p>
+            The <strong>coefficients</strong> aₙ and bₙ tell you how much of each frequency is present. They're computed by multiplying the function by a sine or cosine and integrating — a process that acts like a "frequency detector."
+          </p>
+
+          <h3>Building a Square Wave</h3>
+          <p>
+            The classic demonstration is the square wave. A perfect square wave jumps instantly between +1 and −1 — the complete opposite of a smooth sine wave. Yet Fourier proved it can be built from sines alone:
+          </p>
+          <div class="four-formula">
+            <strong>square(x) = (4/π) · [ sin(x) + sin(3x)/3 + sin(5x)/5 + sin(7x)/7 + … ]</strong>
+            <span>only odd harmonics, amplitudes shrink as 1/n — more terms → sharper corners</span>
+          </div>
+          <p>
+            Each term adds one more "harmonic." The <strong>fundamental</strong> (n=1) sets the pitch. The <strong>3rd harmonic</strong> (n=3) sharpens the corners. The <strong>5th, 7th, 9th…</strong> each add more detail. With infinitely many terms, you get a perfect square wave.
+          </p>
+
+          <div class="four-harmonic-grid">
+            <div class="four-harmonic-item">
+              <div class="h-label">n = 1</div>
+              <div class="h-name">Fundamental</div>
+              <div class="h-desc">The base sine wave — sets the frequency of the wave.</div>
+            </div>
+            <div class="four-harmonic-item">
+              <div class="h-label">n = 3</div>
+              <div class="h-name">3rd Harmonic</div>
+              <div class="h-desc">3× the frequency, ⅓ the amplitude. Starts flattening the top.</div>
+            </div>
+            <div class="four-harmonic-item">
+              <div class="h-label">n = 5</div>
+              <div class="h-name">5th Harmonic</div>
+              <div class="h-desc">5× the frequency, ⅕ the amplitude. Corners sharpen further.</div>
+            </div>
+            <div class="four-harmonic-item">
+              <div class="h-label">n → ∞</div>
+              <div class="h-name">Infinite sum</div>
+              <div class="h-desc">Converges to a perfect square wave (except at the jump — see Gibbs below).</div>
+            </div>
+          </div>
+
+          <div class="four-callout">
+            <strong>The Gibbs Phenomenon:</strong> Near a sharp jump, the Fourier Series always overshoots by about 9%, no matter how many terms you add. This isn't a flaw — it's a fundamental mathematical property showing that sharp discontinuities require infinite bandwidth.
+          </div>
+        </section>
+
+        <!-- Interactive Lab -->
+        <section id="lab" class="four-lab">
+          <div class="four-lab-head">
+            <div>
+              <div class="four-lab-kicker">🎛️ Interactive Lab</div>
+              <h2>Waveform Builder</h2>
+              <p class="four-lab-lede">
+                Choose a target waveform, then watch as harmonics stack up to recreate it. Drag the slider to add more terms and see the Fourier Series converge in real time.
+              </p>
+            </div>
+          </div>
+
+          <div class="four-controls">
+            <div class="four-ctrl-group">
+              <label for="wave-select">Target Wave</label>
+              <select id="wave-select">
+                <option value="square">Square Wave</option>
+                <option value="triangle">Triangle Wave</option>
+                <option value="sawtooth">Sawtooth Wave</option>
+              </select>
+            </div>
+            <div class="four-ctrl-group">
+              <label>Harmonics</label>
+              <div class="four-range-row">
+                <input type="range" id="harmonics-slider" min="1" max="20" value="1" step="1" data-range-skin="native" />
+                <span class="four-ctrl-val" id="harmonics-val">1</span>
+              </div>
+            </div>
+            <div class="four-ctrl-group">
+              <label>Animation</label>
+              <div class="four-range-row">
+                <input type="range" id="speed-slider" min="0.5" max="3" value="1.5" step="0.1" data-range-skin="native" />
+                <span class="four-ctrl-val" id="speed-val">1.5×</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Canvas: Fourier components -->
+          <div class="four-canvas-area">
+            <div class="four-canvas-block">
+              <div class="four-canvas-label">Component Waves (each harmonic separately)</div>
+              <div class="four-canvas-wrap">
+                <canvas id="components-canvas" height="120"></canvas>
+              </div>
+            </div>
+            <div class="four-canvas-block">
+              <div class="four-canvas-label">Fourier Sum vs Target</div>
+              <div class="four-canvas-wrap">
+                <canvas id="sum-canvas" height="160"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Frequency spectrum -->
+          <div class="four-spectrum" id="spectrum-display"></div>
+
+          <!-- Stats -->
+          <div class="four-hud">
+            <div class="four-hud-stat">
+              <span class="s-val" id="hud-harmonics">1</span>
+              <span class="s-lbl">HARMONICS ACTIVE</span>
+            </div>
+            <div class="four-hud-stat">
+              <span class="s-val" id="hud-error">—</span>
+              <span class="s-lbl">APPROX. ERROR %</span>
+            </div>
+            <div class="four-hud-stat">
+              <span class="s-val" id="hud-wave">Square</span>
+              <span class="s-lbl">TARGET WAVE</span>
+            </div>
+            <div class="four-hud-stat">
+              <span class="s-val four-mono" id="hud-formula">sin(x)</span>
+              <span class="s-lbl">CURRENT SERIES</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Fourier Transform -->
+        <section id="transform" class="four-card">
+          <h2>∫ From Series to Transform</h2>
+          <p>
+            The Fourier Series works for <em>periodic</em> functions (ones that repeat forever). But what about a single drum hit, a spoken word, or the EKG of one heartbeat? For these, we need the <strong>Fourier Transform</strong>.
+          </p>
+
+          <div class="four-compare">
+            <div class="four-compare-box">
+              <div class="cb-label">Fourier Series</div>
+              <div class="cb-title">Periodic Functions</div>
+              <p>Decomposes a repeating wave into a discrete set of frequencies — only specific harmonics (n=1, 2, 3…) are present. Input: a periodic function. Output: a list of amplitudes and phases.</p>
+            </div>
+            <div class="four-compare-box">
+              <div class="cb-label">Fourier Transform</div>
+              <div class="cb-title">Any Function</div>
+              <p>Decomposes any signal — even a one-time event — into a continuous frequency spectrum. Input: any function of time. Output: a continuous function of frequency.</p>
+            </div>
+          </div>
+
+          <div class="four-formula">
+            <strong>F̂(ξ) = ∫₋∞^∞ f(x) · e^(−2πiξx) dx</strong>
+            <span>The transform: multiply f(x) by a spinning complex exponential and integrate over all time</span>
+          </div>
+
+          <p>
+            The key identity <strong>e<sup>iθ</sup> = cos(θ) + i·sin(θ)</strong> (Euler's formula) shows that the complex exponential is really just a sine and cosine together. The Fourier Transform is essentially asking: "for each possible frequency ξ, how much of that frequency is in my signal?"
+          </p>
+
+          <h3>Time Domain vs Frequency Domain</h3>
+          <p>
+            The Fourier Transform lets us switch between two equivalent views of the same signal:
+          </p>
+          <ul>
+            <li><strong>Time domain</strong> — the signal as it changes over time (what you see on an oscilloscope).</li>
+            <li><strong>Frequency domain</strong> — the signal broken into its component frequencies (what you see on an equalizer).</li>
+          </ul>
+          <p>
+            Neither view is more "real" than the other — they contain identical information, just arranged differently. Many problems that are complicated in the time domain become simple in the frequency domain (and vice versa).
+          </p>
+
+          <div class="four-callout">
+            <strong>The Fast Fourier Transform (FFT):</strong> Computing a Fourier Transform directly requires O(n²) operations. In 1965, Cooley and Tukey published an algorithm that does it in O(n log n) — making it feasible for real-time audio, video, and telecommunications. The FFT is why your phone can process voice, compress photos, and stream music simultaneously.
+          </div>
+        </section>
+
+        <!-- Applications -->
+        <section id="applications" class="four-card">
+          <h2>🌍 Real-World Applications</h2>
+          <p>
+            Fourier's mathematics is everywhere in modern technology. Here are some of the most important applications:
+          </p>
+
+          <div class="four-app-strip">
+            <div class="four-app-chip">
+              <span class="app-icon">🎵</span>
+              <div class="app-title">Audio & Music</div>
+              <div class="app-desc">MP3 compression uses the Discrete Cosine Transform (a relative of Fourier's) to store only the perceptually important frequencies, cutting file size by 90%.</div>
+            </div>
+            <div class="four-app-chip">
+              <span class="app-icon">🏥</span>
+              <div class="app-title">MRI Scanning</div>
+              <div class="app-desc">MRI machines record signals in "k-space" (frequency domain). An inverse Fourier Transform reconstructs the actual anatomical image that doctors read.</div>
+            </div>
+            <div class="four-app-chip">
+              <span class="app-icon">🖼️</span>
+              <div class="app-title">JPEG Images</div>
+              <div class="app-desc">Every JPEG photograph is split into 8×8 pixel blocks and Fourier-transformed. Only the dominant frequencies are saved, discarding imperceptible detail.</div>
+            </div>
+            <div class="four-app-chip">
+              <span class="app-icon">📡</span>
+              <div class="app-title">WiFi & 5G</div>
+              <div class="app-desc">OFDM (Orthogonal Frequency Division Multiplexing) uses the FFT to pack data into hundreds of overlapping frequency carriers, maximizing bandwidth efficiency.</div>
+            </div>
+            <div class="four-app-chip">
+              <span class="app-icon">🌍</span>
+              <div class="app-title">Seismology</div>
+              <div class="app-desc">Geologists decompose earthquake seismograms into frequencies to identify fault types, locate epicenters, and probe Earth's internal structure.</div>
+            </div>
+            <div class="four-app-chip">
+              <span class="app-icon">🔭</span>
+              <div class="app-title">Astronomy</div>
+              <div class="app-desc">Radio telescopes use Fourier transforms to reconstruct images of distant galaxies from interference patterns recorded across arrays of antennas.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Quiz -->
+        <section id="quiz" class="four-card four-quiz">
+          <h2>✅ Quick Quiz</h2>
+
+          <div class="four-q" id="q1">
+            <p>1. What was the original problem that led Fourier to develop his series?</p>
+            <div class="four-options">
+              <button class="four-opt" data-q="q1" data-correct="false">
+                <span class="opt-letter">A</span> Predicting planetary orbits
+              </button>
+              <button class="four-opt" data-q="q1" data-correct="true">
+                <span class="opt-letter">B</span> Modeling heat flow through solid objects
+              </button>
+              <button class="four-opt" data-q="q1" data-correct="false">
+                <span class="opt-letter">C</span> Designing musical instruments
+              </button>
+              <button class="four-opt" data-q="q1" data-correct="false">
+                <span class="opt-letter">D</span> Compressing telegraph signals
+              </button>
+            </div>
+            <div class="four-q-feedback" id="fb-q1"></div>
+          </div>
+
+          <div class="four-q" id="q2">
+            <p>2. A square wave's Fourier Series uses only which harmonics?</p>
+            <div class="four-options">
+              <button class="four-opt" data-q="q2" data-correct="false">
+                <span class="opt-letter">A</span> Even harmonics (2, 4, 6, 8…)
+              </button>
+              <button class="four-opt" data-q="q2" data-correct="true">
+                <span class="opt-letter">B</span> Odd harmonics (1, 3, 5, 7…)
+              </button>
+              <button class="four-opt" data-q="q2" data-correct="false">
+                <span class="opt-letter">C</span> Prime-numbered harmonics only
+              </button>
+              <button class="four-opt" data-q="q2" data-correct="false">
+                <span class="opt-letter">D</span> All harmonics equally
+              </button>
+            </div>
+            <div class="four-q-feedback" id="fb-q2"></div>
+          </div>
+
+          <div class="four-q" id="q3">
+            <p>3. What is the key difference between a Fourier Series and a Fourier Transform?</p>
+            <div class="four-options">
+              <button class="four-opt" data-q="q3" data-correct="false">
+                <span class="opt-letter">A</span> The Transform uses cosines; the Series uses sines
+              </button>
+              <button class="four-opt" data-q="q3" data-correct="false">
+                <span class="opt-letter">B</span> The Series works for 2D signals; the Transform for 1D
+              </button>
+              <button class="four-opt" data-q="q3" data-correct="true">
+                <span class="opt-letter">C</span> The Series applies to periodic functions; the Transform applies to any signal
+              </button>
+              <button class="four-opt" data-q="q3" data-correct="false">
+                <span class="opt-letter">D</span> They are the same thing, different names
+              </button>
+            </div>
+            <div class="four-q-feedback" id="fb-q3"></div>
+          </div>
+
+          <div class="four-q" id="q4">
+            <p>4. Which example is least likely to require a Fourier Transform?</p>
+            <div class="four-options">
+              <button class="four-opt" data-q="q4" data-correct="false">
+                <span class="opt-letter">A</span> JPEG image compression
+              </button>
+              <button class="four-opt" data-q="q4" data-correct="false">
+                <span class="opt-letter">B</span> MRI brain scanning
+              </button>
+              <button class="four-opt" data-q="q4" data-correct="true">
+                <span class="opt-letter">C</span> Opening a door with a simple hinge
+              </button>
+              <button class="four-opt" data-q="q4" data-correct="false">
+                <span class="opt-letter">D</span> MP3 audio compression
+              </button>
+            </div>
+            <div class="four-q-feedback" id="fb-q4"></div>
+          </div>
+
+          <div class="four-q" id="q5">
+            <p>5. The Gibbs phenomenon refers to what behavior near a sharp discontinuity?</p>
+            <div class="four-options">
+              <button class="four-opt" data-q="q5" data-correct="false">
+                <span class="opt-letter">A</span> The series diverges completely and becomes meaningless
+              </button>
+              <button class="four-opt" data-q="q5" data-correct="false">
+                <span class="opt-letter">B</span> The series requires exponentially more terms to converge
+              </button>
+              <button class="four-opt" data-q="q5" data-correct="true">
+                <span class="opt-letter">C</span> The partial sum always overshoots the true value by about 9%
+              </button>
+              <button class="four-opt" data-q="q5" data-correct="false">
+                <span class="opt-letter">D</span> Even harmonics cancel out at the discontinuity
+              </button>
+            </div>
+            <div class="four-q-feedback" id="fb-q5"></div>
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </div><!-- /.ll-content -->
+        </main>
+      </div><!-- /.ll-sim -->
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="four-pane-guide">Guide</button>
+            <button class="ll-tab" aria-selected="false" data-pane="four-pane-map">Map</button>
+            <button class="ll-tab" aria-selected="false" data-pane="four-pane-links">Links</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="four-pane-guide">
+            <span class="ll-label">Lesson Focus</span>
+            <p class="four-panel-note">A complex signal can be analyzed as a stack of simple circular motions. The lab makes that stack visible: harmonics build shape, and the spectrum shows what each frequency contributes.</p>
+
+            <span class="ll-label">Key Facts</span>
+            <div class="ll-readouts">
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Mathematician</span>
+                <span class="ll-readout-val">Fourier</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Published</span>
+                <span class="ll-readout-val">1822</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Core Idea</span>
+                <span class="ll-readout-val">Waves</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Method</span>
+                <span class="ll-readout-val">FFT</span>
+              </div>
+            </div>
+
+            <span class="ll-label">Watch For</span>
+            <ul class="four-mini-list">
+              <li>Square waves need odd harmonics with amplitudes 1/n.</li>
+              <li>Triangle waves converge faster because amplitudes shrink as 1/n².</li>
+              <li>Sharp corners mean high-frequency detail.</li>
+            </ul>
+          </div>
+
+          <div class="ll-pane" id="four-pane-map">
+            <span class="ll-label">On This Page</span>
+            <a class="four-panel-link" href="#intro">Introduction <span>01</span></a>
+            <a class="four-panel-link" href="#fourier-bio">Joseph Fourier <span>02</span></a>
+            <a class="four-panel-link" href="#series">Fourier Series <span>03</span></a>
+            <a class="four-panel-link" href="#lab">Interactive Lab <span>04</span></a>
+            <a class="four-panel-link" href="#transform">Fourier Transform <span>05</span></a>
+            <a class="four-panel-link" href="#applications">Applications <span>06</span></a>
+            <a class="four-panel-link" href="#quiz">Quick Quiz <span>07</span></a>
+          </div>
+
+          <div class="ll-pane" id="four-pane-links">
+            <span class="ll-label">Related Lessons</span>
+            <a class="four-panel-link" href="digital-signal-processing.html">Digital Signal Processing <span>DSP</span></a>
+            <a class="four-panel-link" href="pi.html">Pi &amp; Circles <span>π</span></a>
+            <a class="four-panel-link" href="graphing-calculator.html">Graphing Calculator <span>f(x)</span></a>
+            <hr class="ll-hr" />
+            <span class="ll-label">Exit</span>
+            <a class="four-panel-link" href="../steam-lessons.html">All STEAM Lessons <span>↗</span></a>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span>
+        <span class="ll-open-dot"></span>
+        <span class="ll-open-dot"></span>
+      </button>
+    </div><!-- /.ll-stage -->
+  </div><!-- /.ll-viewport -->
+
+  <!-- ── Theme toggle ─────────────────────────────────── -->
+  <script>
+    (function() {
+      var btn = document.querySelector('.theme-toggle');
+      var icon = btn ? btn.querySelector('.theme-icon') : null;
+      var saved = localStorage.getItem('theme') || 'light';
+      document.body.setAttribute('data-theme', saved);
+      if (icon) icon.textContent = saved === 'night' ? '☀' : '☽';
+      if (btn) btn.addEventListener('click', function() {
+        var t = document.body.getAttribute('data-theme') === 'night' ? 'light' : 'night';
+        document.body.setAttribute('data-theme', t);
+        localStorage.setItem('theme', t);
+        if (icon) icon.textContent = t === 'night' ? '☀' : '☽';
+      });
+    })();
+  </script>
+
+  <!-- ── TOC scroll spy ───────────────────────────────── -->
+  <script>
+    (function() {
+      var links = document.querySelectorAll('.ll-toc-link');
+      var sections = [];
+      links.forEach(function(l) {
+        var id = l.getAttribute('href').replace('#', '');
+        var el = document.getElementById(id);
+        if (el) sections.push({ id: id, el: el, link: l });
+      });
+      function onScroll() {
+        var scroll = window.scrollY + 120;
+        var active = sections[0];
+        sections.forEach(function(s) { if (s.el.offsetTop <= scroll) active = s; });
+        links.forEach(function(l) { l.classList.remove('active'); });
+        if (active) active.link.classList.add('active');
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+    })();
+  </script>
+
+  <!-- ── Quiz logic ───────────────────────────────────── -->
+  <script>
+    (function() {
+      document.querySelectorAll('.four-opt').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var qId = btn.getAttribute('data-q');
+          var container = document.getElementById(qId);
+          if (!container || container.dataset.answered) return;
+          container.dataset.answered = '1';
+
+          var correct = btn.getAttribute('data-correct') === 'true';
+          var fb = document.getElementById('fb-' + qId);
+
+          container.querySelectorAll('.four-opt').forEach(function(b) {
+            b.disabled = true;
+            if (b.getAttribute('data-correct') === 'true') b.classList.add('correct');
+          });
+
+          if (!correct) {
+            btn.classList.add('wrong');
+            if (fb) { fb.textContent = '✗ Not quite — the highlighted answer is correct.'; fb.className = 'four-q-feedback err'; }
+          } else {
+            if (fb) { fb.textContent = '✓ Correct!'; fb.className = 'four-q-feedback ok'; }
+          }
+        });
+      });
+    })();
+  </script>
+
+  <!-- ── Fourier Lab ──────────────────────────────────── -->
+  <script>
+    (function() {
+      var waveSelect   = document.getElementById('wave-select');
+      var harmonicSlider = document.getElementById('harmonics-slider');
+      var harmonicVal  = document.getElementById('harmonics-val');
+      var speedSlider  = document.getElementById('speed-slider');
+      var speedVal     = document.getElementById('speed-val');
+      var compCanvas   = document.getElementById('components-canvas');
+      var sumCanvas    = document.getElementById('sum-canvas');
+      var specDisplay  = document.getElementById('spectrum-display');
+      var hudHarmonics = document.getElementById('hud-harmonics');
+      var hudError     = document.getElementById('hud-error');
+      var hudWave      = document.getElementById('hud-wave');
+      var hudFormula   = document.getElementById('hud-formula');
+
+      if (!compCanvas || !sumCanvas) return;
+
+      var compCtx = compCanvas.getContext('2d');
+      var sumCtx  = sumCanvas.getContext('2d');
+
+      var phase = 0;
+      var animId = null;
+      var maxH = 20; // max harmonics shown in spectrum
+
+      /* ── Wave functions ──────────────────────────────── */
+      // Returns the nth harmonic's amplitude and frequency for a given wave type.
+      // Square:   only odd, amplitude = 4/(π·n)
+      // Triangle: only odd, alternating sign, amplitude = 8/(π²·n²)
+      // Sawtooth: all harmonics, amplitude = 2/(π·n)  (alternating sign)
+      function waveCoeff(type, n) {
+        if (type === 'square') {
+          if (n % 2 === 0) return null;
+          return { freq: n, amp: 4 / (Math.PI * n), sign: 1 };
+        }
+        if (type === 'triangle') {
+          if (n % 2 === 0) return null;
+          var k = (n - 1) / 2;
+          return { freq: n, amp: 8 / (Math.PI * Math.PI * n * n), sign: Math.pow(-1, k) };
+        }
+        if (type === 'sawtooth') {
+          return { freq: n, amp: 2 / (Math.PI * n), sign: Math.pow(-1, n + 1) };
+        }
+        return null;
+      }
+
+      /* target waveform (ideal) */
+      function targetValue(type, x) {
+        if (type === 'square')   return x < Math.PI ? 1 : -1;
+        if (type === 'triangle') return (2 / Math.PI) * Math.asin(Math.sin(x));
+        if (type === 'sawtooth') {
+          var v = (x % (2 * Math.PI)) / (2 * Math.PI);
+          return 2 * v - 1;
+        }
+        return 0;
+      }
+
+      /* compute Fourier sum at x for up to nTerms */
+      function fourierSum(type, x, nTerms) {
+        var sum = 0;
+        var counted = 0;
+        for (var n = 1; counted < nTerms; n++) {
+          var c = waveCoeff(type, n);
+          if (c) {
+            sum += c.sign * c.amp * Math.sin(c.freq * x);
+            counted++;
+          }
+        }
+        return sum;
+      }
+
+      /* ── Canvas helpers ──────────────────────────────── */
+      function resizeCanvas(canvas, h) {
+        var dpr = window.devicePixelRatio || 1;
+        var w = canvas.parentElement.clientWidth;
+        if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+          canvas.width = w * dpr;
+          canvas.height = h * dpr;
+          canvas.getContext('2d').scale(dpr, dpr);
+          canvas.style.height = h + 'px';
+        }
+        return w;
+      }
+
+      function clearCanvas(ctx, canvas) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      /* night-aware colours */
+      function colors() {
+        var night = document.body.getAttribute('data-theme') === 'night';
+        return {
+          bg:      night ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,0)',
+          grid:    night ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+          axis:    night ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)',
+          target:  'rgba(255,255,255,0.22)',
+          sum:     '#f97316',
+          text:    night ? 'rgba(226,232,240,0.5)' : 'rgba(0,0,0,0.35)',
+        };
+      }
+
+      var HARMONIC_PALETTE = [
+        '#38bdf8','#818cf8','#34d399','#fb923c',
+        '#f472b6','#a78bfa','#facc15','#4ade80',
+        '#60a5fa','#f87171','#2dd4bf','#c084fc',
+        '#fbbf24','#86efac','#67e8f9','#e879f9',
+        '#94a3b8','#f9a8d4','#6ee7b7','#c4b5fd',
+      ];
+
+      /* ── Draw components canvas ──────────────────────── */
+      function drawComponents(type, nTerms, ph) {
+        var W = resizeCanvas(compCanvas, 120);
+        var H = 120;
+        var ctx = compCtx;
+        clearCanvas(ctx, compCanvas);
+        var c = colors();
+
+        // axes
+        ctx.strokeStyle = c.axis;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+
+        var pts = 300;
+        var counted = 0;
+        for (var n = 1; counted < nTerms; n++) {
+          var coeff = waveCoeff(type, n);
+          if (!coeff) continue;
+          var color = HARMONIC_PALETTE[counted % HARMONIC_PALETTE.length];
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5;
+          ctx.globalAlpha = 0.85;
+          ctx.beginPath();
+          for (var i = 0; i <= pts; i++) {
+            var x = (i / pts) * 2 * Math.PI;
+            var y = coeff.sign * coeff.amp * Math.sin(coeff.freq * (x + ph));
+            var px = (i / pts) * W;
+            var py = H/2 - y * (H * 0.36);
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+          counted++;
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      /* ── Draw sum canvas ─────────────────────────────── */
+      function drawSum(type, nTerms, ph) {
+        var W = resizeCanvas(sumCanvas, 160);
+        var H = 160;
+        var ctx = sumCtx;
+        clearCanvas(ctx, sumCanvas);
+        var c = colors();
+        var pts = 400;
+
+        // gridlines
+        ctx.strokeStyle = c.grid;
+        ctx.lineWidth = 1;
+        [0.25, 0.5, 0.75].forEach(function(f) {
+          ctx.beginPath(); ctx.moveTo(0, H * f); ctx.lineTo(W, H * f); ctx.stroke();
+        });
+        ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+
+        // target (ghost)
+        ctx.strokeStyle = c.target;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        for (var i = 0; i <= pts; i++) {
+          var xv = (i / pts) * 2 * Math.PI;
+          var tv = targetValue(type, xv + ph);
+          var px = (i / pts) * W;
+          var py = H/2 - tv * (H * 0.38);
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Fourier sum
+        ctx.strokeStyle = c.sum;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        var totalError = 0;
+        var samples = 0;
+        for (var i = 0; i <= pts; i++) {
+          var xv = (i / pts) * 2 * Math.PI;
+          var sv = fourierSum(type, xv + ph, nTerms);
+          var px = (i / pts) * W;
+          var py = H/2 - sv * (H * 0.38);
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          // accumulate error vs target
+          var tv = targetValue(type, xv + ph);
+          totalError += Math.abs(sv - tv);
+          samples++;
+        }
+        ctx.stroke();
+
+        // label top right
+        ctx.fillStyle = c.sum;
+        ctx.font = '700 0.72rem Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(nTerms + ' harmonic' + (nTerms > 1 ? 's' : ''), W - 8, 18);
+        ctx.textAlign = 'left';
+
+        return (totalError / samples) * 100 / 2; // approx % error
+      }
+
+      /* ── Build spectrum ──────────────────────────────── */
+      function buildSpectrum(type, nTerms) {
+        specDisplay.innerHTML = '';
+        var counted = 0;
+        for (var n = 1; n <= maxH * 2; n++) {
+          if (counted >= maxH) break;
+          var coeff = waveCoeff(type, n);
+          if (!coeff) {
+            // show placeholder bar
+            var wrap = document.createElement('div');
+            wrap.className = 'four-spec-bar-wrap';
+            var bar = document.createElement('div');
+            bar.className = 'four-spec-bar muted';
+            bar.style.height = '3px';
+            var label = document.createElement('div');
+            label.className = 'four-spec-label';
+            label.textContent = 'n' + n;
+            wrap.appendChild(bar); wrap.appendChild(label);
+            specDisplay.appendChild(wrap);
+            counted++;
+            continue;
+          }
+          var amp = Math.abs(coeff.amp);
+          var maxAmp = 4 / Math.PI;
+          var pct = (amp / maxAmp);
+          var heightPx = Math.max(3, Math.round(pct * 48));
+          var active = counted < nTerms;
+
+          var wrap = document.createElement('div');
+          wrap.className = 'four-spec-bar-wrap';
+          var bar = document.createElement('div');
+          bar.className = 'four-spec-bar' + (active ? '' : ' muted');
+          bar.style.height = heightPx + 'px';
+          var label = document.createElement('div');
+          label.className = 'four-spec-label';
+          label.textContent = 'n' + n;
+          wrap.appendChild(bar); wrap.appendChild(label);
+          specDisplay.appendChild(wrap);
+          counted++;
+        }
+      }
+
+      /* ── Build formula string ────────────────────────── */
+      function buildFormula(type, nTerms) {
+        var parts = [];
+        var counted = 0;
+        for (var n = 1; counted < nTerms && counted < 4; n++) {
+          var c = waveCoeff(type, n);
+          if (!c) continue;
+          var amp = Math.abs(c.amp).toFixed(3);
+          var sign = (c.sign < 0 ? '−' : (counted > 0 ? '+' : ''));
+          parts.push((sign ? sign + ' ' : '') + amp + '·sin(' + c.freq + 'x)');
+          counted++;
+        }
+        if (nTerms > 4) parts.push('+ …');
+        return parts.join(' ');
+      }
+
+      /* ── Main render ─────────────────────────────────── */
+      function render() {
+        var type   = waveSelect.value;
+        var nTerms = parseInt(harmonicSlider.value, 10);
+
+        drawComponents(type, nTerms, phase);
+        var err = drawSum(type, nTerms, phase);
+        buildSpectrum(type, nTerms);
+
+        hudHarmonics.textContent = nTerms;
+        hudError.textContent = err.toFixed(1) + '%';
+        hudWave.textContent = { square: 'Square', triangle: 'Triangle', sawtooth: 'Sawtooth' }[type];
+        hudFormula.textContent = buildFormula(type, nTerms);
+
+        harmonicVal.textContent = nTerms;
+      }
+
+      /* ── Animation loop ──────────────────────────────── */
+      function animate() {
+        var spd = parseFloat(speedSlider.value);
+        speedVal.textContent = spd.toFixed(1) + '×';
+        phase += 0.012 * spd;
+        if (phase > 2 * Math.PI) phase -= 2 * Math.PI;
+        render();
+        animId = requestAnimationFrame(animate);
+      }
+
+      /* ── Event wiring ────────────────────────────────── */
+      harmonicSlider.addEventListener('input', render);
+      waveSelect.addEventListener('change', render);
+      speedSlider.addEventListener('input', function() {
+        speedVal.textContent = parseFloat(this.value).toFixed(1) + '×';
+      });
+      window.addEventListener('resize', render);
+      document.querySelector('.theme-toggle') &&
+        document.querySelector('.theme-toggle').addEventListener('click', function() {
+          setTimeout(render, 50);
+        });
+
+      /* ── Start ───────────────────────────────────────── */
+      render();
+      animate();
+    })();
+  </script>
+  <script src="../assets/js/lesson-layout.js"></script>
+
+</body>
+</html>
