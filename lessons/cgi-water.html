@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CGI Water · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Computer Science Lesson — how fluid simulation, wave physics, and optics combine to create photorealistic water in movies and games." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cgi-page { padding-bottom: 0; }
+    .ll-viewport {
+      --ll-panel-w: 290px;
+      --ll-panel-bg: rgba(12, 26, 58, 0.98);
+      --ll-panel-border: rgba(56, 189, 248, 0.22);
+      --ll-tab-active-bg: rgba(56, 189, 248, 0.18);
+      --ll-tab-active: #7dd3fc;
+    }
+    .cgi-hero { padding: 0.45rem 0 1.25rem; }
+    .cgi-hero h1 { max-width: 30ch; margin-left: 0; font-size: clamp(1.6rem, 3.6vw, 2.45rem); letter-spacing: -0.03em; }
+    .cgi-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cgi-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; display: inline-block; align-self: center; }
+    .cgi-lede { margin: 0.7rem 0 0; max-width: 72ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cgi-lede { color: rgba(245,245,247,0.72); }
+
+    .cgi-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--cgi-accent, #0284c7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.35rem;
+      margin-bottom: 1rem;
+    }
+    [data-theme="night"] .cgi-card { background: #2c2c2e; }
+    .cgi-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cgi-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; }
+    .cgi-card p { margin: 0 0 0.65rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cgi-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cgi-card p { color: rgba(245,245,247,0.74); }
+
+    /* Formula box */
+    .cgi-formula-box {
+      background: linear-gradient(135deg, rgba(2,132,199,0.11), rgba(14,165,233,0.07));
+      border: 1px solid rgba(2,132,199,0.28);
+      border-radius: 14px;
+      padding: 1rem 1.15rem;
+      margin: 0.85rem 0;
+      text-align: center;
+    }
+    .cgi-formula { display: block; color: #0369a1; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: clamp(1rem, 2.8vw, 1.45rem); font-weight: 700; margin-bottom: 0.4rem; }
+    [data-theme="night"] .cgi-formula { color: #7dd3fc; }
+    .cgi-formula-note { color: #52647c; font-size: 0.8rem; line-height: 1.5; }
+    [data-theme="night"] .cgi-formula-note { color: rgba(245,245,247,0.68); }
+
+    /* Callout / highlight box */
+    .cgi-callout {
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      margin: 0.8rem 0;
+      font-size: 0.84rem;
+      line-height: 1.6;
+      background: rgba(2,132,199,0.08);
+      border-left: 3px solid #0284c7;
+      color: #1e3a5f;
+    }
+    [data-theme="night"] .cgi-callout { color: rgba(245,245,247,0.75); background: rgba(2,132,199,0.13); }
+
+    /* Challenges grid */
+    .cgi-challenge-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0.7rem; margin: 0.85rem 0; }
+    .cgi-challenge { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.85rem; background: rgba(2,132,199,0.04); }
+    [data-theme="night"] .cgi-challenge { background: rgba(2,132,199,0.1); }
+    .cgi-challenge-icon { font-size: 1.4rem; margin-bottom: 0.22rem; }
+    .cgi-challenge strong { display: block; font-size: 0.86rem; margin-bottom: 0.18rem; color: var(--text, #1d1d1f); }
+    [data-theme="night"] .cgi-challenge strong { color: #f8fafc; }
+    .cgi-challenge small { display: block; color: #64748b; font-size: 0.77rem; line-height: 1.48; }
+
+    /* Simulation */
+    .cgi-sim-wrap {
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(148,163,184,0.18);
+      background: radial-gradient(circle at 20% 0%, rgba(2,132,199,0.25), transparent 50%), linear-gradient(180deg, #060e23, #01050f);
+      color: #e2e8f0;
+      box-shadow: 0 18px 44px rgba(1,5,15,0.3);
+      margin: 0.9rem 0;
+    }
+    .cgi-sim-header { padding: 1rem 1rem 0; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; }
+    .cgi-sim-header h3 { margin: 0; color: #f0f9ff; font-size: 1rem; }
+    .cgi-sim-header p { margin: 0.2rem 0 0; color: #94a3b8; font-size: 0.79rem; line-height: 1.45; max-width: 60ch; }
+    #cgi-canvas { width: 100%; height: 320px; display: block; cursor: crosshair; }
+    .cgi-sim-controls { display: flex; flex-wrap: wrap; gap: 0.55rem; padding: 0.7rem 1rem; border-top: 1px solid rgba(148,163,184,0.12); background: rgba(1,5,15,0.6); }
+    .cgi-dark-btn { border: 1px solid rgba(255,255,255,0.16); border-radius: 9px; padding: 0.4rem 0.72rem; background: rgba(12,26,58,0.76); color: #f0f9ff; font-weight: 700; font-size: 0.78rem; cursor: pointer; transition: background 0.14s; }
+    .cgi-dark-btn:hover, .cgi-dark-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
+    .cgi-sim-note { padding: 0.6rem 1rem 0.85rem; color: #64748b; font-size: 0.76rem; line-height: 1.45; }
+
+    /* Approach grid (SPH vs Euler) */
+    .cgi-approach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 0.85rem 0; }
+    .cgi-approach { border: 1px solid var(--line, #d2d2d7); border-radius: 14px; padding: 1rem; }
+    .cgi-approach.sph { background: rgba(124,58,237,0.06); border-color: rgba(124,58,237,0.2); }
+    .cgi-approach.euler { background: rgba(2,132,199,0.06); border-color: rgba(2,132,199,0.2); }
+    [data-theme="night"] .cgi-approach { background: rgba(255,255,255,0.04); }
+    .cgi-approach h3 { margin: 0 0 0.4rem; font-size: 0.96rem; color: var(--text, #1d1d1f); }
+    [data-theme="night"] .cgi-approach h3 { color: #f8fafc; }
+    .cgi-approach ul { margin: 0.4rem 0 0; padding-left: 1.25rem; }
+    .cgi-approach li { color: #64748b; font-size: 0.8rem; line-height: 1.52; margin-bottom: 0.2rem; }
+
+    /* Wave components */
+    .cgi-wave-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0.7rem; margin: 0.85rem 0; }
+    .cgi-wave { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.85rem; background: rgba(15,118,110,0.05); }
+    [data-theme="night"] .cgi-wave { background: rgba(15,118,110,0.12); }
+    .cgi-wave strong { display: block; font-size: 0.88rem; margin-bottom: 0.22rem; color: #0f766e; }
+    [data-theme="night"] .cgi-wave strong { color: #5eead4; }
+    .cgi-wave small { display: block; color: #64748b; font-size: 0.78rem; line-height: 1.48; }
+
+    /* Rendering techniques */
+    .cgi-render-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0.7rem; margin: 0.85rem 0; }
+    .cgi-render { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.85rem; }
+    .cgi-render-icon { font-size: 1.35rem; margin-bottom: 0.22rem; }
+    .cgi-render strong { display: block; font-size: 0.86rem; margin-bottom: 0.18rem; color: var(--text, #1d1d1f); }
+    [data-theme="night"] .cgi-render strong { color: #f8fafc; }
+    .cgi-render small { display: block; color: #64748b; font-size: 0.78rem; line-height: 1.48; }
+
+    /* Timeline */
+    .cgi-timeline { display: grid; gap: 0.55rem; margin: 0.85rem 0; }
+    .cgi-era { display: grid; grid-template-columns: 110px 1fr; gap: 0.75rem; align-items: start; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.75rem; }
+    [data-theme="night"] .cgi-era { border-color: rgba(255,255,255,0.1); }
+    .cgi-era time { font-weight: 800; color: #0284c7; font-size: 0.82rem; font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .cgi-era strong { display: block; font-size: 0.86rem; margin-bottom: 0.14rem; color: var(--text, #1d1d1f); }
+    [data-theme="night"] .cgi-era strong { color: #f8fafc; }
+    .cgi-era small { display: block; color: #64748b; font-size: 0.78rem; line-height: 1.45; }
+
+    /* Practice */
+    .cgi-practice .cgi-problem { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cgi-problem p { margin-bottom: 0.55rem; }
+    .cgi-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .cgi-input { border: 1px solid var(--line, #d2d2d7); border-radius: 8px; padding: 0.36rem 0.6rem; width: 110px; background: var(--white, #fff); color: var(--text, #1d1d1f); font: inherit; font-size: 0.88rem; }
+    .cgi-btn { background: #0284c7; color: #fff; border: 0; border-radius: 8px; padding: 0.38rem 0.82rem; font-weight: 700; cursor: pointer; font: inherit; }
+    .cgi-btn:hover { background: #0369a1; }
+    .cgi-feedback { font-size: 0.82rem; font-weight: 700; }
+    .cgi-feedback.ok { color: #16a34a; }
+    .cgi-feedback.err { color: #dc2626; }
+    .cgi-hint { display: none; color: #64748b; font-size: 0.78rem; margin-top: 0.4rem; line-height: 1.5; }
+    .cgi-badge { border-radius: 5px; padding: 0.1rem 0.42rem; font-size: 0.72rem; font-weight: 800; margin-right: 0.4rem; }
+    .cgi-badge.easy { background: rgba(34,197,94,0.14); color: #15803d; }
+    .cgi-badge.mid { background: rgba(249,115,22,0.14); color: #c2410c; }
+    .cgi-badge.hard { background: rgba(220,38,38,0.11); color: #b91c1c; }
+
+    /* Panel */
+    .cgi-panel-block { margin-bottom: 1rem; }
+    .cgi-panel-block label { display: flex; justify-content: space-between; gap: 0.75rem; color: rgba(245,245,247,0.82); font-size: 0.8rem; margin-bottom: 0.3rem; }
+    .cgi-panel-block output { color: #7dd3fc; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .cgi-panel-help { color: rgba(245,245,247,0.58); font-size: 0.77rem; line-height: 1.52; margin: 0.25rem 0 0; }
+    .cgi-panel-btn { display: block; width: 100%; border: 1px solid rgba(56,189,248,0.28); border-radius: 10px; padding: 0.48rem 0.7rem; background: rgba(2,132,199,0.15); color: #7dd3fc; font-weight: 800; font-size: 0.82rem; cursor: pointer; text-align: center; margin-top: 0.5rem; }
+    .cgi-panel-btn:hover, .cgi-panel-btn.active { background: #0284c7; color: #fff; }
+
+    @media (max-width: 760px) {
+      .cgi-challenge-grid, .cgi-wave-grid { grid-template-columns: 1fr 1fr; }
+      .cgi-approach-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      .cgi-challenge-grid { grid-template-columns: 1fr; }
+      .cgi-card { padding: 1rem; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cgi-page">
+
+        <section class="hero cgi-hero">
+          <p class="eyebrow">Computer Science · Simulation &amp; Visual Effects</p>
+          <h1>CGI Water: From Physics to Pixels</h1>
+          <div class="cgi-meta">
+            <span>Fluid Simulation</span><span class="dot"></span>
+            <span>Wave Dynamics</span><span class="dot"></span>
+            <span>Optics &amp; Rendering</span>
+          </div>
+          <p class="cgi-lede">Water is one of the hardest things to fake in computer graphics. It flows, splashes, refracts light, reflects the sky, and forms foam on crests. Every major film studio has spent decades building custom simulators to solve this problem. The math behind those simulators is real physics.</p>
+        </section>
+
+        <!-- The Challenge -->
+        <section class="cgi-card" style="--cgi-accent:#0284c7;">
+          <h2>Why Water Is So Hard to Fake</h2>
+          <p>When you look at a glass of water, several physical systems are happening simultaneously. Any CGI system that tries to look real must solve all of them at once.</p>
+          <div class="cgi-challenge-grid">
+            <div class="cgi-challenge">
+              <div class="cgi-challenge-icon">🌊</div>
+              <strong>Fluid dynamics</strong>
+              <small>Water is incompressible — it can't be squeezed. Pressure waves and turbulence must follow the Navier-Stokes equations exactly, or it looks wrong.</small>
+            </div>
+            <div class="cgi-challenge">
+              <div class="cgi-challenge-icon">💡</div>
+              <strong>Optics</strong>
+              <small>Water refracts (bends) light, reflects like a mirror at steep angles, absorbs certain wavelengths, and scatters light internally. Each effect is a separate computation.</small>
+            </div>
+            <div class="cgi-challenge">
+              <div class="cgi-challenge-icon">🫧</div>
+              <strong>Surface phenomena</strong>
+              <small>Surface tension creates capillary waves. Crashing waves entrain air to form foam. Droplets detach from jets. Each requires its own physical model.</small>
+            </div>
+            <div class="cgi-challenge">
+              <div class="cgi-challenge-icon">📏</div>
+              <strong>Scale</strong>
+              <small>A movie ocean scene may simulate a volume of water millions of cubic meters. Even with a 5 cm grid resolution, that's billions of grid cells.</small>
+            </div>
+            <div class="cgi-challenge">
+              <div class="cgi-challenge-icon">⏱️</div>
+              <strong>Time stepping</strong>
+              <small>Fluid simulation can become unstable if the time step is too large. The CFL condition limits how far information can travel per frame.</small>
+            </div>
+            <div class="cgi-challenge">
+              <div class="cgi-challenge-icon">🎨</div>
+              <strong>Art direction</strong>
+              <small>Physics alone isn't enough. Artists need to control the simulation — making a wave hit at the right moment, on cue, every take.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Physics Foundation -->
+        <section class="cgi-card" style="--cgi-accent:#0ea5e9;">
+          <h2>The Physics: Navier-Stokes Equations</h2>
+          <p>Every serious fluid simulation is built on two equations derived in the 1840s by Claude-Louis Navier and George Gabriel Stokes. Together they describe how any viscous fluid moves.</p>
+
+          <div class="cgi-formula-box" role="img" aria-label="Navier-Stokes momentum equation: density times material derivative of velocity equals negative gradient of pressure plus viscosity times Laplacian of velocity plus external forces">
+            <span class="cgi-formula">ρ(∂<strong>u</strong>/∂t + <strong>u</strong>·∇<strong>u</strong>) = −∇p + μ∇²<strong>u</strong> + <strong>f</strong></span>
+            <span class="cgi-formula-note"><strong>ρ</strong> = density · <strong>u</strong> = velocity field · <strong>p</strong> = pressure · <strong>μ</strong> = viscosity · <strong>f</strong> = external forces (gravity, wind)</span>
+          </div>
+          <p>The second equation is even simpler for liquid water, because water barely compresses:</p>
+          <div class="cgi-formula-box" role="img" aria-label="Continuity equation for incompressible fluid: divergence of velocity equals zero">
+            <span class="cgi-formula">∇·<strong>u</strong> = 0</span>
+            <span class="cgi-formula-note">The divergence-free condition: fluid must flow out of any volume at exactly the same rate it flows in. No voids, no piling up.</span>
+          </div>
+
+          <div class="cgi-callout">
+            <strong>The hard part:</strong> The left side of the momentum equation has <strong>u·∇u</strong> — velocity advecting itself. This non-linear term makes the equations extremely hard to solve analytically. Turbulence arises here. Every simulation method is essentially a different strategy for taming this term on a computer.
+          </div>
+
+          <h3>The Simple Wave Equation</h3>
+          <p>For surfaces (not full 3D volumes), a simpler model called the <strong>height-field approximation</strong> works well. We track only the vertical displacement of the water surface and propagate it with the discrete wave equation. This is what drives the simulator below.</p>
+          <div class="cgi-formula-box" role="img" aria-label="Discrete wave update: new height equals neighbors sum divided by two minus old height, times damping">
+            <span class="cgi-formula">h<sub>new</sub> = (Σneighbors / 2 − h<sub>old</sub>) × d</span>
+            <span class="cgi-formula-note">Each cell's new height is an average of its four neighbors, minus its old value. The damping factor <strong>d</strong> (close to 1.0) controls energy loss over time.</span>
+          </div>
+        </section>
+
+        <!-- Interactive Simulation -->
+        <section class="cgi-card" style="--cgi-accent:#38bdf8;">
+          <h2>Interactive Ripple Simulator</h2>
+          <p>This is a real height-field water simulation running in your browser. Click or drag on the surface to create disturbances and watch waves propagate, reflect, and interfere.</p>
+          <div class="cgi-sim-wrap">
+            <div class="cgi-sim-header">
+              <div>
+                <h3>Height-field Water · Real-time Simulation</h3>
+                <p>Click anywhere on the surface to drop a disturbance. Drag to create a continuous wake. Toggle Rain to watch interference patterns form.</p>
+              </div>
+            </div>
+            <canvas id="cgi-canvas" aria-label="Interactive 2D water ripple simulation — click to create waves"></canvas>
+            <div class="cgi-sim-controls">
+              <button class="cgi-dark-btn" id="cgi-rain-btn">Rain: Off</button>
+              <button class="cgi-dark-btn" id="cgi-clear-btn">Clear</button>
+              <button class="cgi-dark-btn active" id="cgi-mode-surface" data-mode="surface">Surface</button>
+              <button class="cgi-dark-btn" id="cgi-mode-normals" data-mode="normals">Normals</button>
+              <button class="cgi-dark-btn" id="cgi-mode-depth" data-mode="depth">Depth Map</button>
+            </div>
+            <p class="cgi-sim-note">Surface mode: specular lighting on height field. Normals mode: RGB encodes the surface normal vector (same technique used in normal-map rendering). Depth Map: raw height values.</p>
+          </div>
+        </section>
+
+        <!-- Simulation Approaches -->
+        <section class="cgi-card" style="--cgi-accent:#7c3aed;">
+          <h2>Two Approaches: Particles vs Grids</h2>
+          <p>Production studios choose between two fundamental philosophies for fluid simulation. Each has situations where it excels.</p>
+          <div class="cgi-approach-grid">
+            <div class="cgi-approach sph">
+              <h3>SPH — Smoothed Particle Hydrodynamics</h3>
+              <p style="color:#52647c;font-size:0.82rem;margin:0 0 0.5rem;line-height:1.55;">Lagrangian: track individual particles of fluid as they move through space</p>
+              <ul>
+                <li>Each particle carries mass, velocity, pressure, and density</li>
+                <li>Forces computed from neighboring particles within a radius</li>
+                <li>Naturally handles splashing, droplets, and thin sheets</li>
+                <li>Used in: <em>Finding Nemo</em>, Houdini flip sims, game physics engines</li>
+                <li>Challenge: slow for large calm bodies of water</li>
+              </ul>
+            </div>
+            <div class="cgi-approach euler">
+              <h3>Grid (Eulerian) Method</h3>
+              <p style="color:#52647c;font-size:0.82rem;margin:0 0 0.5rem;line-height:1.55;">Eulerian: fixed grid in space; fluid flows through cells</p>
+              <ul>
+                <li>Each cell stores velocity, pressure, and density</li>
+                <li>Pressure projection enforces incompressibility each step</li>
+                <li>Efficient for large ocean volumes and contained fluid</li>
+                <li>Used in: <em>Titanic</em>, <em>Life of Pi</em>, most big ocean sims</li>
+                <li>Challenge: loses fine surface detail without sub-grid tracking</li>
+              </ul>
+            </div>
+          </div>
+          <div class="cgi-callout">
+            <strong>FLIP (Fluid-Implicit-Particles)</strong> — the method used in most modern film production — is a hybrid: particles carry momentum while a grid enforces incompressibility. You get the sharp detail of SPH and the large-scale behavior of Eulerian grids.
+          </div>
+        </section>
+
+        <!-- Ocean Synthesis -->
+        <section class="cgi-card" style="--cgi-accent:#0f766e;">
+          <h2>Synthesizing the Open Ocean</h2>
+          <p>Simulating a full 3D ocean with a fluid solver would require a planetary-scale computer. Instead, visual effects artists use statistical wave models that reproduce how real ocean surfaces look without solving Navier-Stokes at all.</p>
+          <div class="cgi-wave-grid">
+            <div class="cgi-wave">
+              <strong>Gerstner Waves</strong>
+              <small>Derived in 1802, Gerstner waves are analytic: each point on the surface traces a circle as a wave passes. Particles orbit rather than just moving up and down. Summing many Gerstner waves produces the characteristic peaked crests and broad troughs of ocean swell.</small>
+            </div>
+            <div class="cgi-wave">
+              <strong>FFT Ocean Models</strong>
+              <small>Phillips spectrum + an inverse Fast Fourier Transform gives a statistically correct random sea state at any scale in milliseconds. <em>Pirates of the Caribbean</em> and most real-time game oceans use this technique. The entire ocean is a single textured mesh updated each frame.</small>
+            </div>
+            <div class="cgi-wave">
+              <strong>JONSWAP Spectrum</strong>
+              <small>A real oceanographic energy spectrum (Joint North Sea Wave Project) defines how much energy different wave frequencies carry in a given wind condition. CGI ocean tools let artists dial in wind speed and fetch to match actual recorded ocean conditions.</small>
+            </div>
+          </div>
+          <div class="cgi-formula-box" role="img" aria-label="Gerstner wave position: x offset equals amplitude times kx divided by k times sine of k dot x minus omega t. y offset equals amplitude times cosine of k dot x minus omega t">
+            <span class="cgi-formula">P = (x − A·(kₓ/k)·sin(k·x − ωt), &nbsp; A·cos(k·x − ωt))</span>
+            <span class="cgi-formula-note"><strong>A</strong> = amplitude · <strong>k</strong> = wave vector (direction &amp; spatial frequency) · <strong>ω</strong> = angular frequency · Points orbit in circles of radius A</span>
+          </div>
+        </section>
+
+        <!-- Rendering Pipeline -->
+        <section class="cgi-card" style="--cgi-accent:#1d4ed8;">
+          <h2>How Water Gets Its Look</h2>
+          <p>Simulating the motion is only half the job. Making water look convincing requires accurate light transport through a surface that both transmits and reflects.</p>
+          <div class="cgi-render-grid">
+            <div class="cgi-render">
+              <div class="cgi-render-icon">🔆</div>
+              <strong>Fresnel Equations</strong>
+              <small>At a shallow grazing angle, water looks like a mirror (100% reflection). Looking straight down, most light passes through. The Fresnel equations (Schlick's approximation in real-time engines) compute the exact ratio for every view angle. This single formula is responsible for the characteristic glare you see across a lake at sunset.</small>
+            </div>
+            <div class="cgi-render">
+              <div class="cgi-render-icon">🔭</div>
+              <strong>Refraction (Snell's Law)</strong>
+              <small>Light bends when it enters water (n ≈ 1.33) from air (n = 1.0). Objects beneath the surface appear displaced and distorted. In CGI, the renderer samples a slightly offset point on an environment map or sub-surface texture to reproduce this bending: n₁ sin θ₁ = n₂ sin θ₂.</small>
+            </div>
+            <div class="cgi-render">
+              <div class="cgi-render-icon">🌀</div>
+              <strong>Caustics</strong>
+              <small>Rippling water focuses and defocuses light on the sea floor, creating the bright shifting patterns known as caustics. Computing them physically requires tracing millions of photons through the curved surface. Most real-time engines fake them with animated light-map textures.</small>
+            </div>
+            <div class="cgi-render">
+              <div class="cgi-render-icon">🟦</div>
+              <strong>Scattering &amp; Absorption</strong>
+              <small>Pure water absorbs red wavelengths more than blue — that's why deep water looks blue. Dissolved particles scatter light. Together these effects are modeled as participating media with extinction and scattering coefficients. Shallow tropical water and murky river water have very different coefficients.</small>
+            </div>
+            <div class="cgi-render">
+              <div class="cgi-render-icon">🫧</div>
+              <strong>Foam &amp; Whitecaps</strong>
+              <small>When wave speed exceeds the shallow-water limit, crests break and entrain air. The resulting foam is rendered as a separate particle system or a whitecap texture painted onto high-curvature regions of the wave surface. Houdini's foam solver tracks bubble lifetime and density.</small>
+            </div>
+            <div class="cgi-render">
+              <div class="cgi-render-icon">🗺️</div>
+              <strong>Normal Mapping</strong>
+              <small>High-frequency surface ripples would require a prohibitively fine mesh. Instead, a normal map encodes small-scale surface normals in an RGB texture. The renderer perturbs the reflection/refraction direction at each pixel using the map, giving the illusion of micro-ripples at zero polygon cost.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Timeline -->
+        <section class="cgi-card" style="--cgi-accent:#6d28d9;">
+          <h2>Breakthrough Moments in Film</h2>
+          <div class="cgi-timeline">
+            <div class="cgi-era">
+              <time>1989</time>
+              <div>
+                <strong>The Abyss — first digital water creature</strong>
+                <small>ILM created a pseudopod of water that could mimic human faces. It was the first time a fluid surface existed as a photorealistic CG object in a live-action film. No simulation — the shape was hand-animated by artists.</small>
+              </div>
+            </div>
+            <div class="cgi-era">
+              <time>1997</time>
+              <div>
+                <strong>Titanic — first production ocean simulation</strong>
+                <small>Digital Domain built a custom particle simulator for the sinking sequence. Over 1 million SPH particles represented the flooding interior water. The exterior ocean used tileable wave meshes with a real FFT ocean shader — a technique still in use today.</small>
+              </div>
+            </div>
+            <div class="cgi-era">
+              <time>2003</time>
+              <div>
+                <strong>Pirates of the Caribbean: The Curse of the Black Pearl</strong>
+                <small>Industrial Light &amp; Magic's ocean shots popularized the FFT deep-water model for real-time and near-real-time ocean rendering. The "maelstrom" in At World's End (2007) remains one of the largest fluid simulations ever rendered for a feature film.</small>
+              </div>
+            </div>
+            <div class="cgi-era">
+              <time>2006</time>
+              <div>
+                <strong>Poseidon — full-CG wave interior</strong>
+                <small>A 90-foot rogue wave overturning an ocean liner required close-up shots of solid walls of water. Industrial Light &amp; Magic ran a grid-based Eulerian sim for the massive wave body and SPH particles for the breaking surface and spray.</small>
+              </div>
+            </div>
+            <div class="cgi-era">
+              <time>2012</time>
+              <div>
+                <strong>Life of Pi — photoreal open ocean</strong>
+                <small>Rhythm &amp; Hues simulated an entire open ocean for weeks of render time. The challenge was not just the water surface but the interaction of light — the film won the Academy Award for Visual Effects partly on the strength of its water rendering.</small>
+              </div>
+            </div>
+            <div class="cgi-era">
+              <time>2018–now</time>
+              <div>
+                <strong>Real-time ocean in games (Sea of Thieves, Uncharted 4)</strong>
+                <small>FFT ocean simulation and physically based rendering now run in real-time on consumer GPUs. Sea of Thieves uses a layered wave model with interactive displacement, buoyancy, and foam that reacts to ships — computed entirely on the GPU every frame at 60 fps.</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="cgi-card cgi-practice" style="--cgi-accent:#ef4444;">
+          <h2>Practice Problems</h2>
+
+          <div class="cgi-problem">
+            <p><span class="cgi-badge easy">Easy</span>1. A CGI ocean wave has wavelength λ = 20 m and period T = 4 s. Using the wave speed formula v = λ / T, what is the wave speed in m/s?</p>
+            <div class="cgi-row">
+              <input class="cgi-input" type="number" id="cgi-ans-1" placeholder="m/s" />
+              <button class="cgi-btn" onclick="cgiCheck(1, 5, 0.1)">Check</button>
+              <span class="cgi-feedback" id="cgi-fb-1"></span>
+            </div>
+            <div class="cgi-hint" id="cgi-hint-1">Hint: v = λ / T = 20 m ÷ 4 s = 5 m/s</div>
+          </div>
+
+          <div class="cgi-problem">
+            <p><span class="cgi-badge mid">Medium</span>2. Light travels from air (n₁ = 1.00) into water (n₂ = 1.33) at an incident angle of 45°. Using Snell's law — n₁ sin θ₁ = n₂ sin θ₂ — find the refraction angle θ₂ to the nearest whole degree. (sin 45° ≈ 0.707)</p>
+            <div class="cgi-row">
+              <input class="cgi-input" type="number" id="cgi-ans-2" placeholder="degrees" />
+              <button class="cgi-btn" onclick="cgiCheck(2, 32, 1)">Check</button>
+              <span class="cgi-feedback" id="cgi-fb-2"></span>
+            </div>
+            <div class="cgi-hint" id="cgi-hint-2">Hint: sin θ₂ = n₁ sin θ₁ / n₂ = 1.00 × 0.707 / 1.33 ≈ 0.532 → θ₂ = arcsin(0.532) ≈ 32°</div>
+          </div>
+
+          <div class="cgi-problem">
+            <p><span class="cgi-badge hard">Challenge</span>3. The CFL stability condition limits the simulation time step: Δt ≤ (CFL × Δx) / c, where CFL = 0.5, grid spacing Δx = 0.10 m, and wave speed c = 5 m/s. What is the maximum stable time step in milliseconds?</p>
+            <div class="cgi-row">
+              <input class="cgi-input" type="number" id="cgi-ans-3" placeholder="ms" />
+              <button class="cgi-btn" onclick="cgiCheck(3, 10, 0.5)">Check</button>
+              <span class="cgi-feedback" id="cgi-fb-3"></span>
+            </div>
+            <div class="cgi-hint" id="cgi-hint-3">Hint: Δt = (0.5 × 0.10) / 5 = 0.05 / 5 = 0.01 s = 10 ms</div>
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="cgi-pane-controls">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cgi-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="cgi-pane-controls">
+          <div class="cgi-panel-block">
+            <label for="cgi-damping">Wave persistence <output id="cgi-damping-val">97%</output></label>
+            <input type="range" id="cgi-damping" min="88" max="99" value="97" />
+            <p class="cgi-panel-help">Higher values let waves travel further before fading. At 99% waves reflect and interfere for a long time.</p>
+          </div>
+          <div class="cgi-panel-block">
+            <label for="cgi-drop-size">Drop radius <output id="cgi-drop-size-val">8</output></label>
+            <input type="range" id="cgi-drop-size" min="2" max="20" value="8" />
+            <p class="cgi-panel-help">Larger drops displace more water and create wider initial ring waves.</p>
+          </div>
+          <div class="cgi-panel-block">
+            <label for="cgi-rain-rate">Rain density <output id="cgi-rain-rate-val">80 ms</output></label>
+            <input type="range" id="cgi-rain-rate" min="40" max="400" value="80" step="20" />
+            <p class="cgi-panel-help">How often a raindrop falls when Rain is on. Lower = heavier rain.</p>
+          </div>
+          <button class="cgi-panel-btn" id="cgi-rain-panel-btn">Rain: Off</button>
+          <button class="cgi-panel-btn" id="cgi-clear-panel-btn" style="margin-top:0.45rem;background:rgba(255,255,255,0.05);color:rgba(245,245,247,0.7);border-color:rgba(255,255,255,0.12);">Clear surface</button>
+        </div>
+        <div class="ll-pane" id="cgi-pane-guide">
+          <span class="ll-label">Key Vocabulary</span>
+          <p><strong>Navier-Stokes:</strong> the governing equations of fluid motion; describes pressure, viscosity, and acceleration.</p>
+          <p><strong>Incompressibility:</strong> liquids cannot be compressed — divergence of velocity must equal zero.</p>
+          <p><strong>SPH:</strong> Smoothed Particle Hydrodynamics; Lagrangian method tracking individual fluid particles.</p>
+          <p><strong>FLIP:</strong> hybrid particle-grid method used in Houdini and most major VFX pipelines.</p>
+          <p><strong>Fresnel effect:</strong> the angle-dependent ratio of reflection to transmission at a surface.</p>
+          <p><strong>Caustics:</strong> bright patterns formed when a curved surface focuses transmitted light.</p>
+          <span class="ll-label">Teacher Prompts</span>
+          <p>Ask students: why do you think water looks blue in the deep ocean but clear in a glass? What does the absorption coefficient tell us?</p>
+          <p>Challenge: set the damping to 99% and use rain mode. Ask students to identify constructive and destructive interference where ripples meet.</p>
+        </div>
+      </div>
+      <button class="ll-panel-toggle" aria-expanded="true" aria-label="Toggle lesson panel">Controls</button>
+    </aside>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<script>
+/* ── Panel / tab behaviour ── */
+(function () {
+  const vp = document.querySelector('.ll-viewport');
+  if (!vp) return;
+
+  /* Tab switching */
+  vp.querySelectorAll('.ll-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const paneId = tab.dataset.pane;
+      vp.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected', 'false'));
+      vp.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      tab.setAttribute('aria-selected', 'true');
+      const pane = document.getElementById(paneId);
+      if (pane) pane.classList.add('ll-active');
+    });
+  });
+
+  /* Panel toggle */
+  const panel = vp.querySelector('.ll-panel');
+  const toggleBtn = vp.querySelector('.ll-panel-toggle');
+  const closeBtn = vp.querySelector('.ll-panel-close');
+  function openPanel() { panel.removeAttribute('aria-hidden'); toggleBtn.setAttribute('aria-expanded', 'true'); }
+  function closePanel() { panel.setAttribute('aria-hidden', 'true'); toggleBtn.setAttribute('aria-expanded', 'false'); }
+  if (toggleBtn) toggleBtn.addEventListener('click', () => {
+    panel.getAttribute('aria-hidden') === 'true' ? openPanel() : closePanel();
+  });
+  if (closeBtn) closeBtn.addEventListener('click', closePanel);
+})();
+
+/* ── Water Simulation ── */
+(function () {
+  const W = 140, H = 90;
+  const len = W * H;
+  let cur = new Float32Array(len);
+  let prev = new Float32Array(len);
+
+  const canvas = document.getElementById('cgi-canvas');
+  const ctx = canvas.getContext('2d');
+  const off = document.createElement('canvas');
+  off.width = W; off.height = H;
+  const offCtx = off.getContext('2d');
+  const imgData = offCtx.createImageData(W, H);
+
+  let cw, ch;
+  function resize() {
+    cw = canvas.width = canvas.offsetWidth;
+    ch = canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* Controls */
+  const dampSlider = document.getElementById('cgi-damping');
+  const dampVal = document.getElementById('cgi-damping-val');
+  const dropSlider = document.getElementById('cgi-drop-size');
+  const dropVal = document.getElementById('cgi-drop-size-val');
+  const rainRateSlider = document.getElementById('cgi-rain-rate');
+  const rainRateVal = document.getElementById('cgi-rain-rate-val');
+
+  dampSlider.addEventListener('input', () => dampVal.textContent = dampSlider.value + '%');
+  dropSlider.addEventListener('input', () => dropVal.textContent = dropSlider.value);
+  rainRateSlider.addEventListener('input', () => { rainRateVal.textContent = rainRateSlider.value + ' ms'; if (raining) restartRain(); });
+
+  let renderMode = 'surface';
+
+  /* Mode buttons */
+  document.querySelectorAll('[data-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      renderMode = btn.dataset.mode;
+      document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  function idx(x, y) { return y * W + x; }
+
+  function splash(gx, gy, radius, strength) {
+    const r = Math.floor(radius);
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const x = gx + dx, y = gy + dy;
+        if (x < 1 || x >= W - 1 || y < 1 || y >= H - 1) continue;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d <= radius) cur[idx(x, y)] += strength * (1 - d / radius);
+      }
+    }
+  }
+
+  function canvasToGrid(cx, cy) {
+    return {
+      gx: Math.floor(cx / cw * W),
+      gy: Math.floor(cy / ch * H)
+    };
+  }
+
+  /* Pointer events */
+  let pointerDown = false;
+
+  function onPointerDown(e) {
+    pointerDown = true;
+    const r = canvas.getBoundingClientRect();
+    const { gx, gy } = canvasToGrid(e.clientX - r.left, e.clientY - r.top);
+    splash(gx, gy, Number(dropSlider.value), 90);
+  }
+  function onPointerMove(e) {
+    if (!pointerDown) return;
+    const r = canvas.getBoundingClientRect();
+    const { gx, gy } = canvasToGrid(e.clientX - r.left, e.clientY - r.top);
+    splash(gx, gy, Math.max(2, Number(dropSlider.value) * 0.4), 45);
+  }
+  function onPointerUp() { pointerDown = false; }
+
+  canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('pointermove', onPointerMove);
+  canvas.addEventListener('pointerup', onPointerUp);
+  canvas.addEventListener('pointerleave', onPointerUp);
+
+  /* Touch fallback */
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    const t = e.touches[0];
+    const { gx, gy } = canvasToGrid(t.clientX - r.left, t.clientY - r.top);
+    splash(gx, gy, Number(dropSlider.value), 90);
+  }, { passive: false });
+
+  /* Rain */
+  let raining = false;
+  let rainTimer = null;
+
+  function startRain() {
+    if (rainTimer) clearInterval(rainTimer);
+    rainTimer = setInterval(() => {
+      const gx = 2 + Math.floor(Math.random() * (W - 4));
+      const gy = 2 + Math.floor(Math.random() * (H - 4));
+      splash(gx, gy, 2 + Math.random() * 2, 55 + Math.random() * 30);
+    }, Number(rainRateSlider.value));
+  }
+  function stopRain() { clearInterval(rainTimer); rainTimer = null; }
+  function restartRain() { if (raining) { stopRain(); startRain(); } }
+
+  function toggleRain(btn1, btn2) {
+    raining = !raining;
+    if (raining) {
+      startRain();
+      if (btn1) { btn1.textContent = 'Rain: On'; btn1.classList.add('active'); }
+      if (btn2) { btn2.textContent = 'Rain: On'; btn2.classList.add('active'); }
+    } else {
+      stopRain();
+      if (btn1) { btn1.textContent = 'Rain: Off'; btn1.classList.remove('active'); }
+      if (btn2) { btn2.textContent = 'Rain: Off'; btn2.classList.remove('active'); }
+    }
+  }
+
+  const rainBtn = document.getElementById('cgi-rain-btn');
+  const rainPanelBtn = document.getElementById('cgi-rain-panel-btn');
+  if (rainBtn) rainBtn.addEventListener('click', () => toggleRain(rainBtn, rainPanelBtn));
+  if (rainPanelBtn) rainPanelBtn.addEventListener('click', () => toggleRain(rainPanelBtn, rainBtn));
+
+  function clearSurface() { cur.fill(0); prev.fill(0); }
+  const clearBtn = document.getElementById('cgi-clear-btn');
+  const clearPanelBtn = document.getElementById('cgi-clear-panel-btn');
+  if (clearBtn) clearBtn.addEventListener('click', clearSurface);
+  if (clearPanelBtn) clearPanelBtn.addEventListener('click', clearSurface);
+
+  /* Simulation step */
+  function step() {
+    const d = Number(dampSlider.value) / 100;
+    for (let y = 1; y < H - 1; y++) {
+      for (let x = 1; x < W - 1; x++) {
+        const i = idx(x, y);
+        const sum = cur[idx(x - 1, y)] + cur[idx(x + 1, y)] + cur[idx(x, y - 1)] + cur[idx(x, y + 1)];
+        prev[i] = (sum * 0.5 - prev[i]) * d;
+      }
+    }
+    /* swap buffers */
+    const tmp = cur; cur = prev; prev = tmp;
+  }
+
+  /* Render */
+  function render() {
+    const d = imgData.data;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const i = idx(x, y);
+        const h = cur[i];
+
+        /* surface normal via finite differences */
+        const hL = x > 0 ? cur[idx(x - 1, y)] : h;
+        const hR = x < W - 1 ? cur[idx(x + 1, y)] : h;
+        const hU = y > 0 ? cur[idx(x, y - 1)] : h;
+        const hD = y < H - 1 ? cur[idx(x, y + 1)] : h;
+        const nx = (hL - hR) * 0.4;
+        const ny = (hU - hD) * 0.4;
+        const nz = 5.0;
+        const nl = Math.sqrt(nx * nx + ny * ny + nz * nz);
+        const nnx = nx / nl, nny = ny / nl, nnz = nz / nl;
+
+        /* diffuse + specular lighting */
+        const lx = -0.45, ly = -0.65, lz = 1.0;
+        const ll = Math.sqrt(lx * lx + ly * ly + lz * lz);
+        const lnx = lx / ll, lny = ly / ll, lnz = lz / ll;
+        const diffuse = Math.max(0, nnx * lnx + nny * lny + nnz * lnz);
+        const spec = Math.pow(diffuse, 28);
+
+        /* height tint */
+        const t = Math.max(0, Math.min(1, (h + 40) / 80));
+
+        let r, g, b;
+        if (renderMode === 'normals') {
+          r = Math.floor((nnx + 1) * 127.5);
+          g = Math.floor((nny + 1) * 127.5);
+          b = Math.floor(nnz * 255);
+        } else if (renderMode === 'depth') {
+          const v = Math.floor(t * 220);
+          r = v; g = v; b = v;
+        } else {
+          /* surface: deep-sea tones with specular highlights */
+          r = Math.min(255, Math.floor(0   + t * 25  + diffuse * 40  + spec * 220));
+          g = Math.min(255, Math.floor(35  + t * 120 + diffuse * 100 + spec * 230));
+          b = Math.min(255, Math.floor(100 + t * 120 + diffuse * 80  + spec * 255));
+        }
+
+        const p = (y * W + x) * 4;
+        d[p] = r; d[p + 1] = g; d[p + 2] = b; d[p + 3] = 255;
+      }
+    }
+    offCtx.putImageData(imgData, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'medium';
+    ctx.drawImage(off, 0, 0, cw, ch);
+  }
+
+  /* Seed with initial disturbances */
+  splash(Math.floor(W * 0.5), Math.floor(H * 0.5), 14, 70);
+  splash(Math.floor(W * 0.25), Math.floor(H * 0.35), 8, 50);
+  splash(Math.floor(W * 0.72), Math.floor(H * 0.65), 6, 60);
+
+  /* Main loop */
+  function loop() {
+    step();
+    render();
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ── Practice problems ── */
+function cgiCheck(n, correct, tol) {
+  const val = parseFloat(document.getElementById('cgi-ans-' + n).value);
+  const fb = document.getElementById('cgi-fb-' + n);
+  const hint = document.getElementById('cgi-hint-' + n);
+  if (isNaN(val)) { fb.className = 'cgi-feedback err'; fb.textContent = 'Enter a number.'; return; }
+  if (Math.abs(val - correct) <= tol) {
+    fb.className = 'cgi-feedback ok'; fb.textContent = '✓ Correct!';
+    hint.style.display = 'none';
+  } else {
+    fb.className = 'cgi-feedback err';
+    fb.textContent = val < correct - tol ? '↑ Too low.' : '↓ Too high.';
+    hint.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>
