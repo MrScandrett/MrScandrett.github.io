@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Language Foundations Lab · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Connect alphabet sounds, phonics, syllables, word building, sentence structure, speaking, reading, and writing as one living symbol system." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    /* ── Theme tokens ─────────────────────────────────── */
+    .ll-viewport {
+      --ll-panel-w: 295px;
+      --ll-accent: #b45309;
+      --ll-tab-active: #d97706;
+      --ll-tab-active-bg: rgba(217, 119, 6, 0.10);
+    }
+
+    /* ── Sim background ───────────────────────────────── */
+    .ll-sim {
+      background:
+        radial-gradient(circle at 10% 6%, rgba(253, 230, 138, 0.28) 0, transparent 32rem),
+        var(--surface-0);
+    }
+
+    /* ── Page scaffold ────────────────────────────────── */
+    .lf-page { max-width: 1080px; margin: 0 auto; padding: 0 1rem 3rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .lf-hero { padding: 0.75rem 0 1.15rem; }
+    .lf-hero h1 { font-size: clamp(1.55rem, 3.5vw, 2.35rem); margin: 0.25rem 0 0.5rem; }
+    .lf-meta {
+      display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem;
+      margin: 0.55rem 0 0; font-size: 0.8rem; color: #64748b;
+    }
+    .lf-meta .dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: currentColor; opacity: 0.45;
+      display: inline-block; align-self: center;
+    }
+    .lf-lede { margin: 0.7rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.93rem; line-height: 1.65; }
+
+    /* ── Card ─────────────────────────────────────────── */
+    .lf-card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-left: 3.5px solid var(--lf-accent, #b45309);
+      border-radius: 16px;
+      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.07);
+      padding: 1.15rem 1.3rem;
+      margin-bottom: 0.9rem;
+    }
+    .lf-card h2 { margin: 0 0 0.4rem; font-size: 1.18rem; }
+    .lf-card p  { margin: 0 0 0.55rem; color: #3f4f65; font-size: 0.87rem; line-height: 1.65; }
+    .lf-card p:last-child { margin-bottom: 0; }
+
+    /* ── Section label ────────────────────────────────── */
+    .lf-label {
+      display: inline-block; margin-bottom: 0.3rem;
+      font-weight: 900; color: #b45309;
+      letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.7rem;
+    }
+
+    /* ── Card head (title + button row) ──────────────── */
+    .lf-card-head {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 0.75rem; margin-bottom: 0.4rem;
+    }
+    .lf-card-head h2 { margin: 0 0 0.2rem; }
+
+    /* ── Reset / action button ────────────────────────── */
+    .lf-btn {
+      flex-shrink: 0;
+      border: 1px solid #dde3ea; border-radius: 8px;
+      background: #fff; color: #56657a;
+      font: inherit; font-weight: 700; font-size: 0.75rem;
+      padding: 5px 11px; cursor: pointer;
+      transition: border-color 120ms, background 120ms;
+    }
+    .lf-btn:hover { border-color: #b45309; background: #fffbeb; color: #92400e; }
+
+    /* ── Learning Ladder ──────────────────────────────── */
+    .lf-ladder {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0.6rem; margin-top: 0.7rem;
+    }
+    .lf-step {
+      border: 1px solid #e3eaf1; border-radius: 12px;
+      background: rgba(217, 119, 6, 0.04);
+      padding: 0.7rem 0.85rem;
+      display: flex; align-items: flex-start; gap: 0.55rem;
+      font-size: 0.84rem; font-weight: 700; color: #18212f;
+    }
+    .lf-step-n {
+      width: 24px; height: 24px; flex: 0 0 auto;
+      border-radius: 50%; display: grid; place-items: center;
+      background: #fde68a; color: #92400e;
+      font-size: 0.72rem; font-weight: 800;
+    }
+
+    /* ── Alphabet grid ────────────────────────────────── */
+    .lf-alpha-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+      gap: 0.4rem; margin: 0.75rem 0;
+    }
+    .lf-alpha-btn {
+      aspect-ratio: 1;
+      border: 1.5px solid #dde3ea; border-radius: 11px;
+      background: #fff; font-size: 1.05rem; font-weight: 800;
+      color: #18212f; cursor: pointer;
+      transition: transform 90ms ease, border-color 110ms, background 110ms;
+      display: grid; place-items: center;
+    }
+    .lf-alpha-btn:hover { transform: translateY(-1px); border-color: #d97706; background: #fffbeb; }
+    .lf-alpha-btn[aria-pressed="true"] {
+      background: #fef3c7; border-color: #d97706;
+      color: #92400e; outline: 2px solid rgba(217, 119, 6, 0.3);
+    }
+
+    /* ── Sound info bar ───────────────────────────────── */
+    .lf-sound-bar {
+      display: grid; grid-template-columns: auto 1fr auto;
+      gap: 0.75rem; align-items: center;
+      background: rgba(217, 119, 6, 0.06);
+      border: 1px solid rgba(217, 119, 6, 0.2);
+      border-radius: 12px; padding: 0.8rem 1rem;
+      margin-bottom: 0.6rem;
+    }
+    .lf-sound-big {
+      font-size: 2.4rem; font-weight: 800;
+      color: #92400e; line-height: 1;
+    }
+    .lf-sound-detail { font-size: 0.86rem; color: #3f4f65; line-height: 1.55; }
+    .lf-sound-detail strong { display: block; font-size: 1rem; color: #18212f; margin-bottom: 0.1rem; }
+
+    /* ── Speak button ─────────────────────────────────── */
+    .lf-speak {
+      border: 1.5px solid #d97706; border-radius: 9px;
+      background: transparent; color: #b45309;
+      font: inherit; font-weight: 700; font-size: 0.78rem;
+      padding: 0.42rem 0.62rem; cursor: pointer; white-space: nowrap;
+      transition: background 110ms, color 110ms;
+    }
+    .lf-speak:hover { background: #d97706; color: #fff; }
+
+    /* ── Word choices ─────────────────────────────────── */
+    .lf-choices { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.55rem 0; }
+    .lf-choice {
+      border: 1.5px solid #dde3ea; border-radius: 9px;
+      background: #fff; color: #18212f;
+      font: inherit; font-weight: 700; font-size: 0.86rem;
+      padding: 0.45rem 0.8rem; cursor: pointer;
+      transition: border-color 110ms, background 110ms;
+    }
+    .lf-choice:hover { border-color: #d97706; background: #fffbeb; }
+    .lf-choice.correct { background: #d1fae5; border-color: #059669; color: #065f46; cursor: default; }
+    .lf-choice.wrong   { background: #fee2e2; border-color: #dc2626; color: #7f1d1d; }
+
+    /* ── Feedback ─────────────────────────────────────── */
+    .lf-fb { font-size: 0.85rem; font-weight: 700; min-height: 1.5em; padding: 0.3rem 0; color: #059669; }
+    .lf-fb.err     { color: #b91c1c; }
+    .lf-fb.neutral { color: #56657a; }
+
+    /* ── Tile system ──────────────────────────────────── */
+    .lf-tiles { display: flex; flex-wrap: wrap; gap: 0.42rem; margin: 0.55rem 0; }
+    .lf-tile {
+      border: 1.5px solid #dde3ea; border-radius: 9px;
+      background: #fff; color: #18212f;
+      font: inherit; font-weight: 800; font-size: 0.98rem;
+      padding: 0.5rem 0.7rem; cursor: pointer;
+      min-width: 40px; text-align: center;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.07);
+      transition: transform 80ms ease, border-color 100ms;
+    }
+    .lf-tile:hover { transform: translateY(-1px); border-color: #d97706; }
+    .lf-tile.used { opacity: 0.32; cursor: default; pointer-events: none; }
+    .lf-tile.placed {
+      background: #fffbeb; border-color: rgba(217, 119, 6, 0.35);
+      box-shadow: none; cursor: default;
+    }
+
+    /* ── Output zone ──────────────────────────────────── */
+    .lf-output {
+      min-height: 50px;
+      border: 2px dashed rgba(180, 83, 9, 0.22);
+      border-radius: 11px; background: rgba(217, 119, 6, 0.03);
+      display: flex; align-items: center; gap: 0.38rem;
+      padding: 0.55rem 0.65rem; flex-wrap: wrap; margin: 0.45rem 0;
+    }
+    .lf-output-hint { color: #94a3b8; font-size: 0.8rem; font-style: italic; }
+
+    /* ── Target chips ─────────────────────────────────── */
+    .lf-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.45rem 0; }
+    .lf-chip {
+      border: 1px solid #dde3ea; border-radius: 20px;
+      background: transparent; color: #56657a;
+      font: inherit; font-weight: 700; font-size: 0.75rem;
+      padding: 3px 9px; cursor: pointer;
+      transition: background 110ms, color 110ms, border-color 110ms;
+    }
+    .lf-chip:hover, .lf-chip.on {
+      background: rgba(217, 119, 6, 0.10); color: #b45309; border-color: #d97706;
+    }
+
+    /* ── Builder two-col grid ─────────────────────────── */
+    .lf-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+
+    /* ── Target label row ─────────────────────────────── */
+    .lf-target-row {
+      display: flex; align-items: center; gap: 0.45rem;
+      font-size: 0.78rem; color: #56657a; margin: 0.2rem 0 0.3rem;
+    }
+    .lf-target-row strong { font-size: 1.05rem; color: #0369a1; }
+
+    /* ── Syllable Lab ─────────────────────────────────── */
+    .lf-syl-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 0.7rem; margin-top: 0.7rem;
+    }
+    .lf-syl-card {
+      border: 1px solid #e3eaf1; border-radius: 13px;
+      padding: 0.9rem 1rem; background: rgba(217, 119, 6, 0.03);
+    }
+    .lf-syl-word {
+      font-size: 1.08rem; font-weight: 800;
+      color: #18212f; margin: 0 0 0.4rem;
+    }
+    .lf-beats { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.45rem; }
+    .lf-beat {
+      border-radius: 999px; background: #fde68a;
+      padding: 0.28rem 0.55rem; font-weight: 800;
+      font-size: 0.86rem; color: #92400e;
+    }
+    .lf-claps { display: flex; gap: 0.28rem; align-items: center; }
+    .lf-clap-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #d97706; opacity: 0.55;
+    }
+    .lf-clap-lbl { font-size: 0.72rem; color: #94a3b8; font-weight: 600; margin-left: 0.3rem; }
+
+    /* ── Sentence Machine ─────────────────────────────── */
+    .lf-bank, .lf-sentence {
+      min-height: 52px; display: flex; flex-wrap: wrap;
+      gap: 0.42rem; align-items: center;
+      padding: 0.55rem 0.65rem; border-radius: 11px;
+      border: 2px dashed rgba(180, 83, 9, 0.2);
+      background: rgba(255, 255, 255, 0.5); margin: 0.45rem 0;
+    }
+    .lf-sentence { background: #fff; border-style: solid; }
+    .lf-word-tile {
+      border: 1.5px solid #dde3ea; border-radius: 9px;
+      background: #fff; color: #18212f;
+      font: inherit; font-weight: 800; font-size: 0.9rem;
+      padding: 0.42rem 0.65rem; cursor: pointer;
+      box-shadow: 0 2px 5px rgba(15, 23, 42, 0.07);
+      transition: transform 80ms ease, border-color 100ms;
+    }
+    .lf-word-tile:hover { transform: translateY(-1px); border-color: #d97706; }
+    .lf-word-tile.placed {
+      background: #fffbeb; border-color: rgba(217, 119, 6, 0.35);
+      cursor: default; box-shadow: none;
+    }
+
+    /* ── Read-Speak-Write Loop ────────────────────────── */
+    .lf-loop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin-top: 0.7rem; }
+    .lf-loop-card {
+      border: 1px solid #e3eaf1; border-radius: 13px;
+      padding: 0.9rem 1rem; background: #fff;
+    }
+    .lf-loop-lbl {
+      display: block; font-size: 0.66rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: #b45309; margin-bottom: 0.35rem;
+    }
+    .lf-loop-word {
+      font-size: 1.45rem; font-weight: 800;
+      color: #18212f; margin: 0 0 0.45rem; line-height: 1;
+    }
+    .lf-loop-note { font-size: 0.76rem; color: #56657a; margin: 0 0 0.55rem; line-height: 1.5; }
+    .lf-input {
+      width: 100%; border: 1.5px solid #dde3ea; border-radius: 8px;
+      padding: 0.5rem 0.6rem; background: #f8fafc; color: #18212f;
+      font: inherit; font-size: 0.88rem;
+      transition: border-color 140ms;
+    }
+    .lf-input:focus { outline: none; border-color: #d97706; background: #fff; }
+
+    /* ── Extension grid ───────────────────────────────── */
+    .lf-ext-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-top: 0.7rem; }
+    .lf-ext-card {
+      border: 1px solid #e3eaf1; border-radius: 13px;
+      padding: 0.88rem 1rem; background: #fff;
+    }
+    .lf-ext-card strong { display: block; font-size: 0.87rem; margin-bottom: 0.22rem; color: #b45309; }
+    .lf-ext-card p { margin: 0; font-size: 0.81rem; color: #3f4f65; line-height: 1.6; }
+
+    /* ── Footer ───────────────────────────────────────── */
+    .lf-footer { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #dde3ea; }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media (max-width: 860px) {
+      .lf-two { grid-template-columns: 1fr; }
+      .lf-syl-grid { grid-template-columns: 1fr 1fr; }
+      .lf-loop { grid-template-columns: 1fr 1fr; }
+      .lf-ext-grid { grid-template-columns: 1fr 1fr; }
+      .lf-ladder { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px) {
+      .lf-syl-grid { grid-template-columns: 1fr; }
+      .lf-loop { grid-template-columns: 1fr; }
+      .lf-ext-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <main class="ll-sim" id="main-content">
+        <div class="lf-page">
+
+          <!-- ── Hero ───────────────────────────────── -->
+          <section class="lf-hero">
+            <p class="eyebrow">Language · Symbol Lab · K–12</p>
+            <h1>Language Foundations Lab</h1>
+            <div class="lf-meta">
+              <span>Alphabet &amp; Phonics</span><span class="dot"></span>
+              <span>Word Building</span><span class="dot"></span>
+              <span>Sentence Structure</span><span class="dot"></span>
+              <span>Read–Speak–Write Loop</span>
+            </div>
+            <p class="lf-lede">Connect alphabet, phonics, syllables, word building, sentence structure, speaking, reading, and writing as one symbol system. Sound becomes meaning one piece at a time.</p>
+          </section>
+
+          <!-- ── Learning Ladder ─────────────────── -->
+          <section class="lf-card" style="--lf-accent:#d97706;">
+            <span class="lf-label">Map</span>
+            <h2>Language Ladder</h2>
+            <p>Follow the path from raw sound to full thought. Each step builds on the one before.</p>
+            <div class="lf-ladder">
+              <div class="lf-step"><span class="lf-step-n">1</span>Hear a Sound</div>
+              <div class="lf-step"><span class="lf-step-n">2</span>See a Letter</div>
+              <div class="lf-step"><span class="lf-step-n">3</span>Blend Sounds</div>
+              <div class="lf-step"><span class="lf-step-n">4</span>Build Syllables</div>
+              <div class="lf-step"><span class="lf-step-n">5</span>Make Words</div>
+              <div class="lf-step"><span class="lf-step-n">6</span>Form Sentences</div>
+              <div class="lf-step"><span class="lf-step-n">7</span>Read Meaning</div>
+              <div class="lf-step"><span class="lf-step-n">8</span>Write Back</div>
+            </div>
+          </section>
+
+          <!-- ── Alphabet & Sound Lab ────────────── -->
+          <section id="alphabet" class="lf-card" style="--lf-accent:#b45309;">
+            <span class="lf-label">Interactive Lab</span>
+            <h2>Alphabet &amp; Sound Lab</h2>
+            <p>Click any letter to hear its sound, then match it to the correct word from the choices below.</p>
+            <div class="lf-alpha-grid" id="alphaGrid" aria-label="Alphabet letters"></div>
+            <div class="lf-sound-bar" aria-live="polite">
+              <span class="lf-sound-big" id="soundLetter">A</span>
+              <div class="lf-sound-detail">
+                <strong id="soundPhoneme">/a/ as in apple</strong>
+                <span id="soundHint">Short vowel — mouth opens wide.</span>
+              </div>
+              <button class="lf-speak" id="soundSpeakBtn" type="button">▶ Speak</button>
+            </div>
+            <div class="lf-choices" id="soundChoices" aria-label="Word choices"></div>
+            <p class="lf-fb neutral" id="soundFb" aria-live="polite">Choose a letter, then match it to a word.</p>
+          </section>
+
+          <!-- ── Phonics Builder + Word Workshop ── -->
+          <div class="lf-two">
+
+            <div class="lf-card" style="--lf-accent:#0369a1;">
+              <div class="lf-card-head">
+                <div>
+                  <span class="lf-label">Phonics</span>
+                  <h2>Phonics Builder</h2>
+                  <p style="margin:0 0 0; font-size:0.81rem; color:#56657a;">Tap sound tiles in order. Digraphs stay together.</p>
+                </div>
+                <button class="lf-btn" type="button" id="phonicsReset">Reset</button>
+              </div>
+              <div class="lf-tiles" id="phonicsTiles" aria-label="Sound tiles"></div>
+              <div class="lf-output" id="phonicsOutput" aria-label="Built word">
+                <span class="lf-output-hint">Tap tiles to build the word →</span>
+              </div>
+              <div class="lf-target-row">
+                <span>Target:</span>
+                <strong id="phonicsTarget"></strong>
+              </div>
+              <div class="lf-chips" id="phonicsTargets" aria-label="Word targets"></div>
+              <p class="lf-fb neutral" id="phonicsFb" aria-live="polite">Build the target word from left to right.</p>
+            </div>
+
+            <div class="lf-card" style="--lf-accent:#7c3aed;">
+              <div class="lf-card-head">
+                <div>
+                  <span class="lf-label">Workshop</span>
+                  <h2>Word Workshop</h2>
+                  <p style="margin:0; font-size:0.81rem; color:#56657a;">Build CVC words, blends, and longer words from tiles.</p>
+                </div>
+                <button class="lf-btn" type="button" id="workshopReset">Clear</button>
+              </div>
+              <div class="lf-tiles" id="wordBank" aria-label="Letter tiles"></div>
+              <div class="lf-output" id="workshopOutput" aria-label="Workshop word">
+                <span class="lf-output-hint">Tap letters to spell a word →</span>
+              </div>
+              <div class="lf-chips" id="wordChallenges" aria-label="Word challenges"></div>
+              <p class="lf-fb neutral" id="workshopFb" aria-live="polite">Try building sun.</p>
+            </div>
+
+          </div>
+
+          <!-- ── Syllable Lab ────────────────────── -->
+          <section class="lf-card" style="--lf-accent:#059669;">
+            <span class="lf-label">Phonological Awareness</span>
+            <h2>Syllable Lab</h2>
+            <p>Each colored block is one syllable — one "clap." Read the word, count the beats, then check your answer.</p>
+            <div class="lf-syl-grid" id="sylGrid"></div>
+          </section>
+
+          <!-- ── Sentence Machine ────────────────── -->
+          <section class="lf-card" style="--lf-accent:#dc2626;">
+            <div class="lf-card-head">
+              <div>
+                <span class="lf-label">Syntax</span>
+                <h2>Sentence Machine</h2>
+                <p style="margin:0; font-size:0.81rem; color:#56657a;">Arrange word tiles into a complete, ordered thought.</p>
+              </div>
+              <button class="lf-btn" type="button" id="sentenceReset">Reset</button>
+            </div>
+            <div class="lf-bank"     id="sentenceBank"      aria-label="Word bank"></div>
+            <div class="lf-sentence" id="sentenceLine"      aria-label="Sentence workspace"></div>
+            <div class="lf-chips"    id="sentenceTargets"   aria-label="Sentence challenges"></div>
+            <p class="lf-fb neutral" id="sentenceFb" aria-live="polite">Build: The cat runs.</p>
+          </section>
+
+          <!-- ── Read-Speak-Write Loop ───────────── -->
+          <section class="lf-card" style="--lf-accent:#0f766e;">
+            <span class="lf-label">Integration</span>
+            <h2>Read, Speak, Write Loop</h2>
+            <p>One word travels through eyes, voice, hand, and thought — the four paths to fluency.</p>
+            <div class="lf-loop">
+              <div class="lf-loop-card">
+                <span class="lf-loop-lbl">1 · Read</span>
+                <p class="lf-loop-word">moon</p>
+                <p class="lf-loop-note">Look at the word. Picture what it means.</p>
+              </div>
+              <div class="lf-loop-card">
+                <span class="lf-loop-lbl">2 · Speak</span>
+                <p class="lf-loop-note">Say it aloud, then use it in a sentence.</p>
+                <button class="lf-speak" type="button" id="loopSpeakBtn">▶ Speak "moon"</button>
+              </div>
+              <div class="lf-loop-card">
+                <span class="lf-loop-lbl">3 · Write</span>
+                <input class="lf-input" id="traceWord" type="text"
+                  aria-label='Type the word moon' placeholder='type "moon"' autocomplete="off" />
+              </div>
+              <div class="lf-loop-card">
+                <span class="lf-loop-lbl">4 · Use</span>
+                <input class="lf-input" id="sentenceUse" type="text"
+                  aria-label='Use moon in a sentence' placeholder='I see the...' autocomplete="off" />
+              </div>
+            </div>
+            <p class="lf-fb neutral" id="loopFb" aria-live="polite">Read it → say it → type it → use it in a sentence.</p>
+          </section>
+
+          <!-- ── K–12 Extension Layer ────────────── -->
+          <section class="lf-card" style="--lf-accent:#6d28d9;">
+            <span class="lf-label">Extension · Grades 6–12</span>
+            <h2>Language as a Logic System</h2>
+            <p>Older students can study language the way a programmer studies code — a structured, rule-governed system for encoding thought.</p>
+            <div class="lf-ext-grid">
+              <div class="lf-ext-card">
+                <strong>Greek &amp; Latin Roots</strong>
+                <p>Roots carry meaning across many words. <em>bio-</em> (life), <em>graph-</em> (write), <em>port-</em> (carry). One root unlocks dozens of words.</p>
+              </div>
+              <div class="lf-ext-card">
+                <strong>Affixes</strong>
+                <p>Prefixes and suffixes act like reusable code blocks: <em>un-</em>, <em>re-</em>, <em>-tion</em>, <em>-ly</em> — modifying base words predictably.</p>
+              </div>
+              <div class="lf-ext-card">
+                <strong>Etymology</strong>
+                <p>Word histories reveal migration, trade, and culture. English borrowed from Latin, French, Norse, and Arabic across centuries.</p>
+              </div>
+              <div class="lf-ext-card">
+                <strong>Grammar</strong>
+                <p>Sentence structure is logic for thought. Subject, predicate, clause — these are the data structures of language.</p>
+              </div>
+              <div class="lf-ext-card">
+                <strong>Rhetoric</strong>
+                <p>Word order, tone, and structure all affect how meaning lands. Language choices shape response as much as content does.</p>
+              </div>
+              <div class="lf-ext-card">
+                <strong>Encoding</strong>
+                <p>Writing systems are compression formats for thought and memory. Letters are symbols that store spoken sound across time.</p>
+              </div>
+            </div>
+          </section>
+
+          <footer class="site-footer lf-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+          </footer>
+
+        </div><!-- .lf-page -->
+      </main>
+
+      <!-- ── Side Panel ──────────────────────────────── -->
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs" role="tablist" aria-label="Lesson panel">
+            <button class="ll-tab" role="tab" aria-selected="true"  data-pane="lf-guide">Guide</button>
+            <button class="ll-tab" role="tab" aria-selected="false" data-pane="lf-vocab">Vocab</button>
+            <button class="ll-tab" role="tab" aria-selected="false" data-pane="lf-activities">Activities</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+
+        <div class="ll-panel-body">
+
+          <div class="ll-pane ll-active" id="lf-guide">
+            <div class="ll-info">
+              <strong>Lesson objective</strong>
+              Students connect the five stages of language (sound → symbol → word → sentence → meaning) and demonstrate each step using the interactive tools.
+            </div>
+            <div class="ll-info">
+              <strong>Sound Lab</strong>
+              Have students say the letter sound aloud before selecting a word. Hearing first, then choosing, reinforces phonemic awareness before decoding begins.
+            </div>
+            <div class="ll-info">
+              <strong>Phonics Builder</strong>
+              Digraphs (sh, ch, th) are kept as single tiles — two letters that make one sound. Point this out as the key insight before students begin.
+            </div>
+            <div class="ll-info">
+              <strong>Syllable Lab</strong>
+              Clap along with students. Say the word, tap once per beat, then count. Physical engagement deepens phonological awareness significantly.
+            </div>
+            <div class="ll-info">
+              <strong>Sentence Machine</strong>
+              After building a sentence, ask: what changes if you move the period word last? What if you swap the subject? Explore word-order effects.
+            </div>
+            <div class="ll-info">
+              <strong>Read-Speak-Write Loop</strong>
+              The loop mirrors four paths to word retention: visual, auditory, kinesthetic (typing), and generative (using). All four together cement a word in memory.
+            </div>
+          </div>
+
+          <div class="ll-pane" id="lf-vocab">
+            <div class="ll-info"><strong>Phoneme</strong>The smallest unit of sound in a language. "cat" has three: /k/, /æ/, /t/.</div>
+            <div class="ll-info"><strong>Grapheme</strong>The written symbol — a letter or letter group — that represents a phoneme.</div>
+            <div class="ll-info"><strong>Digraph</strong>Two letters that together make one sound: sh, ch, th, wh, ck.</div>
+            <div class="ll-info"><strong>CVC Word</strong>Consonant-Vowel-Consonant — the simplest English pattern: cat, sun, pin, dog.</div>
+            <div class="ll-info"><strong>Syllable</strong>A unit of spoken language built around one vowel sound. Every syllable is exactly one beat.</div>
+            <div class="ll-info"><strong>Phonological Awareness</strong>The ability to hear and manipulate spoken sounds — a key early predictor of reading success.</div>
+            <div class="ll-info"><strong>Decode</strong>To translate written symbols back into spoken sounds — what readers do with unfamiliar words.</div>
+            <div class="ll-info"><strong>Encode</strong>To translate spoken sounds into written symbols — what writers do when spelling.</div>
+            <div class="ll-info"><strong>Fluency</strong>Accurate, automatic, expressive reading — the bridge between decoding and comprehension.</div>
+            <div class="ll-info"><strong>Syntax</strong>The rules that govern word order and sentence structure in a language.</div>
+          </div>
+
+          <div class="ll-pane" id="lf-activities">
+            <div class="ll-info">
+              <strong>Sound Sorting</strong>
+              Sort all 26 letters into vowels and consonants using the Alphabet Lab. Ask: what happens in a word with no vowel? Why does every syllable need one?
+            </div>
+            <div class="ll-info">
+              <strong>Beat Detective</strong>
+              Pick any word. Predict the syllable count, clap it out, then check the Syllable Lab. Which words surprised you most?
+            </div>
+            <div class="ll-info">
+              <strong>Sentence Expand</strong>
+              Build a short sentence in the Sentence Machine, then describe one word you could add that would change the meaning most. What part of speech is it?
+            </div>
+            <div class="ll-info">
+              <strong>Loop Challenge</strong>
+              Complete the Read-Speak-Write Loop five times with different words. Which of the four steps is hardest? That's where to focus practice.
+            </div>
+            <div class="ll-info">
+              <strong>Digraph Hunt (Grades 3–5)</strong>
+              Find every digraph in the Phonics Builder. How many words can you spell using only sh, ch, th, or wh?
+            </div>
+            <div class="ll-info">
+              <strong>Root Hunt (Grades 6–12)</strong>
+              Take any word from today and trace it to its origin language. How many modern English words share that root?
+            </div>
+          </div>
+
+        </div><!-- .ll-panel-body -->
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span>
+        <span class="ll-open-dot"></span>
+        <span class="ll-open-dot"></span>
+      </button>
+
+    </div><!-- .ll-stage -->
+  </div><!-- .ll-viewport -->
+
+  <script>
+    /* ── Panel: tabs + open/close ─────────────────────── */
+    (function () {
+      const panel   = document.querySelector(".ll-panel");
+      const closeBtn= document.querySelector(".ll-panel-close");
+      const openBtn = document.querySelector(".ll-open-btn");
+      const tabs    = document.querySelectorAll(".ll-tab");
+
+      function showPane(id) {
+        document.querySelectorAll(".ll-pane").forEach(p => p.classList.remove("ll-active"));
+        const pane = document.getElementById(id);
+        if (pane) pane.classList.add("ll-active");
+        tabs.forEach(t => t.setAttribute("aria-selected", t.dataset.pane === id ? "true" : "false"));
+      }
+
+      tabs.forEach(tab => tab.addEventListener("click", () => showPane(tab.dataset.pane)));
+      closeBtn.addEventListener("click", () => panel.setAttribute("aria-hidden", "true"));
+      openBtn.addEventListener("click",  () => panel.setAttribute("aria-hidden", "false"));
+
+      if (window.innerWidth <= 680) {
+        document.querySelector(".ll-panel-head").addEventListener("click", e => {
+          if (e.target.closest(".ll-tab, .ll-panel-close")) return;
+          const hidden = panel.getAttribute("aria-hidden") === "true";
+          panel.setAttribute("aria-hidden", hidden ? "false" : "true");
+        });
+      }
+    })();
+
+    /* ── Speech synthesis ─────────────────────────────── */
+    const speak = text => {
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.rate = 0.82;
+      window.speechSynthesis.speak(utt);
+    };
+
+    /* ── Alphabet & Sound Lab ─────────────────────────── */
+    const SOUNDS = [
+      { letter:"A", phoneme:"/a/",  word:"apple",    hint:"Short vowel — mouth opens wide.",                              choices:["apple","ball","cat","moon","ship"],    speech:"a, apple"    },
+      { letter:"B", phoneme:"/b/",  word:"ball",     hint:"A voiced lip-pop. Feel your lips close.",                     choices:["apple","ball","fan","sun","rain"],     speech:"b, ball"     },
+      { letter:"C", phoneme:"/k/",  word:"cat",      hint:"A hard /k/ at the back of the throat.",                      choices:["ant","ball","cat","dog","egg"],        speech:"k, cat"      },
+      { letter:"D", phoneme:"/d/",  word:"dog",      hint:"A voiced stop — tongue behind top teeth.",                   choices:["cat","dog","fan","log","map"],         speech:"d, dog"      },
+      { letter:"E", phoneme:"/e/",  word:"egg",      hint:"Short vowel — mid front of the mouth.",                      choices:["ant","egg","ice","oak","up"],          speech:"e, egg"      },
+      { letter:"F", phoneme:"/f/",  word:"fan",      hint:"Upper teeth on lower lip — breath only, no voice.",          choices:["fan","man","pan","ran","van"],         speech:"f, fan"      },
+      { letter:"G", phoneme:"/g/",  word:"goat",     hint:"A voiced stop at the back of the throat.",                   choices:["boat","coat","goat","note","road"],    speech:"g, goat"     },
+      { letter:"H", phoneme:"/h/",  word:"hat",      hint:"A gentle breath — no contact between mouth parts.",          choices:["bat","cat","hat","mat","sat"],         speech:"h, hat"      },
+      { letter:"I", phoneme:"/ɪ/",  word:"insect",   hint:"Short vowel — slightly open, middle front.",                 choices:["ant","egg","insect","oak","up"],       speech:"i, insect"   },
+      { letter:"J", phoneme:"/dʒ/", word:"jar",      hint:"A voiced affricate — combines d and zh sounds.",             choices:["bar","car","far","jar","star"],        speech:"j, jar"      },
+      { letter:"K", phoneme:"/k/",  word:"kite",     hint:"Same sound as C — tongue meets the soft palate.",            choices:["bite","kite","mite","site","white"],   speech:"k, kite"     },
+      { letter:"L", phoneme:"/l/",  word:"leaf",     hint:"Tongue tip behind top teeth, sides open for air.",           choices:["beef","leaf","reef","teal","teeth"],   speech:"l, leaf"     },
+      { letter:"M", phoneme:"/m/",  word:"moon",     hint:"Lips closed — sound travels through the nose.",              choices:["boon","moon","noon","soon","tune"],    speech:"m, moon"     },
+      { letter:"N", phoneme:"/n/",  word:"nest",     hint:"Tongue behind top teeth — sound through the nose.",          choices:["best","fest","nest","rest","test"],    speech:"n, nest"     },
+      { letter:"O", phoneme:"/ɒ/",  word:"octopus",  hint:"Short vowel — round lips, mid-back mouth.",                  choices:["ant","egg","ice","octopus","up"],      speech:"o, octopus"  },
+      { letter:"P", phoneme:"/p/",  word:"pen",      hint:"A voiceless lip-pop — no throat vibration.",                 choices:["den","hen","men","pen","ten"],         speech:"p, pen"      },
+      { letter:"Q", phoneme:"/kw/", word:"queen",    hint:"Always paired with U — produces a /kw/ blend.",              choices:["bean","green","queen","seen","teen"],  speech:"kw, queen"   },
+      { letter:"R", phoneme:"/r/",  word:"rain",     hint:"Tongue curls back slightly — one of the trickiest sounds.",  choices:["cane","lane","mane","pain","rain"],    speech:"r, rain"     },
+      { letter:"S", phoneme:"/s/",  word:"sun",      hint:"A voiceless hiss — air streams past the tongue tip.",        choices:["bun","fun","gun","run","sun"],         speech:"s, sun"      },
+      { letter:"T", phoneme:"/t/",  word:"top",      hint:"A voiceless stop — tongue behind top teeth, then a pop.",    choices:["cop","hop","mop","pop","top"],         speech:"t, top"      },
+      { letter:"U", phoneme:"/ʌ/",  word:"umbrella", hint:"Short vowel — central, relaxed jaw.",                        choices:["ant","egg","ice","oak","umbrella"],    speech:"u, umbrella" },
+      { letter:"V", phoneme:"/v/",  word:"van",      hint:"Like F but voiced — teeth still rest on the lower lip.",     choices:["ban","can","fan","pan","van"],         speech:"v, van"      },
+      { letter:"W", phoneme:"/w/",  word:"web",      hint:"Lips round then quickly open — a glide consonant.",          choices:["bed","fed","led","red","web"],         speech:"w, web"      },
+      { letter:"X", phoneme:"/ks/", word:"fox",      hint:"Usually /ks/ — two sounds packed into one letter.",          choices:["box","dog","fox","lock","top"],        speech:"ks, fox"     },
+      { letter:"Y", phoneme:"/j/",  word:"yarn",     hint:"A palatal glide — tongue near the roof of the mouth.",       choices:["barn","earn","fern","learn","yarn"],   speech:"y, yarn"     },
+      { letter:"Z", phoneme:"/z/",  word:"zebra",    hint:"A voiced hiss — buzzy, like a bee.",                         choices:["cobra","parrot","rabbit","snake","zebra"], speech:"z, zebra"},
+    ];
+
+    let activeSound = SOUNDS[0];
+
+    const alphaGrid    = document.getElementById("alphaGrid");
+    const soundLetter  = document.getElementById("soundLetter");
+    const soundPhoneme = document.getElementById("soundPhoneme");
+    const soundHint    = document.getElementById("soundHint");
+    const soundChoices = document.getElementById("soundChoices");
+    const soundFb      = document.getElementById("soundFb");
+    const soundSpeakBtn= document.getElementById("soundSpeakBtn");
+
+    function renderAlpha() {
+      alphaGrid.innerHTML = SOUNDS.map(s =>
+        `<button class="lf-alpha-btn" type="button" data-letter="${s.letter}" aria-pressed="${s.letter === activeSound.letter}">${s.letter}</button>`
+      ).join("");
+    }
+
+    function renderSoundInfo() {
+      soundLetter.textContent  = activeSound.letter;
+      soundPhoneme.textContent = `${activeSound.phoneme} as in ${activeSound.word}`;
+      soundHint.textContent    = activeSound.hint;
+      soundFb.className        = "lf-fb neutral";
+      soundFb.textContent      = `${activeSound.letter} says ${activeSound.phoneme}. Which word starts with this sound?`;
+      soundChoices.innerHTML = [...activeSound.choices].sort(() => 0.5 - Math.random()).map(w =>
+        `<button class="lf-choice" type="button" data-word="${w}">${w}</button>`
+      ).join("");
+    }
+
+    alphaGrid.addEventListener("click", e => {
+      const btn = e.target.closest("[data-letter]");
+      if (!btn) return;
+      activeSound = SOUNDS.find(s => s.letter === btn.dataset.letter);
+      speak(activeSound.speech);
+      renderAlpha();
+      renderSoundInfo();
+    });
+
+    soundChoices.addEventListener("click", e => {
+      const btn = e.target.closest("[data-word]");
+      if (!btn || btn.classList.contains("correct") || btn.classList.contains("wrong")) return;
+      const ok = btn.dataset.word === activeSound.word;
+      btn.classList.add(ok ? "correct" : "wrong");
+      soundFb.className = `lf-fb ${ok ? "" : "err"}`;
+      soundFb.textContent = ok
+        ? `Correct! "${activeSound.word}" starts with ${activeSound.letter} (${activeSound.phoneme}).`
+        : "Try another word.";
+      if (ok) speak(activeSound.word);
+    });
+
+    soundSpeakBtn.addEventListener("click", () => speak(activeSound.speech));
+
+    renderAlpha();
+    renderSoundInfo();
+
+    /* ── Phonics Builder ──────────────────────────────── */
+    const PHONICS = {
+      cat:  ["c","a","t"],
+      sun:  ["s","u","n"],
+      ship: ["sh","i","p"],
+      chin: ["ch","i","n"],
+      that: ["th","a","t"],
+      frog: ["f","r","o","g"],
+    };
+    const PH_EXTRA = ["wh","ck","b","e","d","m","x"];
+
+    let phTarget = "cat";
+    let phBuilt  = [];
+
+    const phTilesEl  = document.getElementById("phonicsTiles");
+    const phOutputEl = document.getElementById("phonicsOutput");
+    const phTargetEl = document.getElementById("phonicsTarget");
+    const phChipsEl  = document.getElementById("phonicsTargets");
+    const phFbEl     = document.getElementById("phonicsFb");
+
+    function renderPhonics() {
+      phTargetEl.textContent = phTarget;
+      const tiles = [...new Set([...PHONICS[phTarget], ...PH_EXTRA])];
+      phTilesEl.innerHTML = tiles.map((t, i) =>
+        `<button class="lf-tile" type="button" data-tile="${t}" data-idx="${i}">${t}</button>`
+      ).join("");
+      phOutputEl.innerHTML = phBuilt.length
+        ? phBuilt.map(t => `<span class="lf-tile placed">${t}</span>`).join("")
+        : `<span class="lf-output-hint">Tap tiles to build the word →</span>`;
+      phChipsEl.innerHTML = Object.keys(PHONICS).map(w =>
+        `<button class="lf-chip${w === phTarget ? " on" : ""}" type="button" data-ph-target="${w}">${w}</button>`
+      ).join("");
+    }
+
+    function checkPhonics() {
+      if (phBuilt.join("") === phTarget) {
+        phFbEl.className = "lf-fb";
+        phFbEl.textContent = `${PHONICS[phTarget].join(" + ")} = ${phTarget} ✓`;
+        speak(phTarget);
+      } else if (phBuilt.length >= PHONICS[phTarget].length) {
+        phFbEl.className = "lf-fb err";
+        phFbEl.textContent = "That order doesn't make the word — reset and try again.";
+      }
+    }
+
+    phTilesEl.addEventListener("click", e => {
+      const btn = e.target.closest("[data-tile]");
+      if (!btn || btn.classList.contains("used")) return;
+      phBuilt.push(btn.dataset.tile);
+      btn.classList.add("used");
+      phOutputEl.innerHTML = phBuilt.map(t => `<span class="lf-tile placed">${t}</span>`).join("");
+      checkPhonics();
+    });
+
+    phChipsEl.addEventListener("click", e => {
+      const chip = e.target.closest("[data-ph-target]");
+      if (!chip) return;
+      phTarget = chip.dataset.phTarget;
+      phBuilt  = [];
+      phFbEl.className = "lf-fb neutral";
+      phFbEl.textContent = `Build "${phTarget}" from left to right.`;
+      renderPhonics();
+    });
+
+    document.getElementById("phonicsReset").addEventListener("click", () => {
+      phBuilt = [];
+      phFbEl.className = "lf-fb neutral";
+      phFbEl.textContent = `Build "${phTarget}" from left to right.`;
+      renderPhonics();
+    });
+
+    renderPhonics();
+
+    /* ── Word Workshop ────────────────────────────────── */
+    const WB_TILES      = ["s","u","n","c","l","a","p","r","o","b","t","mu","sic","ro","bot"];
+    const WB_CHALLENGES = ["sun","clap","robot","music"];
+    let wbTarget = "sun";
+    let wbBuilt  = [];
+
+    const wbBankEl   = document.getElementById("wordBank");
+    const wbOutputEl = document.getElementById("workshopOutput");
+    const wbChipsEl  = document.getElementById("wordChallenges");
+    const wbFbEl     = document.getElementById("workshopFb");
+
+    function renderWorkshop() {
+      wbBankEl.innerHTML = WB_TILES.map(t =>
+        `<button class="lf-tile" type="button" data-wb-tile="${t}">${t}</button>`
+      ).join("");
+      wbOutputEl.innerHTML = wbBuilt.length
+        ? wbBuilt.map(t => `<span class="lf-tile placed">${t}</span>`).join("")
+        : `<span class="lf-output-hint">Tap letters to spell a word →</span>`;
+      wbChipsEl.innerHTML = WB_CHALLENGES.map(w =>
+        `<button class="lf-chip${w === wbTarget ? " on" : ""}" type="button" data-wb-target="${w}">${w}</button>`
+      ).join("");
+    }
+
+    wbBankEl.addEventListener("click", e => {
+      const btn = e.target.closest("[data-wb-tile]");
+      if (!btn) return;
+      wbBuilt.push(btn.dataset.wbTile);
+      wbOutputEl.innerHTML = wbBuilt.map(t => `<span class="lf-tile placed">${t}</span>`).join("");
+      if (wbBuilt.join("") === wbTarget) {
+        wbFbEl.className = "lf-fb";
+        wbFbEl.textContent = `You built "${wbTarget}" ✓`;
+        speak(wbTarget);
+      }
+    });
+
+    wbChipsEl.addEventListener("click", e => {
+      const chip = e.target.closest("[data-wb-target]");
+      if (!chip) return;
+      wbTarget = chip.dataset.wbTarget;
+      wbBuilt  = [];
+      wbFbEl.className = "lf-fb neutral";
+      wbFbEl.textContent = `Try building "${wbTarget}".`;
+      renderWorkshop();
+    });
+
+    document.getElementById("workshopReset").addEventListener("click", () => {
+      wbBuilt = [];
+      wbFbEl.className = "lf-fb neutral";
+      wbFbEl.textContent = `Try building "${wbTarget}".`;
+      renderWorkshop();
+    });
+
+    renderWorkshop();
+
+    /* ── Syllable Lab ─────────────────────────────────── */
+    const SYL_WORDS = [
+      { word:"cat",       beats:["cat"],                count:1 },
+      { word:"robot",     beats:["ro","bot"],            count:2 },
+      { word:"music",     beats:["mu","sic"],            count:2 },
+      { word:"computer",  beats:["com","pu","ter"],      count:3 },
+      { word:"animal",    beats:["an","i","mal"],        count:3 },
+      { word:"alphabet",  beats:["al","pha","bet"],      count:3 },
+    ];
+
+    document.getElementById("sylGrid").innerHTML = SYL_WORDS.map(item => `
+      <article class="lf-syl-card">
+        <p class="lf-syl-word">${item.word}</p>
+        <div class="lf-beats">${item.beats.map(b => `<span class="lf-beat">${b}</span>`).join("")}</div>
+        <div class="lf-claps">
+          ${Array(item.count).fill('<span class="lf-clap-dot"></span>').join("")}
+          <span class="lf-clap-lbl">${item.count} beat${item.count > 1 ? "s" : ""}</span>
+        </div>
+      </article>
+    `).join("");
+
+    /* ── Sentence Machine ─────────────────────────────── */
+    const SENTENCES = [
+      ["The","cat","runs."],
+      ["I","see","the","moon."],
+      ["The","robot","can","jump."],
+      ["We","read","every","day."],
+      ["The","small","robot","can","jump","over","the","red","box."],
+    ];
+    let sentIdx   = 0;
+    let sentBuilt = [];
+
+    const sentBankEl   = document.getElementById("sentenceBank");
+    const sentLineEl   = document.getElementById("sentenceLine");
+    const sentChipsEl  = document.getElementById("sentenceTargets");
+    const sentFbEl     = document.getElementById("sentenceFb");
+
+    function renderSentence() {
+      const shuffled = [...SENTENCES[sentIdx]].sort(() => 0.5 - Math.random());
+      sentBankEl.innerHTML = shuffled.map(w =>
+        `<button class="lf-word-tile" type="button" data-sw="${w}">${w}</button>`
+      ).join("");
+      sentLineEl.innerHTML = sentBuilt.length
+        ? sentBuilt.map(w => `<span class="lf-word-tile placed">${w}</span>`).join("")
+        : `<span style="color:#94a3b8; font-size:0.8rem; font-style:italic;">Tap words to place them →</span>`;
+      sentChipsEl.innerHTML = SENTENCES.map((words, i) =>
+        `<button class="lf-chip${i === sentIdx ? " on" : ""}" type="button" data-st="${i}">${words.join(" ")}</button>`
+      ).join("");
+    }
+
+    sentBankEl.addEventListener("click", e => {
+      const btn = e.target.closest("[data-sw]");
+      if (!btn) return;
+      sentBuilt.push(btn.dataset.sw);
+      btn.remove();
+      sentLineEl.innerHTML = sentBuilt.map(w => `<span class="lf-word-tile placed">${w}</span>`).join("");
+      if (sentBuilt.join(" ") === SENTENCES[sentIdx].join(" ")) {
+        sentFbEl.className = "lf-fb";
+        sentFbEl.textContent = "Sentence is correct ✓";
+        speak(sentBuilt.join(" "));
+      } else if (sentBuilt.length >= SENTENCES[sentIdx].length) {
+        sentFbEl.className = "lf-fb err";
+        sentFbEl.textContent = "Word order is off — reset and try again.";
+      }
+    });
+
+    sentChipsEl.addEventListener("click", e => {
+      const chip = e.target.closest("[data-st]");
+      if (!chip) return;
+      sentIdx   = Number(chip.dataset.st);
+      sentBuilt = [];
+      sentFbEl.className = "lf-fb neutral";
+      sentFbEl.textContent = `Build: ${SENTENCES[sentIdx].join(" ")}`;
+      renderSentence();
+    });
+
+    document.getElementById("sentenceReset").addEventListener("click", () => {
+      sentBuilt = [];
+      sentFbEl.className = "lf-fb neutral";
+      sentFbEl.textContent = `Build: ${SENTENCES[sentIdx].join(" ")}`;
+      renderSentence();
+    });
+
+    renderSentence();
+
+    /* ── Read-Speak-Write Loop ────────────────────────── */
+    document.getElementById("loopSpeakBtn").addEventListener("click", () => speak("moon"));
+
+    const traceEl  = document.getElementById("traceWord");
+    const useEl    = document.getElementById("sentenceUse");
+    const loopFbEl = document.getElementById("loopFb");
+
+    [traceEl, useEl].forEach(input => {
+      input.addEventListener("input", () => {
+        const traced = traceEl.value.trim().toLowerCase() === "moon";
+        const used   = useEl.value.toLowerCase().includes("moon");
+        if (traced && used) {
+          loopFbEl.className = "lf-fb";
+          loopFbEl.textContent = "Loop complete: you read, spoke, wrote, and used the word ✓";
+        } else if (traced) {
+          loopFbEl.className = "lf-fb neutral";
+          loopFbEl.textContent = 'Good — now use "moon" in a sentence.';
+        } else if (used) {
+          loopFbEl.className = "lf-fb neutral";
+          loopFbEl.textContent = 'Good — now type "moon" in the Write box.';
+        } else {
+          loopFbEl.className = "lf-fb neutral";
+          loopFbEl.textContent = 'Read it → say it → type "moon" → use it in a sentence.';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
