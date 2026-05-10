@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Do Atoms Make Music? · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="A STEAM lesson connecting music, sound, oscillation, resonance, heat, light, radio waves, molecules, and atoms." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --atom-music-bg: #071013;
+      --atom-music-panel: rgba(255, 255, 255, 0.92);
+      --atom-music-line: rgba(15, 23, 42, 0.14);
+      --atom-music-text: #172126;
+      --atom-music-muted: #51606a;
+      --atom-music-teal: #12b8a6;
+      --atom-music-amber: #f59e0b;
+      --atom-music-blue: #2563eb;
+      --atom-music-rose: #e11d48;
+      --atom-music-radius: 8px;
+    }
+
+    body.theme-steam {
+      color: var(--atom-music-text);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(18, 184, 166, 0.16), transparent 32rem),
+        radial-gradient(circle at 88% 12%, rgba(245, 158, 11, 0.14), transparent 30rem),
+        linear-gradient(180deg, #f8fbf9 0%, #eef6f5 46%, #f8fafc 100%);
+    }
+
+    .atom-music-shell {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.2rem 0 4rem;
+    }
+
+    .atom-music-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+      gap: 1rem;
+      align-items: stretch;
+      min-height: min(560px, calc(100vh - 96px));
+      padding: 1rem 0 1.2rem;
+    }
+
+    .atom-music-copy,
+    .atom-music-visual,
+    .atom-music-card,
+    .atom-music-ladder {
+      border: 1px solid var(--atom-music-line);
+      border-radius: var(--atom-music-radius);
+      background: var(--atom-music-panel);
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.1);
+    }
+
+    .atom-music-copy {
+      padding: clamp(1.25rem, 4vw, 2.6rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .atom-music-copy h1 {
+      margin: 0;
+      max-width: 12ch;
+      font-size: clamp(2.25rem, 8vw, 5.6rem);
+      line-height: 0.94;
+      letter-spacing: 0;
+    }
+
+    .atom-music-copy p {
+      max-width: 72ch;
+      color: var(--atom-music-muted);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .atom-music-eyebrow,
+    .atom-music-kicker {
+      margin: 0 0 0.7rem;
+      color: var(--atom-music-teal);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .atom-music-answer {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-left: 4px solid var(--atom-music-amber);
+      background: rgba(245, 158, 11, 0.1);
+      border-radius: var(--atom-music-radius);
+      color: #54320a;
+      line-height: 1.6;
+    }
+
+    .atom-music-visual {
+      position: relative;
+      overflow: hidden;
+      min-height: 360px;
+      background:
+        linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
+        radial-gradient(circle at 50% 44%, #123b44 0%, #081316 70%);
+      background-size: 34px 34px, 34px 34px, auto;
+    }
+
+    .atom-music-wave {
+      position: absolute;
+      inset: 12%;
+      border: 2px solid rgba(18, 184, 166, 0.42);
+      border-radius: 50%;
+      animation: pulse-ring 3.6s ease-in-out infinite;
+    }
+
+    .atom-music-wave:nth-child(2) { inset: 22%; border-color: rgba(245, 158, 11, 0.44); animation-delay: -1.2s; }
+    .atom-music-wave:nth-child(3) { inset: 33%; border-color: rgba(96, 165, 250, 0.48); animation-delay: -2.4s; }
+
+    .atom-music-nucleus {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 6.8rem;
+      height: 6.8rem;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, #fef3c7, #12b8a6 56%, #0f766e);
+      box-shadow: 0 0 46px rgba(18, 184, 166, 0.46);
+    }
+
+    .atom-music-orbit {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 18rem;
+      height: 7rem;
+      margin: -3.5rem 0 0 -9rem;
+      border: 1px solid rgba(226, 232, 240, 0.36);
+      border-radius: 50%;
+      transform: rotate(var(--turn));
+    }
+
+    .atom-music-orbit::after {
+      content: "";
+      position: absolute;
+      left: 1.2rem;
+      top: 50%;
+      width: 0.85rem;
+      height: 0.85rem;
+      border-radius: 50%;
+      background: #f59e0b;
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.75);
+    }
+
+    .atom-music-visual-note {
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      padding: 0.85rem;
+      border-radius: var(--atom-music-radius);
+      background: rgba(2, 6, 23, 0.66);
+      color: #dbeafe;
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    @keyframes pulse-ring {
+      0%, 100% { transform: scale(0.94); opacity: 0.55; }
+      50% { transform: scale(1.04); opacity: 1; }
+    }
+
+    .atom-music-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .atom-music-card {
+      padding: 1.15rem;
+      border-top: 4px solid var(--accent, var(--atom-music-teal));
+    }
+
+    .atom-music-card h2 {
+      margin: 0 0 0.65rem;
+      font-size: 1.25rem;
+      letter-spacing: 0;
+    }
+
+    .atom-music-card h3 {
+      margin: 1rem 0 0.35rem;
+      font-size: 1rem;
+    }
+
+    .atom-music-card p,
+    .atom-music-card li {
+      color: var(--atom-music-muted);
+      font-size: 0.92rem;
+      line-height: 1.65;
+    }
+
+    .atom-music-card ul,
+    .atom-music-card ol {
+      margin: 0.5rem 0 0;
+      padding-left: 1.25rem;
+    }
+
+    .atom-music-vocab {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.8rem;
+    }
+
+    .atom-music-term {
+      padding: 0.8rem;
+      border: 1px solid var(--atom-music-line);
+      border-radius: var(--atom-music-radius);
+      background: rgba(18, 184, 166, 0.06);
+    }
+
+    .atom-music-term strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 0.86rem;
+    }
+
+    .atom-music-term small {
+      color: var(--atom-music-muted);
+      line-height: 1.45;
+    }
+
+    .atom-music-ladder {
+      margin-top: 1rem;
+      padding: 1.15rem;
+    }
+
+    .atom-music-ladder ol {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+      padding: 0;
+      margin: 0.8rem 0 0;
+      list-style: none;
+      counter-reset: ladder;
+    }
+
+    .atom-music-ladder li {
+      counter-increment: ladder;
+      padding: 0.72rem;
+      border-radius: var(--atom-music-radius);
+      border: 1px solid var(--atom-music-line);
+      background: linear-gradient(135deg, rgba(18, 184, 166, 0.08), rgba(37, 99, 235, 0.06));
+      color: var(--atom-music-muted);
+      font-size: 0.86rem;
+    }
+
+    .atom-music-ladder li::before {
+      content: counter(ladder) ". ";
+      color: var(--atom-music-teal);
+      font-weight: 800;
+    }
+
+    .atom-music-equation {
+      display: grid;
+      gap: 0.25rem;
+      margin: 0.75rem 0;
+      padding: 0.85rem;
+      border-radius: var(--atom-music-radius);
+      background: #081316;
+      color: #e2e8f0;
+      text-align: center;
+    }
+
+    .atom-music-equation strong {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      color: #5eead4;
+      font-size: 1.15rem;
+    }
+
+    .atom-music-footer {
+      margin-top: 1rem;
+      padding: 1.2rem;
+      border-radius: var(--atom-music-radius);
+      background: #081316;
+      color: #dbeafe;
+    }
+
+    .atom-music-footer p {
+      margin: 0;
+      line-height: 1.65;
+    }
+
+    @media (max-width: 840px) {
+      .atom-music-hero,
+      .atom-music-grid,
+      .atom-music-vocab,
+      .atom-music-ladder ol {
+        grid-template-columns: 1fr;
+      }
+
+      .atom-music-copy h1 {
+        max-width: 13ch;
+      }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="atom-music-shell">
+    <section class="atom-music-hero">
+      <div class="atom-music-copy">
+        <p class="atom-music-eyebrow">Physics · Music · Matter</p>
+        <h1>Do Atoms Make Music?</h1>
+        <p>Everything that exists is moving, vibrating, cycling, pulsing, rotating, orbiting, or oscillating. Music is not separate from physics. Music is one of the clearest ways humans experience vibration directly.</p>
+        <div class="atom-music-answer"><strong>Better answer:</strong> atoms do not usually make audible music, but they do vibrate, resonate, absorb energy, release energy, and form patterns. Music is the human-scale version of a much deeper law: oscillation.</div>
+      </div>
+      <div class="atom-music-visual" aria-label="Animated atom-like resonance diagram">
+        <div class="atom-music-wave"></div>
+        <div class="atom-music-wave"></div>
+        <div class="atom-music-wave"></div>
+        <div class="atom-music-orbit" style="--turn: 18deg;"></div>
+        <div class="atom-music-orbit" style="--turn: 78deg;"></div>
+        <div class="atom-music-orbit" style="--turn: 138deg;"></div>
+        <div class="atom-music-nucleus"></div>
+        <div class="atom-music-visual-note">Music is audible oscillation. Physics is universal oscillation. The universe is not still; it is rhythm all the way down.</div>
+      </div>
+    </section>
+
+    <section class="atom-music-card" style="--accent: var(--atom-music-amber);">
+      <p class="atom-music-kicker">Lesson Hook</p>
+      <h2>Zoom Into a Guitar String</h2>
+      <p>Ask students: <strong>If you zoomed into a guitar string while it was making sound, what would you see?</strong> The answer is vibration.</p>
+      <p>Then ask: <strong>If you zoomed into heat, light, atoms, or electricity, would you also find vibration?</strong> Yes. Not always sound, but oscillation.</p>
+    </section>
+
+    <section class="atom-music-grid">
+      <article class="atom-music-card">
+        <h2>Key Vocabulary</h2>
+        <div class="atom-music-vocab">
+          <div class="atom-music-term"><strong>Oscillation</strong><small>A back-and-forth repeating motion.</small></div>
+          <div class="atom-music-term"><strong>Vibration</strong><small>Fast oscillation through matter.</small></div>
+          <div class="atom-music-term"><strong>Frequency</strong><small>How many cycles happen per second, measured in Hertz.</small></div>
+          <div class="atom-music-term"><strong>Amplitude</strong><small>How strong or large the vibration is.</small></div>
+          <div class="atom-music-term"><strong>Resonance</strong><small>When something vibrates strongly at its natural frequency.</small></div>
+          <div class="atom-music-term"><strong>Wave</strong><small>A moving pattern of energy.</small></div>
+          <div class="atom-music-term"><strong>Sound</strong><small>A vibration traveling through matter, usually air.</small></div>
+          <div class="atom-music-term"><strong>Pitch</strong><small>How high or low a sound seems, based on frequency.</small></div>
+          <div class="atom-music-term"><strong>Timbre</strong><small>The character or color of a sound, based on wave shape.</small></div>
+        </div>
+      </article>
+
+      <article class="atom-music-card" style="--accent: var(--atom-music-blue);">
+        <h2>Student-Friendly Explanation</h2>
+        <p>When you pluck a guitar string, the string moves back and forth. That movement pushes air molecules. The air molecules bump into other air molecules. Those bumps travel to your ear. Your eardrum vibrates. Your brain turns those vibrations into sound.</p>
+        <p>That is music. But this same basic idea appears everywhere: heat is atoms moving faster, light is an electromagnetic wave, electricity involves moving charges, radio uses oscillating electromagnetic fields, a heartbeat is a rhythm, and a pendulum swings.</p>
+      </article>
+    </section>
+
+    <section class="atom-music-card" style="--accent: var(--atom-music-teal);">
+      <h2>Main Concept: The Universe Runs on Patterns of Motion</h2>
+      <div class="atom-music-grid">
+        <div>
+          <h3>Slow oscillations</h3>
+          <ul>
+            <li>A swing moving back and forth</li>
+            <li>A clock pendulum</li>
+            <li>A person breathing</li>
+            <li>Day and night</li>
+            <li>The moon's orbit</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Fast oscillations</h3>
+          <ul>
+            <li>A guitar string</li>
+            <li>A speaker cone</li>
+            <li>A tuning fork</li>
+            <li>A radio wave</li>
+            <li>A vibrating molecule or light wave</li>
+          </ul>
+        </div>
+      </div>
+      <div class="atom-music-equation">
+        <strong>Music = audible oscillation</strong>
+        <span>Physics = oscillation, energy, and pattern across every scale</span>
+      </div>
+    </section>
+
+    <section class="atom-music-grid">
+      <article class="atom-music-card" style="--accent: var(--atom-music-rose);">
+        <h2>Demonstration 1: The Ruler Oscillator</h2>
+        <p><strong>Materials:</strong> ruler and desk.</p>
+        <p>Hold part of a ruler against the edge of a desk and flick the loose end. More ruler hanging off the desk vibrates slower and makes a lower pitch. Less ruler hanging off the desk vibrates faster and makes a higher pitch.</p>
+        <p><strong>Lesson point:</strong> shorter vibrating objects usually vibrate faster. Faster vibration means higher pitch.</p>
+      </article>
+
+      <article class="atom-music-card">
+        <h2>Demonstration 2: Pitch, Volume, Timbre</h2>
+        <p>Use a guitar, rubber band, ukulele, tuning fork, piano string, or phone tone generator.</p>
+        <ul>
+          <li>Low pitch means slower vibration.</li>
+          <li>High pitch means faster vibration.</li>
+          <li>Louder sound means bigger amplitude.</li>
+          <li>Different instruments have different wave shapes.</li>
+        </ul>
+        <p>A flute and guitar can play the same note, but they sound different because their vibrations are shaped differently. That is timbre.</p>
+      </article>
+
+      <article class="atom-music-card" style="--accent: var(--atom-music-amber);">
+        <h2>Demonstration 3: Resonance</h2>
+        <p>Use a guitar or piano. Play or sing near a string tuned to the same note. If possible, let students observe that the string may begin vibrating sympathetically.</p>
+        <p><strong>Resonance</strong> means the object wakes up because it is receiving energy at the frequency it naturally likes to vibrate. Bridges, buildings, instruments, atoms, radio antennas, and molecules can resonate.</p>
+      </article>
+
+      <article class="atom-music-card" style="--accent: var(--atom-music-blue);">
+        <h2>Atomic Connection</h2>
+        <p>Atoms are not little balls sitting still. They move, vibrate, and interact. In solids, atoms are locked into structures but still jiggle in place. In liquids, they slide past each other. In gases, they fly around freely.</p>
+        <p>When matter gets hotter, particles move more. Heat is microscopic motion. Molecules also vibrate in specific ways: stretching, bending, and twisting. Scientists can study these vibrations with infrared spectroscopy, using light to read a vibrational fingerprint of matter.</p>
+      </article>
+    </section>
+
+    <section class="atom-music-card" style="--accent: var(--atom-music-teal);">
+      <h2>The Music Analogy</h2>
+      <p>A musical instrument works because it organizes vibration. A guitar string alone is quiet. The wooden body resonates and amplifies it. The air carries the vibration. The ear receives it. The brain interprets it.</p>
+      <p>The universe does something similar. Energy moves through systems. Matter responds. Patterns form. Some patterns stabilize. Some patterns collapse. Some patterns become waves, sounds, structures, or life.</p>
+      <p>Music gives students a doorway into that larger truth.</p>
+    </section>
+
+    <section class="atom-music-ladder">
+      <p class="atom-music-kicker">Classroom Activity</p>
+      <h2>Build a Frequency Ladder</h2>
+      <p>Have students arrange examples from slowest to fastest, then ask which ones humans can hear, which ones humans can see, and which ones need machines to detect.</p>
+      <ol>
+        <li>Seasons</li>
+        <li>Day and night</li>
+        <li>Heartbeat</li>
+        <li>Pendulum</li>
+        <li>Guitar string</li>
+        <li>Human voice</li>
+        <li>Ultrasonic sound</li>
+        <li>Radio waves</li>
+        <li>Infrared light</li>
+        <li>Visible light</li>
+        <li>X-rays</li>
+        <li>Atomic and molecular transitions</li>
+      </ol>
+    </section>
+
+    <section class="atom-music-grid">
+      <article class="atom-music-card">
+        <h2>Hands-On Projects</h2>
+        <h3>Rubber Band Guitar</h3>
+        <p>Stretch rubber bands over a box and test tight versus loose, short versus long, thin versus thick, quiet versus loud. Record which changes raise or lower pitch.</p>
+        <h3>Speaker Patterns</h3>
+        <p>Place a thin plate, tray, or membrane over a speaker and play tones. Add sand, salt, or light particles. Vibration can organize matter into visible geometry.</p>
+      </article>
+
+      <article class="atom-music-card" style="--accent: var(--atom-music-blue);">
+        <h2>Code and Sound Design</h2>
+        <h3>Arduino Tone Lab</h3>
+        <p>The Arduino creates electrical oscillations. The speaker turns electrical oscillation into air vibration. The ear turns air vibration into music.</p>
+        <pre><code>tone(8, 262); // C
+delay(500);
+tone(8, 294); // D
+delay(500);
+tone(8, 330); // E
+delay(500);
+noTone(8);</code></pre>
+        <h3>Synthesizer Oscillator Lab</h3>
+        <p>Compare sine, square, triangle, and sawtooth waves. Same frequency, different shape. Same pitch, different tone color.</p>
+      </article>
+    </section>
+
+    <section class="atom-music-card" style="--accent: var(--atom-music-amber);">
+      <h2>K-12 Ladder</h2>
+      <div class="atom-music-grid">
+        <div>
+          <h3>Younger students</h3>
+          <p>Everything wiggles. Sound is wiggles in the air. Fast wiggles sound high. Slow wiggles sound low.</p>
+        </div>
+        <div>
+          <h3>Middle school</h3>
+          <p>Vibration creates waves. Waves have frequency and amplitude. Matter can resonate. Atoms move more when heated.</p>
+        </div>
+        <div>
+          <h3>High school</h3>
+          <p>Oscillation appears in mechanical systems, sound waves, electromagnetic waves, molecular vibration, quantum energy transitions, and signal processing.</p>
+        </div>
+        <div>
+          <h3>Whiteboard Structure</h3>
+          <p>Oscillation -> Wave -> Frequency -> Resonance -> Music -> Matter -> Universe</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="atom-music-footer">
+      <p><strong>Exit question:</strong> What is one thing in the universe that oscillates but does not make audible music?</p>
+      <p><strong>Final takeaway:</strong> atoms do not play songs, but music reveals the same principle that moves atoms: vibration, frequency, and resonance.</p>
+    </section>
+  </main>
+  <script src="../assets/js/theme-lighting.js"></script>
+  <script src="../assets/js/nav-mobile.js"></script>
+</body>
+</html>

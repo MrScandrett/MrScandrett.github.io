@@ -10,6 +10,16 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+    }
+  }
+  </script>
+
   <style>
     .cgi-page { padding-bottom: 0; }
     .ll-viewport {
@@ -25,6 +35,27 @@
     .cgi-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; display: inline-block; align-self: center; }
     .cgi-lede { margin: 0.7rem 0 0; max-width: 72ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
     [data-theme="night"] .cgi-lede { color: rgba(245,245,247,0.72); }
+
+    /* Grade toggle */
+    .cgi-grade-bar { display: flex; gap: 0.35rem; margin: 1rem 0 0; flex-wrap: wrap; }
+    .cgi-grade-bar label { align-self: center; font-size: 0.8rem; font-weight: 700; color: #64748b; margin-right: 0.3rem; }
+    .cgi-grade-btn {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      padding: 0.34rem 0.92rem;
+      background: transparent;
+      color: #52647c;
+      font: 700 0.82rem/1 inherit;
+      cursor: pointer;
+      transition: background 0.14s, color 0.14s, border-color 0.14s;
+    }
+    .cgi-grade-btn.active {
+      background: #0284c7;
+      border-color: #0284c7;
+      color: #fff;
+    }
+    [data-theme="night"] .cgi-grade-btn { border-color: rgba(255,255,255,0.15); color: rgba(245,245,247,0.7); }
+    [data-theme="night"] .cgi-grade-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
 
     .cgi-card {
       background: var(--white, #fff);
@@ -56,7 +87,7 @@
     .cgi-formula-note { color: #52647c; font-size: 0.8rem; line-height: 1.5; }
     [data-theme="night"] .cgi-formula-note { color: rgba(245,245,247,0.68); }
 
-    /* Callout / highlight box */
+    /* Callout */
     .cgi-callout {
       border-radius: 12px;
       padding: 0.85rem 1rem;
@@ -78,12 +109,12 @@
     [data-theme="night"] .cgi-challenge strong { color: #f8fafc; }
     .cgi-challenge small { display: block; color: #64748b; font-size: 0.77rem; line-height: 1.48; }
 
-    /* Simulation */
+    /* 3D Sim */
     .cgi-sim-wrap {
       border-radius: 20px;
       overflow: hidden;
       border: 1px solid rgba(148,163,184,0.18);
-      background: radial-gradient(circle at 20% 0%, rgba(2,132,199,0.25), transparent 50%), linear-gradient(180deg, #060e23, #01050f);
+      background: #01050f;
       color: #e2e8f0;
       box-shadow: 0 18px 44px rgba(1,5,15,0.3);
       margin: 0.9rem 0;
@@ -91,13 +122,15 @@
     .cgi-sim-header { padding: 1rem 1rem 0; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; }
     .cgi-sim-header h3 { margin: 0; color: #f0f9ff; font-size: 1rem; }
     .cgi-sim-header p { margin: 0.2rem 0 0; color: #94a3b8; font-size: 0.79rem; line-height: 1.45; max-width: 60ch; }
-    #cgi-canvas { width: 100%; height: 320px; display: block; cursor: crosshair; }
+    #cgi-canvas { width: 100%; height: 380px; display: block; cursor: grab; }
+    #cgi-canvas:active { cursor: grabbing; }
+    #cgi-webgl-fallback { display: none; width: 100%; height: 380px; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.88rem; text-align: center; padding: 2rem; }
     .cgi-sim-controls { display: flex; flex-wrap: wrap; gap: 0.55rem; padding: 0.7rem 1rem; border-top: 1px solid rgba(148,163,184,0.12); background: rgba(1,5,15,0.6); }
     .cgi-dark-btn { border: 1px solid rgba(255,255,255,0.16); border-radius: 9px; padding: 0.4rem 0.72rem; background: rgba(12,26,58,0.76); color: #f0f9ff; font-weight: 700; font-size: 0.78rem; cursor: pointer; transition: background 0.14s; }
     .cgi-dark-btn:hover, .cgi-dark-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
     .cgi-sim-note { padding: 0.6rem 1rem 0.85rem; color: #64748b; font-size: 0.76rem; line-height: 1.45; }
 
-    /* Approach grid (SPH vs Euler) */
+    /* Approach grid */
     .cgi-approach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 0.85rem 0; }
     .cgi-approach { border: 1px solid var(--line, #d2d2d7); border-radius: 14px; padding: 1rem; }
     .cgi-approach.sph { background: rgba(124,58,237,0.06); border-color: rgba(124,58,237,0.2); }
@@ -200,11 +233,23 @@
             <span>Wave Dynamics</span><span class="dot"></span>
             <span>Optics &amp; Rendering</span>
           </div>
-          <p class="cgi-lede">Water is one of the hardest things to fake in computer graphics. It flows, splashes, refracts light, reflects the sky, and forms foam on crests. Every major film studio has spent decades building custom simulators to solve this problem. The math behind those simulators is real physics.</p>
+
+          <!-- Grade-level lede (one per grade band) -->
+          <p class="cgi-lede" data-grade-only="1">Water is one of the hardest things to fake in movies and games. It flows, splashes, bends light, and glitters in the sun. Making it look real takes powerful math and millions of computer calculations every single second.</p>
+          <p class="cgi-lede" data-grade-only="2">CGI water combines fluid simulation, wave physics, and optics into a single renderer. Studios solve fluid dynamics and light transport simultaneously — each frame of a feature-film ocean can take hours to compute on a render farm.</p>
+          <p class="cgi-lede" data-grade-only="3">Water is one of the hardest things to fake in computer graphics. It flows, splashes, refracts light, reflects the sky, and forms foam on crests. Every major film studio has spent decades building custom simulators to solve this problem. The math behind those simulators is real physics.</p>
+
+          <!-- Grade toggle -->
+          <div class="cgi-grade-bar" role="group" aria-label="Select grade level">
+            <label>Grade level:</label>
+            <button class="cgi-grade-btn" data-grade="1" aria-pressed="false">K–5</button>
+            <button class="cgi-grade-btn" data-grade="2" aria-pressed="false">6–8</button>
+            <button class="cgi-grade-btn active" data-grade="3" aria-pressed="true">9–12</button>
+          </div>
         </section>
 
         <!-- The Challenge -->
-        <section class="cgi-card" style="--cgi-accent:#0284c7;">
+        <section class="cgi-card" style="--cgi-accent:#0284c7;" data-grade-min="1">
           <h2>Why Water Is So Hard to Fake</h2>
           <p>When you look at a glass of water, several physical systems are happening simultaneously. Any CGI system that tries to look real must solve all of them at once.</p>
           <div class="cgi-challenge-grid">
@@ -241,8 +286,8 @@
           </div>
         </section>
 
-        <!-- Physics Foundation -->
-        <section class="cgi-card" style="--cgi-accent:#0ea5e9;">
+        <!-- Physics Foundation — 9–12 only -->
+        <section class="cgi-card" style="--cgi-accent:#0ea5e9;" data-grade-min="3">
           <h2>The Physics: Navier-Stokes Equations</h2>
           <p>Every serious fluid simulation is built on two equations derived in the 1840s by Claude-Louis Navier and George Gabriel Stokes. Together they describe how any viscous fluid moves.</p>
 
@@ -260,39 +305,41 @@
             <strong>The hard part:</strong> The left side of the momentum equation has <strong>u·∇u</strong> — velocity advecting itself. This non-linear term makes the equations extremely hard to solve analytically. Turbulence arises here. Every simulation method is essentially a different strategy for taming this term on a computer.
           </div>
 
-          <h3>The Simple Wave Equation</h3>
-          <p>For surfaces (not full 3D volumes), a simpler model called the <strong>height-field approximation</strong> works well. We track only the vertical displacement of the water surface and propagate it with the discrete wave equation. This is what drives the simulator below.</p>
+          <h3>The Wave Equation — Height-Field Approximation</h3>
+          <p>For surfaces (not full 3D volumes), a simpler model called the <strong>height-field approximation</strong> works well. We track only the vertical displacement of the water surface and propagate it with the discrete wave equation. The formula below also drives the real-time GPU ocean shader you can see in the 3D simulator.</p>
           <div class="cgi-formula-box" role="img" aria-label="Discrete wave update: new height equals neighbors sum divided by two minus old height, times damping">
             <span class="cgi-formula">h<sub>new</sub> = (Σneighbors / 2 − h<sub>old</sub>) × d</span>
             <span class="cgi-formula-note">Each cell's new height is an average of its four neighbors, minus its old value. The damping factor <strong>d</strong> (close to 1.0) controls energy loss over time.</span>
           </div>
         </section>
 
-        <!-- Interactive Simulation -->
-        <section class="cgi-card" style="--cgi-accent:#38bdf8;">
-          <h2>Interactive Ripple Simulator</h2>
-          <p>This is a real height-field water simulation running in your browser. Click or drag on the surface to create disturbances and watch waves propagate, reflect, and interfere.</p>
+        <!-- 3D Interactive Simulation -->
+        <section class="cgi-card" style="--cgi-accent:#38bdf8;" data-grade-min="1">
+          <h2>Interactive 3D Ocean Simulator</h2>
+          <p data-grade-only="1">This is a real 3D ocean simulation running on your GPU using the same wave and lighting techniques used in video games. Drag to look around, scroll to zoom.</p>
+          <p data-grade-only="2">A GPU-rendered ocean using Gerstner waves and a Fresnel shader. The water surface reacts to the sun angle — try dragging the Sun Elevation slider in the panel and watch the reflection change. Drag to orbit, scroll to zoom.</p>
+          <p data-grade-only="3">A Three.js scene using the <em>Water</em> shader: a tiled normal map drives the surface perturbation, a Schlick Fresnel approximation blends reflection and refraction, and a physically-based sky (Preetham model) provides the environment. Use the panel sliders to explore how each parameter shapes the render. Drag to orbit, scroll to zoom.</p>
+
           <div class="cgi-sim-wrap">
-            <div class="cgi-sim-header">
-              <div>
-                <h3>Height-field Water · Real-time Simulation</h3>
-                <p>Click anywhere on the surface to drop a disturbance. Drag to create a continuous wake. Toggle Rain to watch interference patterns form.</p>
-              </div>
+            <canvas id="cgi-canvas" aria-label="Interactive 3D GPU ocean — drag to orbit, scroll to zoom, use panel controls to adjust sun and waves"></canvas>
+            <div id="cgi-webgl-fallback">
+              <p>WebGL is not available in this browser.<br>Try Chrome, Firefox, or Safari to see the 3D ocean.</p>
             </div>
-            <canvas id="cgi-canvas" aria-label="Interactive 2D water ripple simulation — click to create waves"></canvas>
             <div class="cgi-sim-controls">
-              <button class="cgi-dark-btn" id="cgi-rain-btn">Rain: Off</button>
-              <button class="cgi-dark-btn" id="cgi-clear-btn">Clear</button>
-              <button class="cgi-dark-btn active" id="cgi-mode-surface" data-mode="surface">Surface</button>
-              <button class="cgi-dark-btn" id="cgi-mode-normals" data-mode="normals">Normals</button>
-              <button class="cgi-dark-btn" id="cgi-mode-depth" data-mode="depth">Depth Map</button>
+              <button class="cgi-dark-btn active" id="cgi-cam-horizon">Horizon View</button>
+              <button class="cgi-dark-btn" id="cgi-cam-overhead">Overhead View</button>
+              <button class="cgi-dark-btn active" id="cgi-autorotate-btn">Auto-Rotate: On</button>
             </div>
-            <p class="cgi-sim-note">Surface mode: specular lighting on height field. Normals mode: RGB encodes the surface normal vector (same technique used in normal-map rendering). Depth Map: raw height values.</p>
+            <p class="cgi-sim-note">
+              <span data-grade-only="1">The shimmery glare on the water's surface is called the Fresnel effect — it's stronger when you look at the water at a low angle.</span>
+              <span data-grade-only="2">Overhead view shows the normal map tiling clearly. Horizon view reveals the Fresnel effect — light reflects more strongly at grazing angles (Schlick approximation).</span>
+              <span data-grade-only="3">Overhead view: normal-map tiling visible. Horizon view: Fresnel grazing-angle reflection. Panel: distortionScale → normal map strength, sun elevation → sky PMREM re-bake, speed → time uniform rate.</span>
+            </p>
           </div>
         </section>
 
-        <!-- Simulation Approaches -->
-        <section class="cgi-card" style="--cgi-accent:#7c3aed;">
+        <!-- Simulation Approaches — 6–8+ -->
+        <section class="cgi-card" style="--cgi-accent:#7c3aed;" data-grade-min="2">
           <h2>Two Approaches: Particles vs Grids</h2>
           <p>Production studios choose between two fundamental philosophies for fluid simulation. Each has situations where it excels.</p>
           <div class="cgi-approach-grid">
@@ -324,8 +371,8 @@
           </div>
         </section>
 
-        <!-- Ocean Synthesis -->
-        <section class="cgi-card" style="--cgi-accent:#0f766e;">
+        <!-- Ocean Synthesis — 6–8+ -->
+        <section class="cgi-card" style="--cgi-accent:#0f766e;" data-grade-min="2">
           <h2>Synthesizing the Open Ocean</h2>
           <p>Simulating a full 3D ocean with a fluid solver would require a planetary-scale computer. Instead, visual effects artists use statistical wave models that reproduce how real ocean surfaces look without solving Navier-Stokes at all.</p>
           <div class="cgi-wave-grid">
@@ -342,14 +389,14 @@
               <small>A real oceanographic energy spectrum (Joint North Sea Wave Project) defines how much energy different wave frequencies carry in a given wind condition. CGI ocean tools let artists dial in wind speed and fetch to match actual recorded ocean conditions.</small>
             </div>
           </div>
-          <div class="cgi-formula-box" role="img" aria-label="Gerstner wave position: x offset equals amplitude times kx divided by k times sine of k dot x minus omega t. y offset equals amplitude times cosine of k dot x minus omega t">
+          <div class="cgi-formula-box" role="img" aria-label="Gerstner wave position formula" data-grade-min="3">
             <span class="cgi-formula">P = (x − A·(kₓ/k)·sin(k·x − ωt), &nbsp; A·cos(k·x − ωt))</span>
             <span class="cgi-formula-note"><strong>A</strong> = amplitude · <strong>k</strong> = wave vector (direction &amp; spatial frequency) · <strong>ω</strong> = angular frequency · Points orbit in circles of radius A</span>
           </div>
         </section>
 
-        <!-- Rendering Pipeline -->
-        <section class="cgi-card" style="--cgi-accent:#1d4ed8;">
+        <!-- Rendering Pipeline — 6–8+ -->
+        <section class="cgi-card" style="--cgi-accent:#1d4ed8;" data-grade-min="2">
           <h2>How Water Gets Its Look</h2>
           <p>Simulating the motion is only half the job. Making water look convincing requires accurate light transport through a surface that both transmits and reflects.</p>
           <div class="cgi-render-grid">
@@ -387,7 +434,7 @@
         </section>
 
         <!-- Timeline -->
-        <section class="cgi-card" style="--cgi-accent:#6d28d9;">
+        <section class="cgi-card" style="--cgi-accent:#6d28d9;" data-grade-min="1">
           <h2>Breakthrough Moments in Film</h2>
           <div class="cgi-timeline">
             <div class="cgi-era">
@@ -436,10 +483,10 @@
         </section>
 
         <!-- Practice Problems -->
-        <section class="cgi-card cgi-practice" style="--cgi-accent:#ef4444;">
+        <section class="cgi-card cgi-practice" style="--cgi-accent:#ef4444;" data-grade-min="1">
           <h2>Practice Problems</h2>
 
-          <div class="cgi-problem">
+          <div class="cgi-problem" data-grade-min="1">
             <p><span class="cgi-badge easy">Easy</span>1. A CGI ocean wave has wavelength λ = 20 m and period T = 4 s. Using the wave speed formula v = λ / T, what is the wave speed in m/s?</p>
             <div class="cgi-row">
               <input class="cgi-input" type="number" id="cgi-ans-1" placeholder="m/s" />
@@ -449,7 +496,7 @@
             <div class="cgi-hint" id="cgi-hint-1">Hint: v = λ / T = 20 m ÷ 4 s = 5 m/s</div>
           </div>
 
-          <div class="cgi-problem">
+          <div class="cgi-problem" data-grade-min="2">
             <p><span class="cgi-badge mid">Medium</span>2. Light travels from air (n₁ = 1.00) into water (n₂ = 1.33) at an incident angle of 45°. Using Snell's law — n₁ sin θ₁ = n₂ sin θ₂ — find the refraction angle θ₂ to the nearest whole degree. (sin 45° ≈ 0.707)</p>
             <div class="cgi-row">
               <input class="cgi-input" type="number" id="cgi-ans-2" placeholder="degrees" />
@@ -459,7 +506,7 @@
             <div class="cgi-hint" id="cgi-hint-2">Hint: sin θ₂ = n₁ sin θ₁ / n₂ = 1.00 × 0.707 / 1.33 ≈ 0.532 → θ₂ = arcsin(0.532) ≈ 32°</div>
           </div>
 
-          <div class="cgi-problem">
+          <div class="cgi-problem" data-grade-min="3">
             <p><span class="cgi-badge hard">Challenge</span>3. The CFL stability condition limits the simulation time step: Δt ≤ (CFL × Δx) / c, where CFL = 0.5, grid spacing Δx = 0.10 m, and wave speed c = 5 m/s. What is the maximum stable time step in milliseconds?</p>
             <div class="cgi-row">
               <input class="cgi-input" type="number" id="cgi-ans-3" placeholder="ms" />
@@ -468,6 +515,9 @@
             </div>
             <div class="cgi-hint" id="cgi-hint-3">Hint: Δt = (0.5 × 0.10) / 5 = 0.05 / 5 = 0.01 s = 10 ms</div>
           </div>
+
+          <p class="cgi-callout" data-grade-only="1" style="margin-top:0.5rem;margin-bottom:0;">Switch to 6–8 or 9–12 above to unlock more challenging problems.</p>
+          <p class="cgi-callout" data-grade-only="2" style="margin-top:0.5rem;margin-bottom:0;">Switch to 9–12 above to unlock the CFL stability challenge.</p>
         </section>
 
         <footer class="site-footer">
@@ -487,34 +537,36 @@
       <div class="ll-panel-body">
         <div class="ll-pane ll-active" id="cgi-pane-controls">
           <div class="cgi-panel-block">
-            <label for="cgi-damping">Wave persistence <output id="cgi-damping-val">97%</output></label>
-            <input type="range" id="cgi-damping" min="88" max="99" value="97" />
-            <p class="cgi-panel-help">Higher values let waves travel further before fading. At 99% waves reflect and interfere for a long time.</p>
+            <label for="cgi-sun">Sun elevation <output id="cgi-sun-val">45°</output></label>
+            <input type="range" id="cgi-sun" min="2" max="88" value="45" />
+            <p class="cgi-panel-help">Drag to change time of day — watch the Fresnel reflection shift as the sun drops toward the horizon.</p>
           </div>
           <div class="cgi-panel-block">
-            <label for="cgi-drop-size">Drop radius <output id="cgi-drop-size-val">8</output></label>
-            <input type="range" id="cgi-drop-size" min="2" max="20" value="8" />
-            <p class="cgi-panel-help">Larger drops displace more water and create wider initial ring waves.</p>
+            <label for="cgi-choppy">Wave choppiness <output id="cgi-choppy-val">3.5</output></label>
+            <input type="range" id="cgi-choppy" min="0" max="8" value="3.5" step="0.5" />
+            <p class="cgi-panel-help">How much the normal map distorts the sky reflection. Higher values produce rougher, choppier water.</p>
           </div>
           <div class="cgi-panel-block">
-            <label for="cgi-rain-rate">Rain density <output id="cgi-rain-rate-val">80 ms</output></label>
-            <input type="range" id="cgi-rain-rate" min="40" max="400" value="80" step="20" />
-            <p class="cgi-panel-help">How often a raindrop falls when Rain is on. Lower = heavier rain.</p>
+            <label for="cgi-speed">Wave speed <output id="cgi-speed-val">1.0×</output></label>
+            <input type="range" id="cgi-speed" min="0.1" max="3" value="1" step="0.1" />
+            <p class="cgi-panel-help">Rate at which the time uniform advances in the shader — controls how fast the wave pattern animates.</p>
           </div>
-          <button class="cgi-panel-btn" id="cgi-rain-panel-btn">Rain: Off</button>
-          <button class="cgi-panel-btn" id="cgi-clear-panel-btn" style="margin-top:0.45rem;background:rgba(255,255,255,0.05);color:rgba(245,245,247,0.7);border-color:rgba(255,255,255,0.12);">Clear surface</button>
+          <button class="cgi-panel-btn" id="cgi-cam-horizon-panel">Horizon View</button>
+          <button class="cgi-panel-btn" id="cgi-cam-overhead-panel" style="margin-top:0.4rem;background:rgba(255,255,255,0.05);color:rgba(245,245,247,0.7);border-color:rgba(255,255,255,0.12);">Overhead View</button>
         </div>
         <div class="ll-pane" id="cgi-pane-guide">
           <span class="ll-label">Key Vocabulary</span>
+          <p><strong>Fresnel effect:</strong> the angle-dependent ratio of reflection to refraction at a water surface — strong at grazing angles, weaker when looking straight down.</p>
+          <p><strong>Normal map:</strong> an RGB texture where each pixel stores a surface normal direction, letting the GPU fake micro-ripples without extra geometry.</p>
+          <p><strong>Gerstner waves:</strong> analytic wave model where surface points trace circles rather than moving straight up and down.</p>
           <p><strong>Navier-Stokes:</strong> the governing equations of fluid motion; describes pressure, viscosity, and acceleration.</p>
-          <p><strong>Incompressibility:</strong> liquids cannot be compressed — divergence of velocity must equal zero.</p>
           <p><strong>SPH:</strong> Smoothed Particle Hydrodynamics; Lagrangian method tracking individual fluid particles.</p>
           <p><strong>FLIP:</strong> hybrid particle-grid method used in Houdini and most major VFX pipelines.</p>
-          <p><strong>Fresnel effect:</strong> the angle-dependent ratio of reflection to transmission at a surface.</p>
-          <p><strong>Caustics:</strong> bright patterns formed when a curved surface focuses transmitted light.</p>
+          <p><strong>Caustics:</strong> bright patterns formed when a curved surface focuses transmitted light onto the sea floor.</p>
           <span class="ll-label">Teacher Prompts</span>
-          <p>Ask students: why do you think water looks blue in the deep ocean but clear in a glass? What does the absorption coefficient tell us?</p>
-          <p>Challenge: set the damping to 99% and use rain mode. Ask students to identify constructive and destructive interference where ripples meet.</p>
+          <p>Set sun to &lt;10° and ask students: why does the glare spread so much? Connect to Schlick's approximation and grazing-angle Fresnel.</p>
+          <p>Overhead view: ask students to identify the repeating tile seam in the normal map. Why don't we notice it in horizon view?</p>
+          <p>Set choppiness to 0 and compare to max — ask students what physical ocean condition each represents (calm harbor vs open ocean gale).</p>
         </div>
       </div>
       <button class="ll-panel-toggle" aria-expanded="true" aria-label="Toggle lesson panel">Controls</button>
@@ -522,13 +574,12 @@
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
 
+<!-- Non-module scripts: panel tabs, grade toggle, practice problems -->
 <script>
 /* ── Panel / tab behaviour ── */
 (function () {
   const vp = document.querySelector('.ll-viewport');
   if (!vp) return;
-
-  /* Tab switching */
   vp.querySelectorAll('.ll-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       const paneId = tab.dataset.pane;
@@ -539,8 +590,6 @@
       if (pane) pane.classList.add('ll-active');
     });
   });
-
-  /* Panel toggle */
   const panel = vp.querySelector('.ll-panel');
   const toggleBtn = vp.querySelector('.ll-panel-toggle');
   const closeBtn = vp.querySelector('.ll-panel-close');
@@ -552,228 +601,32 @@
   if (closeBtn) closeBtn.addEventListener('click', closePanel);
 })();
 
-/* ── Water Simulation ── */
+/* ── Grade-level toggle ── */
 (function () {
-  const W = 140, H = 90;
-  const len = W * H;
-  let cur = new Float32Array(len);
-  let prev = new Float32Array(len);
+  const btns = document.querySelectorAll('.cgi-grade-btn');
 
-  const canvas = document.getElementById('cgi-canvas');
-  const ctx = canvas.getContext('2d');
-  const off = document.createElement('canvas');
-  off.width = W; off.height = H;
-  const offCtx = off.getContext('2d');
-  const imgData = offCtx.createImageData(W, H);
-
-  let cw, ch;
-  function resize() {
-    cw = canvas.width = canvas.offsetWidth;
-    ch = canvas.height = canvas.offsetHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  /* Controls */
-  const dampSlider = document.getElementById('cgi-damping');
-  const dampVal = document.getElementById('cgi-damping-val');
-  const dropSlider = document.getElementById('cgi-drop-size');
-  const dropVal = document.getElementById('cgi-drop-size-val');
-  const rainRateSlider = document.getElementById('cgi-rain-rate');
-  const rainRateVal = document.getElementById('cgi-rain-rate-val');
-
-  dampSlider.addEventListener('input', () => dampVal.textContent = dampSlider.value + '%');
-  dropSlider.addEventListener('input', () => dropVal.textContent = dropSlider.value);
-  rainRateSlider.addEventListener('input', () => { rainRateVal.textContent = rainRateSlider.value + ' ms'; if (raining) restartRain(); });
-
-  let renderMode = 'surface';
-
-  /* Mode buttons */
-  document.querySelectorAll('[data-mode]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      renderMode = btn.dataset.mode;
-      document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+  function setGrade(g) {
+    btns.forEach(b => {
+      const active = Number(b.dataset.grade) === g;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-pressed', active);
     });
-  });
-
-  function idx(x, y) { return y * W + x; }
-
-  function splash(gx, gy, radius, strength) {
-    const r = Math.floor(radius);
-    for (let dy = -r; dy <= r; dy++) {
-      for (let dx = -r; dx <= r; dx++) {
-        const x = gx + dx, y = gy + dy;
-        if (x < 1 || x >= W - 1 || y < 1 || y >= H - 1) continue;
-        const d = Math.sqrt(dx * dx + dy * dy);
-        if (d <= radius) cur[idx(x, y)] += strength * (1 - d / radius);
-      }
-    }
+    document.querySelectorAll('[data-grade-min]').forEach(el => {
+      el.hidden = g < Number(el.dataset.gradeMin);
+    });
+    document.querySelectorAll('[data-grade-only]').forEach(el => {
+      el.hidden = Number(el.dataset.gradeOnly) !== g;
+    });
   }
 
-  function canvasToGrid(cx, cy) {
-    return {
-      gx: Math.floor(cx / cw * W),
-      gy: Math.floor(cy / ch * H)
-    };
-  }
-
-  /* Pointer events */
-  let pointerDown = false;
-
-  function onPointerDown(e) {
-    pointerDown = true;
-    const r = canvas.getBoundingClientRect();
-    const { gx, gy } = canvasToGrid(e.clientX - r.left, e.clientY - r.top);
-    splash(gx, gy, Number(dropSlider.value), 90);
-  }
-  function onPointerMove(e) {
-    if (!pointerDown) return;
-    const r = canvas.getBoundingClientRect();
-    const { gx, gy } = canvasToGrid(e.clientX - r.left, e.clientY - r.top);
-    splash(gx, gy, Math.max(2, Number(dropSlider.value) * 0.4), 45);
-  }
-  function onPointerUp() { pointerDown = false; }
-
-  canvas.addEventListener('pointerdown', onPointerDown);
-  canvas.addEventListener('pointermove', onPointerMove);
-  canvas.addEventListener('pointerup', onPointerUp);
-  canvas.addEventListener('pointerleave', onPointerUp);
-
-  /* Touch fallback */
-  canvas.addEventListener('touchstart', e => {
-    e.preventDefault();
-    const r = canvas.getBoundingClientRect();
-    const t = e.touches[0];
-    const { gx, gy } = canvasToGrid(t.clientX - r.left, t.clientY - r.top);
-    splash(gx, gy, Number(dropSlider.value), 90);
-  }, { passive: false });
-
-  /* Rain */
-  let raining = false;
-  let rainTimer = null;
-
-  function startRain() {
-    if (rainTimer) clearInterval(rainTimer);
-    rainTimer = setInterval(() => {
-      const gx = 2 + Math.floor(Math.random() * (W - 4));
-      const gy = 2 + Math.floor(Math.random() * (H - 4));
-      splash(gx, gy, 2 + Math.random() * 2, 55 + Math.random() * 30);
-    }, Number(rainRateSlider.value));
-  }
-  function stopRain() { clearInterval(rainTimer); rainTimer = null; }
-  function restartRain() { if (raining) { stopRain(); startRain(); } }
-
-  function toggleRain(btn1, btn2) {
-    raining = !raining;
-    if (raining) {
-      startRain();
-      if (btn1) { btn1.textContent = 'Rain: On'; btn1.classList.add('active'); }
-      if (btn2) { btn2.textContent = 'Rain: On'; btn2.classList.add('active'); }
-    } else {
-      stopRain();
-      if (btn1) { btn1.textContent = 'Rain: Off'; btn1.classList.remove('active'); }
-      if (btn2) { btn2.textContent = 'Rain: Off'; btn2.classList.remove('active'); }
-    }
-  }
-
-  const rainBtn = document.getElementById('cgi-rain-btn');
-  const rainPanelBtn = document.getElementById('cgi-rain-panel-btn');
-  if (rainBtn) rainBtn.addEventListener('click', () => toggleRain(rainBtn, rainPanelBtn));
-  if (rainPanelBtn) rainPanelBtn.addEventListener('click', () => toggleRain(rainPanelBtn, rainBtn));
-
-  function clearSurface() { cur.fill(0); prev.fill(0); }
-  const clearBtn = document.getElementById('cgi-clear-btn');
-  const clearPanelBtn = document.getElementById('cgi-clear-panel-btn');
-  if (clearBtn) clearBtn.addEventListener('click', clearSurface);
-  if (clearPanelBtn) clearPanelBtn.addEventListener('click', clearSurface);
-
-  /* Simulation step */
-  function step() {
-    const d = Number(dampSlider.value) / 100;
-    for (let y = 1; y < H - 1; y++) {
-      for (let x = 1; x < W - 1; x++) {
-        const i = idx(x, y);
-        const sum = cur[idx(x - 1, y)] + cur[idx(x + 1, y)] + cur[idx(x, y - 1)] + cur[idx(x, y + 1)];
-        prev[i] = (sum * 0.5 - prev[i]) * d;
-      }
-    }
-    /* swap buffers */
-    const tmp = cur; cur = prev; prev = tmp;
-  }
-
-  /* Render */
-  function render() {
-    const d = imgData.data;
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        const i = idx(x, y);
-        const h = cur[i];
-
-        /* surface normal via finite differences */
-        const hL = x > 0 ? cur[idx(x - 1, y)] : h;
-        const hR = x < W - 1 ? cur[idx(x + 1, y)] : h;
-        const hU = y > 0 ? cur[idx(x, y - 1)] : h;
-        const hD = y < H - 1 ? cur[idx(x, y + 1)] : h;
-        const nx = (hL - hR) * 0.4;
-        const ny = (hU - hD) * 0.4;
-        const nz = 5.0;
-        const nl = Math.sqrt(nx * nx + ny * ny + nz * nz);
-        const nnx = nx / nl, nny = ny / nl, nnz = nz / nl;
-
-        /* diffuse + specular lighting */
-        const lx = -0.45, ly = -0.65, lz = 1.0;
-        const ll = Math.sqrt(lx * lx + ly * ly + lz * lz);
-        const lnx = lx / ll, lny = ly / ll, lnz = lz / ll;
-        const diffuse = Math.max(0, nnx * lnx + nny * lny + nnz * lnz);
-        const spec = Math.pow(diffuse, 28);
-
-        /* height tint */
-        const t = Math.max(0, Math.min(1, (h + 40) / 80));
-
-        let r, g, b;
-        if (renderMode === 'normals') {
-          r = Math.floor((nnx + 1) * 127.5);
-          g = Math.floor((nny + 1) * 127.5);
-          b = Math.floor(nnz * 255);
-        } else if (renderMode === 'depth') {
-          const v = Math.floor(t * 220);
-          r = v; g = v; b = v;
-        } else {
-          /* surface: deep-sea tones with specular highlights */
-          r = Math.min(255, Math.floor(0   + t * 25  + diffuse * 40  + spec * 220));
-          g = Math.min(255, Math.floor(35  + t * 120 + diffuse * 100 + spec * 230));
-          b = Math.min(255, Math.floor(100 + t * 120 + diffuse * 80  + spec * 255));
-        }
-
-        const p = (y * W + x) * 4;
-        d[p] = r; d[p + 1] = g; d[p + 2] = b; d[p + 3] = 255;
-      }
-    }
-    offCtx.putImageData(imgData, 0, 0);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'medium';
-    ctx.drawImage(off, 0, 0, cw, ch);
-  }
-
-  /* Seed with initial disturbances */
-  splash(Math.floor(W * 0.5), Math.floor(H * 0.5), 14, 70);
-  splash(Math.floor(W * 0.25), Math.floor(H * 0.35), 8, 50);
-  splash(Math.floor(W * 0.72), Math.floor(H * 0.65), 6, 60);
-
-  /* Main loop */
-  function loop() {
-    step();
-    render();
-    requestAnimationFrame(loop);
-  }
-  loop();
+  btns.forEach(b => b.addEventListener('click', () => setGrade(Number(b.dataset.grade))));
+  setGrade(3);
 })();
 
 /* ── Practice problems ── */
 function cgiCheck(n, correct, tol) {
   const val = parseFloat(document.getElementById('cgi-ans-' + n).value);
-  const fb = document.getElementById('cgi-fb-' + n);
+  const fb  = document.getElementById('cgi-fb-' + n);
   const hint = document.getElementById('cgi-hint-' + n);
   if (isNaN(val)) { fb.className = 'cgi-feedback err'; fb.textContent = 'Enter a number.'; return; }
   if (Math.abs(val - correct) <= tol) {
@@ -785,6 +638,182 @@ function cgiCheck(n, correct, tol) {
     hint.style.display = 'block';
   }
 }
+</script>
+
+<!-- Three.js GPU ocean (ES module) -->
+<script type="module">
+import * as THREE from 'three';
+import { Water }          from 'three/addons/objects/Water.js';
+import { Sky }            from 'three/addons/objects/Sky.js';
+import { OrbitControls }  from 'three/addons/controls/OrbitControls.js';
+
+(function () {
+  const canvas = document.getElementById('cgi-canvas');
+  if (!canvas) return;
+
+  /* WebGL check */
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  } catch (e) {
+    canvas.style.display = 'none';
+    document.getElementById('cgi-webgl-fallback').style.display = 'flex';
+    return;
+  }
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.5;
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(55, 1, 1, 20000);
+  camera.position.set(30, 30, 100);
+
+  /* Resize handler */
+  function resize() {
+    const w = canvas.offsetWidth;
+    const h = canvas.offsetHeight;
+    if (!w || !h) return;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* OrbitControls */
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.maxPolarAngle = Math.PI * 0.493;
+  controls.target.set(0, 10, 0);
+  controls.minDistance = 20;
+  controls.maxDistance = 350;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.5;
+  controls.update();
+
+  /* Sky */
+  const sky = new Sky();
+  sky.scale.setScalar(10000);
+  scene.add(sky);
+  const skyUni = sky.material.uniforms;
+  skyUni['turbidity'].value = 10;
+  skyUni['rayleigh'].value  = 2;
+  skyUni['mieCoefficient'].value    = 0.005;
+  skyUni['mieDirectionalG'].value   = 0.8;
+
+  const sun            = new THREE.Vector3();
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  let envRT;
+
+  function updateSun(elevationDeg) {
+    const phi   = THREE.MathUtils.degToRad(90 - elevationDeg);
+    const theta = THREE.MathUtils.degToRad(180);
+    sun.setFromSphericalCoords(1, phi, theta);
+    skyUni['sunPosition'].value.copy(sun);
+    water.material.uniforms['sunDirection'].value.copy(sun).normalize();
+    if (envRT) envRT.dispose();
+    envRT = pmremGenerator.fromScene(sky);
+    scene.environment = envRT.texture;
+  }
+
+  /* Water surface */
+  const waterGeo     = new THREE.PlaneGeometry(10000, 10000);
+  const textureLoader = new THREE.TextureLoader();
+  const waterNormals  = textureLoader.load(
+    'https://threejs.org/examples/textures/waternormals.jpg',
+    t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
+  );
+
+  const water = new Water(waterGeo, {
+    textureWidth:   256,
+    textureHeight:  256,
+    waterNormals,
+    sunDirection:   new THREE.Vector3(),
+    sunColor:       0xffffff,
+    waterColor:     0x001e0f,
+    distortionScale: 3.7,
+    fog:            false,
+  });
+  water.rotation.x = -Math.PI / 2;
+  scene.add(water);
+
+  updateSun(45);
+
+  /* ── Slider wiring ── */
+  let waveSpeed = 1;
+
+  const sunSlider    = document.getElementById('cgi-sun');
+  const sunVal       = document.getElementById('cgi-sun-val');
+  const choppySlider = document.getElementById('cgi-choppy');
+  const choppyVal    = document.getElementById('cgi-choppy-val');
+  const speedSlider  = document.getElementById('cgi-speed');
+  const speedVal     = document.getElementById('cgi-speed-val');
+
+  if (sunSlider) sunSlider.addEventListener('input', () => {
+    sunVal.textContent = sunSlider.value + '°';
+    updateSun(Number(sunSlider.value));
+  });
+  if (choppySlider) choppySlider.addEventListener('input', () => {
+    choppyVal.textContent = choppySlider.value;
+    water.material.uniforms['distortionScale'].value = Number(choppySlider.value);
+  });
+  if (speedSlider) speedSlider.addEventListener('input', () => {
+    waveSpeed = Number(speedSlider.value);
+    speedVal.textContent = waveSpeed.toFixed(1) + '×';
+  });
+
+  /* ── Camera preset helpers ── */
+  function gotoHorizon() {
+    camera.position.set(30, 30, 100);
+    controls.target.set(0, 10, 0);
+    controls.update();
+  }
+  function gotoOverhead() {
+    camera.position.set(0, 250, 1);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  }
+
+  /* Inline buttons */
+  const camH = document.getElementById('cgi-cam-horizon');
+  const camO = document.getElementById('cgi-cam-overhead');
+  const arBtn = document.getElementById('cgi-autorotate-btn');
+
+  if (camH) camH.addEventListener('click', () => {
+    gotoHorizon();
+    camH.classList.add('active'); camO && camO.classList.remove('active');
+  });
+  if (camO) camO.addEventListener('click', () => {
+    gotoOverhead();
+    camO.classList.add('active'); camH && camH.classList.remove('active');
+  });
+  if (arBtn) arBtn.addEventListener('click', () => {
+    controls.autoRotate = !controls.autoRotate;
+    arBtn.textContent = 'Auto-Rotate: ' + (controls.autoRotate ? 'On' : 'Off');
+    arBtn.classList.toggle('active', controls.autoRotate);
+  });
+
+  /* Panel buttons */
+  const camHP = document.getElementById('cgi-cam-horizon-panel');
+  const camOP = document.getElementById('cgi-cam-overhead-panel');
+  if (camHP) camHP.addEventListener('click', () => {
+    gotoHorizon();
+    camH && camH.classList.add('active'); camO && camO.classList.remove('active');
+  });
+  if (camOP) camOP.addEventListener('click', () => {
+    gotoOverhead();
+    camO && camO.classList.add('active'); camH && camH.classList.remove('active');
+  });
+
+  /* ── Render loop ── */
+  function animate() {
+    requestAnimationFrame(animate);
+    water.material.uniforms['time'].value += waveSpeed / 60;
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
 </script>
 </body>
 </html>
