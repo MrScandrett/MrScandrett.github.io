@@ -1,0 +1,1178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Squishy Science Lab · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="A K-12 soft matter lesson page for engineering classroom-safe squishy materials, comparing elasticity, viscosity, viscoelasticity, rebound, and material memory." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,650;9..144,750&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --sq-ink: #18212f;
+      --sq-muted: #536174;
+      --sq-card: rgba(255, 255, 255, 0.94);
+      --sq-line: rgba(150, 164, 183, 0.32);
+      --sq-teal: #0f9f9a;
+      --sq-coral: #e65f55;
+      --sq-plum: #7c4d9e;
+      --sq-sun: #f3ad2f;
+      --sq-blue: #276fd1;
+      --sq-green: #3d8f50;
+      --sq-shadow: 0 18px 42px rgba(24, 33, 47, 0.12);
+    }
+
+    body {
+      margin: 0;
+      color: var(--sq-ink);
+      background:
+        radial-gradient(900px 480px at 0% 0%, rgba(15, 159, 154, 0.15), transparent 58%),
+        radial-gradient(820px 420px at 100% 5%, rgba(230, 95, 85, 0.15), transparent 56%),
+        linear-gradient(180deg, #f8fbf8 0%, #eef3f5 48%, #f7f4ef 100%);
+      font-family: Inter, system-ui, sans-serif;
+    }
+
+    .sq-page {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1rem 0 3rem;
+    }
+
+    .sq-page h1,
+    .sq-page h2,
+    .sq-page h3 {
+      font-family: Fraunces, Georgia, serif;
+      letter-spacing: 0;
+    }
+
+    .sq-hero,
+    .sq-card,
+    .sq-sim,
+    .sq-station,
+    .sq-alert,
+    .sq-note {
+      border: 1px solid var(--sq-line);
+      background: var(--sq-card);
+      box-shadow: var(--sq-shadow);
+      border-radius: 8px;
+    }
+
+    .sq-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+      gap: 1rem;
+      overflow: hidden;
+      padding: 1.25rem;
+    }
+
+    .sq-eyebrow {
+      margin: 0 0 0.45rem;
+      color: var(--sq-teal);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .sq-hero h1 {
+      max-width: 12ch;
+      margin: 0;
+      font-size: clamp(2.35rem, 6vw, 4.8rem);
+      line-height: 0.94;
+    }
+
+    .sq-lede {
+      max-width: 72ch;
+      margin: 0.85rem 0 0;
+      color: var(--sq-muted);
+      font-size: 1rem;
+      line-height: 1.68;
+    }
+
+    .sq-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.8rem;
+    }
+
+    .sq-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 0.7rem;
+      border: 1px solid rgba(15, 159, 154, 0.28);
+      border-radius: 999px;
+      background: rgba(15, 159, 154, 0.08);
+      color: #126a69;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .sq-back {
+      display: inline-flex;
+      margin-top: 1rem;
+      color: #175e7a;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .sq-back:hover { text-decoration: underline; }
+
+    .sq-visual {
+      min-height: 260px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(135deg, rgba(243, 173, 47, 0.18), rgba(15, 159, 154, 0.12)),
+        #f9fbfb;
+      border: 1px solid rgba(150, 164, 183, 0.28);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .sq-blob {
+      width: 172px;
+      height: 142px;
+      border-radius: 48% 52% 46% 54% / 58% 45% 55% 42%;
+      background:
+        radial-gradient(circle at 34% 30%, rgba(255,255,255,0.74) 0 13%, transparent 14%),
+        radial-gradient(circle at 61% 41%, rgba(255,255,255,0.4) 0 7%, transparent 8%),
+        linear-gradient(145deg, #56c8bd, #f08f77 62%, #f3ad2f);
+      box-shadow: inset -20px -24px 35px rgba(82, 40, 26, 0.14), 0 18px 36px rgba(24, 33, 47, 0.2);
+      animation: sq-breathe 4s ease-in-out infinite;
+    }
+
+    @keyframes sq-breathe {
+      0%, 100% { transform: scale(1, 1); }
+      45% { transform: scale(1.12, 0.82) translateY(16px); }
+      70% { transform: scale(0.94, 1.08) translateY(-5px); }
+    }
+
+    .sq-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .sq-card,
+    .sq-sim,
+    .sq-station,
+    .sq-alert,
+    .sq-note {
+      padding: 1rem;
+    }
+
+    .sq-card h2,
+    .sq-sim h2,
+    .sq-station h3,
+    .sq-alert h2,
+    .sq-note h2 {
+      margin: 0 0 0.45rem;
+      font-size: 1.35rem;
+    }
+
+    .sq-card p,
+    .sq-card li,
+    .sq-station li,
+    .sq-note p,
+    .sq-note li,
+    .sq-alert li {
+      color: var(--sq-muted);
+      line-height: 1.58;
+    }
+
+    .sq-card ul,
+    .sq-card ol,
+    .sq-station ul,
+    .sq-station ol,
+    .sq-note ul,
+    .sq-alert ul {
+      margin: 0.55rem 0 0;
+      padding-left: 1.2rem;
+    }
+
+    .sq-alert {
+      border-color: rgba(230, 95, 85, 0.4);
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255, 245, 242, 0.96));
+    }
+
+    .sq-alert h2 { color: #b63f36; }
+
+    .sq-wide { grid-column: 1 / -1; }
+
+    .sq-two {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .sq-vocab {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+
+    .sq-term {
+      padding: 0.75rem;
+      border: 1px solid var(--sq-line);
+      border-left: 4px solid var(--accent, var(--sq-teal));
+      border-radius: 8px;
+      background: rgba(255,255,255,0.72);
+    }
+
+    .sq-term strong {
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .sq-term span {
+      color: var(--sq-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .sq-sim {
+      margin-top: 1rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(240, 248, 247, 0.96));
+    }
+
+    .sq-sim-layout {
+      display: grid;
+      grid-template-columns: minmax(290px, 0.86fr) minmax(0, 1.14fr);
+      gap: 1rem;
+      align-items: stretch;
+      margin-top: 0.75rem;
+    }
+
+    .sq-controls {
+      display: grid;
+      gap: 0.75rem;
+      padding: 0.85rem;
+      border: 1px solid var(--sq-line);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.72);
+    }
+
+    .sq-control label {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      color: var(--sq-ink);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+
+    .sq-control input {
+      width: 100%;
+      margin-top: 0.38rem;
+      accent-color: var(--sq-teal);
+    }
+
+    .sq-sim-stage {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+
+    .sq-material-box {
+      position: relative;
+      min-height: 250px;
+      border: 1px solid var(--sq-line);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.72), rgba(241,244,246,0.76));
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .sq-soft-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 250px;
+      cursor: grab;
+    }
+
+    .sq-soft-canvas:active {
+      cursor: grabbing;
+    }
+
+    .sq-sim-caption {
+      position: absolute;
+      left: 0.75rem;
+      right: 0.75rem;
+      bottom: 0.65rem;
+      color: rgba(24, 33, 47, 0.68);
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .sq-button {
+      border: 0;
+      border-radius: 8px;
+      background: var(--sq-ink);
+      color: white;
+      min-height: 40px;
+      padding: 0 0.9rem;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .sq-button:hover { background: #263448; }
+
+    .sq-readout {
+      padding: 0.85rem;
+      border: 1px solid var(--sq-line);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.76);
+    }
+
+    .sq-readout h3 {
+      margin: 0 0 0.35rem;
+      font-size: 1.08rem;
+    }
+
+    .sq-readout p {
+      margin: 0.2rem 0;
+      color: var(--sq-muted);
+      line-height: 1.52;
+    }
+
+    .sq-stations {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .sq-station {
+      border-top: 5px solid var(--accent, var(--sq-teal));
+      box-shadow: 0 12px 28px rgba(24, 33, 47, 0.08);
+    }
+
+    .sq-station h3 {
+      color: var(--accent, var(--sq-teal));
+    }
+
+    .sq-mini-table {
+      width: 100%;
+      margin-top: 0.75rem;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .sq-mini-table th,
+    .sq-mini-table td {
+      padding: 0.65rem;
+      border: 1px solid var(--sq-line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .sq-mini-table th {
+      color: var(--sq-ink);
+      background: rgba(39, 111, 209, 0.08);
+    }
+
+    .sq-mini-table td {
+      color: var(--sq-muted);
+      background: rgba(255,255,255,0.72);
+    }
+
+    .sq-flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+
+    .sq-step {
+      min-height: 110px;
+      padding: 0.7rem;
+      border: 1px solid var(--sq-line);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.72);
+    }
+
+    .sq-step strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: var(--sq-ink);
+    }
+
+    .sq-step span {
+      color: var(--sq-muted);
+      font-size: 0.84rem;
+      line-height: 1.48;
+    }
+
+    .sq-teacher-script {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    .sq-script-line {
+      padding: 0.78rem;
+      border-left: 4px solid var(--sq-plum);
+      border-radius: 8px;
+      background: rgba(124, 77, 158, 0.08);
+      color: var(--sq-muted);
+      line-height: 1.58;
+    }
+
+    .sq-script-line strong { color: var(--sq-ink); }
+
+    @media (max-width: 940px) {
+      .sq-hero,
+      .sq-two,
+      .sq-sim-layout,
+      .sq-sim-stage {
+        grid-template-columns: 1fr;
+      }
+
+      .sq-grid,
+      .sq-stations {
+        grid-template-columns: 1fr;
+      }
+
+      .sq-flow,
+      .sq-vocab {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 620px) {
+      .sq-page { width: min(100% - 1rem, 1180px); }
+      .sq-hero h1 { font-size: 2.45rem; }
+      .sq-flow,
+      .sq-vocab {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="sq-page">
+          <section class="sq-hero">
+            <div>
+              <p class="sq-eyebrow">Materials Science · Soft Matter Lab</p>
+              <h1>Squishy Science Lab</h1>
+              <div class="sq-meta">
+                <span class="sq-pill">Grades 3-8 core</span>
+                <span class="sq-pill">K-12 adaptable</span>
+                <span class="sq-pill">Soft matter</span>
+                <span class="sq-pill">Stress relief design</span>
+              </div>
+              <p class="sq-lede">Squishies are soft-matter engineering. Today you are not just making toys. You are testing how materials deform, absorb force, return to shape, and send calming touch information through your hands.</p>
+              <a class="sq-back" href="../steam-lessons.html#module-fabrication">&larr; Back to Applied Physics &amp; Materials Science</a>
+            </div>
+            <div class="sq-visual" aria-label="Animated squishy blob showing compression and rebound">
+              <div class="sq-blob" aria-hidden="true"></div>
+            </div>
+          </section>
+
+          <section class="sq-alert sq-wide" style="margin-top:1rem;">
+            <h2>Lab Safety First</h2>
+            <ul>
+              <li>No eating lab materials. Wash hands after testing.</li>
+              <li>Do not heat, freeze, microwave, cut open, or pressure-test commercial squishy toys.</li>
+              <li>Use gloves at messy stations. Avoid latex balloons if anyone has a latex sensitivity.</li>
+              <li>Teacher controls contact solution or any borate activator. For younger students, skip slime-gel and use cloud dough, flour dough, and oobleck.</li>
+              <li>No sealed container pressure experiments. Squishy pouches are for gentle hand squeezing only.</li>
+            </ul>
+          </section>
+
+          <section class="sq-two">
+            <article class="sq-card">
+              <h2>Big Question</h2>
+              <p><strong>What makes a material satisfying to squeeze, and how can we design one safely?</strong></p>
+              <p>Good squishy materials are usually soft, stretchy or moldable, slow to rebound, and able to recover at least part of their shape. Different recipes feel different because they behave like different kinds of matter: foams, gels, pastes, fluids, and viscoelastic solids.</p>
+            </article>
+            <article class="sq-card">
+              <h2>Teacher Opening</h2>
+              <div class="sq-teacher-script">
+                <div class="sq-script-line"><strong>Hold up a sponge, marshmallow, foam piece, dough ball, and squishy toy.</strong> Ask: which one is soft, which one is stretchy, which one is slow, and which one pushes back?</div>
+                <div class="sq-script-line"><strong>Say:</strong> Newton's laws tell us your hand applies force. Materials science tells us why each object answers that force differently.</div>
+                <div class="sq-script-line"><strong>Transition:</strong> Today our job is to design a safe squishy and test it like materials engineers.</div>
+              </div>
+            </article>
+          </section>
+
+          <section class="sq-card sq-wide" style="margin-top:1rem;">
+            <h2>Key Vocabulary</h2>
+            <div class="sq-vocab">
+              <div class="sq-term" style="--accent:var(--sq-teal);"><strong>Elasticity</strong><span>How well a material returns to its original shape.</span></div>
+              <div class="sq-term" style="--accent:var(--sq-coral);"><strong>Plasticity</strong><span>How much a material stays deformed after force is removed.</span></div>
+              <div class="sq-term" style="--accent:var(--sq-blue);"><strong>Viscosity</strong><span>A material's resistance to flow.</span></div>
+              <div class="sq-term" style="--accent:var(--sq-plum);"><strong>Viscoelasticity</strong><span>Acting partly like a liquid and partly like a spring.</span></div>
+              <div class="sq-term" style="--accent:var(--sq-sun);"><strong>Rebound</strong><span>How quickly something returns after being pressed.</span></div>
+              <div class="sq-term" style="--accent:var(--sq-green);"><strong>Tactile Feedback</strong><span>Information your hands and nervous system receive through touch.</span></div>
+            </div>
+          </section>
+
+          <section class="sq-sim" aria-labelledby="sim-title">
+            <h2 id="sim-title">Intro Simulation: How Materials Answer a Squeeze</h2>
+            <p class="sq-lede">Use this at the beginning of class. Pick a material, press the test blob, then ask students to predict which classroom recipe will feel most similar. This is a simplified spring-particle model: it helps compare rebound and squishiness, but it is not a molecular, fluid, or foam-cell simulation.</p>
+            <div class="sq-sim-layout">
+              <div class="sq-controls">
+                <button class="sq-button" type="button" data-preset="cloud">Cloud Dough</button>
+                <button class="sq-button" type="button" data-preset="flour">Flour Stress Dough</button>
+                <button class="sq-button" type="button" data-preset="oobleck">Oobleck</button>
+                <button class="sq-button" type="button" data-preset="gel">Slime-Gel</button>
+                <button class="sq-button" type="button" data-preset="foam">Memory Foam</button>
+                <div class="sq-control">
+                  <label for="softness">Squishiness <span id="softness-value">4</span></label>
+                  <input id="softness" type="range" min="1" max="5" value="4" />
+                </div>
+                <div class="sq-control">
+                  <label for="rebound">Rebound Time <span id="rebound-value">3</span></label>
+                  <input id="rebound" type="range" min="1" max="5" value="3" />
+                </div>
+                <div class="sq-control">
+                  <label for="flow">Flow or Shape Change <span id="flow-value">3</span></label>
+                  <input id="flow" type="range" min="1" max="5" value="3" />
+                </div>
+              </div>
+              <div class="sq-sim-stage">
+                <div class="sq-material-box">
+                  <canvas id="soft-body-canvas" class="sq-soft-canvas" aria-label="Matter.js soft-body squishy simulation"></canvas>
+                  <div class="sq-sim-caption">Drag the squishy or press it with the plate.</div>
+                </div>
+                <div class="sq-readout">
+                  <h3 id="material-name">Cloud Dough</h3>
+                  <p id="material-response">Soft paste: slow squeeze, gentle shape recovery, good for dumplings and mood blobs.</p>
+                  <p><strong>Class question:</strong> Is this more like a spring, a liquid, a foam, or a paste?</p>
+                  <button id="squeeze-button" class="sq-button" type="button" style="margin-top:0.7rem;">Press for 5 Seconds</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="sq-card sq-wide" style="margin-top:1rem;">
+            <h2>Class Flow</h2>
+            <div class="sq-flow">
+              <div class="sq-step"><strong>1. Touch Lab</strong><span>Compare sponge, marshmallow, memory foam, squishy toy, and dough.</span></div>
+              <div class="sq-step"><strong>2. Mini Talk</strong><span>Introduce force, elasticity, viscosity, rebound, and viscoelasticity.</span></div>
+              <div class="sq-step"><strong>3. Recipe Stations</strong><span>Make cloud dough, flour dough, oobleck, and optional slime-gel.</span></div>
+              <div class="sq-step"><strong>4. Design</strong><span>Create a dumpling, creature, cube, blob, or stress object.</span></div>
+              <div class="sq-step"><strong>5. Test</strong><span>Measure rebound time, shape memory, satisfaction, and durability.</span></div>
+              <div class="sq-step"><strong>6. Reflect</strong><span>Choose which material best matches a stress ball, squishy toy, oobleck pouch, or memory foam.</span></div>
+            </div>
+          </section>
+
+          <section class="sq-stations">
+            <article class="sq-station" style="--accent:var(--sq-teal);">
+              <h3>Station A: Cloud Dough Squishy</h3>
+              <p><strong>Best for:</strong> young students, dumplings, soft blobs, sensory forms.</p>
+              <ul>
+                <li>Mix 2 parts cornstarch with 1 part conditioner or lotion.</li>
+                <li>Add color if needed. Knead until smooth.</li>
+                <li>Add cornstarch if sticky; add conditioner if too dry.</li>
+              </ul>
+              <p><strong>Science:</strong> A soft paste made of solid particles suspended in a creamy liquid.</p>
+            </article>
+
+            <article class="sq-station" style="--accent:var(--sq-sun);">
+              <h3>Station B: Flour Stress Dough</h3>
+              <p><strong>Best for:</strong> dense hand resistance and stress-ball style filling.</p>
+              <ul>
+                <li>Mix 1 cup flour, 1/4 cup salt, and 1-2 tablespoons oil.</li>
+                <li>Add water one spoon at a time. Knead until smooth.</li>
+                <li>Place into a latex-free balloon, vinyl glove finger, or sealed sensory bag.</li>
+              </ul>
+              <p><strong>Science:</strong> A granular paste that can resist compression and slowly deform when squeezed. Its behavior depends strongly on how much water and oil are mixed in.</p>
+            </article>
+
+            <article class="sq-station" style="--accent:var(--sq-blue);">
+              <h3>Station C: Oobleck Pressure Squishy</h3>
+              <p><strong>Best for:</strong> non-Newtonian behavior and force-response testing.</p>
+              <ul>
+                <li>Mix 2 parts cornstarch with 1 part water.</li>
+                <li>Place in a strong zip bag and double-bag it.</li>
+                <li>Compare a slow squeeze with a fast tap or quick squeeze.</li>
+              </ul>
+              <p><strong>Science:</strong> Oobleck is shear-thickening. Under sudden shear, cornstarch particles crowd and jam; under slow motion, they have time to slide past one another.</p>
+            </article>
+
+            <article class="sq-station" style="--accent:var(--sq-plum);">
+              <h3>Station D: Slime-Gel Squishy</h3>
+              <p><strong>Best for:</strong> older students only, with teacher-controlled activator.</p>
+              <ul>
+                <li>Mix 1/2 cup glue, 1/2 teaspoon baking soda, lotion, and color.</li>
+                <li>Add contact solution a few drops at a time.</li>
+                <li>Stop when it becomes stretchy. Store in a sealed bag.</li>
+              </ul>
+              <p><strong>Science:</strong> Borate activator cross-links glue polymers into a flexible gel network.</p>
+            </article>
+          </section>
+
+          <section class="sq-two">
+            <article class="sq-note">
+              <h2>Memory Foam Comparison</h2>
+              <p>Do not make polyurethane foam in class. Instead, compare a memory foam sample with sponge foam.</p>
+              <ol>
+                <li>Press each foam for 5 seconds.</li>
+                <li>Release and count return time.</li>
+                <li>Describe the feel: springy, slow, sinking, or bouncy.</li>
+              </ol>
+              <p>Memory foam is usually a viscoelastic polyurethane foam. Its slow return comes from polymer viscoelasticity plus the structure of tiny foam cells.</p>
+            </article>
+
+            <article class="sq-note">
+              <h2>Design Challenge</h2>
+              <p>Build a one-hand squishy object: dumpling, creature, cube, stress object, planet, mood blob, molecule, or memory-foam monster.</p>
+              <ul>
+                <li>It must be safe to squeeze.</li>
+                <li>It must return partly to shape.</li>
+                <li>It must have a face, texture, label, or theme.</li>
+                <li>It must name the material family: dough, gel, oobleck, foam, or hybrid.</li>
+              </ul>
+            </article>
+          </section>
+
+          <section class="sq-card sq-wide" style="margin-top:1rem;">
+            <h2>Testing Lab</h2>
+            <table class="sq-mini-table">
+              <thead>
+                <tr>
+                  <th>Test</th>
+                  <th>What to Do</th>
+                  <th>What to Record</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Rebound Time</td>
+                  <td>Press for 5 seconds, release, and count.</td>
+                  <td>Seconds until it mostly returns to shape.</td>
+                </tr>
+                <tr>
+                  <td>Shape Memory</td>
+                  <td>Draw original, squeezed, and recovered shapes.</td>
+                  <td>Did it recover, stay dented, flow, or crack?</td>
+                </tr>
+                <tr>
+                  <td>Squeeze Satisfaction</td>
+                  <td>Rate softness, smoothness, stretch, slow return, and stress-relief feel.</td>
+                  <td>Use a 1-5 scale for each category.</td>
+                </tr>
+                <tr>
+                  <td>Durability</td>
+                  <td>Squeeze 20 times gently.</td>
+                  <td>Did it leak, tear, dry, crumble, or survive?</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="sq-card sq-wide" style="margin-top:1rem;">
+            <h2>Newtonian vs Non-Newtonian</h2>
+            <table class="sq-mini-table">
+              <thead>
+                <tr>
+                  <th>Concept</th>
+                  <th>Meaning</th>
+                  <th>Squishy Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Newton's laws of motion</td>
+                  <td>The force framework: pushes, pulls, motion, and action-reaction.</td>
+                  <td>Your hand squeezes; the squishy pushes back.</td>
+                </tr>
+                <tr>
+                  <td>Newtonian fluid</td>
+                  <td>A fluid with mostly constant viscosity.</td>
+                  <td>Water or oil flows predictably.</td>
+                </tr>
+                <tr>
+                  <td>Non-Newtonian fluid</td>
+                  <td>A fluid whose viscosity changes under stress.</td>
+                  <td>Oobleck gets harder when hit.</td>
+                </tr>
+                <tr>
+                  <td>Viscoelastic solid</td>
+                  <td>A material that acts partly like a spring and partly like a slow-flowing material.</td>
+                  <td>Memory foam slowly returns to shape.</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="sq-lede">Classroom phrase: Newton's laws tell us that your hand applies force. Non-Newtonian materials show us that not all fluids respond to force in the same way.</p>
+          </section>
+
+          <section class="sq-card sq-wide" style="margin-top:1rem;">
+            <h2>Student Fallback Checklist</h2>
+            <ol>
+              <li>Choose one safe recipe and write the material name.</li>
+              <li>Build a one-hand squishy shape.</li>
+              <li>Test rebound time after a 5-second press.</li>
+              <li>Rate softness, smoothness, stretch, slow return, and stress-relief feel from 1 to 5.</li>
+              <li>Explain what you would change in version 2.</li>
+              <li>Name one real-world object that uses a similar material: shoes, helmets, pillows, packaging foam, prosthetics, therapy tools, sports padding, or car seats.</li>
+            </ol>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/vendor/matter-js/matter.min.js"></script>
+  <script>
+    (function () {
+      const presets = {
+        cloud: {
+          name: 'Cloud Dough',
+          response: 'Soft paste: slow squeeze, gentle shape recovery, good for dumplings and mood blobs.',
+          softness: 4,
+          rebound: 3,
+          flow: 3,
+          colors: ['#73d2c9', '#f08f77'],
+          stiffness: 0.036,
+          damping: 0.12,
+          frictionAir: 0.055,
+          restitution: 0.08
+        },
+        flour: {
+          name: 'Flour Stress Dough',
+          response: 'Dense granular paste: strong hand resistance, slow movement, classic stress-ball feel.',
+          softness: 2,
+          rebound: 2,
+          flow: 2,
+          colors: ['#f0c36a', '#c98c42'],
+          stiffness: 0.06,
+          damping: 0.18,
+          frictionAir: 0.085,
+          restitution: 0.03
+        },
+        oobleck: {
+          name: 'Oobleck',
+          response: 'Non-Newtonian fluid: flows under slow pressure and stiffens under quick force.',
+          softness: 3,
+          rebound: 1,
+          flow: 5,
+          colors: ['#8ad8ff', '#276fd1'],
+          stiffness: 0.018,
+          damping: 0.28,
+          frictionAir: 0.095,
+          restitution: 0.01
+        },
+        gel: {
+          name: 'Slime-Gel',
+          response: 'Polymer gel: stretchy, elastic, and flexible when the network is cross-linked gently.',
+          softness: 4,
+          rebound: 4,
+          flow: 4,
+          colors: ['#b78be8', '#7c4d9e'],
+          stiffness: 0.03,
+          damping: 0.08,
+          frictionAir: 0.04,
+          restitution: 0.18
+        },
+        foam: {
+          name: 'Memory Foam',
+          response: 'Viscoelastic solid: sinks under pressure, rebounds slowly, and remembers the squeeze for a moment.',
+          softness: 5,
+          rebound: 5,
+          flow: 2,
+          colors: ['#9ccf7a', '#3d8f50'],
+          stiffness: 0.045,
+          damping: 0.32,
+          frictionAir: 0.13,
+          restitution: 0.01
+        }
+      };
+
+      if (!window.Matter) {
+        return;
+      }
+
+      const name = document.getElementById('material-name');
+      const response = document.getElementById('material-response');
+      const squeezeButton = document.getElementById('squeeze-button');
+      const canvas = document.getElementById('soft-body-canvas');
+      const canvasBox = canvas.parentElement;
+      const ctx = canvas.getContext('2d');
+      const sliders = {
+        softness: document.getElementById('softness'),
+        rebound: document.getElementById('rebound'),
+        flow: document.getElementById('flow')
+      };
+      const values = {
+        softness: document.getElementById('softness-value'),
+        rebound: document.getElementById('rebound-value'),
+        flow: document.getElementById('flow-value')
+      };
+
+      const Engine = Matter.Engine;
+      const Runner = Matter.Runner;
+      const Bodies = Matter.Bodies;
+      const Body = Matter.Body;
+      const Composite = Matter.Composite;
+      const Composites = Matter.Composites;
+      const Constraint = Matter.Constraint;
+      const Mouse = Matter.Mouse;
+      const MouseConstraint = Matter.MouseConstraint;
+      const Vector = Matter.Vector;
+
+      const engine = Engine.create();
+      const runner = Runner.create();
+      engine.gravity.y = 0.85;
+
+      let width = 420;
+      let height = 300;
+      let softBody = null;
+      let pressPlate = null;
+      let activePreset = presets.cloud;
+      let activeColors = activePreset.colors;
+      let animationFrame = null;
+
+      const mouse = Mouse.create(canvas);
+      const mouseConstraint = MouseConstraint.create(engine, {
+        mouse,
+        constraint: {
+          stiffness: 0.16,
+          damping: 0.14,
+          render: { visible: false }
+        }
+      });
+      Composite.add(engine.world, mouseConstraint);
+
+      function sliderPhysics() {
+        const softness = Number(sliders.softness.value);
+        const rebound = Number(sliders.rebound.value);
+        const flow = Number(sliders.flow.value);
+        values.softness.textContent = softness;
+        values.rebound.textContent = rebound;
+        values.flow.textContent = flow;
+        return {
+          stiffness: Math.max(0.012, 0.082 - softness * 0.008 - flow * 0.004),
+          damping: 0.04 + rebound * 0.045 + flow * 0.01,
+          frictionAir: 0.025 + rebound * 0.016 + (6 - softness) * 0.006,
+          restitution: Math.max(0.01, 0.2 - rebound * 0.032)
+        };
+      }
+
+      function resizeCanvas() {
+        const rect = canvasBox.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = Math.max(320, Math.floor(rect.width));
+        height = Math.max(250, Math.floor(rect.height));
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function makeWorld() {
+        Composite.clear(engine.world, false);
+        Composite.add(engine.world, mouseConstraint);
+
+        const wallOptions = {
+          isStatic: true,
+          render: { visible: false },
+          friction: 0.9,
+          restitution: 0
+        };
+
+        const walls = [
+          Bodies.rectangle(width / 2, height + 28, width + 80, 56, wallOptions),
+          Bodies.rectangle(-28, height / 2, 56, height + 80, wallOptions),
+          Bodies.rectangle(width + 28, height / 2, 56, height + 80, wallOptions),
+          Bodies.rectangle(width / 2, -30, width + 80, 60, wallOptions)
+        ];
+
+        const physics = sliderPhysics();
+        const particleRadius = Math.max(11, Math.min(15, width / 34));
+        const columns = 6;
+        const rows = 5;
+        const gap = particleRadius * 1.35;
+        const startX = width / 2 - ((columns - 1) * gap) / 2;
+        const startY = height * 0.32;
+
+        softBody = Composites.softBody(
+          startX,
+          startY,
+          columns,
+          rows,
+          gap,
+          gap,
+          true,
+          particleRadius,
+          {
+            friction: 0.72,
+            frictionAir: physics.frictionAir,
+            restitution: physics.restitution,
+            density: 0.0016,
+            collisionFilter: { group: Body.nextGroup(true) }
+          },
+          {
+            stiffness: physics.stiffness,
+            damping: physics.damping,
+            render: { visible: false }
+          }
+        );
+
+        softBody.constraints.forEach(function (constraint) {
+          constraint.length *= 0.92;
+        });
+
+        pressPlate = Bodies.rectangle(width / 2, -42, Math.min(230, width * 0.58), 34, {
+          isStatic: true,
+          chamfer: { radius: 9 },
+          friction: 0.8,
+          restitution: 0.02
+        });
+
+        Composite.add(engine.world, walls);
+        Composite.add(engine.world, softBody);
+        Composite.add(engine.world, pressPlate);
+      }
+
+      function updateSoftBodyPhysics(physics) {
+        if (!softBody) return;
+        softBody.constraints.forEach(function (constraint) {
+          constraint.stiffness = physics.stiffness;
+          constraint.damping = physics.damping;
+        });
+        softBody.bodies.forEach(function (body) {
+          body.frictionAir = physics.frictionAir;
+          body.restitution = physics.restitution;
+          Body.setDensity(body, 0.0012 + Number(sliders.softness.value) * 0.00008);
+        });
+        mouseConstraint.constraint.stiffness = Math.max(0.08, 0.25 - Number(sliders.flow.value) * 0.025);
+      }
+
+      function applyPreset(key) {
+        const preset = presets[key];
+        if (!preset) return;
+        activePreset = preset;
+        activeColors = preset.colors;
+        name.textContent = preset.name;
+        response.textContent = preset.response;
+        sliders.softness.value = preset.softness;
+        sliders.rebound.value = preset.rebound;
+        sliders.flow.value = preset.flow;
+        values.softness.textContent = preset.softness;
+        values.rebound.textContent = preset.rebound;
+        values.flow.textContent = preset.flow;
+        updateSoftBodyPhysics({
+          stiffness: preset.stiffness,
+          damping: preset.damping,
+          frictionAir: preset.frictionAir,
+          restitution: preset.restitution
+        });
+      }
+
+      function drawSoftMembrane(points) {
+        const sorted = points
+          .slice()
+          .sort(function (a, b) {
+            const center = points.reduce(function (acc, point) {
+              acc.x += point.x / points.length;
+              acc.y += point.y / points.length;
+              return acc;
+            }, { x: 0, y: 0 });
+            return Math.atan2(a.y - center.y, a.x - center.x) - Math.atan2(b.y - center.y, b.x - center.x);
+          });
+
+        if (sorted.length < 3) return;
+        const gradient = ctx.createLinearGradient(width * 0.28, height * 0.18, width * 0.72, height * 0.72);
+        gradient.addColorStop(0, activeColors[0]);
+        gradient.addColorStop(1, activeColors[1]);
+
+        ctx.beginPath();
+        sorted.forEach(function (point, index) {
+          const next = sorted[(index + 1) % sorted.length];
+          const midX = (point.x + next.x) / 2;
+          const midY = (point.y + next.y) / 2;
+          if (index === 0) ctx.moveTo(midX, midY);
+          ctx.quadraticCurveTo(point.x, point.y, midX, midY);
+        });
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = 'rgba(24, 33, 47, 0.18)';
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 9;
+        ctx.fill();
+        ctx.shadowColor = 'transparent';
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(24, 33, 47, 0.18)';
+        ctx.stroke();
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = 'rgba(255,255,255,0.16)';
+        ctx.fillRect(0, 0, width, height);
+
+        if (pressPlate) {
+          ctx.save();
+          ctx.translate(pressPlate.position.x, pressPlate.position.y);
+          ctx.rotate(pressPlate.angle);
+          ctx.fillStyle = 'rgba(24, 33, 47, 0.82)';
+          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+          ctx.lineWidth = 2;
+          roundRect(ctx, -pressPlate.bounds.max.x + pressPlate.position.x, -17, pressPlate.bounds.max.x - pressPlate.bounds.min.x, 34, 9);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        if (softBody) {
+          const points = softBody.bodies.map(function (body) {
+            return body.position;
+          });
+          drawSoftMembrane(points);
+
+          ctx.globalAlpha = 0.34;
+          ctx.strokeStyle = 'rgba(24, 33, 47, 0.22)';
+          ctx.lineWidth = 1.35;
+          softBody.constraints.forEach(function (constraint) {
+            if (!constraint.bodyA || !constraint.bodyB) return;
+            ctx.beginPath();
+            ctx.moveTo(constraint.bodyA.position.x, constraint.bodyA.position.y);
+            ctx.lineTo(constraint.bodyB.position.x, constraint.bodyB.position.y);
+            ctx.stroke();
+          });
+          ctx.globalAlpha = 1;
+
+          softBody.bodies.forEach(function (body) {
+            ctx.beginPath();
+            ctx.arc(body.position.x, body.position.y, body.circleRadius || 11, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.22)';
+            ctx.fill();
+          });
+        }
+
+        animationFrame = window.requestAnimationFrame(render);
+      }
+
+      function roundRect(context, x, y, rectWidth, rectHeight, radius) {
+        context.beginPath();
+        context.moveTo(x + radius, y);
+        context.lineTo(x + rectWidth - radius, y);
+        context.quadraticCurveTo(x + rectWidth, y, x + rectWidth, y + radius);
+        context.lineTo(x + rectWidth, y + rectHeight - radius);
+        context.quadraticCurveTo(x + rectWidth, y + rectHeight, x + rectWidth - radius, y + rectHeight);
+        context.lineTo(x + radius, y + rectHeight);
+        context.quadraticCurveTo(x, y + rectHeight, x, y + rectHeight - radius);
+        context.lineTo(x, y + radius);
+        context.quadraticCurveTo(x, y, x + radius, y);
+        context.closePath();
+      }
+
+      function pressSquishy() {
+        const startY = -42;
+        const targetY = height * 0.34;
+        const start = performance.now();
+        const hold = 360 + Number(sliders.rebound.value) * 130;
+
+        function animatePlate(now) {
+          const elapsed = now - start;
+          let y = startY;
+          if (elapsed < 360) {
+            y = startY + (targetY - startY) * easeOut(elapsed / 360);
+          } else if (elapsed < hold) {
+            y = targetY;
+          } else if (elapsed < hold + 620) {
+            y = targetY + (startY - targetY) * easeInOut((elapsed - hold) / 620);
+          } else {
+            y = startY;
+          }
+          Body.setPosition(pressPlate, { x: width / 2, y });
+          if (elapsed < hold + 620) window.requestAnimationFrame(animatePlate);
+        }
+
+        window.requestAnimationFrame(animatePlate);
+      }
+
+      function easeOut(t) {
+        return 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+      }
+
+      function easeInOut(t) {
+        t = Math.min(1, Math.max(0, t));
+        return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      }
+
+      Object.keys(sliders).forEach(function (key) {
+        sliders[key].addEventListener('input', function () {
+          updateSoftBodyPhysics(sliderPhysics());
+        });
+      });
+
+      document.querySelectorAll('[data-preset]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          applyPreset(button.dataset.preset);
+        });
+      });
+
+      squeezeButton.addEventListener('click', function () {
+        pressSquishy();
+      });
+
+      window.addEventListener('resize', function () {
+        window.clearTimeout(window.sqResizeTimer);
+        window.sqResizeTimer = window.setTimeout(function () {
+          resizeCanvas();
+          makeWorld();
+          applyPreset(activePreset === presets.cloud ? 'cloud' : Object.keys(presets).find(function (key) {
+            return presets[key] === activePreset;
+          }));
+        }, 180);
+      });
+
+      resizeCanvas();
+      makeWorld();
+      Runner.run(runner, engine);
+      render();
+      applyPreset('cloud');
+
+      window.addEventListener('pagehide', function () {
+        Runner.stop(runner);
+        if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      });
+    })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
