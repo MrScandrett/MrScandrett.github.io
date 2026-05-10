@@ -362,11 +362,11 @@
 
   function getQ1() { return q1sign * q1mag * 1e-6; }
   function getQ2() { return q2sign * q2mag * 1e-6; }
-  function distMeters(W) { return Math.abs(chargeX2 - chargeX1) * W * 0.01; } // 1px = 0.01m at W=100
+  // Fixed scale: full canvas width = 0.5 m. Initial positions (0.3, 0.7) → 0.20 m apart.
+  function distMeters() { return Math.max(0.01, Math.abs(chargeX2 - chargeX1) * 0.5); }
 
-  function calcForce(W) {
-    const r = distMeters(W);
-    if (r < 0.01) return 0;
+  function calcForce() {
+    const r = distMeters();
     return K * Math.abs(getQ1()) * Math.abs(getQ2()) / (r * r);
   }
 
@@ -440,7 +440,7 @@
     const R = 22;
     const x1 = chargeX1 * W;
     const x2 = chargeX2 * W;
-    const force = calcForce(W);
+    const force = calcForce();
     const attract = (getQ1() * getQ2()) < 0;
 
     // Richer background and spatial grid to give depth
@@ -465,7 +465,7 @@
     ctx.setLineDash([]);
 
     // Distance label
-    const r = distMeters(W);
+    const r = distMeters();
     ctx.font = '11px Inter,sans-serif';
     ctx.fillStyle = '#94a3b8';
     ctx.textAlign = 'center';
