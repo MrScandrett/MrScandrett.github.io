@@ -1463,7 +1463,8 @@ function seedWorld() {
 
 let lastTimestamp = performance.now();
 function update(timestamp) {
-    const dtSec = Math.min(0.05, (timestamp - lastTimestamp) / 1000 || 0.016);
+    const rawDt = (timestamp - lastTimestamp) / 1000;
+    const dtSec = Math.min(0.05, Math.max(0, Number.isFinite(rawDt) ? rawDt : 0.016));
     lastTimestamp = timestamp;
     environment.time += dtSec;
 

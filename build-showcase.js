@@ -47,6 +47,16 @@ function exists(targetPath) {
   return fssync.existsSync(targetPath);
 }
 
+function findFileNameCaseInsensitive(dirPath, desiredName) {
+  if (!exists(dirPath)) return null;
+  const desiredLower = desiredName.toLowerCase();
+  const entries = fssync.readdirSync(dirPath, { withFileTypes: true });
+  const exact = entries.find((entry) => entry.isFile() && entry.name === desiredName);
+  if (exact) return exact.name;
+  const match = entries.find((entry) => entry.isFile() && entry.name.toLowerCase() === desiredLower);
+  return match ? match.name : null;
+}
+
 async function ensureDir(targetPath) {
   await fs.mkdir(targetPath, { recursive: true });
 }
@@ -522,17 +532,22 @@ async function processProject(source, slug) {
   const { projectDir, entryHtml, student } = source;
   const outputDir = path.join(APPS_DIR, slug);
   const sourceIndexPath = path.join(projectDir, entryHtml);
-  const sourceStylePath = path.join(projectDir, "style.css");
-  const sourceScriptPath = path.join(projectDir, "script.js");
-  const hasStyle = exists(sourceStylePath);
-  const hasScript = exists(sourceScriptPath);
+  const sourceStyleName = findFileNameCaseInsensitive(projectDir, "style.css");
+  const sourceScriptName = findFileNameCaseInsensitive(projectDir, "script.js");
+  const sourceStylePath = sourceStyleName ? path.join(projectDir, sourceStyleName) : null;
+  const sourceScriptPath = sourceScriptName ? path.join(projectDir, sourceScriptName) : null;
+  const hasStyle = Boolean(sourceStylePath);
+  const hasScript = Boolean(sourceScriptPath);
 
   await fs.rm(outputDir, { recursive: true, force: true });
   await ensureDir(outputDir);
 
   // Copy everything except root index/style/script; those are rebuilt below.
+  const skipFiles = new Set([entryHtml]);
+  if (sourceStyleName) skipFiles.add(sourceStyleName);
+  if (sourceScriptName) skipFiles.add(sourceScriptName);
   await copyDirectoryRecursive(projectDir, outputDir, {
-    skipFiles: new Set([entryHtml, "style.css", "script.js"])
+    skipFiles
   });
 
   if (hasScript) {
@@ -1378,15 +1393,31 @@ function ensureUniqueSlugs(projectSources) {
   return pairs;
 }
 
-async function removeStaleAppDirs(validSlugs) {
-  const entries = await fs.readdir(APPS_DIR, { withFileTypes: true });
-  const keep = new Set(validSlugs);
+async function readManifestSlugs() {
+  if (!exists(MANIFEST_PATH)) return [];
+  try {
+    const raw = await fs.readFile(MANIFEST_PATH, "utf8");
+    const manifest = JSON.parse(raw);
+    if (!Array.isArray(manifest)) return [];
+    return manifest.map((item) => item && item.slug).filter(Boolean);
+  } catch (error) {
+    logStep(`Skipping stale app cleanup because ${MANIFEST_PATH} could not be read: ${error.message}`);
+    return [];
+  }
+}
 
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    if (keep.has(entry.name)) continue;
-    await fs.rm(path.join(APPS_DIR, entry.name), { recursive: true, force: true });
-    logStep(`Removed stale app directory: /apps/${entry.name}/`);
+async function removeStaleAppDirs(validSlugs) {
+  const keep = new Set(validSlugs);
+  const previousGeneratedSlugs = await readManifestSlugs();
+
+  for (const slug of previousGeneratedSlugs) {
+    if (keep.has(slug)) continue;
+    const appDir = path.join(APPS_DIR, slug);
+    if (!exists(appDir)) continue;
+    const stat = await fs.stat(appDir);
+    if (!stat.isDirectory()) continue;
+    await fs.rm(appDir, { recursive: true, force: true });
+    logStep(`Removed stale generated app directory: /apps/${slug}/`);
   }
 }
 

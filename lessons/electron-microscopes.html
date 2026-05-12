@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Electron Microscopes · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics and biology lesson on electron microscopes: wavelengths, lenses, vacuum columns, SEM vs TEM, and an interactive resolution simulator." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .em-page {
+      width: min(100%, 1180px);
+      margin: 0 auto;
+      padding: 1rem clamp(1rem, 3vw, 1.6rem) 1.5rem;
+    }
+    .ll-viewport { --ll-panel-w: 300px; }
+    .em-hero {
+      position: relative;
+      overflow: hidden;
+      margin: 0 0 1rem;
+      padding: clamp(1.1rem, 3vw, 1.7rem);
+      border: 1px solid color-mix(in srgb, var(--line, #d2d2d7) 80%, transparent);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 90% 16%, rgba(20, 184, 166, 0.2), transparent 32%),
+        linear-gradient(135deg, rgba(255,255,255,0.95), rgba(232,248,247,0.9));
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+    }
+    .em-hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr);
+      gap: clamp(1rem, 3vw, 1.5rem);
+      align-items: center;
+    }
+    .em-eyebrow {
+      margin: 0 0 0.45rem;
+      color: #0f766e;
+      font-size: 0.73rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+    .em-hero h1 {
+      max-width: 18ch;
+      margin: 0;
+      font-size: clamp(1.75rem, 4vw, 2.65rem);
+      line-height: 1.06;
+      letter-spacing: -0.02em;
+    }
+    .em-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.55rem;
+      margin: 0.65rem 0 0.8rem;
+      color: #64748b;
+      font-size: 0.77rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .em-meta .dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: currentColor;
+      align-self: center;
+    }
+    .em-lede {
+      max-width: 72ch;
+      margin: 0 0 0.9rem;
+      color: #415266;
+      font-size: 0.97rem;
+      line-height: 1.68;
+    }
+    .em-back-link {
+      color: var(--accent, #007aff);
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .em-back-link:hover { text-decoration: underline; }
+    .em-feature {
+      border: 1px solid rgba(20, 184, 166, 0.25);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(240,253,250,0.82));
+      padding: 0.9rem;
+    }
+    .em-feature svg {
+      display: block;
+      width: 100%;
+      height: clamp(170px, 25vw, 235px);
+      border-radius: 12px;
+      background: #071013;
+    }
+    .em-feature strong {
+      display: block;
+      margin-top: 0.65rem;
+      font-size: 0.95rem;
+    }
+    .em-feature small {
+      display: block;
+      margin-top: 0.25rem;
+      color: #415266;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+    .em-card, .em-quiz {
+      margin-bottom: 1rem;
+      padding: 1.3rem 1.5rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--em-accent, #14b8a6);
+      border-radius: var(--radius, 18px);
+      background: var(--white, #fff);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
+    }
+    .em-card h2, .em-quiz h2 {
+      margin: 0 0 0.55rem;
+      font-size: clamp(1.08rem, 2vw, 1.28rem);
+      letter-spacing: -0.02em;
+    }
+    .em-card h3 { margin: 0.95rem 0 0.35rem; font-size: 0.98rem; }
+    .em-card p, .em-quiz p {
+      margin: 0 0 0.7rem;
+      color: #415266;
+      font-size: 0.9rem;
+      line-height: 1.66;
+    }
+    .em-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.8rem;
+    }
+    .em-mini {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      padding: 0.9rem;
+      background: rgba(248,250,252,0.88);
+    }
+    .em-mini strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 0.86rem;
+    }
+    .em-mini small {
+      display: block;
+      color: #64748b;
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+    .em-formula {
+      margin: 0.85rem 0;
+      padding: 1rem;
+      border: 1px solid rgba(20,184,166,0.32);
+      border-radius: 14px;
+      background: rgba(20,184,166,0.08);
+      text-align: center;
+    }
+    .em-formula strong {
+      display: block;
+      color: #0f766e;
+      font-size: clamp(1.05rem, 2.6vw, 1.55rem);
+      letter-spacing: -0.01em;
+    }
+    .em-formula span {
+      display: block;
+      margin-top: 0.35rem;
+      color: #64748b;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+    .em-sim-wrap {
+      overflow: hidden;
+      margin: 0.85rem 0;
+      border: 1px solid rgba(15,23,42,0.16);
+      border-radius: 14px;
+      background: #061114;
+    }
+    .em-embed-wrap {
+      overflow: hidden;
+      margin: 0.85rem 0;
+      border: 1px solid rgba(15,23,42,0.16);
+      border-radius: 14px;
+      background: #071013;
+    }
+    .em-embed-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      background: rgba(15, 23, 42, 0.94);
+      color: rgba(236,253,245,0.9);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .em-embed-toolbar a {
+      color: #67e8f9;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .em-embed-toolbar a:hover { text-decoration: underline; }
+    .em-embed-frame {
+      display: block;
+      width: 100%;
+      height: min(760px, calc(100vh - 130px));
+      min-height: 560px;
+      border: 0;
+      background: #fff;
+    }
+    #em-canvas {
+      display: block;
+      width: 100%;
+      height: 320px;
+    }
+    .em-controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .em-control {
+      display: grid;
+      gap: 0.25rem;
+      color: #415266;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .em-control output { color: #0f766e; }
+    .em-control input, .em-control select {
+      width: 100%;
+      accent-color: #14b8a6;
+    }
+    .em-check {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 0.8rem;
+    }
+    .em-question {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+    }
+    .em-question p { margin-bottom: 0.55rem; }
+    .em-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    .em-options button {
+      border: 1px solid rgba(20,184,166,0.35);
+      border-radius: 10px;
+      background: rgba(20,184,166,0.08);
+      color: #0f766e;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 0.42rem 0.65rem;
+    }
+    .em-options button:hover { border-color: rgba(20,184,166,0.7); }
+    .em-feedback {
+      min-height: 1.2em;
+      margin-top: 0.45rem;
+      color: #64748b;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .em-feedback.ok { color: #15803d; }
+    .em-feedback.err { color: #be123c; }
+    [data-theme="night"] .em-hero,
+    [data-theme="night"] .em-feature,
+    [data-theme="night"] .em-mini {
+      background: rgba(28, 44, 44, 0.76);
+    }
+    [data-theme="night"] .em-lede,
+    [data-theme="night"] .em-feature small,
+    [data-theme="night"] .em-card p,
+    [data-theme="night"] .em-quiz p,
+    [data-theme="night"] .em-mini small,
+    [data-theme="night"] .em-control {
+      color: rgba(245,245,247,0.74);
+    }
+    @media (max-width: 760px) {
+      .em-hero-grid, .em-grid, .em-controls { grid-template-columns: 1fr; }
+      #em-canvas { height: 280px; }
+      .em-embed-toolbar { align-items: flex-start; flex-direction: column; }
+      .em-embed-frame { height: 620px; min-height: 620px; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header ll-topbar">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Applications</a></li>
+            <li><a href="../video-library.html">Video Library</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../class-downloads.html">Class Downloads</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="em-page">
+          <section class="em-hero">
+            <div class="em-hero-grid">
+              <div>
+                <p class="em-eyebrow">Physics + Biology · Lesson</p>
+                <h1>Electron Microscopes</h1>
+                <div class="em-meta">
+                  <span>Resolution</span><span class="dot"></span>
+                  <span>de Broglie Waves</span><span class="dot"></span>
+                  <span>SEM vs TEM</span><span class="dot"></span>
+                  <span>Vacuum Columns</span>
+                </div>
+                <p class="em-lede">A light microscope is limited by the wavelength of visible light. An electron microscope uses accelerated electrons with much shorter wavelengths, then bends and focuses them with electromagnetic lenses. That swap lets scientists see viruses, cell membranes, nanomaterials, and even individual atoms.</p>
+                <a class="em-back-link" href="../steam-lessons.html">Back to all STEAM Lessons</a>
+              </div>
+              <div class="em-feature" aria-label="Electron microscope column diagram">
+                <svg viewBox="0 0 420 260" role="img" aria-label="Stylized electron microscope column with electron beam">
+                  <defs>
+                    <linearGradient id="beamGrad" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0" stop-color="#67e8f9" />
+                      <stop offset="1" stop-color="#14b8a6" />
+                    </linearGradient>
+                    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                  </defs>
+                  <rect x="72" y="18" width="276" height="224" rx="24" fill="#0f172a" stroke="#1f3d46" stroke-width="3" />
+                  <rect x="174" y="28" width="72" height="22" rx="11" fill="#fbbf24" />
+                  <path d="M210 50 C205 88 205 126 210 164 C216 126 216 88 210 50Z" fill="url(#beamGrad)" opacity="0.88" filter="url(#glow)" />
+                  <g fill="none" stroke="#5eead4" stroke-width="8" opacity="0.9">
+                    <ellipse cx="210" cy="82" rx="84" ry="15" />
+                    <ellipse cx="210" cy="126" rx="96" ry="17" />
+                    <ellipse cx="210" cy="174" rx="108" ry="19" />
+                  </g>
+                  <rect x="128" y="166" width="164" height="17" rx="8" fill="#94a3b8" />
+                  <rect x="115" y="195" width="190" height="24" rx="12" fill="#134e4a" stroke="#2dd4bf" />
+                  <g fill="#ccfbf1">
+                    <circle cx="152" cy="207" r="3" /><circle cx="176" cy="205" r="2.5" /><circle cx="205" cy="209" r="3.5" />
+                    <circle cx="232" cy="204" r="2.5" /><circle cx="258" cy="210" r="3" />
+                  </g>
+                  <text x="210" y="245" text-anchor="middle" fill="#99f6e4" font-size="15" font-weight="800" font-family="Inter, sans-serif">electrons behave like tiny waves</text>
+                </svg>
+                <strong>More magnification is not the real magic.</strong>
+                <small>The breakthrough is resolution: separating two nearby details instead of blurring them into one.</small>
+              </div>
+            </div>
+          </section>
+
+          <section class="em-card" style="--em-accent:#14b8a6;">
+            <h2>Why Electrons Reveal Smaller Things</h2>
+            <p>Microscopes cannot resolve details much smaller than the wavelength of the wave they use. Visible light is hundreds of nanometers wide, so a classroom light microscope cannot clearly separate objects only a few nanometers apart. Fast electrons have de Broglie wavelengths far shorter than visible light, so electron microscopes can resolve structures at the scale of proteins, membranes, and atoms.</p>
+            <div class="em-formula">
+              <strong>lambda = h / p</strong>
+              <span>Wavelength gets smaller as momentum gets larger. Accelerating electrons through a high voltage gives them high momentum and tiny wavelengths.</span>
+            </div>
+            <p>The tradeoff: electrons are easily scattered by air, glass, and water. That is why electron microscopes need a vacuum column, carefully prepared samples, and electromagnetic lenses instead of ordinary glass lenses.</p>
+          </section>
+
+          <section class="em-card" style="--em-accent:#0ea5e9;">
+            <h2>SEM vs TEM</h2>
+            <div class="em-grid">
+              <div class="em-mini">
+                <strong>Scanning Electron Microscope (SEM)</strong>
+                <small>An electron beam scans across the sample surface. Detectors collect emitted electrons to build a detailed 3D-like surface image. Great for pollen, insects, crystals, circuits, and fracture surfaces.</small>
+              </div>
+              <div class="em-mini">
+                <strong>Transmission Electron Microscope (TEM)</strong>
+                <small>Electrons pass through an ultra-thin sample. Dense regions block or scatter more electrons, revealing internal structure. Great for viruses, cell organelles, proteins, and crystal lattices.</small>
+              </div>
+              <div class="em-mini">
+                <strong>Electromagnetic Lenses</strong>
+                <small>Coils of wire create magnetic fields that bend electron paths. The microscope column acts like a stack of tunable lenses for charged particles.</small>
+              </div>
+              <div class="em-mini">
+                <strong>Sample Preparation</strong>
+                <small>Samples may be dried, sliced, coated with metal, frozen, or stained with heavy atoms. Preparation choices shape what the final image can honestly show.</small>
+              </div>
+            </div>
+          </section>
+
+          <section class="em-card" style="--em-accent:#8b5cf6;">
+            <h2>Interactive Resolution Simulator</h2>
+            <p>Adjust the accelerating voltage, lens focus, and microscope mode. Higher voltage makes the electron wavelength shorter, while focus controls how tightly the beam lands on the sample.</p>
+            <div class="em-sim-wrap">
+              <canvas id="em-canvas" aria-label="Electron microscope resolution simulator"></canvas>
+            </div>
+            <div class="em-controls">
+              <label class="em-control">Accelerating voltage: <output id="em-voltage-out">80 kV</output>
+                <input id="em-voltage" type="range" min="20" max="300" step="10" value="80" />
+              </label>
+              <label class="em-control">Lens focus: <output id="em-focus-out">72%</output>
+                <input id="em-focus" type="range" min="15" max="100" step="1" value="72" />
+              </label>
+              <label class="em-control">Mode:
+                <select id="em-mode">
+                  <option value="sem">SEM surface scan</option>
+                  <option value="tem">TEM thin section</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="em-card" style="--em-accent:#06b6d4;">
+            <h2>Professional SEM Simulator</h2>
+            <p>This embedded MyScope simulator gives you a more instrument-like SEM workflow: vent and evacuate the chamber, choose a detector, tune accelerating voltage, spot size, working distance, brightness, contrast, magnification, focus, stigmators, scan speed, and sample type.</p>
+            <div class="em-embed-wrap">
+              <div class="em-embed-toolbar">
+                <span>Third-party simulation from MyScope Training. Best on a laptop or desktop screen.</span>
+                <a href="https://myscope.training/SEM_simulator.html" target="_blank" rel="noopener noreferrer">Open full simulator</a>
+              </div>
+              <iframe
+                class="em-embed-frame"
+                title="MyScope scanning electron microscope simulator"
+                src="https://myscope.training/SEM_simulator.html"
+                loading="lazy"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              ></iframe>
+            </div>
+            <p>If the embedded simulator does not load, open it directly using the link above. Some school networks and browser privacy settings block third-party training tools inside iframes.</p>
+          </section>
+
+          <section class="em-card" style="--em-accent:#f97316;">
+            <h2>What Can Go Wrong?</h2>
+            <p>Electron microscope images are powerful, but they are not simple photographs. False color is often added after imaging. Vacuum and staining can change delicate biological samples. Too much beam energy can damage what you are trying to observe. A good scientist asks: what did the instrument detect, and what did the sample preparation change?</p>
+            <div class="em-grid">
+              <div class="em-mini"><strong>Charging</strong><small>Nonconductive samples can build up electric charge and distort SEM images unless coated or imaged carefully.</small></div>
+              <div class="em-mini"><strong>Beam damage</strong><small>High-energy electrons can break chemical bonds, especially in biological and soft materials.</small></div>
+            </div>
+          </section>
+
+          <section class="em-quiz" style="--em-accent:#e11d48;">
+            <h2>Quick Check</h2>
+            <div class="em-check">
+              <div class="em-question">
+                <p>1. What mainly lets electron microscopes resolve smaller structures than light microscopes?</p>
+                <div class="em-options">
+                  <button type="button" data-answer="wrong">Brighter lamps</button>
+                  <button type="button" data-answer="right">Shorter electron wavelengths</button>
+                  <button type="button" data-answer="wrong">Larger glass lenses</button>
+                </div>
+                <div class="em-feedback" aria-live="polite"></div>
+              </div>
+              <div class="em-question">
+                <p>2. Which microscope type is best known for 3D-like surface images?</p>
+                <div class="em-options">
+                  <button type="button" data-answer="right">SEM</button>
+                  <button type="button" data-answer="wrong">TEM</button>
+                  <button type="button" data-answer="wrong">Simple magnifier</button>
+                </div>
+                <div class="em-feedback" aria-live="polite"></div>
+              </div>
+              <div class="em-question">
+                <p>3. Why does the microscope column need a vacuum?</p>
+                <div class="em-options">
+                  <button type="button" data-answer="wrong">To make the image colorful</button>
+                  <button type="button" data-answer="right">Air molecules scatter electrons</button>
+                  <button type="button" data-answer="wrong">Glass lenses only work in vacuum</button>
+                </div>
+                <div class="em-feedback" aria-live="polite"></div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <aside class="ll-panel" data-ll-panel="guide">
+        <div class="panel-section">
+          <h2>Lesson Guide</h2>
+          <p>Use this lesson to connect waves, electromagnetism, biology, and materials science through one instrument.</p>
+        </div>
+        <div class="panel-section">
+          <h3>Vocabulary</h3>
+          <p><strong>Resolution:</strong> the ability to distinguish two close details.</p>
+          <p><strong>de Broglie wavelength:</strong> the wave-like wavelength of a moving particle.</p>
+          <p><strong>Vacuum:</strong> a low-pressure space with very few air molecules.</p>
+          <p><strong>SEM/TEM:</strong> scanning and transmission electron microscope.</p>
+        </div>
+        <div class="panel-section">
+          <h3>Exit Ticket</h3>
+          <p>Explain why an electron microscope needs both high voltage and a vacuum column.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script src="../assets/js/theme-lighting.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById('em-canvas');
+      const ctx = canvas.getContext('2d');
+      const voltage = document.getElementById('em-voltage');
+      const focus = document.getElementById('em-focus');
+      const mode = document.getElementById('em-mode');
+      const voltageOut = document.getElementById('em-voltage-out');
+      const focusOut = document.getElementById('em-focus-out');
+
+      function resizeCanvas() {
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = Math.round(rect.width * dpr);
+        canvas.height = Math.round(rect.height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        draw();
+      }
+
+      function drawSample(w, h, clarity, isTem) {
+        const sampleY = h * 0.64;
+        ctx.save();
+        ctx.translate(w * 0.5, sampleY);
+        ctx.fillStyle = isTem ? 'rgba(148, 163, 184, 0.22)' : 'rgba(20, 184, 166, 0.22)';
+        ctx.strokeStyle = isTem ? 'rgba(203, 213, 225, 0.75)' : 'rgba(94, 234, 212, 0.75)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(-w * 0.34, -20, w * 0.68, 40, 18);
+        ctx.fill();
+        ctx.stroke();
+
+        const dots = isTem ? 48 : 38;
+        for (let i = 0; i < dots; i += 1) {
+          const a = i * 2.399;
+          const r = 14 + (i % 9) * (w * 0.018);
+          const x = Math.cos(a) * r;
+          const y = Math.sin(a) * r * 0.36;
+          const size = Math.max(1.6, 6 - clarity * 4 + (i % 3));
+          ctx.fillStyle = isTem ? `rgba(226,232,240,${0.28 + clarity * 0.6})` : `rgba(153,246,228,${0.3 + clarity * 0.58})`;
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function draw() {
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        const kv = Number(voltage.value);
+        const focusValue = Number(focus.value);
+        const isTem = mode.value === 'tem';
+        const voltageQuality = (kv - 20) / 280;
+        const focusQuality = focusValue / 100;
+        const clarity = Math.max(0.08, Math.min(1, voltageQuality * 0.55 + focusQuality * 0.55));
+        const blur = (1 - clarity) * 9;
+        voltageOut.textContent = kv + ' kV';
+        focusOut.textContent = focusValue + '%';
+
+        ctx.clearRect(0, 0, w, h);
+        const bg = ctx.createLinearGradient(0, 0, 0, h);
+        bg.addColorStop(0, '#071013');
+        bg.addColorStop(1, '#0f172a');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(45, 212, 191, 0.34)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < w; x += 28) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x + 42, h);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        const center = w * 0.5;
+        const sourceY = 34;
+        const sampleY = h * 0.64;
+        const beamWidth = 34 - clarity * 24;
+        const beam = ctx.createLinearGradient(0, sourceY, 0, sampleY);
+        beam.addColorStop(0, 'rgba(103,232,249,0.9)');
+        beam.addColorStop(1, 'rgba(20,184,166,0.08)');
+        ctx.fillStyle = beam;
+        ctx.beginPath();
+        ctx.moveTo(center - beamWidth, sourceY);
+        ctx.quadraticCurveTo(center - beamWidth * 0.4, h * 0.32, center - beamWidth * 0.22, sampleY);
+        ctx.lineTo(center + beamWidth * 0.22, sampleY);
+        ctx.quadraticCurveTo(center + beamWidth * 0.4, h * 0.32, center + beamWidth, sourceY);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.roundRect(center - 38, 20, 76, 22, 11);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(94,234,212,0.8)';
+        ctx.lineWidth = 7;
+        [h * 0.24, h * 0.39, h * 0.53].forEach((y, i) => {
+          ctx.beginPath();
+          ctx.ellipse(center, y, 92 + i * 24, 14 + i * 3, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+
+        ctx.filter = `blur(${blur}px)`;
+        drawSample(w, h, clarity, isTem);
+        ctx.filter = 'none';
+
+        ctx.fillStyle = 'rgba(236,253,245,0.94)';
+        ctx.font = '700 13px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(isTem ? 'TEM: internal contrast through a thin slice' : 'SEM: scanning the surface point by point', 18, h - 46);
+        ctx.fillStyle = 'rgba(153,246,228,0.95)';
+        ctx.fillText('Estimated resolving power: ' + Math.round(clarity * 100) + '%', 18, h - 24);
+      }
+
+      [voltage, focus, mode].forEach((control) => control.addEventListener('input', draw));
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      document.querySelectorAll('.em-options button').forEach((button) => {
+        button.addEventListener('click', () => {
+          const feedback = button.closest('.em-question').querySelector('.em-feedback');
+          const ok = button.dataset.answer === 'right';
+          feedback.className = 'em-feedback ' + (ok ? 'ok' : 'err');
+          feedback.textContent = ok ? 'Correct.' : 'Try again. Look for the idea the lesson keeps returning to.';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
