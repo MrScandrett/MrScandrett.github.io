@@ -11,133 +11,199 @@
 (function (global) {
   'use strict';
 
-  function ensureKawaiiRangeSkin() {
-    if (window.ClassroomOSKawaiiRangeSkin) {
-      window.ClassroomOSKawaiiRangeSkin();
+  function ensureClassroomRangeSkin() {
+    if (window.ClassroomOSRangeSkin) {
+      window.ClassroomOSRangeSkin();
       return;
     }
 
-    var STYLE_ID = 'classroomos-kawaii-range-style';
+    var STYLE_ID = 'classroomos-range-style';
+    var LEGACY_STYLE_ID = 'classroomos-kawaii-range-style';
     var RANGE_SELECTOR = 'input[type="range"]';
-    var RANGE_CLASS = 'cos-kawaii-range';
+    var RANGE_CLASS = 'cos-range';
+    var LEGACY_RANGE_CLASS = 'cos-kawaii-range';
 
     function injectStyle() {
+      var legacy = document.getElementById(LEGACY_STYLE_ID);
+      if (legacy) legacy.remove();
+      if (window.__classroomosKawaiiRangeObserver) {
+        window.__classroomosKawaiiRangeObserver.disconnect();
+        window.__classroomosKawaiiRangeObserver = null;
+      }
       if (document.getElementById(STYLE_ID)) return;
 
       var style = document.createElement('style');
       style.id = STYLE_ID;
       style.textContent =
-        '.rangeWrapper{display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;height:100%;}' +
         'input[type="range"].' + RANGE_CLASS + '{' +
-          '--base:#fe8ce4;' +
-          '--light:color-mix(in sRGB,var(--base) 60%,#fff);' +
-          '--lighter:color-mix(in sRGB,var(--base) 30%,#fff);' +
-          '--dark:color-mix(in sRGB,var(--base) 95%,#000);' +
-          '--transparent:color-mix(in sRGB,var(--base) 0%,#0000);' +
-          'appearance:none;-webkit-appearance:none;font-size:clamp(12px,1rem,16px);' +
-          'width:100%;max-width:100%;height:2em;padding:0;border:0.38em solid #fff;border-radius:2em;' +
-          'background:transparent;box-shadow:0 0 1em #0001,0 0.25em 0.5em #0001;overflow:hidden;cursor:pointer;' +
+          '--cos-range-accent:#0071e3;' +
+          '--cos-range-progress:0%;' +
+          '--cos-range-track:rgba(125,136,154,0.24);' +
+          '--cos-range-track-border:rgba(125,136,154,0.28);' +
+          '--cos-range-thumb-surface:var(--surface-elevated,var(--white,#fff));' +
+          'appearance:none;-webkit-appearance:none;accent-color:var(--cos-range-accent);' +
+          'display:block;width:100%;max-width:100%;min-width:0;height:28px;padding:0;border:0;background:transparent;' +
+          'border-radius:999px;cursor:pointer;color:var(--cos-range-accent);touch-action:pan-y;' +
         '}' +
-        'input[type="range"].' + RANGE_CLASS + ':focus-visible{outline:2px solid color-mix(in sRGB,var(--base) 65%,#fff);outline-offset:4px;}' +
+        'input[type="range"].' + RANGE_CLASS + ':focus{outline:none;}' +
+        'input[type="range"].' + RANGE_CLASS + ':focus-visible{' +
+          'outline:2px solid var(--focus-ring,rgba(0,113,227,0.34));outline-offset:3px;' +
+        '}' +
         'input[type="range"].' + RANGE_CLASS + '::-webkit-slider-runnable-track{' +
-          'background:' +
-            'radial-gradient(circle at 0.75em 0.6em,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
-            'radial-gradient(circle at 1.25em 0.6em,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
-            'radial-gradient(circle at 5em 0.6em,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
-            'linear-gradient(var(--light) 0 0) 1.25em 0.4em / 3.75em calc(0.4em - 0.5px) no-repeat,' +
-            'linear-gradient(90deg,var(--base),var(--transparent) 1em),' +
-            'linear-gradient(#0000 70%,var(--dark) 80%),' +
-            'var(--base);' +
-          'border-radius:2em;height:100%;' +
+          'height:8px;border:1px solid var(--cos-range-track-border);border-radius:999px;' +
+          'background:linear-gradient(90deg,var(--cos-range-accent) 0 var(--cos-range-progress),var(--cos-range-track) var(--cos-range-progress) 100%);' +
+          'box-shadow:inset 0 1px 1px rgba(15,23,42,0.08);' +
         '}' +
         'input[type="range"].' + RANGE_CLASS + '::-webkit-slider-thumb{' +
-          'appearance:none;-webkit-appearance:none;height:2em;width:2em;margin-top:0;color:var(--lighter);' +
-          'background:' +
-            'radial-gradient(circle at 0.75em 0.6em,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
-            'linear-gradient(90deg,#0000 0.75em,var(--base) 0) 0 0 / 100% 50% no-repeat;' +
-          'border:none;border-radius:50%;' +
-          'box-shadow:' +
-            'inset -0.5em 0 0.5em -0.25em var(--base),' +
-            '1em 0 0 0.25em,2em 0 0 0.25em,3em 0 0 0.25em,4em 0 0 0.25em,5em 0 0 0.25em,' +
-            '6em 0 0 0.25em,7em 0 0 0.25em,8em 0 0 0.25em,9em 0 0 0.25em,10em 0 0 0.25em,' +
-            '11em 0 0 0.25em,12em 0 0 0.25em,13em 0 0 0.25em,14em 0 0 0.25em,15em 0 0 0.25em,' +
-            '16em 0 0 0.25em,17em 0 0 0.25em,18em 0 0 0.25em,19em 0 0 0.25em;' +
+          '-webkit-appearance:none;appearance:none;width:20px;height:20px;margin-top:-7px;border-radius:50%;' +
+          'border:3px solid var(--cos-range-thumb-surface);' +
+          'background:linear-gradient(180deg,color-mix(in srgb,var(--cos-range-accent) 72%,#fff),var(--cos-range-accent));' +
+          'box-shadow:0 2px 7px rgba(15,23,42,0.22),0 0 0 1px color-mix(in srgb,var(--cos-range-accent) 40%,#1d1d1f);' +
+          'transition:transform 120ms ease,box-shadow 120ms ease;' +
         '}' +
+        'input[type="range"].' + RANGE_CLASS + ':hover::-webkit-slider-thumb,' +
+        'input[type="range"].' + RANGE_CLASS + ':focus-visible::-webkit-slider-thumb{' +
+          'transform:scale(1.08);box-shadow:0 3px 10px rgba(15,23,42,0.26),0 0 0 4px color-mix(in srgb,var(--cos-range-accent) 16%,transparent);' +
+        '}' +
+        'input[type="range"].' + RANGE_CLASS + ':active::-webkit-slider-thumb{transform:scale(0.96);}' +
         'input[type="range"].' + RANGE_CLASS + '::-moz-range-track{' +
-          'background:' +
-            'radial-gradient(circle at 0.75em 30%,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
-            'radial-gradient(circle at 1.5em 30%,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
-            'radial-gradient(circle at 5.5em 30%,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
-            'linear-gradient(var(--light) 0 0) 1.5em calc(15% + 0.18em) / 4em calc(0.4em - 0.5px) no-repeat,' +
-            'linear-gradient(90deg,var(--base),var(--transparent) 1em),' +
-            'linear-gradient(var(--transparent) 70%,var(--dark) 80%),' +
-            'var(--base);' +
-          'border:none;border-radius:2em;height:100%;' +
-        '}' +
-        'input[type="range"].' + RANGE_CLASS + '::-moz-range-thumb{' +
-          'appearance:none;height:2em;width:2em;border:0;color:var(--lighter);' +
-          'background:' +
-            'radial-gradient(circle at 0.75em 0.6em,var(--light) calc(0.2em - 1px),#0000 0.2em),' +
-            'linear-gradient(90deg,var(--transparent) 0.75em,var(--base) 0) 0 0 / 100% 50% no-repeat;' +
-          'border-radius:50% 0 50% 50% 0;' +
-          'box-shadow:' +
-            'inset -0.5em 0 0.5em -0.25em var(--base),' +
-            '1em 0 0 0.25em,2em 0 0 0.25em,3em 0 0 0.25em,4em 0 0 0.25em,5em 0 0 0.25em,' +
-            '6em 0 0 0.25em,7em 0 0 0.25em,8em 0 0 0.25em,9em 0 0 0.25em,10em 0 0 0.25em,' +
-            '11em 0 0 0.25em,12em 0 0 0.25em,13em 0 0 0.25em,14em 0 0 0.25em,15em 0 0 0.25em,' +
-            '16em 0 0 0.25em,17em 0 0 0.25em,18em 0 0 0.25em,19em 0 0 0.25em;' +
+          'height:8px;border:1px solid var(--cos-range-track-border);border-radius:999px;' +
+          'background:var(--cos-range-track);box-shadow:inset 0 1px 1px rgba(15,23,42,0.08);' +
         '}' +
         'input[type="range"].' + RANGE_CLASS + '::-moz-range-progress{' +
-          'background:transparent;height:100%;border-radius:2em;' +
+          'height:8px;border-radius:999px;background:var(--cos-range-accent);' +
+        '}' +
+        'input[type="range"].' + RANGE_CLASS + '::-moz-range-thumb{' +
+          'appearance:none;width:20px;height:20px;border-radius:50%;border:3px solid var(--cos-range-thumb-surface);' +
+          'background:linear-gradient(180deg,color-mix(in srgb,var(--cos-range-accent) 72%,#fff),var(--cos-range-accent));' +
+          'box-shadow:0 2px 7px rgba(15,23,42,0.22),0 0 0 1px color-mix(in srgb,var(--cos-range-accent) 40%,#1d1d1f);' +
+          'transition:transform 120ms ease,box-shadow 120ms ease;' +
+        '}' +
+        'input[type="range"].' + RANGE_CLASS + ':hover::-moz-range-thumb,' +
+        'input[type="range"].' + RANGE_CLASS + ':focus-visible::-moz-range-thumb{' +
+          'transform:scale(1.08);box-shadow:0 3px 10px rgba(15,23,42,0.26),0 0 0 4px color-mix(in srgb,var(--cos-range-accent) 16%,transparent);' +
+        '}' +
+        'input[type="range"].' + RANGE_CLASS + ':disabled{' +
+          'cursor:not-allowed;opacity:0.52;filter:saturate(0.6);' +
+        '}' +
+        '[data-lighting="night"] input[type="range"].' + RANGE_CLASS + ',' +
+        '[data-theme="night"] input[type="range"].' + RANGE_CLASS + '{' +
+          '--cos-range-track:rgba(155,168,190,0.22);' +
+          '--cos-range-track-border:rgba(155,168,190,0.25);' +
+        '}' +
+        '@media (prefers-reduced-motion:reduce){' +
+          'input[type="range"].' + RANGE_CLASS + '::-webkit-slider-thumb,' +
+          'input[type="range"].' + RANGE_CLASS + '::-moz-range-thumb{transition:none;}' +
         '}';
       document.head.appendChild(style);
     }
 
-    function syncSliderAccent(slider) {
+    function getInlineAccent(slider) {
+      var explicit = slider.getAttribute('data-range-accent');
+      var inlineAccent = slider.style.getPropertyValue('accent-color') || slider.style.accentColor;
+      var inlineColor = slider.style.getPropertyValue('color') || slider.style.color;
+
+      if (explicit) return explicit;
+      if (inlineAccent && inlineAccent !== 'auto') {
+        return inlineAccent.toLowerCase() === 'currentcolor' && inlineColor ? inlineColor : inlineAccent;
+      }
+      return inlineColor || '';
+    }
+
+    function isVerticalRange(slider) {
+      var writingMode = '';
+      if (window.getComputedStyle) {
+        writingMode = window.getComputedStyle(slider).writingMode || '';
+      }
+      return slider.getAttribute('orient') === 'vertical' || writingMode.indexOf('vertical') === 0;
+    }
+
+    function syncSlider(slider) {
       if (!slider || slider.dataset.rangeSkin === 'native') return;
+
+      slider.classList.remove(LEGACY_RANGE_CLASS);
+      if (isVerticalRange(slider)) {
+        slider.classList.remove(RANGE_CLASS);
+        slider.style.removeProperty('--base');
+        slider.style.removeProperty('--light');
+        slider.style.removeProperty('--lighter');
+        slider.style.removeProperty('--dark');
+        slider.style.removeProperty('--transparent');
+        slider.style.removeProperty('--cos-range-progress');
+        return;
+      }
 
       slider.classList.add(RANGE_CLASS);
 
-      if (!slider.style.getPropertyValue('--base')) {
-        var accent = window.getComputedStyle(slider).accentColor;
-        if (accent && accent !== 'auto') {
-          slider.style.setProperty('--base', accent);
-        }
+      slider.style.removeProperty('--base');
+      slider.style.removeProperty('--light');
+      slider.style.removeProperty('--lighter');
+      slider.style.removeProperty('--dark');
+      slider.style.removeProperty('--transparent');
+
+      var accent = getInlineAccent(slider);
+      if (accent) slider.style.setProperty('--cos-range-accent', accent);
+
+      var min = parseFloat(slider.min);
+      var max = parseFloat(slider.max);
+      var value = parseFloat(slider.value);
+      if (!isFinite(min)) min = 0;
+      if (!isFinite(max)) max = 100;
+      if (!isFinite(value)) value = min;
+
+      var percent = max === min ? 0 : ((value - min) / (max - min)) * 100;
+      percent = Math.max(0, Math.min(100, percent));
+      slider.style.setProperty('--cos-range-progress', percent.toFixed(3) + '%');
+
+      if (!slider.dataset.cosRangeBound) {
+        slider.dataset.cosRangeBound = 'true';
+        slider.addEventListener('input', function () { syncSlider(slider); });
+        slider.addEventListener('change', function () { syncSlider(slider); });
       }
     }
 
     function applyToRoot(root) {
       if (!root || !root.querySelectorAll) return;
-      root.querySelectorAll(RANGE_SELECTOR).forEach(syncSliderAccent);
+      root.querySelectorAll(RANGE_SELECTOR).forEach(syncSlider);
       if (root.matches && root.matches(RANGE_SELECTOR)) {
-        syncSliderAccent(root);
+        syncSlider(root);
       }
     }
 
-    window.ClassroomOSKawaiiRangeSkin = function () {
+    window.ClassroomOSRangeSkin = function () {
       injectStyle();
       applyToRoot(document);
     };
+    window.ClassroomOSKawaiiRangeSkin = window.ClassroomOSRangeSkin;
 
-    window.ClassroomOSKawaiiRangeSkin();
+    window.ClassroomOSRangeSkin();
 
-    if (!window.__classroomosKawaiiRangeObserver) {
-      window.__classroomosKawaiiRangeObserver = new MutationObserver(function (mutations) {
+    if (!window.__classroomosRangeObserver) {
+      window.__classroomosRangeObserver = new MutationObserver(function (mutations) {
         mutations.forEach(function (mutation) {
           mutation.addedNodes.forEach(function (node) {
             if (node && node.nodeType === 1) applyToRoot(node);
           });
+          if (mutation.type === 'attributes' && mutation.target && mutation.target.matches && mutation.target.matches(RANGE_SELECTOR)) {
+            syncSlider(mutation.target);
+          }
         });
       });
 
-      window.__classroomosKawaiiRangeObserver.observe(document.documentElement, {
+      window.__classroomosRangeObserver.observe(document.documentElement, {
         childList: true,
-        subtree: true
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['value', 'min', 'max', 'data-range-accent']
       });
     }
+
+    window.addEventListener('classroomos:lightingchange', function () {
+      applyToRoot(document);
+    });
   }
 
-  ensureKawaiiRangeSkin();
+  ensureClassroomRangeSkin();
 
   /* ──────────────────────────────────────────────────────────
      Auto panel builder
