@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ada Lovelace · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Explore the life and legacy of Ada Lovelace — the world's first computer programmer. Learn how she envisioned algorithms, loops, and general-purpose computing a century before the first computer was built." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --al-teal: #0f766e;
+      --al-violet: #7c3aed;
+      --al-brass: #b45309;
+      --al-rose: #be185d;
+      --al-ink: #042f2e;
+      --al-muted: #475569;
+      --al-line: #e2e8f0;
+      --al-soft: #f0fdfa;
+    }
+
+    .al-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .al-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .al-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .al-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .al-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .al-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .al-lede { color: rgba(245,245,247,0.7); }
+
+    .al-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#0f766e); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .al-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .al-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .al-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .al-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .al-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .al-card p { color: rgba(245,245,247,0.72); }
+
+    .al-formula-box { background: linear-gradient(135deg,rgba(15,118,110,0.09),rgba(15,118,110,0.03)); border: 1px solid rgba(15,118,110,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .al-formula-sym { font-size: clamp(1.1rem,3vw,1.4rem); font-weight: 800; letter-spacing: -0.02em; color: var(--al-teal); display: block; margin-bottom: 0.5rem; font-family: monospace; }
+    .al-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .al-formula-vars { color: rgba(245,245,247,0.7); }
+    .al-formula-note { font-size: 0.79rem; color: #64748b; margin-top: 0.55rem; font-style: italic; }
+    [data-theme="night"] .al-formula-note { color: rgba(245,245,247,0.5); }
+
+    .al-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .al-callout.teal   { background: rgba(15,118,110,0.09);  border-left: 3px solid var(--al-teal); }
+    .al-callout.violet { background: rgba(124,58,237,0.09);  border-left: 3px solid var(--al-violet); }
+    .al-callout.brass  { background: rgba(180,83,9,0.10);    border-left: 3px solid var(--al-brass); }
+
+    /* Timeline */
+    .al-timeline { list-style: none; padding: 0 0 0 36px; margin: 0.7rem 0; position: relative; }
+    .al-timeline::before { content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 2px; background: var(--al-violet); opacity: 0.3; border-radius: 2px; }
+    .al-tl-item { position: relative; margin-bottom: 0.75rem; font-size: 0.87rem; color: #3f4f65; line-height: 1.55; }
+    [data-theme="night"] .al-tl-item { color: rgba(245,245,247,0.72); }
+    .al-tl-item::before { content: ''; position: absolute; left: -24px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--al-violet); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--al-violet); }
+    .al-tl-year { display: inline-block; background: var(--al-violet); color: #fff; font-size: 0.72rem; font-weight: 700; border-radius: 5px; padding: 0.05rem 0.4rem; margin-right: 0.4rem; vertical-align: middle; }
+
+    /* Canvas / readouts */
+    .al-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #1a0f02; }
+    #al-canvas { width: 100%; height: 320px; display: block; }
+
+    .al-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .al-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .al-readout { background: rgba(255,255,255,0.06); }
+    .al-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .al-readout-val   { font-size: 1rem; font-weight: 700; color: var(--al-teal); }
+
+    /* Grids */
+    .al-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; }
+
+    /* Contribution cards */
+    .al-contribution-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem; }
+    .al-contribution-icon { font-size: 1.6rem; margin-bottom: 0.35rem; }
+    .al-contribution-card strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; color: var(--al-ink); }
+    .al-contribution-card p { font-size: 0.77rem; color: #64748b; line-height: 1.5; margin: 0; }
+    [data-theme="night"] .al-contribution-card strong { color: rgba(245,245,247,0.9); }
+
+    /* Practice problems */
+    .al-practice .al-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .al-practice .al-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: #3f4f65; line-height: 1.6; }
+    [data-theme="night"] .al-problem p { color: rgba(245,245,247,0.72); }
+    .al-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .al-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 130px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .al-check-btn { background: var(--al-teal); color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .al-check-btn:hover { background: #0d5c56; }
+    .al-feedback { font-size: 0.82rem; font-weight: 600; }
+    .al-feedback.ok  { color: #34c759; }
+    .al-feedback.err { color: #dc2626; }
+    .al-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+
+    @media (max-width: 560px) {
+      .al-grid-2 { grid-template-columns: 1fr; }
+      .al-readouts { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="al-page">
+
+        <!-- Hero -->
+        <section class="hero al-hero">
+          <p class="eyebrow">Computer Science · Mathematics · History of Science</p>
+          <h1>Ada Lovelace</h1>
+          <div class="al-hero-meta">
+            <span>Algorithms</span><span class="dot"></span>
+            <span>The Analytical Engine</span><span class="dot"></span>
+            <span>First Programmer</span><span class="dot"></span>
+            <span>Pioneering Women in STEAM</span>
+          </div>
+          <p class="al-lede">Augusta Ada King, Countess of Lovelace, was born in 1815 as the daughter of the poet Lord Byron. She never met a working computer — yet in 1843 she wrote the world's first algorithm: a precise, step-by-step set of instructions intended for Charles Babbage's Analytical Engine. Her notes introduced concepts like loops, subroutines, and the idea that a machine could manipulate symbols beyond mere arithmetic — a vision that predates Alan Turing by nearly a century.</p>
+        </section>
+
+        <!-- Biography -->
+        <section class="al-card" style="--card-accent:#b45309;">
+          <h2>Who Was Ada Lovelace?</h2>
+          <p>Born December 10, 1815 in London, Ada's father was the Romantic poet Lord Byron, who left the family when Ada was one month old. Her mother, Anne Isabella Milbanke, fearful Ada would inherit Byron's "poetic madness," raised her on a strict diet of mathematics and logic — ironically the very discipline that made Ada famous.</p>
+          <p>At 17, Ada met Charles Babbage at a dinner party and immediately grasped the potential of his Difference Engine — a mechanical calculator. Babbage was so impressed that he introduced her to his plans for the far more ambitious Analytical Engine: a general-purpose mechanical computer with a mill (processor), store (memory), input via punched cards, and output via printer.</p>
+          <p>In 1842, Italian mathematician Luigi Menabrea published a description of the Analytical Engine in French. Babbage asked Ada to translate it. She did — and added her own notes (labeled A through G) that were nearly three times longer than the original article. Note G contained an algorithm for computing Bernoulli numbers — history's first published computer program.</p>
+          <p>Ada died of uterine cancer on November 27, 1852, aged 36 — the same age as her father Byron. She was buried beside him at the Church of St. Mary Magdalene in Hucknall, Nottinghamshire. In 1980, the US Department of Defense named its new programming language "Ada" in her honor.</p>
+        </section>
+
+        <!-- Timeline -->
+        <section class="al-card" style="--card-accent:#7c3aed;">
+          <h2>A Life Ahead of Its Time</h2>
+          <ol class="al-timeline">
+            <li class="al-tl-item"><span class="al-tl-year">1815</span> Born in London; father is poet Lord Byron.</li>
+            <li class="al-tl-item"><span class="al-tl-year">1816</span> Byron leaves; mother raises Ada on a strict curriculum of mathematics and logic.</li>
+            <li class="al-tl-item"><span class="al-tl-year">1832</span> Contracts measles; temporarily paralyzed; spends years bedridden — studies mathematics intensively.</li>
+            <li class="al-tl-item"><span class="al-tl-year">1833</span> Meets Charles Babbage at a dinner party; sees the Difference Engine prototype.</li>
+            <li class="al-tl-item"><span class="al-tl-year">1835</span> Marries William King (later Earl of Lovelace); becomes Countess of Lovelace.</li>
+            <li class="al-tl-item"><span class="al-tl-year">1840</span> Babbage lectures in Turin on the Analytical Engine; Menabrea writes a description in French.</li>
+            <li class="al-tl-item"><span class="al-tl-year">1842</span> Asked to translate Menabrea's paper from French; begins adding her own extensive notes.</li>
+            <li class="al-tl-item"><span class="al-tl-year">1843</span> Publishes translation + Notes A–G; Note G contains the Bernoulli algorithm — the first computer program.</li>
+            <li class="al-tl-item"><span class="al-tl-year">1844</span> Notes describe loops, subroutines, and the idea the machine could compose music.</li>
+            <li class="al-tl-item"><span class="al-tl-year">1852</span> Dies aged 36; buried beside Lord Byron at the Church of St. Mary Magdalene.</li>
+            <li class="al-tl-item"><span class="al-tl-year">1980</span> US Department of Defense names the "Ada" programming language in her honor (MIL-STD-1815).</li>
+          </ol>
+        </section>
+
+        <!-- The Algorithm Explained -->
+        <section class="al-card" style="--card-accent:#0f766e;">
+          <h2>What Is an Algorithm — and Why Did It Matter?</h2>
+          <p>An algorithm is a <strong>finite, ordered sequence of unambiguous instructions</strong> to solve a problem. Before Ada, "computing" meant human clerks doing arithmetic by hand. Babbage's Analytical Engine could follow programmed instructions on punched cards — but no one had described how to write those instructions systematically.</p>
+          <p>Ada was the first to describe: <strong>conditional branching</strong> (if X then do Y), <strong>loops</strong> (repeat until), and <strong>subroutines</strong> (reusable named operations). Her Bernoulli algorithm used a loop that updated 8 variables across 25 operation steps — structurally identical to a for-loop in any modern language.</p>
+          <p>Most radically, she wrote that the Engine "might act upon other things besides number... supposing, for instance, that the fundamental relations of pitched sounds in the science of harmony and of musical composition were susceptible of such expression... the Engine might compose elaborate and scientific pieces of music." — 1843</p>
+
+          <div class="al-formula-box" role="img" aria-label="Ada Lovelace's Bernoulli algorithm loop — for n from 1 to 8, compute Bn from previous values, output B8">
+            <span class="al-formula-sym">FOR n FROM 1 TO 8:<br>&nbsp;&nbsp;&nbsp;&nbsp;Bn ← f(B0, B1, ..., Bn-1)<br>OUTPUT: B8 &larr; Bernoulli number</span>
+            <p class="al-formula-note">Ada's Note G contained this structure — the world's first loop in a published algorithm.</p>
+          </div>
+
+          <div class="al-callout teal">
+            Ada distinguished between the Analytical Engine's ability to do what it is programmed to do and the ability to originate anything — anticipating debates Turing would formalize a century later as the "Turing Test."
+          </div>
+          <div class="al-callout violet">
+            The programming language Ada (MIL-STD-1815, named for Ada's birth year) was mandated for US military software in the 1980s and is still used in aviation, rail signaling, and nuclear systems today.
+          </div>
+          <div class="al-callout brass">
+            Charles Babbage's Analytical Engine was never completed in his lifetime. A working portion was built at the Science Museum in London in 1991. A full replica was proposed for 2021 but funding has remained elusive.
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="al-card" style="--card-accent:#0f766e;">
+          <h2>Interactive Analytical Engine — Bernoulli Sequence</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Watch Ada's algorithm execute step by step. The Analytical Engine used gear columns as memory registers. Each column below represents a variable. Press Run to watch the algorithm update values in sequence — like the world's first program executing on the world's first computer.</p>
+          <div class="al-canvas-wrap">
+            <canvas id="al-canvas" aria-label="Animated Analytical Engine register visualizer showing 8 gear columns representing variables V0 through V7, with a punched card operation label and step-by-step algorithm execution"></canvas>
+          </div>
+          <div class="al-readouts">
+            <div class="al-readout"><span class="al-readout-label">Current Step</span><span class="al-readout-val" id="al-r-step">1 / 25</span></div>
+            <div class="al-readout"><span class="al-readout-label">Active Register</span><span class="al-readout-val" id="al-r-reg">—</span></div>
+            <div class="al-readout"><span class="al-readout-label">Operation</span><span class="al-readout-val" id="al-r-op">Ready</span></div>
+          </div>
+        </section>
+
+        <!-- Key Contributions -->
+        <section class="al-card" style="--card-accent:#0369a1;">
+          <h2>Ada's Key Contributions</h2>
+          <div class="al-grid-2">
+
+            <div class="al-contribution-card">
+              <div class="al-contribution-icon">&#128221;</div>
+              <strong>First Published Algorithm (1843)</strong>
+              <p>Note G of her translation described a step-by-step process for computing Bernoulli numbers — the first algorithm intended for execution by a machine, not a human.</p>
+            </div>
+
+            <div class="al-contribution-card">
+              <div class="al-contribution-icon">&#128260;</div>
+              <strong>Concept of Loops</strong>
+              <p>Ada described how a sequence of operations could be repeated with updated values — the foundation of every for-loop, while-loop, and recursive function in computing today.</p>
+            </div>
+
+            <div class="al-contribution-card">
+              <div class="al-contribution-icon">&#128256;</div>
+              <strong>Conditional Branching</strong>
+              <p>She recognized the Engine could take different action paths based on intermediate results — the origin of if/then/else logic in all programming languages.</p>
+            </div>
+
+            <div class="al-contribution-card">
+              <div class="al-contribution-icon">&#127925;</div>
+              <strong>Symbolic Computation</strong>
+              <p>Ada foresaw that if numbers could represent musical notes, the Engine could compose music. This is the earliest documented vision of a general-purpose symbolic computer.</p>
+            </div>
+
+            <div class="al-contribution-card">
+              <div class="al-contribution-icon">&#129513;</div>
+              <strong>Subroutines</strong>
+              <p>She described reusable operation sequences — the concept that became functions, procedures, and methods in all modern software.</p>
+            </div>
+
+            <div class="al-contribution-card">
+              <div class="al-contribution-icon">&#128187;</div>
+              <strong>"Ada" Programming Language (1980)</strong>
+              <p>The US Department of Defense named its safety-critical programming language Ada in her honor, recognizing her as the mother of software. Ada is still used in aviation, rail, and defense.</p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Legacy -->
+        <section class="al-card" style="--card-accent:#059669;">
+          <h2>Ada Lovelace's Legacy Today</h2>
+          <p><strong>Ada Lovelace Day</strong> (second Tuesday of October) celebrates women in STEAM globally, inspired by her legacy. Alan Turing cited Babbage and Lovelace's work in his 1950 paper "Computing Machinery and Intelligence" — the paper that introduced the Turing Test.</p>
+          <p>Every modern programming concept — <strong>variables, loops, conditionals, subroutines</strong> — traces conceptually to Ada's 1843 notes. The <strong>separation of hardware and software</strong> (the Engine could run any algorithm on punched cards) is Ada's most profound insight — 100 years before von Neumann architecture.</p>
+          <p>Ada grasped that the Analytical Engine's punched-card programs were separate from the machine — the first conception of software as distinct from hardware. This idea, that the same machine could be reprogrammed to solve any problem, is the founding principle of every computer ever built.</p>
+
+          <div class="al-formula-box" role="img" aria-label="Big-O notation: O of n means the number of operations grows linearly with input n">
+            <span class="al-formula-sym">O(n)</span>
+            <div class="al-formula-vars">
+              <div><strong>O(n)</strong> = linear time complexity</div>
+              <div><strong>n</strong> = size of the input</div>
+              <div>Ada's Bernoulli loop ran in O(n) steps</div>
+            </div>
+            <p class="al-formula-note">An algorithm's time complexity — O(n) — means the number of operations grows linearly with input n. Ada's Bernoulli loop ran in O(n) steps.</p>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="al-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Think about algorithms, loops, and the history of computing.</p>
+          <div class="al-practice">
+
+            <div class="al-problem">
+              <p><span class="diff-easy">Easy</span>1. In what year did Ada Lovelace publish the world's first algorithm?</p>
+              <div class="al-problem-row">
+                <select class="al-ans-input" id="alans-1" style="width:120px;">
+                  <option value="">Choose…</option>
+                  <option value="1833">1833</option>
+                  <option value="1843">1843</option>
+                  <option value="1852">1852</option>
+                  <option value="1871">1871</option>
+                </select>
+                <button class="al-check-btn" onclick="alCheckText(1,'1843')">Check</button>
+                <span class="al-feedback" id="alfb-1"></span>
+              </div>
+              <div class="al-hint" id="alhint-1">Hint: Ada published her translation of Menabrea's paper, with her famous Notes A–G, in the same year she met Babbage at the British Association meeting in Cambridge.</div>
+            </div>
+
+            <div class="al-problem">
+              <p><span class="diff-easy">Easy</span>2. What programming concept did Ada describe as repeating a sequence of operations with updated values?</p>
+              <div class="al-problem-row">
+                <select class="al-ans-input" id="alans-2" style="width:150px;">
+                  <option value="">Choose…</option>
+                  <option value="variable">Variable</option>
+                  <option value="loop">Loop</option>
+                  <option value="subroutine">Subroutine</option>
+                  <option value="compiler">Compiler</option>
+                </select>
+                <button class="al-check-btn" onclick="alCheckText(2,'loop')">Check</button>
+                <span class="al-feedback" id="alfb-2"></span>
+              </div>
+              <div class="al-hint" id="alhint-2">Hint: Ada's Bernoulli algorithm repeated a block of 25 operations, updating register values on each pass. Every for-loop and while-loop in modern code traces to this idea.</div>
+            </div>
+
+            <div class="al-problem">
+              <p><span class="diff-mid">Medium</span>3. An algorithm has 3 nested loops each running n = 10 times. How many total operations are executed? (Hint: 10 × 10 × 10 = ?)</p>
+              <div class="al-problem-row">
+                <input type="number" class="al-ans-input" id="alans-3" step="1" placeholder="operations" />
+                <button class="al-check-btn" onclick="alCheck(3, 1000, 0)">Check</button>
+                <span class="al-feedback" id="alfb-3"></span>
+              </div>
+              <div class="al-hint" id="alhint-3">Hint: Each nested loop multiplies the operation count. 3 loops × n = 10 each gives n³ = 10 × 10 × 10 = 1,000. In Big-O notation, this is O(n³) — cubic time complexity.</div>
+            </div>
+
+            <div class="al-problem">
+              <p><span class="diff-mid">Medium</span>4. Ada's Note G computed which mathematical sequence?</p>
+              <div class="al-problem-row">
+                <select class="al-ans-input" id="alans-4" style="width:200px;">
+                  <option value="">Choose…</option>
+                  <option value="fibonacci">Fibonacci numbers</option>
+                  <option value="prime">Prime numbers</option>
+                  <option value="bernoulli">Bernoulli numbers</option>
+                  <option value="pascal">Pascal's triangle</option>
+                </select>
+                <button class="al-check-btn" onclick="alCheckText(4,'bernoulli')">Check</button>
+                <span class="al-feedback" id="alfb-4"></span>
+              </div>
+              <div class="al-hint" id="alhint-4">Hint: These are rational numbers that appear in the Taylor series expansions of many trigonometric and hyperbolic functions. Ada's algorithm computed the first eight of them using a loop across 25 operation steps.</div>
+            </div>
+
+            <div class="al-problem">
+              <p><span class="diff-hard">Challenge</span>5. Which of these is closest to Ada's most radical insight about the Analytical Engine?</p>
+              <div class="al-problem-row">
+                <select class="al-ans-input" id="alans-5" style="width:380px;">
+                  <option value="">Choose…</option>
+                  <option value="a">It could add faster than a human clerk</option>
+                  <option value="b">It could manipulate any symbols, not just numbers, making it a general-purpose machine</option>
+                  <option value="c">It could run without electricity</option>
+                  <option value="d">It could store more data than any book</option>
+                </select>
+                <button class="al-check-btn" onclick="alCheckText(5,'b')">Check</button>
+                <span class="al-feedback" id="alfb-5"></span>
+              </div>
+              <div class="al-hint" id="alhint-5">Hint: Ada explicitly wrote that the Engine could act on "other things besides number" — including musical notes. This is the origin of the idea that a computer is a universal symbol-manipulating machine, not just a calculator.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="al-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="al-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="al-pane-sim">
+          <span class="ll-label">Step Speed</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Speed <span id="al-speed-val">2</span></label>
+            <input type="range" class="nl-slider" id="al-speed-slider" min="1" max="5" value="2" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <button class="ll-preset" onclick="alRun()"   style="width:100%;margin-bottom:0.4rem;">Run Algorithm</button>
+          <button class="ll-preset" onclick="alPause()" style="width:100%;margin-bottom:0.4rem;">Pause</button>
+          <button class="ll-preset" onclick="alStep()"  style="width:100%;margin-bottom:0.4rem;">Step Forward</button>
+          <button class="ll-preset" onclick="alReset()" style="width:100%;margin-bottom:0.4rem;">Reset</button>
+          <hr class="ll-hr">
+          <button class="ll-preset" onclick="alPreset(1)" style="width:100%;margin-bottom:0.4rem;">Auto Run (slow)</button>
+          <button class="ll-preset" onclick="alPreset(5)" style="width:100%;">Auto Run (fast)</button>
+        </div>
+
+        <div class="ll-pane" id="al-pane-guide">
+          <div class="ll-info"><strong>Algorithm</strong>A finite, ordered set of unambiguous instructions. Ada's 1843 Bernoulli algorithm is history's first published one.</div>
+          <div class="ll-info"><strong>Loop</strong>Repeat a block of instructions until a condition is met. Ada described this structure before any computer existed.</div>
+          <div class="ll-info"><strong>Conditional Branch</strong>Execute different instructions depending on a result. Origin of if/then/else in all languages.</div>
+          <div class="ll-info"><strong>Subroutine</strong>A named, reusable block of operations. Modern functions and methods trace to this idea.</div>
+          <div class="ll-info"><strong>Hardware vs. Software</strong>Ada grasped that the Analytical Engine's punched-card programs were separate from the machine — the first conception of software as distinct from hardware.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  // ── Panel tab logic ───────────────────────────────────────────────────────
+  document.querySelectorAll('.ll-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pane = btn.dataset.pane;
+      document.querySelectorAll('.ll-tab').forEach(b => b.setAttribute('aria-selected','false'));
+      btn.setAttribute('aria-selected','true');
+      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      document.getElementById(pane).classList.add('ll-active');
+    });
+  });
+
+  document.querySelector('.ll-panel-close')?.addEventListener('click', () => {
+    document.querySelector('.ll-panel')?.classList.add('ll-panel-hidden');
+    document.querySelector('.ll-open-btn')?.classList.add('ll-visible');
+  });
+  document.querySelector('.ll-open-btn')?.addEventListener('click', () => {
+    document.querySelector('.ll-panel')?.classList.remove('ll-panel-hidden');
+    document.querySelector('.ll-open-btn')?.classList.remove('ll-visible');
+  });
+
+  // ── Practice check functions ──────────────────────────────────────────────
+  window.alCheck = function(n, correct, tol) {
+    const val  = parseFloat(document.getElementById('alans-' + n).value);
+    const fb   = document.getElementById('alfb-' + n);
+    const hint = document.getElementById('alhint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'al-feedback err'; return; }
+    if (Math.abs(val - correct) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'al-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'al-feedback err';
+      if (hint) hint.style.display = 'block';
+    }
+  };
+
+  window.alCheckText = function(n, correct) {
+    const val  = document.getElementById('alans-' + n).value.toString().toLowerCase().trim();
+    const fb   = document.getElementById('alfb-' + n);
+    const hint = document.getElementById('alhint-' + n);
+    if (val === correct.toLowerCase()) {
+      fb.textContent = '✓ Correct!'; fb.className = 'al-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'al-feedback err';
+      if (hint) hint.style.display = 'block';
+    }
+  };
+
+  // ── Analytical Engine Register Visualizer ────────────────────────────────
+  (function() {
+    const canvas  = document.getElementById('al-canvas');
+    const ctx     = canvas.getContext('2d');
+
+    const BERNOULLI = ['1', '−½', '⅙', '0', '−1/30', '0', '1/42', '0'];
+    const ops = [
+      { label: "Initialize: Load B₀ = 1",         active: [0] },
+      { label: "Initialize: Load B₁ = −½",        active: [1] },
+      { label: "Initialize: Load B₂ = ⅙",         active: [2] },
+      { label: "Compute: V3 ← V0 × V1",           active: [0,1,3] },
+      { label: "Compute: V4 ← V3 + V2",           active: [3,2,4] },
+      { label: "Compute: V5 ← V4 / 2",            active: [4,5] },
+      { label: "Compute: V3 ← V1 × V2",           active: [1,2,3] },
+      { label: "Compute: V6 ← V3 + V5",           active: [3,5,6] },
+      { label: "Compute: V3 ← V2 × V2",           active: [2,3] },
+      { label: "Compute: V7 ← V3 / 6",            active: [3,7] },
+      { label: "Loop check: n < 8?",                   active: [] },
+      { label: "Compute: V4 ← V0 × V3",           active: [0,3,4] },
+      { label: "Compute: V5 ← V4 − V1",           active: [4,1,5] },
+      { label: "Compute: V3 ← V5 / 2",            active: [5,3] },
+      { label: "Compute: V4 ← V1 × V2",           active: [1,2,4] },
+      { label: "Compute: V6 ← V4 + V3",           active: [4,3,6] },
+      { label: "Compute: V5 ← V2 × V2",           active: [2,5] },
+      { label: "Compute: V7 ← V5 × V6",           active: [5,6,7] },
+      { label: "Loop: n = n + 1",                      active: [] },
+      { label: "Output: B3 = −1/30",               active: [3] },
+      { label: "Output: B4 = 0",                       active: [4] },
+      { label: "Output: B5 = 1/42",                    active: [5] },
+      { label: "Output: B6 = 0",                       active: [6] },
+      { label: "Output: B7 = −1/30",               active: [7] },
+      { label: "✓ Complete: All Bernoulli numbers computed!", active: [] }
+    ];
+
+    let step       = 0;
+    let running    = false;
+    let intervalId = null;
+
+    function getSpeed() { return parseInt(document.getElementById('al-speed-slider').value); }
+
+    function drawFrame() {
+      const W = canvas.offsetWidth || 600;
+      canvas.width  = W;
+      canvas.height = 320;
+      const H = 320;
+
+      // Background
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#1a0f02');
+      bg.addColorStop(1, '#0d0801');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      const numCols    = 8;
+      const colW       = Math.floor((W - 40) / numCols);
+      const colH       = 180;
+      const colY       = 50;
+      const op         = ops[step] || ops[ops.length - 1];
+      const activeCols = op.active;
+
+      // Draw each register column
+      for (let i = 0; i < numCols; i++) {
+        const cx       = 20 + i * colW + colW / 2;
+        const isActive = activeCols.includes(i);
+
+        // Column body (gear tower)
+        const colGrad = ctx.createLinearGradient(cx - colW * 0.35, 0, cx + colW * 0.35, 0);
+        if (isActive) {
+          colGrad.addColorStop(0, '#0d4d48');
+          colGrad.addColorStop(0.5, '#0f766e');
+          colGrad.addColorStop(1, '#0d4d48');
+        } else {
+          colGrad.addColorStop(0, '#3d2a0a');
+          colGrad.addColorStop(0.5, '#5c3d0f');
+          colGrad.addColorStop(1, '#3d2a0a');
+        }
+        ctx.fillStyle = colGrad;
+        ctx.beginPath();
+        ctx.roundRect(cx - colW * 0.38, colY, colW * 0.76, colH, 6);
+        ctx.fill();
+        ctx.strokeStyle = isActive ? 'rgba(15,118,110,0.8)' : 'rgba(180,83,9,0.4)';
+        ctx.lineWidth   = 1.5;
+        ctx.stroke();
+
+        // Gear teeth (decorative horizontal lines)
+        ctx.strokeStyle = isActive ? 'rgba(20,180,160,0.3)' : 'rgba(180,100,10,0.25)';
+        ctx.lineWidth   = 1;
+        for (let g = 0; g < 6; g++) {
+          const gy = colY + 25 + g * 25;
+          ctx.beginPath();
+          ctx.moveTo(cx - colW * 0.35, gy);
+          ctx.lineTo(cx + colW * 0.35, gy);
+          ctx.stroke();
+        }
+
+        // Value display at top
+        ctx.fillStyle = '#1a0f02';
+        ctx.beginPath();
+        ctx.roundRect(cx - colW * 0.34, colY - 2, colW * 0.68, 28, 5);
+        ctx.fill();
+        ctx.fillStyle    = isActive ? '#5eead4' : '#a67c3a';
+        ctx.font         = `bold ${colW > 60 ? 13 : 10}px monospace`;
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(BERNOULLI[i], cx, colY + 12);
+
+        // Label at bottom
+        ctx.fillStyle    = isActive ? '#99f6e4' : '#78582e';
+        ctx.font         = 'bold 11px sans-serif';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('V' + i, cx, colY + colH + 5);
+
+        // Active glow
+        if (isActive) {
+          ctx.shadowColor = '#0f766e';
+          ctx.shadowBlur  = 14;
+          ctx.strokeStyle = 'rgba(15,118,110,0.6)';
+          ctx.lineWidth   = 2;
+          ctx.beginPath();
+          ctx.roundRect(cx - colW * 0.38, colY, colW * 0.76, colH, 6);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      // Operation card (punched card)
+      const cardX = 20;
+      const cardY = colY + colH + 30;
+      ctx.fillStyle = '#f5e6c8';
+      ctx.beginPath();
+      ctx.roundRect(cardX, cardY, W - 40, 36, 4);
+      ctx.fill();
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+      // Card slot lines
+      ctx.strokeStyle = 'rgba(180,83,9,0.3)';
+      for (let s = 0; s < 5; s++) {
+        ctx.beginPath();
+        ctx.moveTo(cardX + 10, cardY + 6 + s * 5);
+        ctx.lineTo(cardX + W - 50, cardY + 6 + s * 5);
+        ctx.stroke();
+      }
+      ctx.fillStyle    = '#1a0f02';
+      ctx.font         = 'bold 12px sans-serif';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(op.label, cardX + (W - 40) / 2, cardY + 18);
+
+      // Progress bar
+      const pct  = step / (ops.length - 1);
+      const barY = cardY + 44;
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath(); ctx.roundRect(20, barY, W - 40, 8, 4); ctx.fill();
+      ctx.fillStyle = '#0f766e';
+      ctx.beginPath(); ctx.roundRect(20, barY, (W - 40) * pct, 8, 4); ctx.fill();
+
+      // Readouts
+      document.getElementById('al-r-step').textContent = (step + 1) + ' / ' + ops.length;
+      document.getElementById('al-r-reg').textContent  = activeCols.length ? activeCols.map(c => 'V' + c).join(', ') : '—';
+      document.getElementById('al-r-op').textContent   = step < ops.length - 1 ? 'Running' : 'Done';
+
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    function advanceStep() {
+      if (step < ops.length - 1) {
+        step++;
+        drawFrame();
+      } else {
+        clearInterval(intervalId);
+        running = false;
+      }
+    }
+
+    window.alRun = function() {
+      if (running) return;
+      running    = true;
+      const delay = 1600 - getSpeed() * 280;
+      intervalId  = setInterval(advanceStep, Math.max(200, delay));
+      drawFrame();
+    };
+    window.alPause = function() {
+      if (running) { clearInterval(intervalId); running = false; }
+    };
+    window.alStep  = function() { alPause(); if (step < ops.length - 1) { step++; drawFrame(); } };
+    window.alReset = function() { alPause(); step = 0; drawFrame(); };
+    window.alPreset = function(speed) {
+      document.getElementById('al-speed-slider').value = speed;
+      document.getElementById('al-speed-val').textContent = speed;
+      alReset();
+      alRun();
+    };
+
+    document.getElementById('al-speed-slider').addEventListener('input', function() {
+      document.getElementById('al-speed-val').textContent = this.value;
+    });
+
+    drawFrame();
+  })();
+
+})();
+</script>
+</body>
+</html>

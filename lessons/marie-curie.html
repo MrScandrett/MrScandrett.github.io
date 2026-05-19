@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Marie Curie · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Explore the life, discoveries, and legacy of Marie Curie — the first person to win two Nobel Prizes. Learn about radioactivity, polonium, radium, half-life, and atomic decay with an interactive decay chain simulator." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --mc-rose: #be185d;
+      --mc-violet: #7c3aed;
+      --mc-blue: #0369a1;
+      --mc-gold: #d97706;
+      --mc-green: #059669;
+      --mc-ink: #1a0a2e;
+      --mc-muted: #475569;
+      --mc-line: #e2e8f0;
+      --mc-soft: #fdf2f8;
+    }
+
+    .mc-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .mc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .mc-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .mc-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .mc-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .mc-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .mc-lede { color: rgba(245,245,247,0.7); }
+
+    .mc-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#be185d); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .mc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .mc-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .mc-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .mc-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .mc-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .mc-card p { color: rgba(245,245,247,0.72); }
+
+    .mc-formula-box { background: linear-gradient(135deg,rgba(190,24,93,0.09),rgba(190,24,93,0.03)); border: 1px solid rgba(190,24,93,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .mc-formula-sym { font-size: clamp(1.4rem,4vw,2rem); font-weight: 800; letter-spacing: -0.02em; color: var(--mc-rose); display: block; margin-bottom: 0.5rem; }
+    .mc-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .mc-formula-vars { color: rgba(245,245,247,0.7); }
+
+    .mc-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .mc-callout.rose   { background: rgba(190,24,93,0.09);  border-left: 3px solid var(--mc-rose); }
+    .mc-callout.blue   { background: rgba(3,105,161,0.10);  border-left: 3px solid var(--mc-blue); }
+    .mc-callout.violet { background: rgba(124,58,237,0.09); border-left: 3px solid var(--mc-violet); }
+
+    /* Timeline */
+    .mc-timeline { list-style: none; padding: 0 0 0 36px; margin: 0.7rem 0; position: relative; }
+    .mc-timeline::before { content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 2px; background: var(--mc-violet); opacity: 0.3; border-radius: 2px; }
+    .mc-tl-item { position: relative; margin-bottom: 0.75rem; font-size: 0.87rem; color: #3f4f65; line-height: 1.55; }
+    [data-theme="night"] .mc-tl-item { color: rgba(245,245,247,0.72); }
+    .mc-tl-item::before { content: ''; position: absolute; left: -24px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--mc-violet); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--mc-violet); }
+    .mc-tl-year { display: inline-block; background: var(--mc-violet); color: #fff; font-size: 0.72rem; font-weight: 700; border-radius: 5px; padding: 0.05rem 0.4rem; margin-right: 0.4rem; vertical-align: middle; }
+
+    /* Canvas / readouts */
+    .mc-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #040d1a; }
+    #mc-canvas { width: 100%; height: 340px; display: block; }
+
+    .mc-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .mc-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .mc-readout { background: rgba(255,255,255,0.06); }
+    .mc-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .mc-readout-val   { font-size: 1rem; font-weight: 700; color: var(--mc-rose); }
+
+    /* Grids */
+    .mc-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; }
+
+    /* Invention cards */
+    .mc-invention-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem; }
+    .mc-invention-icon { font-size: 1.6rem; margin-bottom: 0.35rem; }
+    .mc-invention-card strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; color: var(--mc-ink); }
+    .mc-invention-card p { font-size: 0.77rem; color: #64748b; line-height: 1.5; margin: 0; }
+    [data-theme="night"] .mc-invention-card strong { color: rgba(245,245,247,0.9); }
+
+    /* Practice problems */
+    .mc-practice .mc-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .mc-practice .mc-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: #3f4f65; line-height: 1.6; }
+    [data-theme="night"] .mc-problem p { color: rgba(245,245,247,0.72); }
+    .mc-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .mc-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 130px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .mc-check-btn { background: var(--mc-rose); color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .mc-check-btn:hover { background: #9d174d; }
+    .mc-feedback { font-size: 0.82rem; font-weight: 600; }
+    .mc-feedback.ok  { color: #34c759; }
+    .mc-feedback.err { color: #dc2626; }
+    .mc-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+
+    @media (max-width: 560px) {
+      .mc-grid-2 { grid-template-columns: 1fr; }
+      .mc-readouts { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="mc-page">
+
+        <!-- Hero -->
+        <section class="hero mc-hero">
+          <p class="eyebrow">Chemistry · Physics · History of Science</p>
+          <h1>Marie Curie</h1>
+          <div class="mc-hero-meta">
+            <span>Radioactivity</span><span class="dot"></span>
+            <span>Atomic Decay</span><span class="dot"></span>
+            <span>Nobel Prize</span><span class="dot"></span>
+            <span>Pioneering Women in Science</span>
+          </div>
+          <p class="mc-lede">Born Maria Skłodowska in Warsaw in 1867, Marie Curie became the first person — and still the only woman — to win the Nobel Prize twice, in two different sciences. Her discovery of polonium and radium, and her foundational work on radioactivity, transformed our understanding of the atom and launched nuclear physics and modern medicine.</p>
+        </section>
+
+        <!-- Biography -->
+        <section class="mc-card" style="--card-accent:#d97706;">
+          <h2>Who Was Marie Curie?</h2>
+          <p>Born November 7, 1867, in Warsaw, Poland — then under Russian rule — Maria Skłodowska grew up in a society that barred women from higher education. Forbidden from attending university in Poland, she made a deal with her sister Bronya: each would fund the other's education abroad in turn. Maria worked as a governess for years to pay for Bronya's medical studies, then in 1891 moved to Paris, enrolled at the Sorbonne, and graduated first in her physics degree despite arriving knowing very little French and with almost no money.</p>
+          <p>She met Pierre Curie in 1894, a brilliant physicist who had himself made significant discoveries in crystallography and piezoelectricity. They married in 1895, forming one of the most productive scientific partnerships in history. Together they investigated uranium rays first observed by Henri Becquerel. Marie made a transformative insight: she coined the term <strong>"radioactivity"</strong> and demonstrated that radiation was an intrinsic property of the atom itself — not a result of molecular interaction. This was a revolution. The classical model of the indivisible, inert atom could not survive her evidence.</p>
+          <p>In 1898 she discovered two new elements: <strong>polonium</strong> (named after her occupied homeland Poland, as an act of national pride) and <strong>radium</strong>. To isolate one gram of radium, she and Pierre processed over one tonne of pitchblende ore — an extraordinary feat of physical and chemical labor. In 1903 she and Pierre shared the Nobel Prize in Physics with Becquerel. After Pierre was killed in a 1906 street accident — struck by a horse-drawn cart — Marie took over his professorship at the Sorbonne, becoming the first female professor in the university's 650-year history.</p>
+          <p>In 1911 she won a second Nobel Prize, this time in Chemistry, for the isolation of pure radium and the study of its properties. During World War I she designed and personally operated 20 mobile radiological units — called <em>petites Curies</em> — which performed X-rays on wounded soldiers in field hospitals. She trained 150 women as X-ray technicians and the units are estimated to have served over one million soldiers. She died July 4, 1934, from aplastic anemia caused by decades of radiation exposure. Her personal notebooks from the 1890s remain radioactive to this day and are stored in lead-lined boxes at the Bibliothèque nationale de France.</p>
+        </section>
+
+        <!-- Timeline -->
+        <section class="mc-card" style="--card-accent:#7c3aed;">
+          <h2>A Life of Discovery</h2>
+          <ol class="mc-timeline">
+            <li class="mc-tl-item"><span class="mc-tl-year">1867</span> Born Maria Skłodowska on November 7 in Warsaw, Poland — then under Russian imperial rule.</li>
+            <li class="mc-tl-item"><span class="mc-tl-year">1891</span> Moves to Paris and enrolls at the Sorbonne; graduates top of her class in physics despite language barriers and poverty.</li>
+            <li class="mc-tl-item"><span class="mc-tl-year">1894</span> Meets Pierre Curie in a Paris laboratory; he becomes her scientific collaborator and closest ally.</li>
+            <li class="mc-tl-item"><span class="mc-tl-year">1895</span> Marries Pierre Curie; begins systematic investigation of uranium rays discovered by Henri Becquerel.</li>
+            <li class="mc-tl-item"><span class="mc-tl-year">1897</span> Daughter Irène born — who will herself win a Nobel Prize in Chemistry in 1935.</li>
+            <li class="mc-tl-item"><span class="mc-tl-year">1898</span> Discovers polonium (July) and radium (December), and coins the term "radioactivity."</li>
+            <li class="mc-tl-item"><span class="mc-tl-year">1903</span> Awarded the Nobel Prize in Physics jointly with Pierre Curie and Henri Becquerel for research on radioactivity — first woman to win a Nobel Prize.</li>
+            <li class="mc-tl-item"><span class="mc-tl-year">1906</span> Pierre is killed by a horse-drawn cart in Paris. Marie accepts his professorship at the Sorbonne — first female professor in the university's history.</li>
+            <li class="mc-tl-item"><span class="mc-tl-year">1911</span> Awarded the Nobel Prize in Chemistry for the discovery and isolation of radium and polonium — first person ever to win two Nobel Prizes.</li>
+            <li class="mc-tl-item"><span class="mc-tl-year">1914</span> Develops 20 mobile X-ray vehicles (<em>petites Curies</em>) for WWI; personally trains 150 women as radiological technicians.</li>
+            <li class="mc-tl-item"><span class="mc-tl-year">1934</span> Dies July 4 from aplastic anemia caused by decades of radiation exposure. Her notebooks remain radioactive today.</li>
+          </ol>
+        </section>
+
+        <!-- Radioactivity Explained -->
+        <section class="mc-card" style="--card-accent:#be185d;">
+          <h2>What Is Radioactivity?</h2>
+          <p>Radioactivity is the <strong>spontaneous emission of particles or energy from an unstable atomic nucleus</strong>. When a nucleus has too many protons, too many neutrons, or too much energy, it rearranges itself by releasing radiation — transforming into a more stable configuration, sometimes into a completely different element in a process called <strong>nuclear decay</strong>.</p>
+
+          <h3>Three Types of Radiation</h3>
+          <p>Marie Curie and her contemporaries identified three fundamental types, named after the first three letters of the Greek alphabet:</p>
+          <ul style="padding-left:1.2rem;margin:0.4rem 0 0.8rem;font-size:0.88rem;color:#3f4f65;line-height:1.7;">
+            <li><strong>Alpha (α) particles</strong> — helium nuclei (2 protons + 2 neutrons, charge +2). Low penetrating power: stopped by a sheet of paper or a few centimetres of air. Dangerous if inhaled or ingested.</li>
+            <li><strong>Beta (β) particles</strong> — fast-moving electrons (β⁻) or positrons (β⁺). Medium penetration: stopped by a few millimetres of aluminium. Emitted when a neutron converts to a proton or vice versa.</li>
+            <li><strong>Gamma (γ) rays</strong> — high-energy electromagnetic photons. High penetration: requires several centimetres of lead or metres of concrete for effective shielding. Often emitted alongside α or β decay.</li>
+          </ul>
+
+          <h3>The Decay Equation</h3>
+          <p>Radioactive decay is a random process — any individual nucleus may decay at any instant — but large samples follow a precise exponential law:</p>
+
+          <div class="mc-formula-box" role="img" aria-label="N of t equals N-naught times e to the power of negative lambda times t — exponential radioactive decay law">
+            <span class="mc-formula-sym">N(t) = N₀ · e<sup style="font-size:0.65em;">−λt</sup></span>
+            <div class="mc-formula-vars">
+              <div><strong>N(t)</strong> = atoms remaining at time t</div>
+              <div><strong>N₀</strong> = initial number of atoms</div>
+              <div><strong>λ</strong> = decay constant (s⁻¹)</div>
+              <div><strong>t</strong> = time elapsed</div>
+              <div><strong>t½</strong> = half-life = ln(2) / λ</div>
+            </div>
+          </div>
+
+          <h3>Half-Life Examples</h3>
+          <p>The <strong>half-life (t½)</strong> is the time required for exactly half of a radioactive sample to decay. It is a fixed constant for each isotope — unaffected by temperature, pressure, or chemical bonding.</p>
+          <ul style="padding-left:1.2rem;margin:0.4rem 0 0.8rem;font-size:0.88rem;color:#3f4f65;line-height:1.7;">
+            <li><strong>Polonium-210:</strong> t½ = 138 days — highly radioactive; decays by alpha emission</li>
+            <li><strong>Radium-226:</strong> t½ = 1,600 years — alpha emitter; used in early cancer treatment</li>
+            <li><strong>Carbon-14:</strong> t½ = 5,730 years — beta emitter; used in radiocarbon dating of organic material</li>
+            <li><strong>Uranium-238:</strong> t½ = 4.47 billion years — approximately the age of Earth; very slow decay</li>
+          </ul>
+
+          <div class="mc-callout rose">
+            <strong>Penetration power:</strong> Alpha particles travel only a few centimetres in air and are stopped by a sheet of paper. Beta particles need a few millimetres of aluminium. Gamma rays require several centimetres of lead or metres of concrete for effective shielding.
+          </div>
+          <div class="mc-callout blue">
+            <strong>Polonium and national identity:</strong> Curie named the element polonium after Poland — then occupied by Russia — as an act of national pride in a time when naming things was a form of political statement. Poland would not regain independence until 1918, eighteen years after the element's discovery.
+          </div>
+          <div class="mc-callout violet">
+            <strong>Still radioactive today:</strong> Marie Curie's personal notebooks from the 1890s remain too radioactive to handle safely. Visitors to the Bibliothèque nationale de France must sign a liability waiver to view them. They are stored in lead-lined boxes and are expected to remain radioactive for another 1,500 years.
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="mc-card" style="--card-accent:#7c3aed;">
+          <h2>Radioactive Decay Chain Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Watch atoms decay over time. Adjust the half-life and sample size to see exponential decay in action. Each dot represents a group of atoms — when it flashes and changes color, that group has decayed.</p>
+          <div class="mc-canvas-wrap">
+            <canvas id="mc-canvas" aria-label="Animated radioactive decay simulation showing atoms decaying over time with real-time decay curve graph"></canvas>
+          </div>
+          <div class="mc-readouts">
+            <div class="mc-readout"><span class="mc-readout-label">Atoms Remaining</span><span class="mc-readout-val" id="mc-r-n">1000</span></div>
+            <div class="mc-readout"><span class="mc-readout-label">% Decayed</span><span class="mc-readout-val" id="mc-r-pct">0.0%</span></div>
+            <div class="mc-readout"><span class="mc-readout-label">Half-Lives Elapsed</span><span class="mc-readout-val" id="mc-r-hl">0.00</span></div>
+          </div>
+        </section>
+
+        <!-- Key Discoveries -->
+        <section class="mc-card" style="--card-accent:#0369a1;">
+          <h2>Key Discoveries &amp; Contributions</h2>
+          <div class="mc-grid-2">
+
+            <div class="mc-invention-card">
+              <div class="mc-invention-icon">&#9762;&#65039;</div>
+              <strong>Radioactivity (1898)</strong>
+              <p>Coined the term; proved radiation is an atomic property, not a chemical reaction. This insight launched nuclear physics and disproved the classical model of the indivisible, passive atom.</p>
+            </div>
+
+            <div class="mc-invention-card">
+              <div class="mc-invention-icon">&#9879;&#65039;</div>
+              <strong>Polonium (1898)</strong>
+              <p>New element discovered in pitchblende, named after Poland. Atomic number 84. Used today in anti-static devices, neutron sources, and was the subject of the 2006 Litvinenko poisoning.</p>
+            </div>
+
+            <div class="mc-invention-card">
+              <div class="mc-invention-icon">&#128300;</div>
+              <strong>Radium (1898)</strong>
+              <p>Isolated from tonnes of pitchblende ore; 1,600-year half-life. Its spontaneous glow confirmed that atoms hold internal energy. Used in early cancer brachytherapy and luminescent watch dials.</p>
+            </div>
+
+            <div class="mc-invention-card">
+              <div class="mc-invention-icon">&#127973;&#65039;</div>
+              <strong>Mobile X-Ray Units (1914)</strong>
+              <p>Designed, built, and personally operated 20 battlefield radiological vehicles in WWI, training 150 women as X-ray technicians. Estimated to have served over one million wounded soldiers.</p>
+            </div>
+
+            <div class="mc-invention-card">
+              <div class="mc-invention-icon">&#127891;</div>
+              <strong>First Female Sorbonne Professor (1906)</strong>
+              <p>After Pierre's death, Marie accepted his chair in physics — breaking a 650-year barrier at one of the world's oldest universities. She lectured to a standing-room audience on her very first day.</p>
+            </div>
+
+            <div class="mc-invention-card">
+              <div class="mc-invention-icon">&#127942;</div>
+              <strong>Two Nobel Prizes (1903 &amp; 1911)</strong>
+              <p>Physics (1903) for radioactivity research; Chemistry (1911) for discovery and isolation of radium and polonium. No other person has won Nobel Prizes in two different sciences.</p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Legacy -->
+        <section class="mc-card" style="--card-accent:#059669;">
+          <h2>Marie Curie's Legacy Today</h2>
+          <p>The <strong>curie (Ci)</strong> was the original unit of radioactivity — named in honor of both Marie and Pierre Curie — defined as 3.7 × 10¹⁰ disintegrations per second, the activity of exactly one gram of radium-226. Today the SI unit is the <strong>becquerel (Bq)</strong>, equal to one decay per second. One curie = 37 billion becquerels.</p>
+          <p><strong>Radiation therapy</strong> for cancer traces directly to Marie Curie's observation that radium destroyed tumor tissue faster than healthy tissue. The Curie Institute (Institut Curie), which she founded in Paris in 1920, remains one of Europe's leading cancer research and treatment centers. Modern radiotherapy treats millions of cancer patients annually.</p>
+          <p>Daughter <strong>Irène Joliot-Curie</strong> won the 1935 Nobel Prize in Chemistry alongside her husband Frédéric Joliot-Curie for their synthesis of new radioactive elements — making the Curies the only mother-daughter Nobel Prize pair in history. Irène had been trained by Marie herself on the WWI mobile X-ray units from the age of 18.</p>
+          <p><strong>Nuclear medicine</strong> — including PET scans, thyroid scintigraphy, and bone scans — uses radioactive isotopes whose behavior was first systematically understood through Curie's work. The global cancer screening and treatment industry built on radioactive tracers owes its foundations to her discoveries.</p>
+          <p>The element <strong>curium (Cm, atomic number 96)</strong> was synthesized in 1944 by Glenn Seaborg and Albert Ghiorso at the University of California, Berkeley, and named in honor of both Marie and Pierre Curie in recognition of their pioneering contributions to radioactivity research.</p>
+
+          <div class="mc-formula-box" role="img" aria-label="Activity A equals lambda times N — radioactive activity equals decay constant times number of atoms">
+            <span class="mc-formula-sym">A = λN</span>
+            <div class="mc-formula-vars">
+              <div><strong>A</strong> = activity (becquerels, Bq)</div>
+              <div><strong>λ</strong> = decay constant = ln(2) / t½</div>
+              <div><strong>N</strong> = number of atoms remaining</div>
+              <div>1 Ci = 3.7 × 10¹⁰ Bq</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="mc-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Use N(t) = N₀ · e<sup>−λt</sup>, t½ = ln(2)/λ, and A = λN. ln(2) ≈ 0.693.</p>
+          <div class="mc-practice">
+
+            <div class="mc-problem">
+              <p><span class="diff-easy">Easy</span>1. What term did Marie Curie coin to describe the spontaneous emission of particles or energy from atomic nuclei?</p>
+              <div class="mc-problem-row">
+                <select class="mc-ans-input" id="mcans-1" style="width:180px;">
+                  <option value="">Choose…</option>
+                  <option value="fission">Nuclear fission</option>
+                  <option value="radioactivity">Radioactivity</option>
+                  <option value="resonance">Atomic resonance</option>
+                  <option value="beta">Beta emission</option>
+                </select>
+                <button class="mc-check-btn" onclick="mcCheckText(1,'radioactivity')">Check</button>
+                <span class="mc-feedback" id="mcfb-1"></span>
+              </div>
+              <div class="mc-hint" id="mchint-1">Hint: Marie Curie observed that uranium rays were a property of the atom itself — not a chemical reaction. She invented a new word for this phenomenon in 1898.</div>
+            </div>
+
+            <div class="mc-problem">
+              <p><span class="diff-easy">Easy</span>2. Which two elements did Marie Curie discover?</p>
+              <div class="mc-problem-row">
+                <select class="mc-ans-input" id="mcans-2" style="width:220px;">
+                  <option value="">Choose…</option>
+                  <option value="ut">Uranium &amp; Thorium</option>
+                  <option value="pr">Polonium &amp; Radium</option>
+                  <option value="cr">Curium &amp; Radium</option>
+                  <option value="pf">Polonium &amp; Francium</option>
+                </select>
+                <button class="mc-check-btn" onclick="mcCheckText(2,'pr')">Check</button>
+                <span class="mc-feedback" id="mcfb-2"></span>
+              </div>
+              <div class="mc-hint" id="mchint-2">Hint: One element was named after her homeland; the other glowed in the dark with a distinctive blue-green luminescence.</div>
+            </div>
+
+            <div class="mc-problem">
+              <p><span class="diff-mid">Medium</span>3. Radium-226 has a half-life of 1,600 years. If you start with N₀ = 800 atoms, how many atoms remain after <strong>3,200 years</strong>? (3,200 years = 2 half-lives.)</p>
+              <div class="mc-problem-row">
+                <input type="number" class="mc-ans-input" id="mcans-3" step="1" placeholder="atoms" />
+                <button class="mc-check-btn" onclick="mcCheck(3, 200, 5)">Check</button>
+                <span class="mc-feedback" id="mcfb-3"></span>
+              </div>
+              <div class="mc-hint" id="mchint-3">Hint: After 1 half-life: 800 ÷ 2 = 400 atoms. After 2 half-lives: 400 ÷ 2 = 200 atoms. Alternatively, N = N₀ / 2ⁿ = 800 / 4 = 200.</div>
+            </div>
+
+            <div class="mc-problem">
+              <p><span class="diff-mid">Medium</span>4. A sample has λ = 0.0866 s⁻¹ (t½ = 8 s). Starting with N₀ = 1000 atoms, use N(t) = 1000 × e<sup>−0.0866 × 16</sup> to find the number of atoms remaining at t = 16 s. Round to the nearest whole number.</p>
+              <div class="mc-problem-row">
+                <input type="number" class="mc-ans-input" id="mcans-4" step="1" placeholder="atoms" />
+                <button class="mc-check-btn" onclick="mcCheck(4, 250, 20)">Check</button>
+                <span class="mc-feedback" id="mcfb-4"></span>
+              </div>
+              <div class="mc-hint" id="mchint-4">Hint: t = 16 s = 2 × t½ (since t½ = 8 s). After 2 half-lives: N = 1000 / 4 = 250. Or: e^(−0.0866 × 16) = e^(−1.386) ≈ 0.250, so N ≈ 250.</div>
+            </div>
+
+            <div class="mc-problem">
+              <p><span class="diff-hard">Challenge</span>5. Why do Marie Curie's notebooks from the 1890s remain radioactive today?</p>
+              <div class="mc-problem-row">
+                <select class="mc-ans-input" id="mcans-5" style="width:360px;">
+                  <option value="">Choose…</option>
+                  <option value="a">They were stored near uranium ore in a museum</option>
+                  <option value="b">The paper itself absorbed radioactive contamination from polonium and radium during her experiments</option>
+                  <option value="c">Radioactivity is passed through ink to any surface it contacts</option>
+                  <option value="d">Modern scanning equipment makes them appear radioactive</option>
+                </select>
+                <button class="mc-check-btn" onclick="mcCheckText(5,'b')">Check</button>
+                <span class="mc-feedback" id="mcfb-5"></span>
+              </div>
+              <div class="mc-hint" id="mchint-5">Hint: Radium-226 has a half-life of 1,600 years. Radioactive material deposited on the paper ~130 years ago would still retain nearly 95% of its original activity. The contamination came from direct contact with radioactive substances during her lab work.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="mc-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="mc-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="mc-pane-sim">
+          <span class="ll-label">Sample Size (N₀)</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Atoms <span id="mc-n0-val">1000</span></label>
+            <input type="range" class="nl-slider" id="mc-n0-slider" min="100" max="5000" value="1000" step="100" style="width:100%;" />
+          </div>
+          <span class="ll-label">Half-Life (scaled s)</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Half-Life <span id="mc-hl-val">8 s</span></label>
+            <input type="range" class="nl-slider" id="mc-hl-slider" min="1" max="30" value="8" style="width:100%;" />
+          </div>
+          <span class="ll-label">Decay Type</span>
+          <div style="margin-bottom:0.9rem;">
+            <select id="mc-type-select" style="width:100%;padding:0.3rem 0.5rem;border:1px solid var(--line,#d2d2d7);border-radius:8px;font-size:0.84rem;background:var(--white,#fff);color:var(--text,#1d1d1f);">
+              <option value="Alpha">Alpha (α)</option>
+              <option value="Beta">Beta (β)</option>
+              <option value="Gamma">Gamma (γ)</option>
+            </select>
+          </div>
+          <hr class="ll-hr">
+          <button class="ll-preset" onclick="mcPreset(1000,3)"  style="width:100%;margin-bottom:0.4rem;">Polonium-210 (fast)</button>
+          <button class="ll-preset" onclick="mcPreset(500,25)"  style="width:100%;margin-bottom:0.4rem;">Radium-226 (slow)</button>
+          <button class="ll-preset" onclick="mcPreset(2000,12)" style="width:100%;margin-bottom:0.4rem;">Carbon-14 (medium)</button>
+          <button class="ll-preset" onclick="mcReset()"         style="width:100%;margin-bottom:0.4rem;">Reset</button>
+          <button class="ll-preset" onclick="mcPause()"         style="width:100%;" id="mc-pause-btn">Pause</button>
+        </div>
+
+        <div class="ll-pane" id="mc-pane-guide">
+          <div class="ll-info"><strong>Radioactive Decay</strong>Unstable nuclei spontaneously emit particles or energy to reach a more stable configuration. The rate depends only on the number of atoms present — it cannot be slowed by heat, pressure, or chemistry.</div>
+          <div class="ll-info"><strong>Half-Life</strong>The time for half the atoms in a sample to decay. After n half-lives, N = N₀ / 2ⁿ remains. Some isotopes are dangerous for millennia (U-238: 4.47 billion years); others safe within hours.</div>
+          <div class="ll-info"><strong>Decay Equation</strong>N(t) = N₀ × e<sup>−λt</sup>. The decay constant λ = ln(2) / t½ tells you the fraction of atoms decaying per second.</div>
+          <div class="ll-info"><strong>Activity</strong>A = λN (becquerels). As the sample shrinks, activity falls proportionally — halving N halves the radiation output.</div>
+          <div class="ll-info"><strong>The Curie Unit</strong>1 Ci = 3.7 × 10¹⁰ Bq = activity of 1 g of Ra-226. Named for Marie and Pierre Curie. The modern SI unit is the becquerel (1 Bq = 1 decay/second).</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  // ── Panel tab logic ───────────────────────────────────────────────────────
+  document.querySelectorAll('.ll-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pane = btn.dataset.pane;
+      document.querySelectorAll('.ll-tab').forEach(b => b.setAttribute('aria-selected','false'));
+      btn.setAttribute('aria-selected','true');
+      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      document.getElementById(pane).classList.add('ll-active');
+    });
+  });
+
+  document.querySelector('.ll-panel-close')?.addEventListener('click', () => {
+    document.querySelector('.ll-panel')?.classList.add('ll-panel-hidden');
+    document.querySelector('.ll-open-btn')?.classList.add('ll-visible');
+  });
+  document.querySelector('.ll-open-btn')?.addEventListener('click', () => {
+    document.querySelector('.ll-panel')?.classList.remove('ll-panel-hidden');
+    document.querySelector('.ll-open-btn')?.classList.remove('ll-visible');
+  });
+
+  // ── Practice check functions ──────────────────────────────────────────────
+  window.mcCheck = function (n, correct, tol) {
+    const val  = parseFloat(document.getElementById('mcans-' + n).value);
+    const fb   = document.getElementById('mcfb-' + n);
+    const hint = document.getElementById('mchint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'mc-feedback err'; return; }
+    if (Math.abs(val - correct) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'mc-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.';  fb.className = 'mc-feedback err';
+      if (hint) hint.style.display = 'block';
+    }
+  };
+
+  window.mcCheckText = function (n, correct) {
+    const el   = document.getElementById('mcans-' + n);
+    const val  = el.value.toString().toLowerCase().trim();
+    const fb   = document.getElementById('mcfb-' + n);
+    const hint = document.getElementById('mchint-' + n);
+    if (val === correct.toLowerCase()) {
+      fb.textContent = '✓ Correct!'; fb.className = 'mc-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'mc-feedback err';
+      if (hint) hint.style.display = 'block';
+    }
+  };
+
+  // ── Decay Simulator ───────────────────────────────────────────────────────
+  (function() {
+    const canvas = document.getElementById('mc-canvas');
+    const ctx    = canvas.getContext('2d');
+
+    let N0       = 1000;
+    let halfLife = 8;     // scaled seconds
+    let elapsed  = 0;     // in scaled seconds
+    let atoms    = [];
+    let history  = [];    // [{t, n}] for the graph
+    let flashes  = [];    // [{x,y,age,type}] for decay flash effects
+    let paused   = false;
+
+    function getN0()   { return parseInt(document.getElementById('mc-n0-slider').value); }
+    function getHL()   { return parseInt(document.getElementById('mc-hl-slider').value); }
+    function getType() { return document.getElementById('mc-type-select').value; }
+
+    function initAtoms() {
+      N0       = getN0();
+      halfLife = getHL();
+      elapsed  = 0;
+      history  = [];
+      flashes  = [];
+      const W  = canvas.offsetWidth || 600;
+      const H  = 240;
+      atoms    = [];
+      const lam = Math.LN2 / getHL();
+      for (let i = 0; i < N0; i++) {
+        const u = Math.random();
+        const decayTime = -Math.log(1 - u) / lam;
+        atoms.push({
+          x: 20 + Math.random() * (W - 40),
+          y: 20 + Math.random() * (H - 40),
+          decayed: false,
+          decayTime: decayTime,
+          flashAge: -1
+        });
+      }
+    }
+
+    function draw() {
+      const W = canvas.offsetWidth || 600;
+      canvas.width  = W;
+      canvas.height = 340;
+      const atomH = 240;
+      const graphH = 80;
+      const graphY = atomH + 10;
+
+      ctx.clearRect(0, 0, W, 340);
+
+      // Background gradient
+      const bg = ctx.createLinearGradient(0, 0, 0, 340);
+      bg.addColorStop(0, '#040d1a');
+      bg.addColorStop(1, '#0a0520');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, 340);
+
+      // Subtle grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth   = 1;
+      for (let x = 0; x < W; x += 30) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, atomH); ctx.stroke();
+      }
+      for (let y = 0; y < atomH; y += 30) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+
+      if (!paused) {
+        elapsed += 0.05;
+      }
+
+      const type = getType();
+      let decayedCount = 0;
+
+      // Update and draw atoms
+      atoms.forEach(a => {
+        if (!a.decayed && elapsed >= a.decayTime) {
+          a.decayed  = true;
+          a.flashAge = 0;
+          flashes.push({ x: a.x, y: a.y, age: 0, type });
+        }
+        if (a.decayed) decayedCount++;
+
+        const r = 3;
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = a.decayed ? '#3a2a4c' : '#06b6d4';
+        ctx.fill();
+      });
+
+      // Draw flash effects
+      flashes = flashes.filter(f => f.age < 20);
+      flashes.forEach(f => {
+        const alpha  = 1 - f.age / 20;
+        const radius = f.age * 2.5;
+        if (f.type === 'Alpha') {
+          // Expanding ring
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, radius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(251,146,60,${alpha})`;
+          ctx.lineWidth   = 1.5;
+          ctx.stroke();
+          // Orange spark lines
+          for (let i = 0; i < 4; i++) {
+            const angle = (i / 4) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(f.x, f.y);
+            ctx.lineTo(f.x + Math.cos(angle) * radius, f.y + Math.sin(angle) * radius);
+            ctx.strokeStyle = `rgba(251,146,60,${alpha * 0.6})`;
+            ctx.lineWidth   = 1;
+            ctx.stroke();
+          }
+        } else if (f.type === 'Beta') {
+          // Fast blue electron streak
+          const angle = (f.age * 0.8);
+          ctx.beginPath();
+          ctx.moveTo(f.x, f.y);
+          ctx.lineTo(f.x + Math.cos(angle) * radius * 2, f.y + Math.sin(angle) * radius * 2);
+          ctx.strokeStyle = `rgba(59,130,246,${alpha})`;
+          ctx.lineWidth   = 1.5;
+          ctx.stroke();
+        } else {
+          // Gamma: yellow ray lines in 3 directions
+          for (let i = 0; i < 3; i++) {
+            const angle = (i / 3) * Math.PI * 2 + elapsed;
+            ctx.beginPath();
+            ctx.moveTo(f.x, f.y);
+            ctx.lineTo(f.x + Math.cos(angle) * radius * 3, f.y + Math.sin(angle) * radius * 3);
+            ctx.strokeStyle = `rgba(250,204,21,${alpha})`;
+            ctx.lineWidth   = 1;
+            ctx.stroke();
+          }
+        }
+        f.age++;
+      });
+
+      // Decay curve graph
+      const nNow = atoms.length - decayedCount;
+      history.push({ t: elapsed, n: nNow });
+      if (history.length > 200) history.shift();
+
+      // Graph background
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      ctx.fillRect(10, graphY, W - 20, graphH - 10);
+
+      // Graph line
+      if (history.length > 1) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#be185d';
+        ctx.lineWidth   = 2;
+        history.forEach((pt, i) => {
+          const gx = 10 + (i / history.length) * (W - 20);
+          const gy = graphY + (graphH - 15) - (pt.n / N0) * (graphH - 15);
+          if (i === 0) ctx.moveTo(gx, gy); else ctx.lineTo(gx, gy);
+        });
+        ctx.stroke();
+      }
+
+      // Graph labels
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font      = '10px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('N(t)', 12, graphY + 12);
+      ctx.textAlign = 'right';
+      ctx.fillText('Time →', W - 12, graphY + graphH - 14);
+
+      // Readouts
+      const pct = ((decayedCount / N0) * 100).toFixed(1);
+      const hl  = (elapsed / getHL()).toFixed(2);
+      document.getElementById('mc-r-n').textContent   = nNow.toLocaleString();
+      document.getElementById('mc-r-pct').textContent = pct + '%';
+      document.getElementById('mc-r-hl').textContent  = hl;
+
+      // Auto-reset when all decayed
+      if (decayedCount >= N0) {
+        setTimeout(() => { initAtoms(); }, 1500);
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    // Slider event listeners
+    document.getElementById('mc-n0-slider').addEventListener('input', function() {
+      document.getElementById('mc-n0-val').textContent = this.value;
+    });
+    document.getElementById('mc-hl-slider').addEventListener('input', function() {
+      document.getElementById('mc-hl-val').textContent = this.value + ' s';
+    });
+
+    // Preset buttons
+    window.mcPreset = function(n0, hl) {
+      document.getElementById('mc-n0-slider').value     = n0;
+      document.getElementById('mc-hl-slider').value     = hl;
+      document.getElementById('mc-n0-val').textContent  = n0;
+      document.getElementById('mc-hl-val').textContent  = hl + ' s';
+      initAtoms();
+    };
+
+    window.mcReset = function() {
+      document.getElementById('mc-n0-slider').value    = 1000;
+      document.getElementById('mc-hl-slider').value    = 8;
+      document.getElementById('mc-n0-val').textContent = '1000';
+      document.getElementById('mc-hl-val').textContent = '8 s';
+      document.getElementById('mc-type-select').value  = 'Alpha';
+      paused = false;
+      document.getElementById('mc-pause-btn').textContent = 'Pause';
+      initAtoms();
+    };
+
+    window.mcPause = function() {
+      paused = !paused;
+      document.getElementById('mc-pause-btn').textContent = paused ? 'Resume' : 'Pause';
+    };
+
+    initAtoms();
+    requestAnimationFrame(draw);
+  })();
+
+})();
+</script>
+</body>
+</html>

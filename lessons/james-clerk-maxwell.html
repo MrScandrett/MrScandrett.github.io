@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>James Clerk Maxwell · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Explore the life and discoveries of James Clerk Maxwell — the physicist who unified electricity, magnetism, and light into four elegant equations, predicted radio waves, and took the world's first colour photograph." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --jcm-blue: #1d4ed8;
+      --jcm-violet: #7c3aed;
+      --jcm-emerald: #059669;
+      --jcm-amber: #d97706;
+      --jcm-ink: #0f172a;
+      --jcm-muted: #475569;
+      --jcm-line: #e2e8f0;
+      --jcm-soft: #eff6ff;
+    }
+
+    .jcm-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .jcm-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .jcm-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .jcm-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .jcm-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .jcm-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .jcm-lede { color: rgba(245,245,247,0.7); }
+
+    .jcm-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#1d4ed8); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .jcm-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .jcm-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .jcm-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .jcm-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .jcm-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .jcm-card p { color: rgba(245,245,247,0.72); }
+
+    .jcm-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .jcm-callout.blue   { background: rgba(29,78,216,0.09);  border-left: 3px solid var(--jcm-blue); }
+    .jcm-callout.violet { background: rgba(124,58,237,0.09); border-left: 3px solid var(--jcm-violet); }
+    .jcm-callout.amber  { background: rgba(217,119,6,0.10);  border-left: 3px solid var(--jcm-amber); }
+
+    /* Timeline */
+    .jcm-timeline { list-style: none; padding: 0 0 0 36px; margin: 0.7rem 0; position: relative; }
+    .jcm-timeline::before { content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 2px; background: var(--jcm-violet); opacity: 0.3; border-radius: 2px; }
+    .jcm-tl-item { position: relative; margin-bottom: 0.75rem; font-size: 0.87rem; color: #3f4f65; line-height: 1.55; }
+    [data-theme="night"] .jcm-tl-item { color: rgba(245,245,247,0.72); }
+    .jcm-tl-item::before { content: ''; position: absolute; left: -24px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--jcm-violet); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--jcm-violet); }
+    .jcm-tl-year { display: inline-block; background: var(--jcm-violet); color: #fff; font-size: 0.72rem; font-weight: 700; border-radius: 5px; padding: 0.05rem 0.4rem; margin-right: 0.4rem; vertical-align: middle; }
+
+    /* Canvas / readouts */
+    .jcm-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #060d1f; }
+    #jcm-canvas { width: 100%; height: 320px; display: block; }
+
+    .jcm-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .jcm-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .jcm-readout { background: rgba(255,255,255,0.06); }
+    .jcm-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .jcm-readout-val   { font-size: 1rem; font-weight: 700; color: var(--jcm-blue); }
+
+    /* Equation cards — 2×2 grid */
+    .jcm-eq-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; margin: 0.9rem 0; }
+    .jcm-eq-card { background: #0f172a; border-radius: 12px; border-left: 4px solid var(--eq-accent,#1d4ed8); padding: 0.95rem 1rem; }
+    .jcm-eq-name { font-size: 0.73rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.45); margin: 0 0 0.35rem; }
+    .jcm-eq-sym  { font-family: 'Courier New', Courier, monospace; font-size: clamp(1.1rem,2.5vw,1.5rem); font-weight: 700; color: #f1f5f9; display: block; margin-bottom: 0.55rem; letter-spacing: 0.02em; }
+    .jcm-eq-desc { font-size: 0.78rem; color: rgba(203,213,225,0.78); line-height: 1.58; margin: 0; }
+
+    /* Grids */
+    .jcm-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; }
+
+    /* Contribution cards */
+    .jcm-contribution-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem; }
+    .jcm-contribution-icon { font-size: 1.6rem; margin-bottom: 0.35rem; }
+    .jcm-contribution-card strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; color: var(--jcm-ink); }
+    .jcm-contribution-card p { font-size: 0.77rem; color: #64748b; line-height: 1.5; margin: 0; }
+    [data-theme="night"] .jcm-contribution-card strong { color: rgba(245,245,247,0.9); }
+
+    /* Practice problems */
+    .jcm-practice .jcm-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .jcm-practice .jcm-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: #3f4f65; line-height: 1.6; }
+    [data-theme="night"] .jcm-problem p { color: rgba(245,245,247,0.72); }
+    .jcm-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .jcm-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 130px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .jcm-check-btn { background: var(--jcm-blue); color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .jcm-check-btn:hover { background: #1e40af; }
+    .jcm-feedback { font-size: 0.82rem; font-weight: 600; }
+    .jcm-feedback.ok  { color: #34c759; }
+    .jcm-feedback.err { color: #dc2626; }
+    .jcm-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+
+    [data-theme="night"] .jcm-eq-card { background: #0a1020; }
+    [data-theme="night"] .jcm-callout.blue   { background: rgba(29,78,216,0.14); }
+    [data-theme="night"] .jcm-callout.violet { background: rgba(124,58,237,0.14); }
+    [data-theme="night"] .jcm-callout.amber  { background: rgba(217,119,6,0.14); }
+
+    @media (max-width: 560px) {
+      .jcm-grid-2, .jcm-eq-grid { grid-template-columns: 1fr; }
+      .jcm-readouts { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="jcm-page">
+
+        <!-- Hero -->
+        <section class="hero jcm-hero">
+          <p class="eyebrow">Physics · Electromagnetism · History of Science</p>
+          <h1>James Clerk Maxwell</h1>
+          <div class="jcm-hero-meta">
+            <span>Maxwell's Equations</span><span class="dot"></span>
+            <span>Electromagnetic Waves</span><span class="dot"></span>
+            <span>Light</span><span class="dot"></span>
+            <span>First Colour Photograph</span><span class="dot"></span>
+            <span>Kinetic Theory</span>
+          </div>
+          <p class="jcm-lede">James Clerk Maxwell (1831–1879) did for electromagnetism what Newton did for gravity. His four equations — written in 1865 — unified electricity, magnetism, and optics into a single mathematical framework, predicted that light is an electromagnetic wave, and forecast the existence of radio waves two decades before Hertz detected them. Einstein kept a portrait of Maxwell on his study wall, calling his work "the most profound and the most fruitful that physics has experienced since the time of Newton."</p>
+        </section>
+
+        <!-- Biography -->
+        <section class="jcm-card" style="--card-accent:#d97706;">
+          <h2>Who Was James Clerk Maxwell?</h2>
+          <p>Born June 13, 1831, in Edinburgh, Scotland. From childhood he was relentlessly curious — submitting his first geometry paper to the Royal Society of Edinburgh at age 14. His mother died when he was 8, and his father, a lawyer and inventor, raised him with deep intellectual encouragement. Friends called him "Dafty" — a local Scottish term for someone pleasantly eccentric.</p>
+          <p>At Cambridge, Maxwell graduated second wrangler in 1854 — a stunning result for a man who wrote poetry and studied colour perception as recreation. He held professorships at Marischal College (Aberdeen), King's College London, and finally became the first Cavendish Professor of Physics at Cambridge in 1871, where he designed the Cavendish Laboratory.</p>
+          <p>His 1865 paper "A Dynamical Theory of the Electromagnetic Field" compressed 20 equations into what we now call Maxwell's four equations — the most compressed and powerful description of classical electromagnetism ever written. From them, he calculated the speed of electromagnetic waves to be 3 × 10⁸ m/s — matching the measured speed of light — and concluded that light itself is an electromagnetic wave.</p>
+          <p>In his short life (he died of abdominal cancer at 48, the same age Newton's mother died and the same age Einstein would later discover the field equations of general relativity), Maxwell also explained the rings of Saturn (they must be particles, not solid), developed the kinetic theory of gases, and in 1861 produced the world's first durable colour photograph. He is widely regarded as the third greatest physicist of all time, behind only Newton and Einstein.</p>
+        </section>
+
+        <!-- Timeline -->
+        <section class="jcm-card" style="--card-accent:#7c3aed;">
+          <h2>A Life in Equations</h2>
+          <ol class="jcm-timeline">
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1831</span> Born in Edinburgh, Scotland.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1845</span> Age 14: submits geometry paper to the Royal Society of Edinburgh.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1847</span> Enters University of Edinburgh; studies philosophy and natural science.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1854</span> Graduates from Cambridge as Second Wrangler.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1856</span> Paper on Saturn's Rings: proves they must be made of particles, not a solid or liquid mass.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1859</span> Derives the Maxwell–Boltzmann speed distribution for gas molecules.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1861</span> Takes the world's first durable colour photograph — a tartan ribbon photographed through red, green, and blue filters.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1864</span> Presents "A Dynamical Theory of the Electromagnetic Field" to the Royal Society.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1865</span> Publishes the 20 equations (later condensed to 4) unifying electricity, magnetism, and light.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1871</span> Appointed first Cavendish Professor of Physics at Cambridge; designs the Cavendish Laboratory.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1879</span> Dies of abdominal cancer, aged 48, in Cambridge.</li>
+            <li class="jcm-tl-item"><span class="jcm-tl-year">1888</span> Heinrich Hertz detects radio waves — confirming Maxwell's prediction 9 years after Maxwell's death.</li>
+          </ol>
+        </section>
+
+        <!-- Maxwell's Equations -->
+        <section class="jcm-card" style="--card-accent:#1d4ed8;">
+          <h2>The Four Equations That Changed Everything</h2>
+          <p>Before Maxwell, electricity and magnetism were studied as separate phenomena. Coulomb had described electric force. Faraday had discovered induction. Ampère had described the magnetic force of currents. Maxwell's genius was to unify all of this — and in doing so, to predict something neither Faraday nor Ampère had imagined: that oscillating fields would propagate through space as waves at the speed of light.</p>
+
+          <div class="jcm-eq-grid">
+
+            <div class="jcm-eq-card" style="--eq-accent:#1d4ed8;">
+              <p class="jcm-eq-name">Gauss's Law for Electricity</p>
+              <span class="jcm-eq-sym">∇·E = ρ/ε₀</span>
+              <p class="jcm-eq-desc">Electric field lines originate from electric charges. A positive charge pushes field lines outward; a negative charge pulls them in. The total flux through any closed surface equals the enclosed charge divided by ε₀.</p>
+            </div>
+
+            <div class="jcm-eq-card" style="--eq-accent:#059669;">
+              <p class="jcm-eq-name">Gauss's Law for Magnetism</p>
+              <span class="jcm-eq-sym">∇·B = 0</span>
+              <p class="jcm-eq-desc">There are no magnetic monopoles. Every magnetic field line that enters a closed surface must also exit it — north and south poles always come in pairs. Magnetic field lines form closed loops.</p>
+            </div>
+
+            <div class="jcm-eq-card" style="--eq-accent:#d97706;">
+              <p class="jcm-eq-name">Faraday's Law of Induction</p>
+              <span class="jcm-eq-sym">∇×E = −∂B/∂t</span>
+              <p class="jcm-eq-desc">A changing magnetic field creates a circling electric field. This is the principle behind every electric generator, transformer, and induction motor. Faraday discovered it experimentally; Maxwell wrote it mathematically.</p>
+            </div>
+
+            <div class="jcm-eq-card" style="--eq-accent:#7c3aed;">
+              <p class="jcm-eq-name">Ampère–Maxwell Law</p>
+              <span class="jcm-eq-sym">∇×B = μ₀J + μ₀ε₀∂E/∂t</span>
+              <p class="jcm-eq-desc">A current OR a changing electric field creates a circling magnetic field. Maxwell's addition of the ∂E/∂t term — the "displacement current" — was the key insight that predicted electromagnetic waves.</p>
+            </div>
+
+          </div>
+
+          <div class="jcm-callout blue">
+            <strong>The wave equation:</strong> From equations 3 and 4, Maxwell derived: ∂²E/∂x² = μ₀ε₀ ∂²E/∂t² — a wave equation. The wave speed is c = 1/√(μ₀ε₀) = 2.998 × 10⁸ m/s. This matched the known speed of light exactly. Maxwell wrote: "We can scarcely avoid the conclusion that light consists in the transverse undulations of the same medium which is the cause of electric and magnetic phenomena."
+          </div>
+
+          <div class="jcm-callout violet">
+            <strong>Maxwell and Einstein:</strong> Einstein's special relativity (1905) grew directly from a question Maxwell's equations raised: if light travels at c in all reference frames, what happens to Newton's mechanics? Maxwell's equations were already relativistically correct — Newton's had to be revised.
+          </div>
+        </section>
+
+        <!-- EM Spectrum Simulator -->
+        <section class="jcm-card" style="--card-accent:#1d4ed8;">
+          <h2>Electromagnetic Wave Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">All electromagnetic waves — from radio to gamma rays — are the same phenomenon at different frequencies. Drag the frequency slider to travel across the spectrum. The E field (blue) and B field (amber) oscillate perpendicular to each other and to the direction of travel.</p>
+          <div class="jcm-canvas-wrap">
+            <canvas id="jcm-canvas" aria-label="Animated electromagnetic wave showing E field (blue) and B field (amber) propagating across the spectrum from radio waves to gamma rays"></canvas>
+          </div>
+          <div class="jcm-readouts">
+            <div class="jcm-readout"><span class="jcm-readout-label">Band</span><span class="jcm-readout-val" id="jcm-r-band">Visible Light</span></div>
+            <div class="jcm-readout"><span class="jcm-readout-label">Wavelength</span><span class="jcm-readout-val" id="jcm-r-lambda">500 nm</span></div>
+            <div class="jcm-readout"><span class="jcm-readout-label">Frequency</span><span class="jcm-readout-val" id="jcm-r-freq">600 THz</span></div>
+          </div>
+        </section>
+
+        <!-- Key Contributions -->
+        <section class="jcm-card" style="--card-accent:#059669;">
+          <h2>Maxwell's Key Contributions</h2>
+          <div class="jcm-grid-2">
+
+            <div class="jcm-contribution-card">
+              <div class="jcm-contribution-icon">🌊</div>
+              <strong>Maxwell's Equations (1865)</strong>
+              <p>Four equations unifying all classical electromagnetism. They describe how electric and magnetic fields are generated, interact, and propagate. Every electrical engineer, radio engineer, and optical physicist works within this framework daily.</p>
+            </div>
+
+            <div class="jcm-contribution-card">
+              <div class="jcm-contribution-icon">💡</div>
+              <strong>Light as an EM Wave (1865)</strong>
+              <p>By calculating wave speed from his own equations, Maxwell proved light is an electromagnetic wave — unifying optics with electromagnetism and ending centuries of debate about light's nature.</p>
+            </div>
+
+            <div class="jcm-contribution-card">
+              <div class="jcm-contribution-icon">📡</div>
+              <strong>Predicted Radio Waves (1865)</strong>
+              <p>Maxwell's equations implied electromagnetic waves of all frequencies must exist. Hertz confirmed this in 1888, nine years after Maxwell's death — launching wireless communication, radar, and modern telecommunications.</p>
+            </div>
+
+            <div class="jcm-contribution-card">
+              <div class="jcm-contribution-icon">📷</div>
+              <strong>First Colour Photograph (1861)</strong>
+              <p>Maxwell took three photographs of a tartan ribbon through red, green, and blue filters, then combined the projections. This established the RGB principle underlying every camera, screen, and digital image today.</p>
+            </div>
+
+            <div class="jcm-contribution-card">
+              <div class="jcm-contribution-icon">🔥</div>
+              <strong>Kinetic Theory of Gases (1860)</strong>
+              <p>Derived the Maxwell–Boltzmann distribution: the statistical spread of molecular speeds in a gas. This connected macroscopic temperature and pressure to microscopic molecular motion — founding statistical mechanics.</p>
+            </div>
+
+            <div class="jcm-contribution-card">
+              <div class="jcm-contribution-icon">🪐</div>
+              <strong>Saturn's Rings (1857)</strong>
+              <p>Proved mathematically that Saturn's rings cannot be solid or liquid — they must be composed of independently orbiting particles. The Cassini spacecraft confirmed this 150 years later.</p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Legacy -->
+        <section class="jcm-card" style="--card-accent:#1d4ed8;">
+          <h2>Maxwell's Legacy Today</h2>
+          <p><strong>Every radio, TV, phone, Wi-Fi router, microwave oven, MRI scanner, and X-ray machine</strong> operates on principles described by Maxwell's equations. These are not approximations or historical curiosities — they are the exact governing laws of all classical electromagnetic phenomena, used in engineering calculations every day.</p>
+          <p><strong>Einstein's special relativity</strong> was directly motivated by a contradiction Maxwell's equations created with Newtonian mechanics — Maxwell's equations were already relativistically correct, and it was Newton's laws of motion that had to be revised to match them.</p>
+          <p>The <strong>maxwell (Mx)</strong> is a CGS unit of magnetic flux; the SI unit of magnetic flux is the <strong>weber (Wb)</strong>, but Maxwell is commemorated in the CGS name. The <strong>RGB colour model</strong> — every pixel on every screen — uses Maxwell's discovery that all colours can be mixed from red, green, and blue primaries, first demonstrated with his tartan photograph in 1861.</p>
+          <p>The <strong>James Clerk Maxwell Foundation</strong> preserves his birthplace at 14 India Street in Edinburgh as a museum, open to visitors today.</p>
+
+          <div class="jcm-callout blue">
+            <strong>c = 1/√(μ₀ε₀)</strong> — the wave equation Maxwell derived, where μ₀ = 4π×10⁻⁷ H/m (permeability of free space) and ε₀ = 8.854×10⁻¹² F/m (permittivity of free space). No free parameters, no tuning — the speed of light falls out of pure electromagnetic theory.
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="jcm-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Use c = 1/√(μ₀ε₀) = 3×10⁸ m/s, c = fλ, and the four equations.</p>
+          <div class="jcm-practice">
+
+            <div class="jcm-problem">
+              <p><span class="diff-easy">Easy</span>1. Which of Maxwell's four equations states that there are no magnetic monopoles?</p>
+              <div class="jcm-problem-row">
+                <select class="jcm-ans-input" id="jcmans-1" style="width:260px;">
+                  <option value="">Choose…</option>
+                  <option value="ge">Gauss's Law for Electricity</option>
+                  <option value="gm">Gauss's Law for Magnetism</option>
+                  <option value="fl">Faraday's Law</option>
+                  <option value="am">Ampère–Maxwell Law</option>
+                </select>
+                <button class="jcm-check-btn" onclick="jcmCheckText(1,'gm')">Check</button>
+                <span class="jcm-feedback" id="jcmfb-1"></span>
+              </div>
+              <div class="jcm-hint" id="jcmhint-1">Hint: The equation ∇·B = 0 says the divergence of the magnetic field is always zero — meaning no isolated magnetic charges (monopoles) exist. Every magnet has both a north and a south pole.</div>
+            </div>
+
+            <div class="jcm-problem">
+              <p><span class="diff-easy">Easy</span>2. What did Maxwell calculate from his equations that matched a known experimental value and led him to conclude light is an EM wave?</p>
+              <div class="jcm-problem-row">
+                <select class="jcm-ans-input" id="jcmans-2" style="width:260px;">
+                  <option value="">Choose…</option>
+                  <option value="charge">The charge of an electron</option>
+                  <option value="speed">The speed of electromagnetic waves</option>
+                  <option value="photon">The energy of a photon</option>
+                  <option value="radius">The radius of an atom</option>
+                </select>
+                <button class="jcm-check-btn" onclick="jcmCheckText(2,'speed')">Check</button>
+                <span class="jcm-feedback" id="jcmfb-2"></span>
+              </div>
+              <div class="jcm-hint" id="jcmhint-2">Hint: From his wave equation, Maxwell calculated c = 1/√(μ₀ε₀) = 2.998×10⁸ m/s — which exactly matched the experimentally measured speed of light. He concluded light must be an electromagnetic wave.</div>
+            </div>
+
+            <div class="jcm-problem">
+              <p><span class="diff-mid">Medium</span>3. A radio wave has frequency f = 100 MHz (10⁸ Hz). Using c = fλ, what is its wavelength in metres?</p>
+              <div class="jcm-problem-row">
+                <input type="number" class="jcm-ans-input" id="jcmans-3" step="0.1" placeholder="metres" />
+                <button class="jcm-check-btn" onclick="jcmCheck(3, 3, 0.1)">Check</button>
+                <span class="jcm-feedback" id="jcmfb-3"></span>
+              </div>
+              <div class="jcm-hint" id="jcmhint-3">Hint: λ = c/f = 3×10⁸ / 10⁸ = 3 m. FM radio waves are about 3 metres long — roughly the height of a room.</div>
+            </div>
+
+            <div class="jcm-problem">
+              <p><span class="diff-mid">Medium</span>4. Visible light has λ = 500 nm = 5×10⁻⁷ m. Using f = c/λ, what is its frequency in THz? (1 THz = 10¹² Hz)</p>
+              <div class="jcm-problem-row">
+                <input type="number" class="jcm-ans-input" id="jcmans-4" step="10" placeholder="THz" />
+                <button class="jcm-check-btn" onclick="jcmCheck(4, 600, 10)">Check</button>
+                <span class="jcm-feedback" id="jcmfb-4"></span>
+              </div>
+              <div class="jcm-hint" id="jcmhint-4">Hint: f = c/λ = 3×10⁸ / 5×10⁻⁷ = 6×10¹⁴ Hz = 600 THz. Visible light oscillates 600 trillion times per second.</div>
+            </div>
+
+            <div class="jcm-problem">
+              <p><span class="diff-hard">Challenge</span>5. Maxwell added the "displacement current" term (μ₀ε₀ ∂E/∂t) to Ampère's Law. Why was this addition crucial?</p>
+              <div class="jcm-problem-row">
+                <select class="jcm-ans-input" id="jcmans-5" style="width:400px;">
+                  <option value="">Choose…</option>
+                  <option value="a">It made current flow faster in wires</option>
+                  <option value="b">Without it, the equations were mathematically inconsistent and could not predict waves</option>
+                  <option value="c">It explained why magnets attract iron</option>
+                  <option value="d">It corrected Faraday's experimental measurements</option>
+                </select>
+                <button class="jcm-check-btn" onclick="jcmCheckText(5,'b')">Check</button>
+                <span class="jcm-feedback" id="jcmfb-5"></span>
+              </div>
+              <div class="jcm-hint" id="jcmhint-5">Hint: Without the displacement current term, taking the divergence of Ampère's Law gave a mathematical contradiction (∇·J ≠ 0 in general). Adding μ₀ε₀ ∂E/∂t fixed the inconsistency — and as a bonus, it meant that a changing E field acts just like a current, allowing waves to propagate through empty space.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- See Also -->
+        <section style="margin: 0 0 1rem; padding: 0.85rem 1.1rem; background: rgba(255,255,255,0.8); border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
+          <p style="margin: 0 0 0.45rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8;">Innovator Profile · See Also</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+            <a href="nikola-tesla.html" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.7rem; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 7px; font-size: 0.81rem; font-weight: 600; color: #3730a3; text-decoration: none;">⚡ Nikola Tesla — AC Power &amp; the Tesla Coil</a>
+            <a href="marie-curie.html" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.7rem; background: #fff1f5; border: 1px solid #fecdd3; border-radius: 7px; font-size: 0.81rem; font-weight: 600; color: #9d174d; text-decoration: none;">☢️ Marie Curie — Radioactivity &amp; Atomic Decay</a>
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="jcm-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="jcm-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="jcm-pane-sim">
+          <span class="ll-label">Frequency</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Band <span id="jcm-freq-val">Visible Light</span></label>
+            <input type="range" class="nl-slider" id="jcm-freq-slider" min="0" max="100" value="50" style="width:100%;" />
+          </div>
+          <span class="ll-label">Amplitude</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Amplitude <span id="jcm-amp-val">6</span></label>
+            <input type="range" class="nl-slider" id="jcm-amp-slider" min="1" max="10" value="6" style="width:100%;" />
+          </div>
+          <span class="ll-label">Wave Speed</span>
+          <div style="margin-bottom:0.9rem; font-size:0.82rem; color:#64748b; padding: 0.3rem 0;">
+            c = 3×10⁸ m/s (constant)
+          </div>
+          <hr class="ll-hr">
+          <button class="ll-preset" onclick="jcmPreset(5)"  style="width:100%;margin-bottom:0.4rem;">Radio (AM)</button>
+          <button class="ll-preset" onclick="jcmPreset(50)" style="width:100%;margin-bottom:0.4rem;">Visible Light</button>
+          <button class="ll-preset" onclick="jcmPreset(75)" style="width:100%;margin-bottom:0.4rem;">X-Rays</button>
+          <button class="ll-preset" onclick="jcmPreset(92)" style="width:100%;margin-bottom:0.4rem;">Gamma Rays</button>
+          <button class="ll-preset" onclick="jcmPreset(50); document.getElementById('jcm-amp-slider').value=6; document.getElementById('jcm-amp-val').textContent='6';" style="width:100%;">Reset</button>
+        </div>
+
+        <div class="ll-pane" id="jcm-pane-guide">
+          <div class="ll-info"><strong>Gauss (E)</strong> ∇·E = ρ/ε₀. Electric charges are the sources of electric fields. The total flux through a closed surface equals the enclosed charge divided by ε₀.</div>
+          <div class="ll-info"><strong>Gauss (B)</strong> ∇·B = 0. No magnetic monopoles exist. All magnetic field lines form closed loops — every north pole has a corresponding south pole.</div>
+          <div class="ll-info"><strong>Faraday</strong> ∇×E = −∂B/∂t. A changing magnetic field induces a circling electric field. Foundation of all generators and transformers.</div>
+          <div class="ll-info"><strong>Ampère–Maxwell</strong> ∇×B = μ₀J + μ₀ε₀∂E/∂t. Current and changing electric fields both produce magnetic fields. Maxwell's displacement current term enables wave propagation.</div>
+          <div class="ll-info"><strong>c = 1/√(μ₀ε₀)</strong> Maxwell derived the speed of EM waves purely from electrical constants. It matched the speed of light — proving light is an EM wave.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  // ── Panel tab logic ───────────────────────────────────────────────────────
+  document.querySelectorAll('.ll-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pane = btn.dataset.pane;
+      document.querySelectorAll('.ll-tab').forEach(b => b.setAttribute('aria-selected','false'));
+      btn.setAttribute('aria-selected','true');
+      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      document.getElementById(pane).classList.add('ll-active');
+    });
+  });
+
+  document.querySelector('.ll-panel-close')?.addEventListener('click', () => {
+    document.querySelector('.ll-panel')?.classList.add('ll-panel-hidden');
+    document.querySelector('.ll-open-btn')?.classList.add('ll-visible');
+  });
+  document.querySelector('.ll-open-btn')?.addEventListener('click', () => {
+    document.querySelector('.ll-panel')?.classList.remove('ll-panel-hidden');
+    document.querySelector('.ll-open-btn')?.classList.remove('ll-visible');
+  });
+
+  // ── Practice check functions ──────────────────────────────────────────────
+  window.jcmCheck = function (n, correct, tol) {
+    const val  = parseFloat(document.getElementById('jcmans-' + n).value);
+    const fb   = document.getElementById('jcmfb-' + n);
+    const hint = document.getElementById('jcmhint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'jcm-feedback err'; return; }
+    if (Math.abs(val - correct) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'jcm-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'jcm-feedback err';
+      if (hint) hint.style.display = 'block';
+    }
+  };
+
+  window.jcmCheckText = function (n, correct) {
+    const val  = document.getElementById('jcmans-' + n).value.toString().toLowerCase().trim();
+    const fb   = document.getElementById('jcmfb-' + n);
+    const hint = document.getElementById('jcmhint-' + n);
+    if (val === correct.toLowerCase()) {
+      fb.textContent = '✓ Correct!'; fb.className = 'jcm-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'jcm-feedback err';
+      if (hint) hint.style.display = 'block';
+    }
+  };
+
+  // ── EM Wave Canvas Simulator ──────────────────────────────────────────────
+  (function() {
+    const canvas = document.getElementById('jcm-canvas');
+    const ctx    = canvas.getContext('2d');
+    let phase    = 0;
+
+    const BANDS = [
+      { min: 0,  max: 15,  name: 'Radio Waves',  color: '#ef4444',
+        lambdaStr: () => (300 / getFreqMHz()).toFixed(0) + ' km',
+        freqStr:   () => getFreqMHz().toFixed(2) + ' kHz' },
+      { min: 15, max: 30,  name: 'Microwaves',   color: '#f97316',
+        lambdaStr: () => (300 / getFreqMHz() * 1000).toFixed(1) + ' mm',
+        freqStr:   () => (getFreqMHz() * 1000).toFixed(0) + ' MHz' },
+      { min: 30, max: 45,  name: 'Infrared',     color: '#f59e0b',
+        lambdaStr: () => (300e9 / getFreqHz()).toFixed(0) + ' μm',
+        freqStr:   () => (getFreqHz() / 1e12).toFixed(2) + ' THz' },
+      { min: 45, max: 55,  name: 'Visible Light', color: '#ffffff',
+        lambdaStr: () => Math.round(700 - (getSlider() - 45) / 10 * 300) + ' nm',
+        freqStr:   () => (getFreqHz() / 1e12).toFixed(0) + ' THz' },
+      { min: 55, max: 70,  name: 'Ultraviolet',  color: '#a78bfa',
+        lambdaStr: () => Math.round(400 - (getSlider() - 55) / 15 * 360) + ' nm',
+        freqStr:   () => (getFreqHz() / 1e15).toFixed(1) + ' PHz' },
+      { min: 70, max: 85,  name: 'X-Rays',       color: '#22d3ee',
+        lambdaStr: () => (3e8 / getFreqHz() * 1e12).toFixed(2) + ' pm',
+        freqStr:   () => (getFreqHz() / 1e18).toFixed(1) + ' EHz' },
+      { min: 85, max: 101, name: 'Gamma Rays',   color: '#4ade80',
+        lambdaStr: () => '< 10 pm',
+        freqStr:   () => '> 10 EHz' }
+    ];
+
+    function getSlider()  { return parseInt(document.getElementById('jcm-freq-slider').value); }
+    function getAmp()     { return parseInt(document.getElementById('jcm-amp-slider').value) / 10; }
+    function getFreqMHz() { return Math.pow(10, getSlider() / 100 * 9) / 1e3; }
+    function getFreqHz()  { return Math.pow(10, getSlider() / 100 * 19 + 3); }
+
+    function getBand() {
+      const s = getSlider();
+      return BANDS.find(b => s >= b.min && s < b.max) || BANDS[BANDS.length - 1];
+    }
+
+    function visualCycles() { return 1 + (getSlider() / 100) * 7; }
+
+    function draw() {
+      const W  = canvas.offsetWidth || 600;
+      canvas.width  = W;
+      canvas.height = 320;
+      const H  = 320;
+      const CY = H / 2;
+      const amp   = getAmp() * (H * 0.28);
+      const band  = getBand();
+      const cycles = visualCycles();
+
+      // Background
+      ctx.fillStyle = '#060d1f';
+      ctx.fillRect(0, 0, W, H);
+
+      // Visible light tint
+      if (getSlider() >= 45 && getSlider() < 55) {
+        const t = (getSlider() - 45) / 10;
+        const hue = 0 + t * 270;
+        ctx.fillStyle = `hsla(${hue}, 80%, 40%, 0.12)`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+      // Propagation axis
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 6]);
+      ctx.beginPath(); ctx.moveTo(0, CY); ctx.lineTo(W, CY); ctx.stroke();
+      ctx.setLineDash([]);
+
+      const eColor = (getSlider() >= 45 && getSlider() < 55)
+        ? `hsl(${0 + ((getSlider() - 45) / 10) * 270}, 90%, 65%)`
+        : '#60a5fa';
+
+      // E field wave (vertical plane)
+      ctx.beginPath();
+      ctx.strokeStyle = eColor;
+      ctx.lineWidth = 2.5;
+      for (let px = 0; px <= W; px += 2) {
+        const angle = (px / W) * cycles * Math.PI * 2 - phase;
+        const y = CY - Math.sin(angle) * amp;
+        if (px === 0) ctx.moveTo(px, y); else ctx.lineTo(px, y);
+      }
+      ctx.stroke();
+
+      // E field arrowheads (every half wavelength)
+      const halfWaveW = W / (cycles * 2);
+      ctx.fillStyle = eColor;
+      for (let i = 0; i < cycles * 2; i++) {
+        const px    = (i + 0.5) * halfWaveW;
+        const angle = (px / W) * cycles * Math.PI * 2 - phase;
+        const y     = CY - Math.sin(angle) * amp;
+        const dy    = -Math.cos(angle) * amp * 0.25;
+        ctx.beginPath();
+        const dir = dy > 0 ? 1 : -1;
+        ctx.moveTo(px, y);
+        ctx.lineTo(px - 5, y - dir * 8);
+        ctx.lineTo(px + 5, y - dir * 8);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // B field wave (horizontal plane, compressed to simulate depth)
+      ctx.beginPath();
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 2;
+      const bScale = 0.45;
+      for (let px = 0; px <= W; px += 2) {
+        const angle = (px / W) * cycles * Math.PI * 2 - phase + Math.PI / 2;
+        const y = CY - Math.sin(angle) * amp * bScale;
+        if (px === 0) ctx.moveTo(px, y); else ctx.lineTo(px, y);
+      }
+      ctx.stroke();
+
+      // Crest dotted lines
+      ctx.strokeStyle = 'rgba(96,165,250,0.25)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 5]);
+      const waveW = W / cycles;
+      for (let i = 0; i <= cycles; i++) {
+        const crestX = ((i - phase / (Math.PI * 2)) * waveW + W * 2) % W;
+        if (crestX > 0 && crestX < W) {
+          ctx.beginPath(); ctx.moveTo(crestX, CY - amp); ctx.lineTo(crestX, CY + amp); ctx.stroke();
+        }
+      }
+      ctx.setLineDash([]);
+
+      // Legend
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillStyle = eColor;
+      ctx.textAlign = 'left';
+      ctx.fillText('E field (electric)', 12, 20);
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillText('B field (magnetic)', 12, 36);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.font = '10px sans-serif';
+      ctx.fillText('→ propagation direction', 12, 52);
+
+      // Band name (top right)
+      ctx.textAlign = 'right';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillStyle = band.color;
+      ctx.shadowColor = band.color;
+      ctx.shadowBlur = 10;
+      ctx.fillText(band.name, W - 14, 28);
+      ctx.shadowBlur = 0;
+
+      // Speed label (bottom right)
+      ctx.font = 'bold 11px monospace';
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillText('c = 3×10⁸ m/s', W - 14, H - 12);
+
+      // Update readouts
+      document.getElementById('jcm-r-band').textContent   = band.name;
+      document.getElementById('jcm-r-lambda').textContent = band.lambdaStr();
+      document.getElementById('jcm-r-freq').textContent   = band.freqStr();
+
+      phase += 0.04;
+      requestAnimationFrame(draw);
+    }
+
+    // Slider listeners
+    document.getElementById('jcm-freq-slider').addEventListener('input', function() {
+      document.getElementById('jcm-freq-val').textContent = getBand().name;
+    });
+    document.getElementById('jcm-amp-slider').addEventListener('input', function() {
+      document.getElementById('jcm-amp-val').textContent = this.value;
+    });
+
+    // Presets
+    window.jcmPreset = function(val) {
+      document.getElementById('jcm-freq-slider').value = val;
+      document.getElementById('jcm-freq-val').textContent = getBand().name;
+    };
+
+    draw();
+  })();
+
+})();
+</script>
+</body>
+</html>

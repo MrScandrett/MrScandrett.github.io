@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nikola Tesla · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Explore the life, inventions, and legacy of Nikola Tesla — from AC power and the Tesla Coil to radio and wireless energy. Interactive Tesla Coil simulator included." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --ntl-purple: #7c3aed;
+      --ntl-indigo: #4f46e5;
+      --ntl-cyan: #06b6d4;
+      --ntl-gold: #d97706;
+      --ntl-red: #dc2626;
+      --ntl-ink: #1e1b4b;
+      --ntl-muted: #475569;
+      --ntl-line: #e2e8f0;
+      --ntl-soft: #f8f7ff;
+    }
+
+    .ntl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+
+    .ntl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .ntl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .ntl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .ntl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .ntl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .ntl-lede { color: rgba(245,245,247,0.7); }
+
+    .ntl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#7c3aed); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .ntl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .ntl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .ntl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .ntl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .ntl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .ntl-card p { color: rgba(245,245,247,0.72); }
+
+    .ntl-formula-box { background: linear-gradient(135deg,rgba(124,58,237,0.09),rgba(124,58,237,0.03)); border: 1px solid rgba(124,58,237,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .ntl-formula-sym { font-size: clamp(1.4rem,4vw,2rem); font-weight: 800; letter-spacing: -0.02em; color: var(--ntl-purple); display: block; margin-bottom: 0.5rem; }
+    .ntl-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: #3f4f65; }
+    [data-theme="night"] .ntl-formula-vars { color: rgba(245,245,247,0.7); }
+
+    .ntl-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .ntl-callout.purple { background: rgba(124,58,237,0.09);  border-left: 3px solid var(--ntl-purple); }
+    .ntl-callout.cyan   { background: rgba(6,182,212,0.10);   border-left: 3px solid var(--ntl-cyan); }
+    .ntl-callout.gold   { background: rgba(217,119,6,0.10);   border-left: 3px solid var(--ntl-gold); }
+
+    .ntl-steps { list-style: none; padding: 0; margin: 0.7rem 0; }
+    .ntl-steps li { display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.55rem; font-size: 0.87rem; color: #3f4f65; line-height: 1.55; }
+    .ntl-steps li .ntl-step-num { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--ntl-purple); color: #fff; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    [data-theme="night"] .ntl-steps li { color: rgba(245,245,247,0.72); }
+
+    .ntl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #0d0721; }
+    #ntl-canvas { width: 100%; height: 320px; display: block; }
+
+    .ntl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
+    .ntl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
+    [data-theme="night"] .ntl-readout { background: rgba(255,255,255,0.06); }
+    .ntl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block; margin-bottom: 0.2rem; }
+    .ntl-readout-val   { font-size: 1rem; font-weight: 700; color: var(--ntl-purple); }
+
+    .ntl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .ntl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .ntl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .ntl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .ntl-app small   { font-size: 0.77rem; color: #64748b; line-height: 1.5; display: block; }
+
+    /* Timeline */
+    .ntl-timeline { list-style: none; padding: 0 0 0 36px; margin: 0.7rem 0; position: relative; }
+    .ntl-timeline::before { content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 2px; background: var(--ntl-purple); opacity: 0.3; border-radius: 2px; }
+    .ntl-tl-item { position: relative; margin-bottom: 0.75rem; font-size: 0.87rem; color: #3f4f65; line-height: 1.55; }
+    [data-theme="night"] .ntl-tl-item { color: rgba(245,245,247,0.72); }
+    .ntl-tl-item::before { content: ''; position: absolute; left: -24px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--ntl-purple); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--ntl-purple); }
+    .ntl-tl-year { display: inline-block; background: var(--ntl-purple); color: #fff; font-size: 0.72rem; font-weight: 700; border-radius: 5px; padding: 0.05rem 0.4rem; margin-right: 0.4rem; vertical-align: middle; }
+
+    /* Grids */
+    .ntl-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; }
+    .ntl-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; }
+
+    /* Invention cards */
+    .ntl-invention-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem; }
+    .ntl-invention-icon { font-size: 1.6rem; margin-bottom: 0.35rem; }
+    .ntl-invention-card strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; color: var(--ntl-ink); }
+    .ntl-invention-card p { font-size: 0.77rem; color: #64748b; line-height: 1.5; margin: 0; }
+    [data-theme="night"] .ntl-invention-card strong { color: rgba(245,245,247,0.9); }
+
+    /* War of Currents comparison */
+    .ntl-war-split { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; margin: 0.8rem 0; }
+    .ntl-war-side { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; overflow: hidden; }
+    .ntl-war-side-head { padding: 0.55rem 0.9rem; font-size: 0.84rem; font-weight: 700; color: #fff; }
+    .ntl-war-side-head.dc { background: #64748b; }
+    .ntl-war-side-head.ac { background: var(--ntl-purple); }
+    .ntl-war-side ul { list-style: none; padding: 0.6rem 0.9rem; margin: 0; }
+    .ntl-war-side ul li { font-size: 0.82rem; color: #3f4f65; line-height: 1.55; margin-bottom: 0.35rem; padding-left: 1rem; position: relative; }
+    .ntl-war-side ul li::before { content: '•'; position: absolute; left: 0; color: var(--ntl-purple); font-weight: 700; }
+    .ntl-war-side.dc ul li::before { color: #64748b; }
+    [data-theme="night"] .ntl-war-side ul li { color: rgba(245,245,247,0.72); }
+
+    /* Practice problems */
+    .ntl-practice .ntl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .ntl-practice .ntl-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: #3f4f65; line-height: 1.6; }
+    [data-theme="night"] .ntl-problem p { color: rgba(245,245,247,0.72); }
+    .ntl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .ntl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 130px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .ntl-check-btn { background: var(--ntl-purple); color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .ntl-check-btn:hover { background: var(--ntl-indigo); }
+    .ntl-feedback { font-size: 0.82rem; font-weight: 600; }
+    .ntl-feedback.ok  { color: #34c759; }
+    .ntl-feedback.err { color: #dc2626; }
+    .ntl-hint { font-size: 0.78rem; color: #64748b; margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+
+    @media (max-width: 560px) {
+      .ntl-grid-2, .ntl-grid-3, .ntl-war-split { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header ll-topbar">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">STEAM Lessons</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Applications</a></li>
+          <li><a href="../video-library.html">Video Library</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Class Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="ntl-page">
+
+        <!-- Hero -->
+        <section class="hero ntl-hero">
+          <p class="eyebrow">Physics · History of Science</p>
+          <h1>Nikola Tesla</h1>
+          <div class="ntl-hero-meta">
+            <span>AC Power</span><span class="dot"></span>
+            <span>Electromagnetism</span><span class="dot"></span>
+            <span>Resonance</span><span class="dot"></span>
+            <span>Wireless Energy</span>
+          </div>
+          <p class="ntl-lede">Born in Serbia in 1856, Nikola Tesla reimagined how electricity could move across the world. His alternating current system powers every outlet on the planet. His Tesla Coil demonstrated resonant wireless energy transfer a century before smartphones used it to charge wirelessly.</p>
+        </section>
+
+        <!-- Biography -->
+        <section class="ntl-card" style="--card-accent:#d97706;">
+          <h2>Who Was Nikola Tesla?</h2>
+          <p><strong>Nikola Tesla (July 10, 1856 – January 7, 1943)</strong> was born in Smiljan, Serbia — then part of the Austrian Empire. From a young age he displayed a photographic memory and a remarkable ability to visualize complex machines entirely in his mind before ever building them, often completing designs in his head before committing anything to paper.</p>
+          <p>Tesla studied electrical engineering at the Graz University of Technology and later at the University of Prague. In 1884 he emigrated to America with four cents in his pocket and a letter of introduction to Thomas Edison. He worked briefly for Edison, impressing him with his engineering precision, but left when Edison refused to pay him a promised bonus for improving his DC generators.</p>
+          <p>After a stint digging ditches to survive, Tesla partnered with industrialist George Westinghouse to champion alternating current (AC) against Edison's entrenched direct current (DC) empire. Their victory in the "War of Currents" — culminating in powering the 1893 Chicago World's Fair and the first commercial AC generators at Niagara Falls in 1895 — established the global electrical standard we use today.</p>
+          <p>Despite his colossal contributions, Tesla died alone on January 7, 1943, in Room 3327 of the Hotel New Yorker in New York City, nearly bankrupt. He left over 300 patents spanning AC motors, the Tesla Coil, radio, remote control, and early wireless energy transmission. The SI unit of magnetic flux density — the <strong>tesla (T)</strong> — is named in his honor.</p>
+        </section>
+
+        <!-- Timeline -->
+        <section class="ntl-card" style="--card-accent:#4f46e5;">
+          <h2>A Life in Invention</h2>
+          <ol class="ntl-timeline">
+            <li class="ntl-tl-item"><span class="ntl-tl-year">1856</span> Born in Smiljan, Serbia (then Austrian Empire) to a Serbian Orthodox priest and an inventor's daughter.</li>
+            <li class="ntl-tl-item"><span class="ntl-tl-year">1884</span> Arrives in New York City; joins Edison Machine Works and impresses Edison with his electrical expertise.</li>
+            <li class="ntl-tl-item"><span class="ntl-tl-year">1887</span> Invents the AC induction motor, demonstrating that rotating magnetic fields can drive a rotor without physical contact — revolutionizing industrial machinery.</li>
+            <li class="ntl-tl-item"><span class="ntl-tl-year">1891</span> Invents the Tesla Coil, a resonant air-core transformer capable of producing extremely high voltages at high frequencies. Becomes a naturalized US citizen.</li>
+            <li class="ntl-tl-item"><span class="ntl-tl-year">1893</span> AC power illuminates the Chicago World's Columbian Exposition. Westinghouse, using Tesla's system, defeats Edison's DC bid — 27 million visitors witness the future of electricity.</li>
+            <li class="ntl-tl-item"><span class="ntl-tl-year">1895</span> Niagara Falls AC generators designed by Tesla and Westinghouse go online, transmitting power to Buffalo, New York — the first large-scale AC transmission system in history.</li>
+            <li class="ntl-tl-item"><span class="ntl-tl-year">1898</span> Demonstrates a radio-controlled boat at Madison Square Garden — the world's first remotely operated vehicle, predating modern remote control by decades.</li>
+            <li class="ntl-tl-item"><span class="ntl-tl-year">1899</span> In his Colorado Springs laboratory, Tesla produces artificial lightning bolts measuring 135 feet — the longest man-made electrical discharge at the time.</li>
+            <li class="ntl-tl-item"><span class="ntl-tl-year">1901</span> Construction begins on Wardenclyffe Tower on Long Island — Tesla's dream of a global wireless energy and communication system. Funding is withdrawn by J.P. Morgan before completion.</li>
+            <li class="ntl-tl-item"><span class="ntl-tl-year">1943</span> Tesla dies in New York. Later that year, the US Supreme Court rules that Tesla's radio patents predated those of Guglielmo Marconi, posthumously crediting Tesla as a co-inventor of radio.</li>
+          </ol>
+        </section>
+
+        <!-- War of Currents -->
+        <section class="ntl-card" style="--card-accent:#dc2626;">
+          <h2>The War of Currents: AC vs DC</h2>
+          <p>Edison backed direct current (DC); Tesla and Westinghouse championed alternating current (AC). This was not just a scientific debate — it was a battle for the future of American industry, fought with patents, lobbying, and dramatic public demonstrations.</p>
+          <div class="ntl-war-split">
+            <div class="ntl-war-side dc">
+              <div class="ntl-war-side-head dc">DC — Edison</div>
+              <ul>
+                <li>Current flows in one direction only; does not change direction</li>
+                <li>Cannot be stepped up or down with a transformer</li>
+                <li>Power lost rapidly over distance due to I²R heating losses</li>
+                <li>Required a power station approximately every one mile in a city</li>
+                <li>Safer at low voltages and simpler for early electrical devices</li>
+              </ul>
+            </div>
+            <div class="ntl-war-side ac">
+              <div class="ntl-war-side-head ac">AC — Tesla / Westinghouse</div>
+              <ul>
+                <li>Current alternates direction 60 times per second (60 Hz in North America)</li>
+                <li>Transformers can step voltage up for long-distance transmission, then step it down safely for homes</li>
+                <li>Travels thousands of miles with minimal energy loss</li>
+                <li>A single power plant can serve entire cities and regions</li>
+                <li>Won the War of Currents and became the universal global standard</li>
+              </ul>
+            </div>
+          </div>
+          <div class="ntl-callout gold">
+            <strong>The deciding moment:</strong> In 1893, Westinghouse and Tesla won the contract to illuminate the Chicago World's Columbian Exposition using AC. 27 million people saw the future — an entire fairground blazing with electric light powered by Tesla's system, running flawlessly while Edison's DC booths went dark.
+          </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="ntl-card" style="--card-accent:#7c3aed;">
+          <h2>Interactive Tesla Coil Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">A Tesla Coil is an air-core resonant transformer. The primary LC circuit resonates at the same frequency as the secondary, causing dramatic voltage amplification. Sparks leap from the toroid as the voltage exceeds air's breakdown threshold (~3 MV/m).</p>
+          <div class="ntl-canvas-wrap">
+            <canvas id="ntl-canvas" aria-label="Animated Tesla coil diagram showing primary coil, secondary coil, toroid, and lightning spark discharges"></canvas>
+          </div>
+          <div class="ntl-readouts">
+            <div class="ntl-readout"><span class="ntl-readout-label">Secondary Voltage</span><span class="ntl-readout-val" id="ntl-r-v">500 kV</span></div>
+            <div class="ntl-readout"><span class="ntl-readout-label">Spark Length</span><span class="ntl-readout-val" id="ntl-r-spark">40.0 cm</span></div>
+            <div class="ntl-readout"><span class="ntl-readout-label">Frequency</span><span class="ntl-readout-val" id="ntl-r-freq">60 kHz</span></div>
+          </div>
+        </section>
+
+        <!-- Key Inventions -->
+        <section class="ntl-card" style="--card-accent:#06b6d4;">
+          <h2>Tesla's Key Inventions</h2>
+          <div class="ntl-grid-2">
+
+            <div class="ntl-invention-card">
+              <div class="ntl-invention-icon">⚡</div>
+              <strong>AC Induction Motor (1887)</strong>
+              <p>Rotating magnetic fields drive a rotor without physical contact between stator and rotor. Powers refrigerators, fans, pumps, HVAC systems, and every modern electric vehicle today.</p>
+            </div>
+
+            <div class="ntl-invention-card">
+              <div class="ntl-invention-icon">🌀</div>
+              <strong>Tesla Coil (1891)</strong>
+              <p>A resonant air-core transformer that generates extremely high voltages at high frequencies. Used in early radio research, neon sign power supplies, and wireless energy demonstrations.</p>
+            </div>
+
+            <div class="ntl-invention-card">
+              <div class="ntl-invention-icon">📡</div>
+              <strong>Radio (1893 / 1943)</strong>
+              <p>Tesla demonstrated wireless signal transmission in 1893. In 1943, the US Supreme Court posthumously ruled that Tesla's radio patents predated Marconi's, crediting Tesla as a co-inventor.</p>
+            </div>
+
+            <div class="ntl-invention-card">
+              <div class="ntl-invention-icon">🔄</div>
+              <strong>AC Power System (1888)</strong>
+              <p>The complete system of AC generation, transmission, and distribution — patented, licensed to Westinghouse, and still the global standard powering every home and business on Earth.</p>
+            </div>
+
+            <div class="ntl-invention-card">
+              <div class="ntl-invention-icon">🚤</div>
+              <strong>Remote Control (1898)</strong>
+              <p>Demonstrated a radio-controlled boat in Madison Square Garden — the world's first remotely operated vehicle, using radio signals to steer and control the craft from a distance.</p>
+            </div>
+
+            <div class="ntl-invention-card">
+              <div class="ntl-invention-icon">🔭</div>
+              <strong>Wardenclyffe Tower (1901)</strong>
+              <p>A 57-metre tower on Long Island designed to transmit electricity and communications wirelessly across the globe. Never completed after J.P. Morgan withdrew funding in 1903.</p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Legacy -->
+        <section class="ntl-card" style="--card-accent:#4f46e5;">
+          <h2>Tesla's Legacy Today</h2>
+          <p>Tesla's contributions were so foundational that they permeate nearly every aspect of modern electrical and electronic life, even when his name is not attached to them.</p>
+
+          <div class="ntl-formula-box" role="img" aria-label="B equals Phi divided by A — magnetic flux density in teslas equals magnetic flux over area">
+            <span class="ntl-formula-sym">B = Φ / A</span>
+            <div class="ntl-formula-vars">
+              <div><strong>B</strong> = magnetic flux density (teslas, T)</div>
+              <div><strong>Φ</strong> = magnetic flux (Webers, Wb)</div>
+              <div><strong>A</strong> = area (m²)</div>
+              <div>1 T = 1 Wb/m² = 1 V·s/m²</div>
+            </div>
+          </div>
+
+          <div class="ntl-callout purple">
+            <strong>The tesla (T):</strong> The SI unit of magnetic flux density is named for Tesla. Earth's magnetic field measures approximately 25–65 μT (microteslas). An MRI machine generates 1.5–3 T — millions of times stronger than Earth's field.
+          </div>
+          <div class="ntl-callout cyan">
+            <strong>Wireless charging:</strong> The Qi wireless charging standard in modern smartphones is a direct descendant of Tesla's resonant inductive coupling. Tesla demonstrated the principle in 1891; your phone uses it daily.
+          </div>
+          <div class="ntl-callout gold">
+            <strong>Tesla, Inc.:</strong> The electric car company named itself after Tesla in recognition that all of their vehicles rely on AC induction motors — the same motor Tesla invented in 1887. The <strong>National Inventors Hall of Fame</strong> inducted Tesla in 1975. AC power at 60 Hz (North America) and 50 Hz (Europe and Asia) is the universal standard worldwide.
+          </div>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="ntl-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color:#64748b;font-size:0.84rem;">Use f = 1/(2π√LC) for resonant frequency, V₂ = (N₂/N₁) × V₁ for transformer voltage.</p>
+          <div class="ntl-practice">
+
+            <div class="ntl-problem">
+              <p><span class="diff-easy">Easy</span>1. Which type of current does a Tesla Coil produce at its output — AC or DC?</p>
+              <div class="ntl-problem-row">
+                <select class="ntl-ans-input" id="ntlans-1" style="width:120px;">
+                  <option value="">Choose…</option>
+                  <option value="ac">AC</option>
+                  <option value="dc">DC</option>
+                </select>
+                <button class="ntl-check-btn" onclick="ntlCheckText(1,'ac')">Check</button>
+                <span class="ntl-feedback" id="ntlfb-1"></span>
+              </div>
+              <div class="ntl-hint" id="ntlhint-1">Hint: A Tesla Coil is a resonant transformer. Transformers require alternating current to function — the changing magnetic field induced by AC is what transfers energy between windings.</div>
+            </div>
+
+            <div class="ntl-problem">
+              <p><span class="diff-easy">Easy</span>2. What is the standard AC frequency used in North American homes and businesses?</p>
+              <div class="ntl-problem-row">
+                <select class="ntl-ans-input" id="ntlans-2" style="width:120px;">
+                  <option value="">Choose…</option>
+                  <option value="50">50 Hz</option>
+                  <option value="60">60 Hz</option>
+                  <option value="120">120 Hz</option>
+                </select>
+                <button class="ntl-check-btn" onclick="ntlCheckText(2,'60')">Check</button>
+                <span class="ntl-feedback" id="ntlfb-2"></span>
+              </div>
+              <div class="ntl-hint" id="ntlhint-2">Hint: North America uses 60 Hz AC. Much of Europe and Asia use 50 Hz. Tesla's original Niagara Falls generators were designed for 60 Hz.</div>
+            </div>
+
+            <div class="ntl-problem">
+              <p><span class="diff-mid">Medium</span>3. A transformer's primary coil has <strong>100 turns</strong> connected to <strong>120 V</strong>. The secondary coil has <strong>2,000 turns</strong>. Use V₂ = (N₂/N₁) × V₁ to find the secondary voltage in volts.</p>
+              <div class="ntl-problem-row">
+                <input type="number" class="ntl-ans-input" id="ntlans-3" step="100" placeholder="V" />
+                <button class="ntl-check-btn" onclick="ntlCheck(3, 2400, 50)">Check</button>
+                <span class="ntl-feedback" id="ntlfb-3"></span>
+              </div>
+              <div class="ntl-hint" id="ntlhint-3">Hint: V₂ = (N₂/N₁) × V₁ = (2000/100) × 120 = 20 × 120 = 2,400 V. This is how transformers step up voltage for long-distance transmission.</div>
+            </div>
+
+            <div class="ntl-problem">
+              <p><span class="diff-mid">Medium</span>4. A Tesla coil LC circuit has <strong>L = 25 mH</strong> and <strong>C = 10 nF</strong>. Calculate the resonant frequency using f = 1/(2π√LC). Give your answer in kHz (round to one decimal place).</p>
+              <div class="ntl-problem-row">
+                <input type="number" class="ntl-ans-input" id="ntlans-4" step="0.1" placeholder="kHz" />
+                <button class="ntl-check-btn" onclick="ntlCheck(4, 10.07, 1)">Check</button>
+                <span class="ntl-feedback" id="ntlfb-4"></span>
+              </div>
+              <div class="ntl-hint" id="ntlhint-4">Hint: L = 25×10⁻³ H, C = 10×10⁻⁹ F. LC = 25×10⁻³ × 10×10⁻⁹ = 2.5×10⁻¹⁰. √LC ≈ 1.581×10⁻⁵. f = 1/(2π × 1.581×10⁻⁵) ≈ 10,065 Hz ≈ 10.07 kHz.</div>
+            </div>
+
+            <div class="ntl-problem">
+              <p><span class="diff-hard">Challenge</span>5. Why can AC be transmitted over long distances more efficiently than DC?</p>
+              <div class="ntl-problem-row">
+                <select class="ntl-ans-input" id="ntlans-5" style="width:320px;">
+                  <option value="">Choose…</option>
+                  <option value="a">AC travels faster through wires than DC</option>
+                  <option value="b">Transformers can step AC voltage up, reducing current and therefore I²R losses</option>
+                  <option value="c">AC uses less copper wire than DC</option>
+                  <option value="d">DC loses charge to the atmosphere during transmission</option>
+                </select>
+                <button class="ntl-check-btn" onclick="ntlCheckText(5,'b')">Check</button>
+                <span class="ntl-feedback" id="ntlfb-5"></span>
+              </div>
+              <div class="ntl-hint" id="ntlhint-5">Hint: Power lost as heat in a wire = I²R. By stepping voltage up (with a transformer), current decreases proportionally (P = IV is constant). Lower current means dramatically less heat loss. Only AC can be stepped up and down by transformers.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <section style="margin: 0 0 1rem; padding: 0.85rem 1.1rem; background: rgba(255,255,255,0.8); border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
+          <p style="margin: 0 0 0.45rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8;">Innovator Profile · See Also</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+            <a href="james-clerk-maxwell.html" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.7rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 7px; font-size: 0.81rem; font-weight: 600; color: #1e40af; text-decoration: none;">🌊 James Clerk Maxwell — The Equations Behind Tesla's Work</a>
+            <a href="marie-curie.html" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.7rem; background: #fff1f5; border: 1px solid #fecdd3; border-radius: 7px; font-size: 0.81rem; font-weight: 600; color: #9d174d; text-decoration: none;">☢️ Marie Curie — Radioactivity &amp; Atomic Decay</a>
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">STEAM Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="ntl-pane-sim">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="ntl-pane-guide">Summary</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="ntl-pane-sim">
+          <span class="ll-label">Primary Voltage</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Voltage <span id="ntl-volt-val">50 kV</span></label>
+            <input type="range" class="nl-slider" id="ntl-volt-slider" min="10" max="100" value="50" style="width:100%;" />
+          </div>
+          <span class="ll-label">Frequency</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Freq <span id="ntl-freq-val">60 kHz</span></label>
+            <input type="range" class="nl-slider" id="ntl-freq-slider" min="10" max="200" value="60" style="width:100%;" />
+          </div>
+          <span class="ll-label">Spark Density</span>
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Density <span id="ntl-density-val">3</span></label>
+            <input type="range" class="nl-slider" id="ntl-density-slider" min="1" max="5" value="3" style="width:100%;" />
+          </div>
+          <hr class="ll-hr">
+          <button class="ll-preset" onclick="ntlPreset('low')" style="width:100%;margin-bottom:0.4rem;">Low Power (10 kV)</button>
+          <button class="ll-preset" onclick="ntlPreset('resonance')" style="width:100%;margin-bottom:0.4rem;">Resonance (60 kHz)</button>
+          <button class="ll-preset" onclick="ntlPreset('max')" style="width:100%;margin-bottom:0.4rem;">Maximum Spark</button>
+          <button class="ll-preset" onclick="ntlReset()" style="width:100%;">Reset</button>
+        </div>
+
+        <div class="ll-pane" id="ntl-pane-guide">
+          <div class="ll-info"><strong>AC Frequency</strong>North American grid runs at 60 Hz. Tesla coils operate at much higher frequencies (kHz range) for better resonance and voltage amplification.</div>
+          <div class="ll-info"><strong>Transformer Ratio</strong>V₂/V₁ = N₂/N₁. Step up voltage → step down current. Power (P = IV) is conserved across ideal transformers.</div>
+          <div class="ll-info"><strong>Resonant Frequency</strong>f = 1/(2π√LC). Primary and secondary circuits must be tuned to the same frequency for maximum energy transfer through the air gap.</div>
+          <div class="ll-info"><strong>Breakdown Voltage</strong>Air ionizes at ~3 MV/m. Tesla coils produce millions of volts across very short gaps to create the visible spark discharges.</div>
+          <div class="ll-info"><strong>The Tesla (unit)</strong>1 T = 1 V·s/m² = 1 Wb/m². Earth's magnetic field is ~25–65 μT. An MRI machine generates 1.5–3 T.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  // ── Panel tab logic ───────────────────────────────────────────────────────
+  document.querySelectorAll('.ll-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pane = btn.dataset.pane;
+      document.querySelectorAll('.ll-tab').forEach(b => b.setAttribute('aria-selected','false'));
+      btn.setAttribute('aria-selected','true');
+      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      document.getElementById(pane).classList.add('ll-active');
+    });
+  });
+
+  document.querySelector('.ll-panel-close')?.addEventListener('click', () => {
+    document.querySelector('.ll-panel')?.classList.add('ll-panel-hidden');
+    document.querySelector('.ll-open-btn')?.classList.add('ll-visible');
+  });
+  document.querySelector('.ll-open-btn')?.addEventListener('click', () => {
+    document.querySelector('.ll-panel')?.classList.remove('ll-panel-hidden');
+    document.querySelector('.ll-open-btn')?.classList.remove('ll-visible');
+  });
+
+  // ── Tesla Coil Canvas Simulator ───────────────────────────────────────────
+  const canvas = document.getElementById('ntl-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  // State
+  let voltage     = 50;   // slider value 10–100
+  let frequency   = 60;   // slider value 10–200 (kHz display)
+  let sparkDensity = 3;   // slider value 1–5
+  let phase       = 0;
+  let sparks      = [];   // active spark bolt objects
+
+  // Slider event listeners
+  const voltSlider    = document.getElementById('ntl-volt-slider');
+  const freqSlider    = document.getElementById('ntl-freq-slider');
+  const densitySlider = document.getElementById('ntl-density-slider');
+
+  voltSlider.addEventListener('input', e => {
+    voltage = parseInt(e.target.value);
+    document.getElementById('ntl-volt-val').textContent = voltage + ' kV';
+  });
+  freqSlider.addEventListener('input', e => {
+    frequency = parseInt(e.target.value);
+    document.getElementById('ntl-freq-val').textContent = frequency + ' kHz';
+  });
+  densitySlider.addEventListener('input', e => {
+    sparkDensity = parseInt(e.target.value);
+    document.getElementById('ntl-density-val').textContent = sparkDensity;
+  });
+
+  // ── Spark generation helper ───────────────────────────────────────────────
+  function makeSpark(startX, startY) {
+    const segments = 8 + Math.floor(Math.random() * 5);
+    const path = [{ x: startX, y: startY }];
+    let cx = startX, cy = startY;
+    const angle = (Math.random() * Math.PI * 2); // random direction from toroid
+    const spread = 0.6;
+    for (let i = 0; i < segments; i++) {
+      const reach = (voltage / 100) * 55 * (1 - i / segments);
+      cx += Math.cos(angle) * reach * (0.4 + Math.random() * 0.6) + (Math.random() - 0.5) * 28;
+      cy += Math.sin(angle) * reach * (0.2 + Math.random() * 0.5) + (Math.random() - 0.5) * 20 + 3;
+      path.push({ x: cx, y: cy });
+    }
+    const life = 18 + Math.floor(Math.random() * 18);
+    return { life, maxLife: life, path };
+  }
+
+  // ── Draw one helix coil ───────────────────────────────────────────────────
+  function drawCoil(cx, topY, rx, ry, turns, color, lineW) {
+    const totalH = turns * ry * 1.7;
+    for (let t = 0; t < turns; t++) {
+      const y = topY + t * ry * 1.7;
+      ctx.beginPath();
+      ctx.ellipse(cx, y + ry * 0.85, rx, ry, 0, Math.PI, 0, false);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineW;
+      ctx.stroke();
+      if (t < turns - 1) {
+        ctx.beginPath();
+        ctx.ellipse(cx, y + ry * 1.7, rx, ry, 0, 0, Math.PI, false);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineW;
+        ctx.stroke();
+      }
+    }
+    return totalH;
+  }
+
+  // ── Main draw loop ─────────────────────────────────────────────────────────
+  function draw() {
+    const W = canvas.offsetWidth || 640;
+    canvas.width  = W;
+    canvas.height = 320;
+    const H = 320;
+
+    // Background gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, '#0d0721');
+    bgGrad.addColorStop(1, '#1a0a3d');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    phase += 0.04 * (frequency / 60);
+
+    // Layout anchors
+    const CX      = W * 0.45;
+    const botY    = H * 0.90;
+    const groundY = H * 0.91;
+
+    // Primary coil: 5 turns, copper, wide
+    const primaryRx = 36;
+    const primaryRy = 7;
+    const primaryTurns = 5;
+    const primaryTop = botY - primaryTurns * primaryRy * 1.7 - 8;
+    drawCoil(CX, primaryTop, primaryRx, primaryRy, primaryTurns, '#b45309', 2.5);
+
+    // Secondary coil: 8 turns, narrower, above primary
+    const secondaryRx = 22;
+    const secondaryRy = 7;
+    const secondaryTurns = 8;
+    const secondaryTop = primaryTop - secondaryTurns * secondaryRy * 1.7 - 16;
+    drawCoil(CX, secondaryTop, secondaryRx, secondaryRy, secondaryTurns, '#94a3b8', 1.5);
+
+    // Toroid position (top of secondary)
+    const toroidY = secondaryTop - 14;
+    const toroidRx = 30 + (voltage / 100) * 8;
+    const toroidRy = 9;
+
+    // Corona glow when voltage > 40
+    if (voltage > 40) {
+      const glowIntensity = (voltage - 40) / 60;
+      const coronaGrad = ctx.createRadialGradient(CX, toroidY, 0, CX, toroidY, toroidRx * 2.5);
+      coronaGrad.addColorStop(0, `rgba(124,58,237,${0.25 * glowIntensity})`);
+      coronaGrad.addColorStop(0.5, `rgba(79,70,229,${0.12 * glowIntensity})`);
+      coronaGrad.addColorStop(1, 'rgba(6,182,212,0)');
+      ctx.fillStyle = coronaGrad;
+      ctx.beginPath();
+      ctx.ellipse(CX, toroidY, toroidRx * 2.5, toroidRx * 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Toroid ring
+    const toroidGrad = ctx.createLinearGradient(CX - toroidRx, toroidY, CX + toroidRx, toroidY);
+    toroidGrad.addColorStop(0, '#4f46e5');
+    toroidGrad.addColorStop(0.5, '#7c3aed');
+    toroidGrad.addColorStop(1, '#4f46e5');
+    ctx.beginPath();
+    ctx.ellipse(CX, toroidY, toroidRx, toroidRy, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = toroidGrad;
+    ctx.lineWidth = 7 + (voltage / 100) * 4;
+    ctx.shadowColor = '#7c3aed';
+    ctx.shadowBlur  = 8 + (voltage / 100) * 18;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Ground plane
+    ctx.strokeStyle = 'rgba(148,163,184,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    ctx.lineTo(W, groundY);
+    ctx.stroke();
+    // Hatch marks
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+    for (let x = 10; x < W; x += 24) {
+      ctx.beginPath();
+      ctx.moveTo(x, groundY);
+      ctx.lineTo(x - 10, groundY + 9);
+      ctx.stroke();
+    }
+
+    // Generate new sparks
+    const sparkProb = (voltage / 100) * (sparkDensity / 5) * 0.28;
+    if (Math.random() < sparkProb && voltage > 20) {
+      sparks.push(makeSpark(CX, toroidY - toroidRy));
+    }
+
+    // Draw & decay sparks
+    sparks = sparks.filter(s => s.life > 0);
+    sparks.forEach(s => {
+      const alpha = s.life / s.maxLife;
+      // White core
+      ctx.beginPath();
+      ctx.moveTo(s.path[0].x, s.path[0].y);
+      for (let i = 1; i < s.path.length; i++) ctx.lineTo(s.path[i].x, s.path[i].y);
+      ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.85})`;
+      ctx.lineWidth   = 1.2;
+      ctx.shadowColor = '#c4b5fd';
+      ctx.shadowBlur  = 6;
+      ctx.stroke();
+      // Outer purple bolt
+      ctx.beginPath();
+      ctx.moveTo(s.path[0].x, s.path[0].y);
+      for (let i = 1; i < s.path.length; i++) ctx.lineTo(s.path[i].x, s.path[i].y);
+      ctx.strokeStyle = `rgba(200,180,255,${alpha * 0.7})`;
+      ctx.lineWidth   = 2;
+      ctx.shadowColor = '#7c3aed';
+      ctx.shadowBlur  = 10;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      s.life--;
+    });
+
+    // AC sine wave visualization (bottom-left)
+    const sineX0 = 12, sineY0 = H - 26, sineW = 90, sineAmp = 10 * (voltage / 100);
+    ctx.strokeStyle = 'rgba(6,182,212,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let px = 0; px <= sineW; px++) {
+      const t = (px / sineW) * Math.PI * 4;
+      const py = sineY0 - Math.sin(t + phase * 2) * sineAmp;
+      if (px === 0) ctx.moveTo(sineX0 + px, py);
+      else          ctx.lineTo(sineX0 + px, py);
+    }
+    ctx.stroke();
+    ctx.font = '8px Inter,-apple-system,sans-serif';
+    ctx.fillStyle = 'rgba(6,182,212,0.6)';
+    ctx.textAlign = 'left';
+    ctx.fillText('AC ' + frequency + ' kHz', sineX0, H - 10);
+
+    // Labels
+    ctx.font = 'bold 9px Inter,-apple-system,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(180,83,9,0.85)';
+    ctx.fillText('Primary', CX + primaryRx + 6, primaryTop + (primaryTurns * primaryRy * 1.7 * 0.5));
+
+    ctx.fillStyle = 'rgba(148,163,184,0.85)';
+    ctx.fillText('Secondary', CX + secondaryRx + 6, secondaryTop + (secondaryTurns * secondaryRy * 1.7 * 0.5));
+
+    ctx.fillStyle = 'rgba(124,58,237,0.9)';
+    ctx.fillText('Toroid', CX + toroidRx + 8, toroidY + 4);
+
+    // Update readouts
+    document.getElementById('ntl-r-v').textContent     = (voltage * 10).toFixed(0) + ' kV';
+    document.getElementById('ntl-r-spark').textContent  = (voltage * 0.8).toFixed(1) + ' cm';
+    document.getElementById('ntl-r-freq').textContent   = frequency + ' kHz';
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+
+  // ── Preset buttons ────────────────────────────────────────────────────────
+  window.ntlPreset = function (mode) {
+    if (mode === 'low') {
+      voltSlider.value    = 10; voltage     = 10;
+      freqSlider.value    = 60; frequency   = 60;
+      densitySlider.value = 2;  sparkDensity = 2;
+    } else if (mode === 'resonance') {
+      voltSlider.value    = 60; voltage     = 60;
+      freqSlider.value    = 60; frequency   = 60;
+      densitySlider.value = 3;  sparkDensity = 3;
+    } else if (mode === 'max') {
+      voltSlider.value    = 100; voltage     = 100;
+      freqSlider.value    = 100; frequency   = 100;
+      densitySlider.value = 5;   sparkDensity = 5;
+    }
+    document.getElementById('ntl-volt-val').textContent    = voltage + ' kV';
+    document.getElementById('ntl-freq-val').textContent    = frequency + ' kHz';
+    document.getElementById('ntl-density-val').textContent = sparkDensity;
+  };
+
+  window.ntlReset = function () {
+    voltSlider.value    = 50; voltage     = 50;
+    freqSlider.value    = 60; frequency   = 60;
+    densitySlider.value = 3;  sparkDensity = 3;
+    sparks = [];
+    document.getElementById('ntl-volt-val').textContent    = '50 kV';
+    document.getElementById('ntl-freq-val').textContent    = '60 kHz';
+    document.getElementById('ntl-density-val').textContent = '3';
+  };
+
+  // ── Practice check functions ──────────────────────────────────────────────
+  window.ntlCheck = function (n, correct, tol) {
+    const val  = parseFloat(document.getElementById('ntlans-' + n).value);
+    const fb   = document.getElementById('ntlfb-' + n);
+    const hint = document.getElementById('ntlhint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'ntl-feedback err'; return; }
+    if (Math.abs(val - correct) <= tol) {
+      fb.textContent = '✓ Correct!'; fb.className = 'ntl-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'ntl-feedback err';
+      if (hint) hint.style.display = 'block';
+    }
+  };
+
+  window.ntlCheckText = function (n, correct) {
+    const el   = document.getElementById('ntlans-' + n);
+    const val  = el.value.toString().toLowerCase().trim();
+    const fb   = document.getElementById('ntlfb-' + n);
+    const hint = document.getElementById('ntlhint-' + n);
+    if (val === correct.toLowerCase()) {
+      fb.textContent = '✓ Correct!'; fb.className = 'ntl-feedback ok';
+    } else {
+      fb.textContent = '✗ Try again.'; fb.className = 'ntl-feedback err';
+      if (hint) hint.style.display = 'block';
+    }
+  };
+
+})();
+</script>
+</body>
+</html>
