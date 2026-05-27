@@ -4,7 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="ClassroomOS launchpad for labs, projects, and weekly learning flow." />
+  <meta name="description" content="Mr. Scandrett's ClassroomOS — a launchpad for STEAM lessons, student projects, robotics, music lab, and hands-on learning." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Mr. Scandrett's ClassroomOS" />
+  <meta property="og:description" content="Build something real today. Lessons, tools, student showcases, and weekly learning — all in one place." />
+  <meta property="og:url" content="https://mrscandrett.github.io/" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
   <script src="assets/js/theme-lighting.js"></script>
@@ -85,7 +89,7 @@
               <p class="home-widget-eyebrow">Weekly Rhythm</p>
               <h3 class="home-widget-title">Class Schedule</h3>
             </div>
-            <p class="weekly-focus">This Week: Prototypes + Problem-Solving</p>
+            <p class="weekly-focus" id="weekly-focus-label">This Week</p>
           </div>
           <div class="weekly-grid" aria-label="Weekly class schedule">
             <article class="weekly-day-card" data-day="Monday">
@@ -275,6 +279,7 @@
   <script src="assets/js/canvas-bg.js"></script>
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
+  <script src="assets/js/command-palette.js"></script>
   <script>
     const homeLaunchSettings = document.getElementById("home-launch-settings");
     if (homeLaunchSettings) {
@@ -338,6 +343,38 @@
         day: 'numeric'
       });
     }
+
+    (function setWeeklyFocus() {
+      const label = document.getElementById('weekly-focus-label');
+      if (!label) return;
+      const now = new Date();
+      const dow = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((dow + 6) % 7));
+      const friday = new Date(monday);
+      friday.setDate(monday.getDate() + 4);
+      const fmt = { month: 'short', day: 'numeric' };
+      const locale = undefined;
+      const monStr = monday.toLocaleDateString(locale, fmt);
+      const friStr = friday.toLocaleDateString(locale, fmt);
+      const THEMES = [
+        'Exploration + Observation',
+        'Questions + Hypotheses',
+        'Prototypes + Problem-Solving',
+        'Build + Iterate',
+        'Test + Refine',
+        'Present + Reflect',
+        'Create + Publish',
+        'Collaborate + Critique',
+        'Research + Discover',
+        'Design + Engineer',
+        'Debug + Improve',
+        'Launch + Showcase',
+      ];
+      const weekSeed = Math.floor(monday.getTime() / (7 * 24 * 60 * 60 * 1000));
+      const theme = THEMES[weekSeed % THEMES.length];
+      label.textContent = monStr + ' – ' + friStr + ' · ' + theme;
+    })();
   </script>
   <script>
     (function () {
@@ -348,7 +385,14 @@
       const VOD_LIST = [
         { src: 'assets/videos/steve-jobs-on-failure.mp4', title: 'Steve Jobs on Failure', category: 'Interview', desc: 'Steve Jobs reflects on failure, resilience, and what it really means to build something that matters.', seekTo: 1 },
         { src: 'assets/videos/steve-jobs-life.mp4', title: 'Steve Jobs on Life', category: 'Interview', desc: 'Steve Jobs shares his perspective on life, purpose, and the importance of following what you love.', seekTo: 1 },
-        { src: 'assets/videos/carl-sagan-pale-blue-dot.mp4', title: 'Carl Sagan — Pale Blue Dot', category: 'Science & Perspective', desc: 'Carl Sagan reflects on a photograph of Earth taken from 3.7 billion miles away, and what it means for how we treat each other.', seekTo: 3 }
+        { src: 'assets/videos/carl-sagan-pale-blue-dot.mp4', title: 'Carl Sagan — Pale Blue Dot', category: 'Science & Perspective', desc: 'Carl Sagan reflects on a photograph of Earth taken from 3.7 billion miles away, and what it means for how we treat each other.', seekTo: 3 },
+        { src: 'assets/videos/carl-sagan-kids-questions.mp4', title: 'Carl Sagan Answers Kids\' Questions', category: 'Science & Wonder', desc: 'Carl Sagan fields questions from curious kids and demonstrates his gift for making the cosmos feel personal and immediate.', seekTo: 5 },
+        { src: 'assets/videos/powers-of-ten.mp4', title: 'Powers of Ten', category: 'Science', desc: 'A journey from the scale of the universe down to the subatomic — one of the most iconic science films ever made.', seekTo: 10 },
+        { src: 'assets/videos/nature-by-numbers.mp4', title: 'Nature by Numbers', category: 'Math + Art', desc: 'A beautiful short film exploring the Fibonacci sequence and the golden ratio hidden throughout the natural world.', seekTo: 5 },
+        { src: 'assets/videos/disneymathmagic.mp4', title: 'Donald in Mathmagic Land', category: 'Math', desc: 'A timeless Disney classic that uncovers the surprising connections between mathematics, music, art, and everyday life.', seekTo: 30 },
+        { src: 'assets/videos/deadpoetsociety.mp4', title: 'Dead Poets Society — O Captain, My Captain', category: 'Inspiration', desc: 'A reminder that great teachers change the way students see themselves — and the world.', seekTo: 5 },
+        { src: 'assets/videos/makeyourlifespectacular.mp4', title: 'Make Your Life Spectacular', category: 'Inspiration', desc: 'A short film about the decision to truly live — and to pursue what lights you up.', seekTo: 5 },
+        { src: 'assets/videos/what-is-the-internet.mp4', title: 'What Is the Internet?', category: 'Computer Science', desc: 'A clear, visual explanation of how the internet actually works — packets, protocols, and the invisible infrastructure behind every click.', seekTo: 5 }
       ];
 
       const v = VOD_LIST[Math.floor(Math.random() * VOD_LIST.length)];
