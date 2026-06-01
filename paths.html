@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Learning Paths · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Nine cross-disciplinary learning paths through the ClassroomOS lesson library — from waves and signals to AI and civilization." />
+  <link rel="stylesheet" href="assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
+  <script src="assets/js/theme-lighting.js"></script>
+  <style>
+    /* ── Paths page layout ─────────────────────────── */
+    .paths-hero { padding: 2.5rem 1.5rem 1.5rem; max-width: 820px; }
+    .paths-hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; margin: 0 0 0.5rem; }
+    .paths-hero p { font-size: 1.05rem; opacity: 0.72; max-width: 60ch; margin: 0; }
+
+    /* ── Path section ──────────────────────────────── */
+    .path-section {
+      margin: 0 0 3rem;
+      padding: 0 1.5rem;
+    }
+    .path-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.1rem;
+    }
+    .path-icon {
+      font-size: 2rem;
+      line-height: 1;
+      flex-shrink: 0;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--path-color-bg, rgba(88, 86, 214, 0.12));
+    }
+    .path-meta { flex: 1; }
+    .path-title {
+      font-size: 1.22rem;
+      font-weight: 700;
+      margin: 0 0 0.2rem;
+      color: var(--path-color, #5856d6);
+    }
+    .path-desc { font-size: 0.9rem; opacity: 0.72; margin: 0; line-height: 1.5; }
+    .path-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .path-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.18rem 0.55rem;
+      border-radius: 99px;
+      background: var(--path-color-bg, rgba(88,86,214,0.1));
+      color: var(--path-color, #5856d6);
+      border: 1px solid var(--path-color-border, rgba(88,86,214,0.2));
+    }
+
+    /* ── Sequence rail ─────────────────────────────── */
+    .path-rail {
+      display: flex;
+      gap: 0.75rem;
+      overflow-x: auto;
+      padding-bottom: 0.75rem;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .path-rail::-webkit-scrollbar { height: 4px; }
+    .path-rail::-webkit-scrollbar-track { background: transparent; }
+    .path-rail::-webkit-scrollbar-thumb {
+      background: var(--path-color-border, rgba(88,86,214,0.25));
+      border-radius: 2px;
+    }
+    .path-connector {
+      display: flex;
+      align-items: center;
+      color: var(--path-color-border, rgba(88,86,214,0.35));
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      padding-top: 1.5rem;
+    }
+
+    /* ── Lesson step card ──────────────────────────── */
+    .path-step {
+      flex-shrink: 0;
+      width: 200px;
+      border-radius: 16px;
+      border: 1px solid var(--line, #d2d2d7);
+      background: var(--white, #fff);
+      padding: 1rem;
+      text-decoration: none;
+      color: inherit;
+      scroll-snap-align: start;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      position: relative;
+    }
+    .path-step:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.1);
+      border-color: var(--path-color, #5856d6);
+      text-decoration: none;
+    }
+    .path-step-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--path-color, #5856d6);
+      opacity: 0.8;
+    }
+    .path-step-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--ink, #1c1c1e);
+    }
+    .path-step-summary {
+      font-size: 0.76rem;
+      opacity: 0.62;
+      line-height: 1.45;
+      flex: 1;
+    }
+    .path-step-meta {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+    .step-badge {
+      font-size: 0.66rem;
+      font-weight: 600;
+      padding: 0.12rem 0.45rem;
+      border-radius: 99px;
+      background: var(--surface, #f5f5f7);
+      color: var(--ink-sub, #6e6e73);
+      border: 1px solid var(--line, #d2d2d7);
+    }
+
+    /* Night theme card overrides */
+    [data-theme="night"] .path-step,
+    [data-site-theme="night"] .path-step {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.12);
+    }
+    [data-theme="night"] .path-step-title,
+    [data-site-theme="night"] .path-step-title { color: #f5f5f7; }
+    [data-theme="night"] .step-badge,
+    [data-site-theme="night"] .step-badge {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.65);
+    }
+
+    /* ── Loading state ─────────────────────────────── */
+    .path-loading {
+      text-align: center;
+      padding: 3rem;
+      opacity: 0.5;
+      font-size: 0.95rem;
+    }
+    .path-error {
+      text-align: center;
+      padding: 2rem;
+      color: #c0392b;
+      font-size: 0.9rem;
+    }
+
+    /* ── Divider between paths ─────────────────────── */
+    .path-divider {
+      height: 1px;
+      background: var(--line, #d2d2d7);
+      margin: 0 1.5rem 3rem;
+      opacity: 0.5;
+    }
+
+    .paths-main { padding-bottom: 4rem; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="steam-lessons.html">Lessons</a></li>
+          <li><a href="paths.html" aria-current="page">Paths</a></li>
+          <li><a href="showcase.html">Showcase</a></li>
+          <li><a href="applications.html">Apps</a></li>
+          <li><a href="video-library.html">Videos</a></li>
+          <li><a href="recipe-book.html">Library</a></li>
+          <li><a href="class-downloads.html">Downloads</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="paths-main">
+    <section class="paths-hero">
+      <p class="eyebrow">Cross-Disciplinary</p>
+      <h1>Learning Paths</h1>
+      <p>Nine curated arcs through the lesson library. Each path connects lessons across subjects into a coherent sequence — from opening questions to capstone understanding.</p>
+    </section>
+
+    <div id="paths-container">
+      <div class="path-loading">Loading paths…</div>
+    </div>
+  </main>
+
+  <script>
+    const PATHS = [
+      {
+        id: 'waves-sound-signals',
+        title: 'Waves, Sound & Signals',
+        icon: '〰️',
+        color: '#5856d6',
+        colorBg: 'rgba(88,86,214,0.1)',
+        colorBorder: 'rgba(88,86,214,0.22)',
+        description: 'How energy propagates through space and matter — from ripples on water to music to digital audio processing.',
+        badges: ['Physics · Music · CS', 'Grades 7–12'],
+        sequence: [
+          'point-wave',
+          'huygens-principle',
+          'physics-of-music',
+          'do-atoms-make-music',
+          'fourier-series',
+          'digital-signal-processing',
+        ],
+      },
+      {
+        id: 'measurement-scale',
+        title: 'Measurement & Scale',
+        icon: '📏',
+        color: '#34c759',
+        colorBg: 'rgba(52,199,89,0.1)',
+        colorBorder: 'rgba(52,199,89,0.22)',
+        description: 'From a ruler to the edge of the observable universe — the art and science of quantifying the world.',
+        badges: ['Math · Physics · Cosmology', 'Grades 5–12'],
+        sequence: [
+          'measuring-length',
+          'proportional-reasoning',
+          'pythagoras',
+          'pi',
+          'earth-circumference',
+          'speed-of-light',
+          'pale-blue-dot',
+        ],
+      },
+      {
+        id: 'matter-atoms-materials',
+        title: 'Matter, Atoms & Materials',
+        icon: '⚛️',
+        color: '#ff9f0a',
+        colorBg: 'rgba(255,159,10,0.1)',
+        colorBorder: 'rgba(255,159,10,0.22)',
+        description: 'Everything is made of atoms. From Feynman\'s foundational fact to the periodic table, bonding, thermodynamics, and quantum behavior.',
+        badges: ['Chemistry · Physics', 'Grades 8–12'],
+        sequence: [
+          'feynman-atoms',
+          'periodic-table',
+          'molecular-bonding-lab',
+          'catalyst',
+          'thermodynamics',
+          'entropy',
+          'world-quantum-day-2026',
+        ],
+      },
+      {
+        id: 'life-as-information',
+        title: 'Life as Information',
+        icon: '🧬',
+        color: '#30d158',
+        colorBg: 'rgba(48,209,88,0.1)',
+        colorBorder: 'rgba(48,209,88,0.22)',
+        description: 'DNA as code, proteins as programs, evolution as iteration. Biology understood as an information science.',
+        badges: ['Life Sciences · Chemistry', 'Grades 6–12'],
+        sequence: [
+          'types-of-cells',
+          'dna-heredity',
+          'amino-acids',
+          'crispr-synthetic-biology',
+          'axolotl-neoteny',
+          'kpg-extinction',
+        ],
+      },
+      {
+        id: 'earth-to-cosmos',
+        title: 'Earth to Cosmos',
+        icon: '🌍',
+        color: '#0a84ff',
+        colorBg: 'rgba(10,132,255,0.1)',
+        colorBorder: 'rgba(10,132,255,0.22)',
+        description: 'From seasons and stone cycles to the scale of the observable universe — a ladder from the ground to infinity.',
+        badges: ['Earth Science · Cosmology', 'Grades 5–12'],
+        sequence: [
+          'seasons-and-the-heavens',
+          'earth-circumference',
+          'constellations',
+          'heliocentrism',
+          'tycho-brahe',
+          'uraniborg',
+          'planetary-system',
+          'universe-expansion',
+          'pale-blue-dot',
+        ],
+      },
+      {
+        id: 'circuits-sensors-control',
+        title: 'Circuits, Sensors & Control',
+        icon: '⚡',
+        color: '#ff6b35',
+        colorBg: 'rgba(255,107,53,0.1)',
+        colorBorder: 'rgba(255,107,53,0.22)',
+        description: 'From voltage and current to electromagnetic induction, sensor modules, and feedback-controlled machines.',
+        badges: ['Engineering · Physics', 'Grades 7–12'],
+        sequence: [
+          'breadboard-basics',
+          'electronic-components',
+          'electronic-schematics',
+          'ohms-law',
+          'faraday-cage',
+          'faradays-law',
+          'pid-control',
+          'maglev-train',
+        ],
+      },
+      {
+        id: 'algorithms-ai-intelligence',
+        title: 'Algorithms, AI & Intelligence',
+        icon: '🤖',
+        color: '#bf5af2',
+        colorBg: 'rgba(191,90,242,0.1)',
+        colorBorder: 'rgba(191,90,242,0.22)',
+        description: 'From ancient logic and chess to the Turing Test, expert systems, and perceptrons — the arc of machine intelligence.',
+        badges: ['Computer Science · History', 'Grades 6–12'],
+        sequence: [
+          'ai-concepts-foundations',
+          'chess-origins-how-to-play',
+          'turing-test',
+          'ai-eliza',
+          'expert-system',
+          'minimax-1v1',
+          'chess-ai-core',
+          'perceptron-lab',
+        ],
+      },
+      {
+        id: 'design-perception-media',
+        title: 'Design, Perception & Media',
+        icon: '🎨',
+        color: '#ff375f',
+        colorBg: 'rgba(255,55,95,0.1)',
+        colorBorder: 'rgba(255,55,95,0.22)',
+        description: 'How we see, represent, and construct visual worlds — from color theory and optics to 3D design and extended reality.',
+        badges: ['Visual Design · Applied Physics', 'Grades 5–12'],
+        sequence: [
+          'color-theory-lab',
+          'dispersive-prism',
+          'optics',
+          'cad-camera-controls',
+          '3d-printing',
+          'vr-technology',
+          'xr-extended-reality',
+        ],
+      },
+      {
+        id: 'human-systems',
+        title: 'Human Systems, Markets & Civilization',
+        icon: '🏛️',
+        color: '#8e8e93',
+        colorBg: 'rgba(142,142,147,0.1)',
+        colorBorder: 'rgba(142,142,147,0.22)',
+        description: 'The systems humans build to organize, trade, govern, and understand each other — from ancient philosophy to modern algorithms.',
+        badges: ['Humanities · Economics · Media', 'Grades 7–12'],
+        sequence: [
+          'school-of-athens',
+          'the-ages',
+          'platos-allegory-cave',
+          'stock-exchange',
+          'tragedy-of-the-commons',
+          'social-media-algorithms',
+          'baloney-detection-kit',
+        ],
+      },
+    ];
+
+    async function loadLessons() {
+      const res = await fetch('data/lessons.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const map = {};
+      for (const l of data.lessons) map[l.id] = l;
+      return map;
+    }
+
+    function buildStepCard(step, lesson, pathColor) {
+      const a = document.createElement('a');
+      a.className = 'path-step';
+      a.href = lesson ? lesson.url : '#';
+
+      const num = document.createElement('span');
+      num.className = 'path-step-num';
+      num.textContent = `Step ${step}`;
+
+      const title = document.createElement('strong');
+      title.className = 'path-step-title';
+      title.textContent = lesson ? lesson.title : step;
+
+      const summary = document.createElement('p');
+      summary.className = 'path-step-summary';
+      summary.textContent = lesson
+        ? (lesson.summary.length > 90 ? lesson.summary.slice(0, 87) + '…' : lesson.summary)
+        : '';
+
+      const meta = document.createElement('div');
+      meta.className = 'path-step-meta';
+
+      if (lesson) {
+        const modBadge = document.createElement('span');
+        modBadge.className = 'step-badge';
+        modBadge.textContent = lesson.primaryModule;
+        meta.appendChild(modBadge);
+
+        if (lesson.gradeBand) {
+          const gradeBadge = document.createElement('span');
+          gradeBadge.className = 'step-badge';
+          gradeBadge.textContent = `Gr. ${lesson.gradeBand}`;
+          meta.appendChild(gradeBadge);
+        }
+      }
+
+      a.appendChild(num);
+      a.appendChild(title);
+      a.appendChild(summary);
+      a.appendChild(meta);
+      return a;
+    }
+
+    function buildConnector() {
+      const span = document.createElement('span');
+      span.className = 'path-connector';
+      span.setAttribute('aria-hidden', 'true');
+      span.textContent = '›';
+      return span;
+    }
+
+    function buildPathSection(path, lessonMap, isLast) {
+      const section = document.createElement('section');
+      section.className = 'path-section';
+      section.style.setProperty('--path-color', path.color);
+      section.style.setProperty('--path-color-bg', path.colorBg);
+      section.style.setProperty('--path-color-border', path.colorBorder);
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'path-header';
+
+      const iconEl = document.createElement('div');
+      iconEl.className = 'path-icon';
+      iconEl.setAttribute('aria-hidden', 'true');
+      iconEl.textContent = path.icon;
+
+      const metaEl = document.createElement('div');
+      metaEl.className = 'path-meta';
+
+      const titleEl = document.createElement('h2');
+      titleEl.className = 'path-title';
+      titleEl.textContent = path.title;
+
+      const descEl = document.createElement('p');
+      descEl.className = 'path-desc';
+      descEl.textContent = path.description;
+
+      const badgesEl = document.createElement('div');
+      badgesEl.className = 'path-badges';
+      for (const b of path.badges) {
+        const badge = document.createElement('span');
+        badge.className = 'path-badge';
+        badge.textContent = b;
+        badgesEl.appendChild(badge);
+      }
+
+      metaEl.appendChild(titleEl);
+      metaEl.appendChild(descEl);
+      metaEl.appendChild(badgesEl);
+      header.appendChild(iconEl);
+      header.appendChild(metaEl);
+
+      // Rail
+      const rail = document.createElement('div');
+      rail.className = 'path-rail';
+      rail.setAttribute('role', 'list');
+      rail.setAttribute('aria-label', `${path.title} lesson sequence`);
+
+      path.sequence.forEach((id, i) => {
+        const lesson = lessonMap[id] || null;
+        const card = buildStepCard(i + 1, lesson, path.color);
+        card.setAttribute('role', 'listitem');
+        rail.appendChild(card);
+        if (i < path.sequence.length - 1) {
+          rail.appendChild(buildConnector());
+        }
+      });
+
+      section.appendChild(header);
+      section.appendChild(rail);
+
+      if (!isLast) {
+        const divider = document.createElement('div');
+        divider.className = 'path-divider';
+        section.appendChild(divider);
+      }
+
+      return section;
+    }
+
+    (async function init() {
+      const container = document.getElementById('paths-container');
+      try {
+        const lessonMap = await loadLessons();
+        container.innerHTML = '';
+        PATHS.forEach((path, i) => {
+          container.appendChild(buildPathSection(path, lessonMap, i === PATHS.length - 1));
+        });
+      } catch (err) {
+        container.innerHTML = `<p class="path-error">Could not load lesson data. If running locally, start the dev server: <code>node serve-local.js</code></p>`;
+        console.error(err);
+      }
+    })();
+  </script>
+</body>
+</html>
