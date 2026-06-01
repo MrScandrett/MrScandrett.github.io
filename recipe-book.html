@@ -1472,6 +1472,68 @@
 
     /* Override lib-room-divider — not needed in progressive-disclosure layout */
     .lib-room-divider { display: none !important; }
+
+    /* ── Hero stat line ── */
+    .library-stat-row {
+      font-size: 0.8rem;
+      color: rgba(244, 233, 220, 0.55);
+      margin: 0.5rem 0 0;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Back to rooms button ── */
+    .lib-back-btn {
+      display: none;
+      align-items: center;
+      gap: 0.38rem;
+      padding: 0.38rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 226, 180, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(244, 233, 220, 0.8);
+      font: 700 0.74rem var(--font-sans);
+      cursor: pointer;
+      margin-top: 0.65rem;
+      transition: background 0.15s;
+      appearance: none;
+    }
+    .lib-back-btn.is-visible { display: inline-flex; }
+    .lib-back-btn:hover { background: rgba(255, 255, 255, 0.1); }
+
+    /* ── Keyboard shortcut badge ── */
+    .lib-search-kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.08rem 0.36rem;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 226, 180, 0.18);
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(244, 233, 220, 0.45);
+      font: 700 0.62rem var(--font-mono);
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    /* ── Empty search state ── */
+    .lib-empty-state {
+      display: none;
+      text-align: center;
+      padding: 2.4rem 1rem;
+      color: rgba(244, 233, 220, 0.45);
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+    .lib-empty-state.is-visible { display: block; }
+
+    /* ── Bigger reader close (WCAG 44px tap target) ── */
+    .library-reader-close {
+      min-width: 2.75rem !important;
+      min-height: 2.75rem !important;
+    }
+    .library-reader-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
   </style>
 </head>
 <body class="library-page">
@@ -1506,15 +1568,19 @@
       <p class="eyebrow">ClassroomOS</p>
       <h1 class="reveal">Library</h1>
       <p class="library-hero-lead">Where ideas become reality.</p>
+      <p class="library-stat-row reveal" style="--i:1" id="libStatRow"></p>
+      <button class="lib-back-btn" id="libBackBtn" type="button" aria-label="Return to all rooms">← All Rooms</button>
     </section>
 
     <!-- ══ Library Entry ════════════════════════ -->
     <section class="section lib-entry-section">
       <label class="lib-search-bar" for="librarySearch">
         <span class="lib-search-icon">⌕</span>
-        <input class="lib-search-input" id="librarySearch" type="search" placeholder="Search across all collections… (press /)" autocomplete="off" />
-        <span class="lib-search-stats" id="librarySearchStats">69 titles</span>
+        <input class="lib-search-input" id="librarySearch" type="search" placeholder="Search across all collections…" autocomplete="off" />
+        <span class="lib-search-stats" id="librarySearchStats"></span>
+        <kbd class="lib-search-kbd" aria-label="Press slash to focus search">/</kbd>
       </label>
+      <p class="lib-empty-state" id="libEmptyState">No titles matched that search.<br>Try a different keyword or clear to browse by room.</p>
 
       <div class="lib-entry-grid" id="libEntryGrid">
         <button class="lib-entry-card" type="button" data-room="classics">
@@ -2771,6 +2837,10 @@
       /* ── Book interactions ─────────────────────── */
       var allBooks = Array.from(document.querySelectorAll('.book'));
       var popupActionSelector = '.book-popup a, .book-popup button';
+      var backBtn      = document.getElementById('libBackBtn');
+      var statRow      = document.getElementById('libStatRow');
+      var emptyState   = document.getElementById('libEmptyState');
+
       var LIBRARY_DATA = allBooks.map(function (book, index) {
         var popup = book.querySelector('.book-popup');
         var title = (book.querySelector('.book-popup-title') || book.querySelector('.book-spine-label'));
@@ -2791,13 +2861,23 @@
         };
       });
 
+      /* ── Hero stat line ── */
+      if (statRow) {
+        var recipeCount = document.querySelectorAll('[data-rtags]').length;
+        statRow.textContent = LIBRARY_DATA.length + ' titles · 4 rooms · ' + recipeCount + ' project recipes';
+      }
+
+      /* ── Seed search stat ── */
+      if (searchStats) searchStats.textContent = LIBRARY_DATA.length + ' titles';
+
       function updateSearchStats(visibleCount, totalCount, query) {
         if (!searchStats) return;
         if (query) {
           searchStats.textContent = visibleCount + ' / ' + totalCount + ' matches';
         } else {
-          searchStats.textContent = totalCount + ' visible';
+          searchStats.textContent = totalCount + ' titles';
         }
+        if (emptyState) emptyState.classList.toggle('is-visible', !!query && visibleCount === 0);
       }
 
       function applyArchiveSearch(query) {
@@ -2939,6 +3019,7 @@
         libRooms.forEach(function (s) { s.hidden = s.id !== 'section-' + roomId; });
         extraSections.forEach(function (s) { s.hidden = s.dataset.roomExtra !== roomId; });
         entryCardEls.forEach(function (c) { c.classList.toggle('is-active', c.dataset.room === roomId); });
+        if (backBtn) backBtn.classList.add('is-visible');
         var target = document.getElementById('section-' + roomId);
         if (target) setTimeout(function () { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
       }
@@ -2949,8 +3030,11 @@
         libRooms.forEach(function (s) { s.hidden = true; });
         extraSections.forEach(function (s) { s.hidden = true; });
         entryCardEls.forEach(function (c) { c.classList.remove('is-active'); });
+        if (backBtn) backBtn.classList.remove('is-visible');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
+
+      if (backBtn) backBtn.addEventListener('click', closeAllRooms);
 
       entryCardEls.forEach(function (card) {
         card.addEventListener('click', function () {
