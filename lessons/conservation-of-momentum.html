@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Conservation of Momentum · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson — Conservation of Momentum: explore p=mv, Newton's Third Law, elastic and inelastic collisions, impulse, and relativistic momentum with interactive simulations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --m-bg: #080b10;
+      --m-panel: rgba(13,17,28,0.84);
+      --m-line: rgba(200,212,238,0.13);
+      --m-line-s: rgba(200,212,238,0.22);
+      --m-text: #e6ecf8;
+      --m-muted: rgba(230,236,248,0.68);
+      --m-dim: rgba(230,236,248,0.44);
+      --m-cyan: #22d3ee;
+      --m-orange: #f97316;
+      --m-green: #22c55e;
+      --m-rose: #f43f5e;
+      --m-violet: #a78bfa;
+      --m-radius: 8px;
+      --m-shadow: 0 24px 64px rgba(0,0,0,0.32);
+    }
+    html { scroll-behavior: smooth; }
+    body { margin:0; font-family:var(--font-sans); color:var(--m-text);
+      background: linear-gradient(rgba(255,255,255,0.024) 1px,transparent 1px), linear-gradient(90deg,rgba(255,255,255,0.017) 1px,transparent 1px), linear-gradient(180deg,#060910 0%,#090d1a 45%,#080b10 100%);
+      background-size: 34px 34px,34px 34px,auto; min-height:100vh; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none;
+      background: linear-gradient(114deg,rgba(34,211,238,0.09),transparent 32%), linear-gradient(248deg,rgba(249,115,22,0.07),transparent 38%);
+      mask-image: linear-gradient(180deg,#000,transparent 78%); }
+    .m-shell { width:min(1280px,calc(100% - 2rem)); margin:0 auto; padding:1rem 0 4rem; display:grid; gap:1rem; }
+    .m-topbar { position:sticky; top:0; z-index:30; backdrop-filter:blur(18px) saturate(140%); background:rgba(8,11,16,0.88); border-bottom:1px solid var(--m-line); }
+    .m-topbar-inner { width:min(1280px,calc(100% - 2rem)); min-height:54px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .m-topbar a { color:#c0d2f4; text-decoration:none; font-size:0.82rem; font-weight:700; }
+    .m-topbar a:hover { color:#fff; }
+    .m-brand { color:#f0f4ff; font-size:0.92rem; font-weight:800; letter-spacing:-0.02em; white-space:nowrap; }
+    .m-nav { display:flex; align-items:center; gap:0.2rem; overflow-x:auto; scrollbar-width:none; }
+    .m-nav::-webkit-scrollbar { display:none; }
+    .m-nav a { display:inline-flex; align-items:center; min-height:1.85rem; padding:0 0.55rem; border-radius:var(--m-radius); color:var(--m-dim); white-space:nowrap; }
+    .m-nav a:hover { color:var(--m-text); background:rgba(255,255,255,0.06); }
+    .m-pills { display:flex; gap:0.4rem; }
+    .m-pill { display:inline-flex; align-items:center; height:1.7rem; padding:0 0.62rem; border-radius:var(--m-radius); font-size:0.69rem; font-weight:800; letter-spacing:0.07em; text-transform:uppercase; border:1px solid rgba(34,211,238,0.36); background:rgba(34,211,238,0.12); color:#a5f3fc; }
+    .m-pill.orange { border-color:rgba(249,115,22,0.36); background:rgba(249,115,22,0.1); color:#fed7aa; }
+    @media (max-width:960px) { .m-brand { display:none; } }
+    @media (max-width:740px) { .m-nav { display:none; } }
+    .m-hero { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(280px,0.7fr); gap:1rem; align-items:stretch; min-height:min(520px,calc(100vh - 88px)); }
+    @media (max-width:700px) { .m-hero { grid-template-columns:1fr; } }
+    .m-hero-copy { border-radius:var(--m-radius); border:1px solid var(--m-line-s); background:linear-gradient(120deg,rgba(34,211,238,0.09),transparent 44%),linear-gradient(180deg,rgba(15,20,36,0.93),rgba(9,13,24,0.93)); box-shadow:var(--m-shadow); padding:clamp(1.2rem,3vw,2.2rem); display:flex; flex-direction:column; justify-content:center; }
+    .m-eyebrow { font-size:0.71rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--m-cyan); margin:0 0 0.65rem; }
+    .m-hero-copy h1 { margin:0 0 0.65rem; max-width:14ch; font-size:clamp(2rem,6vw,4.8rem); line-height:0.94; letter-spacing:-0.055em; color:#fff; }
+    .m-hero-copy h1 em { font-style:normal; color:var(--m-orange); }
+    .m-lede { max-width:72ch; color:var(--m-muted); font-size:clamp(0.93rem,1.4vw,1.04rem); line-height:1.72; margin:0 0 1rem; }
+    .m-meta { display:flex; flex-wrap:wrap; gap:0.38rem; }
+    .m-quote-card { border-radius:var(--m-radius); border:1px solid rgba(249,115,22,0.24); background:linear-gradient(180deg,rgba(249,115,22,0.09),transparent 56%),rgba(13,17,28,0.82); padding:clamp(1.1rem,2.2vw,1.75rem); display:flex; flex-direction:column; justify-content:center; gap:0.85rem; box-shadow:var(--m-shadow); }
+    .m-quote-mark { font-size:2.8rem; line-height:0.8; color:var(--m-orange); opacity:0.6; }
+    .m-quote-text { font-size:clamp(0.9rem,1.9vw,1.08rem); font-style:italic; line-height:1.62; color:#fde8d8; margin:0; }
+    .m-quote-attr { font-size:0.75rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--m-orange); opacity:0.9; }
+    .m-card { border-radius:var(--m-radius); border:1px solid var(--m-line); background:var(--m-panel); backdrop-filter:blur(10px); padding:clamp(1.1rem,2vw,1.55rem); scroll-margin-top:72px; }
+    .m-cyan-a { border-left:4px solid var(--m-cyan); }
+    .m-orange-a { border-left:4px solid var(--m-orange); }
+    .m-green-a { border-left:4px solid var(--m-green); }
+    .m-rose-a { border-left:4px solid var(--m-rose); }
+    .m-violet-a { border-left:4px solid var(--m-violet); }
+    .m-kicker { font-size:0.69rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; margin:0 0 0.4rem; }
+    .ck { color:var(--m-cyan); } .ok { color:var(--m-orange); } .gk { color:var(--m-green); } .rk { color:var(--m-rose); } .vk { color:var(--m-violet); }
+    .m-card h2 { margin:0 0 0.7rem; font-size:clamp(1.18rem,2.3vw,1.6rem); letter-spacing:-0.03em; color:#fff; }
+    .m-card h3 { margin:1rem 0 0.32rem; font-size:0.99rem; letter-spacing:-0.02em; color:#dce8f6; }
+    .m-card p,.m-card li { color:var(--m-muted); font-size:0.9rem; line-height:1.72; margin:0 0 0.62rem; }
+    .m-card p:last-child { margin-bottom:0; }
+    .m-card ul { padding-left:1.35rem; margin:0.35rem 0 0.65rem; }
+    .m-two { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    @media (max-width:600px) { .m-two { grid-template-columns:1fr; } }
+    .m-box { border-radius:var(--m-radius); padding:0.95rem 1.15rem; margin:0.85rem 0; }
+    .m-box.cyan { background:rgba(34,211,238,0.09); border:1px solid rgba(34,211,238,0.26); }
+    .m-box.orange { background:rgba(249,115,22,0.09); border:1px solid rgba(249,115,22,0.26); }
+    .m-box.green { background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.26); }
+    .m-box.rose { background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.26); }
+    .m-box strong { display:block; font-size:0.74rem; font-weight:800; letter-spacing:0.09em; text-transform:uppercase; margin-bottom:0.32rem; }
+    .m-box.cyan strong { color:var(--m-cyan); } .m-box.orange strong { color:var(--m-orange); } .m-box.green strong { color:var(--m-green); } .m-box.rose strong { color:var(--m-rose); }
+    .m-box p { margin:0; font-size:0.87rem; color:rgba(230,236,248,0.8); line-height:1.65; }
+    .m-eq { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:clamp(0.95rem,2.2vw,1.35rem); color:var(--m-cyan); text-align:center; padding:0.85rem; letter-spacing:0.04em; border-radius:var(--m-radius); border:1px solid rgba(34,211,238,0.22); background:rgba(34,211,238,0.07); margin:0.75rem 0; }
+    .m-sim { border-radius:var(--m-radius); border:1px solid var(--m-line); overflow:hidden; background:#020710; box-shadow:0 16px 48px rgba(0,0,0,0.28); scroll-margin-top:72px; }
+    .m-sim-head { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.55rem; padding:0.95rem 1.15rem 0.7rem; background:linear-gradient(180deg,rgba(255,255,255,0.038),transparent); }
+    .m-sim-hl { display:flex; flex-direction:column; gap:0.18rem; }
+    .m-sim-title { font-size:0.77rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; }
+    .m-sim-sub { font-size:0.77rem; color:rgba(210,222,248,0.46); }
+    .m-sim canvas { display:block; width:100%; background:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px),#020710; background-size:24px 24px; }
+    .m-sim-controls { display:flex; flex-wrap:wrap; gap:0.48rem 0.85rem; padding:0.75rem 1.15rem; background:rgba(0,0,0,0.28); border-top:1px solid rgba(255,255,255,0.06); }
+    .m-ctrl { display:flex; flex-direction:column; gap:0.2rem; min-width:110px; }
+    .m-ctrl label { font-size:0.65rem; font-weight:800; letter-spacing:0.09em; text-transform:uppercase; color:rgba(210,222,248,0.46); }
+    .m-ctrl input[type="range"] { accent-color:var(--m-cyan); cursor:pointer; width:100%; }
+    .m-ctrl select { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:var(--m-radius); color:#e0eaf8; padding:0.26rem 0.48rem; font-size:0.8rem; cursor:pointer; }
+    .m-ctrl select option { background:#111827; }
+    .m-ctrl-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.72rem; font-weight:700; color:var(--m-cyan); }
+    .m-readout { display:flex; flex-wrap:wrap; gap:0.42rem; padding:0.62rem 1.15rem; }
+    .m-chip { display:flex; flex-direction:column; gap:0.1rem; border-radius:var(--m-radius); padding:0.42rem 0.62rem; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.028); }
+    .m-chip-label { font-size:0.61rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(210,222,248,0.38); }
+    .m-chip-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.83rem; font-weight:700; color:#dce8f6; }
+    .m-btn { padding:0.44rem 0.88rem; border-radius:var(--m-radius); border:1px solid rgba(34,211,238,0.42); background:rgba(34,211,238,0.13); color:#a5f3fc; font-size:0.78rem; font-weight:700; cursor:pointer; transition:background 0.14s; }
+    .m-btn:hover { background:rgba(34,211,238,0.22); }
+    .m-footer { text-align:center; padding:2rem 1rem; color:var(--m-dim); font-size:0.78rem; border-top:1px solid var(--m-line); background:rgba(8,11,16,0.66); }
+    .m-footer a { color:var(--m-cyan); text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<div class="m-topbar">
+  <div class="m-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="m-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="m-nav">
+      <a href="#momentum">Momentum</a>
+      <a href="#newton3">Newton's 3rd Law</a>
+      <a href="#collisions">Collisions</a>
+      <a href="#impulse">Impulse</a>
+      <a href="#relativity">Relativistic</a>
+    </nav>
+    <div class="m-pills">
+      <span class="m-pill">Physics</span>
+      <span class="m-pill orange">Physics</span>
+    </div>
+  </div>
+</div>
+
+<div class="m-shell">
+
+  <div class="m-hero">
+    <div class="m-hero-copy">
+      <p class="m-eyebrow">Classical Mechanics · Momentum &amp; Collisions</p>
+      <h1>Momentum is Always <em>Conserved</em></h1>
+      <p class="m-lede">
+        Every explosion, collision, and rocket burn obeys a single principle: the total momentum of an
+        isolated system never changes. This conservation law — more fundamental than Newton's Laws —
+        is true even in quantum mechanics and relativity.
+      </p>
+      <div class="m-meta">
+        <span class="m-pill">p = mv · Impulse · Collisions</span>
+        <span class="m-pill orange">2 Simulations</span>
+        <span class="m-pill">Grades 7–12</span>
+      </div>
+    </div>
+    <div class="m-quote-card">
+      <div class="m-quote-mark">"</div>
+      <p class="m-quote-text">
+        Conservation of momentum is one of the most fundamental laws in all of physics.
+        It is more fundamental than Newton's Laws — it holds even in quantum mechanics, even in
+        special relativity, even in situations Newton never imagined. The universe simply will not
+        allow total momentum to change without an external force.
+      </p>
+      <div class="m-quote-attr">— Richard Feynman</div>
+    </div>
+  </div>
+
+  <!-- Section 1: Momentum -->
+  <div class="m-card m-cyan-a" id="momentum">
+    <p class="m-kicker ck">Idea 1 · What is Momentum?</p>
+    <h2>The "Quantity of Motion" — Mass Times Velocity</h2>
+    <div class="m-two">
+      <div>
+        <div class="m-eq">p = mv</div>
+        <p>
+          Momentum (<strong>p</strong>) is a vector — it has both magnitude and direction. A massive,
+          slow object can have the same momentum as a light, fast one. That's why a slow freight train
+          is harder to stop than a fast bicycle, even if the bicycle is moving quicker.
+        </p>
+        <ul>
+          <li>A 70 kg person at 1.4 m/s: p = 98 kg·m/s</li>
+          <li>A 0.145 kg baseball at 45 m/s: p = 6.5 kg·m/s</li>
+          <li>A 100,000 kg freight train at 30 m/s: p = 3,000,000 kg·m/s</li>
+        </ul>
+        <div class="m-box cyan">
+          <strong>Newton's Second Law — Momentum Version</strong>
+          <p>F = ma is actually a special case. The full law is: <strong>F = dp/dt</strong> — force equals
+          the rate of change of momentum. This version works even when mass changes (like a rocket burning fuel).</p>
+        </div>
+      </div>
+      <div>
+        <h3>Conservation Law</h3>
+        <p>In an <strong>isolated system</strong> (no external forces), total momentum is constant:</p>
+        <div class="m-eq">p_total = m₁v₁ + m₂v₂ + ... = constant</div>
+        <p>
+          "Isolated" means no outside forces act. For collisions that last milliseconds, internal forces
+          are enormous compared to gravity or friction, so we treat them as isolated.
+        </p>
+        <div class="m-box orange">
+          <strong>Why is Momentum Conserved?</strong>
+          <p>By Noether's theorem: conservation of momentum follows from the fact that the laws of
+          physics are the same at every point in space (translation symmetry). If the universe looks
+          the same here as 1 meter away, momentum must be conserved.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Newton's 3rd Law -->
+  <div class="m-card m-orange-a" id="newton3">
+    <p class="m-kicker ok">Idea 2 · Newton's Third Law → Momentum Conservation</p>
+    <h2>Action and Reaction: The Forces That Cancel Each Other Out</h2>
+    <div class="m-two">
+      <div>
+        <p>
+          Newton's Third Law says: for every action force, there is an equal and opposite reaction force.
+          These forces act on <em>different objects</em> — they never cancel each other on the same object.
+        </p>
+        <p>
+          But when you apply this to two objects interacting: the force on object 1 from object 2 is
+          equal and opposite to the force on object 2 from object 1. Since Δp = FΔt:
+        </p>
+        <div class="m-eq">Δp₁ = −Δp₂ → total Δp = 0</div>
+      </div>
+      <div>
+        <h3>Everyday Examples</h3>
+        <ul>
+          <li><strong>Rocket propulsion:</strong> exhaust gases go backward → rocket goes forward</li>
+          <li><strong>Gun recoil:</strong> bullet goes forward → gun kicks backward</li>
+          <li><strong>Rowing:</strong> paddle pushes water back → boat moves forward</li>
+          <li><strong>Walking:</strong> foot pushes Earth backward → Earth pushes you forward</li>
+          <li><strong>Explosion:</strong> fragments fly in all directions — total momentum = 0 (started at rest)</li>
+        </ul>
+        <div class="m-box green">
+          <strong>Center of Mass</strong>
+          <p>The center of mass of an isolated system moves at constant velocity — forever.
+          No internal forces (collisions, explosions) can change it. Only external forces shift the center of mass trajectory.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 1: Collision Lab -->
+  <div class="m-sim" id="collisions">
+    <div class="m-sim-head">
+      <div class="m-sim-hl">
+        <span class="m-sim-title ck">💥 Collision Lab</span>
+        <span class="m-sim-sub">Elastic: KE conserved. Inelastic: KE lost. Perfectly inelastic: they stick together.</span>
+      </div>
+      <button class="m-btn" id="collReset">Reset</button>
+    </div>
+    <canvas id="collCanvas" height="260"></canvas>
+    <div class="m-sim-controls">
+      <div class="m-ctrl">
+        <label>Mass 1 (kg) <span class="m-ctrl-val" id="m1Label">2.0</span></label>
+        <input type="range" id="m1Sl" min="0.5" max="6" step="0.5" value="2" />
+      </div>
+      <div class="m-ctrl">
+        <label>Velocity 1 (m/s) <span class="m-ctrl-val" id="v1Label">+5.0</span></label>
+        <input type="range" id="v1Sl" min="-10" max="10" value="5" />
+      </div>
+      <div class="m-ctrl">
+        <label>Mass 2 (kg) <span class="m-ctrl-val" id="m2Label">2.0</span></label>
+        <input type="range" id="m2Sl" min="0.5" max="6" step="0.5" value="2" />
+      </div>
+      <div class="m-ctrl">
+        <label>Velocity 2 (m/s) <span class="m-ctrl-val" id="v2Label">-3.0</span></label>
+        <input type="range" id="v2Sl" min="-10" max="10" value="-3" />
+      </div>
+      <div class="m-ctrl">
+        <label>Collision Type</label>
+        <select id="collType">
+          <option value="elastic">Elastic (KE conserved)</option>
+          <option value="inelastic">Inelastic (e = 0.5)</option>
+          <option value="perfect">Perfectly Inelastic (stick)</option>
+        </select>
+      </div>
+    </div>
+    <div class="m-readout">
+      <span class="m-chip"><span class="m-chip-label">p_before</span><span class="m-chip-val" id="pBeforeVal">—</span></span>
+      <span class="m-chip"><span class="m-chip-label">p_after</span><span class="m-chip-val" id="pAfterVal">—</span></span>
+      <span class="m-chip"><span class="m-chip-label">KE_before</span><span class="m-chip-val" id="keBefore">—</span></span>
+      <span class="m-chip"><span class="m-chip-label">KE_after</span><span class="m-chip-val" id="keAfter">—</span></span>
+    </div>
+  </div>
+
+  <!-- Section 3: Impulse -->
+  <div class="m-card m-green-a" id="impulse">
+    <p class="m-kicker gk">Idea 3 · Impulse — Force Over Time</p>
+    <h2>Impulse = Change in Momentum</h2>
+    <div class="m-two">
+      <div>
+        <div class="m-eq">J = FΔt = Δp = mΔv</div>
+        <p>
+          Impulse is force multiplied by the time it acts. It equals the change in momentum.
+          This is why <strong>extending the contact time reduces the peak force</strong> — the same
+          impulse (same Δp) spread over more time means less force each instant.
+        </p>
+        <ul>
+          <li><strong>Airbags:</strong> extend collision time → smaller peak force on occupant</li>
+          <li><strong>Bending knees when landing:</strong> Δt increases → peak force drops</li>
+          <li><strong>Boxing gloves:</strong> pad extends contact → same Δp, less damage per moment</li>
+          <li><strong>Catching a ball:</strong> pull hand back → longer stop time → gentler catch</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Area Under the Force-Time Graph</h3>
+        <p>
+          On a force vs. time graph, the impulse is the <strong>area under the curve</strong>. A short,
+          sharp spike of force and a long, gentle push can deliver the same impulse (same area)
+          but completely different maximum forces.
+        </p>
+        <div class="m-box green">
+          <strong>Impulse in Sports</strong>
+          <p>A baseball bat swung faster stays in contact with the ball for a slightly shorter time —
+          but the force is so much larger that the impulse (and therefore the ball's change in momentum)
+          is greater. Follow-through extends contact time, increasing total impulse.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Relativistic Momentum -->
+  <div class="m-card m-violet-a" id="relativity">
+    <p class="m-kicker vk">Idea 4 · Relativistic Momentum</p>
+    <h2>At Very High Speeds, Mass Increases</h2>
+    <div class="m-two">
+      <div>
+        <div class="m-eq">p = γmv &nbsp;&nbsp; γ = 1/√(1−v²/c²)</div>
+        <p>
+          Newtonian momentum p = mv breaks down near the speed of light. Einstein's relativity
+          requires a correction factor γ (gamma). As v → c, γ → ∞ — meaning it takes infinite force
+          to accelerate an object to the speed of light.
+        </p>
+        <p>
+          At everyday speeds, γ ≈ 1, so p ≈ mv — classical momentum is fine. But particle accelerators
+          push protons to 99.9999% of c, where γ ≈ 7,000 and the relativistic correction is enormous.
+        </p>
+      </div>
+      <div>
+        <h3>Relativistic KE and E = mc²</h3>
+        <div class="m-eq">E² = (pc)² + (mc²)²</div>
+        <p>
+          The full energy-momentum relation. When p = 0 (object at rest), E = mc² — the famous rest energy.
+          When m = 0 (a photon), E = pc — light carries momentum even with zero mass.
+        </p>
+        <div class="m-box rose">
+          <strong>Photon Momentum</strong>
+          <p>Even though photons have zero rest mass, they carry momentum p = E/c = hf/c
+          (where h is Planck's constant and f is frequency). Solar sails use this — sunlight
+          pushes on a large reflective sail to propel a spacecraft without fuel.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="m-footer site-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">All Lessons</a> ·
+  Classical Mechanics · Momentum
+</footer>
+
+<script>
+/* ── SIM 1: Collision Lab ────────────────────────── */
+(function () {
+  const cv = document.getElementById('collCanvas');
+  const ctx = cv.getContext('2d');
+  const ids = { m1:'m1Sl', v1:'v1Sl', m2:'m2Sl', v2:'v2Sl' };
+  const lbl = { m1:'m1Label', v1:'v1Label', m2:'m2Label', v2:'v2Label' };
+
+  let state = null, animFrame = null;
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 260; }
+  resize(); window.addEventListener('resize', resize);
+
+  function getParams() {
+    return {
+      m1: +document.getElementById('m1Sl').value,
+      v1: +document.getElementById('v1Sl').value,
+      m2: +document.getElementById('m2Sl').value,
+      v2: +document.getElementById('v2Sl').value,
+      type: document.getElementById('collType').value
+    };
+  }
+
+  function updateLabels() {
+    const p = getParams();
+    document.getElementById('m1Label').textContent = p.m1.toFixed(1);
+    document.getElementById('v1Label').textContent = (p.v1 >= 0 ? '+' : '') + p.v1.toFixed(1);
+    document.getElementById('m2Label').textContent = p.m2.toFixed(1);
+    document.getElementById('v2Label').textContent = (p.v2 >= 0 ? '+' : '') + p.v2.toFixed(1);
+  }
+
+  Object.values(ids).forEach(id => { document.getElementById(id).oninput = updateLabels; });
+  document.getElementById('collType').oninput = updateLabels;
+  updateLabels();
+
+  function resetSim() {
+    const p = getParams();
+    const W = cv.width, H = cv.height;
+    const r1 = 12 + p.m1 * 4, r2 = 12 + p.m2 * 4;
+    const pBefore = p.m1 * p.v1 + p.m2 * p.v2;
+    const keBefore = 0.5 * p.m1 * p.v1 * p.v1 + 0.5 * p.m2 * p.v2 * p.v2;
+    document.getElementById('pBeforeVal').textContent = pBefore.toFixed(2) + ' kg·m/s';
+    document.getElementById('keBefore').textContent = keBefore.toFixed(2) + ' J';
+    document.getElementById('pAfterVal').textContent = '—';
+    document.getElementById('keAfter').textContent = '—';
+
+    // Scale: 1 m = 30 px
+    const scale = 30;
+    state = {
+      bodies: [
+        { x: W * 0.25, v: p.v1 * scale, m: p.m1, r: r1, color: '#22d3ee', collided: false },
+        { x: W * 0.72, v: p.v2 * scale, m: p.m2, r: r2, color: '#f97316', collided: false }
+      ],
+      collided: false, type: p.type, pBefore, keBefore, scale, W, H
+    };
+  }
+
+  document.getElementById('collReset').onclick = resetSim;
+  resetSim();
+
+  function collide(s) {
+    const [a, b] = s.bodies;
+    const m1 = a.m, m2 = b.m, v1 = a.v / s.scale, v2 = b.v / s.scale;
+    let av1, av2;
+    if (s.type === 'elastic') {
+      av1 = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
+      av2 = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2);
+    } else if (s.type === 'perfect') {
+      const vf = (m1 * v1 + m2 * v2) / (m1 + m2);
+      av1 = vf; av2 = vf;
+    } else {
+      const e = 0.5;
+      av1 = (m1 * v1 + m2 * v2 + m2 * e * (v2 - v1)) / (m1 + m2);
+      av2 = (m1 * v1 + m2 * v2 + m1 * e * (v1 - v2)) / (m1 + m2);
+    }
+    a.v = av1 * s.scale; b.v = av2 * s.scale;
+    const pAfter = m1 * av1 + m2 * av2;
+    const keAfter = 0.5 * m1 * av1 * av1 + 0.5 * m2 * av2 * av2;
+    document.getElementById('pAfterVal').textContent = pAfter.toFixed(2) + ' kg·m/s';
+    document.getElementById('keAfter').textContent = keAfter.toFixed(2) + ' J';
+  }
+
+  function draw() {
+    if (!state) { requestAnimationFrame(draw); return; }
+    const W = cv.width, H = cv.height, s = state;
+    ctx.clearRect(0, 0, W, H);
+
+    // Ground
+    ctx.fillStyle = 'rgba(34,211,238,0.08)'; ctx.fillRect(0, H - 20, W, 20);
+    ctx.strokeStyle = 'rgba(34,211,238,0.4)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, H - 20); ctx.lineTo(W, H - 20); ctx.stroke();
+
+    const cy = H / 2;
+
+    s.bodies.forEach(b => {
+      b.x += b.v * 0.016;
+      if (b.x - b.r < 0) { b.x = b.r; b.v = Math.abs(b.v); }
+      if (b.x + b.r > W) { b.x = W - b.r; b.v = -Math.abs(b.v); }
+    });
+
+    const [a, b] = s.bodies;
+    if (!s.collided && Math.abs(a.x - b.x) < a.r + b.r) {
+      s.collided = true;
+      collide(s);
+    }
+
+    // Momentum arrows
+    [a, b].forEach(body => {
+      const arrowLen = body.v * 0.22;
+      ctx.strokeStyle = body.color + 'aa'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(body.x, cy - body.r - 14); ctx.lineTo(body.x + arrowLen, cy - body.r - 14); ctx.stroke();
+      ctx.fillStyle = body.color + 'aa'; ctx.font = '9px Inter,sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('v=' + (body.v / state.scale).toFixed(1), body.x, cy - body.r - 22);
+      ctx.textAlign = 'left';
+    });
+
+    s.bodies.forEach(body => {
+      const grd = ctx.createRadialGradient(body.x - body.r * 0.3, cy - body.r * 0.3, 2, body.x, cy, body.r);
+      grd.addColorStop(0, '#fff'); grd.addColorStop(0.5, body.color); grd.addColorStop(1, body.color + '55');
+      ctx.beginPath(); ctx.arc(body.x, cy, body.r, 0, Math.PI * 2);
+      ctx.fillStyle = grd; ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Inter,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(body.m + 'kg', body.x, cy); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

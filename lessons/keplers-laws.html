@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kepler's Laws of Planetary Motion · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson — Kepler's Laws: explore the three laws of planetary motion through elliptical orbit simulations, equal-area sweeps, and the T²∝a³ period law." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --k-bg: #04060e;
+      --k-panel: rgba(8,12,24,0.84);
+      --k-line: rgba(190,205,235,0.13);
+      --k-line-s: rgba(190,205,235,0.22);
+      --k-text: #e2ebf8;
+      --k-muted: rgba(226,235,248,0.68);
+      --k-dim: rgba(226,235,248,0.44);
+      --k-gold: #f4c430;
+      --k-blue: #60a5fa;
+      --k-green: #34d399;
+      --k-rose: #f87171;
+      --k-violet: #c4b5fd;
+      --k-radius: 8px;
+      --k-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    }
+    html { scroll-behavior: smooth; }
+    body { margin:0; font-family:var(--font-sans); color:var(--k-text);
+      background: linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px), linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px), linear-gradient(180deg,#03050d 0%,#060a18 48%,#04060e 100%);
+      background-size: 32px 32px,32px 32px,auto; min-height:100vh; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none;
+      background: linear-gradient(108deg,rgba(244,196,48,0.09),transparent 30%), linear-gradient(252deg,rgba(96,165,250,0.07),transparent 36%);
+      mask-image: linear-gradient(180deg,#000,transparent 76%); }
+    .k-shell { width:min(1280px,calc(100% - 2rem)); margin:0 auto; padding:1rem 0 4rem; display:grid; gap:1rem; }
+    .k-topbar { position:sticky; top:0; z-index:30; backdrop-filter:blur(18px) saturate(140%); background:rgba(4,6,14,0.88); border-bottom:1px solid var(--k-line); }
+    .k-topbar-inner { width:min(1280px,calc(100% - 2rem)); min-height:54px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .k-topbar a { color:#b8ccf0; text-decoration:none; font-size:0.82rem; font-weight:700; }
+    .k-topbar a:hover { color:#fff; }
+    .k-brand { color:#f0f4ff; font-size:0.92rem; font-weight:800; letter-spacing:-0.02em; white-space:nowrap; }
+    .k-nav { display:flex; align-items:center; gap:0.2rem; overflow-x:auto; scrollbar-width:none; }
+    .k-nav::-webkit-scrollbar { display:none; }
+    .k-nav a { display:inline-flex; align-items:center; min-height:1.85rem; padding:0 0.55rem; border-radius:var(--k-radius); color:var(--k-dim); white-space:nowrap; }
+    .k-nav a:hover { color:var(--k-text); background:rgba(255,255,255,0.06); }
+    .k-pills { display:flex; gap:0.4rem; }
+    .k-pill { display:inline-flex; align-items:center; height:1.7rem; padding:0 0.62rem; border-radius:var(--k-radius); font-size:0.69rem; font-weight:800; letter-spacing:0.07em; text-transform:uppercase; border:1px solid rgba(244,196,48,0.36); background:rgba(244,196,48,0.12); color:#fde68a; }
+    .k-pill.blue { border-color:rgba(96,165,250,0.36); background:rgba(96,165,250,0.1); color:#bfdbfe; }
+    @media (max-width:960px) { .k-brand { display:none; } }
+    @media (max-width:740px) { .k-nav { display:none; } }
+    .k-hero { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(280px,0.7fr); gap:1rem; align-items:stretch; min-height:min(520px,calc(100vh - 88px)); }
+    @media (max-width:700px) { .k-hero { grid-template-columns:1fr; } }
+    .k-hero-copy { border-radius:var(--k-radius); border:1px solid var(--k-line-s); background:linear-gradient(120deg,rgba(244,196,48,0.09),transparent 44%),linear-gradient(180deg,rgba(12,16,30,0.93),rgba(6,9,20,0.93)); box-shadow:var(--k-shadow); padding:clamp(1.2rem,3vw,2.2rem); display:flex; flex-direction:column; justify-content:center; }
+    .k-eyebrow { font-size:0.71rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--k-gold); margin:0 0 0.65rem; }
+    .k-hero-copy h1 { margin:0 0 0.65rem; max-width:14ch; font-size:clamp(2rem,6vw,4.8rem); line-height:0.93; letter-spacing:-0.055em; color:#fff; }
+    .k-hero-copy h1 em { font-style:normal; color:var(--k-gold); }
+    .k-lede { max-width:72ch; color:var(--k-muted); font-size:clamp(0.93rem,1.4vw,1.04rem); line-height:1.72; margin:0 0 1rem; }
+    .k-meta { display:flex; flex-wrap:wrap; gap:0.38rem; }
+    .k-quote-card { border-radius:var(--k-radius); border:1px solid rgba(244,196,48,0.26); background:linear-gradient(180deg,rgba(244,196,48,0.1),transparent 56%),rgba(8,12,24,0.82); padding:clamp(1.1rem,2.2vw,1.75rem); display:flex; flex-direction:column; justify-content:center; gap:0.85rem; box-shadow:var(--k-shadow); }
+    .k-quote-mark { font-size:2.8rem; line-height:0.8; color:var(--k-gold); opacity:0.6; }
+    .k-quote-text { font-size:clamp(0.9rem,1.9vw,1.06rem); font-style:italic; line-height:1.62; color:#fef9ec; margin:0; }
+    .k-quote-attr { font-size:0.75rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--k-gold); opacity:0.9; }
+    .k-card { border-radius:var(--k-radius); border:1px solid var(--k-line); background:var(--k-panel); backdrop-filter:blur(10px); padding:clamp(1.1rem,2vw,1.55rem); scroll-margin-top:72px; }
+    .k-gold-a { border-left:4px solid var(--k-gold); }
+    .k-blue-a { border-left:4px solid var(--k-blue); }
+    .k-green-a { border-left:4px solid var(--k-green); }
+    .k-rose-a { border-left:4px solid var(--k-rose); }
+    .k-violet-a { border-left:4px solid var(--k-violet); }
+    .k-kicker { font-size:0.69rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; margin:0 0 0.4rem; }
+    .goldk { color:var(--k-gold); } .bluek { color:var(--k-blue); } .greenk { color:var(--k-green); } .rosek { color:var(--k-rose); } .violetk { color:var(--k-violet); }
+    .k-card h2 { margin:0 0 0.7rem; font-size:clamp(1.18rem,2.3vw,1.6rem); letter-spacing:-0.03em; color:#fff; }
+    .k-card h3 { margin:1rem 0 0.32rem; font-size:0.99rem; letter-spacing:-0.02em; color:#dce8f6; }
+    .k-card p,.k-card li { color:var(--k-muted); font-size:0.9rem; line-height:1.72; margin:0 0 0.62rem; }
+    .k-card p:last-child { margin-bottom:0; }
+    .k-card ul { padding-left:1.35rem; margin:0.35rem 0 0.65rem; }
+    .k-two { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    @media (max-width:600px) { .k-two { grid-template-columns:1fr; } }
+    .k-box { border-radius:var(--k-radius); padding:0.95rem 1.15rem; margin:0.85rem 0; }
+    .k-box.gold { background:rgba(244,196,48,0.09); border:1px solid rgba(244,196,48,0.26); }
+    .k-box.blue { background:rgba(96,165,250,0.09); border:1px solid rgba(96,165,250,0.26); }
+    .k-box.green { background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.26); }
+    .k-box.violet { background:rgba(196,181,253,0.09); border:1px solid rgba(196,181,253,0.26); }
+    .k-box strong { display:block; font-size:0.74rem; font-weight:800; letter-spacing:0.09em; text-transform:uppercase; margin-bottom:0.32rem; }
+    .k-box.gold strong { color:var(--k-gold); } .k-box.blue strong { color:var(--k-blue); } .k-box.green strong { color:var(--k-green); } .k-box.violet strong { color:var(--k-violet); }
+    .k-box p { margin:0; font-size:0.87rem; color:rgba(226,235,248,0.8); line-height:1.65; }
+    .k-eq { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:clamp(0.95rem,2.2vw,1.35rem); color:var(--k-gold); text-align:center; padding:0.85rem; letter-spacing:0.04em; border-radius:var(--k-radius); border:1px solid rgba(244,196,48,0.22); background:rgba(244,196,48,0.07); margin:0.75rem 0; }
+    .k-laws { display:grid; grid-template-columns:repeat(3,1fr); gap:0.8rem; margin:0.85rem 0; }
+    @media (max-width:560px) { .k-laws { grid-template-columns:1fr; } }
+    .k-law-card { border-radius:var(--k-radius); padding:1rem 1.1rem; border:1px solid var(--k-line); background:rgba(255,255,255,0.025); }
+    .k-law-num { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:2rem; font-weight:800; line-height:1; margin-bottom:0.35rem; color:var(--k-gold); }
+    .k-law-name { font-size:0.86rem; font-weight:700; color:#e8f0fc; margin-bottom:0.25rem; }
+    .k-law-stmt { font-size:0.77rem; color:var(--k-muted); line-height:1.55; }
+    .k-sim { border-radius:var(--k-radius); border:1px solid var(--k-line); overflow:hidden; background:#010409; box-shadow:0 16px 48px rgba(0,0,0,0.3); scroll-margin-top:72px; }
+    .k-sim-head { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.55rem; padding:0.95rem 1.15rem 0.7rem; background:linear-gradient(180deg,rgba(255,255,255,0.036),transparent); }
+    .k-sim-hl { display:flex; flex-direction:column; gap:0.18rem; }
+    .k-sim-title { font-size:0.77rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; }
+    .k-sim-sub { font-size:0.77rem; color:rgba(208,220,248,0.46); }
+    .k-sim canvas { display:block; width:100%; background:#010409; }
+    .k-sim-controls { display:flex; flex-wrap:wrap; gap:0.48rem 0.85rem; padding:0.75rem 1.15rem; background:rgba(0,0,0,0.3); border-top:1px solid rgba(255,255,255,0.06); }
+    .k-ctrl { display:flex; flex-direction:column; gap:0.2rem; min-width:110px; }
+    .k-ctrl label { font-size:0.65rem; font-weight:800; letter-spacing:0.09em; text-transform:uppercase; color:rgba(208,220,248,0.46); }
+    .k-ctrl input[type="range"] { accent-color:var(--k-gold); cursor:pointer; width:100%; }
+    .k-ctrl-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.72rem; font-weight:700; color:var(--k-gold); }
+    .k-readout { display:flex; flex-wrap:wrap; gap:0.42rem; padding:0.62rem 1.15rem; }
+    .k-chip { display:flex; flex-direction:column; gap:0.1rem; border-radius:var(--k-radius); padding:0.42rem 0.62rem; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.025); }
+    .k-chip-label { font-size:0.61rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(208,220,248,0.38); }
+    .k-chip-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.83rem; font-weight:700; color:#dce8f6; }
+    .k-footer { text-align:center; padding:2rem 1rem; color:var(--k-dim); font-size:0.78rem; border-top:1px solid var(--k-line); background:rgba(4,6,14,0.66); }
+    .k-footer a { color:var(--k-gold); text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<div class="k-topbar">
+  <div class="k-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="k-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="k-nav">
+      <a href="#history">History</a>
+      <a href="#laws">Three Laws</a>
+      <a href="#orbit-sim">Orbit Sim</a>
+      <a href="#period">Period Law</a>
+      <a href="#newton">Newton's Proof</a>
+    </nav>
+    <div class="k-pills">
+      <span class="k-pill">Space · Physics</span>
+      <span class="k-pill blue">Space · Physics</span>
+    </div>
+  </div>
+</div>
+
+<div class="k-shell">
+
+  <div class="k-hero">
+    <div class="k-hero-copy">
+      <p class="k-eyebrow">Orbital Mechanics · The Laws of Planetary Motion</p>
+      <h1>Planets Trace <em>Ellipses</em></h1>
+      <p class="k-lede">
+        Johannes Kepler spent a decade analyzing Tycho Brahe's precise astronomical observations
+        to discover three mathematical laws governing planetary motion — without knowing why they
+        were true. Newton later proved they followed necessarily from his Law of Gravitation.
+      </p>
+      <div class="k-meta">
+        <span class="k-pill">Ellipses · Equal Areas · T²∝a³</span>
+        <span class="k-pill blue">2 Simulations</span>
+        <span class="k-pill">Grades 7–12</span>
+      </div>
+    </div>
+    <div class="k-quote-card">
+      <div class="k-quote-mark">"</div>
+      <p class="k-quote-text">
+        Kepler found the laws of planetary motion — but he did not know why they were true.
+        Newton showed that Kepler's laws follow necessarily from the law of universal gravitation.
+        This is how physics works: observation uncovers patterns; theory explains them.
+        Kepler's rules are not axioms — they are theorems derived from a deeper law.
+      </p>
+      <div class="k-quote-attr">— Richard Feynman</div>
+    </div>
+  </div>
+
+  <!-- Section 1: Historical Context -->
+  <div class="k-card k-gold-a" id="history">
+    <p class="k-kicker goldk">Context · 1600–1687</p>
+    <h2>From Data to Law: The 80-Year Journey</h2>
+    <div class="k-two">
+      <div>
+        <h3>Tycho Brahe (1546–1601)</h3>
+        <p>
+          The greatest naked-eye astronomer in history. For 20 years on the island of Hven, Brahe measured
+          planetary positions to an accuracy of 1–2 arcminutes — a factor of 10 better than anyone before him.
+          He never believed in heliocentrism but his data was so precise it would eventually prove him wrong.
+        </p>
+        <h3>Johannes Kepler (1571–1630)</h3>
+        <p>
+          Brahe's assistant and intellectual heir. After Brahe's death, Kepler inherited the data.
+          He spent 8 years trying to fit Mars's orbit to a circle — failing. Then he tried an ellipse.
+          It worked perfectly. He published his first two laws in 1609, the third in 1619.
+        </p>
+      </div>
+      <div>
+        <h3>Isaac Newton (1643–1727)</h3>
+        <p>
+          Newton proved that Kepler's empirical laws are the inevitable mathematical consequences of
+          an inverse-square law of gravitation. This was the first great unification in physics history:
+          terrestrial gravity (falling apples) and celestial mechanics (planetary orbits) were the same force.
+        </p>
+        <div class="k-box gold">
+          <strong>The Pattern of Discovery</strong>
+          <p>Brahe: collect precise data. Kepler: find the mathematical pattern. Newton: explain why.
+          This three-stage process — observation, pattern, explanation — is the template for all of physics.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: The Three Laws -->
+  <div class="k-card k-blue-a" id="laws">
+    <p class="k-kicker bluek">Kepler's Three Laws</p>
+    <h2>The Mathematical Rules Governing Every Orbit</h2>
+    <div class="k-laws">
+      <div class="k-law-card">
+        <div class="k-law-num">1</div>
+        <div class="k-law-name">The Law of Ellipses</div>
+        <div class="k-law-stmt">Each planet orbits the Sun in an ellipse, with the Sun at one of the two foci. Not a circle — an ellipse. Earth's eccentricity is 0.017 (nearly circular). Pluto's is 0.25 (markedly elliptical).</div>
+      </div>
+      <div class="k-law-card">
+        <div class="k-law-num">2</div>
+        <div class="k-law-name">The Law of Equal Areas</div>
+        <div class="k-law-stmt">A line drawn from the Sun to the planet sweeps out equal areas in equal time intervals. Near perihelion (closest), the planet moves fast. Near aphelion (farthest), it moves slow. Conservation of angular momentum explains this.</div>
+      </div>
+      <div class="k-law-card">
+        <div class="k-law-num">3</div>
+        <div class="k-law-name">The Harmonic Law</div>
+        <div class="k-law-stmt">The square of the orbital period (T²) is proportional to the cube of the semi-major axis (a³). T²/a³ = constant for all planets around the same star. Farther planets orbit much more slowly.</div>
+      </div>
+    </div>
+    <div class="k-two">
+      <div>
+        <h3>Ellipse Geometry</h3>
+        <p>
+          An ellipse has two foci. The Sun sits at one focus — not the center. The closest approach
+          is the <strong>perihelion</strong>; the farthest point is the <strong>aphelion</strong>.
+          The <strong>semi-major axis</strong> (a) is half the longest diameter — used in Kepler's Third Law.
+          Eccentricity (e) ranges from 0 (circle) to 1 (parabola).
+        </p>
+        <div class="k-eq">r = a(1−e²) / (1 + e·cos(θ))</div>
+        <p style="text-align:center;font-size:0.78rem;color:var(--k-dim);margin-top:-0.4rem;">Polar equation of an ellipse with focus at origin</p>
+      </div>
+      <div>
+        <h3>Kepler's Third Law — Numerical Example</h3>
+        <div class="k-eq">T² / a³ = constant</div>
+        <p>Using Earth as reference (T = 1 year, a = 1 AU):</p>
+        <ul>
+          <li>Mars: a = 1.52 AU → T = 1.52^(3/2) ≈ 1.88 years ✓</li>
+          <li>Jupiter: a = 5.2 AU → T = 5.2^(3/2) ≈ 11.9 years ✓</li>
+          <li>Saturn: a = 9.5 AU → T = 9.5^(3/2) ≈ 29.5 years ✓</li>
+        </ul>
+        <div class="k-box blue">
+          <strong>The Constant Depends on the Star</strong>
+          <p>Newton proved T²/a³ = 4π²/(GM) where M is the star's mass. So knowing the period and semi-major
+          axis of any orbit lets you calculate the central body's mass. We use this to weigh black holes,
+          exoplanet hosts, and the Milky Way's galactic center.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 1: Elliptical orbit with equal-area sweep -->
+  <div class="k-sim" id="orbit-sim">
+    <div class="k-sim-head">
+      <div class="k-sim-hl">
+        <span class="k-sim-title goldk">🪐 Kepler's Laws Orbit Simulator</span>
+        <span class="k-sim-sub">Observe elliptical orbit, equal-area sweeps (Law 2), and speed changes near perihelion</span>
+      </div>
+    </div>
+    <canvas id="kepCanvas" height="380"></canvas>
+    <div class="k-sim-controls">
+      <div class="k-ctrl">
+        <label>Eccentricity <span class="k-ctrl-val" id="eccLabel">0.50</span></label>
+        <input type="range" id="eccSl" min="0.01" max="0.92" step="0.01" value="0.5" />
+      </div>
+      <div class="k-ctrl">
+        <label>Show Equal Areas</label>
+        <input type="range" id="areaSl" min="0" max="1" step="1" value="1" style="accent-color:#34d399;" />
+        <span class="k-ctrl-val" id="areaLabel">On</span>
+      </div>
+      <div class="k-ctrl">
+        <label>Speed <span class="k-ctrl-val" id="spdLabel">1×</span></label>
+        <input type="range" id="spdSl" min="0.2" max="4" step="0.1" value="1" />
+      </div>
+    </div>
+    <div class="k-readout">
+      <span class="k-chip"><span class="k-chip-label">Eccentricity</span><span class="k-chip-val" id="eccVal">—</span></span>
+      <span class="k-chip"><span class="k-chip-label">Speed (rel.)</span><span class="k-chip-val" id="speedVal">—</span></span>
+      <span class="k-chip"><span class="k-chip-label">Distance (rel.)</span><span class="k-chip-val" id="distVal">—</span></span>
+      <span class="k-chip"><span class="k-chip-label">At Perihelion</span><span class="k-chip-val" id="periVal">—</span></span>
+    </div>
+  </div>
+
+  <!-- Section: Period Law -->
+  <div class="k-card k-green-a" id="period">
+    <p class="k-kicker greenk">Idea 3 · The Harmonic Law — T² ∝ a³</p>
+    <h2>Period and Distance: The Cosmic Clock</h2>
+    <div class="k-two">
+      <div>
+        <p>
+          Kepler noticed something remarkable when comparing the orbital data of all known planets:
+          the ratio T²/a³ was the same for every planet. He published this in 1619 — a decade after
+          the first two laws — and it remains one of the most elegant relationships in all of astronomy.
+        </p>
+        <div class="k-eq">T² ∝ a³ &nbsp;&nbsp;→&nbsp;&nbsp; T = √(a³) years (for Solar System)</div>
+        <p>
+          Newton later derived this algebraically from F = GMm/r²: the period comes out exactly as
+          T = 2π√(a³/GM). This was the first prediction of a natural law derived from a more fundamental
+          principle rather than just observed empirically.
+        </p>
+      </div>
+      <div>
+        <h3>Applications Beyond the Solar System</h3>
+        <ul>
+          <li><strong>Weighing the Sun:</strong> Earth's orbit gives GM_Sun = 1.33 × 10²⁰ m³/s²</li>
+          <li><strong>Exoplanets:</strong> measure transit period → determine semi-major axis</li>
+          <li><strong>Binary stars:</strong> T and separation → combined mass of both stars</li>
+          <li><strong>Galaxies:</strong> star orbits around galactic center reveal dark matter distribution</li>
+          <li><strong>Black holes:</strong> S2 star orbits Milky Way center in 16 years at 970 AU → mass = 4 million Suns</li>
+        </ul>
+        <div class="k-box green">
+          <strong>The First Weighing of Astronomical Objects</strong>
+          <p>Kepler's Third Law + Newton's gravity = the universe's scale. Without this law,
+          we could see the shapes of orbits but never know the masses of the objects at their centers.
+          Every mass measurement in astronomy traces back to this relationship.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Newton's Proof -->
+  <div class="k-card k-violet-a" id="newton">
+    <p class="k-kicker violetk">Idea 4 · Newton's Proof — Why Kepler Was Right</p>
+    <h2>From Observation to Derivation</h2>
+    <div class="k-two">
+      <div>
+        <p>
+          Newton's greatest achievement was showing that Kepler's laws aren't independent facts to be
+          memorized — they are inevitable mathematical consequences of one equation:
+        </p>
+        <div class="k-eq">F = GMm/r²</div>
+        <ul>
+          <li><strong>Law 1 (Ellipses):</strong> For any 1/r² force, the orbit must be a conic section (ellipse, parabola, or hyperbola) — depending on energy.</li>
+          <li><strong>Law 2 (Equal Areas):</strong> Follows from conservation of angular momentum. Any central force (one always pointing at the same center) produces equal-area sweeping.</li>
+          <li><strong>Law 3 (T²∝a³):</strong> Follows directly from the 1/r² dependence of gravity: combine centripetal force with the gravitational force law and solve for T.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>The Inverse Problem</h3>
+        <p>
+          Newton also solved the inverse: if you observe elliptical orbits, equal-area sweeps, and
+          T²∝a³ — what force law must be responsible? The answer is uniquely 1/r² — inverse square.
+          No other force law produces all three Kepler laws simultaneously.
+        </p>
+        <div class="k-box violet">
+          <strong>Conic Sections and Energy</strong>
+          <p>With an inverse-square force, the orbit shape depends entirely on total energy:
+          Negative total energy → ellipse (bound orbit).
+          Zero energy → parabola (escape at exactly escape velocity).
+          Positive energy → hyperbola (flyby, unbound).
+          This is why comets on hyperbolic paths from interstellar space (like Oumuamua) have never visited us before.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="k-footer site-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">All Lessons</a> ·
+  Orbital Mechanics · Kepler &amp; Newton
+</footer>
+
+<script>
+/* ── Kepler Orbit Simulator ──────────────────────── */
+(function () {
+  const cv = document.getElementById('kepCanvas');
+  const ctx = cv.getContext('2d');
+  const eccSl = document.getElementById('eccSl');
+  const areaSl = document.getElementById('areaSl');
+  const spdSl = document.getElementById('spdSl');
+  const eccLbl = document.getElementById('eccLabel');
+  const areaLbl = document.getElementById('areaLabel');
+  const spdLbl = document.getElementById('spdLabel');
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 380; }
+  resize(); window.addEventListener('resize', resize);
+
+  eccSl.oninput = () => { eccLbl.textContent = parseFloat(eccSl.value).toFixed(2); theta = 0; areas = []; };
+  areaSl.oninput = () => { areaLbl.textContent = +areaSl.value ? 'On' : 'Off'; };
+  spdSl.oninput = () => { spdLbl.textContent = parseFloat(spdSl.value).toFixed(1) + '×'; };
+
+  let theta = 0;
+  let areas = [];
+  let areaTimer = 0;
+  const AREA_INTERVAL = 120; // frames between area slices
+
+  function keplerR(e, a, theta) {
+    return a * (1 - e * e) / (1 + e * Math.cos(theta));
+  }
+
+  // Angular speed from conservation of angular momentum: dA/dt = constant → r²·dθ/dt = constant
+  // We solve numerically: dθ at each step is proportional to 1/r²
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const e = +eccSl.value;
+    const showAreas = +areaSl.value;
+    const spd = +spdSl.value;
+
+    const cx = W / 2, cy = H / 2;
+    const a = Math.min(W, H) * 0.38;
+    const b = a * Math.sqrt(1 - e * e);
+    const focalDist = a * e; // distance from center to focus
+
+    // Star position (at one focus)
+    const sx = cx + focalDist, sy = cy;
+
+    // Stars (background)
+    if (!draw.stars) {
+      draw.stars = [];
+      for (let i = 0; i < 80; i++) {
+        draw.stars.push({ x: Math.random() * 800, y: Math.random() * 400, s: Math.random() * 1.5 + 0.3 });
+      }
+    }
+    draw.stars.forEach(s => {
+      ctx.fillStyle = `rgba(255,255,255,${0.2 + Math.random() * 0.1})`;
+      ctx.beginPath(); ctx.arc(s.x % W, s.y % H, s.s, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // Orbit ellipse
+    ctx.beginPath();
+    ctx.ellipse(cx - focalDist / 2 + focalDist / 2, cy, a, b, 0, 0, Math.PI * 2);
+    // Actually draw centered at offset
+    ctx.save(); ctx.translate(-focalDist / 2, 0);
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, a, b, 0, 0, Math.PI * 2);
+    ctx.restore();
+
+    // Draw orbit path
+    ctx.save();
+    ctx.beginPath();
+    for (let t = 0; t <= Math.PI * 2; t += 0.02) {
+      const r = keplerR(e, a, t);
+      const px = sx + r * Math.cos(t);
+      const py = sy - r * Math.sin(t);
+      if (t === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(244,196,48,0.22)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
+
+    // Equal area wedges
+    if (showAreas && areas.length > 0) {
+      areas.forEach((area, i) => {
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        area.forEach((pt, j) => {
+          if (j === 0) ctx.moveTo(sx, sy);
+          ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = `rgba(52,211,153,${0.08 + 0.08 * (i / areas.length)})`;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(52,211,153,0.4)'; ctx.lineWidth = 1; ctx.stroke();
+      });
+    }
+
+    // Angular momentum conservation: L = r² dθ/dt → dθ = L dt / r²
+    const r = keplerR(e, a, theta);
+    const rMin = a * (1 - e); // perihelion
+    const L = rMin * Math.sqrt(1); // normalized: at perihelion, v_peri = L/r_min
+    const dTheta = (L / (r * r)) * 0.025 * spd;
+    theta += dTheta;
+    if (theta > Math.PI * 2) { theta -= Math.PI * 2; areas = []; }
+
+    // Current planet position
+    const px = sx + r * Math.cos(theta);
+    const py = sy - r * Math.sin(theta);
+
+    // Build area slices for visualization
+    areaTimer++;
+    if (showAreas && areaTimer % AREA_INTERVAL === 0) {
+      // Store a sweep of points for the last AREA_INTERVAL frames
+      const sweepPoints = [];
+      const deltaT = dTheta * AREA_INTERVAL;
+      const startAngle = theta - deltaT;
+      for (let t = startAngle; t <= theta; t += 0.04) {
+        const tr = keplerR(e, a, t);
+        sweepPoints.push({ x: sx + tr * Math.cos(t), y: sy - tr * Math.sin(t) });
+      }
+      areas.push(sweepPoints);
+      if (areas.length > 5) areas.shift();
+    }
+
+    // Line from sun to planet
+    ctx.strokeStyle = 'rgba(244,196,48,0.5)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(px, py); ctx.stroke();
+
+    // Sun (star)
+    const sunGrd = ctx.createRadialGradient(sx, sy, 0, sx, sy, 18);
+    sunGrd.addColorStop(0, '#fff7c0'); sunGrd.addColorStop(0.4, '#f59e0b'); sunGrd.addColorStop(1, 'rgba(245,158,11,0)');
+    ctx.beginPath(); ctx.arc(sx, sy, 18, 0, Math.PI * 2); ctx.fillStyle = sunGrd; ctx.fill();
+    ctx.beginPath(); ctx.arc(sx, sy, 8, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+
+    // Empty focus dot
+    ctx.beginPath(); ctx.arc(cx - focalDist, cy, 3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fill();
+
+    // Planet
+    const planetGrd = ctx.createRadialGradient(px - 3, py - 3, 1, px, py, 10);
+    planetGrd.addColorStop(0, '#c0e0ff'); planetGrd.addColorStop(0.5, '#60a5fa'); planetGrd.addColorStop(1, '#1e40af');
+    ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2); ctx.fillStyle = planetGrd; ctx.fill();
+
+    // Labels
+    ctx.fillStyle = 'rgba(244,196,48,0.7)'; ctx.font = '10px Inter,sans-serif';
+    ctx.fillText('Perihelion →', sx + a * (1 - e) - 5, sy + 16);
+    ctx.fillText('← Aphelion', sx - a * (1 + e) - 40, sy - 12);
+
+    // Readouts
+    const speedRel = (rMin / r).toFixed(2);
+    const distRel = (r / a).toFixed(2);
+    document.getElementById('eccVal').textContent = e.toFixed(2);
+    document.getElementById('speedVal').textContent = speedRel + '×';
+    document.getElementById('distVal').textContent = distRel + ' a';
+    document.getElementById('periVal').textContent = rMin.toFixed(0) + ' px';
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

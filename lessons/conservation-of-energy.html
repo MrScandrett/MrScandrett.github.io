@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Conservation of Energy · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson — Conservation of Energy: explore kinetic energy, potential energy, work, power, and the conservation law that makes the universe's books always balance." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --e-bg: #07050f;
+      --e-panel: rgba(14,10,26,0.84);
+      --e-line: rgba(205,195,240,0.13);
+      --e-line-strong: rgba(205,195,240,0.22);
+      --e-text: #ece8fc;
+      --e-muted: rgba(236,232,252,0.68);
+      --e-dim: rgba(236,232,252,0.44);
+      --e-gold: #f59e0b;
+      --e-violet: #8b5cf6;
+      --e-green: #10b981;
+      --e-rose: #f43f5e;
+      --e-sky: #38bdf8;
+      --e-radius: 8px;
+      --e-shadow: 0 24px 64px rgba(0,0,0,0.36);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; font-family: var(--font-sans); color: var(--e-text);
+      background: linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px), linear-gradient(180deg, #060412 0%, #090718 45%, #07050f 100%);
+      background-size: 34px 34px, 34px 34px, auto; min-height: 100vh;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none;
+      background: linear-gradient(110deg, rgba(245,158,11,0.10), transparent 32%), linear-gradient(250deg, rgba(139,92,246,0.07), transparent 38%);
+      mask-image: linear-gradient(180deg, #000, transparent 76%);
+    }
+    .e-shell { width: min(1280px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 4rem; display: grid; gap: 1rem; }
+    .e-topbar { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(18px) saturate(140%); background: rgba(7,5,15,0.88); border-bottom: 1px solid var(--e-line); }
+    .e-topbar-inner { width: min(1280px, calc(100% - 2rem)); min-height: 54px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .e-topbar a { color: #ccc0f4; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
+    .e-topbar a:hover { color: #fff; }
+    .e-brand { color: #f0ecff; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .e-nav { display: flex; align-items: center; gap: 0.2rem; overflow-x: auto; scrollbar-width: none; }
+    .e-nav::-webkit-scrollbar { display: none; }
+    .e-nav a { display: inline-flex; align-items: center; min-height: 1.85rem; padding: 0 0.55rem; border-radius: var(--e-radius); color: var(--e-dim); white-space: nowrap; }
+    .e-nav a:hover { color: var(--e-text); background: rgba(255,255,255,0.06); }
+    .e-pills { display: flex; gap: 0.4rem; }
+    .e-pill { display: inline-flex; align-items: center; height: 1.7rem; padding: 0 0.62rem; border-radius: var(--e-radius); font-size: 0.69rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; border: 1px solid rgba(139,92,246,0.36); background: rgba(139,92,246,0.12); color: #c4b5fd; }
+    .e-pill.gold { border-color: rgba(245,158,11,0.36); background: rgba(245,158,11,0.1); color: #fde68a; }
+    @media (max-width:960px) { .e-brand { display: none; } }
+    @media (max-width:740px) { .e-nav { display: none; } }
+    .e-hero { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(280px,0.7fr); gap: 1rem; align-items: stretch; min-height: min(520px,calc(100vh - 88px)); }
+    @media (max-width:700px) { .e-hero { grid-template-columns: 1fr; } }
+    .e-hero-copy { border-radius: var(--e-radius); border: 1px solid var(--e-line-strong); background: linear-gradient(120deg, rgba(245,158,11,0.09), transparent 44%), linear-gradient(180deg, rgba(18,12,38,0.93), rgba(10,8,24,0.93)); box-shadow: var(--e-shadow); padding: clamp(1.2rem,3vw,2.2rem); display: flex; flex-direction: column; justify-content: center; }
+    .e-eyebrow { font-size: 0.71rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--e-gold); margin: 0 0 0.65rem; }
+    .e-hero-copy h1 { margin: 0 0 0.65rem; max-width: 14ch; font-size: clamp(2.2rem,6vw,5rem); line-height: 0.93; letter-spacing: -0.055em; color: #fff; }
+    .e-hero-copy h1 em { font-style: normal; color: var(--e-gold); }
+    .e-lede { max-width: 72ch; color: var(--e-muted); font-size: clamp(0.93rem,1.4vw,1.04rem); line-height: 1.72; margin: 0 0 1rem; }
+    .e-meta { display: flex; flex-wrap: wrap; gap: 0.38rem; }
+    .e-quote-card { border-radius: var(--e-radius); border: 1px solid rgba(245,158,11,0.26); background: linear-gradient(180deg, rgba(245,158,11,0.09), transparent 56%), rgba(14,10,26,0.82); padding: clamp(1.1rem,2.2vw,1.75rem); display: flex; flex-direction: column; justify-content: center; gap: 0.85rem; box-shadow: var(--e-shadow); }
+    .e-quote-mark { font-size: 2.8rem; line-height: 0.8; color: var(--e-gold); opacity: 0.6; }
+    .e-quote-text { font-size: clamp(0.9rem,1.9vw,1.08rem); font-style: italic; line-height: 1.62; color: #dff2fe; margin: 0; }
+    .e-quote-attr { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--e-gold); opacity: 0.9; }
+    .e-card { border-radius: var(--e-radius); border: 1px solid var(--e-line); background: var(--e-panel); backdrop-filter: blur(10px); padding: clamp(1.1rem,2vw,1.55rem); scroll-margin-top: 72px; }
+    .e-gold-acc { border-left: 4px solid var(--e-gold); }
+    .e-violet-acc { border-left: 4px solid var(--e-violet); }
+    .e-green-acc { border-left: 4px solid var(--e-green); }
+    .e-rose-acc { border-left: 4px solid var(--e-rose); }
+    .e-sky-acc { border-left: 4px solid var(--e-sky); }
+    .e-kicker { font-size: 0.69rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.4rem; }
+    .e-gold-k { color: var(--e-gold); } .e-violet-k { color: var(--e-violet); } .e-green-k { color: var(--e-green); } .e-rose-k { color: var(--e-rose); } .e-sky-k { color: var(--e-sky); }
+    .e-card h2 { margin: 0 0 0.7rem; font-size: clamp(1.18rem,2.3vw,1.6rem); letter-spacing: -0.03em; color: #fff; }
+    .e-card h3 { margin: 1rem 0 0.32rem; font-size: 0.99rem; letter-spacing: -0.02em; color: #ddd0f8; }
+    .e-card p, .e-card li { color: var(--e-muted); font-size: 0.9rem; line-height: 1.72; margin: 0 0 0.62rem; }
+    .e-card p:last-child { margin-bottom: 0; }
+    .e-card ul { padding-left: 1.35rem; margin: 0.35rem 0 0.65rem; }
+    .e-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width:600px) { .e-two { grid-template-columns: 1fr; } }
+    .e-box { border-radius: var(--e-radius); padding: 0.95rem 1.15rem; margin: 0.85rem 0; }
+    .e-box.gold { background: rgba(245,158,11,0.09); border: 1px solid rgba(245,158,11,0.26); }
+    .e-box.violet { background: rgba(139,92,246,0.09); border: 1px solid rgba(139,92,246,0.26); }
+    .e-box.green { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.26); }
+    .e-box.sky { background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.26); }
+    .e-box strong { display: block; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.32rem; }
+    .e-box.gold strong { color: var(--e-gold); } .e-box.violet strong { color: var(--e-violet); } .e-box.green strong { color: var(--e-green); } .e-box.sky strong { color: var(--e-sky); }
+    .e-box p { margin: 0; font-size: 0.87rem; color: rgba(236,232,252,0.8); line-height: 1.65; }
+    .e-eq { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: clamp(1rem,2.5vw,1.38rem); color: var(--e-gold); text-align: center; padding: 0.9rem; letter-spacing: 0.04em; border-radius: var(--e-radius); border: 1px solid rgba(245,158,11,0.22); background: rgba(245,158,11,0.07); margin: 0.75rem 0; }
+    .e-forms { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 0.62rem; margin: 0.85rem 0; }
+    .e-form-card { border-radius: var(--e-radius); padding: 0.85rem 0.95rem; border: 1px solid var(--e-line); background: rgba(255,255,255,0.028); }
+    .e-form-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .e-form-name { font-size: 0.84rem; font-weight: 700; color: #e0d8fc; margin-bottom: 0.18rem; }
+    .e-form-desc { font-size: 0.73rem; color: rgba(220,210,248,0.52); line-height: 1.45; }
+    .e-sim { border-radius: var(--e-radius); border: 1px solid var(--e-line); overflow: hidden; background: #030110; box-shadow: 0 16px 48px rgba(0,0,0,0.28); scroll-margin-top: 72px; }
+    .e-sim-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.55rem; padding: 0.95rem 1.15rem 0.7rem; background: linear-gradient(180deg, rgba(255,255,255,0.038), transparent); }
+    .e-sim-hl { display: flex; flex-direction: column; gap: 0.18rem; }
+    .e-sim-title { font-size: 0.77rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .e-sim-sub { font-size: 0.77rem; color: rgba(220,210,248,0.46); }
+    .e-sim canvas { display: block; width: 100%; background: linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px), #030110; background-size: 22px 22px; }
+    .e-sim-controls { display: flex; flex-wrap: wrap; gap: 0.48rem 0.85rem; padding: 0.75rem 1.15rem; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.06); }
+    .e-ctrl { display: flex; flex-direction: column; gap: 0.2rem; min-width: 110px; }
+    .e-ctrl label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(220,210,248,0.46); }
+    .e-ctrl input[type="range"] { accent-color: var(--e-gold); cursor: pointer; width: 100%; }
+    .e-ctrl-val { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.72rem; font-weight: 700; color: var(--e-gold); }
+    .e-readout { display: flex; flex-wrap: wrap; gap: 0.42rem; padding: 0.62rem 1.15rem; }
+    .e-chip { display: flex; flex-direction: column; gap: 0.1rem; border-radius: var(--e-radius); padding: 0.42rem 0.62rem; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.028); }
+    .e-chip-label { font-size: 0.61rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(220,210,248,0.38); }
+    .e-chip-val { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.83rem; font-weight: 700; color: #ddd0f8; }
+    .e-btn { padding: 0.44rem 0.88rem; border-radius: var(--e-radius); border: 1px solid rgba(245,158,11,0.42); background: rgba(245,158,11,0.13); color: #fde68a; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 0.14s; }
+    .e-btn:hover { background: rgba(245,158,11,0.22); }
+    .e-footer { text-align: center; padding: 2rem 1rem; color: var(--e-dim); font-size: 0.78rem; border-top: 1px solid var(--e-line); background: rgba(7,5,15,0.66); }
+    .e-footer a { color: var(--e-gold); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="e-topbar">
+  <div class="e-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="e-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="e-nav">
+      <a href="#energy">What is Energy?</a>
+      <a href="#forms">Forms</a>
+      <a href="#work">Work</a>
+      <a href="#coaster">Roller Coaster</a>
+      <a href="#conservative">Conservative Forces</a>
+    </nav>
+    <div class="e-pills">
+      <span class="e-pill">Physics</span>
+      <span class="e-pill gold">Physics</span>
+    </div>
+  </div>
+</div>
+
+<div class="e-shell">
+
+  <div class="e-hero">
+    <div class="e-hero-copy">
+      <p class="e-eyebrow">Classical Mechanics · Energy &amp; Work</p>
+      <h1>Energy is the Universe's <em>Bookkeeping</em></h1>
+      <p class="e-lede">
+        You never see energy directly — you see rocks fall, fires burn, muscles flex. But underneath
+        every transformation is a number that never changes. Conservation of energy is the deepest
+        accounting system in all of physics.
+      </p>
+      <div class="e-meta">
+        <span class="e-pill">KE · PE · Work · Power</span>
+        <span class="e-pill gold">3 Simulations</span>
+        <span class="e-pill">Grades 6–12</span>
+      </div>
+    </div>
+    <div class="e-quote-card">
+      <div class="e-quote-mark">"</div>
+      <p class="e-quote-text">
+        There is a fact, or if you wish, a law, governing all natural phenomena that are known to date.
+        There is no known exception to this law — it is exact so far as we know. The law is called the
+        conservation of energy. It states that there is a certain quantity, which we call energy,
+        that does not change in the manifold changes which nature undergoes.
+      </p>
+      <div class="e-quote-attr">— Richard Feynman</div>
+    </div>
+  </div>
+
+  <!-- Section 1: What is energy? -->
+  <div class="e-card e-gold-acc" id="energy">
+    <p class="e-kicker e-gold-k">Idea 1 · What is Energy?</p>
+    <h2>Energy: A Number That Never Changes</h2>
+    <div class="e-two">
+      <div>
+        <p>
+          Feynman opened with a striking admission: <strong>we don't actually know what energy
+          is</strong>. It isn't a fluid, a substance, or a thing. It is an abstract quantity — a number —
+          that stays constant no matter what physical processes occur.
+        </p>
+        <p>
+          Think of a child's "Dennis the Menace" blocks. Mom can always account for all the blocks,
+          even when some are in a box, some in the water, some hidden under the rug. Energy is like that.
+          The universe can store it in different "hiding places" — but the total never changes.
+        </p>
+        <div class="e-box gold">
+          <strong>The Conservation Law</strong>
+          <p>Total Energy = Kinetic + Potential + Heat + Electrical + Chemical + Nuclear + ...
+          <br/>This total is always the same. Nature never creates or destroys energy — only
+          converts it between forms.</p>
+        </div>
+      </div>
+      <div>
+        <h3>SI Unit: the Joule (J)</h3>
+        <p>
+          One joule is the energy needed to lift an apple (≈100g) one meter upward against Earth's gravity.
+          A food calorie (kcal) equals 4,184 joules. A lightning bolt delivers about 250 kJ.
+          The Sun radiates 3.8 × 10²⁶ joules every second.
+        </p>
+        <div class="e-eq">E_total = constant</div>
+        <div class="e-box violet">
+          <strong>Noether's Theorem</strong>
+          <p>Conservation of energy isn't arbitrary — it follows mathematically from the fact that
+          the laws of physics are the same today as they were yesterday. Time-translation symmetry
+          implies energy conservation. Emmy Noether proved this in 1915.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Forms of Energy -->
+  <div class="e-card e-violet-acc" id="forms">
+    <p class="e-kicker e-violet-k">Idea 2 · The Two Master Forms (and their children)</p>
+    <h2>Kinetic Energy and Potential Energy</h2>
+    <div class="e-two">
+      <div>
+        <h3>Kinetic Energy — the energy of motion</h3>
+        <div class="e-eq">KE = ½mv²</div>
+        <p>
+          Every moving object has kinetic energy. It grows with the <em>square</em> of velocity —
+          double the speed means four times the KE. This is why highway crashes are so much more
+          destructive than parking lot fender-benders.
+        </p>
+        <h3>Gravitational Potential Energy</h3>
+        <div class="e-eq">PE = mgh</div>
+        <p>
+          An object held above the ground has potential energy stored in the gravitational field.
+          When released, gravity converts it to kinetic energy. h is height above a chosen reference
+          point — you can choose any reference, since only <em>changes</em> in PE matter.
+        </p>
+      </div>
+      <div>
+        <h3>Other Forms of Energy</h3>
+        <div class="e-forms">
+          <div class="e-form-card"><div class="e-form-icon">🔥</div><div class="e-form-name">Thermal</div><div class="e-form-desc">Kinetic energy of randomly moving atoms. Temperature measures the average.</div></div>
+          <div class="e-form-card"><div class="e-form-icon">⚗️</div><div class="e-form-name">Chemical</div><div class="e-form-desc">Potential energy stored in electron bonds between atoms.</div></div>
+          <div class="e-form-card"><div class="e-form-icon">⚡</div><div class="e-form-name">Electrical</div><div class="e-form-desc">Energy of charges moving through fields — powers every device.</div></div>
+          <div class="e-form-card"><div class="e-form-icon">☀️</div><div class="e-form-name">Radiant</div><div class="e-form-desc">Energy carried by photons — light, radio, X-rays, gamma rays.</div></div>
+          <div class="e-form-card"><div class="e-form-icon">⚛️</div><div class="e-form-name">Nuclear</div><div class="e-form-desc">Energy in strong/weak nuclear force bonds. E = mc² applies here.</div></div>
+          <div class="e-form-card"><div class="e-form-icon">🌊</div><div class="e-form-name">Elastic</div><div class="e-form-desc">Stored in compressed or stretched materials. PE = ½kx²</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 1: Energy roller coaster -->
+  <div class="e-sim" id="coaster">
+    <div class="e-sim-head">
+      <div class="e-sim-hl">
+        <span class="e-sim-title e-gold-k">⚡ Energy Roller Coaster</span>
+        <span class="e-sim-sub">Watch KE and PE trade back and forth — total energy stays constant</span>
+      </div>
+      <button class="e-btn" id="coasterReset">Reset</button>
+    </div>
+    <canvas id="coasterCanvas" height="300"></canvas>
+    <div class="e-sim-controls">
+      <div class="e-ctrl">
+        <label>Elasticity <span class="e-ctrl-val" id="elastLabel">90%</span></label>
+        <input type="range" id="elastSlider" min="50" max="99" value="90" />
+      </div>
+      <div class="e-ctrl">
+        <label>Start Height <span class="e-ctrl-val" id="hLabel">200 px</span></label>
+        <input type="range" id="hSlider" min="80" max="240" value="200" />
+      </div>
+    </div>
+    <div class="e-readout">
+      <span class="e-chip"><span class="e-chip-label">Kinetic (KE)</span><span class="e-chip-val" id="keVal">0%</span></span>
+      <span class="e-chip"><span class="e-chip-label">Potential (PE)</span><span class="e-chip-val" id="peVal">100%</span></span>
+      <span class="e-chip"><span class="e-chip-label">Heat Lost</span><span class="e-chip-val" id="heatVal">0%</span></span>
+      <span class="e-chip"><span class="e-chip-label">Total</span><span class="e-chip-val" id="totalVal">100%</span></span>
+    </div>
+  </div>
+
+  <!-- Section 3: Work -->
+  <div class="e-card e-green-acc" id="work">
+    <p class="e-kicker e-green-k">Idea 3 · Work — Transferring Energy Through Force</p>
+    <h2>Work: Force × Distance in the Same Direction</h2>
+    <div class="e-two">
+      <div>
+        <div class="e-eq">W = F · d · cos(θ)</div>
+        <p>
+          Work is energy transferred to or from an object by a force acting over a distance.
+          The angle θ is between the force direction and the direction of motion.
+          Only the component of force <em>along the motion</em> does work.
+        </p>
+        <ul>
+          <li>Lift a 10 N box 2 m → W = 20 J (θ = 0°, cos0 = 1)</li>
+          <li>Carry a box horizontally → W = 0 J (force is vertical, motion is horizontal)</li>
+          <li>Friction slowing a car → W is negative (force opposes motion)</li>
+        </ul>
+        <div class="e-box green">
+          <strong>Work–Energy Theorem</strong>
+          <p>The net work done on an object equals the change in its kinetic energy:
+          W_net = ΔKE = ½mv² − ½mv₀²</p>
+        </div>
+      </div>
+      <div>
+        <h3>Power: Rate of Doing Work</h3>
+        <div class="e-eq">P = W/t = F·v</div>
+        <p>
+          Power is how fast energy is transferred. Unit: the Watt (W = J/s).
+          A 100 W lightbulb consumes 100 joules every second.
+          A Tour de France cyclist outputs ~400 W sustained. A horse: ~750 W (1 horsepower).
+        </p>
+        <h3>Efficiency</h3>
+        <p>
+          No real machine converts energy perfectly. Some always becomes heat (friction, air resistance).
+          Efficiency = (useful output energy) / (total input energy) × 100%.
+          A car engine: ~25%. A human muscle: ~25%. An LED: ~80%.
+        </p>
+        <div class="e-box sky">
+          <strong>Why Can't Efficiency Be 100%?</strong>
+          <p>Thermodynamics limits it. The Second Law says that in every energy conversion, some energy
+          "spreads out" into heat — increasing entropy. A perfectly efficient engine would violate
+          the Second Law of Thermodynamics.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 2: Work and force angle -->
+  <div class="e-sim">
+    <div class="e-sim-head">
+      <div class="e-sim-hl">
+        <span class="e-sim-title e-green-k">🔧 Work Calculator: Force × cos(θ)</span>
+        <span class="e-sim-sub">Drag the force angle to see how much work is done vs. wasted sideways</span>
+      </div>
+    </div>
+    <canvas id="workCanvas" height="240"></canvas>
+    <div class="e-sim-controls">
+      <div class="e-ctrl">
+        <label>Force Angle θ <span class="e-ctrl-val" id="thetaLabel">0°</span></label>
+        <input type="range" id="thetaSlider" min="0" max="89" value="0" />
+      </div>
+      <div class="e-ctrl">
+        <label>Force (N) <span class="e-ctrl-val" id="fLabel">50 N</span></label>
+        <input type="range" id="fSlider" min="5" max="100" value="50" />
+      </div>
+      <div class="e-ctrl">
+        <label>Distance (m) <span class="e-ctrl-val" id="dLabel">4 m</span></label>
+        <input type="range" id="dSlider" min="1" max="10" value="4" />
+      </div>
+      <div class="e-readout" style="padding:0;align-self:flex-end;">
+        <span class="e-chip"><span class="e-chip-label">Work Done</span><span class="e-chip-val" id="workVal">200 J</span></span>
+        <span class="e-chip"><span class="e-chip-label">Wasted (⊥)</span><span class="e-chip-val" id="perpVal">0 J</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Conservative vs Nonconservative -->
+  <div class="e-card e-sky-acc" id="conservative">
+    <p class="e-kicker e-sky-k">Idea 4 · Conservative vs. Nonconservative Forces</p>
+    <h2>Path Independence: The Hallmark of Conservation</h2>
+    <div class="e-two">
+      <div>
+        <h3>Conservative Forces</h3>
+        <p>
+          A force is <strong>conservative</strong> if the work it does is <em>independent of the path</em>
+          taken — only the starting and ending positions matter.
+          Examples: gravity, springs (Hooke's Law), electric force (Coulomb's Law).
+        </p>
+        <p>
+          For a conservative force, you can define a potential energy function.
+          Going around a closed loop returns you to the same energy state.
+        </p>
+        <div class="e-eq">W = −ΔPE &nbsp;(conservative)</div>
+      </div>
+      <div>
+        <h3>Nonconservative Forces</h3>
+        <p>
+          <strong>Friction, air resistance, tension</strong> — these are nonconservative.
+          The work they do depends on the path; taking a longer path means more energy lost to heat.
+          You can't recover that energy as potential energy — it has spread into thermal motion.
+        </p>
+        <div class="e-box sky">
+          <strong>The Full Energy Equation</strong>
+          <p>KE_initial + PE_initial + W_nonconservative = KE_final + PE_final
+          <br/>The nonconservative work term (friction, drag) accounts for energy converted to heat.
+          Total energy is still conserved — it just moves into forms we can't easily use.</p>
+        </div>
+        <div class="e-box violet">
+          <strong>Potential Energy Fields</strong>
+          <p>Every conservative force has a potential energy field — a map of stored energy in space.
+          Gravity: PE = mgh. Electric: PE = kq₁q₂/r. Spring: PE = ½kx².
+          Objects "roll downhill" in these fields toward lower potential energy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="e-footer site-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">All Lessons</a> ·
+  Classical Mechanics · Energy &amp; Work
+</footer>
+
+<script>
+/* ── SIM 1: Roller Coaster / Bouncing Ball ─────────── */
+(function () {
+  const cv = document.getElementById('coasterCanvas');
+  const ctx = cv.getContext('2d');
+  const elastSl = document.getElementById('elastSlider');
+  const hSl = document.getElementById('hSlider');
+  const elastLbl = document.getElementById('elastLabel');
+  const hLbl = document.getElementById('hLabel');
+  const keEl = document.getElementById('keVal');
+  const peEl = document.getElementById('peVal');
+  const heatEl = document.getElementById('heatVal');
+  const totalEl = document.getElementById('totalVal');
+
+  let ball = null, initPE = 0;
+  const g = 0.35;
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
+  resize(); window.addEventListener('resize', resize);
+
+  elastSl.oninput = () => { elastLbl.textContent = elastSl.value + '%'; resetBall(); };
+  hSl.oninput = () => { hLbl.textContent = hSl.value + ' px'; resetBall(); };
+  document.getElementById('coasterReset').onclick = resetBall;
+
+  function resetBall() {
+    const H = cv.height, startH = +hSl.value;
+    ball = { x: cv.width / 2, y: H - startH - 14, vy: 0, heatLost: 0 };
+    initPE = startH;
+  }
+  resetBall();
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Ground
+    ctx.fillStyle = 'rgba(16,185,129,0.14)'; ctx.fillRect(0, H - 24, W, 24);
+    ctx.strokeStyle = 'rgba(16,185,129,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, H - 24); ctx.lineTo(W, H - 24); ctx.stroke();
+
+    if (!ball) { requestAnimationFrame(draw); return; }
+
+    ball.vy += g;
+    ball.y += ball.vy;
+
+    const ground = H - 24 - 12;
+    if (ball.y >= ground) {
+      ball.y = ground;
+      const elast = +elastSl.value / 100;
+      const lostFrac = 1 - elast * elast;
+      const keBefore = 0.5 * ball.vy * ball.vy;
+      ball.heatLost += keBefore * lostFrac;
+      ball.vy = -Math.abs(ball.vy) * elast;
+    }
+
+    // Energy calculations
+    const height = ground - ball.y;
+    const pe = height;
+    const ke = 0.5 * ball.vy * ball.vy;
+    const total = initPE;
+    const keP = Math.min(100, (ke / total * 100)).toFixed(0);
+    const peP = Math.min(100, (pe / total * 100)).toFixed(0);
+    const heatP = Math.min(100, (ball.heatLost / total * 100)).toFixed(0);
+    const sumP = (+keP + +peP + +heatP);
+
+    keEl.textContent = keP + '%'; peEl.textContent = peP + '%'; heatEl.textContent = heatP + '%'; totalEl.textContent = sumP + '%';
+
+    // Energy bars
+    const barX = 20, barW = 12, barH = H - 60;
+    const barColors = [{ color: '#8b5cf6', val: +keP }, { color: '#f59e0b', val: +peP }, { color: '#f43f5e', val: +heatP }];
+    const barLabels = ['KE', 'PE', 'Heat'];
+    barColors.forEach((b, i) => {
+      const bx = barX + i * (barW + 8);
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.fillRect(bx, 20, barW, barH);
+      ctx.fillStyle = b.color;
+      const bH = barH * b.val / 100;
+      ctx.fillRect(bx, 20 + barH - bH, barW, bH);
+      ctx.fillStyle = 'rgba(220,210,248,0.5)'; ctx.font = '9px Inter,sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(barLabels[i], bx + barW / 2, barH + 34);
+    });
+    ctx.textAlign = 'left';
+
+    // Ball shadow
+    ctx.beginPath(); ctx.ellipse(ball.x, ground + 5, 14, 4, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
+
+    // Ball
+    const bGrd = ctx.createRadialGradient(ball.x - 3, ball.y - 3, 1, ball.x, ball.y, 13);
+    bGrd.addColorStop(0, '#fff8e0'); bGrd.addColorStop(0.5, '#f59e0b'); bGrd.addColorStop(1, '#78350f');
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, 12, 0, Math.PI * 2);
+    ctx.fillStyle = bGrd; ctx.fill();
+
+    // Height arrow
+    ctx.strokeStyle = 'rgba(245,158,11,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(ball.x + 20, ball.y); ctx.lineTo(ball.x + 20, ground); ctx.stroke();
+    ctx.fillStyle = 'rgba(245,158,11,0.7)'; ctx.font = '10px Inter,sans-serif';
+    ctx.fillText('h=' + height.toFixed(0), ball.x + 24, (ball.y + ground) / 2);
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ── SIM 2: Work = F·d·cos(θ) ──────────────────────── */
+(function () {
+  const cv = document.getElementById('workCanvas');
+  const ctx = cv.getContext('2d');
+  const thetaSl = document.getElementById('thetaSlider');
+  const fSl = document.getElementById('fSlider');
+  const dSl = document.getElementById('dSlider');
+  const thetaLbl = document.getElementById('thetaLabel');
+  const fLbl = document.getElementById('fLabel');
+  const dLbl = document.getElementById('dLabel');
+  const workLbl = document.getElementById('workVal');
+  const perpLbl = document.getElementById('perpVal');
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 240; }
+  resize(); window.addEventListener('resize', resize);
+
+  function update() {
+    const theta = +thetaSl.value, F = +fSl.value, d = +dSl.value;
+    thetaLbl.textContent = theta + '°'; fLbl.textContent = F + ' N'; dLbl.textContent = d + ' m';
+    const rad = theta * Math.PI / 180;
+    const work = (F * Math.cos(rad) * d).toFixed(1);
+    const perp = (F * Math.sin(rad) * d).toFixed(1);
+    workLbl.textContent = work + ' J'; perpLbl.textContent = perp + ' J';
+    draw(theta, F, d, +work, +perp);
+  }
+  thetaSl.oninput = update; fSl.oninput = update; dSl.oninput = update;
+  window.addEventListener('resize', update);
+
+  function draw(theta, F, d, work, perp) {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const cx = W * 0.22, cy = H * 0.62;
+    const arrowLen = Math.min(F * 1.2, 120);
+    const rad = theta * Math.PI / 180;
+    const ax = cx + arrowLen * Math.cos(rad), ay = cy - arrowLen * Math.sin(rad);
+
+    // Ground line
+    const gLen = Math.min(d * 28, W * 0.55);
+    ctx.strokeStyle = 'rgba(16,185,129,0.5)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx - 10, cy + 18); ctx.lineTo(cx + gLen + 20, cy + 18); ctx.stroke();
+
+    // Box
+    ctx.fillStyle = 'rgba(16,185,129,0.15)'; ctx.strokeStyle = 'rgba(16,185,129,0.5)'; ctx.lineWidth = 1.5;
+    ctx.fillRect(cx, cy - 22, 40, 40); ctx.strokeRect(cx, cy - 22, 40, 40);
+
+    // Force arrow
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(cx + 20, cy); ctx.lineTo(ax + 20, ay); ctx.stroke();
+    // Arrowhead
+    ctx.fillStyle = '#f59e0b';
+    ctx.save(); ctx.translate(ax + 20, ay); ctx.rotate(-rad);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-10, 4); ctx.lineTo(-10, -4); ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // Components dashed
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = 'rgba(16,185,129,0.7)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx + 20, cy); ctx.lineTo(ax + 20, cy); ctx.stroke();
+    ctx.strokeStyle = 'rgba(244,63,94,0.7)';
+    ctx.beginPath(); ctx.moveTo(ax + 20, cy); ctx.lineTo(ax + 20, ay); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Angle arc
+    ctx.strokeStyle = 'rgba(251,191,36,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx + 20, cy, 28, -rad, 0); ctx.stroke();
+    ctx.fillStyle = 'rgba(251,191,36,0.7)'; ctx.font = '11px Inter,sans-serif';
+    ctx.fillText(theta + '°', cx + 35, cy - 6);
+
+    // Labels
+    ctx.fillStyle = 'rgba(16,185,129,0.9)'; ctx.font = 'bold 11px Inter,sans-serif';
+    ctx.fillText('→ useful: ' + work.toFixed(0) + ' J', cx + gLen * 0.3, cy + 36);
+    ctx.fillStyle = 'rgba(244,63,94,0.9)';
+    ctx.fillText('↑ wasted: ' + perp.toFixed(0) + ' J', ax + 28, (cy + ay) / 2);
+
+    // Work bar
+    const barX = W * 0.78, barW = 28, barH = H - 50;
+    const maxWork = F * d;
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(barX, 20, barW, barH);
+    ctx.fillStyle = '#f59e0b'; ctx.fillRect(barX, 20 + barH - (barH * work / maxWork), barW, barH * work / maxWork);
+    ctx.fillStyle = 'rgba(220,210,248,0.5)'; ctx.font = '10px Inter,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Work', barX + barW / 2, barH + 36);
+    ctx.fillText(work.toFixed(0) + 'J', barX + barW / 2, 16);
+    ctx.textAlign = 'left';
+  }
+  update();
+})();
+</script>
+</body>
+</html>

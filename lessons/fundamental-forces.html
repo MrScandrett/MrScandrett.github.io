@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fundamental Forces · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson — Fundamental Forces: explore the four fundamental forces, friction, molecular forces, pseudo forces, and nuclear forces through interactive simulations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --f-bg: #050a0e;
+      --f-panel: rgba(9,15,22,0.84);
+      --f-line: rgba(195,210,230,0.13);
+      --f-line-s: rgba(195,210,230,0.22);
+      --f-text: #e4edf8;
+      --f-muted: rgba(228,237,248,0.68);
+      --f-dim: rgba(228,237,248,0.44);
+      --f-sky: #38bdf8;
+      --f-amber: #f59e0b;
+      --f-rose: #fb7185;
+      --f-green: #4ade80;
+      --f-violet: #c084fc;
+      --f-radius: 8px;
+      --f-shadow: 0 24px 64px rgba(0,0,0,0.34);
+    }
+    html { scroll-behavior: smooth; }
+    body { margin:0; font-family:var(--font-sans); color:var(--f-text);
+      background: linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px), linear-gradient(90deg,rgba(255,255,255,0.016) 1px,transparent 1px), linear-gradient(180deg,#040910 0%,#070d18 45%,#050a0e 100%);
+      background-size: 34px 34px,34px 34px,auto; min-height:100vh; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none;
+      background: linear-gradient(112deg,rgba(56,189,248,0.09),transparent 32%), linear-gradient(248deg,rgba(251,113,133,0.07),transparent 38%);
+      mask-image: linear-gradient(180deg,#000,transparent 78%); }
+    .f-shell { width:min(1280px,calc(100% - 2rem)); margin:0 auto; padding:1rem 0 4rem; display:grid; gap:1rem; }
+    .f-topbar { position:sticky; top:0; z-index:30; backdrop-filter:blur(18px) saturate(140%); background:rgba(5,10,14,0.88); border-bottom:1px solid var(--f-line); }
+    .f-topbar-inner { width:min(1280px,calc(100% - 2rem)); min-height:54px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .f-topbar a { color:#bbd0f0; text-decoration:none; font-size:0.82rem; font-weight:700; }
+    .f-topbar a:hover { color:#fff; }
+    .f-brand { color:#f0f4ff; font-size:0.92rem; font-weight:800; letter-spacing:-0.02em; white-space:nowrap; }
+    .f-nav { display:flex; align-items:center; gap:0.2rem; overflow-x:auto; scrollbar-width:none; }
+    .f-nav::-webkit-scrollbar { display:none; }
+    .f-nav a { display:inline-flex; align-items:center; min-height:1.85rem; padding:0 0.55rem; border-radius:var(--f-radius); color:var(--f-dim); white-space:nowrap; }
+    .f-nav a:hover { color:var(--f-text); background:rgba(255,255,255,0.06); }
+    .f-pills { display:flex; gap:0.4rem; }
+    .f-pill { display:inline-flex; align-items:center; height:1.7rem; padding:0 0.62rem; border-radius:var(--f-radius); font-size:0.69rem; font-weight:800; letter-spacing:0.07em; text-transform:uppercase; border:1px solid rgba(56,189,248,0.36); background:rgba(56,189,248,0.12); color:#bae6fd; }
+    .f-pill.rose { border-color:rgba(251,113,133,0.36); background:rgba(251,113,133,0.1); color:#fecdd3; }
+    @media (max-width:960px) { .f-brand { display:none; } }
+    @media (max-width:740px) { .f-nav { display:none; } }
+    .f-hero { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(280px,0.7fr); gap:1rem; align-items:stretch; min-height:min(500px,calc(100vh - 88px)); }
+    @media (max-width:700px) { .f-hero { grid-template-columns:1fr; } }
+    .f-hero-copy { border-radius:var(--f-radius); border:1px solid var(--f-line-s); background:linear-gradient(120deg,rgba(56,189,248,0.09),transparent 44%),linear-gradient(180deg,rgba(12,18,32,0.93),rgba(7,12,22,0.93)); box-shadow:var(--f-shadow); padding:clamp(1.2rem,3vw,2.2rem); display:flex; flex-direction:column; justify-content:center; }
+    .f-eyebrow { font-size:0.71rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--f-sky); margin:0 0 0.65rem; }
+    .f-hero-copy h1 { margin:0 0 0.65rem; max-width:14ch; font-size:clamp(2rem,6vw,4.6rem); line-height:0.94; letter-spacing:-0.055em; color:#fff; }
+    .f-hero-copy h1 em { font-style:normal; color:var(--f-rose); }
+    .f-lede { max-width:72ch; color:var(--f-muted); font-size:clamp(0.93rem,1.4vw,1.04rem); line-height:1.72; margin:0 0 1rem; }
+    .f-meta { display:flex; flex-wrap:wrap; gap:0.38rem; }
+    .f-quote-card { border-radius:var(--f-radius); border:1px solid rgba(192,132,252,0.24); background:linear-gradient(180deg,rgba(192,132,252,0.09),transparent 56%),rgba(9,15,22,0.82); padding:clamp(1.1rem,2.2vw,1.75rem); display:flex; flex-direction:column; justify-content:center; gap:0.85rem; box-shadow:var(--f-shadow); }
+    .f-quote-mark { font-size:2.8rem; line-height:0.8; color:var(--f-violet); opacity:0.6; }
+    .f-quote-text { font-size:clamp(0.9rem,1.9vw,1.08rem); font-style:italic; line-height:1.62; color:#f0e8ff; margin:0; }
+    .f-quote-attr { font-size:0.75rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--f-violet); opacity:0.9; }
+    .f-card { border-radius:var(--f-radius); border:1px solid var(--f-line); background:var(--f-panel); backdrop-filter:blur(10px); padding:clamp(1.1rem,2vw,1.55rem); scroll-margin-top:72px; }
+    .f-sky-a { border-left:4px solid var(--f-sky); }
+    .f-amber-a { border-left:4px solid var(--f-amber); }
+    .f-rose-a { border-left:4px solid var(--f-rose); }
+    .f-green-a { border-left:4px solid var(--f-green); }
+    .f-violet-a { border-left:4px solid var(--f-violet); }
+    .f-kicker { font-size:0.69rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; margin:0 0 0.4rem; }
+    .sk { color:var(--f-sky); } .ak { color:var(--f-amber); } .rk { color:var(--f-rose); } .gk { color:var(--f-green); } .vk { color:var(--f-violet); }
+    .f-card h2 { margin:0 0 0.7rem; font-size:clamp(1.18rem,2.3vw,1.6rem); letter-spacing:-0.03em; color:#fff; }
+    .f-card h3 { margin:1rem 0 0.32rem; font-size:0.99rem; letter-spacing:-0.02em; color:#dce8f6; }
+    .f-card p,.f-card li { color:var(--f-muted); font-size:0.9rem; line-height:1.72; margin:0 0 0.62rem; }
+    .f-card p:last-child { margin-bottom:0; }
+    .f-card ul { padding-left:1.35rem; margin:0.35rem 0 0.65rem; }
+    .f-two { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    @media (max-width:600px) { .f-two { grid-template-columns:1fr; } }
+    .f-box { border-radius:var(--f-radius); padding:0.95rem 1.15rem; margin:0.85rem 0; }
+    .f-box.sky { background:rgba(56,189,248,0.09); border:1px solid rgba(56,189,248,0.26); }
+    .f-box.amber { background:rgba(245,158,11,0.09); border:1px solid rgba(245,158,11,0.26); }
+    .f-box.rose { background:rgba(251,113,133,0.09); border:1px solid rgba(251,113,133,0.26); }
+    .f-box.green { background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.26); }
+    .f-box.violet { background:rgba(192,132,252,0.09); border:1px solid rgba(192,132,252,0.26); }
+    .f-box strong { display:block; font-size:0.74rem; font-weight:800; letter-spacing:0.09em; text-transform:uppercase; margin-bottom:0.32rem; }
+    .f-box.sky strong { color:var(--f-sky); } .f-box.amber strong { color:var(--f-amber); } .f-box.rose strong { color:var(--f-rose); } .f-box.green strong { color:var(--f-green); } .f-box.violet strong { color:var(--f-violet); }
+    .f-box p { margin:0; font-size:0.87rem; color:rgba(228,237,248,0.8); line-height:1.65; }
+    /* Force cards grid */
+    .f-four { display:grid; grid-template-columns:repeat(2,1fr); gap:0.8rem; margin:0.9rem 0; }
+    @media (max-width:560px) { .f-four { grid-template-columns:1fr; } }
+    .f-force-card { border-radius:var(--f-radius); padding:1rem 1.1rem; border:1px solid var(--f-line); }
+    .f-force-icon { font-size:2rem; margin-bottom:0.35rem; }
+    .f-force-name { font-size:0.9rem; font-weight:800; margin-bottom:0.2rem; }
+    .f-force-range { font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:0.3rem; }
+    .f-force-desc { font-size:0.78rem; color:var(--f-muted); line-height:1.55; }
+    .f-strength-bar { height:6px; border-radius:999px; margin:0.5rem 0 0.3rem; background:rgba(255,255,255,0.08); overflow:hidden; }
+    .f-strength-fill { height:100%; border-radius:999px; }
+    .f-sim { border-radius:var(--f-radius); border:1px solid var(--f-line); overflow:hidden; background:#020810; box-shadow:0 16px 48px rgba(0,0,0,0.28); scroll-margin-top:72px; }
+    .f-sim-head { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.55rem; padding:0.95rem 1.15rem 0.7rem; background:linear-gradient(180deg,rgba(255,255,255,0.038),transparent); }
+    .f-sim-hl { display:flex; flex-direction:column; gap:0.18rem; }
+    .f-sim-title { font-size:0.77rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; }
+    .f-sim-sub { font-size:0.77rem; color:rgba(210,224,248,0.46); }
+    .f-sim canvas { display:block; width:100%; background:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px),#020810; background-size:24px 24px; }
+    .f-sim-controls { display:flex; flex-wrap:wrap; gap:0.48rem 0.85rem; padding:0.75rem 1.15rem; background:rgba(0,0,0,0.28); border-top:1px solid rgba(255,255,255,0.06); }
+    .f-ctrl { display:flex; flex-direction:column; gap:0.2rem; min-width:110px; }
+    .f-ctrl label { font-size:0.65rem; font-weight:800; letter-spacing:0.09em; text-transform:uppercase; color:rgba(210,224,248,0.46); }
+    .f-ctrl input[type="range"] { accent-color:var(--f-sky); cursor:pointer; width:100%; }
+    .f-ctrl-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.72rem; font-weight:700; color:var(--f-sky); }
+    .f-readout { display:flex; flex-wrap:wrap; gap:0.42rem; padding:0.62rem 1.15rem; }
+    .f-chip { display:flex; flex-direction:column; gap:0.1rem; border-radius:var(--f-radius); padding:0.42rem 0.62rem; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.028); }
+    .f-chip-label { font-size:0.61rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(210,224,248,0.38); }
+    .f-chip-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.83rem; font-weight:700; color:#dce8f6; }
+    .f-footer { text-align:center; padding:2rem 1rem; color:var(--f-dim); font-size:0.78rem; border-top:1px solid var(--f-line); background:rgba(5,10,14,0.66); }
+    .f-footer a { color:var(--f-sky); text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<div class="f-topbar">
+  <div class="f-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="f-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="f-nav">
+      <a href="#four">Four Forces</a>
+      <a href="#friction">Friction</a>
+      <a href="#molecular">Molecular Forces</a>
+      <a href="#pseudo">Pseudo Forces</a>
+      <a href="#nuclear">Nuclear Forces</a>
+    </nav>
+    <div class="f-pills">
+      <span class="f-pill">Physics</span>
+      <span class="f-pill rose">Physics</span>
+    </div>
+  </div>
+</div>
+
+<div class="f-shell">
+
+  <div class="f-hero">
+    <div class="f-hero-copy">
+      <p class="f-eyebrow">Classical Mechanics · Forces &amp; Interactions</p>
+      <h1>Everything Pushes and Pulls — But <em>How?</em></h1>
+      <p class="f-lede">
+        There are only four fundamental forces in the universe. Every push, pull, friction, magnetism,
+        chemical reaction, and nuclear explosion you have ever witnessed comes from just four interactions.
+        Understanding them reveals the structure of reality.
+      </p>
+      <div class="f-meta">
+        <span class="f-pill">Gravity · EM · Weak · Strong</span>
+        <span class="f-pill rose">2 Simulations</span>
+        <span class="f-pill">Grades 7–12</span>
+      </div>
+    </div>
+    <div class="f-quote-card">
+      <div class="f-quote-mark">"</div>
+      <p class="f-quote-text">
+        If we stand on our planet and we ask 'what is a force?' — we find that all the forces we see
+        in our ordinary experience... are ultimately either gravitational or electromagnetic in origin.
+        The two others — the weak force and the strong force — act only inside atomic nuclei,
+        and they are responsible for nuclear energy and radioactivity.
+      </p>
+      <div class="f-quote-attr">— Richard Feynman</div>
+    </div>
+  </div>
+
+  <!-- Section 1: Four Fundamental Forces -->
+  <div class="f-card f-sky-a" id="four">
+    <p class="f-kicker sk">Idea 1 · The Four Fundamental Forces</p>
+    <h2>All Forces in the Universe Reduce to Four</h2>
+    <div class="f-four">
+      <div class="f-force-card" style="border-color:rgba(56,189,248,0.28);background:rgba(56,189,248,0.06);">
+        <div class="f-force-icon">🌍</div>
+        <div class="f-force-name" style="color:#38bdf8;">Gravity</div>
+        <div class="f-force-range" style="color:#38bdf8;">Range: Infinite · Carrier: Graviton (hypothetical)</div>
+        <div class="f-strength-bar"><div class="f-strength-fill" style="width:1%;background:#38bdf8;"></div></div>
+        <div class="f-force-desc">Weakest of the four forces — but it has infinite range and acts between all mass-energy. Dominates at large scales because it only attracts (no repulsion), so it accumulates. Responsible for orbits, tides, black holes, and the large-scale structure of the universe.</div>
+      </div>
+      <div class="f-force-card" style="border-color:rgba(251,113,133,0.28);background:rgba(251,113,133,0.06);">
+        <div class="f-force-icon">⚡</div>
+        <div class="f-force-name" style="color:#fb7185;">Electromagnetic</div>
+        <div class="f-force-range" style="color:#fb7185;">Range: Infinite · Carrier: Photon</div>
+        <div class="f-strength-bar"><div class="f-strength-fill" style="width:72%;background:#fb7185;"></div></div>
+        <div class="f-force-desc">10³⁶ times stronger than gravity. Acts between charges: attracts opposites, repels likes. Responsible for all chemistry, all materials science, all biology, all electronics, all light. Nearly everything you interact with daily is electromagnetic.</div>
+      </div>
+      <div class="f-force-card" style="border-color:rgba(245,158,11,0.28);background:rgba(245,158,11,0.06);">
+        <div class="f-force-icon">☢️</div>
+        <div class="f-force-name" style="color:#f59e0b;">Weak Nuclear</div>
+        <div class="f-force-range" style="color:#f59e0b;">Range: 10⁻¹⁸ m · Carriers: W±, Z bosons</div>
+        <div class="f-strength-bar"><div class="f-strength-fill" style="width:20%;background:#f59e0b;"></div></div>
+        <div class="f-force-desc">Responsible for radioactive beta decay — converting neutrons into protons (or vice versa) with neutrino emission. Makes the Sun shine: nuclear fusion requires protons to change into neutrons via the weak force. Also responsible for neutrino interactions.</div>
+      </div>
+      <div class="f-force-card" style="border-color:rgba(74,222,128,0.28);background:rgba(74,222,128,0.06);">
+        <div class="f-force-icon">⚛️</div>
+        <div class="f-force-name" style="color:#4ade80;">Strong Nuclear</div>
+        <div class="f-force-range" style="color:#4ade80;">Range: 10⁻¹⁵ m · Carrier: Gluon</div>
+        <div class="f-strength-bar"><div class="f-strength-fill" style="width:100%;background:#4ade80;"></div></div>
+        <div class="f-force-desc">The strongest force — holds quarks together inside protons and neutrons, and holds protons and neutrons together inside nuclei. Overcomes the enormous electromagnetic repulsion between positive protons. Nuclear energy and atomic bombs release this energy.</div>
+      </div>
+    </div>
+    <div class="f-box sky">
+      <strong>Unification</strong>
+      <p>At very high energies (early universe), the electromagnetic and weak forces merge into the "electroweak" force.
+      Physicists hope to eventually unify all four into a single theory — the "Theory of Everything." So far, only three have been unified (Standard Model).</p>
+    </div>
+  </div>
+
+  <!-- Section 2: Friction -->
+  <div class="f-card f-amber-a" id="friction">
+    <p class="f-kicker ak">Idea 2 · Friction — An Emergent, Not Fundamental, Force</p>
+    <h2>Friction Is Electromagnetic at Heart</h2>
+    <div class="f-two">
+      <div>
+        <p>
+          Friction is not a fundamental force — it emerges from electromagnetic interactions between
+          surface molecules. When two surfaces press together, their atoms' electron clouds interact,
+          creating the macroscopic resistance we call friction.
+        </p>
+        <p><strong>Static friction</strong> (f_s ≤ μ_s · N): holds object in place. Can vary from 0 up to its maximum.</p>
+        <p><strong>Kinetic friction</strong> (f_k = μ_k · N): constant force opposing sliding. Always less than max static.</p>
+        <div class="f-box amber">
+          <strong>Amontons' Laws (empirical)</strong>
+          <p>1. Friction is proportional to normal force (N). 2. Friction is independent of contact area.
+          3. Kinetic friction is independent of sliding speed (approximately).
+          These "laws" are approximations — at atomic scales, friction is extremely complex.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Types of Friction in Practice</h3>
+        <ul>
+          <li><strong>Static:</strong> prevents initial motion — always ≥ kinetic friction</li>
+          <li><strong>Kinetic/sliding:</strong> while surfaces slide against each other</li>
+          <li><strong>Rolling:</strong> much smaller than sliding (why wheels exist)</li>
+          <li><strong>Fluid/viscous:</strong> drag through liquids or gases — grows with speed</li>
+          <li><strong>Air resistance:</strong> proportional to v² for fast objects</li>
+        </ul>
+        <div class="f-box rose">
+          <strong>Triboelectric Effect</strong>
+          <p>Friction can also transfer charge between surfaces — that's how a balloon rubbed against
+          hair becomes statically charged (triboelectric effect). Friction is deeply electromagnetic.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 1: Friction simulator -->
+  <div class="f-sim">
+    <div class="f-sim-head">
+      <div class="f-sim-hl">
+        <span class="f-sim-title ak">🧱 Friction Simulator</span>
+        <span class="f-sim-sub">Apply force to a block — watch static friction hold, then kinetic friction take over</span>
+      </div>
+    </div>
+    <canvas id="fricCanvas" height="240"></canvas>
+    <div class="f-sim-controls">
+      <div class="f-ctrl">
+        <label>Applied Force (N) <span class="f-ctrl-val" id="fApplLabel">0 N</span></label>
+        <input type="range" id="fApplSl" min="0" max="100" value="0" />
+      </div>
+      <div class="f-ctrl">
+        <label>μ_static <span class="f-ctrl-val" id="muSLabel">0.50</span></label>
+        <input type="range" id="muSSl" min="0.1" max="1.0" step="0.05" value="0.5" />
+      </div>
+      <div class="f-ctrl">
+        <label>μ_kinetic <span class="f-ctrl-val" id="muKLabel">0.35</span></label>
+        <input type="range" id="muKSl" min="0.05" max="0.9" step="0.05" value="0.35" />
+      </div>
+      <div class="f-ctrl">
+        <label>Mass (kg) <span class="f-ctrl-val" id="massLabel">10 kg</span></label>
+        <input type="range" id="massSl" min="1" max="30" value="10" />
+      </div>
+    </div>
+    <div class="f-readout">
+      <span class="f-chip"><span class="f-chip-label">Normal Force</span><span class="f-chip-val" id="normalVal">98 N</span></span>
+      <span class="f-chip"><span class="f-chip-label">Max Static Friction</span><span class="f-chip-val" id="maxStaticVal">—</span></span>
+      <span class="f-chip"><span class="f-chip-label">Net Force</span><span class="f-chip-val" id="netForceVal">—</span></span>
+      <span class="f-chip"><span class="f-chip-label">Status</span><span class="f-chip-val" id="motionStatus">Static</span></span>
+    </div>
+  </div>
+
+  <!-- Section 3: Molecular Forces -->
+  <div class="f-card f-violet-a" id="molecular">
+    <p class="f-kicker vk">Idea 3 · Molecular Forces</p>
+    <h2>The Lennard-Jones Potential: Attraction and Repulsion at Atomic Scale</h2>
+    <div class="f-two">
+      <div>
+        <p>
+          Between any two atoms or molecules, two competing effects create a characteristic force profile
+          — the <strong>Lennard-Jones potential</strong>:
+        </p>
+        <ul>
+          <li><strong>At long range:</strong> weak attraction (van der Waals / London dispersion forces) — electrons in one atom temporarily create dipoles that attract the other atom.</li>
+          <li><strong>At short range:</strong> strong repulsion — electron clouds of both atoms overlap, causing enormous Pauli exclusion repulsion.</li>
+        </ul>
+        <p>
+          The balance between these creates an <strong>equilibrium distance</strong> — where force = 0.
+          This is the bond length in molecules, and explains why solids have definite crystal structures.
+        </p>
+      </div>
+      <div>
+        <h3>Why Solids Are Solid</h3>
+        <p>
+          Compress a solid: atoms repel → you feel hardness. Stretch a solid: atoms attract → you feel
+          tension. The equilibrium is extremely sharp — even small displacements create large restoring forces.
+          This is why materials have definite elastic moduli (Young's modulus).
+        </p>
+        <div class="f-box violet">
+          <strong>From Molecular Forces to Thermodynamics</strong>
+          <p>Temperature is the average kinetic energy of atoms vibrating about their equilibrium positions.
+          Heat a solid enough and atoms gain enough energy to escape the potential well — the material melts.
+          Heat more and they escape molecular attraction entirely — it evaporates.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Pseudo Forces -->
+  <div class="f-card f-rose-a" id="pseudo">
+    <p class="f-kicker rk">Idea 4 · Pseudo Forces — Forces That Aren't Really There</p>
+    <h2>Centrifugal, Coriolis, and Other Fictitious Forces</h2>
+    <div class="f-two">
+      <div>
+        <p>
+          Newton's Laws only work in <strong>inertial reference frames</strong> — frames that aren't
+          accelerating. In a rotating or accelerating frame, we experience apparent forces that don't
+          really exist — they're artifacts of the frame's acceleration.
+        </p>
+        <h3>Centrifugal Force</h3>
+        <p>
+          Standing inside a rotating space station, you feel pushed outward — "centrifugal force."
+          But from an inertial frame (outside looking in), there is no outward force. You're simply
+          moving in a circle, and your inertia wants to continue straight — the wall pushes you inward.
+        </p>
+      </div>
+      <div>
+        <h3>Coriolis Force</h3>
+        <p>
+          On a rotating Earth, moving objects appear to curve — right in the Northern Hemisphere,
+          left in the Southern. This "Coriolis force" makes hurricanes spin, deflects long-range missiles,
+          and creates ocean gyres. It's not a real force — just the appearance of curved motion from a
+          rotating frame.
+        </p>
+        <div class="f-box rose">
+          <strong>Einstein's Equivalence Principle</strong>
+          <p>Einstein noticed something profound: gravity and accelerating frames are locally indistinguishable.
+          You can't tell (locally) whether you're in a rocket accelerating at 9.8 m/s² or sitting on Earth's surface.
+          This equivalence led Einstein to general relativity — gravity as curved spacetime.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Nuclear Forces -->
+  <div class="f-card f-green-a" id="nuclear">
+    <p class="f-kicker gk">Idea 5 · Nuclear Forces</p>
+    <h2>The Force That Powers Stars and Splits Atoms</h2>
+    <div class="f-two">
+      <div>
+        <p>
+          The strong nuclear force is nature's most powerful — roughly 100 times stronger than
+          electromagnetism at nuclear distances. It must be: it has to overcome the enormous
+          electromagnetic repulsion between protons packed into a tiny nucleus.
+        </p>
+        <p>
+          The strong force is charge-blind — it acts equally on protons and neutrons (collectively called nucleons).
+          It's mediated by the exchange of particles called <strong>gluons</strong> between quarks,
+          which effectively creates a "residual" force between nucleons.
+        </p>
+      </div>
+      <div>
+        <h3>Binding Energy and E = mc²</h3>
+        <p>
+          A nucleus weighs less than the sum of its individual protons and neutrons. This "mass defect"
+          is converted to binding energy via E = mc². The binding energy per nucleon peaks at Iron-56 —
+          the most stable nucleus.
+        </p>
+        <ul>
+          <li><strong>Fission:</strong> heavy nuclei (uranium, plutonium) split → binding energy released</li>
+          <li><strong>Fusion:</strong> light nuclei (hydrogen) combine → binding energy released</li>
+          <li>Both release energy because products have higher binding energy per nucleon</li>
+        </ul>
+        <div class="f-box green">
+          <strong>Why the Sun Shines</strong>
+          <p>The Sun fuses 620 million tons of hydrogen per second, converting it to helium.
+          The mass defect — about 0.7% of the hydrogen mass — becomes the photons and neutrinos that
+          light and warm our planet. The same process in a thermonuclear weapon happens in microseconds.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="f-footer site-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">All Lessons</a> ·
+  Classical Mechanics · Forces
+</footer>
+
+<script>
+/* ── SIM 1: Friction Simulator ───────────────────── */
+(function () {
+  const cv = document.getElementById('fricCanvas');
+  const ctx = cv.getContext('2d');
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 240; }
+  resize(); window.addEventListener('resize', resize);
+
+  const fApplSl = document.getElementById('fApplSl');
+  const muSSl = document.getElementById('muSSl');
+  const muKSl = document.getElementById('muKSl');
+  const massSl = document.getElementById('massSl');
+
+  let blockX = null, blockV = 0, sliding = false;
+
+  function updateLabels() {
+    document.getElementById('fApplLabel').textContent = fApplSl.value + ' N';
+    document.getElementById('muSLabel').textContent = parseFloat(muSSl.value).toFixed(2);
+    document.getElementById('muKLabel').textContent = parseFloat(muKSl.value).toFixed(2);
+    document.getElementById('massLabel').textContent = massSl.value + ' kg';
+  }
+  [fApplSl, muSSl, muKSl, massSl].forEach(el => el.oninput = updateLabels);
+  updateLabels();
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const fAppl = +fApplSl.value;
+    const muS = +muSSl.value, muK = +muKSl.value;
+    const mass = +massSl.value;
+    const g = 9.8;
+    const N = mass * g;
+    const maxStatic = muS * N;
+    const kineticF = muK * N;
+
+    document.getElementById('normalVal').textContent = N.toFixed(1) + ' N';
+    document.getElementById('maxStaticVal').textContent = maxStatic.toFixed(1) + ' N';
+
+    if (blockX === null) blockX = W * 0.35;
+
+    if (!sliding) {
+      if (fAppl > maxStatic) { sliding = true; blockV = 0; }
+    }
+
+    let netF;
+    if (sliding) {
+      netF = fAppl - kineticF;
+      blockV += netF * 0.016 * 8 / mass;
+      blockX += blockV * 0.5;
+      if (blockX > W - 60) { blockX = W - 60; blockV = 0; sliding = false; }
+      if (blockX < 60) { blockX = 60; blockV = 0; }
+    } else {
+      netF = 0;
+    }
+
+    document.getElementById('netForceVal').textContent = netF.toFixed(1) + ' N';
+    document.getElementById('motionStatus').textContent = sliding ? '🟠 Sliding' : '🟢 Static';
+
+    // Ground
+    const gy = H - 50;
+    ctx.fillStyle = 'rgba(245,158,11,0.08)'; ctx.fillRect(0, gy, W, 50);
+    ctx.strokeStyle = 'rgba(245,158,11,0.4)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+
+    // Block
+    const bW = 60, bH = 40;
+    ctx.fillStyle = sliding ? 'rgba(251,113,133,0.4)' : 'rgba(56,189,248,0.3)';
+    ctx.strokeStyle = sliding ? '#fb7185' : '#38bdf8'; ctx.lineWidth = 2;
+    ctx.fillRect(blockX - bW / 2, gy - bH, bW, bH);
+    ctx.strokeRect(blockX - bW / 2, gy - bH, bW, bH);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(mass + 'kg', blockX, gy - bH / 2); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+
+    // Applied force arrow
+    if (fAppl > 0) {
+      const arrowLen = Math.min(fAppl * 1.2, 100);
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(blockX - bW / 2 - 4, gy - bH / 2); ctx.lineTo(blockX - bW / 2 - 4 - arrowLen, gy - bH / 2); ctx.stroke();
+      // No arrowhead needed here for simplicity
+      ctx.fillStyle = 'rgba(245,158,11,0.8)'; ctx.font = '10px Inter,sans-serif';
+      ctx.fillText('F=' + fAppl + 'N', blockX - bW / 2 - arrowLen - 4, gy - bH / 2 - 8);
+    }
+
+    // Friction arrow
+    const fricF = sliding ? kineticF : Math.min(fAppl, maxStatic);
+    if (fricF > 0) {
+      const fLen = Math.min(fricF * 1.2, 80);
+      ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(blockX + bW / 2 + 4, gy - bH / 2); ctx.lineTo(blockX + bW / 2 + 4 + fLen, gy - bH / 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(74,222,128,0.8)'; ctx.font = '10px Inter,sans-serif';
+      ctx.fillText('f=' + fricF.toFixed(0) + 'N', blockX + bW / 2 + 8, gy - bH / 2 - 8);
+    }
+
+    // Normal force arrow
+    ctx.strokeStyle = 'rgba(192,132,252,0.7)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(blockX, gy - bH); ctx.lineTo(blockX, gy - bH - 35); ctx.stroke();
+    ctx.fillStyle = 'rgba(192,132,252,0.7)'; ctx.font = '10px Inter,sans-serif';
+    ctx.fillText('N=' + N.toFixed(0) + 'N', blockX + 4, gy - bH - 38);
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

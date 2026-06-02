@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vectors · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson — Vectors: explore components, vector addition, dot products, symmetry in physics, and why direction matters as much as magnitude." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --v-bg: #050810;
+      --v-panel: rgba(10,14,26,0.84);
+      --v-line: rgba(198,208,238,0.13);
+      --v-line-s: rgba(198,208,238,0.22);
+      --v-text: #e4eaf8;
+      --v-muted: rgba(228,234,248,0.68);
+      --v-dim: rgba(228,234,248,0.44);
+      --v-pink: #ec4899;
+      --v-blue: #60a5fa;
+      --v-lime: #a3e635;
+      --v-amber: #f59e0b;
+      --v-violet: #a78bfa;
+      --v-radius: 8px;
+      --v-shadow: 0 24px 64px rgba(0,0,0,0.34);
+    }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; font-family: var(--font-sans); color: var(--v-text);
+      background: linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px), linear-gradient(90deg,rgba(255,255,255,0.016) 1px,transparent 1px), linear-gradient(180deg,#050710 0%,#070a18 45%,#050810 100%);
+      background-size: 34px 34px, 34px 34px, auto; min-height: 100vh; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none;
+      background: linear-gradient(112deg,rgba(96,165,250,0.09),transparent 32%), linear-gradient(252deg,rgba(236,72,153,0.07),transparent 38%);
+      mask-image: linear-gradient(180deg,#000,transparent 78%); }
+    .v-shell { width: min(1280px,calc(100% - 2rem)); margin:0 auto; padding:1rem 0 4rem; display:grid; gap:1rem; }
+    .v-topbar { position:sticky; top:0; z-index:30; backdrop-filter:blur(18px) saturate(140%); background:rgba(5,8,16,0.88); border-bottom:1px solid var(--v-line); }
+    .v-topbar-inner { width:min(1280px,calc(100% - 2rem)); min-height:54px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .v-topbar a { color:#c0d2f4; text-decoration:none; font-size:0.82rem; font-weight:700; }
+    .v-topbar a:hover { color:#fff; }
+    .v-brand { color:#f0f4ff; font-size:0.92rem; font-weight:800; letter-spacing:-0.02em; white-space:nowrap; }
+    .v-nav { display:flex; align-items:center; gap:0.2rem; overflow-x:auto; scrollbar-width:none; }
+    .v-nav::-webkit-scrollbar { display:none; }
+    .v-nav a { display:inline-flex; align-items:center; min-height:1.85rem; padding:0 0.55rem; border-radius:var(--v-radius); color:var(--v-dim); white-space:nowrap; }
+    .v-nav a:hover { color:var(--v-text); background:rgba(255,255,255,0.06); }
+    .v-pills { display:flex; gap:0.4rem; }
+    .v-pill { display:inline-flex; align-items:center; height:1.7rem; padding:0 0.62rem; border-radius:var(--v-radius); font-size:0.69rem; font-weight:800; letter-spacing:0.07em; text-transform:uppercase; border:1px solid rgba(96,165,250,0.36); background:rgba(96,165,250,0.12); color:#bfdbfe; }
+    .v-pill.pink { border-color:rgba(236,72,153,0.36); background:rgba(236,72,153,0.1); color:#fbcfe8; }
+    @media (max-width:960px) { .v-brand { display:none; } }
+    @media (max-width:740px) { .v-nav { display:none; } }
+    .v-hero { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(280px,0.7fr); gap:1rem; align-items:stretch; min-height:min(520px,calc(100vh - 88px)); }
+    @media (max-width:700px) { .v-hero { grid-template-columns:1fr; } }
+    .v-hero-copy { border-radius:var(--v-radius); border:1px solid var(--v-line-s); background:linear-gradient(120deg,rgba(96,165,250,0.09),transparent 44%),linear-gradient(180deg,rgba(14,18,36,0.93),rgba(8,10,22,0.93)); box-shadow:var(--v-shadow); padding:clamp(1.2rem,3vw,2.2rem); display:flex; flex-direction:column; justify-content:center; }
+    .v-eyebrow { font-size:0.71rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--v-blue); margin:0 0 0.65rem; }
+    .v-hero-copy h1 { margin:0 0 0.65rem; max-width:12ch; font-size:clamp(2.2rem,6vw,5.2rem); line-height:0.93; letter-spacing:-0.055em; color:#fff; }
+    .v-hero-copy h1 em { font-style:normal; color:var(--v-pink); }
+    .v-lede { max-width:72ch; color:var(--v-muted); font-size:clamp(0.93rem,1.4vw,1.04rem); line-height:1.72; margin:0 0 1rem; }
+    .v-meta { display:flex; flex-wrap:wrap; gap:0.38rem; }
+    .v-quote-card { border-radius:var(--v-radius); border:1px solid rgba(163,230,53,0.24); background:linear-gradient(180deg,rgba(163,230,53,0.09),transparent 56%),rgba(10,14,26,0.82); padding:clamp(1.1rem,2.2vw,1.75rem); display:flex; flex-direction:column; justify-content:center; gap:0.85rem; box-shadow:var(--v-shadow); }
+    .v-quote-mark { font-size:2.8rem; line-height:0.8; color:var(--v-lime); opacity:0.6; }
+    .v-quote-text { font-size:clamp(0.9rem,1.9vw,1.08rem); font-style:italic; line-height:1.62; color:#e8fadc; margin:0; }
+    .v-quote-attr { font-size:0.75rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--v-lime); opacity:0.9; }
+    .v-card { border-radius:var(--v-radius); border:1px solid var(--v-line); background:var(--v-panel); backdrop-filter:blur(10px); padding:clamp(1.1rem,2vw,1.55rem); scroll-margin-top:72px; }
+    .v-blue-acc { border-left:4px solid var(--v-blue); }
+    .v-pink-acc { border-left:4px solid var(--v-pink); }
+    .v-lime-acc { border-left:4px solid var(--v-lime); }
+    .v-amber-acc { border-left:4px solid var(--v-amber); }
+    .v-violet-acc { border-left:4px solid var(--v-violet); }
+    .v-kicker { font-size:0.69rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; margin:0 0 0.4rem; }
+    .blue-k { color:var(--v-blue); } .pink-k { color:var(--v-pink); } .lime-k { color:var(--v-lime); } .amber-k { color:var(--v-amber); } .violet-k { color:var(--v-violet); }
+    .v-card h2 { margin:0 0 0.7rem; font-size:clamp(1.18rem,2.3vw,1.6rem); letter-spacing:-0.03em; color:#fff; }
+    .v-card h3 { margin:1rem 0 0.32rem; font-size:0.99rem; letter-spacing:-0.02em; color:#dce8f6; }
+    .v-card p,.v-card li { color:var(--v-muted); font-size:0.9rem; line-height:1.72; margin:0 0 0.62rem; }
+    .v-card p:last-child { margin-bottom:0; }
+    .v-card ul { padding-left:1.35rem; margin:0.35rem 0 0.65rem; }
+    .v-two { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    @media (max-width:600px) { .v-two { grid-template-columns:1fr; } }
+    .v-box { border-radius:var(--v-radius); padding:0.95rem 1.15rem; margin:0.85rem 0; }
+    .v-box.blue { background:rgba(96,165,250,0.09); border:1px solid rgba(96,165,250,0.26); }
+    .v-box.pink { background:rgba(236,72,153,0.09); border:1px solid rgba(236,72,153,0.26); }
+    .v-box.lime { background:rgba(163,230,53,0.08); border:1px solid rgba(163,230,53,0.26); }
+    .v-box.amber { background:rgba(245,158,11,0.09); border:1px solid rgba(245,158,11,0.26); }
+    .v-box strong { display:block; font-size:0.74rem; font-weight:800; letter-spacing:0.09em; text-transform:uppercase; margin-bottom:0.32rem; }
+    .v-box.blue strong { color:var(--v-blue); } .v-box.pink strong { color:var(--v-pink); } .v-box.lime strong { color:var(--v-lime); } .v-box.amber strong { color:var(--v-amber); }
+    .v-box p { margin:0; font-size:0.87rem; color:rgba(228,234,248,0.8); line-height:1.65; }
+    .v-eq { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:clamp(0.95rem,2.2vw,1.32rem); color:var(--v-blue); text-align:center; padding:0.85rem; letter-spacing:0.04em; border-radius:var(--v-radius); border:1px solid rgba(96,165,250,0.22); background:rgba(96,165,250,0.07); margin:0.75rem 0; }
+    .v-table { width:100%; border-collapse:collapse; font-size:0.84rem; margin:0.75rem 0; }
+    .v-table th { color:var(--v-blue); font-size:0.7rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; padding:0.5rem 0.7rem; border-bottom:1px solid var(--v-line); text-align:left; }
+    .v-table td { padding:0.45rem 0.7rem; color:var(--v-muted); border-bottom:1px solid rgba(255,255,255,0.05); }
+    .v-table tr:last-child td { border-bottom:none; }
+    .v-sim { border-radius:var(--v-radius); border:1px solid var(--v-line); overflow:hidden; background:#020611; box-shadow:0 16px 48px rgba(0,0,0,0.28); scroll-margin-top:72px; }
+    .v-sim-head { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.55rem; padding:0.95rem 1.15rem 0.7rem; background:linear-gradient(180deg,rgba(255,255,255,0.038),transparent); }
+    .v-sim-hl { display:flex; flex-direction:column; gap:0.18rem; }
+    .v-sim-title { font-size:0.77rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; }
+    .v-sim-sub { font-size:0.77rem; color:rgba(210,222,248,0.46); }
+    .v-sim canvas { display:block; width:100%; background:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px),#020611; background-size:28px 28px; }
+    .v-sim-controls { display:flex; flex-wrap:wrap; gap:0.48rem 0.85rem; padding:0.75rem 1.15rem; background:rgba(0,0,0,0.28); border-top:1px solid rgba(255,255,255,0.06); }
+    .v-ctrl { display:flex; flex-direction:column; gap:0.2rem; min-width:110px; }
+    .v-ctrl label { font-size:0.65rem; font-weight:800; letter-spacing:0.09em; text-transform:uppercase; color:rgba(210,222,248,0.46); }
+    .v-ctrl input[type="range"] { accent-color:var(--v-blue); cursor:pointer; width:100%; }
+    .v-ctrl-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.72rem; font-weight:700; color:var(--v-blue); }
+    .v-readout { display:flex; flex-wrap:wrap; gap:0.42rem; padding:0.62rem 1.15rem; }
+    .v-chip { display:flex; flex-direction:column; gap:0.1rem; border-radius:var(--v-radius); padding:0.42rem 0.62rem; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.028); }
+    .v-chip-label { font-size:0.61rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(210,222,248,0.38); }
+    .v-chip-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.83rem; font-weight:700; color:#dce8f6; }
+    .v-footer { text-align:center; padding:2rem 1rem; color:var(--v-dim); font-size:0.78rem; border-top:1px solid var(--v-line); background:rgba(5,8,16,0.66); }
+    .v-footer a { color:var(--v-blue); text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<div class="v-topbar">
+  <div class="v-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="v-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="v-nav">
+      <a href="#scalars">Scalars vs Vectors</a>
+      <a href="#components">Components</a>
+      <a href="#addition">Addition Lab</a>
+      <a href="#dot">Dot Product</a>
+      <a href="#symmetry">Symmetry</a>
+    </nav>
+    <div class="v-pills">
+      <span class="v-pill">Physics · Math</span>
+      <span class="v-pill pink">Physics · Math</span>
+    </div>
+  </div>
+</div>
+
+<div class="v-shell">
+
+  <div class="v-hero">
+    <div class="v-hero-copy">
+      <p class="v-eyebrow">Classical Mechanics · Direction &amp; Magnitude</p>
+      <h1>Direction is Half the <em>Story</em></h1>
+      <p class="v-lede">
+        Speed tells you how fast. Velocity tells you how fast and which way.
+        Vectors are the mathematical language that captures both at once —
+        and they underlie everything from Newton's Laws to quantum mechanics.
+      </p>
+      <div class="v-meta">
+        <span class="v-pill">Components · Addition · Dot Product</span>
+        <span class="v-pill pink">2 Simulations</span>
+        <span class="v-pill">Grades 7–12</span>
+      </div>
+    </div>
+    <div class="v-quote-card">
+      <div class="v-quote-mark">"</div>
+      <p class="v-quote-text">
+        One of the most powerful ideas in physics is that the laws of nature look the same
+        from every orientation in space. This symmetry — that rotating the universe doesn't
+        change the equations — is exactly why vectors exist: they encode what's invariant
+        across all rotations.
+      </p>
+      <div class="v-quote-attr">— Richard Feynman</div>
+    </div>
+  </div>
+
+  <!-- Section 1: Scalars vs Vectors -->
+  <div class="v-card v-blue-acc" id="scalars">
+    <p class="v-kicker blue-k">Idea 1 · Scalars vs. Vectors</p>
+    <h2>Two Types of Quantities in Physics</h2>
+    <div class="v-two">
+      <div>
+        <p>
+          Every measurable quantity in physics is either a <strong>scalar</strong> or a <strong>vector</strong>:
+        </p>
+        <table class="v-table">
+          <thead><tr><th>Scalars (magnitude only)</th><th>Vectors (magnitude + direction)</th></tr></thead>
+          <tbody>
+            <tr><td>Temperature (25°C)</td><td>Velocity (30 m/s north)</td></tr>
+            <tr><td>Mass (5 kg)</td><td>Force (20 N upward)</td></tr>
+            <tr><td>Speed (60 mph)</td><td>Displacement (5 m east)</td></tr>
+            <tr><td>Energy (100 J)</td><td>Acceleration (9.8 m/s² down)</td></tr>
+            <tr><td>Time (3 s)</td><td>Momentum (p = mv, directed)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3>Why Direction Matters</h3>
+        <p>
+          Two forces of 10 N pushing on a block from the same side = 20 N net force.
+          Two forces of 10 N pushing from opposite sides = 0 N net force. Same magnitudes,
+          completely different physics — because direction matters.
+        </p>
+        <div class="v-box blue">
+          <strong>Vector Notation</strong>
+          <p>Vectors are written in bold (<strong>v</strong>) or with an arrow (→). Their magnitude is written
+          with absolute-value bars: |<strong>v</strong>|. In component form: <strong>v</strong> = (vₓ, v_y, v_z).</p>
+        </div>
+        <div class="v-box pink">
+          <strong>The Parallelogram Rule</strong>
+          <p>To add two vectors graphically, place them tail-to-tip. The resultant is the vector from the first
+          tail to the second tip. Or: draw a parallelogram and take the diagonal.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Components -->
+  <div class="v-card v-pink-acc" id="components">
+    <p class="v-kicker pink-k">Idea 2 · Breaking Vectors into Components</p>
+    <h2>Any Vector = a Sum of Axis-Aligned Pieces</h2>
+    <div class="v-two">
+      <div>
+        <p>
+          The most powerful technique in vector math: decompose any vector into components along
+          the x and y axes (and z for 3D). Then each axis can be solved independently — a
+          2D or 3D problem becomes two or three 1D problems.
+        </p>
+        <div class="v-eq">vₓ = |v| · cos(θ) &nbsp;&nbsp; v_y = |v| · sin(θ)</div>
+        <div class="v-eq">|v| = √(vₓ² + v_y²) &nbsp;&nbsp; θ = arctan(v_y/vₓ)</div>
+        <p>
+          This is Pythagoras applied to vectors. The component method turns every vector problem
+          into coordinate arithmetic.
+        </p>
+      </div>
+      <div>
+        <h3>Unit Vectors</h3>
+        <p>
+          A unit vector has magnitude 1 — it just points a direction. Written with a hat: <strong>î</strong> (x), <strong>ĵ</strong> (y), <strong>k̂</strong> (z).
+          Any vector can be written: <strong>v</strong> = vₓ<strong>î</strong> + v_y<strong>ĵ</strong> + v_z<strong>k̂</strong>
+        </p>
+        <div class="v-box lime">
+          <strong>Why Components Work</strong>
+          <p>Newton's Second Law is a vector equation: <strong>F</strong> = m<strong>a</strong>.
+          In 2D, this really means two equations: Fₓ = maₓ and F_y = ma_y.
+          You solve each axis separately, then combine for the full picture.</p>
+        </div>
+        <ul>
+          <li>Projectile: x-axis has no force → constant vₓ. y-axis has gravity → changing v_y.</li>
+          <li>Inclined plane: break gravity into parallel and perpendicular to slope.</li>
+          <li>3D motion: drones, spacecraft solve x, y, z independently per frame.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 1: Vector Addition Lab -->
+  <div class="v-sim" id="addition">
+    <div class="v-sim-head">
+      <div class="v-sim-hl">
+        <span class="v-sim-title blue-k">➕ Vector Addition Lab</span>
+        <span class="v-sim-sub">Set two vectors' magnitude and angle — watch the resultant form by tip-to-tail addition</span>
+      </div>
+    </div>
+    <canvas id="vecCanvas" height="320"></canvas>
+    <div class="v-sim-controls">
+      <div class="v-ctrl">
+        <label>Vector A — Magnitude <span class="v-ctrl-val" id="amagLabel">80</span></label>
+        <input type="range" id="amagSl" min="10" max="130" value="80" />
+      </div>
+      <div class="v-ctrl">
+        <label>Vector A — Angle <span class="v-ctrl-val" id="aangLabel">30°</span></label>
+        <input type="range" id="aangSl" min="0" max="359" value="30" />
+      </div>
+      <div class="v-ctrl">
+        <label>Vector B — Magnitude <span class="v-ctrl-val" id="bmagLabel">60</span></label>
+        <input type="range" id="bmagSl" min="10" max="130" value="60" />
+      </div>
+      <div class="v-ctrl">
+        <label>Vector B — Angle <span class="v-ctrl-val" id="bangLabel">110°</span></label>
+        <input type="range" id="bangSl" min="0" max="359" value="110" />
+      </div>
+    </div>
+    <div class="v-readout">
+      <span class="v-chip"><span class="v-chip-label">Resultant |R|</span><span class="v-chip-val" id="rmagVal">—</span></span>
+      <span class="v-chip"><span class="v-chip-label">Angle θ_R</span><span class="v-chip-val" id="rangVal">—</span></span>
+      <span class="v-chip"><span class="v-chip-label">Rₓ</span><span class="v-chip-val" id="rxVal">—</span></span>
+      <span class="v-chip"><span class="v-chip-label">R_y</span><span class="v-chip-val" id="ryVal">—</span></span>
+    </div>
+  </div>
+
+  <!-- Section 3: Dot Product -->
+  <div class="v-card v-lime-acc" id="dot">
+    <p class="v-kicker lime-k">Idea 3 · The Dot Product — How Much Do Vectors Agree?</p>
+    <h2>Scalar Product: Projecting One Vector Onto Another</h2>
+    <div class="v-two">
+      <div>
+        <div class="v-eq">A · B = |A||B|cos(θ) = AₓBₓ + A_yB_y + A_zB_z</div>
+        <p>
+          The dot product takes two vectors and returns a <em>scalar</em> — a single number
+          measuring "how much they point in the same direction." It has deep physical meaning:
+        </p>
+        <ul>
+          <li><strong>θ = 0°</strong> → cos(0) = 1 → maximum agreement</li>
+          <li><strong>θ = 90°</strong> → cos(90) = 0 → perpendicular, zero dot product</li>
+          <li><strong>θ = 180°</strong> → cos(180) = −1 → opposite directions</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Where You've Already Seen It</h3>
+        <div class="v-box lime">
+          <strong>Work = F · d</strong>
+          <p>Work is the dot product of force and displacement: W = <strong>F</strong>·<strong>d</strong> = |F||d|cos(θ).
+          Only the component of force along the motion does work. Perpendicular forces do zero work — that's exactly cos(90°) = 0.</p>
+        </div>
+        <div class="v-box amber">
+          <strong>Power = F · v</strong>
+          <p>Power delivered to an object is the dot product of force and velocity. A car engine working
+          against drag: only the component of thrust along the direction of travel contributes to power output.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 2: Dot product visualizer -->
+  <div class="v-sim">
+    <div class="v-sim-head">
+      <div class="v-sim-hl">
+        <span class="v-sim-title lime-k">● Dot Product Visualizer</span>
+        <span class="v-sim-sub">The shadow of A onto B = |A|·cos(θ) — multiply by |B| to get A·B</span>
+      </div>
+    </div>
+    <canvas id="dotCanvas" height="280"></canvas>
+    <div class="v-sim-controls">
+      <div class="v-ctrl">
+        <label>|A| <span class="v-ctrl-val" id="dotALabel">100</span></label>
+        <input type="range" id="dotASl" min="20" max="120" value="100" />
+      </div>
+      <div class="v-ctrl">
+        <label>Angle A <span class="v-ctrl-val" id="dotAAngLabel">0°</span></label>
+        <input type="range" id="dotAAngSl" min="0" max="359" value="0" />
+      </div>
+      <div class="v-ctrl">
+        <label>|B| <span class="v-ctrl-val" id="dotBLabel">80</span></label>
+        <input type="range" id="dotBSl" min="20" max="120" value="80" />
+      </div>
+      <div class="v-ctrl">
+        <label>Angle B <span class="v-ctrl-val" id="dotBAngLabel">50°</span></label>
+        <input type="range" id="dotBAngSl" min="0" max="359" value="50" />
+      </div>
+    </div>
+    <div class="v-readout">
+      <span class="v-chip"><span class="v-chip-label">θ between</span><span class="v-chip-val" id="dotThetaVal">—</span></span>
+      <span class="v-chip"><span class="v-chip-label">A · B</span><span class="v-chip-val" id="dotProdVal">—</span></span>
+      <span class="v-chip"><span class="v-chip-label">Projection of A onto B</span><span class="v-chip-val" id="projVal">—</span></span>
+    </div>
+  </div>
+
+  <!-- Section 4: Symmetry -->
+  <div class="v-card v-amber-acc" id="symmetry">
+    <p class="v-kicker amber-k">Idea 4 · Symmetry in Physics — Why Vectors Exist</p>
+    <h2>Rotational Symmetry and the Laws of Nature</h2>
+    <div class="v-two">
+      <div>
+        <p>
+          Feynman made a profound point: <strong>vectors exist because the laws of physics
+          don't care about direction</strong>. Whether you perform an experiment pointing north or east,
+          the same laws apply. This symmetry — rotational invariance — demands that physical laws
+          be written in vector form.
+        </p>
+        <p>
+          If a physical law were written as "the force in the x-direction equals...", it would break
+          if you rotated your coordinate system. But <strong>F</strong> = m<strong>a</strong> holds
+          in <em>any</em> coordinate system. That's the power of vector equations.
+        </p>
+      </div>
+      <div>
+        <h3>Translation and Rotation Symmetry</h3>
+        <ul>
+          <li><strong>Translation symmetry</strong> → conservation of momentum (Noether's theorem)</li>
+          <li><strong>Rotation symmetry</strong> → conservation of angular momentum</li>
+          <li><strong>Time symmetry</strong> → conservation of energy</li>
+        </ul>
+        <div class="v-box amber">
+          <strong>The Deepest Idea</strong>
+          <p>Every conservation law in physics corresponds to a symmetry. Vectors are the language
+          that makes these symmetries visible. When you write <strong>F</strong> = m<strong>a</strong>,
+          you're writing a law that's true in every orientation — and that's why the universe
+          uses vectors as its grammar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="v-footer site-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">All Lessons</a> ·
+  Classical Mechanics · Vectors
+</footer>
+
+<script>
+/* ── SHARED UTILS ─────────────────────────────────── */
+function toRad(d) { return d * Math.PI / 180; }
+function toDeg(r) { return r * 180 / Math.PI; }
+function arrow(ctx, x1, y1, x2, y2, color, lw) {
+  ctx.strokeStyle = color; ctx.lineWidth = lw || 2.5;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  ctx.fillStyle = color; ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - 10 * Math.cos(angle - 0.4), y2 - 10 * Math.sin(angle - 0.4));
+  ctx.lineTo(x2 - 10 * Math.cos(angle + 0.4), y2 - 10 * Math.sin(angle + 0.4));
+  ctx.closePath(); ctx.fill();
+}
+
+/* ── SIM 1: Vector Addition ──────────────────────── */
+(function () {
+  const cv = document.getElementById('vecCanvas');
+  const ctx = cv.getContext('2d');
+  const ids = ['amag','aang','bmag','bang'];
+  const lbls = ['amagLabel','aangLabel','bmagLabel','bangLabel'];
+  const units = ['','°','','°'];
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 320; }
+  resize(); window.addEventListener('resize', resize);
+
+  function getVals() {
+    return {
+      am: +document.getElementById('amagSl').value, aa: +document.getElementById('aangSl').value,
+      bm: +document.getElementById('bmagSl').value, ba: +document.getElementById('bangSl').value
+    };
+  }
+
+  function update() {
+    ids.forEach((id, i) => {
+      const v = document.getElementById(id + 'Sl').value;
+      document.getElementById(lbls[i]).textContent = v + units[i];
+    });
+    draw();
+  }
+  ids.forEach(id => { document.getElementById(id + 'Sl').oninput = update; });
+  window.addEventListener('resize', update);
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    const { am, aa, bm, ba } = getVals();
+    const cx = W / 2, cy = H / 2;
+
+    const ax = am * Math.cos(toRad(aa)), ay = -am * Math.sin(toRad(aa));
+    const bx = bm * Math.cos(toRad(ba)), by = -bm * Math.sin(toRad(ba));
+    const rx = ax + bx, ry = ay + by;
+
+    // Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    // Axes
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+
+    // Tip-to-tail
+    arrow(ctx, cx, cy, cx + ax, cy + ay, '#60a5fa', 3);
+    ctx.fillStyle = '#bfdbfe'; ctx.font = 'bold 12px Inter,sans-serif';
+    ctx.fillText('A', cx + ax * 0.5 + 6, cy + ay * 0.5 - 4);
+
+    arrow(ctx, cx + ax, cy + ay, cx + ax + bx, cy + ay + by, '#ec4899', 3);
+    ctx.fillStyle = '#fbcfe8'; ctx.fillText('B', cx + ax + bx * 0.5 + 6, cy + ay + by * 0.5 - 4);
+
+    // Resultant
+    arrow(ctx, cx, cy, cx + rx, cy + ry, '#a3e635', 3.5);
+    ctx.fillStyle = '#d9f99d'; ctx.fillText('R', cx + rx * 0.5 - 10, cy + ry * 0.5 - 8);
+
+    // Ghost parallelogram
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx + bx, cy + by); ctx.lineTo(cx + rx, cy + ry); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + ax, cy + ay); ctx.lineTo(cx + rx, cy + ry); ctx.stroke();
+    ctx.setLineDash([]);
+
+    const mag = Math.sqrt(rx * rx + ry * ry);
+    const ang = ((toDeg(Math.atan2(-ry, rx)) + 360) % 360);
+    document.getElementById('rmagVal').textContent = mag.toFixed(1);
+    document.getElementById('rangVal').textContent = ang.toFixed(1) + '°';
+    document.getElementById('rxVal').textContent = rx.toFixed(1);
+    document.getElementById('ryVal').textContent = (-ry).toFixed(1);
+  }
+  draw();
+})();
+
+/* ── SIM 2: Dot Product ──────────────────────────── */
+(function () {
+  const cv = document.getElementById('dotCanvas');
+  const ctx = cv.getContext('2d');
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 280; }
+  resize(); window.addEventListener('resize', resize);
+
+  function getVals() {
+    return {
+      am: +document.getElementById('dotASl').value, aa: +document.getElementById('dotAAngSl').value,
+      bm: +document.getElementById('dotBSl').value, ba: +document.getElementById('dotBAngSl').value
+    };
+  }
+
+  function update() {
+    const { am, aa, bm, ba } = getVals();
+    document.getElementById('dotALabel').textContent = am;
+    document.getElementById('dotAAngLabel').textContent = aa + '°';
+    document.getElementById('dotBLabel').textContent = bm;
+    document.getElementById('dotBAngLabel').textContent = ba + '°';
+
+    const theta = ((aa - ba + 360) % 360);
+    const thetaDisplay = theta > 180 ? 360 - theta : theta;
+    const dot = am * bm * Math.cos(toRad(thetaDisplay));
+    const proj = am * Math.cos(toRad(thetaDisplay));
+    document.getElementById('dotThetaVal').textContent = thetaDisplay.toFixed(1) + '°';
+    document.getElementById('dotProdVal').textContent = dot.toFixed(1);
+    document.getElementById('projVal').textContent = proj.toFixed(1);
+    draw(am, aa, bm, ba, thetaDisplay, proj);
+  }
+
+  ['dotASl','dotAAngSl','dotBSl','dotBAngSl'].forEach(id => {
+    document.getElementById(id).oninput = update;
+  });
+  window.addEventListener('resize', update);
+
+  function draw(am, aa, bm, ba, theta, proj) {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    const cx = W / 2, cy = H / 2;
+
+    const ax = am * Math.cos(toRad(aa)), ay = -am * Math.sin(toRad(aa));
+    const bx = bm * Math.cos(toRad(ba)), by = -bm * Math.sin(toRad(ba));
+
+    // Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    // B vector
+    arrow(ctx, cx, cy, cx + bx, cy + by, '#ec4899', 3);
+    ctx.fillStyle = '#fbcfe8'; ctx.font = 'bold 12px Inter,sans-serif';
+    ctx.fillText('B', cx + bx + 6, cy + by - 4);
+
+    // Projection of A onto B direction
+    const bUnit = { x: Math.cos(toRad(ba)), y: -Math.sin(toRad(ba)) };
+    const pLen = proj;
+    const px = cx + bUnit.x * pLen, py = cy + bUnit.y * pLen;
+
+    // Dashed projection line
+    ctx.setLineDash([4, 3]); ctx.strokeStyle = 'rgba(163,230,53,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx + ax, cy + ay); ctx.lineTo(px, py); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Projection point arc
+    ctx.strokeStyle = 'rgba(163,230,53,0.5)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.stroke();
+
+    // A vector
+    arrow(ctx, cx, cy, cx + ax, cy + ay, '#60a5fa', 3);
+    ctx.fillStyle = '#bfdbfe'; ctx.font = 'bold 12px Inter,sans-serif';
+    ctx.fillText('A', cx + ax + 6, cy + ay - 4);
+
+    // Angle arc
+    const a1 = toRad(ba - 180), a2 = toRad(aa - 180);
+    ctx.strokeStyle = 'rgba(245,158,11,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, 32, Math.min(a1,a2), Math.max(a1,a2)); ctx.stroke();
+    ctx.fillStyle = 'rgba(245,158,11,0.7)'; ctx.font = '11px Inter,sans-serif';
+    ctx.fillText(theta.toFixed(0) + '°', cx + 38, cy - 4);
+
+    // Projection label
+    ctx.fillStyle = 'rgba(163,230,53,0.8)'; ctx.font = '10px Inter,sans-serif';
+    ctx.fillText('proj: ' + pLen.toFixed(1), (cx + px) / 2 - 12, (cy + py) / 2 + 14);
+  }
+  update();
+})();
+</script>
+</body>
+</html>

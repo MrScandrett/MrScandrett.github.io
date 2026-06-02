@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kinematics: Motion, Speed &amp; Acceleration · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Physics Lesson — Kinematics: explore 1D motion with interactive position, velocity, and acceleration graphs, projectile simulation, and the calculus connection." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --kin-bg: #060a10;
+      --kin-panel: rgba(11,17,28,0.84);
+      --kin-line: rgba(196,210,236,0.13);
+      --kin-line-strong: rgba(196,210,236,0.22);
+      --kin-text: #e6ecf8;
+      --kin-muted: rgba(230,236,248,0.68);
+      --kin-dim: rgba(230,236,248,0.44);
+      --kin-teal: #2dd4bf;
+      --kin-violet: #a78bfa;
+      --kin-amber: #fbbf24;
+      --kin-rose: #fb7185;
+      --kin-green: #34d399;
+      --kin-radius: 8px;
+      --kin-shadow: 0 24px 64px rgba(0,0,0,0.32);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; font-family: var(--font-sans);
+      color: var(--kin-text);
+      background:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(180deg, #06090f 0%, #080d16 45%, #060a10 100%);
+      background-size: 36px 36px, 36px 36px, auto;
+      min-height: 100vh;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none;
+      background:
+        linear-gradient(115deg, rgba(45,212,191,0.09), transparent 32%),
+        linear-gradient(255deg, rgba(167,139,250,0.07), transparent 36%);
+      mask-image: linear-gradient(180deg, #000, transparent 78%);
+    }
+    .kin-shell { width: min(1280px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 4rem; display: grid; gap: 1rem; }
+
+    /* Topbar */
+    .kin-topbar { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(18px) saturate(150%); background: rgba(6,9,15,0.88); border-bottom: 1px solid var(--kin-line); }
+    .kin-topbar-inner { width: min(1280px, calc(100% - 2rem)); min-height: 54px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .kin-topbar a { color: #c4d4f0; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
+    .kin-topbar a:hover { color: #fff; }
+    .kin-brand { color: #f0f4ff; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .kin-nav { display: flex; align-items: center; gap: 0.2rem; overflow-x: auto; scrollbar-width: none; }
+    .kin-nav::-webkit-scrollbar { display: none; }
+    .kin-nav a { display: inline-flex; align-items: center; min-height: 1.85rem; padding: 0 0.55rem; border-radius: var(--kin-radius); color: var(--kin-dim); white-space: nowrap; }
+    .kin-nav a:hover { color: var(--kin-text); background: rgba(255,255,255,0.06); }
+    .kin-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .kin-pill { display: inline-flex; align-items: center; height: 1.7rem; padding: 0 0.62rem; border-radius: var(--kin-radius); font-size: 0.69rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; border: 1px solid rgba(167,139,250,0.36); background: rgba(167,139,250,0.12); color: #d4ccff; }
+    .kin-pill.teal { border-color: rgba(45,212,191,0.36); background: rgba(45,212,191,0.1); color: #99f6e4; }
+    @media (max-width:960px) { .kin-brand { display: none; } }
+    @media (max-width:740px) { .kin-nav { display: none; } }
+
+    /* Hero */
+    .kin-hero { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(280px,0.7fr); gap: 1rem; align-items: stretch; min-height: min(520px, calc(100vh - 88px)); }
+    @media (max-width:700px) { .kin-hero { grid-template-columns: 1fr; } }
+    .kin-hero-copy { border-radius: var(--kin-radius); border: 1px solid var(--kin-line-strong); background: linear-gradient(120deg, rgba(45,212,191,0.09), transparent 44%), linear-gradient(180deg, rgba(16,23,38,0.93), rgba(8,12,22,0.93)); box-shadow: var(--kin-shadow); padding: clamp(1.2rem,3vw,2.2rem); display: flex; flex-direction: column; justify-content: center; }
+    .kin-eyebrow { font-size: 0.71rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kin-teal); margin: 0 0 0.65rem; }
+    .kin-hero-copy h1 { margin: 0 0 0.65rem; max-width: 14ch; font-size: clamp(2.2rem,6vw,5.2rem); line-height: 0.93; letter-spacing: -0.055em; color: #fff; }
+    .kin-hero-copy h1 em { font-style: normal; color: var(--kin-teal); }
+    .kin-lede { max-width: 72ch; color: var(--kin-muted); font-size: clamp(0.93rem,1.4vw,1.04rem); line-height: 1.72; margin: 0 0 1rem; }
+    .kin-meta { display: flex; flex-wrap: wrap; gap: 0.38rem; }
+    .kin-quote-card { border-radius: var(--kin-radius); border: 1px solid rgba(251,191,36,0.24); background: linear-gradient(180deg, rgba(251,191,36,0.09), transparent 56%), rgba(11,17,28,0.82); padding: clamp(1.1rem,2.2vw,1.75rem); display: flex; flex-direction: column; justify-content: center; gap: 0.85rem; box-shadow: var(--kin-shadow); }
+    .kin-quote-mark { font-size: 2.8rem; line-height: 0.8; color: var(--kin-amber); opacity: 0.6; }
+    .kin-quote-text { font-size: clamp(0.9rem,1.9vw,1.08rem); font-style: italic; line-height: 1.62; color: #dff2fd; margin: 0; }
+    .kin-quote-attr { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--kin-amber); opacity: 0.9; }
+
+    /* Cards */
+    .kin-card { border-radius: var(--kin-radius); border: 1px solid var(--kin-line); background: var(--kin-panel); backdrop-filter: blur(10px); padding: clamp(1.1rem,2vw,1.55rem); scroll-margin-top: 72px; }
+    .kin-card-teal { border-left: 4px solid var(--kin-teal); }
+    .kin-card-violet { border-left: 4px solid var(--kin-violet); }
+    .kin-card-amber { border-left: 4px solid var(--kin-amber); }
+    .kin-card-rose { border-left: 4px solid var(--kin-rose); }
+    .kin-card-green { border-left: 4px solid var(--kin-green); }
+    .kin-kicker { font-size: 0.69rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.4rem; }
+    .teal { color: var(--kin-teal); } .violet { color: var(--kin-violet); } .amber { color: var(--kin-amber); } .rose { color: var(--kin-rose); } .green { color: var(--kin-green); }
+    .kin-card h2 { margin: 0 0 0.7rem; font-size: clamp(1.18rem,2.3vw,1.6rem); letter-spacing: -0.03em; color: #fff; }
+    .kin-card h3 { margin: 1rem 0 0.32rem; font-size: 0.99rem; letter-spacing: -0.02em; color: #dce8f6; }
+    .kin-card p, .kin-card li { color: var(--kin-muted); font-size: 0.9rem; line-height: 1.72; margin: 0 0 0.62rem; }
+    .kin-card p:last-child { margin-bottom: 0; }
+    .kin-card ul { padding-left: 1.35rem; margin: 0.35rem 0 0.65rem; }
+    .kin-card li { margin-bottom: 0.32rem; }
+    .kin-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width:600px) { .kin-two { grid-template-columns: 1fr; } }
+
+    /* Highlight */
+    .kin-box { border-radius: var(--kin-radius); padding: 0.95rem 1.15rem; margin: 0.85rem 0; }
+    .kin-box.teal { background: rgba(45,212,191,0.09); border: 1px solid rgba(45,212,191,0.26); }
+    .kin-box.amber { background: rgba(251,191,36,0.09); border: 1px solid rgba(251,191,36,0.26); }
+    .kin-box.violet { background: rgba(167,139,250,0.09); border: 1px solid rgba(167,139,250,0.26); }
+    .kin-box.rose { background: rgba(251,113,133,0.08); border: 1px solid rgba(251,113,133,0.26); }
+    .kin-box strong { display: block; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.32rem; }
+    .kin-box.teal strong { color: var(--kin-teal); } .kin-box.amber strong { color: var(--kin-amber); } .kin-box.violet strong { color: var(--kin-violet); } .kin-box.rose strong { color: var(--kin-rose); }
+    .kin-box p { margin: 0; font-size: 0.87rem; color: rgba(230,236,248,0.8); line-height: 1.65; }
+
+    /* Equation */
+    .kin-eq { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: clamp(1rem,2.5vw,1.42rem); color: var(--kin-teal); text-align: center; padding: 0.95rem; letter-spacing: 0.04em; border-radius: var(--kin-radius); border: 1px solid rgba(45,212,191,0.22); background: rgba(45,212,191,0.07); margin: 0.8rem 0; }
+
+    /* Sim */
+    .kin-sim { border-radius: var(--kin-radius); border: 1px solid var(--kin-line); overflow: hidden; background: #020811; position: relative; box-shadow: 0 16px 48px rgba(0,0,0,0.24); scroll-margin-top: 72px; }
+    .kin-sim-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.55rem; padding: 0.95rem 1.15rem 0.7rem; background: linear-gradient(180deg, rgba(255,255,255,0.042), transparent); }
+    .kin-sim-head-left { display: flex; flex-direction: column; gap: 0.18rem; }
+    .kin-sim-title { font-size: 0.77rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .kin-sim-sub { font-size: 0.77rem; color: rgba(218,228,248,0.48); }
+    .kin-sim canvas { display: block; width: 100%; background: linear-gradient(rgba(255,255,255,0.024) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px), #020811; background-size: 24px 24px; }
+    .kin-sim-controls { display: flex; flex-wrap: wrap; gap: 0.48rem 0.85rem; padding: 0.75rem 1.15rem; background: rgba(0,0,0,0.28); border-top: 1px solid rgba(255,255,255,0.07); }
+    .kin-ctrl { display: flex; flex-direction: column; gap: 0.2rem; min-width: 110px; }
+    .kin-ctrl label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(218,228,248,0.48); }
+    .kin-ctrl input[type="range"] { accent-color: var(--kin-teal); cursor: pointer; width: 100%; }
+    .kin-ctrl-val { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.72rem; font-weight: 700; color: var(--kin-teal); }
+    .kin-readout { display: flex; flex-wrap: wrap; gap: 0.45rem; padding: 0.65rem 1.15rem; }
+    .kin-chip { display: flex; flex-direction: column; gap: 0.1rem; border-radius: var(--kin-radius); padding: 0.42rem 0.65rem; border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.03); }
+    .kin-chip-label { font-size: 0.61rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(218,228,248,0.4); }
+    .kin-chip-val { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.83rem; font-weight: 700; color: #dce8f6; }
+    .kin-btn { padding: 0.44rem 0.88rem; border-radius: var(--kin-radius); border: 1px solid rgba(45,212,191,0.42); background: rgba(45,212,191,0.13); color: #a7f3ea; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 0.14s; }
+    .kin-btn:hover { background: rgba(45,212,191,0.22); }
+
+    /* DVA grid */
+    .dva-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 0.65rem; margin: 0.85rem 0; }
+    @media (max-width:560px) { .dva-grid { grid-template-columns: 1fr; } }
+    .dva-card { border-radius: var(--kin-radius); padding: 0.9rem 1rem; border: 1px solid var(--kin-line); background: rgba(255,255,255,0.03); }
+    .dva-card .dva-sym { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 1.9rem; font-weight: 800; line-height: 1; margin-bottom: 0.35rem; }
+    .dva-card .dva-name { font-size: 0.82rem; font-weight: 700; color: #dce8f6; margin-bottom: 0.22rem; }
+    .dva-card .dva-def { font-size: 0.76rem; color: rgba(218,228,248,0.55); line-height: 1.48; }
+    .kin-footer { text-align: center; padding: 2rem 1rem; color: var(--kin-dim); font-size: 0.78rem; border-top: 1px solid var(--kin-line); background: rgba(6,9,15,0.66); }
+    .kin-footer a { color: var(--kin-teal); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="kin-topbar">
+  <div class="kin-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="kin-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="kin-nav">
+      <a href="#motion">Motion</a>
+      <a href="#dva">d·v·a</a>
+      <a href="#graphs">Graphs</a>
+      <a href="#projectile">Projectile</a>
+      <a href="#calculus">Calculus Link</a>
+    </nav>
+    <div class="kin-pills">
+      <span class="kin-pill">Physics</span>
+      <span class="kin-pill teal">Physics</span>
+    </div>
+  </div>
+</div>
+
+<div class="kin-shell">
+
+  <!-- Hero -->
+  <div class="kin-hero">
+    <div class="kin-hero-copy">
+      <p class="kin-eyebrow">Classical Mechanics · Motion &amp; Description</p>
+      <h1>The Language of <em>Motion</em></h1>
+      <p class="kin-lede">
+        Before equations, before calculus, before Newton — there is observation. How far? How fast?
+        How quickly does fast change? Kinematics is the precise vocabulary for describing motion,
+        and it is the gateway to all of classical mechanics.
+      </p>
+      <div class="kin-meta">
+        <span class="kin-pill">Position · Velocity · Acceleration</span>
+        <span class="kin-pill teal">3 Simulations</span>
+        <span class="kin-pill">Grades 6–12</span>
+      </div>
+    </div>
+    <div class="kin-quote-card">
+      <div class="kin-quote-mark">"</div>
+      <p class="kin-quote-text">
+        Nature uses only the longest threads to weave her patterns, so each small piece of the fabric
+        reveals the organization of the entire tapestry. The key is motion — and motion demands description
+        before it demands explanation.
+      </p>
+      <div class="kin-quote-attr">— Richard Feynman</div>
+    </div>
+  </div>
+
+  <!-- Section 1: What is Motion? -->
+  <div class="kin-card kin-card-teal" id="motion">
+    <p class="kin-kicker teal">Idea 1 · Description of Motion</p>
+    <h2>Kinematics: Motion Without the "Why"</h2>
+    <div class="kin-two">
+      <div>
+        <p>
+          Kinematics describes <em>how</em> things move — not <em>why</em>. That distinction matters.
+          Dynamics (Newton's Laws) explains causes. Kinematics gives us the language to describe
+          any motion with precision before we ask what caused it.
+        </p>
+        <p>
+          Every description of motion begins with a <strong>reference point</strong> (origin) and a
+          <strong>coordinate system</strong>. Once you fix those, three quantities fully describe the
+          state of any moving object:
+        </p>
+        <div class="dva-grid">
+          <div class="dva-card">
+            <div class="dva-sym" style="color:#2dd4bf;">x</div>
+            <div class="dva-name">Position</div>
+            <div class="dva-def">Where something is right now. Measured in meters (m). Changes over time.</div>
+          </div>
+          <div class="dva-card">
+            <div class="dva-sym" style="color:#a78bfa;">v</div>
+            <div class="dva-name">Velocity</div>
+            <div class="dva-def">How fast position changes — and in which direction. Meters per second (m/s).</div>
+          </div>
+          <div class="dva-card">
+            <div class="dva-sym" style="color:#fbbf24;">a</div>
+            <div class="dva-name">Acceleration</div>
+            <div class="dva-def">How fast velocity changes. Meters per second squared (m/s²).</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>Scalar vs. Vector Quantities</h3>
+        <p>
+          <strong>Speed</strong> is a scalar — it's just a number (how fast).
+          <strong>Velocity</strong> is a vector — it has both magnitude and direction.
+          This distinction matters enormously. A car at 60 mph going north and a car at 60 mph going
+          south have the same speed but opposite velocities.
+        </p>
+        <div class="kin-box teal">
+          <strong>Distance vs. Displacement</strong>
+          <p>You walk 3 blocks east, then 3 blocks west. You've traveled a <em>distance</em> of 6 blocks.
+          But your <em>displacement</em> is 0 — you're back where you started. Physics cares about displacement.</p>
+        </div>
+        <div class="kin-box amber">
+          <strong>Instantaneous vs. Average</strong>
+          <p><strong>Average velocity</strong> = total displacement ÷ total time.
+          <strong>Instantaneous velocity</strong> = velocity at one specific moment (what your car's speedometer shows).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: The Big Three Equations -->
+  <div class="kin-card kin-card-violet" id="dva">
+    <p class="kin-kicker violet">Idea 2 · Constant Acceleration</p>
+    <h2>The Kinematic Equations</h2>
+    <p>When acceleration is constant (uniform), four equations connect position, velocity, acceleration, and time.
+       You only need to know three of the five quantities to solve for the other two.</p>
+    <div class="kin-two">
+      <div>
+        <div class="kin-eq">v = v₀ + at</div>
+        <p style="text-align:center;font-size:0.8rem;color:var(--kin-dim);margin-top:-0.4rem;">Final velocity = initial + (acceleration × time)</p>
+        <div class="kin-eq">x = x₀ + v₀t + ½at²</div>
+        <p style="text-align:center;font-size:0.8rem;color:var(--kin-dim);margin-top:-0.4rem;">Position from initial spot, velocity, and acceleration</p>
+        <div class="kin-eq">v² = v₀² + 2aΔx</div>
+        <p style="text-align:center;font-size:0.8rem;color:var(--kin-dim);margin-top:-0.4rem;">Velocity² connects to displacement — no time needed</p>
+      </div>
+      <div>
+        <h3>Free Fall: The Classic Example</h3>
+        <p>Near Earth's surface, gravity pulls every object downward with the same acceleration:
+           <strong style="color:var(--kin-amber);">g = 9.8 m/s²</strong> (regardless of mass — Galileo proved this).</p>
+        <p>A ball dropped from rest:</p>
+        <ul>
+          <li>After 1 s: v = 9.8 m/s, fallen 4.9 m</li>
+          <li>After 2 s: v = 19.6 m/s, fallen 19.6 m</li>
+          <li>After 3 s: v = 29.4 m/s, fallen 44.1 m</li>
+        </ul>
+        <div class="kin-box violet">
+          <strong>Galileo's Insight</strong>
+          <p>All objects fall at the same rate — a feather and a hammer reach the same speed at the same time in a vacuum.
+          The Moon is in free fall around Earth right now; it just also moves sideways fast enough to keep missing the ground.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 1: Falling object / constant acceleration -->
+  <div class="kin-sim" id="graphs">
+    <div class="kin-sim-head">
+      <div class="kin-sim-head-left">
+        <span class="kin-sim-title teal">📊 Position · Velocity · Acceleration Graphs</span>
+        <span class="kin-sim-sub">Watch how the three graphs relate — slope of x gives v; slope of v gives a</span>
+      </div>
+      <button class="kin-btn" id="simRestart">Reset</button>
+    </div>
+    <canvas id="kinCanvas" height="340"></canvas>
+    <div class="kin-sim-controls">
+      <div class="kin-ctrl">
+        <label>Init. Velocity v₀ <span class="kin-ctrl-val" id="v0Label">0 m/s</span></label>
+        <input type="range" id="v0Slider" min="-15" max="15" value="0" step="0.5" />
+      </div>
+      <div class="kin-ctrl">
+        <label>Acceleration a <span class="kin-ctrl-val" id="aLabel">9.8 m/s²</span></label>
+        <input type="range" id="aSlider" min="-15" max="15" value="9.8" step="0.1" />
+      </div>
+      <div class="kin-readout" style="padding:0;align-self:flex-end;">
+        <span class="kin-chip"><span class="kin-chip-label">t (s)</span><span class="kin-chip-val" id="tVal">0.00</span></span>
+        <span class="kin-chip"><span class="kin-chip-label">x (m)</span><span class="kin-chip-val" id="xVal">0.00</span></span>
+        <span class="kin-chip"><span class="kin-chip-label">v (m/s)</span><span class="kin-chip-val" id="vVal">0.00</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Projectile Motion -->
+  <div class="kin-card kin-card-amber" id="projectile">
+    <p class="kin-kicker amber">Idea 3 · Projectile Motion</p>
+    <h2>Two Independent Axes — One Trajectory</h2>
+    <div class="kin-two">
+      <div>
+        <p>
+          Feynman's key insight about projectile motion: the horizontal and vertical motions are
+          <strong>completely independent</strong>. A bullet fired horizontally from a gun hits the ground
+          at the same time as a bullet dropped straight down — both fall under the same gravitational
+          acceleration.
+        </p>
+        <p>Horizontal: <strong>no acceleration</strong> (ignoring air). Constant velocity.</p>
+        <div class="kin-eq">x = v₀·cos(θ)·t</div>
+        <p>Vertical: <strong>gravity acts</strong>. Uniformly accelerating.</p>
+        <div class="kin-eq">y = v₀·sin(θ)·t − ½g·t²</div>
+      </div>
+      <div>
+        <h3>Why 45° Gives Maximum Range</h3>
+        <p>
+          For a given launch speed, the angle that maximizes horizontal range is 45°.
+          At 45°, vertical and horizontal launch components are equal, creating the best balance
+          between "going up long enough" and "moving forward fast enough."
+        </p>
+        <div class="kin-box amber">
+          <strong>Symmetry of the Parabola</strong>
+          <p>A projectile's path is a perfect parabola (when air resistance is ignored).
+          The landing speed equals the launch speed. The time going up equals the time coming down.
+          The peak is exactly halfway along the range.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 2: Projectile -->
+  <div class="kin-sim">
+    <div class="kin-sim-head">
+      <div class="kin-sim-head-left">
+        <span class="kin-sim-title amber">🏹 Projectile Motion Simulator</span>
+        <span class="kin-sim-sub">Adjust angle and speed — watch horizontal and vertical components act independently</span>
+      </div>
+      <button class="kin-btn" id="launchBtn">Launch</button>
+    </div>
+    <canvas id="projCanvas" height="300"></canvas>
+    <div class="kin-sim-controls">
+      <div class="kin-ctrl">
+        <label>Angle <span class="kin-ctrl-val" id="angleLabel">45°</span></label>
+        <input type="range" id="angleSlider" min="5" max="85" value="45" />
+      </div>
+      <div class="kin-ctrl">
+        <label>Speed <span class="kin-ctrl-val" id="speedLabel">30 m/s</span></label>
+        <input type="range" id="speedSlider" min="10" max="60" value="30" />
+      </div>
+      <div class="kin-readout" style="padding:0;align-self:flex-end;">
+        <span class="kin-chip"><span class="kin-chip-label">Range</span><span class="kin-chip-val" id="rangeVal">—</span></span>
+        <span class="kin-chip"><span class="kin-chip-label">Max Height</span><span class="kin-chip-val" id="heightVal">—</span></span>
+        <span class="kin-chip"><span class="kin-chip-label">Air Time</span><span class="kin-chip-val" id="timeVal">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Calculus Connection -->
+  <div class="kin-card kin-card-green" id="calculus">
+    <p class="kin-kicker green">Idea 4 · The Calculus Connection</p>
+    <h2>Speed as a Derivative, Distance as an Integral</h2>
+    <div class="kin-two">
+      <div>
+        <p>
+          Newton and Leibniz formalized the idea — that <strong>velocity is the
+          derivative of position</strong> with respect to time, and <strong>position is the integral
+          of velocity</strong>. This was Newton's great invention: calculus born from motion.
+        </p>
+        <div class="kin-eq">v(t) = dx/dt &nbsp;&nbsp; a(t) = dv/dt</div>
+        <p>
+          On a position-time graph, the <strong>slope at any point</strong> is the instantaneous velocity.
+          On a velocity-time graph, the <strong>area under the curve</strong> is the displacement.
+        </p>
+      </div>
+      <div>
+        <h3>Reading Graphs Like a Physicist</h3>
+        <ul>
+          <li><strong>Flat x(t) line</strong> → object is stationary (v = 0)</li>
+          <li><strong>Straight sloped x(t) line</strong> → constant velocity (a = 0)</li>
+          <li><strong>Curved x(t)</strong> → changing velocity (acceleration present)</li>
+          <li><strong>Flat v(t) line</strong> → constant velocity, zero acceleration</li>
+          <li><strong>Sloped v(t) line</strong> → uniform acceleration</li>
+          <li><strong>Area under v(t)</strong> = displacement (count the rectangles)</li>
+        </ul>
+        <div class="kin-box rose">
+          <strong>The Big Picture</strong>
+          <p>Kinematics isn't just about physics — it's about how to read the world as a graph.
+          Once you see that slope = rate of change and area = accumulation, you've understood
+          the heart of calculus through motion.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="kin-footer site-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">All Lessons</a> ·
+  Classical Mechanics · Kinematics
+</footer>
+
+<script>
+/* ── SIM 1: d-v-a graphs ─────────────────────────────── */
+(function () {
+  const cv = document.getElementById('kinCanvas');
+  const ctx = cv.getContext('2d');
+  const v0Sl = document.getElementById('v0Slider');
+  const aSl = document.getElementById('aSlider');
+  const v0Lbl = document.getElementById('v0Label');
+  const aLbl = document.getElementById('aLabel');
+  const tLbl = document.getElementById('tVal');
+  const xLbl = document.getElementById('xVal');
+  const vLbl = document.getElementById('vVal');
+  document.getElementById('simRestart').onclick = () => { t = 0; };
+
+  let t = 0, running = true;
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 340; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  v0Sl.oninput = () => { v0Lbl.textContent = (+v0Sl.value).toFixed(1) + ' m/s'; t = 0; };
+  aSl.oninput = () => { aLbl.textContent = (+aSl.value).toFixed(1) + ' m/s²'; t = 0; };
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    const v0 = +v0Sl.value, a = +aSl.value;
+    const TMAX = 5, dt = TMAX / (W - 20);
+    const rowH = H / 3;
+
+    const labels = ['x (m)', 'v (m/s)', 'a (m/s²)'];
+    const colors = ['#2dd4bf', '#a78bfa', '#fbbf24'];
+
+    // Find ranges for auto-scale
+    let xMax = 0, vMax = 0;
+    for (let i = 0; i < W; i++) {
+      const tt = i * dt;
+      const xi = v0 * tt + 0.5 * a * tt * tt;
+      const vi = v0 + a * tt;
+      xMax = Math.max(xMax, Math.abs(xi));
+      vMax = Math.max(vMax, Math.abs(vi));
+    }
+    xMax = Math.max(xMax, 1); vMax = Math.max(vMax, 1);
+    const aMax = Math.max(Math.abs(a), 1);
+    const scales = [xMax, vMax, aMax];
+
+    for (let row = 0; row < 3; row++) {
+      const y0 = row * rowH;
+      // Background
+      ctx.fillStyle = 'rgba(255,255,255,0.02)';
+      ctx.fillRect(0, y0, W, rowH);
+      // Center line
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(0, y0 + rowH/2); ctx.lineTo(W, y0 + rowH/2); ctx.stroke();
+      ctx.setLineDash([]);
+      // Label
+      ctx.fillStyle = colors[row]; ctx.font = 'bold 10px Inter,sans-serif';
+      ctx.fillText(labels[row], 8, y0 + 14);
+
+      // Plot
+      ctx.beginPath(); ctx.strokeStyle = colors[row]; ctx.lineWidth = 2.5;
+      for (let i = 0; i < W; i++) {
+        const tt = i * dt;
+        let val;
+        if (row === 0) val = v0 * tt + 0.5 * a * tt * tt;
+        else if (row === 1) val = v0 + a * tt;
+        else val = a;
+        const py = y0 + rowH / 2 - (val / scales[row]) * (rowH / 2 - 10);
+        if (i === 0) ctx.moveTo(i, py); else ctx.lineTo(i, py);
+      }
+      ctx.stroke();
+
+      // Separator
+      if (row < 2) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, (row+1)*rowH); ctx.lineTo(W, (row+1)*rowH); ctx.stroke();
+      }
+    }
+
+    // Current time cursor
+    const tx = (t / TMAX) * W;
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.5; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(tx, 0); ctx.lineTo(tx, H); ctx.stroke(); ctx.setLineDash([]);
+
+    // Readouts
+    const xNow = v0 * t + 0.5 * a * t * t;
+    const vNow = v0 + a * t;
+    tLbl.textContent = t.toFixed(2);
+    xLbl.textContent = xNow.toFixed(2);
+    vLbl.textContent = vNow.toFixed(2);
+
+    t = (t + 0.025) % TMAX;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ── SIM 2: Projectile ──────────────────────────────── */
+(function () {
+  const cv = document.getElementById('projCanvas');
+  const ctx = cv.getContext('2d');
+  const angleSl = document.getElementById('angleSlider');
+  const speedSl = document.getElementById('speedSlider');
+  const angleLbl = document.getElementById('angleLabel');
+  const speedLbl = document.getElementById('speedLabel');
+  const rangeLbl = document.getElementById('rangeVal');
+  const heightLbl = document.getElementById('heightVal');
+  const timeLbl = document.getElementById('timeVal');
+
+  let proj = null, trail = [], launched = false;
+  const g = 9.8;
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
+  resize(); window.addEventListener('resize', resize);
+
+  function getParams() {
+    const deg = +angleSl.value, spd = +speedSl.value;
+    const rad = deg * Math.PI / 180;
+    return { vx: spd * Math.cos(rad), vy: spd * Math.sin(rad) };
+  }
+
+  angleSl.oninput = () => { angleLbl.textContent = angleSl.value + '°'; updateStats(); };
+  speedSl.oninput = () => { speedLbl.textContent = speedSl.value + ' m/s'; updateStats(); };
+
+  function updateStats() {
+    const { vx, vy } = getParams();
+    const tFlight = 2 * vy / g;
+    const range = vx * tFlight;
+    const hMax = vy * vy / (2 * g);
+    rangeLbl.textContent = range.toFixed(1) + ' m';
+    heightLbl.textContent = hMax.toFixed(1) + ' m';
+    timeLbl.textContent = tFlight.toFixed(2) + ' s';
+  }
+  updateStats();
+
+  document.getElementById('launchBtn').onclick = () => {
+    const { vx, vy } = getParams();
+    const W = cv.width, H = cv.height;
+    const scale = (W - 40) / Math.max((vx * 2 * vy / g) || 1, 1);
+    proj = { x: 20, y: H - 30, vx, vy, t: 0, scale, H };
+    trail = []; launched = true;
+  };
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Ground
+    ctx.fillStyle = 'rgba(45,212,191,0.12)';
+    ctx.fillRect(0, H - 26, W, 26);
+    ctx.strokeStyle = 'rgba(45,212,191,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, H - 26); ctx.lineTo(W, H - 26); ctx.stroke();
+
+    // Angle guide
+    if (!launched) {
+      const deg = +angleSl.value, rad = deg * Math.PI / 180;
+      const len = 60;
+      ctx.strokeStyle = 'rgba(251,191,36,0.5)'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(20, H - 26); ctx.lineTo(20 + len * Math.cos(rad), H - 26 - len * Math.sin(rad)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(251,191,36,0.7)'; ctx.font = 'bold 11px Inter,sans-serif';
+      ctx.fillText(angleSl.value + '°', 30 + len * Math.cos(rad * 0.6), H - 26 - len * Math.sin(rad * 0.6) - 4);
+    }
+
+    if (proj) {
+      // Preview arc
+      const { vx, vy } = getParams();
+      const tFlight = 2 * vy / g;
+      const range = vx * tFlight;
+      const sc = Math.min((W - 40) / Math.max(range, 1), (H - 40) / Math.max(vy * vy / (2 * g), 1));
+
+      ctx.strokeStyle = 'rgba(167,139,250,0.25)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+      ctx.beginPath();
+      for (let i = 0; i <= 80; i++) {
+        const tt = (i / 80) * tFlight;
+        const px = 20 + vx * tt * sc;
+        const py = H - 26 - (vy * tt - 0.5 * g * tt * tt) * sc;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+
+      // Trail
+      trail.forEach((p, i) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(45,212,191,${0.15 + 0.5 * (i / trail.length)})`;
+        ctx.fill();
+      });
+
+      // Ball
+      const bx = 20 + proj.vx * proj.t * sc;
+      const by = H - 26 - (proj.vy * proj.t - 0.5 * g * proj.t * proj.t) * sc;
+      trail.push({ x: bx, y: by });
+      if (trail.length > 60) trail.shift();
+
+      // Velocity arrows
+      const avx = proj.vx * 0.4, avy = (proj.vy - g * proj.t) * 0.4;
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + avx, by); ctx.stroke();
+      ctx.strokeStyle = '#fb7185';
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx, by - avy); ctx.stroke();
+
+      ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI * 2);
+      const grd = ctx.createRadialGradient(bx, by, 0, bx, by, 7);
+      grd.addColorStop(0, '#fff'); grd.addColorStop(1, '#2dd4bf');
+      ctx.fillStyle = grd; ctx.fill();
+
+      proj.t += 0.035;
+      if (by > H - 20) { proj = null; launched = false; }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>
