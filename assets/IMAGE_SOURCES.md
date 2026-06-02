@@ -53,9 +53,9 @@ Maintained to demonstrate good-faith educational use and to credit creators.
 |------|---------|-------|
 | ada-lovelace.png | Ada Lovelace | Watercolor by Alfred Edward Chalon, 1840 |
 | Anaximander.jpg | Anaximander | Ancient bust / modern illustration |
-| archimedes.jpg | Archimedes | Historical engraving |
+| archimedes.jpg | Archimedes | Domenico Fetti oil painting, 1620 (Gemäldegalerie Alte Meister, Dresden) |
 | aristotle.jpg | Aristotle | Ancient bust |
-| boltzmann.jpg | Ludwig Boltzmann | Portrait photograph, pre-1927 |
+| boltzmann.jpg | Ludwig Boltzmann | Portrait photograph, c. 1875 |
 | brahmagupta.jpeg | Brahmagupta | Historical illustration |
 | copernicus.jpg | Nicolaus Copernicus | Historical portrait, pre-1927 |
 | coulomb.png | Charles-Augustin de Coulomb | Portrait, pre-1927 |
@@ -63,8 +63,8 @@ Maintained to demonstrate good-faith educational use and to credit creators.
 | democritus.jpg | Democritus | Ancient bust |
 | descartes.jpg | René Descartes | Portrait by Frans Hals, ~1649 |
 | euclid.jpg | Euclid | Historical illustration |
-| faraday.jpg | Michael Faraday | Portrait, pre-1927 |
-| feynman.jpg | Richard Feynman | Caltech archives / widely reproduced |
+| faraday.jpg | Michael Faraday | Portrait oil painting by Thomas Phillips, 1842 (National Portrait Gallery, London) |
+| feynman.jpg | Richard Feynman | Los Alamos ID badge photograph, c. 1943 (U.S. Government, public domain) |
 | fibonacci.png | Fibonacci | Historical illustration |
 | galileo.jpg | Galileo Galilei | Portrait, pre-1927 |
 | GeorgeOhm.jpg | Georg Simon Ohm | Portrait, pre-1927 |
@@ -73,15 +73,15 @@ Maintained to demonstrate good-faith educational use and to credit creators.
 | john-von-neumann-bio.png | John von Neumann | Los Alamos National Laboratory (public domain) |
 | LaMettrie.jpg | Julien Offray de La Mettrie | Portrait, pre-1927 |
 | Leibniz_Hannover.jpg | Gottfried Wilhelm Leibniz | Portrait, pre-1927 |
-| maxwell.jpg | James Clerk Maxwell | Portrait, pre-1927 |
+| maxwell.jpg | James Clerk Maxwell | Portrait photograph, c. 1875 |
 | ramon-llull.jpg | Ramon Llull | Historical portrait, pre-1927 |
 | riemann.jpg | Bernhard Riemann | Portrait, pre-1927 |
-| tesla.jpg | Nikola Tesla | Portrait, pre-1927 |
+| tesla.jpg | Nikola Tesla | Portrait photograph by Napoleon Sarony, c. 1890 |
 | thomashobbes.jpg | Thomas Hobbes | Portrait, pre-1927 |
 | turing.jpg | Alan Turing | Photo c.1951, public domain (Crown copyright expired) |
 | van-de-graaff.jpg | Robert J. Van de Graaff | Historical photograph |
 | watt-steam.jpg | James Watt | Portrait / steam engine illustration, pre-1927 |
-| young-thomas.jpg | Thomas Young | Portrait, pre-1927 |
+| young-thomas.jpg | Thomas Young | Stipple engraving by Henry Adlard after Sir Thomas Lawrence, c. 1820 |
 
 ---
 

@@ -118,7 +118,7 @@
     }
     .fib-button:hover { filter: brightness(1.08); }
 
-    .fib-visual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .fib-visual-grid { display: grid; grid-template-columns: 1fr 1.45fr; gap: 1rem; margin-top: 1rem; }
     .fib-panel {
       border: 1px solid rgba(148,163,184,0.16);
       border-radius: 16px;
@@ -128,12 +128,17 @@
     }
     .fib-panel h3 { margin: 0 0 0.6rem; color: #f8fafc; font-size: 0.95rem; }
     .fib-bars { display: grid; gap: 0.4rem; }
-    .fib-bar-row { display: grid; grid-template-columns: 42px 1fr 76px; gap: 0.45rem; align-items: center; color: #cbd5e1; font-size: 0.76rem; }
+    .fib-bar-row { display: grid; grid-template-columns: 52px 1fr 76px; gap: 0.45rem; align-items: center; color: #cbd5e1; font-size: 0.76rem; }
     .fib-bar-track { height: 14px; border-radius: 999px; background: rgba(148,163,184,0.14); overflow: hidden; }
     .fib-bar-fill { height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #10b981, #38bdf8); transition: width 0.28s ease; }
-    .fib-spiral-svg { width: 100%; aspect-ratio: 1; display: block; border-radius: 12px; background: rgba(2,6,23,0.35); }
-    .fib-square { fill: rgba(16,185,129,0.12); stroke: rgba(110,231,183,0.45); stroke-width: 1.4; }
-    .fib-arc { fill: none; stroke: #facc15; stroke-width: 3.2; stroke-linecap: round; }
+    .fib-spiral-svg { width: 100%; aspect-ratio: 1; display: block; border-radius: 12px; }
+    .fib-ratio-hud.at-phi strong { color: #fbbf24; text-shadow: 0 0 16px rgba(251,191,36,0.5); transition: color 0.4s, text-shadow 0.4s; }
+    .fib-btn-group { display: flex; gap: 0.5rem; }
+    .fib-play-btn { min-width: 2.6rem; text-align: center; font-size: 1rem; }
+    @keyframes fib-draw-arc { to { stroke-dashoffset: 0; } }
+    @keyframes fib-sq-in { from { opacity: 0; } to { opacity: 1; } }
+    .fib-arc-draw { animation: fib-draw-arc 0.6s cubic-bezier(0.4,0,0.2,1) forwards; }
+    .fib-sq-new { animation: fib-sq-in 0.35s ease; }
 
     .fib-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-top: 0.75rem; }
     .fib-mini {
@@ -161,10 +166,29 @@
     .fib-panel-list { margin: 0.55rem 0 0; padding-left: 1.1rem; }
     .fib-panel-list li { font-size: 0.82rem; margin-bottom: 0.4rem; }
 
+    /* Three Scales of Nature */
+    .fib-nature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.1rem; }
+    .fib-nature-card {
+      display: flex; flex-direction: column; gap: 0.65rem;
+      border: 1px solid rgba(148,163,184,0.14);
+      border-radius: 16px;
+      background: rgba(15,23,42,0.52);
+      padding: 1rem;
+    }
+    .fib-nature-zoom { font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #6ee7b7; }
+    .fib-nature-card h3 { margin: 0; color: #f8fafc; font-size: 1rem; letter-spacing: -0.02em; }
+    .fib-nature-canvas { width: 100%; aspect-ratio: 1; border-radius: 10px; display: block; cursor: default; }
+    #fib-sunflower { cursor: pointer; }
+    .fib-nature-key { font-size: 0.72rem; font-family: "IBM Plex Mono", monospace; color: #6ee7b7; font-weight: 700; margin: 0; }
+    .fib-nature-desc { color: rgba(226,232,240,0.75); font-size: 0.82rem; line-height: 1.58; margin: 0; flex: 1; }
+    .fib-nature-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .fib-nature-chip { font-size: 0.68rem; font-weight: 700; padding: 0.18rem 0.52rem; border-radius: 999px; border: 1px solid rgba(148,163,184,0.22); color: #94a3b8; }
+
     @media (max-width: 760px) {
-      .fib-controls, .fib-visual-grid, .fib-grid { grid-template-columns: 1fr; }
+      .fib-controls, .fib-visual-grid, .fib-grid, .fib-nature-grid { grid-template-columns: 1fr; }
       .fib-ratio-hud { width: 100%; text-align: left; }
-      .fib-bar-row { grid-template-columns: 38px 1fr 66px; }
+      .fib-bar-row { grid-template-columns: 46px 1fr 66px; }
+      .fib-btn-group { flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -246,16 +270,19 @@
                 Terms shown: <span id="fib-count-label" class="fib-mono">10</span>
                 <input id="fib-count" type="range" min="3" max="15" value="10" />
               </label>
-              <button type="button" class="fib-button" id="fib-next">Add Term</button>
+              <div class="fib-btn-group">
+                <button type="button" class="fib-button fib-play-btn" id="fib-play" aria-label="Auto-play spiral">▶</button>
+                <button type="button" class="fib-button" id="fib-next">Add Term</button>
+              </div>
             </div>
 
             <div class="fib-visual-grid">
               <div class="fib-panel">
-                <h3>Ratio Trail</h3>
+                <h3>Ratio Trail <span style="font-weight:400;font-size:0.75rem;color:#6ee7b7;margin-left:0.4rem;">target: φ ≈ 1.618</span></h3>
                 <div id="fib-bars" class="fib-bars"></div>
               </div>
               <div class="fib-panel">
-                <h3>Fibonacci Spiral</h3>
+                <h3>Fibonacci Spiral <span id="fib-spiral-count" style="font-weight:400;font-size:0.72rem;color:#94a3b8;margin-left:0.35rem;"></span></h3>
                 <svg id="fib-spiral" class="fib-spiral-svg" viewBox="0 0 260 260" role="img" aria-label="Fibonacci spiral built from squares"></svg>
               </div>
             </div>
@@ -317,10 +344,107 @@
           <section class="fib-card" style="--card-accent:#8b5cf6;">
             <h2>Where Fibonacci Appears</h2>
             <p>
-              Fibonacci-style patterns are useful because they model growth where each new stage
-              depends on earlier stages. You can find related patterns in branching plants,
-              pinecones, sunflower seed packing, music, art composition, and computer science.
+              Fibonacci-style patterns arise whenever each new stage depends on previous stages.
+              That simple rule shows up across nature, art, and computing.
             </p>
+            <div class="fib-grid">
+              <div class="fib-mini">
+                <strong>Plants &amp; Seeds</strong>
+                <small>Sunflower seeds pack in 34 and 55 spirals — consecutive Fibonacci numbers — to maximize density.</small>
+              </div>
+              <div class="fib-mini">
+                <strong>Pinecones &amp; Shells</strong>
+                <small>Scales on a pinecone spiral in 8 one way and 13 the other. Nautilus chambers grow by the golden ratio.</small>
+              </div>
+              <div class="fib-mini">
+                <strong>Art &amp; Architecture</strong>
+                <small>The golden rectangle (sides in ratio φ) appears in the Parthenon and in many compositional grids.</small>
+              </div>
+              <div class="fib-mini">
+                <strong>Music</strong>
+                <small>An octave has 13 notes; a major scale uses 8. Fibonacci proportions appear in sonata structure.</small>
+              </div>
+              <div class="fib-mini">
+                <strong>Computer Science</strong>
+                <small>Fibonacci heaps, search trees, and recursive memoization all rely on Fibonacci-style counting.</small>
+              </div>
+              <div class="fib-mini">
+                <strong>Population Models</strong>
+                <small>Fibonacci originally described rabbit breeding — a simple model of exponential-like growth.</small>
+              </div>
+            </div>
+          </section>
+
+          <section class="fib-lab" aria-label="Fibonacci in nature at three scales">
+            <div class="fib-lab-head">
+              <div>
+                <div class="fib-badge">Three Scales of Nature</div>
+                <h2>The Same Rule, Everywhere</h2>
+                <p>Fibonacci's recursive growth appears from the microscopic to the galactic — always driven by efficient packing and self-similar expansion.</p>
+              </div>
+            </div>
+
+            <div class="fib-nature-grid">
+
+              <div class="fib-nature-card">
+                <div class="fib-nature-zoom">👁 Human scale · mm to m</div>
+                <h3>Phyllotaxis</h3>
+                <canvas id="fib-sunflower" class="fib-nature-canvas" title="Click to replay" aria-label="Animated sunflower seed phyllotaxis pattern"></canvas>
+                <p class="fib-nature-key">Golden angle 137.508° · 233 seeds</p>
+                <p class="fib-nature-desc">
+                  Plants place each new leaf or seed at the golden angle (≈ 137.5°) from the last.
+                  Because this angle is irrational, no two seeds ever share a radial ray — the densest
+                  possible packing with no wasted space. The spiral count around the finished head is
+                  always two consecutive Fibonacci numbers: sunflowers show 34 going one way and 55 the other.
+                </p>
+                <div class="fib-nature-chips">
+                  <span class="fib-nature-chip">Sunflower</span>
+                  <span class="fib-nature-chip">Pinecone</span>
+                  <span class="fib-nature-chip">Romanesco</span>
+                  <span class="fib-nature-chip">Pineapple</span>
+                  <span class="fib-nature-chip">Artichoke</span>
+                </div>
+              </div>
+
+              <div class="fib-nature-card">
+                <div class="fib-nature-zoom">🔬 Microscale · 10–500 μm</div>
+                <h3>Diatom Symmetry</h3>
+                <canvas id="fib-diatom" class="fib-nature-canvas" aria-label="Diatom frustule with Fibonacci pore rings"></canvas>
+                <p class="fib-nature-key">Pore rings: 5 · 8 · 13 · 21</p>
+                <p class="fib-nature-desc">
+                  Diatoms are single-celled algae that build glassy silica shells called frustules.
+                  The pores and ribs are arranged in Fibonacci multiples — 5, 8, 13, or 21 per ring —
+                  the same packing logic as a sunflower head, scaled to microns.
+                  Plant stem cross-sections show vascular bundles in an identical golden-angle spiral.
+                </p>
+                <div class="fib-nature-chips">
+                  <span class="fib-nature-chip">Diatoms</span>
+                  <span class="fib-nature-chip">Radiolaria</span>
+                  <span class="fib-nature-chip">Pollen</span>
+                  <span class="fib-nature-chip">Vascular bundles</span>
+                </div>
+              </div>
+
+              <div class="fib-nature-card">
+                <div class="fib-nature-zoom">🌌 Galactic scale · 10 000 ly</div>
+                <h3>Spiral Galaxies</h3>
+                <canvas id="fib-galaxy" class="fib-nature-canvas" aria-label="Two-arm logarithmic spiral galaxy simulation"></canvas>
+                <p class="fib-nature-key">Logarithmic spiral · pitch ≈ 14°</p>
+                <p class="fib-nature-desc">
+                  Spiral galaxy arms follow logarithmic spirals — the continuous version of the
+                  Fibonacci spiral — where the distance from the center multiplies by φ for each
+                  quarter-turn. Gravitational density waves and initial angular momentum produce
+                  the same self-similar curve as seeds packing in a flower head.
+                </p>
+                <div class="fib-nature-chips">
+                  <span class="fib-nature-chip">Milky Way</span>
+                  <span class="fib-nature-chip">M51 Whirlpool</span>
+                  <span class="fib-nature-chip">NGC 1300</span>
+                  <span class="fib-nature-chip">Hurricanes</span>
+                </div>
+              </div>
+
+            </div>
           </section>
 
           <section data-ll-panel="guide">
@@ -354,15 +478,31 @@
       const sequenceEl = document.getElementById('fib-sequence');
       const barsEl = document.getElementById('fib-bars');
       const spiralEl = document.getElementById('fib-spiral');
+      const spiralCountEl = document.getElementById('fib-spiral-count');
       const countInput = document.getElementById('fib-count');
       const countLabel = document.getElementById('fib-count-label');
       const ratioEl = document.getElementById('fib-ratio');
+      const ratioHud = document.querySelector('.fib-ratio-hud');
       const nextButton = document.getElementById('fib-next');
+      const playButton = document.getElementById('fib-play');
       const sequence = [0, 1];
+      let userHasInteracted = false;
+      let playInterval = null;
 
       while (sequence.length < 16) {
         sequence.push(sequence[sequence.length - 1] + sequence[sequence.length - 2]);
       }
+
+      const spiralPalette = [
+        { sq: 'rgba(16,185,129,0.17)',  stroke: '#6ee7b7', arc: '#34d399' },
+        { sq: 'rgba(14,165,233,0.15)',  stroke: '#7dd3fc', arc: '#38bdf8' },
+        { sq: 'rgba(139,92,246,0.15)',  stroke: '#c4b5fd', arc: '#a78bfa' },
+        { sq: 'rgba(245,158,11,0.15)',  stroke: '#fcd34d', arc: '#fbbf24' },
+        { sq: 'rgba(239,68,68,0.13)',   stroke: '#fca5a5', arc: '#f87171' },
+        { sq: 'rgba(236,72,153,0.13)',  stroke: '#f9a8d4', arc: '#f472b6' },
+        { sq: 'rgba(20,184,166,0.15)',  stroke: '#5eead4', arc: '#2dd4bf' },
+        { sq: 'rgba(249,115,22,0.13)',  stroke: '#fdba74', arc: '#fb923c' },
+      ];
 
       function ratioFor(index) {
         if (index < 2 || sequence[index - 1] === 0) return null;
@@ -373,14 +513,15 @@
         const count = parseInt(countInput.value, 10);
         countLabel.textContent = count;
         sequenceEl.innerHTML = sequence.slice(0, count).map((term, index) => {
-          const marker = index === count - 1 ? ' is-new' : '';
+          const marker = userHasInteracted && index === count - 1 ? ' is-new' : '';
           return `<div class="fib-term${marker}"><small>F(${index})</small><b class="fib-mono">${term}</b></div>`;
         }).join('');
 
         const latestRatio = ratioFor(count - 1);
         ratioEl.textContent = latestRatio ? latestRatio.toFixed(4) : 'n/a';
+        if (ratioHud) ratioHud.classList.toggle('at-phi', !!latestRatio && Math.abs(latestRatio - 1.61803398875) < 0.01);
         renderBars(count);
-        renderSpiral(count);
+        renderSpiral(count, userHasInteracted);
       }
 
       function renderBars(count) {
@@ -404,33 +545,21 @@
         return `M ${x + size} ${y + size} A ${size} ${size} 0 0 1 ${x} ${y}`;
       }
 
-      function renderSpiral(count) {
-        const sizes = sequence.slice(2, Math.min(count, 10));
-        if (!sizes.length) {
-          spiralEl.innerHTML = '';
-          return;
-        }
+      function renderSpiral(count, animate) {
+        const sizes = sequence.slice(2, count);
+        if (!sizes.length) { spiralEl.innerHTML = ''; return; }
 
-        let x = 118;
-        let y = 118;
+        let x = 118, y = 118;
         let bounds = { minX: x, minY: y, maxX: x, maxY: y };
         const squares = [];
 
         sizes.forEach((size, i) => {
-          if (i === 0) {
-            x = 118; y = 118;
-          } else if (i % 4 === 1) {
-            x += sizes[i - 1];
-          } else if (i % 4 === 2) {
-            x -= size - sizes[i - 1];
-            y += sizes[i - 1];
-          } else if (i % 4 === 3) {
-            x -= size;
-            y -= size - sizes[i - 1];
-          } else {
-            y -= size;
-          }
-          squares.push({ x, y, size, turn: i % 4 });
+          if (i === 0) { x = 118; y = 118; }
+          else if (i % 4 === 1) { x += sizes[i - 1]; }
+          else if (i % 4 === 2) { x -= size - sizes[i - 1]; y += sizes[i - 1]; }
+          else if (i % 4 === 3) { x -= size; y -= size - sizes[i - 1]; }
+          else { y -= size; }
+          squares.push({ x, y, size, turn: i % 4, fibVal: sequence[i + 2] });
           bounds.minX = Math.min(bounds.minX, x);
           bounds.minY = Math.min(bounds.minY, y);
           bounds.maxX = Math.max(bounds.maxX, x + size);
@@ -442,48 +571,306 @@
         const scale = Math.min(220 / width, 220 / height);
         const offsetX = 130 - (bounds.minX + width / 2) * scale;
         const offsetY = 130 - (bounds.minY + height / 2) * scale;
+        const lastIdx = squares.length - 1;
 
-        spiralEl.innerHTML = squares.map((square) => {
-          const sx = square.x * scale + offsetX;
-          const sy = square.y * scale + offsetY;
-          const ss = square.size * scale;
-          return `<rect class="fib-square" x="${sx}" y="${sy}" width="${ss}" height="${ss}" rx="2" />`;
-        }).join('') + squares.map((square) => {
-          const sx = square.x * scale + offsetX;
-          const sy = square.y * scale + offsetY;
-          const ss = square.size * scale;
-          return `<path class="fib-arc" d="${arcPath(sx, sy, ss, square.turn)}" />`;
-        }).join('');
+        const bg = `<defs><pattern id="fsg" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M 18 0 L 0 0 0 18" fill="none" stroke="rgba(255,255,255,0.045)" stroke-width="0.5"/></pattern></defs><rect width="260" height="260" rx="12" fill="rgba(2,6,23,0.35)"/><rect width="260" height="260" rx="12" fill="url(#fsg)"/>`;
+
+        const rects = squares.map((sq, i) => {
+          const sx = (sq.x * scale + offsetX).toFixed(1);
+          const sy = (sq.y * scale + offsetY).toFixed(1);
+          const ss = (sq.size * scale).toFixed(1);
+          const c = spiralPalette[i % spiralPalette.length];
+          const isNew = animate && i === lastIdx;
+          const newCls = isNew ? ' class="fib-sq-new"' : '';
+          const fs = Math.max(7, Math.min(sq.size * scale * 0.26, 15)).toFixed(1);
+          const lx = (sq.x * scale + offsetX + sq.size * scale / 2).toFixed(1);
+          const ly = (sq.y * scale + offsetY + sq.size * scale / 2 + parseFloat(fs) * 0.4).toFixed(1);
+          const label = sq.size * scale >= 22
+            ? `<text x="${lx}" y="${ly}" text-anchor="middle" fill="${c.stroke}" font-size="${fs}" font-family="IBM Plex Mono,monospace" font-weight="700" opacity="0.9">${sq.fibVal}</text>`
+            : '';
+          return `<rect${newCls} x="${sx}" y="${sy}" width="${ss}" height="${ss}" rx="2" fill="${c.sq}" stroke="${c.stroke}" stroke-width="1.4"/>${label}`;
+        });
+
+        const arcs = squares.map((sq, i) => {
+          const sx = sq.x * scale + offsetX;
+          const sy = sq.y * scale + offsetY;
+          const ss = sq.size * scale;
+          const c = spiralPalette[i % spiralPalette.length];
+          const d = arcPath(sx, sy, ss, sq.turn);
+          const isNew = animate && i === lastIdx;
+          const arcLen = ((Math.PI / 2) * ss).toFixed(1);
+          const animAttr = isNew ? ` stroke-dasharray="${arcLen}" stroke-dashoffset="${arcLen}" class="fib-arc-draw"` : '';
+          return `<path d="${d}" fill="none" stroke="${c.arc}" stroke-width="3.2" stroke-linecap="round"${animAttr}/>`;
+        });
+
+        spiralEl.innerHTML = bg + rects.join('') + arcs.join('');
+        if (spiralCountEl) {
+          const n = squares.length;
+          spiralCountEl.textContent = n > 0 ? `(${n} ${n === 1 ? 'square' : 'squares'})` : '';
+        }
       }
 
-      countInput.addEventListener('input', renderSequence);
+      function stopPlay() {
+        clearInterval(playInterval);
+        playInterval = null;
+        playButton.textContent = '▶';
+        playButton.setAttribute('aria-label', 'Auto-play spiral');
+      }
+
+      playButton.addEventListener('click', () => {
+        if (playInterval) { stopPlay(); return; }
+        if (parseInt(countInput.value, 10) >= parseInt(countInput.max, 10)) {
+          countInput.value = countInput.min;
+          userHasInteracted = false;
+          renderSequence();
+        }
+        playButton.textContent = '⏸';
+        playButton.setAttribute('aria-label', 'Pause');
+        playInterval = setInterval(() => {
+          userHasInteracted = true;
+          const curr = parseInt(countInput.value, 10);
+          if (curr >= parseInt(countInput.max, 10)) { stopPlay(); return; }
+          countInput.value = curr + 1;
+          renderSequence();
+        }, 900);
+      });
+
+      countInput.addEventListener('input', () => { userHasInteracted = true; stopPlay(); renderSequence(); });
       nextButton.addEventListener('click', () => {
+        userHasInteracted = true;
+        stopPlay();
         const next = Math.min(parseInt(countInput.value, 10) + 1, parseInt(countInput.max, 10));
         countInput.value = next;
         renderSequence();
       });
 
+      function checkAnswer(button) {
+        const target = button.dataset.target;
+        const correct = parseInt(button.dataset.answer, 10);
+        const input = document.getElementById('fib-answer-' + target);
+        const feedback = document.getElementById('fib-feedback-' + target);
+        const value = parseInt(input.value, 10);
+        feedback.className = 'fib-feedback';
+        if (value === correct) {
+          feedback.textContent = 'Correct';
+          feedback.classList.add('good');
+          input.style.borderColor = '#10b981';
+        } else {
+          feedback.textContent = 'Try adding the previous two terms.';
+          feedback.classList.add('bad');
+          input.style.borderColor = '#dc2626';
+        }
+      }
+
       document.querySelectorAll('.fib-check').forEach((button) => {
-        button.addEventListener('click', () => {
-          const target = button.dataset.target;
-          const correct = parseInt(button.dataset.answer, 10);
-          const input = document.getElementById('fib-answer-' + target);
-          const feedback = document.getElementById('fib-feedback-' + target);
-          const value = parseInt(input.value, 10);
-          feedback.className = 'fib-feedback';
-          if (value === correct) {
-            feedback.textContent = 'Correct';
-            feedback.classList.add('good');
-            input.style.borderColor = '#10b981';
-          } else {
-            feedback.textContent = 'Try adding the previous two terms.';
-            feedback.classList.add('bad');
-            input.style.borderColor = '#dc2626';
+        button.addEventListener('click', () => checkAnswer(button));
+      });
+
+      document.querySelectorAll('.fib-answer').forEach((input) => {
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const target = input.id.replace('fib-answer-', '');
+            const button = document.querySelector(`.fib-check[data-target="${target}"]`);
+            if (button) checkAnswer(button);
           }
         });
       });
 
       renderSequence();
+    })();
+  </script>
+  <script>
+    (function () {
+      /* ── Sunflower phyllotaxis ── */
+      function initSunflower() {
+        const canvas = document.getElementById('fib-sunflower');
+        if (!canvas) return;
+        const W = 260, H = 260;
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ≈ 137.508°
+        const cx = W / 2, cy = H / 2;
+        const maxN = 233;
+        const maxR = cx * 0.88;
+        const c = maxR / Math.sqrt(maxN);
+        let n = 0, rafId = null;
+
+        function drawBg() {
+          ctx.fillStyle = 'rgba(2,6,18,0.94)';
+          ctx.fillRect(0, 0, W, H);
+        }
+
+        function step() {
+          const batch = n < 60 ? 2 : n < 130 ? 5 : 10;
+          const end = Math.min(n + batch, maxN + 1);
+          for (; n < end; n++) {
+            const theta = n * goldenAngle;
+            const r = Math.sqrt(n) * c;
+            const x = cx + r * Math.cos(theta);
+            const y = cy + r * Math.sin(theta);
+            const seedR = Math.max(1.8, c * 0.44);
+            const t = n / maxN;
+            ctx.fillStyle = `hsl(${148 - t * 18},${65 - t * 10}%,${58 + t * 6}%)`;
+            ctx.beginPath();
+            ctx.arc(x, y, seedR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          if (n <= maxN) rafId = requestAnimationFrame(step);
+        }
+
+        function restart() {
+          if (rafId) cancelAnimationFrame(rafId);
+          n = 0;
+          drawBg();
+          rafId = requestAnimationFrame(step);
+        }
+
+        canvas.addEventListener('click', restart);
+        drawBg();
+        rafId = requestAnimationFrame(step);
+      }
+
+      /* ── Diatom frustule ── */
+      function initDiatom() {
+        const canvas = document.getElementById('fib-diatom');
+        if (!canvas) return;
+        const W = 260, H = 260;
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        const cx = W / 2, cy = H / 2;
+        const R = cx * 0.84;
+
+        ctx.fillStyle = 'rgba(2,6,18,0.94)';
+        ctx.fillRect(0, 0, W, H);
+
+        // Outer shell glow
+        const shellG = ctx.createRadialGradient(cx, cy, R * 0.82, cx, cy, R * 1.06);
+        shellG.addColorStop(0, 'rgba(110,231,183,0)');
+        shellG.addColorStop(0.5, 'rgba(110,231,183,0.14)');
+        shellG.addColorStop(1, 'rgba(110,231,183,0)');
+        ctx.fillStyle = shellG;
+        ctx.beginPath(); ctx.arc(cx, cy, R * 1.06, 0, Math.PI * 2); ctx.fill();
+
+        ctx.strokeStyle = 'rgba(110,231,183,0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+
+        // 5 radial ribs
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
+          ctx.strokeStyle = 'rgba(110,231,183,0.09)';
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+
+        // Fibonacci pore rings: 5 · 8 · 13 · 21
+        const rings = [
+          { n: 5,  r: R * 0.20, color: '#6ee7b7', pr: 5.5 },
+          { n: 8,  r: R * 0.41, color: '#7dd3fc', pr: 4.0 },
+          { n: 13, r: R * 0.62, color: '#c4b5fd', pr: 3.2 },
+          { n: 21, r: R * 0.82, color: '#fcd34d', pr: 2.4 },
+        ];
+
+        rings.forEach(({ n, r, color, pr }) => {
+          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = color + '18'; ctx.lineWidth = 0.5; ctx.stroke();
+
+          for (let i = 0; i < n; i++) {
+            const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+            const px = cx + r * Math.cos(a);
+            const py = cy + r * Math.sin(a);
+
+            const grd = ctx.createRadialGradient(px, py, 0, px, py, pr * 2.4);
+            grd.addColorStop(0, color + 'cc');
+            grd.addColorStop(1, color + '00');
+            ctx.fillStyle = grd;
+            ctx.beginPath(); ctx.arc(px, py, pr * 2.4, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
+          }
+        });
+
+        // Center glow
+        const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.13);
+        cg.addColorStop(0, 'rgba(110,231,183,1)');
+        cg.addColorStop(0.45, 'rgba(110,231,183,0.3)');
+        cg.addColorStop(1, 'transparent');
+        ctx.fillStyle = cg;
+        ctx.beginPath(); ctx.arc(cx, cy, R * 0.13, 0, Math.PI * 2); ctx.fill();
+      }
+
+      /* ── Spiral galaxy ── */
+      function initGalaxy() {
+        const canvas = document.getElementById('fib-galaxy');
+        if (!canvas) return;
+        const W = 260, H = 260;
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        const cx = W / 2, cy = H / 2;
+        const maxR = cx * 0.9;
+
+        ctx.fillStyle = '#010409';
+        ctx.fillRect(0, 0, W, H);
+
+        // Background stars
+        for (let i = 0; i < 280; i++) {
+          const x = Math.random() * W, y = Math.random() * H;
+          ctx.fillStyle = `rgba(255,255,255,${0.07 + Math.random() * 0.32})`;
+          ctx.beginPath(); ctx.arc(x, y, Math.random() * 0.65, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Disk haze
+        const disk = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+        disk.addColorStop(0, 'rgba(140,110,255,0.09)');
+        disk.addColorStop(0.55, 'rgba(80,100,200,0.04)');
+        disk.addColorStop(1, 'transparent');
+        ctx.fillStyle = disk;
+        ctx.beginPath(); ctx.ellipse(cx, cy, maxR, maxR * 0.38, 0, 0, Math.PI * 2); ctx.fill();
+
+        // Two logarithmic spiral arms  r = a·e^(b·θ)
+        const b = Math.tan(14 * Math.PI / 180);
+        for (let arm = 0; arm < 2; arm++) {
+          const offset = arm * Math.PI;
+          const pts = [];
+          for (let j = 0; ; j++) {
+            const theta = j * 0.016;
+            const r = 5 * Math.exp(b * theta);
+            if (r > maxR) break;
+            pts.push({ x: cx + r * Math.cos(theta + offset), y: cy + r * Math.sin(theta + offset), r });
+          }
+          pts.forEach(({ x, y, r }) => {
+            if (Math.random() > 0.52) return;
+            const spread = r * 0.22;
+            const sx = x + (Math.random() - 0.5) * spread * 2;
+            const sy = y + (Math.random() - 0.5) * spread * 2;
+            if (sx < 0 || sx > W || sy < 0 || sy > H) return;
+            const t = r / maxR;
+            const brt = Math.random();
+            const hue = 205 + t * 45;
+            ctx.fillStyle = `hsla(${hue},72%,${60 + brt * 34}%,${0.55 + brt * 0.38})`;
+            ctx.beginPath();
+            ctx.arc(sx, sy, Math.random() * (t < 0.28 ? 1.7 : 1.1), 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+
+        // Galactic bulge
+        const bulge = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.28);
+        bulge.addColorStop(0, 'rgba(255,228,155,1)');
+        bulge.addColorStop(0.18, 'rgba(255,195,110,0.82)');
+        bulge.addColorStop(0.45, 'rgba(195,145,255,0.28)');
+        bulge.addColorStop(1, 'transparent');
+        ctx.fillStyle = bulge;
+        ctx.beginPath(); ctx.arc(cx, cy, maxR * 0.28, 0, Math.PI * 2); ctx.fill();
+      }
+
+      initSunflower();
+      initDiatom();
+      initGalaxy();
     })();
   </script>
   <script src="../assets/js/classroom-animations.js"></script>
