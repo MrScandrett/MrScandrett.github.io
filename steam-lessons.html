@@ -68,6 +68,20 @@
         </div>
       </div>
       <p id="search-status" class="search-status" aria-live="polite" aria-atomic="true"></p>
+
+      <div class="grade-filter-bar" id="grade-filter-bar" role="group" aria-label="Filter by grade band">
+        <button class="grade-btn grade-btn--active" data-grade="all">All grades</button>
+        <button class="grade-btn" data-grade="k2">K–2</button>
+        <button class="grade-btn" data-grade="35">3–5</button>
+        <button class="grade-btn" data-grade="68">6–8</button>
+        <button class="grade-btn" data-grade="910">9–10</button>
+        <button class="grade-btn" data-grade="1112">11–12</button>
+        <span class="grade-filter-sep" aria-hidden="true"></span>
+        <label class="live-toggle" title="Hide lessons not yet built">
+          <input type="checkbox" id="live-only-toggle" />
+          <span class="live-toggle-label">Live only</span>
+        </label>
+      </div>
     </section>
 
     <style>
@@ -381,6 +395,181 @@
         .search-results-list {
           max-height: 300px;
         }
+      }
+
+      /* ── Grade filter bar ── */
+      .grade-filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 1rem;
+      }
+
+      .grade-btn {
+        padding: 0.28rem 0.82rem;
+        border-radius: 999px;
+        border: 1.5px solid var(--border-subtle);
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 0.77rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        transition: background 0.18s, color 0.18s, border-color 0.18s;
+      }
+
+      .grade-btn:hover {
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+        border-color: var(--accent);
+        color: var(--text-strong);
+      }
+
+      .grade-btn.grade-btn--active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .grade-filter-sep {
+        width: 1px;
+        height: 1.1rem;
+        background: var(--border-subtle);
+        margin: 0 0.15rem;
+      }
+
+      /* Live-only toggle */
+      .live-toggle {
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .live-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+      .live-toggle-label {
+        padding: 0.28rem 0.82rem;
+        border-radius: 999px;
+        border: 1.5px solid var(--border-subtle);
+        color: var(--text-muted);
+        font-size: 0.77rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        transition: background 0.18s, color 0.18s, border-color 0.18s;
+      }
+
+      .live-toggle input:checked ~ .live-toggle-label {
+        background: var(--success);
+        border-color: var(--success);
+        color: #fff;
+      }
+
+      .live-toggle:hover .live-toggle-label {
+        border-color: var(--success);
+        color: var(--text-strong);
+      }
+
+      /* ── Subject quick-nav ── */
+      .subject-nav {
+        display: flex;
+        overflow-x: auto;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        border-bottom: 1px solid var(--border-subtle);
+        background: var(--glass-fill-strong, rgba(255,255,255,0.55));
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        position: sticky;
+        top: 3.5rem;
+        z-index: 20;
+      }
+
+      .subject-nav::-webkit-scrollbar { display: none; }
+
+      .subject-nav-link {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        border: 1.5px solid var(--border-subtle);
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 0.76rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.18s, border-color 0.18s, color 0.18s;
+        white-space: nowrap;
+      }
+
+      .subject-nav-link:hover {
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+        border-color: var(--accent);
+        color: var(--text-strong);
+        text-decoration: none;
+      }
+
+      /* ── NEW badge ── */
+      .tile-new-badge {
+        display: inline-block;
+        font-size: 0.58rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #fff;
+        background: var(--success, #10b981);
+        border-radius: 4px;
+        padding: 0.08rem 0.3rem;
+        vertical-align: middle;
+        margin-left: 0.38rem;
+        line-height: 1.5;
+      }
+
+      /* ── Back to top ── */
+      .back-to-top {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 50%;
+        border: 1.5px solid var(--border-subtle);
+        background: var(--glass-fill-strong, rgba(255,255,255,0.8));
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: var(--text-main);
+        font-size: 1rem;
+        line-height: 1;
+        cursor: pointer;
+        z-index: 50;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.22s, transform 0.22s, background 0.18s, border-color 0.18s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-2, 0 2px 12px rgba(0,0,0,0.12));
+      }
+
+      .back-to-top.btt-visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .back-to-top:hover {
+        background: color-mix(in srgb, var(--accent) 15%, var(--glass-fill-strong, rgba(255,255,255,0.8)));
+        border-color: var(--accent);
+        transform: translateY(-2px);
+      }
+
+      /* Grade / live filter hiding */
+      .grade-hidden {
+        display: none !important;
       }
     </style>
 
@@ -740,6 +929,21 @@
       });
     </script>
 
+    <nav class="subject-nav" aria-label="Jump to subject">
+      <a class="subject-nav-link" href="#module-math">📐 Math</a>
+      <a class="subject-nav-link" href="#module-physics">⚡ Physics</a>
+      <a class="subject-nav-link" href="#module-chemistry">🧪 Chemistry</a>
+      <a class="subject-nav-link" href="#module-lifesci">🧬 Life Sci</a>
+      <a class="subject-nav-link" href="#module-earth">🌍 Earth</a>
+      <a class="subject-nav-link" href="#module-space">🚀 Cosmology</a>
+      <a class="subject-nav-link" href="#module-engineering">⚙️ Engineering</a>
+      <a class="subject-nav-link" href="#module-cs">💻 CS</a>
+      <a class="subject-nav-link" href="#module-fabrication">🔧 Materials</a>
+      <a class="subject-nav-link" href="#module-art">🎨 Art</a>
+      <a class="subject-nav-link" href="#module-language">📚 Language</a>
+      <a class="subject-nav-link" href="#module-systems">🌐 Systems</a>
+    </nav>
+
     <!-- ══ Mathematics ══ -->
     <section class="section module-section reveal" id="module-math">
       <div class="module-banner math-banner" role="button" tabindex="0" aria-expanded="false">
@@ -907,12 +1111,12 @@
           <strong>Level 3 · Classical Physics (6–8)</strong>
           <small>The core teaching band: Newton's laws, gravity, energy, fluids, pressure, waves, optics, electricity, and magnetism.</small>
         </div>
-        <a class="tile" href="lessons/kinematics.html" style="border-left:3.5px solid #2dd4bf;">
+        <a class="tile" href="lessons/kinematics.html" style="border-left:3.5px solid #2dd4bf;" data-added="2026-06-02">
           <span class="tile-kicker">Skill · Kinematics · Motion · d·v·a Graphs · Projectile</span>
           <strong>Kinematics: Motion, Speed &amp; Acceleration</strong>
           <small>Describe any motion precisely before explaining why it happens. Explore position, velocity, acceleration, the kinematic equations, and the calculus connections through interactive graphs and projectile simulation.</small>
         </a>
-        <a class="tile" href="lessons/conservation-of-energy.html" style="border-left:3.5px solid #f59e0b;">
+        <a class="tile" href="lessons/conservation-of-energy.html" style="border-left:3.5px solid #f59e0b;" data-added="2026-06-02">
           <span class="tile-kicker">Skill · Energy · KE · PE · Work · Conservation</span>
           <strong>Conservation of Energy</strong>
           <small>Energy is the universe's bookkeeping invariant — a number that never changes. Explore kinetic energy, potential energy, work, power, conservative vs. nonconservative forces, and the law that makes nature's books always balance.</small>
@@ -946,17 +1150,17 @@
           <strong>Level 4 · Fields &amp; Systems (9–10)</strong>
           <small>Physics becomes mathematical and unified through vectors, work, oscillation, superposition, circuits, fields, induction, and optics.</small>
         </div>
-        <a class="tile" href="lessons/vectors.html" style="border-left:3.5px solid #60a5fa;">
+        <a class="tile" href="lessons/vectors.html" style="border-left:3.5px solid #60a5fa;" data-added="2026-06-02">
           <span class="tile-kicker">Skill · Vectors · Components · Dot Product · Symmetry</span>
           <strong>Vectors</strong>
           <small>Master the mathematical language of direction. Decompose any force, velocity, or field into components, add vectors tip-to-tail, compute dot products, and understand why rotational symmetry demands vector equations.</small>
         </a>
-        <a class="tile" href="lessons/conservation-of-momentum.html" style="border-left:3.5px solid #22d3ee;">
+        <a class="tile" href="lessons/conservation-of-momentum.html" style="border-left:3.5px solid #22d3ee;" data-added="2026-06-02">
           <span class="tile-kicker">Skill · Momentum · Collisions · Impulse · Newton's 3rd Law</span>
           <strong>Conservation of Momentum</strong>
           <small>Every collision, explosion, and rocket burn obeys one law: total momentum never changes in an isolated system. Explore elastic and inelastic collisions, impulse, the center of mass, and how this law survives into relativity.</small>
         </a>
-        <a class="tile" href="lessons/fundamental-forces.html" style="border-left:3.5px solid #38bdf8;">
+        <a class="tile" href="lessons/fundamental-forces.html" style="border-left:3.5px solid #38bdf8;" data-added="2026-06-02">
           <span class="tile-kicker">Skill · Four Forces · Friction · Pseudo Forces · Nuclear</span>
           <strong>Fundamental Forces</strong>
           <small>Only four fundamental forces govern everything in the universe. Explore gravity, electromagnetism, the weak force, and the strong force — plus friction, molecular forces, and the fictitious pseudo forces of rotating reference frames.</small>
@@ -1406,7 +1610,7 @@
           <strong>The Asteroid Belt</strong>
           <small>Explore the rocky region between Mars and Jupiter. Model Ceres, Vesta, Kirkwood gaps, meteorites, and why Jupiter kept the belt from becoming a planet.</small>
         </a>
-        <a class="tile" href="lessons/keplers-laws.html" style="border-left:3.5px solid #f4c430;">
+        <a class="tile" href="lessons/keplers-laws.html" style="border-left:3.5px solid #f4c430;" data-added="2026-06-02">
           <span class="tile-kicker">Skill · Orbital Mechanics · Ellipses · T²∝a³ · Kepler</span>
           <strong>Kepler's Laws of Planetary Motion</strong>
           <small>Discover the three mathematical laws Kepler found by staring at Tycho's data for a decade — elliptical orbits, equal-area sweeps, and T²∝a³. Watch Newton later prove they follow inevitably from the inverse-square law of gravity.</small>
@@ -2177,11 +2381,164 @@
 
   </main>
 
+  <button class="back-to-top" id="back-to-top" aria-label="Back to top">↑</button>
+
   <footer class="site-footer">
     <p><a href="index.html">Back to ClassroomOS Home</a></p>
   </footer>
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
+  <script>
+  /* ── Feature additions: grade filter, subject nav, search shortcut,
+        NEW badges, back-to-top, collapse memory ── */
+  (function () {
+    'use strict';
+
+    // ── 1. Tag each tile/cluster with its grade band ──────────────────
+    function extractGradeBand(text) {
+      if (/\(K[–\-]2\)/i.test(text))   return 'k2';
+      if (/\(3[–\-]5\)/i.test(text))   return '35';
+      if (/\(6[–\-]8\)/i.test(text))   return '68';
+      if (/\(9[–\-]10\)/i.test(text))  return '910';
+      if (/\(1[01][–\-]12\)/i.test(text)) return '1112';
+      if (/capstone/i.test(text))       return 'capstone';
+      return 'all';
+    }
+
+    document.querySelectorAll('.module-tile-grid').forEach(function (grid) {
+      var currentBand = 'all';
+      Array.from(grid.children).forEach(function (child) {
+        if (child.classList.contains('module-cluster-label')) {
+          var strong = child.querySelector('strong');
+          currentBand = strong ? extractGradeBand(strong.textContent) : 'all';
+          child.dataset.gradeBand = currentBand;
+        } else {
+          child.dataset.gradeBand = currentBand;
+        }
+      });
+    });
+
+    // ── 2. Grade filter + live-only toggle ────────────────────────────
+    var activeGrade = 'all';
+    var liveOnly = localStorage.getItem('sl-live-only') === 'true';
+
+    var liveToggleInput = document.getElementById('live-only-toggle');
+    if (liveToggleInput) liveToggleInput.checked = liveOnly;
+
+    function applyFilters() {
+      document.querySelectorAll('.module-section').forEach(function (section) {
+        var grid = section.querySelector('.module-tile-grid');
+        if (!grid) return;
+
+        var hasVisible = false;
+
+        Array.from(grid.children).forEach(function (child) {
+          var band = child.dataset.gradeBand || 'all';
+          var isCluster = child.classList.contains('module-cluster-label');
+          var isComingSoon = child.classList.contains('tile-coming-soon');
+
+          var gradeMatch = activeGrade === 'all' || band === 'all' || band === 'capstone' || band === activeGrade;
+          var liveMatch  = !liveOnly || !isComingSoon;
+          var show = gradeMatch && (isCluster || liveMatch);
+
+          child.classList.toggle('grade-hidden', !show);
+          if (show && !isCluster) hasVisible = true;
+        });
+
+        section.classList.toggle('grade-hidden', !hasVisible);
+      });
+    }
+
+    document.querySelectorAll('.grade-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activeGrade = btn.dataset.grade;
+        document.querySelectorAll('.grade-btn').forEach(function (b) {
+          b.classList.toggle('grade-btn--active', b.dataset.grade === activeGrade);
+        });
+        applyFilters();
+      });
+    });
+
+    if (liveToggleInput) {
+      liveToggleInput.addEventListener('change', function () {
+        liveOnly = liveToggleInput.checked;
+        localStorage.setItem('sl-live-only', liveOnly);
+        applyFilters();
+      });
+    }
+
+    applyFilters();
+
+    // ── 3. "/" shortcut to focus search ───────────────────────────────
+    document.addEventListener('keydown', function (e) {
+      var tag = document.activeElement ? document.activeElement.tagName : '';
+      if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+        e.preventDefault();
+        var si = document.getElementById('lesson-search');
+        if (si) { si.focus(); si.select(); }
+      }
+    });
+
+    // ── 4. NEW badges on recently added tiles ─────────────────────────
+    var BADGE_DAYS = 30;
+    var now = Date.now();
+    document.querySelectorAll('.tile[data-added]').forEach(function (tile) {
+      var added = new Date(tile.dataset.added).getTime();
+      if (!isNaN(added) && (now - added) / 86400000 <= BADGE_DAYS) {
+        var titleEl = tile.querySelector('strong');
+        if (titleEl) {
+          var badge = document.createElement('span');
+          badge.className = 'tile-new-badge';
+          badge.setAttribute('aria-label', 'New lesson');
+          badge.textContent = 'NEW';
+          titleEl.appendChild(badge);
+        }
+      }
+    });
+
+    // ── 5. Back to top ────────────────────────────────────────────────
+    var btt = document.getElementById('back-to-top');
+    if (btt) {
+      window.addEventListener('scroll', function () {
+        btt.classList.toggle('btt-visible', window.scrollY > 500);
+      }, { passive: true });
+      btt.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    // ── 6. Collapse memory (localStorage) ─────────────────────────────
+    var COL_KEY = 'sl-open-sections';
+    var savedOpen = {};
+    try { savedOpen = JSON.parse(localStorage.getItem(COL_KEY) || '{}'); } catch (e) {}
+
+    document.querySelectorAll('.module-section').forEach(function (section) {
+      var id = section.id;
+      if (!id) return;
+      var banner = section.querySelector('.module-banner');
+      var drawer = banner ? banner.nextElementSibling : null;
+      if (!banner || !drawer) return;
+
+      if (savedOpen[id] === true) {
+        banner.setAttribute('aria-expanded', 'true');
+        banner.classList.add('open');
+        requestAnimationFrame(function () {
+          drawer.style.maxHeight = drawer.scrollHeight + 'px';
+        });
+      }
+
+      banner.addEventListener('click', function () {
+        // Reads state AFTER the existing toggle handler has already run
+        setTimeout(function () {
+          savedOpen[id] = banner.getAttribute('aria-expanded') === 'true';
+          try { localStorage.setItem(COL_KEY, JSON.stringify(savedOpen)); } catch (e) {}
+        }, 0);
+      });
+    });
+
+  })();
+  </script>
+
   <script>
     document.querySelectorAll('.module-banner').forEach(banner => {
       const drawer = banner.nextElementSibling; // .module-drawer
