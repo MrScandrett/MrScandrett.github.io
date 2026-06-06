@@ -568,7 +568,7 @@
       dayMap:       { value: makeFallbackDayTex() },
       nightMap:     { value: makeFallbackNightTex() },
       sunDir:       { value: new THREE.Vector3(5, 2, 4).normalize() },
-      sunIntensity: { value: 1.4 },
+      sunIntensity: { value: 0.88 },
       sunColor:     { value: new THREE.Color(1.0, 0.96, 0.91) },
       iceLevel:     { value: 0.60 },
       tempAnomaly:  { value: 1.2 },
@@ -606,9 +606,11 @@
 
           vec4 dayTex    = texture2D(dayMap,   vUv);
           vec4 nightTex  = texture2D(nightMap, vUv);
-          float diffuse  = max(0.0, sunDot) * sunIntensity;
-          vec4  litDay   = dayTex  * (vec4(sunColor, 1.0) * diffuse + vec4(0.10));
-          vec4  litNight = nightTex * 1.05;
+          // Clamped Lambertian + ambient — total factor never exceeds 1.0
+          float NdotL    = max(0.0, sunDot);
+          float shade    = clamp(NdotL * sunIntensity + 0.08, 0.0, 1.0);
+          vec4  litDay   = vec4(dayTex.rgb * sunColor * shade, 1.0);
+          vec4  litNight = vec4(nightTex.rgb * 1.05, 1.0);
           vec4  base     = mix(litNight, litDay, dayMix);
 
           // Ice caps — expand/contract with iceLevel and temperature
@@ -1240,7 +1242,7 @@
       const solarFactor = state.solar / 100;
       sunLight.intensity = 1.4 * solarFactor;
       sunLight.color.setHSL(0.1, 0.15 * (1 - (solarFactor - 1) * 5), 0.95);
-      earthUniforms.sunIntensity.value = 1.4 * solarFactor;
+      earthUniforms.sunIntensity.value = 0.88 * solarFactor;
       earthUniforms.sunColor.value.setHSL(0.1, 0.15 * (1 - (solarFactor - 1) * 5), 0.95);
 
       // Aurora — pulses with ice coverage; color shifts slowly over time
