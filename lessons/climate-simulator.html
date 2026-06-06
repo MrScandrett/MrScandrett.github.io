@@ -614,9 +614,10 @@
           vec4  base     = mix(litNight, litDay, dayMix);
 
           // Ice caps — soft edge, clamped brightness
-          // iceLatDeg: latitude (degrees) where ice begins; retreats toward poles as temp rises
+          // iceLatDeg: latitude where ice begins (degrees). Default ~64°, extends to ~50° at max ice.
+          // Higher temperature retreats ice toward poles; higher ice slider expands it equatorward.
           float pole      = abs(vUv.y * 2.0 - 1.0);
-          float iceLatDeg = 62.0 - iceLevel * 12.0 + tempAnomaly * 2.5;
+          float iceLatDeg = 75.0 - iceLevel * 25.0 + tempAnomaly * 3.5;
           float iceEdge   = clamp(iceLatDeg / 90.0, 0.05, 0.98);
           float iceMask   = smoothstep(iceEdge - 0.12, iceEdge + 0.06, pole); // 0.18 wide — soft gradient
           float iceLit    = clamp(NdotL * sunIntensity * 1.05 + 0.14, 0.0, 1.0);
