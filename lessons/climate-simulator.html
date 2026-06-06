@@ -606,36 +606,37 @@
 
           vec4 dayTex    = texture2D(dayMap,   vUv);
           vec4 nightTex  = texture2D(nightMap, vUv);
-          // Clamped Lambertian + ambient — total factor never exceeds 1.0
+          // Clamped Lambertian + ambient — total never exceeds 1.0
           float NdotL    = max(0.0, sunDot);
-          float shade    = clamp(NdotL * sunIntensity + 0.08, 0.0, 1.0);
+          float shade    = clamp(NdotL * sunIntensity + 0.10, 0.0, 1.0);
           vec4  litDay   = vec4(dayTex.rgb * sunColor * shade, 1.0);
           vec4  litNight = vec4(nightTex.rgb * 1.05, 1.0);
           vec4  base     = mix(litNight, litDay, dayMix);
 
-          // Ice caps — expand/contract with iceLevel and temperature
-          // Formula mirrors original: iceOffset(deg) = 62 - ice*0.12 - temp*2.5
-          // but temperature sign corrected: more warming → ice retreats toward poles (higher iceEdge)
-          float pole       = abs(vUv.y * 2.0 - 1.0);
-          float iceLatDeg  = 62.0 - iceLevel * 12.0 + tempAnomaly * 2.5;
-          float iceEdge    = clamp(iceLatDeg / 90.0, 0.05, 0.98);
-          float iceMask    = smoothstep(iceEdge - 0.055, iceEdge + 0.045, pole);
-          float iceLit  = max(0.0, sunDot) * sunIntensity * 1.15 + 0.15;
-          base = mix(base, vec4(0.88, 0.94, 1.0, 1.0) * iceLit, iceMask * dayMix);
+          // Ice caps — soft edge, clamped brightness
+          // iceLatDeg: latitude (degrees) where ice begins; retreats toward poles as temp rises
+          float pole      = abs(vUv.y * 2.0 - 1.0);
+          float iceLatDeg = 62.0 - iceLevel * 12.0 + tempAnomaly * 2.5;
+          float iceEdge   = clamp(iceLatDeg / 90.0, 0.05, 0.98);
+          float iceMask   = smoothstep(iceEdge - 0.12, iceEdge + 0.06, pole); // 0.18 wide — soft gradient
+          float iceLit    = clamp(NdotL * sunIntensity * 1.05 + 0.14, 0.0, 1.0);
+          vec3  iceCol    = vec3(0.87, 0.93, 1.0) * iceLit;
+          base.rgb = mix(base.rgb, iceCol, iceMask * dayMix);
 
-          // Deforestation — shift tropical greens toward brown
-          float tropics = max(0.0, 1.0 - pole * 2.2);
-          float dfShift = deforest * tropics * 0.38;
+          // Deforestation — shift tropical/temperate greens toward brown (extends to ~60° lat)
+          float tropics = max(0.0, 1.0 - pole * 1.5);
+          float dfShift = deforest * tropics * 0.30;
           base.r = min(1.0, base.r + dfShift * 0.55);
           base.g = max(0.0, base.g - dfShift * 0.28);
-          base.b = max(0.0, base.b - dfShift * 0.18);
+          base.b = max(0.0, base.b - dfShift * 0.20);
 
-          // Heat map mode — warm tint toward equator
-          if (heatMap > 0.5) {
-            float heat = clamp(tempAnomaly / 8.0, 0.0, 1.0) * (1.0 - pole * 0.65);
-            base.r = min(1.0, base.r + heat * 0.55);
-            base.g = max(0.0, base.g - heat * 0.38);
-            base.b = max(0.0, base.b - heat * 0.55);
+          // Heat map — multiply + additive warm tint; ice excluded so it stays white
+          if (heatMap > 0.5 && tempAnomaly > 0.0) {
+            float heat   = clamp(tempAnomaly / 8.0, 0.0, 1.0) * (1.0 - pole * 0.70);
+            vec3 warmGlow= vec3(heat * 0.18, 0.0, 0.0);
+            vec3 tintMul = vec3(mix(1.0, 1.30, heat), mix(0.95, 0.48, heat), mix(0.75, 0.18, heat));
+            vec3 tinted  = clamp(base.rgb * tintMul + warmGlow, 0.0, 1.0);
+            base.rgb     = mix(base.rgb, tinted, heat * 0.60 * (1.0 - iceMask));
           }
 
           gl_FragColor = base;
