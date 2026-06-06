@@ -1615,8 +1615,8 @@
             <div class="num-count-mini-controls">
               <div class="num-mini-control">
                 <label for="num-count-start">Start at</label>
-                <input id="num-count-start" type="number" min="0" max="50" step="1" value="0" />
-                <div class="num-mini-note">K-2 starts at 0.</div>
+                <input id="num-count-start" type="number" min="-20" max="50" step="1" value="0" />
+                <div class="num-mini-note">Negatives work too!</div>
               </div>
               <div class="num-mini-control">
                 <label for="num-count-jumps">How many jumps/groups</label>
@@ -1760,6 +1760,9 @@
             <div class="num-count-row" id="num-ratio-theme-row">
               <span class="num-count-label">Theme</span>
             </div>
+            <div class="num-count-row" id="num-ratio-preset-row" style="display:none;">
+              <span class="num-count-label">Preset</span>
+            </div>
             <div class="num-count-mini-controls">
               <div class="num-mini-control">
                 <label for="num-ratio-a">First amount</label>
@@ -1873,8 +1876,9 @@
       <h3>Factor Finder</h3>
       <p>Enter any number (2–10,000) to see all its factors and its prime factorisation.</p>
       <div class="num-factor-row">
-        <input type="number" class="num-factor-input" id="num-factor-in" value="36" min="2" max="10000" />
+        <input type="number" class="num-factor-input" id="num-factor-in" value="36" min="2" max="10000" onkeydown="if(event.key==='Enter')findFactors();" />
         <button class="num-btn" onclick="findFactors()">Find Factors</button>
+        <button class="num-btn" style="background:#1f2937;" onclick="document.getElementById('num-factor-in').value=Math.floor(Math.random()*9999)+2;findFactors();">Random</button>
       </div>
       <div class="num-factor-result" id="num-factor-result"></div>
 
@@ -1900,7 +1904,7 @@
       </div>
 
       <h3>Modular String Art</h3>
-      <p>Pick how many points live on the circle and how fast the multiplier changes. At multiplier 2, the pattern forms a cardioid. At 3, a nephroid appears. Arithmetic becomes visible.</p>
+      <p>Pick how many points live on the circle and how fast the multiplier changes. At multiplier 2, the pattern forms a cardioid. At 3, a nephroid appears. Arithmetic becomes visible. Set speed to 0 to freeze on any shape — then drag the multiplier slider to explore by hand.</p>
 
       <div class="num-mod-wrap">
         <div class="num-mod-controls">
@@ -2019,6 +2023,13 @@
     <!-- ── 7. Practice ── -->
     <section class="num-card" style="--card-accent:#ff9500;">
       <h2>✏️ Practice Problems</h2>
+      <div id="num-score-bar" style="display:flex;align-items:center;gap:0.65rem;margin-bottom:0.75rem;padding:0.65rem 0.85rem;border-radius:12px;background:rgba(255,149,0,0.07);border:1px solid rgba(255,149,0,0.2);">
+        <span style="font-size:0.82rem;font-weight:800;color:#64748b;">Score</span>
+        <span id="num-score-val" style="font-size:1.2rem;font-weight:900;color:#ff9500;">0 / 5</span>
+        <div style="flex:1;height:8px;border-radius:4px;background:rgba(0,0,0,0.07);overflow:hidden;">
+          <div id="num-score-fill" style="height:100%;border-radius:4px;background:linear-gradient(90deg,#ff9500,#34c759);width:0%;transition:width 0.4s ease;"></div>
+        </div>
+      </div>
       <div class="num-practice">
 
         <div class="num-problem">
@@ -2102,19 +2113,19 @@
         <div class="ll-param">
           <div class="ll-param-label">Points on circle</div>
           <input type="range" min="60" max="280" step="10" value="180"
-            onchange="document.getElementById('num-mod-points').value=this.value;updateModControls();"
+            oninput="document.getElementById('num-mod-points').value=this.value;updateModControls();"
             style="width:100%;padding:6px 8px;border:1.5px solid var(--ll-panel-border);border-radius:8px;font-size:0.9rem;font-family:inherit;background:transparent;color:inherit;margin-top:0.25rem;" />
         </div>
         <div class="ll-param">
           <div class="ll-param-label">Multiplier</div>
           <input type="range" min="1" max="20" step="0.05" value="2"
-            onchange="document.getElementById('num-mod-multiplier').value=this.value;setManualMultiplier(this.value);"
+            oninput="document.getElementById('num-mod-multiplier').value=this.value;setManualMultiplier(this.value);"
             style="width:100%;padding:6px 8px;border:1.5px solid var(--ll-panel-border);border-radius:8px;font-size:0.9rem;font-family:inherit;background:transparent;color:inherit;margin-top:0.25rem;" />
         </div>
         <div class="ll-param">
           <div class="ll-param-label">Animation speed</div>
           <input type="range" min="0" max="1.5" step="0.05" value="0.35"
-            onchange="document.getElementById('num-mod-speed').value=this.value;updateModControls();"
+            oninput="document.getElementById('num-mod-speed').value=this.value;updateModControls();"
             style="width:100%;padding:6px 8px;border:1.5px solid var(--ll-panel-border);border-radius:8px;font-size:0.9rem;font-family:inherit;background:transparent;color:inherit;margin-top:0.25rem;" />
         </div>
       </div>
@@ -2290,6 +2301,7 @@
     }
 
     function integerNumberWord(n) {
+      if (n < 0) return `negative ${integerNumberWord(-n)}`;
       const ones = ['zero','one','two','three','four','five','six','seven','eight','nine'];
       const teens = ['ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
       const tens = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
@@ -2478,7 +2490,7 @@
       });
 
       document.getElementById('num-count-start').addEventListener('input', (event) => {
-        const next = Math.max(0, Math.min(50, parseInt(event.target.value || '0', 10) || 0));
+        const next = Math.max(-20, Math.min(50, parseInt(event.target.value || '0', 10) || 0));
         updateIntegerLab({ start: next });
       });
       document.getElementById('num-count-jumps').addEventListener('input', (event) => {
@@ -2582,7 +2594,7 @@
 
     function renderFractionBar(numerator, denominator, fillCount) {
       const segments = Array.from({ length: denominator }, (_, index) => `
-        <div class="num-fraction-bar-segment ${index < fillCount ? 'filled' : ''}">${index < fillCount ? 'filled' : ''}</div>
+        <div class="num-fraction-bar-segment ${index < fillCount ? 'filled' : ''}"></div>
       `).join('');
       return `
         <div class="num-fraction-bar-wrap">
@@ -2599,15 +2611,20 @@
       const left = 54;
       const right = width - 54;
       const y = 88;
-      const xFor = (step) => left + ((right - left) * step) / denominator;
-      const ticks = Array.from({ length: denominator + 1 }, (_, index) => {
+      const isImproper = numerator > denominator;
+      const span = isImproper ? numerator + 1 : denominator;
+      const xFor = (step) => left + ((right - left) * step) / span;
+      const tickCount = isImproper ? numerator + 1 : denominator + 1;
+      const ticks = Array.from({ length: tickCount }, (_, index) => {
         const x = xFor(index);
+        const isMajor = index === 0 || index % denominator === 0 || index === numerator;
+        const label = index === 0 ? '0' : index % denominator === 0 ? String(index / denominator) : `${index}/${denominator}`;
         return `
-          <line class="num-fraction-line-tick ${index === 0 || index === denominator || index === numerator ? 'major' : ''}" x1="${x}" y1="${y - 20}" x2="${x}" y2="${y + 20}"></line>
-          <text class="num-fraction-line-label" x="${x}" y="${y + 42}">${index === 0 ? '0' : index === denominator ? '1' : `${index}/${denominator}`}</text>
+          <line class="num-fraction-line-tick ${isMajor ? 'major' : ''}" x1="${x}" y1="${y - (isMajor ? 20 : 12)}" x2="${x}" y2="${y + (isMajor ? 20 : 12)}"></line>
+          ${isMajor ? `<text class="num-fraction-line-label" x="${x}" y="${y + 42}">${label}</text>` : ''}
         `;
       }).join('');
-      const targetX = xFor(Math.min(numerator, denominator));
+      const targetX = xFor(numerator);
       return `
         <div class="num-fraction-line-wrap">
           <svg class="num-fraction-line-svg" viewBox="0 0 ${width} 180" role="img" aria-label="Fraction number line">
@@ -2615,7 +2632,7 @@
             <line class="num-fraction-line-fill" x1="${left}" y1="${y}" x2="${targetX}" y2="${y}"></line>
             ${ticks}
             <circle class="num-fraction-line-dot" cx="${targetX}" cy="${y}" r="10"></circle>
-            <text class="num-fraction-line-caption" x="${targetX}" y="${y - 28}">${numerator}/${denominator}</text>
+            <text class="num-fraction-line-caption" x="${targetX}" y="${y - 28}">${numerator}/${denominator}${isImproper ? ` = ${(numerator/denominator).toFixed(2)}` : ''}</text>
           </svg>
         </div>
       `;
@@ -2650,6 +2667,10 @@
 
       document.querySelectorAll('[data-fraction-mode]').forEach((btn) => btn.classList.toggle('active', btn.dataset.fractionMode === mode));
       document.querySelectorAll('[data-fraction-shape]').forEach((btn) => btn.classList.toggle('active', btn.dataset.fractionShape === fractionLabState.shape));
+      const shapeRow = document.getElementById('num-fraction-shape-row');
+      if (shapeRow) shapeRow.style.display = mode === 'shape' ? '' : 'none';
+      const fillBtn = document.getElementById('num-fraction-fill');
+      if (fillBtn) fillBtn.closest('.num-mini-control').style.display = mode === 'line' ? 'none' : '';
 
       const visual = document.getElementById('num-fraction-visual');
       if (mode === 'shape') {
@@ -2657,7 +2678,7 @@
       } else if (mode === 'bar') {
         visual.innerHTML = `${renderFractionBar(displayNumerator, displayDenominator, fillCount)}${renderFractionOverflowWholes(displayNumerator, displayDenominator)}`;
       } else {
-        visual.innerHTML = renderFractionLine(Math.min(displayNumerator, displayDenominator), displayDenominator);
+        visual.innerHTML = renderFractionLine(displayNumerator, displayDenominator);
       }
     }
 
@@ -2802,14 +2823,21 @@
     }
 
     function renderDecimalBridge(data) {
+      const g = gcd(data.fraction.numerator, 100);
+      const simpN = data.fraction.numerator / g;
+      const simpD = 100 / g;
+      const isAlreadySimple = g === data.fraction.numerator || simpD === 100;
+      const simplifiedNote = g > 1 && simpN !== data.fraction.numerator
+        ? `<span style="font-size:1rem;color:#64748b;">= <strong style="color:#24a148;">${simpN}/${simpD}</strong></span>` : '';
       return `
         <div class="num-decimal-bridge">
           <div class="num-decimal-bridge-eq num-data">
             <span>${data.value.toFixed(2)}</span>
             <span>=</span>
             <span>${data.fraction.numerator}/100</span>
+            ${simplifiedNote}
           </div>
-          <div class="num-decimal-bridge-note">The decimal and fraction name the same amount of one whole.</div>
+          <div class="num-decimal-bridge-note">${g > 1 && simpN !== data.fraction.numerator ? `Both fractions name the same amount. Divide numerator and denominator by ${g} to simplify.` : 'The decimal and fraction name the same amount of one whole.'}</div>
         </div>
       `;
     }
@@ -2963,7 +2991,8 @@
       document.getElementById('num-ratio-a').value = String(ratioLabState.a);
       document.getElementById('num-ratio-b').value = String(ratioLabState.b);
       document.querySelectorAll('[data-ratio-mode]').forEach((btn) => btn.classList.toggle('active', btn.dataset.ratioMode === ratioLabState.mode));
-      document.querySelectorAll('[data-ratio-theme]').forEach((btn) => btn.classList.toggle('active', btn.dataset.ratioTheme === (ratioLabState.mode === 'real' ? ratioLabState.preset : ratioLabState.theme)));
+      document.querySelectorAll('[data-ratio-theme]').forEach((btn) => btn.classList.toggle('active', btn.dataset.ratioTheme === ratioLabState.theme));
+      document.querySelectorAll('[data-ratio-preset]').forEach((btn) => btn.classList.toggle('active', btn.dataset.ratioPreset === ratioLabState.preset));
       const visual = document.getElementById('num-ratio-visual');
       if (ratioLabState.mode === 'objects') {
         visual.innerHTML = renderRatioObjects(displayA, displayB, ratioLabState.theme);
@@ -2990,13 +3019,19 @@
     function buildRatioLabControls() {
       const modeRow = document.getElementById('num-ratio-mode-row');
       const themeRow = document.getElementById('num-ratio-theme-row');
+      const presetRow = document.getElementById('num-ratio-preset-row');
       Object.entries(ratioModes).forEach(([key, label]) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'num-chip-btn';
         button.dataset.ratioMode = key;
         button.textContent = label;
-        button.addEventListener('click', () => updateRatioLab({ mode: key }));
+        button.addEventListener('click', () => {
+          const nextMode = key;
+          updateRatioLab({ mode: nextMode });
+          themeRow.style.display = nextMode === 'real' ? 'none' : '';
+          presetRow.style.display = nextMode === 'real' ? '' : 'none';
+        });
         modeRow.appendChild(button);
       });
       Object.entries(ratioThemes).forEach(([key, config]) => {
@@ -3005,17 +3040,17 @@
         button.className = 'num-chip-btn';
         button.dataset.ratioTheme = key;
         button.textContent = config.label;
-        button.addEventListener('click', () => updateRatioLab({ theme: key, mode: ratioLabState.mode === 'real' ? 'objects' : ratioLabState.mode }));
+        button.addEventListener('click', () => updateRatioLab({ theme: key }));
         themeRow.appendChild(button);
       });
       Object.entries(ratioPresets).forEach(([key, preset]) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'num-chip-btn';
-        button.dataset.ratioTheme = key;
+        button.dataset.ratioPreset = key;
         button.textContent = preset.title;
         button.addEventListener('click', () => updateRatioLab({ mode: 'real', preset: key, a: preset.a, b: preset.b }));
-        themeRow.appendChild(button);
+        presetRow.appendChild(button);
       });
       document.getElementById('num-ratio-a').addEventListener('input', (event) => {
         updateRatioLab({ a: parseInt(event.target.value, 10) || 1, showSimplified: false });
@@ -3084,6 +3119,12 @@
     buildDecimalLabControls();
     buildRatioLabControls();
 
+    /* Open Integers lab by default so the section is immediately interactive */
+    (function() {
+      const firstCard = document.querySelector('.num-type-card[onclick*="integer"]');
+      if (firstCard) selectType(firstCard, 'integer');
+    })();
+
     /* ── Prime helpers ── */
     let primeCells = [];
     let sieveRunId = 0;
@@ -3097,8 +3138,13 @@
     }
     function getFactors(n) {
       const f = [];
-      for (let i = 1; i <= n; i++) if (n % i === 0) f.push(i);
-      return f;
+      for (let i = 1; i * i <= n; i++) {
+        if (n % i === 0) {
+          f.push(i);
+          if (i !== n / i) f.push(n / i);
+        }
+      }
+      return f.sort((a, b) => a - b);
     }
     function primeFactors(n) {
       const r = []; let d = 2;
@@ -3389,6 +3435,13 @@ ${!prime ? `<div style="margin-top:0.45rem;font-size:0.82rem;color:#64748b;">Pri
     updateZero();
 
     /* ── Practice checker ── */
+    const practiceAnswered = {};
+    function updateScoreBar() {
+      const correct = Object.values(practiceAnswered).filter(Boolean).length;
+      const total = 5;
+      document.getElementById('num-score-val').textContent = `${correct} / ${total}`;
+      document.getElementById('num-score-fill').style.width = `${(correct / total) * 100}%`;
+    }
     function chk(qId, answer, fbId, hintId) {
       const val = document.getElementById(qId).value.trim();
       const fb   = document.getElementById(fbId);
@@ -3396,11 +3449,20 @@ ${!prime ? `<div style="margin-top:0.45rem;font-size:0.82rem;color:#64748b;">Pri
       if (val === String(answer)) {
         fb.textContent = '✓ Correct!'; fb.className = 'num-fb ok';
         hint.classList.remove('show');
+        if (!practiceAnswered[qId]) { practiceAnswered[qId] = true; updateScoreBar(); }
       } else {
         fb.textContent = '✗ Try again'; fb.className = 'num-fb bad';
         hint.classList.add('show');
+        practiceAnswered[qId] = false; updateScoreBar();
       }
     }
+    document.querySelectorAll('.num-ans').forEach((input) => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const btn = input.closest('.num-problem-row')?.querySelector('.num-check');
+        if (btn) btn.click();
+      });
+    });
   </script>
   <script src="../assets/js/classroom-animations.js"></script>
   <script src="../assets/js/lesson-layout.js"></script>

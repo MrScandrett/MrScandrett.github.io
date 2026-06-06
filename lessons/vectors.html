@@ -107,6 +107,43 @@
     .v-chip-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.83rem; font-weight:700; color:#dce8f6; }
     .v-footer { text-align:center; padding:2rem 1rem; color:var(--v-dim); font-size:0.78rem; border-top:1px solid var(--v-line); background:rgba(5,8,16,0.66); }
     .v-footer a { color:var(--v-blue); text-decoration:none; }
+
+    /* ── Unlocks grid ── */
+    .v-unlock-intro { max-width:82ch; color:var(--v-muted); font-size:0.95rem; line-height:1.72; margin:0 0 1.25rem; }
+    .v-unlock-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:0.85rem; }
+    .v-unlock-tile { border-radius:var(--v-radius); border:1px solid var(--v-line); background:rgba(8,11,22,0.7);
+      padding:1.1rem 1.2rem; position:relative; overflow:hidden;
+      transition:border-color 0.22s, transform 0.22s, box-shadow 0.22s; }
+    .v-unlock-tile::before { content:''; position:absolute; inset:0; opacity:0.09;
+      background:radial-gradient(circle at 18% 18%, var(--tc,#60a5fa), transparent 62%); pointer-events:none; }
+    .v-unlock-tile:hover { transform:translateY(-3px); border-color:rgba(255,255,255,0.18);
+      box-shadow:0 18px 48px rgba(0,0,0,0.34); }
+    .v-unlock-icon { font-size:1.65rem; margin-bottom:0.45rem; display:block; }
+    .v-unlock-field { font-size:0.63rem; font-weight:800; letter-spacing:0.11em; text-transform:uppercase;
+      color:var(--tc,var(--v-blue)); margin-bottom:0.22rem; }
+    .v-unlock-title { font-size:0.97rem; font-weight:800; color:#fff; margin:0 0 0.42rem; letter-spacing:-0.022em; }
+    .v-unlock-body { font-size:0.81rem; color:var(--v-muted); line-height:1.65; margin:0 0 0.65rem; }
+    .v-unlock-math { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.68rem;
+      color:var(--tc,var(--v-blue)); border-top:1px solid rgba(255,255,255,0.07);
+      padding-top:0.48rem; margin-top:0.15rem; opacity:0.88; }
+
+    /* ── Scale of reality ── */
+    .v-scale-track { display:grid; gap:0; margin-top:1.1rem; position:relative; }
+    .v-scale-track::before { content:''; position:absolute; left:17px; top:0; bottom:0; width:2px;
+      background:linear-gradient(180deg,rgba(96,165,250,0.6),rgba(167,139,250,0.4),rgba(163,230,53,0.4)); border-radius:2px; }
+    .v-scale-row { display:grid; grid-template-columns:40px 1fr; gap:1rem; align-items:start; padding:0.75rem 0; }
+    .v-scale-dot { width:12px; height:12px; border-radius:50%; background:var(--sd,var(--v-blue));
+      border:2px solid rgba(255,255,255,0.12); margin-top:4px; position:relative; z-index:1; justify-self:center; }
+    .v-scale-label { font-size:0.68rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase;
+      color:var(--sd,var(--v-blue)); margin-bottom:0.18rem; }
+    .v-scale-text { font-size:0.86rem; color:var(--v-muted); line-height:1.62; margin:0; }
+    .v-scale-math { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.7rem;
+      color:rgba(228,234,248,0.38); margin-top:0.22rem; display:block; }
+
+    /* ── Cross product ── */
+    .v-violet-acc { border-left:4px solid var(--v-violet); }
+    #crossCanvas { display:block; width:100%; background:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px),#020611; background-size:28px 28px; }
   </style>
 </head>
 <body>
@@ -116,15 +153,18 @@
     <a href="../steam-lessons.html">← Lessons</a>
     <span class="v-brand">Mr. Scandrett's ClassroomOS</span>
     <nav class="v-nav">
+      <a href="#unlocks">What It Unlocks</a>
       <a href="#scalars">Scalars vs Vectors</a>
       <a href="#components">Components</a>
       <a href="#addition">Addition Lab</a>
       <a href="#dot">Dot Product</a>
+      <a href="#cross">Cross Product</a>
+      <a href="#fields">Vector Fields</a>
       <a href="#symmetry">Symmetry</a>
     </nav>
     <div class="v-pills">
       <span class="v-pill">Physics · Math</span>
-      <span class="v-pill pink">Physics · Math</span>
+      <span class="v-pill pink">4 Simulations</span>
     </div>
   </div>
 </div>
@@ -133,17 +173,18 @@
 
   <div class="v-hero">
     <div class="v-hero-copy">
-      <p class="v-eyebrow">Classical Mechanics · Direction &amp; Magnitude</p>
+      <p class="v-eyebrow">Classical Mechanics · The Language of Direction</p>
       <h1>Direction is Half the <em>Story</em></h1>
       <p class="v-lede">
-        Speed tells you how fast. Velocity tells you how fast and which way.
-        Vectors are the mathematical language that captures both at once —
-        and they underlie everything from Newton's Laws to quantum mechanics.
+        Speed tells you <em>how fast</em>. Velocity tells you how fast <em>and which way</em>.
+        That single distinction — adding direction to magnitude — gives you a tool that powers
+        3D graphics, GPS, orbital mechanics, electromagnetism, quantum mechanics, and AI.
+        Vectors are not a math topic. They are the grammar the universe is written in.
       </p>
       <div class="v-meta">
-        <span class="v-pill">Components · Addition · Dot Product</span>
-        <span class="v-pill pink">2 Simulations</span>
-        <span class="v-pill">Grades 7–12</span>
+        <span class="v-pill">Components · Addition · Dot &amp; Cross Products</span>
+        <span class="v-pill pink">4 Simulations</span>
+        <span class="v-pill">Grades 9–12</span>
       </div>
     </div>
     <div class="v-quote-card">
@@ -155,6 +196,80 @@
         across all rotations.
       </p>
       <div class="v-quote-attr">— Richard Feynman</div>
+    </div>
+  </div>
+
+  <!-- Section 0: What Vectors Unlock -->
+  <div class="v-card" id="unlocks" style="border-color:rgba(245,158,11,0.28);background:linear-gradient(135deg,rgba(10,14,26,0.97),rgba(8,10,22,0.97));">
+    <p class="v-kicker amber-k">The Big Picture · Why This Changes Everything</p>
+    <h2>Master Vectors — Unlock an Entire Universe</h2>
+    <p class="v-unlock-intro">Every technology below runs on the exact same rules you're about to learn: magnitude, direction, components, addition, and projection. This is not preparation for something harder. This <em>is</em> the thing that powers the modern world.</p>
+    <div class="v-unlock-grid">
+
+      <div class="v-unlock-tile" style="--tc:#60a5fa;">
+        <span class="v-unlock-icon">🎮</span>
+        <div class="v-unlock-field">3D Graphics &amp; Games</div>
+        <div class="v-unlock-title">Every Frame Is Millions of Dot Products</div>
+        <div class="v-unlock-body">Your GPU computes the dot product of every surface normal with every light direction — billions of times per second. Shadows, reflections, ambient occlusion, and motion blur are all just <strong>cos(θ) at scale</strong>. Without vectors, there is no 3D world.</div>
+        <div class="v-unlock-math">lighting = max(0, normal · lightDir)</div>
+      </div>
+
+      <div class="v-unlock-tile" style="--tc:#a78bfa;">
+        <span class="v-unlock-icon">🤖</span>
+        <div class="v-unlock-field">AI &amp; Machine Learning</div>
+        <div class="v-unlock-title">Words Are Vectors in 1,536-Dimensional Space</div>
+        <div class="v-unlock-body">Large language models embed every word as a high-dimensional vector. "King − Man + Woman ≈ Queen" is <strong>literal vector subtraction</strong>. The attention mechanism that powers GPT is — at its core — scaled dot products between query and key vectors.</div>
+        <div class="v-unlock-math">attention = softmax(Q · Kᵀ / √d) · V</div>
+      </div>
+
+      <div class="v-unlock-tile" style="--tc:#34d399;">
+        <span class="v-unlock-icon">🚀</span>
+        <div class="v-unlock-field">Orbital Mechanics</div>
+        <div class="v-unlock-title">Every Spacecraft Burn Is a Δv Vector</div>
+        <div class="v-unlock-body">Apollo, Voyager, and the James Webb telescope all navigate by solving vector differential equations. A rocket "burn" is a velocity vector added at exactly the right angle. Miss by 0.01° and you miss Mars by thousands of kilometers.</div>
+        <div class="v-unlock-math">Δv = v_target − v_current</div>
+      </div>
+
+      <div class="v-unlock-tile" style="--tc:#f59e0b;">
+        <span class="v-unlock-icon">⚡</span>
+        <div class="v-unlock-field">Electromagnetism</div>
+        <div class="v-unlock-title">Maxwell's 4 Vector Equations Run the World</div>
+        <div class="v-unlock-body">Wi-Fi, electricity, MRI machines, electric motors, radio waves, and visible light — all governed by Maxwell's four vector field equations. Every photon that has ever traveled through space obeyed them. <strong>All of them.</strong></div>
+        <div class="v-unlock-math">∇ × B = μ₀J + μ₀ε₀ ∂E/∂t</div>
+      </div>
+
+      <div class="v-unlock-tile" style="--tc:#ec4899;">
+        <span class="v-unlock-icon">⚛️</span>
+        <div class="v-unlock-field">Quantum Mechanics</div>
+        <div class="v-unlock-title">Quantum States Are Vectors in Infinite Dimensions</div>
+        <div class="v-unlock-body">An electron's quantum state is a vector in an infinite-dimensional Hilbert space. <strong>Measuring it is a projection</strong> — a dot product. Every chemical bond, every transistor switching inside this device right now, is linear algebra at the quantum level.</div>
+        <div class="v-unlock-math">⟨ψ|φ⟩ — dot product in Hilbert space</div>
+      </div>
+
+      <div class="v-unlock-tile" style="--tc:#22d3ee;">
+        <span class="v-unlock-icon">🧭</span>
+        <div class="v-unlock-field">GPS Navigation</div>
+        <div class="v-unlock-title">Your Position Is a 3D Vector Intersection</div>
+        <div class="v-unlock-body">GPS computes your exact position by intersecting spheres defined by signal timing from ≥4 satellites — all solved as a 3D vector system in real time. It also corrects for relativistic time dilation so the vectors stay accurate.</div>
+        <div class="v-unlock-math">‖r − sᵢ‖ = c · tᵢ (per satellite)</div>
+      </div>
+
+      <div class="v-unlock-tile" style="--tc:#f87171;">
+        <span class="v-unlock-icon">🎵</span>
+        <div class="v-unlock-field">Sound &amp; Signal Processing</div>
+        <div class="v-unlock-title">Every Sound Is a Sum of Frequency Vectors</div>
+        <div class="v-unlock-body">The Fourier transform decomposes any sound into a sum of frequency basis vectors — pure tones that combine into music. Noise-canceling headphones compute and emit the <strong>exact opposite vector</strong>. Silence is vector subtraction.</div>
+        <div class="v-unlock-math">f(t) = Σ Aₙ cos(nωt + φₙ)</div>
+      </div>
+
+      <div class="v-unlock-tile" style="--tc:#a3e635;">
+        <span class="v-unlock-icon">🌊</span>
+        <div class="v-unlock-field">Fluid Dynamics &amp; Weather</div>
+        <div class="v-unlock-title">The Atmosphere Is a Velocity Vector Field</div>
+        <div class="v-unlock-body">Weather simulation assigns a 3D velocity vector to every cubic kilometer of atmosphere and advances Newton's laws forward in time. A 10-day forecast runs vector calculus across <strong>~10 billion grid points</strong> per timestep.</div>
+        <div class="v-unlock-math">∂v/∂t + (v·∇)v = −∇p/ρ + g + ν∇²v</div>
+      </div>
+
     </div>
   </div>
 
@@ -340,10 +455,99 @@
     </div>
   </div>
 
-  <!-- Section 4: Symmetry -->
+  <!-- Section 3b: Cross Product -->
+  <div class="v-card v-violet-acc" id="cross">
+    <p class="v-kicker violet-k">Idea 4 · The Cross Product — Manufacturing the Third Dimension</p>
+    <h2>Perpendicularity on Demand</h2>
+    <div class="v-two">
+      <div>
+        <p>The dot product eats two vectors and spits out a <em>scalar</em> — a number measuring how parallel they are. The cross product eats two vectors and spits out a <em>new vector</em> — perpendicular to both. That's what makes 3D geometry work.</p>
+        <div class="v-eq">A × B = (AyBz−AzBy, AzBx−AxBz, AxBy−AyBx)</div>
+        <div class="v-eq">|A × B| = |A||B|sin(θ)</div>
+        <p>Maximum when perpendicular (sin 90° = 1). Zero when parallel (sin 0° = 0) — the mirror of the dot product's behavior.</p>
+        <div class="v-box" style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.28);">
+          <strong style="color:#a78bfa;">The Right-Hand Rule</strong>
+          <p>Point fingers of your right hand along A, curl toward B — your thumb points along A × B. The direction is always perpendicular to the plane containing A and B.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Where the Cross Product Lives</h3>
+        <ul>
+          <li><strong>Torque:</strong> τ = r × F — the lever arm crossed with force. Direction tells you which way the object rotates.</li>
+          <li><strong>Magnetic Force:</strong> F = qv × B — a moving charge in a field feels a force sideways to its motion. This is why motors spin.</li>
+          <li><strong>Angular Momentum:</strong> L = r × p — defines the rotation axis of every spinning object, from gyroscopes to neutron stars.</li>
+          <li><strong>3D Surface Normals:</strong> Every face of a 3D mesh has its lighting normal computed as the cross product of two edge vectors.</li>
+          <li><strong>Coriolis Effect:</strong> The force that bends hurricanes and rivers is 2m(v × Ω) — Earth's rotation vector crossed with velocity.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 3: Cross Product Visualizer -->
+  <div class="v-sim">
+    <div class="v-sim-head">
+      <div class="v-sim-hl">
+        <span class="v-sim-title violet-k">✕ Cross Product Visualizer</span>
+        <span class="v-sim-sub">A × B shown as torque — the wrench handle (r) crossed with the force (F) produces rotation</span>
+      </div>
+    </div>
+    <canvas id="crossCanvas" height="300"></canvas>
+    <div class="v-sim-controls">
+      <div class="v-ctrl">
+        <label>Lever Arm |r| <span class="v-ctrl-val" id="crLabel">100</span></label>
+        <input type="range" id="crSl" min="20" max="130" value="100" />
+      </div>
+      <div class="v-ctrl">
+        <label>Arm Angle θ_r <span class="v-ctrl-val" id="crAngLabel">0°</span></label>
+        <input type="range" id="crAngSl" min="0" max="359" value="0" />
+      </div>
+      <div class="v-ctrl">
+        <label>Force |F| <span class="v-ctrl-val" id="cfLabel">80</span></label>
+        <input type="range" id="cfSl" min="10" max="130" value="80" />
+      </div>
+      <div class="v-ctrl">
+        <label>Force Angle θ_F <span class="v-ctrl-val" id="cfAngLabel">90°</span></label>
+        <input type="range" id="cfAngSl" min="0" max="359" value="90" />
+      </div>
+    </div>
+    <div class="v-readout">
+      <span class="v-chip"><span class="v-chip-label">θ between r &amp; F</span><span class="v-chip-val" id="crossThetaVal">—</span></span>
+      <span class="v-chip"><span class="v-chip-label">|τ| = |r||F|sin(θ)</span><span class="v-chip-val" id="torqueVal">—</span></span>
+      <span class="v-chip"><span class="v-chip-label">Rotation</span><span class="v-chip-val" id="rotDir">—</span></span>
+      <span class="v-chip"><span class="v-chip-label">sin(θ) efficiency</span><span class="v-chip-val" id="sinEffVal">—</span></span>
+    </div>
+  </div>
+
+  <!-- SIM 4: Vector Field Explorer -->
+  <div class="v-sim" id="fields">
+    <div class="v-sim-head">
+      <div class="v-sim-hl">
+        <span class="v-sim-title" style="color:#22d3ee;">⊕ Vector Field Explorer</span>
+        <span class="v-sim-sub">Click or drag to move the source — arrows show magnitude &amp; direction at every point in the field</span>
+      </div>
+    </div>
+    <canvas id="fieldCanvas" height="360"></canvas>
+    <div class="v-sim-controls">
+      <div class="v-ctrl">
+        <label>Field Type <span class="v-ctrl-val" id="ftLabel">Gravity / Electric</span></label>
+        <input type="range" id="ftSl" min="0" max="2" step="1" value="0" />
+      </div>
+      <div class="v-ctrl">
+        <label>Strength <span class="v-ctrl-val" id="fsLabel">1.0×</span></label>
+        <input type="range" id="fsSl" min="0.2" max="3" step="0.1" value="1.0" />
+      </div>
+    </div>
+    <div class="v-readout">
+      <span class="v-chip"><span class="v-chip-label">Field at cursor</span><span class="v-chip-val" id="fCursorMag">—</span></span>
+      <span class="v-chip"><span class="v-chip-label">Direction</span><span class="v-chip-val" id="fCursorDir">—</span></span>
+      <span class="v-chip"><span class="v-chip-label">Law</span><span class="v-chip-val" id="fLaw">F ∝ 1/r²</span></span>
+    </div>
+  </div>
+
+  <!-- Section 5: Symmetry -->
   <div class="v-card v-amber-acc" id="symmetry">
-    <p class="v-kicker amber-k">Idea 4 · Symmetry in Physics — Why Vectors Exist</p>
-    <h2>Rotational Symmetry and the Laws of Nature</h2>
+    <p class="v-kicker amber-k">Idea 5 · Symmetry — Why the Universe Chose Vectors</p>
+    <h2>Rotational Symmetry and the Grammar of Reality</h2>
     <div class="v-two">
       <div>
         <p>
@@ -367,12 +571,86 @@
         </ul>
         <div class="v-box amber">
           <strong>The Deepest Idea</strong>
-          <p>Every conservation law in physics corresponds to a symmetry. Vectors are the language
-          that makes these symmetries visible. When you write <strong>F</strong> = m<strong>a</strong>,
-          you're writing a law that's true in every orientation — and that's why the universe
-          uses vectors as its grammar.</p>
+          <p>Every conservation law in physics corresponds to a symmetry (Emmy Noether, 1915). Vectors are the language that makes these symmetries visible. When you write <strong>F</strong> = m<strong>a</strong>, you're not writing an equation about one experiment — you're writing a law that holds in every orientation, in every galaxy, at every moment in time. That's only possible because vectors encode what doesn't change when the universe rotates.</p>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Scale of Reality closer -->
+  <div class="v-card" style="border-color:rgba(167,139,250,0.22);background:linear-gradient(135deg,rgba(8,10,22,0.98),rgba(10,14,26,0.98));">
+    <p class="v-kicker violet-k">The Grand View · One Mathematical Language, Every Scale</p>
+    <h2>From Quarks to Galaxy Clusters — It's All Vectors</h2>
+    <p style="color:var(--v-muted);font-size:0.92rem;max-width:80ch;margin:0 0 0.3rem;">The same rules you learned today describe reality at every scale of existence. That's not a metaphor — these are the same equations:</p>
+    <div class="v-scale-track">
+
+      <div class="v-scale-row">
+        <div class="v-scale-dot" style="--sd:#f87171;"></div>
+        <div>
+          <div class="v-scale-label" style="--sd:#f87171;">10⁻¹⁸ m · Quarks</div>
+          <p class="v-scale-text">Gluons carry the strong nuclear force between quarks as vector "color charge" fields. The force keeping protons together is a vector interaction at 10⁻¹⁸ meters.</p>
+          <span class="v-scale-math">F = g_s (color vector charge field)</span>
+        </div>
+      </div>
+
+      <div class="v-scale-row">
+        <div class="v-scale-dot" style="--sd:#ec4899;"></div>
+        <div>
+          <div class="v-scale-label" style="--sd:#ec4899;">10⁻¹⁰ m · Atoms &amp; Electrons</div>
+          <p class="v-scale-text">Electron orbital angular momentum is a vector. Chemical bonds form when orbital vectors overlap and their dot product is non-zero. The shape of every molecule is vector algebra.</p>
+          <span class="v-scale-math">L = r × p (angular momentum vector)</span>
+        </div>
+      </div>
+
+      <div class="v-scale-row">
+        <div class="v-scale-dot" style="--sd:#a78bfa;"></div>
+        <div>
+          <div class="v-scale-label" style="--sd:#a78bfa;">10⁻³ m · Neurons &amp; Biology</div>
+          <p class="v-scale-text">Nerve signals propagate as voltage vectors along axons. The direction of ion flow across a membrane determines whether a neuron fires. Every thought you have is a vector field propagating through neural tissue.</p>
+          <span class="v-scale-math">J = σE (current density vector)</span>
+        </div>
+      </div>
+
+      <div class="v-scale-row">
+        <div class="v-scale-dot" style="--sd:#60a5fa;"></div>
+        <div>
+          <div class="v-scale-label" style="--sd:#60a5fa;">10⁰ m · Human Scale</div>
+          <p class="v-scale-text">Every force your body exerts — walking, throwing, swimming — is resolved into component vectors. Biomechanics, prosthetics, and physical therapy all use vector decomposition to understand and restore movement.</p>
+          <span class="v-scale-math">F_net = Σ Fᵢ (vector sum)</span>
+        </div>
+      </div>
+
+      <div class="v-scale-row">
+        <div class="v-scale-dot" style="--sd:#22d3ee;"></div>
+        <div>
+          <div class="v-scale-label" style="--sd:#22d3ee;">10⁷ m · Planetary Atmosphere</div>
+          <p class="v-scale-text">The Coriolis effect — which makes hurricanes spin counterclockwise in the northern hemisphere — is the cross product of Earth's rotation vector and wind velocity. Global climate is a vector field simulation.</p>
+          <span class="v-scale-math">F_Cor = −2m(Ω × v)</span>
+        </div>
+      </div>
+
+      <div class="v-scale-row">
+        <div class="v-scale-dot" style="--sd:#34d399;"></div>
+        <div>
+          <div class="v-scale-label" style="--sd:#34d399;">10¹¹ m · Solar System</div>
+          <p class="v-scale-text">Planetary orbits, Lagrange points, and every spacecraft trajectory are computed by adding gravitational force vectors from the Sun and planets at every timestep. Newton's vector law, run forward in time.</p>
+          <span class="v-scale-math">F = −GMm/r² r̂ (gravity vector)</span>
+        </div>
+      </div>
+
+      <div class="v-scale-row">
+        <div class="v-scale-dot" style="--sd:#a3e635;"></div>
+        <div>
+          <div class="v-scale-label" style="--sd:#a3e635;">10²² m · Galaxies</div>
+          <p class="v-scale-text">Galaxy rotation curves — where stars orbit the galactic center — were measured as velocity vectors. The fact that outer stars orbit too fast led directly to the discovery of dark matter. Vectors revealed a new form of matter.</p>
+          <span class="v-scale-math">v_rot(r) ≠ √(GM/r) → dark matter</span>
+        </div>
+      </div>
+
+    </div>
+    <div class="v-box amber" style="margin-top:1.4rem;">
+      <strong>What You Now Hold</strong>
+      <p>You're not learning vectors for a test. You're learning the mathematical structure that the universe uses to describe motion, force, fields, and reality at every scale — from the diameter of a proton to the radius of the observable cosmos. The next time you interact with anything that moves, glows, signals, or spins, there is a vector equation running underneath it.</p>
     </div>
   </div>
 
@@ -560,6 +838,254 @@ function arrow(ctx, x1, y1, x2, y2, color, lw) {
     ctx.fillText('proj: ' + pLen.toFixed(1), (cx + px) / 2 - 12, (cy + py) / 2 + 14);
   }
   update();
+})();
+
+/* ── SIM 3: Cross Product / Torque Visualizer ──── */
+(function () {
+  const cv = document.getElementById('crossCanvas');
+  const ctx = cv.getContext('2d');
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
+  resize(); window.addEventListener('resize', resize);
+
+  function getVals() {
+    return {
+      rm: +document.getElementById('crSl').value, ra: +document.getElementById('crAngSl').value,
+      fm: +document.getElementById('cfSl').value, fa: +document.getElementById('cfAngSl').value
+    };
+  }
+
+  function update() {
+    const { rm, ra, fm, fa } = getVals();
+    document.getElementById('crLabel').textContent = rm;
+    document.getElementById('crAngLabel').textContent = ra + '°';
+    document.getElementById('cfLabel').textContent = fm;
+    document.getElementById('cfAngLabel').textContent = fa + '°';
+
+    let theta = ((fa - ra) + 360) % 360;
+    const thetaDisplay = theta > 180 ? 360 - theta : theta;
+    const sinVal = Math.sin(toRad(thetaDisplay));
+    const torque = rm * fm * sinVal;
+    const ccw = ((fa - ra + 360) % 360) < 180;
+
+    document.getElementById('crossThetaVal').textContent = thetaDisplay.toFixed(1) + '°';
+    document.getElementById('torqueVal').textContent = torque.toFixed(1) + ' N·m';
+    document.getElementById('rotDir').textContent = Math.abs(sinVal) < 0.01 ? 'No rotation' : (ccw ? 'Counter-clockwise ↺' : 'Clockwise ↻');
+    document.getElementById('sinEffVal').textContent = (sinVal * 100).toFixed(1) + '%';
+    draw(rm, ra, fm, fa, thetaDisplay, torque, ccw, sinVal);
+  }
+
+  ['crSl','crAngSl','cfSl','cfAngSl'].forEach(id => {
+    document.getElementById(id).oninput = update;
+  });
+  window.addEventListener('resize', update);
+
+  function draw(rm, ra, fm, fa, theta, torque, ccw, sinVal) {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    const cx = W * 0.38, cy = H / 2;
+
+    // Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    const rx = rm * Math.cos(toRad(ra)), ry = -rm * Math.sin(toRad(ra));
+    const fx = fm * Math.cos(toRad(fa)), fy = -fm * Math.sin(toRad(fa));
+
+    // Torque ring (out-of-plane indicator)
+    const ringSize = Math.min(H * 0.22, 66) + Math.abs(torque) * 0.06;
+    const ringX = W * 0.78, ringY = H / 2;
+    ctx.beginPath(); ctx.arc(ringX, ringY, Math.max(18, Math.min(ringSize, H * 0.38)), 0, Math.PI * 2);
+    const alpha = Math.min(0.85, Math.abs(sinVal) * 0.9 + 0.05);
+    ctx.strokeStyle = `rgba(167,139,250,${alpha})`; ctx.lineWidth = 3.5; ctx.stroke();
+    // Arrow on ring
+    const arrowAng = ccw ? -0.3 : Math.PI + 0.3;
+    const ar = Math.max(18, Math.min(ringSize, H * 0.38));
+    const ax2 = ringX + ar * Math.cos(arrowAng), ay2 = ringY + ar * Math.sin(arrowAng);
+    arrow(ctx, ax2 + (ccw ? 4 : -4), ay2, ax2 + (ccw ? 12 : -12), ay2 + (ccw ? -10 : -10), `rgba(167,139,250,${alpha})`, 2.5);
+    ctx.fillStyle = `rgba(167,139,250,${alpha * 0.7})`; ctx.font = '700 11px Inter,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('τ = r × F', ringX, ringY - 6);
+    ctx.fillText(`${Math.abs(torque).toFixed(1)} N·m`, ringX, ringY + 10);
+    ctx.fillText(sinVal < 0.01 ? '(zero)' : (ccw ? '↺ CCW' : '↻ CW'), ringX, ringY + 26);
+    ctx.textAlign = 'left';
+
+    // Pivot dot
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
+
+    // Lever arm r
+    arrow(ctx, cx, cy, cx + rx, cy + ry, '#a78bfa', 3);
+    ctx.fillStyle = '#c4b5fd'; ctx.font = 'bold 13px Inter,sans-serif';
+    ctx.fillText('r', cx + rx * 0.55 + 6, cy + ry * 0.55 - 6);
+
+    // Force F (from tip of r)
+    arrow(ctx, cx + rx, cy + ry, cx + rx + fx, cy + ry + fy, '#60a5fa', 3);
+    ctx.fillStyle = '#bfdbfe'; ctx.fillText('F', cx + rx + fx * 0.5 + 6, cy + ry + fy * 0.5 - 6);
+
+    // Angle arc
+    ctx.strokeStyle = 'rgba(245,158,11,0.55)'; ctx.lineWidth = 1.5;
+    const a1r = toRad(ra - 180), a2r = toRad(fa - 180);
+    ctx.beginPath(); ctx.arc(cx + rx, cy + ry, 28, Math.min(a1r, a2r), Math.max(a1r, a2r)); ctx.stroke();
+    ctx.fillStyle = 'rgba(245,158,11,0.8)'; ctx.font = '11px Inter,sans-serif';
+    ctx.fillText(theta.toFixed(0) + '°', cx + rx + 34, cy + ry - 4);
+
+    // sin(θ) efficiency bar label
+    ctx.fillStyle = 'rgba(228,234,248,0.4)'; ctx.font = '10px Inter,sans-serif';
+    ctx.fillText('sin(θ) = ' + sinVal.toFixed(2), cx + rx + fx * 0.5 + 6, cy + ry + fy * 0.5 + 10);
+  }
+  update();
+})();
+
+/* ── SIM 4: Vector Field Explorer ───────────────── */
+(function () {
+  const cv = document.getElementById('fieldCanvas');
+  const ctx = cv.getContext('2d');
+  const TYPES = ['Gravity / Electric (1/r²)', 'Magnetic Dipole', 'Uniform Field'];
+  const LAWS  = ['F ∝ 1/r²  (inverse-square)', 'B ∝ (3cosθ r̂ − ẑ)/r³', 'F = constant'];
+
+  let sourceX = 0.5, sourceY = 0.5;
+  let fieldType = 0, strength = 1.0;
+  let mouseX = -1, mouseY = -1;
+  let rafId = null;
+
+  function resize() {
+    cv.width = cv.parentElement.clientWidth;
+    cv.height = 360;
+    sourceX = cv.width * 0.5;
+    sourceY = cv.height * 0.5;
+    schedDraw();
+  }
+
+  function fieldVec(px, py) {
+    const dx = px - sourceX, dy = py - sourceY;
+    const r2 = dx * dx + dy * dy;
+    const r = Math.sqrt(r2) || 0.001;
+
+    if (fieldType === 0) {
+      // Radial inverse-square (gravity / electric)
+      const mag = strength * 2200 / r2;
+      return { x: -dx / r * mag, y: -dy / r * mag };
+    }
+    if (fieldType === 1) {
+      // Magnetic dipole (dipole along +y)
+      const cosT = -dy / r;
+      const bx = strength * 800 * (3 * cosT * dx / r) / (r2 * r);
+      const by = strength * 800 * (3 * cosT * (-dy) / r - 1) / (r2 * r);
+      return { x: bx, y: by };
+    }
+    // Uniform field rightward
+    return { x: strength * 40, y: 0 };
+  }
+
+  function schedDraw() {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(draw);
+  }
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const SPACING = 44;
+    const cols = Math.floor(W / SPACING) + 1;
+    const rows = Math.floor(H / SPACING) + 1;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const px = c * SPACING + SPACING * 0.5;
+        const py = r * SPACING + SPACING * 0.5;
+        const fv = fieldVec(px, py);
+        const mag = Math.sqrt(fv.x * fv.x + fv.y * fv.y);
+        if (!isFinite(mag) || mag < 0.01) continue;
+
+        const maxLen = SPACING * 0.42;
+        const len = Math.min(maxLen, Math.log1p(mag) * 5.5);
+        const ux = fv.x / mag, uy = fv.y / mag;
+        const intensity = Math.min(1, len / maxLen);
+
+        const r1 = Math.round(34 + intensity * 188);
+        const g1 = Math.round(211 + intensity * 24);
+        const b1 = Math.round(238 - intensity * 50);
+        const alpha = 0.28 + intensity * 0.58;
+
+        ctx.strokeStyle = `rgba(${r1},${g1},${b1},${alpha})`;
+        ctx.lineWidth = 1 + intensity * 1.5;
+        ctx.beginPath();
+        ctx.moveTo(px - ux * len * 0.4, py - uy * len * 0.4);
+        ctx.lineTo(px + ux * len * 0.6, py + uy * len * 0.6);
+        ctx.stroke();
+
+        // Arrowhead
+        const ex = px + ux * len * 0.6, ey = py + uy * len * 0.6;
+        const hs = 4 + intensity * 4;
+        const angle = Math.atan2(uy, ux);
+        ctx.fillStyle = `rgba(${r1},${g1},${b1},${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(ex - hs * Math.cos(angle - 0.42), ey - hs * Math.sin(angle - 0.42));
+        ctx.lineTo(ex - hs * Math.cos(angle + 0.42), ey - hs * Math.sin(angle + 0.42));
+        ctx.closePath(); ctx.fill();
+      }
+    }
+
+    // Source glow
+    const grad = ctx.createRadialGradient(sourceX, sourceY, 2, sourceX, sourceY, 32);
+    grad.addColorStop(0, 'rgba(34,211,238,0.8)');
+    grad.addColorStop(1, 'rgba(34,211,238,0)');
+    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(sourceX, sourceY, 32, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(sourceX, sourceY, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = 'bold 10px Inter,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('SOURCE', sourceX, sourceY + 20);
+    ctx.textAlign = 'left';
+
+    // Cursor readout
+    if (mouseX >= 0) {
+      const fv = fieldVec(mouseX, mouseY);
+      const mag = Math.sqrt(fv.x * fv.x + fv.y * fv.y);
+      const dirDeg = ((toDeg(Math.atan2(fv.y, fv.x)) + 360) % 360).toFixed(1);
+      document.getElementById('fCursorMag').textContent = isFinite(mag) ? mag.toFixed(1) : '∞';
+      document.getElementById('fCursorDir').textContent = isFinite(mag) ? dirDeg + '°' : '—';
+    }
+  }
+
+  function onMove(cx, cy) {
+    sourceX = cx; sourceY = cy;
+    schedDraw();
+  }
+
+  cv.addEventListener('mousemove', e => {
+    const r = cv.getBoundingClientRect();
+    mouseX = (e.clientX - r.left) * (cv.width / r.width);
+    mouseY = (e.clientY - r.top) * (cv.height / r.height);
+    if (e.buttons & 1) onMove(mouseX, mouseY);
+    schedDraw();
+  });
+  cv.addEventListener('click', e => {
+    const r = cv.getBoundingClientRect();
+    onMove((e.clientX - r.left) * (cv.width / r.width), (e.clientY - r.top) * (cv.height / r.height));
+  });
+  cv.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const r = cv.getBoundingClientRect(); const t = e.touches[0];
+    onMove((t.clientX - r.left) * (cv.width / r.width), (t.clientY - r.top) * (cv.height / r.height));
+  }, { passive: false });
+
+  document.getElementById('ftSl').oninput = function() {
+    fieldType = +this.value;
+    document.getElementById('ftLabel').textContent = TYPES[fieldType];
+    document.getElementById('fLaw').textContent = LAWS[fieldType];
+    schedDraw();
+  };
+  document.getElementById('fsSl').oninput = function() {
+    strength = +this.value;
+    document.getElementById('fsLabel').textContent = strength.toFixed(1) + '×';
+    schedDraw();
+  };
+
+  resize();
+  window.addEventListener('resize', resize);
+  draw();
 })();
 </script>
 </body>
