@@ -381,6 +381,7 @@
   let theta = 0;
   let areas = [];
   let areaTimer = 0;
+  let planetRot = 0;
   const AREA_INTERVAL = 120; // frames between area slices
 
   function keplerR(e, a, theta) {
@@ -461,6 +462,7 @@
     const L = rMin * Math.sqrt(1); // normalized: at perihelion, v_peri = L/r_min
     const dTheta = (L / (r * r)) * 0.025 * spd;
     theta += dTheta;
+    planetRot += 0.008;
     if (theta > Math.PI * 2) { theta -= Math.PI * 2; areas = []; }
 
     // Current planet position
@@ -496,10 +498,40 @@
     ctx.beginPath(); ctx.arc(cx - focalDist, cy, 3, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fill();
 
-    // Planet
+    // Planet atmosphere glow
+    const atmoGrd = ctx.createRadialGradient(px, py, 7, px, py, 20);
+    atmoGrd.addColorStop(0, 'rgba(96,165,250,0.28)');
+    atmoGrd.addColorStop(0.55, 'rgba(96,165,250,0.09)');
+    atmoGrd.addColorStop(1, 'rgba(96,165,250,0)');
+    ctx.beginPath(); ctx.arc(px, py, 20, 0, Math.PI * 2);
+    ctx.fillStyle = atmoGrd; ctx.fill();
+
+    // Planet body
     const planetGrd = ctx.createRadialGradient(px - 3, py - 3, 1, px, py, 10);
     planetGrd.addColorStop(0, '#c0e0ff'); planetGrd.addColorStop(0.5, '#60a5fa'); planetGrd.addColorStop(1, '#1e40af');
     ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2); ctx.fillStyle = planetGrd; ctx.fill();
+
+    // Surface rotation bands (clipped to planet)
+    ctx.save();
+    ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2); ctx.clip();
+    ctx.strokeStyle = 'rgba(30,58,138,0.6)'; ctx.lineWidth = 2.8;
+    ctx.beginPath();
+    ctx.moveTo(px - 14 * Math.cos(planetRot), py - 14 * Math.sin(planetRot));
+    ctx.lineTo(px + 14 * Math.cos(planetRot), py + 14 * Math.sin(planetRot));
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(96,165,250,0.28)'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(px - 14 * Math.cos(planetRot + 1.1), py - 14 * Math.sin(planetRot + 1.1));
+    ctx.lineTo(px + 14 * Math.cos(planetRot + 1.1), py + 14 * Math.sin(planetRot + 1.1));
+    ctx.stroke();
+    ctx.restore();
+
+    // Specular highlight
+    const specGrd = ctx.createRadialGradient(px - 3.5, py - 3.5, 0, px - 3.5, py - 3.5, 5.5);
+    specGrd.addColorStop(0, 'rgba(255,255,255,0.7)');
+    specGrd.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2);
+    ctx.fillStyle = specGrd; ctx.fill();
 
     // Labels
     ctx.fillStyle = 'rgba(244,196,48,0.7)'; ctx.font = '10px Inter,sans-serif';

@@ -516,7 +516,7 @@
     const sunLight = new THREE.DirectionalLight(0xffd090, 1.2);
     sunLight.position.set(8, 14, 6);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.set(1024, 1024);
+    sunLight.shadow.mapSize.set(2048, 2048);
     sunLight.shadow.camera.near = 1;
     sunLight.shadow.camera.far = 60;
     sunLight.shadow.camera.left = -18;
@@ -550,17 +550,27 @@
 
     function updateSky(intensity) {
       const t = intensity / 100;
-      if (t < 0.3) {
-        skyMat.color.setRGB(0.08, 0.12, 0.22);
-      } else if (t < 0.7) {
-        const f = (t - 0.3) / 0.4;
-        skyMat.color.setRGB(lerp(0.08, 0.18, f), lerp(0.12, 0.07, f), lerp(0.22, 0.04, f));
+      let r, g, b;
+      if (t < 0.22) {
+        // Clear blue pre-eruption sky
+        const f = t / 0.22;
+        r = lerp(0.07, 0.12, f); g = lerp(0.13, 0.11, f); b = lerp(0.25, 0.19, f);
+      } else if (t < 0.50) {
+        // Ash haze building — blue → smoky brown
+        const f = (t - 0.22) / 0.28;
+        r = lerp(0.12, 0.20, f); g = lerp(0.11, 0.08, f); b = lerp(0.19, 0.05, f);
+      } else if (t < 0.75) {
+        // Heavy ash, orange glow from below
+        const f = (t - 0.50) / 0.25;
+        r = lerp(0.20, 0.17, f); g = lerp(0.08, 0.05, f); b = lerp(0.05, 0.025, f);
       } else {
-        const f = (t - 0.7) / 0.3;
-        skyMat.color.setRGB(lerp(0.18, 0.04, f), lerp(0.07, 0.03, f), lerp(0.04, 0.02, f));
+        // Extreme — near-black with deep crimson tint
+        const f = (t - 0.75) / 0.25;
+        r = lerp(0.17, 0.055, f); g = lerp(0.05, 0.018, f); b = lerp(0.025, 0.01, f);
       }
+      skyMat.color.setRGB(r, g, b);
       scene.fog.color.copy(skyMat.color);
-      scene.fog.density = lerp(0.012, 0.028, t);
+      scene.fog.density = lerp(0.010, 0.034, t);
     }
 
     /* ══════════════════════════════════════════
@@ -815,7 +825,7 @@
     }
 
     // ── ASH COLUMN ──
-    const ashPool = new ParticlePool(scene, 1800, new THREE.PointsMaterial({
+    const ashPool = new ParticlePool(scene, 3200, new THREE.PointsMaterial({
       size: 0.6,
       vertexColors: true,
       transparent: true,
@@ -852,7 +862,7 @@
     }));
 
     // ── STEAM / GAS ──
-    const steamPool = new ParticlePool(scene, 400, new THREE.PointsMaterial({
+    const steamPool = new ParticlePool(scene, 800, new THREE.PointsMaterial({
       size: 0.7,
       vertexColors: true,
       transparent: true,
@@ -864,7 +874,7 @@
     }));
 
     function spawnAsh(intensity, column) {
-      const n = Math.round(40 * intensity);
+      const n = Math.round(65 * intensity);
       for (let i = 0; i < n; i++) {
         const ang = Math.random() * Math.PI * 2;
         const columnBoost = column / 12;
@@ -1184,8 +1194,9 @@
       pyroPool.update(dt, tickPyro);
       steamPool.update(dt, tickSteam);
 
-      // Pulse crater light
-      lavaLight.intensity = lavaBase * (0.8 + Math.sin(ts * 0.003) * 0.2);
+      // Organic multi-frequency lava pulse
+      const pulse = 0.76 + Math.sin(ts * 0.0031) * 0.13 + Math.sin(ts * 0.0079 + 1.4) * 0.07 + Math.sin(ts * 0.0017 + 2.9) * 0.04;
+      lavaLight.intensity = lavaBase * pulse;
 
       renderer.render(scene, camera);
     }
