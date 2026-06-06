@@ -421,7 +421,9 @@
     environment: 'earth',
     initialMechanicalEnergy: 0,
     heatEnergy: 0,
-    lastTrailStamp: 0
+    lastTrailStamp: 0,
+    dustParticles: [],
+    prevAngle: null
   };
 
   function getLength() {
@@ -536,6 +538,34 @@
     readouts.totalEnergy.textContent = (energy.total + state.heatEnergy).toFixed(2) + ' J';
   }
 
+  function spawnDust(bx, by, speed) {
+    const count = Math.max(5, Math.min(12, Math.floor(Math.abs(speed) * 4)));
+    for (let i = 0; i < count; i++) {
+      const spread = (Math.random() - 0.5) * Math.PI * 0.9;
+      const baseAngle = Math.PI * 0.5 + spread;
+      const spd = 0.5 + Math.random() * 1.8;
+      state.dustParticles.push({
+        x: bx + (Math.random() - 0.5) * 18,
+        y: by,
+        vx: Math.cos(baseAngle) * spd,
+        vy: -Math.abs(Math.sin(baseAngle) * spd) * 0.5,
+        life: 1.0,
+        r: 1.2 + Math.random() * 2.8
+      });
+    }
+    if (state.dustParticles.length > 90) state.dustParticles.splice(0, state.dustParticles.length - 90);
+  }
+
+  function drawDust() {
+    state.dustParticles.forEach(p => {
+      const alpha = p.life * 0.55;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * (0.4 + p.life * 0.6), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(148,163,184,${alpha})`;
+      ctx.fill();
+    });
+  }
+
   function drawBackdrop(geometry) {
     const { width, height, pivot } = geometry;
     const glow = ctx.createRadialGradient(width * 0.5, height * 0.22, 20, width * 0.5, height * 0.22, width * 0.72);
@@ -608,19 +638,28 @@
 
     const speedFactor = Math.min(1, Math.abs(energy.tangentialSpeed) / 3.5);
     const bobRadius = 14 + getMass() * 0.46;
+
+    // Squash/stretch: stretch along velocity direction when moving fast
+    const stretch = Math.min(0.26, speedFactor * 0.26);
+    const velAngle = Math.atan2(
+      Math.cos(state.angle) * (state.omega >= 0 ? 1 : -1),
+      Math.sin(state.angle) * (state.omega >= 0 ? 1 : -1)
+    );
+
+    ctx.save();
+    ctx.translate(bob.x, bob.y);
+    ctx.rotate(velAngle);
+    ctx.scale(1 + stretch * 0.6, 1 - stretch);
+
     const bobGradient = ctx.createRadialGradient(
-      bob.x - bobRadius * 0.28,
-      bob.y - bobRadius * 0.34,
-      bobRadius * 0.24,
-      bob.x,
-      bob.y,
-      bobRadius
+      -bobRadius * 0.28, -bobRadius * 0.34, bobRadius * 0.24,
+      0, 0, bobRadius
     );
     bobGradient.addColorStop(0, 'rgba(191,219,254,0.95)');
     bobGradient.addColorStop(0.35, speedFactor > 0.55 ? '#34d399' : '#38bdf8');
     bobGradient.addColorStop(1, '#1d4ed8');
     ctx.beginPath();
-    ctx.arc(bob.x, bob.y, bobRadius, 0, Math.PI * 2);
+    ctx.arc(0, 0, bobRadius, 0, Math.PI * 2);
     ctx.fillStyle = bobGradient;
     ctx.shadowBlur = 28;
     ctx.shadowColor = speedFactor > 0.55 ? 'rgba(52,211,153,0.45)' : 'rgba(59,130,246,0.44)';
@@ -629,6 +668,7 @@
     ctx.lineWidth = 2;
     ctx.strokeStyle = 'rgba(226,232,240,0.55)';
     ctx.stroke();
+    ctx.restore();
 
     const velocityLength = Math.min(120, Math.abs(energy.tangentialSpeed) * 34);
     if (velocityLength > 6) {
@@ -664,6 +704,16 @@
     drawBackdrop(geometry);
     drawTrail(geometry, ts);
     const energy = computeMechanicalEnergy();
+
+    // Detect bottom crossing → dust puff
+    if (!state.dragging && state.prevAngle !== null && state.prevAngle * state.angle < 0) {
+      if (Math.abs(energy.tangentialSpeed) > 0.5) {
+        spawnDust(geometry.bob.x, geometry.bob.y, energy.tangentialSpeed);
+      }
+    }
+    state.prevAngle = state.angle;
+
+    drawDust();
     drawPendulum(geometry, energy);
     updateEnergyHud(energy);
   }
@@ -689,6 +739,10 @@
         state.heatEnergy += lostEnergy;
       }
     }
+
+    // Advance dust particles
+    state.dustParticles.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.04; p.vx *= 0.96; p.life -= 0.028; });
+    state.dustParticles = state.dustParticles.filter(p => p.life > 0);
 
     render(ts);
     requestAnimationFrame(loop);

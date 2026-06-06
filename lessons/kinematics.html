@@ -591,19 +591,27 @@
       }
       ctx.stroke(); ctx.setLineDash([]);
 
-      // Trail
-      trail.forEach((p, i) => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(45,212,191,${0.15 + 0.5 * (i / trail.length)})`;
-        ctx.fill();
-      });
+      // Trail — glowing comet tail
+      if (trail.length > 1) {
+        for (let i = 1; i < trail.length; i++) {
+          const t = i / trail.length;
+          ctx.beginPath();
+          ctx.moveTo(trail[i-1].x, trail[i-1].y);
+          ctx.lineTo(trail[i].x, trail[i].y);
+          ctx.strokeStyle = `rgba(45,212,191,${0.06 + 0.58 * t})`;
+          ctx.lineWidth = 1 + t * 5.5;
+          ctx.shadowBlur = t * 16;
+          ctx.shadowColor = '#2dd4bf';
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        }
+      }
 
       // Ball
       const bx = 20 + proj.vx * proj.t * sc;
       const by = H - 26 - (proj.vy * proj.t - 0.5 * g * proj.t * proj.t) * sc;
       trail.push({ x: bx, y: by });
-      if (trail.length > 60) trail.shift();
+      if (trail.length > 80) trail.shift();
 
       // Velocity arrows
       const avx = proj.vx * 0.4, avy = (proj.vy - g * proj.t) * 0.4;
@@ -612,10 +620,12 @@
       ctx.strokeStyle = '#fb7185';
       ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx, by - avy); ctx.stroke();
 
-      ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI * 2);
-      const grd = ctx.createRadialGradient(bx, by, 0, bx, by, 7);
-      grd.addColorStop(0, '#fff'); grd.addColorStop(1, '#2dd4bf');
+      ctx.shadowBlur = 22; ctx.shadowColor = '#2dd4bf';
+      ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2);
+      const grd = ctx.createRadialGradient(bx - 2, by - 2, 0, bx, by, 8);
+      grd.addColorStop(0, '#ffffff'); grd.addColorStop(0.35, '#a7f3d0'); grd.addColorStop(1, '#2dd4bf');
       ctx.fillStyle = grd; ctx.fill();
+      ctx.shadowBlur = 0;
 
       proj.t += 0.035;
       if (by > H - 20) { proj = null; launched = false; }

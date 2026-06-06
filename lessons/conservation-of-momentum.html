@@ -363,6 +363,7 @@
   const lbl = { m1:'m1Label', v1:'v1Label', m2:'m2Label', v2:'v2Label' };
 
   let state = null, animFrame = null;
+  let sparks = [];
 
   function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 260; }
   resize(); window.addEventListener('resize', resize);
@@ -414,6 +415,25 @@
   document.getElementById('collReset').onclick = resetSim;
   resetSim();
 
+  function spawnSparks(cx, cy, dvAbs) {
+    const count = Math.max(8, Math.min(20, Math.floor(dvAbs * 1.8)));
+    const palette = ['#22d3ee', '#f97316', '#ffffff', '#fbbf24'];
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd = (0.6 + Math.random() * 2.8) * Math.min(2.5, dvAbs * 0.28 + 0.5);
+      sparks.push({
+        x: cx + (Math.random() - 0.5) * 6,
+        y: cy + (Math.random() - 0.5) * 6,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd - 1.0,
+        life: 1.0,
+        decay: 0.028 + Math.random() * 0.038,
+        r: 1.5 + Math.random() * 2.2,
+        color: palette[Math.floor(Math.random() * palette.length)]
+      });
+    }
+  }
+
   function collide(s) {
     const [a, b] = s.bodies;
     const m1 = a.m, m2 = b.m, v1 = a.v / s.scale, v2 = b.v / s.scale;
@@ -434,6 +454,7 @@
     const keAfter = 0.5 * m1 * av1 * av1 + 0.5 * m2 * av2 * av2;
     document.getElementById('pAfterVal').textContent = pAfter.toFixed(2) + ' kg·m/s';
     document.getElementById('keAfter').textContent = keAfter.toFixed(2) + ' J';
+    spawnSparks((a.x + b.x) / 2, s.H / 2, Math.abs(v1 - v2));
   }
 
   function draw() {
@@ -445,6 +466,19 @@
     ctx.fillStyle = 'rgba(34,211,238,0.08)'; ctx.fillRect(0, H - 20, W, 20);
     ctx.strokeStyle = 'rgba(34,211,238,0.4)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(0, H - 20); ctx.lineTo(W, H - 20); ctx.stroke();
+
+    // Update and draw collision sparks
+    sparks = sparks.filter(sp => { sp.x += sp.vx; sp.y += sp.vy; sp.vy += 0.11; sp.life -= sp.decay; return sp.life > 0; });
+    sparks.forEach(sp => {
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, sp.r * Math.max(0.1, sp.life), 0, Math.PI * 2);
+      ctx.fillStyle = sp.color;
+      ctx.globalAlpha = Math.pow(sp.life, 1.4);
+      ctx.shadowBlur = 10; ctx.shadowColor = sp.color;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+    ctx.globalAlpha = 1;
 
     const cy = H / 2;
 
