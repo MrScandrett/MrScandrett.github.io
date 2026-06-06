@@ -442,142 +442,49 @@
     }
 
     /* ══════════════════════════════════════════
-       RAYLEIGH-BÉNARD DATA  (The Well, NeurIPS 2024)
-       Run scripts/extract-the-well.py once to generate
-       assets/data/rayleigh-benard.png, then commit it.
-       Falls back silently to pure fBm if the file is absent.
+       EARTH TEXTURES & SHADER
     ══════════════════════════════════════════ */
-    let rbConvection = null; // { data: Uint8ClampedArray, w, h } | null
-
-    function loadConvectionTexture() {
-      const img = new window.Image();
-      img.onload = function () {
-        const c = document.createElement('canvas');
-        c.width = img.naturalWidth; c.height = img.naturalHeight;
-        const ctx2 = c.getContext('2d');
-        ctx2.drawImage(img, 0, 0);
-        const px = ctx2.getImageData(0, 0, c.width, c.height);
-        rbConvection = { data: px.data, w: c.width, h: c.height };
-        document.getElementById('rb-badge').style.display = 'block';
-        textureNeedsUpdate = true;
-      };
-      img.onerror = function () { rbConvection = null; };
-      img.src = '../assets/data/rayleigh-benard.png';
-    }
-
-    // Sample the convection texture at normalised coords (tiled, returns 0–1)
-    function sampleRB(nx, ny) {
-      const x = (((nx * 2) % 1) + 1) % 1; // tile ×2 horizontally to match globe aspect
-      const y = ((ny % 1) + 1) % 1;
-      const px = (Math.floor(x * rbConvection.w)) | 0;
-      const py = (Math.floor(y * rbConvection.h)) | 0;
-      return rbConvection.data[(py * rbConvection.w + px) * 4] / 255;
-    }
-
-    /* ══════════════════════════════════════════
-       PROCEDURAL EARTH TEXTURE
-    ══════════════════════════════════════════ */
-    let earthTexture = null, cloudTexture = null, specTexture = null;
-    let earthMesh, cloudMesh, atmMesh;
+    let earthMesh, cloudMesh, atmMesh, atmUniforms, earthUniforms;
 
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
-    function buildEarthTexture(params) {
-      const W = 1024, H = 512;
+    // Tiny procedural day texture — shown instantly while NASA image loads
+    function makeFallbackDayTex() {
+      const W = 128, H = 64;
       const cnv = document.createElement('canvas');
       cnv.width = W; cnv.height = H;
       const ctx = cnv.getContext('2d');
       const img = ctx.createImageData(W, H);
       const d = img.data;
-
-      const iceOffset = 62 - params.ice * 0.12 - params.tempAnomaly * 2.5;
-
-      for (let py = 0; py < H; py++) {
-        const lat = 90 - (py / H) * 180;
-        const ny = py / H;
-
-        for (let px = 0; px < W; px++) {
-          const nx = px / W;
-          const idx = (py * W + px) * 4;
-
-          // Land vs ocean threshold ~30% land
-          const landNoise = fbm(nx * 3.2 + 10, ny * 1.8 + 20, 7);
-          const isLand = landNoise > 0.525;
-
-          const absLat = Math.abs(lat);
-          const poleFade = clamp((absLat - iceOffset) / 6, 0, 1);
-          const isIce = absLat > iceOffset + 6;
-
-          let r, g, b;
-
-          if (isIce) {
-            r = 230 + (params.ice < 20 ? -40 : 0);
-            g = 240 + (params.ice < 20 ? -30 : 0);
-            b = 255;
-          } else if (!isLand) {
-            // Ocean — blend fBm depth with real Rayleigh-Bénard convection data.
-            // convBlend ramps from 0 → 0.65 as tempAnomaly rises 0 → 5 °C,
-            // so students literally watch convection cells emerge as CO₂ climbs.
-            const fbmDepth = fbm(nx * 5 + 200, ny * 3 + 100, 3) * 0.4 + 0.6;
-            const convBlend = rbConvection ? clamp(params.tempAnomaly / 5, 0, 0.65) : 0;
-            const rbVal = rbConvection ? sampleRB(nx, ny) * 0.4 + 0.6 : fbmDepth;
-            const depth = lerp(fbmDepth, rbVal, convBlend);
-            const warmBias = Math.max(0, (1 - absLat / 55)) * params.tempAnomaly * 3;
-            r = clamp(Math.round(8 + depth * 18 + warmBias * 5), 0, 255);
-            g = clamp(Math.round(30 + depth * 55 + warmBias), 0, 255);
-            b = clamp(Math.round(100 + depth * 95 - warmBias * 3), 50, 255);
-
-            // Ice blend at poles
-            if (poleFade > 0) {
-              r = Math.round(lerp(r, 220, poleFade));
-              g = Math.round(lerp(g, 235, poleFade));
-              b = Math.round(lerp(b, 255, poleFade));
-            }
-          } else {
-            // Land biomes
-            const adj = absLat - params.tempAnomaly * 2;
-            const arid = fbm(nx * 2.8 + 5, ny * 2.2 + 55, 3);
-            const deforestShift = params.deforest * 0.008;
-
-            if (adj > 58 || poleFade > 0.3) {
-              // Tundra / frost
-              const t = clamp(poleFade, 0, 1);
-              r = Math.round(lerp(100, 220, t));
-              g = Math.round(lerp(110, 235, t));
-              b = Math.round(lerp(90, 250, t));
-            } else if (adj > 42) {
-              r = 70 + Math.round(deforestShift * 80); g = 120 - Math.round(deforestShift * 60); b = 55;
-            } else if (adj > 24) {
-              if (arid > 0.56) {
-                r = 205 + Math.round(params.tempAnomaly * 4); g = 178; b = 105;
-              } else {
-                r = 50 + Math.round(deforestShift * 100); g = 135 - Math.round(deforestShift * 60); b = 45;
-              }
-            } else {
-              // Tropical
-              r = 28 + Math.round(deforestShift * 120); g = 140 - Math.round(deforestShift * 80); b = 35;
-            }
-          }
-
-          // Temperature heat map overlay (if mode = temperature)
-          if (params.heatMap) {
-            const latHeat = Math.max(0, 1 - absLat / 80) * params.tempAnomaly / 8;
-            const heatBlend = clamp(latHeat, 0, 1);
-            if (!isIce) {
-              r = Math.round(lerp(r, 255, heatBlend * 0.6));
-              g = Math.round(lerp(g, 80, heatBlend * 0.5));
-              b = Math.round(lerp(b, 20, heatBlend * 0.7));
-            }
-          }
-
-          d[idx] = clamp(r, 0, 255);
-          d[idx + 1] = clamp(g, 0, 255);
-          d[idx + 2] = clamp(b, 0, 255);
-          d[idx + 3] = 255;
-        }
+      for (let i = 0; i < W * H; i++) {
+        const nx = (i % W) / W, ny = Math.floor(i / W) / H;
+        const v = fbm(nx * 3.2 + 10, ny * 1.8 + 20, 4);
+        const isLand = v > 0.525;
+        const idx = i * 4;
+        d[idx]   = isLand ? 55  : 12;
+        d[idx+1] = isLand ? 105 : 55;
+        d[idx+2] = isLand ? 40  : 130;
+        d[idx+3] = 255;
       }
       ctx.putImageData(img, 0, 0);
-      return cnv;
+      return new THREE.CanvasTexture(cnv);
+    }
+
+    // Tiny dark night texture — shown until Black Marble loads
+    function makeFallbackNightTex() {
+      const W = 64, H = 32;
+      const cnv = document.createElement('canvas');
+      cnv.width = W; cnv.height = H;
+      const ctx = cnv.getContext('2d');
+      ctx.fillStyle = '#020408';
+      ctx.fillRect(0, 0, W, H);
+      // Approximate city clusters
+      [[0.78,0.34],[0.14,0.38],[0.53,0.35],[0.47,0.35],[0.59,0.35],
+       [0.87,0.27],[0.87,0.33],[0.39,0.40],[0.72,0.40],[0.30,0.45]].forEach(([nx, ny]) => {
+        ctx.fillStyle = 'rgba(255,220,120,0.9)';
+        ctx.fillRect(Math.round(nx * W), Math.round(ny * H), 1, 1);
+      });
+      return new THREE.CanvasTexture(cnv);
     }
 
     function buildCloudTexture() {
@@ -589,35 +496,20 @@
       const d = img.data;
       for (let py = 0; py < H; py++) {
         const ny = py / H;
-        const latBias = 1 - Math.abs(ny * 2 - 1) * 0.3;
+        const lat = (0.5 - ny) * 180;
+        const absLat = Math.abs(lat);
+        // Realistic cloud band structure (ITCZ, storm tracks, polar fronts, dry belts)
+        const itcz       = Math.exp(-Math.pow((absLat -  4) /  9, 2)) * 0.38;
+        const stormTrack = Math.exp(-Math.pow((absLat - 52) / 10, 2)) * 0.28;
+        const polarFront = Math.exp(-Math.pow((absLat - 68) /  7, 2)) * 0.20;
+        const dryBelt    = Math.exp(-Math.pow((absLat - 28) /  5, 2)) * 0.22;
+        const latBias = (itcz + stormTrack + polarFront) * (1 - dryBelt) + 0.05;
         for (let px = 0; px < W; px++) {
           const nx = px / W;
           const v = fbm(nx * 6 + 1000, ny * 3 + 500, 5);
-          const alpha = clamp((v - 0.48) / 0.22 * latBias, 0, 1);
+          const alpha = clamp((v - 0.46 + latBias * 0.18) / 0.22 * (0.65 + latBias * 0.6), 0, 1);
           const idx = (py * W + px) * 4;
-          d[idx] = 255; d[idx + 1] = 255; d[idx + 2] = 255; d[idx + 3] = Math.round(alpha * 200);
-        }
-      }
-      ctx.putImageData(img, 0, 0);
-      return cnv;
-    }
-
-    function buildSpecTexture() {
-      const W = 512, H = 256;
-      const cnv = document.createElement('canvas');
-      cnv.width = W; cnv.height = H;
-      const ctx = cnv.getContext('2d');
-      const img = ctx.createImageData(W, H);
-      const d = img.data;
-      for (let py = 0; py < H; py++) {
-        const ny = py / H;
-        for (let px = 0; px < W; px++) {
-          const nx = px / W;
-          const landNoise = fbm(nx * 3.2 + 10, ny * 1.8 + 20, 7);
-          const isLand = landNoise > 0.525;
-          const spec = isLand ? 5 : 180;
-          const idx = (py * W + px) * 4;
-          d[idx] = spec; d[idx + 1] = spec; d[idx + 2] = spec; d[idx + 3] = 255;
+          d[idx] = 255; d[idx + 1] = 255; d[idx + 2] = 255; d[idx + 3] = Math.round(alpha * 210);
         }
       }
       ctx.putImageData(img, 0, 0);
@@ -639,19 +531,26 @@
     camera.position.set(0, 0, camDist);
     camera.lookAt(0, 0, 0);
 
-    // Stars
+    // Stars — multiple groups with varying sizes and warm/cool color tints
     (function () {
-      const geo = new THREE.BufferGeometry();
-      const verts = [];
-      for (let i = 0; i < 4000; i++) {
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos(2 * Math.random() - 1);
-        const r = 90 + Math.random() * 30;
-        verts.push(r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta));
-      }
-      geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
-      const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.18, transparent: true, opacity: 0.75 });
-      scene.add(new THREE.Points(geo, mat));
+      const groups = [
+        { count: 2200, size: 0.13, color: 0xffffff, opacity: 0.80 },
+        { count: 700,  size: 0.24, color: 0xfff8e8, opacity: 0.65 },
+        { count: 400,  size: 0.09, color: 0xaad0ff, opacity: 0.55 },
+        { count: 200,  size: 0.32, color: 0xffe0a0, opacity: 0.50 },
+      ];
+      groups.forEach(({ count, size, color, opacity }) => {
+        const geo = new THREE.BufferGeometry();
+        const verts = [];
+        for (let i = 0; i < count; i++) {
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(2 * Math.random() - 1);
+          const r = 90 + Math.random() * 30;
+          verts.push(r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta));
+        }
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+        scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color, size, transparent: true, opacity })));
+      });
     })();
 
     // Lighting
@@ -663,53 +562,211 @@
     fillLight.position.set(-4, -1, -3);
     scene.add(fillLight);
 
-    // Earth
+    // Earth — GPU ShaderMaterial; climate overlays run on GPU via uniforms (zero CPU cost)
     const earthGeo = new THREE.SphereGeometry(2, 80, 40);
-    const earthMat = new THREE.MeshPhongMaterial({ shininess: 60 });
+    earthUniforms = {
+      dayMap:       { value: makeFallbackDayTex() },
+      nightMap:     { value: makeFallbackNightTex() },
+      sunDir:       { value: new THREE.Vector3(5, 2, 4).normalize() },
+      sunIntensity: { value: 1.4 },
+      sunColor:     { value: new THREE.Color(1.0, 0.96, 0.91) },
+      iceLevel:     { value: 0.60 },
+      tempAnomaly:  { value: 1.2 },
+      deforest:     { value: 0.30 },
+      heatMap:      { value: 0.0 },
+    };
+    const earthMat = new THREE.ShaderMaterial({
+      uniforms: earthUniforms,
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vWorldNormal;
+        void main() {
+          vUv = uv;
+          vWorldNormal = normalize(mat3(modelMatrix) * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        precision mediump float;
+        uniform sampler2D dayMap;
+        uniform sampler2D nightMap;
+        uniform vec3  sunDir;
+        uniform float sunIntensity;
+        uniform vec3  sunColor;
+        uniform float iceLevel;
+        uniform float tempAnomaly;
+        uniform float deforest;
+        uniform float heatMap;
+        varying vec2 vUv;
+        varying vec3 vWorldNormal;
+        void main() {
+          vec3  norm   = normalize(vWorldNormal);
+          float sunDot = dot(norm, sunDir);
+          float dayMix = smoothstep(-0.15, 0.25, sunDot);
+
+          vec4 dayTex    = texture2D(dayMap,   vUv);
+          vec4 nightTex  = texture2D(nightMap, vUv);
+          float diffuse  = max(0.0, sunDot) * sunIntensity;
+          vec4  litDay   = dayTex  * (vec4(sunColor, 1.0) * diffuse + vec4(0.10));
+          vec4  litNight = nightTex * 1.05;
+          vec4  base     = mix(litNight, litDay, dayMix);
+
+          // Ice caps — expand/contract with iceLevel and temperature
+          // Formula mirrors original: iceOffset(deg) = 62 - ice*0.12 - temp*2.5
+          // but temperature sign corrected: more warming → ice retreats toward poles (higher iceEdge)
+          float pole       = abs(vUv.y * 2.0 - 1.0);
+          float iceLatDeg  = 62.0 - iceLevel * 12.0 + tempAnomaly * 2.5;
+          float iceEdge    = clamp(iceLatDeg / 90.0, 0.05, 0.98);
+          float iceMask    = smoothstep(iceEdge - 0.055, iceEdge + 0.045, pole);
+          float iceLit  = max(0.0, sunDot) * sunIntensity * 1.15 + 0.15;
+          base = mix(base, vec4(0.88, 0.94, 1.0, 1.0) * iceLit, iceMask * dayMix);
+
+          // Deforestation — shift tropical greens toward brown
+          float tropics = max(0.0, 1.0 - pole * 2.2);
+          float dfShift = deforest * tropics * 0.38;
+          base.r = min(1.0, base.r + dfShift * 0.55);
+          base.g = max(0.0, base.g - dfShift * 0.28);
+          base.b = max(0.0, base.b - dfShift * 0.18);
+
+          // Heat map mode — warm tint toward equator
+          if (heatMap > 0.5) {
+            float heat = clamp(tempAnomaly / 8.0, 0.0, 1.0) * (1.0 - pole * 0.65);
+            base.r = min(1.0, base.r + heat * 0.55);
+            base.g = max(0.0, base.g - heat * 0.38);
+            base.b = max(0.0, base.b - heat * 0.55);
+          }
+
+          gl_FragColor = base;
+        }
+      `,
+    });
     earthMesh = new THREE.Mesh(earthGeo, earthMat);
     scene.add(earthMesh);
+
+    // Load NASA textures (non-blocking — fallbacks shown until files are present)
+    const texLoader = new THREE.TextureLoader();
+    texLoader.load('../assets/textures/earth/blue-marble.jpg',
+      tex => { earthUniforms.dayMap.value = tex; }, undefined, () => {}
+    );
+    texLoader.load('../assets/textures/earth/black-marble.jpg',
+      tex => { earthUniforms.nightMap.value = tex; }, undefined, () => {}
+    );
 
     // Clouds
     const cloudGeo = new THREE.SphereGeometry(2.028, 60, 30);
     const cloudMat = new THREE.MeshPhongMaterial({ transparent: true, opacity: 0.55, depthWrite: false });
     cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
     scene.add(cloudMesh);
+    // Procedural cloud texture immediately; swap for NASA version if available
+    cloudMat.alphaMap = new THREE.CanvasTexture(buildCloudTexture());
+    cloudMat.needsUpdate = true;
+    texLoader.load('../assets/textures/earth/clouds.jpg',
+      tex => { cloudMat.alphaMap = tex; cloudMat.needsUpdate = true; }, undefined, () => {}
+    );
 
-    // Atmosphere (Fresnel glow)
-    const atmGeo = new THREE.SphereGeometry(2.12, 48, 24);
-    const atmMat = new THREE.MeshPhongMaterial({
-      color: 0x2266ff, transparent: true, opacity: 0.09, side: THREE.FrontSide, depthWrite: false
+    // Atmosphere — true Fresnel limb-glow via ShaderMaterial (realistic atmospheric scattering)
+    const atmGeo = new THREE.SphereGeometry(2.16, 48, 24);
+    atmUniforms = {
+      atmColor:    { value: new THREE.Color(0x2266ff) },
+      rimStrength: { value: 0.72 },
+    };
+    const atmMat = new THREE.ShaderMaterial({
+      uniforms: atmUniforms,
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vViewDir;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+          vViewDir = normalize(-mvPos.xyz);
+          gl_Position = projectionMatrix * mvPos;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3  atmColor;
+        uniform float rimStrength;
+        varying vec3  vNormal;
+        varying vec3  vViewDir;
+        void main() {
+          float rim = 1.0 - abs(dot(vNormal, vViewDir));
+          rim = pow(rim, 3.2);
+          gl_FragColor = vec4(atmColor * rimStrength, rim * 0.9);
+        }
+      `,
+      transparent: true,
+      side: THREE.FrontSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
     });
     atmMesh = new THREE.Mesh(atmGeo, atmMat);
     scene.add(atmMesh);
 
-    // Outer glow
-    const glowGeo = new THREE.SphereGeometry(2.22, 32, 16);
-    const glowMat = new THREE.MeshPhongMaterial({
-      color: 0x1144cc, transparent: true, opacity: 0.04, side: THREE.FrontSide, depthWrite: false
-    });
-    scene.add(new THREE.Mesh(glowGeo, glowMat));
+    // City lights — additive Points parented to earthMesh so they rotate with it
+    (function () {
+      const CITIES = [
+        [40.7,-74.0],[51.5,-0.1],[48.8,2.3],[52.5,13.4],[55.7,37.6],
+        [35.7,139.7],[31.2,121.5],[28.7,77.2],[19.1,72.9],[22.3,114.2],
+        [37.6,127.0],[1.3,103.8],[-33.9,151.2],[-23.5,-46.6],[-34.6,-58.4],
+        [6.5,3.4],[30.0,31.2],[24.7,46.7],[25.2,55.3],[19.4,-99.1],
+        [34.0,-118.2],[41.9,12.5],[59.9,30.3],[39.9,116.4],[13.8,100.5],
+        [45.5,-73.6],[43.7,-79.4],[33.7,-84.4],[29.8,-95.4],[41.8,-87.6],
+        [47.6,-122.3],[37.8,-122.4],[32.7,-117.2],[36.2,-115.2],[50.4,30.5],
+        [59.3,18.1],[55.7,12.6],[52.4,4.9],[48.2,16.4],[41.0,29.0],
+      ];
+      const R = 2.02;
+      const verts = [];
+      CITIES.forEach(([lat, lon]) => {
+        const phi   = (90 - lat) * Math.PI / 180;
+        const theta = lon * Math.PI / 180;
+        verts.push(R * Math.sin(phi) * Math.cos(theta), R * Math.cos(phi), R * Math.sin(phi) * Math.sin(theta));
+      });
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+      const mat = new THREE.PointsMaterial({
+        color: 0xffee88, size: 0.028, transparent: true, opacity: 0.9,
+        blending: THREE.AdditiveBlending, sizeAttenuation: true, depthWrite: false
+      });
+      earthMesh.add(new THREE.Points(geo, mat));
+    })();
 
-    // Apply textures
-    function applyTextures(params) {
-      const eCanvas = buildEarthTexture(params);
-      const eTex = new THREE.CanvasTexture(eCanvas);
-      eTex.needsUpdate = true;
-      earthMat.map = eTex;
-      earthMat.needsUpdate = true;
+    // Polar auroras — torus rings that pulse with ice coverage
+    const auroraNorth = (() => {
+      const geo = new THREE.TorusGeometry(0.62, 0.045, 8, 80);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(0, 1.90, 0); m.rotation.x = Math.PI / 2;
+      scene.add(m);
+      return { mesh: m, mat };
+    })();
+    const auroraSouth = (() => {
+      const geo = new THREE.TorusGeometry(0.62, 0.045, 8, 80);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x44aaff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(0, -1.90, 0); m.rotation.x = Math.PI / 2;
+      scene.add(m);
+      return { mesh: m, mat };
+    })();
 
-      if (!earthMat.specularMap) {
-        const sTex = new THREE.CanvasTexture(buildSpecTexture());
-        earthMat.specularMap = sTex;
-        earthMat.specular = new THREE.Color(0x888888);
-        earthMat.needsUpdate = true;
-      }
-      if (!cloudMat.alphaMap) {
-        const cTex = new THREE.CanvasTexture(buildCloudTexture());
-        cloudMat.alphaMap = cTex;
-        cloudMat.needsUpdate = true;
-      }
-    }
+    // Sun glow — radial gradient sprite at the light source position
+    const sunGlowSprite = (() => {
+      const cnv = document.createElement('canvas');
+      cnv.width = 64; cnv.height = 64;
+      const ctx2d = cnv.getContext('2d');
+      const grad = ctx2d.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0,   'rgba(255,245,190,1)');
+      grad.addColorStop(0.2, 'rgba(255,210,90,0.7)');
+      grad.addColorStop(0.6, 'rgba(255,150,25,0.2)');
+      grad.addColorStop(1,   'rgba(255,100,0,0)');
+      ctx2d.fillStyle = grad;
+      ctx2d.fillRect(0, 0, 64, 64);
+      const tex = new THREE.CanvasTexture(cnv);
+      const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(7, 7, 1);
+      sprite.position.copy(new THREE.Vector3(5, 2, 4).normalize().multiplyScalar(88));
+      scene.add(sprite);
+      return sprite;
+    })();
 
     /* ══════════════════════════════════════════
        ORBIT CONTROLS (inline)
@@ -1051,8 +1108,6 @@
     ══════════════════════════════════════════ */
     const state = { co2: 415, solar: 100, ice: 60, deforest: 30, ch4: 1900, ocean: 70 };
     let climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
-    let textureNeedsUpdate = true;
-    let rebuildTimeout = null;
 
     const labels = {
       co2: document.getElementById('v-co2'),
@@ -1115,10 +1170,15 @@
       climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
       updateReadouts();
 
-      clearTimeout(rebuildTimeout);
-      rebuildTimeout = setTimeout(() => {
-        textureNeedsUpdate = true;
-      }, 300);
+      // Push climate state to GPU — no CPU texture rebuild needed
+      earthUniforms.iceLevel.value    = state.ice / 100;
+      earthUniforms.tempAnomaly.value = climate.tempAnomaly;
+      earthUniforms.deforest.value    = state.deforest / 100;
+
+      // Atmosphere color shifts with temperature
+      const t = clamp(climate.tempAnomaly / 6, 0, 1);
+      atmUniforms.atmColor.value.setRGB(lerp(0.13, 0.67, t), lerp(0.40, 0.20, t), lerp(1.0, 0.0, t));
+      atmUniforms.rimStrength.value = lerp(0.72, 1.15, t);
 
       spawnPersistent(climate);
     }
@@ -1151,7 +1211,7 @@
       const modeLabels = { weather: '🌪️ Weather Patterns', carbon: '♻️ Carbon Cycle', temperature: '🌡️ Heat Map' };
       modeBadge.textContent = modeLabels[mode];
 
-      textureNeedsUpdate = true;
+      earthUniforms.heatMap.value = mode === 'temperature' ? 1.0 : 0.0;
       spawnPersistent(climate);
     });
 
@@ -1176,36 +1236,24 @@
       cloudMesh.rotation.y += dt * 0.02;
       cloudMesh.rotation.x = 0.04;
 
-      // Rebuild texture when parameters changed
-      if (textureNeedsUpdate) {
-        textureNeedsUpdate = false;
-        const params = {
-          tempAnomaly: climate.tempAnomaly,
-          ice: state.ice,
-          deforest: state.deforest,
-          heatMap: mode === 'temperature'
-        };
-        applyTextures(params);
-
-        // Atmosphere tints
-        const t = climate.tempAnomaly;
-        if (t < 2) {
-          atmMat.color.set(0x2266ff); atmMat.opacity = 0.09;
-        } else if (t < 4) {
-          atmMat.color.set(0x6644aa); atmMat.opacity = 0.12;
-        } else {
-          atmMat.color.set(0xaa3300); atmMat.opacity = 0.15;
-        }
-        atmMat.needsUpdate = true;
-      }
-
-      // Sun position (solar irradiance)
+      // Solar irradiance — update scene light and Earth shader each frame
       const solarFactor = state.solar / 100;
       sunLight.intensity = 1.4 * solarFactor;
       sunLight.color.setHSL(0.1, 0.15 * (1 - (solarFactor - 1) * 5), 0.95);
+      earthUniforms.sunIntensity.value = 1.4 * solarFactor;
+      earthUniforms.sunColor.value.setHSL(0.1, 0.15 * (1 - (solarFactor - 1) * 5), 0.95);
+
+      // Aurora — pulses with ice coverage; color shifts slowly over time
+      const iceNorm = clamp(state.ice / 100, 0, 1);
+      const auroraPulse = iceNorm * 0.30 * (0.55 + 0.45 * Math.sin(ts * 0.0011));
+      auroraNorth.mat.opacity = auroraPulse;
+      auroraSouth.mat.opacity = auroraPulse * 0.75;
+      const auroraHue = (ts * 0.00004) % 1;
+      auroraNorth.mat.color.setHSL(auroraHue * 0.35 + 0.28, 1.0, 0.65);
+      auroraSouth.mat.color.setHSL(auroraHue * 0.30 + 0.55, 1.0, 0.65);
 
       // Time-delayed effect: High deforestation naturally increases CO2 over time
-      if (state.deforest > 50 && mode === 'carbon') {
+      if (state.deforest > 50) {
         const co2IncreaseRate = ((state.deforest - 50) / 50) * 8.0; // up to 8 ppm per second
         state.co2 = Math.min(700, state.co2 + co2IncreaseRate * dt);
         const currentSliderVal = parseInt(document.getElementById('s-co2').value);
@@ -1214,6 +1262,11 @@
           labels.co2.textContent = Math.round(state.co2) + ' ppm';
           climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
           updateReadouts();
+          // Sync GPU shader with drifting temperature
+          earthUniforms.tempAnomaly.value = climate.tempAnomaly;
+          const td = clamp(climate.tempAnomaly / 6, 0, 1);
+          atmUniforms.atmColor.value.setRGB(lerp(0.13, 0.67, td), lerp(0.40, 0.20, td), lerp(1.0, 0.0, td));
+          atmUniforms.rimStrength.value = lerp(0.72, 1.15, td);
         }
       }
 
@@ -1227,11 +1280,6 @@
     /* ══════════════════════════════════════════
        INIT
     ══════════════════════════════════════════ */
-    // Try to load real Rayleigh-Bénard data (graceful no-op if file absent)
-    loadConvectionTexture();
-
-    // Initial texture build
-    applyTextures({ tempAnomaly: climate.tempAnomaly, ice: state.ice, deforest: state.deforest, heatMap: false });
     updateReadouts();
     spawnPersistent(climate);
     requestAnimationFrame(animate);
