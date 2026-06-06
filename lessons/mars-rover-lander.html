@@ -4,7 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mars Rover Landing · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Land a rover on Mars. Manage fuel, fight wind, and nail the landing pad." />
+  <meta name="description" content="Land a rover on Mars. Manage fuel, fight Martian wind, and nail the landing pad." />
+  <meta property="og:title"       content="Mars Rover Landing · Mr. Scandrett's ClassroomOS" />
+  <meta property="og:description" content="Land a Mars lander safely on the red planet. Manage fuel, fight Martian winds, and nail the landing pad." />
+  <meta property="og:image"       content="https://mrscandrett.github.io/assets/thumbs/mars-rover-lander.svg" />
+  <meta property="og:type"        content="website" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
@@ -35,7 +39,6 @@
     }
     .mrl-hero p { font-size: 0.88rem; color: #906050; line-height: 1.6; margin: 0; }
 
-    /* ── Game wrap ── */
     .mrl-game-wrap {
       max-width: 920px; margin: 1.2rem auto 0;
       border-radius: 18px; overflow: hidden;
@@ -45,16 +48,13 @@
     }
     #mrl-canvas { display: block; width: 100%; cursor: default; }
 
-    /* ── Controls row ── */
     .mrl-controls-row {
       max-width: 920px; margin: 1rem auto 0;
       padding: 0 1rem;
       display: flex; align-items: center; justify-content: space-between;
       flex-wrap: wrap; gap: 0.8rem;
     }
-    .mrl-key-legend {
-      display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;
-    }
+    .mrl-key-legend { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
     .mrl-key {
       display: inline-flex; align-items: center; gap: 0.35rem;
       background: rgba(60, 20, 10, 0.7);
@@ -78,7 +78,6 @@
     }
     .mrl-btn:hover { background: rgba(200, 60, 20, 0.5); color: #fff; }
 
-    /* ── Touch controls ── */
     .mrl-touch-controls {
       max-width: 920px; margin: 0.8rem auto 0;
       padding: 0 1rem;
@@ -96,7 +95,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ── Info section ── */
     .mrl-info {
       max-width: 920px; margin: 1.5rem auto 3rem;
       padding: 0 1rem;
@@ -111,14 +109,13 @@
     .mrl-info-title { font-size: 0.78rem; font-weight: 700; color: #c07050; margin: 0 0 0.25rem; text-transform: uppercase; letter-spacing: 0.06em; }
     .mrl-info-body  { font-size: 0.78rem; color: #806050; margin: 0; line-height: 1.5; }
 
-    /* ── ll-viewport overrides ── */
     .ll-viewport {
-      --ll-panel-bg:     rgba(18, 6, 2, 0.97);
-      --ll-panel-border: rgba(180, 60, 20, 0.22);
-      --ll-tab-color:    rgba(200, 130, 90, 0.7);
+      --ll-panel-bg:      rgba(18, 6, 2, 0.97);
+      --ll-panel-border:  rgba(180, 60, 20, 0.22);
+      --ll-tab-color:     rgba(200, 130, 90, 0.7);
       --ll-tab-active-bg: rgba(200, 80, 30, 0.18);
-      --ll-tab-active:   #e08060;
-      --ll-toggle-bg:    rgba(18, 6, 2, 0.97);
+      --ll-tab-active:    #e08060;
+      --ll-toggle-bg:     rgba(18, 6, 2, 0.97);
     }
     .mrl-game-wrap { max-height: calc(100dvh - 140px); }
   </style>
@@ -152,7 +149,7 @@
         <button class="mrl-touch-btn" id="tc-right">▶</button>
       </div>
 
-    </div><!-- .ll-sim -->
+    </div>
 
     <aside class="ll-panel" aria-hidden="false">
       <div class="ll-panel-head">
@@ -207,9 +204,9 @@
       <span class="ll-open-dot"></span>
       <span class="ll-open-dot"></span>
     </button>
-  </div><!-- .ll-stage -->
+  </div>
 
-</div><!-- .ll-viewport -->
+</div>
 
   <script>
   (function () {
@@ -227,73 +224,124 @@
       canvas.height = H;
     }
     resize();
-    window.addEventListener('resize', () => { resize(); buildTerrain(); });
+    window.addEventListener('resize', () => { resize(); buildTerrain(); generateStars(); });
 
     // ── Physics constants ──
-    const FPS      = 60;
-    const DT       = 1 / FPS;
-    const GRAVITY  = 38;          // px/s² (tuned for feel; represents ~3.72 m/s²)
-    const THRUST   = 110;         // px/s² main engine
-    const ROT_SPD  = 90;          // deg/s
-    const FUEL_MAX = 100;
-    const FUEL_BURN= 22;          // % per second of thrust
-    const SAFE_VSPD= 75;          // px/s (safe vertical landing speed)
-    const SAFE_HSPD= 55;          // px/s (safe horizontal)
-    const SAFE_TILT= 12;          // degrees from vertical
+    const FPS       = 60;
+    const DT        = 1 / FPS;
+    const GRAVITY   = 38;
+    const THRUST    = 110;
+    const ROT_SPD   = 90;
+    const FUEL_MAX  = 100;
+    const FUEL_BURN = 22;
+    const SAFE_VSPD = 75;
+    const SAFE_HSPD = 55;
+    const SAFE_TILT = 12;
 
     // ── State ──
-    let state;     // 'playing' | 'landed' | 'crashed'
+    let state;
     let lander, terrain, padX, padW, wind, windLabel;
-    let keys = {};
+    let keys          = {};
+    let particles     = [];
+    let rocks         = [];
+    let craters       = [];
+    let stars         = [];
+    let time          = 0;
+    let shakeTime     = 0;
+    let shakeAmp      = 0;
+    let crashSpawned  = false;
+    let dustSpawned   = false;
+
+    // ── Stars ──
+    function generateStars() {
+      stars = [];
+      for (let i = 0; i < 240; i++) {
+        stars.push({
+          x:    Math.random(),
+          y:    Math.random() * 0.74,
+          r:    Math.random() < 0.07 ? 1.8 : (Math.random() < 0.25 ? 1.2 : 0.65),
+          base: 0.3 + Math.random() * 0.65,
+          amp:  0.15 + Math.random() * 0.35,
+          freq: 0.6 + Math.random() * 2.8,
+          phase: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+    generateStars();
 
     // ── Terrain ──
     function buildTerrain() {
-      const pts = [];
+      const pts  = [];
       const segW = W / 14;
-      // Flat ground level with bumps
       let y = H * 0.72;
       for (let i = 0; i <= 14; i++) {
         if (i === 0 || i === 14) { pts.push({ x: i * segW, y }); continue; }
         y = H * 0.68 + Math.random() * H * 0.10;
         pts.push({ x: i * segW, y });
       }
-      // Landing pad: flat segment
       const padSeg = 4 + Math.floor(Math.random() * 6);
-      const pY = H * 0.70 + Math.random() * H * 0.06;
+      const pY     = H * 0.70 + Math.random() * H * 0.06;
       pts[padSeg].y = pY;
       pts[padSeg + 1] = pts[padSeg + 1] || {};
       pts[padSeg + 1].x = (padSeg + 1) * segW;
       pts[padSeg + 1].y = pY;
-      padX = pts[padSeg].x;
-      padW = segW;
-
+      padX    = pts[padSeg].x;
+      padW    = segW;
       terrain = pts;
+
+      // Rocks
+      rocks = [];
+      for (let i = 0; i < 24; i++) {
+        const rx = Math.random() * W;
+        if (rx > padX - 24 && rx < padX + padW + 24) continue;
+        const ry = terrainYAt(rx);
+        rocks.push({
+          x:     rx,
+          y:     ry,
+          w:     5 + Math.random() * 15,
+          h:     3 + Math.random() * 9,
+          shade: Math.random(),
+          rot:   (Math.random() - 0.5) * 0.6,
+        });
+      }
+
+      // Craters (behind terrain surface)
+      craters = [];
+      for (let i = 0; i < 5; i++) {
+        craters.push({
+          x:     30 + Math.random() * (W - 60),
+          yFrac: 0.76 + Math.random() * 0.16,
+          rx:    16 + Math.random() * 34,
+          ry:    4  + Math.random() * 10,
+        });
+      }
     }
 
     function resetLander() {
       lander = {
-        x:    W * 0.5,
-        y:    H * 0.08,
-        vx:   0,
-        vy:   0,
-        angle: 0,      // deg, 0 = pointing up
+        x: W * 0.5, y: H * 0.08,
+        vx: 0, vy: 0,
+        angle: 0,
         fuel: FUEL_MAX,
         thrusting: false,
       };
-      // Random wind per game
       const wmag = 8 + Math.random() * 18;
       const wdir = Math.random() < 0.5 ? 1 : -1;
-      wind = wmag * wdir;
+      wind      = wmag * wdir;
       windLabel = (wdir > 0 ? '→' : '←') + ' ' + wmag.toFixed(1) + ' m/s';
     }
 
     function initGame() {
       buildTerrain();
       resetLander();
-      state = 'playing';
+      state        = 'playing';
+      particles    = [];
+      crashSpawned = false;
+      dustSpawned  = false;
+      shakeTime    = 0;
     }
 
-    // ── Collision detection ──
+    // ── Terrain helpers ──
     function terrainYAt(x) {
       if (!terrain || terrain.length < 2) return H;
       for (let i = 0; i < terrain.length - 1; i++) {
@@ -305,36 +353,136 @@
       }
       return H;
     }
-
     function isOnPad(x) { return x >= padX && x <= padX + padW; }
 
+    // ── Collision ──
     function checkLanding() {
       const gY = terrainYAt(lander.x);
-      if (lander.y + 16 >= gY) {
-        const vspd  = Math.abs(lander.vy);
-        const hspd  = Math.abs(lander.vx);
-        const tilt  = Math.abs(lander.angle) % 360;
+      if (lander.y + 30 >= gY) {
+        const vspd     = Math.abs(lander.vy);
+        const hspd     = Math.abs(lander.vx);
+        const tilt     = Math.abs(lander.angle) % 360;
         const normTilt = tilt > 180 ? 360 - tilt : tilt;
-        const onPad = isOnPad(lander.x);
+        const onPad    = isOnPad(lander.x);
         if (onPad && vspd < SAFE_VSPD && hspd < SAFE_HSPD && normTilt < SAFE_TILT) {
           state = 'landed';
+          if (!dustSpawned) { spawnDustParticles(lander.x, gY); dustSpawned = true; }
         } else {
           state = 'crashed';
+          if (!crashSpawned) {
+            spawnCrashParticles(lander.x, gY);
+            crashSpawned = true;
+            shakeTime    = 0.55;
+            shakeAmp     = 11;
+          }
         }
-        lander.y = gY - 16;
+        lander.y  = gY - 30;
         lander.vy = 0; lander.vx = 0;
       }
+    }
+
+    // ── Particles ──
+    function spawnThrusterParticles() {
+      const rad = (lander.angle + 90) * Math.PI / 180;
+      const px  = lander.x + Math.cos(rad) * 22;
+      const py  = lander.y + Math.sin(rad) * 22;
+      for (let i = 0; i < 2; i++) {
+        const spread = (Math.random() - 0.5) * 0.45;
+        const speed  = 75 + Math.random() * 65;
+        const a      = rad + spread;
+        particles.push({
+          x: px + (Math.random() - 0.5) * 7,
+          y: py + (Math.random() - 0.5) * 7,
+          vx: Math.cos(a) * speed + lander.vx * 0.3,
+          vy: Math.sin(a) * speed + lander.vy * 0.3,
+          life: 1, maxLife: 0.14 + Math.random() * 0.18,
+          size: 2.2 + Math.random() * 2.8, type: 'exhaust',
+        });
+      }
+    }
+
+    function spawnCrashParticles(x, y) {
+      for (let i = 0; i < 60; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 25 + Math.random() * 200;
+        const isFire = i < 22;
+        particles.push({
+          x: x + (Math.random() - 0.5) * 24,
+          y: y - Math.random() * 14,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - (isFire ? 110 + Math.random() * 80 : 0),
+          life: 1, maxLife: 0.5 + Math.random() * 1.3,
+          size: 2.5 + Math.random() * (isFire ? 9 : 7),
+          type: isFire ? 'fire' : 'debris',
+          col:  Math.random() < 0.55 ? '#ff7030' : '#c84010',
+        });
+      }
+      for (let i = 0; i < 14; i++) {
+        particles.push({
+          x: x + (Math.random() - 0.5) * 36,
+          y: y - 6,
+          vx: (Math.random() - 0.5) * 50,
+          vy: -18 - Math.random() * 65,
+          life: 1, maxLife: 1.3 + Math.random() * 0.9,
+          size: 9 + Math.random() * 18, type: 'smoke',
+        });
+      }
+    }
+
+    function spawnDustParticles(x, y) {
+      for (let i = 0; i < 28; i++) {
+        particles.push({
+          x: x + (Math.random() - 0.5) * 56,
+          y: y,
+          vx: (Math.random() - 0.5) * 90,
+          vy: -14 - Math.random() * 58,
+          life: 1, maxLife: 1.1 + Math.random() * 0.9,
+          size: 3 + Math.random() * 7, type: 'dust',
+        });
+      }
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= DT / p.maxLife;
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
+        p.x  += p.vx * DT;
+        p.y  += p.vy * DT;
+        if (p.type !== 'exhaust') p.vy += GRAVITY * 0.55 * DT;
+        p.vx *= 0.985;
+      }
+    }
+
+    function drawParticles() {
+      for (const p of particles) {
+        const a = Math.max(0, p.life);
+        ctx.globalAlpha = a;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        if (p.type === 'exhaust') {
+          ctx.fillStyle = p.life > 0.5 ? '#ffcc40' : '#ff7020';
+        } else if (p.type === 'fire') {
+          ctx.fillStyle = p.col;
+        } else if (p.type === 'smoke') {
+          ctx.fillStyle = `rgba(70,35,18,${a * 0.38})`;
+        } else if (p.type === 'debris') {
+          ctx.fillStyle = p.col;
+        } else {
+          ctx.fillStyle = '#c07040'; // dust
+        }
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
     }
 
     // ── Update ──
     function update() {
       if (state !== 'playing') return;
 
-      // Rotation
       if (keys['ArrowLeft']  || keys['a']) lander.angle -= ROT_SPD * DT;
       if (keys['ArrowRight'] || keys['d']) lander.angle += ROT_SPD * DT;
 
-      // Thrust
       const thrusting = (keys['ArrowUp'] || keys['w'] || keys[' ']) && lander.fuel > 0;
       lander.thrusting = thrusting;
       if (thrusting) {
@@ -342,269 +490,549 @@
         lander.vx += Math.cos(rad) * THRUST * DT;
         lander.vy += Math.sin(rad) * THRUST * DT;
         lander.fuel = Math.max(0, lander.fuel - FUEL_BURN * DT);
+        spawnThrusterParticles();
       }
 
-      // Wind (horizontal force)
       lander.vx += wind * DT;
-
-      // Gravity
       lander.vy += GRAVITY * DT;
+      lander.x  += lander.vx * DT;
+      lander.y  += lander.vy * DT;
 
-      // Integrate
-      lander.x += lander.vx * DT;
-      lander.y += lander.vy * DT;
-
-      // Bounds
       if (lander.x < 10) { lander.x = 10; lander.vx *= -0.4; }
       if (lander.x > W - 10) { lander.x = W - 10; lander.vx *= -0.4; }
 
       checkLanding();
+      updateParticles();
+      if (shakeTime > 0) shakeTime -= DT;
     }
 
-    // ── Draw helpers ──
+    // ── Draw: Sky ──
+    function drawSky() {
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.76);
+      skyGrad.addColorStop(0,    '#040101');
+      skyGrad.addColorStop(0.28, '#160806');
+      skyGrad.addColorStop(0.60, '#361208');
+      skyGrad.addColorStop(0.82, '#5e1c0a');
+      skyGrad.addColorStop(1,    '#8c3010');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Stars
+      for (const s of stars) {
+        const alpha = s.base + s.amp * Math.sin(time * s.freq + s.phase);
+        ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+        ctx.beginPath();
+        ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Phobos (small moon)
+      const phX = W * 0.77, phY = H * 0.11;
+      ctx.save();
+      ctx.shadowBlur  = 8;
+      ctx.shadowColor = 'rgba(210,190,155,0.5)';
+      ctx.beginPath();
+      ctx.ellipse(phX, phY, W * 0.010, W * 0.006, -0.2, 0, Math.PI * 2);
+      ctx.fillStyle = '#c8a882';
+      ctx.fill();
+      ctx.restore();
+
+      // Horizon haze
+      const haze = ctx.createLinearGradient(0, H * 0.58, 0, H * 0.76);
+      haze.addColorStop(0, 'rgba(155,55,18,0)');
+      haze.addColorStop(1, 'rgba(155,55,18,0.24)');
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, H * 0.58, W, H * 0.18);
+    }
+
+    // ── Draw: Terrain ──
     function drawTerrain() {
       if (!terrain) return;
+
+      // Craters (sub-surface ellipses)
+      for (const c of craters) {
+        const cy = c.yFrac * H;
+        ctx.beginPath();
+        ctx.ellipse(c.x, cy, c.rx, c.ry, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(18,5,2,0.5)';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(c.x, cy - c.ry * 0.25, c.rx * 1.06, c.ry * 0.55, 0, Math.PI, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(130,55,25,0.4)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Terrain fill
       ctx.beginPath();
       ctx.moveTo(0, H);
       terrain.forEach(p => ctx.lineTo(p.x, p.y));
       ctx.lineTo(W, H);
       ctx.closePath();
-
       const tGrad = ctx.createLinearGradient(0, H * 0.65, 0, H);
-      tGrad.addColorStop(0, '#6b2a14');
+      tGrad.addColorStop(0,   '#6b2a14');
       tGrad.addColorStop(0.3, '#4a1a0a');
-      tGrad.addColorStop(1, '#2a0d05');
+      tGrad.addColorStop(1,   '#2a0d05');
       ctx.fillStyle = tGrad;
       ctx.fill();
 
-      // Terrain outline
+      // Terrain edge
       ctx.beginPath();
       terrain.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
       ctx.strokeStyle = '#8b3a1e';
-      ctx.lineWidth = 2;
+      ctx.lineWidth   = 2;
       ctx.stroke();
+
+      // Rocks
+      for (const r of rocks) {
+        ctx.save();
+        ctx.translate(r.x, r.y);
+        ctx.rotate(r.rot);
+        const s = Math.round(75 + r.shade * 80);
+        ctx.beginPath();
+        ctx.ellipse(0, -r.h / 2, r.w / 2, r.h / 2, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgb(${s + 18},${Math.round(s * 0.45)},${Math.round(s * 0.28)})`;
+        ctx.fill();
+        // Highlight
+        ctx.beginPath();
+        ctx.ellipse(-r.w * 0.12, -r.h * 0.7, r.w * 0.22, r.h * 0.18, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(200,145,105,0.22)';
+        ctx.fill();
+        ctx.restore();
+      }
 
       // Landing pad
       const pY = terrainYAt(padX + padW / 2);
       ctx.fillStyle = '#e08040';
       ctx.fillRect(padX, pY - 6, padW, 6);
-      // Pad lights
+
+      // Blinking pad lights
       for (let i = 0; i <= 4; i++) {
-        ctx.beginPath();
-        ctx.arc(padX + (i / 4) * padW, pY - 6, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffe080';
-        ctx.fill();
+        const on = Math.sin(time * 2.8 + i * 1.1) > 0.15;
+        const lx = padX + (i / 4) * padW;
+        if (on) {
+          ctx.save();
+          ctx.shadowBlur  = 10;
+          ctx.shadowColor = '#ffe080';
+          ctx.beginPath();
+          ctx.arc(lx, pY - 6, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffe080';
+          ctx.fill();
+          ctx.restore();
+        } else {
+          ctx.beginPath();
+          ctx.arc(lx, pY - 6, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#886030';
+          ctx.fill();
+        }
       }
-      // Pad label
-      ctx.font = 'bold 11px -apple-system, sans-serif';
+
+      ctx.font      = 'bold 11px -apple-system, sans-serif';
       ctx.fillStyle = '#ffc060';
       ctx.textAlign = 'center';
       ctx.fillText('LANDING ZONE', padX + padW / 2, pY - 14);
     }
 
+    // ── Draw: Lander ──
     function drawLander() {
       const { x, y, angle, thrusting } = lander;
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(angle * Math.PI / 180);
 
-      // Thrust flame
+      // === Engine bell ===
+      ctx.beginPath();
+      ctx.moveTo(-7, 12); ctx.lineTo(-5, 24);
+      ctx.lineTo(5, 24);  ctx.lineTo(7, 12);
+      ctx.closePath();
+      ctx.fillStyle   = '#8a7a6a';
+      ctx.fill();
+      ctx.strokeStyle = '#5a4a3a';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+
+      // === Thruster flame ===
       if (thrusting) {
-        const flameH = 18 + Math.random() * 10;
-        const flameGrad = ctx.createLinearGradient(0, 10, 0, 10 + flameH);
-        flameGrad.addColorStop(0, 'rgba(255,180,50,0.95)');
-        flameGrad.addColorStop(0.5, 'rgba(255,80,20,0.7)');
-        flameGrad.addColorStop(1, 'rgba(255,40,0,0)');
+        const fLen = 24 + Math.random() * 16;
+        const fGrad = ctx.createLinearGradient(0, 16, 0, 16 + fLen * 1.9);
+        fGrad.addColorStop(0,    'rgba(255,235,110,1)');
+        fGrad.addColorStop(0.22, 'rgba(255,160,40,0.95)');
+        fGrad.addColorStop(0.55, 'rgba(255,75,18,0.72)');
+        fGrad.addColorStop(1,    'rgba(200,18,0,0)');
         ctx.beginPath();
-        ctx.moveTo(-6, 10);
-        ctx.lineTo(0, 10 + flameH);
-        ctx.lineTo(6, 10);
+        ctx.moveTo(-8, 16);
+        ctx.bezierCurveTo(-5, 16 + fLen * 0.55, -3, 16 + fLen, 0, 16 + fLen * 1.8);
+        ctx.bezierCurveTo(3,  16 + fLen, 5, 16 + fLen * 0.55, 8, 16);
         ctx.closePath();
-        ctx.fillStyle = flameGrad;
+        ctx.fillStyle = fGrad;
+        ctx.fill();
+
+        // Inner bright core
+        const cGrad = ctx.createLinearGradient(0, 16, 0, 16 + fLen);
+        cGrad.addColorStop(0, 'rgba(255,255,215,1)');
+        cGrad.addColorStop(0.5, 'rgba(255,220,80,0.85)');
+        cGrad.addColorStop(1, 'rgba(255,90,20,0)');
+        ctx.beginPath();
+        ctx.moveTo(-3.5, 16);
+        ctx.bezierCurveTo(-1.5, 16 + fLen * 0.4, -0.5, 16 + fLen * 0.7, 0, 16 + fLen);
+        ctx.bezierCurveTo(0.5, 16 + fLen * 0.7, 1.5, 16 + fLen * 0.4, 3.5, 16);
+        ctx.closePath();
+        ctx.fillStyle = cGrad;
         ctx.fill();
       }
 
-      // Body (lander capsule)
+      // === Landing legs ===
+      ctx.strokeStyle = '#b8a898';
+      ctx.lineWidth   = 2.5;
+      ctx.lineCap     = 'round';
+      // Left
+      ctx.beginPath(); ctx.moveTo(-12, 10); ctx.lineTo(-23, 30); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-27, 30); ctx.lineTo(-19, 30); ctx.stroke();
+      // Right
+      ctx.beginPath(); ctx.moveTo(12, 10); ctx.lineTo(23, 30); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(19, 30); ctx.lineTo(27, 30); ctx.stroke();
+      // Center
+      ctx.strokeStyle = '#b0a090';
+      ctx.lineWidth   = 2;
+      ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(0, 32); ctx.stroke();
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-4, 32); ctx.lineTo(4, 32); ctx.stroke();
+      // Diagonal struts
+      ctx.strokeStyle = '#988878';
+      ctx.lineWidth   = 1.6;
+      ctx.beginPath(); ctx.moveTo(-8, 9); ctx.lineTo(-23, 30); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(8, 9);  ctx.lineTo(23, 30);  ctx.stroke();
+      ctx.lineCap = 'butt';
+
+      // === Main body ===
       ctx.beginPath();
-      ctx.moveTo(0, -16);
-      ctx.lineTo(10, 2);
-      ctx.lineTo(10, 10);
-      ctx.lineTo(-10, 10);
-      ctx.lineTo(-10, 2);
-      ctx.closePath();
-      ctx.fillStyle = '#d0c0b0';
+      ctx.roundRect(-14, -8, 28, 20, 3);
+      ctx.fillStyle = '#d4c4aa';
       ctx.fill();
-      ctx.strokeStyle = '#706050';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#806a52';
+      ctx.lineWidth   = 1.5;
       ctx.stroke();
 
-      // Landing legs
-      ctx.strokeStyle = '#a09080';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(-8, 8);  ctx.lineTo(-14, 16); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(8, 8);   ctx.lineTo(14, 16);  ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-14, 16); ctx.lineTo(-18, 16); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(14, 16);  ctx.lineTo(18, 16);  ctx.stroke();
-
-      // Viewport
+      // Thermal foil overlay
       ctx.beginPath();
-      ctx.arc(0, -5, 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#60a8d0';
+      ctx.roundRect(-12, -6, 24, 16, 2);
+      ctx.fillStyle = 'rgba(200,165,40,0.42)';
       ctx.fill();
+
+      // Panel seam lines
+      ctx.strokeStyle = 'rgba(138,108,34,0.52)';
+      ctx.lineWidth   = 0.8;
+      for (let px = -8; px <= 8; px += 4) {
+        ctx.beginPath(); ctx.moveTo(px, -6); ctx.lineTo(px, 10); ctx.stroke();
+      }
+
+      // === Left solar panel ===
+      ctx.fillStyle = '#9a8a7a';
+      ctx.fillRect(-16, -1, 2, 8);
+      ctx.beginPath(); ctx.roundRect(-42, -4, 24, 14, 2);
+      ctx.fillStyle   = '#1a2840';
+      ctx.fill();
+      ctx.strokeStyle = '#0a1828';
+      ctx.lineWidth   = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#1e3a8a';
+      for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 3; col++) {
+          ctx.beginPath();
+          ctx.rect(-40 + col * 7.5, -2 + row * 5.5, 6.5, 4.5);
+          ctx.fill();
+        }
+      }
+      ctx.strokeStyle = 'rgba(100,160,255,0.22)';
+      ctx.lineWidth   = 0.6;
+      [-33.5, -26].forEach(lx => {
+        ctx.beginPath(); ctx.moveTo(lx, -4); ctx.lineTo(lx, 10); ctx.stroke();
+      });
+      ctx.beginPath(); ctx.moveTo(-42, 3); ctx.lineTo(-18, 3); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(-42, -4, 24, 14, 2);
+      ctx.fillStyle = 'rgba(100,165,255,0.055)';
+      ctx.fill();
+
+      // === Right solar panel ===
+      ctx.fillStyle = '#9a8a7a';
+      ctx.fillRect(14, -1, 2, 8);
+      ctx.beginPath(); ctx.roundRect(18, -4, 24, 14, 2);
+      ctx.fillStyle   = '#1a2840';
+      ctx.fill();
+      ctx.strokeStyle = '#0a1828';
+      ctx.lineWidth   = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#1e3a8a';
+      for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 3; col++) {
+          ctx.beginPath();
+          ctx.rect(20 + col * 7.5, -2 + row * 5.5, 6.5, 4.5);
+          ctx.fill();
+        }
+      }
+      ctx.strokeStyle = 'rgba(100,160,255,0.22)';
+      ctx.lineWidth   = 0.6;
+      [27, 34.5].forEach(lx => {
+        ctx.beginPath(); ctx.moveTo(lx, -4); ctx.lineTo(lx, 10); ctx.stroke();
+      });
+      ctx.beginPath(); ctx.moveTo(18, 3); ctx.lineTo(42, 3); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(18, -4, 24, 14, 2);
+      ctx.fillStyle = 'rgba(100,165,255,0.055)';
+      ctx.fill();
+
+      // === UHF antenna ===
+      ctx.strokeStyle = '#d0c0b0';
+      ctx.lineWidth   = 1.5;
+      ctx.beginPath(); ctx.moveTo(8, -8); ctx.lineTo(12, -23); ctx.stroke();
+      ctx.strokeStyle = '#e8d8c8';
+      ctx.lineWidth   = 1.2;
+      ctx.beginPath();
+      ctx.arc(12, -23, 5.5, Math.PI * 1.1, Math.PI * 2.05);
+      ctx.stroke();
+
+      // === Camera mast ===
+      ctx.strokeStyle = '#c0b0a0';
+      ctx.lineWidth   = 1.3;
+      ctx.beginPath(); ctx.moveTo(-6, -8); ctx.lineTo(-8, -21); ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(-8, -21, 4, 0, Math.PI * 2);
+      ctx.fillStyle   = '#4a8ab0';
+      ctx.fill();
+      ctx.strokeStyle = '#2a5a80';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(-9.2, -22.2, 1.4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(205,245,255,0.78)';
+      ctx.fill();
+
+      // === Attitude thrusters (RCS) ===
+      if (keys['ArrowLeft'] || keys['a']) {
+        const rGrad = ctx.createLinearGradient(14, 0, 30, 0);
+        rGrad.addColorStop(0, 'rgba(170,215,255,0.82)');
+        rGrad.addColorStop(1, 'rgba(170,215,255,0)');
+        ctx.beginPath();
+        ctx.moveTo(14, 2); ctx.lineTo(28 + Math.random() * 5, 0); ctx.lineTo(14, -2);
+        ctx.closePath();
+        ctx.fillStyle = rGrad;
+        ctx.fill();
+      }
+      if (keys['ArrowRight'] || keys['d']) {
+        const rGrad = ctx.createLinearGradient(-14, 0, -30, 0);
+        rGrad.addColorStop(0, 'rgba(170,215,255,0.82)');
+        rGrad.addColorStop(1, 'rgba(170,215,255,0)');
+        ctx.beginPath();
+        ctx.moveTo(-14, 2); ctx.lineTo(-28 - Math.random() * 5, 0); ctx.lineTo(-14, -2);
+        ctx.closePath();
+        ctx.fillStyle = rGrad;
+        ctx.fill();
+      }
 
       ctx.restore();
     }
 
+    // ── Draw: Velocity vector ──
+    function drawVelocityVector() {
+      if (state !== 'playing') return;
+      const speed = Math.hypot(lander.vx, lander.vy);
+      if (speed < 6) return;
+      const nx  = lander.vx / speed;
+      const ny  = lander.vy / speed;
+      const len = Math.min(speed * 0.45, 52);
+      const ex  = lander.x + nx * (len + 36);
+      const ey  = lander.y + ny * (len + 36);
+      const safe = Math.abs(lander.vy) < SAFE_VSPD && Math.abs(lander.vx) < SAFE_HSPD;
+      const col  = safe ? 'rgba(110,215,110,0.62)' : 'rgba(255,115,55,0.62)';
+
+      ctx.save();
+      ctx.strokeStyle = col;
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(lander.x, lander.y);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = col;
+      const a = Math.atan2(ny, nx);
+      ctx.save();
+      ctx.translate(ex, ey);
+      ctx.rotate(a);
+      ctx.beginPath();
+      ctx.moveTo(0, 0); ctx.lineTo(-9, -4); ctx.lineTo(-9, 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      ctx.restore();
+    }
+
+    // ── Draw: HUD ──
     function drawHUD() {
-      const pad = 14;
+      const pad     = 14;
       const fuelPct = lander.fuel / FUEL_MAX;
 
-      // ── Fuel bar ──
-      const bx = pad, by = pad, bw = 120, bh = 14;
-      ctx.fillStyle = 'rgba(20,8,4,0.7)';
-      ctx.beginPath(); ctx.roundRect(bx - 6, by - 6, bw + 50, bh + 24, 8); ctx.fill();
+      // Fuel bar
+      const bx = pad, by = pad, bw = 116, bh = 14;
+      ctx.fillStyle = 'rgba(20,8,4,0.72)';
+      ctx.beginPath(); ctx.roundRect(bx - 6, by - 6, bw + 52, bh + 28, 8); ctx.fill();
 
-      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.font      = 'bold 10px -apple-system, sans-serif';
       ctx.fillStyle = '#c07050';
       ctx.textAlign = 'left';
       ctx.fillText('FUEL', bx, by + 10);
 
-      ctx.fillStyle = 'rgba(100,30,10,0.6)';
-      ctx.fillRect(bx + 34, by, bw, bh);
-      const fc = fuelPct > 0.3 ? '#e07030' : '#ff4010';
-      ctx.fillStyle = fc;
-      ctx.fillRect(bx + 34, by, bw * fuelPct, bh);
+      ctx.fillStyle = 'rgba(100,30,10,0.58)';
+      ctx.fillRect(bx + 36, by, bw, bh);
+      ctx.fillStyle = fuelPct > 0.3 ? '#e07030' : '#ff3808';
+      ctx.fillRect(bx + 36, by, bw * fuelPct, bh);
       ctx.strokeStyle = 'rgba(180,60,20,0.5)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(bx + 34, by, bw, bh);
+      ctx.lineWidth   = 1;
+      ctx.strokeRect(bx + 36, by, bw, bh);
 
-      // ── Telemetry ──
-      const tx = W - pad;
+      // Fuel % text
+      ctx.font      = '9px -apple-system, monospace';
+      ctx.fillStyle = 'rgba(200,130,80,0.7)';
+      ctx.textAlign = 'left';
+      ctx.fillText(Math.round(fuelPct * 100) + '%', bx + 36 + bw + 5, by + 10);
+
+      // Telemetry
+      const tx    = W - pad;
       const vspd  = lander.vy.toFixed(1);
       const hspd  = lander.vx.toFixed(1);
-      const alt   = Math.max(0, terrainYAt(lander.x) - lander.y - 16).toFixed(0);
-      const tilt  = (Math.abs(lander.angle) % 360);
-      const normT = tilt > 180 ? (360 - tilt).toFixed(1) : tilt.toFixed(1);
+      const alt   = Math.max(0, terrainYAt(lander.x) - lander.y - 30).toFixed(0);
+      const tilt  = Math.abs(lander.angle) % 360;
+      const normT = (tilt > 180 ? 360 - tilt : tilt).toFixed(1);
 
-      ctx.fillStyle = 'rgba(20,8,4,0.7)';
-      ctx.beginPath(); ctx.roundRect(tx - 140, pad - 6, 144, 92, 8); ctx.fill();
+      ctx.fillStyle = 'rgba(20,8,4,0.72)';
+      ctx.beginPath(); ctx.roundRect(tx - 142, pad - 6, 146, 96, 8); ctx.fill();
 
-      ctx.font = '11px -apple-system, monospace';
+      ctx.font      = '11px -apple-system, monospace';
       ctx.textAlign = 'right';
-      const lines = [
-        [`ALT`, `${alt} m`],
-        [`V-SPD`, `${vspd > 0 ? '↓' : '↑'} ${Math.abs(vspd)} m/s`],
-        [`H-SPD`, `${hspd >= 0 ? '→' : '←'} ${Math.abs(hspd)} m/s`],
-        [`TILT`, `${normT}°`],
+      const rows = [
+        ['ALT',   `${alt} m`],
+        ['V-SPD', `${Number(vspd) > 0 ? '↓' : '↑'} ${Math.abs(vspd)} m/s`],
+        ['H-SPD', `${Number(hspd) >= 0 ? '→' : '←'} ${Math.abs(hspd)} m/s`],
+        ['TILT',  `${normT}°`],
       ];
-      lines.forEach(([label, val], i) => {
-        const ly = pad + 14 + i * 18;
-        ctx.fillStyle = '#805040';
+      rows.forEach(([label, val], i) => {
+        const ly = pad + 15 + i * 19;
+        ctx.fillStyle = '#7a4c38';
         ctx.fillText(label, tx - 64, ly);
         const danger = (label === 'V-SPD' && Math.abs(lander.vy) > SAFE_VSPD) ||
                        (label === 'H-SPD' && Math.abs(lander.vx) > SAFE_HSPD) ||
                        (label === 'TILT'  && parseFloat(normT) > SAFE_TILT);
-        ctx.fillStyle = danger ? '#ff6030' : '#d09070';
+        ctx.fillStyle = danger ? '#ff5a28' : '#d09070';
         ctx.fillText(val, tx, ly);
       });
 
-      // ── Wind indicator ──
+      // Wind indicator
       const wx = W / 2, wy = pad + 8;
-      ctx.fillStyle = 'rgba(20,8,4,0.65)';
-      ctx.beginPath(); ctx.roundRect(wx - 70, wy - 4, 140, 22, 6); ctx.fill();
-      ctx.font = '11px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(20,8,4,0.68)';
+      ctx.beginPath(); ctx.roundRect(wx - 72, wy - 5, 144, 24, 6); ctx.fill();
+      ctx.font      = '11px -apple-system, sans-serif';
       ctx.fillStyle = '#c07848';
       ctx.textAlign = 'center';
-      ctx.fillText(`WIND  ${windLabel}`, wx, wy + 12);
+      ctx.fillText(`WIND  ${windLabel}`, wx, wy + 13);
     }
 
-    function drawSky() {
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.7);
-      skyGrad.addColorStop(0,   '#0a0402');
-      skyGrad.addColorStop(0.4, '#1e0c06');
-      skyGrad.addColorStop(0.8, '#3a1408');
-      skyGrad.addColorStop(1,   '#6b2a10');
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, W, H);
-
-      // Dust haze
-      const haze = ctx.createLinearGradient(0, H * 0.55, 0, H * 0.72);
-      haze.addColorStop(0, 'rgba(160,60,20,0)');
-      haze.addColorStop(1, 'rgba(160,60,20,0.18)');
-      ctx.fillStyle = haze;
-      ctx.fillRect(0, H * 0.55, W, H * 0.17);
-    }
-
+    // ── Draw: End overlay ──
     function drawOverlay() {
-      ctx.fillStyle = 'rgba(10,4,2,0.75)';
+      ctx.fillStyle = 'rgba(10,4,2,0.76)';
       ctx.fillRect(0, 0, W, H);
-
       const cx = W / 2, cy = H / 2;
 
       if (state === 'landed') {
-        ctx.font = `bold ${Math.round(W * 0.055)}px -apple-system, sans-serif`;
+        // Grade based on fuel and approach
+        const fuel = lander.fuel;
+        const grade = fuel > 60 ? 'PERFECT' : fuel > 40 ? 'EXCELLENT' : fuel > 20 ? 'GOOD' : 'SAFE';
+        const gradeCol = fuel > 60 ? '#60ffb0' : fuel > 40 ? '#80ff80' : '#aaee80';
+
+        ctx.font      = `bold ${Math.round(W * 0.054)}px -apple-system, sans-serif`;
         ctx.fillStyle = '#80ff80';
         ctx.textAlign = 'center';
-        ctx.fillText('LANDED SUCCESSFULLY', cx, cy - 24);
+        ctx.fillText('LANDED SUCCESSFULLY', cx, cy - 32);
 
-        const fuelLeft = lander.fuel.toFixed(1);
-        ctx.font = `${Math.round(W * 0.028)}px -apple-system, sans-serif`;
-        ctx.fillStyle = '#a0e0a0';
-        ctx.fillText(`Fuel remaining: ${fuelLeft}%`, cx, cy + 16);
+        ctx.font      = `bold ${Math.round(W * 0.038)}px -apple-system, sans-serif`;
+        ctx.fillStyle = gradeCol;
+        ctx.fillText(grade + ' LANDING', cx, cy + 10);
+
+        ctx.font      = `${Math.round(W * 0.026)}px -apple-system, sans-serif`;
+        ctx.fillStyle = '#90d090';
+        ctx.fillText(`Fuel remaining: ${fuel.toFixed(1)}%`, cx, cy + 42);
       } else {
-        ctx.font = `bold ${Math.round(W * 0.055)}px -apple-system, sans-serif`;
-        ctx.fillStyle = '#ff6040';
+        ctx.font      = `bold ${Math.round(W * 0.054)}px -apple-system, sans-serif`;
+        ctx.fillStyle = '#ff5530';
         ctx.textAlign = 'center';
         const onPad = isOnPad(lander.x);
-        ctx.fillText(onPad ? 'CRASH — TOO FAST' : 'CRASH — MISSED PAD', cx, cy - 24);
+        ctx.fillText(onPad ? 'CRASH — TOO FAST' : 'CRASH — MISSED PAD', cx, cy - 28);
+        ctx.font      = `${Math.round(W * 0.024)}px -apple-system, sans-serif`;
+        ctx.fillStyle = '#cc6644';
+        const hints = onPad
+          ? 'Burn longer before touchdown to reduce descent speed'
+          : 'Guide the lander over the lit pad before descending';
+        ctx.fillText(hints, cx, cy + 12);
       }
 
-      ctx.font = `${Math.round(W * 0.025)}px -apple-system, sans-serif`;
+      ctx.font      = `${Math.round(W * 0.024)}px -apple-system, sans-serif`;
       ctx.fillStyle = '#c07050';
-      ctx.fillText('Press R or tap Restart to try again', cx, cy + 52);
+      ctx.fillText('Press R or tap Restart to try again', cx, cy + 56);
     }
 
     // ── Main loop ──
-    let lastTime = 0;
-    let accum = 0;
+    let lastTs = 0, accum = 0;
     function loop(ts) {
-      const elapsed = Math.min((ts - lastTime) / 1000, 0.05);
-      lastTime = ts;
+      const elapsed = Math.min((ts - lastTs) / 1000, 0.05);
+      lastTs = ts;
       if (state === 'playing') {
+        time  += elapsed;
         accum += elapsed;
         while (accum >= DT) { update(); accum -= DT; }
+      } else {
+        // Keep time ticking so pad lights still blink
+        time += elapsed;
+        updateParticles();
+      }
+
+      ctx.save();
+      // Screen shake on crash
+      if (shakeTime > 0) {
+        const s = shakeAmp * (shakeTime / 0.55);
+        ctx.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
       }
 
       drawSky();
       drawTerrain();
+      drawParticles();
+      drawVelocityVector();
       drawLander();
       drawHUD();
       if (state !== 'playing') drawOverlay();
 
+      ctx.restore();
       requestAnimationFrame(loop);
     }
 
     // ── Input ──
     document.addEventListener('keydown', e => {
       keys[e.key] = true;
-      if (e.key === 'r' || e.key === 'R') { initGame(); }
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+      if (e.key === 'r' || e.key === 'R') initGame();
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
     });
-    document.addEventListener('keyup',  e => { keys[e.key] = false; });
-
+    document.addEventListener('keyup', e => { keys[e.key] = false; });
     document.getElementById('mrl-restart-btn').addEventListener('click', initGame);
 
     // Touch controls
-    function touchKey(id, key, on) {
+    function touchKey(id, key) {
       const el = document.getElementById(id);
       if (!el) return;
-      const set = v => { keys[key] = v; };
-      el.addEventListener('touchstart', e => { e.preventDefault(); set(on); }, { passive: false });
-      el.addEventListener('touchend',   e => { e.preventDefault(); set(false); }, { passive: false });
+      el.addEventListener('touchstart', e => { e.preventDefault(); keys[key] = true;  }, { passive: false });
+      el.addEventListener('touchend',   e => { e.preventDefault(); keys[key] = false; }, { passive: false });
     }
-    touchKey('tc-thrust', 'ArrowUp',    true);
-    touchKey('tc-left',   'ArrowLeft',  true);
-    touchKey('tc-right',  'ArrowRight', true);
+    touchKey('tc-thrust', 'ArrowUp');
+    touchKey('tc-left',   'ArrowLeft');
+    touchKey('tc-right',  'ArrowRight');
 
     // ── Boot ──
     initGame();
