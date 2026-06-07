@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cambrian Explosion · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Life Sciences Lesson — The Cambrian Explosion: 541 million years ago, nearly every animal body plan appeared in a geological eyeblink. Meet trilobites, Anomalocaris, and Hallucigenia — then design your own Cambrian creature." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --c-bg: #030c0f;
+      --c-panel: rgba(5,18,22,0.84);
+      --c-line: rgba(45,212,191,0.12);
+      --c-line-strong: rgba(45,212,191,0.22);
+      --c-text: #e0f2f1;
+      --c-muted: rgba(224,242,241,0.68);
+      --c-dim: rgba(224,242,241,0.44);
+      --c-teal: #2dd4bf;
+      --c-amber: #f59e0b;
+      --c-rust: #f97316;
+      --c-violet: #a78bfa;
+      --c-green: #4ade80;
+      --c-radius: 8px;
+      --c-shadow: 0 26px 70px rgba(0,0,0,0.38);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; font-family: var(--font-sans); color: var(--c-text);
+      background:
+        linear-gradient(rgba(45,212,191,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45,212,191,0.014) 1px, transparent 1px),
+        linear-gradient(180deg, #030c0f 0%, #05121a 45%, #030c0f 100%);
+      background-size: 38px 38px, 38px 38px, auto; min-height: 100vh;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none;
+      background: linear-gradient(110deg, rgba(45,212,191,0.09), transparent 30%), linear-gradient(250deg, rgba(249,115,22,0.07), transparent 36%);
+      mask-image: linear-gradient(180deg, #000, transparent 80%);
+    }
+    .c-shell { width: min(1280px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 4rem; display: grid; gap: 1rem; }
+    .c-topbar { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(18px) saturate(150%); background: rgba(3,12,15,0.88); border-bottom: 1px solid var(--c-line); }
+    .c-topbar-inner { width: min(1280px, calc(100% - 2rem)); min-height: 54px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .c-topbar a { color: #a7e8e2; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
+    .c-topbar a:hover { color: #fff; }
+    .c-brand { color: #e0f7f4; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .c-nav { display: flex; align-items: center; gap: 0.2rem; overflow-x: auto; scrollbar-width: none; }
+    .c-nav::-webkit-scrollbar { display: none; }
+    .c-nav a { display: inline-flex; align-items: center; min-height: 1.85rem; padding: 0 0.55rem; border-radius: var(--c-radius); color: var(--c-dim); white-space: nowrap; font-size: 0.82rem; text-decoration: none; }
+    .c-nav a:hover { color: var(--c-text); background: rgba(255,255,255,0.06); }
+    .c-pills { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .c-pill { display: inline-flex; align-items: center; height: 1.7rem; padding: 0 0.62rem; border-radius: var(--c-radius); font-size: 0.69rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; border: 1px solid rgba(45,212,191,0.36); background: rgba(45,212,191,0.1); color: #7fffd4; white-space: nowrap; }
+    .c-pill.amber { border-color: rgba(245,158,11,0.36); background: rgba(245,158,11,0.1); color: #fde68a; }
+    @media (max-width:960px) { .c-brand { display: none; } }
+    @media (max-width:740px) { .c-nav { display: none; } .c-pills .c-pill:not(:first-child) { display: none; } }
+
+    /* Hero */
+    .c-hero { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(280px,0.7fr); gap: 1rem; align-items: stretch; min-height: min(520px,calc(100vh - 88px)); }
+    @media (max-width:700px) { .c-hero { grid-template-columns: 1fr; } }
+    .c-hero-copy { border-radius: var(--c-radius); border: 1px solid var(--c-line-strong); background: linear-gradient(120deg, rgba(45,212,191,0.09), transparent 44%), linear-gradient(180deg, rgba(4,18,25,0.93), rgba(3,10,16,0.93)); box-shadow: var(--c-shadow); padding: clamp(1.2rem,3vw,2.2rem); display: flex; flex-direction: column; justify-content: center; }
+    .c-eyebrow { font-size: 0.71rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--c-teal); margin: 0 0 0.65rem; }
+    .c-hero-copy h1 { margin: 0 0 0.65rem; max-width: 14ch; font-size: clamp(2.2rem,6vw,5rem); line-height: 0.93; letter-spacing: -0.055em; color: #fff; }
+    .c-hero-copy h1 em { font-style: normal; color: var(--c-amber); }
+    .c-lede { max-width: 72ch; color: var(--c-muted); font-size: clamp(0.93rem,1.4vw,1.04rem); line-height: 1.72; margin: 0 0 1rem; }
+    .c-meta { display: flex; flex-wrap: wrap; gap: 0.38rem; }
+    .c-quote-card { border-radius: var(--c-radius); border: 1px solid rgba(45,212,191,0.22); background: linear-gradient(180deg, rgba(45,212,191,0.08), transparent 56%), rgba(5,18,22,0.82); padding: clamp(1.1rem,2.2vw,1.75rem); display: flex; flex-direction: column; justify-content: center; gap: 0.85rem; box-shadow: var(--c-shadow); }
+    .c-quote-mark { font-size: 2.8rem; line-height: 0.8; color: var(--c-teal); opacity: 0.6; }
+    .c-quote-text { font-size: clamp(0.88rem,1.8vw,1.05rem); font-style: italic; line-height: 1.64; color: #cff7f4; margin: 0; }
+    .c-quote-attr { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-teal); opacity: 0.9; }
+
+    /* Cards */
+    .c-card { border-radius: var(--c-radius); border: 1px solid var(--c-line); background: var(--c-panel); backdrop-filter: blur(10px); padding: clamp(1.1rem,2vw,1.55rem); scroll-margin-top: 72px; }
+    .c-teal-acc { border-left: 4px solid var(--c-teal); }
+    .c-amber-acc { border-left: 4px solid var(--c-amber); }
+    .c-rust-acc { border-left: 4px solid var(--c-rust); }
+    .c-violet-acc { border-left: 4px solid var(--c-violet); }
+    .c-green-acc { border-left: 4px solid var(--c-green); }
+    .c-kicker { font-size: 0.69rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.4rem; }
+    .c-teal-k { color: var(--c-teal); } .c-amber-k { color: var(--c-amber); } .c-rust-k { color: var(--c-rust); } .c-violet-k { color: var(--c-violet); } .c-green-k { color: var(--c-green); }
+    .c-card h2 { margin: 0 0 0.7rem; font-size: clamp(1.18rem,2.3vw,1.6rem); letter-spacing: -0.03em; color: #fff; }
+    .c-card h3 { margin: 1rem 0 0.32rem; font-size: 0.99rem; letter-spacing: -0.02em; color: #b2e8e4; }
+    .c-card p, .c-card li { color: var(--c-muted); font-size: 0.9rem; line-height: 1.72; margin: 0 0 0.62rem; }
+    .c-card p:last-child, .c-card li:last-child { margin-bottom: 0; }
+    .c-card ul { padding-left: 1.35rem; margin: 0.35rem 0 0.65rem; }
+    .c-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .c-three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+    @media (max-width:620px) { .c-two { grid-template-columns: 1fr; } }
+    @media (max-width:900px) { .c-three { grid-template-columns: 1fr 1fr; } }
+    @media (max-width:500px) { .c-three { grid-template-columns: 1fr; } }
+    .c-box { border-radius: var(--c-radius); padding: 0.95rem 1.15rem; margin: 0.75rem 0; }
+    .c-box.teal { background: rgba(45,212,191,0.07); border: 1px solid rgba(45,212,191,0.22); }
+    .c-box.amber { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.22); }
+    .c-box.rust { background: rgba(249,115,22,0.07); border: 1px solid rgba(249,115,22,0.22); }
+    .c-box.violet { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.22); }
+    .c-box strong { display: block; font-size: 0.73rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.3rem; }
+    .c-box.teal strong { color: var(--c-teal); } .c-box.amber strong { color: var(--c-amber); } .c-box.rust strong { color: var(--c-rust); } .c-box.violet strong { color: var(--c-violet); }
+    .c-box p { margin: 0; font-size: 0.86rem; color: rgba(224,242,241,0.8); line-height: 1.65; }
+
+    /* Timeline strip */
+    .c-timeline { display: grid; grid-template-columns: repeat(4,1fr); gap: 0; margin: 0.85rem 0; }
+    @media (max-width:580px) { .c-timeline { grid-template-columns: 1fr 1fr; } }
+    .c-tstep { padding: 0.85rem 1rem; border: 1px solid var(--c-line); border-left: none; position: relative; }
+    .c-tstep:first-child { border-left: 1px solid var(--c-line); border-radius: var(--c-radius) 0 0 var(--c-radius); }
+    .c-tstep:last-child { border-radius: 0 var(--c-radius) var(--c-radius) 0; }
+    .c-tstep-era { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--c-teal); margin-bottom: 0.22rem; }
+    .c-tstep-age { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.82rem; font-weight: 700; color: #fff; margin-bottom: 0.3rem; }
+    .c-tstep-desc { font-size: 0.75rem; color: var(--c-muted); line-height: 1.5; }
+    .c-tstep.active { background: rgba(45,212,191,0.07); border-color: rgba(45,212,191,0.3); }
+    .c-tstep.active .c-tstep-era { color: var(--c-amber); }
+
+    /* Cast grid */
+    .c-cast { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px,1fr)); gap: 0.85rem; margin-top: 1rem; }
+    .c-cast-card { border-radius: var(--c-radius); border: 1px solid var(--c-line); background: rgba(5,18,22,0.72); padding: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; transition: border-color 0.18s, transform 0.16s; cursor: default; }
+    .c-cast-card:hover { border-color: rgba(45,212,191,0.35); transform: translateY(-2px); }
+    .c-cast-canvas { border-radius: 6px; display: block; background: #041014; width: 100%; height: 110px; }
+    .c-cast-name { font-size: 0.88rem; font-weight: 800; color: #e0f2f1; letter-spacing: -0.02em; margin: 0; }
+    .c-cast-sci { font-size: 0.72rem; font-style: italic; color: var(--c-teal); margin: 0; }
+    .c-cast-desc { font-size: 0.75rem; color: var(--c-muted); line-height: 1.58; margin: 0; }
+    .c-cast-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+    .c-tag { display: inline-flex; align-items: center; height: 1.3rem; padding: 0 0.42rem; border-radius: 4px; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+    .c-tag.pred { background: rgba(249,115,22,0.14); border: 1px solid rgba(249,115,22,0.28); color: #fb923c; }
+    .c-tag.armo { background: rgba(45,212,191,0.11); border: 1px solid rgba(45,212,191,0.26); color: #5eead4; }
+    .c-tag.weird { background: rgba(167,139,250,0.11); border: 1px solid rgba(167,139,250,0.26); color: #c4b5fd; }
+    .c-tag.anc { background: rgba(74,222,128,0.09); border: 1px solid rgba(74,222,128,0.26); color: #86efac; }
+
+    /* Sim / Creature Creator */
+    .c-sim { border-radius: var(--c-radius); border: 1px solid var(--c-line); overflow: hidden; background: #020b0e; box-shadow: 0 16px 48px rgba(0,0,0,0.3); scroll-margin-top: 72px; }
+    .c-sim-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.55rem; padding: 0.95rem 1.15rem 0.7rem; background: linear-gradient(180deg, rgba(45,212,191,0.06), transparent); border-bottom: 1px solid var(--c-line); }
+    .c-sim-hl { display: flex; flex-direction: column; gap: 0.18rem; }
+    .c-sim-title { font-size: 0.77rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--c-teal); }
+    .c-sim-sub { font-size: 0.77rem; color: rgba(45,212,191,0.44); }
+    #creatureCanvas { display: block; width: 100%; height: 260px; background: #020b0e; }
+    .c-sim-controls { padding: 0.8rem 1.15rem; background: rgba(0,0,0,0.28); border-top: 1px solid rgba(255,255,255,0.055); }
+    .c-trait-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 0.6rem; margin-bottom: 0.6rem; }
+    .c-trait { display: flex; flex-direction: column; gap: 0.24rem; }
+    .c-trait-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.5); }
+    .c-trait-btn { display: flex; align-items: center; gap: 0.38rem; padding: 0.46rem 0.6rem; border-radius: var(--c-radius); border: 1px solid rgba(45,212,191,0.26); background: rgba(45,212,191,0.06); color: var(--c-text); font-size: 0.79rem; font-weight: 600; cursor: pointer; transition: background 0.14s, border-color 0.14s; width: 100%; text-align: left; font-family: inherit; }
+    .c-trait-btn:hover { background: rgba(45,212,191,0.13); border-color: rgba(45,212,191,0.44); }
+    .c-trait-btn .t-icon { font-size: 1rem; flex-shrink: 0; }
+    .c-trait-btn .t-label { flex: 1; }
+    .c-trait-btn .t-hint { font-size: 0.6rem; color: var(--c-dim); flex-shrink: 0; }
+    .c-color-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.2rem; }
+    .c-color-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.5); flex-shrink: 0; }
+    .c-swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.15); transition: border-color 0.14s, transform 0.12s; flex-shrink: 0; }
+    .c-swatch:hover { transform: scale(1.18); }
+    .c-swatch.active { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
+    .c-name-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1px solid rgba(45,212,191,0.11); }
+    .c-name-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.5); margin-bottom: 0.16rem; }
+    .c-creature-name { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: clamp(0.88rem,2vw,1.1rem); font-style: italic; color: var(--c-teal); letter-spacing: 0.02em; }
+    .c-save-btn { padding: 0.44rem 1.05rem; border-radius: var(--c-radius); border: 1px solid rgba(245,158,11,0.42); background: rgba(245,158,11,0.12); color: #fde68a; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 0.14s; font-family: inherit; white-space: nowrap; }
+    .c-save-btn:hover { background: rgba(245,158,11,0.22); }
+    .c-gallery-section { padding: 0.72rem 1.15rem 0.85rem; border-top: 1px solid rgba(45,212,191,0.09); background: rgba(0,0,0,0.15); }
+    .c-gallery-label { font-size: 0.63rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.42); margin: 0 0 0.5rem; }
+    .c-gallery-row { display: flex; gap: 0.65rem; flex-wrap: wrap; min-height: 56px; align-items: flex-start; }
+    .c-gallery-item { display: flex; flex-direction: column; align-items: center; gap: 0.16rem; }
+    .c-gallery-name { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.6rem; color: rgba(45,212,191,0.5); text-align: center; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .c-gallery-empty { font-size: 0.8rem; color: var(--c-dim); padding: 0.4rem 0; margin: 0; }
+
+    /* Footer */
+    .c-footer { text-align: center; padding: 2rem 1rem; color: var(--c-dim); font-size: 0.78rem; border-top: 1px solid var(--c-line); background: rgba(3,12,15,0.7); border-radius: 0 0 var(--c-radius) var(--c-radius); }
+    .c-footer a { color: var(--c-teal); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="c-topbar">
+  <div class="c-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="c-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="c-nav">
+      <a href="#explosion">The Explosion</a>
+      <a href="#burgess">Burgess Shale</a>
+      <a href="#cast">Meet the Cast</a>
+      <a href="#creator">Creature Creator</a>
+      <a href="#matters">Why It Matters</a>
+    </nav>
+    <div class="c-pills">
+      <span class="c-pill">Life Sciences</span>
+      <span class="c-pill amber">Evolution</span>
+    </div>
+  </div>
+</div>
+
+<div class="c-shell">
+
+  <!-- ══ Hero ══════════════════════════════════════════════ -->
+  <div class="c-hero">
+    <div class="c-hero-copy">
+      <p class="c-eyebrow">Life Sciences · Deep Time · Evolution · 541 Million Years Ago</p>
+      <h1>Life <em>Invented</em> the Animal</h1>
+      <p class="c-lede">
+        For three billion years, life was simple — bacteria, algae, soft blobs. Then, 541 million
+        years ago, something changed. In a geological eyeblink, virtually every animal body plan
+        that has ever existed burst into existence: eyes, shells, legs, claws, and predation —
+        all for the first time. We call it the Cambrian Explosion.
+      </p>
+      <div class="c-meta">
+        <span class="c-pill">541 mya · Cambrian Period</span>
+        <span class="c-pill">Trilobites · Anomalocaris</span>
+        <span class="c-pill amber">Creature Creator Lab</span>
+        <span class="c-pill">Grades 3–8</span>
+      </div>
+    </div>
+    <div class="c-quote-card">
+      <div class="c-quote-mark">"</div>
+      <p class="c-quote-text">
+        Wind back the tape of life to the early days of the Burgess Shale; let it play again
+        from an identical starting point, and the chance becomes vanishingly small that anything
+        like human intelligence would grace the replay.
+      </p>
+      <div class="c-quote-attr">— Stephen Jay Gould, <em>Wonderful Life</em> (1989)</div>
+    </div>
+  </div>
+
+  <!-- ══ The Explosion ═════════════════════════════════════ -->
+  <div class="c-card c-teal-acc" id="explosion">
+    <p class="c-kicker c-teal-k">Deep Time · What, When, and Why</p>
+    <h2>The Greatest Arms Race in Earth's History</h2>
+    <div class="c-two">
+      <div>
+        <p>For the first 3 billion years of life on Earth, the most complex thing in the ocean was
+        a mat of algae. Then, roughly 541 million years ago — near the boundary between the
+        Ediacaran and Cambrian Periods — something changed, and it changed fast.</p>
+        <p>In approximately 20 million years (a geological instant on a 4.5-billion-year timeline),
+        virtually every major animal body plan appeared. Segmented bodies. Compound eyes. Jointed legs.
+        Mineralized shells. Grasping claws. Complex nervous systems. Active predation.
+        All of it, essentially simultaneously, for the first time in Earth's history.</p>
+        <p>Paleontologists call it the <strong>Cambrian Explosion</strong> — and it set the
+        template for every animal that has lived since, including you.</p>
+      </div>
+      <div>
+        <div class="c-box teal">
+          <strong>Why So Fast?</strong>
+          <p>Scientists debate this. Leading ideas: oxygen levels finally crossed the threshold needed
+          for active muscle tissue; Snowball Earth had just thawed, opening shallow coastal habitats;
+          and once the first predators appeared, an evolutionary arms race drove everything else —
+          prey evolved armor and speed, predators evolved better eyes and claws, and complexity
+          snowballed within a few million years.</p>
+        </div>
+        <div class="c-box amber">
+          <strong>What Is a Body Plan?</strong>
+          <p>A body plan (phylum) is an animal's fundamental blueprint: how many body axes, where
+          the mouth goes, how the nervous system is arranged. Humans, fish, and sharks share one
+          plan. Insects and crabs share another. Jellyfish have a third. Almost all ~35 animal
+          phyla alive today trace their origin directly to the Cambrian.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>The Timeline of Life</h3>
+    <div class="c-timeline">
+      <div class="c-tstep">
+        <div class="c-tstep-era">Archean</div>
+        <div class="c-tstep-age">~3,800 mya</div>
+        <div class="c-tstep-desc">First life appears — single-celled bacteria in shallow seas. No nuclei, no organs, no movement.</div>
+      </div>
+      <div class="c-tstep">
+        <div class="c-tstep-era">Ediacaran</div>
+        <div class="c-tstep-age">~635–541 mya</div>
+        <div class="c-tstep-desc">First multicellular animals: soft, flat, quilted blobs like Dickinsonia. Peaceful, slow, probably filter-feeding.</div>
+      </div>
+      <div class="c-tstep active">
+        <div class="c-tstep-era">Cambrian ← You Are Here</div>
+        <div class="c-tstep-age">541–485 mya</div>
+        <div class="c-tstep-desc">The Explosion. Eyes, shells, legs, and predation appear. Every major animal blueprint invented in ~20 million years.</div>
+      </div>
+      <div class="c-tstep">
+        <div class="c-tstep-era">Today</div>
+        <div class="c-tstep-age">Present</div>
+        <div class="c-tstep-desc">Every animal alive — from nematodes to blue whales — belongs to a body plan first assembled in the Cambrian.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Burgess Shale ══════════════════════════════════════ -->
+  <div class="c-card c-violet-acc" id="burgess">
+    <p class="c-kicker c-violet-k">Discovery · British Columbia, 1909</p>
+    <h2>The Burgess Shale: A Window Into the Cambrian</h2>
+    <div class="c-two">
+      <div>
+        <p>In 1909, Smithsonian paleontologist Charles Walcott was riding through the Canadian
+        Rockies when his horse stumbled on a slab of shale. The rocks were full of extraordinary
+        fossils — soft-bodied Cambrian animals preserved in such perfect detail that you could see
+        their gills, their guts, and their eyes.</p>
+        <p>The Burgess Shale (in British Columbia) became the most important fossil bed in the
+        world. It gave us our clearest picture of what life looked like 508 million years ago —
+        an alien ocean teeming with creatures unlike anything alive today.</p>
+        <p>Stephen Jay Gould's 1989 book <em>Wonderful Life</em> brought these creatures to
+        popular attention and sparked a debate: were Cambrian creatures evolutionary dead-ends,
+        or the ancestors of everything living? The answer turned out to be mostly the latter.</p>
+      </div>
+      <div>
+        <div class="c-box violet">
+          <strong>Why Is Soft-Body Preservation So Rare?</strong>
+          <p>Normally, only hard parts — bones, shells, teeth — fossilize. Soft tissue rots in
+          hours to weeks. The Burgess Shale preserved soft bodies because animals were buried
+          rapidly in fine mud at the base of an underwater cliff, in oxygen-poor conditions that
+          slowed decay. The result: creatures with no shells or bones — worms, gills, digestive
+          tracts — preserved in stone.</p>
+        </div>
+        <div class="c-box teal">
+          <strong>Other Cambrian Windows</strong>
+          <p>The Burgess Shale is the most famous, but other exceptional Cambrian fossil beds
+          exist: the Chengjiang biota in Yunnan, China (~520 mya) preserves even older soft-bodied
+          creatures, and the Sirius Passet in Greenland offers another snapshot of early Cambrian
+          life. Together they show the Explosion was global, not local.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Meet the Cast ══════════════════════════════════════ -->
+  <div class="c-card c-rust-acc" id="cast">
+    <p class="c-kicker c-rust-k">The Burgess Shale Creatures · 508 Million Years Ago</p>
+    <h2>Meet the Cast</h2>
+    <p>These six animals are among the best-known creatures from the Burgess Shale. Each one
+    pioneered a body feature that animals still use today — or died out without leaving a
+    single descendant. Below each portrait is the same drawing system used in the
+    Creature Creator.</p>
+    <div class="c-cast">
+
+      <div class="c-cast-card">
+        <canvas id="cast-canvas-0" class="c-cast-canvas" width="200" height="110"></canvas>
+        <div class="c-cast-name">Trilobite</div>
+        <div class="c-cast-sci">Elrathia sp.</div>
+        <div class="c-cast-tags"><span class="c-tag armo">Armored</span><span class="c-tag armo">Eyes</span></div>
+        <p class="c-cast-desc">The most successful animals of the Paleozoic. Trilobites patrolled the ocean floor for 270 million years. Their compound eyes — built from calcite crystals — were the most complex eyes ever invented at the time. Over 20,000 species are known.</p>
+      </div>
+
+      <div class="c-cast-card">
+        <canvas id="cast-canvas-1" class="c-cast-canvas" width="200" height="110"></canvas>
+        <div class="c-cast-name">Anomalocaris</div>
+        <div class="c-cast-sci">Anomalocaris canadensis</div>
+        <div class="c-cast-tags"><span class="c-tag pred">Apex Predator</span></div>
+        <p class="c-cast-desc">The terror of the Cambrian seas — up to 1 meter long, making it the largest animal on Earth by far. It had stalked compound eyes, a circular toothed mouth, and grasping frontal appendages. Its name means "strange shrimp."</p>
+      </div>
+
+      <div class="c-cast-card">
+        <canvas id="cast-canvas-2" class="c-cast-canvas" width="200" height="110"></canvas>
+        <div class="c-cast-name">Hallucigenia</div>
+        <div class="c-cast-sci">Hallucigenia sparsa</div>
+        <div class="c-cast-tags"><span class="c-tag weird">Bizarre</span></div>
+        <p class="c-cast-desc">So strange that paleontologists drew it upside down for 20 years. It walked on pairs of stiff spines and had a row of tentacles along its back. Recent analysis linked it to velvet worms (onychophorans) — so it did have living relatives after all.</p>
+      </div>
+
+      <div class="c-cast-card">
+        <canvas id="cast-canvas-3" class="c-cast-canvas" width="200" height="110"></canvas>
+        <div class="c-cast-name">Opabinia</div>
+        <div class="c-cast-sci">Opabinia regalis</div>
+        <div class="c-cast-tags"><span class="c-tag weird">5 Eyes</span><span class="c-tag weird">Proboscis</span></div>
+        <p class="c-cast-desc">Five eyes and a flexible snout tipped with a claw for grabbing prey. When Gould first described it at a conference, the audience burst out laughing at its absurdity. It had no close living relatives and left no descendants — a completely unique body plan, gone.</p>
+      </div>
+
+      <div class="c-cast-card">
+        <canvas id="cast-canvas-4" class="c-cast-canvas" width="200" height="110"></canvas>
+        <div class="c-cast-name">Wiwaxia</div>
+        <div class="c-cast-sci">Wiwaxia corrugata</div>
+        <div class="c-cast-tags"><span class="c-tag armo">Armored</span><span class="c-tag armo">Plates</span></div>
+        <p class="c-cast-desc">A tiny tank armored with overlapping scales and tall defensive spines. It crawled along the seafloor scraping algae off rocks. Paleontologists debated for decades whether it was a mollusk or a worm — it may represent an evolutionary branch between the two.</p>
+      </div>
+
+      <div class="c-cast-card">
+        <canvas id="cast-canvas-5" class="c-cast-canvas" width="200" height="110"></canvas>
+        <div class="c-cast-name">Pikaia</div>
+        <div class="c-cast-sci">Pikaia gracilens</div>
+        <div class="c-cast-tags"><span class="c-tag anc">Our Ancestor</span></div>
+        <p class="c-cast-desc">A small, leaf-shaped swimmer with a primitive notochord — a stiff rod running the length of its body. That notochord is the ancestor of your spine. Pikaia is one of the earliest known chordates, making it a distant relative of every vertebrate alive today, including humans.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ Creature Creator ═══════════════════════════════════ -->
+  <div class="c-sim" id="creator">
+    <div class="c-sim-head">
+      <div class="c-sim-hl">
+        <div class="c-sim-title">Creature Creator Lab</div>
+        <div class="c-sim-sub">Mix Cambrian body plans to design your own species</div>
+      </div>
+      <div class="c-pills">
+        <span class="c-pill">5 Traits</span>
+        <span class="c-pill amber">5 Color Schemes</span>
+      </div>
+    </div>
+
+    <canvas id="creatureCanvas" height="260"></canvas>
+
+    <div class="c-sim-controls">
+      <div class="c-trait-grid">
+        <div class="c-trait">
+          <div class="c-trait-label">Body Shape</div>
+          <button class="c-trait-btn" id="btn-body"><span class="t-icon">🦐</span><span class="t-label">Segmented</span><span class="t-hint">▸</span></button>
+        </div>
+        <div class="c-trait">
+          <div class="c-trait-label">Eyes</div>
+          <button class="c-trait-btn" id="btn-eyes"><span class="t-icon">👁</span><span class="t-label">Simple</span><span class="t-hint">▸</span></button>
+        </div>
+        <div class="c-trait">
+          <div class="c-trait-label">Appendages</div>
+          <button class="c-trait-btn" id="btn-append"><span class="t-icon">🦵</span><span class="t-label">Legs</span><span class="t-hint">▸</span></button>
+        </div>
+        <div class="c-trait">
+          <div class="c-trait-label">Armor</div>
+          <button class="c-trait-btn" id="btn-armor"><span class="t-icon">🛡</span><span class="t-label">Shell</span><span class="t-hint">▸</span></button>
+        </div>
+        <div class="c-trait">
+          <div class="c-trait-label">Tail</div>
+          <button class="c-trait-btn" id="btn-tail"><span class="t-icon">🌸</span><span class="t-label">Fan</span><span class="t-hint">▸</span></button>
+        </div>
+      </div>
+
+      <div class="c-color-row">
+        <span class="c-color-label">Color</span>
+        <div class="c-swatch active" id="swatch-0" title="Trilobite Brown"></div>
+        <div class="c-swatch" id="swatch-1" title="Red Shrimp"></div>
+        <div class="c-swatch" id="swatch-2" title="Ocean Blue"></div>
+        <div class="c-swatch" id="swatch-3" title="Olive Green"></div>
+        <div class="c-swatch" id="swatch-4" title="Deep Purple"></div>
+      </div>
+
+      <div class="c-name-row">
+        <div>
+          <div class="c-name-label">Your creature's scientific name</div>
+          <div class="c-creature-name" id="creature-name"><em>loading…</em></div>
+        </div>
+        <button class="c-save-btn" id="save-btn">Save to Gallery</button>
+      </div>
+    </div>
+
+    <div class="c-gallery-section">
+      <div class="c-gallery-label">Saved Creatures</div>
+      <div class="c-gallery-row" id="gallery-row">
+        <p class="c-gallery-empty">No creatures saved yet — design one above and hit Save!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Why It Matters ════════════════════════════════════ -->
+  <div class="c-card c-green-acc" id="matters">
+    <p class="c-kicker c-green-k">Evolution · Contingency · Deep Time</p>
+    <h2>Why the Cambrian Explosion Still Matters</h2>
+    <div class="c-three">
+      <div class="c-box teal">
+        <strong>Evolution Is Not Gradual</strong>
+        <p>Darwin imagined evolution as slow and steady. The Cambrian shows it can be explosive.
+        Body plans diversified faster in those 20 million years than in the 3 billion years before
+        or the 500 million years since. Evolution speeds up when ecological opportunities open up.</p>
+      </div>
+      <div class="c-box amber">
+        <strong>Contingency: History Matters</strong>
+        <p>Gould argued that if the Cambrian were "replayed," different creatures would survive
+        and humans might never appear. Our existence depends on a chain of unlikely survivors —
+        including a small, soft-bodied chordate (Pikaia) that could easily have gone extinct
+        along with dozens of other body plans.</p>
+      </div>
+      <div class="c-box violet">
+        <strong>We Are Cambrian Animals</strong>
+        <p>Your backbone, your two eyes facing forward, your bilateral symmetry, your four limbs —
+        all of these features trace directly to body plan decisions made 541 million years ago.
+        You are not separate from the Cambrian. You are the Cambrian, still running.</p>
+      </div>
+    </div>
+    <div class="c-box rust" style="margin-top:0;">
+      <strong>The Cambrian in Your Camp Activity</strong>
+      <p>When you designed a creature in the lab above, you were doing what evolution did —
+      combining traits (body shape, eyes, appendages, armor, tail) to produce a working organism.
+      The difference: evolution had no designer. Every combination that survived did so because
+      it worked well enough in its environment. Many that didn't survive are now only fossils.</p>
+    </div>
+  </div>
+
+  <div class="c-footer">
+    <p>Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">← All Lessons</a> · Life Sciences · Cambrian Explosion</p>
+    <p style="margin-top:0.4rem;">Cambrian creature illustrations are stylized educational representations. Fossil images: Burgess Shale, British Columbia, Canada (~508 mya).</p>
+  </div>
+
+</div><!-- /.c-shell -->
+
+<script>
+'use strict';
+
+// ═══ Color Palettes ══════════════════════════════════════════════════
+const PALETTES = [
+  { name:'Trilobite',  swatch:'#a08060', light:'#d0b080', mid:'#8c6e4a', dark:'#4e3520', outline:'#2e1e0a', eye:'#0a0800' },
+  { name:'Red Shrimp', swatch:'#c04030', light:'#e47060', mid:'#a83828', dark:'#6a2015', outline:'#3a1008', eye:'#ffe070' },
+  { name:'Ocean',      swatch:'#3878a0', light:'#68aac8', mid:'#38689a', dark:'#183f68', outline:'#0a2848', eye:'#f0ffff' },
+  { name:'Olive',      swatch:'#6a8040', light:'#96b868', mid:'#587030', dark:'#2e3e10', outline:'#182008', eye:'#ffffb0' },
+  { name:'Void',       swatch:'#7050a8', light:'#a888d8', mid:'#6040a0', dark:'#381870', outline:'#1a0840', eye:'#ffb0ff' },
+];
+
+// ═══ Trait Definitions ═══════════════════════════════════════════════
+const TRAITS = {
+  body:   { options:['Segmented','Smooth','Worm','Armored'],       icons:['🦐','🐟','🪱','🦞'] },
+  eyes:   { options:['Simple','Compound','Stalked','5-Eyes'],      icons:['👁','🔵','🎾','⚫'] },
+  append: { options:['Legs','Paddles','Claws','Tentacles','None'], icons:['🦵','🏊','🦞','🦑','—'] },
+  armor:  { options:['None','Spines','Plates','Shell'],            icons:['—','⚡','🛡','🔒'] },
+  tail:   { options:['Fan','Point','Fork','None'],                 icons:['🌸','⚡','✌','—'] },
+};
+
+const traits = { body:3, eyes:1, append:0, armor:3, tail:0, color:0 };
+
+// ═══ Name Generator ══════════════════════════════════════════════════
+const NG = {
+  body:   ['Trilo','Anoma','Halli','Wiwax'],
+  eyes:   ['caris','inia','ella','ops'],
+  append: ['pedalis','natans','brachialis','tentatus','gracilis'],
+};
+function generateName(t) {
+  return NG.body[t.body] + NG.eyes[t.eyes] + ' ' + NG.append[t.append];
+}
+
+// ═══ Drawing Utilities ═══════════════════════════════════════════════
+function drawBg(ctx, W, H) {
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#091420');
+  bg.addColorStop(0.72, '#050e18');
+  bg.addColorStop(1, '#030a10');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(100,190,220,0.1)';
+  for (let i = 0; i < 14; i++) {
+    ctx.beginPath();
+    ctx.arc((i * 137 + 55) % (W - 12) + 6, (i * 89 + 28) % (H - 36) + 8, 1 + (i % 3), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(100,75,45,0.22)';
+  ctx.beginPath(); ctx.moveTo(0, H);
+  for (let x = 0; x <= W; x += 18) ctx.lineTo(x, H - 11 + Math.sin(x * 0.09) * 4);
+  ctx.lineTo(W, H); ctx.fill();
+}
+
+function gradEllipse(ctx, x, y, rx, ry, p) {
+  const g = ctx.createRadialGradient(x - rx * 0.22, y - ry * 0.3, ry * 0.08, x, y, Math.max(rx, ry) * 0.95);
+  g.addColorStop(0, p.light); g.addColorStop(0.55, p.mid); g.addColorStop(1, p.dark);
+  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = p.outline; ctx.lineWidth = 1.8; ctx.stroke();
+}
+
+function getExt(bodyIdx, cx, cy) {
+  return [
+    { headX: cx + 92, tailX: cx - 92, ry: 30 },
+    { headX: cx + 118, tailX: cx - 118, ry: 42 },
+    { headX: cx + 150, tailX: cx - 150, ry: 19 },
+    { headX: cx + 110, tailX: cx - 110, ry: 48 },
+  ][bodyIdx];
+}
+
+// ─── Body ───────────────────────────────────────────────────────────
+function drawBodyShape(ctx, idx, ext, cy, p) {
+  const { headX, tailX, ry } = ext;
+  const cx = (headX + tailX) / 2;
+  ctx.save();
+  if (idx === 0) {
+    const segs = [
+      { x: cx + 67, rx: 28, ry: 30 }, { x: cx + 30, rx: 25, ry: 28 },
+      { x: cx - 4,  rx: 24, ry: 26 }, { x: cx - 37, rx: 23, ry: 25 },
+      { x: cx - 67, rx: 21, ry: 23 },
+    ];
+    for (let i = segs.length - 1; i >= 0; i--) gradEllipse(ctx, segs[i].x, cy, segs[i].rx, segs[i].ry, p);
+    gradEllipse(ctx, cx + 72, cy, 30, 32, p);
+  } else if (idx === 1) {
+    gradEllipse(ctx, cx, cy, 118, 42, p);
+    for (let i = 0; i < 4; i++) {
+      const fx = tailX + (headX - tailX) * (0.18 + i * 0.18);
+      [1, -1].forEach(side => {
+        ctx.beginPath(); ctx.ellipse(fx, cy + side * (ry + 5), 18, 9, side * 0.24, 0, Math.PI * 2);
+        ctx.fillStyle = p.mid + 'bb'; ctx.fill();
+        ctx.strokeStyle = p.outline + '88'; ctx.lineWidth = 1; ctx.stroke();
+      });
+    }
+  } else if (idx === 2) {
+    ctx.beginPath();
+    const hx = headX, tx = tailX;
+    ctx.moveTo(tx, cy);
+    ctx.bezierCurveTo(cx - 60, cy - 9, cx + 50, cy + 7, hx, cy - 3);
+    ctx.bezierCurveTo(hx, cy + ry * 1.4, cx + 50, cy + ry * 2.2, cx - 60, cy + ry * 2.0);
+    ctx.bezierCurveTo(tx, cy + ry * 1.8, tx, cy, tx, cy);
+    const g = ctx.createLinearGradient(tx, cy - ry, tx, cy + ry * 2);
+    g.addColorStop(0, p.light); g.addColorStop(0.5, p.mid); g.addColorStop(1, p.dark);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = p.outline; ctx.lineWidth = 1.5; ctx.stroke();
+  } else {
+    gradEllipse(ctx, cx, cy, 110, 48, p);
+    ctx.beginPath(); ctx.ellipse(cx, cy, 33, 46, 0, 0, Math.PI * 2);
+    ctx.fillStyle = p.light + '88'; ctx.fill();
+    ctx.strokeStyle = p.outline + '44'; ctx.lineWidth = 1; ctx.stroke();
+    for (let i = 1; i <= 6; i++) {
+      const sx = tailX + (headX - tailX) * (i / 7);
+      ctx.beginPath(); ctx.moveTo(sx, cy - 48); ctx.lineTo(sx, cy + 48);
+      ctx.strokeStyle = p.outline + '44'; ctx.lineWidth = 0.8; ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+// ─── Eyes ───────────────────────────────────────────────────────────
+function drawEyes(ctx, idx, ext, cy, p) {
+  const { headX, ry } = ext;
+  const ex = headX - 16;
+  ctx.save();
+  if (idx === 0) {
+    [cy - ry * 0.5, cy + ry * 0.5].forEach(ey => {
+      ctx.beginPath(); ctx.arc(ex, ey, 8, 0, Math.PI * 2);
+      ctx.fillStyle = '#080600'; ctx.fill();
+      ctx.strokeStyle = p.outline; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(ex + 2.5, ey - 2.5, 3, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
+    });
+  } else if (idx === 1) {
+    [cy - ry * 0.45, cy + ry * 0.45].forEach(ey => {
+      for (let d = 0; d < 8; d++) {
+        const a = (d / 8) * Math.PI * 2;
+        ctx.beginPath(); ctx.arc(ex + Math.cos(a) * 6, ey + Math.sin(a) * 4.5, 2.8, 0, Math.PI * 2);
+        ctx.fillStyle = '#0e0c00'; ctx.fill();
+        ctx.strokeStyle = p.outline + '66'; ctx.lineWidth = 0.5; ctx.stroke();
+      }
+      ctx.beginPath(); ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#0e0c00'; ctx.fill();
+    });
+  } else if (idx === 2) {
+    [-1, 1].forEach(side => {
+      const baseY = cy + side * ry * 0.35;
+      const tipY = cy + side * (ry + 19);
+      ctx.beginPath(); ctx.moveTo(ex - 5, baseY); ctx.lineTo(ex - 5, tipY);
+      ctx.strokeStyle = p.mid; ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(ex - 5, tipY, 9, 0, Math.PI * 2);
+      ctx.fillStyle = p.dark; ctx.fill();
+      ctx.strokeStyle = p.outline; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(ex - 2, tipY - 3, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill();
+    });
+  } else {
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI * 0.8 + (i / 4) * Math.PI * 1.6;
+      const ex2 = ex + Math.cos(a) * 14, ey2 = cy + Math.sin(a) * 12;
+      ctx.beginPath(); ctx.arc(ex2, ey2, 7, 0, Math.PI * 2);
+      ctx.fillStyle = p.dark; ctx.fill();
+      ctx.strokeStyle = p.outline; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(ex2 + 2, ey2 - 2, 2.8, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// ─── Appendages ──────────────────────────────────────────────────────
+function drawAppendages(ctx, idx, ext, cy, p) {
+  const { headX, tailX, ry } = ext;
+  const len = headX - tailX;
+  ctx.save(); ctx.lineCap = 'round';
+  if (idx === 0) {
+    for (let i = 0; i < 8; i++) {
+      const lx = tailX + len * (0.1 + i * 0.1);
+      [-1, 1].forEach(side => {
+        ctx.beginPath();
+        ctx.moveTo(lx, cy + ry * 0.8);
+        ctx.lineTo(lx + side * 6, cy + ry + 16);
+        ctx.lineTo(lx + side * 12, cy + ry + 22);
+        ctx.strokeStyle = p.dark; ctx.lineWidth = 2.2; ctx.stroke();
+      });
+    }
+  } else if (idx === 1) {
+    for (let i = 0; i < 3; i++) {
+      const px = tailX + len * (0.2 + i * 0.25);
+      [-1, 1].forEach(side => {
+        ctx.save();
+        ctx.translate(px, cy + side * (ry + 4)); ctx.rotate(side * 0.28);
+        ctx.beginPath(); ctx.ellipse(0, side * 19, 23, 10, 0, 0, Math.PI * 2);
+        ctx.fillStyle = p.mid + 'cc'; ctx.fill();
+        ctx.strokeStyle = p.outline + '88'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.restore();
+      });
+    }
+  } else if (idx === 2) {
+    [-1, 1].forEach(side => {
+      const sx = headX - 28, sy = cy + side * ry * 0.35;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.bezierCurveTo(sx + 25, sy + side * 14, sx + 44, sy + side * 28, sx + 32, sy + side * 44);
+      ctx.strokeStyle = p.mid; ctx.lineWidth = 8; ctx.stroke();
+      ctx.strokeStyle = p.outline; ctx.lineWidth = 2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(sx + 32, sy + side * 44, 6.5, 0, Math.PI * 2);
+      ctx.fillStyle = p.dark; ctx.fill();
+      ctx.strokeStyle = p.outline; ctx.lineWidth = 1.5; ctx.stroke();
+    });
+  } else if (idx === 3) {
+    for (let i = 0; i < 5; i++) {
+      const a = ((i - 2) / 4) * 0.75;
+      const tl = 48 + (2 - Math.abs(i - 2)) * 10;
+      ctx.beginPath();
+      ctx.moveTo(headX - 8, cy + Math.sin(a) * 6);
+      ctx.bezierCurveTo(headX + 18, cy + Math.sin(a) * 22,
+        headX + 22 + tl * 0.4, cy + Math.sin(a) * tl * 0.7,
+        headX + 10 + tl, cy + Math.sin(a) * tl);
+      ctx.strokeStyle = p.mid; ctx.lineWidth = 3.5 - Math.abs(i - 2) * 0.5; ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+// ─── Armor ───────────────────────────────────────────────────────────
+function drawArmor(ctx, idx, ext, cy, p) {
+  const { headX, tailX, ry } = ext;
+  const len = headX - tailX;
+  ctx.save();
+  if (idx === 1) {
+    for (let i = 0; i < 7; i++) {
+      const sx = tailX + len * (0.08 + i * 0.13);
+      const sh = 14 + Math.sin(i * 1.4) * 5;
+      ctx.beginPath();
+      ctx.moveTo(sx - 5, cy - ry + 4); ctx.lineTo(sx, cy - ry - sh); ctx.lineTo(sx + 5, cy - ry + 4);
+      ctx.fillStyle = p.dark; ctx.fill();
+      ctx.strokeStyle = p.outline + '88'; ctx.lineWidth = 0.8; ctx.stroke();
+    }
+  } else if (idx === 2) {
+    for (let i = 0; i < 4; i++) {
+      const px = tailX + len * (0.14 + i * 0.22);
+      const ph = 18 + i * 4;
+      ctx.beginPath();
+      ctx.moveTo(px - 11, cy - ry + 5); ctx.lineTo(px, cy - ry - ph); ctx.lineTo(px + 11, cy - ry + 5);
+      ctx.arc(px, cy - ry + 5, 11, 0, Math.PI, true);
+      ctx.fillStyle = p.mid + 'dd'; ctx.fill();
+      ctx.strokeStyle = p.outline; ctx.lineWidth = 1.2; ctx.stroke();
+    }
+  } else if (idx === 3) {
+    const shcx = (headX + tailX) / 2, shrx = (headX - tailX) / 2 + 10;
+    ctx.beginPath(); ctx.ellipse(shcx, cy, shrx, ry + 9, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = p.dark; ctx.lineWidth = 5; ctx.stroke();
+    ctx.strokeStyle = p.outline; ctx.lineWidth = 2; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ─── Tail ────────────────────────────────────────────────────────────
+function drawTail(ctx, idx, ext, cy, p) {
+  const { tailX, ry } = ext;
+  ctx.save(); ctx.lineCap = 'round';
+  if (idx === 0) {
+    const tips = [];
+    for (let i = 0; i < 5; i++) {
+      const a = Math.PI + ((i - 2) / 4) * 0.85;
+      const tl = 34 - Math.abs(i - 2) * 5;
+      tips.push({ x: tailX + 4 + Math.cos(a) * tl, y: cy + Math.sin(a) * tl });
+    }
+    ctx.beginPath(); ctx.moveTo(tailX + 4, cy);
+    tips.forEach(t => ctx.lineTo(t.x, t.y));
+    ctx.closePath(); ctx.fillStyle = p.mid + '55'; ctx.fill();
+    tips.forEach((t, i) => {
+      ctx.beginPath(); ctx.moveTo(tailX + 4, cy); ctx.lineTo(t.x, t.y);
+      ctx.strokeStyle = p.mid; ctx.lineWidth = 3.5 - Math.abs(i - 2) * 0.5; ctx.stroke();
+    });
+  } else if (idx === 1) {
+    ctx.beginPath();
+    ctx.moveTo(tailX + 10, cy - ry * 0.38); ctx.lineTo(tailX - 20, cy); ctx.lineTo(tailX + 10, cy + ry * 0.38);
+    ctx.fillStyle = p.dark; ctx.fill();
+    ctx.strokeStyle = p.outline; ctx.lineWidth = 1.2; ctx.stroke();
+  } else if (idx === 2) {
+    [-0.38, 0.38].forEach(side => {
+      const a = Math.PI + side;
+      ctx.beginPath(); ctx.moveTo(tailX + 8, cy);
+      ctx.lineTo(tailX + 8 + Math.cos(a) * 34, cy + Math.sin(a) * 30);
+      ctx.strokeStyle = p.mid; ctx.lineWidth = 5.5; ctx.stroke();
+      ctx.strokeStyle = p.outline; ctx.lineWidth = 1.5; ctx.stroke();
+    });
+  }
+  ctx.restore();
+}
+
+// ═══ Master Draw ═════════════════════════════════════════════════════
+function drawCreature(canvas, t) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  drawBg(ctx, W, H);
+  const p = PALETTES[t.color];
+  const cx = W * 0.49, cy = H * 0.45;
+  const ext = getExt(t.body, cx, cy);
+  drawTail(ctx, t.tail, ext, cy, p);
+  drawAppendages(ctx, t.append, ext, cy, p);
+  drawBodyShape(ctx, t.body, ext, cy, p);
+  drawArmor(ctx, t.armor, ext, cy, p);
+  drawEyes(ctx, t.eyes, ext, cy, p);
+}
+
+// ═══ Gallery ═════════════════════════════════════════════════════════
+let gallery = [];
+function saveCreature() {
+  gallery.unshift({ ...traits, name: generateName(traits) });
+  if (gallery.length > 5) gallery.pop();
+  renderGallery();
+}
+function renderGallery() {
+  const row = document.getElementById('gallery-row');
+  if (!row) return;
+  row.innerHTML = '';
+  if (!gallery.length) {
+    row.innerHTML = '<p class="c-gallery-empty">No creatures saved yet — design one above and hit Save!</p>';
+    return;
+  }
+  gallery.forEach(g => {
+    const item = document.createElement('div');
+    item.className = 'c-gallery-item';
+    const cv = document.createElement('canvas');
+    cv.style.cssText = 'width:170px;height:76px;border-radius:6px;background:#041014;';
+    cv.width = 170; cv.height = 76;
+    const nm = document.createElement('div');
+    nm.className = 'c-gallery-name';
+    nm.textContent = g.name;
+    item.appendChild(cv); item.appendChild(nm);
+    row.appendChild(item);
+    drawCreature(cv, g);
+  });
+}
+
+// ═══ Cast Presets ════════════════════════════════════════════════════
+const CAST_PRESETS = [
+  { body:3, eyes:1, append:0, armor:3, tail:0, color:0 },
+  { body:1, eyes:2, append:2, armor:0, tail:0, color:1 },
+  { body:2, eyes:0, append:3, armor:1, tail:1, color:2 },
+  { body:1, eyes:3, append:1, armor:0, tail:0, color:2 },
+  { body:3, eyes:0, append:0, armor:2, tail:3, color:3 },
+  { body:2, eyes:0, append:1, armor:0, tail:2, color:4 },
+];
+
+// ═══ Trait Cycling ═══════════════════════════════════════════════════
+function updateBtn(key) {
+  const btn = document.getElementById('btn-' + key);
+  if (!btn) return;
+  const val = traits[key];
+  btn.querySelector('.t-icon').textContent = TRAITS[key].icons[val];
+  btn.querySelector('.t-label').textContent = TRAITS[key].options[val];
+}
+function cycleTrait(key) {
+  traits[key] = (traits[key] + 1) % TRAITS[key].options.length;
+  updateBtn(key);
+  redraw();
+}
+function redraw() {
+  const canvas = document.getElementById('creatureCanvas');
+  drawCreature(canvas, traits);
+  const nameEl = document.getElementById('creature-name');
+  if (nameEl) nameEl.textContent = generateName(traits);
+}
+
+// ═══ Init ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Main canvas
+  const mainCanvas = document.getElementById('creatureCanvas');
+  if (mainCanvas) { mainCanvas.width = 720; mainCanvas.height = 260; }
+
+  // Trait buttons
+  Object.keys(TRAITS).forEach(key => {
+    updateBtn(key);
+    const btn = document.getElementById('btn-' + key);
+    if (btn) btn.addEventListener('click', () => cycleTrait(key));
+  });
+
+  // Color swatches
+  PALETTES.forEach((pal, i) => {
+    const sw = document.getElementById('swatch-' + i);
+    if (!sw) return;
+    sw.style.background = pal.swatch;
+    sw.addEventListener('click', () => {
+      traits.color = i;
+      document.querySelectorAll('.c-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      redraw();
+    });
+  });
+
+  // Save button
+  const saveBtn = document.getElementById('save-btn');
+  if (saveBtn) saveBtn.addEventListener('click', saveCreature);
+
+  // Initial draw
+  redraw();
+  renderGallery();
+
+  // Cast canvases
+  CAST_PRESETS.forEach((preset, i) => {
+    const cv = document.getElementById('cast-canvas-' + i);
+    if (cv) drawCreature(cv, preset);
+  });
+});
+</script>
+</body>
+</html>
