@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Levers · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Simple Machines — Levers: all three classes, the Law of the Lever, and 5,000 years of history from the Egyptian shaduf to piano keys and bicycle brakes. Interactive balance lab included." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --lv-bg:          #060b10;
+      --lv-panel:       rgba(8,14,22,0.86);
+      --lv-line:        rgba(180,230,200,0.12);
+      --lv-line-strong: rgba(180,230,200,0.21);
+      --lv-text:        #e8f5ee;
+      --lv-muted:       rgba(232,245,238,0.68);
+      --lv-dim:         rgba(232,245,238,0.42);
+      --lv-green:       #10b981;
+      --lv-amber:       #f59e0b;
+      --lv-violet:      #8b5cf6;
+      --lv-sky:         #38bdf8;
+      --lv-rose:        #f43f5e;
+      --lv-teal:        #2dd4bf;
+      --lv-radius:      8px;
+      --lv-shadow:      0 24px 64px rgba(0,0,0,0.38);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans, 'Inter', sans-serif);
+      color: var(--lv-text);
+      background:
+        linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px),
+        linear-gradient(180deg, #030a08 0%, #060b10 50%, #060b10 100%);
+      background-size: 34px 34px, 34px 34px, auto;
+      min-height: 100vh;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none;
+      background:
+        linear-gradient(120deg, rgba(16,185,129,0.08), transparent 28%),
+        linear-gradient(260deg, rgba(245,158,11,0.05), transparent 34%);
+      mask-image: linear-gradient(180deg, #000, transparent 70%);
+    }
+
+    /* ── Shell ───────────────────────────────────────── */
+    .lv-shell { width: min(1280px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 4rem; display: grid; gap: 1rem; }
+
+    /* ── Topbar ──────────────────────────────────────── */
+    .lv-topbar { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(18px) saturate(140%); background: rgba(6,11,16,0.91); border-bottom: 1px solid var(--lv-line); }
+    .lv-topbar-inner { width: min(1280px, calc(100% - 2rem)); min-height: 54px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .lv-topbar a { color: #a7d9c0; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
+    .lv-topbar a:hover { color: #fff; }
+    .lv-brand { color: #e8f5ee; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .lv-nav { display: flex; align-items: center; gap: 0.2rem; overflow-x: auto; scrollbar-width: none; }
+    .lv-nav::-webkit-scrollbar { display: none; }
+    .lv-nav a { display: inline-flex; align-items: center; min-height: 1.85rem; padding: 0 0.55rem; border-radius: var(--lv-radius); color: var(--lv-dim); white-space: nowrap; text-decoration: none; font-size: 0.82rem; font-weight: 600; }
+    .lv-nav a:hover { color: var(--lv-text); background: rgba(255,255,255,0.06); }
+    .lv-pills { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .lv-pill { display: inline-flex; align-items: center; height: 1.7rem; padding: 0 0.62rem; border-radius: var(--lv-radius); font-size: 0.69rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; border: 1px solid rgba(16,185,129,0.38); background: rgba(16,185,129,0.10); color: #6ee7b7; }
+    .lv-pill.amber { border-color: rgba(245,158,11,0.36); background: rgba(245,158,11,0.10); color: #fde68a; }
+    @media (max-width: 960px) { .lv-brand { display: none; } }
+    @media (max-width: 740px) { .lv-nav { display: none; } }
+
+    /* ── Hero ────────────────────────────────────────── */
+    .lv-hero { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(280px,0.7fr); gap: 1rem; align-items: stretch; min-height: min(520px,calc(100vh - 88px)); }
+    @media (max-width: 700px) { .lv-hero { grid-template-columns: 1fr; } }
+    .lv-hero-copy { border-radius: var(--lv-radius); border: 1px solid var(--lv-line-strong); background: linear-gradient(120deg, rgba(16,185,129,0.08), transparent 42%), linear-gradient(180deg, rgba(8,20,14,0.93), rgba(4,12,8,0.93)); box-shadow: var(--lv-shadow); padding: clamp(1.2rem,3vw,2.2rem); display: flex; flex-direction: column; justify-content: center; }
+    .lv-eyebrow { font-size: 0.71rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lv-green); margin: 0 0 0.65rem; }
+    .lv-hero-copy h1 { margin: 0 0 0.65rem; max-width: 14ch; font-size: clamp(2.2rem,6vw,5rem); line-height: 0.93; letter-spacing: -0.055em; color: #fff; }
+    .lv-hero-copy h1 em { font-style: normal; color: var(--lv-green); }
+    .lv-lede { max-width: 72ch; color: var(--lv-muted); font-size: clamp(0.93rem,1.4vw,1.04rem); line-height: 1.72; margin: 0 0 1rem; }
+    .lv-meta { display: flex; flex-wrap: wrap; gap: 0.38rem; }
+    .lv-quote-card { border-radius: var(--lv-radius); border: 1px solid rgba(16,185,129,0.26); background: linear-gradient(180deg, rgba(16,185,129,0.08), transparent 56%), rgba(6,14,10,0.82); padding: clamp(1.1rem,2.2vw,1.75rem); display: flex; flex-direction: column; justify-content: center; gap: 0.85rem; box-shadow: var(--lv-shadow); }
+    .lv-quote-mark { font-size: 2.8rem; line-height: 0.8; color: var(--lv-green); opacity: 0.6; }
+    .lv-quote-text { font-size: clamp(0.9rem,1.9vw,1.08rem); font-style: italic; line-height: 1.62; color: #d1fae5; margin: 0; }
+    .lv-quote-attr { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lv-green); opacity: 0.9; }
+
+    /* ── Cards ───────────────────────────────────────── */
+    .lv-card { border-radius: var(--lv-radius); border: 1px solid var(--lv-line); background: var(--lv-panel); backdrop-filter: blur(10px); padding: clamp(1.1rem,2vw,1.55rem); scroll-margin-top: 72px; }
+    .lv-green-acc  { border-left: 4px solid var(--lv-green); }
+    .lv-amber-acc  { border-left: 4px solid var(--lv-amber); }
+    .lv-violet-acc { border-left: 4px solid var(--lv-violet); }
+    .lv-sky-acc    { border-left: 4px solid var(--lv-sky); }
+    .lv-teal-acc   { border-left: 4px solid var(--lv-teal); }
+    .lv-kicker { font-size: 0.69rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.4rem; }
+    .lv-green-k  { color: var(--lv-green); }
+    .lv-amber-k  { color: var(--lv-amber); }
+    .lv-violet-k { color: var(--lv-violet); }
+    .lv-sky-k    { color: var(--lv-sky); }
+    .lv-teal-k   { color: var(--lv-teal); }
+    .lv-card h2 { margin: 0 0 0.7rem; font-size: clamp(1.18rem,2.3vw,1.6rem); letter-spacing: -0.03em; color: #fff; }
+    .lv-card h3 { margin: 1rem 0 0.32rem; font-size: 0.99rem; letter-spacing: -0.02em; color: #c7f5e2; }
+    .lv-card p, .lv-card li { color: var(--lv-muted); font-size: 0.9rem; line-height: 1.72; margin: 0 0 0.62rem; }
+    .lv-card p:last-child { margin-bottom: 0; }
+    .lv-card ul { padding-left: 1.35rem; margin: 0.35rem 0 0.65rem; }
+
+    /* ── Two-column ──────────────────────────────────── */
+    .lv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .lv-two { grid-template-columns: 1fr; } }
+
+    /* ── Info boxes ──────────────────────────────────── */
+    .lv-box { border-radius: var(--lv-radius); padding: 0.95rem 1.15rem; margin: 0.85rem 0; }
+    .lv-box.green  { background: rgba(16,185,129,0.09);  border: 1px solid rgba(16,185,129,0.26); }
+    .lv-box.amber  { background: rgba(245,158,11,0.09);  border: 1px solid rgba(245,158,11,0.26); }
+    .lv-box.violet { background: rgba(139,92,246,0.09);  border: 1px solid rgba(139,92,246,0.26); }
+    .lv-box.sky    { background: rgba(56,189,248,0.08);  border: 1px solid rgba(56,189,248,0.26); }
+    .lv-box.teal   { background: rgba(45,212,191,0.08);  border: 1px solid rgba(45,212,191,0.26); }
+    .lv-box strong { display: block; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.32rem; }
+    .lv-box.green  strong { color: var(--lv-green); }
+    .lv-box.amber  strong { color: var(--lv-amber); }
+    .lv-box.violet strong { color: var(--lv-violet); }
+    .lv-box.sky    strong { color: var(--lv-sky); }
+    .lv-box.teal   strong { color: var(--lv-teal); }
+    .lv-box p { margin: 0; font-size: 0.87rem; color: rgba(232,245,238,0.8); line-height: 1.65; }
+
+    /* ── Equations ───────────────────────────────────── */
+    .lv-eq { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: clamp(1rem,2.5vw,1.38rem); color: var(--lv-green); text-align: center; padding: 0.9rem; letter-spacing: 0.04em; border-radius: var(--lv-radius); border: 1px solid rgba(16,185,129,0.22); background: rgba(16,185,129,0.07); margin: 0.75rem 0; }
+    .lv-eq.amber  { color: var(--lv-amber);  border-color: rgba(245,158,11,0.22);  background: rgba(245,158,11,0.07); }
+    .lv-eq.violet { color: var(--lv-violet); border-color: rgba(139,92,246,0.22); background: rgba(139,92,246,0.07); }
+
+    /* ── Class cards (three lever classes) ───────────── */
+    .lv-classes { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; margin: 1rem 0; }
+    @media (max-width: 640px) { .lv-classes { grid-template-columns: 1fr; } }
+    .lv-class-card { border-radius: var(--lv-radius); padding: 1rem 1.1rem; border: 1px solid var(--lv-line); background: rgba(255,255,255,0.024); }
+    .lv-class-badge { display: inline-flex; align-items: center; height: 1.55rem; padding: 0 0.58rem; border-radius: 6px; font-size: 0.67rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .lv-class-badge.c1 { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+    .lv-class-badge.c2 { background: rgba(245,158,11,0.13); color: #fde68a; border: 1px solid rgba(245,158,11,0.28); }
+    .lv-class-badge.c3 { background: rgba(139,92,246,0.13); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.28); }
+    .lv-class-card h3 { margin: 0 0 0.3rem; font-size: 0.92rem; font-weight: 700; color: #fff; }
+    .lv-class-pos { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em; margin: 0 0 0.4rem; }
+    .lv-class-card p { font-size: 0.8rem; color: var(--lv-muted); line-height: 1.6; margin: 0 0 0.4rem; }
+    .lv-class-ma { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.8rem; font-weight: 700; }
+    .lv-class-examples { font-size: 0.76rem; color: var(--lv-dim); margin-top: 0.4rem; }
+
+    /* ── Timeline ────────────────────────────────────── */
+    .lv-timeline { position: relative; padding-left: 1.8rem; margin: 1rem 0 0; }
+    .lv-timeline::before { content: ""; position: absolute; left: 0.55rem; top: 0.5rem; bottom: 0.5rem; width: 2px; background: linear-gradient(180deg, var(--lv-green), var(--lv-amber) 55%, var(--lv-violet)); border-radius: 2px; }
+    .lv-tl-item { position: relative; margin-bottom: 1.05rem; }
+    .lv-tl-item:last-child { margin-bottom: 0; }
+    .lv-tl-dot { position: absolute; left: -1.35rem; top: 0.26rem; width: 10px; height: 10px; border-radius: 50%; background: #060b10; }
+    .lv-tl-item:nth-child(3n+1) .lv-tl-dot { border: 2px solid var(--lv-green); }
+    .lv-tl-item:nth-child(3n+2) .lv-tl-dot { border: 2px solid var(--lv-amber); }
+    .lv-tl-item:nth-child(3n)   .lv-tl-dot { border: 2px solid var(--lv-violet); }
+    .lv-tl-date  { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 0.12rem; }
+    .lv-tl-item:nth-child(3n+1) .lv-tl-date { color: var(--lv-green); }
+    .lv-tl-item:nth-child(3n+2) .lv-tl-date { color: var(--lv-amber); }
+    .lv-tl-item:nth-child(3n)   .lv-tl-date { color: var(--lv-violet); }
+    .lv-tl-title { font-size: 0.9rem; font-weight: 700; color: #fff; margin: 0 0 0.16rem; }
+    .lv-tl-desc  { font-size: 0.8rem; color: var(--lv-muted); line-height: 1.56; margin: 0; }
+
+    /* ── Applications grid ───────────────────────────── */
+    .lv-apps { display: grid; grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); gap: 0.62rem; margin: 0.9rem 0; }
+    .lv-app-card { border-radius: var(--lv-radius); padding: 0.85rem 0.95rem; border: 1px solid var(--lv-line); background: rgba(255,255,255,0.024); }
+    .lv-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .lv-app-name { font-size: 0.84rem; font-weight: 700; color: #d1fae5; margin-bottom: 0.18rem; }
+    .lv-app-class { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
+    .lv-app-class.c1 { color: var(--lv-green); }
+    .lv-app-class.c2 { color: var(--lv-amber); }
+    .lv-app-class.c3 { color: var(--lv-violet); }
+    .lv-app-desc { font-size: 0.73rem; color: rgba(210,240,220,0.50); line-height: 1.45; }
+
+    /* ── Simulations ─────────────────────────────────── */
+    .lv-sim { border-radius: var(--lv-radius); border: 1px solid var(--lv-line); overflow: hidden; background: #020a06; box-shadow: 0 16px 48px rgba(0,0,0,0.32); scroll-margin-top: 72px; }
+    .lv-sim-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.55rem; padding: 0.95rem 1.15rem 0.7rem; background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent); }
+    .lv-sim-hl { display: flex; flex-direction: column; gap: 0.18rem; }
+    .lv-sim-title { font-size: 0.77rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .lv-sim-sub { font-size: 0.77rem; color: rgba(210,240,220,0.44); }
+    .lv-sim canvas { display: block; width: 100%; }
+    .lv-sim-controls { display: flex; flex-wrap: wrap; gap: 0.48rem 0.85rem; padding: 0.75rem 1.15rem; background: rgba(0,0,0,0.32); border-top: 1px solid rgba(255,255,255,0.06); }
+    .lv-ctrl { display: flex; flex-direction: column; gap: 0.2rem; min-width: 110px; }
+    .lv-ctrl label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(210,240,220,0.42); }
+    .lv-ctrl input[type="range"] { accent-color: var(--lv-green); cursor: pointer; width: 100%; }
+    .lv-ctrl-val { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.72rem; font-weight: 700; color: var(--lv-green); }
+    .lv-ctrl-val.amber  { color: var(--lv-amber); }
+    .lv-ctrl-val.violet { color: var(--lv-violet); }
+    .lv-readout { display: flex; flex-wrap: wrap; gap: 0.42rem; padding: 0.62rem 1.15rem; }
+    .lv-chip { display: flex; flex-direction: column; gap: 0.1rem; border-radius: var(--lv-radius); padding: 0.42rem 0.62rem; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.026); }
+    .lv-chip-label { font-size: 0.61rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(210,240,220,0.36); }
+    .lv-chip-val { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.83rem; font-weight: 700; color: #c7f5e2; }
+    .lv-chip-val.balanced   { color: var(--lv-green); }
+    .lv-chip-val.unbalanced { color: var(--lv-rose); }
+    .lv-btn { padding: 0.44rem 0.88rem; border-radius: var(--lv-radius); border: 1px solid rgba(16,185,129,0.42); background: rgba(16,185,129,0.12); color: #6ee7b7; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 0.14s; }
+    .lv-btn:hover { background: rgba(16,185,129,0.22); }
+    .lv-btn.active { background: rgba(16,185,129,0.28); border-color: rgba(16,185,129,0.6); }
+    .lv-btn.amber { border-color: rgba(245,158,11,0.42); background: rgba(245,158,11,0.12); color: #fde68a; }
+    .lv-btn.amber:hover, .lv-btn.amber.active { background: rgba(245,158,11,0.26); }
+    .lv-btn.violet { border-color: rgba(139,92,246,0.42); background: rgba(139,92,246,0.12); color: #c4b5fd; }
+    .lv-btn.violet:hover, .lv-btn.violet.active { background: rgba(139,92,246,0.26); }
+    .lv-class-info { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; padding: 0.65rem 1.15rem; background: rgba(0,0,0,0.22); border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; color: var(--lv-muted); }
+    .lv-class-info strong { color: #c7f5e2; }
+
+    /* ── Footer ──────────────────────────────────────── */
+    .lv-footer { text-align: center; padding: 2rem 1rem; color: var(--lv-dim); font-size: 0.78rem; border-top: 1px solid var(--lv-line); background: rgba(6,11,16,0.66); }
+    .lv-footer a { color: var(--lv-green); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="lv-topbar">
+  <div class="lv-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="lv-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="lv-nav">
+      <a href="#what">What Is It?</a>
+      <a href="#sim1">Balance Lab</a>
+      <a href="#classes">3 Classes</a>
+      <a href="#sim2">Class Explorer</a>
+      <a href="#history">History</a>
+      <a href="#modern">Modern</a>
+    </nav>
+    <div class="lv-pills">
+      <span class="lv-pill">Simple Machines</span>
+      <span class="lv-pill amber">Physics</span>
+    </div>
+  </div>
+</div>
+
+<div class="lv-shell">
+
+  <!-- ── Hero ──────────────────────────────────────── -->
+  <div class="lv-hero">
+    <div class="lv-hero-copy">
+      <p class="lv-eyebrow">Simple Machines · Classical Mechanics · History of Technology</p>
+      <h1>The <em>Lever</em></h1>
+      <p class="lv-lede">
+        The oldest tool in human history. A rigid bar on a pivot can move mountains — literally.
+        Three arrangements, one law, and the physics that put a human hand in charge of forces
+        a hundred times its own. From the shaduf on the Nile to the piano key under your finger.
+      </p>
+      <div class="lv-meta">
+        <span class="lv-pill">F × d = F × d</span>
+        <span class="lv-pill amber">2 Simulations</span>
+        <span class="lv-pill">Grades 3–10</span>
+      </div>
+    </div>
+    <div class="lv-quote-card">
+      <div class="lv-quote-mark">"</div>
+      <p class="lv-quote-text">
+        Give me a place to stand, and I shall move the Earth.
+      </p>
+      <div class="lv-quote-attr">— Archimedes, ~250 BCE</div>
+    </div>
+  </div>
+
+  <!-- ── Section 1: What Is a Lever? ──────────────── -->
+  <div class="lv-card lv-green-acc" id="what">
+    <p class="lv-kicker lv-green-k">Concept 1 · The Simple Machine</p>
+    <h2>What Is a Lever?</h2>
+    <div class="lv-two">
+      <div>
+        <p>
+          A <strong>lever</strong> is a rigid bar that rotates around a fixed point called the
+          <strong>fulcrum</strong>. A force applied at one point (the <em>effort</em>) creates
+          a larger or smaller force at another point (the <em>load</em>), depending on where
+          the fulcrum sits.
+        </p>
+        <p>
+          Levers are the simplest of all simple machines — in some form, they predate every other
+          tool. Any stick you've used to pry a rock loose, any door you've pushed open, any
+          pair of scissors you've used is a lever.
+        </p>
+        <div class="lv-box green">
+          <strong>The Law of the Lever</strong>
+          <p>
+            Effort Force × Effort Arm = Load Force × Load Arm<br/>
+            F<sub>effort</sub> × d<sub>effort</sub> = F<sub>load</sub> × d<sub>load</sub><br/><br/>
+            The lever never gives you free energy — it trades force for distance.
+            Move your hand far, the load moves less but with more force.
+          </p>
+        </div>
+      </div>
+      <div>
+        <h3>Mechanical Advantage</h3>
+        <p>
+          The mechanical advantage of a lever tells you how much your force is multiplied.
+          If your effort arm is three times longer than the load arm, you can lift three times
+          your applied force — but you'll push your end three times as far as the load moves.
+        </p>
+        <div class="lv-eq">MA = d<sub>effort</sub> / d<sub>load</sub></div>
+        <div class="lv-eq amber">F<sub>load</sub> = F<sub>effort</sub> × (d<sub>effort</sub> / d<sub>load</sub>)</div>
+        <div class="lv-box amber">
+          <strong>Torque: The Rotating Form of Force</strong>
+          <p>
+            Torque (τ) = Force × perpendicular distance from the fulcrum.<br/>
+            The Law of the Lever is really just torque balance:<br/>
+            τ<sub>effort</sub> = τ<sub>load</sub> when balanced.<br/>
+            The fulcrum is the pivot; the arms are the moment arms.
+          </p>
+        </div>
+        <div class="lv-box violet">
+          <strong>Work In = Work Out</strong>
+          <p>
+            As with all simple machines, energy is conserved. You gain force at the cost of
+            distance — or gain distance (speed) at the cost of force. A lever with MA = 4
+            multiplies your push by 4, but your end must move 4× farther than the load.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SIM 1: Balance Lab ─────────────────────────── -->
+  <div class="lv-sim" id="sim1">
+    <div class="lv-sim-head">
+      <div class="lv-sim-hl">
+        <span class="lv-sim-title lv-green-k">⚖ Law of the Lever — Balance Lab</span>
+        <span class="lv-sim-sub">Slide the fulcrum to find the spot where effort balances the load — watch torques update in real time</span>
+      </div>
+    </div>
+    <canvas id="balanceCanvas" height="320"></canvas>
+    <div class="lv-sim-controls">
+      <div class="lv-ctrl">
+        <label>Fulcrum Position <span class="lv-ctrl-val" id="fulcrumLabel">4.0 m</span></label>
+        <input type="range" id="fulcrumSlider" min="10" max="70" value="40" />
+      </div>
+      <div class="lv-ctrl">
+        <label>Load Weight <span class="lv-ctrl-val amber" id="loadLabel">60 N</span></label>
+        <input type="range" id="loadSlider" min="10" max="150" value="60" />
+      </div>
+      <div class="lv-ctrl">
+        <label>Effort Force <span class="lv-ctrl-val" id="effortLabel">30 N</span></label>
+        <input type="range" id="effortSlider" min="5" max="100" value="30" />
+      </div>
+    </div>
+    <div class="lv-readout">
+      <span class="lv-chip"><span class="lv-chip-label">Effort Arm</span><span class="lv-chip-val" id="dEffortVal">4.0 m</span></span>
+      <span class="lv-chip"><span class="lv-chip-label">Load Arm</span><span class="lv-chip-val" id="dLoadVal">4.0 m</span></span>
+      <span class="lv-chip"><span class="lv-chip-label">MA</span><span class="lv-chip-val" id="maVal">1.0×</span></span>
+      <span class="lv-chip"><span class="lv-chip-label">τ Effort</span><span class="lv-chip-val" id="tauEffortVal">120 N·m</span></span>
+      <span class="lv-chip"><span class="lv-chip-label">τ Load</span><span class="lv-chip-val" id="tauLoadVal">240 N·m</span></span>
+      <span class="lv-chip"><span class="lv-chip-label">Balance</span><span class="lv-chip-val" id="balanceVal">Load wins</span></span>
+    </div>
+  </div>
+
+  <!-- ── Section 2: Three Classes ──────────────────── -->
+  <div class="lv-card lv-violet-acc" id="classes">
+    <p class="lv-kicker lv-violet-k">Concept 2 · Three Arrangements</p>
+    <h2>The Three Classes of Levers</h2>
+    <p>
+      Every lever has the same three components — fulcrum (F), effort (E), and load (L) — but
+      the order in which they appear along the beam determines the lever's class, its MA range,
+      and whether effort and load move in the same or opposite directions.
+    </p>
+    <div class="lv-classes">
+      <div class="lv-class-card">
+        <div class="lv-class-badge c1">Class 1</div>
+        <h3>Fulcrum in the Middle</h3>
+        <p class="lv-class-pos">E ——— △ ——— L</p>
+        <p>
+          The fulcrum sits between the effort and the load. Moving the fulcrum toward the load
+          increases MA; toward the effort decreases it. Effort and load move in <em>opposite</em> directions.
+        </p>
+        <p class="lv-class-ma" style="color:var(--lv-green)">MA = can be &lt;1, =1, or &gt;1</p>
+        <p class="lv-class-examples">Seesaw · Crowbar · Scissors · Pliers · Balance scale · Claw hammer · Nail clippers</p>
+      </div>
+      <div class="lv-class-card">
+        <div class="lv-class-badge c2">Class 2</div>
+        <h3>Load in the Middle</h3>
+        <p class="lv-class-pos">△ ——— L ——— E</p>
+        <p>
+          The load sits between the fulcrum and the effort. The effort arm is always the full
+          beam length; the load arm is always shorter. MA is <em>always greater than 1</em>.
+          Effort and load move in the <em>same</em> direction.
+        </p>
+        <p class="lv-class-ma" style="color:var(--lv-amber)">MA &gt; 1 always</p>
+        <p class="lv-class-examples">Wheelbarrow · Bottle opener · Nutcracker · Door · Stapler · Wheelbarrow · Diving board</p>
+      </div>
+      <div class="lv-class-card">
+        <div class="lv-class-badge c3">Class 3</div>
+        <h3>Effort in the Middle</h3>
+        <p class="lv-class-pos">△ ——— E ——— L</p>
+        <p>
+          The effort sits between the fulcrum and the load. The load arm is always longer than
+          the effort arm, so MA is <em>always less than 1</em>. You apply more force than
+          the load receives — but the load moves <em>faster and farther</em>.
+        </p>
+        <p class="lv-class-ma" style="color:var(--lv-violet)">MA &lt; 1 always — trades force for speed</p>
+        <p class="lv-class-examples">Tweezers · Fishing rod · Broom · Baseball bat · Forearm (bicep) · Shovel · Chopsticks</p>
+      </div>
+    </div>
+    <div class="lv-box teal">
+      <strong>The Human Body Is Full of Class 3 Levers</strong>
+      <p>
+        Your forearm is a classic Class 3 lever. Elbow joint = fulcrum. Bicep muscle attaches
+        ~5 cm from the elbow (effort). Your hand is ~35 cm from the elbow (load). MA ≈ 5/35 ≈ 0.14.
+        Your bicep must exert about 7× the weight it lifts! But your hand moves 7× faster
+        and farther than the muscle contracts — perfect for throwing, catching, and fine motor control.
+        Evolution optimized our arms for speed and range, not brute force.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── SIM 2: Three Classes Explorer ─────────────── -->
+  <div class="lv-sim" id="sim2">
+    <div class="lv-sim-head">
+      <div class="lv-sim-hl">
+        <span class="lv-sim-title lv-violet-k">🔭 Three Classes Explorer</span>
+        <span class="lv-sim-sub">Select a class — see where effort, fulcrum, and load sit, and how the lever moves</span>
+      </div>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <button class="lv-btn active" id="btn1">Class 1</button>
+        <button class="lv-btn amber" id="btn2">Class 2</button>
+        <button class="lv-btn violet" id="btn3">Class 3</button>
+      </div>
+    </div>
+    <canvas id="classCanvas" height="280"></canvas>
+    <div class="lv-class-info" id="classInfo">
+      <span><strong>Class 1</strong> — Fulcrum between effort and load</span>
+      <span>MA = d<sub>E</sub> / d<sub>L</sub> — can be &lt;1, 1, or &gt;1</span>
+      <span>Examples: seesaw, crowbar, scissors, pliers, balance scale</span>
+    </div>
+  </div>
+
+  <!-- ── Section 3: History ────────────────────────── -->
+  <div class="lv-card lv-amber-acc" id="history">
+    <p class="lv-kicker lv-amber-k">History · ~5000 BCE – Today</p>
+    <h2>From the Shaduf to the Piano Key: 7,000 Years of Levers</h2>
+    <div class="lv-two">
+      <div>
+        <p>
+          The lever may be the oldest human tool that isn't just a sharpened rock. As soon as
+          early humans discovered that a stick wedged under a boulder could pry it loose, they
+          had invented the lever — though they wouldn't name it for thousands of years.
+        </p>
+        <p>
+          The first <em>engineered</em> lever was the <strong>shaduf</strong> (~5000–3000 BCE),
+          a well-sweep used along the Nile, Tigris, and Euphrates rivers. A long horizontal
+          beam balanced on a vertical pole: a counterweight on the short end, a rope-and-bucket
+          on the long end. Farmers could lift hundreds of kilograms of water per hour with one
+          hand — a Class 1 lever in perfect action.
+        </p>
+        <div class="lv-box amber">
+          <strong>Building the Pyramids (c. 2560 BCE)</strong>
+          <p>Egyptians used levers — likely wooden beams braced against stone fulcra — to lift
+          2.5-ton granite blocks into place. Experiment and archaeological evidence suggest
+          organized gangs of workers used Class 1 levers to rock blocks onto log rollers,
+          raise them onto sledges, and inch them up ramps. No cranes. No machines. Just levers,
+          ramps, and 20,000 workers organized with military precision.</p>
+        </div>
+      </div>
+      <div>
+        <div class="lv-timeline">
+          <div class="lv-tl-item">
+            <div class="lv-tl-dot"></div>
+            <p class="lv-tl-date">~5000–3000 BCE · Nile, Tigris &amp; Euphrates</p>
+            <p class="lv-tl-title">Shaduf (Well-Sweep)</p>
+            <p class="lv-tl-desc">First engineered lever: counterweighted beam over a pivot, lifts water buckets. Used across Egypt, Mesopotamia, and India for millennia and still used today.</p>
+          </div>
+          <div class="lv-tl-item">
+            <div class="lv-tl-dot"></div>
+            <p class="lv-tl-date">~2560 BCE · Giza, Egypt</p>
+            <p class="lv-tl-title">Pyramid Construction</p>
+            <p class="lv-tl-desc">Wooden levers used to rock and lift 2.5-ton stone blocks. Evidence of lever sockets found in quarry stones at Abu Rawash and Giza.</p>
+          </div>
+          <div class="lv-tl-item">
+            <div class="lv-tl-dot"></div>
+            <p class="lv-tl-date">~400 BCE · Greece &amp; Persia</p>
+            <p class="lv-tl-title">Catapult — The War Lever</p>
+            <p class="lv-tl-desc">Catapults (and later trebuchets) weaponize the Class 1 lever: a short, heavy throwing arm counterweight drives a long projectile arm. MA translates stored energy into devastating range.</p>
+          </div>
+          <div class="lv-tl-item">
+            <div class="lv-tl-dot"></div>
+            <p class="lv-tl-date">~250 BCE · Syracuse, Sicily</p>
+            <p class="lv-tl-title">Archimedes Formalizes the Law</p>
+            <p class="lv-tl-desc">In <em>On the Equilibrium of Planes</em>, Archimedes proves mathematically that F·d = F·d. He builds giant lever-based war machines — cranes that could lift Roman warships out of the water.</p>
+          </div>
+          <div class="lv-tl-item">
+            <div class="lv-tl-dot"></div>
+            <p class="lv-tl-date">~200 BCE · Rome</p>
+            <p class="lv-tl-title">Steelyard Balance</p>
+            <p class="lv-tl-desc">The Roman <em>statera</em> (steelyard) is an asymmetric Class 1 lever: slide a known counterweight along a graduated arm until balance is found. Used for trade across the empire for 1,500 years.</p>
+          </div>
+          <div class="lv-tl-item">
+            <div class="lv-tl-dot"></div>
+            <p class="lv-tl-date">~1150–1300 CE · Europe</p>
+            <p class="lv-tl-title">Trebuchet</p>
+            <p class="lv-tl-desc">The most powerful pre-gunpowder siege weapon uses a massive counterweight on a short lever arm to hurl 100–150 kg stones up to 300 m. Captured Jerusalem, Stirling Castle, and dozens of fortifications.</p>
+          </div>
+          <div class="lv-tl-item">
+            <div class="lv-tl-dot"></div>
+            <p class="lv-tl-date">1700s–present · Industrial World</p>
+            <p class="lv-tl-title">Levers Everywhere</p>
+            <p class="lv-tl-desc">Steam engine valve linkages, railway switches, piano keys (each a Class 1 lever launching a felt hammer), printing presses, typewriter keys, and every pair of scissors manufactured since the Bronze Age.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 4: Modern Applications ───────────── -->
+  <div class="lv-card lv-sky-acc" id="modern">
+    <p class="lv-kicker lv-sky-k">Modern World · Applications &amp; Deeper Ideas</p>
+    <h2>Levers in Every Corner of Life</h2>
+    <div class="lv-two">
+      <div>
+        <p>
+          Look around any room and you'll find levers: light switches (Class 1), door handles
+          (Class 2 or 3 depending on pivot placement), scissors, bottle openers, and
+          keyboard keys. The lever is not a historical artifact — it is the most common mechanism
+          in the engineered world.
+        </p>
+        <p>
+          In the body, levers are everywhere. Your jaw is a Class 3 lever (masseter muscle
+          behind the fulcrum at the jaw joint). Your foot is a Class 2 lever when you stand
+          on tiptoe (fulcrum at toes, load is your body weight at the ankle, effort is the
+          calf muscle at the heel). Your forearm is Class 3 for most lifting tasks.
+        </p>
+        <div class="lv-box sky">
+          <strong>Compound Levers</strong>
+          <p>Nail clippers combine two Class 1 levers in series: the top lever pivots to drive
+          the bottom lever, multiplying the force again. The MA of the compound system is the
+          product of both individual MAs. Compound lever arrangements appear in piano actions,
+          surgical forceps, and industrial presses, achieving MA in the hundreds.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Connection to Other Simple Machines</h3>
+        <p>
+          The lever underlies all other simple machines. A pulley is a lever rotated into a
+          circle (the fulcrum at the axle center, effort and load on the rope). The wheel and
+          axle is two levers at right angles sharing a pivot. The inclined plane can be analyzed
+          as a continuous series of infinitesimally small levers along its slope.
+        </p>
+        <div class="lv-box green">
+          <strong>Feynman's Take</strong>
+          <p>
+            All of classical mechanics ultimately reduces to F = ma. The lever doesn't override
+            Newton — it multiplies force by sacrificing distance, keeping Work = F × d constant.
+            Any time a machine "multiplies" force, you're trading the shape of the energy,
+            not its quantity. Conservation of energy is inviolable — the lever is just one
+            of its most elegant disguises.
+          </p>
+        </div>
+      </div>
+    </div>
+    <h3>Modern Lever Applications by Class</h3>
+    <div class="lv-apps">
+      <div class="lv-app-card"><div class="lv-app-icon">✂️</div><div class="lv-app-name">Scissors</div><div class="lv-app-class c1">Class 1</div><div class="lv-app-desc">Pivot (fulcrum) in the middle; effort on handles, load at the blade tips.</div></div>
+      <div class="lv-app-card"><div class="lv-app-icon">🔨</div><div class="lv-app-name">Claw Hammer</div><div class="lv-app-class c1">Class 1</div><div class="lv-app-desc">Prying mode: nail is load; hammer head is fulcrum; hands apply effort at handle end.</div></div>
+      <div class="lv-app-card"><div class="lv-app-icon">🎹</div><div class="lv-app-name">Piano Key</div><div class="lv-app-class c1">Class 1</div><div class="lv-app-desc">Key pivots at balance rail; finger presses front (effort); back end drives the hammer mechanism (load).</div></div>
+      <div class="lv-app-card"><div class="lv-app-icon">🚪</div><div class="lv-app-name">Door</div><div class="lv-app-class c1">Class 1</div><div class="lv-app-desc">Hinges are the fulcrum; handle is far for maximum MA. Closer to hinges = much harder to open.</div></div>
+      <div class="lv-app-card"><div class="lv-app-icon">🛒</div><div class="lv-app-name">Wheelbarrow</div><div class="lv-app-class c2">Class 2</div><div class="lv-app-desc">Wheel = fulcrum; load sits between wheel and handles; hands lift at handles with MA &gt; 1.</div></div>
+      <div class="lv-app-card"><div class="lv-app-icon">🍾</div><div class="lv-app-name">Bottle Opener</div><div class="lv-app-class c2">Class 2</div><div class="lv-app-desc">Rim of bottle = fulcrum; cap = load; hand grips far end for multiplied lifting force.</div></div>
+      <div class="lv-app-card"><div class="lv-app-icon">🦾</div><div class="lv-app-name">Forearm</div><div class="lv-app-class c3">Class 3</div><div class="lv-app-desc">Elbow = fulcrum; bicep attaches 5 cm away (effort); hand 35 cm away is the load. MA ≈ 0.14 — speed beats force.</div></div>
+      <div class="lv-app-card"><div class="lv-app-icon">🎣</div><div class="lv-app-name">Fishing Rod</div><div class="lv-app-class c3">Class 3</div><div class="lv-app-desc">Grip = fulcrum; rod hand applies effort near base; rod tip (load) whips through large arc.</div></div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="lv-footer site-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">All Lessons</a> ·
+  Simple Machines · Levers
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   SIM 1 — Law of the Lever / Balance Lab
+   Beam = 8 m total.
+   Load (amber) always hangs from LEFT end.
+   Effort (green) always applied at RIGHT end.
+   Fulcrum (violet) slides between them.
+   ═══════════════════════════════════════════════════════ */
+(function () {
+  const cv        = document.getElementById('balanceCanvas');
+  const ctx       = cv.getContext('2d');
+  const fulcrSl   = document.getElementById('fulcrumSlider');
+  const loadSl    = document.getElementById('loadSlider');
+  const effortSl  = document.getElementById('effortSlider');
+  const fulcrLbl  = document.getElementById('fulcrumLabel');
+  const loadLbl   = document.getElementById('loadLabel');
+  const effortLbl = document.getElementById('effortLabel');
+  const dEffEl    = document.getElementById('dEffortVal');
+  const dLdEl     = document.getElementById('dLoadVal');
+  const maEl      = document.getElementById('maVal');
+  const tauEEl    = document.getElementById('tauEffortVal');
+  const tauLEl    = document.getElementById('tauLoadVal');
+  const balEl     = document.getElementById('balanceVal');
+
+  const BEAM_M = 8;       // total beam length in metres
+  let currentAngle = 0;   // animated tilt angle
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 320; }
+  resize(); window.addEventListener('resize', resize);
+
+  function getVals() {
+    const fp = +fulcrSl.value / 10;   // fulcrum position 1.0–7.0 m from left
+    const W  = +loadSl.value;
+    const F  = +effortSl.value;
+    return { fp, W, F };
+  }
+
+  function updateReadout() {
+    const { fp, W, F } = getVals();
+    const dLoad   = fp;                  // load arm: left end to fulcrum
+    const dEffort = BEAM_M - fp;         // effort arm: fulcrum to right end
+    const MA      = dEffort / dLoad;
+    const tauL    = W * dLoad;
+    const tauE    = F * dEffort;
+    const diff    = Math.abs(tauE - tauL);
+    const pct     = diff / Math.max(tauL, tauE) * 100;
+
+    fulcrLbl.textContent  = fp.toFixed(1) + ' m';
+    loadLbl.textContent   = W + ' N';
+    effortLbl.textContent = F + ' N';
+    dLdEl.textContent     = dLoad.toFixed(1) + ' m';
+    dEffEl.textContent    = dEffort.toFixed(1) + ' m';
+    maEl.textContent      = MA.toFixed(2) + '×';
+    tauEEl.textContent    = tauE.toFixed(0) + ' N·m';
+    tauLEl.textContent    = tauL.toFixed(0) + ' N·m';
+
+    if (pct < 3) {
+      balEl.textContent  = 'Balanced!';
+      balEl.className    = 'lv-chip-val balanced';
+    } else if (tauE > tauL) {
+      balEl.textContent  = 'Effort wins';
+      balEl.className    = 'lv-chip-val unbalanced';
+    } else {
+      balEl.textContent  = 'Load wins';
+      balEl.className    = 'lv-chip-val unbalanced';
+    }
+  }
+
+  fulcrSl.oninput = loadSl.oninput = effortSl.oninput = updateReadout;
+  updateReadout();
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    const { fp, W: loadW, F } = getVals();
+    const dLoad   = fp;
+    const dEffort = BEAM_M - fp;
+    const tauL    = loadW * dLoad;
+    const tauE    = F * dEffort;
+
+    // Smooth tilt animation
+    const maxTorque = Math.max(loadW * 7, F * 7, 1);
+    const targetAngle = Math.min(Math.max((tauE - tauL) / maxTorque * 0.38, -0.38), 0.38);
+    currentAngle += (targetAngle - currentAngle) * 0.07;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // ── Beam geometry ─────────────────────────────
+    const margin    = 54;
+    const beamLen   = W - margin * 2;
+    const fulcrumX  = margin + (fp / BEAM_M) * beamLen;
+    const beamY     = H * 0.44;
+
+    // Pixel distances from fulcrum
+    const dLoadPx   = (dLoad / BEAM_M) * beamLen;
+    const dEffortPx = (dEffort / BEAM_M) * beamLen;
+
+    const ang = currentAngle;
+
+    // World positions of beam endpoints
+    const loadX     = fulcrumX - dLoadPx   * Math.cos(ang);
+    const loadY     = beamY    - dLoadPx   * Math.sin(ang);
+    const effortX   = fulcrumX + dEffortPx * Math.cos(ang);
+    const effortY   = beamY    + dEffortPx * Math.sin(ang);
+
+    // ── Ground / fulcrum support ──────────────────
+    const groundY = beamY + 55;
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(0, groundY, W, H - groundY);
+
+    // Fulcrum triangle
+    const tH = 36;
+    ctx.beginPath();
+    ctx.moveTo(fulcrumX, beamY + 2);
+    ctx.lineTo(fulcrumX - 16, groundY);
+    ctx.lineTo(fulcrumX + 16, groundY);
+    ctx.closePath();
+    ctx.fillStyle   = 'rgba(139,92,246,0.22)';
+    ctx.strokeStyle = 'rgba(139,92,246,0.8)';
+    ctx.lineWidth   = 1.8;
+    ctx.fill(); ctx.stroke();
+
+    // Fulcrum base line
+    ctx.beginPath();
+    ctx.moveTo(fulcrumX - 22, groundY);
+    ctx.lineTo(fulcrumX + 22, groundY);
+    ctx.strokeStyle = 'rgba(139,92,246,0.5)'; ctx.lineWidth = 2; ctx.stroke();
+
+    // ── Beam ──────────────────────────────────────
+    // Beam gradient
+    const grd = ctx.createLinearGradient(loadX, 0, effortX, 0);
+    grd.addColorStop(0, 'rgba(245,158,11,0.7)');
+    grd.addColorStop(fp / BEAM_M, 'rgba(180,200,180,0.9)');
+    grd.addColorStop(1, 'rgba(16,185,129,0.7)');
+    ctx.beginPath();
+    ctx.moveTo(loadX, loadY);
+    ctx.lineTo(effortX, effortY);
+    ctx.strokeStyle = grd; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.lineCap = 'butt';
+
+    // ── Fulcrum point on beam ─────────────────────
+    ctx.beginPath(); ctx.arc(fulcrumX, beamY, 5.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(139,92,246,0.9)'; ctx.fill();
+
+    // ── Load weight (left end) ────────────────────
+    const ropeLen = 28 + loadW * 0.18;
+    // Rope (vertical from beam endpoint)
+    ctx.beginPath();
+    ctx.moveTo(loadX, loadY);
+    ctx.lineTo(loadX, loadY + ropeLen);
+    ctx.strokeStyle = 'rgba(245,158,11,0.55)'; ctx.lineWidth = 1.5; ctx.stroke();
+    // Weight box
+    const bW = 36, bH = 24;
+    ctx.fillStyle   = 'rgba(245,158,11,0.18)';
+    ctx.strokeStyle = 'rgba(245,158,11,0.75)'; ctx.lineWidth = 1.5;
+    ctx.fillRect(loadX - bW / 2, loadY + ropeLen, bW, bH);
+    ctx.strokeRect(loadX - bW / 2, loadY + ropeLen, bW, bH);
+    ctx.font = 'bold 10px Inter,sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fde68a';
+    ctx.fillText(loadW + ' N', loadX, loadY + ropeLen + bH * 0.65);
+
+    // Load force arrow (pointing down from box bottom)
+    const laLen = Math.min(loadW * 0.3, 42);
+    const laY   = loadY + ropeLen + bH;
+    ctx.beginPath(); ctx.moveTo(loadX, laY); ctx.lineTo(loadX, laY + laLen);
+    ctx.strokeStyle = 'rgba(245,158,11,0.6)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.save(); ctx.translate(loadX, laY + laLen); ctx.rotate(Math.PI / 2);
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-8,3); ctx.lineTo(-8,-3); ctx.closePath();
+    ctx.fillStyle = 'rgba(245,158,11,0.6)'; ctx.fill(); ctx.restore();
+
+    // ── Effort arrow (right end, pointing down) ───
+    const eaLen = Math.min(F * 0.5, 60);
+    ctx.beginPath(); ctx.moveTo(effortX, effortY - eaLen); ctx.lineTo(effortX, effortY);
+    ctx.strokeStyle = 'rgba(16,185,129,0.9)'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.save(); ctx.translate(effortX, effortY); ctx.rotate(Math.PI / 2);
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-9,3.5); ctx.lineTo(-9,-3.5); ctx.closePath();
+    ctx.fillStyle = 'rgba(16,185,129,0.9)'; ctx.fill(); ctx.restore();
+
+    // Effort label above arrow
+    ctx.font = 'bold 10px Inter,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(16,185,129,0.85)';
+    ctx.fillText(F + ' N', effortX, effortY - eaLen - 6);
+
+    // ── Dimension labels ──────────────────────────
+    const dimY = beamY + tH + 14;
+    // d_load: left end to fulcrum
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(margin, dimY); ctx.lineTo(fulcrumX, dimY);
+    ctx.strokeStyle = 'rgba(245,158,11,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = '600 9px Inter,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(245,158,11,0.65)';
+    ctx.fillText('d_load = ' + dLoad.toFixed(1) + ' m', margin + (fulcrumX - margin) / 2, dimY + 11);
+
+    // d_effort: fulcrum to right end
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(fulcrumX, dimY); ctx.lineTo(margin + beamLen, dimY);
+    ctx.strokeStyle = 'rgba(16,185,129,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(16,185,129,0.65)';
+    ctx.fillText('d_effort = ' + dEffort.toFixed(1) + ' m', fulcrumX + (margin + beamLen - fulcrumX) / 2, dimY + 11);
+
+    // ── MA display ────────────────────────────────
+    const maDisplay = (dEffort / dLoad).toFixed(2);
+    ctx.font = '800 14px "JetBrains Mono",monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.fillText('MA = ' + maDisplay + '×', W / 2, H - 10);
+
+    currentAngle += 0; // no extra drift
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ═══════════════════════════════════════════════════════
+   SIM 2 — Three Classes Explorer
+   ═══════════════════════════════════════════════════════ */
+(function () {
+  const cv    = document.getElementById('classCanvas');
+  const ctx   = cv.getContext('2d');
+  const btn1  = document.getElementById('btn1');
+  const btn2  = document.getElementById('btn2');
+  const btn3  = document.getElementById('btn3');
+  const info  = document.getElementById('classInfo');
+
+  let selectedClass = 1;
+  let oscPhase      = 0;
+
+  const CLASS_INFO = {
+    1: '<span><strong>Class 1</strong> — Fulcrum between effort &amp; load</span><span>MA = d<sub>E</sub> / d<sub>L</sub> — can be &lt;1, =1, or &gt;1</span><span>Examples: seesaw, crowbar, scissors, pliers, balance scale</span>',
+    2: '<span><strong>Class 2</strong> — Load between fulcrum &amp; effort</span><span>MA &gt; 1 always — force multiplication guaranteed</span><span>Examples: wheelbarrow, bottle opener, nutcracker, diving board, stapler</span>',
+    3: '<span><strong>Class 3</strong> — Effort between fulcrum &amp; load</span><span>MA &lt; 1 always — trades force for speed and range</span><span>Examples: tweezers, fishing rod, forearm (bicep), broom, baseball bat</span>',
+  };
+
+  function setClass(c) {
+    selectedClass = c;
+    btn1.classList.toggle('active', c === 1);
+    btn2.classList.toggle('active', c === 2);
+    btn3.classList.toggle('active', c === 3);
+    info.innerHTML = CLASS_INFO[c];
+  }
+
+  btn1.onclick = () => setClass(1);
+  btn2.onclick = () => setClass(2);
+  btn3.onclick = () => setClass(3);
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 280; }
+  resize(); window.addEventListener('resize', resize);
+
+  /* Draw a lever with labeled positions */
+  function drawLever(ctx, W, H, osc, effortFrac, fulcrumFrac, loadFrac, MA) {
+    const margin  = 50;
+    const beamLen = W - margin * 2;
+    const beamY   = H * 0.42;
+
+    // Positions in pixels along beam
+    const effortPx  = margin + effortFrac  * beamLen;
+    const fulcrumPx = margin + fulcrumFrac * beamLen;
+    const loadPx    = margin + loadFrac    * beamLen;
+
+    // Tilt about fulcrum
+    const angle = osc * 0.22;
+    function beamPt(px) {
+      const d = px - fulcrumPx;
+      return { x: fulcrumPx + d * Math.cos(angle), y: beamY + d * Math.sin(angle) };
+    }
+
+    const ePt = beamPt(effortPx);
+    const lPt = beamPt(loadPx);
+    const fPt = { x: fulcrumPx, y: beamY };
+
+    // Beam
+    const leftEnd  = beamPt(margin);
+    const rightEnd = beamPt(margin + beamLen);
+    ctx.beginPath();
+    ctx.moveTo(leftEnd.x, leftEnd.y);
+    ctx.lineTo(rightEnd.x, rightEnd.y);
+    ctx.strokeStyle = 'rgba(180,200,190,0.6)'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.lineCap = 'butt';
+
+    // Fulcrum triangle
+    const groundY = beamY + 44;
+    ctx.beginPath();
+    ctx.moveTo(fPt.x, fPt.y + 2);
+    ctx.lineTo(fPt.x - 14, groundY);
+    ctx.lineTo(fPt.x + 14, groundY);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(139,92,246,0.25)'; ctx.strokeStyle = 'rgba(139,92,246,0.75)'; ctx.lineWidth = 1.5;
+    ctx.fill(); ctx.stroke();
+
+    // Fulcrum dot
+    ctx.beginPath(); ctx.arc(fPt.x, fPt.y, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(139,92,246,0.9)'; ctx.fill();
+
+    // Effort (green arrow pointing down onto beam)
+    const eArrowLen = 38;
+    ctx.beginPath(); ctx.moveTo(ePt.x, ePt.y - eArrowLen); ctx.lineTo(ePt.x, ePt.y);
+    ctx.strokeStyle = 'rgba(16,185,129,0.9)'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.save(); ctx.translate(ePt.x, ePt.y); ctx.rotate(Math.PI / 2);
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-9,3.5); ctx.lineTo(-9,-3.5); ctx.closePath();
+    ctx.fillStyle = 'rgba(16,185,129,0.9)'; ctx.fill(); ctx.restore();
+
+    // Load (amber, hanging from beam)
+    const ropeLen = 28;
+    ctx.beginPath(); ctx.moveTo(lPt.x, lPt.y); ctx.lineTo(lPt.x, lPt.y + ropeLen);
+    ctx.strokeStyle = 'rgba(245,158,11,0.55)'; ctx.lineWidth = 1.5; ctx.stroke();
+    const bW = 30, bH = 20;
+    ctx.fillStyle = 'rgba(245,158,11,0.18)'; ctx.strokeStyle = 'rgba(245,158,11,0.75)'; ctx.lineWidth = 1.5;
+    ctx.fillRect(lPt.x - bW/2, lPt.y + ropeLen, bW, bH);
+    ctx.strokeRect(lPt.x - bW/2, lPt.y + ropeLen, bW, bH);
+
+    // Labels
+    ctx.font = '800 11px Inter,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(16,185,129,0.9)';
+    ctx.fillText('E', ePt.x, ePt.y - eArrowLen - 8);
+    ctx.fillStyle = 'rgba(139,92,246,0.9)';
+    ctx.fillText('F', fPt.x, groundY + 14);
+    ctx.fillStyle = 'rgba(245,158,11,0.9)';
+    ctx.fillText('L', lPt.x, lPt.y + ropeLen + bH + 14);
+
+    // MA note
+    ctx.font = '700 11px "JetBrains Mono",monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(200,240,220,0.55)';
+    ctx.fillText(MA, W / 2, H - 10);
+  }
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    oscPhase += 0.018;
+    const osc = Math.sin(oscPhase);
+
+    switch (selectedClass) {
+      case 1:
+        // Fulcrum center, effort left, load right (seesaw)
+        drawLever(ctx, W, H, osc, 0.18, 0.5, 0.82, 'MA = d_E / d_L  (here: 1.0×)');
+        // Class label
+        ctx.font = 'bold 13px Inter,sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(16,185,129,0.75)';
+        ctx.fillText('Class 1 — Seesaw', W / 2, 22);
+        break;
+      case 2:
+        // Fulcrum left, load center, effort right (wheelbarrow)
+        drawLever(ctx, W, H, osc * 0.5, 0.82, 0.06, 0.42, 'MA = d_E / d_L = 0.82 / 0.36 ≈ 2.3×');
+        ctx.font = 'bold 13px Inter,sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(245,158,11,0.75)';
+        ctx.fillText('Class 2 — Wheelbarrow', W / 2, 22);
+        break;
+      case 3:
+        // Fulcrum left, effort center-left, load right (forearm)
+        drawLever(ctx, W, H, osc * 0.35, 0.28, 0.06, 0.82, 'MA = d_E / d_L = 0.22 / 0.76 ≈ 0.29×');
+        ctx.font = 'bold 13px Inter,sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(139,92,246,0.75)';
+        ctx.fillText('Class 3 — Forearm / Bicep', W / 2, 22);
+        break;
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+
+</body>
+</html>

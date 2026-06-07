@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wheel &amp; Axle · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Simple Machines — The Wheel &amp; Axle: from Mesopotamian pottery wheels to jet turbines. 5,500 years of rotational mechanical advantage with two interactive simulations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --wa-bg:          #080611;
+      --wa-panel:       rgba(12,9,26,0.84);
+      --wa-line:        rgba(200,180,245,0.13);
+      --wa-line-strong: rgba(200,180,245,0.22);
+      --wa-text:        #ede8fc;
+      --wa-muted:       rgba(237,232,252,0.68);
+      --wa-dim:         rgba(237,232,252,0.42);
+      --wa-amber:       #f59e0b;
+      --wa-teal:        #2dd4bf;
+      --wa-violet:      #8b5cf6;
+      --wa-sky:         #38bdf8;
+      --wa-green:       #10b981;
+      --wa-rose:        #f43f5e;
+      --wa-radius:      8px;
+      --wa-shadow:      0 24px 64px rgba(0,0,0,0.38);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans, 'Inter', sans-serif);
+      color: var(--wa-text);
+      background:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px),
+        linear-gradient(180deg, #060412 0%, #08060f 45%, #080611 100%);
+      background-size: 34px 34px, 34px 34px, auto;
+      min-height: 100vh;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none;
+      background:
+        linear-gradient(115deg, rgba(245,158,11,0.09), transparent 30%),
+        linear-gradient(258deg, rgba(45,212,191,0.06), transparent 36%);
+      mask-image: linear-gradient(180deg, #000, transparent 72%);
+    }
+
+    /* ── Shell ───────────────────────────────────────── */
+    .wa-shell { width: min(1280px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 4rem; display: grid; gap: 1rem; }
+
+    /* ── Topbar ──────────────────────────────────────── */
+    .wa-topbar { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(18px) saturate(140%); background: rgba(8,6,17,0.91); border-bottom: 1px solid var(--wa-line); }
+    .wa-topbar-inner { width: min(1280px, calc(100% - 2rem)); min-height: 54px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .wa-topbar a { color: #c8b8f2; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
+    .wa-topbar a:hover { color: #fff; }
+    .wa-brand { color: #ede8ff; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .wa-nav { display: flex; align-items: center; gap: 0.2rem; overflow-x: auto; scrollbar-width: none; }
+    .wa-nav::-webkit-scrollbar { display: none; }
+    .wa-nav a { display: inline-flex; align-items: center; min-height: 1.85rem; padding: 0 0.55rem; border-radius: var(--wa-radius); color: var(--wa-dim); white-space: nowrap; text-decoration: none; font-size: 0.82rem; font-weight: 600; }
+    .wa-nav a:hover { color: var(--wa-text); background: rgba(255,255,255,0.06); }
+    .wa-pills { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .wa-pill { display: inline-flex; align-items: center; height: 1.7rem; padding: 0 0.62rem; border-radius: var(--wa-radius); font-size: 0.69rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; border: 1px solid rgba(245,158,11,0.36); background: rgba(245,158,11,0.10); color: #fde68a; }
+    .wa-pill.teal { border-color: rgba(45,212,191,0.36); background: rgba(45,212,191,0.09); color: #99f6e4; }
+    @media (max-width: 960px) { .wa-brand { display: none; } }
+    @media (max-width: 740px) { .wa-nav { display: none; } }
+
+    /* ── Hero ────────────────────────────────────────── */
+    .wa-hero { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(280px,0.7fr); gap: 1rem; align-items: stretch; min-height: min(520px,calc(100vh - 88px)); }
+    @media (max-width: 700px) { .wa-hero { grid-template-columns: 1fr; } }
+    .wa-hero-copy { border-radius: var(--wa-radius); border: 1px solid var(--wa-line-strong); background: linear-gradient(120deg, rgba(245,158,11,0.08), transparent 42%), linear-gradient(180deg, rgba(18,12,38,0.93), rgba(10,8,24,0.93)); box-shadow: var(--wa-shadow); padding: clamp(1.2rem,3vw,2.2rem); display: flex; flex-direction: column; justify-content: center; }
+    .wa-eyebrow { font-size: 0.71rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--wa-amber); margin: 0 0 0.65rem; }
+    .wa-hero-copy h1 { margin: 0 0 0.65rem; max-width: 14ch; font-size: clamp(2.2rem,6vw,5rem); line-height: 0.93; letter-spacing: -0.055em; color: #fff; }
+    .wa-hero-copy h1 em { font-style: normal; color: var(--wa-amber); }
+    .wa-lede { max-width: 72ch; color: var(--wa-muted); font-size: clamp(0.93rem,1.4vw,1.04rem); line-height: 1.72; margin: 0 0 1rem; }
+    .wa-meta { display: flex; flex-wrap: wrap; gap: 0.38rem; }
+    .wa-quote-card { border-radius: var(--wa-radius); border: 1px solid rgba(245,158,11,0.26); background: linear-gradient(180deg, rgba(245,158,11,0.08), transparent 56%), rgba(14,10,26,0.82); padding: clamp(1.1rem,2.2vw,1.75rem); display: flex; flex-direction: column; justify-content: center; gap: 0.85rem; box-shadow: var(--wa-shadow); }
+    .wa-quote-mark { font-size: 2.8rem; line-height: 0.8; color: var(--wa-amber); opacity: 0.6; }
+    .wa-quote-text { font-size: clamp(0.9rem,1.9vw,1.08rem); font-style: italic; line-height: 1.62; color: #dff2fe; margin: 0; }
+    .wa-quote-attr { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--wa-amber); opacity: 0.9; }
+
+    /* ── Cards ───────────────────────────────────────── */
+    .wa-card { border-radius: var(--wa-radius); border: 1px solid var(--wa-line); background: var(--wa-panel); backdrop-filter: blur(10px); padding: clamp(1.1rem,2vw,1.55rem); scroll-margin-top: 72px; }
+    .wa-amber-acc  { border-left: 4px solid var(--wa-amber); }
+    .wa-teal-acc   { border-left: 4px solid var(--wa-teal); }
+    .wa-violet-acc { border-left: 4px solid var(--wa-violet); }
+    .wa-sky-acc    { border-left: 4px solid var(--wa-sky); }
+    .wa-green-acc  { border-left: 4px solid var(--wa-green); }
+    .wa-kicker { font-size: 0.69rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.4rem; }
+    .wa-amber-k  { color: var(--wa-amber); }
+    .wa-teal-k   { color: var(--wa-teal); }
+    .wa-violet-k { color: var(--wa-violet); }
+    .wa-sky-k    { color: var(--wa-sky); }
+    .wa-green-k  { color: var(--wa-green); }
+    .wa-card h2 { margin: 0 0 0.7rem; font-size: clamp(1.18rem,2.3vw,1.6rem); letter-spacing: -0.03em; color: #fff; }
+    .wa-card h3 { margin: 1rem 0 0.32rem; font-size: 0.99rem; letter-spacing: -0.02em; color: #ddd0f8; }
+    .wa-card p, .wa-card li { color: var(--wa-muted); font-size: 0.9rem; line-height: 1.72; margin: 0 0 0.62rem; }
+    .wa-card p:last-child { margin-bottom: 0; }
+    .wa-card ul { padding-left: 1.35rem; margin: 0.35rem 0 0.65rem; }
+
+    /* ── Two-column ──────────────────────────────────── */
+    .wa-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .wa-two { grid-template-columns: 1fr; } }
+
+    /* ── Info boxes ──────────────────────────────────── */
+    .wa-box { border-radius: var(--wa-radius); padding: 0.95rem 1.15rem; margin: 0.85rem 0; }
+    .wa-box.amber  { background: rgba(245,158,11,0.09);  border: 1px solid rgba(245,158,11,0.26); }
+    .wa-box.teal   { background: rgba(45,212,191,0.08);  border: 1px solid rgba(45,212,191,0.26); }
+    .wa-box.violet { background: rgba(139,92,246,0.09);  border: 1px solid rgba(139,92,246,0.26); }
+    .wa-box.sky    { background: rgba(56,189,248,0.08);  border: 1px solid rgba(56,189,248,0.26); }
+    .wa-box.green  { background: rgba(16,185,129,0.08);  border: 1px solid rgba(16,185,129,0.26); }
+    .wa-box strong { display: block; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.32rem; }
+    .wa-box.amber  strong { color: var(--wa-amber); }
+    .wa-box.teal   strong { color: var(--wa-teal); }
+    .wa-box.violet strong { color: var(--wa-violet); }
+    .wa-box.sky    strong { color: var(--wa-sky); }
+    .wa-box.green  strong { color: var(--wa-green); }
+    .wa-box p { margin: 0; font-size: 0.87rem; color: rgba(237,232,252,0.8); line-height: 1.65; }
+
+    /* ── Equations ───────────────────────────────────── */
+    .wa-eq { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: clamp(1rem,2.5vw,1.38rem); color: var(--wa-amber); text-align: center; padding: 0.9rem; letter-spacing: 0.04em; border-radius: var(--wa-radius); border: 1px solid rgba(245,158,11,0.22); background: rgba(245,158,11,0.07); margin: 0.75rem 0; }
+    .wa-eq.teal { color: var(--wa-teal); border-color: rgba(45,212,191,0.22); background: rgba(45,212,191,0.07); }
+
+    /* ── Timeline ────────────────────────────────────── */
+    .wa-timeline { position: relative; padding-left: 1.8rem; margin: 1rem 0 0; }
+    .wa-timeline::before { content: ""; position: absolute; left: 0.55rem; top: 0.5rem; bottom: 0.5rem; width: 2px; background: linear-gradient(180deg, var(--wa-amber), var(--wa-teal) 60%, var(--wa-violet)); border-radius: 2px; }
+    .wa-tl-item { position: relative; margin-bottom: 1.05rem; }
+    .wa-tl-item:last-child { margin-bottom: 0; }
+    .wa-tl-dot { position: absolute; left: -1.35rem; top: 0.26rem; width: 10px; height: 10px; border-radius: 50%; background: #080611; }
+    .wa-tl-item:nth-child(3n+1) .wa-tl-dot { border: 2px solid var(--wa-amber); }
+    .wa-tl-item:nth-child(3n+2) .wa-tl-dot { border: 2px solid var(--wa-teal); }
+    .wa-tl-item:nth-child(3n)   .wa-tl-dot { border: 2px solid var(--wa-violet); }
+    .wa-tl-date  { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 0.12rem; }
+    .wa-tl-item:nth-child(3n+1) .wa-tl-date { color: var(--wa-amber); }
+    .wa-tl-item:nth-child(3n+2) .wa-tl-date { color: var(--wa-teal); }
+    .wa-tl-item:nth-child(3n)   .wa-tl-date { color: var(--wa-violet); }
+    .wa-tl-title { font-size: 0.9rem; font-weight: 700; color: #fff; margin: 0 0 0.16rem; }
+    .wa-tl-desc  { font-size: 0.8rem; color: var(--wa-muted); line-height: 1.56; margin: 0; }
+
+    /* ── Application grid ────────────────────────────── */
+    .wa-apps { display: grid; grid-template-columns: repeat(auto-fill,minmax(155px,1fr)); gap: 0.62rem; margin: 0.9rem 0; }
+    .wa-app-card { border-radius: var(--wa-radius); padding: 0.85rem 0.95rem; border: 1px solid var(--wa-line); background: rgba(255,255,255,0.028); }
+    .wa-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .wa-app-name { font-size: 0.84rem; font-weight: 700; color: #e0d8fc; margin-bottom: 0.18rem; }
+    .wa-app-desc { font-size: 0.73rem; color: rgba(220,210,248,0.52); line-height: 1.45; }
+
+    /* ── Simulations ─────────────────────────────────── */
+    .wa-sim { border-radius: var(--wa-radius); border: 1px solid var(--wa-line); overflow: hidden; background: #030110; box-shadow: 0 16px 48px rgba(0,0,0,0.3); scroll-margin-top: 72px; }
+    .wa-sim-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.55rem; padding: 0.95rem 1.15rem 0.7rem; background: linear-gradient(180deg, rgba(255,255,255,0.035), transparent); }
+    .wa-sim-hl { display: flex; flex-direction: column; gap: 0.18rem; }
+    .wa-sim-title { font-size: 0.77rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .wa-sim-sub { font-size: 0.77rem; color: rgba(220,210,248,0.46); }
+    .wa-sim canvas { display: block; width: 100%; cursor: grab; }
+    .wa-sim canvas:active { cursor: grabbing; }
+    .wa-sim-controls { display: flex; flex-wrap: wrap; gap: 0.48rem 0.85rem; padding: 0.75rem 1.15rem; background: rgba(0,0,0,0.32); border-top: 1px solid rgba(255,255,255,0.06); }
+    .wa-ctrl { display: flex; flex-direction: column; gap: 0.2rem; min-width: 110px; }
+    .wa-ctrl label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(220,210,248,0.44); }
+    .wa-ctrl input[type="range"] { accent-color: var(--wa-amber); cursor: pointer; width: 100%; }
+    .wa-ctrl-val { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.72rem; font-weight: 700; color: var(--wa-amber); }
+    .wa-ctrl-val.teal { color: var(--wa-teal); }
+    .wa-readout { display: flex; flex-wrap: wrap; gap: 0.42rem; padding: 0.62rem 1.15rem; }
+    .wa-chip { display: flex; flex-direction: column; gap: 0.1rem; border-radius: var(--wa-radius); padding: 0.42rem 0.62rem; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.028); }
+    .wa-chip-label { font-size: 0.61rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(220,210,248,0.38); }
+    .wa-chip-val { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.83rem; font-weight: 700; color: #ddd0f8; }
+    .wa-btn { padding: 0.44rem 0.88rem; border-radius: var(--wa-radius); border: 1px solid rgba(245,158,11,0.42); background: rgba(245,158,11,0.13); color: #fde68a; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 0.14s; }
+    .wa-btn:hover { background: rgba(245,158,11,0.22); }
+
+    /* ── Footer ──────────────────────────────────────── */
+    .wa-footer { text-align: center; padding: 2rem 1rem; color: var(--wa-dim); font-size: 0.78rem; border-top: 1px solid var(--wa-line); background: rgba(8,6,17,0.66); }
+    .wa-footer a { color: var(--wa-amber); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="wa-topbar">
+  <div class="wa-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="wa-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="wa-nav">
+      <a href="#machine">What Is It?</a>
+      <a href="#ancient">Ancient World</a>
+      <a href="#sim1">MA Lab</a>
+      <a href="#medieval">Medieval &amp; Industrial</a>
+      <a href="#modern">Modern Day</a>
+      <a href="#sim2">Winch Lab</a>
+    </nav>
+    <div class="wa-pills">
+      <span class="wa-pill">Simple Machines</span>
+      <span class="wa-pill teal">Physics</span>
+    </div>
+  </div>
+</div>
+
+<div class="wa-shell">
+
+  <!-- ── Hero ──────────────────────────────────────── -->
+  <div class="wa-hero">
+    <div class="wa-hero-copy">
+      <p class="wa-eyebrow">Simple Machines · Classical Mechanics · History of Technology</p>
+      <h1>The <em>Wheel</em> and Axle</h1>
+      <p class="wa-lede">
+        5,500 years ago, Sumerian potters spun clay on the world's first wheels. Today, the same principle —
+        a large circle rigidly joined to a small cylinder — drives every car, turbine, and electric motor
+        on the planet. One simple geometry. An endless revolution.
+      </p>
+      <div class="wa-meta">
+        <span class="wa-pill">MA = R ÷ r</span>
+        <span class="wa-pill teal">2 Simulations</span>
+        <span class="wa-pill">Grades 4–12</span>
+      </div>
+    </div>
+    <div class="wa-quote-card">
+      <div class="wa-quote-mark">"</div>
+      <p class="wa-quote-text">
+        Give me a lever long enough and a fulcrum on which to place it, and I shall move the world.
+        The same principle — trading distance for force — lives at the heart of every wheel that ever turned.
+      </p>
+      <div class="wa-quote-attr">— Archimedes, ~250 BCE</div>
+    </div>
+  </div>
+
+  <!-- ── Section 1: What Is the Wheel and Axle? ────── -->
+  <div class="wa-card wa-amber-acc" id="machine">
+    <p class="wa-kicker wa-amber-k">Concept 1 · The Simple Machine</p>
+    <h2>What Is the Wheel and Axle?</h2>
+    <div class="wa-two">
+      <div>
+        <p>
+          The <strong>wheel and axle</strong> is one of the six classical simple machines — alongside
+          the lever, pulley, inclined plane, wedge, and screw. It consists of a large circular disk
+          (the <em>wheel</em>) rigidly fixed to a smaller cylinder (the <em>axle</em>), so both rotate
+          together as a single unit.
+        </p>
+        <p>
+          Think of it as a <strong>rotating lever</strong>. The wheel rim is the long arm; the axle
+          surface is the short arm. Apply a small force at the rim and you generate a large force at the
+          axle — or reverse it: a motor's large torque at the axle spins the rim very fast (a fan, a
+          turbine, a wheel).
+        </p>
+        <div class="wa-box amber">
+          <strong>Mechanical Advantage</strong>
+          <p>MA = R ÷ r &nbsp;(wheel radius ÷ axle radius)<br/>
+          A wheel of radius 30 cm with an axle of radius 3 cm gives MA = 10.
+          Apply 10 N at the rim → pull 100 N at the axle cord. Same work, different force.</p>
+        </div>
+        <div class="wa-box violet">
+          <strong>It's a Lever in Disguise</strong>
+          <p>Torque = Force × radius. The wheel and axle shares the same pivot between two
+          "lever arms" of lengths R and r. Torque in = Torque out (minus friction):<br/>
+          F_effort × R = F_load × r</p>
+        </div>
+      </div>
+      <div>
+        <h3>The Trade-Off: Force vs. Speed</h3>
+        <p>
+          Simple machines never create energy — they redistribute it. One full revolution moves a rope
+          at the wheel rim through 2πR, while a rope at the axle travels only 2πr. The wheel side
+          travels farther; the axle side pulls harder. You always pay in distance to gain in force.
+        </p>
+        <div class="wa-eq">MA = R / r</div>
+        <div class="wa-eq teal">F_load = F_effort × (R / r)</div>
+        <h3>Efficiency and Friction</h3>
+        <p>
+          Real wheel-and-axle systems lose some energy to friction at the <em>bearing</em> — the joint
+          where the axle meets its support. Ancient wooden axles were roughly 50–70% efficient. Modern
+          sealed ball-bearings reach 98–99%, making friction losses nearly negligible.
+        </p>
+        <div class="wa-box teal">
+          <strong>Two Directions, Two Uses</strong>
+          <p><strong>Force multiplication:</strong> Large wheel → small axle. Trade speed for force.
+          (Steering wheel, winch, screwdriver)<br/>
+          <strong>Speed multiplication:</strong> Small axle motor → large wheel. Trade force for speed.
+          (Fan blades, bicycle wheel, turbine)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SIM 1: Mechanical Advantage Lab ───────────── -->
+  <div class="wa-sim" id="sim1">
+    <div class="wa-sim-head">
+      <div class="wa-sim-hl">
+        <span class="wa-sim-title wa-amber-k">⚙ Mechanical Advantage Lab</span>
+        <span class="wa-sim-sub">Adjust wheel and axle radii — watch how force scales with MA = R ÷ r</span>
+      </div>
+    </div>
+    <canvas id="maCanvas" height="320"></canvas>
+    <div class="wa-sim-controls">
+      <div class="wa-ctrl">
+        <label>Wheel Radius R <span class="wa-ctrl-val" id="rWheelLabel">120</span></label>
+        <input type="range" id="rWheelSlider" min="70" max="155" value="120" />
+      </div>
+      <div class="wa-ctrl">
+        <label>Axle Radius r <span class="wa-ctrl-val teal" id="rAxleLabel">30</span></label>
+        <input type="range" id="rAxleSlider" min="8" max="55" value="30" />
+      </div>
+      <div class="wa-ctrl">
+        <label>Effort Force <span class="wa-ctrl-val" id="effortLabel">20 N</span></label>
+        <input type="range" id="effortSlider" min="5" max="80" value="20" />
+      </div>
+    </div>
+    <div class="wa-readout">
+      <span class="wa-chip"><span class="wa-chip-label">Mech. Advantage</span><span class="wa-chip-val" id="maVal">4.0×</span></span>
+      <span class="wa-chip"><span class="wa-chip-label">Load Force</span><span class="wa-chip-val" id="loadVal">80 N</span></span>
+      <span class="wa-chip"><span class="wa-chip-label">Rim Travel / rev</span><span class="wa-chip-val" id="rimTravelVal">754 px</span></span>
+      <span class="wa-chip"><span class="wa-chip-label">Axle Travel / rev</span><span class="wa-chip-val" id="axleTravelVal">188 px</span></span>
+    </div>
+  </div>
+
+  <!-- ── Section 2: Ancient Origins ────────────────── -->
+  <div class="wa-card wa-teal-acc" id="ancient">
+    <p class="wa-kicker wa-teal-k">History 1 · ~3500–200 BCE</p>
+    <h2>Ancient Origins: From Potter's Wheel to War Chariot</h2>
+    <div class="wa-two">
+      <div>
+        <p>
+          The earliest wheels were not for transport. Around <strong>3500 BCE</strong>, Sumerian potters
+          in Mesopotamia (modern Iraq) began spinning clay on a flat disk resting on a central pivot —
+          the <em>potter's wheel</em>. Spinning clay allowed perfectly symmetrical vessels at a speed and
+          quality hand-shaping could never match.
+        </p>
+        <p>
+          The leap to wheeled transport came around <strong>3200 BCE</strong>, also in Mesopotamia. Early
+          carts used solid wooden disks — cross-sections of tree trunks — lashed to a fixed axle. Heavy,
+          but revolutionary: oxen could now haul loads five to ten times greater than on sleds.
+        </p>
+        <div class="wa-box amber">
+          <strong>The Rotating Axle Breakthrough (~3000 BCE)</strong>
+          <p>Early solid wheels were fixed rigidly to the axle; everything spun together. Craftsmen
+          eventually discovered the <em>free-rotating axle</em> — the axle turns inside fixed supports
+          (the <em>nave</em> or hub). This cut friction dramatically and enabled faster, heavier loads.
+          Grease packed with animal fat served as the first lubricant.</p>
+        </div>
+        <div class="wa-box teal">
+          <strong>The Spoked Wheel (~2000 BCE)</strong>
+          <p>Removing most of a solid wheel's wood — leaving only spokes from hub to rim — created a
+          wheel roughly 70% lighter with nearly the same strength. The spoked wheel made the war chariot
+          possible and swept from Central Asia into Egypt, India, and China within centuries, carried
+          by trade and conquest.</p>
+        </div>
+      </div>
+      <div>
+        <div class="wa-timeline">
+          <div class="wa-tl-item">
+            <div class="wa-tl-dot"></div>
+            <p class="wa-tl-date">~3500 BCE · Sumer, Mesopotamia</p>
+            <p class="wa-tl-title">Potter's Wheel</p>
+            <p class="wa-tl-desc">Flat stone disk on a pivot, spun by hand, revolutionizes ceramic production. First use of rotational wheel-and-axle geometry.</p>
+          </div>
+          <div class="wa-tl-item">
+            <div class="wa-tl-dot"></div>
+            <p class="wa-tl-date">~3200 BCE · Mesopotamia &amp; Eastern Europe</p>
+            <p class="wa-tl-title">Wheeled Cart</p>
+            <p class="wa-tl-desc">Solid wooden disk wheels on a fixed axle appear simultaneously in Sumer and the Eurasian steppe. Oxen can now haul grain, stone, and timber at scale.</p>
+          </div>
+          <div class="wa-tl-item">
+            <div class="wa-tl-dot"></div>
+            <p class="wa-tl-date">~3000 BCE · Multiple regions</p>
+            <p class="wa-tl-title">Rotating Axle &amp; Hub</p>
+            <p class="wa-tl-desc">Axle rotates freely inside fixed nave supports packed with fat grease. Friction drops sharply; heavier loads and longer journeys become practical.</p>
+          </div>
+          <div class="wa-tl-item">
+            <div class="wa-tl-dot"></div>
+            <p class="wa-tl-date">~2000 BCE · Central Asia &amp; Egypt</p>
+            <p class="wa-tl-title">Spoked Wheel</p>
+            <p class="wa-tl-desc">Removing material between hub and rim yields a wheel 70% lighter — enabling the war chariot. Egyptian models use 4–6 bent-wood spokes with bronze hub fittings.</p>
+          </div>
+          <div class="wa-tl-item">
+            <div class="wa-tl-dot"></div>
+            <p class="wa-tl-date">~600 BCE · Greece &amp; Near East</p>
+            <p class="wa-tl-title">Windlass &amp; Capstan</p>
+            <p class="wa-tl-desc">A horizontal cylinder (windlass) cranked by spokes uses pure wheel-and-axle MA to lift heavy anchors and draw water from deep wells.</p>
+          </div>
+          <div class="wa-tl-item">
+            <div class="wa-tl-dot"></div>
+            <p class="wa-tl-date">~270 BCE · Alexandria</p>
+            <p class="wa-tl-title">Archimedes Formalizes MA</p>
+            <p class="wa-tl-desc">Archimedes articulates the principle of mechanical advantage. His compound pulley systems rely on wheel-and-axle geometry, and he builds enormous war machines for Syracuse.</p>
+          </div>
+          <div class="wa-tl-item">
+            <div class="wa-tl-dot"></div>
+            <p class="wa-tl-date">~100 BCE · Roman Empire</p>
+            <p class="wa-tl-title">Iron-Tired Wheels &amp; Water Mills</p>
+            <p class="wa-tl-desc">Romans shrink iron tires onto wooden wheels hot — they cool and clamp tight. Vitruvian water mills use a vertical waterwheel axle geared to millstones for flour production at industrial scale.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 3: Medieval → Industrial ──────────── -->
+  <div class="wa-card wa-violet-acc" id="medieval">
+    <p class="wa-kicker wa-violet-k">History 2 · 500 BCE – 1850 CE</p>
+    <h2>Waterwheel, Windmill, and Steam Engine</h2>
+    <div class="wa-two">
+      <div>
+        <h3>The Water Wheel (~200 BCE – 1800 CE)</h3>
+        <p>
+          By 100 BCE, Romans were operating <em>Vitruvian mills</em> — vertical waterwheels whose axle
+          coupled (via wooden gear trains) to millstone axles, multiplying the water's torque to grind
+          grain. By the 11th century, England alone had over 5,600 water mills (Domesday Book, 1086).
+        </p>
+        <p>
+          Waterwheels ground grain, powered bellows for iron smelting, drove sawmills, and operated
+          trip-hammers for shaping metal — all by transmitting and multiplying torque through
+          wheel-and-axle arrangements. The wheel and axle was the engine of the medieval economy.
+        </p>
+        <div class="wa-box violet">
+          <strong>Gears: Wheel-and-Axle in Series</strong>
+          <p>A gear train is simply a chain of meshed wheel-and-axle pairs. Each pair changes
+          the torque-to-speed ratio. Small gear → large gear: more force, less speed.
+          Large gear → small gear: more speed, less force. Medieval clockmakers used gear trains
+          to convert the slow fall of a stone weight into precise seconds-per-tick escapements —
+          the MA in miniature.</p>
+        </div>
+        <h3>Mechanical Clocks (~1275 CE)</h3>
+        <p>
+          Europe's first weight-driven mechanical clocks relied entirely on wheel-and-axle gear trains.
+          A descending weight turned a large wheel; that wheel engaged smaller pinion wheels, each
+          multiplying angular velocity until the final escapement ticked at exactly the right pace.
+          Every gear pair was a wheel-and-axle pair sharing a common shaft.
+        </p>
+      </div>
+      <div>
+        <h3>Windmills (~650–1100 CE)</h3>
+        <p>
+          Persian engineers built the first horizontal-axis windmills around 650–900 CE to pump water
+          in the arid interior. European post mills appeared around 1100 CE. Wind pushed the sail blades
+          (wheel); the central shaft (axle) transferred that torque through a gear train to millstones
+          or water pumps. By 1350, thousands of Dutch windmills were draining the low-lying polder lands.
+        </p>
+        <div class="wa-box sky">
+          <strong>The Spinning Wheel (c. 1300 CE)</strong>
+          <p>The hand-cranked spinning wheel replaced the hand spindle across Asia and Europe. A large
+          drive wheel (turned by hand or foot treadle) transferred torque via a belt to a tiny spindle
+          whorl — a classic wheel-and-axle pair — spinning fiber into thread at six to ten times the
+          speed of hand-spinning. This one device drove textile production for 500 years.</p>
+        </div>
+        <h3>The Industrial Revolution (1760–1850)</h3>
+        <p>
+          James Watt's steam engine (1769) converted the piston's jerky push into steady rotational
+          motion via a flywheel — a massive spinning disk that smoothed power output. Belt-and-pulley
+          systems (wheel-and-axle pairs) then distributed that rotation to dozens of looms and lathes
+          sharing a single factory shaft.
+        </p>
+        <p>
+          Stephenson's Rocket (1829) transferred engine torque directly to driving wheels via coupling
+          rods. By 1850 railways connected continents, and the wheel and axle was at the center of
+          every machine in every factory.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SIM 2: Well Winch Lab ──────────────────────── -->
+  <div class="wa-sim" id="sim2">
+    <div class="wa-sim-head">
+      <div class="wa-sim-hl">
+        <span class="wa-sim-title wa-teal-k">🪣 Ancient Well Winch — Wheel &amp; Axle in Action</span>
+        <span class="wa-sim-sub">Drag the crank handle in a circle to lift the bucket. Feel the force trade-off as you resize the wheel.</span>
+      </div>
+      <button class="wa-btn" id="winchReset">Reset</button>
+    </div>
+    <canvas id="winchCanvas" height="360"></canvas>
+    <div class="wa-sim-controls">
+      <div class="wa-ctrl">
+        <label>Wheel Radius R <span class="wa-ctrl-val" id="wWheelLabel">80</span></label>
+        <input type="range" id="wWheelSlider" min="30" max="130" value="80" />
+      </div>
+      <div class="wa-ctrl">
+        <label>Axle Radius r <span class="wa-ctrl-val teal" id="wAxleLabel">14</span></label>
+        <input type="range" id="wAxleSlider" min="6" max="32" value="14" />
+      </div>
+      <div class="wa-ctrl">
+        <label>Bucket Weight <span class="wa-ctrl-val" id="wWeightLabel">40 N</span></label>
+        <input type="range" id="wWeightSlider" min="10" max="100" value="40" />
+      </div>
+    </div>
+    <div class="wa-readout">
+      <span class="wa-chip"><span class="wa-chip-label">MA</span><span class="wa-chip-val" id="wMaVal">5.7×</span></span>
+      <span class="wa-chip"><span class="wa-chip-label">Crank Force Needed</span><span class="wa-chip-val" id="wCrankVal">7.0 N</span></span>
+      <span class="wa-chip"><span class="wa-chip-label">Bucket Height</span><span class="wa-chip-val" id="wHeightVal">0 m</span></span>
+      <span class="wa-chip"><span class="wa-chip-label">Rope Wound</span><span class="wa-chip-val" id="wRopeVal">0 cm</span></span>
+    </div>
+  </div>
+
+  <!-- ── Section 4: Modern World ───────────────────── -->
+  <div class="wa-card wa-sky-acc" id="modern">
+    <p class="wa-kicker wa-sky-k">History 3 · 1850 – Today</p>
+    <h2>From Rubber Tires to Jet Turbines</h2>
+    <div class="wa-two">
+      <div>
+        <h3>The Bicycle (1817–1885)</h3>
+        <p>
+          Karl von Drais' velocipede (1817) — two wheels, no pedals — evolved into the safety bicycle
+          (1885) with a chain connecting a large front chainring to a small rear sprocket. That pair is
+          a wheel-and-axle: the big ring drives the small sprocket with a mechanical advantage that
+          balances a rider's leg power against road speed. Modern derailleurs give 22 different MA
+          ratios for different terrain.
+        </p>
+        <h3>The Automobile (1886–present)</h3>
+        <p>
+          Karl Benz's Motorwagen (1886) used engine torque → crankshaft (axle) → gearbox (gear pairs,
+          each a wheel-and-axle) → driveshaft → differential (another wheel-and-axle arrangement) →
+          road wheels. The steering wheel is a pure wheel-and-axle: its large rim multiplies hand force
+          to turn a small steering column, achieving a typical MA of 15–20.
+        </p>
+        <div class="wa-box sky">
+          <strong>Ball Bearings: The Bearing Revolution</strong>
+          <p>Philip Vaughan patented ball bearings in 1794, but mass production came with 1880s bicycle
+          manufacturing. Replacing sliding friction with rolling friction cuts energy loss by ~95%.
+          Today a single jet engine contains thousands of precision ball bearings. Each one is, at its
+          core, a tiny wheel-and-axle system.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Electric Motors (1821–present)</h3>
+        <p>
+          Michael Faraday's first electric motor (1821) converted electrical energy into rotation: magnetic
+          force on current-carrying wires arranged in a circle (the "wheel") generated torque on a central
+          shaft (the "axle"). Every motor since uses this principle. An EV motor couples its shaft directly
+          to the drive wheels, achieving 94–97% efficiency — far beyond any combustion engine.
+        </p>
+        <h3>Turbines: 60,000 RPM Wheel and Axle</h3>
+        <p>
+          A jet engine's turbine stage is a wheel spinning at 10,000–25,000 RPM. Hot exhaust gases push
+          turbine blades (wheel) around a central shaft (axle), which compresses incoming air and powers
+          the front fan. Wind turbines run the same physics in reverse: wind drives the blades (wheel),
+          the shaft (axle) drives a generator. Modern offshore turbines with 100-m blades produce 15 MW.
+        </p>
+        <div class="wa-box green">
+          <strong>Modern Efficiency Records</strong>
+          <p>Combined-cycle gas turbines: 63% fuel-to-electricity efficiency.<br/>
+          Wind turbines: ~45% of the Betz theoretical maximum.<br/>
+          EV motors: 95%+ electrical-to-rotational efficiency.<br/>
+          Magnetic levitation bearings: near-zero friction — the wheel-and-axle approaching perfection.</p>
+        </div>
+      </div>
+    </div>
+    <h3>Modern Wheel-and-Axle Applications</h3>
+    <div class="wa-apps">
+      <div class="wa-app-card"><div class="wa-app-icon">🚗</div><div class="wa-app-name">Automobile</div><div class="wa-app-desc">Engine crankshaft → gearbox → differential → road wheels. Steering wheel MA ≈ 15–20.</div></div>
+      <div class="wa-app-card"><div class="wa-app-icon">✈️</div><div class="wa-app-name">Jet Turbine</div><div class="wa-app-desc">Turbine blades (wheel) on central shaft (axle) at 10,000–25,000 RPM. Every stage is a wheel-and-axle pair.</div></div>
+      <div class="wa-app-card"><div class="wa-app-icon">💨</div><div class="wa-app-name">Wind Turbine</div><div class="wa-app-desc">100-m blades (wheel) spin low-speed shaft → gearbox → generator. Up to 15 MW per turbine.</div></div>
+      <div class="wa-app-card"><div class="wa-app-icon">🚲</div><div class="wa-app-name">Bicycle Gears</div><div class="wa-app-desc">Chainring/sprocket pair adjusts MA from hill-climbing to flat-road sprinting.</div></div>
+      <div class="wa-app-card"><div class="wa-app-icon">⚡</div><div class="wa-app-name">Electric Motor</div><div class="wa-app-desc">Rotor (axle) spins inside stator (wheel housing). 94–97% efficient — closest to ideal.</div></div>
+      <div class="wa-app-card"><div class="wa-app-icon">🏗️</div><div class="wa-app-name">Tower Crane</div><div class="wa-app-desc">Electric motor → cable drum (axle) lifts hundreds of tons. MA = drum radius / crank radius.</div></div>
+      <div class="wa-app-card"><div class="wa-app-icon">🔩</div><div class="wa-app-name">Power Drill</div><div class="wa-app-desc">Motor shaft (axle) drives chuck. Clutch limits torque to protect screws and materials.</div></div>
+      <div class="wa-app-card"><div class="wa-app-icon">💿</div><div class="wa-app-name">Hard Drive / CD</div><div class="wa-app-desc">Magnetic or optical disk (wheel) spins on central spindle (axle) at 5,400–15,000 RPM.</div></div>
+    </div>
+  </div>
+
+  <!-- ── Section 5: Deeper Ideas ───────────────────── -->
+  <div class="wa-card wa-green-acc">
+    <p class="wa-kicker wa-green-k">Deeper Idea · Physics &amp; History United</p>
+    <h2>Five Thousand Years, One Principle</h2>
+    <div class="wa-two">
+      <div>
+        <p>
+          What makes the wheel and axle remarkable is not that humans invented it — it's that the
+          identical idea has persisted for 5,500 years without alteration. A Sumerian potter would
+          recognize the physics in a modern hard drive: a magnetic disk (wheel) spinning on a central
+          spindle (axle) at 7,200 RPM.
+        </p>
+        <p>
+          Feynman would note that the wheel and axle is just conservation of energy wearing a circular
+          costume. Energy in = Energy out (minus friction). Force × distance at the rim equals
+          Force × distance at the axle. Simple machines never give you something for free — they let
+          you choose <em>where</em> you want the difficulty.
+        </p>
+        <div class="wa-box green">
+          <strong>Torque: The Rotational Form of Work</strong>
+          <p>τ = F × r &nbsp;(torque = force × radius). The wheel and axle trades between two torques
+          at different radii. When you tighten a bolt with a long wrench, you're applying wheel-and-axle
+          logic: your long handle (large R) applies a small force → large torque at the bolt head
+          (small r). The wrench is a one-armed wheel-and-axle.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Why Did Wheels Take So Long?</h3>
+        <p>
+          Humans used tools for 2.5 million years before the wheel appeared around 3500 BCE. The delay
+          makes sense: wheels require flat, hard surfaces (roads), the ability to form a true circle
+          and a round bore (the hub hole), and precise tolerances between moving parts. These
+          requirements emerged only after agricultural civilization created the need for bulk transport
+          and the craft specialization to produce precise rotating joints.
+        </p>
+        <h3>What Comes Next?</h3>
+        <p>
+          Magnetic bearings — wheels floating on magnetic fields with zero mechanical contact — now
+          allow turbines to spin with virtually no friction. Superconducting motors for electric
+          aircraft target 99%+ efficiency. The wheel's performance is converging toward its theoretical
+          limit, 5,500 years after it was first scratched into Sumerian clay.
+        </p>
+        <div class="wa-box amber">
+          <strong>Key Takeaways</strong>
+          <p>
+            MA = R ÷ r — bigger wheel → more force at axle<br/>
+            Work in = Work out: F × 2πR = F_load × 2πr<br/>
+            Torque conserved (minus friction): F_effort × R = F_load × r<br/>
+            Every spinning machine contains a wheel-and-axle at its core
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="wa-footer site-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">All Lessons</a> ·
+  Simple Machines · Wheel &amp; Axle
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   SIM 1 — Mechanical Advantage Canvas
+   ═══════════════════════════════════════════════════════ */
+(function () {
+  const cv       = document.getElementById('maCanvas');
+  const ctx      = cv.getContext('2d');
+  const rWSl     = document.getElementById('rWheelSlider');
+  const rASl     = document.getElementById('rAxleSlider');
+  const effSl    = document.getElementById('effortSlider');
+  const rWLbl    = document.getElementById('rWheelLabel');
+  const rALbl    = document.getElementById('rAxleLabel');
+  const effLbl   = document.getElementById('effortLabel');
+  const maEl     = document.getElementById('maVal');
+  const loadEl   = document.getElementById('loadVal');
+  const rimTrEl  = document.getElementById('rimTravelVal');
+  const axlTrEl  = document.getElementById('axleTravelVal');
+
+  let angle = 0;
+
+  function resize() {
+    cv.width = cv.parentElement.clientWidth;
+    cv.height = 320;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function clampAxle() {
+    const R = +rWSl.value, r = +rASl.value;
+    if (r >= R - 12) rASl.value = R - 12;
+  }
+
+  function updateReadout() {
+    const R = +rWSl.value, r = +rASl.value, F = +effSl.value;
+    const MA   = (R / r).toFixed(2);
+    const load = (F * R / r).toFixed(1);
+    rWLbl.textContent   = R + '';
+    rALbl.textContent   = r + '';
+    effLbl.textContent  = F + ' N';
+    maEl.textContent    = MA + '×';
+    loadEl.textContent  = load + ' N';
+    rimTrEl.textContent  = (2 * Math.PI * R).toFixed(0) + ' px';
+    axlTrEl.textContent  = (2 * Math.PI * r).toFixed(0) + ' px';
+  }
+
+  rWSl.oninput = () => { clampAxle(); updateReadout(); };
+  rASl.oninput = () => { clampAxle(); updateReadout(); };
+  effSl.oninput = updateReadout;
+  updateReadout();
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    const R = +rWSl.value, r = +rASl.value, F = +effSl.value;
+    const cx = W / 2, cy = H / 2 + 8;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Subtle center shadow
+    const grd = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, R * 1.1);
+    grd.addColorStop(0, 'rgba(45,212,191,0.06)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.1, 0, Math.PI * 2); ctx.fill();
+
+    // Wheel ring
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(245,158,11,0.75)';
+    ctx.lineWidth = 2.5; ctx.stroke();
+
+    // Spokes
+    for (let i = 0; i < 8; i++) {
+      const a = angle + i * Math.PI / 4;
+      ctx.beginPath();
+      ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+      ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
+      ctx.strokeStyle = 'rgba(245,158,11,0.28)';
+      ctx.lineWidth = 1.5; ctx.stroke();
+    }
+
+    // Axle disk
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(45,212,191,0.12)';
+    ctx.strokeStyle = 'rgba(45,212,191,0.82)';
+    ctx.lineWidth = 2.5;
+    ctx.fill(); ctx.stroke();
+
+    // Hub dot
+    ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fill();
+
+    // Effort arrow — tangential to wheel rim (top, pointing right)
+    const eAngle = angle - Math.PI / 2;
+    const epx = cx + R * Math.cos(eAngle);
+    const epy = cy + R * Math.sin(eAngle);
+    const tangX = Math.cos(eAngle + Math.PI / 2);
+    const tangY = Math.sin(eAngle + Math.PI / 2);
+    const aLen = Math.min(F * 0.85, 65);
+
+    ctx.beginPath();
+    ctx.moveTo(epx, epy);
+    ctx.lineTo(epx + tangX * aLen, epy + tangY * aLen);
+    ctx.strokeStyle = 'rgba(245,158,11,0.95)';
+    ctx.lineWidth = 2.5; ctx.stroke();
+
+    ctx.save();
+    ctx.translate(epx + tangX * aLen, epy + tangY * aLen);
+    ctx.rotate(Math.atan2(tangY, tangX));
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-10, 4); ctx.lineTo(-10, -4); ctx.closePath();
+    ctx.fillStyle = 'rgba(245,158,11,0.95)'; ctx.fill();
+    ctx.restore();
+
+    // Load arrow — downward from axle bottom
+    const load = F * R / r;
+    const lLen = Math.min(load * 0.45, 72);
+    const lpx = cx, lpy = cy + r;
+
+    ctx.beginPath();
+    ctx.moveTo(lpx, lpy);
+    ctx.lineTo(lpx, lpy + lLen);
+    ctx.strokeStyle = 'rgba(45,212,191,0.9)';
+    ctx.lineWidth = 2.5; ctx.stroke();
+
+    ctx.save();
+    ctx.translate(lpx, lpy + lLen);
+    ctx.rotate(Math.PI / 2);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-10, 4); ctx.lineTo(-10, -4); ctx.closePath();
+    ctx.fillStyle = 'rgba(45,212,191,0.9)'; ctx.fill();
+    ctx.restore();
+
+    // Radius labels
+    ctx.font = '600 10px Inter,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(245,158,11,0.82)';
+    ctx.fillText('R = ' + R, cx, cy - R - 10);
+    ctx.fillStyle = 'rgba(45,212,191,0.82)';
+    ctx.fillText('r = ' + r, cx + r + 18, cy + 4);
+
+    // Force labels
+    ctx.font = '700 10px Inter,sans-serif'; ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(245,158,11,0.8)';
+    ctx.fillText(F + ' N effort', epx + tangX * aLen + 6, epy + tangY * aLen + 4);
+    ctx.fillStyle = 'rgba(45,212,191,0.8)'; ctx.textAlign = 'left';
+    ctx.fillText(load.toFixed(1) + ' N load', lpx + 8, lpy + lLen * 0.55);
+
+    // MA display centred at bottom
+    ctx.font = '800 15px "JetBrains Mono",monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillText('MA = ' + (R / r).toFixed(2) + '×', cx, H - 10);
+
+    angle += 0.011;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ═══════════════════════════════════════════════════════
+   SIM 2 — Well Winch / Crank
+   ═══════════════════════════════════════════════════════ */
+(function () {
+  const cv      = document.getElementById('winchCanvas');
+  const ctx     = cv.getContext('2d');
+  const wWSl    = document.getElementById('wWheelSlider');
+  const wASl    = document.getElementById('wAxleSlider');
+  const wWtSl   = document.getElementById('wWeightSlider');
+  const wWLbl   = document.getElementById('wWheelLabel');
+  const wALbl   = document.getElementById('wAxleLabel');
+  const wWtLbl  = document.getElementById('wWeightLabel');
+  const wMaEl   = document.getElementById('wMaVal');
+  const wCrEl   = document.getElementById('wCrankVal');
+  const wHtEl   = document.getElementById('wHeightVal');
+  const wRpEl   = document.getElementById('wRopeVal');
+
+  let crankAngle  = -Math.PI / 2;   // start handle pointing up-right
+  let ropeWound   = 0;              // px of rope wound onto axle drum
+  let dragging    = false;
+  let prevMouseAngle = 0;
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 360; }
+  resize(); window.addEventListener('resize', resize);
+
+  wWSl.oninput  = () => { wWLbl.textContent  = wWSl.value + ''; };
+  wASl.oninput  = () => { wALbl.textContent  = wASl.value + ''; };
+  wWtSl.oninput = () => { wWtLbl.textContent = wWtSl.value + ' N'; };
+
+  document.getElementById('winchReset').onclick = () => {
+    ropeWound   = 0;
+    crankAngle  = -Math.PI / 2;
+  };
+
+  /* Winch geometry helpers */
+  function winchCenter() {
+    return { x: cv.width * 0.35, y: cv.height * 0.32 };
+  }
+
+  function pointerAngle(e) {
+    const rect = cv.getBoundingClientRect();
+    const src  = e.touches ? e.touches[0] : e;
+    const mx   = src.clientX - rect.left;
+    const my   = src.clientY - rect.top;
+    const c    = winchCenter();
+    return Math.atan2(my - c.y, mx - c.x);
+  }
+
+  function handleDown(e) {
+    const R  = +wWSl.value;
+    const c  = winchCenter();
+    const rect = cv.getBoundingClientRect();
+    const src  = e.touches ? e.touches[0] : e;
+    const mx   = src.clientX - rect.left;
+    const my   = src.clientY - rect.top;
+    const hx   = c.x + R * Math.cos(crankAngle);
+    const hy   = c.y + R * Math.sin(crankAngle);
+    const dist = Math.hypot(mx - hx, my - hy);
+    if (dist < 22) {
+      dragging = true;
+      prevMouseAngle = pointerAngle(e);
+      e.preventDefault();
+    }
+  }
+
+  function handleMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const a = pointerAngle(e);
+    let delta = a - prevMouseAngle;
+    if (delta >  Math.PI) delta -= 2 * Math.PI;
+    if (delta < -Math.PI) delta += 2 * Math.PI;
+    crankAngle     += delta;
+    prevMouseAngle  = a;
+    const r  = +wASl.value;
+    const maxRope = cv.height * 0.52;
+    ropeWound = Math.max(0, Math.min(ropeWound + delta * r, maxRope));
+  }
+
+  function handleUp() { dragging = false; }
+
+  cv.addEventListener('mousedown',  handleDown,  { passive: false });
+  cv.addEventListener('touchstart', handleDown,  { passive: false });
+  window.addEventListener('mousemove',  handleMove);
+  window.addEventListener('touchmove',  handleMove, { passive: false });
+  window.addEventListener('mouseup',    handleUp);
+  window.addEventListener('touchend',   handleUp);
+
+  function draw() {
+    const W  = cv.width, H = cv.height;
+    const R  = +wWSl.value;
+    const r  = +wASl.value;
+    const Wt = +wWtSl.value;
+    const MA = (R / r).toFixed(2);
+    const crankForce = (Wt * r / R).toFixed(1);
+    const maxRope    = H * 0.52;
+    const bucketRise = Math.min(ropeWound, maxRope);
+
+    wMaEl.textContent  = MA + '×';
+    wCrEl.textContent  = crankForce + ' N';
+    wHtEl.textContent  = (bucketRise / 10).toFixed(1) + ' m';
+    wRpEl.textContent  = ropeWound.toFixed(0) + ' cm';
+
+    ctx.clearRect(0, 0, W, H);
+
+    const c = winchCenter();
+
+    /* Well structure */
+    const wellCX  = W * 0.65;
+    const wellTop = H * 0.22;
+    const wellW   = 82;
+    const wellDepth = H * 0.68;
+
+    // Well walls (stone texture suggestion)
+    ctx.fillStyle = 'rgba(90,65,35,0.35)';
+    ctx.fillRect(wellCX - wellW / 2, wellTop, wellW, wellDepth);
+    ctx.strokeStyle = 'rgba(160,120,60,0.5)'; ctx.lineWidth = 2;
+    ctx.strokeRect(wellCX - wellW / 2, wellTop, wellW, wellDepth);
+
+    // Well water surface
+    const waterY = wellTop + wellDepth * 0.72;
+    ctx.fillStyle = 'rgba(56,189,248,0.18)';
+    ctx.fillRect(wellCX - wellW / 2 + 2, waterY, wellW - 4, wellDepth * 0.27);
+    ctx.strokeStyle = 'rgba(56,189,248,0.45)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(wellCX - wellW / 2 + 2, waterY);
+    ctx.lineTo(wellCX + wellW / 2 - 2, waterY);
+    ctx.stroke();
+
+    // Drum (axle) at top of well
+    const drumX = wellCX, drumY = wellTop - r - 2;
+    ctx.beginPath(); ctx.arc(drumX, drumY, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(45,212,191,0.14)';
+    ctx.strokeStyle = 'rgba(45,212,191,0.75)'; ctx.lineWidth = 2;
+    ctx.fill(); ctx.stroke();
+
+    // Rope from drum down to bucket
+    const ropeStartY = drumY + r;
+    const bucketTopY = ropeStartY + (maxRope - bucketRise);
+
+    ctx.beginPath();
+    ctx.moveTo(drumX, ropeStartY);
+    ctx.lineTo(drumX, bucketTopY);
+    ctx.strokeStyle = 'rgba(200,165,90,0.85)'; ctx.lineWidth = 2; ctx.stroke();
+
+    // Bucket
+    const bW = 28, bH = 22;
+    ctx.fillStyle = 'rgba(90,60,25,0.7)';
+    ctx.strokeStyle = 'rgba(180,130,55,0.85)'; ctx.lineWidth = 1.5;
+    ctx.fillRect(drumX - bW / 2, bucketTopY, bW, bH);
+    ctx.strokeRect(drumX - bW / 2, bucketTopY, bW, bH);
+
+    // Water in bucket near top
+    if (bucketRise > maxRope * 0.65) {
+      ctx.fillStyle = 'rgba(56,189,248,0.5)';
+      ctx.fillRect(drumX - bW / 2 + 2, bucketTopY + bH * 0.45, bW - 4, bH * 0.48);
+    }
+
+    // Bucket weight label
+    ctx.font = 'bold 9px Inter,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(220,210,248,0.7)';
+    ctx.fillText(Wt + ' N', drumX, bucketTopY + bH + 12);
+
+    /* Shaft connecting crank to drum (dashed) */
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(drumX, drumY);
+    ctx.strokeStyle = 'rgba(200,165,90,0.25)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* Crank wheel */
+    ctx.beginPath(); ctx.arc(c.x, c.y, R, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(245,158,11,0.65)'; ctx.lineWidth = 2.5; ctx.stroke();
+
+    // Crank spokes (4)
+    for (let i = 0; i < 4; i++) {
+      const a = crankAngle + i * Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(c.x + r * Math.cos(a), c.y + r * Math.sin(a));
+      ctx.lineTo(c.x + R * Math.cos(a), c.y + R * Math.sin(a));
+      ctx.strokeStyle = 'rgba(245,158,11,0.35)'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+
+    // Axle hub
+    ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(45,212,191,0.12)';
+    ctx.strokeStyle = 'rgba(45,212,191,0.7)'; ctx.lineWidth = 2;
+    ctx.fill(); ctx.stroke();
+
+    // Center dot
+    ctx.beginPath(); ctx.arc(c.x, c.y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fill();
+
+    // Crank handle
+    const hx = c.x + R * Math.cos(crankAngle);
+    const hy = c.y + R * Math.sin(crankAngle);
+    ctx.beginPath(); ctx.arc(hx, hy, 9, 0, Math.PI * 2);
+    ctx.fillStyle = dragging ? '#f59e0b' : 'rgba(245,158,11,0.55)';
+    ctx.strokeStyle = '#fde68a'; ctx.lineWidth = 1.8;
+    ctx.fill(); ctx.stroke();
+
+    // Instruction hint
+    if (!dragging && ropeWound < 3) {
+      ctx.font = 'bold 12px Inter,sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(245,158,11,0.65)';
+      ctx.fillText('Grab the handle — drag to crank!', c.x, c.y + R + 22);
+    }
+
+    // Labels
+    ctx.font = '600 10px Inter,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(245,158,11,0.78)';
+    ctx.fillText('R = ' + R, c.x, c.y - R - 10);
+    ctx.fillStyle = 'rgba(45,212,191,0.78)';
+    ctx.fillText('r = ' + r, c.x + r + 18, c.y - 4);
+    ctx.fillStyle = 'rgba(200,195,240,0.55)';
+    ctx.fillText('MA = ' + MA + '  →  push ' + crankForce + ' N to lift ' + Wt + ' N', W / 2, H - 8);
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+
+</body>
+</html>
