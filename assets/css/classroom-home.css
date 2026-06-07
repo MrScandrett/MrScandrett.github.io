@@ -843,6 +843,25 @@ input[type="range"] {
   accent-color: var(--cos-range-accent, #0071e3);
 }
 
+/* =========================================================
+   THEME TRANSITIONS
+   Added to <html> only during switches, then removed by JS.
+   Skipped when the user prefers reduced motion.
+   ========================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition:
+      background-color 240ms ease,
+      color 240ms ease,
+      border-color 240ms ease,
+      box-shadow 240ms ease !important;
+    transition-delay: 0s !important;
+  }
+}
+
 html,
 body {
   margin: 0;
@@ -1344,7 +1363,7 @@ html[data-site-theme="diamond"] body {
 
 .nav-theme-chip {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 0.88rem;
   min-height: 4.35rem;
@@ -1415,13 +1434,25 @@ html[data-site-theme="diamond"] body {
   flex-shrink: 0;
 }
 
-.nav-theme-chip[data-theme="day"] .nav-theme-swatch   { background: linear-gradient(135deg, #dff1ff, #6eb6ff); }
-.nav-theme-chip[data-theme="night"] .nav-theme-swatch { background: linear-gradient(135deg, #445c93, #111827); }
-.nav-theme-chip[data-theme="sakura"] .nav-theme-swatch { background: linear-gradient(135deg, #fff7fb, #ff85b2); }
-.nav-theme-chip[data-theme="diamond"] .nav-theme-swatch { background: linear-gradient(135deg, #091224, #00c6ff); }
-.nav-theme-chip[data-theme="emerald"] .nav-theme-swatch { background: linear-gradient(135deg, #f4fff7, #50db82); }
-.nav-theme-chip[data-theme="topaz"] .nav-theme-swatch { background: linear-gradient(135deg, #fff9e3, #ffb900); }
+.nav-theme-chip[data-theme="day"]       .nav-theme-swatch { background: linear-gradient(135deg, #dff1ff, #6eb6ff); }
+.nav-theme-chip[data-theme="night"]     .nav-theme-swatch { background: linear-gradient(135deg, #445c93, #111827); }
+.nav-theme-chip[data-theme="sakura"]    .nav-theme-swatch { background: linear-gradient(135deg, #fff7fb, #ff85b2); }
+.nav-theme-chip[data-theme="diamond"]   .nav-theme-swatch { background: linear-gradient(135deg, #eafcff, #087985); }
+.nav-theme-chip[data-theme="emerald"]   .nav-theme-swatch { background: linear-gradient(135deg, #f4fff7, #50db82); }
+.nav-theme-chip[data-theme="topaz"]     .nav-theme-swatch { background: linear-gradient(135deg, #fff9e3, #ffb900); }
 .nav-theme-chip[data-theme="vaporwave"] .nav-theme-swatch { background: linear-gradient(135deg, #050505 12%, #ff00ff 52%, #00ffff 100%); }
+
+.nav-theme-tone {
+  font-size: 0.72rem;
+  opacity: 0.45;
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.nav-theme-chip.is-active .nav-theme-tone {
+  opacity: 0.7;
+}
 
 /* ── Mobile nav (≤ 680 px) ───────────────────────────────────────────────── */
 @media (max-width: 680px) {
@@ -14267,6 +14298,100 @@ html[data-theme="diamond"] .home-launch-card:focus-visible .card-emoji {
     drop-shadow(0 0 30px rgba(96, 232, 240, 0.24));
 }
 
+/* ── Start Class: restore dark gradient on light themes ─────────────────────
+   html[data-theme="X"] .home-launch-card has specificity 0-2-1, beating
+   .cos-home .home-start-class at 0-2-0, so it paints the Start Class with a
+   light/white background on each light theme. These rules (same 0-2-1, later
+   in file = cascade wins) restore a dark, theme-accented gradient so that the
+   white text remains legible. */
+
+html[data-theme="sakura"] .home-start-class,
+html[data-site-theme="sakura"] .home-start-class {
+  color: #fff;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.10), transparent 28%),
+    linear-gradient(135deg, #3d0d22, #8b1240 54%, #7a1a50);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 22px 50px rgba(139, 18, 64, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html[data-theme="sakura"] .home-start-class:hover,
+html[data-theme="sakura"] .home-start-class:focus-visible,
+html[data-site-theme="sakura"] .home-start-class:hover,
+html[data-site-theme="sakura"] .home-start-class:focus-visible {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.12), transparent 28%),
+    linear-gradient(135deg, #4d1130, #a01650 54%, #8f2060);
+  box-shadow: 0 24px 52px rgba(139, 18, 64, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+html[data-theme="emerald"] .home-start-class,
+html[data-site-theme="kiwi"] .home-start-class,
+html[data-site-theme="emerald"] .home-start-class {
+  color: #fff;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.10), transparent 28%),
+    linear-gradient(135deg, #0d281a, #155c36 54%, #0e6b3e);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 22px 50px rgba(21, 92, 54, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html[data-theme="emerald"] .home-start-class:hover,
+html[data-theme="emerald"] .home-start-class:focus-visible,
+html[data-site-theme="kiwi"] .home-start-class:hover,
+html[data-site-theme="kiwi"] .home-start-class:focus-visible,
+html[data-site-theme="emerald"] .home-start-class:hover,
+html[data-site-theme="emerald"] .home-start-class:focus-visible {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.12), transparent 28%),
+    linear-gradient(135deg, #122e1e, #196e42 54%, #11804a);
+  box-shadow: 0 24px 52px rgba(21, 92, 54, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+html[data-theme="topaz"] .home-start-class,
+html[data-site-theme="mango"] .home-start-class,
+html[data-site-theme="topaz"] .home-start-class {
+  color: #fff;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.10), transparent 28%),
+    linear-gradient(135deg, #3b1e00, #7a4400 54%, #5c3800);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 22px 50px rgba(122, 68, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html[data-theme="topaz"] .home-start-class:hover,
+html[data-theme="topaz"] .home-start-class:focus-visible,
+html[data-site-theme="mango"] .home-start-class:hover,
+html[data-site-theme="mango"] .home-start-class:focus-visible,
+html[data-site-theme="topaz"] .home-start-class:hover,
+html[data-site-theme="topaz"] .home-start-class:focus-visible {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.12), transparent 28%),
+    linear-gradient(135deg, #4a2700, #924f00 54%, #6e4200);
+  box-shadow: 0 24px 52px rgba(122, 68, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+html[data-theme="diamond"] .home-start-class {
+  color: #fff;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.10), transparent 28%),
+    linear-gradient(135deg, #062832, #085c6e 54%, #0a7888);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 22px 50px rgba(8, 92, 110, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html[data-theme="diamond"] .home-start-class:hover,
+html[data-theme="diamond"] .home-start-class:focus-visible {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.12), transparent 28%),
+    linear-gradient(135deg, #083240, #096e83 54%, #0c8fa2);
+  box-shadow: 0 24px 52px rgba(8, 92, 110, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
 html[data-theme="diamond"] .home-widget--weather .home-weather-shell {
   background:
     radial-gradient(circle at top right, rgba(96, 232, 240, 0.28), transparent 30%),
@@ -14588,13 +14713,14 @@ html[data-lighting="night"] .home-widget--weather .home-weather-shell {
   justify-items: start;
   gap: 1rem;
   color: #fff;
+  /* Darkened so every stop clears 4.5:1 contrast with white (#159957 was only 3.6:1) */
   background:
-    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.34), transparent 30%),
-    linear-gradient(135deg, #11324a, #0d6b7f 54%, #159957);
-  border-color: rgba(255, 255, 255, 0.34);
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.10), transparent 28%),
+    linear-gradient(135deg, #0d2b3e, #0a5e70 54%, #0d6338);
+  border-color: rgba(255, 255, 255, 0.26);
   box-shadow:
     0 22px 50px rgba(13, 107, 127, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
   text-align: left;
 }
 
@@ -14962,6 +15088,15 @@ body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widg
 
 body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather :is(.home-weather-condition, .home-weather-range, .home-weather-station, .home-weather-status, .stat-label, .forecast-day) {
   color: #315e66;
+}
+
+/* Fix remaining white-on-white text in diamond's light weather panel */
+body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather .home-weather-city {
+  color: #086875;
+}
+body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather .home-weather-temp {
+  background: linear-gradient(180deg, #0a3d47 0%, #086875 54%, #087985 100%);
+  filter: none;
 }
 
 body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather :is(.weather-header, .home-weather-dashboard, .weather-forecast),

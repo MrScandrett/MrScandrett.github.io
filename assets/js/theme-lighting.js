@@ -14,6 +14,10 @@
   }
 
   function getAutoTheme(date) {
+    if (window.matchMedia) {
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches)  return "night";
+      if (window.matchMedia("(prefers-color-scheme: light)").matches) return "day";
+    }
     var hours = date.getHours();
     return (hours >= 6 && hours < 19) ? "day" : "night";
   }
@@ -80,7 +84,19 @@
     window.dispatchEvent(event);
   }
 
+  function cosTransition() {
+    if (!document.documentElement) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var html = document.documentElement;
+    clearTimeout(html._cosThemeTimer);
+    html.classList.add("theme-transitioning");
+    html._cosThemeTimer = setTimeout(function () {
+      html.classList.remove("theme-transitioning");
+    }, 260);
+  }
+
   function applyTheme(theme) {
+    cosTransition();
     isApplyingTheme = true;
     if (isThemeIndependent()) {
       document.documentElement.removeAttribute("data-theme");
@@ -212,6 +228,17 @@
   } else {
     sync();
     highlightBrandOS();
+  }
+
+  // Re-sync when the OS dark/light preference changes (e.g. user switches system appearance).
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var mqHandler = function () { if (getMode() === "auto") sync(); };
+    try {
+      mq.addEventListener("change", mqHandler);
+    } catch (e) {
+      try { mq.addListener(mqHandler); } catch (e2) {}
+    }
   }
 
   if (typeof MutationObserver === "function") {

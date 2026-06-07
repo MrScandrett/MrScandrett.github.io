@@ -254,13 +254,13 @@
     '</svg>';
 
   var THEME_OPTIONS = [
-    { id: "day", label: "Day", detail: "Default bright ClassroomOS look." },
-    { id: "night", label: "Night", detail: "A darker version for evening use." },
-    { id: "sakura", label: "Sakura", detail: "Soft pink and white with cherry blossom drift." },
-    { id: "diamond", label: "Diamond", detail: "An icy light blue gemstone glow." },
-    { id: "emerald", label: "Emerald", detail: "A pale green gemstone shine." },
-    { id: "topaz", label: "Honey", detail: "Sunlit amber with a bright hive glow." },
-    { id: "vaporwave", label: "Vaporwave", detail: "Broken VHS neon with a corrupted rainbow horizon." }
+    { id: "day",       label: "Day",       detail: "Clean and bright — the default ClassroomOS look.",      tone: "light" },
+    { id: "sakura",    label: "Sakura",    detail: "Cherry blossom pink with a soft spring glow.",           tone: "light" },
+    { id: "diamond",   label: "Diamond",   detail: "Icy teal blue — crisp, cool, and focused.",             tone: "light" },
+    { id: "emerald",   label: "Emerald",   detail: "Fresh leaf green — calm and easy on the eyes.",         tone: "light" },
+    { id: "topaz",     label: "Honey",     detail: "Warm amber — like afternoon sunlight through a window.", tone: "light" },
+    { id: "night",     label: "Night",     detail: "Easy on the eyes after dark — full dark mode.",          tone: "dark"  },
+    { id: "vaporwave", label: "Vaporwave", detail: "Neon magenta and cyan — retro synthwave vibes.",        tone: "dark"  }
   ];
 
   var CANVAS_OPTIONS = [
@@ -355,8 +355,31 @@
   }
 
   function getThemeFromDate(date) {
+    if (window.matchMedia) {
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches)  return "night";
+      if (window.matchMedia("(prefers-color-scheme: light)").matches) return "day";
+    }
     var hours = date.getHours();
     return (hours >= 6 && hours < 19) ? "day" : "night";
+  }
+
+  function getAutoReason() {
+    if (window.matchMedia) {
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches)  return "system (dark)";
+      if (window.matchMedia("(prefers-color-scheme: light)").matches) return "system (light)";
+    }
+    return "local time";
+  }
+
+  function cosTransition() {
+    if (!document.documentElement) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var html = document.documentElement;
+    clearTimeout(html._cosThemeTimer);
+    html.classList.add("theme-transitioning");
+    html._cosThemeTimer = setTimeout(function () {
+      html.classList.remove("theme-transitioning");
+    }, 260);
   }
 
   function getLightingForTheme(theme) {
@@ -570,22 +593,41 @@
       optionBtn.type = "button";
       optionBtn.className = "nav-theme-chip";
       optionBtn.setAttribute("data-theme", option.id);
+      optionBtn.setAttribute("data-tone", option.tone || "light");
       optionBtn.setAttribute("role", "listitem");
       optionBtn.setAttribute("aria-label", option.label + " theme \u2014 " + option.detail);
       optionBtn.setAttribute("aria-pressed", "false");
+      var toneSymbol = option.tone === "dark" ? "\u25d0" : "\u25cb"; // \u25d0 dark, \u25cb light
       optionBtn.innerHTML =
         '<span class="nav-theme-swatch" aria-hidden="true"></span>' +
         '<span class="nav-theme-label">' +
           "<strong>" + option.label + "</strong>" +
           "<small>" + option.detail + "</small>" +
-        "</span>";
+        "</span>" +
+        '<span class="nav-theme-tone" aria-hidden="true" title="' + (option.tone === "dark" ? "Dark" : "Light") + ' theme">' + toneSymbol + "</span>";
       optionBtn.addEventListener("click", function () {
+        cosTransition();
         if (typeof lighting.setTheme === "function") lighting.setTheme(option.id);
         else lighting.setPhase(option.id);
         syncLightingUi();
       });
       themeGrid.appendChild(optionBtn);
     });
+
+    // Arrow key navigation across theme chips (WCAG roving focus pattern for radio-group-like grids).
+    if (themeGrid) {
+      themeGrid.addEventListener("keydown", function (e) {
+        if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+        var chips = Array.prototype.slice.call(themeGrid.querySelectorAll(".nav-theme-chip:not([disabled])"));
+        var idx = chips.indexOf(document.activeElement);
+        if (idx === -1) return;
+        e.preventDefault();
+        var next = (e.key === "ArrowRight" || e.key === "ArrowDown")
+          ? chips[(idx + 1) % chips.length]
+          : chips[(idx - 1 + chips.length) % chips.length];
+        if (next) next.focus();
+      });
+    }
 
     if (modeControls) {
       modeControls.querySelectorAll(".nav-mode-pill").forEach(function (button) {
@@ -608,6 +650,7 @@
         button.addEventListener("click", function () {
           var tone = button.getAttribute("data-tone");
           if (!tone) return;
+          cosTransition();
           if (typeof lighting.setTheme === "function") lighting.setTheme(tone);
           else lighting.setPhase(tone);
           syncLightingUi();
@@ -697,8 +740,16 @@
 
     if (settingsCurrent) {
       settingsCurrent.textContent = mode === "auto"
-        ? "Following local time, currently " + getOptionLabel(activeId)
+        ? "Following " + getAutoReason() + ", currently " + getOptionLabel(activeId)
         : getOptionLabel(activeId);
+    }
+
+    if (autoNote) {
+      var reason = getAutoReason();
+      var isSystemBased = reason.indexOf("system") === 0;
+      autoNote.innerHTML = isSystemBased
+        ? "Following your <strong>system appearance</strong> — select <strong>Manual</strong> above to choose a theme."
+        : "Following <strong>local time</strong> — select <strong>Manual</strong> above to choose a theme.";
     }
 
     if (settingsStatus) {
