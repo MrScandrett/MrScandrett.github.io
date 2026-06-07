@@ -155,6 +155,24 @@
     .r-chip-label { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(254,243,232,0.36); }
     .r-chip-val { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.82rem; font-weight: 700; color: #fde68a; }
 
+    /* Figures, photos, diagrams, video embeds */
+    .r-figure { margin: 0.85rem 0; border-radius: var(--r-radius); overflow: hidden; border: 1px solid var(--r-line); background: #0a0806; }
+    .r-figure img { display: block; width: 100%; height: auto; max-height: 400px; object-fit: cover; object-position: center top; }
+    .r-figcaption { padding: 0.45rem 0.85rem; font-size: 0.68rem; color: var(--r-dim); line-height: 1.6; border-top: 1px solid var(--r-line); }
+    .r-figcaption a { color: var(--r-amber); text-decoration: none; }
+    .r-photo-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; margin: 0.85rem 0; }
+    .r-photo-row .r-figure { margin: 0; }
+    .r-photo-row .r-figure img { max-height: 240px; }
+    .r-video-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: var(--r-radius); border: 1px solid var(--r-line); background: #050304; margin: 0; }
+    .r-video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: var(--r-radius); }
+    .r-video-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin: 0.85rem 0; }
+    @media (max-width:900px) { .r-video-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width:580px) { .r-video-grid { grid-template-columns: 1fr; } }
+    .r-video-label { font-size: 0.72rem; font-weight: 700; color: var(--r-muted); margin: 0 0 0.35rem; }
+    .r-diagram { background: #050304; border-radius: var(--r-radius); border: 1px solid var(--r-line); padding: 1.1rem 1rem 0.7rem; margin: 0.85rem 0; overflow-x: auto; }
+    .r-diagram svg { display: block; width: 100%; height: auto; }
+    .r-diagram-cap { font-size: 0.7rem; color: var(--r-dim); text-align: center; margin: 0.4rem 0 0; line-height: 1.55; }
+
     /* Footer */
     .r-footer { text-align: center; padding: 2rem 1rem; color: var(--r-dim); font-size: 0.78rem; border-top: 1px solid var(--r-line); background: rgba(8,6,8,0.7); border-radius: 0 0 var(--r-radius) var(--r-radius); }
     .r-footer a { color: var(--r-amber); text-decoration: none; }
@@ -172,6 +190,9 @@
       <a href="#gait">Tripod Gait</a>
       <a href="#simulator">Simulator</a>
       <a href="#bristle">Build a Bristle Bot</a>
+      <a href="#popsicle">Popsicle Stick Bug</a>
+      <a href="#boston">Boston Dynamics</a>
+      <a href="#next">Next Lessons</a>
     </nav>
     <div class="r-pills">
       <span class="r-pill">Engineering</span>
@@ -253,6 +274,10 @@
         </div>
       </div>
     </div>
+    <figure class="r-figure">
+      <img src="https://upload.wikimedia.org/wikipedia/en/1/14/Genghis_Robot.jpg" alt="The Genghis hexapod robot — covered in sensors, six-legged, built at the MIT AI Lab in 1989 by Rodney Brooks. It is about the size of a large shoe box." loading="lazy"/>
+      <figcaption><strong>Genghis (1989)</strong> — Rodney Brooks' six-legged subsumption robot at the MIT AI Lab, Cambridge, MA. Each leg has its own controller; walking emerges from local rules with no central brain. Now in the collection of the Smithsonian National Air and Space Museum. Image: <a href="https://en.wikipedia.org/wiki/Genghis_(robot)" target="_blank" rel="noopener">Wikipedia · Genghis (robot)</a> · © Massachusetts Institute of Technology (used for educational identification).</figcaption>
+    </figure>
   </div>
 
   <!-- ══ Subsumption Architecture ══════════════════════════ -->
@@ -328,6 +353,10 @@
         <p style="font-size:0.75rem;color:var(--r-dim);margin:0.35rem 0 0;">Layers 0–2 are always active. Higher layers activate only when needed. The dots animate in the simulator below.</p>
       </div>
     </div>
+    <figure class="r-figure" style="margin-top:0.85rem;">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/d/dd/Subsumption_Architecture_Abstract_Diagram.png" alt="Abstract diagram of subsumption architecture showing layered behavior modules where higher layers can suppress the output of lower layers." loading="lazy" style="object-fit:contain;background:#fff;max-height:300px;padding:0.5rem;"/>
+      <figcaption><strong>Subsumption Architecture</strong> — abstract diagram showing how behavior layers stack and suppress each other. Layer 0 (bottom) always runs; each higher layer can override the one below it when triggered. Diagram by KodoKB, <a href="https://commons.wikimedia.org/wiki/File:Subsumption_Architecture_Abstract_Diagram.png" target="_blank" rel="noopener">Wikimedia Commons</a> · Public Domain (CC0).</figcaption>
+    </figure>
   </div>
 
   <!-- ══ Tripod Gait ════════════════════════════════════════ -->
@@ -371,6 +400,85 @@
           hexapod design independently dozens of times.</p>
         </div>
       </div>
+    </div>
+
+    <div class="r-diagram">
+      <svg viewBox="0 0 580 250" xmlns="http://www.w3.org/2000/svg">
+        <!-- Legend -->
+        <circle cx="15" cy="16" r="8" fill="#f59e0b"/>
+        <text x="28" y="20" fill="rgba(254,243,232,0.75)" font-size="9" font-weight="700" font-family="Inter,sans-serif">Stance — on ground, bearing weight</text>
+        <circle cx="256" cy="16" r="7" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+        <text x="270" y="20" fill="rgba(254,243,232,0.75)" font-size="9" font-weight="700" font-family="Inter,sans-serif">Swing — lifted, stepping forward</text>
+
+        <!-- Forward labels -->
+        <text x="150" y="36" fill="rgba(254,243,232,0.28)" font-size="8" font-weight="700" font-family="Inter,sans-serif" text-anchor="middle">▲ FORWARD</text>
+        <text x="430" y="36" fill="rgba(254,243,232,0.28)" font-size="8" font-weight="700" font-family="Inter,sans-serif" text-anchor="middle">▲ FORWARD</text>
+
+        <!-- ═══ PHASE 1: Group A stance (amber), Group B swing (sky) ═══ -->
+        <!-- Group A — stance: FR, ML, BR -->
+        <line x1="182" y1="103" x2="214" y2="58" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="214" cy="58" r="9" fill="#f59e0b"/>
+        <line x1="108" y1="120" x2="53" y2="120" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="53" cy="120" r="9" fill="#f59e0b"/>
+        <line x1="182" y1="137" x2="214" y2="182" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="214" cy="182" r="9" fill="#f59e0b"/>
+        <!-- Group B — swing: FL, MR, BL -->
+        <line x1="118" y1="103" x2="86" y2="58" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6,4" stroke-linecap="round"/>
+        <circle cx="86" cy="58" r="7" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+        <line x1="192" y1="120" x2="247" y2="120" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6,4" stroke-linecap="round"/>
+        <circle cx="247" cy="120" r="7" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+        <line x1="118" y1="137" x2="86" y2="182" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6,4" stroke-linecap="round"/>
+        <circle cx="86" cy="182" r="7" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+        <!-- Body Phase 1 -->
+        <ellipse cx="150" cy="120" rx="40" ry="26" fill="#1e1208" stroke="#f59e0b" stroke-width="2"/>
+        <polygon points="150,100 145,108 155,108" fill="#f59e0b" opacity="0.8"/>
+        <!-- Leg labels Phase 1 -->
+        <text x="224" y="56" fill="#f59e0b" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">FR</text>
+        <text x="27" y="123" fill="#f59e0b" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">ML</text>
+        <text x="224" y="186" fill="#f59e0b" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">BR</text>
+        <text x="60" y="56" fill="#38bdf8" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">FL</text>
+        <text x="255" y="123" fill="#38bdf8" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">MR</text>
+        <text x="60" y="186" fill="#38bdf8" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">BL</text>
+        <!-- Phase 1 label -->
+        <rect x="88" y="208" width="124" height="32" rx="6" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.32)" stroke-width="1"/>
+        <text x="150" y="221" fill="#f59e0b" font-size="9" font-weight="800" font-family="Inter,sans-serif" text-anchor="middle">TRIPOD A GROUNDED</text>
+        <text x="150" y="232" fill="rgba(245,158,11,0.55)" font-size="8" font-family="Inter,sans-serif" text-anchor="middle">FR · ML · BR on surface</text>
+
+        <!-- Center alternating arrow -->
+        <text x="290" y="130" fill="rgba(254,243,232,0.18)" font-size="40" font-family="sans-serif" text-anchor="middle">⇌</text>
+        <text x="290" y="155" fill="rgba(254,243,232,0.14)" font-size="9" font-family="Inter,sans-serif" text-anchor="middle">ALTERNATES</text>
+
+        <!-- ═══ PHASE 2: Group B stance (sky), Group A swing (amber) ═══ -->
+        <!-- Group B — stance: FL, MR, BL -->
+        <line x1="398" y1="103" x2="366" y2="58" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="366" cy="58" r="9" fill="#38bdf8"/>
+        <line x1="472" y1="120" x2="527" y2="120" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="527" cy="120" r="9" fill="#38bdf8"/>
+        <line x1="398" y1="137" x2="366" y2="182" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="366" cy="182" r="9" fill="#38bdf8"/>
+        <!-- Group A — swing: FR, ML, BR -->
+        <line x1="462" y1="103" x2="494" y2="58" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4" stroke-linecap="round"/>
+        <circle cx="494" cy="58" r="7" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+        <line x1="388" y1="120" x2="333" y2="120" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4" stroke-linecap="round"/>
+        <circle cx="333" cy="120" r="7" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+        <line x1="462" y1="137" x2="494" y2="182" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4" stroke-linecap="round"/>
+        <circle cx="494" cy="182" r="7" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+        <!-- Body Phase 2 -->
+        <ellipse cx="430" cy="120" rx="40" ry="26" fill="#1e1208" stroke="#f59e0b" stroke-width="2"/>
+        <polygon points="430,100 425,108 435,108" fill="#f59e0b" opacity="0.8"/>
+        <!-- Leg labels Phase 2 -->
+        <text x="340" y="56" fill="#38bdf8" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">FL</text>
+        <text x="535" y="123" fill="#38bdf8" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">MR</text>
+        <text x="340" y="186" fill="#38bdf8" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">BL</text>
+        <text x="502" y="56" fill="#f59e0b" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">FR</text>
+        <text x="305" y="123" fill="#f59e0b" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">ML</text>
+        <text x="502" y="186" fill="#f59e0b" font-size="10" font-weight="800" font-family="'JetBrains Mono',monospace">BR</text>
+        <!-- Phase 2 label -->
+        <rect x="368" y="208" width="124" height="32" rx="6" fill="rgba(56,189,248,0.1)" stroke="rgba(56,189,248,0.32)" stroke-width="1"/>
+        <text x="430" y="221" fill="#38bdf8" font-size="9" font-weight="800" font-family="Inter,sans-serif" text-anchor="middle">TRIPOD B GROUNDED</text>
+        <text x="430" y="232" fill="rgba(56,189,248,0.55)" font-size="8" font-family="Inter,sans-serif" text-anchor="middle">FL · MR · BL on surface</text>
+      </svg>
+      <p class="r-diagram-cap">Top-down view of a hexapod in tripod gait. Filled circles = leg on the ground. Dashed lines = leg lifted and stepping. The two tripods alternate so three points always contact the surface — a triangle is the most stable base possible.</p>
     </div>
   </div>
 
@@ -503,15 +611,238 @@
       </div>
     </div>
 
-    <div class="r-box amber" style="margin-top:0.4rem;">
-      <strong>The Science Behind It: Why Does It Move Forward?</strong>
-      <p>The bristles act like a one-way ratchet. When the motor vibrates, it shakes the
-      toothbrush up and down at high frequency. On the downstroke, the angled bristles
-      flex backward and grip the surface. On the upstroke, the bristles spring forward,
-      pushing the bot in that direction. Each tiny vibration cycle produces a tiny forward
-      push. At hundreds of vibrations per second, those tiny pushes add up to real
-      movement — the same way your leg muscles produce walking from millions of tiny
-      contractions.</p>
+    <div class="r-two" style="margin-top:0.75rem;align-items:start;">
+      <div>
+        <div class="r-box amber">
+          <strong>The Science Behind It: Why Does It Move Forward?</strong>
+          <p>The bristles act like a one-way ratchet. When the motor vibrates, it shakes the
+          toothbrush up and down at high frequency. On the <strong>downstroke</strong>, the angled bristles
+          flex backward and grip the surface. On the <strong>upstroke</strong>, the bristles spring forward,
+          pushing the bot in that direction. Each tiny vibration cycle produces a tiny forward
+          push. At hundreds of vibrations per second, those tiny pushes add up to real
+          movement — the same way your leg muscles produce walking from millions of tiny
+          contractions.</p>
+        </div>
+        <div class="r-diagram" style="margin-top:0.6rem;">
+          <svg viewBox="0 0 480 205" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ground surface -->
+            <line x1="18" y1="178" x2="462" y2="178" stroke="rgba(254,243,232,0.18)" stroke-width="2"/>
+            <line x1="40" y1="178" x2="28" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <line x1="80" y1="178" x2="68" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <line x1="120" y1="178" x2="108" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <line x1="160" y1="178" x2="148" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <line x1="200" y1="178" x2="188" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <line x1="240" y1="178" x2="228" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <line x1="280" y1="178" x2="268" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <line x1="320" y1="178" x2="308" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <line x1="360" y1="178" x2="348" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <line x1="400" y1="178" x2="388" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <line x1="440" y1="178" x2="428" y2="196" stroke="rgba(254,243,232,0.08)" stroke-width="1"/>
+            <!-- Angled bristles from body bottom (y=88) to ground (y=178), 28px backward -->
+            <line x1="82" y1="88" x2="54" y2="178" stroke="rgba(74,222,128,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="118" y1="88" x2="90" y2="178" stroke="rgba(74,222,128,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="154" y1="88" x2="126" y2="178" stroke="rgba(74,222,128,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="190" y1="88" x2="162" y2="178" stroke="rgba(74,222,128,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="226" y1="88" x2="198" y2="178" stroke="rgba(74,222,128,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="262" y1="88" x2="234" y2="178" stroke="rgba(74,222,128,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="298" y1="88" x2="270" y2="178" stroke="rgba(74,222,128,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="334" y1="88" x2="306" y2="178" stroke="rgba(74,222,128,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Grip dots -->
+            <circle cx="54" cy="178" r="3" fill="rgba(74,222,128,0.45)"/>
+            <circle cx="90" cy="178" r="3" fill="rgba(74,222,128,0.45)"/>
+            <circle cx="126" cy="178" r="3" fill="rgba(74,222,128,0.45)"/>
+            <circle cx="162" cy="178" r="3" fill="rgba(74,222,128,0.45)"/>
+            <circle cx="198" cy="178" r="3" fill="rgba(74,222,128,0.45)"/>
+            <circle cx="234" cy="178" r="3" fill="rgba(74,222,128,0.45)"/>
+            <circle cx="270" cy="178" r="3" fill="rgba(74,222,128,0.45)"/>
+            <circle cx="306" cy="178" r="3" fill="rgba(74,222,128,0.45)"/>
+            <!-- Bot body -->
+            <rect x="58" y="58" width="295" height="30" rx="6" fill="#1e1208" stroke="rgba(245,158,11,0.35)" stroke-width="1.5"/>
+            <text x="205" y="77" fill="rgba(245,158,11,0.7)" font-size="9" font-weight="700" font-family="Inter,sans-serif" text-anchor="middle">BOT BODY — vibrates ↕</text>
+            <!-- Motor on top of body -->
+            <ellipse cx="205" cy="44" rx="30" ry="14" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.4)" stroke-width="1.5"/>
+            <text x="205" y="48" fill="#f59e0b" font-size="8" font-weight="800" font-family="Inter,sans-serif" text-anchor="middle">MOTOR</text>
+            <!-- Vibration arrows -->
+            <polygon points="205,24 200,30 210,30" fill="#f59e0b" opacity="0.75"/>
+            <line x1="205" y1="27" x2="205" y2="30" stroke="#f59e0b" stroke-width="2" opacity="0.75"/>
+            <polygon points="205,64 200,58 210,58" fill="rgba(245,158,11,0.4)"/>
+            <line x1="205" y1="61" x2="205" y2="58" stroke="rgba(245,158,11,0.4)" stroke-width="2"/>
+            <!-- Net forward motion arrow -->
+            <defs>
+              <marker id="fwd" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+                <polygon points="0,0 10,4 0,8" fill="#4ade80"/>
+              </marker>
+            </defs>
+            <line x1="376" y1="73" x2="448" y2="73" stroke="#4ade80" stroke-width="2.5" marker-end="url(#fwd)"/>
+            <text x="412" y="65" fill="#4ade80" font-size="8" font-weight="800" font-family="Inter,sans-serif" text-anchor="middle">FORWARD</text>
+            <!-- Bristle label -->
+            <text x="185" y="145" fill="rgba(74,222,128,0.55)" font-size="8" font-family="Inter,sans-serif" text-anchor="middle">Angled bristles</text>
+            <text x="185" y="157" fill="rgba(74,222,128,0.55)" font-size="8" font-family="Inter,sans-serif" text-anchor="middle">grip → push forward</text>
+            <!-- Ground label -->
+            <text x="460" y="176" fill="rgba(254,243,232,0.18)" font-size="8" font-family="Inter,sans-serif" text-anchor="end">SURFACE</text>
+          </svg>
+          <p class="r-diagram-cap">Side view — motor vibrates the body up and down. Angled bristles act as a one-way ratchet: they grip on the downstroke and spring forward on the upstroke, producing net forward motion.</p>
+        </div>
+      </div>
+      <figure class="r-figure" style="margin:0;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d1/Kent_State_Mini_Maker_Faire_%2814151261700%29.jpg" alt="Bristle bots (vibrobot) at a Maker Faire — small toothbrush-head robots with vibrating motors mounted on them, racing on a flat surface." loading="lazy" style="max-height:420px;object-position:center;"/>
+        <figcaption><strong>Bristle bots in the wild</strong> — students' vibrobot racers at Kent State Mini Maker Faire, 2014. Each bot is built from a toothbrush head and a coin-cell-powered vibrating motor. Photo: kentstatesms / <a href="https://commons.wikimedia.org/wiki/File:Kent_State_Mini_Maker_Faire_(14151261700).jpg" target="_blank" rel="noopener">Wikimedia Commons</a> · <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener">CC BY 2.0</a></figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <!-- ══ Popsicle Stick Bug ═══════════════════════════════════ -->
+  <div class="r-card r-amber-acc" id="popsicle">
+    <p class="r-kicker r-amber-k">Advanced Build · LEDs + Buzzer · Classroom Activity</p>
+    <h2>Popsicle Stick Bug: Add Eyes and a Voice</h2>
+    <p>Once you've mastered the bristle bot, upgrade to a popsicle stick bug — a light rigid body
+    frame with two glowing LED eyes and a tiny phone buzzer that doubles as the drive motor.
+    The buzzer makes the bug vibrate <em>and</em> buzz, so every student instantly knows when their
+    bot is alive. The LED eyes draw almost no extra current from a CR2032, so they run at the same
+    time as the motor with no extra battery needed.</p>
+
+    <h3>Materials</h3>
+    <div class="r-materials">
+      <div class="r-material">
+        <span class="r-material-icon">🍦</span>
+        <div class="r-material-text"><strong>Popsicle Sticks (3–4)</strong>Two sticks crossed form the body; a third stick on top is the motor platform. Lightweight and rigid.</div>
+      </div>
+      <div class="r-material">
+        <span class="r-material-icon">💡</span>
+        <div class="r-material-text"><strong>2× LED (any color)</strong>One per eye. 3V LEDs work directly off a CR2032 with no resistor — just don't leave them on for days.</div>
+      </div>
+      <div class="r-material">
+        <span class="r-material-icon">📳</span>
+        <div class="r-material-text"><strong>Phone Buzzer / Pager Motor</strong>A tiny vibration motor from a broken phone or buzzer pack. 3V, disc-style. Both vibrates and makes a buzz sound.</div>
+      </div>
+      <div class="r-material">
+        <span class="r-material-icon">🔋</span>
+        <div class="r-material-text"><strong>CR2032 Coin Cell</strong>Powers LEDs and buzzer simultaneously. Tape between the two top popsicle sticks so weight stays centered.</div>
+      </div>
+      <div class="r-material">
+        <span class="r-material-icon">🪥</span>
+        <div class="r-material-text"><strong>Bristle Legs</strong>Cut angled bristles from an old toothbrush — 4 to 6 legs. Angle them backward so vibration pushes the bug forward, not sideways.</div>
+      </div>
+      <div class="r-material">
+        <span class="r-material-icon">🖇</span>
+        <div class="r-material-text"><strong>Hot Glue or Tape</strong>Glue the stick frame, tape the battery flat. Foam tape under the motor keeps it from sliding.</div>
+      </div>
+    </div>
+
+    <h3>Build Steps</h3>
+    <div class="r-steps">
+      <div class="r-step">
+        <div class="r-step-num">01</div>
+        <div class="r-step-viz">🍦</div>
+        <div class="r-step-title">Build the Frame</div>
+        <p class="r-step-body">Glue two popsicle sticks in a cross (+) or parallel pair for the body. This is your chassis — keep it as light as possible. A third stick raised slightly on top is the motor mount.</p>
+      </div>
+      <div class="r-step">
+        <div class="r-step-num">02</div>
+        <div class="r-step-viz">🪥</div>
+        <div class="r-step-title">Attach Bristle Legs</div>
+        <p class="r-step-body">Cut 4–6 angled bristle clusters from the toothbrush and hot-glue them under the frame, all angled in the same rearward direction. Test on a smooth surface — the bug should roll forward when tapped.</p>
+      </div>
+      <div class="r-step">
+        <div class="r-step-num">03</div>
+        <div class="r-step-viz">💡</div>
+        <div class="r-step-title">Wire the LED Eyes</div>
+        <p class="r-step-body">Push two LEDs through the front of the frame facing outward. Connect both LED positive (long) legs together, and both negative (short) legs together. These are your two "eyes" wired in parallel — they share the same battery connection.</p>
+      </div>
+      <div class="r-step">
+        <div class="r-step-num">04</div>
+        <div class="r-step-viz">📳</div>
+        <div class="r-step-title">Mount the Buzzer</div>
+        <p class="r-step-body">Tape the phone buzzer disc to the top-center of the frame. Its red wire is positive (+) and black is negative (−). The off-center weight inside the disc creates the vibration that drives the bug.</p>
+      </div>
+      <div class="r-step">
+        <div class="r-step-num">05</div>
+        <div class="r-step-viz">🔋</div>
+        <div class="r-step-title">Connect the Circuit</div>
+        <p class="r-step-body">Tape the CR2032 flat between the top sticks. Connect: battery (+) → buzzer red + LED positives. Battery (−) → buzzer black + LED negatives. Touch the wires — the eyes should glow and the bug should buzz and walk.</p>
+      </div>
+      <div class="r-step">
+        <div class="r-step-num">06</div>
+        <div class="r-step-viz">🎨</div>
+        <div class="r-step-title">Decorate Your Bug</div>
+        <p class="r-step-body">Add pipe-cleaner antennae, draw a face on the sticks, color the body with marker. The LEDs already make it look alive — now give it a personality. Name it. Enter it in a race. Try adding a small piece of clay to one side to make it curve and patrol a circle.</p>
+      </div>
+    </div>
+
+    <h3>Circuit Diagram: How It's Wired</h3>
+    <div class="r-diagram">
+      <svg viewBox="0 0 470 270" xmlns="http://www.w3.org/2000/svg">
+        <!-- Title -->
+        <text x="235" y="18" fill="rgba(254,243,232,0.55)" font-size="10" font-weight="700" font-family="Inter,sans-serif" text-anchor="middle">PARALLEL CIRCUIT — one CR2032 battery powers all three components</text>
+        <!-- Legend -->
+        <line x1="330" y1="30" x2="362" y2="30" stroke="#ef4444" stroke-width="2.5"/>
+        <text x="367" y="34" fill="#ef4444" font-size="8" font-weight="700" font-family="Inter,sans-serif">+ red wire</text>
+        <line x1="330" y1="44" x2="362" y2="44" stroke="rgba(254,243,232,0.3)" stroke-width="2.5"/>
+        <text x="367" y="48" fill="rgba(254,243,232,0.4)" font-size="8" font-weight="700" font-family="Inter,sans-serif">− black wire</text>
+        <!-- + rail (red) -->
+        <line x1="60" y1="72" x2="420" y2="72" stroke="#ef4444" stroke-width="2.5"/>
+        <text x="26" y="76" fill="#ef4444" font-size="13" font-weight="800" font-family="'JetBrains Mono',monospace">+</text>
+        <!-- − rail -->
+        <line x1="60" y1="210" x2="420" y2="210" stroke="rgba(254,243,232,0.28)" stroke-width="2.5"/>
+        <text x="24" y="214" fill="rgba(254,243,232,0.38)" font-size="13" font-weight="800" font-family="'JetBrains Mono',monospace">−</text>
+
+        <!-- BATTERY (CR2032) at x=90 -->
+        <line x1="90" y1="72" x2="90" y2="93" stroke="#ef4444" stroke-width="2"/>
+        <line x1="74" y1="93" x2="106" y2="93" stroke="rgba(254,243,232,0.7)" stroke-width="2.5"/>
+        <line x1="80" y1="102" x2="100" y2="102" stroke="rgba(254,243,232,0.5)" stroke-width="2"/>
+        <line x1="74" y1="111" x2="106" y2="111" stroke="rgba(254,243,232,0.7)" stroke-width="2.5"/>
+        <line x1="80" y1="120" x2="100" y2="120" stroke="rgba(254,243,232,0.5)" stroke-width="2"/>
+        <line x1="90" y1="120" x2="90" y2="210" stroke="rgba(254,243,232,0.28)" stroke-width="2"/>
+        <text x="90" y="238" fill="#fde68a" font-size="9" font-weight="800" font-family="Inter,sans-serif" text-anchor="middle">CR2032</text>
+        <text x="90" y="251" fill="rgba(254,243,232,0.45)" font-size="8" font-family="Inter,sans-serif" text-anchor="middle">3V coin cell</text>
+
+        <!-- MOTOR/BUZZER at x=210 -->
+        <line x1="210" y1="72" x2="210" y2="100" stroke="#ef4444" stroke-width="2"/>
+        <circle cx="210" cy="132" r="30" fill="rgba(249,115,22,0.1)" stroke="rgba(249,115,22,0.5)" stroke-width="2"/>
+        <text x="210" y="129" fill="#f97316" font-size="15" font-weight="800" font-family="'JetBrains Mono',monospace" text-anchor="middle">M</text>
+        <text x="210" y="142" fill="rgba(249,115,22,0.55)" font-size="7" font-family="Inter,sans-serif" text-anchor="middle">vibrates</text>
+        <line x1="210" y1="162" x2="210" y2="210" stroke="rgba(254,243,232,0.28)" stroke-width="2"/>
+        <text x="210" y="238" fill="#fed7aa" font-size="9" font-weight="800" font-family="Inter,sans-serif" text-anchor="middle">MOTOR/BUZZER</text>
+        <text x="210" y="251" fill="rgba(254,243,232,0.45)" font-size="8" font-family="Inter,sans-serif" text-anchor="middle">phone vibration disc</text>
+
+        <!-- LED 1 at x=320 -->
+        <line x1="320" y1="72" x2="320" y2="96" stroke="#ef4444" stroke-width="2"/>
+        <polygon points="320,96 304,130 336,130" fill="rgba(56,189,248,0.25)" stroke="#38bdf8" stroke-width="1.5" stroke-linejoin="round"/>
+        <line x1="304" y1="130" x2="336" y2="130" stroke="#38bdf8" stroke-width="2.5"/>
+        <line x1="322" y1="110" x2="342" y2="96" stroke="rgba(56,189,248,0.28)" stroke-width="1" stroke-dasharray="2,2"/>
+        <line x1="322" y1="115" x2="342" y2="115" stroke="rgba(56,189,248,0.22)" stroke-width="1" stroke-dasharray="2,2"/>
+        <line x1="320" y1="130" x2="320" y2="210" stroke="rgba(254,243,232,0.28)" stroke-width="2"/>
+        <text x="320" y="238" fill="#bae6fd" font-size="9" font-weight="800" font-family="Inter,sans-serif" text-anchor="middle">LED</text>
+        <text x="320" y="251" fill="rgba(254,243,232,0.45)" font-size="8" font-family="Inter,sans-serif" text-anchor="middle">Eye 1</text>
+
+        <!-- LED 2 at x=400 -->
+        <line x1="400" y1="72" x2="400" y2="96" stroke="#ef4444" stroke-width="2"/>
+        <polygon points="400,96 384,130 416,130" fill="rgba(56,189,248,0.25)" stroke="#38bdf8" stroke-width="1.5" stroke-linejoin="round"/>
+        <line x1="384" y1="130" x2="416" y2="130" stroke="#38bdf8" stroke-width="2.5"/>
+        <line x1="402" y1="110" x2="420" y2="96" stroke="rgba(56,189,248,0.28)" stroke-width="1" stroke-dasharray="2,2"/>
+        <line x1="402" y1="115" x2="420" y2="115" stroke="rgba(56,189,248,0.22)" stroke-width="1" stroke-dasharray="2,2"/>
+        <line x1="400" y1="130" x2="400" y2="210" stroke="rgba(254,243,232,0.28)" stroke-width="2"/>
+        <text x="400" y="238" fill="#bae6fd" font-size="9" font-weight="800" font-family="Inter,sans-serif" text-anchor="middle">LED</text>
+        <text x="400" y="251" fill="rgba(254,243,232,0.45)" font-size="8" font-family="Inter,sans-serif" text-anchor="middle">Eye 2</text>
+      </svg>
+      <p class="r-diagram-cap">All three components (motor + 2 LEDs) are wired in parallel between the + and − rails of the CR2032. Each gets the full 3V. The LEDs draw ~20mA each, the motor ~60mA — total well within the coin cell's capacity. Long LED leg = + (connects to red). Short LED leg = − (connects to black).</p>
+    </div>
+
+    <div class="r-two" style="margin-top:0.85rem;">
+      <div class="r-box amber">
+        <strong>Why Both LED + Buzzer From One Battery?</strong>
+        <p>LEDs in parallel each need about 2–3V at 20mA. A CR2032 supplies 3V and ~220mAh.
+        The buzzer motor draws ~50–80mA when vibrating. Total draw is under 120mA — well within
+        the coin cell's range. The LEDs are your sensor readout: if they dim, the battery
+        is almost dead. Replace it before the buzzer stalls.</p>
+      </div>
+      <div class="r-box sky">
+        <strong>From Bristle Bot → Popsicle Bug → Genghis</strong>
+        <p>Your popsicle stick bug walks by the same principle as Genghis: simple local rules
+        (angled bristles = move forward, vibration = energy source) produce complex behavior
+        (navigation, direction changes from weight shifts). The LEDs are your first sensor readout.
+        <a href="#genghis" style="color:#38bdf8;font-weight:700;">See how Genghis added 8 layers of sensors above this ↑</a></p>
+      </div>
     </div>
   </div>
 
@@ -558,6 +889,211 @@
         cortex plans the route (Layer 7). You are a subsumption architecture. Evolution
         built you bottom-up, just like Brooks built Genghis.</p>
       </div>
+    </div>
+  </div>
+
+  <!-- ══ Boston Dynamics ═══════════════════════════════════════ -->
+  <div class="r-card r-rust-acc" id="boston">
+    <p class="r-kicker r-rust-k">Boston Dynamics · 1992–Present · From MIT to Your Factory Floor</p>
+    <h2>Walking Dogs &amp; Backflipping Robots: Boston Dynamics</h2>
+    <p>If Genghis is the grandfather of legged robots, <strong>Boston Dynamics</strong> is the company
+    that grew the family tree into something that can dance, do parkour, and inspect an oil refinery.
+    Founded by <strong>Marc Raibert</strong> in 1992 as a spin-off from the MIT Leg Lab — the same
+    intellectual neighborhood as Rodney Brooks — Boston Dynamics has spent thirty years turning
+    the dream of animal-like locomotion into real hardware.</p>
+
+    <div class="r-two" style="margin-bottom:0.85rem;">
+      <div>
+        <div class="r-box rust">
+          <strong>Boston Dynamics at a Glance</strong>
+          <p>
+            <strong>Founded:</strong> 1992 · Cambridge, MA<br>
+            <strong>Founder:</strong> Marc Raibert (MIT Leg Lab)<br>
+            <strong>Key robots:</strong> BigDog, Spot, Atlas, Stretch<br>
+            <strong>Owners over time:</strong> MIT spin-off → DARPA contracts → Google (2013) → SoftBank (2017) → Hyundai (2021–present)<br>
+            <strong>Spot commercial launch:</strong> 2019<br>
+            <strong>Famous for:</strong> Viral videos — robots that fall down, get back up, and dance
+          </p>
+        </div>
+      </div>
+      <div>
+        <div class="r-box amber">
+          <strong>Why They Went Viral</strong>
+          <p>In 2020 Boston Dynamics released a video of Spot and Atlas dancing to "Do You Love Me"
+          by The Contours. It hit 35 million views in days. Not because it was a gimmick — but
+          because the robots moved <em>like animals</em>: hips swaying, weight shifting, recovering
+          from stumbles mid-dance. People hadn't seen machines move that way before. That
+          naturalness comes directly from the same ideas Genghis pioneered.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>The Robot Family</h3>
+    <div class="r-three">
+      <div class="r-step" style="border-color:rgba(249,115,22,0.22);">
+        <div class="r-step-viz" style="font-size:2.6rem;">🐕</div>
+        <div class="r-step-title" style="color:#fed7aa;">BigDog (2005)</div>
+        <p class="r-step-body">The first famous one. Four legs, 75 kg, DARPA-funded as a robotic pack mule for soldiers. Could carry 340 lb across rough terrain, snow, and ice. The video of a Boston Dynamics engineer kicking it — and it <em>not</em> falling — shocked the robotics world. Hydraulically powered; too loud for military use, but it proved the concept.</p>
+      </div>
+      <div class="r-step" style="border-color:rgba(249,115,22,0.22);">
+        <div class="r-step-viz" style="font-size:2.6rem;">🤖</div>
+        <div class="r-step-title" style="color:#fed7aa;">Spot (2015 / 2019 commercial)</div>
+        <p class="r-step-body">BigDog's smaller, electric successor. 25 kg, 90-minute battery, top speed 1.6 m/s. Four legs, 12 actuated joints, full LIDAR + stereo cameras. Commercially available since 2019. Used in construction inspection, oil &amp; gas, police, hospitals, and film sets. The "robot dog" students have seen on the news.</p>
+      </div>
+      <div class="r-step" style="border-color:rgba(249,115,22,0.22);">
+        <div class="r-step-viz" style="font-size:2.6rem;">🧍</div>
+        <div class="r-step-title" style="color:#fed7aa;">Atlas (2013–present)</div>
+        <p class="r-step-body">Boston Dynamics' humanoid. Originally hydraulic, now fully electric (as of 2024). 1.5 m tall, 89 kg. Can run, jump, do backflips, and full gymnastics routines. Designed to work in environments built for humans — push open doors, climb ladders, carry boxes. The most advanced bipedal robot ever built.</p>
+      </div>
+    </div>
+
+    <div class="r-photo-row">
+      <figure class="r-figure">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/d/dd/Big_dog_military_robots.jpg" alt="BigDog, the large four-legged hydraulic robot by Boston Dynamics, shown in a field with U.S. Marines." loading="lazy"/>
+        <figcaption><strong>BigDog (2006)</strong> — tested with U.S. Marines in the field. Photo: Lance Cpl. M. L. Meier / <a href="https://commons.wikimedia.org/wiki/File:Big_dog_military_robots.jpg" target="_blank" rel="noopener">Wikimedia Commons</a> · Public Domain</figcaption>
+      </figure>
+      <figure class="r-figure">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/Spot_robot_Royal_Air_Force.jpg" alt="Boston Dynamics Spot quadruped robot being operated by Royal Air Force personnel at RAF Leeming, 2021." loading="lazy"/>
+        <figcaption><strong>Spot (2021)</strong> — deployed by the Royal Air Force at RAF Leeming for base inspection duties. Photo: Senior Airman John Ennis, 48th FW / <a href="https://commons.wikimedia.org/wiki/File:Spot_robot_Royal_Air_Force.jpg" target="_blank" rel="noopener">Wikimedia Commons</a> · Public Domain</figcaption>
+      </figure>
+      <figure class="r-figure">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/8/81/Atlas_frontview_2013.jpg" alt="Atlas humanoid robot by Boston Dynamics, front view, 2013 — a tall bipedal robot developed for DARPA." loading="lazy"/>
+        <figcaption><strong>Atlas (2013)</strong> — Boston Dynamics' hydraulic humanoid robot, developed for DARPA's robotics challenge. Now fully electric and capable of backflips and parkour. Photo: DARPA / <a href="https://commons.wikimedia.org/wiki/File:Atlas_frontview_2013.jpg" target="_blank" rel="noopener">Wikimedia Commons</a> · Public Domain</figcaption>
+      </figure>
+    </div>
+
+    <h3>How Spot Actually Walks: Dynamic Balance</h3>
+    <div class="r-two">
+      <div>
+        <p>Genghis used <strong>static stability</strong> — it always had at least three feet on the
+        ground, forming a stable tripod. Spot uses <strong>dynamic balance</strong>, the same way
+        you walk: at any given moment, your center of gravity is actually <em>outside</em> your base
+        of support, and you're constantly falling forward and catching yourself with your next step.</p>
+        <p>This is harder to engineer (you need to predict where your foot will land and pre-position
+        for it) but it's far more efficient. A statically stable robot wastes energy keeping three
+        legs planted. A dynamically balanced robot flows through gaits — walk, trot, bound — the way
+        a real dog does, using momentum as an asset rather than fighting it.</p>
+        <p>Spot's lowest control layer handles individual joint torques at ~1000 Hz. Above that, a
+        balance controller maintains the center of mass. Above that, a gait planner selects walk vs.
+        trot vs. stair-climb. At the top, a mission planner navigates waypoints. <strong>Four layers
+        — just like Genghis had eight.</strong> The architecture is the same; the hardware is 35 years
+        better.</p>
+      </div>
+      <div>
+        <div class="r-layers">
+          <div class="r-layer firing">
+            <span class="r-layer-num">3</span>
+            <span class="r-layer-name">Mission Planner</span>
+            <span class="r-layer-desc">Navigates to waypoints, avoids no-go zones</span>
+            <span class="r-layer-dot"></span>
+          </div>
+          <div class="r-layer firing">
+            <span class="r-layer-num">2</span>
+            <span class="r-layer-name">Gait Controller</span>
+            <span class="r-layer-desc">Selects walk / trot / stair-climb</span>
+            <span class="r-layer-dot"></span>
+          </div>
+          <div class="r-layer firing">
+            <span class="r-layer-num">1</span>
+            <span class="r-layer-name">Balance Controller</span>
+            <span class="r-layer-desc">Keeps center of mass over support polygon</span>
+            <span class="r-layer-dot"></span>
+          </div>
+          <div class="r-layer firing">
+            <span class="r-layer-num">0</span>
+            <span class="r-layer-name">Joint Torque Control</span>
+            <span class="r-layer-desc">12 motors at 1000 Hz — always running</span>
+            <span class="r-layer-dot"></span>
+          </div>
+        </div>
+        <p style="font-size:0.75rem;color:var(--r-dim);margin:0.4rem 0 0;">Spot's control stack — same subsumption idea, modern hardware. Compare to Genghis's 8 layers above.</p>
+      </div>
+    </div>
+
+    <h3>Where You've Seen Them (and Where They Actually Work)</h3>
+    <div class="r-two">
+      <div class="r-box rust">
+        <strong>Famous Viral Moments</strong>
+        <p>
+          <strong>2015 — "BigDog Kick":</strong> engineer kicks BigDog on ice; it slips but recovers. First proof of dynamic balance to the public.<br>
+          <strong>2018 — SpotMini opens a door:</strong> one robot holds a door, a second walks through. The internet panicked.<br>
+          <strong>2019 — Spot at MIT commencement:</strong> pulled a truck across campus.<br>
+          <strong>2020 — "Do You Love Me":</strong> Atlas + Spot dance to The Contours. 35M+ views.<br>
+          <strong>2021 — Atlas parkour:</strong> backflip, 360 twist, full gymnastics floor routine.<br>
+          <strong>2024 — New Atlas (electric):</strong> gets up from the floor in a single fluid motion no human could match.
+        </p>
+      </div>
+      <div class="r-box sky">
+        <strong>Real-World Deployments</strong>
+        <p>
+          <strong>Chernobyl:</strong> Spot used to map radiation zones too dangerous for humans.<br>
+          <strong>Oil &amp; gas:</strong> Shell and BP use Spot to walk pipeline infrastructure on offshore platforms.<br>
+          <strong>Construction:</strong> Spot maps building sites with LIDAR as they're built, comparing to the design model daily.<br>
+          <strong>Hospitals:</strong> Used during COVID to remotely assess patients without PPE exposure.<br>
+          <strong>Police:</strong> NYPD trialed Spot for crime scene documentation (controversial; cancelled 2021).
+        </p>
+      </div>
+    </div>
+
+    <h3>Watch Them Move</h3>
+    <div class="r-video-grid">
+      <div>
+        <p class="r-video-label">Boston Dynamics — "Do You Love Me?" (2020) · 35M+ views</p>
+        <div class="r-video-wrap">
+          <iframe src="https://www.youtube-nocookie.com/embed/fn3KWM1kuAw" title="Boston Dynamics robots dance to Do You Love Me by The Contours (2020)" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+        </div>
+      </div>
+      <div>
+        <p class="r-video-label">BigDog Overview — rough terrain, ice, kicks (2010)</p>
+        <div class="r-video-wrap">
+          <iframe src="https://www.youtube-nocookie.com/embed/cNZPRsrwumQ" title="BigDog quadruped robot overview — Boston Dynamics 2010" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+        </div>
+      </div>
+      <div>
+        <p class="r-video-label">Atlas Parkour — backflip, gymnastics, full routine (2021)</p>
+        <div class="r-video-wrap">
+          <iframe src="https://www.youtube-nocookie.com/embed/tF4DML7FIWk" title="Atlas humanoid robot parkour and gymnastics — Boston Dynamics 2021" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="r-box amber" style="margin-top:0.75rem;">
+      <strong>The Line from Your Popsicle Bug → Spot</strong>
+      <p>Your bristle bot has one behavior layer: vibrate → move. Genghis had eight. Spot has dozens,
+      trained partly by machine learning on millions of simulated steps. But the core insight
+      is identical across all three: <em>don't try to plan everything — react locally and let
+      global behavior emerge.</em> Marc Raibert worked down the hall from Rodney Brooks at MIT.
+      The ideas didn't just travel — they were neighbors.</p>
+    </div>
+  </div>
+
+  <!-- ══ Next Lessons ══════════════════════════════════════════ -->
+  <div class="r-card r-sky-acc" id="next">
+    <p class="r-kicker r-sky-k">What's Next · Continue the Robotics Path</p>
+    <h2>Give Your Bug a Brain: Next Lessons</h2>
+    <p>Your popsicle stick bug walks using pure physics. Genghis walked using eight stacked behavior
+    layers. The next step is to give your walker real sensors so it can <em>decide</em> where to go
+    — not just vibrate until it hits a wall.</p>
+    <div class="r-two">
+      <a href="bug-bots.html#genghis" style="text-decoration:none;">
+        <div class="r-box amber" style="height:100%;box-sizing:border-box;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(245,158,11,0.6)'" onmouseout="this.style.borderColor=''">
+          <strong>Genghis &amp; Subsumption Architecture →</strong>
+          <p>How MIT's six-legged robot walked without a central brain. Learn how 8 simple behavior
+          layers stack together to produce complex walking, obstacle avoidance, and terrain
+          navigation — the same trick every insect uses.</p>
+          <p style="margin-top:0.5rem;font-size:0.75rem;color:rgba(245,158,11,0.7);font-weight:700;">bug-bots.html · This lesson · #genghis</p>
+        </div>
+      </a>
+      <a href="a-star-pathfinding.html" style="text-decoration:none;">
+        <div class="r-box sky" style="height:100%;box-sizing:border-box;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(56,189,248,0.6)'" onmouseout="this.style.borderColor=''">
+          <strong>Rescue Grid: A* Pathfinding →</strong>
+          <p>Once your walker has sensors, it needs to <em>plan a route</em>. A* is the algorithm
+          behind GPS navigation, game AI, and Mars rover path planning. This lesson shows how a
+          robot with even two distance sensors can find the shortest path through any maze —
+          exactly the upgrade from bristle bot to Genghis.</p>
+          <p style="margin-top:0.5rem;font-size:0.75rem;color:rgba(56,189,248,0.7);font-weight:700;">a-star-pathfinding.html · Algorithms &amp; AI</p>
+        </div>
+      </a>
     </div>
   </div>
 
