@@ -135,6 +135,7 @@
             <div class="home-weather-dashboard">
               <div class="weather-primary">
                 <p class="home-weather-temp" id="home-weather-temp">--°</p>
+                <p class="home-weather-feels" id="home-weather-feels">FEELS LIKE --°</p>
                 <p class="home-weather-condition" id="home-weather-condition">Loading conditions</p>
                 <p class="home-weather-status" id="home-weather-status" aria-live="polite">STATUS: LOADING</p>
                 <p class="home-weather-range">
@@ -163,21 +164,34 @@
               </div>
             </div>
             <div class="weather-forecast" id="home-weather-forecast" aria-label="Five day forecast"></div>
+            <div class="weather-solar" id="home-weather-solar" aria-label="Daylight and moon phase"></div>
+            <div class="weather-clothing" id="home-weather-clothing" aria-live="polite"></div>
+            <div class="weather-precip-chart" id="home-weather-precip" aria-label="5-day precipitation chances"></div>
+            <div class="weather-lessons-bar">
+              <span class="weather-lessons-label">Explore the science:</span>
+              <a href="lessons/water-cycle.html" class="weather-lesson-link">Water Cycle</a>
+              <a href="lessons/rainbows.html" class="weather-lesson-link">Rainbows &amp; Light</a>
+            </div>
           </div>
         </div>
 
         <div class="home-widget home-widget--votd" aria-label="Verse of the Day">
           <div class="votd-immersion-container">
             <div class="bible-page">
+              <div class="votd-datestamp" id="votd-date" aria-label="Today's date"></div>
               <div class="red-letter-header">Verse of the Day</div>
+              <div class="votd-context" id="votd-context" aria-label="Book context"></div>
               <p class="votd-verse" id="votd-verse" aria-busy="true" aria-live="polite">
                 <span class="skeleton skeleton-text" style="width:88%"></span>
                 <span class="skeleton skeleton-text" style="width:72%"></span>
                 <span class="skeleton skeleton-text" style="width:55%"></span>
               </p>
               <p class="votd-ref" id="votd-ref"></p>
+              <div class="votd-translations" id="votd-translations" aria-label="Translation switcher"></div>
               <div class="fleuron" aria-hidden="true">❦</div>
               <div class="votd-actions">
+                <button class="votd-btn votd-btn--listen" id="votd-listen" type="button" aria-label="Listen to verse"><span aria-hidden="true">▶</span> Listen</button>
+                <button class="votd-btn votd-btn--copy" id="votd-copy" type="button" aria-label="Copy verse to clipboard"><span aria-hidden="true">✦</span> Copy</button>
                 <a href="https://www.google.com/search?q=Bible+verse+of+the+day+meaning" class="votd-btn votd-btn--ai" id="votd-ai" target="_blank" rel="noreferrer"><span aria-hidden="true">✦</span> AI Overview</a>
                 <a href="https://www.bible.com/verse-of-the-day" class="votd-btn votd-btn--secondary" id="votd-youversion" target="_blank" rel="noreferrer">YouVersion</a>
                 <a href="https://www.bible.com/verse-of-the-day" class="votd-btn votd-btn--primary" id="votd-chapter" target="_blank" rel="noreferrer">Read Full Chapter</a>
@@ -583,6 +597,10 @@
         uv: document.getElementById('home-weather-uv'),
         pollen: document.getElementById('home-weather-pollen'),
         forecast: document.getElementById('home-weather-forecast'),
+        feels: document.getElementById('home-weather-feels'),
+        solar: document.getElementById('home-weather-solar'),
+        clothing: document.getElementById('home-weather-clothing'),
+        precipChart: document.getElementById('home-weather-precip'),
         windCard: document.getElementById('home-weather-wind-card'),
         humidityCard: document.getElementById('home-weather-humidity-card'),
         uvCard: document.getElementById('home-weather-uv-card'),
@@ -595,9 +613,11 @@
         weatherEls.status.textContent = data.status;
         weatherEls.condition.textContent = data.condition.toUpperCase();
         weatherEls.temp.textContent = `${Math.round(data.temperature)}°`;
+        weatherEls.feels.textContent = `FEELS LIKE ${Math.round(data.feelsLike)}°`;
         weatherEls.min.textContent = `${Math.round(data.min)}°`;
         weatherEls.max.textContent = `${Math.round(data.max)}°`;
-        weatherEls.wind.textContent = `${Math.round(data.wind)} MPH`;
+        const dirLabel = data.windDirection != null ? ` ${windDirectionLabel(data.windDirection)}` : '';
+        weatherEls.wind.textContent = `${Math.round(data.wind)} MPH${dirLabel}`;
         weatherEls.humidity.textContent = `${Math.round(data.humidity)}%`;
         weatherEls.uv.textContent = data.uvLabel;
         weatherEls.pollen.textContent = data.pollen.display;
@@ -610,6 +630,9 @@
             <span class="forecast-temp">${Math.round(day.max)}°</span>
           </div>
         `).join('');
+        weatherEls.solar.innerHTML = buildSolarSection(data);
+        weatherEls.clothing.innerHTML = buildClothingAdvice(data);
+        weatherEls.precipChart.innerHTML = buildPrecipChart(data.precipData, data.forecast);
       }
 
       function weatherLabelFromCode(code) {
@@ -685,12 +708,108 @@
         return 'STATUS: NOMINAL';
       }
 
+      function buildClothingAdvice({ temperature, rainChance, uvAlert, wind }) {
+        const temp = Math.round(temperature);
+        let emoji, mainText;
+        if (temp >= 95) {
+          emoji = '🥵'; mainText = `It's blazing at ${temp}° — wear light, loose clothing. Light colors reflect heat!`;
+        } else if (temp >= 85) {
+          emoji = '☀️'; mainText = `Hot day at ${temp}°! T-shirt and shorts weather — stay cool and hydrated.`;
+        } else if (temp >= 75) {
+          emoji = '😎'; mainText = `Warm and comfortable at ${temp}°. Light clothes like a tee and jeans work great.`;
+        } else if (temp >= 65) {
+          emoji = '🌤️'; mainText = `Mild at ${temp}°. A light layer or long sleeves — perfect for time outside.`;
+        } else if (temp >= 50) {
+          emoji = '🍂'; mainText = `Cool at ${temp}°. Grab a hoodie or light jacket before heading out!`;
+        } else if (temp >= 32) {
+          emoji = '🧥'; mainText = `Cold at ${temp}°! Bundle up with a coat, scarf, and warm layers.`;
+        } else {
+          emoji = '🥶'; mainText = `Freezing at ${temp}°! Heavy coat, hat, gloves, and warm boots — all of it.`;
+        }
+        const tips = [];
+        if (rainChance >= 60) tips.push('☂️ Bring a raincoat or umbrella');
+        else if (rainChance >= 35) tips.push('🌂 Light rain chance — maybe pack an umbrella');
+        if (uvAlert) tips.push('🕶️ High UV — sunscreen and sunglasses');
+        if (wind >= 20) tips.push('💨 Windy out there — a wind-resistant jacket helps');
+        return `<span class="clothing-emoji" aria-hidden="true">${emoji}</span><div class="clothing-body"><p class="clothing-main">${mainText}</p>${tips.length ? `<p class="clothing-tips">${tips.join(' &nbsp;·&nbsp; ')}</p>` : ''}</div>`;
+      }
+
+      function windDirectionLabel(degrees) {
+        const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+        return dirs[Math.round(degrees / 45) % 8];
+      }
+
+      function getMoonPhase(date) {
+        const knownNew = new Date('2000-01-06T18:14:00Z');
+        const synodicMonth = 29.53058867;
+        const elapsed = (date - knownNew) / 86400000;
+        const phase = ((elapsed % synodicMonth) + synodicMonth) % synodicMonth;
+        const illumination = Math.round((1 - Math.cos((phase / synodicMonth) * 2 * Math.PI)) / 2 * 100);
+        let name, emoji;
+        if (phase < 1.85)       { name = 'New Moon';        emoji = '🌑'; }
+        else if (phase < 7.38)  { name = 'Waxing Crescent'; emoji = '🌒'; }
+        else if (phase < 9.22)  { name = 'First Quarter';   emoji = '🌓'; }
+        else if (phase < 14.77) { name = 'Waxing Gibbous';  emoji = '🌔'; }
+        else if (phase < 16.61) { name = 'Full Moon';       emoji = '🌕'; }
+        else if (phase < 22.15) { name = 'Waning Gibbous';  emoji = '🌖'; }
+        else if (phase < 23.99) { name = 'Last Quarter';    emoji = '🌗'; }
+        else                    { name = 'Waning Crescent'; emoji = '🌘'; }
+        return { name, emoji, illumination };
+      }
+
+      function buildSolarSection({ sunrise, sunset }) {
+        if (!sunrise || !sunset) return '';
+        const moon = getMoonPhase(new Date());
+        const now = Date.now();
+        const riseMs = new Date(sunrise).getTime();
+        const setMs = new Date(sunset).getTime();
+        const riseStr = new Date(sunrise).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const setStr  = new Date(sunset).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        let progress = 0;
+        let isDaytime = false;
+        if (now >= riseMs && now <= setMs) {
+          progress = Math.round(((now - riseMs) / (setMs - riseMs)) * 100);
+          isDaytime = true;
+        } else if (now > setMs) {
+          progress = 100;
+        }
+        const markerHTML = isDaytime
+          ? `<div class="solar-sun-marker" style="left:${progress}%" aria-hidden="true">☀️</div>`
+          : '';
+        return `
+          <div class="solar-times">
+            <span class="solar-endpoint"><span class="solar-icon" aria-hidden="true">🌅</span><span class="solar-time">${riseStr}</span></span>
+            <div class="solar-track" role="progressbar" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100" aria-label="Daylight progress ${progress}%">
+              <div class="solar-fill" style="width:${progress}%"></div>
+              ${markerHTML}
+            </div>
+            <span class="solar-endpoint solar-endpoint--right"><span class="solar-time">${setStr}</span><span class="solar-icon" aria-hidden="true">🌇</span></span>
+          </div>
+          <div class="solar-moon">
+            <span class="moon-emoji" aria-hidden="true">${moon.emoji}</span>
+            <span class="moon-name">${moon.name}</span>
+            <span class="moon-illum">${moon.illumination}% lit</span>
+          </div>`;
+      }
+
+      function buildPrecipChart(precipData, forecastDays) {
+        if (!precipData || !precipData.length) return '';
+        const maxH = 46;
+        const bars = precipData.map((pct, i) => {
+          const day = forecastDays[i] ? forecastDays[i].label : '';
+          const barH = Math.max(2, Math.round((pct / 100) * maxH));
+          const wet = pct >= 50;
+          return `<div class="precip-col"><span class="precip-pct">${pct}%</span><div class="precip-bar${wet ? ' precip-bar--wet' : ''}" style="height:${barH}px"></div><span class="precip-day">${day}</span></div>`;
+        }).join('');
+        return `<span class="precip-title">Rain Chance</span><div class="precip-bars">${bars}</div>`;
+      }
+
       async function fetchWeatherForLocation(location) {
         const url = new URL('https://api.open-meteo.com/v1/forecast');
         url.searchParams.set('latitude', location.latitude);
         url.searchParams.set('longitude', location.longitude);
-        url.searchParams.set('current', 'temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m');
-        url.searchParams.set('daily', 'temperature_2m_min,temperature_2m_max,weather_code,uv_index_max,precipitation_probability_max');
+        url.searchParams.set('current', 'temperature_2m,apparent_temperature,weather_code,relative_humidity_2m,wind_speed_10m,wind_direction_10m');
+        url.searchParams.set('daily', 'temperature_2m_min,temperature_2m_max,weather_code,uv_index_max,precipitation_probability_max,sunrise,sunset');
         url.searchParams.set('temperature_unit', 'fahrenheit');
         url.searchParams.set('wind_speed_unit', 'mph');
         url.searchParams.set('forecast_days', '5');
@@ -731,7 +850,9 @@
           }),
           condition: weatherLabelFromCode(current.weather_code),
           temperature: current.temperature_2m,
+          feelsLike: current.apparent_temperature != null ? current.apparent_temperature : current.temperature_2m,
           wind: current.wind_speed_10m || 0,
+          windDirection: current.wind_direction_10m != null ? current.wind_direction_10m : null,
           humidity: current.relative_humidity_2m || 0,
           uvLabel: uv >= 8 ? `${uv >= 10 ? '10+' : uv.toFixed(1)} (HIGH)` : (uv >= 6 ? `${uv.toFixed(1)} (MOD)` : uv.toFixed(1)),
           uvAlert: uv >= 6,
@@ -743,7 +864,11 @@
             label: formatForecastLabel(dateString),
             icon: weatherIconFromCode(daily.weather_code[index]),
             max: daily.temperature_2m_max[index]
-          }))
+          })),
+          rainChance,
+          precipData: (daily.precipitation_probability_max || []).slice(0, 5).map(v => Number(v) || 0),
+          sunrise: (daily.sunrise && daily.sunrise[0]) || null,
+          sunset: (daily.sunset && daily.sunset[0]) || null
         };
       }
 

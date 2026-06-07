@@ -4,20 +4,255 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Video Library · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Videos uploaded by Mr. Scandrett for the classroom." />
+  <meta name="description" content="Curated classroom films — science, purpose, technology, and wonder." />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <style>
-    /* ── Screening room grid ── */
+    /* ── Layout wrapper ── */
+    .vl-inner {
+      width: min(1180px, calc(100% - 2rem));
+      margin-inline: auto;
+    }
+
+    /* ── Cinematic hero ── */
+    .vl-cinema-hero {
+      position: relative;
+      min-height: 58vh;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+      margin-bottom: 2.5rem;
+    }
+    .vl-cinema-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background: #0a111e;
+    }
+    .vl-cinema-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: blur(26px) saturate(1.1) brightness(0.65);
+      transform: scale(1.1);
+      display: block;
+    }
+    .vl-cinema-scrim {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        linear-gradient(0deg, rgba(5, 10, 20, 0.94) 0%, rgba(5, 10, 20, 0.52) 50%, rgba(5, 10, 20, 0.28) 100%),
+        linear-gradient(90deg, rgba(5, 10, 20, 0.64) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .vl-cinema-content {
+      position: relative;
+      z-index: 2;
+      padding: 3.5rem clamp(1.5rem, 5vw, 3.5rem) 3rem;
+    }
+    .vl-cinema-eyebrow {
+      margin: 0 0 0.55rem;
+      font: 700 0.66rem var(--font-mono);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(180, 215, 255, 0.78);
+    }
+    .vl-cinema-title {
+      margin: 0 0 0.65rem;
+      font-size: clamp(1.75rem, 4.5vw, 3rem);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      max-width: 20ch;
+    }
+    .vl-cinema-desc {
+      margin: 0 0 1.35rem;
+      font-size: 0.92rem;
+      color: rgba(210, 230, 255, 0.8);
+      line-height: 1.62;
+      max-width: 54ch;
+    }
+    .vl-cinema-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      flex-wrap: wrap;
+    }
+    .vl-btn-play {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.56rem;
+      min-height: 2.8rem;
+      padding: 0.65rem 1.35rem;
+      border-radius: 999px;
+      border: none;
+      background: rgba(255, 255, 255, 0.95);
+      color: #080f1c;
+      font: 700 0.88rem var(--font-sans);
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .vl-btn-play:hover {
+      transform: scale(1.04);
+      background: #fff;
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5);
+    }
+    .vl-btn-play svg {
+      width: 13px;
+      height: 13px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
+    .vl-cinema-stats {
+      font: 700 0.7rem var(--font-mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(180, 210, 255, 0.62);
+    }
+
+    /* ── Controls row (search + filter) ── */
+    .vl-controls {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      padding: 0.85rem 1.1rem;
+      border-radius: 22px;
+      border: 1px solid var(--glass-stroke, rgba(15, 46, 90, 0.12));
+      background: var(--glass-fill, rgba(255, 255, 255, 0.56));
+      backdrop-filter: blur(18px) saturate(150%);
+    }
+    .vl-search-wrap {
+      position: relative;
+      flex: 1 1 180px;
+      min-width: 150px;
+      max-width: 320px;
+    }
+    .vl-search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+    .vl-search {
+      width: 100%;
+      padding: 0.48rem 0.8rem 0.48rem 2.2rem;
+      border-radius: 999px;
+      border: 1px solid var(--glass-stroke, rgba(15, 46, 90, 0.14));
+      background: var(--glass-fill-soft, rgba(255, 255, 255, 0.34));
+      color: var(--text-main);
+      font: 500 0.84rem var(--font-sans);
+      transition: border-color 150ms, box-shadow 150ms;
+      appearance: none;
+    }
+    .vl-search:focus {
+      outline: none;
+      border-color: var(--accent-gold, #0071e3);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold, #0071e3) 16%, transparent);
+    }
+    .vl-search::placeholder { color: var(--text-soft); }
+    .vl-filter-row {
+      display: flex;
+      gap: 0.38rem;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+    .vl-filter-btn {
+      padding: 0.35rem 0.82rem;
+      min-height: 2rem;
+      border-radius: 999px;
+      border: 1px solid var(--glass-stroke-soft, rgba(15, 46, 90, 0.08));
+      background: transparent;
+      color: var(--text-soft);
+      font: 600 0.72rem var(--font-sans);
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: background 140ms, color 140ms, border-color 140ms, box-shadow 140ms;
+      white-space: nowrap;
+    }
+    .vl-filter-btn:hover,
+    .vl-filter-btn.active {
+      background: color-mix(in srgb, var(--accent-gold, #0071e3) 12%, rgba(255, 255, 255, 0.52));
+      color: var(--text-main);
+      border-color: color-mix(in srgb, var(--accent-gold, #0071e3) 30%, rgba(255, 255, 255, 0.42));
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--accent-gold, #0071e3) 10%, transparent);
+    }
+    .vl-watched-controls {
+      display: none;
+      align-items: center;
+      gap: 0.45rem;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+    .vl-watched-count {
+      font: 600 0.72rem var(--font-sans);
+      color: var(--text-muted);
+    }
+    .vl-clear-watched {
+      background: none;
+      border: 1px solid var(--glass-stroke-soft, rgba(15, 46, 90, 0.1));
+      color: var(--text-soft);
+      border-radius: 8px;
+      padding: 0.26rem 0.58rem;
+      font: 600 0.7rem var(--font-sans);
+      cursor: pointer;
+      transition: background 140ms, color 140ms;
+    }
+    .vl-clear-watched:hover { background: rgba(0,0,0,0.05); color: var(--text-main); }
+
+    /* ── Group sections ── */
+    .vl-group {
+      margin-bottom: 2.8rem;
+    }
+    .vl-group-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.65rem;
+      margin-bottom: 1.1rem;
+      padding-bottom: 0.7rem;
+      border-bottom: 1px solid var(--glass-stroke-soft, rgba(15, 46, 90, 0.08));
+    }
+    .vl-group-title {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.025em;
+    }
+    .vl-group-sub {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .vl-group-count {
+      margin-left: auto;
+      font: 700 0.66rem var(--font-mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      flex-shrink: 0;
+    }
+    @media (max-width: 580px) {
+      .vl-group-sub { display: none; }
+    }
+
+    /* ── Card grid ── */
     .vl-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1rem 0.95rem;
+      grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
+      gap: 1rem;
     }
-    @media (max-width: 1200px) { .vl-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 900px)  { .vl-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 580px)  { .vl-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 380px)  { .vl-grid { grid-template-columns: 1fr; } }
 
+    /* ── Cards ── */
     .vl-card {
       appearance: none;
       cursor: pointer;
@@ -33,50 +268,28 @@
       overflow: hidden;
     }
     .vl-card:hover .vl-play-icon { opacity: 1; }
-    .vl-card:hover .vl-thumb { opacity: 0.88; transform: scale(1.02); }
+    .vl-card:hover .vl-thumb { opacity: 0.88; transform: scale(1.03); }
     .vl-card:focus-visible {
-      outline: 3px solid var(--focus-ring);
+      outline: 3px solid var(--focus-ring, #5aa7ff);
       outline-offset: 3px;
     }
     .vl-card::after {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.2) 42%, transparent 66%);
+      background: linear-gradient(120deg, transparent 18%, rgba(255, 255, 255, 0.16) 42%, transparent 66%);
       opacity: 0;
       transform: translateX(-120%);
-      transition: opacity 0.2s ease, transform 0.4s ease;
+      transition: opacity 0.22s ease, transform 0.42s ease;
       pointer-events: none;
     }
-    .vl-card:hover::after {
-      opacity: 1;
-      transform: translateX(120%);
-    }
-
-    .vl-card--feature {
-      grid-column: span 2;
-    }
-    @media (max-width: 900px) {
-      .vl-card--feature {
-        grid-column: 1 / -1;
-      }
-    }
-
+    .vl-card:hover::after { opacity: 1; transform: translateX(120%); }
     .vl-thumb-wrap {
       position: relative;
       aspect-ratio: 16 / 9;
-      background: var(--surface-0);
-      border-bottom: 1px solid var(--border-subtle);
+      background: var(--glass-fill, rgba(255, 255, 255, 0.56));
+      border-bottom: 1px solid var(--glass-stroke-soft, rgba(15, 46, 90, 0.08));
       overflow: hidden;
-    }
-    .vl-card--feature .vl-thumb-wrap {
-      aspect-ratio: 21 / 9;
-    }
-    @media (min-width: 1024px) {
-      .vl-card--feature .vl-thumb-wrap {
-        aspect-ratio: auto;
-        min-height: 100%;
-      }
     }
     .vl-thumb {
       width: 100%;
@@ -84,19 +297,6 @@
       object-fit: cover;
       display: block;
       transition: opacity 0.15s, transform 0.25s ease;
-    }
-    .vl-thumb-wrap::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03)),
-        radial-gradient(rgba(255,255,255,0.06) 0.6px, transparent 0.8px);
-      background-size: auto, 3px 3px;
-      mix-blend-mode: soft-light;
-      opacity: 0.34;
-      pointer-events: none;
-      z-index: 1;
     }
     .vl-play-icon {
       position: absolute;
@@ -106,130 +306,85 @@
       justify-content: center;
       opacity: 0;
       transition: opacity 0.15s;
-      background: rgba(0, 0, 0, 0.25);
+      background: rgba(0, 0, 0, 0.2);
       z-index: 2;
     }
     .vl-play-icon svg {
-      width: 30px;
-      height: 30px;
-      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
+      width: 46px;
+      height: 46px;
+      filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.7));
     }
     .vl-duration {
       position: absolute;
-      bottom: 4px;
-      right: 5px;
-      background: rgba(0, 0, 0, 0.88);
-      color: var(--text-on-image);
-      font-size: 0.62rem;
-      font-weight: 700;
-      padding: 1px 4px;
-      border-radius: 3px;
+      bottom: 6px;
+      right: 7px;
+      background: rgba(0, 0, 0, 0.82);
+      color: #fff;
+      font: 700 0.62rem var(--font-mono);
+      padding: 2px 5px;
+      border-radius: 4px;
       letter-spacing: 0.02em;
-      font-family: var(--font-mono);
       z-index: 2;
     }
-
-    /* YouTube-style row: avatar + text */
-    .vl-meta {
-      display: flex;
-      gap: 0.5rem;
-      align-items: flex-start;
+    .vl-watched-badge {
+      position: absolute;
+      top: 7px;
+      left: 7px;
+      background: rgba(0, 0, 0, 0.72);
+      color: rgba(100, 220, 130, 0.96);
+      font: 700 0.58rem var(--font-mono);
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+      z-index: 3;
+      display: none;
     }
-    .vl-avatar {
-      flex-shrink: 0;
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #4a90d9 0%, #6c5ce7 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.6rem;
-      font-weight: 800;
-      color: var(--text-on-image);
-      letter-spacing: 0;
-      font-family: var(--font-sans);
-      margin-top: 1px;
-    }
-    .vl-text {
-      flex: 1;
-      min-width: 0;
+    .vl-card--watched .vl-watched-badge { display: block; }
+    .vl-card--watched .vl-thumb { opacity: 0.7; }
+    .vl-card-body { padding: 0.95rem 1.1rem 1rem; }
+    .vl-kicker {
+      margin: 0 0 0.2rem;
+      font: 800 0.66rem var(--font-sans);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-gold, #0071e3);
     }
     .vl-title {
-      margin: 0 0 0.15rem;
+      margin: 0 0 0.18rem;
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: var(--text-main);
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      line-height: 1.3;
     }
-    .vl-desc {
-      margin-top: 0.15rem;
-    }
-    .vl-feature-overlay {
-      position: absolute;
-      inset: auto 1rem 1rem 1rem;
-      z-index: 2;
-      padding: 1rem 1.05rem;
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(7, 18, 32, 0.15), rgba(7, 18, 32, 0.78));
-      border: 1px solid rgba(255,255,255,0.1);
-      color: var(--text-on-image);
-      backdrop-filter: blur(10px);
-    }
-    .vl-feature-kicker {
-      margin: 0 0 0.3rem;
-      font: 700 0.68rem "IBM Plex Mono", monospace;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: rgba(191, 223, 255, 0.88);
-    }
-    .vl-feature-title {
+    .vl-sub {
       margin: 0;
-      font-size: clamp(1.1rem, 2vw, 1.55rem);
-      font-weight: 800;
-      max-width: 24ch;
-      line-height: 1.05;
+      font-size: 0.74rem;
+      color: var(--text-soft);
     }
-    .vl-feature-note {
-      margin: 0.45rem 0 0;
-      max-width: 60ch;
-      font-size: 0.82rem;
-      line-height: 1.5;
-      color: rgba(235, 245, 255, 0.84);
+    .vl-card--playing {
+      outline: 3px solid var(--accent-gold, #0071e3);
+      outline-offset: 2px;
     }
-    .vl-chip {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 2rem;
-      padding: 0.3rem 0.7rem;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      background: var(--theme-accent-soft);
-      color: var(--accent);
-      border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+    .vl-card--playing .vl-play-icon {
+      opacity: 1;
+      background: rgba(59, 130, 246, 0.28);
     }
-    .vl-chip--muted {
-      background: var(--surface-2);
+
+    /* ── No results ── */
+    .vl-no-results {
+      display: none;
+      padding: 3.5rem 1.5rem;
+      text-align: center;
       color: var(--text-muted);
-      border-color: var(--border-subtle);
+      font-size: 0.96rem;
     }
+    .vl-no-results.visible { display: block; }
 
-    /* ── Hero ── */
-    .vl-hero { padding: 0.4rem 0 1.3rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
-    .vl-hero h1 { max-width: 28ch; margin: 0 auto; font-size: clamp(1.8rem, 4vw, 2.8rem); letter-spacing: -0.04em; }
-    .vl-lede { margin: 0.65rem auto 0; max-width: 68ch; color: var(--text-muted); font-size: 0.98rem; line-height: 1.62; }
-
-    /* ── Card Content ── */
-    .vl-card-body { padding: 1.15rem 1.25rem; }
-    .vl-kicker { margin: 0 0 0.25rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
-    .vl-title { margin: 0 0 0.15rem; font-size: 1.05rem; font-weight: 800; color: var(--text-strong); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .vl-sub { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
-    .vl-desc { margin: 0.6rem 0 0; font-size: 0.88rem; color: var(--text-body); line-height: 1.55; }
-    .vl-actions { display: flex; gap: 0.45rem; margin-top: 0.85rem; flex-wrap: wrap; }
-
-    /* ── Cinema modal ── */
+    /* ── Theater glow ── */
     .theater-glow {
       position: fixed;
       inset: 0;
@@ -240,13 +395,15 @@
       transition: opacity 0.25s ease, background 0.6s ease;
     }
     .theater-glow.open { opacity: 1; }
+
+    /* ── Cinema modal ── */
     .vl-modal-backdrop {
       display: none;
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(circle at top, rgba(82, 115, 173, 0.16), transparent 40%),
-        rgba(3, 8, 18, 0.92);
+        radial-gradient(circle at top, rgba(60, 100, 180, 0.16), transparent 44%),
+        rgba(4, 9, 20, 0.9);
       backdrop-filter: blur(18px);
       z-index: 200;
       align-items: center;
@@ -254,225 +411,190 @@
       padding: 1.25rem;
     }
     .vl-modal-backdrop.open { display: flex; }
-
     .vl-modal {
       width: 100%;
-      max-width: 1120px;
-      border-radius: 24px;
+      max-width: 1080px;
+      border-radius: 28px;
       overflow: hidden;
-      background: rgba(9, 17, 31, 0.92);
-      border: 1px solid rgba(154, 193, 255, 0.12);
-      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.75);
+      background: linear-gradient(180deg, rgba(11, 20, 38, 0.97), rgba(7, 13, 24, 0.99));
+      border: 1px solid rgba(154, 193, 255, 0.14);
+      box-shadow: 0 44px 110px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.05);
       position: relative;
     }
     .vl-modal-stage {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
-      gap: 0;
+      grid-template-columns: minmax(0, 1.28fr) minmax(280px, 0.72fr);
     }
     .vl-player-wrap {
-      padding: 1rem;
+      padding: 1rem 0.8rem 1rem 1rem;
       border-right: 1px solid rgba(154, 193, 255, 0.08);
     }
     .vl-modal video {
       display: block;
       width: 100%;
       aspect-ratio: 16 / 9;
-      background: black;
-      border-radius: 18px;
-      position: relative;
-      z-index: 1;
+      background: #000;
+      border-radius: 16px;
     }
     .vl-now-playing {
       display: flex;
       justify-content: space-between;
-      gap: 1rem;
       align-items: center;
-      margin-top: 0.75rem;
-      color: #d4e6ff;
-      font: 600 0.72rem var(--font-mono);
-      letter-spacing: 0.08em;
+      gap: 1rem;
+      margin-top: 0.55rem;
+      color: rgba(190, 215, 255, 0.65);
+      font: 600 0.68rem var(--font-mono);
+      letter-spacing: 0.09em;
       text-transform: uppercase;
     }
-    .vl-now-playing strong {
-      color: #f4f9ff;
-      font-weight: 700;
-    }
+    .vl-now-playing strong { color: #eef5ff; font-weight: 700; }
     .vl-modal-side {
-      padding: 1rem 1rem 1.15rem;
+      padding: 1.1rem 1.05rem 1.1rem 0.85rem;
       display: flex;
       flex-direction: column;
       gap: 0.85rem;
+      overflow-y: auto;
+      max-height: 80vh;
     }
     .vl-modal-category {
-      font-size: 0.64rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
+      font: 700 0.62rem var(--font-mono);
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: #8cb7ff;
-      margin: 0 0 0.15rem;
-      font-family: var(--font-mono);
+      color: rgba(130, 175, 255, 0.88);
+      margin: 0 0 0.18rem;
     }
     .vl-modal-title {
-      font-size: 1.05rem;
-      font-weight: 700;
+      font: 700 1.06rem var(--font-sans);
       color: #fff;
-      margin: 0 0 0.3rem;
-      font-family: var(--font-mono);
+      margin: 0 0 0.32rem;
+      line-height: 1.22;
     }
     .vl-modal-desc {
-      font-size: 0.8rem;
-      color: #b4c7df;
+      font-size: 0.82rem;
+      color: rgba(185, 208, 240, 0.88);
       margin: 0;
-      line-height: 1.5;
+      line-height: 1.58;
     }
     .teacher-insight-card {
-      background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 100%);
-      border-left: 3px solid #3b82f6;
-      padding: 1rem;
-      border-radius: 0 15px 15px 0;
-    }
-    .teacher-insight-card p {
-      margin: 0;
-      color: #d7e7fb;
-      line-height: 1.55;
-      font-size: 0.82rem;
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 3px solid rgba(99, 162, 255, 0.65);
+      padding: 0.82rem 0.95rem;
+      border-radius: 0 14px 14px 0;
     }
     .teacher-insight-card strong {
       display: block;
-      margin-bottom: 0.35rem;
-      color: #8cb7ff;
-      font: 700 0.72rem var(--font-mono);
-      letter-spacing: 0.08em;
+      margin-bottom: 0.28rem;
+      color: rgba(130, 175, 255, 0.82);
+      font: 700 0.62rem var(--font-mono);
+      letter-spacing: 0.1em;
       text-transform: uppercase;
+    }
+    .teacher-insight-card p {
+      margin: 0;
+      color: rgba(210, 228, 252, 0.88);
+      line-height: 1.56;
+      font-size: 0.8rem;
+    }
+    .vl-chapters-label {
+      font: 700 0.62rem var(--font-mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(130, 175, 255, 0.7);
+      margin: 0 0 0.4rem;
     }
     .vl-chapters {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.45rem;
+      gap: 0.38rem;
     }
     .vl-chapters button {
-      border: 1px solid rgba(154, 193, 255, 0.14);
-      background: rgba(255,255,255,0.06);
-      color: #eef6ff;
-      border-radius: 10px;
-      padding: 0.5rem 0.75rem;
+      border: 1px solid rgba(154, 193, 255, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+      color: #eef4ff;
+      border-radius: 8px;
+      padding: 0.42rem 0.68rem;
       cursor: pointer;
-      font: 700 0.68rem var(--font-mono);
-      letter-spacing: 0.05em;
+      font: 700 0.64rem var(--font-mono);
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
     }
-    .vl-chapters button:hover,
-    .vl-chapters button:focus-visible {
-      background: rgba(59,130,246,0.18);
-      border-color: rgba(147,197,253,0.4);
+    .vl-chapters button:hover {
+      background: rgba(59, 130, 246, 0.18);
+      border-color: rgba(147, 197, 253, 0.4);
       transform: translateY(-1px);
-      outline: none;
     }
     .vl-modal-close {
       position: absolute;
-      top: 6px;
-      right: 8px;
-      width: 44px;
-      height: 44px;
+      top: 10px;
+      right: 12px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.6);
-      border: none;
-      color: #fff;
-      font-size: 1rem;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.96rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.15s, color 0.15s;
+      z-index: 10;
     }
-    .vl-modal-close:hover { background: rgba(0, 0, 0, 0.85); }
-    @media (max-width: 900px) {
-      .vl-modal-stage {
-        grid-template-columns: 1fr;
-      }
-      .vl-player-wrap {
-        border-right: none;
-        border-bottom: 1px solid rgba(154, 193, 255, 0.08);
-      }
+    .vl-modal-close:hover { background: rgba(0, 0, 0, 0.78); color: #fff; }
+    @media (max-width: 840px) {
+      .vl-modal-stage { grid-template-columns: 1fr; }
+      .vl-player-wrap { border-right: none; border-bottom: 1px solid rgba(154, 193, 255, 0.08); }
+      .vl-modal-side { max-height: none; }
     }
 
-    /* ── Hero stat line ── */
-    .vl-stat-row {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin: 0.5rem 0 0;
-      letter-spacing: 0.04em;
-    }
-
-    /* ── Category filter row ── */
-    .vl-filter-row {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.25rem;
-    }
-    .vl-filter-btn {
-      padding: 0.35rem 0.9rem;
-      border-radius: 999px;
-      border: 1px solid var(--border-subtle);
-      background: var(--surface-2);
-      color: var(--text-muted);
-      font: 700 0.72rem var(--font-sans);
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-    }
-    .vl-filter-btn.active,
-    .vl-filter-btn:hover {
-      background: var(--theme-accent-soft);
-      color: var(--accent);
-      border-color: color-mix(in srgb, var(--accent) 24%, transparent);
-    }
-
-    /* ── Now-playing card highlight ── */
-    .vl-card--playing {
-      outline: 3px solid var(--accent);
-      outline-offset: 2px;
-    }
-    .vl-card--playing .vl-play-icon {
-      opacity: 1;
-      background: rgba(59, 130, 246, 0.35);
-    }
-
-    /* ── Auto-advance overlay ── */
+    /* ── Auto-advance ── */
     .vl-autonext {
       display: none;
       position: absolute;
-      bottom: 3.5rem;
-      right: 1rem;
-      background: rgba(6, 14, 28, 0.9);
-      border: 1px solid rgba(154, 193, 255, 0.18);
+      bottom: 3.1rem;
+      right: 0.8rem;
+      background: rgba(6, 14, 28, 0.92);
+      border: 1px solid rgba(154, 193, 255, 0.22);
       border-radius: 14px;
-      padding: 0.65rem 0.9rem;
+      padding: 0.58rem 0.82rem;
       color: #d4e6ff;
       font-size: 0.78rem;
-      gap: 0.75rem;
+      gap: 0.68rem;
       align-items: center;
       z-index: 10;
       backdrop-filter: blur(8px);
-      max-width: 280px;
+      max-width: 260px;
     }
     .vl-autonext.visible { display: flex; }
-    .vl-autonext-label { font: 700 0.64rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: #8cb7ff; display: block; margin-bottom: 0.2rem; }
-    .vl-autonext-title { color: #f0f8ff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+    .vl-autonext-label {
+      font: 700 0.6rem var(--font-mono);
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: rgba(130, 175, 255, 0.8);
+      display: block;
+      margin-bottom: 0.12rem;
+    }
+    .vl-autonext-title { color: #f0f8ff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
     .vl-autonext-cancel {
       flex-shrink: 0;
-      border: 1px solid rgba(154, 193, 255, 0.25);
+      border: 1px solid rgba(154, 193, 255, 0.26);
       background: transparent;
       color: #d4e6ff;
       border-radius: 8px;
-      padding: 0.3rem 0.55rem;
-      font: 700 0.68rem var(--font-mono);
+      padding: 0.26rem 0.5rem;
+      font: 700 0.64rem var(--font-mono);
       cursor: pointer;
       white-space: nowrap;
       transition: background 0.15s;
     }
-    .vl-autonext-cancel:hover { background: rgba(255,255,255,0.08); }
+    .vl-autonext-cancel:hover { background: rgba(255, 255, 255, 0.08); }
+
+    /* ── Suppress main padding for full-bleed hero ── */
+    body.theme-liquid-woodland.theme-video-library main {
+      padding-top: 0;
+    }
   </style>
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
   <script src="assets/js/theme-lighting.js"></script>
@@ -500,22 +622,78 @@
   </header>
 
   <main id="main-content">
-    <section class="hero vl-hero">
-      <p class="eyebrow">ClassroomOS</p>
-      <h1 class="reveal">Video Library</h1>
-      <p class="vl-lede reveal" style="--i:1">Curated videos uploaded for class — watch, learn, and reflect on science, technology, and purpose.</p>
-      <p class="vl-stat-row reveal" style="--i:2" id="vl-stat-row"></p>
+    <!-- Cinematic hero -->
+    <section class="vl-cinema-hero" aria-label="Featured video">
+      <div class="vl-cinema-bg" id="vl-cinema-bg" aria-hidden="true"></div>
+      <div class="vl-cinema-scrim" aria-hidden="true"></div>
+      <div class="vl-cinema-content vl-inner">
+        <p class="vl-cinema-eyebrow">Now Screening</p>
+        <h1 class="vl-cinema-title" id="vl-hero-title">Video Library</h1>
+        <p class="vl-cinema-desc" id="vl-hero-desc">Curated films for class — science, purpose, technology, and wonder.</p>
+        <div class="vl-cinema-actions">
+          <button class="vl-btn-play" id="vl-hero-play" type="button">
+            <svg viewBox="0 0 14 14" aria-hidden="true"><polygon points="3,1 13,7 3,13"/></svg>
+            Watch Featured Film
+          </button>
+          <span class="vl-cinema-stats" id="vl-stat-row" aria-live="polite"></span>
+        </div>
+      </div>
     </section>
 
-    <section class="section">
-      <div class="vl-filter-row" id="vl-filter-row" aria-label="Filter by category" role="group"></div>
-      <div class="vl-grid" id="vl-grid" aria-busy="true" aria-live="polite"></div>
-    </section>
+    <div class="vl-inner">
+      <!-- Controls: search + filter -->
+      <div class="vl-controls" role="search" aria-label="Search and filter videos">
+        <div class="vl-search-wrap">
+          <svg class="vl-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="8.5" cy="8.5" r="5.5"/>
+            <line x1="12.5" y1="12.5" x2="18" y2="18"/>
+          </svg>
+          <input class="vl-search" type="search" id="vl-search" placeholder="Search videos…" autocomplete="off" aria-label="Search videos" />
+        </div>
+        <div class="vl-filter-row" id="vl-filter-row" role="group" aria-label="Filter by category"></div>
+        <div class="vl-watched-controls" id="vl-watched-controls">
+          <span class="vl-watched-count" id="vl-watched-count"></span>
+          <button class="vl-clear-watched" id="vl-clear-watched" type="button">Clear watched</button>
+        </div>
+      </div>
+
+      <!-- Library groups -->
+      <div id="vl-library">
+        <div class="vl-group" id="vl-group-science">
+          <header class="vl-group-header">
+            <h2 class="vl-group-title">Science &amp; Wonder</h2>
+            <p class="vl-group-sub">Cosmos, scale, and the patterns of nature</p>
+            <span class="vl-group-count" id="vl-count-science"></span>
+          </header>
+          <div class="vl-grid" id="vl-grid-science"></div>
+        </div>
+
+        <div class="vl-group" id="vl-group-tech">
+          <header class="vl-group-header">
+            <h2 class="vl-group-title">Technology</h2>
+            <p class="vl-group-sub">How systems work and myths get busted</p>
+            <span class="vl-group-count" id="vl-count-tech"></span>
+          </header>
+          <div class="vl-grid" id="vl-grid-tech"></div>
+        </div>
+
+        <div class="vl-group" id="vl-group-purpose">
+          <header class="vl-group-header">
+            <h2 class="vl-group-title">Purpose &amp; Voice</h2>
+            <p class="vl-group-sub">Resilience, creativity, and thinking for yourself</p>
+            <span class="vl-group-count" id="vl-count-purpose"></span>
+          </header>
+          <div class="vl-grid" id="vl-grid-purpose"></div>
+        </div>
+
+        <p class="vl-no-results" id="vl-no-results">No videos match your search.</p>
+      </div>
+    </div>
   </main>
 
   <div class="theater-glow" id="vl-theater-glow" aria-hidden="true"></div>
 
-  <!-- Modal -->
+  <!-- Cinema modal -->
   <div class="vl-modal-backdrop" id="vl-modal-backdrop" role="dialog" aria-modal="true" aria-label="Video player">
     <div class="vl-modal" tabindex="-1">
       <button class="vl-modal-close" id="vl-modal-close" aria-label="Close video">✕</button>
@@ -535,7 +713,7 @@
           </div>
         </div>
         <div class="vl-modal-side">
-          <div class="vl-modal-info">
+          <div>
             <p class="vl-modal-category" id="vl-modal-category"></p>
             <p class="vl-modal-title" id="vl-modal-title"></p>
             <p class="vl-modal-desc" id="vl-modal-desc"></p>
@@ -545,7 +723,7 @@
             <p id="vl-modal-insight"></p>
           </div>
           <div>
-            <p class="vl-modal-category" style="margin-bottom:0.45rem;">Quick Jumps</p>
+            <p class="vl-chapters-label">Quick Jumps</p>
             <div class="vl-chapters" id="vl-modal-chapters"></div>
           </div>
         </div>
@@ -561,28 +739,12 @@
   <script src="assets/js/nav-mobile.js"></script>
   <script>
     const VIDEOS = [
-      {
-        src: 'assets/videos/steve-jobs-on-failure.mp4',
-        title: 'Steve Jobs on Failure',
-        category: 'Interview',
-        desc: 'A rare interview clip where Steve Jobs reflects on failure, resilience, and what it really means to build something that matters.',
-        seekTo: 30,
-        insight: 'Objective: Notice how setbacks can become design fuel. This is here to help students reflect on resilience, iteration, and the difference between quitting and revising.',
-        chapters: { 12: 'Failure', 44: 'Resilience', 86: 'Build Again' }
-      },
-      {
-        src: 'assets/videos/steve-jobs-life.mp4',
-        title: 'Steve Jobs on Life',
-        category: 'Interview',
-        desc: 'Steve Jobs shares his perspective on life, purpose, and the importance of following what you love — even when the path isn\'t clear.',
-        seekTo: 30,
-        insight: 'Objective: Connect personal purpose to long-term craft. Students can listen for the parts about curiosity, identity, and choosing meaningful work.',
-        chapters: { 18: 'Purpose', 62: 'Following Love', 114: 'What Matters' }
-      },
+      // ── Science & Wonder ──
       {
         src: 'assets/videos/carl-sagan-pale-blue-dot.mp4',
         title: 'Carl Sagan — Pale Blue Dot',
-        category: 'Science & Perspective',
+        category: 'Science',
+        group: 'science',
         desc: 'Carl Sagan reflects on a photograph of Earth taken from 3.7 billion miles away, and what it means for how we treat each other and our world.',
         seekTo: 30,
         insight: 'Objective: Use scale to deepen humility. This selection invites students to think about perspective, stewardship, and how scientific imagery can change ethics.',
@@ -590,439 +752,428 @@
       },
       {
         src: 'assets/videos/carl-sagan-kids-questions.mp4',
-        title: 'Carl Sagan "Encourage Kids to Ask Questions" (The Tonight Show 1977)',
-        category: 'Science & Education',
-        desc: 'In this 1977 Tonight Show appearance, Carl Sagan makes a passionate case for nurturing curiosity in children — why asking questions is the foundation of all science, and how adults can keep that spark alive.',
+        title: 'Carl Sagan — Encourage Kids to Ask Questions',
+        category: 'Science',
+        group: 'science',
+        desc: 'In this 1977 Tonight Show appearance, Carl Sagan makes a passionate case for nurturing curiosity — why asking questions is the foundation of all science.',
         seekTo: 15,
-        insight: 'Objective: Model curiosity as a habit, not a personality trait. This is a good anchor for classroom discussion about inquiry, wonder, and intellectual courage.',
+        insight: 'Objective: Model curiosity as a habit, not a personality trait. A good anchor for discussion about inquiry, wonder, and intellectual courage.',
         chapters: { 10: 'Ask Questions', 58: 'How Science Starts', 122: 'Protect Wonder' }
+      },
+      {
+        src: 'assets/videos/powers-of-ten.mp4',
+        title: 'Powers of Ten (1977)',
+        category: 'Scale & Space',
+        group: 'science',
+        desc: 'The classic Eames film that zooms from a picnic on Earth to the edge of the observable universe, then dives inward to the structure of matter.',
+        seekTo: 10,
+        insight: 'Objective: Train scale intuition. Students can use this to think about exponents, scientific notation, and how scale changes what counts as important.',
+        chapters: { 10: 'From Earth', 92: 'Cosmic Scale', 250: 'Into the Atom' }
+      },
+      {
+        src: 'assets/videos/nature-by-numbers.mp4',
+        title: 'Nature by Numbers',
+        category: 'Math & Pattern',
+        group: 'science',
+        desc: 'A beautifully animated short film exploring the golden ratio, Fibonacci spirals, and the geometry hidden inside shells, flowers, and growth patterns.',
+        seekTo: 6,
+        insight: 'Objective: Help students see mathematics as a visual language. Works especially well for pattern, proportion, and the overlap between math and artistic beauty.',
+        chapters: { 6: 'Patterns in Nature', 42: 'Golden Ratio', 88: 'Geometry as Art' }
+      },
+      // ── Technology ──
+      {
+        src: 'assets/videos/what-is-the-internet.mp4',
+        title: 'What Is the Internet?',
+        category: 'Technology',
+        group: 'tech',
+        desc: 'An exploration of how the internet works — from fiber optic cables and servers to protocols and packets. A foundational video for understanding digital infrastructure.',
+        seekTo: 15,
+        insight: 'Objective: Help students understand that the internet is a system, not magic. Notice the layers of abstraction and physical hardware beneath the digital experience.',
+        chapters: { 15: 'Physical Network', 60: 'How Data Moves', 120: 'Protocols' }
+      },
+      {
+        src: 'assets/videos/internet-buster.mp4',
+        title: 'Internet Buster',
+        category: 'Technology',
+        group: 'tech',
+        desc: 'A fun and energetic debunking of internet myths and misconceptions. Great for critical thinking about what students believe about technology.',
+        seekTo: 8,
+        insight: 'Objective: Encourage skepticism about "tech facts." Students can identify which internet myths they believed and why misinformation spreads online.',
+        chapters: { 8: 'Common Myths', 35: 'Why We Believe It', 65: 'The Truth' }
+      },
+      // ── Purpose & Voice ──
+      {
+        src: 'assets/videos/steve-jobs-on-failure.mp4',
+        title: 'Steve Jobs on Failure',
+        category: 'Interview',
+        group: 'purpose',
+        desc: 'A rare interview clip where Steve Jobs reflects on failure, resilience, and what it really means to build something that matters.',
+        seekTo: 30,
+        insight: 'Objective: Notice how setbacks can become design fuel. Helps students reflect on resilience, iteration, and the difference between quitting and revising.',
+        chapters: { 12: 'Failure', 44: 'Resilience', 86: 'Build Again' }
+      },
+      {
+        src: 'assets/videos/steve-jobs-life.mp4',
+        title: 'Steve Jobs on Life',
+        category: 'Interview',
+        group: 'purpose',
+        desc: 'Steve Jobs shares his perspective on life, purpose, and the importance of following what you love — even when the path isn\'t clear.',
+        seekTo: 30,
+        insight: 'Objective: Connect personal purpose to long-term craft. Students can listen for the parts about curiosity, identity, and choosing meaningful work.',
+        chapters: { 18: 'Purpose', 62: 'Following Love', 114: 'What Matters' }
       },
       {
         src: 'assets/videos/deadpoetsociety.mp4',
         title: 'Dead Poets Society',
-        category: 'Film & Inspiration',
+        category: 'Film',
+        group: 'purpose',
         desc: 'A memorable clip from Dead Poets Society focused on voice, courage, and the challenge of thinking for yourself.',
         seekTo: 15,
-        insight: 'Objective: Help students identify moments where conformity and courage collide. This clip works well when discussing voice, pressure, and independent thought.',
+        insight: 'Objective: Help students identify moments where conformity and courage collide. Works well when discussing voice, pressure, and independent thought.',
         chapters: { 15: 'Set the Scene', 52: 'Voice', 96: 'Think for Yourself' }
       },
       {
         src: 'assets/videos/makeyourlifespectacular.mp4',
         title: 'Make Your Life Spectacular',
         category: 'Motivation',
+        group: 'purpose',
         desc: 'An inspirational video about living with purpose, bringing energy to your work, and making your life mean something.',
         seekTo: 15,
-        insight: 'Objective: Push reflection beyond hype. Students can track which ideas are emotionally persuasive and which ones become actionable choices.',
+        insight: 'Objective: Push reflection beyond hype. Students can track which ideas are emotionally persuasive and which become actionable choices.',
         chapters: { 12: 'Purpose', 47: 'Energy', 92: 'Action' }
-      },
-      {
-        src: 'assets/videos/nature-by-numbers.mp4',
-        title: 'Nature by Numbers',
-        category: 'Math, Art & Pattern',
-        desc: 'A beautifully animated short film exploring the golden ratio, Fibonacci spirals, and the geometry hidden inside shells, flowers, and growth patterns.',
-        seekTo: 6,
-        insight: 'Objective: Help students see mathematics as a visual language. This works especially well for pattern, proportion, design, and the overlap between mathematical structure and artistic beauty.',
-        chapters: { 6: 'Patterns in Nature', 42: 'Golden Ratio', 88: 'Geometry as Art' }
-      },
-      {
-        src: 'assets/videos/powers-of-ten.mp4',
-        title: 'Powers of Ten (1977)',
-        category: 'Scale & Perspective',
-        desc: 'The classic Eames film that zooms from a picnic on Earth to the edge of the observable universe, then dives inward to the structure of matter.',
-        seekTo: 10,
-        insight: 'Objective: Train scale intuition. Students can use this to think about exponents, scientific notation, nested systems, and how a shift in scale changes what counts as important.',
-        chapters: { 10: 'From Earth', 92: 'Cosmic Scale', 250: 'Into the Atom' }
-      },
-      {
-        src: 'assets/videos/what-is-the-internet.mp4',
-        title: 'What Is the Internet?',
-        category: 'Technology & Systems',
-        desc: 'An exploration of how the internet works — from fiber optic cables and servers to protocols and packets. A foundational video for understanding digital infrastructure.',
-        seekTo: 15,
-        insight: 'Objective: Help students understand that the internet is a system, not magic. Notice the layers of abstraction and the physical hardware beneath the digital experience.',
-        chapters: { 15: 'Physical Network', 60: 'How Data Moves', 120: 'Protocols' }
-      },
-      {
-        src: 'assets/videos/internet-buster.mp4',
-        title: 'Internet Buster',
-        category: 'Technology & Mythology',
-        desc: 'A fun and energetic debunking of internet myths and misconceptions. Great for critical thinking about what students believe about technology.',
-        seekTo: 8,
-        insight: 'Objective: Encourage skepticism about "tech facts." Students can identify which internet myths they believed and why misinformation spreads online.',
-        chapters: { 8: 'Common Myths', 35: 'Why We Believe It', 65: 'The Truth' }
       }
     ];
 
-    function fmtDuration(s) {
-      if (!s || !isFinite(s)) return '';
-      const m = Math.floor(s / 60);
-      const sec = Math.floor(s % 60).toString().padStart(2, '0');
-      return `${m}:${sec}`;
-    }
+    const GROUPS = {
+      science: { groupId: 'vl-group-science', gridId: 'vl-grid-science', countId: 'vl-count-science' },
+      tech:    { groupId: 'vl-group-tech',    gridId: 'vl-grid-tech',    countId: 'vl-count-tech'    },
+      purpose: { groupId: 'vl-group-purpose', gridId: 'vl-grid-purpose', countId: 'vl-count-purpose' }
+    };
 
-    function captureThumbAndDuration(src, seekTo, imgEl, durEl) {
-      const vid = document.createElement('video');
-      vid.muted = true;
-      vid.preload = 'metadata';
-      vid.src = src;
-      vid.addEventListener('loadedmetadata', () => {
-        if (durEl) durEl.textContent = fmtDuration(vid.duration);
-        vid.currentTime = Math.min(seekTo, vid.duration - 1);
-      });
-      vid.addEventListener('seeked', () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = vid.videoWidth || 640;
-        canvas.height = vid.videoHeight || 360;
-        canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-        imgEl.src = canvas.toDataURL('image/jpeg', 0.85);
-        vid.src = '';
-      }, { once: true });
-    }
-
-    function makeSkeletonLine(width) {
-      const line = document.createElement('span');
-      line.className = 'skeleton skeleton-text';
-      line.dataset.width = width;
-      return line;
-    }
-
-    function createVideoSkeletonCard(isFeature = false) {
-      const card = document.createElement('article');
-      card.className = 'vl-card skeleton-card';
-      card.setAttribute('aria-hidden', 'true');
-      if (isFeature) card.classList.add('vl-card--feature', 'skeleton-card--featured', 'skeleton-card--video-feature');
-      const media = document.createElement('div');
-      media.className = 'skeleton skeleton-media';
-      media.dataset.ratio = isFeature ? 'feature' : 'video';
-      const body = document.createElement('div');
-      body.className = 'skeleton-body vl-card-body';
-      const meta = document.createElement('div');
-      meta.className = 'skeleton-meta';
-      const avatar = document.createElement('span');
-      avatar.className = 'skeleton skeleton-avatar';
-      const metaCopy = document.createElement('div');
-      metaCopy.className = 'skeleton-meta-copy';
-      metaCopy.append(makeSkeletonLine('short'), makeSkeletonLine('long'), makeSkeletonLine('medium'));
-      meta.append(avatar, metaCopy);
-      body.appendChild(meta);
-      if (isFeature) body.append(makeSkeletonLine('long'), makeSkeletonLine('medium'));
-      card.append(media, body);
-      return card;
-    }
-
-    function renderVideoSkeletons() {
-      if (!grid) return;
-      grid.innerHTML = '';
-      grid.append(
-        createVideoSkeletonCard(true),
-        createVideoSkeletonCard(), createVideoSkeletonCard(),
-        createVideoSkeletonCard(), createVideoSkeletonCard(),
-        createVideoSkeletonCard()
-      );
-    }
-
-    const grid = document.getElementById('vl-grid');
-    const filterRow = document.getElementById('vl-filter-row');
-    const backdrop = document.getElementById('vl-modal-backdrop');
-    const modal = backdrop.querySelector('.vl-modal');
-    const closeButton = document.getElementById('vl-modal-close');
-    const modalVideo = document.getElementById('vl-modal-video');
-    const modalCategory = document.getElementById('vl-modal-category');
-    const modalTitle = document.getElementById('vl-modal-title');
-    const modalDesc = document.getElementById('vl-modal-desc');
+    // ── DOM refs ──
+    const filterRow    = document.getElementById('vl-filter-row');
+    const backdrop     = document.getElementById('vl-modal-backdrop');
+    const modal        = backdrop.querySelector('.vl-modal');
+    const closeBtn     = document.getElementById('vl-modal-close');
+    const modalVideo   = document.getElementById('vl-modal-video');
+    const modalCat     = document.getElementById('vl-modal-category');
+    const modalTitle   = document.getElementById('vl-modal-title');
+    const modalDesc    = document.getElementById('vl-modal-desc');
     const modalInsight = document.getElementById('vl-modal-insight');
-    const modalChapters = document.getElementById('vl-modal-chapters');
-    const modalHud = document.getElementById('vl-modal-hud');
-    const theaterGlow = document.getElementById('vl-theater-glow');
-    const autonextEl = document.getElementById('vl-autonext');
-    const autonextTitleEl = document.getElementById('vl-autonext-title');
-    const autonextCancelEl = document.getElementById('vl-autonext-cancel');
+    const modalChaps   = document.getElementById('vl-modal-chapters');
+    const modalHud     = document.getElementById('vl-modal-hud');
+    const theaterGlow  = document.getElementById('vl-theater-glow');
+    const autonextEl   = document.getElementById('vl-autonext');
+    const autonextTitle = document.getElementById('vl-autonext-title');
+    const autonextCancel = document.getElementById('vl-autonext-cancel');
+    const searchInput  = document.getElementById('vl-search');
+    const noResults    = document.getElementById('vl-no-results');
+    const watchedCtrls = document.getElementById('vl-watched-controls');
+    const watchedCount = document.getElementById('vl-watched-count');
+    const clearWatched = document.getElementById('vl-clear-watched');
 
-    const focusableSelector = 'button, [href], input, select, textarea, video[controls], [tabindex]:not([tabindex="-1"])';
-    let lastFocused = null;
-    let ambientFrame = null;
-    let ambientCanvas = null;
-    let ambientCtx = null;
-    let activeVideo = null;
-    let currentVideoIndex = -1;
-    let activeCard = null;
-    let autonextTimer = null;
-    let activeFilter = 'all';
+    const FOCUSABLE = 'button,[href],input,select,textarea,video[controls],[tabindex]:not([tabindex="-1"])';
+    let lastFocused = null, ambientFrame = null, ambientCanvas = null, ambientCtx = null;
+    let activeVideo = null, currentIndex = -1, activeCard = null, autonextTimer = null;
+    let activeFilter = 'all', searchQuery = '';
+    const allCards = [];
 
-    // ── Hero stat ──
-    const statEl = document.getElementById('vl-stat-row');
-    if (statEl) {
-      const catCount = new Set(VIDEOS.map(v => v.category)).size;
-      statEl.textContent = `${VIDEOS.length} videos · ${catCount} categories`;
+    // ── Watch history ──
+    const WATCH_KEY = 'vl-watched-v2';
+    function getWatched() {
+      try { return JSON.parse(localStorage.getItem(WATCH_KEY) || '{}'); } catch { return {}; }
+    }
+    function markWatched(src) {
+      if (!src) return;
+      const w = getWatched(); w[src] = true;
+      localStorage.setItem(WATCH_KEY, JSON.stringify(w));
+      syncWatchedUI();
+    }
+    function syncWatchedUI() {
+      const w = getWatched();
+      const n = Object.keys(w).length;
+      allCards.forEach(({ card, v }) => card.classList.toggle('vl-card--watched', !!w[v.src]));
+      if (n > 0) {
+        watchedCtrls.style.display = 'flex';
+        watchedCount.textContent = `${n} watched`;
+      } else {
+        watchedCtrls.style.display = 'none';
+      }
     }
 
-    // ── Category filter buttons ──
-    const filterCategories = ['all', ...[...new Set(VIDEOS.map(v => v.category))]];
-    filterCategories.forEach(cat => {
+    // ── Hero setup ──
+    const featured = VIDEOS[0];
+    document.getElementById('vl-hero-title').textContent = featured.title;
+    document.getElementById('vl-hero-desc').textContent = featured.desc;
+    const statEl = document.getElementById('vl-stat-row');
+    if (statEl) statEl.textContent = `${VIDEOS.length} films · 3 collections`;
+
+    // Capture hero background thumbnail
+    const heroBg = document.getElementById('vl-cinema-bg');
+    (function captureHeroBg() {
+      const v = document.createElement('video');
+      v.muted = true; v.preload = 'metadata'; v.src = featured.src;
+      v.addEventListener('loadedmetadata', () => { v.currentTime = Math.min(featured.seekTo, v.duration - 1); });
+      v.addEventListener('seeked', () => {
+        const c = document.createElement('canvas');
+        c.width = v.videoWidth || 1280; c.height = v.videoHeight || 720;
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        const img = new Image(); img.alt = ''; img.src = c.toDataURL('image/jpeg', 0.88);
+        heroBg.appendChild(img);
+        v.src = '';
+      }, { once: true });
+    })();
+
+    document.getElementById('vl-hero-play').addEventListener('click', () => {
+      lastFocused = document.getElementById('vl-hero-play');
+      openVideo(0);
+    });
+
+    // ── Filter buttons ──
+    const categories = ['all', ...[...new Set(VIDEOS.map(v => v.category))]];
+    categories.forEach(cat => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'vl-filter-btn' + (cat === 'all' ? ' active' : '');
-      btn.dataset.filter = cat;
       btn.textContent = cat === 'all' ? 'All' : cat;
       btn.addEventListener('click', () => {
         document.querySelectorAll('.vl-filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         activeFilter = cat;
-        applyFilter();
+        applyFilters();
       });
       filterRow.appendChild(btn);
     });
 
-    function applyFilter() {
-      document.querySelectorAll('.vl-card[data-index]').forEach(card => {
-        const v = VIDEOS[parseInt(card.dataset.index)];
-        card.style.display = (activeFilter === 'all' || v.category === activeFilter) ? '' : 'none';
+    // ── Search ──
+    searchInput.addEventListener('input', () => {
+      searchQuery = searchInput.value.trim().toLowerCase();
+      applyFilters();
+    });
+
+    function applyFilters() {
+      const counts = { science: 0, tech: 0, purpose: 0 };
+      allCards.forEach(({ card, v }) => {
+        const matchFilter = activeFilter === 'all' || v.category === activeFilter;
+        const matchSearch = !searchQuery ||
+          v.title.toLowerCase().includes(searchQuery) ||
+          v.category.toLowerCase().includes(searchQuery) ||
+          v.desc.toLowerCase().includes(searchQuery);
+        const show = matchFilter && matchSearch;
+        card.style.display = show ? '' : 'none';
+        if (show) counts[v.group]++;
       });
-    }
-
-    renderVideoSkeletons();
-
-    function focusableElements(root) {
-      return Array.from(root.querySelectorAll(focusableSelector)).filter(el => {
-        if (el.disabled) return false;
-        if (el.getAttribute('aria-hidden') === 'true') return false;
-        return el.offsetParent !== null || el === document.activeElement;
+      let anyVisible = false;
+      Object.entries(GROUPS).forEach(([key, g]) => {
+        const groupEl = document.getElementById(g.groupId);
+        const countEl = document.getElementById(g.countId);
+        const visible = counts[key] > 0;
+        groupEl.style.display = visible ? '' : 'none';
+        if (visible) { anyVisible = true; countEl.textContent = `${counts[key]} film${counts[key] === 1 ? '' : 's'}`; }
       });
+      noResults.classList.toggle('visible', !anyVisible);
     }
 
-    function moveFocusIntoModal() {
-      const focusables = focusableElements(backdrop);
-      if (focusables.length > 0) { focusables[0].focus(); return; }
-      modal.focus();
+    // ── Thumbnail helpers ──
+    function fmtDuration(s) {
+      if (!s || !isFinite(s)) return '';
+      return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
     }
-
-    function trapModalFocus(event) {
-      if (event.key !== 'Tab' || !backdrop.classList.contains('open')) return;
-      const focusables = focusableElements(backdrop);
-      if (focusables.length === 0) { event.preventDefault(); modal.focus(); return; }
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement;
-      if (event.shiftKey) {
-        if (active === first || !backdrop.contains(active)) { event.preventDefault(); last.focus(); }
-        return;
-      }
-      if (active === last) { event.preventDefault(); first.focus(); }
-    }
-
-    function formatTimecode(seconds) {
-      if (!isFinite(seconds)) return '00:00';
-      const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-      const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
-      return `${mins}:${secs}`;
-    }
-
-    function updateHud() {
-      modalHud.textContent = `${formatTimecode(modalVideo.currentTime)} / ${formatTimecode(modalVideo.duration)}`;
-    }
-
-    function stopAmbientLight() {
-      if (ambientFrame) { cancelAnimationFrame(ambientFrame); ambientFrame = null; }
-      theaterGlow.style.background = '';
-    }
-
-    function startAmbientLight(videoEl) {
-      if (!ambientCanvas) {
-        ambientCanvas = document.createElement('canvas');
-        ambientCanvas.width = 1;
-        ambientCanvas.height = 1;
-        ambientCtx = ambientCanvas.getContext('2d', { willReadFrequently: true });
-      }
-      function tick() {
-        if (videoEl !== activeVideo || videoEl.paused || videoEl.ended || videoEl.readyState < 2) { ambientFrame = null; return; }
-        try {
-          ambientCtx.drawImage(videoEl, 0, 0, 1, 1);
-          const data = ambientCtx.getImageData(0, 0, 1, 1).data;
-          const r = data[0], g = data[1], b = data[2];
-          theaterGlow.style.background =
-            `radial-gradient(circle at 30% 25%, rgba(${r}, ${g}, ${b}, 0.34) 0%, transparent 55%), ` +
-            `radial-gradient(circle at 70% 72%, rgba(${Math.min(255, r + 12)}, ${Math.min(255, g + 12)}, ${Math.min(255, b + 12)}, 0.22) 0%, transparent 58%)`;
-        } catch (err) { stopAmbientLight(); return; }
-        ambientFrame = requestAnimationFrame(tick);
-      }
-      stopAmbientLight();
-      ambientFrame = requestAnimationFrame(tick);
-    }
-
-    function renderChapters(chapters) {
-      const entries = Object.entries(chapters || {});
-      if (!entries.length) { modalChapters.innerHTML = '<button type="button" disabled>No chapters</button>'; return; }
-      modalChapters.innerHTML = '';
-      entries.forEach(([time, label]) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = label;
-        button.addEventListener('click', () => { modalVideo.currentTime = Number(time); updateHud(); });
-        modalChapters.appendChild(button);
+    function captureThumbnail(src, seekTo, imgEl, durEl) {
+      const vid = document.createElement('video');
+      vid.muted = true; vid.preload = 'metadata'; vid.src = src;
+      vid.addEventListener('loadedmetadata', () => {
+        if (durEl) durEl.textContent = fmtDuration(vid.duration);
+        vid.currentTime = Math.min(seekTo, vid.duration - 1);
       });
+      vid.addEventListener('seeked', () => {
+        const c = document.createElement('canvas');
+        c.width = vid.videoWidth || 640; c.height = vid.videoHeight || 360;
+        c.getContext('2d').drawImage(vid, 0, 0, c.width, c.height);
+        imgEl.src = c.toDataURL('image/jpeg', 0.85);
+        vid.src = '';
+      }, { once: true });
     }
 
-    function cancelAutonext() {
-      if (autonextTimer) { clearInterval(autonextTimer); autonextTimer = null; }
-      autonextEl.classList.remove('visible');
-    }
-
-    function openVideo(index) {
-      const v = VIDEOS[index];
-      if (!v) return;
-      if (activeCard) activeCard.classList.remove('vl-card--playing');
-      activeCard = document.querySelector(`.vl-card[data-index="${index}"]`);
-      if (activeCard) activeCard.classList.add('vl-card--playing');
-      currentVideoIndex = index;
-      activeVideo = modalVideo;
-      modalVideo.src = v.src;
-      modalCategory.textContent = v.category;
-      modalTitle.textContent = v.title;
-      modalDesc.textContent = v.desc;
-      modalInsight.textContent = v.insight;
-      renderChapters(v.chapters);
-      updateHud();
-      backdrop.classList.add('open');
-      theaterGlow.classList.add('open');
-      window.setTimeout(moveFocusIntoModal, 0);
-      const playPromise = modalVideo.play();
-      if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {});
-    }
-
-    // ── Lazy thumbnail + duration loading ──
-    const thumbObserver = new IntersectionObserver((entries) => {
+    const thumbObserver = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (!entry.isIntersecting) return;
         const card = entry.target;
         const img = card.querySelector('.vl-thumb');
-        const durEl = card.querySelector('.vl-duration');
-        const idx = parseInt(card.dataset.index);
-        const v = VIDEOS[idx];
-        if (v && img && !img.src) captureThumbAndDuration(v.src, v.seekTo, img, durEl);
+        const dur = card.querySelector('.vl-duration');
+        const v = VIDEOS[parseInt(card.dataset.index)];
+        if (v && img && !img.src) captureThumbnail(v.src, v.seekTo, img, dur);
         thumbObserver.unobserve(card);
       });
-    }, { rootMargin: '300px' });
+    }, { rootMargin: '280px' });
 
     // ── Build cards ──
-    grid.innerHTML = '';
-
     VIDEOS.forEach((v, index) => {
+      const g = GROUPS[v.group];
+      const grid = document.getElementById(g.gridId);
+      if (!grid) return;
+
       const card = document.createElement('button');
-      card.className = 'vl-card card-shell card-shell--border reveal';
+      card.className = 'vl-card reveal';
       card.type = 'button';
-      card.dataset.index = index;
+      card.dataset.index = String(index);
       card.setAttribute('aria-label', `Play: ${v.title}`);
-      if (index === 0) card.classList.add('vl-card--feature', 'card-shell--featured');
 
       const thumbWrap = document.createElement('div');
-      thumbWrap.className = 'vl-thumb-wrap card-media';
+      thumbWrap.className = 'vl-thumb-wrap';
 
       const img = document.createElement('img');
-      img.className = 'vl-thumb';
-      img.alt = `Thumbnail for ${v.title}`;
+      img.className = 'vl-thumb'; img.alt = `Thumbnail for ${v.title}`;
 
       const playIcon = document.createElement('div');
       playIcon.className = 'vl-play-icon';
-      playIcon.innerHTML = `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.9"/>
-        <polygon points="22,16 44,28 22,40" fill="#111"/>
+      playIcon.innerHTML = `<svg viewBox="0 0 56 56" fill="none" aria-hidden="true">
+        <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.93"/>
+        <polygon points="22,16 44,28 22,40" fill="#0a0f1c"/>
       </svg>`;
 
-      const durEl = document.createElement('span');
-      durEl.className = 'vl-duration';
+      const dur = document.createElement('span'); dur.className = 'vl-duration';
+      const badge = document.createElement('span'); badge.className = 'vl-watched-badge'; badge.textContent = '✓ Watched';
 
-      thumbWrap.append(img, playIcon, durEl);
+      thumbWrap.append(img, playIcon, dur, badge);
 
       const body = document.createElement('div');
       body.className = 'vl-card-body';
-      body.innerHTML = `
-        <div class="vl-meta">
-          <div class="vl-avatar" aria-hidden="true">MS</div>
-          <div class="vl-text">
-            <p class="vl-kicker">${v.category}</p>
-            <p class="vl-title">${v.title}</p>
-            <p class="vl-sub">Mr. Scandrett &middot; Class video library</p>
-          </div>
-        </div>
-        ${index === 0 ? `<p class="vl-desc">${v.desc}</p>` : ''}
-      `;
-
-      if (index === 0) {
-        const overlay = document.createElement('div');
-        overlay.className = 'vl-feature-overlay';
-        overlay.innerHTML = `
-          <p class="vl-feature-kicker">Featured Screening</p>
-          <p class="vl-feature-title">${v.title}</p>
-          <p class="vl-feature-note">${v.insight}</p>
-        `;
-        thumbWrap.appendChild(overlay);
-      }
+      body.innerHTML = `<p class="vl-kicker">${v.category}</p><p class="vl-title">${v.title}</p><p class="vl-sub">Mr. Scandrett · Class film</p>`;
 
       card.append(thumbWrap, body);
       grid.appendChild(card);
       thumbObserver.observe(card);
+      allCards.push({ card, v });
 
-      card.addEventListener('mousemove', (event) => {
-        const rect = card.getBoundingClientRect();
-        const px = (event.clientX - rect.left) / rect.width;
-        const py = (event.clientY - rect.top) / rect.height;
-        card.style.transform = `perspective(1000px) rotateX(${(0.5 - py) * 8}deg) rotateY(${(px - 0.5) * 8}deg)`;
+      card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        card.style.transform = `perspective(900px) rotateX(${(0.5 - py) * 6}deg) rotateY(${(px - 0.5) * 6}deg)`;
       });
       card.addEventListener('mouseleave', () => { card.style.transform = ''; });
-
-      card.addEventListener('click', () => {
-        lastFocused = card;
-        cancelAutonext();
-        openVideo(index);
-      });
+      card.addEventListener('click', () => { lastFocused = card; cancelAutonext(); openVideo(index); });
     });
 
-    grid.setAttribute('aria-busy', 'false');
+    // Initial group counts
+    Object.entries(GROUPS).forEach(([key, g]) => {
+      const n = VIDEOS.filter(v => v.group === key).length;
+      document.getElementById(g.countId).textContent = `${n} films`;
+    });
+
+    syncWatchedUI();
+
+    // ── Modal focus trap ──
+    function focusableEls(root) {
+      return Array.from(root.querySelectorAll(FOCUSABLE)).filter(el =>
+        !el.disabled && el.getAttribute('aria-hidden') !== 'true' &&
+        (el.offsetParent !== null || el === document.activeElement)
+      );
+    }
+    function moveFocusIn() {
+      const els = focusableEls(backdrop);
+      (els[0] || modal).focus();
+    }
+    function trapFocus(e) {
+      if (e.key !== 'Tab' || !backdrop.classList.contains('open')) return;
+      const els = focusableEls(backdrop);
+      if (!els.length) { e.preventDefault(); modal.focus(); return; }
+      const first = els[0], last = els[els.length - 1], active = document.activeElement;
+      if (e.shiftKey) { if (active === first || !backdrop.contains(active)) { e.preventDefault(); last.focus(); } }
+      else            { if (active === last) { e.preventDefault(); first.focus(); } }
+    }
+
+    // ── HUD ──
+    function fmtCode(s) { return isFinite(s) ? `${Math.floor(s/60).toString().padStart(2,'0')}:${Math.floor(s%60).toString().padStart(2,'0')}` : '00:00'; }
+    function updateHud() { modalHud.textContent = `${fmtCode(modalVideo.currentTime)} / ${fmtCode(modalVideo.duration)}`; }
+
+    // ── Ambient light ──
+    function stopAmbient() { if (ambientFrame) { cancelAnimationFrame(ambientFrame); ambientFrame = null; } theaterGlow.style.background = ''; }
+    function startAmbient(videoEl) {
+      if (!ambientCanvas) { ambientCanvas = document.createElement('canvas'); ambientCanvas.width = ambientCanvas.height = 1; ambientCtx = ambientCanvas.getContext('2d', { willReadFrequently: true }); }
+      function tick() {
+        if (videoEl !== activeVideo || videoEl.paused || videoEl.ended || videoEl.readyState < 2) { ambientFrame = null; return; }
+        try {
+          ambientCtx.drawImage(videoEl, 0, 0, 1, 1);
+          const d = ambientCtx.getImageData(0, 0, 1, 1).data;
+          const [r, g, b] = [d[0], d[1], d[2]];
+          theaterGlow.style.background = `radial-gradient(circle at 28% 24%, rgba(${r},${g},${b},0.3) 0%, transparent 56%), radial-gradient(circle at 72% 74%, rgba(${Math.min(255,r+14)},${Math.min(255,g+14)},${Math.min(255,b+14)},0.2) 0%, transparent 58%)`;
+        } catch { stopAmbient(); return; }
+        ambientFrame = requestAnimationFrame(tick);
+      }
+      stopAmbient(); ambientFrame = requestAnimationFrame(tick);
+    }
+
+    // ── Chapters ──
+    function renderChapters(chapters) {
+      const entries = Object.entries(chapters || {});
+      modalChaps.innerHTML = '';
+      if (!entries.length) { modalChaps.innerHTML = '<button type="button" disabled>No chapters</button>'; return; }
+      entries.forEach(([t, label]) => {
+        const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = label;
+        btn.addEventListener('click', () => { modalVideo.currentTime = Number(t); updateHud(); });
+        modalChaps.appendChild(btn);
+      });
+    }
+
+    function cancelAutonext() { if (autonextTimer) { clearInterval(autonextTimer); autonextTimer = null; } autonextEl.classList.remove('visible'); }
+
+    function openVideo(index) {
+      const v = VIDEOS[index]; if (!v) return;
+      if (activeCard) activeCard.classList.remove('vl-card--playing');
+      activeCard = document.querySelector(`.vl-card[data-index="${index}"]`);
+      if (activeCard) activeCard.classList.add('vl-card--playing');
+      currentIndex = index; activeVideo = modalVideo;
+      modalVideo.src = v.src;
+      modalCat.textContent = v.category; modalTitle.textContent = v.title;
+      modalDesc.textContent = v.desc; modalInsight.textContent = v.insight;
+      renderChapters(v.chapters); updateHud();
+      backdrop.classList.add('open'); theaterGlow.classList.add('open');
+      window.setTimeout(moveFocusIn, 0);
+      const p = modalVideo.play(); if (p?.catch) p.catch(() => {});
+    }
 
     function closeModal() {
-      backdrop.classList.remove('open');
-      theaterGlow.classList.remove('open');
-      stopAmbientLight();
-      cancelAutonext();
+      backdrop.classList.remove('open'); theaterGlow.classList.remove('open');
+      stopAmbient(); cancelAutonext();
       if (activeCard) { activeCard.classList.remove('vl-card--playing'); activeCard = null; }
-      activeVideo = null;
-      currentVideoIndex = -1;
-      modalVideo.pause();
-      modalVideo.src = '';
-      modalChapters.innerHTML = '';
-      modalHud.textContent = '00:00 / 00:00';
+      activeVideo = null; currentIndex = -1;
+      modalVideo.pause(); modalVideo.src = '';
+      modalChaps.innerHTML = ''; modalHud.textContent = '00:00 / 00:00';
       if (lastFocused && document.contains(lastFocused)) lastFocused.focus();
     }
 
     // ── Auto-advance ──
     modalVideo.addEventListener('ended', () => {
-      stopAmbientLight();
-      const nextIndex = currentVideoIndex + 1;
-      if (nextIndex >= VIDEOS.length) return;
-      let countdown = 5;
-      autonextTitleEl.textContent = VIDEOS[nextIndex].title;
-      autonextCancelEl.textContent = `Cancel (${countdown})`;
+      markWatched(VIDEOS[currentIndex]?.src);
+      stopAmbient();
+      const next = currentIndex + 1; if (next >= VIDEOS.length) return;
+      let cd = 5;
+      autonextTitle.textContent = VIDEOS[next].title;
+      autonextCancel.textContent = `Cancel (${cd})`;
       autonextEl.classList.add('visible');
       autonextTimer = setInterval(() => {
-        countdown--;
-        autonextCancelEl.textContent = `Cancel (${countdown})`;
-        if (countdown <= 0) { cancelAutonext(); openVideo(nextIndex); }
+        autonextCancel.textContent = `Cancel (${--cd})`;
+        if (cd <= 0) { cancelAutonext(); openVideo(next); }
       }, 1000);
     });
 
     modalVideo.addEventListener('timeupdate', updateHud);
     modalVideo.addEventListener('loadedmetadata', updateHud);
-    modalVideo.addEventListener('play', () => { activeVideo = modalVideo; startAmbientLight(modalVideo); });
-    modalVideo.addEventListener('pause', stopAmbientLight);
+    modalVideo.addEventListener('play', () => { activeVideo = modalVideo; startAmbient(modalVideo); });
+    modalVideo.addEventListener('pause', stopAmbient);
 
-    autonextCancelEl.addEventListener('click', cancelAutonext);
-    closeButton.addEventListener('click', closeModal);
+    autonextCancel.addEventListener('click', cancelAutonext);
+    closeBtn.addEventListener('click', closeModal);
     backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
     document.addEventListener('keydown', e => {
       if (!backdrop.classList.contains('open')) return;
       if (e.key === 'Escape') { e.preventDefault(); closeModal(); return; }
-      trapModalFocus(e);
+      trapFocus(e);
     });
+
+    clearWatched.addEventListener('click', () => { localStorage.removeItem(WATCH_KEY); syncWatchedUI(); });
   </script>
 </body>
 </html>
