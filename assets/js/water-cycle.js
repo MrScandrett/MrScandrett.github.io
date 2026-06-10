@@ -17,8 +17,8 @@ function initStageSelector() {
     const buttons = Array.from(document.querySelectorAll('.stage-btn'));
     const explanations = Array.from(document.querySelectorAll('.stage-explanation'));
     const stageData = [
-        { name: 'Evaporation', state: 'Liquid to gas', temp: 'Heating above 100°C', transition: 'Water warms and becomes vapor.' },
-        { name: 'Condensation', state: 'Gas to liquid', temp: 'Cooling from 110°C to 95°C', transition: 'Water vapor cools into droplets.' },
+        { name: 'Evaporation', state: 'Liquid to gas', temp: 'Sun-warmed — happens at any temperature', transition: 'Water warms and becomes vapor.' },
+        { name: 'Condensation', state: 'Gas to liquid', temp: 'Cooling below the dew point', transition: 'Water vapor cools into droplets.' },
         { name: 'Precipitation', state: 'Liquid or ice falling', temp: 'Cloud droplets cool and grow heavy', transition: 'Water falls as rain, snow, sleet, or hail.' },
         { name: 'Collection', state: 'Liquid water stored', temp: 'Stable surface temperatures', transition: 'Water gathers in rivers, lakes, and oceans.' },
         { name: 'Infiltration', state: 'Liquid moving underground', temp: 'Cooling in shaded soil', transition: 'Water sinks into soil and aquifers.' },
