@@ -332,14 +332,14 @@
     </div>
 
     <details id="stl-section">
-      <summary>TinkerCAD / 3D Design (optional)</summary>
+      <summary>TinkerCAD STL / Sketchfab GLB (optional)</summary>
       <div class="field">
-        <label>Upload Your STL File</label>
+        <label>Upload Your STL or GLB File</label>
         <div class="file-drop" id="file-drop">
-          <input type="file" id="stl-file" accept=".stl" />
+          <input type="file" id="stl-file" accept=".stl,.glb" />
           <span class="file-drop-icon">📁</span>
-          <span class="file-drop-text">Click to choose your .STL file</span>
-          <span class="file-drop-hint">Max 500 KB · Binary or ASCII STL</span>
+          <span class="file-drop-text">Click to choose your .STL or .GLB file</span>
+          <span class="file-drop-hint">STL max 500 KB · GLB max 2 MB</span>
         </div>
         <div class="file-chosen" id="file-chosen">
           ✅ <span class="file-chosen-name" id="file-name"></span>
@@ -347,8 +347,8 @@
         </div>
         <div class="error-msg" id="stl-error"></div>
         <div class="stl-steps">
-          <strong>How to export from TinkerCAD:</strong><br>
-          Open your design → <strong>Export</strong> → choose <strong>.STL</strong> → save the file → upload it here
+          <strong>TinkerCAD (.STL):</strong> Open your design → <strong>Export</strong> → choose <strong>.STL</strong> → upload it here<br><br>
+          <strong>Sketchfab (.GLB):</strong> Find a model on <strong>sketchfab.com</strong> → <strong>Download</strong> → choose <strong>GLB</strong> → upload it here
         </div>
 
         <!-- 3-D preview + dot placement (shown after file loads) -->
@@ -464,8 +464,9 @@ document.getElementById('fish-name').addEventListener('keydown', e => {
   if (e.key === 'Enter') submitFish();
 });
 
-// STL file upload
+// Model file upload
 let stlDataURL = null;
+let modelFileType = null;
 
 const fileDrop = document.getElementById('file-drop');
 const fileInput = document.getElementById('stl-file');
@@ -478,8 +479,10 @@ fileInput.addEventListener('change', e => {
   if (!file) return;
   stlError.classList.remove('show');
 
-  if (file.size > 500 * 1024) {
-    stlError.textContent = 'File too large (max 500 KB). Try exporting a simpler design.';
+  const isGLB = file.name.toLowerCase().endsWith('.glb');
+  const maxSize = isGLB ? 2 * 1024 * 1024 : 500 * 1024;
+  if (file.size > maxSize) {
+    stlError.textContent = `File too large (max ${isGLB ? '2 MB' : '500 KB'}). Try a smaller model.`;
     stlError.classList.add('show');
     fileInput.value = '';
     return;
@@ -488,10 +491,11 @@ fileInput.addEventListener('change', e => {
   const reader = new FileReader();
   reader.onload = ev => {
     stlDataURL = ev.target.result;
+    modelFileType = isGLB ? 'glb' : 'stl';
     fileNameEl.textContent = file.name;
     fileDrop.style.display = 'none';
     fileChosen.classList.add('show');
-    document.dispatchEvent(new CustomEvent('stl-loaded', { detail: { dataURL: stlDataURL } }));
+    document.dispatchEvent(new CustomEvent('model-loaded', { detail: { dataURL: stlDataURL, fileType: modelFileType } }));
   };
   reader.readAsDataURL(file);
 });
@@ -503,6 +507,7 @@ fileDrop.addEventListener('drop', e => { e.preventDefault(); fileDrop.classList.
 
 function clearSTL() {
   stlDataURL = null;
+  modelFileType = null;
   fileInput.value = '';
   fileDrop.style.display = '';
   fileChosen.classList.remove('show');
@@ -554,7 +559,7 @@ async function submitFish() {
     submitBtn.textContent = '🐠 Adding to tank…';
 
     const fish = { name, color: selectedColor, size: selectedSize };
-    if (stlDataURL) fish.model = stlDataURL;
+    if (stlDataURL) { fish.model = stlDataURL; fish.modelType = modelFileType; }
     if (stlDataURL && window.stlDotData) fish.dots = window.stlDotData;
 
     await window.__db.ref('fish').push(fish);
@@ -597,7 +602,8 @@ function addAnother() {
 
 <script type="module">
 import * as THREE from 'three';
-import { STLLoader }     from 'three/addons/loaders/STLLoader.js';
+import { STLLoader }  from 'three/addons/loaders/STLLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const PREVIEW_TARGET = 2.5;
@@ -634,14 +640,17 @@ const GUIDE = {
   done: '✅ All set! Scroll down to submit your fish',
 };
 
-document.addEventListener('stl-loaded', async e => {
+document.addEventListener('model-loaded', async e => {
   if (!renderer) initRenderer();
   document.getElementById('stl-section').open = true;
   $section.style.display = 'block';
-  // Wait one frame so the browser finishes layout before measuring canvas width
   await new Promise(r => requestAnimationFrame(r));
   onResize();
-  await loadSTL(e.detail.dataURL);
+  if (e.detail.fileType === 'glb') {
+    await loadGLB(e.detail.dataURL);
+  } else {
+    await loadSTL(e.detail.dataURL);
+  }
   setMode('head');
   setTimeout(() => $section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
 });
@@ -715,13 +724,31 @@ async function loadSTL(dataURL) {
   resetDots();
 }
 
+async function loadGLB(dataURL) {
+  const loader = new GLTFLoader();
+  const gltf = await new Promise((res, rej) => loader.load(dataURL, res, undefined, rej));
+  const model = gltf.scene;
+
+  const box = new THREE.Box3().setFromObject(model);
+  const center = box.getCenter(new THREE.Vector3());
+  const sz = box.getSize(new THREE.Vector3());
+  const s = PREVIEW_TARGET / Math.max(sz.x, sz.y, sz.z);
+  model.scale.multiplyScalar(s);
+  model.position.sub(center.multiplyScalar(s));
+
+  if (stlMesh) scene.remove(stlMesh);
+  stlMesh = model;
+  scene.add(stlMesh);
+  resetDots();
+}
+
 function onCanvasClick(e) {
   if (!stlMesh || mode === 'done') return;
   const rect = $canvas.getBoundingClientRect();
   pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObject(stlMesh);
+  const hits = raycaster.intersectObject(stlMesh, true);
   if (!hits.length) return;
   placeDot(mode, hits[0].point.clone());
 }

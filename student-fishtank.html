@@ -333,7 +333,8 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { STLLoader }  from 'three/addons/loaders/STLLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -662,15 +663,66 @@ function makeSTLFish(geometry, colorHex, sizeMul, dots) {
   return group;
 }
 
+function makeGLBFish(gltfScene, sizeMul, dots) {
+  const box    = new THREE.Box3().setFromObject(gltfScene);
+  const center = box.getCenter(new THREE.Vector3());
+  const bsize  = box.getSize(new THREE.Vector3());
+  const targetSize = FISH_SIZE * 2.8 * sizeMul;
+  const s = targetSize / Math.max(bsize.x, bsize.y, bsize.z);
+
+  // Center and scale (scale first so position offset is in scaled space)
+  gltfScene.scale.multiplyScalar(s);
+  gltfScene.position.sub(center.multiplyScalar(s));
+
+  // Apply dot-based orientation (same math as STL, applied to the scene group)
+  if (dots?.head && dots?.tail) {
+    const toTank = targetSize / (dots.scale || 2.5);
+    const headV  = new THREE.Vector3(...dots.head).multiplyScalar(toTank);
+    const tailV  = new THREE.Vector3(...dots.tail).multiplyScalar(toTank);
+    const basisX = new THREE.Vector3().subVectors(headV, tailV).normalize();
+
+    if (dots.back) {
+      const backV  = new THREE.Vector3(...dots.back).multiplyScalar(toTank);
+      const upHint = new THREE.Vector3().subVectors(backV, tailV).normalize();
+      const basisZ = new THREE.Vector3().crossVectors(basisX, upHint).normalize();
+      const basisY = new THREE.Vector3().crossVectors(basisZ, basisX).normalize();
+      gltfScene.applyMatrix4(new THREE.Matrix4().makeBasis(basisX, basisY, basisZ).transpose());
+    } else {
+      gltfScene.applyMatrix4(
+        new THREE.Matrix4().makeRotationFromQuaternion(
+          new THREE.Quaternion().setFromUnitVectors(basisX, new THREE.Vector3(1, 0, 0))
+        )
+      );
+    }
+  }
+
+  gltfScene.traverse(m => { if (m.isMesh) m.castShadow = true; });
+
+  const wagGrp = new THREE.Group();
+  wagGrp.add(gltfScene);
+
+  const group = new THREE.Group();
+  group.add(wagGrp);
+  group.userData.tailGrp = wagGrp;
+  group.userData.isSTL   = true;  // use gentle wag amplitude
+  return group;
+}
+
 async function spawnFish(data) {
   const { name, color = '#4FC3F7', size = 1.0, model } = data;
   let group;
 
   if (model) {
     try {
-      const loader = new STLLoader();
-      const geo = await new Promise((res, rej) => loader.load(model, res, undefined, rej));
-      group = makeSTLFish(geo, color, size, data.dots);
+      if (data.modelType === 'glb') {
+        const loader = new GLTFLoader();
+        const gltf = await new Promise((res, rej) => loader.load(model, res, undefined, rej));
+        group = makeGLBFish(gltf.scene, size, data.dots);
+      } else {
+        const loader = new STLLoader();
+        const geo = await new Promise((res, rej) => loader.load(model, res, undefined, rej));
+        group = makeSTLFish(geo, color, size, data.dots);
+      }
     } catch {
       group = makeProceduralFish(color, size);
     }
