@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Class Fish Tank 🐠 — Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
   <style>
@@ -21,7 +21,7 @@
       position: fixed;
       top: 0; left: 0; right: 0; z-index: 30;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 20px;
+      padding: max(10px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 10px max(20px, env(safe-area-inset-left));
       background: linear-gradient(to bottom, rgba(2,13,26,0.92) 60%, transparent);
       pointer-events: none;
     }
@@ -49,6 +49,7 @@
     }
     #tank-canvas {
       display: block; width: 100%; height: 100%;
+      touch-action: none;
     }
 
     /* ── Label layer (CSS2D) ── */
@@ -150,7 +151,7 @@
       position: fixed;
       bottom: 0; left: 0; right: 0; z-index: 30;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 24px 16px;
+      padding: 12px max(24px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
       background: linear-gradient(to top, rgba(2,13,26,0.96) 55%, transparent);
       gap: 12px;
       flex-wrap: wrap;
@@ -164,10 +165,16 @@
       display: flex; align-items: center; gap: 9px;
       padding: 14px 26px; border-radius: 14px; border: 2px solid;
       font-size: 1.05rem; font-weight: 800; cursor: pointer;
-      transition: all 0.18s; min-width: 158px; justify-content: center;
+      transition: all 0.18s; min-width: 140px; justify-content: center;
       letter-spacing: 0.02em;
       user-select: none; -webkit-user-select: none;
       touch-action: manipulation;
+    }
+    @media (max-width: 480px) {
+      .ctrl-btn { min-width: 0; padding: 12px 16px; font-size: 0.9rem; gap: 6px; }
+      #topbar-title { font-size: 1rem; }
+      .top-btn { padding: 6px 10px; font-size: 0.76rem; }
+      #fish-count { font-size: 0.9rem; min-width: 80px; }
     }
     .ctrl-btn:active { transform: scale(0.95); }
     .ctrl-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
@@ -270,8 +277,8 @@
 <div id="topbar">
   <div id="topbar-title">🐠 Class Fish Tank</div>
   <div id="topbar-actions">
-    <button class="top-btn" onclick="history.back()">← Back</button>
-    <a class="top-btn" href="fish-upload.html" target="_blank">🐠 Add Fish</a>
+    <a class="top-btn" href="index.html">🏠 Home</a>
+    <a class="top-btn" href="fish-upload.html">🐠 Add Fish</a>
     <button class="top-btn" id="fsBtn" onclick="toggleFS()">⛶ Fullscreen</button>
   </div>
 </div>
@@ -1075,6 +1082,11 @@ window.toggleFS = function () {
     document.exitFullscreen?.();
   }
 };
+
+// Hide fullscreen button on iOS where the API isn't supported
+if (!document.documentElement.requestFullscreen) {
+  document.getElementById('fsBtn').style.display = 'none';
+}
 
 // ── Admin Panel ─────────────────────────────────────────────────────────────
 const $admin       = document.getElementById('admin-panel');
