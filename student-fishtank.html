@@ -1,0 +1,1204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Class Fish Tank 🐠 — Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #020d1a;
+      color: #fff;
+    }
+
+    /* ── Top Bar ── */
+    #topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0; z-index: 30;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px;
+      background: linear-gradient(to bottom, rgba(2,13,26,0.92) 60%, transparent);
+      pointer-events: none;
+    }
+    #topbar-title {
+      font-size: 1.2rem; font-weight: 800;
+      color: #7dd3fc;
+      text-shadow: 0 0 18px rgba(125,211,252,0.55);
+      letter-spacing: 0.02em;
+    }
+    #topbar-actions { display: flex; gap: 8px; pointer-events: all; }
+    .top-btn {
+      background: rgba(125,211,252,0.12);
+      border: 1px solid rgba(125,211,252,0.28);
+      color: #93c5fd; padding: 7px 14px;
+      border-radius: 8px; cursor: pointer;
+      font-size: 0.82rem; font-weight: 700;
+      transition: background 0.2s;
+      touch-action: manipulation;
+    }
+    .top-btn:hover, .top-btn:active { background: rgba(125,211,252,0.25); }
+
+    /* ── Canvas ── */
+    #canvas-wrap {
+      position: fixed; inset: 0;
+    }
+    #tank-canvas {
+      display: block; width: 100%; height: 100%;
+    }
+
+    /* ── Label layer (CSS2D) ── */
+    #label-layer {
+      position: fixed; inset: 0;
+      pointer-events: none;
+    }
+    .fish-label {
+      background: rgba(0,18,38,0.78);
+      border: 1px solid rgba(125,211,252,0.45);
+      border-radius: 20px;
+      padding: 3px 11px;
+      color: #bae6fd;
+      font-size: 0.73rem; font-weight: 800;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      backdrop-filter: blur(4px);
+      text-shadow: 0 0 8px rgba(125,211,252,0.7);
+      transform: translateX(-50%);
+      user-select: none;
+    }
+
+    /* ── Admin Panel ── */
+    #admin-panel {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(1,6,18,0.97);
+      display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.22s;
+    }
+    #admin-panel.show { opacity: 1; pointer-events: all; }
+    #admin-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 28px 14px;
+      border-bottom: 1px solid rgba(245,158,11,0.22);
+    }
+    #admin-title {
+      color: #f59e0b; font-size: 1.1rem; font-weight: 900; letter-spacing: 0.1em;
+      text-shadow: 0 0 20px rgba(245,158,11,0.5);
+    }
+    #admin-close {
+      background: rgba(239,68,68,0.14); border: 1px solid rgba(239,68,68,0.38);
+      color: #fca5a5; padding: 8px 18px; border-radius: 8px;
+      cursor: pointer; font-weight: 800; font-size: 0.85rem;
+      transition: background 0.18s;
+    }
+    #admin-close:hover { background: rgba(239,68,68,0.32); }
+    #admin-toolbar {
+      padding: 12px 28px; display: flex; gap: 10px; flex-wrap: wrap;
+      border-bottom: 1px solid rgba(245,158,11,0.1);
+    }
+    .admin-tool-btn {
+      background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.36);
+      color: #fcd34d; padding: 8px 18px; border-radius: 8px;
+      cursor: pointer; font-weight: 800; font-size: 0.83rem;
+      transition: background 0.18s;
+    }
+    .admin-tool-btn:hover { background: rgba(245,158,11,0.26); }
+    #admin-fish-list {
+      flex: 1; overflow-y: auto; padding: 14px 28px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .admin-fish-row {
+      display: flex; align-items: center; gap: 14px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(125,211,252,0.12);
+      border-radius: 10px; padding: 10px 16px;
+    }
+    .admin-fish-swatch {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.18);
+    }
+    .admin-fish-name { flex: 1; color: #e0f2fe; font-weight: 700; font-size: 0.95rem; }
+    .admin-fish-meta { color: #2a4a66; font-size: 0.78rem; }
+    .admin-remove-btn {
+      background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.32);
+      color: #fca5a5; padding: 5px 14px; border-radius: 7px;
+      cursor: pointer; font-weight: 800; font-size: 0.82rem; flex-shrink: 0;
+      transition: background 0.18s;
+    }
+    .admin-remove-btn:hover { background: rgba(239,68,68,0.3); }
+    #admin-status {
+      padding: 10px 28px 14px; color: #2a4a6a; font-size: 0.8rem;
+      border-top: 1px solid rgba(125,211,252,0.08);
+    }
+
+    /* ── Dirty overlay ── */
+    #dirty-overlay {
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at 50% 60%,
+        rgba(20,60,10,0) 30%, rgba(10,45,5,0.5) 100%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 2.5s;
+      z-index: 5;
+    }
+
+    /* ── Bottom Control Bar ── */
+    #control-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0; z-index: 30;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 24px 16px;
+      background: linear-gradient(to top, rgba(2,13,26,0.96) 55%, transparent);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    #fish-count {
+      color: #93c5fd; font-size: 1.05rem; font-weight: 800;
+      min-width: 110px; flex-shrink: 0;
+    }
+    #ctrl-btns { display: flex; gap: 12px; }
+    .ctrl-btn {
+      display: flex; align-items: center; gap: 9px;
+      padding: 14px 26px; border-radius: 14px; border: 2px solid;
+      font-size: 1.05rem; font-weight: 800; cursor: pointer;
+      transition: all 0.18s; min-width: 158px; justify-content: center;
+      letter-spacing: 0.02em;
+      user-select: none; -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .ctrl-btn:active { transform: scale(0.95); }
+    .ctrl-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+    .btn-feed {
+      background: rgba(8,120,150,0.82); border-color: #06b6d4; color: #cffafe;
+      box-shadow: 0 0 18px rgba(6,182,212,0.28);
+    }
+    .btn-feed:not(:disabled):hover { background: rgba(8,145,178,0.95); box-shadow: 0 0 28px rgba(6,182,212,0.5); }
+    .btn-clean {
+      background: rgba(20,95,48,0.82); border-color: #22c55e; color: #bbf7d0;
+      box-shadow: 0 0 18px rgba(34,197,94,0.28);
+    }
+    .btn-clean:not(:disabled):hover { background: rgba(21,122,58,0.95); box-shadow: 0 0 28px rgba(34,197,94,0.5); }
+
+    /* ── Tank meter ── */
+    #tank-meter {
+      display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0;
+    }
+    #meter-label { color: #4b6481; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+    #meter-track {
+      width: 90px; height: 9px;
+      background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden;
+    }
+    #meter-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(to right, #22c55e, #eab308 60%, #ef4444);
+      border-radius: 5px; transition: width 0.6s;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; top: 64px; left: 50%;
+      transform: translateX(-50%) translateY(-14px);
+      background: rgba(0,18,38,0.92);
+      border: 1px solid rgba(125,211,252,0.38);
+      color: #bae6fd; padding: 9px 22px;
+      border-radius: 28px; font-size: 0.95rem; font-weight: 700;
+      z-index: 50; pointer-events: none;
+      opacity: 0; transition: opacity 0.3s, transform 0.3s;
+      backdrop-filter: blur(8px); white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Fish info card ── */
+    #fish-card {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.88);
+      background: rgba(0,18,38,0.94);
+      border: 1px solid rgba(125,211,252,0.45);
+      border-radius: 18px; padding: 22px 32px;
+      text-align: center; z-index: 60;
+      opacity: 0; pointer-events: none;
+      transition: all 0.25s; backdrop-filter: blur(12px);
+      min-width: 200px;
+    }
+    #fish-card.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    #fish-card-emoji { font-size: 2.4rem; }
+    #fish-card-name { font-size: 1.5rem; font-weight: 900; color: #7dd3fc; margin-top: 6px; }
+    #fish-card-sub { font-size: 0.85rem; color: #64748b; margin-top: 3px; }
+
+    /* ── Loading ── */
+    #loading {
+      position: fixed; inset: 0; z-index: 100;
+      background: #020d1a;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      transition: opacity 0.8s;
+    }
+    #loading.gone { opacity: 0; pointer-events: none; }
+    #load-fish { font-size: 3rem; animation: loadswim 1.8s ease-in-out infinite; }
+    @keyframes loadswim {
+      0%,100% { transform: translateX(-18px) rotate(-4deg); }
+      50%      { transform: translateX(18px) rotate(4deg); }
+    }
+    #load-text { color: #7dd3fc; font-size: 1.05rem; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loading">
+  <div id="load-fish">🐠</div>
+  <div id="load-text">Setting up the fish tank…</div>
+</div>
+
+<!-- Top bar -->
+<div id="topbar">
+  <div id="topbar-title">🐠 Class Fish Tank</div>
+  <div id="topbar-actions">
+    <button class="top-btn" onclick="history.back()">← Back</button>
+    <a class="top-btn" href="fish-upload.html" target="_blank">🐠 Add Fish</a>
+    <button class="top-btn" id="fsBtn" onclick="toggleFS()">⛶ Fullscreen</button>
+  </div>
+</div>
+
+<!-- 3D canvas -->
+<div id="canvas-wrap">
+  <canvas id="tank-canvas"></canvas>
+  <div id="label-layer"></div>
+</div>
+
+<!-- Dirty water overlay -->
+<div id="dirty-overlay"></div>
+
+<!-- Fish info card (click/tap a fish) -->
+<div id="fish-card">
+  <div id="fish-card-emoji">🐟</div>
+  <div id="fish-card-name">Fish Name</div>
+  <div id="fish-card-sub">Student's Fish</div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+<!-- Control bar -->
+<div id="control-bar">
+  <div id="fish-count">🐟 …</div>
+  <div id="ctrl-btns">
+    <button class="ctrl-btn btn-feed" id="feedBtn" onclick="onFeed()">🍤 Feed Fish</button>
+    <button class="ctrl-btn btn-clean" id="cleanBtn" onclick="onClean()">🧹 Clean Tank</button>
+  </div>
+  <div id="tank-meter">
+    <div id="meter-label">Tank</div>
+    <div id="meter-track"><div id="meter-fill"></div></div>
+  </div>
+</div>
+
+<!-- Admin Panel — type ADMIN on keyboard to open, Esc to close -->
+<div id="admin-panel">
+  <div id="admin-header">
+    <div id="admin-title">🔧 TANK ADMIN</div>
+    <button id="admin-close" onclick="closeAdmin()">✕ Close (Esc)</button>
+  </div>
+  <div id="admin-toolbar">
+    <button class="admin-tool-btn" onclick="clearDuplicates()">🔄 Remove Duplicate Names</button>
+    <button class="admin-tool-btn" onclick="resetToDefault()">↩ Reset to Default Fish</button>
+  </div>
+  <div id="admin-fish-list"></div>
+  <div id="admin-status"></div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// ── Constants ──────────────────────────────────────────────────────────────
+const BOUNDS   = { x: 10, y: 5.5, z: 4.5 };  // tank half-extents
+const FISH_SPEED  = 0.022;
+const FISH_SIZE   = 0.55;
+const FOOD_COUNT  = 12;
+const MAX_DIRTY   = 100;
+const DIRTY_PER_FEED = 15;
+
+// ── Scene globals ──────────────────────────────────────────────────────────
+let renderer, labelRenderer, scene, camera;
+let clock    = new THREE.Clock();
+let raycaster = new THREE.Raycaster();
+let pointer   = new THREE.Vector2();
+
+// ── Live objects ───────────────────────────────────────────────────────────
+let fishes       = [];   // { group, data, target, speed, tailGroup, tailPhase, tailSpeed, state, feedTarget, waitTicks }
+let foods        = [];   // { mesh, vy, eaten }
+let bubbles      = [];   // { mesh, vel, life, decay }
+let dirtBits     = [];   // { mesh, drift }
+let plankton     = [];   // { mesh, drift }
+
+// ── State ──────────────────────────────────────────────────────────────────
+let dirtiness    = 0;
+let isFeeding    = false;
+let isCleaning   = false;
+
+// ── DOM ────────────────────────────────────────────────────────────────────
+const $canvas   = document.getElementById('tank-canvas');
+const $labels   = document.getElementById('label-layer');
+const $dirty    = document.getElementById('dirty-overlay');
+const $mfill    = document.getElementById('meter-fill');
+const $count    = document.getElementById('fish-count');
+const $feedBtn  = document.getElementById('feedBtn');
+const $cleanBtn = document.getElementById('cleanBtn');
+const $loading  = document.getElementById('loading');
+const $toast    = document.getElementById('toast');
+const $card     = document.getElementById('fish-card');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCENE SETUP
+// ═══════════════════════════════════════════════════════════════════════════
+
+function initScene() {
+  // Renderer
+  renderer = new THREE.WebGLRenderer({ canvas: $canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  // CSS2D renderer for name labels
+  labelRenderer = new CSS2DRenderer({ element: $labels });
+
+  // Scene
+  scene = new THREE.Scene();
+  scene.background = makeBgTexture();
+  scene.fog = new THREE.FogExp2(0x041520, 0.026);
+
+  // Camera
+  camera = new THREE.PerspectiveCamera(58, 1, 0.1, 100);
+  camera.position.set(0, 0.5, 18);
+  camera.lookAt(0, 0, 0);
+
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Lighting
+  scene.add(new THREE.AmbientLight(0x1a4a70, 3.0));
+
+  const sun = new THREE.DirectionalLight(0x90d0f0, 2.2);
+  sun.position.set(3, 12, 10);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.near = 0.5;
+  sun.shadow.camera.far = 50;
+  scene.add(sun);
+
+  const fill = new THREE.PointLight(0x003366, 4, 30);
+  fill.position.set(0, -10, 0);
+  scene.add(fill);
+
+  const side = new THREE.PointLight(0x004488, 2, 22);
+  side.position.set(-9, 2, 4);
+  scene.add(side);
+}
+
+function makeBgTexture() {
+  const c = document.createElement('canvas');
+  c.width = 2; c.height = 512;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, 512);
+  g.addColorStop(0,    '#0a3555');
+  g.addColorStop(0.35, '#051e38');
+  g.addColorStop(0.75, '#031428');
+  g.addColorStop(1,    '#020b18');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 2, 512);
+  return new THREE.CanvasTexture(c);
+}
+
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  labelRenderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENVIRONMENT
+// ═══════════════════════════════════════════════════════════════════════════
+
+function buildEnvironment() {
+  // Sandy floor
+  const floorGeo = new THREE.PlaneGeometry(BOUNDS.x * 2.4, BOUNDS.z * 2.8, 24, 24);
+  const fp = floorGeo.attributes.position;
+  for (let i = 0; i < fp.count; i++) fp.setZ(i, (Math.random() - 0.5) * 0.18);
+  floorGeo.computeVertexNormals();
+  const floor = new THREE.Mesh(floorGeo,
+    new THREE.MeshStandardMaterial({ color: 0xc8a860, roughness: 0.95, metalness: 0.0 }));
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -BOUNDS.y;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  // Seaweed clusters
+  const swPositions = [
+    [-8, -2], [-5.5, -1.5], [-3, -3.5], [0, -2], [3, -3], [5.5, -1.8], [8.5, -2.5], [-1.5, -3.8]
+  ];
+  swPositions.forEach(([x, z]) => addSeaweed(x, z));
+
+  // Rocks
+  for (let i = 0; i < 6; i++) {
+    addRock((Math.random() - 0.5) * BOUNDS.x * 1.6,
+            (Math.random() - 0.5) * BOUNDS.z * 1.3);
+  }
+
+  // Ambient plankton
+  const plankMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.22 });
+  for (let i = 0; i < 35; i++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.018 + Math.random() * 0.024, 4, 4), plankMat);
+    m.position.set(
+      (Math.random() - 0.5) * BOUNDS.x * 2,
+      (Math.random() - 0.5) * BOUNDS.y * 1.8,
+      (Math.random() - 0.5) * BOUNDS.z * 1.8
+    );
+    scene.add(m);
+    plankton.push({ mesh: m, drift: new THREE.Vector3(
+      (Math.random() - 0.5) * 0.006,
+      (Math.random() - 0.5) * 0.004,
+      (Math.random() - 0.5) * 0.005
+    )});
+  }
+
+  // Idle bubble emitters
+  [[-5, -2, -1], [0, -1.5, 0.5], [6, -2.5, -0.5]].forEach(([x, y, z], i) => {
+    setInterval(() => spawnBubbles(x, y, z, 1), 1800 + i * 600);
+  });
+}
+
+function addSeaweed(x, z) {
+  const group = new THREE.Group();
+  const segs = 3 + Math.floor(Math.random() * 3);
+  const height = 1.3 + Math.random() * 1.6;
+  const greens = [0x1a7a3c, 0x228b22, 0x2a6e1e, 0x176035];
+  const col = greens[Math.floor(Math.random() * greens.length)];
+  const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.8, side: THREE.DoubleSide });
+
+  for (let s = 0; s < segs; s++) {
+    const h = height / segs;
+    const geo = new THREE.CylinderGeometry(0.038, 0.065, h, 5);
+    const seg = new THREE.Mesh(geo, mat);
+    seg.position.y = s * h + h / 2;
+    seg.rotation.z = Math.sin(s * 1.5) * 0.22;
+    seg.rotation.x = Math.sin(s * 0.9) * 0.12;
+    seg.castShadow = true;
+    group.add(seg);
+  }
+  group.position.set(x, -BOUNDS.y, z);
+  scene.add(group);
+}
+
+function addRock(x, z) {
+  const geo = new THREE.DodecahedronGeometry(0.28 + Math.random() * 0.38, 0);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    pos.setX(i, pos.getX(i) * (0.75 + Math.random() * 0.45));
+    pos.setY(i, pos.getY(i) * (0.55 + Math.random() * 0.35));
+    pos.setZ(i, pos.getZ(i) * (0.75 + Math.random() * 0.45));
+  }
+  geo.computeVertexNormals();
+  const cols = [0x5a5a5a, 0x7a6a5a, 0x4a4a5a, 0x6a5a4a];
+  const rock = new THREE.Mesh(geo,
+    new THREE.MeshStandardMaterial({ color: cols[cols.length * Math.random() | 0], roughness: 0.9 }));
+  rock.position.set(x, -BOUNDS.y + 0.15, z);
+  rock.rotation.set(Math.random() * 2, Math.random() * 6, Math.random() * 2);
+  rock.castShadow = true;
+  rock.receiveShadow = true;
+  scene.add(rock);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FISH
+// ═══════════════════════════════════════════════════════════════════════════
+
+function makeProceduralFish(colorHex, sizeMul) {
+  const group = new THREE.Group();
+  const s = FISH_SIZE * sizeMul;
+  const col = new THREE.Color(colorHex);
+  const darkCol = col.clone().multiplyScalar(0.55);
+
+  const bodyMat = new THREE.MeshStandardMaterial({ color: col,     roughness: 0.42, metalness: 0.08 });
+  const finMat  = new THREE.MeshStandardMaterial({ color: darkCol, roughness: 0.5,  side: THREE.DoubleSide });
+
+  // Body: fish faces +X, body is elongated along X
+  const body = new THREE.Mesh(new THREE.SphereGeometry(s, 14, 10), bodyMat);
+  body.scale.set(1.75, 1, 0.82);
+  body.castShadow = true;
+  group.add(body);
+
+  // Tail group (sits at -X end; wags on Y)
+  const tailGrp = new THREE.Group();
+  tailGrp.position.x = -s * 1.55;
+  const tv = new Float32Array([
+    0,      0,        0,
+    -s*0.7, s*0.62,   0,
+    -s*0.7, -s*0.62,  0,
+  ]);
+  const tailGeo = new THREE.BufferGeometry();
+  tailGeo.setAttribute('position', new THREE.BufferAttribute(tv, 3));
+  tailGeo.computeVertexNormals();
+  tailGrp.add(new THREE.Mesh(tailGeo, bodyMat));
+  group.add(tailGrp);
+  group.userData.tailGrp = tailGrp;
+
+  // Dorsal fin
+  const dv = new Float32Array([
+    s*0.15,  s*0.95, 0,
+    -s*0.3,  s*0.12, 0,
+    s*0.15,  s*0.12, 0,
+  ]);
+  const dGeo = new THREE.BufferGeometry();
+  dGeo.setAttribute('position', new THREE.BufferAttribute(dv, 3));
+  dGeo.computeVertexNormals();
+  group.add(new THREE.Mesh(dGeo, finMat));
+
+  // Pectoral fin (right side, z+)
+  const pv = new Float32Array([
+    0,    -s*0.1, s*0.12,
+    -s*0.5,-s*0.38,s*0.58,
+    0,    -s*0.38, s*0.12,
+  ]);
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pv, 3));
+  pGeo.computeVertexNormals();
+  group.add(new THREE.Mesh(pGeo, finMat));
+
+  // Eye
+  const eyeMat  = new THREE.MeshBasicMaterial({ color: 0x111111 });
+  const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(s * 0.115, 8, 8), eyeMat);
+  eye.position.set(s * 1.12, s * 0.17, s * 0.5);
+  group.add(eye);
+  const pupil = new THREE.Mesh(new THREE.SphereGeometry(s * 0.048, 6, 6), whiteMat);
+  pupil.position.set(s * 1.24, s * 0.17, s * 0.54);
+  group.add(pupil);
+
+  return group;
+}
+
+function makeSTLFish(geometry, colorHex, sizeMul, dots) {
+  geometry.computeBoundingBox();
+  const center = new THREE.Vector3();
+  geometry.boundingBox.getCenter(center);
+  geometry.translate(-center.x, -center.y, -center.z);
+
+  const size = new THREE.Vector3();
+  geometry.boundingBox.getSize(size);
+  const targetSize = FISH_SIZE * 2.8 * sizeMul;
+  const geoScale = targetSize / Math.max(size.x, size.y, size.z);
+  geometry.scale(geoScale, geoScale, geoScale);
+
+  // Orient model using student-placed dots
+  if (dots?.head && dots?.tail) {
+    const toTank = targetSize / (dots.scale || 2.5);
+    const headV = new THREE.Vector3(...dots.head).multiplyScalar(toTank);
+    const tailV = new THREE.Vector3(...dots.tail).multiplyScalar(toTank);
+    const basisX = new THREE.Vector3().subVectors(headV, tailV).normalize(); // forward → +X
+
+    if (dots.back) {
+      // Full 3-point orientation: head + tail + back (dorsal) → no roll ambiguity
+      const backV  = new THREE.Vector3(...dots.back).multiplyScalar(toTank);
+      const upHint = new THREE.Vector3().subVectors(backV, tailV).normalize();
+      const basisZ = new THREE.Vector3().crossVectors(basisX, upHint).normalize(); // right
+      const basisY = new THREE.Vector3().crossVectors(basisZ, basisX).normalize(); // true up
+      // Rotation matrix whose columns are the fish's axes → transpose = inverse = what we apply
+      geometry.applyMatrix4(new THREE.Matrix4().makeBasis(basisX, basisY, basisZ).transpose());
+    } else {
+      // 2-point fallback: orient forward, then roll-correct by keeping original +Y as up
+      const q1 = new THREE.Quaternion().setFromUnitVectors(basisX, new THREE.Vector3(1, 0, 0));
+      geometry.applyQuaternion(q1);
+      const rotatedUp = new THREE.Vector3(0, 1, 0).applyQuaternion(q1);
+      const projUp = new THREE.Vector3(0, rotatedUp.y, rotatedUp.z);
+      if (projUp.lengthSq() > 0.001) {
+        geometry.applyQuaternion(
+          new THREE.Quaternion().setFromUnitVectors(projUp.normalize(), new THREE.Vector3(0, 1, 0))
+        );
+      }
+    }
+  }
+
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+    color: new THREE.Color(colorHex), roughness: 0.5, metalness: 0.12, side: THREE.DoubleSide
+  }));
+  mesh.castShadow = true;
+
+  // Gentle full-body wag group (amplitude is smaller than procedural tail, see updateFishes)
+  const wagGrp = new THREE.Group();
+  wagGrp.add(mesh);
+
+  const group = new THREE.Group();
+  group.add(wagGrp);
+  group.userData.tailGrp = wagGrp;
+  group.userData.isSTL   = true;
+  return group;
+}
+
+async function spawnFish(data) {
+  const { name, color = '#4FC3F7', size = 1.0, model } = data;
+  let group;
+
+  if (model) {
+    try {
+      const loader = new STLLoader();
+      const geo = await new Promise((res, rej) => loader.load(model, res, undefined, rej));
+      group = makeSTLFish(geo, color, size, data.dots);
+    } catch {
+      group = makeProceduralFish(color, size);
+    }
+  } else {
+    group = makeProceduralFish(color, size);
+  }
+
+  group.position.set(
+    (Math.random() - 0.5) * BOUNDS.x * 1.6,
+    (Math.random() - 0.5) * BOUNDS.y * 0.9,
+    (Math.random() - 0.5) * BOUNDS.z * 0.85
+  );
+  scene.add(group);
+
+  // Label
+  const labelDiv = document.createElement('div');
+  labelDiv.className = 'fish-label';
+  labelDiv.textContent = name;
+  const label = new CSS2DObject(labelDiv);
+  label.position.set(0, FISH_SIZE * size * 2.1, 0);
+  group.add(label);
+
+  fishes.push({
+    group, data,
+    target:     randomTarget(),
+    speed:      FISH_SPEED * (0.7 + Math.random() * 0.6),
+    tailGroup:  group.userData.tailGrp,
+    tailPhase:  Math.random() * Math.PI * 2,
+    tailSpeed:  2.6 + Math.random() * 1.6,
+    state:      'wander',
+    feedTarget: null,
+    waitTicks:  0,
+  });
+}
+
+function randomTarget() {
+  return new THREE.Vector3(
+    (Math.random() - 0.5) * BOUNDS.x * 1.7,
+    (Math.random() - 0.5) * BOUNDS.y * 1.0,
+    (Math.random() - 0.5) * BOUNDS.z * 0.9
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FISH UPDATE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function updateFishes(t) {
+  for (const fish of fishes) {
+    const pos = fish.group.position;
+    let dest;
+
+    if (fish.state === 'feed' && fish.feedTarget) {
+      dest = fish.feedTarget;
+    } else {
+      dest = fish.target;
+    }
+
+    const dir = new THREE.Vector3().subVectors(dest, pos);
+    const dist = dir.length();
+
+    if (fish.state === 'wander') {
+      if (dist < 0.45) {
+        if (fish.waitTicks-- <= 0) {
+          fish.target = randomTarget();
+          fish.waitTicks = (Math.random() * 80) | 0;
+        }
+      }
+    } else if (fish.state === 'feed') {
+      // Find nearest uneaten food
+      let nearDist = Infinity, nearFood = null;
+      for (const f of foods) {
+        if (f.eaten) continue;
+        const d = pos.distanceTo(f.mesh.position);
+        if (d < nearDist) { nearDist = d; nearFood = f; }
+      }
+      if (nearFood) {
+        fish.feedTarget = nearFood.mesh.position;
+        if (nearDist < 0.6) {
+          nearFood.eaten = true;
+          spawnBubbles(pos.x, pos.y, pos.z, 4);
+        }
+        dir.subVectors(fish.feedTarget, pos);
+      } else {
+        fish.state = 'wander';
+        fish.feedTarget = null;
+      }
+    }
+
+    // Move
+    const speed = fish.state === 'feed' ? fish.speed * 1.9 : fish.speed;
+    if (dir.length() > 0.08) {
+      dir.normalize();
+      pos.addScaledVector(dir, speed);
+
+      // Smooth Y-axis steering (fish faces +X by default)
+      // R_y(θ): local +X → world (cosθ, 0, −sinθ) → θ = atan2(−dir.z, dir.x)
+      const tY = Math.atan2(-dir.z, dir.x);
+      let dY = tY - fish.group.rotation.y;
+      if (dY >  Math.PI) dY -= Math.PI * 2;
+      if (dY < -Math.PI) dY += Math.PI * 2;
+      fish.group.rotation.y += dY * 0.07;
+    }
+
+    // Gentle bob
+    pos.y += Math.sin(t * 0.85 + fish.tailPhase) * 0.0025;
+
+    // Clamp to tank
+    pos.x = clamp(pos.x, -BOUNDS.x, BOUNDS.x);
+    pos.y = clamp(pos.y, -BOUNDS.y * 0.82, BOUNDS.y * 0.88);
+    pos.z = clamp(pos.z, -BOUNDS.z, BOUNDS.z);
+
+    // Tail wag (Y rotation on tail group)
+    if (fish.tailGroup) {
+      const amp = fish.group.userData.isSTL ? 0.2 : 0.48;
+      fish.tailGroup.rotation.y = Math.sin(t * fish.tailSpeed + fish.tailPhase) * amp;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FOOD
+// ═══════════════════════════════════════════════════════════════════════════
+
+function dropFood() {
+  const geo = new THREE.SphereGeometry(0.075, 7, 7);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7 });
+  for (let i = 0; i < FOOD_COUNT; i++) {
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(
+      (Math.random() - 0.5) * BOUNDS.x * 0.9,
+      BOUNDS.y * 0.92,
+      (Math.random() - 0.5) * BOUNDS.z * 0.5
+    );
+    mesh.castShadow = true;
+    scene.add(mesh);
+    foods.push({ mesh, vy: 0, eaten: false });
+  }
+}
+
+function updateFood() {
+  foods = foods.filter(f => {
+    if (f.eaten) { scene.remove(f.mesh); return false; }
+    f.vy -= 0.0075;
+    f.mesh.position.y += f.vy;
+    if (f.mesh.position.y < -BOUNDS.y + 0.08) { f.vy = 0; f.mesh.position.y = -BOUNDS.y + 0.08; }
+    return true;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUBBLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+function spawnBubbles(x, y, z, count = 1) {
+  const mat = new THREE.MeshStandardMaterial({ color: 0xadd8e6, transparent: true, opacity: 0.32, roughness: 0.1, metalness: 0.6 });
+  for (let i = 0; i < count; i++) {
+    const r = 0.04 + Math.random() * 0.07;
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 6, 6), mat.clone());
+    mesh.position.set(x + (Math.random() - 0.5) * 0.45, y, z + (Math.random() - 0.5) * 0.3);
+    scene.add(mesh);
+    bubbles.push({
+      mesh,
+      vel: new THREE.Vector3((Math.random() - 0.5) * 0.01, 0.016 + Math.random() * 0.012, (Math.random() - 0.5) * 0.008),
+      life: 1.0,
+      decay: 0.0042 + Math.random() * 0.003,
+    });
+  }
+}
+
+function updateBubbles() {
+  bubbles = bubbles.filter(b => {
+    b.mesh.position.add(b.vel);
+    b.life -= b.decay;
+    b.mesh.material.opacity = b.life * 0.32;
+    if (b.life <= 0 || b.mesh.position.y > BOUNDS.y + 1) {
+      scene.remove(b.mesh); return false;
+    }
+    return true;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIRT
+// ═══════════════════════════════════════════════════════════════════════════
+
+function spawnDirt(n) {
+  for (let i = 0; i < n; i++) {
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05 + Math.random() * 0.07, 4, 4),
+      new THREE.MeshBasicMaterial({ color: 0x2d5a27, transparent: true, opacity: 0.55 })
+    );
+    mesh.position.set(
+      (Math.random() - 0.5) * BOUNDS.x * 1.85,
+      (Math.random() - 0.5) * BOUNDS.y * 1.65,
+      (Math.random() - 0.5) * BOUNDS.z * 1.1
+    );
+    scene.add(mesh);
+    dirtBits.push({ mesh, drift: new THREE.Vector3(
+      (Math.random() - 0.5) * 0.005,
+      (Math.random() - 0.5) * 0.003,
+      (Math.random() - 0.5) * 0.003
+    )});
+  }
+}
+
+function updateDirt() {
+  for (const d of dirtBits) {
+    d.mesh.position.add(d.drift);
+    if (Math.abs(d.mesh.position.x) > BOUNDS.x) d.drift.x *= -1;
+    if (Math.abs(d.mesh.position.y) > BOUNDS.y) d.drift.y *= -1;
+    if (Math.abs(d.mesh.position.z) > BOUNDS.z) d.drift.z *= -1;
+  }
+}
+
+function clearDirt() {
+  dirtBits.forEach(d => scene.remove(d.mesh));
+  dirtBits = [];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PLANKTON
+// ═══════════════════════════════════════════════════════════════════════════
+
+function updatePlankton() {
+  for (const p of plankton) {
+    p.mesh.position.add(p.drift);
+    if (Math.abs(p.mesh.position.x) > BOUNDS.x * 1.1) p.drift.x *= -1;
+    if (Math.abs(p.mesh.position.y) > BOUNDS.y * 1.1) p.drift.y *= -1;
+    if (Math.abs(p.mesh.position.z) > BOUNDS.z * 1.1) p.drift.z *= -1;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIRTY UI
+// ═══════════════════════════════════════════════════════════════════════════
+
+function setDirtiness(val) {
+  dirtiness = clamp(val, 0, MAX_DIRTY);
+  const pct = dirtiness / MAX_DIRTY;
+  $mfill.style.width = `${pct * 100}%`;
+  $dirty.style.opacity = pct * 0.62;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FISH CLICK / TAP
+// ═══════════════════════════════════════════════════════════════════════════
+
+let cardTimer;
+function showCard(fish) {
+  const colors = ['🐠','🐟','🦈','🐡','🐙','🦑','🦞','🦀','🦐','🐚'];
+  document.getElementById('fish-card-emoji').textContent =
+    colors[Math.abs(fish.data.name.charCodeAt(0)) % colors.length];
+  document.getElementById('fish-card-name').textContent = fish.data.name;
+  document.getElementById('fish-card-sub').textContent =
+    fish.data.model ? 'TinkerCAD Design' : "Class Fish";
+  $card.classList.add('show');
+  clearTimeout(cardTimer);
+  cardTimer = setTimeout(() => $card.classList.remove('show'), 3200);
+}
+
+function handlePointerUp(e) {
+  const rect = $canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.changedTouches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.changedTouches[0].clientY : e.clientY;
+  pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+  const all = [];
+  fishes.forEach(f => f.group.traverse(m => { if (m.isMesh) all.push(m); }));
+  const hits = raycaster.intersectObjects(all);
+  if (!hits.length) return;
+  const hitMesh = hits[0].object;
+  const fish = fishes.find(f => { let ok = false; f.group.traverse(m => { if (m === hitMesh) ok = true; }); return ok; });
+  if (fish) showCard(fish);
+}
+
+$canvas.addEventListener('pointerup', handlePointerUp);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.onFeed = function () {
+  if (isFeeding || fishes.length === 0) return;
+  isFeeding = true;
+  $feedBtn.disabled = true;
+
+  dropFood();
+  fishes.forEach(f => { f.state = 'feed'; f.feedTarget = null; });
+  setDirtiness(dirtiness + DIRTY_PER_FEED);
+  spawnDirt(Math.ceil(DIRTY_PER_FEED * 0.6));
+  toast('🍤 Feeding time! Fish are swimming to eat!');
+
+  setTimeout(() => {
+    // Clean up any leftover food
+    foods.forEach(f => { if (!f.eaten) scene.remove(f.mesh); });
+    foods = [];
+    fishes.forEach(f => { f.state = 'wander'; f.feedTarget = null; });
+    isFeeding = false;
+    $feedBtn.disabled = false;
+  }, 13000);
+};
+
+window.onClean = function () {
+  if (isCleaning) return;
+  isCleaning = true;
+  $cleanBtn.disabled = true;
+  toast('🧹 Cleaning the tank…');
+
+  // Bubble wave
+  let wave = 0;
+  const bi = setInterval(() => {
+    [[-BOUNDS.x * 0.75, -BOUNDS.y + 0.4, 0], [0, -BOUNDS.y + 0.4, 0], [BOUNDS.x * 0.75, -BOUNDS.y + 0.4, 0]]
+      .forEach(([x, y, z]) => spawnBubbles(x, y, z, 7));
+    if (++wave >= 9) clearInterval(bi);
+  }, 280);
+
+  // Drain dirtiness over 3.5s
+  const start = dirtiness, dur = 3500;
+  const t0 = performance.now();
+  const step = () => {
+    const elapsed = performance.now() - t0;
+    setDirtiness(start * Math.max(0, 1 - elapsed / dur));
+    const total = dirtBits.length;
+    if (total > 0) {
+      const d = dirtBits.pop();
+      scene.remove(d.mesh);
+    }
+    if (elapsed < dur) {
+      requestAnimationFrame(step);
+    } else {
+      setDirtiness(0);
+      clearDirt();
+      setTimeout(() => {
+        toast('✨ Tank is squeaky clean!');
+        isCleaning = false;
+        $cleanBtn.disabled = false;
+      }, 400);
+    }
+  };
+  requestAnimationFrame(step);
+};
+
+window.toggleFS = function () {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.();
+  } else {
+    document.exitFullscreen?.();
+  }
+};
+
+// ── Admin Panel ─────────────────────────────────────────────────────────────
+const $admin       = document.getElementById('admin-panel');
+const $adminList   = document.getElementById('admin-fish-list');
+const $adminStatus = document.getElementById('admin-status');
+
+function openAdmin() {
+  renderAdminList();
+  $admin.classList.add('show');
+}
+window.closeAdmin = function () { $admin.classList.remove('show'); };
+
+function renderAdminList() {
+  $adminList.innerHTML = '';
+  if (fishes.length === 0) {
+    $adminList.innerHTML = '<div style="color:#2a4a6a;text-align:center;padding:40px 0">No fish in the tank</div>';
+  } else {
+    fishes.forEach(fish => {
+      const row = document.createElement('div');
+      row.className = 'admin-fish-row';
+      row.id = `admin-row-${fish.data.id}`;
+      row.innerHTML = `
+        <div class="admin-fish-swatch" style="background:${fish.data.color}"></div>
+        <div class="admin-fish-name">${fish.data.name}</div>
+        <div class="admin-fish-meta">size ${fish.data.size}${fish.data.model ? ' · STL' : ''}</div>
+        <button class="admin-remove-btn" onclick="removeFishById('${fish.data.id}')">✕ Remove</button>`;
+      $adminList.appendChild(row);
+    });
+  }
+  $adminStatus.textContent = `${fishes.length} fish in tank  ·  Esc to close`;
+}
+
+window.removeFishById = function (id) {
+  const idx = fishes.findIndex(f => f.data.id === id);
+  if (idx === -1) return;
+  const fish = fishes[idx];
+  fish.group.traverse(child => {
+    if (child.isCSS2DObject && child.element.parentNode) child.element.parentNode.removeChild(child.element);
+  });
+  scene.remove(fish.group);
+  fishes.splice(idx, 1);
+  $count.textContent = `🐟 ${fishes.length} fish`;
+  saveToStorage(fishes.map(f => f.data));
+  const row = document.getElementById(`admin-row-${id}`);
+  if (row) row.remove();
+  $adminStatus.textContent = `${fishes.length} fish in tank  ·  Esc to close`;
+};
+
+window.clearDuplicates = function () {
+  const seen = new Set();
+  const toRemove = [];
+  fishes.forEach(f => {
+    const key = f.data.name.toLowerCase().trim();
+    if (seen.has(key)) toRemove.push(f.data.id);
+    else seen.add(key);
+  });
+  if (toRemove.length === 0) { toast('✅ No duplicate names found!'); return; }
+  toRemove.forEach(id => removeFishById(id));
+  toast(`🔄 Removed ${toRemove.length} duplicate${toRemove.length > 1 ? 's' : ''}`);
+};
+
+window.resetToDefault = async function () {
+  if (!confirm('Reset the tank to default fish? All student fish will be removed.')) return;
+  fishes.forEach(fish => {
+    fish.group.traverse(child => {
+      if (child.isCSS2DObject && child.element.parentNode) child.element.parentNode.removeChild(child.element);
+    });
+    scene.remove(fish.group);
+  });
+  fishes = [];
+  localStorage.removeItem(STORAGE_KEY);
+  const list = await loadFishList();
+  for (const data of list) await spawnFish(data);
+  $count.textContent = `🐟 ${fishes.length} fish`;
+  closeAdmin();
+  toast('↩ Tank reset to default fish');
+};
+
+// Live-sync: new fish submitted from the upload page in another tab
+window.addEventListener('storage', e => {
+  if (e.key !== STORAGE_KEY || !e.newValue) return;
+  try {
+    const newList = JSON.parse(e.newValue);
+    const currentIds = new Set(fishes.map(f => f.data.id));
+    newList.forEach(d => {
+      if (!currentIds.has(d.id)) {
+        spawnFish(d).then(() => {
+          $count.textContent = `🐟 ${fishes.length} fish`;
+          toast(`🐠 ${d.name} joined the tank!`);
+        });
+      }
+    });
+  } catch {}
+});
+
+// Secret key sequence: type ADMIN (uppercase letters) to open admin panel
+let _seq = '';
+document.addEventListener('keydown', e => {
+  if ($admin.classList.contains('show')) { if (e.key === 'Escape') closeAdmin(); return; }
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  _seq = (_seq + e.key.toUpperCase()).slice(-5);
+  if (_seq === 'ADMIN') { _seq = ''; openAdmin(); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════════════════
+
+let toastTimer;
+function toast(msg) {
+  $toast.textContent = msg;
+  $toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $toast.classList.remove('show'), 3600);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER LOOP
+// ═══════════════════════════════════════════════════════════════════════════
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  updateFishes(t);
+  updateFood();
+  updateBubbles();
+  updateDirt();
+  updatePlankton();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+// ── Storage ────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'fishtank_fish';
+function loadFromStorage() {
+  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+function saveToStorage(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+async function loadFishList() {
+  const stored = loadFromStorage();
+  if (stored) return stored;
+  try {
+    const r = await fetch('assets/data/fish-data.json');
+    if (r.ok) {
+      const list = await r.json();
+      saveToStorage(list);
+      return list;
+    }
+  } catch {}
+  const defaults = [
+    { id: 'demo1', name: 'Bubbles', color: '#4FC3F7', size: 1.0 },
+    { id: 'demo2', name: 'Coral',   color: '#FF7043', size: 0.9 },
+    { id: 'demo3', name: 'Finn',    color: '#66BB6A', size: 1.1 },
+    { id: 'demo4', name: 'Pearl',   color: '#CE93D8', size: 0.85 },
+    { id: 'demo5', name: 'Neptune', color: '#FFD54F', size: 1.2 },
+  ];
+  saveToStorage(defaults);
+  return defaults;
+}
+
+async function main() {
+  initScene();
+  buildEnvironment();
+
+  const fishList = await loadFishList();
+  for (const data of fishList) await spawnFish(data);
+
+  $count.textContent = `🐟 ${fishes.length} fish`;
+  animate();
+
+  // Auto-fullscreen if ?fs param present
+  if (new URLSearchParams(location.search).has('fs')) {
+    document.documentElement.requestFullscreen?.();
+  }
+
+  // Dismiss loading screen
+  setTimeout(() => {
+    $loading.classList.add('gone');
+    setTimeout(() => $loading.remove(), 800);
+  }, 550);
+}
+
+main();
+</script>
+</body>
+</html>

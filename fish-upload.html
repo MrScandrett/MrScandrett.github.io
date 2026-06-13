@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Add Your Fish 🐠 — Mr. Scandrett's Class Tank</title>
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #020d1a;
+      color: #fff;
+    }
+
+    body {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px 16px 56px;
+    }
+
+    /* Top nav */
+    .top-nav {
+      width: 100%; max-width: 520px;
+      margin-bottom: 22px;
+    }
+    .back-link {
+      color: #7dd3fc; text-decoration: none; font-weight: 700; font-size: 0.92rem;
+      background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.25);
+      padding: 8px 18px; border-radius: 20px; display: inline-block;
+      transition: background 0.2s;
+    }
+    .back-link:hover { background: rgba(125,211,252,0.22); }
+
+    /* Card */
+    .card {
+      width: 100%; max-width: 520px;
+      background: rgba(4,22,48,0.92);
+      border: 1px solid rgba(125,211,252,0.22);
+      border-radius: 24px; padding: 36px 32px 42px;
+      box-shadow: 0 8px 56px rgba(0,60,160,0.22);
+    }
+
+    h1 {
+      font-size: 1.6rem; font-weight: 900; color: #7dd3fc; text-align: center;
+      text-shadow: 0 0 24px rgba(125,211,252,0.4);
+      margin-bottom: 5px; letter-spacing: 0.01em;
+    }
+    .subtitle { text-align: center; color: #4b6481; font-size: 0.88rem; margin-bottom: 28px; }
+
+    /* Fish preview */
+    .fish-preview {
+      display: flex; justify-content: center; align-items: center;
+      height: 120px; margin-bottom: 28px;
+    }
+    .fish-swim {
+      animation: swimpreview 2.6s ease-in-out infinite;
+      display: flex; align-items: center; justify-content: center;
+    }
+    @keyframes swimpreview {
+      0%,100% { transform: translateX(-10px) rotate(-4deg); }
+      50%      { transform: translateX(10px) rotate(4deg); }
+    }
+
+    /* Form */
+    .field { margin-bottom: 22px; }
+    label {
+      display: block; font-size: 0.82rem; font-weight: 800; color: #93c5fd;
+      margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.09em;
+    }
+    input[type="text"], input[type="url"] {
+      width: 100%; padding: 13px 16px;
+      background: rgba(125,211,252,0.07);
+      border: 1.5px solid rgba(125,211,252,0.22);
+      border-radius: 10px; color: #e0f2fe;
+      font-size: 1rem; font-family: inherit;
+      outline: none; transition: border-color 0.2s, background 0.2s;
+    }
+    input[type="text"]:focus, input[type="url"]:focus {
+      border-color: rgba(125,211,252,0.6); background: rgba(125,211,252,0.11);
+    }
+    input[type="text"]::placeholder, input[type="url"]::placeholder { color: #2a4a6a; }
+
+    /* Color swatches */
+    .color-grid { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .swatch {
+      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+      border: 2.5px solid transparent; flex-shrink: 0;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.active { border-color: #fff; transform: scale(1.18); box-shadow: 0 0 0 3px rgba(255,255,255,0.22); }
+    .custom-color-wrap { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
+    .custom-color-wrap input[type="color"] {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      opacity: 0; cursor: pointer; border: none; padding: 0;
+    }
+    .custom-swatch {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+      border: 2.5px solid rgba(255,255,255,0.28);
+      pointer-events: none;
+    }
+
+    /* Size selector */
+    .size-options { display: flex; gap: 10px; }
+    .size-opt {
+      flex: 1; padding: 14px 8px; border-radius: 14px; cursor: pointer;
+      border: 2px solid rgba(125,211,252,0.18); background: rgba(125,211,252,0.06);
+      text-align: center; transition: all 0.18s; user-select: none;
+    }
+    .size-opt:hover { background: rgba(125,211,252,0.14); }
+    .size-opt.active {
+      border-color: #7dd3fc; background: rgba(125,211,252,0.2);
+      box-shadow: 0 0 18px rgba(125,211,252,0.18);
+    }
+    .size-opt .size-emoji { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+    .size-opt .size-label { font-size: 0.78rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* Advanced (TinkerCAD) */
+    details { margin-bottom: 22px; }
+    summary {
+      cursor: pointer; color: #4b6481; font-size: 0.84rem; font-weight: 700;
+      letter-spacing: 0.05em; user-select: none; list-style: none;
+      display: flex; align-items: center; gap: 6px; padding: 6px 0;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: '▸'; transition: transform 0.2s; display: inline-block; }
+    details[open] summary::before { transform: rotate(90deg); }
+    details .field { margin-top: 12px; margin-bottom: 0; }
+
+    /* STL file upload */
+    .file-drop {
+      position: relative;
+      border: 2px dashed rgba(125,211,252,0.28); border-radius: 12px;
+      padding: 22px 16px; text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: rgba(125,211,252,0.04);
+    }
+    .file-drop:hover, .file-drop.dragover {
+      border-color: rgba(125,211,252,0.6); background: rgba(125,211,252,0.1);
+    }
+    .file-drop input[type="file"] {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      opacity: 0; cursor: pointer;
+    }
+    .file-drop-icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+    .file-drop-text { color: #7dd3fc; font-weight: 700; font-size: 0.9rem; display: block; }
+    .file-drop-hint { color: #2a4a6a; font-size: 0.78rem; margin-top: 4px; display: block; }
+    .file-chosen {
+      display: none; align-items: center; gap: 10px;
+      background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 10px; padding: 10px 14px;
+    }
+    .file-chosen.show { display: flex; }
+    .file-chosen-name { flex: 1; color: #bbf7d0; font-weight: 700; font-size: 0.88rem; word-break: break-all; }
+    .file-clear-btn {
+      background: rgba(239,68,68,0.14); border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5; padding: 3px 10px; border-radius: 6px;
+      cursor: pointer; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+      font-family: inherit;
+    }
+    .file-clear-btn:hover { background: rgba(239,68,68,0.28); }
+    .stl-steps {
+      margin-top: 10px; padding: 10px 14px;
+      background: rgba(125,211,252,0.05); border-radius: 8px;
+      color: #4b6481; font-size: 0.78rem; line-height: 1.7;
+    }
+    .stl-steps strong { color: #7dd3fc; }
+
+    /* STL dot-placement preview */
+    #stl-preview-section { display: none; margin-top: 14px; }
+    #stl-canvas-wrap {
+      position: relative; border-radius: 12px; overflow: hidden;
+      border: 1px solid rgba(125,211,252,0.18); background: #020d1a;
+    }
+    #stl-preview-canvas { display: block; width: 100%; height: 280px; }
+    .dot-guide {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 8px 14px; font-size: 0.82rem; font-weight: 700;
+      background: rgba(2,13,26,0.9); backdrop-filter: blur(4px);
+      text-align: center;
+    }
+    .dot-guide-head { color: #ffaaaa; }
+    .dot-guide-tail { color: #99ccff; }
+    .dot-guide-fin  { color: #ffee88; }
+    .dot-guide-done { color: #99ffcc; }
+    #dot-controls {
+      display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+    }
+    .dot-btn {
+      flex: 1; padding: 9px 6px; border-radius: 9px;
+      font-weight: 800; font-size: 0.82rem; cursor: pointer;
+      font-family: inherit; transition: all 0.15s; min-width: 68px;
+    }
+    .dot-btn-head { background: rgba(255,60,60,0.12); border: 2px solid rgba(255,60,60,0.28); color: #ffaaaa; }
+    .dot-btn-head.active { background: rgba(255,60,60,0.3); border-color: #ff4444; color: #ffdddd; }
+    .dot-btn-tail { background: rgba(50,140,255,0.12); border: 2px solid rgba(50,140,255,0.28); color: #88bbff; }
+    .dot-btn-tail.active { background: rgba(50,140,255,0.3); border-color: #3388ff; color: #cce0ff; }
+    .dot-btn-fin  { background: rgba(255,200,30,0.12); border: 2px solid rgba(255,200,30,0.28); color: #ffe080; }
+    .dot-btn-fin.active  { background: rgba(255,200,30,0.3); border-color: #ffcc00; color: #fff0bb; }
+    .dot-btn-back  { background: rgba(52,211,153,0.12); border: 2px solid rgba(52,211,153,0.28); color: #6ee7b7; }
+    .dot-btn-back.active  { background: rgba(52,211,153,0.3); border-color: #34d399; color: #d1fae5; }
+    .dot-btn-reset { background: rgba(125,211,252,0.06); border: 2px solid rgba(125,211,252,0.14); color: #2a4a6a; }
+    .dot-btn-reset:hover { background: rgba(125,211,252,0.13); color: #7dd3fc; }
+    #dot-status { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .dot-stat {
+      font-size: 0.78rem; font-weight: 700; color: #1e3a52;
+      padding: 4px 12px; border-radius: 20px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(125,211,252,0.1);
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .dot-stat.placed { color: #7dd3fc; border-color: rgba(125,211,252,0.38); }
+    .preview-tip { color: #1a3448; font-size: 0.72rem; text-align: center; margin-top: 6px; }
+
+    /* Error */
+    .error-msg { color: #fca5a5; font-size: 0.85rem; font-weight: 700; margin-top: 8px; display: none; }
+    .error-msg.show { display: block; }
+
+    /* Submit */
+    .submit-btn {
+      width: 100%; padding: 17px;
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      border: none; border-radius: 14px;
+      color: #cffafe; font-size: 1.15rem; font-weight: 900;
+      cursor: pointer; letter-spacing: 0.03em;
+      transition: all 0.2s; box-shadow: 0 4px 28px rgba(6,182,212,0.3);
+    }
+    .submit-btn:hover { background: linear-gradient(135deg, #0ea5e9, #0891b2); box-shadow: 0 4px 36px rgba(6,182,212,0.5); transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); }
+
+    /* Success */
+    #success { display: none; text-align: center; padding: 16px 0; }
+    #success.show { display: block; }
+    #form-area.hidden { display: none; }
+    .success-fish { font-size: 3.8rem; animation: successbounce 0.55s cubic-bezier(.36,.07,.19,.97); display: block; }
+    @keyframes successbounce { 0% { transform: scale(0.4); } 60% { transform: scale(1.22); } 100% { transform: scale(1); } }
+    .success-msg { font-size: 1.35rem; font-weight: 900; color: #7dd3fc; margin: 14px 0 6px; }
+    .success-sub { color: #4b6481; font-size: 0.92rem; margin-bottom: 28px; }
+    .success-actions { display: flex; flex-direction: column; gap: 10px; }
+    .btn-primary {
+      display: block; padding: 15px; border-radius: 12px; text-align: center;
+      background: rgba(6,182,212,0.16); border: 1.5px solid rgba(6,182,212,0.4);
+      color: #7dd3fc; font-weight: 800; font-size: 0.98rem; text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: rgba(6,182,212,0.3); }
+    .btn-secondary {
+      display: block; width: 100%; padding: 15px; border-radius: 12px; text-align: center;
+      background: transparent; border: 1.5px solid rgba(125,211,252,0.16);
+      color: #4b6481; font-weight: 700; font-size: 0.92rem; cursor: pointer;
+      transition: background 0.2s, color 0.2s; font-family: inherit;
+    }
+    .btn-secondary:hover { background: rgba(125,211,252,0.08); color: #93c5fd; }
+
+    @media (max-width: 400px) {
+      .card { padding: 24px 16px 32px; }
+      h1 { font-size: 1.28rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-nav">
+  <a class="back-link" href="student-fishtank.html">🐠 ← Back to Tank</a>
+</div>
+
+<div class="card">
+  <h1>Add Your Fish! 🐠</h1>
+  <p class="subtitle">Design your fish and add it to the class tank</p>
+
+  <!-- Fish preview -->
+  <div class="fish-preview">
+    <div class="fish-swim">
+      <svg id="fish-svg" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg" width="210" height="122">
+        <polygon id="fp-tail" points="20,35 2,13 2,57" opacity="0.85"/>
+        <ellipse id="fp-body" cx="62" cy="35" rx="40" ry="23"/>
+        <polygon id="fp-dfin" points="46,12 68,12 60,23" opacity="0.72"/>
+        <ellipse id="fp-pfin" cx="56" cy="48" rx="13" ry="6" opacity="0.65" transform="rotate(18 56 48)"/>
+        <circle cx="90" cy="29" r="5.5" fill="white"/>
+        <circle cx="91.5" cy="29" r="2.8" fill="#111"/>
+        <ellipse cx="66" cy="43" rx="18" ry="7" fill="white" opacity="0.12"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div id="form-area">
+    <div class="field">
+      <label for="fish-name">Your Fish's Name</label>
+      <input type="text" id="fish-name" maxlength="24"
+             placeholder="e.g. Bubbles, Nemo, Sparkle…" autocomplete="off" />
+      <div class="error-msg" id="name-error"></div>
+    </div>
+
+    <div class="field">
+      <label>Pick a Color</label>
+      <div class="color-grid" id="color-grid"></div>
+    </div>
+
+    <div class="field">
+      <label>Fish Size</label>
+      <div class="size-options">
+        <div class="size-opt active" data-size="0.75" onclick="selectSize(this)">
+          <span class="size-emoji">🐟</span>
+          <span class="size-label">Small</span>
+        </div>
+        <div class="size-opt" data-size="1.0" onclick="selectSize(this)">
+          <span class="size-emoji">🐠</span>
+          <span class="size-label">Medium</span>
+        </div>
+        <div class="size-opt" data-size="1.3" onclick="selectSize(this)">
+          <span class="size-emoji">🐡</span>
+          <span class="size-label">Large</span>
+        </div>
+      </div>
+    </div>
+
+    <details id="stl-section">
+      <summary>TinkerCAD / 3D Design (optional)</summary>
+      <div class="field">
+        <label>Upload Your STL File</label>
+        <div class="file-drop" id="file-drop">
+          <input type="file" id="stl-file" accept=".stl" />
+          <span class="file-drop-icon">📁</span>
+          <span class="file-drop-text">Click to choose your .STL file</span>
+          <span class="file-drop-hint">Max 500 KB · Binary or ASCII STL</span>
+        </div>
+        <div class="file-chosen" id="file-chosen">
+          ✅ <span class="file-chosen-name" id="file-name"></span>
+          <button class="file-clear-btn" type="button" onclick="clearSTL()">✕ Remove</button>
+        </div>
+        <div class="error-msg" id="stl-error"></div>
+        <div class="stl-steps">
+          <strong>How to export from TinkerCAD:</strong><br>
+          Open your design → <strong>Export</strong> → choose <strong>.STL</strong> → save the file → upload it here
+        </div>
+
+        <!-- 3-D preview + dot placement (shown after file loads) -->
+        <div id="stl-preview-section">
+          <div id="stl-canvas-wrap">
+            <canvas id="stl-preview-canvas"></canvas>
+            <div id="dot-guide" class="dot-guide dot-guide-head">🔴 Click your fish's HEAD on the model above</div>
+          </div>
+          <div id="dot-controls">
+            <button id="dot-btn-head"  class="dot-btn dot-btn-head">🔴 Head</button>
+            <button id="dot-btn-tail"  class="dot-btn dot-btn-tail">🔵 Tail</button>
+            <button id="dot-btn-back"  class="dot-btn dot-btn-back">🔺 Back</button>
+            <button id="dot-btn-fin"   class="dot-btn dot-btn-fin">🟡 Fins</button>
+            <button id="dot-reset-btn" class="dot-btn dot-btn-reset">↺ Reset</button>
+          </div>
+          <div id="dot-status">
+            <span class="dot-stat" id="dot-stat-head">🔴 Head</span>
+            <span class="dot-stat" id="dot-stat-tail">🔵 Tail</span>
+            <span class="dot-stat" id="dot-stat-back">🔺 Back</span>
+            <span class="dot-stat" id="dot-stat-fin">🟡 Fins</span>
+          </div>
+          <p class="preview-tip">Drag to rotate · Scroll to zoom · Place all dots, then scroll down to submit</p>
+        </div>
+      </div>
+    </details>
+
+    <button class="submit-btn" onclick="submitFish()">🐠 Add My Fish to the Tank!</button>
+  </div>
+
+  <!-- Success state -->
+  <div id="success">
+    <span class="success-fish" id="success-emoji">🐠</span>
+    <div class="success-msg" id="success-name"></div>
+    <div class="success-sub">is now swimming in the class tank!</div>
+    <div class="success-actions">
+      <a class="btn-primary" href="student-fishtank.html">🐠 See the Tank!</a>
+      <button class="btn-secondary" onclick="addAnother()">+ Add Another Fish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'fishtank_fish';
+
+const PRESETS = [
+  { name: 'Sky Blue',  hex: '#4FC3F7' },
+  { name: 'Coral',     hex: '#FF7043' },
+  { name: 'Lime',      hex: '#66BB6A' },
+  { name: 'Lavender',  hex: '#CE93D8' },
+  { name: 'Gold',      hex: '#FFD54F' },
+  { name: 'Hot Pink',  hex: '#F06292' },
+  { name: 'Teal',      hex: '#26C6DA' },
+  { name: 'Red',       hex: '#EF5350' },
+  { name: 'Blue',      hex: '#42A5F5' },
+  { name: 'Mint',      hex: '#80CBC4' },
+  { name: 'Orange',    hex: '#FFA726' },
+  { name: 'Silver',    hex: '#B0BEC5' },
+];
+
+let selectedColor = PRESETS[0].hex;
+let selectedSize = 0.75;
+
+// Build color swatches
+const grid = document.getElementById('color-grid');
+PRESETS.forEach((c, i) => {
+  const el = document.createElement('div');
+  el.className = 'swatch' + (i === 0 ? ' active' : '');
+  el.style.background = c.hex;
+  el.title = c.name;
+  el.onclick = () => selectColor(c.hex, el);
+  grid.appendChild(el);
+});
+
+// Custom color picker
+const wrap = document.createElement('div');
+wrap.className = 'custom-color-wrap';
+wrap.title = 'Custom color';
+const customSwatch = document.createElement('div');
+customSwatch.className = 'custom-swatch';
+const colorInput = document.createElement('input');
+colorInput.type = 'color';
+colorInput.value = selectedColor;
+colorInput.addEventListener('input', e => {
+  selectedColor = e.target.value;
+  updatePreview(selectedColor);
+  grid.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+});
+wrap.appendChild(customSwatch);
+wrap.appendChild(colorInput);
+grid.appendChild(wrap);
+
+function updatePreview(hex) {
+  ['fp-body', 'fp-tail', 'fp-dfin', 'fp-pfin'].forEach(id => {
+    document.getElementById(id).setAttribute('fill', hex);
+  });
+}
+updatePreview(selectedColor);
+
+function selectColor(hex, el) {
+  selectedColor = hex;
+  updatePreview(hex);
+  colorInput.value = hex;
+  grid.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+function selectSize(el) {
+  document.querySelectorAll('.size-opt').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  selectedSize = parseFloat(el.dataset.size);
+}
+
+// Also allow pressing Enter in name field to submit
+document.getElementById('fish-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitFish();
+});
+
+// STL file upload
+let stlDataURL = null;
+
+const fileDrop = document.getElementById('file-drop');
+const fileInput = document.getElementById('stl-file');
+const fileChosen = document.getElementById('file-chosen');
+const fileNameEl = document.getElementById('file-name');
+const stlError = document.getElementById('stl-error');
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  stlError.classList.remove('show');
+
+  if (file.size > 500 * 1024) {
+    stlError.textContent = 'File too large (max 500 KB). Try exporting a simpler design.';
+    stlError.classList.add('show');
+    fileInput.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    stlDataURL = ev.target.result;
+    fileNameEl.textContent = file.name;
+    fileDrop.style.display = 'none';
+    fileChosen.classList.add('show');
+    document.dispatchEvent(new CustomEvent('stl-loaded', { detail: { dataURL: stlDataURL } }));
+  };
+  reader.readAsDataURL(file);
+});
+
+// Drag-and-drop highlight
+fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('dragover'); });
+fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
+fileDrop.addEventListener('drop', e => { e.preventDefault(); fileDrop.classList.remove('dragover'); });
+
+function clearSTL() {
+  stlDataURL = null;
+  fileInput.value = '';
+  fileDrop.style.display = '';
+  fileChosen.classList.remove('show');
+  fileNameEl.textContent = '';
+  document.dispatchEvent(new CustomEvent('stl-cleared'));
+}
+
+function loadStorage() {
+  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; } catch { return []; }
+}
+function saveStorage(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+function submitFish() {
+  const nameEl = document.getElementById('fish-name');
+  const nameErr = document.getElementById('name-error');
+  const name = nameEl.value.trim();
+
+  nameErr.classList.remove('show');
+  nameErr.textContent = '';
+  nameEl.style.borderColor = '';
+
+  if (!name) {
+    nameErr.textContent = 'Please give your fish a name!';
+    nameErr.classList.add('show');
+    nameEl.focus();
+    return;
+  }
+
+  const existing = loadStorage();
+  const dup = existing.find(f => f.name.toLowerCase() === name.toLowerCase());
+  if (dup) {
+    nameErr.textContent = `A fish named "${dup.name}" is already in the tank. Try a different name!`;
+    nameErr.classList.add('show');
+    nameEl.style.borderColor = 'rgba(239,68,68,0.6)';
+    nameEl.focus();
+    return;
+  }
+
+  const fish = {
+    id: `fish_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    name,
+    color: selectedColor,
+    size: selectedSize,
+  };
+  if (stlDataURL) fish.model = stlDataURL;
+  if (stlDataURL && window.stlDotData) fish.dots = window.stlDotData;
+
+  existing.push(fish);
+  saveStorage(existing);
+
+  // Show success
+  const emojis = ['🐠', '🐟', '🐡', '🦈', '🐙', '🐬'];
+  document.getElementById('success-emoji').textContent =
+    emojis[Math.abs(name.charCodeAt(0)) % emojis.length];
+  document.getElementById('success-name').textContent = name;
+  document.getElementById('form-area').classList.add('hidden');
+  document.getElementById('success').classList.add('show');
+}
+
+function addAnother() {
+  document.getElementById('fish-name').value = '';
+  document.getElementById('name-error').classList.remove('show');
+  document.getElementById('form-area').classList.remove('hidden');
+  document.getElementById('success').classList.remove('show');
+  clearSTL();
+  document.getElementById('fish-name').focus();
+  document.querySelectorAll('.size-opt').forEach(s => s.classList.remove('active'));
+  document.querySelector('[data-size="1.0"]').classList.add('active');
+  selectedSize = 1.0;
+}
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { STLLoader }     from 'three/addons/loaders/STLLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const PREVIEW_TARGET = 2.5;
+
+const $section  = document.getElementById('stl-preview-section');
+const $canvas   = document.getElementById('stl-preview-canvas');
+const $guide    = document.getElementById('dot-guide');
+const $headBtn  = document.getElementById('dot-btn-head');
+const $tailBtn  = document.getElementById('dot-btn-tail');
+const $backBtn  = document.getElementById('dot-btn-back');
+const $finBtn   = document.getElementById('dot-btn-fin');
+const $resetBtn = document.getElementById('dot-reset-btn');
+const $statHead = document.getElementById('dot-stat-head');
+const $statTail = document.getElementById('dot-stat-tail');
+const $statBack = document.getElementById('dot-stat-back');
+const $statFin  = document.getElementById('dot-stat-fin');
+
+let renderer, scene, camera, controls;
+let stlMesh = null;
+const raycaster = new THREE.Raycaster();
+const pointer   = new THREE.Vector2();
+
+let dots      = { head: null, tail: null, back: null, fins: [] };
+let dotMeshes = { head: null, tail: null, back: null, fins: [] };
+let mode = 'head';
+
+const DOT_COLOR = { head: 0xff3333, tail: 0x2288ff, back: 0x34d399, fin: 0xffcc00 };
+
+const GUIDE = {
+  head: "🔴 Click your fish's HEAD on the model above",
+  tail: '🔵 Now click the TAIL end',
+  back: '🔺 Click the TOP / BACK of your fish (dorsal fin side — fixes the roll!)',
+  fin:  '🟡 Optional: click fins or animated parts (up to 2) — or scroll down when ready',
+  done: '✅ All set! Scroll down to submit your fish',
+};
+
+document.addEventListener('stl-loaded', async e => {
+  if (!renderer) initRenderer();
+  document.getElementById('stl-section').open = true;
+  $section.style.display = 'block';
+  // Wait one frame so the browser finishes layout before measuring canvas width
+  await new Promise(r => requestAnimationFrame(r));
+  onResize();
+  await loadSTL(e.detail.dataURL);
+  setMode('head');
+  setTimeout(() => $section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
+});
+
+document.addEventListener('stl-cleared', () => {
+  $section.style.display = 'none';
+  resetDots();
+  window.stlDotData = null;
+});
+
+function initRenderer() {
+  renderer = new THREE.WebGLRenderer({ canvas: $canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(0x020d1a, 1);
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(48, 1, 0.01, 200);
+  camera.position.set(0, 1, 5.5);
+
+  controls = new OrbitControls(camera, $canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
+
+  scene.add(new THREE.AmbientLight(0x8ab4d4, 3.2));
+  const key = new THREE.DirectionalLight(0xffffff, 2.5);
+  key.position.set(5, 10, 8);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0x2255cc, 1.0);
+  fill.position.set(-5, 2, -4);
+  scene.add(fill);
+
+  const grid = new THREE.GridHelper(8, 14, 0x0d2030, 0x081520);
+  grid.position.y = -1.8;
+  scene.add(grid);
+
+  onResize();
+  window.addEventListener('resize', onResize);
+  $canvas.addEventListener('click', onCanvasClick);
+
+  (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+}
+
+function onResize() {
+  const w = $canvas.parentElement.clientWidth;
+  const h = 280;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+
+async function loadSTL(dataURL) {
+  const loader = new STLLoader();
+  const buf = await fetch(dataURL).then(r => r.arrayBuffer());
+  const geo = loader.parse(buf);
+
+  geo.computeBoundingBox();
+  const center = new THREE.Vector3();
+  geo.boundingBox.getCenter(center);
+  geo.translate(-center.x, -center.y, -center.z);
+
+  const sz = new THREE.Vector3();
+  geo.boundingBox.getSize(sz);
+  const s = PREVIEW_TARGET / Math.max(sz.x, sz.y, sz.z);
+  geo.scale(s, s, s);
+
+  if (stlMesh) scene.remove(stlMesh);
+  stlMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+    color: 0x4fc3f7, roughness: 0.4, metalness: 0.1, side: THREE.DoubleSide
+  }));
+  scene.add(stlMesh);
+  resetDots();
+}
+
+function onCanvasClick(e) {
+  if (!stlMesh || mode === 'done') return;
+  const rect = $canvas.getBoundingClientRect();
+  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObject(stlMesh);
+  if (!hits.length) return;
+  placeDot(mode, hits[0].point.clone());
+}
+
+function makeSphere(color) {
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1, 12, 12),
+    new THREE.MeshBasicMaterial({ color, depthTest: false })
+  );
+  m.renderOrder = 999;
+  return m;
+}
+
+function placeDot(type, pt) {
+  if (type === 'head') {
+    if (dotMeshes.head) scene.remove(dotMeshes.head);
+    const m = makeSphere(DOT_COLOR.head);
+    m.position.copy(pt); scene.add(m);
+    dotMeshes.head = m; dots.head = [pt.x, pt.y, pt.z];
+    setMode('tail');
+  } else if (type === 'tail') {
+    if (dotMeshes.tail) scene.remove(dotMeshes.tail);
+    const m = makeSphere(DOT_COLOR.tail);
+    m.position.copy(pt); scene.add(m);
+    dotMeshes.tail = m; dots.tail = [pt.x, pt.y, pt.z];
+    setMode('back');
+  } else if (type === 'back') {
+    if (dotMeshes.back) scene.remove(dotMeshes.back);
+    const m = makeSphere(DOT_COLOR.back);
+    m.position.copy(pt); scene.add(m);
+    dotMeshes.back = m; dots.back = [pt.x, pt.y, pt.z];
+    setMode('fin');
+  } else if (type === 'fin' && dots.fins.length < 2) {
+    const m = makeSphere(DOT_COLOR.fin);
+    m.position.copy(pt); scene.add(m);
+    dotMeshes.fins.push(m); dots.fins.push([pt.x, pt.y, pt.z]);
+    if (dots.fins.length >= 2) setMode('done');
+  }
+  syncDotData();
+  updateStatus();
+}
+
+function setMode(m) {
+  mode = m;
+  $guide.textContent = GUIDE[m];
+  $guide.className = `dot-guide dot-guide-${m}`;
+  [$headBtn, $tailBtn, $backBtn, $finBtn].forEach(b => b.classList.remove('active'));
+  if (m === 'head') $headBtn.classList.add('active');
+  else if (m === 'tail') $tailBtn.classList.add('active');
+  else if (m === 'back') $backBtn.classList.add('active');
+  else if (m === 'fin')  $finBtn.classList.add('active');
+}
+
+function updateStatus() {
+  $statHead.textContent = dots.head ? '🔴 Head ✓' : '🔴 Head';
+  $statHead.classList.toggle('placed', !!dots.head);
+  $statTail.textContent = dots.tail ? '🔵 Tail ✓' : '🔵 Tail';
+  $statTail.classList.toggle('placed', !!dots.tail);
+  $statBack.textContent = dots.back ? '🔺 Back ✓' : '🔺 Back';
+  $statBack.classList.toggle('placed', !!dots.back);
+  $statFin.textContent  = dots.fins.length ? `🟡 Fins ✓ (${dots.fins.length})` : '🟡 Fins';
+  $statFin.classList.toggle('placed', dots.fins.length > 0);
+}
+
+function resetDots() {
+  [dotMeshes.head, dotMeshes.tail, dotMeshes.back, ...dotMeshes.fins].forEach(m => m && scene && scene.remove(m));
+  dots      = { head: null, tail: null, back: null, fins: [] };
+  dotMeshes = { head: null, tail: null, back: null, fins: [] };
+  window.stlDotData = null;
+  updateStatus();
+}
+
+function syncDotData() {
+  if (dots.head && dots.tail) {
+    window.stlDotData = { scale: PREVIEW_TARGET, head: dots.head, tail: dots.tail, back: dots.back, fins: dots.fins };
+  }
+}
+
+$headBtn.addEventListener('click',  () => setMode('head'));
+$tailBtn.addEventListener('click',  () => setMode('tail'));
+$backBtn.addEventListener('click',  () => setMode('back'));
+$finBtn.addEventListener('click',   () => setMode('fin'));
+$resetBtn.addEventListener('click', () => { resetDots(); setMode('head'); });
+</script>
+</body>
+</html>
