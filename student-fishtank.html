@@ -243,6 +243,20 @@
     }
     #load-text { color: #7dd3fc; font-size: 1.05rem; font-weight: 700; }
   </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyD5_i08If4CWXvTzr3nhdh3rQiZHybSDsU",
+      authDomain: "steamaqaurium.firebaseapp.com",
+      databaseURL: "https://steamaqaurium-default-rtdb.firebaseio.com",
+      projectId: "steamaqaurium",
+      storageBucket: "steamaqaurium.firebasestorage.app",
+      messagingSenderId: "966555196100",
+      appId: "1:966555196100:web:e0243f586e9cf14f9f4791"
+    });
+    window.__db = firebase.database();
+  </script>
 </head>
 <body>
 
@@ -1041,7 +1055,7 @@ function renderAdminList() {
   $adminStatus.textContent = `${fishes.length} fish in tank  ·  Esc to close`;
 }
 
-window.removeFishById = function (id) {
+function removeFishVisually(id) {
   const idx = fishes.findIndex(f => f.data.id === id);
   if (idx === -1) return;
   const fish = fishes[idx];
@@ -1051,10 +1065,16 @@ window.removeFishById = function (id) {
   scene.remove(fish.group);
   fishes.splice(idx, 1);
   $count.textContent = `🐟 ${fishes.length} fish`;
-  saveToStorage(fishes.map(f => f.data));
   const row = document.getElementById(`admin-row-${id}`);
   if (row) row.remove();
-  $adminStatus.textContent = `${fishes.length} fish in tank  ·  Esc to close`;
+  if ($admin.classList.contains('show')) {
+    $adminStatus.textContent = `${fishes.length} fish in tank  ·  Esc to close`;
+  }
+}
+
+window.removeFishById = function (id) {
+  removeFishVisually(id);
+  window.__db.ref('fish/' + id).remove();
 };
 
 window.clearDuplicates = function () {
@@ -1072,37 +1092,14 @@ window.clearDuplicates = function () {
 
 window.resetToDefault = async function () {
   if (!confirm('Reset the tank to default fish? All student fish will be removed.')) return;
-  fishes.forEach(fish => {
-    fish.group.traverse(child => {
-      if (child.isCSS2DObject && child.element.parentNode) child.element.parentNode.removeChild(child.element);
-    });
-    scene.remove(fish.group);
-  });
-  fishes = [];
-  localStorage.removeItem(STORAGE_KEY);
-  const list = await loadFishList();
-  for (const data of list) await spawnFish(data);
-  $count.textContent = `🐟 ${fishes.length} fish`;
+  const fishRef = window.__db.ref('fish');
+  fishes.slice().forEach(f => removeFishVisually(f.data.id));
+  await fishRef.remove();
+  for (const d of DEFAULTS) await fishRef.push(d);
   closeAdmin();
   toast('↩ Tank reset to default fish');
 };
 
-// Live-sync: new fish submitted from the upload page in another tab
-window.addEventListener('storage', e => {
-  if (e.key !== STORAGE_KEY || !e.newValue) return;
-  try {
-    const newList = JSON.parse(e.newValue);
-    const currentIds = new Set(fishes.map(f => f.data.id));
-    newList.forEach(d => {
-      if (!currentIds.has(d.id)) {
-        spawnFish(d).then(() => {
-          $count.textContent = `🐟 ${fishes.length} fish`;
-          toast(`🐠 ${d.name} joined the tank!`);
-        });
-      }
-    });
-  } catch {}
-});
 
 // Secret key sequence: type ADMIN (uppercase letters) to open admin panel
 let _seq = '';
@@ -1147,55 +1144,59 @@ function animate() {
 
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
-// ── Storage ────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'fishtank_fish';
-function loadFromStorage() {
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
-}
-function saveToStorage(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
-
-async function loadFishList() {
-  const stored = loadFromStorage();
-  if (stored) return stored;
-  try {
-    const r = await fetch('assets/data/fish-data.json');
-    if (r.ok) {
-      const list = await r.json();
-      saveToStorage(list);
-      return list;
-    }
-  } catch {}
-  const defaults = [
-    { id: 'demo1', name: 'Bubbles', color: '#4FC3F7', size: 1.0 },
-    { id: 'demo2', name: 'Coral',   color: '#FF7043', size: 0.9 },
-    { id: 'demo3', name: 'Finn',    color: '#66BB6A', size: 1.1 },
-    { id: 'demo4', name: 'Pearl',   color: '#CE93D8', size: 0.85 },
-    { id: 'demo5', name: 'Neptune', color: '#FFD54F', size: 1.2 },
-  ];
-  saveToStorage(defaults);
-  return defaults;
-}
+// ── Firebase ───────────────────────────────────────────────────────────────
+const DEFAULTS = [
+  { name: 'Bubbles', color: '#4FC3F7', size: 1.0 },
+  { name: 'Coral',   color: '#FF7043', size: 0.9 },
+  { name: 'Finn',    color: '#66BB6A', size: 1.1 },
+  { name: 'Pearl',   color: '#CE93D8', size: 0.85 },
+  { name: 'Neptune', color: '#FFD54F', size: 1.2 },
+];
 
 async function main() {
   initScene();
   buildEnvironment();
-
-  const fishList = await loadFishList();
-  for (const data of fishList) await spawnFish(data);
-
-  $count.textContent = `🐟 ${fishes.length} fish`;
   animate();
 
-  // Auto-fullscreen if ?fs param present
   if (new URLSearchParams(location.search).has('fs')) {
     document.documentElement.requestFullscreen?.();
   }
 
-  // Dismiss loading screen
-  setTimeout(() => {
-    $loading.classList.add('gone');
-    setTimeout(() => $loading.remove(), 800);
-  }, 550);
+  const fishRef = window.__db.ref('fish');
+
+  // Load initial snapshot
+  let snap = await fishRef.once('value');
+
+  // Seed defaults if tank is empty
+  if (!snap.exists()) {
+    for (const d of DEFAULTS) await fishRef.push(d);
+    snap = await fishRef.once('value');
+  }
+
+  // Spawn all existing fish and track their keys
+  const initialKeys = new Set();
+  const spawns = [];
+  snap.forEach(child => {
+    initialKeys.add(child.key);
+    spawns.push(spawnFish({ id: child.key, ...child.val() }));
+  });
+  await Promise.all(spawns);
+
+  $count.textContent = `🐟 ${fishes.length} fish`;
+  $loading.classList.add('gone');
+  setTimeout(() => $loading.remove(), 800);
+
+  // Live: new fish from any device appear instantly
+  fishRef.on('child_added', async snap => {
+    if (initialKeys.has(snap.key)) return;
+    const data = { id: snap.key, ...snap.val() };
+    await spawnFish(data);
+    $count.textContent = `🐟 ${fishes.length} fish`;
+    toast(`🐠 ${data.name} joined the tank!`);
+  });
+
+  // Live: fish removed from admin panel on any device
+  fishRef.on('child_removed', snap => removeFishVisually(snap.key));
 }
 
 main();

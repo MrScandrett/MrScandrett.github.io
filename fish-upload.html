@@ -259,6 +259,20 @@
       h1 { font-size: 1.28rem; }
     }
   </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyD5_i08If4CWXvTzr3nhdh3rQiZHybSDsU",
+      authDomain: "steamaqaurium.firebaseapp.com",
+      databaseURL: "https://steamaqaurium-default-rtdb.firebaseio.com",
+      projectId: "steamaqaurium",
+      storageBucket: "steamaqaurium.firebasestorage.app",
+      messagingSenderId: "966555196100",
+      appId: "1:966555196100:web:e0243f586e9cf14f9f4791"
+    });
+    window.__db = firebase.database();
+  </script>
 </head>
 <body>
 
@@ -377,8 +391,6 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'fishtank_fish';
-
 const PRESETS = [
   { name: 'Sky Blue',  hex: '#4FC3F7' },
   { name: 'Coral',     hex: '#FF7043' },
@@ -498,14 +510,10 @@ function clearSTL() {
   document.dispatchEvent(new CustomEvent('stl-cleared'));
 }
 
-function loadStorage() {
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; } catch { return []; }
-}
-function saveStorage(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
-
-function submitFish() {
+async function submitFish() {
   const nameEl = document.getElementById('fish-name');
   const nameErr = document.getElementById('name-error');
+  const submitBtn = document.querySelector('.submit-btn');
   const name = nameEl.value.trim();
 
   nameErr.classList.remove('show');
@@ -519,35 +527,50 @@ function submitFish() {
     return;
   }
 
-  const existing = loadStorage();
-  const dup = existing.find(f => f.name.toLowerCase() === name.toLowerCase());
-  if (dup) {
-    nameErr.textContent = `A fish named "${dup.name}" is already in the tank. Try a different name!`;
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ Checking…';
+
+  try {
+    // Duplicate check against live Firebase data
+    const snap = await window.__db.ref('fish').once('value');
+    let dup = null;
+    if (snap.exists()) {
+      snap.forEach(child => {
+        const val = child.val();
+        if (val.name.toLowerCase() === name.toLowerCase()) dup = val;
+      });
+    }
+
+    if (dup) {
+      nameErr.textContent = `A fish named "${dup.name}" is already in the tank. Try a different name!`;
+      nameErr.classList.add('show');
+      nameEl.style.borderColor = 'rgba(239,68,68,0.6)';
+      nameEl.focus();
+      submitBtn.disabled = false;
+      submitBtn.textContent = '🐠 Add My Fish to the Tank!';
+      return;
+    }
+
+    submitBtn.textContent = '🐠 Adding to tank…';
+
+    const fish = { name, color: selectedColor, size: selectedSize };
+    if (stlDataURL) fish.model = stlDataURL;
+    if (stlDataURL && window.stlDotData) fish.dots = window.stlDotData;
+
+    await window.__db.ref('fish').push(fish);
+
+    const emojis = ['🐠', '🐟', '🐡', '🦈', '🐙', '🐬'];
+    document.getElementById('success-emoji').textContent =
+      emojis[Math.abs(name.charCodeAt(0)) % emojis.length];
+    document.getElementById('success-name').textContent = name;
+    document.getElementById('form-area').classList.add('hidden');
+    document.getElementById('success').classList.add('show');
+  } catch (err) {
+    nameErr.textContent = 'Connection error — check your internet and try again.';
     nameErr.classList.add('show');
-    nameEl.style.borderColor = 'rgba(239,68,68,0.6)';
-    nameEl.focus();
-    return;
+    submitBtn.disabled = false;
+    submitBtn.textContent = '🐠 Add My Fish to the Tank!';
   }
-
-  const fish = {
-    id: `fish_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    name,
-    color: selectedColor,
-    size: selectedSize,
-  };
-  if (stlDataURL) fish.model = stlDataURL;
-  if (stlDataURL && window.stlDotData) fish.dots = window.stlDotData;
-
-  existing.push(fish);
-  saveStorage(existing);
-
-  // Show success
-  const emojis = ['🐠', '🐟', '🐡', '🦈', '🐙', '🐬'];
-  document.getElementById('success-emoji').textContent =
-    emojis[Math.abs(name.charCodeAt(0)) % emojis.length];
-  document.getElementById('success-name').textContent = name;
-  document.getElementById('form-area').classList.add('hidden');
-  document.getElementById('success').classList.add('show');
 }
 
 function addAnother() {
