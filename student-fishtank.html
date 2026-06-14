@@ -250,6 +250,34 @@
     }
     #load-text { color: #7dd3fc; font-size: 1.05rem; font-weight: 700; }
 
+    /* ── Music Player Row ── */
+    #music-row {
+      width: 100%; display: flex; align-items: center; gap: 10px;
+      padding-top: 9px; margin-top: 2px;
+      border-top: 1px solid rgba(125,211,252,0.08);
+      flex-wrap: wrap;
+    }
+    #music-info {
+      flex: 1; display: flex; align-items: center; gap: 6px;
+      color: #7dd3fc; font-size: 0.79rem; font-weight: 700; min-width: 120px;
+      overflow: hidden; white-space: nowrap;
+    }
+    #music-info span { overflow: hidden; text-overflow: ellipsis; }
+    .mpulse { color: #06b6d4; font-size: 0.65rem; flex-shrink: 0; }
+    .mpulse.on { animation: mpulse 2.4s ease-in-out infinite; }
+    @keyframes mpulse { 0%,100% { opacity:1; } 50% { opacity:0.15; } }
+    #music-ctrls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .mbtn {
+      background: rgba(6,182,212,0.09); border: 1.5px solid rgba(6,182,212,0.24);
+      color: #67e8f9; padding: 5px 10px; border-radius: 7px;
+      cursor: pointer; font-size: 0.75rem; font-family: inherit; font-weight: 900;
+      transition: background 0.14s; white-space: nowrap;
+    }
+    .mbtn:hover { background: rgba(6,182,212,0.2); }
+    .mbtn.on { background: rgba(6,182,212,0.26); border-color: rgba(6,182,212,0.5); color: #cffafe; }
+    #music-vol { width: 65px; accent-color: #06b6d4; cursor: pointer; vertical-align: middle; }
+    #music-vol-icon { color: #2a5a7a; font-size: 0.8rem; }
+
     /* ── Aquarium Systems Panel ── */
     #systems-panel {
       position: fixed; top: 50%; left: 50%;
@@ -294,6 +322,7 @@
     .sys-btn:disabled { opacity: 0.36; cursor: not-allowed; }
     #topbar-actions { flex-wrap: wrap; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script>
@@ -357,6 +386,22 @@
   <div id="tank-meter">
     <div id="meter-label">Tank</div>
     <div id="meter-track"><div id="meter-fill"></div></div>
+  </div>
+  <!-- Music player row -->
+  <div id="music-row">
+    <div id="music-info">
+      <span class="mpulse" id="mpulse">●</span>
+      <span id="music-title">♫ La Cathédrale Engloutie</span>
+      <span id="music-sub" style="color:#2a5a7a; margin-left:4px;"></span>
+    </div>
+    <div id="music-ctrls">
+      <button class="mbtn" onclick="musicPrev()" title="Previous">◀</button>
+      <button class="mbtn" id="mPlayBtn" onclick="toggleMusic()">▶ Music</button>
+      <button class="mbtn" onclick="musicNext()" title="Next">▶</button>
+      <span id="music-vol-icon">🔉</span>
+      <input type="range" id="music-vol" min="0" max="1" step="0.04" value="0.5"
+             oninput="setMusicVol(this.value)" title="Volume">
+    </div>
   </div>
 </div>
 
@@ -1429,6 +1474,232 @@ window.toggleSystems = function () {
 window.closeSystems = function () {
   document.getElementById('systems-panel').classList.remove('show');
 };
+
+// ── Ambient Classical Music ──────────────────────────────────────────────────
+// Transcribed opening motifs — public domain works performed on synthesis.
+// Each event: [beatTime, note|notes[], durationBeats, velocity 0-1]
+
+const CLASSICAL_PIECES = [
+  {
+    name: 'La Cathédrale Engloutie',
+    composer: 'Debussy', year: '1910',
+    bpm: 52, loopBeats: 72,           // 12 bars × 6/4
+    atk: 0.20, rel: 5.5,
+    events: [
+      // Parallel open-5ths rise from the depths (pp, sans nuances)
+      [0,  ['C3','G3','C4','G4'],        6, 0.22],
+      [6,  ['D3','A3','D4','A4'],        6, 0.22],
+      [12, ['E3','B3','E4','B4'],        3, 0.24],
+      [15, ['F3','C4','F4','C5'],        3, 0.24],
+      [18, ['G3','D4','G4','D5'],        6, 0.26],
+      [24, ['Bb2','F3','Bb3','F4'],      6, 0.23],
+      [30, ['Ab2','Eb3','Ab3','Eb4'],    6, 0.22],
+      // Descending — cathedral submerges again
+      [36, ['G2','D3','G3','D4'],        6, 0.21],
+      [42, ['F2','C3','F3','C4'],        6, 0.20],
+      [48, ['E2','B2','E3','B3'],        6, 0.19],
+      [54, ['D2','A2','D3','A3'],        6, 0.19],
+      [60, ['C2','G2','C3','G3','C4'], 12, 0.17],
+    ]
+  },
+  {
+    name: 'Clair de Lune',
+    composer: 'Debussy', year: '1905',
+    bpm: 60, loopBeats: 72,           // 8 bars × 9 eighth-note beats (9/8)
+    atk: 0.08, rel: 4.0,
+    events: [
+      // Rolling Db major arpeggios — moonlight on water
+      // Bar 1: Db major (I)
+      [0,'Db3',9,0.28],  [0,'Db4',1,0.18],[1,'F4',1,0.16],[2,'Ab4',1,0.16],
+      [3,'Db5',1,0.20],  [4,'F5',1,0.18], [5,'Ab5',1,0.18],[6,'Db5',1,0.17],
+      [7,'Ab4',1,0.16],  [8,'F4',1,0.16],
+      // Bar 2: Ab major (V)
+      [9,'Ab2',9,0.26],  [9,'Ab3',1,0.17],[10,'C4',1,0.15],[11,'Eb4',1,0.15],
+      [12,'Ab4',1,0.18], [13,'C5',1,0.17],[14,'Eb5',1,0.16],[15,'Ab5',1,0.18],
+      [16,'Eb5',1,0.16], [17,'C5',1,0.15],
+      // Bar 3: Gb major (IV)
+      [18,'Gb2',9,0.25], [18,'Gb3',1,0.16],[19,'Bb3',1,0.15],[20,'Db4',1,0.15],
+      [21,'Gb4',1,0.18], [22,'Bb4',1,0.17],[23,'Db5',1,0.16],[24,'Gb5',1,0.19],
+      [25,'Db5',1,0.16], [26,'Bb4',1,0.15],
+      // Bar 4: Db/F (I⁶)
+      [27,'F2',9,0.26],  [27,'Db4',1,0.16],[28,'F4',1,0.16],[29,'Ab4',1,0.16],
+      [30,'Db5',1,0.18], [31,'F5',1,0.17], [32,'Ab5',1,0.18],[33,'Db5',1,0.16],
+      [34,'Ab4',1,0.16], [35,'F4',1,0.15],
+      // Bar 5: Bbm (vi)
+      [36,'Bb2',9,0.24], [36,'Bb3',1,0.16],[37,'Db4',1,0.15],[38,'F4',1,0.15],
+      [39,'Bb4',1,0.17], [40,'Db5',1,0.16],[41,'F5',1,0.16], [42,'Bb5',1,0.19],
+      [43,'F5',1,0.16],  [44,'Db5',1,0.15],
+      // Bar 6: Ebm (iim)
+      [45,'Eb2',9,0.23], [45,'Eb3',1,0.15],[46,'Gb3',1,0.14],[47,'Bb3',1,0.14],
+      [48,'Eb4',1,0.16], [49,'Gb4',1,0.15],[50,'Bb4',1,0.15],[51,'Eb5',1,0.17],
+      [52,'Bb4',1,0.15], [53,'Gb4',1,0.14],
+      // Bar 7: Ab major (V)
+      [54,'Ab2',9,0.25], [54,'Ab3',1,0.16],[55,'C4',1,0.15],[56,'Eb4',1,0.15],
+      [57,'Ab4',1,0.18], [58,'C5',1,0.17], [59,'Eb5',1,0.17],[60,'Ab5',1,0.20],
+      [61,'Eb5',1,0.17], [62,'C5',1,0.16],
+      // Bar 8: Db (I) — resolution
+      [63,'Db2',9,0.27], [63,'Db4',1,0.17],[64,'F4',1,0.16],[65,'Ab4',1,0.16],
+      [66,'Db5',1,0.20], [67,'F5',1,0.18], [68,'Ab5',1,0.18],[69,'Db5',1,0.17],
+      [70,'Ab4',1,0.16], [71,'F4',1,0.16],
+    ]
+  },
+  {
+    name: "Jeux d'eau",
+    composer: 'Ravel', year: '1901',
+    bpm: 120, loopBeats: 48,          // 6 bars, 8th-note pulse
+    atk: 0.03, rel: 2.5,
+    events: [
+      // E major cascading fountain — up then down each bar
+      // Bar 1: E major
+      [0,'E2',8,0.25],
+      [0,'E4',.5,0.18],[.5,'G#4',.5,0.16],[1,'B4',.5,0.16],[1.5,'E5',.5,0.18],
+      [2,'G#5',.5,0.17],[2.5,'B5',.5,0.17],[3,'E6',.5,0.22],
+      [3.5,'B5',.5,0.17],[4,'G#5',.5,0.16],[4.5,'E5',.5,0.16],
+      [5,'B4',.5,0.15],[5.5,'G#4',.5,0.15],[6,'E4',.5,0.14],[6.5,'B3',.5,0.14],[7,'G#3',.5,0.13],[7.5,'E3',.5,0.13],
+      // Bar 2: F# major
+      [8,'F#2',8,0.22],
+      [8,'F#3',.5,0.16],[8.5,'A#3',.5,0.15],[9,'C#4',.5,0.15],[9.5,'F#4',.5,0.17],
+      [10,'A#4',.5,0.16],[10.5,'C#5',.5,0.16],[11,'F#5',.5,0.20],
+      [11.5,'C#5',.5,0.16],[12,'A#4',.5,0.15],[12.5,'F#4',.5,0.15],
+      [13,'C#4',.5,0.14],[13.5,'A#3',.5,0.14],[14,'F#3',.5,0.13],[14.5,'C#3',.5,0.13],[15,'A#2',.5,0.12],[15.5,'F#2',.5,0.12],
+      // Bar 3: B major
+      [16,'B2',8,0.23],
+      [16,'B3',.5,0.16],[16.5,'D#4',.5,0.15],[17,'F#4',.5,0.15],[17.5,'B4',.5,0.17],
+      [18,'D#5',.5,0.16],[18.5,'F#5',.5,0.16],[19,'B5',.5,0.20],
+      [19.5,'F#5',.5,0.16],[20,'D#5',.5,0.15],[20.5,'B4',.5,0.15],
+      [21,'F#4',.5,0.14],[21.5,'D#4',.5,0.14],[22,'B3',.5,0.13],[22.5,'F#3',.5,0.13],[23,'D#3',.5,0.12],[23.5,'B2',.5,0.12],
+      // Bar 4: A major (IV)
+      [24,'A2',8,0.22],
+      [24,'A3',.5,0.16],[24.5,'C#4',.5,0.15],[25,'E4',.5,0.15],[25.5,'A4',.5,0.17],
+      [26,'C#5',.5,0.16],[26.5,'E5',.5,0.16],[27,'A5',.5,0.20],
+      [27.5,'E5',.5,0.16],[28,'C#5',.5,0.15],[28.5,'A4',.5,0.15],
+      [29,'E4',.5,0.14],[29.5,'C#4',.5,0.14],[30,'A3',.5,0.13],[30.5,'E3',.5,0.13],[31,'C#3',.5,0.12],[31.5,'A2',.5,0.12],
+      // Bar 5: E major (return)
+      [32,'E2',8,0.24],
+      [32,'E4',.5,0.18],[32.5,'G#4',.5,0.17],[33,'B4',.5,0.17],[33.5,'E5',.5,0.19],
+      [34,'G#5',.5,0.17],[34.5,'B5',.5,0.17],[35,'E6',.5,0.21],
+      [35.5,'B5',.5,0.17],[36,'G#5',.5,0.16],[36.5,'E5',.5,0.16],
+      [37,'B4',.5,0.15],[37.5,'G#4',.5,0.15],[38,'E4',.5,0.14],[38.5,'B3',.5,0.14],[39,'G#3',.5,0.13],[39.5,'E3',.5,0.13],
+      // Bar 6: G#m (vi) — shadow before return
+      [40,'G#2',8,0.21],
+      [40,'G#3',.5,0.15],[40.5,'B3',.5,0.14],[41,'D#4',.5,0.14],[41.5,'G#4',.5,0.16],
+      [42,'B4',.5,0.15],[42.5,'D#5',.5,0.15],[43,'G#5',.5,0.18],
+      [43.5,'D#5',.5,0.15],[44,'B4',.5,0.14],[44.5,'G#4',.5,0.14],
+      [45,'D#4',.5,0.13],[45.5,'B3',.5,0.13],[46,'G#3',.5,0.12],[46.5,'D#3',.5,0.12],[47,'B2',.5,0.11],[47.5,'G#2',.5,0.11],
+    ]
+  },
+];
+
+let _musicReady   = false;
+let _musicPlaying = false;
+let _musicIdx     = 0;
+let _musicPart    = null;
+let _musicSynth   = null;
+let _musicReverb  = null;
+let _musicVol     = null;
+
+async function _initMusic() {
+  if (_musicReady) return;
+  if (typeof Tone === 'undefined') { toast('⚠ Music engine unavailable'); return; }
+  await Tone.start();
+  _musicReverb = new Tone.Reverb({ decay: 5.5, preDelay: 0.04, wet: 0.62 });
+  await _musicReverb.generate();
+  _musicVol = new Tone.Volume(-10).toDestination();
+  _musicSynth = new Tone.PolySynth(Tone.Synth, {
+    maxPolyphony: 28,
+    oscillator: { type: 'triangle' },
+    envelope: { attack: 0.14, decay: 0.6, sustain: 0.55, release: 4.5 }
+  });
+  _musicSynth.connect(_musicReverb);
+  _musicReverb.connect(_musicVol);
+  // Initial volume from slider
+  const vol = document.getElementById('music-vol');
+  if (vol) setMusicVol(vol.value);
+  _musicReady = true;
+}
+
+async function _playPiece() {
+  await _initMusic();
+  if (!_musicReady) return;
+
+  const p   = CLASSICAL_PIECES[_musicIdx];
+  const spb = 60 / p.bpm;
+
+  // Reconfigure synth for this piece's articulation
+  _musicSynth.set({
+    envelope: { attack: p.atk, decay: 0.6, sustain: 0.55, release: p.rel }
+  });
+
+  // Tear down existing part
+  if (_musicPart) { _musicPart.stop(); _musicPart.dispose(); _musicPart = null; }
+  Tone.Transport.stop();
+  Tone.Transport.cancel();
+
+  const evts = p.events.map(([bt, n, d, v]) => [
+    bt * spb,
+    { notes: Array.isArray(n) ? n : [n], dur: d * spb, vel: v }
+  ]);
+
+  _musicPart = new Tone.Part((time, ev) => {
+    _musicSynth.triggerAttackRelease(ev.notes, ev.dur, time, ev.vel);
+  }, evts);
+  _musicPart.loop    = true;
+  _musicPart.loopEnd = p.loopBeats * spb;
+  _musicPart.start(0);
+
+  Tone.Transport.start();
+  _musicPlaying = true;
+  _updateMusicUI();
+}
+
+function _stopMusic() {
+  if (_musicPart) { _musicPart.stop(); _musicPart.dispose(); _musicPart = null; }
+  if (typeof Tone !== 'undefined') { Tone.Transport.stop(); Tone.Transport.cancel(); }
+  _musicPlaying = false;
+  _updateMusicUI();
+}
+
+function _updateMusicUI() {
+  const p    = CLASSICAL_PIECES[_musicIdx];
+  const btn  = document.getElementById('mPlayBtn');
+  const pulse = document.getElementById('mpulse');
+  const title = document.getElementById('music-title');
+  const sub   = document.getElementById('music-sub');
+  if (!btn) return;
+  if (_musicPlaying) {
+    btn.textContent = '⏸ Pause';
+    btn.classList.add('on');
+    pulse.classList.add('on');
+    title.textContent = `♫ ${p.name}`;
+    sub.textContent   = `— ${p.composer} (${p.year})`;
+  } else {
+    btn.textContent = '▶ Play';
+    btn.classList.remove('on');
+    pulse.classList.remove('on');
+    title.textContent = `♫ ${p.name}`;
+    sub.textContent   = '';
+  }
+}
+
+window.toggleMusic = function () {
+  if (_musicPlaying) _stopMusic(); else _playPiece();
+};
+window.musicPrev = function () {
+  const wrap = CLASSICAL_PIECES.length;
+  _musicIdx  = ((_musicIdx - 1 + wrap) % wrap);
+  if (_musicPlaying) _playPiece(); else _updateMusicUI();
+};
+window.musicNext = function () {
+  _musicIdx = (_musicIdx + 1) % CLASSICAL_PIECES.length;
+  if (_musicPlaying) _playPiece(); else _updateMusicUI();
+};
+window.setMusicVol = function (v) {
+  if (!_musicVol) return;
+  _musicVol.volume.value = parseFloat(v) < 0.02 ? -80 : Tone.gainToDb(parseFloat(v));
+};
+
+// Initialize title display
+_updateMusicUI();
 
 // ── Admin Panel ─────────────────────────────────────────────────────────────
 const $admin       = document.getElementById('admin-panel');
