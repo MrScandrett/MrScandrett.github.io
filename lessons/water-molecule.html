@@ -1,0 +1,1263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Water: The Architecture of H₂O · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Chemistry Lesson — Explore the bent geometry, polar covalent bonds, and hydrogen-bonding network that make water the most extraordinary molecule in chemistry. Three interactive simulations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --atom-bg: #07090f;
+      --atom-panel: rgba(10, 16, 26, 0.88);
+      --atom-line: rgba(160, 210, 240, 0.12);
+      --atom-line-strong: rgba(160, 210, 240, 0.22);
+      --atom-text: #dceaf8;
+      --atom-muted: rgba(220, 234, 248, 0.68);
+      --atom-dim: rgba(220, 234, 248, 0.42);
+      --water-cyan: #38bdf8;
+      --water-teal: #2dd4bf;
+      --atom-violet: #b09fff;
+      --atom-amber: #f6c35b;
+      --atom-green: #4fdc9a;
+      --atom-rose: #ff7a94;
+      --atom-radius: 8px;
+      --atom-shadow: 0 24px 64px rgba(0,0,0,0.35);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans, 'Inter', sans-serif);
+      color: var(--atom-text);
+      background:
+        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(180deg, #070c14 0%, #0a1421 46%, #07090f 100%);
+      background-size: 38px 38px, 38px 38px, auto;
+      min-height: 100vh;
+    }
+    body::before {
+      content: "";
+      position: fixed; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 40% at 15% 0%, rgba(56,189,248,0.12), transparent 55%),
+        radial-gradient(ellipse 60% 35% at 88% 5%, rgba(45,212,191,0.07), transparent 52%);
+    }
+
+    /* ── Shell ── */
+    .atom-shell {
+      width: min(1320px, calc(100% - 2rem));
+      margin: 0 auto; padding: 1rem 0 4rem;
+      display: grid; gap: 1rem; position: relative;
+    }
+
+    /* ── Topbar ── */
+    .atom-topbar {
+      position: sticky; top: 0; z-index: 30;
+      backdrop-filter: blur(18px) saturate(150%);
+      background: rgba(7,9,15,0.88);
+      border-bottom: 1px solid var(--atom-line);
+    }
+    .atom-topbar-inner {
+      width: min(1320px, calc(100% - 2rem)); min-height: 56px;
+      margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .atom-topbar a { color: #b0d4ef; text-decoration: none; font-size: 0.83rem; font-weight: 700; }
+    .atom-topbar a:hover { color: #fff; }
+    .atom-brand { color: #eef6ff; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .atom-nav {
+      display: flex; align-items: center; gap: 0.2rem;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .atom-nav::-webkit-scrollbar { display: none; }
+    .atom-nav a {
+      display: inline-flex; align-items: center; min-height: 1.9rem;
+      padding: 0 0.6rem; border-radius: var(--atom-radius);
+      color: var(--atom-dim); white-space: nowrap; font-size: 0.83rem; font-weight: 700; text-decoration: none;
+    }
+    .atom-nav a:hover { color: var(--atom-text); background: rgba(255,255,255,0.06); }
+    .atom-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .atom-pill {
+      display: inline-flex; align-items: center; height: 1.75rem;
+      padding: 0 0.65rem; border-radius: var(--atom-radius);
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+      border: 1px solid rgba(56,189,248,0.36); background: rgba(56,189,248,0.1); color: #a8dcf5;
+    }
+    .atom-pill.teal { border-color: rgba(45,212,191,0.36); background: rgba(45,212,191,0.1); color: #7de8df; }
+    .atom-pill.violet { border-color: rgba(176,159,255,0.36); background: rgba(176,159,255,0.1); color: #d0c8ff; }
+    @media (max-width:980px) { .atom-brand { display: none; } }
+    @media (max-width:760px) { .atom-nav { display: none; } .atom-topbar-inner { min-height: 52px; } }
+
+    /* ── Hero ── */
+    .atom-hero {
+      display: grid; grid-template-columns: minmax(0,1.3fr) minmax(280px,0.7fr);
+      gap: 1rem; align-items: stretch;
+      min-height: min(520px, calc(100vh - 90px));
+    }
+    @media (max-width:720px) { .atom-hero { grid-template-columns: 1fr; } }
+    .atom-hero-copy {
+      border-radius: var(--atom-radius); border: 1px solid var(--atom-line-strong);
+      background:
+        linear-gradient(120deg, rgba(56,189,248,0.12), transparent 44%),
+        linear-gradient(180deg, rgba(14,20,34,0.95), rgba(8,12,22,0.95));
+      box-shadow: var(--atom-shadow);
+      padding: clamp(1.25rem,3vw,2.4rem);
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .atom-hero-copy::before {
+      content: "";
+      position: absolute; right: -6rem; top: -6rem;
+      width: 22rem; height: 22rem;
+      border: 1px solid rgba(56,189,248,0.16); border-radius: 50%;
+      box-shadow:
+        inset 0 0 0 72px transparent,
+        inset 0 0 0 73px rgba(45,212,191,0.10),
+        inset 0 0 0 130px transparent,
+        inset 0 0 0 131px rgba(56,189,248,0.09);
+      transform: rotate(-20deg) scaleX(1.3); pointer-events: none;
+    }
+    .atom-eyebrow {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--water-cyan); margin: 0 0 0.7rem;
+    }
+    .atom-hero-copy h1 {
+      margin: 0 0 0.7rem; max-width: 13ch;
+      font-size: clamp(2.4rem,7vw,5.5rem);
+      line-height: 0.92; letter-spacing: -0.055em; color: #fff;
+    }
+    .atom-hero-copy h1 em { font-style: normal; color: var(--water-cyan); }
+    .atom-lede { max-width: 72ch; color: var(--atom-muted); font-size: clamp(0.94rem,1.5vw,1.05rem); line-height: 1.72; margin: 0 0 1.1rem; }
+    .atom-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+    /* Quote card */
+    .atom-quote-card {
+      border-radius: var(--atom-radius);
+      border: 1px solid rgba(56,189,248,0.22);
+      background: linear-gradient(180deg,rgba(56,189,248,0.09),transparent 60%),rgba(10,16,26,0.9);
+      padding: clamp(1.1rem,2.2vw,1.8rem);
+      display: flex; flex-direction: column; justify-content: center; gap: 0.9rem;
+      box-shadow: var(--atom-shadow);
+    }
+    .atom-quote-mark { font-size: 3rem; line-height: 0.8; color: var(--water-cyan); opacity: 0.6; }
+    .atom-quote-text { font-size: clamp(0.9rem,1.8vw,1.1rem); font-style: italic; line-height: 1.65; color: #cce8f8; margin: 0; }
+    .atom-quote-attr { font-size: 0.76rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--water-cyan); opacity: 0.82; }
+
+    /* ── Cards ── */
+    .atom-card {
+      border-radius: var(--atom-radius); border: 1px solid var(--atom-line);
+      background: var(--atom-panel); backdrop-filter: blur(10px);
+      padding: clamp(1.1rem,2vw,1.6rem); scroll-margin-top: 72px;
+    }
+    .atom-card-accent-cyan   { border-left: 4px solid var(--water-cyan); }
+    .atom-card-accent-teal   { border-left: 4px solid var(--water-teal); }
+    .atom-card-accent-violet { border-left: 4px solid var(--atom-violet); }
+    .atom-card-accent-amber  { border-left: 4px solid var(--atom-amber); }
+    .atom-card-accent-green  { border-left: 4px solid var(--atom-green); }
+    .atom-card-accent-rose   { border-left: 4px solid var(--atom-rose); }
+
+    .atom-kicker { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.45rem; }
+    .atom-kicker.cyan   { color: var(--water-cyan); }
+    .atom-kicker.teal   { color: var(--water-teal); }
+    .atom-kicker.violet { color: var(--atom-violet); }
+    .atom-kicker.amber  { color: var(--atom-amber); }
+    .atom-kicker.green  { color: var(--atom-green); }
+    .atom-kicker.rose   { color: var(--atom-rose); }
+
+    .atom-card h2 { margin: 0 0 0.75rem; font-size: clamp(1.2rem,2.4vw,1.6rem); letter-spacing: -0.03em; color: #fff; }
+    .atom-card h3 { margin: 1rem 0 0.35rem; font-size: 1.02rem; letter-spacing: -0.02em; color: #d8eaf8; }
+    .atom-card p, .atom-card li { color: var(--atom-muted); font-size: 0.92rem; line-height: 1.72; margin: 0 0 0.65rem; }
+    .atom-card p:last-child { margin-bottom: 0; }
+    .atom-card ul { padding-left: 1.4rem; margin: 0.4rem 0 0.7rem; }
+    .atom-card li { margin-bottom: 0.35rem; }
+    .atom-card strong { color: #e4f2ff; }
+
+    .atom-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width:620px) { .atom-two-col { grid-template-columns: 1fr; } }
+
+    .atom-highlight { border-radius: var(--atom-radius); padding: 1rem 1.2rem; margin: 0.9rem 0; }
+    .atom-highlight.cyan   { background: rgba(56,189,248,0.08);  border: 1px solid rgba(56,189,248,0.24); }
+    .atom-highlight.teal   { background: rgba(45,212,191,0.08);  border: 1px solid rgba(45,212,191,0.24); }
+    .atom-highlight.violet { background: rgba(176,159,255,0.09); border: 1px solid rgba(176,159,255,0.26); }
+    .atom-highlight.amber  { background: rgba(246,195,91,0.08);  border: 1px solid rgba(246,195,91,0.24); }
+    .atom-highlight.rose   { background: rgba(255,122,148,0.08); border: 1px solid rgba(255,122,148,0.24); }
+    .atom-highlight strong { display: block; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.35rem; }
+    .atom-highlight.cyan   strong { color: var(--water-cyan); }
+    .atom-highlight.teal   strong { color: var(--water-teal); }
+    .atom-highlight.violet strong { color: var(--atom-violet); }
+    .atom-highlight.amber  strong { color: var(--atom-amber); }
+    .atom-highlight.rose   strong { color: var(--atom-rose); }
+    .atom-highlight p { margin: 0; font-size: 0.88rem; color: rgba(220,234,248,0.80); line-height: 1.65; }
+
+    .atom-chip-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(175px,1fr)); gap: 0.65rem; margin: 0.85rem 0; }
+    .atom-chip {
+      border-radius: var(--atom-radius); padding: 0.85rem 1rem;
+      border: 1px solid var(--atom-line); background: rgba(255,255,255,0.03);
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .atom-chip:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,0.22); border-color: var(--atom-line-strong); }
+    .atom-chip .chip-icon { font-size: 1.4rem; margin-bottom: 0.5rem; display: block; }
+    .atom-chip .chip-title { font-size: 0.9rem; font-weight: 700; color: #e4f4ff; margin-bottom: 0.2rem; }
+    .atom-chip .chip-desc { font-size: 0.76rem; color: rgba(200,228,248,0.52); line-height: 1.45; }
+
+    /* EN table */
+    .en-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.86rem; }
+    .en-table th, .en-table td { padding: 0.5rem 0.85rem; text-align: left; border-bottom: 1px solid var(--atom-line); }
+    .en-table th { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--water-cyan); }
+    .en-table td { color: var(--atom-muted); }
+    .en-table tr:last-child td { border-bottom: none; }
+    .en-bar { height: 8px; border-radius: 4px; background: rgba(56,189,248,0.14); overflow: hidden; margin-top: 4px; }
+    .en-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--water-teal), var(--water-cyan)); }
+
+    /* Properties grid */
+    .water-props-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 0.75rem; margin: 1rem 0; }
+    .water-prop-card {
+      border-radius: var(--atom-radius); padding: 1rem 1.1rem;
+      border: 1px solid rgba(56,189,248,0.18); background: rgba(56,189,248,0.04);
+      display: flex; flex-direction: column; gap: 0.4rem;
+    }
+    .water-prop-icon { font-size: 1.6rem; }
+    .water-prop-title { font-size: 0.88rem; font-weight: 800; color: var(--water-cyan); }
+    .water-prop-value {
+      font-family: "JetBrains Mono", monospace; font-size: 0.79rem; font-weight: 700;
+      color: #7fdeff; background: rgba(56,189,248,0.10);
+      border-radius: 4px; padding: 0.18rem 0.5rem; display: inline-block; width: fit-content;
+    }
+    .water-prop-desc { font-size: 0.81rem; color: var(--atom-muted); line-height: 1.55; }
+    .water-prop-why { font-size: 0.78rem; color: rgba(45,212,191,0.82); font-style: italic; margin-top: auto; }
+
+    /* Equation */
+    .atom-equation {
+      font-family: "JetBrains Mono", monospace;
+      font-size: clamp(0.88rem,2vw,1.25rem);
+      color: var(--water-cyan); text-align: center; padding: 1rem; letter-spacing: 0.04em;
+      border-radius: var(--atom-radius); border: 1px solid rgba(56,189,248,0.2); background: rgba(56,189,248,0.05); margin: 0.85rem 0;
+    }
+
+    /* ── Sims ── */
+    .atom-sim {
+      border-radius: var(--atom-radius); border: 1px solid var(--atom-line);
+      overflow: hidden; background: #02080f; position: relative;
+      box-shadow: 0 16px 50px rgba(0,0,0,0.30); scroll-margin-top: 72px;
+    }
+    .atom-sim-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      flex-wrap: wrap; gap: 0.6rem; padding: 0.9rem 1.2rem 0.7rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0));
+    }
+    .atom-sim-head-left { display: flex; flex-direction: column; gap: 0.2rem; }
+    .atom-sim-title { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .atom-sim-title.cyan { color: var(--water-cyan); }
+    .atom-sim-title.teal { color: var(--water-teal); }
+    .atom-sim-title.violet { color: var(--atom-violet); }
+    .atom-sim-sub { font-size: 0.78rem; color: rgba(200,232,248,0.45); }
+    .atom-sim canvas { display: block; width: 100%; }
+    .atom-sim-controls {
+      display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; padding: 0.75rem 1.2rem;
+      background: rgba(0,0,0,0.34); border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .atom-ctrl { display: flex; flex-direction: column; gap: 0.22rem; min-width: 120px; }
+    .atom-control-row { display: flex; align-items: flex-end; gap: 0.4rem; flex-wrap: wrap; }
+    .atom-align-end { align-self: flex-end; }
+    .atom-ctrl label { font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(200,232,248,0.46); }
+    .atom-ctrl input[type="range"] { accent-color: var(--water-cyan); cursor: pointer; width: 100%; }
+    .atom-ctrl-val { font-family: "JetBrains Mono", monospace; font-size: 0.73rem; font-weight: 700; color: var(--water-cyan); }
+    .atom-btn {
+      padding: 0.44rem 0.85rem; border-radius: var(--atom-radius);
+      border: 1px solid rgba(56,189,248,0.36); background: rgba(56,189,248,0.09); color: #80d8f8;
+      font-size: 0.79rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.14s;
+    }
+    .atom-btn:hover { background: rgba(56,189,248,0.19); }
+    .atom-btn.active { border-color: rgba(56,189,248,0.65); background: rgba(56,189,248,0.22); color: #d0f0ff; }
+    .atom-readout { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.65rem 1.2rem; }
+    .atom-readout-chip {
+      display: flex; flex-direction: column; gap: 0.08rem;
+      border-radius: var(--atom-radius); padding: 0.4rem 0.65rem;
+      border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);
+    }
+    .atom-readout-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(200,232,248,0.36); }
+    .atom-readout-val { font-family: "JetBrains Mono", monospace; font-size: 0.83rem; font-weight: 700; color: #c8e6f8; }
+
+    /* AI prompts */
+    .atom-prompt-box { border-radius: var(--atom-radius); padding: 1rem 1.2rem; border: 1px solid rgba(45,212,191,0.22); background: rgba(45,212,191,0.055); margin-top: 0.75rem; }
+    .atom-prompt-box pre { margin: 0.5rem 0 0; font-family: "JetBrains Mono", monospace; font-size: 0.77rem; color: #80e4dc; white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .atom-prompt-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #3ed8cf; }
+
+    /* Footer */
+    .atom-footer { text-align: center; padding: 2rem 1rem; color: var(--atom-dim); font-size: 0.8rem; border-top: 1px solid var(--atom-line); background: rgba(7,9,15,0.6); border-radius: var(--atom-radius); }
+    .atom-footer a { color: var(--water-cyan); text-decoration: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.001ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="atom-topbar">
+  <div class="atom-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="atom-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="atom-nav" aria-label="Lesson sections">
+      <a href="#anatomy">Anatomy</a>
+      <a href="#polarity">Polarity</a>
+      <a href="#hbonds">H-Bonds</a>
+      <a href="#properties">Properties</a>
+      <a href="#phases">Phases</a>
+    </nav>
+    <div class="atom-pills">
+      <span class="atom-pill">Chemistry</span>
+      <span class="atom-pill teal">Gr. 6–10</span>
+    </div>
+  </div>
+</div>
+
+<div class="atom-shell">
+
+  <!-- ══ HERO ══ -->
+  <div class="atom-hero">
+    <div class="atom-hero-copy">
+      <p class="atom-eyebrow">Chemistry · Molecular Structure · Level 3</p>
+      <h1>Water:<br><em>H₂O</em></h1>
+      <p class="atom-lede">
+        Two hydrogens. One oxygen. Bent at exactly 104.5°. That tiny kink — just 5° less than a perfect tetrahedron — gives water its polar character, its extraordinary hydrogen-bonding network, and ultimately its power to dissolve, buffer, and sustain all known life on Earth.
+      </p>
+      <div class="atom-meta">
+        <span class="atom-pill">Grade 6–10</span>
+        <span class="atom-pill teal">3 Simulations</span>
+        <span class="atom-pill violet">Molecular Chemistry</span>
+      </div>
+    </div>
+    <div class="atom-quote-card">
+      <div class="atom-quote-mark">"</div>
+      <p class="atom-quote-text">
+        Water is the most extraordinary substance! Practically all its properties are anomalous, which enabled life to use it as building material for its machinery.
+      </p>
+      <div class="atom-quote-attr">— Albert Szent-Györgyi<br>Nobel Prize in Physiology, 1937</div>
+    </div>
+  </div>
+
+  <!-- ══ 1 · ANATOMY ══ -->
+  <div class="atom-card atom-card-accent-cyan" id="anatomy">
+    <p class="atom-kicker cyan">Atomic Anatomy · VSEPR · Covalent Bonds</p>
+    <h2>Inside H₂O: Atoms, Electrons &amp; the Bent Shape</h2>
+
+    <div class="atom-two-col">
+      <div>
+        <h3>The Building Blocks</h3>
+        <p>
+          Oxygen (element 8) has <strong>6 valence electrons</strong> — two short of a full outer shell.
+          Hydrogen (element 1) has <strong>1 valence electron</strong> — one short.
+          Two hydrogen atoms each share one electron with oxygen through <strong>polar covalent bonds</strong>,
+          completing all three outer shells simultaneously.
+        </p>
+        <p>
+          The result: a molecule with <strong>10 total electrons</strong> (8 from O, 1 from each H), held together
+          by two O–H bonds of length <strong>0.96 Å</strong> (angstroms; 1 Å = 10⁻¹⁰ m).
+        </p>
+        <div class="atom-highlight cyan">
+          <strong>VSEPR — Why the Bent Shape?</strong>
+          <p>
+            Valence Shell Electron Pair Repulsion theory tells us electron pairs arrange themselves
+            as far apart as possible. Oxygen has <strong>4 electron pairs</strong> around it:
+            2 bonding pairs (to H atoms) and <strong>2 lone pairs</strong>. Lone pairs take up more
+            angular space than bonding pairs, squeezing the H–O–H bond angle from the tetrahedral ideal
+            of 109.5° down to just <strong>104.5°</strong>.
+          </p>
+        </div>
+      </div>
+      <div>
+        <h3>The Numbers</h3>
+        <div class="atom-chip-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="atom-chip"><div class="chip-icon">⚛️</div><div class="chip-title">Bond Angle</div><div class="chip-desc">104.5° — bent, not linear</div></div>
+          <div class="atom-chip"><div class="chip-icon">📏</div><div class="chip-title">Bond Length</div><div class="chip-desc">0.96 Å per O–H bond</div></div>
+          <div class="atom-chip"><div class="chip-icon">🎯</div><div class="chip-title">Geometry</div><div class="chip-desc">Bent / V-shaped (VSEPR)</div></div>
+          <div class="atom-chip"><div class="chip-icon">⚡</div><div class="chip-title">Bond Type</div><div class="chip-desc">Polar covalent — shared electrons, unequal pull</div></div>
+          <div class="atom-chip"><div class="chip-icon">💚</div><div class="chip-title">Lone Pairs</div><div class="chip-desc">2 non-bonding electron pairs on oxygen</div></div>
+          <div class="atom-chip"><div class="chip-icon">⚖️</div><div class="chip-title">Molar Mass</div><div class="chip-desc">18.015 g/mol (2×1.008 + 15.999)</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 1: Molecule Viewer -->
+  <div class="atom-sim" id="sim-anatomy">
+    <div class="atom-sim-head">
+      <div class="atom-sim-head-left">
+        <span class="atom-sim-title cyan">🔬 H₂O Molecule Viewer</span>
+        <span class="atom-sim-sub">Three representations of the same molecule — toggle the view mode below</span>
+      </div>
+    </div>
+    <canvas id="cvMolecule" height="380"></canvas>
+    <div class="atom-sim-controls">
+      <div class="atom-ctrl">
+        <label>View Mode</label>
+        <div class="atom-control-row">
+          <button class="atom-btn active" data-mol-mode="stick">Ball &amp; Stick</button>
+          <button class="atom-btn" data-mol-mode="density">Electron Density</button>
+          <button class="atom-btn" data-mol-mode="spacefill">Space Fill (CPK)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 2 · POLARITY ══ -->
+  <div class="atom-card atom-card-accent-violet" id="polarity">
+    <p class="atom-kicker violet">Electronegativity · Dipole Moment · Polar Covalent</p>
+    <h2>Why Water is Polar</h2>
+
+    <p>
+      Not all covalent bonds share electrons equally. <strong>Electronegativity</strong> measures how strongly
+      an atom pulls shared electrons toward itself. On the Pauling scale:
+    </p>
+
+    <table class="en-table">
+      <thead><tr><th>Atom</th><th>Electronegativity (Pauling)</th><th>Visual Pull</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Oxygen (O)</td><td>3.44</td>
+          <td><div class="en-bar"><div class="en-bar-fill" style="width:86%"></div></div></td>
+        </tr>
+        <tr>
+          <td>Hydrogen (H)</td><td>2.20</td>
+          <td><div class="en-bar"><div class="en-bar-fill" style="width:55%"></div></div></td>
+        </tr>
+        <tr>
+          <td>Difference (Δ)</td><td>1.24 → Polar covalent</td>
+          <td><div class="en-bar"><div class="en-bar-fill" style="width:31%;background:linear-gradient(90deg,#ff9f7f,#d04040)"></div></div></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="atom-two-col">
+      <div>
+        <h3>Partial Charges</h3>
+        <p>
+          Because oxygen pulls shared electrons closer, it acquires a slight <strong>negative charge (δ⁻)</strong>.
+          The hydrogens, depleted of electron density, each carry a slight <strong>positive charge (δ⁺)</strong>.
+          These are not full ±1 ionic charges — they're fractional partial charges (roughly δ ≈ ±0.33 for water).
+        </p>
+        <p>
+          A molecule with separated positive and negative charge centers is called a <strong>dipole</strong>.
+          Water's net dipole moment is <strong>1.85 Debye</strong> — one of the highest of any common small molecule,
+          and the root of its extraordinary solvent power.
+        </p>
+      </div>
+      <div>
+        <h3>Why the Angle is Everything</h3>
+        <p>
+          Each O–H bond has its own dipole pointing from H toward O (following the electrons).
+          In a <em>linear</em> molecule two equal dipoles pointing opposite directions would cancel to zero.
+          Water's 104.5° bend means the two O–H dipoles <strong>add together</strong> — creating a strong net
+          dipole pointing toward the oxygen end.
+        </p>
+        <div class="atom-highlight violet">
+          <strong>Geometry is destiny</strong>
+          <p>
+            Carbon dioxide (CO₂) has two polar C=O bonds but is linear, so dipoles cancel — CO₂ is nonpolar.
+            If water were linear, its dipoles would also cancel. The bent geometry is the reason water
+            can dissolve salt, moderate temperature, and support life.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="atom-equation">
+      μ(H₂O) = 1.85 D &nbsp;·&nbsp; Two O–H dipoles at 104.5° add constructively → net dipole toward O
+    </div>
+  </div>
+
+  <!-- ══ 3 · HYDROGEN BONDS ══ -->
+  <div class="atom-card atom-card-accent-teal" id="hbonds">
+    <p class="atom-kicker teal">Intermolecular Forces · Hydrogen Bonds · Networks</p>
+    <h2>The Hydrogen Bond Network</h2>
+
+    <p>
+      Water molecules don't exist in isolation — they cluster. The <strong>δ⁺ hydrogen</strong> of one molecule
+      is electrostatically attracted to the <strong>lone pair electrons</strong> on the oxygen (δ⁻) of a neighbor.
+      This electrostatic attraction is called a <strong>hydrogen bond</strong>.
+    </p>
+
+    <div class="atom-two-col">
+      <div>
+        <h3>The Hydrogen Bond at a Glance</h3>
+        <ul>
+          <li>Bond energy: ~20 kJ/mol (individually weak)</li>
+          <li>O–H covalent bond for comparison: ~460 kJ/mol</li>
+          <li>Van der Waals forces for comparison: ~2 kJ/mol</li>
+          <li>Each water molecule can form <strong>up to 4 H-bonds</strong> (2 as donor via its H's, 2 as acceptor via lone pairs)</li>
+          <li>Liquid water average: ~3.4 H-bonds per molecule</li>
+          <li>Ice: exactly 4 H-bonds per molecule in a rigid hexagonal lattice</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Why They Matter So Much</h3>
+        <p>
+          Based on its molar mass and position in Group 16 of the periodic table, water should boil
+          around <strong>−80 °C</strong>. It actually boils at <strong>+100 °C</strong>.
+          That 180-degree gap is entirely due to hydrogen bonds that must be broken before molecules
+          can escape into the gas phase.
+        </p>
+        <div class="atom-highlight teal">
+          <strong>H-bonds are the thermostat of life</strong>
+          <p>
+            The same network that raises water's boiling point gives it an enormous heat capacity —
+            water resists temperature swings. This moderates Earth's climate, buffers ocean temperatures,
+            and lets living cells maintain stable internal conditions.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 2: H-Bond Network -->
+  <div class="atom-sim" id="sim-hbonds">
+    <div class="atom-sim-head">
+      <div class="atom-sim-head-left">
+        <span class="atom-sim-title teal">🔗 Hydrogen Bond Network</span>
+        <span class="atom-sim-sub">Water molecules as oriented dipoles — cyan dashed lines show active hydrogen bonds</span>
+      </div>
+    </div>
+    <canvas id="cvHbond" height="400"></canvas>
+    <div class="atom-sim-controls">
+      <div class="atom-ctrl" style="flex:1;min-width:180px;max-width:320px;">
+        <label>Temperature <span class="atom-ctrl-val" id="hbondTempVal">20 °C</span></label>
+        <input type="range" id="hbondTemp" min="0" max="100" value="20" />
+      </div>
+      <div class="atom-align-end"><button class="atom-btn" id="hbondFreezeBtn">❄️ Near-freeze</button></div>
+      <div class="atom-align-end"><button class="atom-btn" id="hbondBoilBtn">🔥 Boiling (100 °C)</button></div>
+    </div>
+    <div class="atom-readout">
+      <div class="atom-readout-chip"><span class="atom-readout-label">H-bonds Active</span><span class="atom-readout-val" id="hbondCount">—</span></div>
+      <div class="atom-readout-chip"><span class="atom-readout-label">Avg Speed</span><span class="atom-readout-val" id="hbondSpeed">—</span></div>
+      <div class="atom-readout-chip"><span class="atom-readout-label">State</span><span class="atom-readout-val" id="hbondState">—</span></div>
+    </div>
+  </div>
+
+  <!-- ══ 4 · PROPERTIES ══ -->
+  <div class="atom-card atom-card-accent-amber" id="properties">
+    <p class="atom-kicker amber">Emergent Properties · Why Water is Anomalous</p>
+    <h2>Five Anomalies That Make Life Possible</h2>
+
+    <p>
+      Water's bent shape and H-bond network create properties that defy the predictions you'd make for
+      a molecule of its size. Every one of these "anomalies" is, in fact, <em>essential</em> for Earth's biosphere.
+    </p>
+
+    <div class="water-props-grid">
+      <div class="water-prop-card">
+        <div class="water-prop-icon">🌡️</div>
+        <div class="water-prop-title">Unusually High Boiling Point</div>
+        <div class="water-prop-value">+100 °C (expected: −80 °C)</div>
+        <div class="water-prop-desc">The 180° difference is entirely from H-bonds that must be broken to let molecules escape into vapor. No other molecule of similar mass comes close.</div>
+        <div class="water-prop-why">→ Keeps oceans liquid across Earth's temperature range.</div>
+      </div>
+      <div class="water-prop-card">
+        <div class="water-prop-icon">🔥</div>
+        <div class="water-prop-title">High Heat Capacity</div>
+        <div class="water-prop-value">4.18 J/(g·K)</div>
+        <div class="water-prop-desc">Highest of any common liquid. Energy goes into bending and breaking H-bonds rather than raising temperature — water heats and cools much more slowly than other substances.</div>
+        <div class="water-prop-why">→ Moderates Earth's climate; keeps body temperature stable.</div>
+      </div>
+      <div class="water-prop-card">
+        <div class="water-prop-icon">🫧</div>
+        <div class="water-prop-title">Surface Tension</div>
+        <div class="water-prop-value">72.8 mN/m</div>
+        <div class="water-prop-desc">Surface molecules are pulled inward by H-bonds to neighbors below but not above, creating a taut "skin." This lets water-strider insects walk on water and drives capillary action in plants.</div>
+        <div class="water-prop-why">→ Enables capillary action, vascular transport in plants, surface ecosystems.</div>
+      </div>
+      <div class="water-prop-card">
+        <div class="water-prop-icon">🧂</div>
+        <div class="water-prop-title">Universal Solvent</div>
+        <div class="water-prop-value">dissolves 70+ ionic cpds</div>
+        <div class="water-prop-desc">Water's dipole surrounds and separates ions: δ⁻ oxygen points toward cations (Na⁺), δ⁺ hydrogens point toward anions (Cl⁻). These hydration shells pull apart ionic crystal lattices.</div>
+        <div class="water-prop-why">→ Transports nutrients, salts, and metabolic waste in all living cells.</div>
+      </div>
+      <div class="water-prop-card">
+        <div class="water-prop-icon">🧊</div>
+        <div class="water-prop-title">Density Anomaly</div>
+        <div class="water-prop-value">ice: 0.917 g/cm³ &lt; liquid</div>
+        <div class="water-prop-desc">Ice is less dense than liquid water — nearly unique in nature. The rigid hexagonal H-bond lattice in ice has more open space than the disordered liquid, so ice expands on freezing.</div>
+        <div class="water-prop-why">→ Ice floats and insulates. Oceans don't freeze solid; life survives winter.</div>
+      </div>
+    </div>
+
+    <div class="atom-highlight amber">
+      <strong>These Properties Are Interdependent</strong>
+      <p>
+        As global temperatures rise, ice melts (density anomaly weakens its buffering), the ocean absorbs
+        more heat (heat capacity buffer is finite), evaporation increases (H-bonds break more easily), and
+        weather patterns destabilize. Water's anomalous properties are not chemistry curiosities — they are
+        the levers of Earth's entire climate system.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══ 5 · PHASE TRANSITIONS ══ -->
+  <div class="atom-card atom-card-accent-rose" id="phases">
+    <p class="atom-kicker rose">Phase Transitions · Ice · Liquid · Steam</p>
+    <h2>Water Across Three Phases</h2>
+
+    <div class="atom-two-col">
+      <div>
+        <h3>Ice: The H-Bond Lattice</h3>
+        <p>
+          At 0 °C water freezes into hexagonal ice (ice I<sub>h</sub>) — each molecule forms
+          <strong>exactly 4 hydrogen bonds</strong> in a rigid, open lattice. This open geometry explains
+          the density anomaly: liquid water near 4 °C is denser than ice because the H-bond lattice
+          is partially broken and molecules pack more tightly.
+        </p>
+        <p>
+          Melting ice requires <strong>334 J/g</strong> of energy (latent heat of fusion) without any
+          temperature increase — every joule goes into breaking H-bonds.
+        </p>
+      </div>
+      <div>
+        <h3>Liquid → Steam: A Giant Energy Barrier</h3>
+        <p>
+          Boiling liquid water requires <strong>2,260 J/g</strong> (latent heat of vaporization) —
+          the highest of any common liquid. Every joule breaks one more H-bond until molecules finally
+          escape the surface as free steam.
+        </p>
+        <p>
+          This is why sweating cools so effectively: each gram of sweat that evaporates removes 2,260 J
+          from your body — far more than any other biological coolant could achieve at body temperature.
+        </p>
+      </div>
+    </div>
+
+    <div class="atom-highlight rose">
+      <strong>Latent Heat — Energy Without Temperature Change</strong>
+      <p>
+        Pour heat into boiling water and the temperature stays at 100 °C until <em>all</em> the liquid
+        is gone — every joule breaks H-bonds, none raises the thermometer. This is why steam at 100 °C
+        causes much worse burns than liquid water at 100 °C: the steam carries 2,260 J/g of hidden latent
+        energy that releases instantly on contact with skin.
+      </p>
+    </div>
+  </div>
+
+  <!-- SIM 3: Phase Transition -->
+  <div class="atom-sim" id="sim-phase">
+    <div class="atom-sim-head">
+      <div class="atom-sim-head-left">
+        <span class="atom-sim-title violet">🧊💧☁️ Phase Transition Simulator</span>
+        <span class="atom-sim-sub">Lennard-Jones particle simulation — drag temperature to watch the phase change in real time</span>
+      </div>
+    </div>
+    <canvas id="cvPhase" height="400"></canvas>
+    <div class="atom-sim-controls">
+      <div class="atom-ctrl" style="flex:1;min-width:180px;max-width:360px;">
+        <label>Temperature <span class="atom-ctrl-val" id="phaseTempVal">50 °C</span></label>
+        <input type="range" id="phaseTemp" min="1" max="500" value="50" />
+      </div>
+      <div class="atom-align-end"><button class="atom-btn" id="phaseIceBtn">❄️ Ice (0 °C)</button></div>
+      <div class="atom-align-end"><button class="atom-btn" id="phaseLiqBtn">💧 Liquid (50 °C)</button></div>
+      <div class="atom-align-end"><button class="atom-btn" id="phaseSteamBtn">☁️ Steam (200 °C)</button></div>
+    </div>
+    <div class="atom-readout">
+      <div class="atom-readout-chip"><span class="atom-readout-label">Phase</span><span class="atom-readout-val" id="phaseLabel">—</span></div>
+      <div class="atom-readout-chip"><span class="atom-readout-label">Avg Kinetic Energy</span><span class="atom-readout-val" id="phaseKE">—</span></div>
+      <div class="atom-readout-chip"><span class="atom-readout-label">Wall Pressure (hits/s)</span><span class="atom-readout-val" id="phasePressure">—</span></div>
+    </div>
+  </div>
+
+  <!-- ══ 6 · AI EXTENSION ══ -->
+  <div class="atom-card atom-card-accent-green">
+    <p class="atom-kicker green">Extend Your Learning · AI Simulation Prompts</p>
+    <h2>Build Your Own Water Simulation</h2>
+    <p>
+      Now that you understand the structure and behavior of water, build your own interactive models.
+      Paste any of these prompts into Claude or ChatGPT and ask for a working HTML simulation:
+    </p>
+
+    <div class="atom-prompt-box">
+      <div class="atom-prompt-label">Prompt 1 · How Water Dissolves Salt</div>
+      <pre>Build a self-contained HTML canvas simulation showing how water (as a polar molecule) dissolves sodium chloride (NaCl). Place Na⁺ and Cl⁻ ions in a small crystal lattice. Show water molecules as bent dipoles (δ− oxygen, δ+ hydrogens) surrounding and separating the ions. Add a "Dissolve" button that gradually breaks the lattice as water molecules reorient and pull the ions apart into solution. Vanilla JavaScript only, no libraries.</pre>
+    </div>
+
+    <div class="atom-prompt-box">
+      <div class="atom-prompt-label">Prompt 2 · Snowflake Growth</div>
+      <pre>Simulate hexagonal ice crystal growth on an HTML canvas. Start with a seed in the center. Water molecules (dots) drift randomly and attach to the crystal edges, respecting six-fold symmetry. Lower temperature means faster, more symmetric growth; higher temperature gives irregular branching. Show each new bond as it forms and animates. Vanilla JS only.</pre>
+    </div>
+
+    <div class="atom-prompt-box">
+      <div class="atom-prompt-label">Prompt 3 · Surface Tension</div>
+      <pre>Create an HTML canvas simulation of water surface tension. Show water molecules as circles filling the bottom two-thirds. Molecules in the bulk have H-bond attractions in all directions (faint dashed lines in all directions). Surface molecules only have neighbors below and to the sides — show net downward force arrows on them. Place a small "insect" polygon on the surface supported by surface tension. Add a temperature slider: higher temperature weakens surface tension until the insect sinks. Vanilla JS only.</pre>
+    </div>
+  </div>
+
+  <footer class="atom-footer">
+    <p>Mr. Scandrett's ClassroomOS · Chemistry · Level 3 · Molecular Structure &nbsp;·&nbsp; <a href="../steam-lessons.html">← All Lessons</a></p>
+  </footer>
+
+</div><!-- /.atom-shell -->
+
+<script>
+/* ── Utilities ── */
+function rand(a, b) { return Math.random() * (b - a) + a; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+/* ═══════════════════════════════════════════════════════════
+   SIM 1 · MOLECULE ANATOMY VIEWER
+═══════════════════════════════════════════════════════════ */
+(function () {
+  const cv  = document.getElementById('cvMolecule');
+  const ctx = cv.getContext('2d');
+  let mode  = 'stick';
+
+  function resize() { cv.width = cv.parentElement.getBoundingClientRect().width; draw(); }
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#02080f'; ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 26) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 26) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    ctx.restore();
+
+    const cx = W * 0.5, cy = H * 0.44;
+    const sc = Math.min(W, H) / 480;
+    const L  = 100 * sc;
+    const phi = 52.25 * Math.PI / 180;
+
+    const h1x = cx + L * Math.sin(phi), h1y = cy + L * Math.cos(phi);
+    const h2x = cx - L * Math.sin(phi), h2y = cy + L * Math.cos(phi);
+
+    const lpD = L * 0.6, lpA = 38 * Math.PI / 180;
+    const lp1x = cx - lpD * Math.sin(lpA), lp1y = cy - lpD * Math.cos(lpA);
+    const lp2x = cx + lpD * Math.sin(lpA), lp2y = cy - lpD * Math.cos(lpA);
+
+    if (mode === 'stick')     drawStick(W, H, cx, cy, L, phi, h1x, h1y, h2x, h2y, lp1x, lp1y, lp2x, lp2y, sc);
+    else if (mode === 'density')   drawDensity(W, H, cx, cy, L, h1x, h1y, h2x, h2y, sc);
+    else                      drawSpaceFill(W, H, cx, cy, L, h1x, h1y, h2x, h2y, sc);
+  }
+
+  function drawStick(W, H, cx, cy, L, phi, h1x, h1y, h2x, h2y, lp1x, lp1y, lp2x, lp2y, sc) {
+    /* Bonds */
+    ctx.save();
+    ctx.lineWidth = 5 * sc; ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(160,200,240,0.72)';
+    ctx.beginPath();
+    ctx.moveTo(cx,cy); ctx.lineTo(h1x,h1y);
+    ctx.moveTo(cx,cy); ctx.lineTo(h2x,h2y);
+    ctx.stroke(); ctx.restore();
+
+    /* Lone pair dashes */
+    ctx.save();
+    ctx.setLineDash([4*sc, 6*sc]); ctx.lineWidth = 2*sc;
+    ctx.strokeStyle = 'rgba(79,220,154,0.52)';
+    ctx.beginPath();
+    ctx.moveTo(cx,cy); ctx.lineTo(lp1x,lp1y);
+    ctx.moveTo(cx,cy); ctx.lineTo(lp2x,lp2y);
+    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+
+    /* Bond angle arc */
+    const arcR = L * 0.46;
+    const ang1 = Math.atan2(h1y-cy, h1x-cx);
+    const ang2 = Math.atan2(h2y-cy, h2x-cx);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, arcR, ang1, ang2, false);
+    ctx.strokeStyle = 'rgba(246,195,91,0.80)'; ctx.lineWidth = 2*sc; ctx.stroke();
+    ctx.font = `bold ${clamp(12*sc,9,15)}px "JetBrains Mono",monospace`;
+    ctx.fillStyle = '#f6c35b'; ctx.textAlign = 'center';
+    ctx.fillText('104.5°', cx, cy + arcR + 18*sc);
+    ctx.restore();
+
+    /* Lone pair dots */
+    ctx.save();
+    const lpR = 5*sc, lpOff = L*0.08;
+    [[lp1x,lp1y],[lp2x,lp2y]].forEach(([lx,ly]) => {
+      [-lpOff,lpOff].forEach(d => {
+        ctx.beginPath(); ctx.arc(lx+d, ly, lpR, 0, Math.PI*2);
+        ctx.fillStyle = '#4fdc9a'; ctx.fill();
+      });
+    });
+    ctx.font = `${clamp(10*sc,8,12)}px Inter,sans-serif`;
+    ctx.fillStyle = 'rgba(79,220,154,0.68)'; ctx.textAlign = 'center';
+    ctx.fillText('lone pairs', cx, cy - L*0.6 - 14*sc);
+    ctx.restore();
+
+    /* Oxygen */
+    const oR = L*0.27;
+    ctx.save();
+    const og = ctx.createRadialGradient(cx-oR*0.3,cy-oR*0.3,oR*0.08,cx,cy,oR);
+    og.addColorStop(0,'#ff7070'); og.addColorStop(1,'#7a0000');
+    ctx.beginPath(); ctx.arc(cx,cy,oR,0,Math.PI*2);
+    ctx.fillStyle=og; ctx.fill();
+    ctx.strokeStyle='rgba(255,160,160,0.28)'; ctx.lineWidth=1.5*sc; ctx.stroke();
+    ctx.font=`bold ${clamp(15*sc,12,20)}px Inter,sans-serif`;
+    ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('O',cx,cy); ctx.restore();
+
+    /* Hydrogens */
+    const hR = L*0.14;
+    [[h1x,h1y,1],[h2x,h2y,-1]].forEach(([hx,hy,side]) => {
+      ctx.save();
+      const hg = ctx.createRadialGradient(hx-hR*0.3,hy-hR*0.3,hR*0.08,hx,hy,hR);
+      hg.addColorStop(0,'#fff'); hg.addColorStop(1,'#8ab8d8');
+      ctx.beginPath(); ctx.arc(hx,hy,hR,0,Math.PI*2);
+      ctx.fillStyle=hg; ctx.fill();
+      ctx.strokeStyle='rgba(180,220,255,0.28)'; ctx.lineWidth=1.5*sc; ctx.stroke();
+      ctx.font=`bold ${clamp(10*sc,8,13)}px Inter,sans-serif`;
+      ctx.fillStyle='#334'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('H',hx,hy); ctx.restore();
+      /* δ⁺ */
+      ctx.save();
+      ctx.font=`bold ${clamp(12*sc,10,15)}px Inter,sans-serif`;
+      ctx.fillStyle='#ff9f7f'; ctx.textAlign=side>0?'left':'right'; ctx.textBaseline='middle';
+      ctx.fillText('δ⁺', hx+side*(hR+7*sc), hy); ctx.restore();
+    });
+
+    /* δ⁻ */
+    ctx.save();
+    ctx.font=`bold ${clamp(13*sc,10,16)}px Inter,sans-serif`;
+    ctx.fillStyle='#5ac8ee'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText('δ⁻', cx+oR+6*sc, cy); ctx.restore();
+
+    /* Bond length label */
+    const mbx=(cx+h1x)/2, mby=(cy+h1y)/2;
+    const ba=Math.atan2(h1y-cy,h1x-cx);
+    ctx.save(); ctx.translate(mbx,mby); ctx.rotate(ba-Math.PI/2);
+    ctx.font=`${clamp(9*sc,7,11)}px "JetBrains Mono",monospace`;
+    ctx.fillStyle='rgba(200,228,248,0.38)'; ctx.textAlign='center';
+    ctx.fillText('0.96 Å',0,-9*sc); ctx.restore();
+
+    /* Net dipole arrow */
+    const hhMx=(h1x+h2x)/2, hhMy=(h1y+h2y)/2;
+    const ddx=cx-hhMx, ddy=cy-hhMy, ddl=Math.hypot(ddx,ddy);
+    const al=ddl*0.5, ax2=hhMx+ddx/ddl*al, ay2=hhMy+ddy/ddl*al;
+    ctx.save();
+    ctx.strokeStyle='#b09fff'; ctx.lineWidth=2.5*sc; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(hhMx,hhMy); ctx.lineTo(ax2,ay2); ctx.stroke();
+    const ha=Math.atan2(ddy,ddx), hl=9*sc;
+    ctx.fillStyle='#b09fff'; ctx.beginPath();
+    ctx.moveTo(ax2,ay2);
+    ctx.lineTo(ax2-hl*Math.cos(ha-0.4),ay2-hl*Math.sin(ha-0.4));
+    ctx.lineTo(ax2-hl*Math.cos(ha+0.4),ay2-hl*Math.sin(ha+0.4));
+    ctx.closePath(); ctx.fill();
+    ctx.font=`${clamp(10*sc,8,12)}px Inter,sans-serif`;
+    ctx.fillStyle='#c4b8ff'; ctx.textAlign='center';
+    ctx.fillText('net dipole',hhMx,hhMy+16*sc); ctx.restore();
+  }
+
+  function drawDensity(W, H, cx, cy, L, h1x, h1y, h2x, h2y, sc) {
+    /* O electron cloud — blue (high density) */
+    const oc=ctx.createRadialGradient(cx,cy,0,cx,cy,L*1.3);
+    oc.addColorStop(0,'rgba(10,80,220,0.72)');
+    oc.addColorStop(0.5,'rgba(30,100,255,0.28)');
+    oc.addColorStop(1,'rgba(30,100,255,0)');
+    ctx.beginPath(); ctx.arc(cx,cy,L*1.3,0,Math.PI*2);
+    ctx.fillStyle=oc; ctx.fill();
+
+    /* H clouds — orange (low density) */
+    [h1x,h2x].forEach(hx => {
+      const hy=h1y;
+      const hc=ctx.createRadialGradient(hx,hy,0,hx,hy,L*0.65);
+      hc.addColorStop(0,'rgba(255,170,50,0.58)');
+      hc.addColorStop(0.5,'rgba(255,90,20,0.22)');
+      hc.addColorStop(1,'rgba(255,90,20,0)');
+      ctx.beginPath(); ctx.arc(hx,hy,L*0.65,0,Math.PI*2);
+      ctx.fillStyle=hc; ctx.fill();
+    });
+
+    /* Atom outlines */
+    ctx.save(); ctx.globalAlpha=0.22; ctx.strokeStyle='#fff'; ctx.lineWidth=2*sc;
+    ctx.beginPath(); ctx.arc(cx,cy,L*0.25,0,Math.PI*2); ctx.stroke();
+    [h1x,h2x].forEach(hx => { ctx.beginPath(); ctx.arc(hx,h1y,L*0.12,0,Math.PI*2); ctx.stroke(); });
+    ctx.restore();
+
+    /* Labels */
+    ctx.save();
+    ctx.textAlign='center';
+    ctx.font=`bold ${clamp(13*sc,10,16)}px Inter,sans-serif`;
+    ctx.fillStyle='#80bcff'; ctx.fillText('δ⁻  (high e⁻ density)',cx,cy-L*0.5);
+    ctx.fillStyle='#ffaa60';
+    ctx.fillText('δ⁺',h1x+L*0.3,h1y-5*sc);
+    ctx.fillText('δ⁺',h2x-L*0.3,h2y-5*sc);
+
+    /* Color legend */
+    const lx=W-90*sc, ly=H-55*sc;
+    const leg=ctx.createLinearGradient(lx,ly,lx+68*sc,ly);
+    leg.addColorStop(0,'rgb(255,110,20)');
+    leg.addColorStop(1,'rgb(10,70,220)');
+    ctx.fillStyle=leg; ctx.fillRect(lx,ly,68*sc,9*sc);
+    ctx.font=`${clamp(9*sc,7,11)}px Inter,sans-serif`;
+    ctx.fillStyle='rgba(200,228,248,0.44)';
+    ctx.textAlign='left'; ctx.fillText('δ⁺',lx,ly+22*sc);
+    ctx.textAlign='right'; ctx.fillText('δ⁻',lx+68*sc,ly+22*sc);
+    ctx.restore();
+  }
+
+  function drawSpaceFill(W, H, cx, cy, L, h1x, h1y, h2x, h2y, sc) {
+    const ppa=L/0.96; /* px per angstrom */
+    const oR=1.52*ppa, hR=1.20*ppa;
+
+    /* Hydrogens first (partly behind O) */
+    [h1x,h2x].forEach(hx => {
+      const hy=h1y;
+      const hg=ctx.createRadialGradient(hx-hR*0.3,hy-hR*0.3,hR*0.05,hx,hy,hR);
+      hg.addColorStop(0,'#fff'); hg.addColorStop(0.6,'#c4dced'); hg.addColorStop(1,'#809ab4');
+      ctx.beginPath(); ctx.arc(hx,hy,hR,0,Math.PI*2);
+      ctx.fillStyle=hg; ctx.fill();
+    });
+
+    /* Oxygen */
+    const og=ctx.createRadialGradient(cx-oR*0.28,cy-oR*0.28,oR*0.05,cx,cy,oR);
+    og.addColorStop(0,'#ff5555'); og.addColorStop(0.7,'#cc0000'); og.addColorStop(1,'#800000');
+    ctx.beginPath(); ctx.arc(cx,cy,oR,0,Math.PI*2);
+    ctx.fillStyle=og; ctx.fill();
+
+    /* Labels */
+    ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font=`bold ${clamp(16*sc,12,22)}px Inter,sans-serif`;
+    ctx.fillStyle='#fff'; ctx.fillText('O',cx,cy);
+    ctx.font=`bold ${clamp(12*sc,9,16)}px Inter,sans-serif`;
+    ctx.fillStyle='#445'; ctx.fillText('H',h1x,h1y); ctx.fillText('H',h2x,h2y);
+    ctx.restore();
+
+    ctx.save();
+    ctx.font=`${clamp(9*sc,7,11)}px "JetBrains Mono",monospace`;
+    ctx.fillStyle='rgba(200,228,248,0.38)'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    ctx.fillText('CPK Model · O = 1.52 Å · H = 1.20 Å (van der Waals radii)',12*sc,H-12*sc);
+    ctx.restore();
+  }
+
+  document.querySelectorAll('[data-mol-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      mode = btn.dataset.molMode;
+      document.querySelectorAll('[data-mol-mode]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      draw();
+    });
+  });
+
+  window.addEventListener('resize', resize);
+  resize();
+})();
+
+
+/* ═══════════════════════════════════════════════════════════
+   SIM 2 · HYDROGEN BOND NETWORK
+═══════════════════════════════════════════════════════════ */
+(function () {
+  const cv        = document.getElementById('cvHbond');
+  const ctx       = cv.getContext('2d');
+  const tempSl    = document.getElementById('hbondTemp');
+  const tempValEl = document.getElementById('hbondTempVal');
+  const countEl   = document.getElementById('hbondCount');
+  const speedEl   = document.getElementById('hbondSpeed');
+  const stateEl   = document.getElementById('hbondState');
+
+  document.getElementById('hbondFreezeBtn').addEventListener('click', () => { tempSl.value = 2; });
+  document.getElementById('hbondBoilBtn').addEventListener('click',   () => { tempSl.value = 100; });
+
+  const N      = 20;
+  const L_VIS  = 14;
+  const PHI    = 52.25 * Math.PI / 180;
+  const OR     = 7, HR = 4;
+  const HBDIST = 30;
+  const REPSIG = 32;
+
+  let mols = [];
+
+  function initMols(W, H) {
+    mols = [];
+    const cols = Math.ceil(Math.sqrt(N)), rows = Math.ceil(N / cols);
+    const pX = W*0.1, pY = H*0.1;
+    const cW = (W-pX*2)/cols, cH = (H-pY*2)/rows;
+    let idx = 0;
+    for (let r = 0; r < rows && idx < N; r++) {
+      for (let c = 0; c < cols && idx < N; c++, idx++) {
+        mols.push({
+          x: pX+c*cW+cW/2+rand(-cW*0.18,cW*0.18),
+          y: pY+r*cH+cH/2+rand(-cH*0.18,cH*0.18),
+          vx: rand(-0.4,0.4), vy: rand(-0.4,0.4),
+          angle: rand(0,Math.PI*2), omega: rand(-0.02,0.02),
+        });
+      }
+    }
+  }
+
+  function getH(m, i) {
+    const a = m.angle + (i===0 ? PHI : -PHI);
+    return { x: m.x + L_VIS * Math.sin(a), y: m.y + L_VIS * Math.cos(a) };
+  }
+
+  function resize() { cv.width = cv.parentElement.getBoundingClientRect().width; initMols(cv.width, cv.height); }
+
+  let rafId;
+  function tick() {
+    const W = cv.width, H = cv.height;
+    const T = Number(tempSl.value);
+    tempValEl.textContent = T + ' °C';
+
+    const tgtSpd   = 0.25 + T * 0.030;
+    const noiseAmt = T * 0.0009;
+
+    mols.forEach(m => {
+      m.vx += rand(-noiseAmt, noiseAmt);
+      m.vy += rand(-noiseAmt, noiseAmt);
+      m.omega += rand(-noiseAmt*0.4, noiseAmt*0.4);
+
+      /* O-O soft repulsion */
+      mols.forEach(o => {
+        if (o===m) return;
+        const dx=m.x-o.x, dy=m.y-o.y, r=Math.hypot(dx,dy);
+        if (r<REPSIG && r>0.5) { const f=0.14*(REPSIG-r)/r; m.vx+=dx*f; m.vy+=dy*f; }
+      });
+
+      /* H-bond alignment torque at low T */
+      if (T<70) {
+        mols.forEach(o => {
+          if (o===m) return;
+          [0,1].forEach(hi => {
+            const h=getH(m,hi);
+            const dx=o.x-h.x, dy=o.y-h.y, r=Math.hypot(dx,dy);
+            if (r<HBDIST*1.6 && r>0.5) {
+              const tAng=Math.atan2(dx,dy)-(hi===0?PHI:-PHI);
+              let da=tAng-m.angle;
+              while(da>Math.PI)da-=Math.PI*2; while(da<-Math.PI)da+=Math.PI*2;
+              m.omega+=da*0.0008*(70-T)/70;
+            }
+          });
+        });
+      }
+
+      /* Speed rescale */
+      const sp=Math.hypot(m.vx,m.vy);
+      if(sp>0.01){const sc=lerp(1,tgtSpd/sp,0.05); m.vx*=sc; m.vy*=sc;}
+      m.omega*=0.96;
+      m.x+=m.vx; m.y+=m.vy; m.angle+=m.omega;
+
+      const mg=18;
+      if(m.x<mg){m.x=mg;m.vx=Math.abs(m.vx);}
+      if(m.x>W-mg){m.x=W-mg;m.vx=-Math.abs(m.vx);}
+      if(m.y<mg){m.y=mg;m.vy=Math.abs(m.vy);}
+      if(m.y>H-mg){m.y=H-mg;m.vy=-Math.abs(m.vy);}
+    });
+
+    /* Draw */
+    ctx.fillStyle='#02080f'; ctx.fillRect(0,0,W,H);
+    ctx.save(); ctx.strokeStyle='rgba(255,255,255,0.02)'; ctx.lineWidth=1;
+    for(let x=0;x<W;x+=26){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=26){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    ctx.restore();
+
+    /* H-bonds */
+    let hbCnt=0;
+    for(let i=0;i<N;i++){
+      for(let j=0;j<N;j++){
+        if(i===j) continue;
+        const mA=mols[i], mB=mols[j];
+        [0,1].forEach(hi=>{
+          const h=getH(mA,hi);
+          const dx=mB.x-h.x, dy=mB.y-h.y, r=Math.hypot(dx,dy);
+          if(r<HBDIST && r>0.5){
+            const alpha=clamp(1-r/HBDIST,0,1)*0.88;
+            ctx.save(); ctx.setLineDash([4,5]); ctx.lineWidth=1.5;
+            ctx.strokeStyle=`rgba(56,189,248,${alpha})`;
+            ctx.beginPath(); ctx.moveTo(h.x,h.y); ctx.lineTo(mB.x,mB.y); ctx.stroke();
+            ctx.setLineDash([]); ctx.restore();
+            hbCnt++;
+          }
+        });
+      }
+    }
+
+    /* Molecules */
+    mols.forEach(m=>{
+      const h1=getH(m,0), h2=getH(m,1);
+      ctx.save(); ctx.strokeStyle='rgba(155,200,240,0.62)'; ctx.lineWidth=2.5; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(m.x,m.y); ctx.lineTo(h1.x,h1.y);
+      ctx.moveTo(m.x,m.y); ctx.lineTo(h2.x,h2.y); ctx.stroke(); ctx.restore();
+      [h1,h2].forEach(h=>{
+        const hg=ctx.createRadialGradient(h.x-1,h.y-1,0.5,h.x,h.y,HR);
+        hg.addColorStop(0,'#fff'); hg.addColorStop(1,'#6aa4cc');
+        ctx.beginPath(); ctx.arc(h.x,h.y,HR,0,Math.PI*2); ctx.fillStyle=hg; ctx.fill();
+      });
+      const og=ctx.createRadialGradient(m.x-2,m.y-2,1,m.x,m.y,OR);
+      og.addColorStop(0,'#ff7070'); og.addColorStop(1,'#8b0000');
+      ctx.beginPath(); ctx.arc(m.x,m.y,OR,0,Math.PI*2); ctx.fillStyle=og; ctx.fill();
+    });
+
+    const avgSp=mols.reduce((s,m)=>s+Math.hypot(m.vx,m.vy),0)/N;
+    countEl.textContent=Math.floor(hbCnt/2);
+    speedEl.textContent=avgSp.toFixed(2)+' px/fr';
+    stateEl.textContent=T<8?'Near-frozen':T<55?'Liquid-like':'Steam-like';
+
+    rafId=requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize',()=>{cancelAnimationFrame(rafId);resize();tick();});
+  resize(); tick();
+})();
+
+
+/* ═══════════════════════════════════════════════════════════
+   SIM 3 · PHASE TRANSITION (Lennard-Jones)
+═══════════════════════════════════════════════════════════ */
+(function () {
+  const cv       = document.getElementById('cvPhase');
+  const ctx      = cv.getContext('2d');
+  const tempSl   = document.getElementById('phaseTemp');
+  const tempValEl= document.getElementById('phaseTempVal');
+  const phLblEl  = document.getElementById('phaseLabel');
+  const keEl     = document.getElementById('phaseKE');
+  const pressEl  = document.getElementById('phasePressure');
+
+  document.getElementById('phaseIceBtn').addEventListener('click',   ()=>{tempSl.value=3;});
+  document.getElementById('phaseLiqBtn').addEventListener('click',   ()=>{tempSl.value=80;});
+  document.getElementById('phaseSteamBtn').addEventListener('click', ()=>{tempSl.value=350;});
+
+  const N    = 48;
+  const SIG  = 14;
+  const EPS  = 1.2;
+  const RCUT = SIG * 2.5;
+  const DT   = 0.55;
+
+  let pts=[], wallHits=0, lastHitCt=0, lastHitT=0;
+
+  function initPts(W,H){
+    pts=[];
+    const cols=Math.ceil(Math.sqrt(N)), rows=Math.ceil(N/cols);
+    const pX=W*0.07, pY=H*0.07;
+    const cW=(W-pX*2)/cols, cH=(H-pY*2)/rows;
+    let idx=0;
+    for(let r=0;r<rows&&idx<N;r++){
+      for(let c=0;c<cols&&idx<N;c++,idx++){
+        const T0=Number(tempSl.value);
+        const v0=Math.sqrt(2*EPS*T0/500)*0.4;
+        const a=Math.random()*Math.PI*2;
+        pts.push({
+          x:pX+c*cW+cW/2+rand(-cW*0.28,cW*0.28),
+          y:pY+r*cH+cH/2+rand(-cH*0.28,cH*0.28),
+          vx:v0*Math.cos(a), vy:v0*Math.sin(a), ax:0, ay:0
+        });
+      }
+    }
+  }
+
+  function ljForce(r){
+    if(r<0.8||r>RCUT) return 0;
+    const sr=SIG/r, sr6=sr*sr*sr*sr*sr*sr, sr12=sr6*sr6;
+    return clamp(24*EPS/r*(2*sr12-sr6),-80,80);
+  }
+
+  function resize(){cv.width=cv.parentElement.getBoundingClientRect().width;initPts(cv.width,cv.height);}
+
+  let rafId2;
+  function tick(){
+    const W=cv.width, H=cv.height;
+    const T=Number(tempSl.value);
+
+    const degC=T<=5?'0 °C':T<=200?T+' °C':T+' °C';
+    tempValEl.textContent=degC;
+    phLblEl.textContent=T<=10?'ICE ❄️':T<=200?'LIQUID 💧':'STEAM ☁️';
+
+    pts.forEach(p=>{p.ax=0;p.ay=0;});
+
+    for(let i=0;i<N;i++){
+      for(let j=i+1;j<N;j++){
+        const pi=pts[i], pj=pts[j];
+        const dx=pj.x-pi.x, dy=pj.y-pi.y, r=Math.hypot(dx,dy);
+        if(r<0.8||r>RCUT) continue;
+        const f=ljForce(r);
+        const fx=-f*dx/r, fy=-f*dy/r;
+        pi.ax+=fx; pi.ay+=fy; pj.ax-=fx; pj.ay-=fy;
+      }
+    }
+
+    pts.forEach(p=>{
+      p.vx+=p.ax*DT; p.vy+=p.ay*DT;
+      p.x+=p.vx*DT; p.y+=p.vy*DT;
+      const mg=SIG;
+      if(p.x<mg){p.x=mg;p.vx=Math.abs(p.vx);wallHits++;}
+      if(p.x>W-mg){p.x=W-mg;p.vx=-Math.abs(p.vx);wallHits++;}
+      if(p.y<mg){p.y=mg;p.vy=Math.abs(p.vy);wallHits++;}
+      if(p.y>H-mg){p.y=H-mg;p.vy=-Math.abs(p.vy);wallHits++;}
+    });
+
+    /* Thermostat */
+    const tgtKE=N*EPS*(T/100);
+    let curKE=pts.reduce((s,p)=>s+0.5*(p.vx*p.vx+p.vy*p.vy),0);
+    if(curKE>0.001){
+      const sc=Math.sqrt(tgtKE/curKE);
+      const bl=lerp(1,sc,0.05);
+      pts.forEach(p=>{p.vx*=bl;p.vy*=bl;});
+      curKE*=bl*bl;
+    }
+
+    /* Draw */
+    ctx.fillStyle='#02080f'; ctx.fillRect(0,0,W,H);
+    ctx.save(); ctx.strokeStyle='rgba(255,255,255,0.02)'; ctx.lineWidth=1;
+    for(let x=0;x<W;x+=26){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=26){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    ctx.restore();
+
+    /* H-bond-like lines when cold */
+    if(T<100){
+      ctx.save(); ctx.setLineDash([3,5]); ctx.lineWidth=1;
+      for(let i=0;i<N;i++){
+        for(let j=i+1;j<N;j++){
+          const pi=pts[i],pj=pts[j];
+          const r=Math.hypot(pj.x-pi.x,pj.y-pi.y);
+          if(r<SIG*2.0){
+            const alpha=clamp((SIG*2.0-r)/(SIG*0.7),0,0.55)*(1-T/100);
+            ctx.strokeStyle=`rgba(56,189,248,${alpha})`;
+            ctx.beginPath();ctx.moveTo(pi.x,pi.y);ctx.lineTo(pj.x,pj.y);ctx.stroke();
+          }
+        }
+      }
+      ctx.setLineDash([]); ctx.restore();
+    }
+
+    /* Particles colored by speed */
+    const refSpd=Math.sqrt(2*EPS*5);
+    pts.forEach(p=>{
+      const sp=Math.hypot(p.vx,p.vy);
+      const t=clamp(sp/refSpd,0,1);
+      const r=Math.round(lerp(20,255,t));
+      const g=Math.round(lerp(120,120,t>0.5?1-(t-0.5)*2:t*2));
+      const b=Math.round(lerp(230,20,t));
+      const pr=SIG*0.55;
+      const pg=ctx.createRadialGradient(p.x-pr*0.3,p.y-pr*0.3,pr*0.1,p.x,p.y,pr);
+      pg.addColorStop(0,`rgba(${Math.min(r+80,255)},${Math.min(g+80,255)},${Math.min(b+80,255)},0.95)`);
+      pg.addColorStop(1,`rgba(${r},${g},${b},0.75)`);
+      ctx.beginPath();ctx.arc(p.x,p.y,pr,0,Math.PI*2);
+      ctx.fillStyle=pg;ctx.fill();
+    });
+
+    /* Phase watermark */
+    ctx.save();
+    ctx.font='bold 16px Inter,sans-serif';
+    ctx.fillStyle=T<=10?'rgba(160,215,255,0.28)':T<=200?'rgba(56,189,248,0.22)':'rgba(255,185,70,0.24)';
+    ctx.textAlign='center';
+    ctx.fillText(T<=10?'ICE':T<=200?'LIQUID':'STEAM',W/2,H/2);
+    ctx.restore();
+
+    const now=Date.now();
+    if(now-lastHitT>500){lastHitCt=wallHits*2;wallHits=0;lastHitT=now;}
+    keEl.textContent=(curKE/N).toFixed(3)+' ε';
+    pressEl.textContent=lastHitCt+'/s';
+
+    rafId2=requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize',()=>{cancelAnimationFrame(rafId2);resize();tick();});
+  resize(); tick();
+})();
+</script>
+
+</body>
+</html>
