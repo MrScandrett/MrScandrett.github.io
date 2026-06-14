@@ -364,6 +364,8 @@ let foods        = [];   // { mesh, vy, eaten }
 let bubbles      = [];   // { mesh, vel, life, decay }
 let dirtBits     = [];   // { mesh, drift }
 let plankton     = [];   // { mesh, drift }
+let seaweeds     = [];   // { group, segments:[{mesh,idx}], phase }
+let anemones     = [];   // { group, tentacles:[{mesh,angle,baseRotZ,baseRotX}], phase }
 
 // ── State ──────────────────────────────────────────────────────────────────
 let dirtiness    = 0;
@@ -468,14 +470,29 @@ function buildEnvironment() {
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Seaweed clusters
+  // Seaweed clusters — more coverage than before
   const swPositions = [
-    [-8, -2], [-5.5, -1.5], [-3, -3.5], [0, -2], [3, -3], [5.5, -1.8], [8.5, -2.5], [-1.5, -3.8]
+    [-8,-2],[-5.5,-1.5],[-3,-3.5],[0,-2],[3,-3],[5.5,-1.8],[8.5,-2.5],[-1.5,-3.8],
+    [-7,-3],[6.5,-3.2],[2,-1.5],[-4,-1],[9,-1.5],[-9,-3.5]
   ];
   swPositions.forEach(([x, z]) => addSeaweed(x, z));
 
+  // Coral formations
+  [[-7,-3.5],[-4.5,-2.5],[-2,-4],[1.5,-3.5],[4,-2],[7,-3],[9.5,-2],[-6,-1],[0.5,-4.2]]
+    .forEach(([x, z]) => addCoral(x + (Math.random()-0.5)*0.8, z + (Math.random()-0.5)*0.6));
+
+  // Anemones
+  [[-6.5,-2.5],[3.5,-3.8],[7.5,-1.5],[-2.5,-2],[0,-4.0]].forEach(([x, z]) => addAnemone(x, z));
+
+  // Starfish
+  for (let i = 0; i < 7; i++)
+    addStarfish((Math.random()-0.5)*BOUNDS.x*1.7, (Math.random()-0.5)*BOUNDS.z*1.5);
+
+  // Pebbles
+  addPebbles();
+
   // Rocks
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     addRock((Math.random() - 0.5) * BOUNDS.x * 1.6,
             (Math.random() - 0.5) * BOUNDS.z * 1.3);
   }
@@ -510,19 +527,18 @@ function addSeaweed(x, z) {
   const greens = [0x1a7a3c, 0x228b22, 0x2a6e1e, 0x176035];
   const col = greens[Math.floor(Math.random() * greens.length)];
   const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.8, side: THREE.DoubleSide });
-
+  const segments = [];
   for (let s = 0; s < segs; s++) {
     const h = height / segs;
-    const geo = new THREE.CylinderGeometry(0.038, 0.065, h, 5);
-    const seg = new THREE.Mesh(geo, mat);
+    const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.065, h, 5), mat);
     seg.position.y = s * h + h / 2;
-    seg.rotation.z = Math.sin(s * 1.5) * 0.22;
-    seg.rotation.x = Math.sin(s * 0.9) * 0.12;
     seg.castShadow = true;
     group.add(seg);
+    segments.push({ mesh: seg, idx: s });
   }
   group.position.set(x, -BOUNDS.y, z);
   scene.add(group);
+  seaweeds.push({ group, segments, phase: Math.random() * Math.PI * 2 });
 }
 
 function addRock(x, z) {
@@ -542,6 +558,122 @@ function addRock(x, z) {
   rock.castShadow = true;
   rock.receiveShadow = true;
   scene.add(rock);
+}
+
+function addCoral(x, z) {
+  const group = new THREE.Group();
+  const palette = [0xe84393, 0xff7043, 0x9b59b6, 0xef4444, 0xf59e0b, 0x06b6d4, 0xec4899];
+  const col = new THREE.Color(palette[Math.floor(Math.random() * palette.length)]);
+  const mat     = new THREE.MeshStandardMaterial({ color: col, roughness: 0.65, metalness: 0.05 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(0.55), roughness: 0.8 });
+
+  const stemH = 0.5 + Math.random() * 1.0;
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.09, stemH, 7), darkMat);
+  stem.position.y = stemH / 2;
+  stem.castShadow = true;
+  group.add(stem);
+
+  const numBranches = 2 + Math.floor(Math.random() * 4);
+  for (let b = 0; b < numBranches; b++) {
+    const branchH = 0.22 + Math.random() * 0.42;
+    const angle = (b / numBranches) * Math.PI * 2 + Math.random() * 0.4;
+    const tilt  = 0.45 + Math.random() * 0.35;
+    const startY = stemH * (0.35 + Math.random() * 0.45);
+
+    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.04, branchH, 5), mat);
+    branch.position.set(Math.cos(angle) * 0.12, startY + Math.cos(tilt) * branchH * 0.5, Math.sin(angle) * 0.12);
+    branch.rotation.z = Math.cos(angle) * tilt;
+    branch.rotation.x = Math.sin(angle) * tilt;
+    branch.castShadow = true;
+    group.add(branch);
+
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.055 + Math.random() * 0.04, 8, 6), mat);
+    tip.position.set(
+      branch.position.x + Math.cos(angle) * Math.sin(tilt) * branchH * 0.5,
+      branch.position.y + Math.cos(tilt) * branchH * 0.5 + 0.04,
+      branch.position.z + Math.sin(angle) * Math.sin(tilt) * branchH * 0.5
+    );
+    group.add(tip);
+  }
+
+  group.position.set(x, -BOUNDS.y, z);
+  scene.add(group);
+}
+
+function addStarfish(x, z) {
+  const palette = [0xe85d04, 0xc1121f, 0x7b2d8b, 0xff6b6b, 0xfca311];
+  const col = palette[Math.floor(Math.random() * palette.length)];
+  const shape = new THREE.Shape();
+  const arms = 5, outer = 0.14 + Math.random() * 0.1, inner = outer * 0.4;
+  for (let i = 0; i < arms * 2; i++) {
+    const a = (i * Math.PI) / arms - Math.PI / 2;
+    const r = i % 2 === 0 ? outer : inner;
+    i === 0 ? shape.moveTo(Math.cos(a)*r, Math.sin(a)*r) : shape.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+  }
+  shape.closePath();
+  const mesh = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(shape, { depth: 0.03, bevelEnabled: true, bevelSize: 0.01, bevelThickness: 0.01 }),
+    new THREE.MeshStandardMaterial({ color: col, roughness: 0.75 })
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.rotation.z = Math.random() * Math.PI * 2;
+  mesh.position.set(x, -BOUNDS.y + 0.01, z);
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+}
+
+function addPebbles() {
+  const cols = [0x8b7355, 0x9e9e9e, 0x7b6b4f, 0xa0a0a0, 0xb5a48a, 0x6b7280, 0x795548];
+  const mats = cols.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.95 }));
+  for (let i = 0; i < 55; i++) {
+    const r = 0.04 + Math.random() * 0.08;
+    const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mats[Math.floor(Math.random() * mats.length)]);
+    mesh.position.set(
+      (Math.random()-0.5)*BOUNDS.x*2.0, -BOUNDS.y + r*0.4,
+      (Math.random()-0.5)*BOUNDS.z*2.0
+    );
+    mesh.rotation.set(Math.random()*6, Math.random()*6, Math.random()*6);
+    mesh.scale.set(1+Math.random()*0.7, 0.5+Math.random()*0.5, 1+Math.random()*0.7);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+  }
+}
+
+function addAnemone(x, z) {
+  const group = new THREE.Group();
+  const col = new THREE.Color([0xff6b9d, 0xff8c42, 0x9b59b6, 0x06b6d4][Math.floor(Math.random()*4)]);
+  const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.6 });
+  const baseMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.9 });
+
+  const base = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), baseMat);
+  base.scale.set(1, 0.7, 1);
+  base.position.y = 0.09;
+  group.add(base);
+
+  const tentacles = [];
+  const count = 9 + Math.floor(Math.random() * 7);
+  const tipMat = new THREE.MeshStandardMaterial({ color: col.clone().lerp(new THREE.Color(0xffffff), 0.4), roughness: 0.4 });
+  for (let i = 0; i < count; i++) {
+    const tentH = 0.18 + Math.random() * 0.18;
+    const angle = (i / count) * Math.PI * 2;
+    const radius = 0.04 + Math.random() * 0.055;
+    const tent = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.014, tentH, 4), mat);
+    const bRotZ = Math.cos(angle) * 0.32;
+    const bRotX = Math.sin(angle) * 0.32;
+    tent.position.set(Math.cos(angle)*radius, 0.1 + tentH/2, Math.sin(angle)*radius);
+    tent.rotation.z = bRotZ;
+    tent.rotation.x = bRotX;
+    const tipBall = new THREE.Mesh(new THREE.SphereGeometry(0.013, 6, 5), tipMat);
+    tipBall.position.y = tentH / 2 + 0.01;
+    tent.add(tipBall);
+    group.add(tent);
+    tentacles.push({ mesh: tent, angle, baseRotZ: bRotZ, baseRotX: bRotX });
+  }
+
+  group.position.set(x, -BOUNDS.y, z);
+  scene.add(group);
+  anemones.push({ group, tentacles, phase: Math.random() * Math.PI * 2 });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -963,6 +1095,25 @@ function updatePlankton() {
   }
 }
 
+function updateSeaweeds(t) {
+  for (const sw of seaweeds) {
+    sw.segments.forEach(({ mesh, idx }) => {
+      mesh.rotation.z = Math.sin(t * 0.65 + sw.phase + idx * 0.55) * 0.16;
+      mesh.rotation.x = Math.sin(t * 0.45 + sw.phase * 1.3 + idx * 0.38) * 0.07;
+    });
+  }
+}
+
+function updateAnemones(t) {
+  for (const an of anemones) {
+    an.tentacles.forEach(({ mesh, angle, baseRotZ, baseRotX }, i) => {
+      const wave = Math.sin(t * 1.1 + an.phase + i * 0.65) * 0.18;
+      mesh.rotation.z = baseRotZ + wave * Math.cos(angle);
+      mesh.rotation.x = baseRotX + wave * Math.sin(angle);
+    });
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // DIRTY UI
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1198,6 +1349,8 @@ function animate() {
   updateBubbles();
   updateDirt();
   updatePlankton();
+  updateSeaweeds(t);
+  updateAnemones(t);
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
 }
