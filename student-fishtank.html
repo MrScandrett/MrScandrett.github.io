@@ -31,7 +31,7 @@
       text-shadow: 0 0 18px rgba(125,211,252,0.55);
       letter-spacing: 0.02em;
     }
-    #topbar-actions { display: flex; gap: 8px; pointer-events: all; }
+    #topbar-actions { display: flex; gap: 8px; pointer-events: all; flex-wrap: wrap; }
     .top-btn {
       background: rgba(125,211,252,0.12);
       border: 1px solid rgba(125,211,252,0.28);
@@ -249,6 +249,50 @@
       50%      { transform: translateX(18px) rotate(4deg); }
     }
     #load-text { color: #7dd3fc; font-size: 1.05rem; font-weight: 700; }
+
+    /* ── Aquarium Systems Panel ── */
+    #systems-panel {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.92);
+      z-index: 90;
+      background: rgba(0, 8, 18, 0.97);
+      border: 1px solid rgba(52, 211, 153, 0.28);
+      border-radius: 18px;
+      width: min(480px, 92vw);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 12px 60px rgba(0,0,0,0.75), 0 0 0 1px rgba(52,211,153,0.06);
+      overflow: hidden;
+    }
+    #systems-panel.show { opacity: 1; pointer-events: all; transform: translate(-50%, -50%) scale(1); }
+    #sys-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px 12px;
+      border-bottom: 1px solid rgba(52,211,153,0.13);
+      background: rgba(52,211,153,0.04);
+    }
+    #sys-header span { color: #34d399; font-size: 0.87rem; font-weight: 900; letter-spacing: 0.14em; text-shadow: 0 0 14px rgba(52,211,153,0.4); }
+    #sys-close { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.26); color: #fca5a5; padding: 4px 11px; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 0.8rem; font-family: inherit; }
+    #sys-close:hover { background: rgba(239,68,68,0.22); }
+    #sys-body { display: flex; gap: 12px; padding: 14px; }
+    .sys-widget { flex: 1; display: flex; flex-direction: column; gap: 8px; background: rgba(52,211,153,0.025); border: 1px solid rgba(52,211,153,0.09); border-radius: 12px; padding: 14px 12px; }
+    .sys-wlabel { font-size: 0.67rem; font-weight: 900; color: #34d399; letter-spacing: 0.13em; text-transform: uppercase; text-shadow: 0 0 9px rgba(52,211,153,0.35); }
+    .sys-lcd { font-family: 'Courier New', monospace; font-size: 0.96rem; font-weight: 900; color: #86efac; text-shadow: 0 0 9px rgba(134,239,172,0.5); letter-spacing: 0.03em; }
+    .sys-ok   { color: #4ade80; font-size: 0.71rem; font-weight: 700; }
+    .sys-warn { color: #fbbf24; font-size: 0.71rem; font-weight: 700; }
+    .sys-bad  { color: #f87171; font-size: 0.71rem; font-weight: 700; }
+    .thermo-wrap { display: flex; gap: 7px; align-items: stretch; height: 90px; }
+    .thermo-track { width: 13px; background: rgba(255,255,255,0.04); border-radius: 7px; overflow: hidden; display: flex; align-items: flex-end; border: 1px solid rgba(255,255,255,0.07); flex-shrink: 0; }
+    #thermo-fill { width: 100%; border-radius: 7px; transition: height 1.2s ease, background 1.2s ease; }
+    .thermo-marks { display: flex; flex-direction: column; justify-content: space-between; font-size: 0.57rem; color: #2a4a6a; font-weight: 700; line-height: 1; }
+    .filter-track { height: 9px; background: rgba(255,255,255,0.04); border-radius: 5px; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); }
+    #filter-fill { height: 100%; border-radius: 5px; transition: width 0.9s ease, background 0.9s ease; }
+    .sys-divider { border: none; border-top: 1px solid rgba(52,211,153,0.09); margin: 3px 0; }
+    .sys-btn { width: 100%; padding: 9px 12px; border-radius: 9px; font-family: inherit; font-weight: 800; font-size: 0.78rem; cursor: pointer; border: 1.5px solid rgba(52,211,153,0.28); background: rgba(52,211,153,0.08); color: #34d399; transition: background 0.15s; margin-top: 2px; }
+    .sys-btn:hover { background: rgba(52,211,153,0.18); }
+    .sys-btn:disabled { opacity: 0.36; cursor: not-allowed; }
+    #topbar-actions { flex-wrap: wrap; }
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -279,6 +323,7 @@
   <div id="topbar-actions">
     <a class="top-btn" href="index.html">🏠 Home</a>
     <a class="top-btn" href="fish-upload.html">🐠 Add Fish</a>
+    <button class="top-btn" onclick="toggleSystems()">📊 Systems</button>
     <button class="top-btn" id="fsBtn" onclick="toggleFS()">⛶ Fullscreen</button>
   </div>
 </div>
@@ -312,6 +357,46 @@
   <div id="tank-meter">
     <div id="meter-label">Tank</div>
     <div id="meter-track"><div id="meter-fill"></div></div>
+  </div>
+</div>
+
+<!-- Aquarium Systems Panel -->
+<div id="systems-panel">
+  <div id="sys-header">
+    <span>🔬 AQUARIUM SYSTEMS</span>
+    <button id="sys-close" onclick="closeSystems()">✕ Close</button>
+  </div>
+  <div id="sys-body">
+    <!-- Temperature widget -->
+    <div class="sys-widget">
+      <div class="sys-wlabel">🌡️ TEMPERATURE</div>
+      <div class="thermo-wrap">
+        <div class="thermo-track"><div id="thermo-fill"></div></div>
+        <div class="thermo-marks">
+          <span>82°F</span>
+          <span>78°F</span>
+          <span>74°F</span>
+          <span>70°F</span>
+          <span>66°F</span>
+        </div>
+      </div>
+      <div id="temp-lcd" class="sys-lcd">75.0°F</div>
+      <div id="temp-c" style="font-size:0.73rem;color:#3a6a8a;font-weight:700;">23.9°C</div>
+      <div id="temp-status" class="sys-ok">✓ Optimal</div>
+      <button class="sys-btn" id="heatBtn" onclick="onAdjustHeater()">🌡️ Adjust Heater</button>
+    </div>
+    <!-- Filter + pH widget -->
+    <div class="sys-widget">
+      <div class="sys-wlabel">🔧 FILTER</div>
+      <div class="filter-track"><div id="filter-fill"></div></div>
+      <div id="filter-lcd" class="sys-lcd">100% Efficiency</div>
+      <div id="filter-status" class="sys-ok">✓ Running Clean</div>
+      <button class="sys-btn" id="filterBtn" onclick="onReplaceFilter()">🔧 Replace Filter</button>
+      <hr class="sys-divider">
+      <div class="sys-wlabel">⚗️ pH LEVEL</div>
+      <div id="ph-lcd" class="sys-lcd">7.20</div>
+      <div id="ph-status" class="sys-ok">✓ Neutral</div>
+    </div>
   </div>
 </div>
 
@@ -371,6 +456,16 @@ let anemones     = [];   // { group, tentacles:[{mesh,angle,baseRotZ,baseRotX}],
 let dirtiness    = 0;
 let isFeeding    = false;
 let isCleaning   = false;
+
+// ── Systems simulation state ───────────────────────────────────────────────
+let waterTemp      = 75.0;   // °F
+let tempTarget     = 75.0;   // heater set-point °F
+let filterHealth   = 100;    // 0–100 %
+let phLevel        = 7.20;
+let phDrift        = 0;
+let heatCooldown   = 0;      // seconds remaining on heater button
+let filterCooldown = 0;      // seconds remaining on filter button
+let _prevT         = 0;      // previous clock time for dt
 
 // ── DOM ────────────────────────────────────────────────────────────────────
 const $canvas   = document.getElementById('tank-canvas');
@@ -1174,6 +1269,7 @@ window.onFeed = function () {
   fishes.forEach(f => { f.state = 'feed'; f.feedTarget = null; });
   setDirtiness(dirtiness + DIRTY_PER_FEED);
   spawnDirt(Math.ceil(DIRTY_PER_FEED * 0.6));
+  filterHealth = clamp(filterHealth - 6, 0, 100);   // feeding strains the filter
   toast('🍤 Feeding time! Fish are swimming to eat!');
 
   setTimeout(() => {
@@ -1238,6 +1334,101 @@ window.toggleFS = function () {
 if (!document.documentElement.requestFullscreen) {
   document.getElementById('fsBtn').style.display = 'none';
 }
+
+// ── Aquarium Systems ─────────────────────────────────────────────────────────
+
+function updateSystems(dt) {
+  // Temperature: drift toward set-point + small random noise
+  const err = tempTarget - waterTemp;
+  waterTemp += err * 0.0008 + (Math.random() - 0.5) * 0.003;
+  waterTemp = clamp(waterTemp, 60, 92);
+  // Natural drift: occasionally shift the set-point slightly
+  if (Math.random() < 0.0008) tempTarget = clamp(tempTarget + (Math.random() - 0.5) * 2, 71, 79);
+
+  // Filter: degrades with time and fish count
+  const rate = (0.003 + fishes.length * 0.0008) * dt;
+  filterHealth = clamp(filterHealth - rate, 0, 100);
+
+  // pH: random slow drift
+  phDrift += (Math.random() - 0.5) * 0.00015;
+  phDrift  = clamp(phDrift, -0.004, 0.004);
+  phLevel  = clamp(phLevel + phDrift, 6.3, 7.9);
+
+  if (heatCooldown   > 0) heatCooldown   -= dt;
+  if (filterCooldown > 0) filterCooldown -= dt;
+
+  // Render UI only when panel is open
+  if (document.getElementById('systems-panel').classList.contains('show')) {
+    renderSystemsUI();
+  }
+}
+
+function renderSystemsUI() {
+  const tempC = ((waterTemp - 32) * 5 / 9).toFixed(1);
+  document.getElementById('temp-lcd').textContent = `${waterTemp.toFixed(1)}°F`;
+  document.getElementById('temp-c').textContent   = `${tempC}°C`;
+
+  // Thermometer fill: 66–82°F mapped to 0–100%
+  const pct = clamp((waterTemp - 66) / (82 - 66), 0, 1);
+  const tf  = document.getElementById('thermo-fill');
+  tf.style.height = `${pct * 100}%`;
+  tf.style.background =
+    waterTemp < 70 ? 'linear-gradient(to top,#3b82f6,#60a5fa)' :
+    waterTemp > 79 ? 'linear-gradient(to top,#ef4444,#f87171)' :
+                     'linear-gradient(to top,#059669,#34d399)';
+
+  const ts = document.getElementById('temp-status');
+  const hb = document.getElementById('heatBtn');
+  if (waterTemp < 70)      { ts.textContent = '⚠ Too Cold!'; ts.className = 'sys-bad'; }
+  else if (waterTemp > 79) { ts.textContent = '⚠ Too Warm!'; ts.className = 'sys-bad'; }
+  else                     { ts.textContent = '✓ Optimal';   ts.className = 'sys-ok';  }
+  hb.disabled    = heatCooldown > 0;
+  hb.textContent = heatCooldown > 0 ? `⏳ ${Math.ceil(heatCooldown)}s` : '🌡️ Adjust Heater';
+
+  // Filter bar
+  const ff = document.getElementById('filter-fill');
+  ff.style.width = `${filterHealth}%`;
+  ff.style.background =
+    filterHealth > 60 ? 'linear-gradient(to right,#059669,#34d399)' :
+    filterHealth > 25 ? 'linear-gradient(to right,#d97706,#fbbf24)' :
+                        'linear-gradient(to right,#dc2626,#f87171)';
+  document.getElementById('filter-lcd').textContent = `${Math.round(filterHealth)}% Efficiency`;
+  const fs2 = document.getElementById('filter-status');
+  const fb  = document.getElementById('filterBtn');
+  if (filterHealth > 60)      { fs2.textContent = '✓ Running Clean'; fs2.className = 'sys-ok';   }
+  else if (filterHealth > 25) { fs2.textContent = '⚠ Filter Dirty';  fs2.className = 'sys-warn'; }
+  else                        { fs2.textContent = '🚨 Clogged!';      fs2.className = 'sys-bad';  }
+  fb.disabled    = filterCooldown > 0;
+  fb.textContent = filterCooldown > 0 ? `⏳ ${Math.ceil(filterCooldown)}s` : '🔧 Replace Filter';
+
+  // pH
+  document.getElementById('ph-lcd').textContent = phLevel.toFixed(2);
+  const ps = document.getElementById('ph-status');
+  if (phLevel < 6.6 || phLevel > 7.6) { ps.textContent = '⚠ Out of Range'; ps.className = 'sys-warn'; }
+  else                                 { ps.textContent = '✓ Neutral';       ps.className = 'sys-ok';   }
+}
+
+window.onAdjustHeater = function () {
+  if (heatCooldown > 0) return;
+  tempTarget   = 75.0;
+  heatCooldown = 30;
+  toast('🌡️ Heater adjusted — targeting 75°F');
+};
+
+window.onReplaceFilter = function () {
+  if (filterCooldown > 0) return;
+  filterHealth   = 100;
+  filterCooldown = 45;
+  toast('🔧 Filter replaced — running at full efficiency!');
+};
+
+window.toggleSystems = function () {
+  const panel = document.getElementById('systems-panel');
+  if (panel.classList.toggle('show')) renderSystemsUI();
+};
+window.closeSystems = function () {
+  document.getElementById('systems-panel').classList.remove('show');
+};
 
 // ── Admin Panel ─────────────────────────────────────────────────────────────
 const $admin       = document.getElementById('admin-panel');
@@ -1320,6 +1511,10 @@ window.resetToDefault = async function () {
 let _seq = '';
 document.addEventListener('keydown', e => {
   if ($admin.classList.contains('show')) { if (e.key === 'Escape') closeAdmin(); return; }
+  if (document.getElementById('systems-panel').classList.contains('show')) {
+    if (e.key === 'Escape') closeSystems();
+    return;
+  }
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   _seq = (_seq + e.key.toUpperCase()).slice(-5);
   if (_seq === 'ADMIN') { _seq = ''; openAdmin(); }
@@ -1343,7 +1538,9 @@ function toast(msg) {
 
 function animate() {
   requestAnimationFrame(animate);
-  const t = clock.getElapsedTime();
+  const t  = clock.getElapsedTime();
+  const dt = t - _prevT;
+  _prevT   = t;
   updateFishes(t);
   updateFood();
   updateBubbles();
@@ -1351,6 +1548,7 @@ function animate() {
   updatePlankton();
   updateSeaweeds(t);
   updateAnemones(t);
+  updateSystems(dt);
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
 }
