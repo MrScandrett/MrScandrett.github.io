@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <script type="module" src="../assets/js/vendor/model-viewer.min.js"></script>
   <style>
     :root {
       color-scheme: dark;
@@ -118,6 +119,8 @@
     .c-cast-card { border-radius: var(--c-radius); border: 1px solid var(--c-line); background: rgba(5,18,22,0.72); padding: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; transition: border-color 0.18s, transform 0.16s; cursor: default; }
     .c-cast-card:hover { border-color: rgba(45,212,191,0.35); transform: translateY(-2px); }
     .c-cast-canvas { border-radius: 6px; display: block; background: #041014; width: 100%; height: 110px; }
+    .c-cast-mv { border-radius: 6px; display: block; background: #041014; width: 100%; height: 110px; --poster-color: transparent; }
+    .c-cast-mv::part(default-progress-bar) { background: var(--c-teal); }
     .c-cast-name { font-size: 0.88rem; font-weight: 800; color: #e0f2f1; letter-spacing: -0.02em; margin: 0; }
     .c-cast-sci { font-size: 0.72rem; font-style: italic; color: var(--c-teal); margin: 0; }
     .c-cast-desc { font-size: 0.75rem; color: var(--c-muted); line-height: 1.58; margin: 0; }
@@ -128,38 +131,67 @@
     .c-tag.weird { background: rgba(167,139,250,0.11); border: 1px solid rgba(167,139,250,0.26); color: #c4b5fd; }
     .c-tag.anc { background: rgba(74,222,128,0.09); border: 1px solid rgba(74,222,128,0.26); color: #86efac; }
 
-    /* Sim / Creature Creator */
+    /* ── Creature Creator ─────────────────────────────────── */
     .c-sim { border-radius: var(--c-radius); border: 1px solid var(--c-line); overflow: hidden; background: #020b0e; box-shadow: 0 16px 48px rgba(0,0,0,0.3); scroll-margin-top: 72px; }
     .c-sim-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.55rem; padding: 0.95rem 1.15rem 0.7rem; background: linear-gradient(180deg, rgba(45,212,191,0.06), transparent); border-bottom: 1px solid var(--c-line); }
     .c-sim-hl { display: flex; flex-direction: column; gap: 0.18rem; }
     .c-sim-title { font-size: 0.77rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--c-teal); }
     .c-sim-sub { font-size: 0.77rem; color: rgba(45,212,191,0.44); }
-    #creatureCanvas { display: block; width: 100%; height: 260px; background: #020b0e; }
-    .c-sim-controls { padding: 0.8rem 1.15rem; background: rgba(0,0,0,0.28); border-top: 1px solid rgba(255,255,255,0.055); }
-    .c-trait-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 0.6rem; margin-bottom: 0.6rem; }
-    .c-trait { display: flex; flex-direction: column; gap: 0.24rem; }
-    .c-trait-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.5); }
-    .c-trait-btn { display: flex; align-items: center; gap: 0.38rem; padding: 0.46rem 0.6rem; border-radius: var(--c-radius); border: 1px solid rgba(45,212,191,0.26); background: rgba(45,212,191,0.06); color: var(--c-text); font-size: 0.79rem; font-weight: 600; cursor: pointer; transition: background 0.14s, border-color 0.14s; width: 100%; text-align: left; font-family: inherit; }
-    .c-trait-btn:hover { background: rgba(45,212,191,0.13); border-color: rgba(45,212,191,0.44); }
-    .c-trait-btn .t-icon { font-size: 1rem; flex-shrink: 0; }
-    .c-trait-btn .t-label { flex: 1; }
-    .c-trait-btn .t-hint { font-size: 0.6rem; color: var(--c-dim); flex-shrink: 0; }
-    .c-color-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.2rem; }
-    .c-color-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.5); flex-shrink: 0; }
-    .c-swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.15); transition: border-color 0.14s, transform 0.12s; flex-shrink: 0; }
-    .c-swatch:hover { transform: scale(1.18); }
-    .c-swatch.active { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
-    .c-name-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1px solid rgba(45,212,191,0.11); }
-    .c-name-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.5); margin-bottom: 0.16rem; }
-    .c-creature-name { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: clamp(0.88rem,2vw,1.1rem); font-style: italic; color: var(--c-teal); letter-spacing: 0.02em; }
-    .c-save-btn { padding: 0.44rem 1.05rem; border-radius: var(--c-radius); border: 1px solid rgba(245,158,11,0.42); background: rgba(245,158,11,0.12); color: #fde68a; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 0.14s; font-family: inherit; white-space: nowrap; }
-    .c-save-btn:hover { background: rgba(245,158,11,0.22); }
-    .c-gallery-section { padding: 0.72rem 1.15rem 0.85rem; border-top: 1px solid rgba(45,212,191,0.09); background: rgba(0,0,0,0.15); }
-    .c-gallery-label { font-size: 0.63rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.42); margin: 0 0 0.5rem; }
-    .c-gallery-row { display: flex; gap: 0.65rem; flex-wrap: wrap; min-height: 56px; align-items: flex-start; }
-    .c-gallery-item { display: flex; flex-direction: column; align-items: center; gap: 0.16rem; }
-    .c-gallery-name { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.6rem; color: rgba(45,212,191,0.5); text-align: center; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .c-gallery-empty { font-size: 0.8rem; color: var(--c-dim); padding: 0.4rem 0; margin: 0; }
+
+    /* Viewport */
+    .cc-viewport { position: relative; background: #020b0e; }
+    #creatureCanvas { display: block; width: 100%; height: 360px; }
+    .cc-badge { position: absolute; bottom: 0.75rem; left: 0; right: 0; text-align: center; pointer-events: none; }
+    .cc-badge-name { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: clamp(0.9rem,2vw,1.12rem); font-style: italic; color: var(--c-teal); letter-spacing: 0.02em; text-shadow: 0 2px 10px rgba(0,0,0,0.9); }
+    .cc-badge-role { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.55); text-shadow: 0 1px 5px rgba(0,0,0,0.95); margin-top: 0.18rem; }
+
+    /* Part picker */
+    .cc-picker { background: rgba(2,10,13,0.97); border-top: 1px solid rgba(45,212,191,0.08); }
+    .cc-cat-tabs { display: flex; overflow-x: auto; scrollbar-width: none; background: rgba(0,0,0,0.22); border-bottom: 1px solid rgba(45,212,191,0.07); }
+    .cc-cat-tabs::-webkit-scrollbar { display: none; }
+    .cc-cat { flex-shrink: 0; padding: 0.55rem 0.9rem; background: none; border: none; border-bottom: 2.5px solid transparent; color: var(--c-dim); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; font-family: inherit; transition: color 0.14s, border-color 0.14s; white-space: nowrap; }
+    .cc-cat:hover { color: var(--c-text); }
+    .cc-cat.active { color: var(--c-teal); border-bottom-color: var(--c-teal); }
+
+    .cc-opt-row { display: flex; gap: 0.55rem; padding: 0.75rem 0.9rem; overflow-x: auto; scrollbar-width: thin; scrollbar-color: rgba(45,212,191,0.15) transparent; min-height: 108px; align-items: flex-start; }
+    .cc-opt { display: flex; flex-direction: column; align-items: center; gap: 0.28rem; padding: 0.42rem 0.45rem 0.4rem; border-radius: var(--c-radius); border: 1.5px solid rgba(45,212,191,0.13); background: rgba(45,212,191,0.03); cursor: pointer; transition: border-color 0.14s, background 0.14s, transform 0.12s; flex-shrink: 0; width: 82px; user-select: none; }
+    .cc-opt:hover { border-color: rgba(45,212,191,0.3); background: rgba(45,212,191,0.07); transform: translateY(-2px); }
+    .cc-opt.sel { border-color: var(--c-teal); background: rgba(45,212,191,0.12); box-shadow: 0 0 0 1px rgba(45,212,191,0.22), 0 4px 14px rgba(0,0,0,0.35); }
+    .cc-opt-cv { display: block; border-radius: 4px; background: #030e12; width: 70px; height: 50px; }
+    .cc-opt-name { font-size: 0.59rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--c-text); text-align: center; line-height: 1.25; }
+    .cc-opt-sci { font-size: 0.51rem; color: var(--c-dim); text-align: center; font-style: italic; line-height: 1.2; }
+
+    /* Bottom bar */
+    .cc-bottom { display: flex; align-items: center; gap: 0.8rem; padding: 0.65rem 0.9rem; background: rgba(0,0,0,0.22); border-top: 1px solid rgba(255,255,255,0.04); flex-wrap: wrap; }
+    .cc-section-lbl { font-size: 0.57rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.4); display: block; margin-bottom: 0.25rem; }
+    .cc-color-col { flex-shrink: 0; }
+    .cc-swatches { display: flex; gap: 0.35rem; }
+    .cc-swatch { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.1); transition: border-color 0.14s, transform 0.12s; flex-shrink: 0; }
+    .cc-swatch:hover { transform: scale(1.18); }
+    .cc-swatch.sel { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.25); }
+
+    .cc-stats { flex: 1; display: grid; grid-template-columns: repeat(3,1fr); gap: 0.45rem 0.7rem; min-width: 170px; }
+    .cc-stat-lbl { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(45,212,191,0.38); display: block; margin-bottom: 0.16rem; }
+    .cc-stat-bar { height: 3px; background: rgba(45,212,191,0.07); border-radius: 2px; overflow: hidden; }
+    .cc-stat-fill { height: 100%; border-radius: 2px; transition: width 0.28s ease; }
+    .cc-stat-teal { background: var(--c-teal); }
+    .cc-stat-amber { background: var(--c-amber); }
+    .cc-stat-rust { background: var(--c-rust); }
+
+    .cc-save-area { margin-left: auto; display: flex; align-items: center; gap: 0.45rem; flex-shrink: 0; }
+    .cc-save-btn { padding: 0.42rem 0.95rem; border-radius: var(--c-radius); border: 1px solid rgba(245,158,11,0.38); background: rgba(245,158,11,0.1); color: #fde68a; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: background 0.14s; font-family: inherit; white-space: nowrap; }
+    .cc-save-btn:hover { background: rgba(245,158,11,0.2); }
+    .cc-mutate-btn { padding: 0.42rem 0.9rem; border-radius: var(--c-radius); border: 1px solid rgba(45,212,191,0.38); background: rgba(45,212,191,0.1); color: #7fffd4; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: background 0.14s, transform 0.12s; font-family: inherit; white-space: nowrap; }
+    .cc-mutate-btn:hover { background: rgba(45,212,191,0.2); }
+    .cc-mutate-btn:active { transform: scale(0.94) rotate(-8deg); }
+
+    /* Gallery */
+    .cc-gallery { padding: 0.62rem 0.9rem 0.78rem; border-top: 1px solid rgba(45,212,191,0.07); background: rgba(0,0,0,0.12); }
+    .cc-gallery-lbl { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(45,212,191,0.36); margin: 0 0 0.42rem; }
+    .cc-gallery-row { display: flex; gap: 0.6rem; flex-wrap: wrap; min-height: 50px; align-items: flex-start; }
+    .cc-gallery-item { display: flex; flex-direction: column; align-items: center; gap: 0.14rem; }
+    .cc-gallery-name { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.54rem; color: rgba(45,212,191,0.42); text-align: center; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cc-gallery-empty { font-size: 0.78rem; color: var(--c-dim); padding: 0.35rem 0; margin: 0; }
 
     /* Footer */
     .c-footer { text-align: center; padding: 2rem 1rem; color: var(--c-dim); font-size: 0.78rem; border-top: 1px solid var(--c-line); background: rgba(3,12,15,0.7); border-radius: 0 0 var(--c-radius) var(--c-radius); }
@@ -325,15 +357,37 @@
     <div class="c-cast">
 
       <div class="c-cast-card">
-        <canvas id="cast-canvas-0" class="c-cast-canvas" width="200" height="110"></canvas>
+        <model-viewer
+          src="../assets/models/trilobite_proetida.glb"
+          class="c-cast-mv"
+          camera-controls
+          auto-rotate
+          auto-rotate-delay="500"
+          rotation-per-second="20deg"
+          shadow-intensity="0"
+          exposure="1.3"
+          environment-image="neutral"
+          camera-orbit="20deg 80deg 1.8m"
+        ></model-viewer>
         <div class="c-cast-name">Trilobite</div>
-        <div class="c-cast-sci">Elrathia sp.</div>
+        <div class="c-cast-sci">Proetida sp.</div>
         <div class="c-cast-tags"><span class="c-tag armo">Armored</span><span class="c-tag armo">Eyes</span></div>
         <p class="c-cast-desc">The most successful animals of the Paleozoic. Trilobites patrolled the ocean floor for 270 million years. Their compound eyes — built from calcite crystals — were the most complex eyes ever invented at the time. Over 20,000 species are known.</p>
       </div>
 
       <div class="c-cast-card">
-        <canvas id="cast-canvas-1" class="c-cast-canvas" width="200" height="110"></canvas>
+        <model-viewer
+          src="../assets/models/anomalocaris_3d_model.glb"
+          class="c-cast-mv"
+          camera-controls
+          auto-rotate
+          auto-rotate-delay="500"
+          rotation-per-second="18deg"
+          shadow-intensity="0"
+          exposure="1.2"
+          environment-image="neutral"
+          camera-orbit="25deg 78deg 2.2m"
+        ></model-viewer>
         <div class="c-cast-name">Anomalocaris</div>
         <div class="c-cast-sci">Anomalocaris canadensis</div>
         <div class="c-cast-tags"><span class="c-tag pred">Apex Predator</span></div>
@@ -341,7 +395,18 @@
       </div>
 
       <div class="c-cast-card">
-        <canvas id="cast-canvas-2" class="c-cast-canvas" width="200" height="110"></canvas>
+        <model-viewer
+          src="../assets/models/hallucigenia_cambrian_animal.glb"
+          class="c-cast-mv"
+          camera-controls
+          auto-rotate
+          auto-rotate-delay="500"
+          rotation-per-second="20deg"
+          shadow-intensity="0"
+          exposure="1.4"
+          environment-image="neutral"
+          camera-orbit="30deg 75deg 2m"
+        ></model-viewer>
         <div class="c-cast-name">Hallucigenia</div>
         <div class="c-cast-sci">Hallucigenia sparsa</div>
         <div class="c-cast-tags"><span class="c-tag weird">Bizarre</span></div>
@@ -380,62 +445,46 @@
     <div class="c-sim-head">
       <div class="c-sim-hl">
         <div class="c-sim-title">Creature Creator Lab</div>
-        <div class="c-sim-sub">Mix Cambrian body plans to design your own species</div>
+        <div class="c-sim-sub">Pick Cambrian body parts to assemble your own species</div>
       </div>
       <div class="c-pills">
-        <span class="c-pill">5 Traits</span>
-        <span class="c-pill amber">5 Color Schemes</span>
+        <span class="c-pill">6 Trait Categories</span>
+        <span class="c-pill amber">Pre-Cambrian Accurate</span>
       </div>
     </div>
 
-    <canvas id="creatureCanvas" height="260"></canvas>
-
-    <div class="c-sim-controls">
-      <div class="c-trait-grid">
-        <div class="c-trait">
-          <div class="c-trait-label">Body Shape</div>
-          <button class="c-trait-btn" id="btn-body"><span class="t-icon">🦐</span><span class="t-label">Segmented</span><span class="t-hint">▸</span></button>
-        </div>
-        <div class="c-trait">
-          <div class="c-trait-label">Eyes</div>
-          <button class="c-trait-btn" id="btn-eyes"><span class="t-icon">👁</span><span class="t-label">Simple</span><span class="t-hint">▸</span></button>
-        </div>
-        <div class="c-trait">
-          <div class="c-trait-label">Appendages</div>
-          <button class="c-trait-btn" id="btn-append"><span class="t-icon">🦵</span><span class="t-label">Legs</span><span class="t-hint">▸</span></button>
-        </div>
-        <div class="c-trait">
-          <div class="c-trait-label">Armor</div>
-          <button class="c-trait-btn" id="btn-armor"><span class="t-icon">🛡</span><span class="t-label">Shell</span><span class="t-hint">▸</span></button>
-        </div>
-        <div class="c-trait">
-          <div class="c-trait-label">Tail</div>
-          <button class="c-trait-btn" id="btn-tail"><span class="t-icon">🌸</span><span class="t-label">Fan</span><span class="t-hint">▸</span></button>
-        </div>
-      </div>
-
-      <div class="c-color-row">
-        <span class="c-color-label">Color</span>
-        <div class="c-swatch active" id="swatch-0" title="Trilobite Brown"></div>
-        <div class="c-swatch" id="swatch-1" title="Red Shrimp"></div>
-        <div class="c-swatch" id="swatch-2" title="Ocean Blue"></div>
-        <div class="c-swatch" id="swatch-3" title="Olive Green"></div>
-        <div class="c-swatch" id="swatch-4" title="Deep Purple"></div>
-      </div>
-
-      <div class="c-name-row">
-        <div>
-          <div class="c-name-label">Your creature's scientific name</div>
-          <div class="c-creature-name" id="creature-name"><em>loading…</em></div>
-        </div>
-        <button class="c-save-btn" id="save-btn">Save to Gallery</button>
+    <!-- Main viewport -->
+    <div class="cc-viewport">
+      <canvas id="creatureCanvas" width="720" height="360"></canvas>
+      <div class="cc-badge">
+        <div class="cc-badge-name" id="creature-name">loading…</div>
+        <div class="cc-badge-role" id="creature-role"></div>
       </div>
     </div>
 
-    <div class="c-gallery-section">
-      <div class="c-gallery-label">Saved Creatures</div>
-      <div class="c-gallery-row" id="gallery-row">
-        <p class="c-gallery-empty">No creatures saved yet — design one above and hit Save!</p>
+    <!-- Part picker -->
+    <div class="cc-picker">
+      <div class="cc-cat-tabs" id="cc-cat-tabs"></div>
+      <div class="cc-opt-row" id="cc-opt-row"></div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="cc-bottom">
+      <div class="cc-color-col">
+        <span class="cc-section-lbl">Color Scheme</span>
+        <div class="cc-swatches" id="cc-swatches"></div>
+      </div>
+      <div class="cc-stats" id="cc-stats"></div>
+      <div class="cc-save-area">
+        <button class="cc-mutate-btn" id="mutate-btn" title="Randomly recombine every trait — just like blind evolution">🎲 Mutate</button>
+        <button class="cc-save-btn" id="save-btn">Save to Gallery</button>
+      </div>
+    </div>
+
+    <div class="cc-gallery">
+      <div class="cc-gallery-lbl">Saved Creatures</div>
+      <div class="cc-gallery-row" id="gallery-row">
+        <p class="cc-gallery-empty">No creatures saved yet — design one above and hit Save!</p>
       </div>
     </div>
   </div>
@@ -468,15 +517,15 @@
     <div class="c-box rust" style="margin-top:0;">
       <strong>The Cambrian in Your Camp Activity</strong>
       <p>When you designed a creature in the lab above, you were doing what evolution did —
-      combining traits (body shape, eyes, appendages, armor, tail) to produce a working organism.
-      The difference: evolution had no designer. Every combination that survived did so because
-      it worked well enough in its environment. Many that didn't survive are now only fossils.</p>
+      combining traits (body plan, vision, locomotion, feeding, defense, tail) to produce a
+      working organism. The difference: evolution had no designer. Every combination that survived
+      did so because it worked well enough in its environment. Many that didn't survive are now only fossils.</p>
     </div>
   </div>
 
   <div class="c-footer">
     <p>Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">← All Lessons</a> · Life Sciences · Cambrian Explosion</p>
-    <p style="margin-top:0.4rem;">Cambrian creature illustrations are stylized educational representations. Fossil images: Burgess Shale, British Columbia, Canada (~508 mya).</p>
+    <p style="margin-top:0.4rem;">Cambrian creature illustrations are stylized educational representations. Hallucigenia 3-D model used for educational purposes. Fossil images: Burgess Shale, British Columbia, Canada (~508 mya).</p>
   </div>
 
 </div><!-- /.c-shell -->
@@ -484,7 +533,7 @@
 <script>
 'use strict';
 
-// ═══ Color Palettes ══════════════════════════════════════════════════
+// ═══ Palettes ════════════════════════════════════════════════════════
 const PALETTES = [
   { name:'Trilobite',  swatch:'#a08060', light:'#d0b080', mid:'#8c6e4a', dark:'#4e3520', outline:'#2e1e0a', eye:'#0a0800' },
   { name:'Red Shrimp', swatch:'#c04030', light:'#e47060', mid:'#a83828', dark:'#6a2015', outline:'#3a1008', eye:'#ffe070' },
@@ -494,24 +543,76 @@ const PALETTES = [
 ];
 
 // ═══ Trait Definitions ═══════════════════════════════════════════════
-const TRAITS = {
-  body:   { options:['Segmented','Smooth','Worm','Armored'],       icons:['🦐','🐟','🪱','🦞'] },
-  eyes:   { options:['Simple','Compound','Stalked','5-Eyes'],      icons:['👁','🔵','🎾','⚫'] },
-  append: { options:['Legs','Paddles','Claws','Tentacles','None'], icons:['🦵','🏊','🦞','🦑','—'] },
-  armor:  { options:['None','Spines','Plates','Shell'],            icons:['—','⚡','🛡','🔒'] },
-  tail:   { options:['Fan','Point','Fork','None'],                 icons:['🌸','⚡','✌','—'] },
-};
+const CATS = [
+  { key:'body', label:'Body Plan', options:[
+    { name:'Segmented',  sci:'Arthropod-grade' },
+    { name:'Vermiform',  sci:'Worm-grade' },
+    { name:'Bilateral',  sci:'Chordate-grade' },
+    { name:'Sclerotized',sci:'Lophotrochozoan' },
+  ]},
+  { key:'eyes', label:'Vision', options:[
+    { name:'Absent',    sci:'Pre-visual' },
+    { name:'Simple',    sci:'Ocellus pair' },
+    { name:'Compound',  sci:'Stalked' },
+    { name:'Five-Eyes', sci:'Opabiniid' },
+  ]},
+  { key:'limbs', label:'Locomotion', options:[
+    { name:'Legs',      sci:'Biramous' },
+    { name:'Paddles',   sci:'Nektonic' },
+    { name:'Claws',     sci:'Raptorial' },
+    { name:'Tentacles', sci:'Soft extensions' },
+    { name:'None',      sci:'Sessile' },
+  ]},
+  { key:'feed', label:'Feeding', options:[
+    { name:'Mouth Cone',   sci:'Circular aperture' },
+    { name:'Filter Gills', sci:'Suspension' },
+    { name:'Radula',       sci:'Grazing rasper' },
+    { name:'Proboscis',    sci:'Probing tube' },
+  ]},
+  { key:'armor', label:'Defense', options:[
+    { name:'None',     sci:'Soft-bodied' },
+    { name:'Spines',   sci:'Acanthomorph' },
+    { name:'Sclerites',sci:'Wiwaxiid' },
+    { name:'Shell',    sci:'Mineralized' },
+  ]},
+  { key:'tail', label:'Tail', options:[
+    { name:'Caudal Fan', sci:'Arthropod' },
+    { name:'Pygidium',   sci:'Trilobite-grade' },
+    { name:'Ribbon',     sci:'Notochord' },
+    { name:'None',       sci:'Acaudal' },
+  ]},
+];
 
-const traits = { body:3, eyes:1, append:0, armor:3, tail:0, color:0 };
+// ─── Starting creature (trilobite-like) ──────────────────────────────
+const traits = { body:0, eyes:2, limbs:0, feed:2, armor:3, tail:1, color:0 };
+let activeCat = 'body';
 
 // ═══ Name Generator ══════════════════════════════════════════════════
 const NG = {
-  body:   ['Trilo','Anoma','Halli','Wiwax'],
-  eyes:   ['caris','inia','ella','ops'],
-  append: ['pedalis','natans','brachialis','tentatus','gracilis'],
+  prefix: ['Trilo','Anoma','Halli','Wiwax','Opabi','Pikae','Cambro','Burgessi'],
+  mid:    ['caris','inia','ella','ops','genia','lobus','derm','culus'],
+  suffix: ['pedalis','natans','brachialis','tentatus','gracilis','armatus','aculeatus','filtrans'],
 };
 function generateName(t) {
-  return NG.body[t.body] + NG.eyes[t.eyes] + ' ' + NG.append[t.append];
+  const p = NG.prefix[(t.body * 2 + t.eyes) % NG.prefix.length];
+  const m = NG.mid[(t.eyes + t.feed) % NG.mid.length];
+  const s = NG.suffix[(t.limbs + t.armor + t.tail) % NG.suffix.length];
+  return p + m + ' ' + s;
+}
+
+// ═══ Ecological Stats ════════════════════════════════════════════════
+function getEcoStats(t) {
+  const feedRoles = ['predator','filter-feeder','grazer','predator'];
+  const role = feedRoles[t.feed];
+  const limbMob  = [2,3,1,1,0][t.limbs];
+  const bodyMob  = [2,3,3,1][t.body];
+  const mobility = Math.min(4, Math.round((limbMob + bodyMob) / 1.6));
+  const defense  = [0,2,3,4][t.armor];
+  const eyePred  = [0,1,2,3][t.eyes];
+  const feedPred = [3,0,0,2][t.feed];
+  const predation = Math.min(4, Math.max(0, eyePred + feedPred - 1));
+  const habitats = ['benthic','burrowing','nektonic','benthic'];
+  return { role, mobility, defense, predation, habitat: habitats[t.body] };
 }
 
 // ═══ Drawing Utilities ═══════════════════════════════════════════════
@@ -543,14 +644,14 @@ function gradEllipse(ctx, x, y, rx, ry, p) {
 
 function getExt(bodyIdx, cx, cy) {
   return [
-    { headX: cx + 92, tailX: cx - 92, ry: 30 },
+    { headX: cx + 92,  tailX: cx - 92,  ry: 30 },
     { headX: cx + 118, tailX: cx - 118, ry: 42 },
     { headX: cx + 150, tailX: cx - 150, ry: 19 },
     { headX: cx + 110, tailX: cx - 110, ry: 48 },
-  ][bodyIdx];
+  ][bodyIdx] || { headX: cx + 92, tailX: cx - 92, ry: 30 };
 }
 
-// ─── Body ───────────────────────────────────────────────────────────
+// ─── Body ────────────────────────────────────────────────────────────
 function drawBodyShape(ctx, idx, ext, cy, p) {
   const { headX, tailX, ry } = ext;
   const cx = (headX + tailX) / 2;
@@ -598,12 +699,13 @@ function drawBodyShape(ctx, idx, ext, cy, p) {
   ctx.restore();
 }
 
-// ─── Eyes ───────────────────────────────────────────────────────────
+// ─── Eyes ────────────────────────────────────────────────────────────
 function drawEyes(ctx, idx, ext, cy, p) {
+  if (idx === 0) return;
   const { headX, ry } = ext;
   const ex = headX - 16;
   ctx.save();
-  if (idx === 0) {
+  if (idx === 1) {
     [cy - ry * 0.5, cy + ry * 0.5].forEach(ey => {
       ctx.beginPath(); ctx.arc(ex, ey, 8, 0, Math.PI * 2);
       ctx.fillStyle = '#080600'; ctx.fill();
@@ -611,7 +713,7 @@ function drawEyes(ctx, idx, ext, cy, p) {
       ctx.beginPath(); ctx.arc(ex + 2.5, ey - 2.5, 3, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
     });
-  } else if (idx === 1) {
+  } else if (idx === 2) {
     [cy - ry * 0.45, cy + ry * 0.45].forEach(ey => {
       for (let d = 0; d < 8; d++) {
         const a = (d / 8) * Math.PI * 2;
@@ -621,18 +723,6 @@ function drawEyes(ctx, idx, ext, cy, p) {
       }
       ctx.beginPath(); ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
       ctx.fillStyle = '#0e0c00'; ctx.fill();
-    });
-  } else if (idx === 2) {
-    [-1, 1].forEach(side => {
-      const baseY = cy + side * ry * 0.35;
-      const tipY = cy + side * (ry + 19);
-      ctx.beginPath(); ctx.moveTo(ex - 5, baseY); ctx.lineTo(ex - 5, tipY);
-      ctx.strokeStyle = p.mid; ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
-      ctx.beginPath(); ctx.arc(ex - 5, tipY, 9, 0, Math.PI * 2);
-      ctx.fillStyle = p.dark; ctx.fill();
-      ctx.strokeStyle = p.outline; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.beginPath(); ctx.arc(ex - 2, tipY - 3, 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill();
     });
   } else {
     for (let i = 0; i < 5; i++) {
@@ -648,8 +738,9 @@ function drawEyes(ctx, idx, ext, cy, p) {
   ctx.restore();
 }
 
-// ─── Appendages ──────────────────────────────────────────────────────
-function drawAppendages(ctx, idx, ext, cy, p) {
+// ─── Appendages / Limbs ──────────────────────────────────────────────
+function drawLimbs(ctx, idx, ext, cy, p) {
+  if (idx === 4) return;
   const { headX, tailX, ry } = ext;
   const len = headX - tailX;
   ctx.save(); ctx.lineCap = 'round';
@@ -703,8 +794,70 @@ function drawAppendages(ctx, idx, ext, cy, p) {
   ctx.restore();
 }
 
+// ─── Feeding Apparatus ───────────────────────────────────────────────
+function drawFeed(ctx, idx, ext, cy, p) {
+  const { headX, ry } = ext;
+  ctx.save(); ctx.lineCap = 'round';
+  if (idx === 0) {
+    // Circular mouth cone (Anomalocaris-style)
+    const mx = headX + 10, r = ry * 0.62;
+    const g = ctx.createRadialGradient(mx, cy, r * 0.1, mx, cy, r);
+    g.addColorStop(0, '#000'); g.addColorStop(0.4, p.dark); g.addColorStop(1, p.mid);
+    ctx.beginPath(); ctx.arc(mx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = p.outline; ctx.lineWidth = 2; ctx.stroke();
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(mx + Math.cos(a) * r * 0.38, cy + Math.sin(a) * r * 0.38);
+      ctx.lineTo(mx + Math.cos(a) * r * 0.88, cy + Math.sin(a) * r * 0.88);
+      ctx.strokeStyle = p.outline + 'aa'; ctx.lineWidth = 1.2; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(mx, cy, r * 0.28, 0, Math.PI * 2);
+    ctx.fillStyle = '#000'; ctx.fill();
+  } else if (idx === 1) {
+    // Filter gills
+    for (let j = -2; j <= 2; j++) {
+      const bx = headX + 8, by = cy + j * (ry * 0.38);
+      const drawBranch = (x, y, angle, length, depth) => {
+        if (depth === 0 || length < 1) return;
+        const ex2 = x + Math.cos(angle) * length, ey2 = y + Math.sin(angle) * length;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex2, ey2);
+        ctx.strokeStyle = depth === 3 ? p.mid : p.light + 'aa';
+        ctx.lineWidth = depth * 1.1; ctx.stroke();
+        drawBranch(ex2, ey2, angle - 0.45, length * 0.6, depth - 1);
+        drawBranch(ex2, ey2, angle + 0.45, length * 0.6, depth - 1);
+      };
+      drawBranch(bx, by, 0, ry * 0.85, 3);
+    }
+  } else if (idx === 2) {
+    // Radula (rasping plate)
+    const rx2 = ry * 1.3, ry2 = ry * 0.5;
+    ctx.beginPath(); ctx.ellipse(headX + 5, cy, rx2, ry2, 0, 0, Math.PI * 2);
+    ctx.fillStyle = p.mid + 'cc'; ctx.fill();
+    ctx.strokeStyle = p.outline; ctx.lineWidth = 1.5; ctx.stroke();
+    for (let i = 0; i < 7; i++) {
+      const x = headX + 5 - rx2 * 0.8 + i * (rx2 * 1.6 / 6);
+      ctx.beginPath(); ctx.moveTo(x, cy - ry2 * 0.72); ctx.lineTo(x, cy + ry2 * 0.72);
+      ctx.strokeStyle = p.outline + '66'; ctx.lineWidth = 0.8; ctx.stroke();
+    }
+  } else {
+    // Proboscis
+    ctx.beginPath();
+    ctx.moveTo(headX, cy);
+    ctx.bezierCurveTo(headX + 24, cy - 10, headX + 46, cy - 22, headX + 40, cy - 40);
+    ctx.strokeStyle = p.mid; ctx.lineWidth = 8; ctx.stroke();
+    ctx.strokeStyle = p.outline; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(headX + 40, cy - 40, 6, 0, Math.PI * 2);
+    ctx.fillStyle = p.dark; ctx.fill();
+    ctx.strokeStyle = p.outline; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+  ctx.restore();
+}
+
 // ─── Armor ───────────────────────────────────────────────────────────
 function drawArmor(ctx, idx, ext, cy, p) {
+  if (idx === 0) return;
   const { headX, tailX, ry } = ext;
   const len = headX - tailX;
   ctx.save();
@@ -738,6 +891,7 @@ function drawArmor(ctx, idx, ext, cy, p) {
 
 // ─── Tail ────────────────────────────────────────────────────────────
 function drawTail(ctx, idx, ext, cy, p) {
+  if (idx === 3) return;
   const { tailX, ry } = ext;
   ctx.save(); ctx.lineCap = 'round';
   if (idx === 0) {
@@ -760,13 +914,15 @@ function drawTail(ctx, idx, ext, cy, p) {
     ctx.fillStyle = p.dark; ctx.fill();
     ctx.strokeStyle = p.outline; ctx.lineWidth = 1.2; ctx.stroke();
   } else if (idx === 2) {
-    [-0.38, 0.38].forEach(side => {
-      const a = Math.PI + side;
-      ctx.beginPath(); ctx.moveTo(tailX + 8, cy);
-      ctx.lineTo(tailX + 8 + Math.cos(a) * 34, cy + Math.sin(a) * 30);
-      ctx.strokeStyle = p.mid; ctx.lineWidth = 5.5; ctx.stroke();
-      ctx.strokeStyle = p.outline; ctx.lineWidth = 1.5; ctx.stroke();
-    });
+    // Notochord ribbon (sinusoidal)
+    ctx.beginPath();
+    for (let i = 0; i <= 30; i++) {
+      const t = i / 30;
+      const x = tailX - t * 40, y = cy + Math.sin(t * Math.PI * 2.5) * ry * 0.7;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = p.mid; ctx.lineWidth = 5; ctx.stroke();
+    ctx.strokeStyle = p.outline; ctx.lineWidth = 1.5; ctx.stroke();
   }
   ctx.restore();
 }
@@ -779,20 +935,191 @@ function drawCreature(canvas, t) {
   ctx.clearRect(0, 0, W, H);
   drawBg(ctx, W, H);
   const p = PALETTES[t.color];
-  const cx = W * 0.49, cy = H * 0.45;
+  const cx = W * 0.47, cy = H * 0.46;
   const ext = getExt(t.body, cx, cy);
   drawTail(ctx, t.tail, ext, cy, p);
-  drawAppendages(ctx, t.append, ext, cy, p);
+  drawLimbs(ctx, t.limbs, ext, cy, p);
   drawBodyShape(ctx, t.body, ext, cy, p);
+  drawFeed(ctx, t.feed, ext, cy, p);
   drawArmor(ctx, t.armor, ext, cy, p);
   drawEyes(ctx, t.eyes, ext, cy, p);
+}
+
+// ═══ Mini Part Previews ══════════════════════════════════════════════
+function renderPreview(canvas, cat, optIdx) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  drawBg(ctx, W, H);
+
+  const p = PALETTES[0];
+  const refExt = getExt(0, 0, 0);
+
+  const noneGlyph = () => {
+    ctx.fillStyle = 'rgba(224,242,241,0.2)';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('—', W/2, H/2);
+  };
+
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+
+  if (cat === 'body') {
+    const bodyExt = getExt(optIdx, 0, 0);
+    const scaleX = (W * 0.82) / ((bodyExt.headX - bodyExt.tailX) + 20);
+    const scaleY = (H * 0.7) / (bodyExt.ry * 2 + 20);
+    const s = Math.min(scaleX, scaleY, 0.4);
+    ctx.scale(s, s);
+    drawBodyShape(ctx, optIdx, bodyExt, 0, p);
+  } else if (cat === 'eyes') {
+    if (optIdx === 0) { ctx.restore(); noneGlyph(); return; }
+    ctx.scale(0.38, 0.38);
+    ctx.translate(-refExt.headX * 0.55, 0);
+    drawEyes(ctx, optIdx, refExt, 0, p);
+  } else if (cat === 'limbs') {
+    if (optIdx === 4) { ctx.restore(); noneGlyph(); return; }
+    ctx.scale(0.3, 0.3);
+    drawLimbs(ctx, optIdx, refExt, 0, p);
+  } else if (cat === 'feed') {
+    ctx.scale(0.38, 0.38);
+    ctx.translate(-refExt.headX * 0.62, 0);
+    drawFeed(ctx, optIdx, refExt, 0, p);
+  } else if (cat === 'armor') {
+    if (optIdx === 0) { ctx.restore(); noneGlyph(); return; }
+    ctx.scale(0.3, 0.3);
+    drawArmor(ctx, optIdx, refExt, 0, p);
+  } else if (cat === 'tail') {
+    if (optIdx === 3) { ctx.restore(); noneGlyph(); return; }
+    ctx.scale(0.38, 0.38);
+    ctx.translate(refExt.tailX * 0.5, 0);
+    drawTail(ctx, optIdx, refExt, 0, p);
+  }
+
+  ctx.restore();
+}
+
+// ═══ UI Rendering ════════════════════════════════════════════════════
+function buildCatTabs() {
+  const tabs = document.getElementById('cc-cat-tabs');
+  tabs.innerHTML = '';
+  CATS.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cc-cat' + (cat.key === activeCat ? ' active' : '');
+    btn.textContent = cat.label;
+    btn.dataset.cat = cat.key;
+    btn.addEventListener('click', () => {
+      activeCat = cat.key;
+      document.querySelectorAll('.cc-cat').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      buildOptRow();
+    });
+    tabs.appendChild(btn);
+  });
+}
+
+function buildOptRow() {
+  const row = document.getElementById('cc-opt-row');
+  row.innerHTML = '';
+  const catDef = CATS.find(c => c.key === activeCat);
+  if (!catDef) return;
+
+  catDef.options.forEach((opt, i) => {
+    const card = document.createElement('div');
+    card.className = 'cc-opt' + (traits[activeCat] === i ? ' sel' : '');
+    card.dataset.idx = i;
+
+    const cv = document.createElement('canvas');
+    cv.className = 'cc-opt-cv';
+    cv.width = 70; cv.height = 50;
+    renderPreview(cv, activeCat, i);
+
+    const name = document.createElement('div');
+    name.className = 'cc-opt-name';
+    name.textContent = opt.name;
+
+    const sci = document.createElement('div');
+    sci.className = 'cc-opt-sci';
+    sci.textContent = opt.sci;
+
+    card.appendChild(cv); card.appendChild(name); card.appendChild(sci);
+
+    card.addEventListener('click', () => {
+      traits[activeCat] = i;
+      document.querySelectorAll('.cc-opt').forEach(c => c.classList.remove('sel'));
+      card.classList.add('sel');
+      redraw();
+    });
+
+    row.appendChild(card);
+  });
+}
+
+function buildSwatches() {
+  const container = document.getElementById('cc-swatches');
+  container.innerHTML = '';
+  PALETTES.forEach((pal, i) => {
+    const sw = document.createElement('div');
+    sw.className = 'cc-swatch' + (i === traits.color ? ' sel' : '');
+    sw.style.background = pal.swatch;
+    sw.title = pal.name;
+    sw.addEventListener('click', () => {
+      traits.color = i;
+      document.querySelectorAll('.cc-swatch').forEach(s => s.classList.remove('sel'));
+      sw.classList.add('sel');
+      redraw();
+    });
+    container.appendChild(sw);
+  });
+}
+
+function updateStats() {
+  const s = getEcoStats(traits);
+  const statsEl = document.getElementById('cc-stats');
+  statsEl.innerHTML = `
+    <div>
+      <span class="cc-stat-lbl">Mobility</span>
+      <div class="cc-stat-bar"><div class="cc-stat-fill cc-stat-teal" style="width:${s.mobility*25}%"></div></div>
+    </div>
+    <div>
+      <span class="cc-stat-lbl">Defense</span>
+      <div class="cc-stat-bar"><div class="cc-stat-fill cc-stat-amber" style="width:${s.defense*25}%"></div></div>
+    </div>
+    <div>
+      <span class="cc-stat-lbl">Predation</span>
+      <div class="cc-stat-bar"><div class="cc-stat-fill cc-stat-rust" style="width:${s.predation*25}%"></div></div>
+    </div>
+  `;
+  const roleEl = document.getElementById('creature-role');
+  if (roleEl) roleEl.textContent = s.role + ' · ' + s.habitat;
+}
+
+function redraw() {
+  const canvas = document.getElementById('creatureCanvas');
+  drawCreature(canvas, traits);
+  const nameEl = document.getElementById('creature-name');
+  if (nameEl) nameEl.textContent = generateName(traits);
+  updateStats();
+}
+
+// ═══ Mutation (random recombination) ═════════════════════════════════
+function randomizeCreature() {
+  CATS.forEach(cat => {
+    traits[cat.key] = Math.floor(Math.random() * cat.options.length);
+  });
+  traits.color = Math.floor(Math.random() * PALETTES.length);
+  // Refresh the picker + swatches so selection highlights match the new genome
+  buildOptRow();
+  buildSwatches();
+  redraw();
 }
 
 // ═══ Gallery ═════════════════════════════════════════════════════════
 let gallery = [];
 function saveCreature() {
   gallery.unshift({ ...traits, name: generateName(traits) });
-  if (gallery.length > 5) gallery.pop();
+  if (gallery.length > 6) gallery.pop();
   renderGallery();
 }
 function renderGallery() {
@@ -800,17 +1127,17 @@ function renderGallery() {
   if (!row) return;
   row.innerHTML = '';
   if (!gallery.length) {
-    row.innerHTML = '<p class="c-gallery-empty">No creatures saved yet — design one above and hit Save!</p>';
+    row.innerHTML = '<p class="cc-gallery-empty">No creatures saved yet — design one above and hit Save!</p>';
     return;
   }
   gallery.forEach(g => {
     const item = document.createElement('div');
-    item.className = 'c-gallery-item';
+    item.className = 'cc-gallery-item';
     const cv = document.createElement('canvas');
-    cv.style.cssText = 'width:170px;height:76px;border-radius:6px;background:#041014;';
-    cv.width = 170; cv.height = 76;
+    cv.style.cssText = 'width:158px;height:70px;border-radius:5px;background:#041014;';
+    cv.width = 158; cv.height = 70;
     const nm = document.createElement('div');
-    nm.className = 'c-gallery-name';
+    nm.className = 'cc-gallery-name';
     nm.textContent = g.name;
     item.appendChild(cv); item.appendChild(nm);
     row.appendChild(item);
@@ -820,70 +1147,38 @@ function renderGallery() {
 
 // ═══ Cast Presets ════════════════════════════════════════════════════
 const CAST_PRESETS = [
-  { body:3, eyes:1, append:0, armor:3, tail:0, color:0 },
-  { body:1, eyes:2, append:2, armor:0, tail:0, color:1 },
-  { body:2, eyes:0, append:3, armor:1, tail:1, color:2 },
-  { body:1, eyes:3, append:1, armor:0, tail:0, color:2 },
-  { body:3, eyes:0, append:0, armor:2, tail:3, color:3 },
-  { body:2, eyes:0, append:1, armor:0, tail:2, color:4 },
+  // Trilobite: handled by model-viewer
+  null,
+  // Anomalocaris: handled by model-viewer
+  null,
+  // Hallucigenia: handled by model-viewer (index 2, skip canvas)
+  null,
+  // Opabinia: bilateral, 5-eyes, paddles, proboscis, none, caudal fan
+  { body:2, eyes:3, limbs:1, feed:3, armor:0, tail:0, color:2 },
+  // Wiwaxia: sclerotized, simple, none, radula, sclerites, none
+  { body:3, eyes:1, limbs:4, feed:2, armor:2, tail:3, color:3 },
+  // Pikaia: bilateral, simple, paddles, filter gills, none, ribbon
+  { body:2, eyes:1, limbs:1, feed:1, armor:0, tail:2, color:4 },
 ];
-
-// ═══ Trait Cycling ═══════════════════════════════════════════════════
-function updateBtn(key) {
-  const btn = document.getElementById('btn-' + key);
-  if (!btn) return;
-  const val = traits[key];
-  btn.querySelector('.t-icon').textContent = TRAITS[key].icons[val];
-  btn.querySelector('.t-label').textContent = TRAITS[key].options[val];
-}
-function cycleTrait(key) {
-  traits[key] = (traits[key] + 1) % TRAITS[key].options.length;
-  updateBtn(key);
-  redraw();
-}
-function redraw() {
-  const canvas = document.getElementById('creatureCanvas');
-  drawCreature(canvas, traits);
-  const nameEl = document.getElementById('creature-name');
-  if (nameEl) nameEl.textContent = generateName(traits);
-}
 
 // ═══ Init ════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  // Main canvas
   const mainCanvas = document.getElementById('creatureCanvas');
-  if (mainCanvas) { mainCanvas.width = 720; mainCanvas.height = 260; }
+  if (mainCanvas) { mainCanvas.width = 720; mainCanvas.height = 360; }
 
-  // Trait buttons
-  Object.keys(TRAITS).forEach(key => {
-    updateBtn(key);
-    const btn = document.getElementById('btn-' + key);
-    if (btn) btn.addEventListener('click', () => cycleTrait(key));
-  });
+  buildCatTabs();
+  buildOptRow();
+  buildSwatches();
 
-  // Color swatches
-  PALETTES.forEach((pal, i) => {
-    const sw = document.getElementById('swatch-' + i);
-    if (!sw) return;
-    sw.style.background = pal.swatch;
-    sw.addEventListener('click', () => {
-      traits.color = i;
-      document.querySelectorAll('.c-swatch').forEach(s => s.classList.remove('active'));
-      sw.classList.add('active');
-      redraw();
-    });
-  });
+  document.getElementById('save-btn')?.addEventListener('click', saveCreature);
+  document.getElementById('mutate-btn')?.addEventListener('click', randomizeCreature);
 
-  // Save button
-  const saveBtn = document.getElementById('save-btn');
-  if (saveBtn) saveBtn.addEventListener('click', saveCreature);
-
-  // Initial draw
   redraw();
   renderGallery();
 
-  // Cast canvases
+  // Cast canvases (skip index 2 — that's Hallucigenia model-viewer)
   CAST_PRESETS.forEach((preset, i) => {
+    if (!preset) return;
     const cv = document.getElementById('cast-canvas-' + i);
     if (cv) drawCreature(cv, preset);
   });
