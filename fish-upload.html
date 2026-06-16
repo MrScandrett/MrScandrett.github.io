@@ -118,6 +118,25 @@
     .size-opt .size-emoji { font-size: 1.5rem; display: block; margin-bottom: 5px; }
     .size-opt .size-label { font-size: 0.78rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.06em; }
 
+    /* Creature role selector */
+    .role-options { display: flex; flex-direction: column; gap: 8px; }
+    .role-opt {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 16px; border-radius: 12px; cursor: pointer;
+      border: 2px solid rgba(125,211,252,0.18); background: rgba(125,211,252,0.06);
+      transition: all 0.18s; user-select: none;
+    }
+    .role-opt:hover { background: rgba(125,211,252,0.12); }
+    .role-opt.active {
+      border-color: #7dd3fc; background: rgba(125,211,252,0.18);
+      box-shadow: 0 0 14px rgba(125,211,252,0.14);
+    }
+    .role-opt-emoji { font-size: 1.5rem; flex-shrink: 0; }
+    .role-opt-info  { display: flex; flex-direction: column; gap: 2px; }
+    .role-opt-label { font-size: 0.88rem; font-weight: 800; color: #93c5fd; }
+    .role-opt-desc  { font-size: 0.75rem; color: #2a4a6a; }
+    .role-opt.active .role-opt-desc { color: #4b6481; }
+
     /* Advanced (TinkerCAD) */
     details { margin-bottom: 22px; }
     summary {
@@ -332,6 +351,47 @@
       </div>
     </div>
 
+    <div class="field">
+      <label>Creature Type</label>
+      <div class="role-options">
+        <div class="role-opt active" data-role="fish" onclick="selectRole(this)">
+          <span class="role-opt-emoji">🐟</span>
+          <div class="role-opt-info">
+            <span class="role-opt-label">Fish — Swimmer</span>
+            <span class="role-opt-desc">Swims freely through the water</span>
+          </div>
+        </div>
+        <div class="role-opt" data-role="bottom" onclick="selectRole(this)">
+          <span class="role-opt-emoji">🦀</span>
+          <div class="role-opt-info">
+            <span class="role-opt-label">Bottom Feeder</span>
+            <span class="role-opt-desc">Scuttles along the sandy floor (crab, shrimp, lobster…)</span>
+          </div>
+        </div>
+        <div class="role-opt" data-role="wall" onclick="selectRole(this)">
+          <span class="role-opt-emoji">🐌</span>
+          <div class="role-opt-info">
+            <span class="role-opt-label">Wall Crawler</span>
+            <span class="role-opt-desc">Clings to the tank glass and slowly slides along it</span>
+          </div>
+        </div>
+        <div class="role-opt" data-role="eel" onclick="selectRole(this)">
+          <span class="role-opt-emoji">🐍</span>
+          <div class="role-opt-info">
+            <span class="role-opt-label">Eel</span>
+            <span class="role-opt-desc">Slithers near the bottom with a sinuous, wave-like body</span>
+          </div>
+        </div>
+        <div class="role-opt" data-role="jelly" onclick="selectRole(this)">
+          <span class="role-opt-emoji">🪼</span>
+          <div class="role-opt-info">
+            <span class="role-opt-label">Jellyfish</span>
+            <span class="role-opt-desc">Drifts through the upper water with a pulsing bell and trailing tentacles</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <details id="stl-section">
       <summary>TinkerCAD STL / Sketchfab GLB (optional)</summary>
       <div class="field">
@@ -409,6 +469,7 @@ const PRESETS = [
 
 let selectedColor = PRESETS[0].hex;
 let selectedSize = 0.75;
+let selectedRole = 'fish';
 
 // Build color swatches
 const grid = document.getElementById('color-grid');
@@ -458,6 +519,12 @@ function selectSize(el) {
   document.querySelectorAll('.size-opt').forEach(s => s.classList.remove('active'));
   el.classList.add('active');
   selectedSize = parseFloat(el.dataset.size);
+}
+
+function selectRole(el) {
+  document.querySelectorAll('.role-opt').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  selectedRole = el.dataset.role;
 }
 
 // Also allow pressing Enter in name field to submit
@@ -559,7 +626,7 @@ async function submitFish() {
 
     submitBtn.textContent = '🐠 Adding to tank…';
 
-    const fish = { name, color: selectedColor, size: selectedSize };
+    const fish = { name, color: selectedColor, size: selectedSize, role: selectedRole };
     if (stlDataURL) { fish.model = stlDataURL; fish.modelType = modelFileType; }
     if (stlDataURL && window.stlDotData) fish.dots = window.stlDotData;
 
@@ -589,6 +656,10 @@ function addAnother() {
   document.querySelectorAll('.size-opt').forEach(s => s.classList.remove('active'));
   document.querySelector('[data-size="1.0"]').classList.add('active');
   selectedSize = 1.0;
+  selectedRole = 'fish';
+  document.querySelectorAll('.role-opt').forEach(s => s.classList.remove('active'));
+  document.querySelector('[data-role="fish"]').classList.add('active');
+
 }
 </script>
 
