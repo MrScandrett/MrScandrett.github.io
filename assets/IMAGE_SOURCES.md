@@ -90,6 +90,9 @@ Maintained to demonstrate good-faith educational use and to credit creators.
 
 | File | Description | Notes |
 |------|-------------|-------|
+| tycho-brahe.jpg | Tycho Brahe portrait | Oil painting by Eduard Ender (1822–1883); public domain via Wikimedia Commons |
+| curiosity-rover-selfportrait.jpg | Curiosity rover self-portrait on Mars | NASA/JPL-Caltech/Malin Space Science Systems; public domain |
+| ceres-vesta-comparison.jpg | Ceres and Vesta size compared to the Moon | NASA Dawn mission; public domain |
 | solvay-conference-1927.jpg | Solvay Conference 1927 | Photo by Benjamin Couprie; Institut International de Physique Solvay; public domain |
 | antikythera-mechanism.jpg | Antikythera Mechanism | Museum artifact photo (National Archaeological Museum Athens) |
 | foucault-pendulum.jpg | Foucault pendulum | Public domain photograph |
@@ -107,6 +110,7 @@ Maintained to demonstrate good-faith educational use and to credit creators.
 | File | Description | License | Attribution |
 |------|-------------|---------|-------------|
 | m87-blackhole.jpg | M87 black hole (Event Horizon Telescope) | CC BY 4.0 | © EHT Collaboration |
+| trilobite-fossil.jpg | Isotelus maximus trilobite fossil | CC BY 2.0 | James St. John, via Wikimedia Commons |
 | pangaea.png | Pangaea map | CC BY-SA (Wikimedia Commons) | USGS / various |
 | periodic-table.png | Periodic table | CC0 / public domain variant | Source: Wikimedia Commons |
 | constellations.png | Constellation map | CC0 / public domain variant | Source: Wikimedia Commons |
