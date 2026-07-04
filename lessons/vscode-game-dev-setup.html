@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VS Code for Game Dev · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Game Design Lesson 3 — set up a professional game development workspace in Visual Studio Code. Install extensions, organize your project, and use Live Server for instant browser testing." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    :root { --acc: #007acc; --acc-soft: rgba(0,122,204,0.1); --acc-border: rgba(0,122,204,0.3); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    /* Extension cards */
+    .ext-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin: 0.8rem 0; }
+    .ext-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem 1rem; display: flex; gap: 0.75rem; align-items: flex-start; }
+    .ext-icon { font-size: 1.8rem; flex-shrink: 0; }
+    .ext-info strong { display: block; font-size: 0.88rem; margin-bottom: 0.15rem; }
+    .ext-info .ext-id { font-size: 0.72rem; color: #94a3b8; font-family: 'JetBrains Mono', monospace; margin-bottom: 0.25rem; display: block; }
+    .ext-info small { font-size: 0.78rem; color: #64748b; line-height: 1.5; display: block; }
+    @media (max-width:600px) { .ext-grid { grid-template-columns: 1fr; } }
+
+    /* Steps checklist */
+    .steps { list-style: none; margin: 0.7rem 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .step { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.65rem 0.8rem; border: 1px solid var(--line,#d2d2d7); border-radius: 10px; cursor: pointer; transition: background 0.18s; }
+    .step.done { background: rgba(0,122,204,0.07); border-color: rgba(0,122,204,0.3); }
+    .step-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--acc); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0; transition: background 0.18s, color 0.18s; color: transparent; margin-top: 0.1rem; }
+    .step.done .step-check { background: var(--acc); color: #fff; }
+    .step-text { font-size: 0.86rem; color: #3f4f65; line-height: 1.55; }
+    .step.done .step-text { color: #64748b; }
+    [data-theme="night"] .step-text { color: rgba(245,245,247,0.75); }
+
+    /* Folder tree */
+    .folder-tree { background: #0f172a; border-radius: 12px; padding: 1rem 1.2rem; margin: 0.8rem 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.9; color: #e2e8f0; }
+    .folder-tree .folder { color: #60a5fa; }
+    .folder-tree .file   { color: #94a3b8; }
+    .folder-tree .active { color: #4ade80; }
+    .folder-tree .indent1 { padding-left: 1.2rem; }
+    .folder-tree .indent2 { padding-left: 2.4rem; }
+
+    /* Code block */
+    .code-block { background: #0f172a; border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.7rem 0; overflow-x: auto; }
+    .code-block pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.79rem; line-height: 1.7; color: #e2e8f0; white-space: pre; }
+    .code-block .kw  { color: #c084fc; }
+    .code-block .str { color: #4ade80; }
+    .code-block .cm  { color: #475569; font-style: italic; }
+    .code-block .num { color: #fb923c; }
+
+    /* Shortcuts table */
+    .shortcuts { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin: 0.7rem 0; }
+    .shortcuts th { text-align: left; font-weight: 700; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; border-bottom: 1px solid var(--line,#d2d2d7); padding: 0.4rem 0.5rem; }
+    .shortcuts td { padding: 0.5rem 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); color: #3f4f65; vertical-align: top; }
+    .shortcuts tr:last-child td { border-bottom: none; }
+    .kbd { background: #f1f5f9; border: 1px solid #cbd5e1; border-bottom-width: 2px; border-radius: 5px; padding: 0.1rem 0.45rem; font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; color: #1e293b; white-space: nowrap; }
+    [data-theme="night"] .shortcuts td { color: rgba(245,245,247,0.72); }
+    [data-theme="night"] .kbd { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+
+    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .callout.blue { background: rgba(0,122,204,0.09); border-left: 3px solid var(--acc); color: #3f4f65; }
+    [data-theme="night"] .callout.blue { color: rgba(245,245,247,0.72); }
+    .callout strong { color: var(--text,#1d1d1f); }
+
+    .progress-bar-wrap { background: rgba(0,0,0,0.07); border-radius: 999px; height: 8px; margin: 0.5rem 0 0.2rem; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 999px; background: var(--acc); transition: width 0.35s ease; }
+    .progress-label { font-size: 0.76rem; color: #64748b; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../video-library.html">Videos</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Game Design &amp; Development · Lesson 3</p>
+          <h1>VS Code for Game Dev</h1>
+          <div class="cl-hero-meta">
+            <span>Visual Studio Code</span><span class="dot"></span>
+            <span>Live Server</span><span class="dot"></span>
+            <span>Extensions</span><span class="dot"></span>
+            <span>Project Structure</span><span class="dot"></span>
+            <span>Workflow</span>
+          </div>
+          <p class="cl-lede">Professional game developers use powerful editors that give instant feedback, catch errors before you run the code, and let you see changes in the browser without reloading manually. Visual Studio Code is free, runs everywhere, and is used at Google, Microsoft, and every major game studio that targets the web. Let's set it up right.</p>
+        </section>
+
+        <!-- Why VS Code -->
+        <section class="cl-card">
+          <h2>Why Visual Studio Code?</h2>
+          <p>VS Code (not to be confused with Visual Studio) is a lightweight but powerful <strong>code editor</strong> — free, open source, and built by Microsoft. It has become the most-used editor in the world because it's fast, extensible, and works for every language.</p>
+          <p>For game development with JavaScript and HTML5 Canvas, VS Code gives you:</p>
+          <div class="ext-grid">
+            <div class="ext-card">
+              <span class="ext-icon">🔴</span>
+              <div class="ext-info">
+                <strong>Error Highlighting</strong>
+                <small>Red squiggles appear under mistakes <em>while you type</em> — before you even run the code.</small>
+              </div>
+            </div>
+            <div class="ext-card">
+              <span class="ext-icon">💡</span>
+              <div class="ext-info">
+                <strong>IntelliSense</strong>
+                <small>Autocomplete suggests function names, property names, and parameters as you type.</small>
+              </div>
+            </div>
+            <div class="ext-card">
+              <span class="ext-icon">🔄</span>
+              <div class="ext-info">
+                <strong>Live Reload</strong>
+                <small>Save a file and the browser tab refreshes automatically — no manual F5 needed.</small>
+              </div>
+            </div>
+            <div class="ext-card">
+              <span class="ext-icon">🐛</span>
+              <div class="ext-info">
+                <strong>Built-in Debugger</strong>
+                <small>Set breakpoints, inspect variables, and step through code line by line inside the editor.</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Setup Checklist -->
+        <section class="cl-card">
+          <h2>Setup Checklist</h2>
+          <p>Click each step as you complete it. Progress: <span id="done-count">0</span> / <span id="total-count">7</span> steps done.</p>
+          <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
+          <p class="progress-label" id="prog-label">Let's get started!</p>
+
+          <ul class="steps" id="setup-steps">
+            <li class="step" data-step="0">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>Download VS Code</strong> — Go to <code>code.visualstudio.com</code> and download the installer for your OS (Windows, macOS, or Linux). Run the installer with default settings.</div>
+            </li>
+            <li class="step" data-step="1">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>Open a project folder</strong> — In VS Code: File → Open Folder… → choose or create a folder named <code>my-game</code>. VS Code treats the folder as your project root.</div>
+            </li>
+            <li class="step" data-step="2">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>Install Live Server</strong> — Click the Extensions icon (four squares) or press <kbd>Ctrl+Shift+X</kbd>. Search <code>Live Server</code> by Ritwick Dey and click Install. This is the most important extension for game dev.</div>
+            </li>
+            <li class="step" data-step="3">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>Install Prettier</strong> — Search <code>Prettier - Code formatter</code> and install it. It auto-formats your code when you save, keeping indentation and spacing clean.</div>
+            </li>
+            <li class="step" data-step="4">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>Create your first file</strong> — Right-click in the Explorer panel → New File → name it <code>index.html</code>. Type <code>!</code> and press Tab — VS Code generates a full HTML skeleton instantly.</div>
+            </li>
+            <li class="step" data-step="5">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>Launch Live Server</strong> — Right-click <code>index.html</code> in the Explorer → "Open with Live Server." A browser tab opens at <code>localhost:5500</code>. Now every save instantly updates the browser.</div>
+            </li>
+            <li class="step" data-step="6">
+              <div class="step-check">✓</div>
+              <div class="step-text"><strong>Open the terminal</strong> — Press <kbd>Ctrl+`</kbd> (backtick) to open VS Code's built-in terminal. You can run commands, start build tools, and manage files without leaving the editor.</div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Project structure -->
+        <section class="cl-card">
+          <h2>Game Project Folder Structure</h2>
+          <p>A clean folder structure makes your project easier to manage, especially during a Game Jam when time is short. Here's the recommended layout:</p>
+
+          <div class="folder-tree" aria-label="Recommended game project folder structure">
+            <div class="folder">📁 my-game/</div>
+            <div class="indent1 active">📄 index.html  <span class="file" style="font-size:0.7rem;">← entry point, open this in Live Server</span></div>
+            <div class="indent1 folder">📁 src/</div>
+            <div class="indent2 active">📄 game.js      <span class="file" style="font-size:0.7rem;">← main game loop, all logic</span></div>
+            <div class="indent2 file">📄 player.js    ← player object (when code gets big)</div>
+            <div class="indent2 file">📄 enemies.js   ← enemy logic</div>
+            <div class="indent1 folder">📁 assets/</div>
+            <div class="indent2 file">📄 sprites/     ← PNG images for characters &amp; tiles</div>
+            <div class="indent2 file">📄 sounds/      ← WAV or OGG sound effects &amp; music</div>
+            <div class="indent2 file">📄 maps/        ← JSON level data (Tiled map editor output)</div>
+            <div class="indent1 folder">📁 lib/</div>
+            <div class="indent2 file">📄 kaplay.js    ← engine library (if using one)</div>
+            <div class="indent1 file">📄 README.md    ← what the game is, how to run it</div>
+          </div>
+
+          <div class="callout blue">
+            <strong>Game Jam tip:</strong> Don't overthink the structure at the start of a jam. One <code>index.html</code> and one <code>game.js</code> is fine. Organize when you need to — clean code is good, but a <em>shipped</em> game beats a perfectly organized one that's not done.
+          </div>
+        </section>
+
+        <!-- Live Server workflow -->
+        <section class="cl-card">
+          <h2>The Live Server Workflow</h2>
+          <p>Your development cycle should be fast. With Live Server, it looks like this:</p>
+
+          <div class="code-block">
+            <pre><span class="cm">1. Write code in VS Code</span>
+<span class="cm">2. Press Ctrl+S to save</span>
+<span class="cm">3. Browser tab automatically reloads</span>
+<span class="cm">4. See the result immediately</span>
+<span class="cm">5. Repeat — every 30 seconds if needed</span></pre>
+          </div>
+
+          <p>This tight feedback loop is how professionals work. The goal is to <strong>never go more than a few minutes without running your code</strong>. Small, frequent tests catch bugs early — long sessions without testing mean hours of debugging later.</p>
+
+          <h3>Opening the Browser DevTools</h3>
+          <p>Press <kbd>F12</kbd> in the browser to open DevTools. The <strong>Console</strong> tab shows error messages and any <code>console.log()</code> output from your game. This is your primary debugging tool.</p>
+
+          <div class="code-block">
+            <pre><span class="cm">// Add debug output anywhere in your game:</span>
+console.<span class="fn" style="color:#60a5fa;">log</span>(<span class="str">'Player position:'</span>, player.x, player.y);
+console.<span class="fn" style="color:#60a5fa;">log</span>(<span class="str">'Enemy count:'</span>, enemies.length);
+console.<span class="fn" style="color:#4ade80;">warn</span>(<span class="str">'Lives low!'</span>);   <span class="cm">// shows in yellow</span>
+console.<span class="fn" style="color:#f87171;">error</span>(<span class="str">'Crash!'</span>);     <span class="cm">// shows in red</span></pre>
+          </div>
+        </section>
+
+        <!-- Keyboard shortcuts -->
+        <section class="cl-card">
+          <h2>Essential Keyboard Shortcuts</h2>
+          <p>Learning these 10 shortcuts will make you dramatically faster during a Game Jam:</p>
+          <table class="shortcuts">
+            <thead>
+              <tr><th>Action</th><th>Windows / Linux</th><th>macOS</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Save file</td><td><span class="kbd">Ctrl + S</span></td><td><span class="kbd">⌘ + S</span></td></tr>
+              <tr><td>Save all files</td><td><span class="kbd">Ctrl + K, S</span></td><td><span class="kbd">⌘ + K, S</span></td></tr>
+              <tr><td>Undo</td><td><span class="kbd">Ctrl + Z</span></td><td><span class="kbd">⌘ + Z</span></td></tr>
+              <tr><td>Find in file</td><td><span class="kbd">Ctrl + F</span></td><td><span class="kbd">⌘ + F</span></td></tr>
+              <tr><td>Find &amp; Replace</td><td><span class="kbd">Ctrl + H</span></td><td><span class="kbd">⌘ + H</span></td></tr>
+              <tr><td>Open terminal</td><td><span class="kbd">Ctrl + `</span></td><td><span class="kbd">⌃ + `</span></td></tr>
+              <tr><td>Toggle sidebar</td><td><span class="kbd">Ctrl + B</span></td><td><span class="kbd">⌘ + B</span></td></tr>
+              <tr><td>Command palette</td><td><span class="kbd">Ctrl + Shift + P</span></td><td><span class="kbd">⌘ + Shift + P</span></td></tr>
+              <tr><td>Duplicate line</td><td><span class="kbd">Shift + Alt + ↓</span></td><td><span class="kbd">⇧ + ⌥ + ↓</span></td></tr>
+              <tr><td>Multi-cursor select</td><td><span class="kbd">Ctrl + D</span></td><td><span class="kbd">⌘ + D</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Recommended extras -->
+        <section class="cl-card">
+          <h2>Recommended Extra Extensions</h2>
+          <div class="ext-grid">
+            <div class="ext-card">
+              <span class="ext-icon">🎨</span>
+              <div class="ext-info">
+                <strong>One Dark Pro</strong>
+                <span class="ext-id">zhuangtongfa.material-theme</span>
+                <small>The most popular dark color theme. Easier on the eyes during long jam sessions.</small>
+              </div>
+            </div>
+            <div class="ext-card">
+              <span class="ext-icon">🔷</span>
+              <div class="ext-info">
+                <strong>ESLint</strong>
+                <span class="ext-id">dbaeumer.vscode-eslint</span>
+                <small>Catches common JavaScript mistakes — undeclared variables, missing semicolons, unreachable code.</small>
+              </div>
+            </div>
+            <div class="ext-card">
+              <span class="ext-icon">🖼️</span>
+              <div class="ext-info">
+                <strong>Image Preview</strong>
+                <span class="ext-id">kisstkondoros.vscode-gutter-preview</span>
+                <small>Shows a preview of image files in the gutter when you reference a path in code.</small>
+              </div>
+            </div>
+            <div class="ext-card">
+              <span class="ext-icon">🔑</span>
+              <div class="ext-info">
+                <strong>GitLens</strong>
+                <span class="ext-id">eamodio.gitlens</span>
+                <small>Shows who wrote each line and when — great for team jams and seeing your own history.</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <!-- Side panel -->
+    <aside class="ll-panel" aria-label="Guide panel">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-tips">Tips</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-guide">
+          <p class="ll-pane-title">Learning Goals</p>
+          <ul class="ll-guide-list">
+            <li>Install VS Code and Live Server</li>
+            <li>Organize a game project folder correctly</li>
+            <li>Use Live Server for instant browser testing</li>
+            <li>Read error messages in the browser DevTools console</li>
+            <li>Use 5+ keyboard shortcuts fluently</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Editor vs IDE</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;"><strong>Code Editor:</strong> VS Code — lightweight, fast, extensible. You add features via extensions. Great for web game dev.<br><strong>IDE (Integrated Development Environment):</strong> Unity Editor, Visual Studio — heavier, all-in-one tools for larger projects. You'll encounter these if you move to 3D engines.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">localhost:5500</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;"><code>localhost</code> means your own computer. Port <code>5500</code> is where Live Server listens. You're running a tiny web server right on your machine — the same kind of server that hosts real websites.</p>
+        </div>
+        <div class="ll-pane" id="pane-tips">
+          <p class="ll-pane-title">Pro Tips</p>
+          <ul style="font-size:0.81rem;color:#64748b;line-height:1.65;padding-left:1.1rem;">
+            <li style="margin-bottom:0.5rem;"><strong>Auto-save:</strong> Enable File → Auto Save so you never forget to save before checking the browser.</li>
+            <li style="margin-bottom:0.5rem;"><strong>Split editor:</strong> Right-click a tab → "Split Right" to see your HTML and JS side-by-side.</li>
+            <li style="margin-bottom:0.5rem;"><strong>Emmet shortcuts:</strong> In HTML files, type <code>canvas#gameCanvas</code> and press Tab to generate <code>&lt;canvas id="gameCanvas"&gt;&lt;/canvas&gt;</code>.</li>
+            <li style="margin-bottom:0.5rem;"><strong>Multiple cursors:</strong> Hold Alt and click multiple lines to edit all of them at once — great for renaming variables.</li>
+            <li style="margin-bottom:0.5rem;"><strong>Integrated Git:</strong> Click the Source Control icon to commit your game's progress. Commit often during jams — if something breaks you can roll back.</li>
+            <li><strong>Zen mode:</strong> Press <kbd>Ctrl+K Z</kbd> to enter distraction-free full-screen mode during focused coding sessions.</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<script>
+  /* Setup checklist */
+  const steps = document.querySelectorAll('.step');
+  const doneCount = document.getElementById('done-count');
+  const totalCount = document.getElementById('total-count');
+  const progBar = document.getElementById('prog-bar');
+  const progLabel = document.getElementById('prog-label');
+  const msgs = ['Let\'s get started!','Good — keep going!','Halfway there!','Almost set up!','Almost set up!','Looking good — one more!','VS Code is ready!','Game dev workspace: ✅'];
+  totalCount.textContent = steps.length;
+  let done = 0;
+
+  steps.forEach(step => {
+    step.addEventListener('click', () => {
+      step.classList.toggle('done');
+      done = document.querySelectorAll('.step.done').length;
+      doneCount.textContent = done;
+      progBar.style.width = (done / steps.length * 100) + '%';
+      progLabel.textContent = msgs[Math.min(done, msgs.length - 1)];
+    });
+  });
+
+  /* Panel tabs */
+  document.querySelectorAll('.ll-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
+      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      tab.setAttribute('aria-selected','true');
+      document.getElementById(tab.dataset.pane).classList.add('ll-active');
+    });
+  });
+  const openBtn = document.querySelector('.ll-open-btn');
+  const closeBtn = document.querySelector('.ll-panel-close');
+  const panel = document.querySelector('.ll-panel');
+  if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
+  if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
+</script>
+<script src="../assets/js/reveal.js"></script>
+<script src="../assets/js/nav-mobile.js"></script>
+</body>
+</html>

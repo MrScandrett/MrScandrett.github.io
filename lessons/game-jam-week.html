@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Game Jam Week: From Idea to Demo · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Game Design Capstone — the complete Game Jam week playbook. Write a Game Design Document, scope your build, follow a day-by-day sprint plan, and demo on showcase day." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    :root { --acc: #f97316; --acc-soft: rgba(249,115,22,0.1); --acc-border: rgba(249,115,22,0.3); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    /* Day schedule */
+    .day-schedule { display: flex; flex-direction: column; gap: 0.6rem; margin: 0.8rem 0; }
+    .day-row { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.8rem 0.9rem; border-radius: 12px; border: 1px solid var(--line,#d2d2d7); }
+    .day-badge { min-width: 52px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.25rem 0.5rem; border-radius: 7px; text-align: center; flex-shrink: 0; }
+    .day1 .day-badge { background: rgba(16,185,129,0.15); color: #059669; }
+    .day2 .day-badge { background: rgba(59,130,246,0.15); color: #1d4ed8; }
+    .day3 .day-badge { background: rgba(139,92,246,0.15); color: #6d28d9; }
+    .day4 .day-badge { background: rgba(249,115,22,0.15); color: #c2410c; }
+    .day5 .day-badge { background: rgba(236,72,153,0.15); color: #9d174d; }
+    .day-content strong { display: block; font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .day-content ul { margin: 0; padding-left: 1.1rem; font-size: 0.82rem; color: #64748b; line-height: 1.7; }
+
+    /* GDD builder */
+    .gdd { border: 1.5px solid var(--acc-border); border-radius: 16px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; background: var(--acc-soft); }
+    .gdd h3 { margin: 0 0 0.8rem; color: var(--acc); font-size: 1rem; }
+    .gdd-field { margin-bottom: 0.8rem; }
+    .gdd-field label { display: block; font-size: 0.81rem; font-weight: 700; color: #3f4f65; margin-bottom: 0.25rem; }
+    [data-theme="night"] .gdd-field label { color: rgba(245,245,247,0.75); }
+    .gdd-field input[type="text"],
+    .gdd-field textarea,
+    .gdd-field select {
+      width: 100%; padding: 0.4rem 0.65rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px;
+      font-size: 0.84rem; font-family: inherit; background: var(--white,#fff); color: var(--text,#1d1d1f);
+      box-sizing: border-box;
+    }
+    .gdd-field textarea { min-height: 52px; resize: vertical; }
+    .gdd-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    @media (max-width:600px) { .gdd-row { grid-template-columns: 1fr; } }
+    .btn-export { margin-top: 0.7rem; background: var(--acc); color: #fff; border: none; border-radius: 9px; padding: 0.45rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.18s; }
+    .btn-export:hover { opacity: 0.85; }
+    .gdd-preview { margin-top: 0.8rem; padding: 0.9rem 1.1rem; border-radius: 12px; background: rgba(255,255,255,0.75); border: 1px solid var(--acc-border); font-size: 0.82rem; line-height: 1.65; color: #1d1d1f; display: none; }
+    [data-theme="night"] .gdd-preview { background: rgba(40,20,5,0.6); color: rgba(245,245,247,0.8); }
+    .gdd-preview h4 { margin: 0 0 0.5rem; color: var(--acc); font-size: 0.95rem; }
+    .gdd-preview dt { font-weight: 700; margin-top: 0.5rem; }
+    .gdd-preview dd { margin: 0 0 0 0.7rem; color: #64748b; }
+
+    /* Scope checker */
+    .scope-check { display: flex; flex-direction: column; gap: 0.45rem; margin: 0.8rem 0; }
+    .scope-item { display: flex; align-items: center; gap: 0.65rem; padding: 0.5rem 0.75rem; border-radius: 9px; border: 1px solid var(--line,#d2d2d7); font-size: 0.84rem; cursor: pointer; transition: background 0.18s; user-select: none; }
+    .scope-item input[type="checkbox"] { accent-color: var(--acc); width: 16px; height: 16px; cursor: pointer; }
+    .scope-item.danger { border-left: 3px solid #ef4444; }
+    .scope-item.warning { border-left: 3px solid #f59e0b; }
+    .scope-item.safe { border-left: 3px solid #10b981; }
+    .scope-label { flex: 1; }
+    .scope-badge { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.4rem; border-radius: 5px; }
+    .scope-badge.danger  { background: rgba(239,68,68,0.12);  color: #b91c1c; }
+    .scope-badge.warning { background: rgba(245,158,11,0.12); color: #92400e; }
+    .scope-badge.safe    { background: rgba(16,185,129,0.12); color: #065f46; }
+    #scope-meter { margin-top: 0.6rem; font-size: 0.83rem; font-weight: 600; color: var(--acc); }
+
+    /* Checklist */
+    .checklist { list-style: none; padding: 0; margin: 0.7rem 0; display: flex; flex-direction: column; gap: 0.4rem; }
+    .checklist li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.85rem; color: #3f4f65; padding: 0.4rem 0.5rem; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+    .checklist li:hover { background: rgba(0,0,0,0.03); }
+    .checklist li input[type="checkbox"] { accent-color: var(--acc); flex-shrink: 0; margin-top: 0.15rem; width: 16px; height: 16px; cursor: pointer; }
+    .checklist li.checked { color: #94a3b8; text-decoration: line-through; }
+    [data-theme="night"] .checklist li { color: rgba(245,245,247,0.72); }
+
+    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .callout.orange { background: rgba(249,115,22,0.09); border-left: 3px solid var(--acc); color: #3f4f65; }
+    [data-theme="night"] .callout.orange { color: rgba(245,245,247,0.72); }
+    .callout strong { color: var(--text,#1d1d1f); }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../video-library.html">Videos</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Game Design &amp; Development · Capstone</p>
+          <h1>Game Jam Week: From Idea to Demo</h1>
+          <div class="cl-hero-meta">
+            <span>Game Jam</span><span class="dot"></span>
+            <span>GDD</span><span class="dot"></span>
+            <span>Scoping</span><span class="dot"></span>
+            <span>Sprint Planning</span><span class="dot"></span>
+            <span>Showcase Day</span>
+          </div>
+          <p class="cl-lede">A Game Jam is a timed challenge to design, build, and ship a complete game in a short period — anywhere from 48 hours to a week. This is your complete playbook: how to scope a build you can actually finish, what to do each day, and how to present on showcase day.</p>
+        </section>
+
+        <!-- What is a game jam -->
+        <section class="cl-card">
+          <h2>What Is a Game Jam?</h2>
+          <p>Game jams are real events in the professional world. <strong>Ludum Dare</strong>, the world's oldest online jam (running since 2002), sees 3,000+ entries in 72 hours. <strong>Global Game Jam</strong> is the world's largest, held simultaneously in 100+ countries. Many successful commercial games — including <em>Superhot</em> and <em>Untitled Goose Game</em> — started as jam prototypes.</p>
+
+          <p>The rules of your classroom jam:</p>
+          <div class="callout orange">
+            <strong>Classroom Game Jam Rules:</strong><br>
+            ① You have <strong>5 days</strong> — Monday through Friday.<br>
+            ② Build a game in the engine or tool of your choice.<br>
+            ③ The game must be playable from start to "game over" (or winning state).<br>
+            ④ On Friday, you demo your game to the class for 3–5 minutes.<br>
+            ⑤ <strong>Done beats perfect</strong> — a simple game that works beats an ambitious game that crashes.
+          </div>
+        </section>
+
+        <!-- Scope checker -->
+        <section class="cl-card">
+          <h2>Scope Checker — Can You Build It in a Week?</h2>
+          <p>The #1 reason game jam games don't get finished is <strong>too much scope</strong>. Check every feature you're planning. If you check too many danger or warning items, cut something.</p>
+
+          <div class="scope-check" id="scope-check">
+            <label class="scope-item safe"><input type="checkbox" onchange="updateScope()"><span class="scope-label">One mechanic (jump, dodge, shoot, build)</span><span class="scope-badge safe">Safe</span></label>
+            <label class="scope-item safe"><input type="checkbox" onchange="updateScope()"><span class="scope-label">1–3 levels or a single endless level</span><span class="scope-badge safe">Safe</span></label>
+            <label class="scope-item safe"><input type="checkbox" onchange="updateScope()"><span class="scope-label">Rectangle or simple sprite art (no animation)</span><span class="scope-badge safe">Safe</span></label>
+            <label class="scope-item safe"><input type="checkbox" onchange="updateScope()"><span class="scope-label">One enemy type</span><span class="scope-badge safe">Safe</span></label>
+            <label class="scope-item safe"><input type="checkbox" onchange="updateScope()"><span class="scope-label">Score counter or timer</span><span class="scope-badge safe">Safe</span></label>
+            <label class="scope-item warning"><input type="checkbox" onchange="updateScope()"><span class="scope-label">Animated sprites (walk cycle)</span><span class="scope-badge warning">Caution</span></label>
+            <label class="scope-item warning"><input type="checkbox" onchange="updateScope()"><span class="scope-label">2–3 enemy types with different behaviors</span><span class="scope-badge warning">Caution</span></label>
+            <label class="scope-item warning"><input type="checkbox" onchange="updateScope()"><span class="scope-label">Tiled map / multiple rooms</span><span class="scope-badge warning">Caution</span></label>
+            <label class="scope-item warning"><input type="checkbox" onchange="updateScope()"><span class="scope-label">Basic inventory or item system</span><span class="scope-badge warning">Caution</span></label>
+            <label class="scope-item warning"><input type="checkbox" onchange="updateScope()"><span class="scope-label">Boss enemy</span><span class="scope-badge warning">Caution</span></label>
+            <label class="scope-item danger"><input type="checkbox" onchange="updateScope()"><span class="scope-label">Multiplayer (online or local co-op)</span><span class="scope-badge danger">Danger</span></label>
+            <label class="scope-item danger"><input type="checkbox" onchange="updateScope()"><span class="scope-label">Procedurally generated levels</span><span class="scope-badge danger">Danger</span></label>
+            <label class="scope-item danger"><input type="checkbox" onchange="updateScope()"><span class="scope-label">Full story with dialogue and cutscenes</span><span class="scope-badge danger">Danger</span></label>
+            <label class="scope-item danger"><input type="checkbox" onchange="updateScope()"><span class="scope-label">RPG stat system (XP, leveling, equipment)</span><span class="scope-badge danger">Danger</span></label>
+            <label class="scope-item danger"><input type="checkbox" onchange="updateScope()"><span class="scope-label">3D graphics (if you haven't used a 3D engine before)</span><span class="scope-badge danger">Danger</span></label>
+          </div>
+          <div id="scope-meter">Select features above to check your scope.</div>
+        </section>
+
+        <!-- GDD builder -->
+        <section class="cl-card">
+          <h2>Game Design Document Builder</h2>
+          <p>A GDD doesn't need to be 50 pages. For a jam, a half-page document keeps your team aligned and your scope honest. Fill this in <strong>before you write any code</strong>.</p>
+
+          <div class="gdd">
+            <h3>Mini GDD — Game Jam Edition</h3>
+
+            <div class="gdd-row">
+              <div class="gdd-field">
+                <label>Game Title</label>
+                <input type="text" id="gdd-title" placeholder="e.g., Neon Dodge, Cave Crawler" />
+              </div>
+              <div class="gdd-field">
+                <label>Genre</label>
+                <select id="gdd-genre">
+                  <option value="">— genre —</option>
+                  <option>Platformer</option><option>Arcade / Dodge</option><option>Puzzle</option>
+                  <option>Shooter</option><option>Adventure</option><option>Sandbox</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="gdd-field">
+              <label>One-sentence pitch (what is the game?)</label>
+              <input type="text" id="gdd-pitch" placeholder="e.g., Dodge falling rocks to survive as long as possible" />
+            </div>
+
+            <div class="gdd-field">
+              <label>Core mechanic (one verb: jump, dodge, shoot, build, swap…)</label>
+              <input type="text" id="gdd-mechanic" placeholder="e.g., dodge" />
+            </div>
+
+            <div class="gdd-row">
+              <div class="gdd-field">
+                <label>Win condition</label>
+                <input type="text" id="gdd-win" placeholder="e.g., Survive 60 seconds" />
+              </div>
+              <div class="gdd-field">
+                <label>Lose condition</label>
+                <input type="text" id="gdd-lose" placeholder="e.g., Hit by a falling rock" />
+              </div>
+            </div>
+
+            <div class="gdd-field">
+              <label>Obstacles / Enemies (keep to 1–2 types)</label>
+              <input type="text" id="gdd-enemies" placeholder="e.g., Falling rocks that speed up over time" />
+            </div>
+
+            <div class="gdd-field">
+              <label>Player feedback (score, health bar, sound, screen shake…)</label>
+              <input type="text" id="gdd-feedback" placeholder="e.g., Score counter, red flash on hit, sound effect" />
+            </div>
+
+            <div class="gdd-row">
+              <div class="gdd-field">
+                <label>Engine / Tool</label>
+                <select id="gdd-engine">
+                  <option value="">— tool —</option>
+                  <option>Kaplay</option><option>Phaser 3</option><option>Scratch</option>
+                  <option>Vanilla JS + Canvas</option><option>Godot</option><option>Unity</option>
+                </select>
+              </div>
+              <div class="gdd-field">
+                <label>Art style</label>
+                <select id="gdd-art">
+                  <option value="">— style —</option>
+                  <option>Colored rectangles (no art)</option><option>Pixel art sprites</option>
+                  <option>Free asset pack</option><option>Hand-drawn scan</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="gdd-field">
+              <label>Cut list — features you want but WON'T build this week</label>
+              <textarea id="gdd-cuts" placeholder="e.g., Animated sprite, boss fight, leaderboard — save for v2"></textarea>
+            </div>
+
+            <button class="btn-export" id="btn-gdd">Generate GDD Preview ✨</button>
+            <div class="gdd-preview" id="gdd-preview"></div>
+          </div>
+        </section>
+
+        <!-- 5-day plan -->
+        <section class="cl-card">
+          <h2>The 5-Day Jam Sprint</h2>
+          <p>Follow this day-by-day plan. Resist the urge to jump to features — foundation first, features second, polish last.</p>
+
+          <div class="day-schedule">
+            <div class="day-row day1">
+              <div class="day-badge">Mon<br>Day 1</div>
+              <div class="day-content">
+                <strong>Design Day — No Code</strong>
+                <ul>
+                  <li>Write your GDD (use the builder above)</li>
+                  <li>Sketch 2–3 screens on paper (menu, gameplay, game over)</li>
+                  <li>Find or decide on a 5-item asset list (what sprites/sounds you need)</li>
+                  <li>Set up your VS Code project folder and get Live Server running</li>
+                </ul>
+              </div>
+            </div>
+            <div class="day-row day2">
+              <div class="day-badge">Tue<br>Day 2</div>
+              <div class="day-content">
+                <strong>Foundation Day — Core Loop Only</strong>
+                <ul>
+                  <li>Get the player moving and responding to input</li>
+                  <li>Add one obstacle or enemy (even as a rectangle placeholder)</li>
+                  <li>Implement the lose condition (game over screen)</li>
+                  <li>Goal: the game is <em>playable but ugly</em> by end of day</li>
+                </ul>
+              </div>
+            </div>
+            <div class="day-row day3">
+              <div class="day-badge">Wed<br>Day 3</div>
+              <div class="day-content">
+                <strong>Features Day — Mechanics &amp; Feedback</strong>
+                <ul>
+                  <li>Add score, timer, or health system</li>
+                  <li>Add sound effects (at least one for hit/lose)</li>
+                  <li>Implement difficulty scaling (enemies get faster over time)</li>
+                  <li>Replace placeholder art with your actual sprites</li>
+                </ul>
+              </div>
+            </div>
+            <div class="day-row day4">
+              <div class="day-badge">Thu<br>Day 4</div>
+              <div class="day-content">
+                <strong>Polish Day — Feel &amp; Flow</strong>
+                <ul>
+                  <li>Add a proper start screen (title, "Press Space to play")</li>
+                  <li>Add screen shake, particle effects, or color flash on impact</li>
+                  <li>Add background music</li>
+                  <li>Fix the top 3 bugs your playtesters find</li>
+                  <li>Freeze new features — only polish from here</li>
+                </ul>
+              </div>
+            </div>
+            <div class="day-row day5">
+              <div class="day-badge">Fri<br>Day 5</div>
+              <div class="day-content">
+                <strong>Showcase Day — Demo &amp; Celebrate</strong>
+                <ul>
+                  <li>Final bug fixes (one hour max)</li>
+                  <li>Prepare your 3-minute demo: show gameplay, explain your concept</li>
+                  <li>Tell the class: what went well, what you'd do differently</li>
+                  <li>Play everyone else's games — give specific, constructive feedback</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Showcase checklist -->
+        <section class="cl-card">
+          <h2>Showcase Day Checklist</h2>
+          <p>Click each item as you complete it before Friday's demo:</p>
+
+          <ul class="checklist" id="showcase-list">
+            <li><input type="checkbox" onchange="toggleCheck(this)"> Game runs without crashing from start to game over</li>
+            <li><input type="checkbox" onchange="toggleCheck(this)"> Start screen explains the goal and controls</li>
+            <li><input type="checkbox" onchange="toggleCheck(this)"> Restart button works after game over</li>
+            <li><input type="checkbox" onchange="toggleCheck(this)"> Score or progress is visible during play</li>
+            <li><input type="checkbox" onchange="toggleCheck(this)"> At least one sound effect plays during gameplay</li>
+            <li><input type="checkbox" onchange="toggleCheck(this)"> Game has a clear lose condition the player understands</li>
+            <li><input type="checkbox" onchange="toggleCheck(this)"> Tested on a second computer or phone (not just your machine)</li>
+            <li><input type="checkbox" onchange="toggleCheck(this)"> Practiced the demo: can explain the game in under 60 seconds</li>
+            <li><input type="checkbox" onchange="toggleCheck(this)"> Prepared one thing you learned and one thing you'd change</li>
+            <li><input type="checkbox" onchange="toggleCheck(this)"> Project folder is backed up (USB, cloud, or GitHub)</li>
+          </ul>
+        </section>
+
+        <!-- Tips & traps -->
+        <section class="cl-card">
+          <h2>Tips from Experienced Jammers</h2>
+          <h3>✅ Do</h3>
+          <ul style="font-size:0.86rem;color:#3f4f65;padding-left:1.2rem;line-height:1.8;">
+            <li>Commit your code to Git every day (or every hour during jams)</li>
+            <li>Playtest with someone who didn't build the game — you'll miss obvious problems</li>
+            <li>Use free licensed assets from itch.io, OpenGameArt, or Freesound</li>
+            <li>Build the core loop first and get it fun before adding anything else</li>
+            <li>Write a cut list — features go there when scope creep hits</li>
+          </ul>
+          <h3>❌ Don't</h3>
+          <ul style="font-size:0.86rem;color:#3f4f65;padding-left:1.2rem;line-height:1.8;">
+            <li>Start with art — placeholder rectangles are fine. Art can come Thursday</li>
+            <li>Add features on Day 4 or 5 — only fix bugs and polish</li>
+            <li>Change your game concept mid-week unless the original is genuinely unworkable</li>
+            <li>Aim for perfection — aim for <em>playable</em> and <em>interesting</em></li>
+            <li>Work alone if you can work in a team — jams are more fun together</li>
+          </ul>
+        </section>
+
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <!-- Side panel -->
+    <aside class="ll-panel" aria-label="Guide panel">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-jams">Real Jams</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-guide">
+          <p class="ll-pane-title">Learning Goals</p>
+          <ul class="ll-guide-list">
+            <li>Write a complete mini GDD before coding</li>
+            <li>Identify over-scoped features and cut them intentionally</li>
+            <li>Follow a day-by-day sprint structure for a 5-day build</li>
+            <li>Demo a game to peers with a clear, confident 3-minute pitch</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">The Magic of Constraints</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">Jams have strict time limits for a reason: constraints <em>force creativity</em>. When you can't spend 3 weeks perfecting the controls, you find the simplest version that works — and often that's the version that's most fun.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">Vertical Slice</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">Game studios use the concept of a "vertical slice" — one complete, polished section of a game showing all planned features working together. Your jam game should be a tiny vertical slice: shallow in content, but complete in experience.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">Free Asset Sources</p>
+          <ul style="font-size:0.79rem;color:#64748b;line-height:1.7;padding-left:1.1rem;">
+            <li><strong>itch.io</strong> — game-jam-ready free sprite packs</li>
+            <li><strong>OpenGameArt.org</strong> — CC-licensed art</li>
+            <li><strong>Freesound.org</strong> — CC-licensed sound effects</li>
+            <li><strong>Kenney.nl</strong> — 40,000+ free assets</li>
+            <li><strong>Google Fonts</strong> — free game-friendly fonts</li>
+          </ul>
+        </div>
+        <div class="ll-pane" id="pane-jams">
+          <p class="ll-pane-title">Famous Real Game Jams</p>
+          <dl style="font-size:0.82rem;line-height:1.6;color:#3f4f65;">
+            <dt style="font-weight:700;margin-top:0.5rem;">Ludum Dare</dt>
+            <dd style="margin:0 0 0.4rem 0.8rem;color:#64748b;">Online, 72-hour solo jam, runs 3× per year. A theme is announced on Friday night; your game must be submitted by Monday morning.</dd>
+            <dt style="font-weight:700;margin-top:0.5rem;">Global Game Jam</dt>
+            <dd style="margin:0 0 0.4rem 0.8rem;color:#64748b;">The world's largest jam — 48 hours, held in January at 800+ locations worldwide. Team-based.</dd>
+            <dt style="font-weight:700;margin-top:0.5rem;">GMTK Game Jam</dt>
+            <dd style="margin:0 0 0.4rem 0.8rem;color:#64748b;">Run by YouTube channel Game Maker's Toolkit. 48 hours, 10,000+ entries, single theme twist. Very educational.</dd>
+            <dt style="font-weight:700;margin-top:0.5rem;">itch.io Jams</dt>
+            <dd style="margin:0 0 0.4rem 0.8rem;color:#64748b;">Hundreds of themed jams run continuously on itch.io — horror, accessibility, nature, retro. Filter by upcoming jams.</dd>
+          </dl>
+          <p class="ll-pane-title" style="margin-top:1rem;">Games that Started as Jams</p>
+          <ul style="font-size:0.79rem;color:#64748b;line-height:1.7;padding-left:1.1rem;">
+            <li><strong>Superhot</strong> — became a bestselling VR title</li>
+            <li><strong>Untitled Goose Game</strong> — 7-day prototype</li>
+            <li><strong>Celeste</strong> — 4-day PICO-8 prototype</li>
+            <li><strong>Downwell</strong> — jam prototype became mobile hit</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<script>
+  /* Scope checker */
+  function updateScope() {
+    const items = document.querySelectorAll('#scope-check input[type="checkbox"]:checked');
+    const danger  = document.querySelectorAll('#scope-check .danger input:checked').length;
+    const warning = document.querySelectorAll('#scope-check .warning input:checked').length;
+    const safe    = document.querySelectorAll('#scope-check .safe input:checked').length;
+    const meter   = document.getElementById('scope-meter');
+
+    if (items.length === 0) {
+      meter.textContent = 'Select features above to check your scope.';
+      meter.style.color = '#64748b';
+    } else if (danger >= 2) {
+      meter.textContent = '🚨 Over-scoped! Cut danger features — you will not finish in a week.';
+      meter.style.color = '#ef4444';
+    } else if (danger === 1 || warning >= 3) {
+      meter.textContent = '⚠️ Risky scope — consider cutting one feature before you start coding.';
+      meter.style.color = '#f59e0b';
+    } else {
+      meter.textContent = '✅ Scope looks achievable! Go build it.';
+      meter.style.color = '#10b981';
+    }
+  }
+
+  /* GDD Builder */
+  document.getElementById('btn-gdd').addEventListener('click', () => {
+    const title    = document.getElementById('gdd-title').value.trim() || 'Untitled Game';
+    const genre    = document.getElementById('gdd-genre').value || 'Unspecified';
+    const pitch    = document.getElementById('gdd-pitch').value.trim() || '(no pitch written)';
+    const mechanic = document.getElementById('gdd-mechanic').value.trim() || '(no mechanic)';
+    const win      = document.getElementById('gdd-win').value.trim() || '(not defined)';
+    const lose     = document.getElementById('gdd-lose').value.trim() || '(not defined)';
+    const enemies  = document.getElementById('gdd-enemies').value.trim() || '(not defined)';
+    const feedback = document.getElementById('gdd-feedback').value.trim() || '(not defined)';
+    const engine   = document.getElementById('gdd-engine').value || 'TBD';
+    const art      = document.getElementById('gdd-art').value || 'TBD';
+    const cuts     = document.getElementById('gdd-cuts').value.trim() || '(none listed)';
+
+    const preview = document.getElementById('gdd-preview');
+    preview.style.display = 'block';
+    preview.innerHTML = `
+      <h4>📄 GDD: ${title} (${genre})</h4>
+      <dl>
+        <dt>Pitch</dt><dd>${pitch}</dd>
+        <dt>Core Mechanic</dt><dd>The player can <strong>${mechanic}</strong></dd>
+        <dt>Win Condition</dt><dd>${win}</dd>
+        <dt>Lose Condition</dt><dd>${lose}</dd>
+        <dt>Obstacles / Enemies</dt><dd>${enemies}</dd>
+        <dt>Feedback Systems</dt><dd>${feedback}</dd>
+        <dt>Engine / Tool</dt><dd>${engine}</dd>
+        <dt>Art Style</dt><dd>${art}</dd>
+        <dt>Cut List (v2 features)</dt><dd>${cuts}</dd>
+      </dl>
+      <p style="margin-top:0.6rem;color:#f97316;font-weight:600;">✅ GDD written. Now go build Day 1!</p>
+    `;
+  });
+
+  /* Showcase checklist */
+  function toggleCheck(el) {
+    el.closest('li').classList.toggle('checked', el.checked);
+  }
+
+  /* Panel tabs */
+  document.querySelectorAll('.ll-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
+      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      tab.setAttribute('aria-selected','true');
+      document.getElementById(tab.dataset.pane).classList.add('ll-active');
+    });
+  });
+  const openBtn = document.querySelector('.ll-open-btn');
+  const closeBtn = document.querySelector('.ll-panel-close');
+  const panel = document.querySelector('.ll-panel');
+  if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
+  if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
+</script>
+<script src="../assets/js/reveal.js"></script>
+<script src="../assets/js/nav-mobile.js"></script>
+</body>
+</html>

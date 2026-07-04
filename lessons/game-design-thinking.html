@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>What Makes a Game? · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Game Design Lesson 1 — explore what turns an activity into a game using the MDA framework. Design your own game concept using Goals, Rules, Feedback, and Player Choice." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    :root { --acc: #8b5cf6; --acc-soft: rgba(139,92,246,0.12); --acc-border: rgba(139,92,246,0.3); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    /* MDA pillars */
+    .mda-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.7rem; margin: 0.9rem 0; }
+    .mda-pillar { border-radius: 14px; padding: 1rem 0.9rem; text-align: center; border: 1.5px solid; }
+    .mda-pillar.mechanics  { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.3); }
+    .mda-pillar.dynamics   { background: rgba(139,92,246,0.08); border-color: rgba(139,92,246,0.3); }
+    .mda-pillar.aesthetics { background: rgba(236,72,153,0.08); border-color: rgba(236,72,153,0.3); }
+    .mda-pillar-icon { font-size: 1.6rem; display: block; margin-bottom: 0.4rem; }
+    .mda-pillar strong { display: block; font-size: 0.92rem; margin-bottom: 0.25rem; }
+    .mda-pillar small { font-size: 0.78rem; color: #64748b; line-height: 1.45; display: block; }
+    .mda-arrow { display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 1.3rem; }
+    @media (max-width:600px) {
+      .mda-grid { grid-template-columns: 1fr; }
+      .mda-arrow { transform: rotate(90deg); }
+    }
+
+    /* 4 game elements */
+    .elements-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin: 0.8rem 0; }
+    .el-card { border-radius: 12px; padding: 0.85rem 1rem; border: 1px solid var(--line,#d2d2d7); }
+    .el-card-icon { font-size: 1.4rem; display: block; margin-bottom: 0.3rem; }
+    .el-card strong { display: block; font-size: 0.88rem; margin-bottom: 0.2rem; }
+    .el-card p { font-size: 0.79rem; color: #64748b; margin: 0; line-height: 1.5; }
+
+    /* Genre chips */
+    .genre-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.7rem 0; }
+    .genre-chip { padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; border: 1.5px solid; cursor: pointer; transition: all 0.18s; user-select: none; }
+    .genre-chip:hover { transform: translateY(-1px); }
+    .genre-chip.active { color: #fff !important; }
+
+    /* Workshop */
+    .workshop { border: 1.5px solid var(--acc-border); border-radius: 16px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; background: var(--acc-soft); }
+    .workshop h3 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--acc); }
+    .workshop label { display: block; font-size: 0.82rem; font-weight: 600; color: #3f4f65; margin: 0.55rem 0 0.2rem; }
+    [data-theme="night"] .workshop label { color: rgba(245,245,247,0.75); }
+    .workshop select, .workshop input[type="text"], .workshop textarea {
+      width: 100%; padding: 0.4rem 0.65rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px;
+      font-size: 0.84rem; font-family: inherit; background: var(--white,#fff); color: var(--text,#1d1d1f);
+      box-sizing: border-box;
+    }
+    .workshop textarea { min-height: 56px; resize: vertical; }
+    .workshop-preview { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 10px; background: rgba(255,255,255,0.7); border: 1px solid var(--acc-border); font-size: 0.83rem; line-height: 1.6; color: #3f4f65; }
+    [data-theme="night"] .workshop-preview { background: rgba(40,30,60,0.6); color: rgba(245,245,247,0.75); }
+    .workshop-preview strong { color: var(--acc); }
+    .btn-generate { margin-top: 0.65rem; background: var(--acc); color: #fff; border: none; border-radius: 9px; padding: 0.45rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.18s; }
+    .btn-generate:hover { opacity: 0.85; }
+
+    /* Practice */
+    .practice-item { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 0.65rem; }
+    .practice-item p { font-size: 0.87rem; color: #3f4f65; margin: 0 0 0.55rem; }
+    [data-theme="night"] .practice-item p { color: rgba(245,245,247,0.72); }
+    .practice-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .practice-select { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.84rem; font-family: inherit; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .btn-check { background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.83rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-check:hover { opacity: 0.85; }
+    .fb { font-size: 0.82rem; font-weight: 600; }
+    .fb.ok  { color: #22c55e; }
+    .fb.err { color: #ef4444; }
+
+    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .callout.violet { background: rgba(139,92,246,0.09); border-left: 3px solid var(--acc); color: #3f4f65; }
+    [data-theme="night"] .callout.violet { color: rgba(245,245,247,0.72); }
+    .callout strong { color: var(--text,#1d1d1f); }
+
+    @media (max-width:600px) {
+      .elements-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../video-library.html">Videos</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <!-- Hero -->
+        <section class="hero cl-hero">
+          <p class="eyebrow">Game Design &amp; Development · Lesson 1</p>
+          <h1>What Makes a Game?</h1>
+          <div class="cl-hero-meta">
+            <span>Game Design</span><span class="dot"></span>
+            <span>MDA Framework</span><span class="dot"></span>
+            <span>Mechanics</span><span class="dot"></span>
+            <span>Dynamics</span><span class="dot"></span>
+            <span>Aesthetics</span>
+          </div>
+          <p class="cl-lede">Before you write a single line of code, great games start with a clear design. Learn the four ingredients every game needs, the MDA framework designers use to think about play, and build your own game concept — no code required.</p>
+        </section>
+
+        <!-- The 4 Elements -->
+        <section class="cl-card">
+          <h2>The 4 Ingredients of Every Game</h2>
+          <p>Game designer <strong>Bernard Suits</strong> defined a game as "the voluntary attempt to overcome unnecessary obstacles." Every real game has four things:</p>
+          <div class="elements-grid">
+            <div class="el-card">
+              <span class="el-card-icon">🎯</span>
+              <strong>Goals</strong>
+              <p>A clear win or objective — reach the flag, score 10 points, survive the longest. Without a goal, there's no direction.</p>
+            </div>
+            <div class="el-card">
+              <span class="el-card-icon">📋</span>
+              <strong>Rules</strong>
+              <p>Constraints that limit what you can do. Rules create the challenge — you can't just walk past the enemy, you have to jump over it.</p>
+            </div>
+            <div class="el-card">
+              <span class="el-card-icon">📊</span>
+              <strong>Feedback</strong>
+              <p>Information that shows the player how they're doing — a score, a health bar, sound effects, screen shake. Feedback creates satisfaction.</p>
+            </div>
+            <div class="el-card">
+              <span class="el-card-icon">🖐️</span>
+              <strong>Voluntary Play</strong>
+              <p>Players choose to play. This is what separates games from forced tasks. A truly fun game makes you <em>want</em> to keep playing.</p>
+            </div>
+          </div>
+
+          <div class="callout violet">
+            <strong>Think About It:</strong> Take any game you know — Minecraft, tag, chess, or Mario. Can you name the goal, at least one rule, one form of feedback, and why people choose to play it?
+          </div>
+        </section>
+
+        <!-- MDA Framework -->
+        <section class="cl-card">
+          <h2>The MDA Framework</h2>
+          <p>Game researchers <strong>Robin Hunicke, Marc LeBlanc, and Robert Zubek</strong> created MDA in 2004 — the most widely used framework for understanding and designing games. It says every game can be analyzed at three levels:</p>
+
+          <div class="mda-grid">
+            <div class="mda-pillar mechanics">
+              <span class="mda-pillar-icon">⚙️</span>
+              <strong>Mechanics</strong>
+              <small>The rules and actions written in code or on paper. "Press space to jump." These are what the designer controls directly.</small>
+            </div>
+            <div class="mda-arrow">→</div>
+            <div class="mda-pillar dynamics">
+              <span class="mda-pillar-icon">🌀</span>
+              <strong>Dynamics</strong>
+              <small>What actually happens when players interact with the mechanics. Jumping over enemies creates tension and timing puzzles — emergent behavior.</small>
+            </div>
+            <div class="mda-arrow">→</div>
+            <div class="mda-pillar aesthetics">
+              <span class="mda-pillar-icon">✨</span>
+              <strong>Aesthetics</strong>
+              <small>The emotional response in the player — fun, excitement, challenge, curiosity, mastery. This is the real goal of game design.</small>
+            </div>
+          </div>
+
+          <p>Designers work <strong>top-down</strong> (decide the feeling first, design mechanics to produce it). Players experience games <strong>bottom-up</strong> (feel the mechanics, experience the dynamics, have the emotional response).</p>
+
+          <div class="callout violet">
+            <strong>Super Mario Example:</strong> <em>Mechanic</em> — run and jump with momentum physics. <em>Dynamic</em> — timing jumps across gaps creates near-misses. <em>Aesthetic</em> — the thrill of skillful control and overcoming obstacles.
+          </div>
+        </section>
+
+        <!-- Game Genres -->
+        <section class="cl-card">
+          <h2>Game Genres &amp; Core Mechanics</h2>
+          <p>Genres cluster games by their dominant mechanic. Click any genre to see its defining mechanic.</p>
+
+          <div class="genre-chips" id="genre-chips">
+            <button class="genre-chip" data-genre="platformer" style="color:#3b82f6;border-color:#3b82f6;">Platformer</button>
+            <button class="genre-chip" data-genre="puzzle" style="color:#8b5cf6;border-color:#8b5cf6;">Puzzle</button>
+            <button class="genre-chip" data-genre="shooter" style="color:#ef4444;border-color:#ef4444;">Shooter</button>
+            <button class="genre-chip" data-genre="rpg" style="color:#f59e0b;border-color:#f59e0b;">RPG</button>
+            <button class="genre-chip" data-genre="strategy" style="color:#10b981;border-color:#10b981;">Strategy</button>
+            <button class="genre-chip" data-genre="arcade" style="color:#f97316;border-color:#f97316;">Arcade</button>
+            <button class="genre-chip" data-genre="adventure" style="color:#06b6d4;border-color:#06b6d4;">Adventure</button>
+          </div>
+
+          <div id="genre-desc" style="min-height:64px; font-size:0.87rem; color:#3f4f65; border:1px solid var(--line,#d2d2d7); border-radius:12px; padding:0.8rem 1rem; margin-top:0.4rem; line-height:1.6;">
+            <em>Click a genre above to explore its core mechanic.</em>
+          </div>
+        </section>
+
+        <!-- Workshop -->
+        <section class="cl-card">
+          <h2>Design Workshop — Build Your Own Game Concept</h2>
+          <p>Fill in the fields below to generate a game design pitch. You don't need to know how to code yet — just think like a designer.</p>
+
+          <div class="workshop">
+            <h3>Game Design Document (Mini)</h3>
+
+            <label for="w-title">Game Title</label>
+            <input type="text" id="w-title" placeholder="e.g., Shadow Dash, Cube Escape, Pixel Kingdom" />
+
+            <label for="w-genre">Genre</label>
+            <select id="w-genre">
+              <option value="">— pick a genre —</option>
+              <option>Platformer</option>
+              <option>Puzzle</option>
+              <option>Arcade / Dodge</option>
+              <option>Shooter</option>
+              <option>Adventure</option>
+              <option>RPG</option>
+              <option>Strategy</option>
+              <option>Sandbox / Builder</option>
+            </select>
+
+            <label for="w-goal">Player Goal (win condition)</label>
+            <input type="text" id="w-goal" placeholder="e.g., Reach the portal before the timer runs out" />
+
+            <label for="w-mechanic">Core Mechanic (one verb)</label>
+            <input type="text" id="w-mechanic" placeholder="e.g., jump, shoot, swap, build, dash, grow" />
+
+            <label for="w-obstacle">Main Obstacle / Challenge</label>
+            <input type="text" id="w-obstacle" placeholder="e.g., Moving enemies, crumbling platforms, time pressure" />
+
+            <label for="w-feedback">Feedback (how does the player know they're doing well?)</label>
+            <input type="text" id="w-feedback" placeholder="e.g., Score counter, health hearts, sound effects, screen shake" />
+
+            <button class="btn-generate" id="btn-gen">Generate Game Pitch ✨</button>
+
+            <div class="workshop-preview" id="workshop-out" hidden></div>
+          </div>
+        </section>
+
+        <!-- Practice -->
+        <section class="cl-card">
+          <h2>Identify the Elements</h2>
+          <p>For each scenario, identify what game design element is being described.</p>
+
+          <div class="practice-item">
+            <p><strong>1.</strong> In a racing game, a sound effect plays and the screen flashes green whenever you pass a checkpoint.</p>
+            <div class="practice-row">
+              <select class="practice-select" id="q1">
+                <option value="">— choose —</option>
+                <option>Goal</option>
+                <option>Rule</option>
+                <option>Feedback</option>
+                <option>Voluntary Play</option>
+              </select>
+              <button class="btn-check" onclick="check('q1','Feedback','fb1')">Check</button>
+              <span class="fb" id="fb1"></span>
+            </div>
+          </div>
+
+          <div class="practice-item">
+            <p><strong>2.</strong> In chess, you cannot move your king onto a square that is under attack.</p>
+            <div class="practice-row">
+              <select class="practice-select" id="q2">
+                <option value="">— choose —</option>
+                <option>Goal</option>
+                <option>Rule</option>
+                <option>Feedback</option>
+                <option>Voluntary Play</option>
+              </select>
+              <button class="btn-check" onclick="check('q2','Rule','fb2')">Check</button>
+              <span class="fb" id="fb2"></span>
+            </div>
+          </div>
+
+          <div class="practice-item">
+            <p><strong>3.</strong> The objective of Pac-Man is to eat all the dots on the screen without being caught by a ghost.</p>
+            <div class="practice-row">
+              <select class="practice-select" id="q3">
+                <option value="">— choose —</option>
+                <option>Goal</option>
+                <option>Rule</option>
+                <option>Feedback</option>
+                <option>Voluntary Play</option>
+              </select>
+              <button class="btn-check" onclick="check('q3','Goal','fb3')">Check</button>
+              <span class="fb" id="fb3"></span>
+            </div>
+          </div>
+
+          <div class="practice-item">
+            <p><strong>4.</strong> A player quits a mobile game because it started feeling like homework — just chores to collect daily rewards.</p>
+            <div class="practice-row">
+              <select class="practice-select" id="q4">
+                <option value="">— choose —</option>
+                <option>Goal</option>
+                <option>Rule</option>
+                <option>Feedback</option>
+                <option>Voluntary Play</option>
+              </select>
+              <button class="btn-check" onclick="check('q4','Voluntary Play','fb4')">Check</button>
+              <span class="fb" id="fb4"></span>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <!-- Side panel -->
+    <aside class="ll-panel" aria-label="Guide panel">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-guide">
+          <p class="ll-pane-title">Learning Goals</p>
+          <ul class="ll-guide-list">
+            <li>Name the 4 elements every game must have</li>
+            <li>Explain the MDA framework with an example</li>
+            <li>Identify game genre by its core mechanic</li>
+            <li>Write a mini game design document</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">MDA Flow</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">Designers think <strong>M→D→A</strong>: choose a mechanic, predict what behavior emerges, aim for a target emotion. Players experience games in reverse: they feel the aesthetic first, before they understand the rules.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">8 Aesthetic Types (LeBlanc)</p>
+          <ul style="font-size:0.79rem;color:#64748b;line-height:1.7;padding-left:1.1rem;">
+            <li><strong>Sensation</strong> — sight, sound, feel</li>
+            <li><strong>Fantasy</strong> — make-believe worlds</li>
+            <li><strong>Narrative</strong> — story and drama</li>
+            <li><strong>Challenge</strong> — obstacle courses</li>
+            <li><strong>Fellowship</strong> — co-op, social play</li>
+            <li><strong>Discovery</strong> — exploration</li>
+            <li><strong>Expression</strong> — self-customization</li>
+            <li><strong>Submission</strong> — relaxing "flow state"</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Game Jam Tip</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">Write your GDD <em>before</em> you code. Even a half-page document with goal, mechanic, and one obstacle will save you hours of aimless building during a jam week.</p>
+        </div>
+        <div class="ll-pane" id="pane-vocab">
+          <p class="ll-pane-title">Key Vocabulary</p>
+          <dl style="font-size:0.82rem;line-height:1.6;color:#3f4f65;">
+            <dt style="font-weight:700;margin-top:0.6rem;">Mechanic</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">A specific rule or action available to the player (jump, shoot, drag, combine).</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Dynamic</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">Emergent behavior that arises when players interact with the mechanics.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Aesthetic</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">The emotional response the game creates in the player.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">GDD</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">Game Design Document — a written plan describing a game's concept, mechanics, and goals.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Emergent Gameplay</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">Unplanned, complex behaviors that arise from simple rules — like Minecraft's infinite possibilities from basic block placement.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Core Loop</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">The repeating cycle of actions that defines moment-to-moment play: shoot enemy → collect loot → upgrade weapon → shoot enemy.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Scope</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">The size and complexity of a project. Good game jam design starts small and well-scoped.</dd>
+          </dl>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<script>
+  /* Genre descriptions */
+  const genres = {
+    platformer: { color: '#3b82f6', text: '<strong>Platformer</strong> — Core mechanic: precise jumping and movement through space. The challenge comes from timing, momentum, and navigating vertically arranged environments. Examples: Super Mario Bros., Celeste, Hollow Knight.' },
+    puzzle: { color: '#8b5cf6', text: '<strong>Puzzle</strong> — Core mechanic: logic and pattern recognition. Players must figure out the solution — move blocks, flip switches, match tiles. Examples: Tetris, Portal, Monument Valley.' },
+    shooter: { color: '#ef4444', text: '<strong>Shooter</strong> — Core mechanic: aim and fire projectiles at targets. Success depends on accuracy, timing, and positioning. Examples: Space Invaders, Minecraft (combat), Halo.' },
+    rpg: { color: '#f59e0b', text: '<strong>RPG (Role-Playing Game)</strong> — Core mechanics: character growth and choice. Players build a character over time, making decisions that affect the story and stats. Examples: Pokémon, Undertale, The Legend of Zelda.' },
+    strategy: { color: '#10b981', text: '<strong>Strategy</strong> — Core mechanic: resource management and long-range planning. Players think several moves ahead, balancing economy, units, and objectives. Examples: Chess, Civilization, Clash of Clans.' },
+    arcade: { color: '#f97316', text: '<strong>Arcade</strong> — Core mechanic: score-chasing under escalating difficulty. Simple rules, instant restart, and a leaderboard drive repeated play. Examples: Pac-Man, Snake, Flappy Bird.' },
+    adventure: { color: '#06b6d4', text: '<strong>Adventure</strong> — Core mechanic: exploration and discovery. Players navigate an open world, uncovering secrets, solving light puzzles, and experiencing narrative. Examples: Minecraft, The Legend of Zelda, Animal Crossing.' }
+  };
+
+  document.querySelectorAll('.genre-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      chip.style.backgroundColor = genres[chip.dataset.genre].color;
+      const d = genres[chip.dataset.genre];
+      document.getElementById('genre-desc').innerHTML = d.text;
+    });
+  });
+
+  /* Workshop generator */
+  document.getElementById('btn-gen').addEventListener('click', () => {
+    const title = document.getElementById('w-title').value.trim() || 'Untitled Game';
+    const genre = document.getElementById('w-genre').value || 'Unspecified genre';
+    const goal = document.getElementById('w-goal').value.trim() || '(no goal defined)';
+    const mechanic = document.getElementById('w-mechanic').value.trim() || '(no mechanic defined)';
+    const obstacle = document.getElementById('w-obstacle').value.trim() || '(no obstacle defined)';
+    const feedback = document.getElementById('w-feedback').value.trim() || '(no feedback defined)';
+
+    const out = document.getElementById('workshop-out');
+    out.hidden = false;
+    out.innerHTML = `
+      <p><strong>🎮 ${title}</strong> is a <strong>${genre}</strong> game.</p>
+      <p><strong>Goal:</strong> ${goal}</p>
+      <p><strong>Core Mechanic:</strong> The player can <em>${mechanic}</em>.</p>
+      <p><strong>Challenge:</strong> ${obstacle}</p>
+      <p><strong>Feedback:</strong> ${feedback}</p>
+      <p style="margin-top:0.5rem;color:#8b5cf6;font-weight:600;">✅ Great start! Share your pitch with the class.</p>
+    `;
+  });
+
+  /* Practice checks */
+  function check(qId, correct, fbId) {
+    const val = document.getElementById(qId).value;
+    const fb = document.getElementById(fbId);
+    if (!val) { fb.className = 'fb err'; fb.textContent = 'Pick an answer first.'; return; }
+    if (val === correct) {
+      fb.className = 'fb ok'; fb.textContent = '✓ Correct!';
+    } else {
+      fb.className = 'fb err'; fb.textContent = `✗ Try again. Hint: "${correct}"`;
+    }
+  }
+
+  /* Panel tabs */
+  document.querySelectorAll('.ll-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const pane = tab.dataset.pane;
+      document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
+      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      tab.setAttribute('aria-selected','true');
+      document.getElementById(pane).classList.add('ll-active');
+    });
+  });
+
+  /* Panel toggle */
+  const openBtn = document.querySelector('.ll-open-btn');
+  const closeBtn = document.querySelector('.ll-panel-close');
+  const panel = document.querySelector('.ll-panel');
+  if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
+  if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
+</script>
+<script src="../assets/js/reveal.js"></script>
+<script src="../assets/js/nav-mobile.js"></script>
+</body>
+</html>

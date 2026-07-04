@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>From Scratch: Build a Browser Game · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Game Design Lesson 2 — build a real browser game using only HTML5 Canvas and vanilla JavaScript. Learn the game loop, input handling, and collision detection." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    :root { --acc: #3b82f6; --acc-soft: rgba(59,130,246,0.1); --acc-border: rgba(59,130,246,0.3); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    /* Game loop diagram */
+    .loop-diagram { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; margin: 1rem 0; }
+    .loop-box { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 10px; padding: 0.6rem 1rem; text-align: center; min-width: 80px; }
+    .loop-box strong { display: block; font-size: 0.88rem; color: var(--acc); }
+    .loop-box small  { display: block; font-size: 0.7rem; color: #64748b; margin-top: 0.1rem; }
+    .loop-arrow { font-size: 1.3rem; color: #94a3b8; padding: 0 0.3rem; }
+    .loop-back { text-align: center; font-size: 0.75rem; color: #94a3b8; margin-top: 0.3rem; }
+
+    /* Code blocks */
+    .code-block { background: #0f172a; border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.7rem 0; overflow-x: auto; }
+    .code-block pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.79rem; line-height: 1.7; color: #e2e8f0; white-space: pre; }
+    .code-block .kw  { color: #c084fc; }
+    .code-block .fn  { color: #60a5fa; }
+    .code-block .str { color: #4ade80; }
+    .code-block .cm  { color: #475569; font-style: italic; }
+    .code-block .num { color: #fb923c; }
+
+    /* Live game */
+    .game-wrap { border: 2px solid var(--acc-border); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #0a0a0f; position: relative; }
+    #dodge-canvas { display: block; width: 100%; max-width: 480px; height: 240px; margin: 0 auto; cursor: none; }
+    .game-hud { display: flex; justify-content: space-between; padding: 0.4rem 0.9rem; background: rgba(0,0,0,0.6); font-size: 0.78rem; font-weight: 600; }
+    .game-hud .hud-score { color: #60a5fa; }
+    .game-hud .hud-lives { color: #f87171; }
+    .game-hud .hud-hint  { color: #94a3b8; }
+    .game-btn { display: block; margin: 0.5rem auto 0; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1.2rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .game-btn:hover { opacity: 0.85; }
+
+    /* Concept steps */
+    .concept-steps { counter-reset: step; display: flex; flex-direction: column; gap: 0.55rem; margin: 0.7rem 0; }
+    .concept-step { display: flex; gap: 0.75rem; align-items: flex-start; }
+    .concept-step::before { counter-increment: step; content: counter(step); min-width: 24px; height: 24px; border-radius: 50%; background: var(--acc); color: #fff; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.05rem; }
+    .concept-step p { font-size: 0.86rem; color: #3f4f65; margin: 0; line-height: 1.55; }
+    [data-theme="night"] .concept-step p { color: rgba(245,245,247,0.72); }
+
+    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .callout.blue { background: rgba(59,130,246,0.09); border-left: 3px solid var(--acc); color: #3f4f65; }
+    [data-theme="night"] .callout.blue { color: rgba(245,245,247,0.72); }
+    .callout strong { color: var(--text,#1d1d1f); }
+
+    /* Anatomy diagram */
+    .anatomy-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin: 0.7rem 0; }
+    .anatomy-box { border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.7rem 0.8rem; }
+    .anatomy-box strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .anatomy-box small { font-size: 0.77rem; color: #64748b; display: block; line-height: 1.45; }
+    @media (max-width:600px) { .anatomy-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../video-library.html">Videos</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Game Design &amp; Development · Lesson 2</p>
+          <h1>From Scratch: Build a Browser Game</h1>
+          <div class="cl-hero-meta">
+            <span>HTML5 Canvas</span><span class="dot"></span>
+            <span>Game Loop</span><span class="dot"></span>
+            <span>Input Handling</span><span class="dot"></span>
+            <span>Collision</span><span class="dot"></span>
+            <span>Vanilla JavaScript</span>
+          </div>
+          <p class="cl-lede">Before engines and libraries, every game was written from scratch. Understanding the foundations — the game loop, canvas drawing, input, and collision — makes you a better developer regardless of which tools you use later. Let's build a playable dodge game with zero dependencies.</p>
+        </section>
+
+        <!-- Anatomy -->
+        <section class="cl-card">
+          <h2>Anatomy of a Browser Game</h2>
+          <p>A browser game is just three files working together:</p>
+          <div class="anatomy-grid">
+            <div class="anatomy-box">
+              <strong>📄 index.html</strong>
+              <small>Creates the canvas element and loads your scripts. The stage on which the game lives.</small>
+            </div>
+            <div class="anatomy-box">
+              <strong>🎨 style.css</strong>
+              <small>Optional. Makes the page look good around the canvas — background color, no scrollbars, centered layout.</small>
+            </div>
+            <div class="anatomy-box">
+              <strong>⚡ game.js</strong>
+              <small>Where all the logic lives: the game loop, player, enemies, score, and collision detection.</small>
+            </div>
+          </div>
+          <div class="code-block">
+            <pre><span class="cm">&lt;!-- index.html: the bare minimum --&gt;</span>
+<span class="kw">&lt;canvas</span> id=<span class="str">"gameCanvas"</span> width=<span class="str">"480"</span> height=<span class="str">"320"</span><span class="kw">&gt;&lt;/canvas&gt;</span>
+<span class="kw">&lt;script</span> src=<span class="str">"game.js"</span><span class="kw">&gt;&lt;/script&gt;</span></pre>
+          </div>
+        </section>
+
+        <!-- The Game Loop -->
+        <section class="cl-card">
+          <h2>The Game Loop</h2>
+          <p>Every game — from Pong to Cyberpunk 2077 — runs on a <strong>game loop</strong>. It repeats ~60 times per second, doing two things:</p>
+
+          <div class="loop-diagram">
+            <div class="loop-box">
+              <strong>Update</strong>
+              <small>Move objects<br>Check input<br>Resolve physics</small>
+            </div>
+            <div class="loop-arrow">→</div>
+            <div class="loop-box">
+              <strong>Render</strong>
+              <small>Clear canvas<br>Draw everything<br>Show to player</small>
+            </div>
+            <div class="loop-arrow" style="transform:rotate(180deg);">←</div>
+            <div class="loop-box">
+              <strong>Wait</strong>
+              <small>~16ms<br>(60 fps)<br>repeat…</small>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <pre><span class="kw">function</span> <span class="fn">gameLoop</span>() {
+  <span class="fn">update</span>();  <span class="cm">// move everything, check input, collisions</span>
+  <span class="fn">render</span>();  <span class="cm">// draw the current frame to the canvas</span>
+  <span class="fn">requestAnimationFrame</span>(gameLoop); <span class="cm">// call again next frame</span>
+}
+<span class="fn">requestAnimationFrame</span>(gameLoop); <span class="cm">// start the loop</span></pre>
+          </div>
+          <p><code>requestAnimationFrame</code> is the browser's built-in game loop. It syncs to your monitor's refresh rate (usually 60 fps) and pauses automatically when you switch tabs — saving battery and CPU.</p>
+        </section>
+
+        <!-- Canvas drawing -->
+        <section class="cl-card">
+          <h2>Drawing with Canvas</h2>
+          <p>The Canvas API gives you a drawing surface you control pixel-by-pixel using JavaScript. The key concept: <strong>clear, then redraw everything each frame</strong>.</p>
+          <div class="code-block">
+            <pre><span class="kw">const</span> canvas = document.<span class="fn">getElementById</span>(<span class="str">'gameCanvas'</span>);
+<span class="kw">const</span> ctx = canvas.<span class="fn">getContext</span>(<span class="str">'2d'</span>);
+
+<span class="kw">function</span> <span class="fn">render</span>() {
+  <span class="cm">// 1. Clear the canvas each frame</span>
+  ctx.<span class="fn">clearRect</span>(<span class="num">0</span>, <span class="num">0</span>, canvas.width, canvas.height);
+
+  <span class="cm">// 2. Draw the player (a blue square)</span>
+  ctx.fillStyle = <span class="str">'#3b82f6'</span>;
+  ctx.<span class="fn">fillRect</span>(player.x, player.y, player.w, player.h);
+
+  <span class="cm">// 3. Draw score text</span>
+  ctx.fillStyle = <span class="str">'#fff'</span>;
+  ctx.font = <span class="str">'16px Inter, sans-serif'</span>;
+  ctx.<span class="fn">fillText</span>(<span class="str">'Score: '</span> + score, <span class="num">8</span>, <span class="num">22</span>);
+}</pre>
+          </div>
+          <div class="callout blue">
+            <strong>Important:</strong> Never draw without clearing first! If you skip <code>clearRect</code>, you'll see a smear trail of every position the object has ever been.
+          </div>
+        </section>
+
+        <!-- Input -->
+        <section class="cl-card">
+          <h2>Keyboard Input</h2>
+          <p>Track which keys are currently held down using a <strong>keys object</strong> — much better than checking individual events in your update loop.</p>
+          <div class="code-block">
+            <pre><span class="kw">const</span> keys = {};
+document.<span class="fn">addEventListener</span>(<span class="str">'keydown'</span>, e => keys[e.code] = <span class="kw">true</span>);
+document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</span>,   e => keys[e.code] = <span class="kw">false</span>);
+
+<span class="kw">function</span> <span class="fn">update</span>() {
+  <span class="kw">if</span> (keys[<span class="str">'ArrowLeft'</span>]  || keys[<span class="str">'KeyA'</span>]) player.x -= <span class="num">4</span>;
+  <span class="kw">if</span> (keys[<span class="str">'ArrowRight'</span>] || keys[<span class="str">'KeyD'</span>]) player.x += <span class="num">4</span>;
+  <span class="kw">if</span> (keys[<span class="str">'ArrowUp'</span>]    || keys[<span class="str">'KeyW'</span>]) player.y -= <span class="num">4</span>;
+  <span class="kw">if</span> (keys[<span class="str">'ArrowDown'</span>]  || keys[<span class="str">'KeyS'</span>]) player.y += <span class="num">4</span>;
+}</pre>
+          </div>
+        </section>
+
+        <!-- Collision -->
+        <section class="cl-card">
+          <h2>Collision Detection</h2>
+          <p>The most common collision check in 2D games is <strong>AABB</strong> — Axis-Aligned Bounding Box. Two rectangles overlap when they overlap on <em>both</em> the X and Y axes simultaneously.</p>
+          <div class="code-block">
+            <pre><span class="kw">function</span> <span class="fn">collides</span>(a, b) {
+  <span class="kw">return</span> a.x &lt; b.x + b.w &amp;&amp;  <span class="cm">// a's left is left of b's right</span>
+         a.x + a.w &gt; b.x &amp;&amp;  <span class="cm">// a's right is right of b's left</span>
+         a.y &lt; b.y + b.h &amp;&amp;  <span class="cm">// a's top is above b's bottom</span>
+         a.y + a.h &gt; b.y;    <span class="cm">// a's bottom is below b's top</span>
+}</pre>
+          </div>
+        </section>
+
+        <!-- Live game demo -->
+        <section class="cl-card">
+          <h2>Play It — Dodge Game</h2>
+          <p>This complete dodge game was built using only the techniques above: Canvas, game loop, keyboard input, and AABB collision. Move with <strong>arrow keys or WASD</strong>. Avoid the red enemies. Score rises as you survive.</p>
+          <div class="game-wrap">
+            <div class="game-hud">
+              <span class="hud-score" id="g-score">Score: 0</span>
+              <span class="hud-hint">Arrow keys / WASD</span>
+              <span class="hud-lives" id="g-lives">♥ ♥ ♥</span>
+            </div>
+            <canvas id="dodge-canvas" width="480" height="220" tabindex="0" aria-label="Dodge game — use arrow keys or WASD to move"></canvas>
+            <button class="game-btn" id="g-restart" hidden>Restart ↺</button>
+          </div>
+          <div class="callout blue" style="margin-top:0.5rem;">
+            <strong>What you see in the code:</strong> the game loop runs every frame via <code>requestAnimationFrame</code>. Enemies spawn at random X positions and fall from the top. AABB collision checks each enemy against the player every frame. The score ticks up with <code>Date.now()</code>.
+          </div>
+        </section>
+
+        <!-- Your Turn -->
+        <section class="cl-card">
+          <h2>Your Turn — Extend the Game</h2>
+          <p>Now that you understand the pattern, try these modifications in VS Code:</p>
+          <div class="concept-steps">
+            <div class="concept-step"><p><strong>Change player speed</strong> — find the <code>4</code> in the movement code and try <code>6</code> or <code>2</code>. How does this change the difficulty feel?</p></div>
+            <div class="concept-step"><p><strong>Add a score multiplier</strong> — make enemies worth more points the longer you survive (multiply score by a factor that increases over time).</p></div>
+            <div class="concept-step"><p><strong>Add a power-up</strong> — spawn a green square at random intervals. When the player collides with it, restore a life.</p></div>
+            <div class="concept-step"><p><strong>Add sound</strong> — use the Web Audio API to play a beep when the player is hit: <code>new AudioContext()</code> → create an oscillator → <code>start()</code> and <code>stop(0.1)</code>.</p></div>
+            <div class="concept-step"><p><strong>Add a high score</strong> — use <code>localStorage.setItem('highscore', score)</code> to save the best score between sessions.</p></div>
+          </div>
+        </section>
+
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <!-- Side panel -->
+    <aside class="ll-panel" aria-label="Guide panel">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-guide">
+          <p class="ll-pane-title">Learning Goals</p>
+          <ul class="ll-guide-list">
+            <li>Explain what a game loop does and why it runs 60×/sec</li>
+            <li>Use <code>requestAnimationFrame</code> to power a loop</li>
+            <li>Draw rectangles and text with the Canvas 2D API</li>
+            <li>Track keyboard state with a <code>keys</code> object</li>
+            <li>Implement AABB collision detection between two rectangles</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Core APIs Used</p>
+          <ul style="font-size:0.79rem;color:#64748b;line-height:1.7;padding-left:1.1rem;">
+            <li><code>canvas.getContext('2d')</code></li>
+            <li><code>ctx.fillRect(x, y, w, h)</code></li>
+            <li><code>ctx.clearRect(0, 0, w, h)</code></li>
+            <li><code>ctx.fillText(text, x, y)</code></li>
+            <li><code>requestAnimationFrame(fn)</code></li>
+            <li><code>addEventListener('keydown')</code></li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Delta Time</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">Real games use <em>delta time</em> — the milliseconds since the last frame — to make movement frame-rate independent. Multiply speed by <code>dt / 16.67</code> so the game runs the same on a 30 Hz tablet or a 144 Hz monitor.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">Next Step</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">Once you understand the scratch approach, you're ready for <a href="2d-game-engines.html" style="color:var(--acc);">2D Game Engines</a> — they automate the loop, canvas, and input so you can focus on game design.</p>
+        </div>
+        <div class="ll-pane" id="pane-vocab">
+          <p class="ll-pane-title">Key Vocabulary</p>
+          <dl style="font-size:0.82rem;line-height:1.6;color:#3f4f65;">
+            <dt style="font-weight:700;margin-top:0.6rem;">Game Loop</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">The repeating cycle (update → render → wait) that drives every frame of a game.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">requestAnimationFrame</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">Browser API that calls a function before the next display repaint — the standard way to run a game loop in JS.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Canvas 2D Context</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">The drawing API you get from <code>canvas.getContext('2d')</code> — used to draw rectangles, paths, images, and text.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">AABB Collision</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">Axis-Aligned Bounding Box — the simple, fast check that two non-rotated rectangles overlap.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Delta Time (dt)</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">The time elapsed since the last frame. Used to normalize movement speed across different hardware.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Sprite</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">A 2D image representing a game object. In our scratch game we use colored rectangles, but sprites are typically PNG images.</dd>
+          </dl>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<script>
+/* ── Dodge Mini-Game ───────────────────────────────────── */
+(function() {
+  const canvas = document.getElementById('dodge-canvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('g-score');
+  const livesEl = document.getElementById('g-lives');
+  const restartBtn = document.getElementById('g-restart');
+
+  const W = canvas.width, H = canvas.height;
+  const keys = {};
+  let player, enemies, score, lives, started, over, frameId, startTime, lastSpawn;
+
+  function init() {
+    player = { x: W/2 - 14, y: H - 40, w: 28, h: 28, speed: 4 };
+    enemies = [];
+    score = 0;
+    lives = 3;
+    started = false;
+    over = false;
+    lastSpawn = 0;
+    startTime = Date.now();
+    restartBtn.hidden = true;
+    render();
+  }
+
+  function spawnEnemy() {
+    const w = 18 + Math.random() * 20;
+    enemies.push({ x: Math.random() * (W - w), y: -w, w, h: w, speed: 1.5 + Math.random() * 2 });
+  }
+
+  function collides(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  function update() {
+    if (!started) return;
+    const now = Date.now();
+    score = Math.floor((now - startTime) / 100);
+
+    if (keys['ArrowLeft']  || keys['KeyA']) player.x -= player.speed;
+    if (keys['ArrowRight'] || keys['KeyD']) player.x += player.speed;
+    if (keys['ArrowUp']    || keys['KeyW']) player.y -= player.speed;
+    if (keys['ArrowDown']  || keys['KeyS']) player.y += player.speed;
+    player.x = Math.max(0, Math.min(W - player.w, player.x));
+    player.y = Math.max(0, Math.min(H - player.h, player.y));
+
+    const spawnInterval = Math.max(600, 1800 - score * 3);
+    if (now - lastSpawn > spawnInterval) { spawnEnemy(); lastSpawn = now; }
+
+    enemies.forEach(e => { e.y += e.speed; });
+    enemies = enemies.filter(e => e.y < H + 40);
+
+    for (const e of enemies) {
+      if (collides(player, e)) {
+        enemies.splice(enemies.indexOf(e), 1);
+        lives--;
+        if (lives <= 0) { over = true; started = false; restartBtn.hidden = false; }
+        break;
+      }
+    }
+
+    scoreEl.textContent = 'Score: ' + score;
+    livesEl.textContent = '♥ '.repeat(Math.max(0,lives)).trim() || '💀';
+  }
+
+  function render() {
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(0, 0, W, H);
+
+    /* grid lines */
+    ctx.strokeStyle = 'rgba(59,130,246,0.07)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+    /* enemies */
+    enemies.forEach(e => {
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.roundRect(e.x, e.y, e.w, e.h, 4);
+      ctx.fill();
+    });
+
+    /* player */
+    ctx.fillStyle = over ? '#475569' : '#3b82f6';
+    ctx.beginPath();
+    ctx.roundRect(player.x, player.y, player.w, player.h, 5);
+    ctx.fill();
+    ctx.fillStyle = '#93c5fd';
+    ctx.fillRect(player.x + 7, player.y + 6, 5, 5);
+    ctx.fillRect(player.x + 16, player.y + 6, 5, 5);
+
+    if (!started && !over) {
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 20px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Press any arrow key to start', W/2, H/2);
+      ctx.font = '13px Inter, sans-serif';
+      ctx.fillStyle = '#93c5fd';
+      ctx.fillText('Dodge the red squares — stay alive!', W/2, H/2 + 26);
+      ctx.textAlign = 'left';
+    }
+
+    if (over) {
+      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#ef4444';
+      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Game Over', W/2, H/2 - 10);
+      ctx.fillStyle = '#fff';
+      ctx.font = '14px Inter, sans-serif';
+      ctx.fillText('Final Score: ' + score, W/2, H/2 + 16);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  function loop() {
+    update();
+    render();
+    if (!over) frameId = requestAnimationFrame(loop);
+  }
+
+  document.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (!started && !over) { started = true; startTime = Date.now(); loop(); }
+  });
+  document.addEventListener('keyup', e => keys[e.code] = false);
+
+  restartBtn.addEventListener('click', () => { cancelAnimationFrame(frameId); init(); });
+  init();
+})();
+
+/* Panel tabs */
+document.querySelectorAll('.ll-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
+    document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+    tab.setAttribute('aria-selected','true');
+    document.getElementById(tab.dataset.pane).classList.add('ll-active');
+  });
+});
+const openBtn = document.querySelector('.ll-open-btn');
+const closeBtn = document.querySelector('.ll-panel-close');
+const panel = document.querySelector('.ll-panel');
+if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
+if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
+</script>
+<script src="../assets/js/reveal.js"></script>
+<script src="../assets/js/nav-mobile.js"></script>
+</body>
+</html>
