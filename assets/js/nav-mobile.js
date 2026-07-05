@@ -259,6 +259,8 @@
     { id: "diamond",   label: "Diamond",   detail: "Icy teal blue — crisp, cool, and focused.",             tone: "light" },
     { id: "emerald",   label: "Emerald",   detail: "Fresh leaf green — calm and easy on the eyes.",         tone: "light" },
     { id: "topaz",     label: "Honey",     detail: "Warm amber — like afternoon sunlight through a window.", tone: "light" },
+    { id: "goldfish",  label: "Goldfish",  detail: "Saturated goldfish orange with a scale-textured glow.",  tone: "light" },
+    { id: "cobblestone", label: "Cobblestone", detail: "Light grey stone tones — quiet and understated.",    tone: "light" },
     { id: "night",     label: "Night",     detail: "Easy on the eyes after dark — full dark mode.",          tone: "dark"  },
     { id: "vaporwave", label: "Vaporwave", detail: "Neon magenta and cyan — retro synthwave vibes.",        tone: "dark"  }
   ];

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>From Scratch: Build a Browser Game · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Game Design Lesson 2 — build a real browser game using only HTML5 Canvas and vanilla JavaScript. Learn the game loop, input handling, and collision detection." />
+  <meta name="description" content="Game Design Lesson 2 — build a real browser game using only HTML5 Canvas and vanilla JavaScript, with a parallel path for building the same game in Scratch. Learn the game loop, input handling, and collision detection." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -76,6 +76,28 @@
     .anatomy-box strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
     .anatomy-box small { font-size: 0.77rem; color: #64748b; display: block; line-height: 1.45; }
     @media (max-width:600px) { .anatomy-grid { grid-template-columns: 1fr; } }
+
+    /* Scratch block-equivalent boxes */
+    .scratch-box { border: 1.5px solid rgba(255,171,25,0.35); border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; background: rgba(255,191,0,0.06); }
+    [data-theme="night"] .scratch-box { background: rgba(255,191,0,0.09); }
+    .scratch-box h4 { margin: 0 0 0.5rem; font-size: 0.86rem; letter-spacing: -0.01em; color: #b45309; display: flex; align-items: center; gap: 0.4rem; }
+    [data-theme="night"] .scratch-box h4 { color: #fbbf24; }
+    .scratch-box p { font-size: 0.83rem; color: #3f4f65; margin: 0.5rem 0 0; line-height: 1.55; }
+    [data-theme="night"] .scratch-box p { color: rgba(245,245,247,0.72); }
+    .scratch-stack { display: flex; flex-direction: column; gap: 2px; font-family: 'JetBrains Mono', monospace; }
+    .sb-block { color: #fff; font-size: 0.78rem; font-weight: 600; padding: 0.4rem 0.65rem; border-radius: 4px; }
+    .sb-block:first-child { border-radius: 8px 8px 4px 4px; }
+    .sb-block:last-child { border-radius: 4px 4px 8px 8px; }
+    .sb-events { background: #FFBF00; }
+    .sb-control { background: #FFAB19; }
+    .sb-sensing { background: #5CB1D6; }
+    .sb-motion { background: #4C97FF; }
+    .sb-variables { background: #FF8C1A; }
+    .sb-sound { background: #CF63CF; }
+    .sb-nest { margin-left: 1.4rem; }
+    .scratch-link { display: inline-block; margin-top: 0.6rem; font-size: 0.78rem; font-weight: 700; color: #b45309; text-decoration: none; border-bottom: 1.5px solid rgba(180,83,9,0.4); }
+    [data-theme="night"] .scratch-link { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
+    .scratch-link:hover { border-color: currentColor; }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -113,14 +135,29 @@
             <span>Game Loop</span><span class="dot"></span>
             <span>Input Handling</span><span class="dot"></span>
             <span>Collision</span><span class="dot"></span>
-            <span>Vanilla JavaScript</span>
+            <span>Vanilla JavaScript</span><span class="dot"></span>
+            <span>+ Scratch Path</span><span class="dot"></span>
+            <span>Beginner Friendly</span>
           </div>
-          <p class="cl-lede">Before engines and libraries, every game was written from scratch. Understanding the foundations — the game loop, canvas drawing, input, and collision — makes you a better developer regardless of which tools you use later. Let's build a playable dodge game with zero dependencies.</p>
+          <p class="cl-lede">Before engines and libraries, every game was written from scratch. Understanding the foundations — the game loop, canvas drawing, input, and collision — makes you a better developer regardless of which tools you use later. Every section below shows the idea two ways: in typed JavaScript, and in Scratch's drag-and-drop blocks — so build it in whichever one fits you, or both.</p>
+        </section>
+
+        <!-- Reassurance -->
+        <section class="cl-card">
+          <h2>🧭 Before You Dive In</h2>
+          <p>This lesson has more code on the page than Lesson 1 did — and that can feel like a lot at once. You don't need to memorize any of it. Read a section once, then <strong>type the code yourself</strong> (or drag the matching blocks in Scratch) and watch it run. Getting something on screen is most of the learning; the rest comes from tinkering with it afterward.</p>
+          <p>If something breaks the first time, that's completely normal — it happens to professional developers every day. Reading the error message and fixing one small thing at a time <em>is</em> the skill, not a sign you're doing it wrong.</p>
+          <div class="callout blue">
+            <strong>Two meanings of "Scratch" in this lesson:</strong> building a game <strong>"from scratch"</strong> means writing every line yourself, with no libraries or engines — that's the JavaScript path below. <strong><a href="https://scratch.mit.edu/" target="_blank" rel="noreferrer noopener" style="color:var(--acc);">Scratch</a></strong> (capital S) is a specific, free tool from MIT where you build games by snapping together colored blocks instead of typing. They're two different things that happen to share a name — this lesson teaches the same ideas in both.
+          </div>
+          <div class="callout blue">
+            <strong>What you need:</strong> for the JavaScript path, a code editor (<a href="vscode-game-dev-setup.html" style="color:var(--acc);">VS Code works great</a>) and a web browser. For the Scratch path, just a free account at <a href="https://scratch.mit.edu/" target="_blank" rel="noreferrer noopener" style="color:var(--acc);">scratch.mit.edu</a> — no installs required either way. Budget 45–60 minutes.
+          </div>
         </section>
 
         <!-- Anatomy -->
         <section class="cl-card">
-          <h2>Anatomy of a Browser Game</h2>
+          <h2>🧱 Anatomy of a Browser Game</h2>
           <p>A browser game is just three files working together:</p>
           <div class="anatomy-grid">
             <div class="anatomy-box">
@@ -141,12 +178,16 @@
 <span class="kw">&lt;canvas</span> id=<span class="str">"gameCanvas"</span> width=<span class="str">"480"</span> height=<span class="str">"320"</span><span class="kw">&gt;&lt;/canvas&gt;</span>
 <span class="kw">&lt;script</span> src=<span class="str">"game.js"</span><span class="kw">&gt;&lt;/script&gt;</span></pre>
           </div>
+          <div class="scratch-box">
+            <h4>🧩 The Same Idea in Scratch</h4>
+            <p>Scratch skips the file setup entirely. Open a new project and you already have a <strong>Stage</strong> (the canvas), a default <strong>Sprite</strong> (the player), and a script area next to it — the equivalent of <code>index.html</code> and <code>game.js</code> already wired together for you.</p>
+          </div>
         </section>
 
         <!-- The Game Loop -->
         <section class="cl-card">
-          <h2>The Game Loop</h2>
-          <p>Every game — from Pong to Cyberpunk 2077 — runs on a <strong>game loop</strong>. It repeats ~60 times per second, doing two things:</p>
+          <h2>🔁 The Game Loop</h2>
+          <p>Think of a flipbook: each page looks a little different from the last, and flipping through them fast tricks your eye into seeing motion. Every game — from Pong to Cyberpunk 2077 — uses the exact same trick, just automated by the browser. That repeating cycle is called a <strong>game loop</strong>, and it fires about 60 times per second, doing two jobs each time:</p>
 
           <div class="loop-diagram">
             <div class="loop-box">
@@ -174,12 +215,22 @@
 <span class="fn">requestAnimationFrame</span>(gameLoop); <span class="cm">// start the loop</span></pre>
           </div>
           <p><code>requestAnimationFrame</code> is the browser's built-in game loop. It syncs to your monitor's refresh rate (usually 60 fps) and pauses automatically when you switch tabs — saving battery and CPU.</p>
+
+          <div class="scratch-box">
+            <h4>🧩 The Same Idea in Scratch</h4>
+            <div class="scratch-stack">
+              <div class="sb-block sb-events">when 🏳️ green flag clicked</div>
+              <div class="sb-block sb-control">forever</div>
+              <div class="sb-block sb-control sb-nest">move / check keys / check touching …</div>
+            </div>
+            <p>"Green flag clicked" is Scratch's <code>requestAnimationFrame(gameLoop)</code> — the signal that starts everything. "Forever" is the loop itself: everything snapped inside it runs again and again, exactly like <code>update()</code> and <code>render()</code> firing every frame in the JS version. Scratch just hides the ~16ms timing math from you.</p>
+          </div>
         </section>
 
         <!-- Canvas drawing -->
         <section class="cl-card">
-          <h2>Drawing with Canvas</h2>
-          <p>The Canvas API gives you a drawing surface you control pixel-by-pixel using JavaScript. The key concept: <strong>clear, then redraw everything each frame</strong>.</p>
+          <h2>🖌️ Drawing with Canvas</h2>
+          <p>Picture a whiteboard that gets wiped clean and redrawn from scratch every single frame — that's the Canvas API. It hands JavaScript a blank surface and lets you control every pixel. The one rule that trips people up at first: <strong>clear it, then redraw everything, every single frame</strong>.</p>
           <div class="code-block">
             <pre><span class="kw">const</span> canvas = document.<span class="fn">getElementById</span>(<span class="str">'gameCanvas'</span>);
 <span class="kw">const</span> ctx = canvas.<span class="fn">getContext</span>(<span class="str">'2d'</span>);
@@ -201,15 +252,25 @@
           <div class="callout blue">
             <strong>Important:</strong> Never draw without clearing first! If you skip <code>clearRect</code>, you'll see a smear trail of every position the object has ever been.
           </div>
+
+          <div class="scratch-box">
+            <h4>🧩 The Same Idea in Scratch</h4>
+            <p>Scratch has no equivalent code to write here at all — that's the trade-off. Every sprite just carries its own x/y position and current costume, and Scratch's engine automatically clears and redraws the whole Stage every frame for you. The "clear, then redraw" rule still happens underneath — you just never have to remember it yourself.</p>
+          </div>
         </section>
 
         <!-- Input -->
         <section class="cl-card">
-          <h2>Keyboard Input</h2>
-          <p>Track which keys are currently held down using a <strong>keys object</strong> — much better than checking individual events in your update loop.</p>
+          <h2>⌨️ Keyboard Input</h2>
+          <p>Think of each key like a light switch: pressing it flips the switch on, releasing it flips it back off. Instead of reacting to every single press and release, we just keep a little switchboard — a <strong>keys object</strong> — and check which switches are on during each update.</p>
           <div class="code-block">
             <pre><span class="kw">const</span> keys = {};
-document.<span class="fn">addEventListener</span>(<span class="str">'keydown'</span>, e => keys[e.code] = <span class="kw">true</span>);
+<span class="kw">const</span> scrollKeys = [<span class="str">'ArrowLeft'</span>, <span class="str">'ArrowRight'</span>, <span class="str">'ArrowUp'</span>, <span class="str">'ArrowDown'</span>, <span class="str">'Space'</span>];
+
+document.<span class="fn">addEventListener</span>(<span class="str">'keydown'</span>, e => {
+  keys[e.code] = <span class="kw">true</span>;
+  <span class="kw">if</span> (scrollKeys.<span class="fn">includes</span>(e.code)) e.<span class="fn">preventDefault</span>(); <span class="cm">// stop the page from scrolling</span>
+});
 document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</span>,   e => keys[e.code] = <span class="kw">false</span>);
 
 <span class="kw">function</span> <span class="fn">update</span>() {
@@ -219,12 +280,25 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
   <span class="kw">if</span> (keys[<span class="str">'ArrowDown'</span>]  || keys[<span class="str">'KeyS'</span>]) player.y += <span class="num">4</span>;
 }</pre>
           </div>
+          <div class="callout blue">
+            <strong>Common glitch:</strong> by default, the browser uses arrow keys and space to scroll the page. If you skip <code>e.preventDefault()</code> on those keys, the page will scroll up and down while someone is trying to play — breaking the controls. This one line is the fix for almost every "my arrow keys aren't working right" bug you'll hit.
+          </div>
+          <p>That's it — the same switchboard pattern runs every keyboard-controlled game you've ever played, from Mario's jump button to a rhythm game's tap keys.</p>
+
+          <div class="scratch-box">
+            <h4>🧩 The Same Idea in Scratch</h4>
+            <div class="scratch-stack">
+              <div class="sb-block sb-control">if &lt;<span style="text-decoration:underline;">key (right arrow) pressed?</span>&gt; then</div>
+              <div class="sb-block sb-motion sb-nest">change x by (4)</div>
+            </div>
+            <p>The underlined part is a <strong>Sensing</strong> block called "key (_) pressed?" — a Boolean, just like the <code>true</code>/<code>false</code> values sitting inside our <code>keys</code> object. Snap it inside an "if … then" block, and it checks the exact same switch every single frame, since it lives inside the "forever" loop from before.</p>
+          </div>
         </section>
 
         <!-- Collision -->
         <section class="cl-card">
-          <h2>Collision Detection</h2>
-          <p>The most common collision check in 2D games is <strong>AABB</strong> — Axis-Aligned Bounding Box. Two rectangles overlap when they overlap on <em>both</em> the X and Y axes simultaneously.</p>
+          <h2>💥 Collision Detection</h2>
+          <p>Picture two picture frames hanging on a wall. They only overlap if they overlap left-to-right <em>and</em> top-to-bottom at the same time — lining up on just one direction isn't enough. That simple idea has a formal name — <strong>AABB</strong>, short for Axis-Aligned Bounding Box — and it's the collision check almost every simple 2D game relies on.</p>
           <div class="code-block">
             <pre><span class="kw">function</span> <span class="fn">collides</span>(a, b) {
   <span class="kw">return</span> a.x &lt; b.x + b.w &amp;&amp;  <span class="cm">// a's left is left of b's right</span>
@@ -233,11 +307,22 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
          a.y + a.h &gt; b.y;    <span class="cm">// a's bottom is below b's top</span>
 }</pre>
           </div>
+          <p>This exact check is how Pac-Man knows he touched a ghost, how Mario knows he's landed on a platform, and how the dodge game below knows you got hit.</p>
+
+          <div class="scratch-box">
+            <h4>🧩 The Same Idea in Scratch</h4>
+            <div class="scratch-stack">
+              <div class="sb-block sb-control">if &lt;<span style="text-decoration:underline;">touching (Enemy)?</span>&gt; then</div>
+              <div class="sb-block sb-variables sb-nest">change lives by (-1)</div>
+            </div>
+            <p>Scratch's "touching (_)?" block — another Sensing Boolean — <em>is</em> the whole <code>collides()</code> function above, already written for you. It's even more precise than AABB: it checks actual sprite shapes, not just rectangles. Same job, zero formula to type.</p>
+            <a class="scratch-link" href="https://en.scratch-wiki.info/wiki/Making_Sprites_Detect_and_Sense_Other_Sprites" target="_blank" rel="noreferrer noopener">See the Scratch Wiki's guide to collision blocks →</a>
+          </div>
         </section>
 
         <!-- Live game demo -->
         <section class="cl-card">
-          <h2>Play It — Dodge Game</h2>
+          <h2>🎮 Play It — Dodge Game</h2>
           <p>This complete dodge game was built using only the techniques above: Canvas, game loop, keyboard input, and AABB collision. Move with <strong>arrow keys or WASD</strong>. Avoid the red enemies. Score rises as you survive.</p>
           <div class="game-wrap">
             <div class="game-hud">
@@ -254,12 +339,18 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
           <div class="callout blue">
             <strong>Which tiny-loop archetype is this?</strong> This is the <strong>Dodging Game</strong> archetype from <a href="game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> — one mechanic (move), one lose condition (collision), one climbing variable (score). Flip the collision logic — good items add score instead of costing a life — and you've rebuilt the <strong>Catch Game</strong> archetype using the exact same loop.
           </div>
+
+          <div class="scratch-box">
+            <h4>🧩 Build This Exact Game in Scratch</h4>
+            <p>Scratch's own team built an official tutorial for this exact archetype — move a sprite, avoid (or chase) another one, and keep score. It walks you through the same green-flag → forever → touching → score pattern you just read above, one block at a time.</p>
+            <a class="scratch-link" href="https://scratch.mit.edu/projects/editor/?tutorial=chase-game" target="_blank" rel="noreferrer noopener">Open the official Scratch Chase Game tutorial →</a>
+          </div>
         </section>
 
         <!-- Your Turn -->
         <section class="cl-card">
-          <h2>Your Turn — Extend the Game</h2>
-          <p>Now that you understand the pattern, try these modifications in VS Code:</p>
+          <h2>🛠️ Your Turn — Extend the Game</h2>
+          <p>Now that you've seen the pattern, try one of these small, safe edits to code that already works. Pick whichever sounds most fun — you don't need to do all six, and it's completely fine to keep the code above open while you work.</p>
           <div class="concept-steps">
             <div class="concept-step"><p><strong>Change player speed</strong> — find the <code>4</code> in the movement code and try <code>6</code> or <code>2</code>. How does this change the difficulty feel?</p></div>
             <div class="concept-step"><p><strong>Add a score multiplier</strong> — make enemies worth more points the longer you survive (multiply score by a factor that increases over time).</p></div>
@@ -267,6 +358,11 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
             <div class="concept-step"><p><strong>Add sound</strong> — use the Web Audio API to play a beep when the player is hit: <code>new AudioContext()</code> → create an oscillator → <code>start()</code> and <code>stop(0.1)</code>.</p></div>
             <div class="concept-step"><p><strong>Add a high score</strong> — use <code>localStorage.setItem('highscore', score)</code> to save the best score between sessions.</p></div>
             <div class="concept-step"><p><strong>Turn Dodge into Catch</strong> — in the collision check, instead of always subtracting a life, make half the falling squares "good" (green, +1 score) and half "bad" (red, −1 life). You've just built a second tiny-loop archetype from the same code.</p></div>
+          </div>
+
+          <div class="scratch-box">
+            <h4>🧩 The Same Six Ideas — in Scratch</h4>
+            <p>Working in Scratch instead? Every edit above has a direct block equivalent: change the number inside "change x by (4)" for speed · multiply the "change score by" amount using a timer variable for a multiplier · add a power-up sprite with its own "if touching (_)? then change lives by (1)" script · drop in a "play sound" block inside your collision check · add a "highscore" variable and an "if score > highscore then" block to save the best run · and swap "change lives by (−1)" for "change score by (1)" on your good sprites to turn Dodge into Catch.</p>
           </div>
         </section>
 
@@ -291,6 +387,7 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
             <li>Draw rectangles and text with the Canvas 2D API</li>
             <li>Track keyboard state with a <code>keys</code> object</li>
             <li>Implement AABB collision detection between two rectangles</li>
+            <li>Match each JS concept to its Scratch block equivalent</li>
           </ul>
           <p class="ll-pane-title" style="margin-top:1rem;">Core APIs Used</p>
           <ul style="font-size:0.79rem;color:#64748b;line-height:1.7;padding-left:1.1rem;">
@@ -304,7 +401,7 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
           <p class="ll-pane-title" style="margin-top:1rem;">Delta Time</p>
           <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">Real games use <em>delta time</em> — the milliseconds since the last frame — to make movement frame-rate independent. Multiply speed by <code>dt / 16.67</code> so the game runs the same on a 30 Hz tablet or a 144 Hz monitor.</p>
           <p class="ll-pane-title" style="margin-top:1rem;">Next Step</p>
-          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">Once you understand the scratch approach, you're ready for <a href="2d-game-engines.html" style="color:var(--acc);">2D Game Engines</a> — they automate the loop, canvas, and input so you can focus on game design.</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">Once you understand the from-scratch approach (in code, in Scratch, or both), you're ready for <a href="2d-game-engines.html" style="color:var(--acc);">2D Game Engines</a> — they automate the loop, canvas, and input so you can focus on game design.</p>
         </div>
         <div class="ll-pane" id="pane-vocab">
           <p class="ll-pane-title">Key Vocabulary</p>
@@ -320,7 +417,11 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
             <dt style="font-weight:700;margin-top:0.6rem;">Delta Time (dt)</dt>
             <dd style="margin:0 0 0 0.8rem;color:#64748b;">The time elapsed since the last frame. Used to normalize movement speed across different hardware.</dd>
             <dt style="font-weight:700;margin-top:0.6rem;">Sprite</dt>
-            <dd style="margin:0 0 0 0.8rem;color:#64748b;">A 2D image representing a game object. In our scratch game we use colored rectangles, but sprites are typically PNG images.</dd>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">A 2D game object with a position and image. Our from-scratch JS game uses colored rectangles instead of images; in Scratch, every character or object on the Stage is officially called a Sprite.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Hat Block</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">A rounded Scratch block that starts a script, like "when green flag clicked" — the block-based equivalent of calling <code>requestAnimationFrame(gameLoop)</code> to kick things off.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Boolean Block</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">A hexagon-shaped Scratch block that's always either true or false, like "key (_) pressed?" or "touching (_)?" — the same idea as a JS expression that evaluates to <code>true</code>/<code>false</code>.</dd>
           </dl>
         </div>
       </div>
@@ -457,6 +558,7 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
 
   document.addEventListener('keydown', e => {
     keys[e.code] = true;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
     if (!started && !over) { started = true; startTime = Date.now(); loop(); }
   });
   document.addEventListener('keyup', e => keys[e.code] = false);

@@ -276,7 +276,20 @@
         <div class="home-widget home-widget--timer" aria-label="Classroom Timer">
           <div class="timer-layout">
             <div class="timer-col-clock">
-              <p class="home-widget-eyebrow">Classroom Timer</p>
+              <div class="timer-clock-head">
+                <p class="home-widget-eyebrow">Classroom Timer</p>
+                <div class="mini-clock" aria-hidden="true" title="Current time">
+                  <div class="mini-clock-tick mini-clock-tick--12"></div>
+                  <div class="mini-clock-tick mini-clock-tick--3"></div>
+                  <div class="mini-clock-tick mini-clock-tick--6"></div>
+                  <div class="mini-clock-tick mini-clock-tick--9"></div>
+                  <div class="mini-clock-hand mini-clock-hand--hour" id="mini-clock-hour"></div>
+                  <div class="mini-clock-hand mini-clock-hand--min" id="mini-clock-min"></div>
+                  <div class="mini-clock-hand mini-clock-hand--sec" id="mini-clock-sec"></div>
+                  <div class="mini-clock-pin"></div>
+                </div>
+                <span class="sr-only">Current time updates live next to the classroom countdown timer.</span>
+              </div>
               <div class="timer-ring-wrap">
                 <svg class="timer-svg" viewBox="0 0 160 160" aria-hidden="true">
                   <circle class="timer-track" cx="80" cy="80" r="68"/>
@@ -1362,6 +1375,31 @@
     });
 
     render();
+  })();
+  </script>
+
+  <!-- =====================================================
+       MINI ANALOG CLOCK (next to Classroom Timer)
+       ===================================================== -->
+  <script>
+  (function () {
+    var hourHand = document.getElementById('mini-clock-hour');
+    var minHand  = document.getElementById('mini-clock-min');
+    var secHand  = document.getElementById('mini-clock-sec');
+    if (!hourHand || !minHand || !secHand) return;
+
+    function updateMiniClock() {
+      var now = new Date();
+      var h = now.getHours() % 12;
+      var m = now.getMinutes();
+      var s = now.getSeconds();
+      hourHand.style.transform = 'translateX(-50%) rotate(' + (h * 30 + m * 0.5) + 'deg)';
+      minHand.style.transform  = 'translateX(-50%) rotate(' + (m * 6 + s * 0.1) + 'deg)';
+      secHand.style.transform  = 'translateX(-50%) rotate(' + (s * 6) + 'deg)';
+    }
+
+    updateMiniClock();
+    setInterval(updateMiniClock, 1000);
   })();
   </script>
 

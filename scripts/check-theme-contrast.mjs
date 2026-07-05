@@ -10,6 +10,9 @@ const themes = [
   { name: "emerald", selector: 'html[data-theme="emerald"]' },
   { name: "topaz", selector: 'html[data-theme="topaz"]' },
   { name: "vaporwave", selector: 'html[data-theme="vaporwave"]' },
+  { name: "goldfish", selector: 'html[data-theme="goldfish"]' },
+  { name: "cobblestone", selector: 'html[data-theme="cobblestone"]' },
+  { name: "bark", selector: 'html[data-theme="bark"]' },
 ];
 
 const pairs = [

@@ -32,7 +32,9 @@
       diamond: [ 80, 190, 255],
       emerald: [ 50, 180, 100],
       topaz:   [255, 185,   0],
-      vaporwave: [255,   0, 255]
+      vaporwave: [255,   0, 255],
+      goldfish: [255, 106,  26],
+      cobblestone: [138, 141, 145]
     };
     return map[theme] || map['day'];
   }

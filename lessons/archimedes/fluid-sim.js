@@ -44,6 +44,86 @@ function _arrow(ctx, x1, y1, x2, y2, color) {
   ctx.closePath(); ctx.fill();
 }
 
+/* ── WaterSurface ───────────────────────────────────────────────────────────
+ * Column/spring wave surface, ported from the classic dynamic-2D-water
+ * technique (Michael Hoffman / Notch): the surface is a row of independent
+ * vertical springs that pull back toward rest height and spread their
+ * displacement to neighbouring columns each frame, producing physically
+ * plausible propagating ripples instead of a canned sine overlay.
+ * https://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236
+ */
+class WaterSurface {
+  constructor() {
+    this.columns = [];
+    this.spacing = 0;
+    this.restY   = 0;
+    this.width   = -1;
+  }
+
+  configure(width, restY) {
+    if (width === this.width && restY === this.restY) return;
+    this.width  = width;
+    this.restY  = restY;
+    const count = 90;
+    this.spacing = width / (count - 1);
+    this.columns = new Array(count);
+    for (let i = 0; i < count; i++) this.columns[i] = { y: restY, vy: 0 };
+  }
+
+  reset() {
+    for (const c of this.columns) { c.y = this.restY; c.vy = 0; }
+  }
+
+  // Kick the column(s) nearest xPx with a velocity impulse, falling off
+  // across neighbours within spreadPx so an impact reads as one splash.
+  impulse(xPx, velocity, spreadPx) {
+    if (!this.columns.length) return;
+    const centre     = Math.round(xPx / this.spacing);
+    const spreadCols = Math.max(1, Math.round(spreadPx / this.spacing));
+    for (let i = -spreadCols; i <= spreadCols; i++) {
+      const ci = centre + i;
+      if (ci < 0 || ci >= this.columns.length) continue;
+      this.columns[ci].vy += velocity * (1 - Math.abs(i) / (spreadCols + 1));
+    }
+  }
+
+  update(dt) {
+    const TENSION = 0.01;
+    const DAMP    = 0.005;
+    const SPREAD  = 0.2;
+    const PASSES  = 6;
+    const k = dt * 60; // reference constants assume one call per 60fps frame
+
+    const cols = this.columns;
+    for (let i = 0; i < cols.length; i++) {
+      const c = cols[i];
+      c.vy += (TENSION * (this.restY - c.y) - c.vy * DAMP) * k;
+      c.y  += c.vy * k;
+    }
+
+    // Columns pull on their neighbours over several passes so displacement
+    // spreads outward as a travelling wave rather than jumping instantly.
+    const leftDeltas  = new Float32Array(cols.length);
+    const rightDeltas = new Float32Array(cols.length);
+    for (let pass = 0; pass < PASSES; pass++) {
+      for (let i = 0; i < cols.length; i++) {
+        if (i > 0) {
+          leftDeltas[i] = SPREAD * (cols[i].y - cols[i - 1].y) * k;
+          cols[i - 1].vy += leftDeltas[i];
+        }
+        if (i < cols.length - 1) {
+          rightDeltas[i] = SPREAD * (cols[i].y - cols[i + 1].y) * k;
+          cols[i + 1].vy += rightDeltas[i];
+        }
+      }
+      for (let i = 0; i < cols.length; i++) {
+        if (i > 0)               cols[i - 1].y += leftDeltas[i];
+        if (i < cols.length - 1) cols[i + 1].y += rightDeltas[i];
+      }
+    }
+  }
+}
+
 /* ── ArchimedesFluidSim ─────────────────────────────────────────────────── */
 const ArchimedesFluidSim = (() => {
   let canvas = null;
@@ -175,6 +255,7 @@ class FluidSimulation {
     this.objectVY = 0;
     this.flowOffset = 0;
     this.disturbances = [];
+    this.water = new WaterSurface();
 
     // Kelvin-Helmholtz texture (loaded asynchronously)
     this.khCanvas = null;
@@ -229,6 +310,18 @@ class FluidSimulation {
       }
     }
 
+    // Water surface: spring/column simulation
+    const canvasH = this.canvas.height;
+    this.water.configure(this.canvas.width, WATER_Y * canvasH);
+    this.water.update(dt);
+    // The object agitates the surface directly beneath it while it's near
+    // the interface — settles to calm automatically as objectVY decays.
+    // Scaled by dt: this runs every frame, so it must be a rate, not a
+    // flat per-frame nudge, or it overwhelms the surface's weak damping.
+    if (Math.abs(this.objectY - WATER_Y) < OBJ_HALF * 1.6) {
+      this.water.impulse(this.canvas.width / 2, this.objectVY * canvasH * 0.02 * dt, OBJ_HALF * canvasH * 1.8);
+    }
+
     // Scroll KH texture proportionally to object speed
     this.flowOffset = (this.flowOffset + Math.abs(this.objectVY) * 90 * dt + 4 * dt) % 512;
 
@@ -242,9 +335,15 @@ class FluidSimulation {
   }
 
   disturb(x, y, radius, strength) {
+    // x/y arrive already relative to the canvas element (see archimedes-principle.html)
     const rect = this.canvas.getBoundingClientRect();
-    const cx = (x - rect.left) * (this.canvas.width  / rect.width);
-    const cy = (y - rect.top)  * (this.canvas.height / rect.height);
+    const scaleX = this.canvas.width  / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const cx = x * scaleX;
+    const cy = y * scaleY;
+
+    this.water.impulse(cx, 45 * strength, radius * scaleX);
+
     for (let i = 0; i < 10; i++) {
       const angle = Math.random() * Math.PI * 2;
       const spd   = (1 + Math.random() * 2) * strength;
@@ -268,7 +367,6 @@ class FluidSimulation {
     const objCY    = Math.round(this.objectY * H);
     const objX     = Math.round(W / 2);
     const willFloat = s.objectDensity < s.fluidDensity;
-    const now = performance.now() * 0.001;
 
     /* ── Air above waterline ─────────────────────────────────────────── */
     const skyGrad = ctx.createLinearGradient(0, 0, 0, WATER_Y);
@@ -277,11 +375,20 @@ class FluidSimulation {
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, W, WATER_Y);
 
-    /* ── Water body (KH texture tiled) ──────────────────────────────── */
+    /* ── Water surface (column/spring simulation) ─────────────────────── */
+    // Must match step()'s configure() call exactly (unrounded) or the
+    // restY equality check there will fail every frame and flatten the waves.
+    this.water.configure(W, 0.30 * H);
+    const cols = this.water.columns;
+    const spacing = this.water.spacing;
+
+    /* ── Water body (KH texture tiled), clipped to the wavy surface ──── */
     const waterH = H - WATER_Y;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, WATER_Y, W, waterH);
+    ctx.moveTo(0, cols[0].y);
+    for (let i = 1; i < cols.length; i++) ctx.lineTo(i * spacing, cols[i].y);
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
     ctx.clip();
 
     // Base water fill
@@ -289,7 +396,7 @@ class FluidSimulation {
     waterGrad.addColorStop(0, `rgba(35,110,200,0.65)`);
     waterGrad.addColorStop(1, `rgba(15, 60,140,0.80)`);
     ctx.fillStyle = waterGrad;
-    ctx.fillRect(0, WATER_Y, W, waterH);
+    ctx.fillRect(0, WATER_Y - 40, W, waterH + 40);
 
     // KH texture overlay — opacity scales with velocity (more visible when object moves fast)
     if (this.khCanvas) {
@@ -308,27 +415,19 @@ class FluidSimulation {
     }
     ctx.restore();
 
-    /* ── Wavy waterline ─────────────────────────────────────────────── */
-    const waveMag = Math.abs(this.objectVY) * 6 + 1.2;
+    /* ── Sky-coloured cap where ripples crest above the rest line ────── */
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(0, WATER_Y);
-    for (let px = 0; px <= W; px += 3) {
-      const wy = WATER_Y + Math.sin(px * 0.022 + now * 2.2) * waveMag
-                         + Math.sin(px * 0.041 + now * 1.4) * waveMag * 0.4;
-      ctx.lineTo(px, wy);
-    }
+    ctx.moveTo(0, cols[0].y);
+    for (let i = 1; i < cols.length; i++) ctx.lineTo(i * spacing, cols[i].y);
     ctx.lineTo(W, 0); ctx.lineTo(0, 0); ctx.closePath();
     ctx.fillStyle = '#c8dff0';
     ctx.fill();
 
-    // Glint line
+    // Glint line along the crest
     ctx.beginPath();
-    ctx.moveTo(0, WATER_Y);
-    for (let px = 0; px <= W; px += 3) {
-      ctx.lineTo(px, WATER_Y + Math.sin(px * 0.022 + now * 2.2) * waveMag
-                             + Math.sin(px * 0.041 + now * 1.4) * waveMag * 0.4);
-    }
+    ctx.moveTo(0, cols[0].y);
+    for (let i = 1; i < cols.length; i++) ctx.lineTo(i * spacing, cols[i].y);
     ctx.strokeStyle = 'rgba(255,255,255,0.55)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
@@ -433,6 +532,7 @@ class FluidSimulation {
     this.objectVY   = 0;
     this.flowOffset = 0;
     this.disturbances = [];
+    this.water.reset();
   }
 }
 
