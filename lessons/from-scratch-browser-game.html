@@ -98,6 +98,17 @@
     .scratch-link { display: inline-block; margin-top: 0.6rem; font-size: 0.78rem; font-weight: 700; color: #b45309; text-decoration: none; border-bottom: 1.5px solid rgba(180,83,9,0.4); }
     [data-theme="night"] .scratch-link { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
     .scratch-link:hover { border-color: currentColor; }
+
+    /* Live Blockly mini-workspaces */
+    .blockly-mini { height: 210px; border: 1.5px solid rgba(255,171,25,0.35); border-radius: 10px; background: #fff; margin: 0.6rem 0 0.5rem; }
+    [data-theme="night"] .blockly-mini { background: #1e1e20; }
+    .blockly-hint { font-size: 0.72rem; color: #94a3b8; margin: 0 0 0.5rem; }
+    .blockly-showjs { display: inline-flex; align-items: center; gap: 0.35rem; background: none; border: 1.5px solid rgba(180,83,9,0.4); color: #b45309; border-radius: 7px; padding: 0.3rem 0.7rem; font-size: 0.76rem; font-weight: 700; font-family: inherit; cursor: pointer; }
+    [data-theme="night"] .blockly-showjs { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
+    .blockly-showjs:hover { background: rgba(180,83,9,0.08); }
+    .blockly-js-out { display: none; margin-top: 0.5rem; }
+    .blockly-js-out.open { display: block; }
+    .blockly-js-out pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; line-height: 1.6; color: #e2e8f0; white-space: pre-wrap; }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -218,11 +229,10 @@
 
           <div class="scratch-box">
             <h4>🧩 The Same Idea in Scratch</h4>
-            <div class="scratch-stack">
-              <div class="sb-block sb-events">when 🏳️ green flag clicked</div>
-              <div class="sb-block sb-control">forever</div>
-              <div class="sb-block sb-control sb-nest">move / check keys / check touching …</div>
-            </div>
+            <p class="blockly-hint">Live blocks — drag them, click to select, or reveal the JS they translate to.</p>
+            <div class="blockly-mini" id="bk-loop"></div>
+            <button class="blockly-showjs" data-target="bk-loop" data-outid="bk-loop-out">👁 Show the JavaScript</button>
+            <div class="blockly-js-out code-block" id="bk-loop-out"><pre></pre></div>
             <p>"Green flag clicked" is Scratch's <code>requestAnimationFrame(gameLoop)</code> — the signal that starts everything. "Forever" is the loop itself: everything snapped inside it runs again and again, exactly like <code>update()</code> and <code>render()</code> firing every frame in the JS version. Scratch just hides the ~16ms timing math from you.</p>
           </div>
         </section>
@@ -287,11 +297,11 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
 
           <div class="scratch-box">
             <h4>🧩 The Same Idea in Scratch</h4>
-            <div class="scratch-stack">
-              <div class="sb-block sb-control">if &lt;<span style="text-decoration:underline;">key (right arrow) pressed?</span>&gt; then</div>
-              <div class="sb-block sb-motion sb-nest">change x by (4)</div>
-            </div>
-            <p>The underlined part is a <strong>Sensing</strong> block called "key (_) pressed?" — a Boolean, just like the <code>true</code>/<code>false</code> values sitting inside our <code>keys</code> object. Snap it inside an "if … then" block, and it checks the exact same switch every single frame, since it lives inside the "forever" loop from before.</p>
+            <p class="blockly-hint">Live blocks — try swapping the dropdown or the number, then reveal the JS.</p>
+            <div class="blockly-mini" id="bk-input"></div>
+            <button class="blockly-showjs" data-target="bk-input" data-outid="bk-input-out">👁 Show the JavaScript</button>
+            <div class="blockly-js-out code-block" id="bk-input-out"><pre></pre></div>
+            <p>The hexagonal piece is a <strong>Sensing</strong> block called "key (_) pressed?" — a Boolean, just like the <code>true</code>/<code>false</code> values sitting inside our <code>keys</code> object. Snap it inside an "if … then" block, and it checks the exact same switch every single frame, since it lives inside the "forever" loop from before.</p>
           </div>
         </section>
 
@@ -311,10 +321,10 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
 
           <div class="scratch-box">
             <h4>🧩 The Same Idea in Scratch</h4>
-            <div class="scratch-stack">
-              <div class="sb-block sb-control">if &lt;<span style="text-decoration:underline;">touching (Enemy)?</span>&gt; then</div>
-              <div class="sb-block sb-variables sb-nest">change lives by (-1)</div>
-            </div>
+            <p class="blockly-hint">Live blocks — edit the sprite name or the number, then reveal the JS.</p>
+            <div class="blockly-mini" id="bk-collision"></div>
+            <button class="blockly-showjs" data-target="bk-collision" data-outid="bk-collision-out">👁 Show the JavaScript</button>
+            <div class="blockly-js-out code-block" id="bk-collision-out"><pre></pre></div>
             <p>Scratch's "touching (_)?" block — another Sensing Boolean — <em>is</em> the whole <code>collides()</code> function above, already written for you. It's even more precise than AABB: it checks actual sprite shapes, not just rectangles. Same job, zero formula to type.</p>
             <a class="scratch-link" href="https://en.scratch-wiki.info/wiki/Making_Sprites_Detect_and_Sense_Other_Sprites" target="_blank" rel="noreferrer noopener">See the Scratch Wiki's guide to collision blocks →</a>
           </div>
@@ -584,5 +594,96 @@ if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('l
 </script>
 <script src="../assets/js/reveal.js"></script>
 <script src="../assets/js/nav-mobile.js"></script>
+
+<!-- Live Blockly workspaces (Raspberry Pi Foundation's Blockly, https://github.com/RaspberryPiFoundation/blockly) -->
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.1.0/blockly.min.js"></script>
+<script>
+(function() {
+  if (typeof Blockly === 'undefined') return; // CDN unreachable — page still works, just no live blocks
+
+  const COLOR = { events: 45, control: 40, sensing: 195, motion: 210, variables: 30 };
+
+  Blockly.defineBlocksWithJsonArray([
+    { type: 'event_whenflagclicked', message0: 'when 🏳️ green flag clicked', nextStatement: null, colour: COLOR.events, tooltip: 'Runs everything below once, when the game starts.' },
+    { type: 'control_forever', message0: 'forever %1 %2', args0: [{ type: 'input_dummy' }, { type: 'input_statement', name: 'DO' }], previousStatement: null, colour: COLOR.control, tooltip: 'Repeats the blocks inside every frame, forever — like the JS game loop.' },
+    { type: 'control_note', message0: 'move / check keys / check touching …', previousStatement: null, nextStatement: null, colour: COLOR.control, tooltip: 'Stand-in for whatever your game needs to check each frame.' },
+    { type: 'control_if_then', message0: 'if %1 then %2 %3', args0: [{ type: 'input_value', name: 'BOOL', check: 'Boolean' }, { type: 'input_dummy' }, { type: 'input_statement', name: 'DO' }], previousStatement: null, nextStatement: null, colour: COLOR.control, tooltip: 'Runs the inner blocks only when the condition is true.' },
+    { type: 'sensing_key_pressed', message0: 'key %1 pressed?', args0: [{ type: 'field_dropdown', name: 'KEY', options: [['right arrow', 'ArrowRight'], ['left arrow', 'ArrowLeft'], ['up arrow', 'ArrowUp'], ['down arrow', 'ArrowDown'], ['space', 'Space']] }], output: 'Boolean', colour: COLOR.sensing, tooltip: 'True while that key is held down.' },
+    { type: 'sensing_touching', message0: 'touching %1 ?', args0: [{ type: 'field_input', name: 'SPRITE', text: 'Enemy' }], output: 'Boolean', colour: COLOR.sensing, tooltip: 'True while this sprite overlaps the named sprite.' },
+    { type: 'motion_changex', message0: 'change x by %1', args0: [{ type: 'field_number', name: 'DX', value: 4 }], previousStatement: null, nextStatement: null, colour: COLOR.motion, tooltip: 'Moves the sprite left/right this many steps.' },
+    { type: 'variables_change_by', message0: 'change %1 by %2', args0: [{ type: 'field_input', name: 'VAR', text: 'lives' }, { type: 'field_number', name: 'DELTA', value: -1 }], previousStatement: null, nextStatement: null, colour: COLOR.variables, tooltip: 'Adds (or subtracts) from a variable, like score or lives.' }
+  ]);
+
+  const gen = Blockly.JavaScript;
+  gen.forBlock['event_whenflagclicked'] = () => '';
+  gen.forBlock['control_forever'] = function(block, g) {
+    return 'requestAnimationFrame(function gameLoop() {\n' + g.statementToCode(block, 'DO') + '  requestAnimationFrame(gameLoop);\n});\n';
+  };
+  gen.forBlock['control_note'] = () => '// move / check keys / check touching …\n';
+  gen.forBlock['control_if_then'] = function(block, g) {
+    const cond = g.valueToCode(block, 'BOOL', gen.ORDER_NONE) || 'false';
+    return 'if (' + cond + ') {\n' + g.statementToCode(block, 'DO') + '}\n';
+  };
+  gen.forBlock['sensing_key_pressed'] = block => ["keys['" + block.getFieldValue('KEY') + "']", gen.ORDER_ATOMIC];
+  gen.forBlock['sensing_touching'] = block => ["touching('" + block.getFieldValue('SPRITE') + "')", gen.ORDER_ATOMIC];
+  gen.forBlock['motion_changex'] = block => 'player.x += ' + block.getFieldValue('DX') + ';\n';
+  gen.forBlock['variables_change_by'] = block => block.getFieldValue('VAR') + ' += ' + block.getFieldValue('DELTA') + ';\n';
+
+  function makeWorkspace(divId, buildFn) {
+    const el = document.getElementById(divId);
+    if (!el) return;
+    const workspace = Blockly.inject(divId, { toolbox: null, trashcan: false, zoom: { controls: false, wheel: false }, scrollbars: false, move: { drag: true } });
+    buildFn(workspace);
+    return workspace;
+  }
+
+  const workspaces = {};
+
+  workspaces['bk-loop'] = makeWorkspace('bk-loop', ws => {
+    const flag = ws.newBlock('event_whenflagclicked'); flag.initSvg(); flag.render();
+    const forever = ws.newBlock('control_forever'); forever.initSvg(); forever.render();
+    const note = ws.newBlock('control_note'); note.initSvg(); note.render();
+    flag.nextConnection.connect(forever.previousConnection);
+    forever.getInput('DO').connection.connect(note.previousConnection);
+    flag.moveBy(10, 10);
+    ws.render();
+  });
+
+  workspaces['bk-input'] = makeWorkspace('bk-input', ws => {
+    const ifBlock = ws.newBlock('control_if_then'); ifBlock.initSvg(); ifBlock.render();
+    const key = ws.newBlock('sensing_key_pressed'); key.initSvg(); key.render();
+    const move = ws.newBlock('motion_changex'); move.initSvg(); move.render();
+    ifBlock.getInput('BOOL').connection.connect(key.outputConnection);
+    ifBlock.getInput('DO').connection.connect(move.previousConnection);
+    ifBlock.moveBy(10, 10);
+    ws.render();
+  });
+
+  workspaces['bk-collision'] = makeWorkspace('bk-collision', ws => {
+    const ifBlock = ws.newBlock('control_if_then'); ifBlock.initSvg(); ifBlock.render();
+    const touch = ws.newBlock('sensing_touching'); touch.initSvg(); touch.render();
+    const change = ws.newBlock('variables_change_by'); change.initSvg(); change.render();
+    ifBlock.getInput('BOOL').connection.connect(touch.outputConnection);
+    ifBlock.getInput('DO').connection.connect(change.previousConnection);
+    ifBlock.moveBy(10, 10);
+    ws.render();
+  });
+
+  document.querySelectorAll('.blockly-showjs').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ws = workspaces[btn.dataset.target];
+      const out = document.getElementById(btn.dataset.outid);
+      if (!ws || !out) return;
+      const open = out.classList.toggle('open');
+      btn.textContent = open ? '🙈 Hide the JavaScript' : '👁 Show the JavaScript';
+      if (open) out.querySelector('pre').textContent = gen.workspaceToCode(ws).trim();
+    });
+  });
+
+  window.addEventListener('resize', () => {
+    Object.values(workspaces).forEach(ws => ws && Blockly.svgResize(ws));
+  });
+})();
+</script>
 </body>
 </html>
