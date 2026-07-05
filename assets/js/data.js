@@ -2,9 +2,31 @@ let cache = null;
 let loadingPromise = null;
 const PLACEHOLDER_THUMB = "/assets/thumbs/showcase/student-showcase-thumb.png";
 
-function resolveThumbPath(value) {
+function getAvatarForProject(projectSlug) {
+  const avatars = [
+    "/assets/thumbs/showcase/avatar-monkey.svg",
+    "/assets/thumbs/showcase/avatar-astronaut.svg",
+    "/assets/thumbs/showcase/avatar-octopus.svg",
+    "/assets/thumbs/showcase/avatar-music.svg",
+    "/assets/thumbs/showcase/avatar-racecar.svg",
+    "/assets/thumbs/showcase/avatar-dog.svg",
+    "/assets/thumbs/showcase/avatar-cat.svg",
+    "/assets/thumbs/showcase/avatar-robot.svg",
+    "/assets/thumbs/showcase/avatar-dinosaur.svg",
+    "/assets/thumbs/showcase/avatar-rocket.svg"
+  ];
+  if (!projectSlug) return avatars[0];
+  let hash = 0;
+  for (let i = 0; i < projectSlug.length; i++) {
+    hash = projectSlug.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % avatars.length;
+  return avatars[index];
+}
+
+function resolveThumbPath(value, slug) {
   const raw = String(value || "").trim();
-  if (!raw) return PLACEHOLDER_THUMB;
+  if (!raw || raw === PLACEHOLDER_THUMB) return getAvatarForProject(slug);
 
   // Normalise all recognised shorthand forms to /assets/thumbs/...
   if (raw.startsWith("/thumbs/"))          return `/assets${raw}`;
@@ -18,8 +40,8 @@ function resolveThumbPath(value) {
   if (raw.startsWith("./apps/"))           return raw.slice(1);
   if (raw.startsWith("apps/"))             return `/${raw}`;
 
-  // Any other path is rejected — use placeholder.
-  return PLACEHOLDER_THUMB;
+  // Any other path is rejected — use random avatar.
+  return getAvatarForProject(slug);
 }
 
 function titleFromSlug(slug) {
@@ -33,29 +55,32 @@ function titleFromSlug(slug) {
 function normalizeProjects(projects) {
   return projects
     .slice()
-    .map((p) => ({
-      id: p.id,
-      title: p.title || "Untitled Project",
-      student: p.student || "Student",
-      year: p.year || new Date().getFullYear(),
-      term: p.term || "Q1",
-      program: p.program || "Independent",
-      category: p.category || "Web",
-      type: p.type || "Solo",
-      jam: Boolean(p.jam),
-      difficulty: p.difficulty || "Beginner",
-      tech: Array.isArray(p.tech) ? p.tech : [],
-      tags: Array.isArray(p.tags) ? p.tags : [],
-      thumbnail: resolveThumbPath(p.thumbnail),
-      hero: resolveThumbPath(p.hero || p.thumbnail),
-      short_description: p.short_description || "Student project submission.",
-      long_description: p.long_description || "Built and published as part of the classroom showcase.",
-      links: p.links || {},
-      gallery: Array.isArray(p.gallery) ? p.gallery : [],
-      featured: Boolean(p.featured),
-      date_added: p.date_added || "1970-01-01",
-      appUrl: p.appUrl || null,
-    }))
+    .map((p) => {
+      const slug = p.id || p.title || "";
+      return {
+        id: p.id,
+        title: p.title || "Untitled Project",
+        student: p.student || "Student",
+        year: p.year || new Date().getFullYear(),
+        term: p.term || "Q1",
+        program: p.program || "Independent",
+        category: p.category || "Web",
+        type: p.type || "Solo",
+        jam: Boolean(p.jam),
+        difficulty: p.difficulty || "Beginner",
+        tech: Array.isArray(p.tech) ? p.tech : [],
+        tags: Array.isArray(p.tags) ? p.tags : [],
+        thumbnail: resolveThumbPath(p.thumbnail, slug),
+        hero: resolveThumbPath(p.hero || p.thumbnail, slug),
+        short_description: p.short_description || "Student project submission.",
+        long_description: p.long_description || "Built and published as part of the classroom showcase.",
+        links: p.links || {},
+        gallery: Array.isArray(p.gallery) ? p.gallery : [],
+        featured: Boolean(p.featured),
+        date_added: p.date_added || "1970-01-01",
+        appUrl: p.appUrl || null,
+      };
+    })
     .sort((a, b) => new Date(b.date_added).getTime() - new Date(a.date_added).getTime());
 }
 
@@ -107,8 +132,8 @@ function normalizeManifestApps(payload) {
         difficulty,
         tech,
         tags,
-        thumbnail: resolveThumbPath(item.thumbnail),
-        hero: resolveThumbPath(item.thumbnail),
+        thumbnail: resolveThumbPath(item.thumbnail, slug),
+        hero: resolveThumbPath(item.thumbnail, slug),
         short_description: "Student project uploaded to the classroom showcase.",
         long_description: "Open the app to play or explore the student build.",
         links: { play: item.url },
