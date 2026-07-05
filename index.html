@@ -418,19 +418,30 @@
         <!-- Draw panel -->
         <div class="phys-panel is-active" id="ppanel-draw" role="tabpanel" aria-labelledby="ptab-draw">
           <div class="phys-toolbar" role="toolbar" aria-label="Drawing tools">
-            <button class="ptool is-active" data-tool="pencil" title="Pencil" type="button">✏️</button>
-            <button class="ptool" data-tool="rect" title="Rectangle" type="button">▭</button>
-            <button class="ptool" data-tool="circle" title="Circle" type="button">○</button>
-            <button class="ptool" data-tool="ruler" title="Measure distance" type="button">📏</button>
-            <button class="ptool" data-tool="eraser" title="Eraser" type="button">⬜</button>
+            <button class="ptool is-active" data-tool="pencil" title="Pencil (P)" type="button">✏️</button>
+            <button class="ptool" data-tool="line"   title="Line (L)"      type="button">╱</button>
+            <button class="ptool" data-tool="rect"   title="Rectangle (R)" type="button">▭</button>
+            <button class="ptool" data-tool="circle" title="Circle (C)"    type="button">○</button>
+            <button class="ptool" data-tool="ruler"  title="Measure (M)"   type="button">📏</button>
+            <button class="ptool" data-tool="eraser" title="Eraser (E)"    type="button">⬜</button>
+            <span class="ptool-sep" aria-hidden="true"></span>
+            <label class="ptool-fill-wrap" title="Fill shapes">
+              <input type="checkbox" id="pdraw-fill">
+              <span>Fill</span>
+            </label>
             <span class="ptool-sep" aria-hidden="true"></span>
             <label class="ptool-color-wrap" title="Stroke color">
               <input type="color" id="pdraw-color" value="#2563eb" aria-label="Stroke color">
+            </label>
+            <label class="ptool-color-wrap" title="Fill color">
+              <input type="color" id="pdraw-fillcolor" value="#93c5fd" aria-label="Fill color">
             </label>
             <label class="ptool-size-wrap" title="Stroke size">
               <input type="range" id="pdraw-size" min="1" max="24" value="3" aria-label="Stroke size">
             </label>
             <span class="ptool-sep" aria-hidden="true"></span>
+            <button class="ptool" id="pdraw-undo"     title="Undo (Ctrl+Z)" type="button">↩</button>
+            <button class="ptool" id="pdraw-download" title="Save as PNG"   type="button">⬇</button>
             <button class="ptool ptool-clear" id="pdraw-clear" title="Clear canvas" type="button">🗑️</button>
           </div>
           <canvas id="pdraw-canvas" class="phys-canvas" aria-label="Drawing canvas"></canvas>
@@ -443,12 +454,29 @@
         <!-- Physics panel -->
         <div class="phys-panel" id="ppanel-phys" role="tabpanel" aria-labelledby="ptab-phys">
           <div class="phys-toolbar" role="toolbar" aria-label="Physics tools">
-            <button class="ptool is-active" data-spawn="ball" title="Spawn Ball" type="button">⚽</button>
-            <button class="ptool" data-spawn="box" title="Spawn Box" type="button">📦</button>
+            <button class="ptool is-active" data-spawn="ball" title="Ball"     type="button">⚽</button>
+            <button class="ptool"           data-spawn="box"  title="Box"      type="button">📦</button>
+            <button class="ptool"           data-spawn="tri"  title="Triangle" type="button">🔺</button>
+            <span class="ptool-sep" aria-hidden="true"></span>
+            <span class="ptool-label">Gravity</span>
+            <button class="ptool ptool-grav is-active" data-grav="down"  title="Down"  type="button">↓</button>
+            <button class="ptool ptool-grav"           data-grav="up"    title="Up"    type="button">↑</button>
+            <button class="ptool ptool-grav"           data-grav="left"  title="Left"  type="button">←</button>
+            <button class="ptool ptool-grav"           data-grav="right" title="Right" type="button">→</button>
+            <button class="ptool ptool-grav"           data-grav="none"  title="Off"   type="button">∅</button>
+            <span class="ptool-sep" aria-hidden="true"></span>
+            <label class="ptool-slider-wrap" title="Bounciness">
+              <span>Bounce</span>
+              <input type="range" id="pphys-bounce" min="0" max="100" value="72">
+            </label>
+            <label class="ptool-slider-wrap" title="Wind force">
+              <span>Wind</span>
+              <input type="range" id="pphys-wind" min="-100" max="100" value="0">
+            </label>
             <span class="ptool-sep" aria-hidden="true"></span>
             <label class="ptool-gravity">
-              <input type="checkbox" id="pphys-gravity" checked>
-              <span>Gravity</span>
+              <input type="checkbox" id="pphys-vectors">
+              <span>Vectors</span>
             </label>
             <span class="ptool-sep" aria-hidden="true"></span>
             <button class="ptool ptool-clear" id="pphys-clear" title="Clear all objects" type="button">🗑️</button>
@@ -1376,7 +1404,7 @@
     // ══════════════════════════════════════════════════════
     // DRAW MODE
     // ══════════════════════════════════════════════════════
-    var drawTool = 'pencil', drawColor = '#2563eb', drawSize = 3;
+    var drawTool = 'pencil', drawColor = '#2563eb', drawFillColor = '#93c5fd', drawSize = 3, drawFill = false;
     var strokes = [], curStroke = null, drawing = false, shapeStart = null;
     var rulerPts = [];
 
@@ -1405,7 +1433,7 @@
 
     function paintStroke(s) {
       dCtx.save();
-      dCtx.strokeStyle = s.color; dCtx.fillStyle = s.color;
+      dCtx.strokeStyle = s.color; dCtx.fillStyle = s.fillColor || s.color;
       dCtx.lineWidth = s.size; dCtx.lineCap = 'round'; dCtx.lineJoin = 'round';
       if (s.type === 'pencil') {
         dCtx.beginPath();
@@ -1416,10 +1444,15 @@
         dCtx.beginPath();
         s.pts.forEach(function (p, i) { i ? dCtx.lineTo(p.x, p.y) : dCtx.moveTo(p.x, p.y); });
         dCtx.stroke();
+      } else if (s.type === 'line') {
+        dCtx.beginPath(); dCtx.moveTo(s.x1, s.y1); dCtx.lineTo(s.x2, s.y2); dCtx.stroke();
       } else if (s.type === 'rect') {
+        if (s.fill) { dCtx.fillStyle = s.fillColor; dCtx.fillRect(s.x, s.y, s.w, s.h); }
         dCtx.strokeRect(s.x, s.y, s.w, s.h);
       } else if (s.type === 'circle') {
-        dCtx.beginPath(); dCtx.arc(s.cx, s.cy, s.r, 0, Math.PI * 2); dCtx.stroke();
+        dCtx.beginPath(); dCtx.arc(s.cx, s.cy, s.r, 0, Math.PI * 2);
+        if (s.fill) { dCtx.fillStyle = s.fillColor; dCtx.fill(); }
+        dCtx.stroke();
       } else if (s.type === 'ruler') {
         dCtx.setLineDash([6, 4]);
         dCtx.beginPath(); dCtx.moveTo(s.x1, s.y1); dCtx.lineTo(s.x2, s.y2); dCtx.stroke();
@@ -1456,8 +1489,9 @@
         curStroke.pts.push(p);
       } else {
         var dx = p.x - shapeStart.x, dy = p.y - shapeStart.y;
-        if (drawTool === 'rect') curStroke = { type: 'rect', color: drawColor, size: drawSize, x: shapeStart.x, y: shapeStart.y, w: dx, h: dy };
-        else curStroke = { type: 'circle', color: drawColor, size: drawSize, cx: shapeStart.x, cy: shapeStart.y, r: Math.hypot(dx, dy) };
+        if (drawTool === 'line')        curStroke = { type: 'line',   color: drawColor, size: drawSize, x1: shapeStart.x, y1: shapeStart.y, x2: p.x, y2: p.y };
+        else if (drawTool === 'rect')   curStroke = { type: 'rect',   color: drawColor, fillColor: drawFillColor, fill: drawFill, size: drawSize, x: shapeStart.x, y: shapeStart.y, w: dx, h: dy };
+        else                            curStroke = { type: 'circle', color: drawColor, fillColor: drawFillColor, fill: drawFill, size: drawSize, cx: shapeStart.x, cy: shapeStart.y, r: Math.hypot(dx, dy) };
       }
       redrawD();
     }
@@ -1466,6 +1500,20 @@
       if (!drawing) return; drawing = false;
       if (curStroke) { strokes.push(curStroke); curStroke = null; }
       redrawD();
+    }
+
+    function undoDraw() {
+      if (strokes.length) { strokes.pop(); redrawD(); }
+    }
+
+    function downloadDraw() {
+      var tmp = document.createElement('canvas');
+      tmp.width = drawCanvas.width; tmp.height = drawCanvas.height;
+      var tCtx = tmp.getContext('2d');
+      tCtx.fillStyle = '#ffffff'; tCtx.fillRect(0, 0, tmp.width, tmp.height);
+      tCtx.drawImage(drawCanvas, 0, 0);
+      var a = document.createElement('a');
+      a.href = tmp.toDataURL('image/png'); a.download = 'drawing.png'; a.click();
     }
 
     drawCanvas.addEventListener('mousedown', dDown);
@@ -1484,20 +1532,37 @@
         if (bar && drawTool !== 'ruler') bar.hidden = true;
       });
     });
-    document.getElementById('pdraw-color')  && document.getElementById('pdraw-color').addEventListener('input', function () { drawColor = this.value; });
-    document.getElementById('pdraw-size')   && document.getElementById('pdraw-size').addEventListener('input', function () { drawSize = +this.value; });
-    document.getElementById('pdraw-clear')  && document.getElementById('pdraw-clear').addEventListener('click', function () {
+    document.getElementById('pdraw-color')     && document.getElementById('pdraw-color').addEventListener('input', function () { drawColor = this.value; });
+    document.getElementById('pdraw-fillcolor') && document.getElementById('pdraw-fillcolor').addEventListener('input', function () { drawFillColor = this.value; });
+    document.getElementById('pdraw-size')      && document.getElementById('pdraw-size').addEventListener('input', function () { drawSize = +this.value; });
+    document.getElementById('pdraw-fill')      && document.getElementById('pdraw-fill').addEventListener('change', function () { drawFill = this.checked; });
+    document.getElementById('pdraw-undo')      && document.getElementById('pdraw-undo').addEventListener('click', undoDraw);
+    document.getElementById('pdraw-download')  && document.getElementById('pdraw-download').addEventListener('click', downloadDraw);
+    document.getElementById('pdraw-clear')     && document.getElementById('pdraw-clear').addEventListener('click', function () {
       strokes = []; curStroke = null; rulerPts = [];
       var bar = document.getElementById('pdraw-ruler-bar'); if (bar) bar.hidden = true;
       redrawD();
     });
 
+    // Keyboard shortcuts (active when draw panel is visible)
+    document.addEventListener('keydown', function (e) {
+      if (!document.getElementById('ppanel-draw').classList.contains('is-active')) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoDraw(); return; }
+      var map = { p: 'pencil', l: 'line', r: 'rect', c: 'circle', m: 'ruler', e: 'eraser' };
+      var t = map[e.key.toLowerCase()];
+      if (t) { var btn = document.querySelector('#ppanel-draw .ptool[data-tool="'+t+'"]'); if (btn) btn.click(); }
+    });
+
     // ══════════════════════════════════════════════════════
     // PHYSICS MODE
     // ══════════════════════════════════════════════════════
-    var PPM = 80;              // pixels per metre
-    var G   = 9.8 * PPM;      // gravity in px/s²
-    var gravOn = true;
+    var PPM = 80;
+    var G   = 9.8 * PPM;
+    var gravDir = { x: 0, y: 1 };
+    var windForce = 0;
+    var bounceScale = 0.72;
+    var showVectors = false;
     var objs = [], rafId = null, lastT = null;
     var physMode = 'ball';
     var dragObj = null, dragOx = 0, dragOy = 0, prevP = null, prevPT = 0, throwVx = 0, throwVy = 0;
@@ -1516,20 +1581,24 @@
     function PW() { return physCanvas.offsetWidth; }
     function PH() { return physCanvas.offsetHeight; }
 
-    function spawnBall(x, y, vx, vy) {
-      if (objs.length >= 20) objs.shift();
-      var r = 16 + Math.random() * 10;
-      objs.push({ type: 'ball', x: x, y: y, vx: vx || 0, vy: vy || 0, r: r, mass: r / 10, color: COLORS[ci++ % COLORS.length], e: 0.72 });
-    }
-
-    function spawnBox(x, y, vx, vy) {
-      if (objs.length >= 20) objs.shift();
-      var s = 26 + Math.random() * 14;
-      objs.push({ type: 'box', x: x, y: y, vx: vx || 0, vy: vy || 0, w: s, h: s, mass: s / 8, color: COLORS[ci++ % COLORS.length], e: 0.5 });
+    function spawnObj(x, y, vx, vy) {
+      if (objs.length >= 25) objs.shift();
+      var color = COLORS[ci++ % COLORS.length];
+      var e = bounceScale;
+      if (physMode === 'ball') {
+        var r = 16 + Math.random() * 10;
+        objs.push({ type: 'ball', x: x, y: y, vx: vx||0, vy: vy||0, r: r, mass: r/10, color: color, e: e, angle: 0, omega: 0 });
+      } else if (physMode === 'box') {
+        var s = 26 + Math.random() * 14;
+        objs.push({ type: 'box', x: x, y: y, vx: vx||0, vy: vy||0, w: s, h: s, mass: s/8, color: color, e: e*0.7, angle: 0, omega: 0 });
+      } else {
+        var r2 = 18 + Math.random() * 10;
+        objs.push({ type: 'tri', x: x, y: y, vx: vx||0, vy: vy||0, r: r2, mass: r2/10, color: color, e: e*0.8, angle: 0, omega: 0 });
+      }
     }
 
     function hit(o, x, y) {
-      if (o.type === 'ball') return Math.hypot(x - o.x, y - o.y) <= o.r;
+      if (o.type === 'ball' || o.type === 'tri') return Math.hypot(x - o.x, y - o.y) <= o.r;
       return x >= o.x - o.w/2 && x <= o.x + o.w/2 && y >= o.y - o.h/2 && y <= o.y + o.h/2;
     }
 
@@ -1542,7 +1611,7 @@
     physCanvas.addEventListener('mousedown', function (e) {
       var p = pPos(e);
       dragObj = objs.slice().reverse().find(function (o) { return hit(o, p.x, p.y); }) || null;
-      if (dragObj) { dragOx = dragObj.x - p.x; dragOy = dragObj.y - p.y; dragObj.vx = dragObj.vy = 0; }
+      if (dragObj) { dragOx = dragObj.x - p.x; dragOy = dragObj.y - p.y; dragObj.vx = dragObj.vy = 0; dragObj.omega = 0; }
       prevP = p; prevPT = performance.now();
     });
     physCanvas.addEventListener('mousemove', function (e) {
@@ -1554,51 +1623,48 @@
       prevP = p; prevPT = now;
     });
     physCanvas.addEventListener('mouseup', function (e) {
-      if (dragObj) { dragObj.vx = throwVx; dragObj.vy = throwVy; dragObj = null; throwVx = throwVy = 0; }
-      else {
-        var p = pPos(e);
-        if (prevP && Math.hypot(p.x - prevP.x, p.y - prevP.y) < 6) {
-          physMode === 'ball' ? spawnBall(p.x, p.y) : spawnBox(p.x, p.y);
-        }
-      }
+      if (dragObj) { dragObj.vx = throwVx; dragObj.vy = throwVy; dragObj.omega = throwVx * 0.02; dragObj = null; throwVx = throwVy = 0; }
+      else { var p = pPos(e); if (prevP && Math.hypot(p.x - prevP.x, p.y - prevP.y) < 6) spawnObj(p.x, p.y); }
     });
     physCanvas.addEventListener('touchstart', function (e) {
       e.preventDefault();
       var p = pPos(e);
       dragObj = objs.slice().reverse().find(function (o) { return hit(o, p.x, p.y); }) || null;
-      if (dragObj) { dragOx = dragObj.x - p.x; dragOy = dragObj.y - p.y; dragObj.vx = dragObj.vy = 0; }
+      if (dragObj) { dragOx = dragObj.x - p.x; dragOy = dragObj.y - p.y; dragObj.vx = dragObj.vy = 0; dragObj.omega = 0; }
       prevP = p; prevPT = performance.now();
     }, { passive: false });
     physCanvas.addEventListener('touchmove', function (e) {
       e.preventDefault();
       var p = pPos(e), now = performance.now(), dt = (now - prevPT) / 1000;
-      if (dragObj) { throwVx = (p.x - (prevP ? prevP.x : p.x)) / Math.max(dt, 0.008); throwVy = (p.y - (prevP ? prevP.y : p.y)) / Math.max(dt, 0.008); dragObj.x = p.x + dragOx; dragObj.y = p.y + dragOy; }
+      if (dragObj) { throwVx = (p.x-(prevP?prevP.x:p.x))/Math.max(dt,0.008); throwVy = (p.y-(prevP?prevP.y:p.y))/Math.max(dt,0.008); dragObj.x = p.x+dragOx; dragObj.y = p.y+dragOy; }
       prevP = p; prevPT = now;
     }, { passive: false });
     physCanvas.addEventListener('touchend', function (e) {
-      if (dragObj) { dragObj.vx = throwVx; dragObj.vy = throwVy; dragObj = null; throwVx = throwVy = 0; }
-      else if (prevP) { physMode === 'ball' ? spawnBall(prevP.x, prevP.y) : spawnBox(prevP.x, prevP.y); }
+      if (dragObj) { dragObj.vx = throwVx; dragObj.vy = throwVy; dragObj.omega = throwVx * 0.02; dragObj = null; throwVx = throwVy = 0; }
+      else if (prevP) spawnObj(prevP.x, prevP.y);
     });
 
     function collCC(a, b) {
-      var dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), min = a.r + b.r;
+      var dx = b.x-a.x, dy = b.y-a.y, d = Math.hypot(dx,dy), min = a.r+b.r;
       if (d >= min || d < 0.001) return;
-      var nx = dx/d, ny = dy/d, ov = min - d, tm = a.mass + b.mass;
-      a.x -= nx * ov * b.mass/tm; a.y -= ny * ov * b.mass/tm;
-      b.x += nx * ov * a.mass/tm; b.y += ny * ov * a.mass/tm;
-      var dvx = a.vx - b.vx, dvy = a.vy - b.vy, dot = dvx*nx + dvy*ny;
+      var nx = dx/d, ny = dy/d, ov = min-d, tm = a.mass+b.mass;
+      a.x -= nx*ov*b.mass/tm; a.y -= ny*ov*b.mass/tm;
+      b.x += nx*ov*a.mass/tm; b.y += ny*ov*a.mass/tm;
+      var dvx = a.vx-b.vx, dvy = a.vy-b.vy, dot = dvx*nx+dvy*ny;
       if (dot <= 0) return;
-      var e = Math.min(a.e, b.e), imp = (1+e)*dot/tm;
+      var e = Math.min(a.e,b.e), imp = (1+e)*dot/tm;
       a.vx -= imp*b.mass*nx; a.vy -= imp*b.mass*ny;
       b.vx += imp*a.mass*nx; b.vy += imp*a.mass*ny;
-      var v = Math.hypot(a.vx, a.vy)/PPM;
-      liveMsg = 'v = ' + v.toFixed(1) + ' m/s · KE = ' + (0.5*a.mass*v*v).toFixed(2) + ' J';
+      a.omega += (dvy*nx - dvx*ny) * 0.8;
+      b.omega -= (dvy*nx - dvx*ny) * 0.8;
+      var v = Math.hypot(a.vx,a.vy)/PPM;
+      liveMsg = 'v = '+v.toFixed(1)+' m/s · KE = '+(0.5*a.mass*v*v).toFixed(2)+' J · p = '+(a.mass*v).toFixed(2)+' kg·m/s';
     }
 
     function collCB(c, b) {
       var cx = Math.max(b.x-b.w/2, Math.min(b.x+b.w/2, c.x));
       var cy = Math.max(b.y-b.h/2, Math.min(b.y+b.h/2, c.y));
-      var dx = c.x-cx, dy = c.y-cy, d = Math.hypot(dx, dy);
+      var dx = c.x-cx, dy = c.y-cy, d = Math.hypot(dx,dy);
       if (d >= c.r || d < 0.001) return;
       var nx = dx/d, ny = dy/d, ov = c.r-d, tm = c.mass+b.mass, e = Math.min(c.e,b.e);
       c.x += nx*ov*b.mass/tm; c.y += ny*ov*b.mass/tm;
@@ -1608,6 +1674,8 @@
       var imp = (1+e)*dot/tm;
       c.vx -= imp*b.mass*nx; c.vy -= imp*b.mass*ny;
       b.vx += imp*c.mass*nx; b.vy += imp*c.mass*ny;
+      c.omega += (dvy*nx - dvx*ny) * 0.6;
+      b.omega -= (dvy*nx - dvx*ny) * 0.3;
     }
 
     function collBB(a, b) {
@@ -1615,66 +1683,140 @@
       var ot = (a.y+a.h/2)-(b.y-b.h/2), ob = (b.y+b.h/2)-(a.y-a.h/2);
       if (ol<=0||or_<=0||ot<=0||ob<=0) return;
       var e = Math.min(a.e,b.e), tm = a.mass+b.mass, m = Math.min(ol,or_,ot,ob);
-      if (m===ot) { a.vy=-Math.abs(a.vy)*e; b.vy=Math.abs(b.vy)*e; a.y-=ot*b.mass/tm; b.y+=ot*a.mass/tm; }
-      else if (m===ob) { a.vy=Math.abs(a.vy)*e; b.vy=-Math.abs(b.vy)*e; a.y+=ob*b.mass/tm; b.y-=ob*a.mass/tm; }
-      else if (m===ol) { a.vx=-Math.abs(a.vx)*e; b.vx=Math.abs(b.vx)*e; a.x-=ol*b.mass/tm; b.x+=ol*a.mass/tm; }
-      else { a.vx=Math.abs(a.vx)*e; b.vx=-Math.abs(b.vx)*e; a.x+=or_*b.mass/tm; b.x-=or_*a.mass/tm; }
+      if (m===ot)      { a.vy=-Math.abs(a.vy)*e; b.vy= Math.abs(b.vy)*e; a.y-=ot*b.mass/tm; b.y+=ot*a.mass/tm; a.omega+=a.vx*0.01; b.omega-=b.vx*0.01; }
+      else if (m===ob) { a.vy= Math.abs(a.vy)*e; b.vy=-Math.abs(b.vy)*e; a.y+=ob*b.mass/tm; b.y-=ob*a.mass/tm; a.omega+=a.vx*0.01; b.omega-=b.vx*0.01; }
+      else if (m===ol) { a.vx=-Math.abs(a.vx)*e; b.vx= Math.abs(b.vx)*e; a.x-=ol*b.mass/tm; b.x+=ol*a.mass/tm; a.omega+=a.vy*0.01; b.omega-=b.vy*0.01; }
+      else             { a.vx= Math.abs(a.vx)*e; b.vx=-Math.abs(b.vx)*e; a.x+=or_*b.mass/tm; b.x-=or_*a.mass/tm; a.omega+=a.vy*0.01; b.omega-=b.vy*0.01; }
+    }
+
+    function wallBounce(o, W, H) {
+      var e = o.e;
+      if (o.type === 'ball' || o.type === 'tri') {
+        var r = o.r;
+        if (o.y+r >= H) { o.y=H-r; o.vy=-Math.abs(o.vy)*e; o.vx*=0.92; o.omega += o.vx*0.05; }
+        if (o.y-r <=  0) { o.y=r;   o.vy= Math.abs(o.vy)*e; }
+        if (o.x-r <=  0) { o.x=r;   o.vx= Math.abs(o.vx)*e; o.omega += o.vy*0.05; }
+        if (o.x+r >=  W) { o.x=W-r; o.vx=-Math.abs(o.vx)*e; o.omega += o.vy*0.05; }
+      } else {
+        var hw=o.w/2, hh=o.h/2;
+        if (o.y+hh >= H) { o.y=H-hh; o.vy=-Math.abs(o.vy)*e; o.vx*=0.92; o.omega += o.vx*0.03; }
+        if (o.y-hh <=  0) { o.y=hh;  o.vy= Math.abs(o.vy)*e; }
+        if (o.x-hw <=  0) { o.x=hw;  o.vx= Math.abs(o.vx)*e; o.omega += o.vy*0.03; }
+        if (o.x+hw >=  W) { o.x=W-hw; o.vx=-Math.abs(o.vx)*e; o.omega += o.vy*0.03; }
+      }
     }
 
     function step(dt) {
       var W = PW(), H = PH();
       objs.forEach(function (o) {
         if (o === dragObj) return;
-        if (gravOn) o.vy += G * dt;
+        o.vx += (G * gravDir.x + windForce) * dt;
+        o.vy += G * gravDir.y * dt;
         o.vx *= 0.9995; o.vy *= 0.9995;
+        o.omega *= 0.994;
         o.x += o.vx * dt; o.y += o.vy * dt;
-        if (o.type === 'ball') {
-          if (o.y+o.r >= H) { o.y=H-o.r; o.vy=-Math.abs(o.vy)*o.e; o.vx*=0.9; }
-          if (o.y-o.r <= 0) { o.y=o.r; o.vy=Math.abs(o.vy)*o.e; }
-          if (o.x-o.r <= 0) { o.x=o.r; o.vx=Math.abs(o.vx)*o.e; }
-          if (o.x+o.r >= W) { o.x=W-o.r; o.vx=-Math.abs(o.vx)*o.e; }
-        } else {
-          var hw=o.w/2, hh=o.h/2;
-          if (o.y+hh>=H) { o.y=H-hh; o.vy=-Math.abs(o.vy)*o.e; o.vx*=0.9; }
-          if (o.y-hh<=0) { o.y=hh; o.vy=Math.abs(o.vy)*o.e; }
-          if (o.x-hw<=0) { o.x=hw; o.vx=Math.abs(o.vx)*o.e; }
-          if (o.x+hw>=W) { o.x=W-hw; o.vx=-Math.abs(o.vx)*o.e; }
-        }
+        o.angle += o.omega * dt;
+        wallBounce(o, W, H);
       });
       for (var i=0;i<objs.length;i++) for (var j=i+1;j<objs.length;j++) {
+        if (objs[i]===dragObj||objs[j]===dragObj) continue;
         var a=objs[i],b=objs[j];
-        if (a.type==='ball'&&b.type==='ball') collCC(a,b);
-        else if (a.type==='box'&&b.type==='box') collBB(a,b);
-        else if (a.type==='ball') collCB(a,b);
+        var ac=(a.type==='ball'||a.type==='tri'), bc=(b.type==='ball'||b.type==='tri');
+        if (ac&&bc) collCC(a,b);
+        else if (!ac&&!bc) collBB(a,b);
+        else if (ac) collCB(a,b);
         else collCB(b,a);
       }
     }
 
+    function drawArrow(x, y, dx, dy, color) {
+      var len = Math.hypot(dx, dy);
+      if (len < 1) return;
+      var sc = Math.min(len, 80) / len;
+      var ex = x + dx*sc, ey = y + dy*sc, ang = Math.atan2(dy, dx);
+      pCtx.save();
+      pCtx.strokeStyle = color; pCtx.fillStyle = color; pCtx.lineWidth = 2;
+      pCtx.beginPath(); pCtx.moveTo(x, y); pCtx.lineTo(ex, ey); pCtx.stroke();
+      pCtx.beginPath();
+      pCtx.moveTo(ex, ey);
+      pCtx.lineTo(ex - 9*Math.cos(ang-0.4), ey - 9*Math.sin(ang-0.4));
+      pCtx.lineTo(ex - 9*Math.cos(ang+0.4), ey - 9*Math.sin(ang+0.4));
+      pCtx.closePath(); pCtx.fill();
+      pCtx.restore();
+    }
+
+    function lighten(hex, amt) {
+      var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+      return 'rgb('+Math.min(255,Math.round(r+(255-r)*amt))+','+Math.min(255,Math.round(g+(255-g)*amt))+','+Math.min(255,Math.round(b+(255-b)*amt))+')';
+    }
+
     function drawObjs() {
-      var W=PW(),H=PH();
+      var W=PW(), H=PH();
       pCtx.clearRect(0,0,W,H);
       drawGrid(pCtx,W,H);
-      pCtx.save(); pCtx.strokeStyle='rgba(100,130,200,0.2)'; pCtx.lineWidth=2;
-      pCtx.beginPath(); pCtx.moveTo(0,H); pCtx.lineTo(W,H); pCtx.stroke(); pCtx.restore();
+
+      // Gravity direction indicator
+      if (gravDir.x !== 0 || gravDir.y !== 0)
+        drawArrow(22, 22, gravDir.x*28, gravDir.y*28, 'rgba(100,130,200,0.45)');
+
+      // Wind indicator
+      if (Math.abs(windForce) > 8) {
+        pCtx.save(); pCtx.globalAlpha = 0.45;
+        drawArrow(W/2, 14, (windForce>0?1:-1)*Math.min(Math.abs(windForce)*0.22,44), 0, '#22c55e');
+        pCtx.restore();
+      }
+
+      // Floor/wall line (follows gravity direction)
+      pCtx.save(); pCtx.strokeStyle='rgba(100,130,200,0.22)'; pCtx.lineWidth=2;
+      if (gravDir.y > 0)      { pCtx.beginPath(); pCtx.moveTo(0,H); pCtx.lineTo(W,H); pCtx.stroke(); }
+      else if (gravDir.y < 0) { pCtx.beginPath(); pCtx.moveTo(0,0); pCtx.lineTo(W,0); pCtx.stroke(); }
+      else if (gravDir.x > 0) { pCtx.beginPath(); pCtx.moveTo(W,0); pCtx.lineTo(W,H); pCtx.stroke(); }
+      else if (gravDir.x < 0) { pCtx.beginPath(); pCtx.moveTo(0,0); pCtx.lineTo(0,H); pCtx.stroke(); }
+      pCtx.restore();
+
       objs.forEach(function (o) {
         pCtx.save();
-        pCtx.fillStyle = o.color; pCtx.strokeStyle = 'rgba(0,0,0,0.15)'; pCtx.lineWidth = 1.5;
-        if (o.type==='ball') {
-          pCtx.beginPath(); pCtx.arc(o.x,o.y,o.r,0,Math.PI*2); pCtx.fill(); pCtx.stroke();
-        } else {
+        pCtx.translate(o.x, o.y);
+        pCtx.rotate(o.angle);
+        pCtx.strokeStyle = 'rgba(0,0,0,0.18)'; pCtx.lineWidth = 1.5;
+        if (o.type === 'ball') {
+          var grad = pCtx.createRadialGradient(-o.r*0.3,-o.r*0.3,o.r*0.05,0,0,o.r);
+          grad.addColorStop(0, lighten(o.color,0.5));
+          grad.addColorStop(1, o.color);
+          pCtx.fillStyle = grad;
+          pCtx.beginPath(); pCtx.arc(0,0,o.r,0,Math.PI*2); pCtx.fill(); pCtx.stroke();
+          pCtx.strokeStyle='rgba(0,0,0,0.2)'; pCtx.lineWidth=1.5;
+          pCtx.beginPath(); pCtx.moveTo(0,0); pCtx.lineTo(o.r*0.75,0); pCtx.stroke();
+        } else if (o.type === 'box') {
+          pCtx.fillStyle = o.color;
           pCtx.beginPath();
-          if (pCtx.roundRect) pCtx.roundRect(o.x-o.w/2,o.y-o.h/2,o.w,o.h,5);
-          else pCtx.rect(o.x-o.w/2,o.y-o.h/2,o.w,o.h);
+          if (pCtx.roundRect) pCtx.roundRect(-o.w/2,-o.h/2,o.w,o.h,5);
+          else pCtx.rect(-o.w/2,-o.h/2,o.w,o.h);
           pCtx.fill(); pCtx.stroke();
+        } else {
+          pCtx.fillStyle = o.color;
+          pCtx.beginPath();
+          for (var k=0;k<3;k++) {
+            var a=k*2*Math.PI/3-Math.PI/2;
+            k ? pCtx.lineTo(o.r*Math.cos(a),o.r*Math.sin(a)) : pCtx.moveTo(o.r*Math.cos(a),o.r*Math.sin(a));
+          }
+          pCtx.closePath(); pCtx.fill(); pCtx.stroke();
         }
-        var v = Math.hypot(o.vx,o.vy)/PPM;
-        var top = o.type==='ball' ? o.y-o.r-4 : o.y-o.h/2-4;
-        pCtx.fillStyle='rgba(255,255,255,0.95)'; pCtx.font='bold 9px monospace'; pCtx.textAlign='center';
-        pCtx.fillText('v='+v.toFixed(1)+'m/s', o.x, top);
         pCtx.restore();
+
+        // Velocity label
+        var v = Math.hypot(o.vx,o.vy)/PPM;
+        var ly = (o.type==='ball'||o.type==='tri') ? o.y-o.r-4 : o.y-o.h/2-4;
+        pCtx.fillStyle='rgba(255,255,255,0.95)'; pCtx.font='bold 9px monospace'; pCtx.textAlign='center';
+        pCtx.fillText('v='+v.toFixed(1)+'m/s', o.x, ly);
+
+        // Velocity vector arrow
+        if (showVectors && (Math.abs(o.vx) > 8 || Math.abs(o.vy) > 8))
+          drawArrow(o.x, o.y, o.vx*0.08, o.vy*0.08, 'rgba(255,230,50,0.9)');
       });
+
       var ro = document.getElementById('pphys-readout');
-      if (ro) ro.textContent = liveMsg;
+      if (ro) ro.textContent = liveMsg || (objs.length ? objs.length+' object'+(objs.length!==1?'s':'') : 'Click or tap to spawn');
     }
 
     function loop(ts) {
@@ -1694,7 +1836,22 @@
         btn.classList.add('is-active'); physMode = btn.dataset.spawn;
       });
     });
-    document.getElementById('pphys-gravity') && document.getElementById('pphys-gravity').addEventListener('change', function () { gravOn = this.checked; });
+
+    document.querySelectorAll('#ppanel-phys .ptool-grav').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('#ppanel-phys .ptool-grav').forEach(function (b) { b.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        var dirs = { down:{x:0,y:1}, up:{x:0,y:-1}, left:{x:-1,y:0}, right:{x:1,y:0}, none:{x:0,y:0} };
+        gravDir = dirs[btn.dataset.grav] || {x:0,y:1};
+      });
+    });
+
+    document.getElementById('pphys-bounce') && document.getElementById('pphys-bounce').addEventListener('input', function () {
+      bounceScale = +this.value / 100;
+      objs.forEach(function (o) { o.e = bounceScale * (o.type==='box' ? 0.7 : o.type==='tri' ? 0.8 : 1); });
+    });
+    document.getElementById('pphys-wind')    && document.getElementById('pphys-wind').addEventListener('input', function () { windForce = +this.value * 3; });
+    document.getElementById('pphys-vectors') && document.getElementById('pphys-vectors').addEventListener('change', function () { showVectors = this.checked; });
     document.getElementById('pphys-clear')   && document.getElementById('pphys-clear').addEventListener('click', function () { objs=[]; liveMsg=''; drawObjs(); });
 
     document.getElementById('ptab-phys') && document.getElementById('ptab-phys').addEventListener('click', function () { resizeP(); startPhys(); });
@@ -1702,10 +1859,9 @@
 
     window.addEventListener('resize', function () {
       if (document.getElementById('ppanel-draw').classList.contains('is-active')) resizeD();
-      else { resizeP(); }
+      else resizeP();
     });
 
-    // Init
     if (document.getElementById('ppanel-phys').classList.contains('is-active')) { resizeP(); startPhys(); }
     else resizeD();
   })();
