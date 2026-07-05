@@ -896,8 +896,8 @@
 // ── Command Palette (Cmd+K / Ctrl+K global search) ──────────────────
 (function () {
   var s = document.createElement('script');
-  var isSubdir = location.pathname.includes('/lessons/') || location.pathname.includes('/projects/');
-  s.src = (isSubdir ? '../' : '') + 'assets/js/command-palette.js';
+  var baseScript = document.currentScript && document.currentScript.src;
+  s.src = baseScript ? new URL('command-palette.js', baseScript).href : '/assets/js/command-palette.js';
   s.defer = true;
   document.head.appendChild(s);
 }());
