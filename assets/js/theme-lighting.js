@@ -6,6 +6,7 @@
   var currentTheme = null;
   var CHANGE_EVENT = "classroomos:lightingchange";
   var isApplyingTheme = false;
+  var textureScrollQueued = false;
 
   function isThemeIndependent() {
     var htmlScope = document.documentElement && document.documentElement.dataset.themeScope;
@@ -223,11 +224,55 @@
     });
   }
 
+  function ensureCanvasBackgroundEngine() {
+    if (window.ClassroomOSCanvasBg || document.querySelector('script[data-classroomos-canvas-bg="true"]')) return;
+
+    var src = "assets/js/canvas-bg.js";
+    var lightingScript = Array.prototype.slice.call(document.scripts).find(function (script) {
+      return /(^|\/)theme-lighting\.js(?:[?#].*)?$/.test(script.getAttribute("src") || script.src || "");
+    });
+
+    if (lightingScript) {
+      src = (lightingScript.getAttribute("src") || lightingScript.src).replace(/theme-lighting\.js(?:[?#].*)?$/, "canvas-bg.js");
+    }
+
+    var script = document.createElement("script");
+    script.src = src;
+    script.defer = true;
+    script.dataset.classroomosCanvasBg = "true";
+    document.head.appendChild(script);
+  }
+
+  function syncTextureScroll() {
+    textureScrollQueued = false;
+    var offset = -(window.scrollY || document.documentElement.scrollTop || 0) + "px";
+    document.documentElement.style.setProperty("--theme-texture-scroll-y", offset);
+    if (document.body) {
+      document.body.style.setProperty("--theme-texture-scroll-y", offset);
+    }
+  }
+
+  function requestTextureScrollSync() {
+    if (textureScrollQueued) return;
+    textureScrollQueued = true;
+    window.requestAnimationFrame(syncTextureScroll);
+  }
+
+  function bindTextureScrollSync() {
+    if (window.__classroomosTextureScrollBound) return;
+    window.__classroomosTextureScrollBound = true;
+    syncTextureScroll();
+    window.addEventListener("scroll", requestTextureScrollSync, { passive: true });
+    window.addEventListener("resize", requestTextureScrollSync, { passive: true });
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () { sync(); highlightBrandOS(); }, { once: true });
+    document.addEventListener("DOMContentLoaded", function () { sync(); highlightBrandOS(); ensureCanvasBackgroundEngine(); bindTextureScrollSync(); }, { once: true });
   } else {
     sync();
     highlightBrandOS();
+    ensureCanvasBackgroundEngine();
+    bindTextureScrollSync();
   }
 
   // Re-sync when the OS dark/light preference changes (e.g. user switches system appearance).

@@ -1,7 +1,7 @@
 /**
- * canvas-bg.js — Animated hero canvas backgrounds
- * Loaded only on index.html. Settings panel (nav-mobile.js) writes the
- * preference; this file reads it and renders it.
+ * canvas-bg.js — Animated site canvas backgrounds
+ * Settings panel (nav-mobile.js) writes the preference; this file reads it
+ * and renders the selected background behind shared ClassroomOS pages.
  *
  * Modes: 'none' | 'mesh' | 'particles' | 'aurora' | 'petals' | 'hive'
  * Storage key: classroomos-canvas-bg
@@ -9,9 +9,14 @@
  */
 
 (function () {
+  if (window.ClassroomOSCanvasBg && window.ClassroomOSCanvasBg.__ready) return;
+
   var STORAGE_KEY  = 'classroomos-canvas-bg';
   var CHANGE_EVENT = 'classroomos:canvasbgchange';
-  var BEE_SPRITE   = 'assets/images/sprites/bee.png';
+  var scriptSrc = (document.currentScript && document.currentScript.src) || '';
+  var scriptBase = scriptSrc ? scriptSrc.replace(/\/assets\/js\/[^/]*$/, '/') : '';
+  var BEE_SPRITE = scriptBase ? scriptBase + 'assets/images/sprites/bee.png' : 'assets/images/sprites/bee.png';
+  var STYLE_ID = 'classroomos-canvas-bg-style';
 
   var canvas, ctx, raf;
   var w = 0, h = 0, t = 0;
@@ -55,17 +60,61 @@
     return 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + a + ')';
   }
 
-  /* ── Canvas mount / resize ───────────────────────────────────── */
-  function mount() {
-    var hero = document.querySelector('.hero');
-    if (!hero) return false;
+  /* ── Texture scroll equilibrium ──────────────────────────────── */
+  function bindTextureScrollSync() {
+    if (window.__classroomosTextureScrollBound) return;
+    var queued = false;
 
-    canvas = document.getElementById('hero-canvas');
+    function sync() {
+      queued = false;
+      var offset = -(window.scrollY || document.documentElement.scrollTop || 0) + 'px';
+      document.documentElement.style.setProperty('--theme-texture-scroll-y', offset);
+      if (document.body) document.body.style.setProperty('--theme-texture-scroll-y', offset);
+    }
+
+    function requestSync() {
+      if (queued) return;
+      queued = true;
+      window.requestAnimationFrame(sync);
+    }
+
+    window.__classroomosTextureScrollBound = true;
+    sync();
+    window.addEventListener('scroll', requestSync, { passive: true });
+    window.addEventListener('resize', requestSync, { passive: true });
+  }
+
+  /* ── Canvas mount / resize ───────────────────────────────────── */
+  function injectStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    var style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent =
+      '#site-canvas-bg,#hero-canvas{' +
+        'position:fixed;inset:0;width:100vw;height:100vh;z-index:0;' +
+        'pointer-events:none;opacity:.42;display:block;' +
+      '}' +
+      'body.theme-liquid-woodland #site-canvas-bg,body.theme-liquid-woodland #hero-canvas{' +
+        'position:fixed;z-index:0;' +
+      '}' +
+      'body.theme-liquid-woodland .site-header,body.theme-liquid-woodland main,body.theme-liquid-woodland .site-footer{' +
+        'position:relative;z-index:1;' +
+      '}' +
+      'body.theme-liquid-woodland .site-header{position:sticky;z-index:10030;}' +
+      '@media (prefers-reduced-motion:reduce){#site-canvas-bg,#hero-canvas{display:none!important;}}';
+    document.head.appendChild(style);
+  }
+
+  function mount() {
+    if (!document.body) return false;
+    injectStyles();
+
+    canvas = document.getElementById('site-canvas-bg') || document.getElementById('hero-canvas');
     if (!canvas) {
       canvas = document.createElement('canvas');
-      canvas.id = 'hero-canvas';
+      canvas.id = 'site-canvas-bg';
       canvas.setAttribute('aria-hidden', 'true');
-      hero.insertBefore(canvas, hero.firstChild);
+      document.body.insertBefore(canvas, document.body.firstChild);
     }
 
     ctx = canvas.getContext('2d');
@@ -75,9 +124,17 @@
 
   function resize() {
     if (!canvas) return;
-    var hero = canvas.parentElement;
-    w = canvas.width  = hero.offsetWidth  || 960;
-    h = canvas.height = hero.offsetHeight || 220;
+    var ratio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    var cssW = window.innerWidth || document.documentElement.clientWidth || 960;
+    var cssH = window.innerHeight || document.documentElement.clientHeight || 720;
+    w = canvas.width = Math.max(1, Math.round(cssW * ratio));
+    h = canvas.height = Math.max(1, Math.round(cssH * ratio));
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    ctx = canvas.getContext('2d');
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    w = cssW;
+    h = cssH;
   }
 
   /* ── Mesh (drifting gradient blobs) ──────────────────────────── */
@@ -190,7 +247,7 @@
   function makePetals() {
     petals = [];
     var count = Math.max(12, Math.min(26, Math.floor(w / 44)));
-    for (var i = 0; i < count; i++) petals.push(spawnPetal());
+    for (var i = 0; i < count; i++) petals.push(spawnPetal(Math.random() * h));
   }
 
   function drawPetals() {
@@ -358,11 +415,14 @@
   window.ClassroomOSCanvasBg = {
     set:  function (bg) { start(bg); },
     get:  function ()   { return currentBg; },
-    stop: stop
+    stop: stop,
+    __ready: true
   };
 
   /* ── Init ────────────────────────────────────────────────────── */
   function init() {
+    bindTextureScrollSync();
+
     // Skip if user prefers reduced motion
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     // Skip on weak hardware (Chromebooks, older tablets)

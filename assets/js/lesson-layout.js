@@ -671,6 +671,26 @@
     initKeyboard();
     initPresets();
     initDrawerDrag();
+    ensureCanvasBackgroundEngine();
+  }
+
+  function ensureCanvasBackgroundEngine() {
+    if (window.ClassroomOSCanvasBg || document.querySelector('script[data-classroomos-canvas-bg="true"]')) return;
+
+    var src = '../assets/js/canvas-bg.js';
+    var layoutScript = Array.prototype.slice.call(document.scripts).find(function (script) {
+      return /(^|\/)lesson-layout\.js(?:[?#].*)?$/.test(script.getAttribute('src') || script.src || '');
+    });
+
+    if (layoutScript) {
+      src = (layoutScript.getAttribute('src') || layoutScript.src).replace(/lesson-layout\.js(?:[?#].*)?$/, 'canvas-bg.js');
+    }
+
+    var script = document.createElement('script');
+    script.src = src;
+    script.defer = true;
+    script.dataset.classroomosCanvasBg = 'true';
+    document.head.appendChild(script);
   }
 
   if (document.readyState === 'loading') {

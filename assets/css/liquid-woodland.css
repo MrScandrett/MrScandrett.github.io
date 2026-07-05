@@ -26,6 +26,12 @@ body.theme-liquid-woodland {
   --surface-radius-lg: 36px;
   --surface-radius-md: 30px;
   --surface-radius-sm: 22px;
+  --theme-texture-image: none;
+  --theme-texture-tile-x: 180px;
+  --theme-texture-tile-y: 180px;
+  --theme-texture-opacity: 0.08;
+  --theme-texture-blend: soft-light;
+  --theme-texture-scroll-y: 0px;
   background:
     radial-gradient(1200px 760px at 18% -10%, var(--page-glow), transparent 60%),
     radial-gradient(960px 620px at 85% 14%, var(--page-glow-strong), transparent 60%),
@@ -140,6 +146,11 @@ body.theme-liquid-woodland[data-theme="diamond"] {
   --accent-moss: #315e66;
   --accent-sky: rgba(96, 232, 240, 0.84);
   --focus-ring: #087985;
+  --theme-texture-image: url("../images/theme-patterns/diamond-facets.png");
+  --theme-texture-tile-x: 128px;
+  --theme-texture-tile-y: 224px;
+  --theme-texture-opacity: 0.18;
+  --theme-texture-blend: multiply;
 }
 
 body.theme-liquid-woodland[data-theme="emerald"] {
@@ -162,6 +173,11 @@ body.theme-liquid-woodland[data-theme="emerald"] {
   --accent-moss: #c8ffe0;
   --accent-sky: rgba(80, 219, 130, 0.84);
   --focus-ring: #50db82;
+  --theme-texture-image: url("../images/theme-patterns/emerald-leaves.png");
+  --theme-texture-tile-x: 294px;
+  --theme-texture-tile-y: 235px;
+  --theme-texture-opacity: 0.18;
+  --theme-texture-blend: multiply;
 }
 
 body.theme-liquid-woodland[data-theme="topaz"] {
@@ -184,6 +200,11 @@ body.theme-liquid-woodland[data-theme="topaz"] {
   --accent-moss: #ffd94d;
   --accent-sky: rgba(255, 185, 0, 0.84);
   --focus-ring: #ffb900;
+  --theme-texture-image: url("../images/theme-patterns/honey-comb.png");
+  --theme-texture-tile-x: 270px;
+  --theme-texture-tile-y: 289px;
+  --theme-texture-opacity: 0.26;
+  --theme-texture-blend: multiply;
 }
 
 body.theme-liquid-woodland[data-theme="goldfish"] {
@@ -206,6 +227,11 @@ body.theme-liquid-woodland[data-theme="goldfish"] {
   --accent-moss: #ffb37a;
   --accent-sky: rgba(255, 106, 26, 0.84);
   --focus-ring: #d94e00;
+  --theme-texture-image: url("../images/theme-patterns/goldfish-scales.png");
+  --theme-texture-tile-x: 40px;
+  --theme-texture-tile-y: 40px;
+  --theme-texture-opacity: 0.28;
+  --theme-texture-blend: multiply;
 }
 
 body.theme-liquid-woodland[data-theme="cobblestone"] {
@@ -228,6 +254,11 @@ body.theme-liquid-woodland[data-theme="cobblestone"] {
   --accent-moss: #b0b2b5;
   --accent-sky: rgba(138, 141, 145, 0.84);
   --focus-ring: #55575b;
+  --theme-texture-image: url("../images/theme-patterns/cobblestone.png");
+  --theme-texture-tile-x: 220px;
+  --theme-texture-tile-y: 220px;
+  --theme-texture-opacity: 0.22;
+  --theme-texture-blend: multiply;
 }
 
 body.theme-liquid-woodland[data-theme="bark"] {
@@ -250,6 +281,11 @@ body.theme-liquid-woodland[data-theme="bark"] {
   --accent-moss: #c9ac8e;
   --accent-sky: rgba(217, 154, 84, 0.86);
   --focus-ring: #e0a868;
+  --theme-texture-image: url("../images/theme-patterns/bark.png");
+  --theme-texture-tile-x: 300px;
+  --theme-texture-tile-y: 409px;
+  --theme-texture-opacity: 0.28;
+  --theme-texture-blend: soft-light;
   color-scheme: dark;
 }
 
@@ -316,9 +352,28 @@ body.theme-liquid-woodland::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.08;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E");
-  mix-blend-mode: soft-light;
+  opacity: var(--theme-texture-opacity, 0.08);
+  background-image: var(--theme-texture-image), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E");
+  background-repeat: repeat, repeat;
+  background-size: var(--theme-texture-tile-x, 180px) var(--theme-texture-tile-y, 180px), 180px 180px;
+  background-position: var(--theme-texture-scroll-y, 0px) var(--theme-texture-scroll-y, 0px), 0 0;
+  mix-blend-mode: var(--theme-texture-blend, soft-light);
+  animation: theme-texture-diagonal-drift 18s linear infinite;
+  will-change: background-position;
+}
+
+@keyframes theme-texture-diagonal-drift {
+  from {
+    background-position:
+      var(--theme-texture-scroll-y, 0px) var(--theme-texture-scroll-y, 0px),
+      0 0;
+  }
+  to {
+    background-position:
+      calc(var(--theme-texture-scroll-y, 0px) + var(--theme-texture-tile-x, 180px))
+      calc(var(--theme-texture-scroll-y, 0px) + var(--theme-texture-tile-y, 180px)),
+      180px 180px;
+  }
 }
 
 body.theme-liquid-woodland[data-theme="vaporwave"]::before {
@@ -360,6 +415,7 @@ body.theme-liquid-woodland[data-theme="vaporwave"]::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  body.theme-liquid-woodland::before,
   body.theme-liquid-woodland[data-theme="vaporwave"]::before,
   body.theme-liquid-woodland[data-theme="vaporwave"]::after {
     animation: none;
@@ -375,7 +431,7 @@ body.theme-liquid-woodland .site-footer {
 
 body.theme-liquid-woodland .site-header {
   position: sticky;
-  z-index: 120;
+  z-index: 10030;
 }
 
 body.theme-liquid-woodland a {
@@ -511,6 +567,11 @@ body.theme-liquid-woodland .nav-toggle:hover {
 
 body.theme-liquid-woodland .nav-settings {
   position: relative;
+  z-index: 1;
+}
+
+body.theme-liquid-woodland .nav-settings.is-open {
+  z-index: 10040;
 }
 
 body.theme-liquid-woodland .nav-settings-toggle {
@@ -574,7 +635,7 @@ body.theme-liquid-woodland .nav-settings-panel {
   box-shadow: 0 30px 84px rgba(35, 68, 121, 0.18), 0 14px 36px rgba(80, 122, 188, 0.14);
   -webkit-backdrop-filter: blur(26px) saturate(160%);
   backdrop-filter: blur(26px) saturate(160%);
-  z-index: 180;
+  z-index: 10050;
 }
 
 body.theme-liquid-woodland .nav-settings-head {
@@ -899,12 +960,11 @@ body.theme-liquid-woodland[data-theme="diamond"].theme-steam,
 body.theme-liquid-woodland[data-theme="diamond"].theme-video-library,
 body.theme-liquid-woodland[data-theme="diamond"].theme-music-lab {
   background-image:
-    url("../images/theme-patterns/diamond-facets.png"),
     radial-gradient(1100px 600px at 50% -8%, rgba(96, 232, 240, 0.34), transparent 58%),
     radial-gradient(920px 560px at 88% 8%, rgba(96, 232, 240, 0.2), transparent 58%),
     linear-gradient(180deg, #f7feff 0%, #eafcff 44%, #d8f9fc 100%);
-  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
-  background-size: 128px 224px, auto, auto, auto;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: auto, auto, auto;
 }
 
 body.theme-liquid-woodland[data-theme="emerald"].theme-home,
@@ -922,12 +982,11 @@ body.theme-liquid-woodland[data-theme="topaz"].theme-steam,
 body.theme-liquid-woodland[data-theme="topaz"].theme-video-library,
 body.theme-liquid-woodland[data-theme="topaz"].theme-music-lab {
   background-image:
-    url("../images/theme-patterns/honey-comb.png"),
     radial-gradient(1000px 560px at 50% -8%, rgba(255, 247, 173, 0.26), transparent 58%),
     radial-gradient(820px 460px at 84% 12%, rgba(255, 185, 0, 0.14), transparent 56%),
     linear-gradient(180deg, #fffaf0 0%, #fff6d9 44%, #fff9e3 100%);
-  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
-  background-size: 270px 289px, auto, auto, auto;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: auto, auto, auto;
 }
 
 body.theme-liquid-woodland[data-theme="vaporwave"].theme-home,
@@ -951,12 +1010,11 @@ body.theme-liquid-woodland[data-theme="goldfish"].theme-steam,
 body.theme-liquid-woodland[data-theme="goldfish"].theme-video-library,
 body.theme-liquid-woodland[data-theme="goldfish"].theme-music-lab {
   background-image:
-    url("../images/theme-patterns/goldfish-scales.png"),
     radial-gradient(1000px 560px at 50% -8%, rgba(255, 106, 26, 0.26), transparent 58%),
     radial-gradient(820px 460px at 84% 12%, rgba(255, 106, 26, 0.16), transparent 56%),
     linear-gradient(180deg, #fff8f0 0%, #ffe9d3 44%, #ffe6cc 100%);
-  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
-  background-size: 40px 40px, auto, auto, auto;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: auto, auto, auto;
 }
 
 body.theme-liquid-woodland[data-theme="cobblestone"].theme-home,
@@ -964,12 +1022,23 @@ body.theme-liquid-woodland[data-theme="cobblestone"].theme-steam,
 body.theme-liquid-woodland[data-theme="cobblestone"].theme-video-library,
 body.theme-liquid-woodland[data-theme="cobblestone"].theme-music-lab {
   background-image:
-    url("../images/theme-patterns/cobblestone.png"),
     radial-gradient(1000px 560px at 50% -8%, rgba(120, 120, 118, 0.16), transparent 58%),
     radial-gradient(820px 460px at 84% 12%, rgba(180, 180, 176, 0.14), transparent 56%),
     linear-gradient(180deg, #f6f5f4 0%, #ece9e8 44%, #e9e7e5 100%);
-  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
-  background-size: 220px 220px, auto, auto, auto;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: auto, auto, auto;
+}
+
+body.theme-liquid-woodland[data-theme="bark"].theme-home,
+body.theme-liquid-woodland[data-theme="bark"].theme-steam,
+body.theme-liquid-woodland[data-theme="bark"].theme-video-library,
+body.theme-liquid-woodland[data-theme="bark"].theme-music-lab {
+  background-image:
+    radial-gradient(1000px 560px at 50% -8%, rgba(217, 154, 84, 0.18), transparent 58%),
+    radial-gradient(820px 460px at 84% 12%, rgba(180, 120, 60, 0.14), transparent 56%),
+    linear-gradient(180deg, #2d2016 0%, #23180f 44%, #1a120b 100%);
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: auto, auto, auto;
 }
 
 body.theme-liquid-woodland.theme-home[data-theme="sakura"] .home-widget--schedule,

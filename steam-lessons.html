@@ -83,6 +83,35 @@
           <span class="live-toggle-label">Live only</span>
         </label>
       </div>
+
+      <div class="theme-filter-bar" id="theme-filter-bar" role="group" aria-label="Filter by STEAM theme">
+        <button class="theme-filter-btn theme-filter-btn--active" data-theme-filter="all">All themes</button>
+        <button class="theme-filter-btn" data-theme-filter="science">Science</button>
+        <button class="theme-filter-btn" data-theme-filter="technology">Technology</button>
+        <button class="theme-filter-btn" data-theme-filter="engineering">Engineering</button>
+        <button class="theme-filter-btn" data-theme-filter="art">Art</button>
+        <button class="theme-filter-btn" data-theme-filter="math">Math</button>
+        <button class="theme-filter-btn" data-theme-filter="bridge">Bridge</button>
+      </div>
+
+      <div class="steam-readouts" aria-label="Library status">
+        <div class="steam-readout">
+          <span class="steam-readout-label">Modules</span>
+          <span class="steam-readout-val" id="steam-readout-modules">13</span>
+        </div>
+        <div class="steam-readout">
+          <span class="steam-readout-label">Visible</span>
+          <span class="steam-readout-val" id="steam-readout-visible">13</span>
+        </div>
+        <div class="steam-readout">
+          <span class="steam-readout-label">Lessons</span>
+          <span class="steam-readout-val" id="steam-readout-lessons">0</span>
+        </div>
+        <div class="steam-readout">
+          <span class="steam-readout-label">Themes</span>
+          <span class="steam-readout-val">6</span>
+        </div>
+      </div>
     </section>
 
     <style>
@@ -585,6 +614,285 @@
       .grade-hidden {
         display: none !important;
       }
+
+      /* Shared STEAM theme tokens */
+      .theme-steam [data-theme-area="science"] { --steam-color: #38bdf8; --steam-soft: rgba(56, 189, 248, 0.14); }
+      .theme-steam [data-theme-area="technology"] { --steam-color: #f59e0b; --steam-soft: rgba(245, 158, 11, 0.14); }
+      .theme-steam [data-theme-area="engineering"] { --steam-color: #10b981; --steam-soft: rgba(16, 185, 129, 0.14); }
+      .theme-steam [data-theme-area="art"] { --steam-color: #ec4899; --steam-soft: rgba(236, 72, 153, 0.14); }
+      .theme-steam [data-theme-area="math"] { --steam-color: #818cf8; --steam-soft: rgba(129, 140, 248, 0.14); }
+      .theme-steam [data-theme-area="bridge"] { --steam-color: #14b8a6; --steam-soft: rgba(20, 184, 166, 0.14); }
+
+      .theme-filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 0.42rem;
+        margin: 0.75rem auto 0;
+        max-width: 780px;
+      }
+
+      .theme-filter-btn {
+        padding: 0.28rem 0.82rem;
+        border-radius: 999px;
+        border: 1.5px solid var(--border-subtle);
+        background: color-mix(in srgb, var(--steam-color, var(--accent)) 8%, transparent);
+        color: var(--text-muted);
+        font-size: 0.77rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.18s;
+      }
+
+      .theme-filter-btn:hover,
+      .theme-filter-btn.theme-filter-btn--active {
+        background: color-mix(in srgb, var(--steam-color, var(--accent)) 18%, transparent);
+        border-color: var(--steam-color, var(--accent));
+        color: var(--text-strong);
+      }
+
+      .theme-filter-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .theme-filter-btn[data-theme-filter="science"] { --steam-color: #38bdf8; }
+      .theme-filter-btn[data-theme-filter="technology"] { --steam-color: #f59e0b; }
+      .theme-filter-btn[data-theme-filter="engineering"] { --steam-color: #10b981; }
+      .theme-filter-btn[data-theme-filter="art"] { --steam-color: #ec4899; }
+      .theme-filter-btn[data-theme-filter="math"] { --steam-color: #818cf8; }
+      .theme-filter-btn[data-theme-filter="bridge"] { --steam-color: #14b8a6; }
+
+      .steam-readouts {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.55rem;
+        width: min(680px, calc(100% - 2rem));
+        margin: 1rem auto 0;
+      }
+
+      .steam-readout {
+        border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
+        border-left: 3px solid var(--accent);
+        border-radius: 10px;
+        background:
+          linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 64%),
+          var(--glass-fill-soft);
+        padding: 0.55rem 0.65rem;
+        text-align: center;
+        box-shadow: var(--glass-shadow-soft);
+      }
+
+      .steam-readout-label {
+        display: block;
+        margin-bottom: 0.12rem;
+        color: var(--text-muted);
+        font-size: 0.64rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .steam-readout-val {
+        color: var(--text-strong);
+        font-size: 1.02rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .module-map {
+        width: min(1180px, calc(100% - 2rem));
+        margin: 0 auto 1.1rem;
+      }
+
+      .module-map-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
+
+      .module-map-group {
+        grid-column: span 4;
+        display: grid;
+        align-content: start;
+        gap: 0.55rem;
+        min-height: 7.4rem;
+        padding: 0.85rem;
+        border-radius: 8px;
+        border: 1px solid color-mix(in srgb, var(--steam-color) 35%, var(--border-subtle));
+        background:
+          linear-gradient(135deg, var(--steam-soft), transparent 62%),
+          var(--glass-fill-soft);
+        color: var(--text-main);
+        box-shadow: var(--glass-shadow-soft);
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+      }
+
+      .module-map-group.is-active {
+        border-color: var(--steam-color);
+        box-shadow:
+          var(--glass-shadow-soft),
+          0 0 0 1px color-mix(in srgb, var(--steam-color) 24%, transparent);
+      }
+
+      .module-map-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.8rem;
+      }
+
+      .module-map-heading strong {
+        color: var(--text-strong);
+        font-size: 1rem;
+        line-height: 1.2;
+      }
+
+      .module-map-heading small {
+        display: block;
+        margin-top: 0.18rem;
+        color: var(--text-muted);
+        font-size: 0.72rem;
+        line-height: 1.35;
+      }
+
+      .module-map-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.38rem;
+      }
+
+      .module-map-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.7rem;
+        padding: 0.26rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid color-mix(in srgb, var(--steam-color) 28%, var(--border-subtle));
+        background: color-mix(in srgb, var(--steam-color) 9%, transparent);
+        color: var(--text-main);
+        font-size: 0.73rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        text-decoration: none;
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      }
+
+      .module-map-link:hover {
+        background: color-mix(in srgb, var(--steam-color) 18%, transparent);
+        border-color: var(--steam-color);
+        text-decoration: none;
+        transform: translateY(-1px);
+      }
+
+      .module-map-link.is-active {
+        background: color-mix(in srgb, var(--steam-color) 22%, transparent);
+        border-color: var(--steam-color);
+        color: var(--text-strong);
+      }
+
+      .module-theme-pill,
+      .module-summary-pill {
+        width: fit-content;
+        border-radius: 999px;
+        border: 1px solid color-mix(in srgb, var(--steam-color) 34%, transparent);
+        background: var(--steam-soft);
+        color: var(--text-main);
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        padding: 0.16rem 0.46rem;
+      }
+
+      .module-section {
+        scroll-margin-top: 7.2rem;
+      }
+
+      .module-section .module-banner {
+        border-left: 4px solid var(--steam-color, var(--accent));
+      }
+
+      .module-section .module-banner-count {
+        background: color-mix(in srgb, var(--steam-color, var(--accent)) 14%, rgba(255, 255, 255, 0.38));
+        border-color: color-mix(in srgb, var(--steam-color, var(--accent)) 28%, rgba(255, 255, 255, 0.5));
+      }
+
+      .module-section .module-cluster-label {
+        border-top-color: color-mix(in srgb, var(--steam-color, var(--border-subtle)) 34%, var(--border-subtle));
+      }
+
+      .module-section .module-cluster-label strong {
+        color: color-mix(in srgb, var(--steam-color, var(--text-strong)) 42%, var(--text-strong));
+      }
+
+      .module-summary-row {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        align-items: center;
+        margin-bottom: 0.15rem;
+        padding: 0.15rem 0.1rem 0.55rem;
+        border-bottom: 1px solid color-mix(in srgb, var(--steam-color, var(--border-subtle)) 28%, var(--border-subtle));
+      }
+
+      .subject-nav-link {
+        --nav-theme-color: var(--steam-color, var(--accent));
+      }
+
+      .subject-nav-link.is-active {
+        background: color-mix(in srgb, var(--nav-theme-color) 18%, transparent);
+        border-color: var(--nav-theme-color);
+        color: var(--text-strong);
+      }
+
+      .subject-nav-progress {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        overflow: hidden;
+        background: color-mix(in srgb, var(--border-subtle) 70%, transparent);
+      }
+
+      .subject-nav-progress span {
+        display: block;
+        width: 0%;
+        height: 100%;
+        background: var(--active-module-color, var(--accent));
+        transition: width 0.12s linear, background 0.18s ease;
+      }
+
+      .theme-steam [data-nav-theme="science"] { --nav-theme-color: #38bdf8; }
+      .theme-steam [data-nav-theme="technology"] { --nav-theme-color: #f59e0b; }
+      .theme-steam [data-nav-theme="engineering"] { --nav-theme-color: #10b981; }
+      .theme-steam [data-nav-theme="art"] { --nav-theme-color: #ec4899; }
+      .theme-steam [data-nav-theme="math"] { --nav-theme-color: #818cf8; }
+      .theme-steam [data-nav-theme="bridge"] { --nav-theme-color: #14b8a6; }
+
+      @media (max-width: 720px) {
+        .module-map {
+          width: min(100% - 1rem, 1180px);
+        }
+
+        .module-map-grid {
+          grid-template-columns: 1fr;
+          gap: 0.55rem;
+        }
+
+        .module-map-group {
+          grid-column: 1 / -1;
+          min-height: 0;
+          padding: 0.68rem;
+        }
+
+        .steam-readouts {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
     </style>
 
     <script>
@@ -687,6 +995,7 @@
             var kickerNode = tile.querySelector(".tile-kicker");
             var section = tile.closest(".module-section");
             var bannerTitleNode = section ? section.querySelector(".module-banner-title") : null;
+            var themeLabel = section ? section.dataset.themeLabel || "" : "";
             var href = tile.getAttribute("href");
             var title = titleNode ? titleNode.textContent.trim() : "Untitled Lesson";
             var description = descriptionNode ? descriptionNode.textContent.trim() : "";
@@ -706,6 +1015,7 @@
               id: id,
               title: title,
               topic: topic,
+              themeLabel: themeLabel,
               description: description,
               difficulty: difficulty,
               searchableText: searchableText,
@@ -809,7 +1119,7 @@
               '<button type="button" class="search-result-item" role="option" aria-selected="false" id="lesson-search-option-' + index + '" data-href="' + escapeHtml(lesson.href) + '">' +
                 '<span class="search-result-id">' + highlightText(lesson.id, queryTokens) + '</span>' +
                 '<span class="search-result-title">' + highlightText(lesson.title, queryTokens) + '</span>' +
-                '<span class="search-result-meta">' + highlightText(lesson.topic, queryTokens) + (lesson.difficulty ? ' · ' + highlightText(lesson.difficulty, queryTokens) : '') + '</span>' +
+                '<span class="search-result-meta">' + highlightText(lesson.topic, queryTokens) + (lesson.themeLabel ? ' · ' + highlightText(lesson.themeLabel, queryTokens) : '') + (lesson.difficulty ? ' · ' + highlightText(lesson.difficulty, queryTokens) : '') + '</span>' +
                 '<span class="search-result-desc">' + highlightText(lesson.description, queryTokens) + '</span>' +
               '</button>'
             );
@@ -856,16 +1166,7 @@
           clearButton.hidden = !query;
           lastResults = searchLessons(query);
 
-          var updateDom = function() {
-            updateLessonVisibility(lastResults, query);
-          };
-
-          if (document.startViewTransition) {
-            document.startViewTransition(updateDom);
-          } else {
-            updateDom();
-          }
-
+          updateLessonVisibility(lastResults, query);
           renderDropdown(lastResults, query);
         }
 
@@ -943,23 +1244,114 @@
       });
     </script>
 
+    <section class="module-map" aria-label="Module overview">
+      <div class="module-map-grid">
+        <div class="module-map-group" data-theme-area="math">
+          <div class="module-map-heading">
+            <div>
+              <strong>Mathematics</strong>
+              <small>15 live · skills spiral</small>
+            </div>
+            <span class="module-theme-pill">Math</span>
+          </div>
+          <div class="module-map-links">
+            <a class="module-map-link" href="#module-math">Math</a>
+          </div>
+        </div>
+
+        <div class="module-map-group" data-theme-area="science">
+          <div class="module-map-heading">
+            <div>
+              <strong>Natural Sciences</strong>
+              <small>60 live · physical, living, Earth, and space systems</small>
+            </div>
+            <span class="module-theme-pill">Science</span>
+          </div>
+          <div class="module-map-links">
+            <a class="module-map-link" href="#module-physics">Physics</a>
+            <a class="module-map-link" href="#module-chemistry">Chemistry</a>
+            <a class="module-map-link" href="#module-lifesci">Life Sci</a>
+            <a class="module-map-link" href="#module-earth">Earth</a>
+            <a class="module-map-link" href="#module-space">Cosmology</a>
+          </div>
+        </div>
+
+        <div class="module-map-group" data-theme-area="technology">
+          <div class="module-map-heading">
+            <div>
+              <strong>Technology</strong>
+              <small>25 live · computing, AI, and game systems</small>
+            </div>
+            <span class="module-theme-pill">Technology</span>
+          </div>
+          <div class="module-map-links">
+            <a class="module-map-link" href="#module-cs">Computer Science</a>
+            <a class="module-map-link" href="#module-gamedev">Game Design</a>
+          </div>
+        </div>
+
+        <div class="module-map-group" data-theme-area="engineering">
+          <div class="module-map-heading">
+            <div>
+              <strong>Engineering & Materials</strong>
+              <small>17 live · design, circuits, fabrication, and constraints</small>
+            </div>
+            <span class="module-theme-pill">Engineering</span>
+          </div>
+          <div class="module-map-links">
+            <a class="module-map-link" href="#module-engineering">Engineering</a>
+            <a class="module-map-link" href="#module-fabrication">Materials</a>
+          </div>
+        </div>
+
+        <div class="module-map-group" data-theme-area="art">
+          <div class="module-map-heading">
+            <div>
+              <strong>Visual Design</strong>
+              <small>3 live · perception, color, and spatial media</small>
+            </div>
+            <span class="module-theme-pill">Art</span>
+          </div>
+          <div class="module-map-links">
+            <a class="module-map-link" href="#module-art">Art & Design</a>
+          </div>
+        </div>
+
+        <div class="module-map-group" data-theme-area="bridge">
+          <div class="module-map-heading">
+            <div>
+              <strong>Human Systems</strong>
+              <small>11 live · language, culture, networks, and civilization</small>
+            </div>
+            <span class="module-theme-pill">Bridge</span>
+          </div>
+          <div class="module-map-links">
+            <a class="module-map-link" href="#module-language">Language</a>
+            <a class="module-map-link" href="#module-systems">Systems</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <nav class="subject-nav" aria-label="Jump to subject">
-      <a class="subject-nav-link" href="#module-math">📐 Math</a>
-      <a class="subject-nav-link" href="#module-physics">⚡ Physics</a>
-      <a class="subject-nav-link" href="#module-chemistry">🧪 Chemistry</a>
-      <a class="subject-nav-link" href="#module-lifesci">🧬 Life Sci</a>
-      <a class="subject-nav-link" href="#module-earth">🌍 Earth</a>
-      <a class="subject-nav-link" href="#module-space">🚀 Cosmology</a>
-      <a class="subject-nav-link" href="#module-engineering">⚙️ Engineering</a>
-      <a class="subject-nav-link" href="#module-cs">💻 CS</a>
-      <a class="subject-nav-link" href="#module-fabrication">🔧 Materials</a>
-      <a class="subject-nav-link" href="#module-art">🎨 Art</a>
-      <a class="subject-nav-link" href="#module-language">📚 Language</a>
-      <a class="subject-nav-link" href="#module-systems">🌐 Systems</a>
+      <a class="subject-nav-link" data-nav-theme="math" href="#module-math">📐 Math</a>
+      <a class="subject-nav-link" data-nav-theme="science" href="#module-physics">⚡ Physics</a>
+      <a class="subject-nav-link" data-nav-theme="science" href="#module-chemistry">🧪 Chemistry</a>
+      <a class="subject-nav-link" data-nav-theme="science" href="#module-lifesci">🧬 Life Sci</a>
+      <a class="subject-nav-link" data-nav-theme="science" href="#module-earth">🌍 Earth</a>
+      <a class="subject-nav-link" data-nav-theme="science" href="#module-space">🚀 Cosmology</a>
+      <a class="subject-nav-link" data-nav-theme="engineering" href="#module-engineering">⚙️ Engineering</a>
+      <a class="subject-nav-link" data-nav-theme="technology" href="#module-cs">💻 CS</a>
+      <a class="subject-nav-link" data-nav-theme="technology" href="#module-gamedev">🎮 Game Dev</a>
+      <a class="subject-nav-link" data-nav-theme="engineering" href="#module-fabrication">🔧 Materials</a>
+      <a class="subject-nav-link" data-nav-theme="art" href="#module-art">🎨 Art</a>
+      <a class="subject-nav-link" data-nav-theme="bridge" href="#module-language">📚 Language</a>
+      <a class="subject-nav-link" data-nav-theme="bridge" href="#module-systems">🌐 Systems</a>
+      <span class="subject-nav-progress" aria-hidden="true"><span id="subject-nav-progress-bar"></span></span>
     </nav>
 
     <!-- ══ Mathematics ══ -->
-    <section class="section module-section reveal" id="module-math">
+    <section class="section module-section reveal" id="module-math" data-theme-area="math" data-theme-label="Math">
       <div class="module-banner math-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">📐</span>
         <div class="module-banner-text">
@@ -1082,7 +1474,7 @@
     </section>
 
     <!-- ══ Physics ══ -->
-    <section class="section module-section reveal" id="module-physics">
+    <section class="section module-section reveal" id="module-physics" data-theme-area="science" data-theme-label="Science">
       <div class="module-banner physics-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">⚡</span>
         <div class="module-banner-text">
@@ -1285,7 +1677,7 @@
     </section>
 
     <!-- ══ Chemistry ══ -->
-    <section class="section module-section reveal" id="module-chemistry">
+    <section class="section module-section reveal" id="module-chemistry" data-theme-area="science" data-theme-label="Science">
       <div class="module-banner chemistry-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">🧪</span>
         <div class="module-banner-text">
@@ -1389,7 +1781,7 @@
     </section>
 
     <!-- ══ Life Sciences ══ -->
-    <section class="section module-section reveal" id="module-lifesci">
+    <section class="section module-section reveal" id="module-lifesci" data-theme-area="science" data-theme-label="Science">
       <div class="module-banner lifesci-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">🧬</span>
         <div class="module-banner-text">
@@ -1492,7 +1884,7 @@
     </section>
 
     <!-- ══ Earth Science ══ -->
-    <section class="section module-section reveal" id="module-earth">
+    <section class="section module-section reveal" id="module-earth" data-theme-area="science" data-theme-label="Science">
       <div class="module-banner earth-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">🌍</span>
         <div class="module-banner-text">
@@ -1586,7 +1978,7 @@
     </section>
 
     <!-- ══ Cosmology & Planetary Science ══ -->
-    <section class="section module-section reveal" id="module-space">
+    <section class="section module-section reveal" id="module-space" data-theme-area="science" data-theme-label="Science">
       <div class="module-banner space-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">🚀</span>
         <div class="module-banner-text">
@@ -1715,7 +2107,7 @@
     </section>
 
     <!-- ══ Engineering ══ -->
-    <section class="section module-section reveal" id="module-engineering">
+    <section class="section module-section reveal" id="module-engineering" data-theme-area="engineering" data-theme-label="Engineering">
       <div class="module-banner engineering-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">⚙️</span>
         <div class="module-banner-text">
@@ -1842,7 +2234,7 @@
     </section>
 
     <!-- ══ Computer Science ══ -->
-    <section class="section module-section reveal" id="module-cs">
+    <section class="section module-section reveal" id="module-cs" data-theme-area="technology" data-theme-label="Technology">
       <div class="module-banner cs-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">💻</span>
         <div class="module-banner-text">
@@ -2012,7 +2404,7 @@
     </section>
 
     <!-- ══ Game Design & Development ══ -->
-    <section class="section module-section reveal" id="module-gamedev">
+    <section class="section module-section reveal" id="module-gamedev" data-theme-area="technology" data-theme-label="Technology">
       <div class="module-banner gamedev-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">🎮</span>
         <div class="module-banner-text">
@@ -2086,7 +2478,7 @@
     </section>
 
     <!-- ══ Applied Physics & Materials Science ══ -->
-    <section class="section module-section reveal" id="module-fabrication">
+    <section class="section module-section reveal" id="module-fabrication" data-theme-area="engineering" data-theme-label="Engineering">
       <div class="module-banner fabrication-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">🔧</span>
         <div class="module-banner-text">
@@ -2211,7 +2603,7 @@
     </section>
 
     <!-- ══ Visual Perception & Design ══ -->
-    <section class="section module-section reveal" id="module-art">
+    <section class="section module-section reveal" id="module-art" data-theme-area="art" data-theme-label="Art">
       <div class="module-banner art-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">🎨</span>
         <div class="module-banner-text">
@@ -2294,7 +2686,7 @@
     </section>
 
     <!-- ══ Language and Literature ══ -->
-    <section class="section module-section reveal" id="module-language">
+    <section class="section module-section reveal" id="module-language" data-theme-area="bridge" data-theme-label="Bridge">
       <div class="module-banner language-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">📚</span>
         <div class="module-banner-text">
@@ -2391,7 +2783,7 @@
     </section>
 
     <!-- ══ Complex Systems & Humanities ══ -->
-    <section class="section module-section reveal" id="module-systems">
+    <section class="section module-section reveal" id="module-systems" data-theme-area="bridge" data-theme-label="Bridge">
       <div class="module-banner systems-banner" role="button" tabindex="0" aria-expanded="false">
         <span class="module-banner-icon">🌐</span>
         <div class="module-banner-text">
@@ -2536,35 +2928,75 @@
       });
     });
 
+    document.querySelectorAll('.module-section').forEach(function (section) {
+      var grid = section.querySelector('.module-tile-grid');
+      var bannerCount = section.querySelector('.module-banner-count');
+      var bannerLevel = section.querySelector('.module-banner-level');
+      if (!grid || grid.querySelector('.module-summary-row')) return;
+
+      var row = document.createElement('div');
+      row.className = 'module-summary-row';
+      row.setAttribute('aria-label', 'Module summary');
+      row.innerHTML =
+        '<span class="module-summary-pill">' + (section.dataset.themeLabel || 'STEAM') + '</span>' +
+        '<span class="module-summary-pill">' + (bannerCount ? bannerCount.textContent.trim() : 'Lessons') + '</span>' +
+        '<span class="module-summary-pill">' + (bannerLevel ? bannerLevel.textContent.trim() : 'Progression') + '</span>';
+      grid.insertBefore(row, grid.firstElementChild);
+    });
+
     // ── 2. Grade filter + live-only toggle ────────────────────────────
     var activeGrade = 'all';
+    var activeTheme = 'all';
     var liveOnly = localStorage.getItem('sl-live-only') === 'true';
 
     var liveToggleInput = document.getElementById('live-only-toggle');
     if (liveToggleInput) liveToggleInput.checked = liveOnly;
 
     function applyFilters() {
+      var visibleModuleCount = 0;
+      var visibleLessonCount = 0;
+
       document.querySelectorAll('.module-section').forEach(function (section) {
         var grid = section.querySelector('.module-tile-grid');
         if (!grid) return;
 
+        var themeMatch = activeTheme === 'all' || section.dataset.themeArea === activeTheme;
         var hasVisible = false;
 
         Array.from(grid.children).forEach(function (child) {
           var band = child.dataset.gradeBand || 'all';
           var isCluster = child.classList.contains('module-cluster-label');
+          var isSummary = child.classList.contains('module-summary-row');
           var isComingSoon = child.classList.contains('tile-coming-soon');
 
           var gradeMatch = activeGrade === 'all' || band === 'all' || band === 'capstone' || band === activeGrade;
           var liveMatch  = !liveOnly || !isComingSoon;
-          var show = gradeMatch && (isCluster || liveMatch);
+          var show = themeMatch && (isSummary || (gradeMatch && (isCluster || liveMatch)));
 
           child.classList.toggle('grade-hidden', !show);
-          if (show && !isCluster) hasVisible = true;
+          if (show && !isCluster && !isSummary) hasVisible = true;
         });
 
-        section.classList.toggle('grade-hidden', !hasVisible);
+        var showSection = themeMatch && hasVisible;
+        section.classList.toggle('grade-hidden', !showSection);
+        if (showSection) visibleModuleCount++;
+        visibleLessonCount += Array.from(grid.querySelectorAll('.tile')).filter(function (tile) {
+          return !tile.classList.contains('grade-hidden') && !tile.classList.contains('lesson-hidden');
+        }).length;
       });
+
+      document.querySelectorAll('.module-map-group').forEach(function (group) {
+        var showGroup = activeTheme === 'all' || group.dataset.themeArea === activeTheme;
+        group.classList.toggle('grade-hidden', !showGroup);
+      });
+
+      var modulesReadout = document.getElementById('steam-readout-modules');
+      var visibleReadout = document.getElementById('steam-readout-visible');
+      var lessonsReadout = document.getElementById('steam-readout-lessons');
+      if (modulesReadout) modulesReadout.textContent = document.querySelectorAll('.module-section').length;
+      if (visibleReadout) visibleReadout.textContent = visibleModuleCount;
+      if (lessonsReadout) lessonsReadout.textContent = visibleLessonCount;
+      if (typeof updateActiveFromScroll === 'function' && Array.isArray(subjectLinks)) updateActiveFromScroll();
     }
 
     document.querySelectorAll('.grade-btn').forEach(function (btn) {
@@ -2584,6 +3016,16 @@
         applyFilters();
       });
     }
+
+    document.querySelectorAll('.theme-filter-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activeTheme = btn.dataset.themeFilter;
+        document.querySelectorAll('.theme-filter-btn').forEach(function (b) {
+          b.classList.toggle('theme-filter-btn--active', b.dataset.themeFilter === activeTheme);
+        });
+        applyFilters();
+      });
+    });
 
     applyFilters();
 
@@ -2613,6 +3055,79 @@
         }
       }
     });
+
+    // ── 4b. Sticky subject nav active section ────────────────────────
+    var subjectLinks = Array.from(document.querySelectorAll('.subject-nav-link[href^="#module-"]'));
+    var moduleMapLinks = Array.from(document.querySelectorAll('.module-map-link[href^="#module-"]'));
+    var progressBar = document.getElementById('subject-nav-progress-bar');
+    var themeColors = {
+      science: '#38bdf8',
+      technology: '#f59e0b',
+      engineering: '#10b981',
+      art: '#ec4899',
+      math: '#818cf8',
+      bridge: '#14b8a6'
+    };
+    var sectionById = {};
+    subjectLinks.forEach(function (link) {
+      sectionById[link.getAttribute('href').slice(1)] = link;
+    });
+
+    function setActiveModule(id) {
+      var section = document.getElementById(id);
+      var themeArea = section ? section.dataset.themeArea : '';
+      var themeColor = themeColors[themeArea] || 'var(--accent)';
+
+      subjectLinks.forEach(function (link) {
+        link.classList.toggle('is-active', link.getAttribute('href') === '#' + id);
+      });
+
+      moduleMapLinks.forEach(function (link) {
+        var isActive = link.getAttribute('href') === '#' + id;
+        link.classList.toggle('is-active', isActive);
+        var group = link.closest('.module-map-group');
+        if (group && isActive) group.classList.add('is-active');
+      });
+
+      document.querySelectorAll('.module-map-group').forEach(function (group) {
+        var hasActiveLink = Boolean(group.querySelector('.module-map-link.is-active'));
+        group.classList.toggle('is-active', hasActiveLink);
+      });
+
+      document.documentElement.style.setProperty('--active-module-color', themeColor);
+    }
+
+    function updateScrollProgress() {
+      if (!progressBar) return;
+      var doc = document.documentElement;
+      var max = Math.max(1, doc.scrollHeight - window.innerHeight);
+      var pct = Math.min(100, Math.max(0, (window.scrollY / max) * 100));
+      progressBar.style.width = pct.toFixed(2) + '%';
+    }
+
+    function getActiveSectionIdFromScroll() {
+      var visibleSections = Array.from(document.querySelectorAll('.module-section')).filter(function (section) {
+        return !section.classList.contains('grade-hidden') && getComputedStyle(section).display !== 'none';
+      });
+      if (!visibleSections.length) return '';
+
+      var marker = 160;
+      var active = visibleSections[0];
+      visibleSections.forEach(function (section) {
+        if (section.getBoundingClientRect().top <= marker) active = section;
+      });
+      return active.id;
+    }
+
+    function updateActiveFromScroll() {
+      var id = getActiveSectionIdFromScroll();
+      if (id) setActiveModule(id);
+      updateScrollProgress();
+    }
+
+    window.addEventListener('scroll', updateActiveFromScroll, { passive: true });
+    window.addEventListener('resize', updateActiveFromScroll);
+    updateActiveFromScroll();
 
     // ── 5. Back to top ────────────────────────────────────────────────
     var btt = document.getElementById('back-to-top');

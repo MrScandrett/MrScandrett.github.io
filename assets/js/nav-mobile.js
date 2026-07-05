@@ -575,8 +575,8 @@
         '</div>' +
         '<div class="nav-settings-divider"></div>' +
         '<div class="nav-settings-section">' +
-          '<p class="nav-settings-eyebrow">Home Background</p>' +
-          '<p class="nav-settings-note">Animated canvas on the home page hero. Has no effect on other pages.</p>' +
+          '<p class="nav-settings-eyebrow">Page Background</p>' +
+          '<p class="nav-settings-note">Animated canvas behind the site. The choice follows you across shared pages.</p>' +
           '<div class="nav-canvas-grid" role="list"></div>' +
         '</div>' +
       "</div>";
@@ -831,6 +831,25 @@
     });
   }
 
+  function ensureCanvasBackgroundEngine() {
+    if (isThemeIndependent || window.ClassroomOSCanvasBg || document.querySelector('script[data-classroomos-canvas-bg="true"]')) return;
+
+    var src = "assets/js/canvas-bg.js";
+    var navScript = Array.prototype.slice.call(document.scripts).find(function (script) {
+      return /(^|\/)nav-mobile\.js(?:[?#].*)?$/.test(script.getAttribute("src") || script.src || "");
+    });
+
+    if (navScript) {
+      src = (navScript.getAttribute("src") || navScript.src).replace(/nav-mobile\.js(?:[?#].*)?$/, "canvas-bg.js");
+    }
+
+    var script = document.createElement("script");
+    script.src = src;
+    script.defer = true;
+    script.dataset.classroomosCanvasBg = "true";
+    document.head.appendChild(script);
+  }
+
   function openNav() {
     nav.classList.add("is-open");
     btn.setAttribute("aria-expanded", "true");
@@ -891,6 +910,8 @@
 
     syncLightingUi();
   }
+
+  ensureCanvasBackgroundEngine();
 }());
 
 // ── Command Palette (Cmd+K / Ctrl+K global search) ──────────────────
