@@ -325,51 +325,32 @@ function getColorSpectrum() {
     ];
 }
 
+const rainbowAngleCache = new Map();
+
+// Finds the minimum-deviation angle for light entering a droplet of refractive
+// index n and exiting after `numReflections` internal bounces (1 = primary
+// rainbow, 2 = secondary), then converts it to the angle seen from the
+// antisolar point. This is the actual geometry that produces the classic
+// ~42° primary / ~51° secondary bows, not an approximation of it.
 function computeRainbowAngle(n, numReflections) {
-    const nWater = n;
-    const nAir = 1.0;
+    const cacheKey = `${n}-${numReflections}`;
+    if (rainbowAngleCache.has(cacheKey)) return rainbowAngleCache.get(cacheKey);
 
     let minDeviation = Infinity;
-    let rainbowAngle = 0;
-
-    for (let b = 0.001; b < 0.999; b += 0.001) {
-        const sinThetaI = b;
-        const cosThetaI = Math.sqrt(1 - sinThetaI * sinThetaI);
-
-        const sinThetaR = sinThetaI / nWater;
-        const cosThetaR = Math.sqrt(1 - sinThetaR * sinThetaR);
-
-        const thetaI = Math.asin(sinThetaI);
+    for (let hundredths = 1; hundredths < 8999; hundredths += 1) {
+        const thetaI = (hundredths / 100) * (Math.PI / 180);
+        const sinThetaR = Math.sin(thetaI) / n;
+        if (sinThetaR >= 1) continue;
         const thetaR = Math.asin(sinThetaR);
 
-        let D;
-        if (numReflections === 1) {
-            D = Math.PI + 2 * thetaI - 4 * thetaR;
-        } else {
-            D = 2 * Math.PI + 4 * thetaI - 4 * Math.PI / 2 - 6 * thetaR;
-        }
-
-        const deviation = Math.abs(D);
-        if (deviation < minDeviation) {
-            minDeviation = deviation;
-            const angle = (thetaI - thetaR) * (180 / Math.PI);
-            rainbowAngle = Math.abs(angle) * (numReflections === 1 ? 1 : 0.95);
-        }
+        const deviation = 2 * thetaI - 2 * (numReflections + 1) * thetaR + numReflections * Math.PI;
+        if (deviation < minDeviation) minDeviation = deviation;
     }
 
-    return numReflections === 1 ? 42 - (n - 1.331) * 50 : 51 - (n - 1.331) * 30;
-}
-
-function fresnelReflectance(angleOfIncidence, n) {
-    const cosI = Math.cos(angleOfIncidence);
-    const sinI = Math.sin(angleOfIncidence);
-    const n2 = n * n;
-
-    const rPerp = Math.pow((1 - n * cosI) / (1 + n * cosI), 2);
-    const temp = Math.sqrt(n2 - 1 + cosI * cosI);
-    const rParallel = Math.pow((n * cosI - temp) / (n * cosI + temp), 2);
-
-    return (rPerp + rParallel) / 2;
+    const deviationDeg = minDeviation * (180 / Math.PI);
+    const angle = numReflections === 1 ? 180 - deviationDeg : deviationDeg - 180;
+    rainbowAngleCache.set(cacheKey, angle);
+    return angle;
 }
 
 function createSimulationScene(canvas) {
