@@ -16,7 +16,7 @@
   <link rel="canonical" href="https://mrscandrett.github.io/applications.html" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <script src="assets/js/theme-lighting.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/fuse.js@7.4.2/dist/fuse.min.js" integrity="sha384-2QuAtllswCM22yDQfFPXsWfvKeabbLyMK11IdFq9+XGdSJZAnsRtVoYUcIoUxqjH" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.min.js" integrity="sha384-P/y/5cwqUn6MDvJ9lCHJSaAi2EoH3JSeEdyaORsQMPgbpvA+NvvUqik7XH2YGBjb" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/lucide@1.17.0/dist/umd/lucide.min.js" integrity="sha384-bdZtphetAEBgkGZvhZXOFDWc55tHGLqaSo1f4qZtgvEiolEBqlJ9u6FTk+CoLfj0" crossorigin="anonymous"></script>
   <style>
     :root {
@@ -2363,6 +2363,19 @@
     @media (max-width: 600px) {
       .applications-hero-lead { font-size: clamp(0.9rem, 4vw, 1.05rem); }
     }
+
+    /* Respect motion sensitivity: stop continuous decorative animations */
+    @media (prefers-reduced-motion: reduce) {
+      .steam-galaxy-shell,
+      .applications-hero::before {
+        animation: none !important;
+      }
+      .steam-galaxy-link.is-visible,
+      .steam-galaxy-project-path,
+      .steam-galaxy-node.is-active .steam-galaxy-node-aura {
+        animation: none !important;
+      }
+    }
   </style>
   <script type="application/ld+json">
   {
@@ -2463,24 +2476,24 @@
       </div>
     </section>
 
-    <nav class="app-tab-bar" role="tablist" aria-label="Applications views">
-      <button class="app-tab is-active" role="tab" aria-selected="true" aria-controls="tab-panel-library" id="tab-btn-library" type="button">
+    <div class="app-tab-bar" role="tablist" aria-label="Applications views">
+      <button class="app-tab is-active" role="tab" aria-selected="true" aria-controls="tab-panel-library" id="tab-btn-library" type="button" aria-label="Library">
         <span class="app-tab-icon" aria-hidden="true">📚</span>
         <span class="app-tab-label">Library</span>
       </button>
-      <button class="app-tab" role="tab" aria-selected="false" aria-controls="tab-panel-guided" id="tab-btn-guided" type="button">
+      <button class="app-tab" role="tab" aria-selected="false" aria-controls="tab-panel-guided" id="tab-btn-guided" type="button" aria-label="Guided Library">
         <span class="app-tab-icon" aria-hidden="true">🎯</span>
         <span class="app-tab-label">Guided Library</span>
       </button>
-      <button class="app-tab" role="tab" aria-selected="false" aria-controls="tab-panel-galaxy" id="tab-btn-galaxy" type="button">
+      <button class="app-tab" role="tab" aria-selected="false" aria-controls="tab-panel-galaxy" id="tab-btn-galaxy" type="button" aria-label="Galaxy Library">
         <span class="app-tab-icon" aria-hidden="true">🌌</span>
         <span class="app-tab-label">Galaxy Library</span>
       </button>
-      <button class="app-command-trigger" id="open-app-command" type="button" aria-haspopup="dialog" aria-controls="app-command-palette">
+      <button class="app-command-trigger" id="open-app-command" type="button" aria-haspopup="dialog" aria-controls="app-command-palette" aria-label="Open Neural Search">
         <span>Neural Search</span>
         <kbd>Cmd K</kbd>
       </button>
-    </nav>
+    </div>
 
     <div class="app-command-backdrop" id="app-command-palette" hidden>
       <div class="app-command-shell" role="dialog" aria-modal="true" aria-labelledby="app-command-title">
@@ -5659,8 +5672,13 @@
       }
 
       if (librarySearch) {
+        let librarySearchDebounce = null;
         librarySearch.addEventListener("input", function () {
-          renderAll();
+          window.clearTimeout(librarySearchDebounce);
+          librarySearchDebounce = window.setTimeout(function () {
+            renderLibraryBrowse();
+            renderLibrary();
+          }, 120);
         });
       }
 
@@ -6012,6 +6030,13 @@
           }
         });
 
+        function paletteFocusables() {
+          return Array.from(palette.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter((element) => {
+            if (element.disabled) return false;
+            return element.offsetParent !== null || element === document.activeElement;
+          });
+        }
+
         document.addEventListener("keydown", function (event) {
           const isPaletteShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
           if (isPaletteShortcut) {
@@ -6023,9 +6048,27 @@
             }
             return;
           }
-          if (!palette.hidden && event.key === "Escape") {
+          if (palette.hidden) return;
+          if (event.key === "Escape") {
             event.preventDefault();
             closePalette();
+            return;
+          }
+          if (event.key === "Tab") {
+            const focusables = paletteFocusables();
+            if (focusables.length === 0) return;
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            const active = document.activeElement;
+            if (event.shiftKey) {
+              if (active === first || !palette.contains(active)) {
+                event.preventDefault();
+                last.focus();
+              }
+            } else if (active === last) {
+              event.preventDefault();
+              first.focus();
+            }
           }
         });
       })();
@@ -7892,6 +7935,7 @@
 
         const width = starsCanvas.clientWidth;
         const height = starsCanvas.clientHeight;
+        if (!width || !height) return;
         const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
 
         ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
@@ -7906,6 +7950,7 @@
           const breathe = 0.88 + Math.sin(time * 0.00013 + cloud.phase) * 0.12;
           const alpha = cloud.alpha * (0.72 + Math.sin(time * 0.00025 + cloud.phase * 1.7) * 0.28);
           const r = cloud.radius * breathe;
+          if (!Number.isFinite(px) || !Number.isFinite(py) || !(r > 0)) return;
           const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
           grad.addColorStop(0,   `rgba(${cloud.r},${cloud.g},${cloud.b},${alpha})`);
           grad.addColorStop(0.45,`rgba(${cloud.r},${cloud.g},${cloud.b},${alpha * 0.35})`);
@@ -8138,8 +8183,18 @@
       }
 
       function animate(time) {
+        if (document.hidden || stage.offsetParent === null) {
+          animationFrameId = null;
+          return;
+        }
         renderFrame(time);
         animationFrameId = window.requestAnimationFrame(animate);
+      }
+
+      function resumeAnimation() {
+        if (!animationFrameId) {
+          animationFrameId = window.requestAnimationFrame(animate);
+        }
       }
 
       let panelLayoutTimer = null;
@@ -8192,9 +8247,11 @@
         }
       });
 
-      if (!animationFrameId) {
-        animationFrameId = window.requestAnimationFrame(animate);
-      }
+      resumeAnimation();
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) resumeAnimation();
+      });
+      document.getElementById("tab-btn-galaxy")?.addEventListener("click", resumeAnimation);
 
       if (galaxyPanelToggle && galaxyLayout) {
         galaxyPanelToggle.addEventListener("click", function () {
