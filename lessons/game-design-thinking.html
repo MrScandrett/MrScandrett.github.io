@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>What Makes a Game? · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Game Design Lesson 1 — explore what turns an activity into a game using the MDA framework. Design your own game concept using Goals, Rules, Feedback, and Player Choice." />
+  <meta name="description" content="Game Design Lesson 1 — explore what turns an activity into a game using the MDA framework, trace the history of video games from room-sized computers to AI-assisted creation, and design your own game concept using Goals, Rules, Feedback, and Player Choice." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -76,6 +76,52 @@
     .arch-btn:hover { background: var(--acc-soft); }
     .arch-btn.used { border-color: #22c55e; color: #22c55e; }
 
+    /* Archetype mini-previews: pure CSS, no JS, no images */
+    .arch-preview { position: relative; height: 52px; border-radius: 10px; margin-bottom: 0.15rem; background: linear-gradient(180deg, rgba(139,92,246,0.07), rgba(139,92,246,0.02)); border: 1px solid rgba(139,92,246,0.15); overflow: hidden; }
+    [data-theme="night"] .arch-preview { background: linear-gradient(180deg, rgba(139,92,246,0.14), rgba(139,92,246,0.04)); border-color: rgba(139,92,246,0.24); }
+    .pv-dot { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: var(--acc); }
+    .pv-bar { position: absolute; border-radius: 3px; background: var(--acc); opacity: 0.85; }
+    .pv-txt { position: absolute; font-size: 0.62rem; font-weight: 800; color: var(--acc); }
+    .pv-ring { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--acc); top: 19px; left: 50%; margin-left: -7px; }
+    .pv-line { position: absolute; background: rgba(139,92,246,0.4); }
+
+    @keyframes pv-fall     { 0% { transform: translateY(-8px); opacity: 0; } 12% { opacity: 1; } 82% { opacity: 1; } 100% { transform: translateY(46px); opacity: 0; } }
+    @keyframes pv-sway     { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(var(--pv-dx, 26px)); } }
+    @keyframes pv-pulse    { 0% { transform: scale(0.5); opacity: 0.9; } 100% { transform: scale(2.4); opacity: 0; } }
+    @keyframes pv-flap     { 0%, 100% { transform: translateY(2px) rotate(-8deg); } 50% { transform: translateY(-10px) rotate(10deg); } }
+    @keyframes pv-scroll   { from { transform: translateX(0); } to { transform: translateX(-120px); } }
+    @keyframes pv-blink    { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+    @keyframes pv-rise     { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-34px); opacity: 0; } }
+    @keyframes pv-popin    { 0%, 100% { transform: scale(0); opacity: 0; } 45%, 55% { transform: scale(1); opacity: 1; } }
+    @keyframes pv-swap-a   { 0%, 45% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    @keyframes pv-swap-b   { 0%, 45% { opacity: 0; } 50%, 95% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes pv-maze-move{ 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
+
+    /* Archetype-specific geometry */
+    .arch-card[data-arch="catch"] .pv-bar { bottom: 4px; left: 6px; width: 18px; height: 4px; animation: pv-sway 1.6s ease-in-out infinite; }
+    .arch-card[data-arch="dodge"] .pv-bar { bottom: 4px; left: 30px; width: 14px; height: 4px; --pv-dx: 14px; animation: pv-sway 1.1s ease-in-out infinite; }
+    .arch-card[data-arch="clicker"] .pv-txt { top: 6px; left: 50%; transform: translateX(-50%); animation: pv-rise 1.3s ease-out infinite; }
+    .arch-card[data-arch="maze"] .pv-line { top: 8px; left: 8px; width: 3px; height: 30px; }
+    .arch-card[data-arch="maze"] .pv-line + .pv-line { left: 44px; top: 14px; height: 24px; }
+    .arch-card[data-arch="maze"] .pv-dot { offset-path: path('M10,42 L10,10 L66,10 L66,32'); animation: pv-maze-move 2.6s linear infinite; }
+    .arch-card[data-arch="pong"] .pv-bar { width: 3px; height: 14px; top: 19px; }
+    .arch-card[data-arch="pong"] .pv-bar:first-of-type { left: 5px; }
+    .arch-card[data-arch="pong"] .pv-bar:last-of-type { right: 5px; left: auto; }
+    .arch-card[data-arch="pong"] .pv-dot { top: 23px; animation: pv-sway 1.3s ease-in-out infinite; --pv-dx: 58px; }
+    .arch-card[data-arch="shooter"] .pv-dot.pv-target { top: 6px; left: 50%; margin-left: -3.5px; animation: pv-popin 1.4s ease-in-out infinite; }
+    .arch-card[data-arch="shooter"] .pv-dot.pv-shot { bottom: 4px; left: 50%; margin-left: -3.5px; animation: pv-rise 1.4s ease-out infinite; }
+    .arch-card[data-arch="rhythm"] .pv-line.pv-target-line { left: 0; right: 0; bottom: 10px; height: 2px; animation: pv-blink 1.2s ease-in-out infinite; }
+    .arch-card[data-arch="quiz"] .pv-txt.pv-q { top: 16px; left: 50%; transform: translateX(-50%); font-size: 1rem; animation: pv-swap-a 2.4s ease-in-out infinite; }
+    .arch-card[data-arch="quiz"] .pv-txt.pv-a { top: 16px; left: 50%; transform: translateX(-50%); font-size: 1rem; color: #22c55e; animation: pv-swap-b 2.4s ease-in-out infinite; }
+    .arch-card[data-arch="cyoa"] .pv-line { top: 24px; left: 12px; width: 22px; height: 2px; transform-origin: left center; transform: rotate(-18deg); }
+    .arch-card[data-arch="cyoa"] .pv-line + .pv-line { transform: rotate(18deg); }
+    .arch-card[data-arch="cyoa"] .pv-dot:nth-of-type(2) { animation: pv-blink 1.6s ease-in-out infinite; }
+    .arch-card[data-arch="cyoa"] .pv-dot:nth-of-type(3) { animation: pv-blink 1.6s ease-in-out infinite 0.8s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .arch-preview * { animation: none !important; }
+    }
+
     .grade-picks { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.6rem; margin: 0.8rem 0; }
     .grade-pick { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.65rem 0.75rem; }
     .grade-pick strong { display: block; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--acc); }
@@ -120,6 +166,56 @@
     @media (max-width:600px) {
       .elements-grid { grid-template-columns: 1fr; }
     }
+
+    /* History timeline: Tech vs. Complexity */
+    .history-timeline { display: flex; gap: 0.75rem; overflow-x: auto; padding: 0.15rem 0.15rem 0.85rem; scroll-snap-type: x proximity; margin: 0.7rem -0.15rem 0; }
+    .tl-era { flex: 0 0 218px; scroll-snap-align: start; border: 1px solid var(--line,#d2d2d7); border-radius: 14px; padding: 0.85rem 0.95rem; display: flex; flex-direction: column; gap: 0.35rem; background: var(--white,#fff); }
+    [data-theme="night"] .tl-era { background: var(--white,#2c2c2e); }
+    .tl-era-top { display: flex; align-items: center; gap: 0.5rem; }
+    .tl-era-icon { font-size: 1.35rem; line-height: 1; }
+    .tl-era-year { font-size: 0.68rem; font-weight: 700; color: var(--acc); letter-spacing: 0.02em; }
+    .tl-era h4 { margin: 0.1rem 0 0; font-size: 0.92rem; letter-spacing: -0.01em; }
+    .tl-era-tech, .tl-era-games { margin: 0; font-size: 0.76rem; line-height: 1.5; color: #64748b; }
+    .tl-era-games strong { color: #3f4f65; }
+    [data-theme="night"] .tl-era-tech, [data-theme="night"] .tl-era-games { color: rgba(245,245,247,0.6); }
+    [data-theme="night"] .tl-era-games strong { color: rgba(245,245,247,0.85); }
+    .tl-meters { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.2rem; }
+    .tl-meter { display: flex; align-items: center; gap: 0.4rem; }
+    .tl-meter-label { font-size: 0.6rem; font-weight: 700; color: #94a3b8; width: 40px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.03em; }
+    .tl-meter-bar { flex: 1; height: 5px; border-radius: 3px; background: rgba(148,163,184,0.22); overflow: hidden; }
+    .tl-meter-fill { height: 100%; border-radius: 3px; }
+    .tl-meter-fill.access { background: #ef4444; }
+    .tl-meter-fill.complexity { background: #22c55e; }
+    .history-legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.74rem; color: #64748b; margin: 0.2rem 0 0; }
+    [data-theme="night"] .history-legend { color: rgba(245,245,247,0.6); }
+    .history-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .history-legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+    /* Drawing-board case studies */
+    .sketch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.75rem; margin: 0.85rem 0; }
+    .sketch-case { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.45rem; background: var(--white,#fff); }
+    [data-theme="night"] .sketch-case { background: var(--white,#2c2c2e); }
+    .sketch-head { display: flex; align-items: center; gap: 0.5rem; }
+    .sketch-icon { font-size: 1.4rem; }
+    .sketch-head strong { font-size: 0.94rem; letter-spacing: -0.01em; }
+    .sketch-artifact { font-size: 0.68rem; font-weight: 700; color: var(--acc); letter-spacing: 0.03em; text-transform: uppercase; }
+    .sketch-case p { font-size: 0.81rem; line-height: 1.55; color: #3f4f65; margin: 0; }
+    [data-theme="night"] .sketch-case p { color: rgba(245,245,247,0.72); }
+    .sketch-quote { font-size: 0.79rem; font-style: italic; padding: 0.5rem 0.7rem; border-left: 2.5px solid var(--acc-border); background: var(--acc-soft); border-radius: 0 8px 8px 0; color: #3f4f65; margin: 0; }
+    [data-theme="night"] .sketch-quote { color: rgba(245,245,247,0.78); }
+    .sketch-link { align-self: flex-start; font-size: 0.77rem; font-weight: 700; color: var(--acc); text-decoration: none; border-bottom: 1.5px solid var(--acc-border); padding-bottom: 1px; }
+    .sketch-link:hover { border-color: var(--acc); }
+
+    /* Concept -> architecture stage flow */
+    .stages-flow { display: flex; align-items: stretch; gap: 0.55rem; margin: 0.9rem 0; flex-wrap: wrap; }
+    .stages-step { flex: 1 1 150px; border-radius: 14px; padding: 0.9rem 0.85rem; border: 1.5px solid var(--acc-border); background: var(--acc-soft); text-align: center; }
+    .stages-step-icon { font-size: 1.4rem; display: block; margin-bottom: 0.3rem; }
+    .stages-step strong { display: block; font-size: 0.86rem; margin-bottom: 0.25rem; }
+    .stages-step small { font-size: 0.76rem; color: #64748b; line-height: 1.45; display: block; }
+    [data-theme="night"] .stages-step small { color: rgba(245,245,247,0.65); }
+    @media (max-width: 700px) {
+      .stages-flow { flex-direction: column; }
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -159,6 +255,8 @@
             <span>Mechanics</span><span class="dot"></span>
             <span>Dynamics</span><span class="dot"></span>
             <span>Aesthetics</span><span class="dot"></span>
+            <span>Game History</span><span class="dot"></span>
+            <span>Real Design Docs</span><span class="dot"></span>
             <span>Tiny-Loop Games</span>
           </div>
           <p class="cl-lede">Before you write a single line of code, great games start with a clear design. Learn the four ingredients every game needs, the MDA framework designers use to think about play, and build your own game concept — no code required.</p>
@@ -228,6 +326,156 @@
           </div>
         </section>
 
+        <!-- History of Video Games -->
+        <section class="cl-card">
+          <h2>The History of Video Games — Tech vs. Complexity</h2>
+          <p>Here's a pattern worth noticing: the earliest video games needed some of the most advanced, expensive technology on the planet — yet the games themselves were almost absurdly simple. Today, the technology to make a game fits in a browser tab — and it can build something wildly complex. Scroll through six decades and watch the two bars flip.</p>
+
+          <div class="history-timeline" id="history-timeline">
+            <div class="tl-era">
+              <div class="tl-era-top"><span class="tl-era-icon">🖥️</span><span class="tl-era-year">1958–1962</span></div>
+              <h4>The Lab Era</h4>
+              <p class="tl-era-tech">Room-sized computers built from thousands of vacuum tubes, costing more than a house — owned only by university physics labs and the military.</p>
+              <p class="tl-era-games"><strong>Tennis for Two</strong> (a glowing dot bouncing over a line on an oscilloscope) and <strong>Spacewar!</strong> (two ships orbiting a star on MIT's $120,000 PDP-1).</p>
+              <div class="tl-meters">
+                <div class="tl-meter"><span class="tl-meter-label">Access</span><div class="tl-meter-bar"><div class="tl-meter-fill access" style="width:95%"></div></div></div>
+                <div class="tl-meter"><span class="tl-meter-label">Games</span><div class="tl-meter-bar"><div class="tl-meter-fill complexity" style="width:5%"></div></div></div>
+              </div>
+            </div>
+            <div class="tl-era">
+              <div class="tl-era-top"><span class="tl-era-icon">🕹️</span><span class="tl-era-year">1972–1979</span></div>
+              <h4>Coin-Op &amp; Custom Circuits</h4>
+              <p class="tl-era-tech">Arcade cabinets ran on hard-wired logic — the original Pong had no CPU or software at all, just custom circuitry built for that one game.</p>
+              <p class="tl-era-games"><strong>Pong</strong>, <strong>Breakout</strong>, <strong>Space Invaders</strong> — one screen, one mechanic, rules you could learn in five seconds.</p>
+              <div class="tl-meters">
+                <div class="tl-meter"><span class="tl-meter-label">Access</span><div class="tl-meter-bar"><div class="tl-meter-fill access" style="width:85%"></div></div></div>
+                <div class="tl-meter"><span class="tl-meter-label">Games</span><div class="tl-meter-bar"><div class="tl-meter-fill complexity" style="width:12%"></div></div></div>
+              </div>
+            </div>
+            <div class="tl-era">
+              <div class="tl-era-top"><span class="tl-era-icon">🎮</span><span class="tl-era-year">1980s</span></div>
+              <h4>8-bit Cartridges</h4>
+              <p class="tl-era-tech">Home consoles ran on 8-bit CPUs with kilobytes of memory — the entire original Super Mario Bros. fits in about 40 kilobytes total.</p>
+              <p class="tl-era-games"><strong>Super Mario Bros.</strong>, <strong>Tetris</strong>, <strong>The Legend of Zelda</strong> — bigger worlds built from small, repeating rule sets.</p>
+              <div class="tl-meters">
+                <div class="tl-meter"><span class="tl-meter-label">Access</span><div class="tl-meter-bar"><div class="tl-meter-fill access" style="width:68%"></div></div></div>
+                <div class="tl-meter"><span class="tl-meter-label">Games</span><div class="tl-meter-bar"><div class="tl-meter-fill complexity" style="width:25%"></div></div></div>
+              </div>
+            </div>
+            <div class="tl-era">
+              <div class="tl-era-top"><span class="tl-era-icon">🧊</span><span class="tl-era-year">1990s</span></div>
+              <h4>The Jump to 3D</h4>
+              <p class="tl-era-tech">Dedicated 3D graphics chips and CD-ROMs arrive, letting entire rendered worlds fit on a single disc — a huge leap past cartridge memory limits.</p>
+              <p class="tl-era-games"><strong>Myst</strong>, <strong>Super Mario 64</strong>, <strong>Final Fantasy VII</strong> — real 3D space, still hand-built scene by scene.</p>
+              <div class="tl-meters">
+                <div class="tl-meter"><span class="tl-meter-label">Access</span><div class="tl-meter-bar"><div class="tl-meter-fill access" style="width:55%"></div></div></div>
+                <div class="tl-meter"><span class="tl-meter-label">Games</span><div class="tl-meter-bar"><div class="tl-meter-fill complexity" style="width:42%"></div></div></div>
+              </div>
+            </div>
+            <div class="tl-era">
+              <div class="tl-era-top"><span class="tl-era-icon">🏢</span><span class="tl-era-year">2000s</span></div>
+              <h4>Studios &amp; Engines</h4>
+              <p class="tl-era-tech">Licensed engines and broadband internet save teams from building tools from scratch — but a top-tier game now needs 50–500 people and years of budget.</p>
+              <p class="tl-era-games"><strong>World of Warcraft</strong>, <strong>Halo</strong>, <strong>Grand Theft Auto</strong> — massive and persistent, reachable only with serious money and staff.</p>
+              <div class="tl-meters">
+                <div class="tl-meter"><span class="tl-meter-label">Access</span><div class="tl-meter-bar"><div class="tl-meter-fill access" style="width:42%"></div></div></div>
+                <div class="tl-meter"><span class="tl-meter-label">Games</span><div class="tl-meter-bar"><div class="tl-meter-fill complexity" style="width:65%"></div></div></div>
+              </div>
+            </div>
+            <div class="tl-era">
+              <div class="tl-era-top"><span class="tl-era-icon">🧑‍💻</span><span class="tl-era-year">2009–2015</span></div>
+              <h4>The Solo-Dev Breakthrough</h4>
+              <p class="tl-era-tech">Free engines like Unity and GameMaker put professional-grade tools on a single laptop.</p>
+              <p class="tl-era-games"><strong>Minecraft</strong> — coded almost entirely solo by Markus Persson — became one of the best-selling games ever made.</p>
+              <div class="tl-meters">
+                <div class="tl-meter"><span class="tl-meter-label">Access</span><div class="tl-meter-bar"><div class="tl-meter-fill access" style="width:22%"></div></div></div>
+                <div class="tl-meter"><span class="tl-meter-label">Games</span><div class="tl-meter-bar"><div class="tl-meter-fill complexity" style="width:78%"></div></div></div>
+              </div>
+            </div>
+            <div class="tl-era">
+              <div class="tl-era-top"><span class="tl-era-icon">🧱</span><span class="tl-era-year">2015–2022</span></div>
+              <h4>No-Code &amp; Block Coding</h4>
+              <p class="tl-era-tech">Scratch, MakeCode, and Roblox Studio bring drag-and-drop game logic to classrooms and bedrooms — no syntax required.</p>
+              <p class="tl-era-games">Millions of student- and hobbyist-made games, some played by more people than big-budget releases.</p>
+              <div class="tl-meters">
+                <div class="tl-meter"><span class="tl-meter-label">Access</span><div class="tl-meter-bar"><div class="tl-meter-fill access" style="width:12%"></div></div></div>
+                <div class="tl-meter"><span class="tl-meter-label">Games</span><div class="tl-meter-bar"><div class="tl-meter-fill complexity" style="width:85%"></div></div></div>
+              </div>
+            </div>
+            <div class="tl-era">
+              <div class="tl-era-top"><span class="tl-era-icon">✨</span><span class="tl-era-year">Today</span></div>
+              <h4>Describe It, Build It</h4>
+              <p class="tl-era-tech">An AI assistant can write working game code, generate art and music, and debug your logic from a plain-English sentence in a browser tab.</p>
+              <p class="tl-era-games">One student can prototype a physics-based, multi-level, scoring game in an afternoon — something that once needed a whole studio.</p>
+              <div class="tl-meters">
+                <div class="tl-meter"><span class="tl-meter-label">Access</span><div class="tl-meter-bar"><div class="tl-meter-fill access" style="width:5%"></div></div></div>
+                <div class="tl-meter"><span class="tl-meter-label">Games</span><div class="tl-meter-bar"><div class="tl-meter-fill complexity" style="width:96%"></div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="history-legend">
+            <span><i style="background:#ef4444;"></i> Barrier to Entry — how hard/expensive it is to access the tech</span>
+            <span><i style="background:#22c55e;"></i> Achievable Game Complexity — what a designer can actually build with it</span>
+          </div>
+
+          <div class="callout violet">
+            <strong>The Big Flip:</strong> In 1962, it took MIT's $120,000 PDP-1 — one of the most powerful computers on Earth — and a team of grad students to make two dots orbit a star. Today, you can open a free tab, describe a game in plain English to an AI, or drag a few Scratch blocks together, and build something far more complex than <em>Spacewar!</em> in an afternoon. The technology got radically <em>easier</em> to access while the games it can build got radically <em>more</em> complex. You're designing games at the exact moment that flip finished happening.
+          </div>
+        </section>
+
+        <!-- Drawing Board / Real Design Documents -->
+        <section class="cl-card">
+          <h2>Before the Code: Real Games at the Drawing Board</h2>
+          <p>Every game on the timeline above — no matter how technically advanced — started the same way: a sketch, a typed page, a hand-drawn map. None of these teams opened a code editor first. They organized a rough idea into <strong>architecture</strong> — a concept, a list of systems, and a structure connecting them — and only then started building. Here are four real, documented examples you can go verify yourself.</p>
+
+          <div class="sketch-grid">
+            <div class="sketch-case">
+              <div class="sketch-head"><span class="sketch-icon">🕳️</span><strong>The Legend of Zelda</strong></div>
+              <span class="sketch-artifact">Miyamoto's Cave Memory · 1986</span>
+              <p>Shigeru Miyamoto didn't start Zelda with a plot — he started with a childhood memory of getting brave enough to explore a real cave near Kyoto. That single feeling became the design goal for the entire game: make the player feel that same nervous curiosity.</p>
+              <p class="sketch-quote">"When I was a child, I went hiking and found a lake." — Shigeru Miyamoto</p>
+              <a class="sketch-link" href="https://www.videogameschronicle.com/features/zelda-at-40-how-shigeru-miyamotos-childhood-explorations-inspired-nintendos-legendary-classic/" target="_blank" rel="noreferrer noopener">Read the full story →</a>
+            </div>
+
+            <div class="sketch-case">
+              <div class="sketch-head"><span class="sketch-icon">✏️</span><strong>Grim Fandango</strong></div>
+              <span class="sketch-artifact">Puzzle Design Document · 1996</span>
+              <p>LucasArts' design team mapped every puzzle in Grim Fandango on hand-illustrated, sketch-covered pages, working out how each clue connected to the next before any of it was programmed. The Video Game History Foundation has preserved and published the actual document online.</p>
+              <a class="sketch-link" href="https://gamehistory.org/gallery/grim-fandango-puzzle-design-document/" target="_blank" rel="noreferrer noopener">See the real design document →</a>
+            </div>
+
+            <div class="sketch-case">
+              <div class="sketch-head"><span class="sketch-icon">🕹️</span><strong>Minecraft</strong></div>
+              <span class="sketch-artifact">"Cave Game" Prototype · May 2009</span>
+              <p>Minecraft began as a one-week experiment Notch called "Cave Game," inspired by Infiniminer and Dwarf Fortress. The very first public test video didn't even let you place a block yet — it was just a cave you could walk through. Everything else was added on top of that tiny first architecture.</p>
+              <a class="sketch-link" href="https://minecraft.wiki/w/Java_Edition_pre-Classic" target="_blank" rel="noreferrer noopener">See the earliest prototype history →</a>
+            </div>
+
+            <div class="sketch-case">
+              <div class="sketch-head"><span class="sketch-icon">🎓</span><strong>Portal</strong></div>
+              <span class="sketch-artifact">Narbacular Drop · 2005</span>
+              <p>Portal didn't start at Valve at all — it began as <em>Narbacular Drop</em>, a student senior project built by a small team at DigiPen. Valve saw it at a student showcase and hired the entire team on the spot to rebuild the idea. Your class project could be someone's Portal.</p>
+              <a class="sketch-link" href="https://www.digipen.edu/showcase/student-games/narbacular-drop" target="_blank" rel="noreferrer noopener">See the original student project →</a>
+            </div>
+          </div>
+
+          <p><strong>From concept to architecture:</strong> every one of these documents did the same four things, just in different formats.</p>
+          <div class="stages-flow">
+            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>One sentence: what's the feeling or fantasy? (Miyamoto's cave. Hall's moon base.)</small></div>
+            <div class="mda-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>What does the player do, over and over? Walk. Solve a clue. Flap through a gap.</small></div>
+            <div class="mda-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems List</strong><small>Break the loop into parts: movement, scoring, enemies, puzzles, sound.</small></div>
+            <div class="mda-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🗺️</span><strong>Structure Diagram</strong><small>Map how the pieces connect: level order, puzzle chain, dungeon layout.</small></div>
+          </div>
+
+          <div class="callout violet">
+            <strong>Go Deeper (with a teacher):</strong> The <a href="https://archive.gamehistory.org/" target="_blank" rel="noreferrer noopener">Video Game History Foundation's public archive</a> holds real design documents, sketches, and prototypes from decades of games, free to browse. It's exactly the kind of primary-source research a historian would do — just aimed at games instead of wars or treaties.
+          </div>
+        </section>
+
         <!-- Game Genres -->
         <section class="cl-card">
           <h2>Game Genres &amp; Core Mechanics</h2>
@@ -260,6 +508,11 @@
           <div class="archetype-grid" id="archetype-grid">
             <div class="arch-card" data-arch="catch">
               <span class="arch-rank">#1 Easiest</span>
+              <div class="arch-preview" aria-hidden="true">
+                <span class="pv-dot" style="left:14px;animation:pv-fall 1.6s linear infinite;"></span>
+                <span class="pv-dot" style="left:42px;background:#ef4444;animation:pv-fall 1.6s linear infinite 0.7s;"></span>
+                <span class="pv-bar"></span>
+              </div>
               <div class="arch-head"><span class="arch-icon">⭐</span><strong>Catch Game</strong></div>
               <span class="arch-grade">Best: K–5</span>
               <span class="arch-tools">Scratch · MakeCode · Godot · Pygame</span>
@@ -270,6 +523,12 @@
             </div>
             <div class="arch-card" data-arch="dodge">
               <span class="arch-rank">#2</span>
+              <div class="arch-preview" aria-hidden="true">
+                <span class="pv-dot" style="left:10px;background:#ef4444;animation:pv-fall 1.2s linear infinite;"></span>
+                <span class="pv-dot" style="left:34px;background:#ef4444;animation:pv-fall 1.2s linear infinite 0.4s;"></span>
+                <span class="pv-dot" style="left:58px;background:#ef4444;animation:pv-fall 1.2s linear infinite 0.8s;"></span>
+                <span class="pv-bar"></span>
+              </div>
               <div class="arch-head"><span class="arch-icon">💥</span><strong>Dodging Game</strong></div>
               <span class="arch-grade">Best: 2nd–8th</span>
               <span class="arch-tools">Scratch · MakeCode · Godot</span>
@@ -280,6 +539,11 @@
             </div>
             <div class="arch-card" data-arch="clicker">
               <span class="arch-rank">#3</span>
+              <div class="arch-preview" aria-hidden="true">
+                <span class="pv-ring" style="animation:pv-pulse 1.3s ease-out infinite;"></span>
+                <span class="pv-dot" style="top:19px;left:50%;margin-left:-3.5px;"></span>
+                <span class="pv-txt">+1</span>
+              </div>
               <div class="arch-head"><span class="arch-icon">🖱️</span><strong>Clicker Game</strong></div>
               <span class="arch-grade">Best: K–6</span>
               <span class="arch-tools">Scratch · HTML/JS · MakeCode</span>
@@ -290,6 +554,11 @@
             </div>
             <div class="arch-card" data-arch="maze">
               <span class="arch-rank">#4</span>
+              <div class="arch-preview" aria-hidden="true">
+                <span class="pv-line"></span>
+                <span class="pv-line"></span>
+                <span class="pv-dot"></span>
+              </div>
               <div class="arch-head"><span class="arch-icon">🧩</span><strong>Maze Game</strong></div>
               <span class="arch-grade">Best: 3rd–8th</span>
               <span class="arch-tools">Scratch · MakeCode · Godot</span>
@@ -300,6 +569,11 @@
             </div>
             <div class="arch-card" data-arch="flappy">
               <span class="arch-rank">#5</span>
+              <div class="arch-preview" aria-hidden="true">
+                <span class="pv-txt" style="top:18px;left:10px;font-size:1rem;animation:pv-flap 0.6s ease-in-out infinite;">🐦</span>
+                <span class="pv-bar" style="top:0;left:60px;width:6px;height:16px;animation:pv-scroll 2.2s linear infinite;"></span>
+                <span class="pv-bar" style="bottom:0;left:60px;width:6px;height:20px;animation:pv-scroll 2.2s linear infinite;"></span>
+              </div>
               <div class="arch-head"><span class="arch-icon">🐦</span><strong>Flappy Clone</strong></div>
               <span class="arch-grade">Best: 4th–8th</span>
               <span class="arch-tools">Scratch · MakeCode · Godot</span>
@@ -310,6 +584,11 @@
             </div>
             <div class="arch-card" data-arch="pong">
               <span class="arch-rank">#6</span>
+              <div class="arch-preview" aria-hidden="true">
+                <span class="pv-bar"></span>
+                <span class="pv-bar"></span>
+                <span class="pv-dot"></span>
+              </div>
               <div class="arch-head"><span class="arch-icon">🏓</span><strong>Pong / Paddle Game</strong></div>
               <span class="arch-grade">Best: 4th–8th</span>
               <span class="arch-tools">Scratch · MakeCode · Godot · Python</span>
@@ -320,6 +599,10 @@
             </div>
             <div class="arch-card" data-arch="shooter">
               <span class="arch-rank">#7</span>
+              <div class="arch-preview" aria-hidden="true">
+                <span class="pv-dot pv-target" style="background:#22c55e;"></span>
+                <span class="pv-dot pv-shot"></span>
+              </div>
               <div class="arch-head"><span class="arch-icon">🫧</span><strong>Top-Down "Shooter"</strong></div>
               <span class="arch-grade">Best: 4th–8th</span>
               <span class="arch-tools">Scratch · MakeCode · Godot</span>
@@ -330,6 +613,12 @@
             </div>
             <div class="arch-card" data-arch="rhythm">
               <span class="arch-rank">#8</span>
+              <div class="arch-preview" aria-hidden="true">
+                <span class="pv-bar" style="left:16px;width:5px;height:8px;top:-8px;animation:pv-fall 1.1s linear infinite;"></span>
+                <span class="pv-bar" style="left:38px;width:5px;height:8px;top:-8px;animation:pv-fall 1.1s linear infinite 0.4s;"></span>
+                <span class="pv-bar" style="left:60px;width:5px;height:8px;top:-8px;animation:pv-fall 1.1s linear infinite 0.8s;"></span>
+                <span class="pv-line pv-target-line"></span>
+              </div>
               <div class="arch-head"><span class="arch-icon">🎵</span><strong>Rhythm Tap Game</strong></div>
               <span class="arch-grade">Best: 5th–12th</span>
               <span class="arch-tools">Scratch · MakeCode · Godot</span>
@@ -340,6 +629,10 @@
             </div>
             <div class="arch-card" data-arch="quiz">
               <span class="arch-rank">#9</span>
+              <div class="arch-preview" aria-hidden="true">
+                <span class="pv-txt pv-q">❓</span>
+                <span class="pv-txt pv-a">✅</span>
+              </div>
               <div class="arch-head"><span class="arch-icon">❓</span><strong>Quiz Adventure</strong></div>
               <span class="arch-grade">Best: K–6</span>
               <span class="arch-tools">Scratch · Slides · PowerPoint · Twine</span>
@@ -350,6 +643,13 @@
             </div>
             <div class="arch-card" data-arch="cyoa">
               <span class="arch-rank">#10</span>
+              <div class="arch-preview" aria-hidden="true">
+                <span class="pv-dot" style="top:23px;left:8px;"></span>
+                <span class="pv-line"></span>
+                <span class="pv-line"></span>
+                <span class="pv-dot" style="top:8px;left:60px;"></span>
+                <span class="pv-dot" style="top:38px;left:60px;"></span>
+              </div>
               <div class="arch-head"><span class="arch-icon">📖</span><strong>Choose-Your-Own-Adventure</strong></div>
               <span class="arch-grade">Best: 2nd–8th</span>
               <span class="arch-tools">Scratch · Twine · Slides · Canva</span>
@@ -500,6 +800,8 @@
             <li>Name the 4 elements every game must have</li>
             <li>Explain the MDA framework with an example</li>
             <li>Identify game genre by its core mechanic</li>
+            <li>Trace how technology and game complexity have flipped roles over six decades</li>
+            <li>Explain how a real design document turns an idea into a system architecture</li>
             <li>Match a project timeline to a tiny-loop archetype</li>
             <li>Write a mini game design document</li>
           </ul>
@@ -540,6 +842,14 @@
             <dd style="margin:0 0 0 0.8rem;color:#64748b;">A game built around one mechanic, one win/lose condition, and one customizable variable — the format most likely to actually get finished in a single day.</dd>
             <dt style="font-weight:700;margin-top:0.6rem;">Scope</dt>
             <dd style="margin:0 0 0 0.8rem;color:#64748b;">The size and complexity of a project. Good game jam design starts small and well-scoped.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Game Engine</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">Software (like Unity, Godot, or Scratch's runtime) that handles physics, graphics, and input so designers don't have to build those systems from scratch.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Barrier to Entry</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">How much money, skill, or specialized equipment someone needs before they can start creating with a technology.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Architecture (in game design)</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">How a game's systems and content connect and depend on each other — the structural plan underneath the concept, usually mapped out before any code is written.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Prototype</dt>
+            <dd style="margin:0 0 0 0.8rem;color:#64748b;">A rough, early, working test of one idea — built fast and expected to be messy, like Minecraft's first "Cave Game" build.</dd>
           </dl>
         </div>
       </div>
