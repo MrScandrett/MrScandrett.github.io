@@ -1250,6 +1250,27 @@
     .num-prime-legend { display: flex; gap: 0.9rem; align-items: center; margin-left: auto; font-size: 0.74rem; color: #64748b; }
     .num-prime-legend-item { display: flex; align-items: center; gap: 0.3rem; }
     .num-legend-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+    .num-legend-swatch--prime {
+      background: rgba(255,149,0,0.15);
+      border: 1.5px solid rgba(255,149,0,0.4);
+    }
+    .num-legend-swatch--composite {
+      background: rgba(0,0,0,0.05);
+      border: 1.5px solid transparent;
+    }
+    [data-theme="night"] .num-legend-swatch--composite,
+    [data-theme="vaporwave"] .num-legend-swatch--composite,
+    [data-theme="bark"] .num-legend-swatch--composite {
+      background: rgba(255,255,255,0.12);
+    }
+    .num-legend-swatch--one {
+      background: rgba(0,0,0,0.04);
+    }
+    [data-theme="night"] .num-legend-swatch--one,
+    [data-theme="vaporwave"] .num-legend-swatch--one,
+    [data-theme="bark"] .num-legend-swatch--one {
+      background: rgba(255,255,255,0.06);
+    }
     .num-prime-info {
       min-height: 2rem; font-size: 0.82rem; color: #3f4f65; line-height: 1.5;
       padding: 0.4rem 0.75rem; background: rgba(0,0,0,0.03);
@@ -1298,6 +1319,18 @@
       cursor: pointer; font-family: inherit; transition: opacity 0.15s;
     }
     .num-btn:hover { opacity: 0.85; }
+    .num-btn.secondary {
+      background: var(--surface-2, #e8e8ed);
+      color: var(--text, #1f2937);
+      border: 1px solid var(--line, #d2d2d7);
+    }
+    [data-theme="night"] .num-btn.secondary,
+    [data-theme="vaporwave"] .num-btn.secondary,
+    [data-theme="bark"] .num-btn.secondary {
+      background: var(--surface-1, rgba(255,255,255,0.06));
+      color: var(--text, rgba(245,245,247,0.9));
+      border: 1px solid var(--line, rgba(255,255,255,0.1));
+    }
     .num-factor-result {
       padding: 0.75rem 1rem; background: rgba(0,0,0,0.03);
       border: 1px solid var(--line,#d2d2d7); border-radius: 12px;
@@ -1455,6 +1488,50 @@
     [data-theme="bark"] .num-fb.bad { color: #ff6b6b; }
     .num-hint { font-size: 0.77rem; color: #64748b; margin-top: 0.35rem; display: none; }
     .num-hint.show { display: block; }
+    .num-score-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 12px;
+      background: rgba(255,149,0,0.07);
+      border: 1px solid rgba(255,149,0,0.2);
+    }
+    .num-score-label {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #64748b;
+    }
+    [data-theme="night"] .num-score-label,
+    [data-theme="vaporwave"] .num-score-label,
+    [data-theme="bark"] .num-score-label {
+      color: rgba(245,245,247,0.6);
+    }
+    .num-score-val {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: #ff9500;
+    }
+    .num-score-progress {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+    [data-theme="night"] .num-score-progress,
+    [data-theme="vaporwave"] .num-score-progress,
+    [data-theme="bark"] .num-score-progress {
+      background: rgba(255,255,255,0.12);
+    }
+    .num-score-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #ff9500, #34c759);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
 
     @media (max-width: 600px) {
       .num-type-grid { grid-template-columns: 1fr; }
@@ -1755,7 +1832,7 @@
             </div>
             <div class="num-fraction-actions">
               <button id="num-fraction-equivalent" class="num-btn" type="button" style="background:#007aff;">Equivalent</button>
-              <button id="num-fraction-reset-equivalent" class="num-btn" type="button" style="background:#1f2937;">Reset Split</button>
+              <button id="num-fraction-reset-equivalent" class="num-btn secondary" type="button">Reset Split</button>
             </div>
             <div id="num-fraction-eq-note" class="num-fraction-eq-note">Same amount, same whole, just a different cut.</div>
           </div>
@@ -1896,19 +1973,19 @@
 
       <div class="num-prime-toolbar">
         <button class="num-btn" type="button" onclick="runSieve()">Run Sieve</button>
-        <button class="num-btn" type="button" style="background:#1f2937;" onclick="resetPrimeGrid()">Reset</button>
+        <button class="num-btn secondary" type="button" onclick="resetPrimeGrid()">Reset</button>
         <span id="num-sieve-status" style="font-size:0.75rem;color:#64748b;">Click a number or run the sieve.</span>
         <div class="num-prime-legend">
           <div class="num-prime-legend-item">
-            <div class="num-legend-swatch" style="background:rgba(255,149,0,0.15);border:1.5px solid rgba(255,149,0,0.4);"></div>
+            <div class="num-legend-swatch num-legend-swatch--prime"></div>
             <span>Prime</span>
           </div>
           <div class="num-prime-legend-item">
-            <div class="num-legend-swatch" style="background:rgba(0,0,0,0.05);border:1.5px solid transparent;"></div>
+            <div class="num-legend-swatch num-legend-swatch--composite"></div>
             <span>Composite</span>
           </div>
           <div class="num-prime-legend-item">
-            <div class="num-legend-swatch" style="background:rgba(0,0,0,0.04);"></div>
+            <div class="num-legend-swatch num-legend-swatch--one"></div>
             <span style="color:#94a3b8;">1</span>
           </div>
         </div>
@@ -1951,7 +2028,7 @@
       <div class="num-factor-row">
         <input type="number" class="num-factor-input" id="num-factor-in" value="36" min="2" max="10000" onkeydown="if(event.key==='Enter')findFactors();" />
         <button class="num-btn" onclick="findFactors()">Find Factors</button>
-        <button class="num-btn" style="background:#1f2937;" onclick="document.getElementById('num-factor-in').value=Math.floor(Math.random()*9999)+2;findFactors();">Random</button>
+        <button class="num-btn secondary" onclick="document.getElementById('num-factor-in').value=Math.floor(Math.random()*9999)+2;findFactors();">Random</button>
       </div>
       <div class="num-factor-result" id="num-factor-result"></div>
 
@@ -2046,7 +2123,7 @@
             <span class="num-line-pill num-data" id="num-line-step-pill">Resolution: halves</span>
           </div>
           <div class="num-line-controls">
-            <button class="num-btn" type="button" style="background:#1f2937;" onclick="zoomNumberLine(-1)">Zoom Out</button>
+            <button class="num-btn secondary" type="button" onclick="zoomNumberLine(-1)">Zoom Out</button>
             <button class="num-btn" type="button" onclick="zoomNumberLine(1)">Zoom In</button>
           </div>
         </div>
@@ -2096,11 +2173,11 @@
     <!-- ── 7. Practice ── -->
     <section class="num-card" style="--card-accent:#ff9500;">
       <h2>✏️ Practice Problems</h2>
-      <div id="num-score-bar" style="display:flex;align-items:center;gap:0.65rem;margin-bottom:0.75rem;padding:0.65rem 0.85rem;border-radius:12px;background:rgba(255,149,0,0.07);border:1px solid rgba(255,149,0,0.2);">
-        <span style="font-size:0.82rem;font-weight:800;color:#64748b;">Score</span>
-        <span id="num-score-val" style="font-size:1.2rem;font-weight:900;color:#ff9500;">0 / 5</span>
-        <div style="flex:1;height:8px;border-radius:4px;background:rgba(0,0,0,0.07);overflow:hidden;">
-          <div id="num-score-fill" style="height:100%;border-radius:4px;background:linear-gradient(90deg,#ff9500,#34c759);width:0%;transition:width 0.4s ease;"></div>
+      <div id="num-score-bar" class="num-score-bar">
+        <span class="num-score-label">Score</span>
+        <span id="num-score-val" class="num-score-val">0 / 5</span>
+        <div class="num-score-progress">
+          <div id="num-score-fill" class="num-score-fill"></div>
         </div>
       </div>
       <div class="num-practice">
@@ -2245,6 +2322,7 @@
   </div><!-- /ll-stage -->
 </div><!-- /ll-viewport -->
 
+  <script src="../assets/js/nav-mobile.js"></script>
   <script>
     /* ── Number type details ── */
     const typeInfo = {};
