@@ -7,6 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
   <meta name="description" content="Explore, filter, and sort student projects with instant discovery tools." />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
   <script src="assets/js/theme-lighting.js"></script>
 </head>
@@ -79,7 +80,7 @@
   </footer>
 
   <!-- Project Detail Modal (Lightbox) -->
-  <div id="project-modal" class="project-modal">
+  <div id="project-modal" class="project-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-description">
     <div class="modal-content">
       <div class="modal-header">
         <div style="flex: 1;">
@@ -108,7 +109,10 @@
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
   <script>
+    let lastActiveElement = null;
+
     function openProjectModal(projectData) {
+      lastActiveElement = document.activeElement;
       const modal = document.getElementById('project-modal');
       const gallery = document.getElementById('modal-gallery');
       const title = document.getElementById('modal-title');
@@ -120,8 +124,8 @@
 
       title.textContent = projectData.title;
       student.textContent = projectData.student;
-      yearGroup.textContent = projectData.year;
-      description.textContent = projectData.short_description;
+      yearGroup.textContent = `${projectData.year} • ${projectData.term}`;
+      description.textContent = projectData.long_description || projectData.short_description;
 
       // Set badge
       badge.className = `card-type-badge type-${(projectData.type || 'game').toLowerCase()}`;
@@ -163,14 +167,28 @@
         actions.appendChild(btn);
       }
 
+      // Link to standalone details page
+      const detailsBtn = document.createElement('a');
+      detailsBtn.href = `project.html?id=${encodeURIComponent(projectData.id)}`;
+      detailsBtn.className = 'modal-btn';
+      detailsBtn.textContent = '→ Full Details';
+      actions.appendChild(detailsBtn);
+
       modal.classList.add('is-open');
       document.body.style.overflow = 'hidden';
+
+      // Focus the close button for accessibility
+      const closeBtn = modal.querySelector('.modal-close-btn');
+      if (closeBtn) closeBtn.focus();
     }
 
     function closeProjectModal() {
       const modal = document.getElementById('project-modal');
       modal.classList.remove('is-open');
       document.body.style.overflow = '';
+      if (lastActiveElement) {
+        lastActiveElement.focus();
+      }
     }
 
     // Close modal on background click
@@ -181,6 +199,30 @@
     // Close on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeProjectModal();
+    });
+
+    // Trap focus inside modal when open
+    document.getElementById('project-modal')?.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const modal = document.getElementById('project-modal');
+      if (!modal.classList.contains('is-open')) return;
+
+      const focusableEls = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex="0"]');
+      if (focusableEls.length === 0) return;
+      const firstFocusableEl = focusableEls[0];
+      const lastFocusableEl = focusableEls[focusableEls.length - 1];
+
+      if (e.shiftKey) { /* Shift + Tab */
+        if (document.activeElement === firstFocusableEl) {
+          lastFocusableEl.focus();
+          e.preventDefault();
+        }
+      } else { /* Tab */
+        if (document.activeElement === lastFocusableEl) {
+          firstFocusableEl.focus();
+          e.preventDefault();
+        }
+      }
     });
   </script>
 </body>

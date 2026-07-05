@@ -57,12 +57,12 @@ export function createProjectCard(project, options = {}) {
 
   const link = document.createElement("a");
   link.className = "card-link";
-  link.href = "javascript:void(0)";
+  link.href = projectUrl(project.id);
   link.setAttribute("aria-label", `View project: ${project.title} by ${project.student}`);
   link.addEventListener("click", (e) => {
-    e.preventDefault();
     // Call the global modal function if it exists
     if (typeof openProjectModal === 'function') {
+      e.preventDefault();
       openProjectModal(project);
     }
   });

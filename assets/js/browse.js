@@ -71,6 +71,7 @@ function makeChip(value, selected, onToggle) {
   button.className = "chip";
   button.textContent = value;
   button.setAttribute("aria-pressed", selected ? "true" : "false");
+  button.dataset.value = value;
   button.addEventListener("click", () => {
     const wasActive = button.getAttribute("aria-pressed") === "true";
     onToggle(!wasActive);
@@ -78,7 +79,7 @@ function makeChip(value, selected, onToggle) {
   return button;
 }
 
-function renderChipGroup({ mount, title, values, selectedSet, onToggle }) {
+function renderChipGroup({ mount, title, filterKey, values, selectedSet, onToggle }) {
   const group = document.createElement("section");
   group.className = "filter-group";
   const heading = document.createElement("h3");
@@ -88,11 +89,11 @@ function renderChipGroup({ mount, title, values, selectedSet, onToggle }) {
   const chips = document.createElement("div");
   chips.className = "chips";
   values.forEach((value) => {
-    chips.appendChild(
-      makeChip(value, selectedSet.has(String(value)), (enabled) => {
-        onToggle(String(value), enabled);
-      })
-    );
+    const chip = makeChip(value, selectedSet.has(String(value)), (enabled) => {
+      onToggle(String(value), enabled);
+    });
+    chip.dataset.filter = filterKey;
+    chips.appendChild(chip);
   });
   group.appendChild(chips);
   mount.appendChild(group);
@@ -171,91 +172,40 @@ function init() {
       const typeValues = uniqueValues(projects, "type").sort();
       const programValues = uniqueValues(projects, "program").sort();
 
-      function rerenderFilterPanels() {
-        dom.groups.innerHTML = "";
+      // Render filter panels once on load
+      dom.groups.innerHTML = "";
+      const filterConfig = [
+        { title: "Category", key: "category", values: categoryValues },
+        { title: "Tech", key: "tech", values: techValues },
+        { title: "Difficulty", key: "difficulty", values: difficultyValues },
+        { title: "Year", key: "year", values: yearValues },
+        { title: "Term", key: "term", values: termValues },
+        { title: "Solo / Team", key: "type", values: typeValues },
+        { title: "Program", key: "program", values: programValues }
+      ];
 
+      filterConfig.forEach(cfg => {
         renderChipGroup({
           mount: dom.groups,
-          title: "Category",
-          values: categoryValues,
-          selectedSet: state.category,
+          title: cfg.title,
+          filterKey: cfg.key,
+          values: cfg.values,
+          selectedSet: state[cfg.key],
           onToggle: (value, enabled) => {
-            if (enabled) state.category.add(value);
-            else state.category.delete(value);
+            if (enabled) state[cfg.key].add(value);
+            else state[cfg.key].delete(value);
             apply();
-          },
+          }
         });
+      });
 
-        renderChipGroup({
-          mount: dom.groups,
-          title: "Tech",
-          values: techValues,
-          selectedSet: state.tech,
-          onToggle: (value, enabled) => {
-            if (enabled) state.tech.add(value);
-            else state.tech.delete(value);
-            apply();
-          },
-        });
-
-        renderChipGroup({
-          mount: dom.groups,
-          title: "Difficulty",
-          values: difficultyValues,
-          selectedSet: state.difficulty,
-          onToggle: (value, enabled) => {
-            if (enabled) state.difficulty.add(value);
-            else state.difficulty.delete(value);
-            apply();
-          },
-        });
-
-        renderChipGroup({
-          mount: dom.groups,
-          title: "Year",
-          values: yearValues,
-          selectedSet: state.year,
-          onToggle: (value, enabled) => {
-            if (enabled) state.year.add(value);
-            else state.year.delete(value);
-            apply();
-          },
-        });
-
-        renderChipGroup({
-          mount: dom.groups,
-          title: "Term",
-          values: termValues,
-          selectedSet: state.term,
-          onToggle: (value, enabled) => {
-            if (enabled) state.term.add(value);
-            else state.term.delete(value);
-            apply();
-          },
-        });
-
-        renderChipGroup({
-          mount: dom.groups,
-          title: "Solo / Team",
-          values: typeValues,
-          selectedSet: state.type,
-          onToggle: (value, enabled) => {
-            if (enabled) state.type.add(value);
-            else state.type.delete(value);
-            apply();
-          },
-        });
-
-        renderChipGroup({
-          mount: dom.groups,
-          title: "Program",
-          values: programValues,
-          selectedSet: state.program,
-          onToggle: (value, enabled) => {
-            if (enabled) state.program.add(value);
-            else state.program.delete(value);
-            apply();
-          },
+      function updateChipsFromState() {
+        const chips = dom.groups.querySelectorAll(".chip");
+        chips.forEach((chip) => {
+          const key = chip.dataset.filter;
+          const val = chip.dataset.value;
+          const selected = state[key].has(val);
+          chip.setAttribute("aria-pressed", selected ? "true" : "false");
         });
       }
 
@@ -294,7 +244,7 @@ function init() {
         }
 
         writeStateToQuery(state);
-        rerenderFilterPanels();
+        updateChipsFromState();
       }
 
       dom.search.addEventListener("input", () => {
