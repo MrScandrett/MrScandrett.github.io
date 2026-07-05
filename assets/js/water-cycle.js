@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDistributionChart();
     initSimulation(stageController);
     initTranspirationExplorer();
+    initUsgsDiagram();
     initQuiz();
     initScavengerHunt();
     initContentsToggle();
@@ -449,6 +450,179 @@ function initTranspirationExplorer() {
     canvas.appendChild(svg('text', { x: 55, y: 250, 'font-size': 13, fill: '#12456f', 'font-weight': 700 }, 'Roots absorb water'));
     canvas.appendChild(svg('text', { x: 295, y: 130, 'font-size': 13, fill: '#12456f', 'font-weight': 700 }, 'Water travels upward'));
     canvas.appendChild(svg('text', { x: 335, y: 45, 'font-size': 13, fill: '#12456f', 'font-weight': 700 }, 'Leaves release vapor'));
+}
+
+function initUsgsDiagram() {
+    const viewport = document.getElementById('usgs-diagram-viewport');
+    const wrapper = document.getElementById('usgs-diagram-wrapper');
+    const img = document.getElementById('usgs-diagram-img');
+    const loading = document.getElementById('usgs-diagram-loading');
+    if (!viewport || !wrapper || !img) return;
+
+    const DIAGRAM_SOURCES = {
+        en: {
+            src: 'https://labs.waterdata.usgs.gov/visualizations/images/USGS_WaterCycle_English_ONLINE.webp',
+            alt: 'Illustrated diagram of the water cycle showing the major pools and fluxes of water on Earth, published by the U.S. Geological Survey.'
+        },
+        es: {
+            src: 'https://labs.waterdata.usgs.gov/visualizations/images/USGS_WaterCycle_Spanish_ONLINE.webp',
+            alt: 'Diagrama ilustrado del ciclo del agua que muestra los principales reservorios y flujos de agua en la Tierra, publicado por el Servicio Geologico de los Estados Unidos.'
+        }
+    };
+    const MIN_ZOOM = 1;
+    const MAX_ZOOM = 5;
+    const ZOOM_STEP = 0.4;
+
+    const state = { zoom: 1, panX: 0, panY: 0, lang: 'en', loadedFull: false };
+    let dragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+
+    function applyTransform() {
+        wrapper.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+    }
+
+    function clampPan() {
+        const container = viewport.getBoundingClientRect();
+        const scaledWidth = wrapper.offsetWidth * state.zoom;
+        const scaledHeight = wrapper.offsetHeight * state.zoom;
+        const maxX = Math.max((scaledWidth - container.width) / 2, 0);
+        const maxY = Math.max((scaledHeight - container.height) / 2, 0);
+        state.panX = Math.max(Math.min(state.panX, maxX), -maxX);
+        state.panY = Math.max(Math.min(state.panY, maxY), -maxY);
+    }
+
+    function setZoom(nextZoom) {
+        state.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
+        if (state.zoom === MIN_ZOOM) {
+            state.panX = 0;
+            state.panY = 0;
+        }
+        clampPan();
+        applyTransform();
+    }
+
+    function resetView() {
+        state.zoom = MIN_ZOOM;
+        state.panX = 0;
+        state.panY = 0;
+        applyTransform();
+    }
+
+    function loadFullResolution(lang) {
+        const target = DIAGRAM_SOURCES[lang];
+        loading.hidden = false;
+        const probe = new Image();
+        probe.onload = () => {
+            img.src = target.src;
+            img.alt = target.alt;
+            state.loadedFull = true;
+            loading.hidden = true;
+        };
+        probe.onerror = () => {
+            loading.textContent = 'Could not load the high-resolution diagram. Check your connection and try again.';
+        };
+        probe.src = target.src;
+    }
+
+    document.getElementById('usgs-zoom-in-btn')?.addEventListener('click', () => setZoom(state.zoom + ZOOM_STEP));
+    document.getElementById('usgs-zoom-out-btn')?.addEventListener('click', () => setZoom(state.zoom - ZOOM_STEP));
+    document.getElementById('usgs-zoom-reset-btn')?.addEventListener('click', resetView);
+
+    document.getElementById('usgs-load-full-btn')?.addEventListener('click', (event) => {
+        loadFullResolution(state.lang);
+        event.target.disabled = true;
+        event.target.textContent = 'Loading…';
+    });
+
+    document.getElementById('usgs-lang-toggle-btn')?.addEventListener('click', (event) => {
+        state.lang = state.lang === 'en' ? 'es' : 'en';
+        event.target.textContent = state.lang === 'en' ? 'Español' : 'English';
+        if (state.loadedFull) loadFullResolution(state.lang);
+    });
+
+    const descriptionBtn = document.getElementById('usgs-description-btn');
+    const descriptionPanel = document.getElementById('usgs-description-panel');
+    descriptionBtn?.addEventListener('click', () => {
+        const isOpen = !descriptionPanel.hidden;
+        descriptionPanel.hidden = isOpen;
+        descriptionBtn.setAttribute('aria-expanded', String(!isOpen));
+        descriptionBtn.textContent = isOpen ? 'Read the Official USGS Description' : 'Hide USGS Description';
+    });
+
+    viewport.addEventListener('wheel', (event) => {
+        if (!event.ctrlKey && !event.metaKey) return;
+        event.preventDefault();
+        const delta = event.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+        setZoom(state.zoom + delta);
+    }, { passive: false });
+
+    wrapper.addEventListener('pointerdown', (event) => {
+        if (event.pointerType !== 'mouse' || event.button !== 0 || state.zoom <= MIN_ZOOM) return;
+        dragging = true;
+        wrapper.classList.add('is-dragging');
+        dragStartX = event.clientX - state.panX;
+        dragStartY = event.clientY - state.panY;
+        wrapper.setPointerCapture(event.pointerId);
+    });
+
+    wrapper.addEventListener('pointermove', (event) => {
+        if (!dragging) return;
+        state.panX = event.clientX - dragStartX;
+        state.panY = event.clientY - dragStartY;
+        clampPan();
+        applyTransform();
+    });
+
+    function stopDragging() {
+        dragging = false;
+        wrapper.classList.remove('is-dragging');
+    }
+    wrapper.addEventListener('pointerup', stopDragging);
+    wrapper.addEventListener('pointercancel', stopDragging);
+    wrapper.addEventListener('dragstart', (event) => event.preventDefault());
+
+    let pinchStartDistance = null;
+    let pinchStartZoom = state.zoom;
+    let touchDragStart = null;
+
+    function touchDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    wrapper.addEventListener('touchstart', (event) => {
+        if (event.touches.length === 2) {
+            pinchStartDistance = touchDistance(event.touches);
+            pinchStartZoom = state.zoom;
+        } else if (event.touches.length === 1 && state.zoom > MIN_ZOOM) {
+            touchDragStart = {
+                x: event.touches[0].clientX - state.panX,
+                y: event.touches[0].clientY - state.panY
+            };
+        }
+    }, { passive: true });
+
+    wrapper.addEventListener('touchmove', (event) => {
+        if (event.touches.length === 2 && pinchStartDistance) {
+            event.preventDefault();
+            const scaleChange = touchDistance(event.touches) / pinchStartDistance;
+            setZoom(pinchStartZoom * scaleChange);
+        } else if (event.touches.length === 1 && touchDragStart) {
+            state.panX = event.touches[0].clientX - touchDragStart.x;
+            state.panY = event.touches[0].clientY - touchDragStart.y;
+            clampPan();
+            applyTransform();
+        }
+    }, { passive: false });
+
+    wrapper.addEventListener('touchend', () => {
+        pinchStartDistance = null;
+        touchDragStart = null;
+    });
+
+    applyTransform();
 }
 
 function initQuiz() {
