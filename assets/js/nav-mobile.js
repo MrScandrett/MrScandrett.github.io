@@ -280,6 +280,25 @@
   var STORAGE_CANVAS = "classroomos-canvas-bg";
   var CANVAS_EVENT   = "classroomos:canvasbgchange";
 
+  /* Per-theme picks, e.g. { topaz: "mesh" } — a choice made under one
+   * theme shouldn't stick around after switching to another. */
+  function readCanvasPrefs() {
+    try {
+      var parsed = JSON.parse(readStorage(STORAGE_CANVAS));
+      return (parsed && typeof parsed === "object") ? parsed : {};
+    } catch (e) { return {}; }
+  }
+
+  function writeCanvasPref(theme, bg) {
+    var prefs = readCanvasPrefs();
+    prefs[theme] = bg;
+    writeStorage(STORAGE_CANVAS, JSON.stringify(prefs));
+  }
+
+  function canvasBgForTheme(theme) {
+    return readCanvasPrefs()[theme] || CANVAS_THEME_DEFAULT[theme] || "particles";
+  }
+
   var STORAGE_MODE = "classroomos-lighting-mode";
   var STORAGE_PHASE = "classroomos-lighting-phase";
   var LIGHTING_EVENT = "classroomos:lightingchange";
@@ -681,7 +700,10 @@
           "<small>" + opt.detail + "</small>" +
         "</span>";
       btn.addEventListener("click", function () {
-        try { localStorage.setItem(STORAGE_CANVAS, opt.id); } catch (e) {}
+        var theme = lighting && typeof lighting.getCurrentTheme === "function"
+          ? lighting.getCurrentTheme()
+          : (document.documentElement.dataset.theme || "day");
+        writeCanvasPref(theme, opt.id);
         // Notify canvas-bg.js if loaded on this page
         if (window.ClassroomOSCanvasBg) window.ClassroomOSCanvasBg.set(opt.id);
         var ev;
@@ -817,12 +839,10 @@
 
   function syncCanvasUi() {
     if (!canvasGrid) return;
-    var stored;
-    try { stored = localStorage.getItem(STORAGE_CANVAS); } catch (e) { stored = null; }
-    if (!stored) {
-      var theme = document.documentElement.dataset.theme || "day";
-      stored = CANVAS_THEME_DEFAULT[theme] || "particles";
-    }
+    var theme = (lighting && typeof lighting.getCurrentTheme === "function")
+      ? lighting.getCurrentTheme()
+      : (document.documentElement.dataset.theme || "day");
+    var stored = canvasBgForTheme(theme);
     var chips = canvasGrid.querySelectorAll(".nav-canvas-chip");
     chips.forEach(function (chip) {
       var isActive = chip.getAttribute("data-canvas-bg") === stored;
@@ -902,10 +922,12 @@
     window.addEventListener(LIGHTING_EVENT, function (event) {
       if (!event || !event.detail) {
         syncLightingUi();
+        syncCanvasUi();
         return;
       }
 
       updateSettingsUi(event.detail.mode || "auto", event.detail.theme || event.detail.phase || "day");
+      syncCanvasUi();
     });
 
     syncLightingUi();

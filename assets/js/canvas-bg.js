@@ -25,17 +25,25 @@
   var beeImg = null, beeImgReady = false;
 
   /* Theme → the falling/crawling background it debuts with, until a
-   * visitor picks their own from the settings panel. */
+   * visitor picks their own from the settings panel (for that theme). */
   var THEME_DEFAULT_BG = { sakura: 'petals', topaz: 'hive' };
 
   /* ── Storage ─────────────────────────────────────────────────── */
-  function read() {
+  function currentTheme() {
+    return document.documentElement.dataset.theme || 'day';
+  }
+
+  /* Per-theme picks, e.g. { topaz: 'mesh' } — a choice made under one
+   * theme shouldn't stick around after switching to another. */
+  function readPrefs() {
     try {
-      var stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return stored;
-    } catch (e) { /* ignore */ }
-    var theme = document.documentElement.dataset.theme || 'day';
-    return THEME_DEFAULT_BG[theme] || 'particles';
+      var parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch (e) { return {}; }
+  }
+
+  function bgForTheme(theme) {
+    return readPrefs()[theme] || THEME_DEFAULT_BG[theme] || 'particles';
   }
 
   /* ── Theme-aware accent colour ───────────────────────────────── */
@@ -430,7 +438,7 @@
 
     if (!mount()) return;
 
-    var stored = read();
+    var stored = bgForTheme(currentTheme());
     if (stored && stored !== 'none') start(stored);
 
     // Settings panel fired a change on this same page
@@ -440,7 +448,7 @@
 
     // Preference changed from another tab
     window.addEventListener('storage', function (e) {
-      if (e && e.key === STORAGE_KEY) start(e.newValue || 'none');
+      if (e && e.key === STORAGE_KEY) start(bgForTheme(currentTheme()));
     });
 
     // Repaint on resize
@@ -458,10 +466,13 @@
       else if (currentBg !== 'none') { t = t; raf = requestAnimationFrame(tick); }
     });
 
-    // Re-colour when theme changes
-    window.addEventListener('classroomos:lightingchange', function () {
-      if (currentBg === 'mesh')      makeBlobs();
-      if (currentBg === 'particles') { /* colours read live */ }
+    // Theme changed (live, no reload): switch to that theme's pick/default
+    // — e.g. hive debuts with honey, petals with sakura — and re-colour.
+    window.addEventListener('classroomos:lightingchange', function (e) {
+      var theme = (e && e.detail && e.detail.theme) || currentTheme();
+      var bg = bgForTheme(theme);
+      if (bg !== currentBg) start(bg);
+      if (currentBg === 'mesh') makeBlobs();
     });
   }
 
