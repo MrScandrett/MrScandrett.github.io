@@ -66,6 +66,7 @@
     .cyoa-choices { display: flex; flex-direction: column; gap: 0.6rem; }
     .cyoa-choice { background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.15); color: #e2e8f0; border-radius: 10px; padding: 0.65rem 0.9rem; font-size: 0.88rem; font-family: inherit; cursor: pointer; text-align: left; transition: background 0.15s, border-color 0.15s; }
     .cyoa-choice:hover { background: rgba(139,92,246,0.16); border-color: var(--acc-border); }
+    .cyoa-choice:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; }
     .game-btn { display: block; margin: 0.5rem auto 0; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1.2rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: inherit; }
     .game-btn:hover { opacity: 0.85; }
     .game-msg { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 0.5rem; background: rgba(10,10,15,0.9); color: #fff; text-align: center; font-size: 1rem; font-weight: 700; padding: 1rem; }
@@ -199,16 +200,16 @@
           <p>Read the scene, then click a choice. There's no wrong click to worry about mid-story — every choice leads somewhere, some endings are just better than others.</p>
 
           <div class="game-wrap">
-            <div class="game-hud">
+            <div class="game-hud" aria-live="polite" aria-atomic="false">
               <span class="hud-score" id="g-score">Lost in Space</span>
               <span id="g-lives">Scene 1</span>
             </div>
             <div class="game-stage" id="g-stage">
               <div class="cyoa-avatar" id="g-avatar">🧑‍🚀</div>
-              <p class="cyoa-scene" id="g-scene">Loading…</p>
+              <p class="cyoa-scene" id="g-scene" aria-live="polite">Loading…</p>
               <div class="cyoa-choices" id="g-choices"></div>
             </div>
-            <div class="game-msg" id="g-msg"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
+            <div class="game-msg" id="g-msg" role="status" aria-live="assertive"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
           </div>
 
           <div class="config-panel">
@@ -234,6 +235,7 @@
             </div>
             <button class="btn-apply" id="c-apply">Apply &amp; Restart</button>
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how branching works" or "how endings are detected." That's the engine — the part every version of this game shares. You're only choosing which story (content) plays through it. That's the limit, on purpose.</p>
+            <p class="config-note"><strong>What the two selects actually touch in the engine:</strong> <strong>Story</strong> only decides which entire scene-graph object <code>stories[config.story]</code> gets loaded — "Lost in Space," "Forest Temple," and "Time Travel Lab" have completely different scenes and endings, but they're all shaped exactly the same way (a <code>start</code> id, scenes with <code>choices</code>, endings marked <code>ending: true</code>), which is why the same <code>goTo()</code> function can walk any of them. <strong>Protagonist Sprite</strong> only sets <code>avatarEl.textContent</code> — it's never read by the branching logic at all.</p>
           </div>
         </section>
 
@@ -243,6 +245,7 @@
           <p>The game running above <em>is</em> this code — nothing hidden. It's split into two parts on purpose: a story graph (content) you just picked with the panel, and a locked engine that walks it.</p>
 
           <span class="code-tag editable">✏️ Content — this is what the panel above picks between</span>
+          <p class="config-note" style="margin-top:-0.2rem;">👆 Right now <code>config.story</code> is <strong>'<span id="cfg-story">space</span>'</strong> and <code>config.avatar</code> is <strong>'<span id="cfg-avatar">🧑‍🚀</span>'</strong> — hit "Apply &amp; Restart" above to see these change. The excerpt below is always the "Lost in Space" scene graph as an example of the shape every story shares; switching stories swaps in a different object of the same shape, not different engine code.</p>
           <div class="code-block">
             <pre><span class="kw">const</span> story = {
   start: {
@@ -495,6 +498,11 @@
       document.getElementById('g-msg').classList.add('show');
     }
 
+    function updateCodePeek() {
+      document.getElementById('cfg-story').textContent = config.story;
+      document.getElementById('cfg-avatar').textContent = config.avatar;
+    }
+
     document.getElementById('g-restart').addEventListener('click', reset);
 
     document.getElementById('c-apply').addEventListener('click', () => {
@@ -502,9 +510,11 @@
         story: document.getElementById('c-story').value,
         avatar: document.getElementById('c-avatar').value
       };
+      updateCodePeek();
       reset();
     });
 
+    updateCodePeek();
     reset();
   })();
 

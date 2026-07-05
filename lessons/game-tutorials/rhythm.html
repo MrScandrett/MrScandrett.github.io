@@ -50,6 +50,9 @@
 
     .game-wrap { border: 2px solid var(--acc-border); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #0a0a0f; position: relative; }
     #rhythm-canvas { display: block; width: 100%; max-width: 480px; height: 300px; margin: 0 auto; }
+    #rhythm-canvas:focus-visible { outline: 3px solid var(--acc); outline-offset: -3px; }
+    .game-focus-hint { text-align: center; font-size: 0.76rem; color: #64748b; margin: 0.5rem 0 0; }
+    [data-theme="night"] .game-focus-hint { color: rgba(245,245,247,0.6); }
     .game-hud { display: flex; justify-content: space-between; padding: 0.4rem 0.9rem; background: rgba(0,0,0,0.6); font-size: 0.78rem; font-weight: 600; }
     .game-hud .hud-score { color: #a78bfa; }
     .game-hud .hud-hint  { color: #94a3b8; }
@@ -172,13 +175,14 @@
           <p>Three lanes, three inputs: <strong>← (left lane), ↓ (middle lane), → (right lane)</strong>, or the matching touch buttons below the game. Press or tap exactly when a note crosses the glowing line.</p>
 
           <div class="game-wrap">
-            <div class="game-hud">
+            <div class="game-hud" aria-live="polite" aria-atomic="false">
               <span class="hud-score" id="g-score">Score: 0</span>
               <span class="hud-hint">← ↓ →</span>
             </div>
             <canvas id="rhythm-canvas" width="480" height="300" tabindex="0" aria-label="Rhythm tap game — press or tap left, down, or right when a note crosses the line"></canvas>
-            <div class="game-msg" id="g-msg"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
+            <div class="game-msg" id="g-msg" role="status" aria-live="assertive"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
           </div>
+          <p class="game-focus-hint">💡 Click inside the game first — that gives it keyboard focus so ← ↓ → hit notes instead of scrolling the page.</p>
 
           <div class="config-panel">
             <h3>Tune the Game (limited, on purpose)</h3>
@@ -206,6 +210,7 @@
             </div>
             <button class="btn-apply" id="c-apply">Apply &amp; Restart</button>
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how Perfect vs. Good is decided" or "how notes are spawned." That's the engine — the part every version of this game shares. You're only tuning content, not rewriting architecture. That's the limit, on purpose.</p>
+            <p class="config-note"><strong>What the sliders actually touch in the engine:</strong> <strong>Note Speed</strong> feeds two places at once — it shortens the spawn timer (<code>max(70 − speed×6, 30)</code>) and speeds up how fast notes fall (<code>1.2 + speed×0.9</code> pixels/frame) — so faster songs also arrive more often. <strong>Timing Forgiveness</strong> only widens the <code>perfectWindow</code> (<code>10 + window×8</code> pixels) that <code>onKeyPress()</code> compares your tap distance against — the Perfect/Good/Miss scoring math itself never changes.</p>
           </div>
         </section>
 
@@ -217,12 +222,13 @@
           <span class="code-tag editable">✏️ Config — this is what the panel above edits</span>
           <div class="code-block">
             <pre><span class="kw">const</span> config = {
-  theme:  <span class="str">'drum'</span>,
-  speed:  <span class="num">3</span>,
-  window: <span class="num">2</span>,
-  winScore: <span class="num">30</span>
+  theme:  <span class="str">'<span id="cfg-theme">drum</span>'</span>,
+  speed:  <span class="num" id="cfg-speed">3</span>,
+  window: <span class="num" id="cfg-window">2</span>,
+  winScore: <span class="num" id="cfg-winscore">30</span>
 };</pre>
           </div>
+          <p class="config-note" style="margin-top:-0.3rem;">👆 This block updates live — hit "Apply &amp; Restart" above and watch the exact values change here. There's no separate "demo" version of the code; this <em>is</em> it.</p>
 
           <span class="code-tag locked">🔒 Engine — locked, shared by every version of this game</span>
           <div class="code-block">
@@ -470,6 +476,13 @@
       document.getElementById('c-win-out').textContent = e.target.value;
     });
 
+    function updateCodePeek() {
+      document.getElementById('cfg-theme').textContent = config.theme;
+      document.getElementById('cfg-speed').textContent = config.speed;
+      document.getElementById('cfg-window').textContent = config.window;
+      document.getElementById('cfg-winscore').textContent = config.winScore;
+    }
+
     document.getElementById('c-apply').addEventListener('click', () => {
       config = {
         theme: document.getElementById('c-theme').value,
@@ -477,10 +490,12 @@
         window: Number(document.getElementById('c-window').value),
         winScore: Number(document.getElementById('c-win').value)
       };
+      updateCodePeek();
       reset();
       canvas.focus();
     });
 
+    updateCodePeek();
     reset();
     loop();
   })();

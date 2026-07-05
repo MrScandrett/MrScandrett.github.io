@@ -59,6 +59,7 @@
     .quiz-choices { display: flex; flex-direction: column; gap: 0.55rem; }
     .quiz-choice { background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.15); color: #e2e8f0; border-radius: 10px; padding: 0.6rem 0.9rem; font-size: 0.88rem; font-family: inherit; cursor: pointer; text-align: left; transition: background 0.15s, border-color 0.15s; }
     .quiz-choice:hover { background: rgba(139,92,246,0.16); border-color: var(--acc-border); }
+    .quiz-choice:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; }
     .quiz-choice.correct { background: rgba(34,197,94,0.22); border-color: #22c55e; }
     .quiz-choice.wrong { background: rgba(239,68,68,0.22); border-color: #ef4444; }
     .quiz-hint { min-height: 1.2rem; text-align: center; font-size: 0.8rem; color: #fbbf24; margin-top: 0.7rem; }
@@ -181,18 +182,18 @@
           <p>Click an answer. Correct answers advance the quest; wrong answers give you a hint and another try.</p>
 
           <div class="game-wrap">
-            <div class="game-hud">
+            <div class="game-hud" aria-live="polite" aria-atomic="false">
               <span class="hud-score" id="g-score">Question 1 of 5</span>
               <span id="g-lives">3 retries left</span>
             </div>
             <div class="game-stage" id="g-stage">
               <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="g-progress" style="width:20%"></div></div>
               <div class="quiz-avatar" id="g-avatar">🧙</div>
-              <p class="quiz-question" id="g-question">Loading…</p>
+              <p class="quiz-question" id="g-question" aria-live="polite">Loading…</p>
               <div class="quiz-choices" id="g-choices"></div>
-              <p class="quiz-hint" id="g-hint"></p>
+              <p class="quiz-hint" id="g-hint" aria-live="polite"></p>
             </div>
-            <div class="game-msg" id="g-msg"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
+            <div class="game-msg" id="g-msg" role="status" aria-live="assertive"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
           </div>
 
           <div class="config-panel">
@@ -222,6 +223,7 @@
             </div>
             <button class="btn-apply" id="c-apply">Apply &amp; Restart</button>
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how answer-checking works" or "how the progress bar advances." That's the engine — the part every version of this game shares. You're only tuning content (and writing questions), not rewriting architecture. That's the limit, on purpose.</p>
+            <p class="config-note"><strong>What these actually touch in the engine:</strong> <strong>Retries per Question</strong> only sets the starting value of <code>retriesLeft</code> each time a question renders — the same <code>retriesLeft <= 0</code> check in <code>onChoice()</code> decides when to reveal the answer and advance, whatever that starting number is. <strong>Question Set</strong> swaps in a whole different <code>questions</code> array — <code>onChoice()</code> never looks at whether a question is math, science, or animals, only at <code>choices</code> and <code>correct</code>.</p>
           </div>
         </section>
 
@@ -232,13 +234,14 @@
 
           <span class="code-tag editable">✏️ Config &amp; Content — this is what the panel above edits</span>
           <div class="code-block">
-            <pre><span class="kw">const</span> config = { theme: <span class="str">'math'</span>, avatar: <span class="str">'🧙'</span>, retries: <span class="num">3</span> };
+            <pre><span class="kw">const</span> config = { theme: <span class="str">'<span id="cfg-theme">math</span>'</span>, avatar: <span class="str">'<span id="cfg-avatar">🧙</span>'</span>, retries: <span class="num" id="cfg-retries">3</span> };
 
 <span class="kw">const</span> questions = [
   { text: <span class="str">'5 + 7 = ?'</span>, choices: [<span class="str">'10'</span>, <span class="str">'12'</span>, <span class="str">'13'</span>], correct: <span class="num">1</span>, hint: <span class="str">'Count up from 7, four times.'</span> },
   <span class="cm">// ...more questions</span>
 ];</pre>
           </div>
+          <p class="config-note" style="margin-top:-0.3rem;">👆 The <code>config</code> line updates live — hit "Apply &amp; Restart" above and watch it change. (The <code>questions</code> excerpt always shows the Math Dungeon set as an example; picking a different Question Set swaps in a same-shaped array with different text.)</p>
 
           <span class="code-tag locked">🔒 Engine — locked, shared by every version of this game</span>
           <div class="code-block">
@@ -443,15 +446,23 @@
       document.getElementById('c-retries-out').textContent = e.target.value;
     });
 
+    function updateCodePeek() {
+      document.getElementById('cfg-theme').textContent = config.theme;
+      document.getElementById('cfg-avatar').textContent = config.avatar;
+      document.getElementById('cfg-retries').textContent = config.retries;
+    }
+
     document.getElementById('c-apply').addEventListener('click', () => {
       config = {
         theme: document.getElementById('c-theme').value,
         avatar: document.getElementById('c-avatar').value,
         retries: Number(document.getElementById('c-retries').value)
       };
+      updateCodePeek();
       reset();
     });
 
+    updateCodePeek();
     reset();
   })();
 
