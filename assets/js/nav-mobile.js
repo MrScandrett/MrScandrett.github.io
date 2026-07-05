@@ -261,6 +261,7 @@
     { id: "topaz",     label: "Honey",     detail: "Warm amber — like afternoon sunlight through a window.", tone: "light" },
     { id: "goldfish",  label: "Goldfish",  detail: "Saturated goldfish orange with a scale-textured glow.",  tone: "light" },
     { id: "cobblestone", label: "Cobblestone", detail: "Light grey stone tones — quiet and understated.",    tone: "light" },
+    { id: "bark",      label: "Bark",      detail: "Warm dark wood tones with a rough bark texture.",       tone: "dark"  },
     { id: "night",     label: "Night",     detail: "Easy on the eyes after dark — full dark mode.",          tone: "dark"  },
     { id: "vaporwave", label: "Vaporwave", detail: "Neon magenta and cyan — retro synthwave vibes.",        tone: "dark"  }
   ];
@@ -269,8 +270,12 @@
     { id: "none",      label: "None",      detail: "Static background.",          icon: "◻" },
     { id: "mesh",      label: "Mesh",      detail: "Drifting gradient blobs.",    icon: "◉" },
     { id: "particles", label: "Particles", detail: "Connected floating dots.",    icon: "⁕" },
-    { id: "aurora",    label: "Aurora",    detail: "Flowing light bands.",        icon: "≋" }
+    { id: "aurora",    label: "Aurora",    detail: "Flowing light bands.",        icon: "≋" },
+    { id: "petals",    label: "Petals",    detail: "Falling blossoms drifting on the wind.", icon: "❀" },
+    { id: "hive",      label: "Bee Hive",  detail: "Bees crawling the hive walls.", icon: "🐝" }
   ];
+
+  var CANVAS_THEME_DEFAULT = { sakura: "petals", topaz: "hive" };
 
   var STORAGE_CANVAS = "classroomos-canvas-bg";
   var CANVAS_EVENT   = "classroomos:canvasbgchange";
@@ -386,7 +391,7 @@
 
   function getLightingForTheme(theme) {
     var normalized = normalizeTheme(theme);
-    return (normalized === "night" || normalized === "vaporwave") ? "night" : "day";
+    return (normalized === "night" || normalized === "vaporwave" || normalized === "bark") ? "night" : "day";
   }
 
   function ensureLightingApi() {
@@ -813,7 +818,11 @@
   function syncCanvasUi() {
     if (!canvasGrid) return;
     var stored;
-    try { stored = localStorage.getItem(STORAGE_CANVAS) || "particles"; } catch (e) { stored = "particles"; }
+    try { stored = localStorage.getItem(STORAGE_CANVAS); } catch (e) { stored = null; }
+    if (!stored) {
+      var theme = document.documentElement.dataset.theme || "day";
+      stored = CANVAS_THEME_DEFAULT[theme] || "particles";
+    }
     var chips = canvasGrid.querySelectorAll(".nav-canvas-chip");
     chips.forEach(function (chip) {
       var isActive = chip.getAttribute("data-canvas-bg") === stored;

@@ -3,7 +3,7 @@
  * Loaded only on index.html. Settings panel (nav-mobile.js) writes the
  * preference; this file reads it and renders it.
  *
- * Modes: 'none' | 'mesh' | 'particles' | 'aurora'
+ * Modes: 'none' | 'mesh' | 'particles' | 'aurora' | 'petals' | 'hive'
  * Storage key: classroomos-canvas-bg
  * Change event: classroomos:canvasbgchange  →  { detail: { bg: 'mesh' } }
  */
@@ -11,15 +11,26 @@
 (function () {
   var STORAGE_KEY  = 'classroomos-canvas-bg';
   var CHANGE_EVENT = 'classroomos:canvasbgchange';
+  var BEE_SPRITE   = 'assets/images/sprites/bee.png';
 
   var canvas, ctx, raf;
   var w = 0, h = 0, t = 0;
   var currentBg = 'none';
-  var blobs = null, pts = null;
+  var blobs = null, pts = null, petals = null, bees = null;
+  var beeImg = null, beeImgReady = false;
+
+  /* Theme → the falling/crawling background it debuts with, until a
+   * visitor picks their own from the settings panel. */
+  var THEME_DEFAULT_BG = { sakura: 'petals', topaz: 'hive' };
 
   /* ── Storage ─────────────────────────────────────────────────── */
   function read() {
-    try { return localStorage.getItem(STORAGE_KEY) || 'particles'; } catch (e) { return 'particles'; }
+    try {
+      var stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) return stored;
+    } catch (e) { /* ignore */ }
+    var theme = document.documentElement.dataset.theme || 'day';
+    return THEME_DEFAULT_BG[theme] || 'particles';
   }
 
   /* ── Theme-aware accent colour ───────────────────────────────── */
@@ -34,7 +45,8 @@
       topaz:   [255, 185,   0],
       vaporwave: [255,   0, 255],
       goldfish: [255, 106,  26],
-      cobblestone: [138, 141, 145]
+      cobblestone: [138, 141, 145],
+      bark: [217, 154, 84]
     };
     return map[theme] || map['day'];
   }
@@ -155,6 +167,131 @@
     }
   }
 
+  /* ── Petals (falling blossoms/leaves, wind + gravity) ────────
+   * Same idea as jhammann/sakura (rain of gradient petals swayed by
+   * wind), reworked onto this file's canvas/rAF loop instead of DOM
+   * sprites so it shares the theme-aware colour + perf guards below. */
+  function spawnPetal(y) {
+    return {
+      x:          Math.random() * w,
+      y:          (y === undefined) ? -10 - Math.random() * h : y,
+      size:       5 + Math.random() * 7,
+      speed:      0.35 + Math.random() * 0.55,
+      drift:      (Math.random() - 0.5) * 0.5,
+      swingAmp:   0.4 + Math.random() * 0.7,
+      swingFreq:  0.006 + Math.random() * 0.01,
+      swingPhase: Math.random() * Math.PI * 2,
+      rot:        Math.random() * Math.PI * 2,
+      rotSpeed:   (Math.random() - 0.5) * 0.03,
+      shade:      Math.random()
+    };
+  }
+
+  function makePetals() {
+    petals = [];
+    var count = Math.max(12, Math.min(26, Math.floor(w / 44)));
+    for (var i = 0; i < count; i++) petals.push(spawnPetal());
+  }
+
+  function drawPetals() {
+    ctx.clearRect(0, 0, w, h);
+    var rgb = accentRGB();
+
+    for (var i = 0; i < petals.length; i++) {
+      var p = petals[i];
+      p.y   += p.speed;
+      p.x   += p.drift + Math.sin(t * p.swingFreq + p.swingPhase) * p.swingAmp;
+      p.rot += p.rotSpeed;
+
+      if (p.y - p.size > h) { petals[i] = spawnPetal(-10 - Math.random() * 30); continue; }
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+
+      var alpha = 0.5 + p.shade * 0.3;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      var g = ctx.createLinearGradient(-p.size, -p.size, p.size, p.size);
+      g.addColorStop(0, rgba(rgb, alpha));
+      g.addColorStop(1, rgba(rgb, alpha * 0.45));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, p.size, p.size * 0.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  /* ── Bee Hive (sprites crawling the hive walls) ───────────────
+   * Loads assets/images/sprites/bee.png once and animates several
+   * copies wandering the canvas like bees walking a hive interior:
+   * mostly-straight crawling with a wandering heading, and a turn
+   * (not a fall-off) whenever they reach an edge. */
+  function loadBeeImg() {
+    if (beeImg) return;
+    beeImg = new Image();
+    beeImg.onload = function () { beeImgReady = true; };
+    beeImg.src = BEE_SPRITE;
+  }
+
+  function spawnBee() {
+    var size = 22 + Math.random() * 14;
+    return {
+      x:          Math.random() * w,
+      y:          Math.random() * h,
+      heading:    Math.random() * Math.PI * 2,
+      speed:      0.28 + Math.random() * 0.32,
+      turnTimer:  60 + Math.random() * 120,
+      wigglePhase: Math.random() * Math.PI * 2,
+      size:       size,
+      alpha:      0.65 + Math.random() * 0.3
+    };
+  }
+
+  function makeHive() {
+    loadBeeImg();
+    bees = [];
+    var count = Math.max(6, Math.min(14, Math.floor(w / 90)));
+    for (var i = 0; i < count; i++) bees.push(spawnBee());
+  }
+
+  function drawHive() {
+    ctx.clearRect(0, 0, w, h);
+    if (!beeImgReady) return;
+
+    var margin = 16;
+    for (var i = 0; i < bees.length; i++) {
+      var b = bees[i];
+
+      // Wander: small continuous jitter plus an occasional bigger turn.
+      b.heading += (Math.random() - 0.5) * 0.06;
+      b.turnTimer--;
+      if (b.turnTimer <= 0) {
+        b.heading   += (Math.random() - 0.5) * 1.4;
+        b.turnTimer  = 60 + Math.random() * 120;
+      }
+
+      b.x += Math.cos(b.heading) * b.speed;
+      b.y += Math.sin(b.heading) * b.speed;
+
+      // Hit a wall of the hive interior: turn along it instead of leaving.
+      if (b.x < margin)     { b.x = margin;     b.heading = Math.PI - b.heading; }
+      if (b.x > w - margin) { b.x = w - margin; b.heading = Math.PI - b.heading; }
+      if (b.y < margin)     { b.y = margin;     b.heading = -b.heading; }
+      if (b.y > h - margin) { b.y = h - margin; b.heading = -b.heading; }
+
+      var wiggle = Math.sin(t * 0.2 + b.wigglePhase) * 0.12;
+      var hh = b.size * (beeImg.naturalHeight / beeImg.naturalWidth || 1);
+
+      ctx.save();
+      ctx.globalAlpha = b.alpha;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.heading + wiggle);
+      ctx.drawImage(beeImg, -b.size / 2, -hh / 2, b.size, hh);
+      ctx.restore();
+    }
+  }
+
   /* ── Aurora (sine-wave light bands) ─────────────────────────── */
   function drawAurora() {
     ctx.clearRect(0, 0, w, h);
@@ -187,6 +324,8 @@
     if      (currentBg === 'mesh')      drawMesh();
     else if (currentBg === 'particles') drawParticles();
     else if (currentBg === 'aurora')    drawAurora();
+    else if (currentBg === 'petals')    drawPetals();
+    else if (currentBg === 'hive')      drawHive();
     raf = requestAnimationFrame(tick);
   }
 
@@ -207,8 +346,10 @@
     canvas.style.display = '';
 
     // Re-init data if switching modes
-    if (bg === 'mesh')      { blobs = null; makeBlobs();     }
-    if (bg === 'particles') { pts   = null; makeParticles(); }
+    if (bg === 'mesh')      { blobs  = null; makeBlobs();     }
+    if (bg === 'particles') { pts    = null; makeParticles(); }
+    if (bg === 'petals')    { petals = null; makePetals();    }
+    if (bg === 'hive')      { bees   = null; makeHive();      }
 
     raf = requestAnimationFrame(tick);
   }
@@ -245,8 +386,10 @@
     // Repaint on resize
     window.addEventListener('resize', function () {
       resize();
-      if (currentBg === 'mesh')      { blobs = null; makeBlobs();     }
-      if (currentBg === 'particles') { pts   = null; makeParticles(); }
+      if (currentBg === 'mesh')      { blobs  = null; makeBlobs();     }
+      if (currentBg === 'particles') { pts    = null; makeParticles(); }
+      if (currentBg === 'petals')    { petals = null; makePetals();    }
+      if (currentBg === 'hive')      { bees   = null; makeHive();      }
     });
 
     // Pause when tab is backgrounded (battery / CPU)

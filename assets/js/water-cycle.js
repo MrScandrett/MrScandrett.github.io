@@ -20,7 +20,7 @@ function initStageSelector() {
     const stageData = [
         { name: 'Evaporation', state: 'Liquid to gas', temp: 'Sun-warmed — happens at any temperature', transition: 'Water warms and becomes vapor.' },
         { name: 'Condensation', state: 'Gas to liquid', temp: 'Cooling below the dew point', transition: 'Water vapor cools into droplets.' },
-        { name: 'Precipitation', state: 'Liquid or ice falling', temp: 'Cloud droplets cool and grow heavy', transition: 'Water falls as rain, snow, sleet, or hail.' },
+        { name: 'Precipitation', state: 'Liquid or ice falling', temp: 'Droplets merge until too heavy to stay aloft', transition: 'Water falls as rain, snow, sleet, or hail.' },
         { name: 'Collection', state: 'Liquid water stored', temp: 'Stable surface temperatures', transition: 'Water gathers in rivers, lakes, and oceans.' },
         { name: 'Infiltration', state: 'Liquid moving underground', temp: 'Cooling in shaded soil', transition: 'Water sinks into soil and aquifers.' },
         { name: 'Transpiration', state: 'Liquid to gas in plants', temp: 'Leaf warming drives vapor release', transition: 'Plants return water vapor to the air.' }
@@ -256,27 +256,30 @@ function initDistributionChart() {
     const tooltip = document.getElementById('distribution-tooltip');
     if (!canvas) return;
     let zoomFreshwater = false;
+    // Figures per NOAA Education, "The water cycle": saltwater 97.5%, freshwater 2.5%;
+    // within freshwater, glaciers/ice/snow ~68%, groundwater ~30%, surface water well under 1%.
     const earthWater = [
-        { label: 'Oceans', value: 97, color: '#1e90ff', target: '#simulation' },
-        { label: 'Glaciers & Ice', value: 2, color: '#bfe6ff', target: '#states' },
-        { label: 'Freshwater', value: 1, color: '#74c0fc', target: '#vocabulary' }
+        { label: 'Saltwater', value: 97.5, color: '#1e90ff', target: '#simulation' },
+        { label: 'Freshwater', value: 2.5, color: '#74c0fc', target: '#states' }
     ];
     const freshwater = [
-        { label: 'Groundwater', value: 68, color: '#3d8bd9', target: '#scavenger' },
-        { label: 'Glaciers', value: 30, color: '#cdefff', target: '#states' },
-        { label: 'Lakes & Rivers', value: 2, color: '#8dd3ff', target: '#where' }
+        { label: 'Glaciers & Ice', value: 68, color: '#cdefff', target: '#states' },
+        { label: 'Groundwater', value: 30, color: '#3d8bd9', target: '#scavenger' },
+        { label: 'Lakes, Rivers & Other', value: 2, color: '#8dd3ff', target: '#where' }
     ];
+    const SMALL_SLICE_THRESHOLD = 8;
 
     function render() {
         const data = zoomFreshwater ? freshwater : earthWater;
         canvas.innerHTML = '';
-        const cx = 170;
+        const cx = 190;
         const cy = 160;
         const radius = 110;
         let startAngle = -Math.PI / 2;
         data.forEach((slice) => {
             const sweep = (slice.value / 100) * Math.PI * 2;
-            const path = describeArcSlice(cx, cy, radius, startAngle, startAngle + sweep);
+            const endAngle = startAngle + sweep;
+            const path = describeArcSlice(cx, cy, radius, startAngle, endAngle);
             const node = svg('path', { d: path, fill: slice.color, class: 'distribution-chart-slice' });
             node.addEventListener('mouseenter', () => {
                 tooltip.textContent = `${slice.label}: ${slice.value}${zoomFreshwater ? '% of freshwater' : "% of Earth's water"}`;
@@ -285,16 +288,31 @@ function initDistributionChart() {
                 document.querySelector(slice.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
             canvas.appendChild(node);
+
+            // Small slices get their label pushed outside the pie with a leader line so
+            // adjacent thin wedges (e.g. a 2% sliver) don't collide or become illegible.
             const labelAngle = startAngle + sweep / 2;
-            canvas.appendChild(svg('text', {
-                x: cx + Math.cos(labelAngle) * 72,
-                y: cy + Math.sin(labelAngle) * 72,
-                'text-anchor': 'middle',
-                'font-size': 12,
-                fill: '#12456f',
-                'font-weight': 700
-            }, `${slice.label}\n${slice.value}%`));
-            startAngle += sweep;
+            const isSmall = slice.value < SMALL_SLICE_THRESHOLD;
+            const labelRadius = isSmall ? radius + 34 : radius - 2;
+            const labelX = cx + Math.cos(labelAngle) * labelRadius;
+            const labelY = cy + Math.sin(labelAngle) * labelRadius;
+            const anchor = !isSmall ? 'middle' : Math.cos(labelAngle) < -0.15 ? 'end' : Math.cos(labelAngle) > 0.15 ? 'start' : 'middle';
+
+            if (isSmall) {
+                canvas.appendChild(svg('line', {
+                    x1: cx + Math.cos(labelAngle) * radius,
+                    y1: cy + Math.sin(labelAngle) * radius,
+                    x2: labelX,
+                    y2: labelY,
+                    stroke: '#7a93a8',
+                    'stroke-width': 1
+                }));
+            }
+
+            canvas.appendChild(svg('text', { x: labelX, y: labelY, 'text-anchor': anchor, 'font-size': 12, fill: '#12456f', 'font-weight': 700 }, slice.label));
+            canvas.appendChild(svg('text', { x: labelX, y: labelY + 14, 'text-anchor': anchor, 'font-size': 11, fill: '#517089' }, `${slice.value}%`));
+
+            startAngle = endAngle;
         });
         canvas.appendChild(svg('circle', { cx, cy, r: 52, fill: '#ffffff' }));
         canvas.appendChild(svg('text', { x: cx, y: cy - 6, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: '#144f7d' }, zoomFreshwater ? 'Freshwater' : 'Earth Water'));
@@ -759,6 +777,12 @@ function initContentsToggle() {
         const expanded = toggle.getAttribute('aria-expanded') === 'true';
         toggle.setAttribute('aria-expanded', String(!expanded));
         toc.classList.toggle('is-open', !expanded);
+    });
+    toc.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+            toggle.setAttribute('aria-expanded', 'false');
+            toc.classList.remove('is-open');
+        });
     });
 }
 

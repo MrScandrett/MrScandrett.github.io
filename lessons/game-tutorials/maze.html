@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tutorial: Maze Game · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Tiny-loop tutorial — play and customize a real Maze Game with pre-built sprites and wall layouts, see the exact architecture powering it, then build the same loop yourself in Scratch or from real scratch in JavaScript." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+
+    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: #64748b; }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: #3f4f65; font-size: 0.96rem; line-height: 1.62; }
+    [data-theme="night"] .cl-lede { color: rgba(245,245,247,0.7); }
+
+    :root { --acc: #8b5cf6; --acc-soft: rgba(139,92,246,0.12); --acc-border: rgba(139,92,246,0.3); }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent, var(--acc)); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p  { margin: 0 0 0.6rem; color: #3f4f65; font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    [data-theme="night"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-theme="night"] .cl-card p { color: rgba(245,245,247,0.72); }
+
+    .callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .callout.violet { background: rgba(139,92,246,0.09); border-left: 3px solid var(--acc); color: #3f4f65; }
+    [data-theme="night"] .callout.violet { color: rgba(245,245,247,0.72); }
+    .callout strong { color: var(--text,#1d1d1f); }
+
+    .stages-flow { display: flex; align-items: stretch; gap: 0.55rem; margin: 0.9rem 0; flex-wrap: wrap; }
+    .stages-step { flex: 1 1 150px; border-radius: 14px; padding: 0.9rem 0.85rem; border: 1.5px solid var(--acc-border); background: var(--acc-soft); text-align: center; }
+    .stages-step-icon { font-size: 1.4rem; display: block; margin-bottom: 0.3rem; }
+    .stages-step strong { display: block; font-size: 0.86rem; margin-bottom: 0.25rem; }
+    .stages-step small { font-size: 0.76rem; color: #64748b; line-height: 1.45; display: block; }
+    [data-theme="night"] .stages-step small { color: rgba(245,245,247,0.65); }
+    .stages-arrow { display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 1.3rem; }
+    @media (max-width: 700px) { .stages-flow { flex-direction: column; } .stages-arrow { transform: rotate(90deg); } }
+
+    .systems-list { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; color: #3f4f65; line-height: 1.7; }
+    [data-theme="night"] .systems-list { color: rgba(245,245,247,0.72); }
+
+    .game-wrap { border: 2px solid var(--acc-border); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #0a0a0f; position: relative; }
+    #maze-canvas { display: block; width: 100%; max-width: 440px; height: 280px; margin: 0 auto; }
+    .game-hud { display: flex; justify-content: space-between; padding: 0.4rem 0.9rem; background: rgba(0,0,0,0.6); font-size: 0.78rem; font-weight: 600; }
+    .game-hud .hud-score { color: #a78bfa; }
+    .game-hud .hud-hint  { color: #94a3b8; }
+    .game-btn { display: block; margin: 0.5rem auto 0; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1.2rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .game-btn:hover { opacity: 0.85; }
+    .game-msg { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 0.5rem; background: rgba(10,10,15,0.82); color: #fff; text-align: center; font-size: 1rem; font-weight: 700; }
+    .game-msg.show { display: flex; }
+    .game-msg span { font-size: 0.78rem; font-weight: 500; color: #cbd5e1; }
+
+    .config-panel { border: 1.5px solid var(--acc-border); border-radius: 16px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; background: var(--acc-soft); }
+    .config-panel h3 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--acc); }
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1rem; }
+    @media (max-width: 560px) { .config-grid { grid-template-columns: 1fr; } }
+    .config-field label { display: block; font-size: 0.78rem; font-weight: 600; color: #3f4f65; margin-bottom: 0.25rem; }
+    [data-theme="night"] .config-field label { color: rgba(245,245,247,0.75); }
+    .config-field select, .config-field input[type="range"] {
+      width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px;
+      font-size: 0.84rem; font-family: inherit; background: var(--white,#fff); color: var(--text,#1d1d1f); box-sizing: border-box;
+    }
+    .config-field output { font-size: 0.76rem; color: #64748b; margin-left: 0.3rem; }
+    .btn-apply { margin-top: 0.9rem; background: var(--acc); color: #fff; border: none; border-radius: 9px; padding: 0.45rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-apply:hover { opacity: 0.85; }
+    .config-note { font-size: 0.74rem; color: #94a3b8; margin-top: 0.6rem; }
+
+    .code-block { background: #0f172a; border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.7rem 0; overflow-x: auto; }
+    .code-block pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.79rem; line-height: 1.7; color: #e2e8f0; white-space: pre; }
+    .code-block .kw  { color: #c084fc; }
+    .code-block .fn  { color: #60a5fa; }
+    .code-block .str { color: #4ade80; }
+    .code-block .cm  { color: #475569; font-style: italic; }
+    .code-block .num { color: #fb923c; }
+    .code-tag { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 999px; margin-bottom: 0.4rem; }
+    .code-tag.editable { background: rgba(34,197,94,0.14); color: #16a34a; }
+    .code-tag.locked   { background: rgba(148,163,184,0.18); color: #64748b; }
+
+    .scratch-box { border: 1.5px solid rgba(255,171,25,0.35); border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; background: rgba(255,191,0,0.06); }
+    [data-theme="night"] .scratch-box { background: rgba(255,191,0,0.09); }
+    .scratch-box h4 { margin: 0 0 0.5rem; font-size: 0.86rem; letter-spacing: -0.01em; color: #b45309; display: flex; align-items: center; gap: 0.4rem; }
+    [data-theme="night"] .scratch-box h4 { color: #fbbf24; }
+    .scratch-box p { font-size: 0.83rem; color: #3f4f65; margin: 0.5rem 0 0; line-height: 1.55; }
+    [data-theme="night"] .scratch-box p { color: rgba(245,245,247,0.72); }
+    .scratch-link { display: inline-block; margin-top: 0.6rem; font-size: 0.78rem; font-weight: 700; color: #b45309; text-decoration: none; border-bottom: 1.5px solid rgba(180,83,9,0.4); }
+    [data-theme="night"] .scratch-link { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
+    .scratch-link:hover { border-color: currentColor; }
+
+    .next-card { display: flex; align-items: center; gap: 0.9rem; border: 1.5px solid var(--acc-border); border-radius: 14px; padding: 0.9rem 1.1rem; margin-top: 0.8rem; text-decoration: none; }
+    .next-card:hover { background: var(--acc-soft); }
+    .next-card-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .next-card strong { display: block; font-size: 0.9rem; color: var(--text,#1d1d1f); }
+    .next-card small { font-size: 0.8rem; color: #64748b; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../video-library.html">Videos</a></li>
+          <li><a href="../../recipe-book.html">Library</a></li>
+          <li><a href="../../class-downloads.html">Downloads</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Game Design &amp; Development · Tiny-Loop Tutorial · Archetype #4</p>
+          <h1>Tutorial: Maze Game</h1>
+          <div class="cl-hero-meta">
+            <span>Grid Movement</span><span class="dot"></span>
+            <span>Wall Collision</span><span class="dot"></span>
+            <span>Goal Detection</span><span class="dot"></span>
+            <span>Pre-built Sprites</span>
+          </div>
+          <p class="cl-lede">This is the exact <strong>Maze Game</strong> archetype from <a href="../game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> — already built and running below. Play it, then swap the pre-built sprites, wall theme, and maze layout using the panel underneath. You can't break the loop itself; that part is locked. Once you've tuned a version you like, you'll build this same architecture two more times: with Scratch's blocks, then from real scratch in JavaScript.</p>
+        </section>
+
+        <!-- Architecture -->
+        <section class="cl-card">
+          <h2>🗺️ The Architecture</h2>
+          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Maze Game's architecture:</p>
+
+          <div class="stages-flow">
+            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Navigate a grid of walls and reach the goal tile.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Press a direction → move one tile if it's open → repeat until you reach the goal.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Grid movement, wall collision, goal detection, step counter.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the goal tile to win. There's no lose state — just fewer or more steps.</small></div>
+          </div>
+
+          <p><strong>The four systems, in order of execution on every key press:</strong></p>
+          <ol class="systems-list">
+            <li><strong>Input system</strong> — reads the arrow key pressed and computes the one target tile in that direction.</li>
+            <li><strong>Wall collision system</strong> — checks whether the target tile is a wall; if it is, the move is cancelled and the player stays put.</li>
+            <li><strong>Step counter system</strong> — only counts a step when a move actually succeeds (feedback for the player).</li>
+            <li><strong>Goal detection system</strong> — checks the player's tile against the goal tile every move; matching tiles ends the game.</li>
+          </ol>
+        </section>
+
+        <!-- Play + Customize -->
+        <section class="cl-card">
+          <h2>🎮 Play &amp; Customize</h2>
+          <p>Move one tile at a time with <strong>Arrow keys</strong> or <strong>W A S D</strong>. Walls block you completely — find the path to the goal.</p>
+
+          <div class="game-wrap">
+            <div class="game-hud">
+              <span class="hud-score" id="g-score">Steps: 0</span>
+              <span class="hud-hint">Arrows / WASD</span>
+            </div>
+            <canvas id="maze-canvas" width="440" height="280" tabindex="0" aria-label="Maze game — use arrow keys or WASD to move one tile at a time"></canvas>
+            <div class="game-msg" id="g-msg"><span id="g-msg-title"></span><span id="g-msg-sub"></span><button class="game-btn" id="g-restart">Play Again ↺</button></div>
+          </div>
+
+          <div class="config-panel">
+            <h3>Tune the Game (limited, on purpose)</h3>
+            <div class="config-grid">
+              <div class="config-field">
+                <label for="c-player">Player Sprite</label>
+                <select id="c-player">
+                  <option value="🤖">🤖 Robot</option>
+                  <option value="🐭">🐭 Mouse</option>
+                  <option value="🧙">🧙 Wizard</option>
+                  <option value="⚔️">⚔️ Knight</option>
+                </select>
+              </div>
+              <div class="config-field">
+                <label for="c-goal">Goal Sprite</label>
+                <select id="c-goal">
+                  <option value="🔑">🔑 Key</option>
+                  <option value="🧀">🧀 Cheese</option>
+                  <option value="💎">💎 Gem</option>
+                  <option value="🚪">🚪 Exit Door</option>
+                </select>
+              </div>
+              <div class="config-field">
+                <label for="c-wall">Wall Theme</label>
+                <select id="c-wall">
+                  <option value="lab">🧪 Lab Walls</option>
+                  <option value="stone">🪨 Stone Walls</option>
+                  <option value="hedge">🌳 Hedge Walls</option>
+                </select>
+              </div>
+              <div class="config-field">
+                <label for="c-layout">Maze Layout</label>
+                <select id="c-layout">
+                  <option value="zigzag">Zigzag</option>
+                  <option value="branching">Branching</option>
+                  <option value="spiral">Spiral</option>
+                </select>
+              </div>
+              <div class="config-field">
+                <label for="c-speed">Move Animation Speed <output id="c-speed-out">2</output></label>
+                <input type="range" id="c-speed" min="1" max="3" step="1" value="2" />
+              </div>
+            </div>
+            <button class="btn-apply" id="c-apply">Apply &amp; Restart</button>
+            <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how wall collision works" or "how the goal is detected." That's the engine — the part every version of this game shares. You're only tuning content, not rewriting architecture. That's the limit, on purpose.</p>
+          </div>
+        </section>
+
+        <!-- Peek at the code -->
+        <section class="cl-card">
+          <h2>👀 Peek at the Code</h2>
+          <p>The game running above <em>is</em> this code — nothing hidden. It's split into two parts on purpose: a small config object you just edited with the panel, and a locked engine that reads it.</p>
+
+          <span class="code-tag editable">✏️ Config — this is what the panel above edits</span>
+          <div class="code-block">
+            <pre><span class="kw">const</span> config = {
+  player: <span class="str">'🤖'</span>,
+  goal:   <span class="str">'🔑'</span>,
+  wall:   <span class="str">'lab'</span>,
+  layout: <span class="str">'zigzag'</span>,
+  moveSpeed: <span class="num">2</span>
+};</pre>
+          </div>
+
+          <span class="code-tag locked">🔒 Engine — locked, shared by every version of this game</span>
+          <div class="code-block">
+            <pre><span class="kw">function</span> <span class="fn">tryMove</span>(dx, dy) {
+  <span class="kw">const</span> tx = player.col + dx, ty = player.row + dy;
+
+  <span class="cm">// 1. wall collision: cancel the move if the target tile is a wall</span>
+  <span class="kw">if</span> (maze[ty][tx] === <span class="str">'#'</span>) <span class="kw">return</span>;
+
+  <span class="cm">// 2. move succeeds: update position</span>
+  player.col = tx; player.row = ty;
+
+  <span class="cm">// 3. only count steps that actually happen</span>
+  steps++;
+  <span class="fn">updateHUD</span>();
+
+  <span class="cm">// 4. check the goal every successful move</span>
+  <span class="kw">if</span> (tx === goal.col &amp;&amp; ty === goal.row) <span class="fn">endGame</span>();
+}</pre>
+          </div>
+
+          <div class="callout violet">
+            <strong>This is what "architecture" means in practice:</strong> the config is the part of the design doc you filled out in Lesson 1 (goal, mechanic, feedback). The engine is the part no one writes twice — the same movement, wall-collision, and goal-detection systems power every maze game, from this one to the original text-adventure dungeon crawlers.
+          </div>
+        </section>
+
+        <!-- Build it for real -->
+        <section class="cl-card">
+          <h2>🛠️ Now Build It For Real</h2>
+          <p>You've played a working Maze Game and seen exactly how it's built. Next, build this same architecture yourself — twice, in two different tools.</p>
+
+          <div class="scratch-box">
+            <h4>🧩 Step 1 — Build It in Scratch</h4>
+            <p>There's no in-editor tutorial deck for mazes specifically, but the Scratch Team publishes an official <strong>Maze Starter</strong> project you can open and remix directly — arrow-key movement, wall collision, and a goal, already built. Its own remix tips even suggest exactly what you're tuning here: "keep score, subtracting points for hitting the walls" and "customize the character."</p>
+            <a class="scratch-link" href="https://scratch.mit.edu/projects/10128431/" target="_blank" rel="noreferrer noopener">Open the official Scratch "Maze Starter" project →</a>
+          </div>
+
+          <a class="next-card" href="../from-scratch-browser-game.html">
+            <span class="next-card-icon">⚡</span>
+            <span>
+              <strong>Step 2 — Code It From Real Scratch (Lesson 2)</strong>
+              <small>Write this same grid movement, wall collision, and goal detection yourself in plain JavaScript and HTML5 Canvas — no engine, no blocks.</small>
+            </span>
+          </a>
+
+          <a class="next-card" href="../game-design-thinking.html">
+            <span class="next-card-icon">↩️</span>
+            <span>
+              <strong>Back to the Archetype Grid</strong>
+              <small>Return to What Makes a Game? to try another tiny-loop archetype or the design workshop.</small>
+            </span>
+          </a>
+        </section>
+
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <aside class="ll-panel" aria-label="Guide panel">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-guide">
+          <p class="ll-pane-title">Learning Goals</p>
+          <ul class="ll-guide-list">
+            <li>Explain what a "core loop" is using the Maze Game as an example</li>
+            <li>Identify which parts of a game are "engine" vs. "content"</li>
+            <li>Tune a working game's layout without touching its logic</li>
+            <li>Trace the same architecture across Scratch and JavaScript</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Why the Limits?</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">Real game engines work exactly this way: a locked core (physics, rendering, input) and an open layer of content (sprites, levels, tuning) built on top. You're practicing that split before you ever write the locked part yourself.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">Stuck?</p>
+          <p style="font-size:0.82rem;color:#64748b;line-height:1.55;">If the canvas doesn't respond, click inside it first so your keyboard focus is on the game, then use arrow keys or WASD.</p>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<script>
+  (function () {
+    const canvas = document.getElementById('maze-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const TILE = 40;
+
+    /* Each layout is an 11x7 grid generated with a verified recursive-backtracker maze algorithm. */
+    const layouts = {
+      zigzag: [
+        '###########',
+        '#...#.....#',
+        '###.#.###.#',
+        '#.#.#...#.#',
+        '#.#.#####.#',
+        '#.........#',
+        '###########'
+      ],
+      branching: [
+        '###########',
+        '#...#.....#',
+        '###.#####.#',
+        '#.#.#...#.#',
+        '#.#.#.#.#.#',
+        '#.....#...#',
+        '###########'
+      ],
+      spiral: [
+        '###########',
+        '#.#.......#',
+        '#.#.#.#####',
+        '#.#.#.....#',
+        '#.#######.#',
+        '#.........#',
+        '###########'
+      ]
+    };
+
+    const wallColors = { lab: '#334155', stone: '#4b3f36', hedge: '#1f4d2e' };
+    const floorColors = { lab: '#0f2436', stone: '#241d16', hedge: '#0d1f13' };
+
+    let config = { player: '🤖', goal: '🔑', wall: 'lab', layout: 'zigzag', moveSpeed: 2 };
+
+    let maze, player, goal, steps, running, ended;
+    let anim = null; // { fromX, fromY, toX, toY, start, duration }
+
+    function reset() {
+      maze = layouts[config.layout];
+      player = { col: 1, row: 1 };
+      goal = { col: maze[0].length - 2, row: maze.length - 2 };
+      steps = 0;
+      running = true;
+      ended = false;
+      anim = null;
+      document.getElementById('g-msg').classList.remove('show');
+      updateHUD();
+    }
+
+    function updateHUD() {
+      document.getElementById('g-score').textContent = 'Steps: ' + steps;
+    }
+
+    function tryMove(dx, dy) {
+      if (!running || anim) return;
+      const tx = player.col + dx, ty = player.row + dy;
+      if (ty < 0 || ty >= maze.length || tx < 0 || tx >= maze[0].length) return;
+      if (maze[ty][tx] === '#') return; // wall collision — move cancelled
+
+      const fromX = player.col, fromY = player.row;
+      player.col = tx; player.row = ty;
+      steps++;
+      updateHUD();
+
+      const duration = { 1: 180, 2: 110, 3: 60 }[config.moveSpeed] || 110;
+      anim = { fromX, fromY, toX: tx, toY: ty, start: performance.now(), duration };
+
+      if (tx === goal.col && ty === goal.row) {
+        running = false;
+        ended = true;
+        setTimeout(endGame, duration + 30);
+      }
+    }
+
+    function endGame() {
+      document.getElementById('g-msg-title').textContent = '🎉 You Reached the Goal!';
+      document.getElementById('g-msg-sub').textContent = `Finished in ${steps} steps.`;
+      document.getElementById('g-msg').classList.add('show');
+    }
+
+    document.addEventListener('keydown', e => {
+      const map = {
+        ArrowUp: [0, -1], KeyW: [0, -1],
+        ArrowDown: [0, 1], KeyS: [0, 1],
+        ArrowLeft: [-1, 0], KeyA: [-1, 0],
+        ArrowRight: [1, 0], KeyD: [1, 0]
+      };
+      if (map[e.code]) {
+        e.preventDefault();
+        tryMove(map[e.code][0], map[e.code][1]);
+      }
+    });
+
+    function render() {
+      ctx.fillStyle = floorColors[config.wall] || '#0f2436';
+      ctx.fillRect(0, 0, W, H);
+
+      const offX = (W - maze[0].length * TILE) / 2;
+      const offY = (H - maze.length * TILE) / 2;
+
+      ctx.fillStyle = wallColors[config.wall] || '#334155';
+      for (let r = 0; r < maze.length; r++) {
+        for (let c = 0; c < maze[0].length; c++) {
+          if (maze[r][c] === '#') {
+            ctx.fillRect(offX + c * TILE, offY + r * TILE, TILE, TILE);
+          }
+        }
+      }
+
+      ctx.font = '26px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(config.goal, offX + goal.col * TILE + TILE / 2, offY + goal.row * TILE + TILE / 2);
+
+      let px = player.col, py = player.row;
+      if (anim) {
+        const t = Math.min(1, (performance.now() - anim.start) / anim.duration);
+        px = anim.fromX + (anim.toX - anim.fromX) * t;
+        py = anim.fromY + (anim.toY - anim.fromY) * t;
+        if (t >= 1) anim = null;
+      }
+      ctx.fillText(config.player, offX + px * TILE + TILE / 2, offY + py * TILE + TILE / 2);
+    }
+
+    function loop() {
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById('g-restart').addEventListener('click', reset);
+    canvas.addEventListener('click', () => canvas.focus());
+
+    document.getElementById('c-speed').addEventListener('input', e => {
+      document.getElementById('c-speed-out').textContent = e.target.value;
+    });
+
+    document.getElementById('c-apply').addEventListener('click', () => {
+      config = {
+        player: document.getElementById('c-player').value,
+        goal: document.getElementById('c-goal').value,
+        wall: document.getElementById('c-wall').value,
+        layout: document.getElementById('c-layout').value,
+        moveSpeed: Number(document.getElementById('c-speed').value)
+      };
+      reset();
+      canvas.focus();
+    });
+
+    reset();
+    loop();
+  })();
+
+  /* Panel tabs */
+  document.querySelectorAll('.ll-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const pane = tab.dataset.pane;
+      document.querySelectorAll('.ll-tab').forEach(t => t.setAttribute('aria-selected','false'));
+      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
+      tab.setAttribute('aria-selected','true');
+      document.getElementById(pane).classList.add('ll-active');
+    });
+  });
+
+  /* Panel toggle */
+  const openBtn = document.querySelector('.ll-open-btn');
+  const closeBtn = document.querySelector('.ll-panel-close');
+  const panel = document.querySelector('.ll-panel');
+  if (openBtn) openBtn.addEventListener('click', () => panel.classList.add('ll-panel--open'));
+  if (closeBtn) closeBtn.addEventListener('click', () => panel.classList.remove('ll-panel--open'));
+</script>
+<script src="../../assets/js/reveal.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
+</body>
+</html>
