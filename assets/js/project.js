@@ -187,6 +187,14 @@ async function init() {
 
     main.append(h2Main, short, long, tagsTitle, tagWrap);
 
+    const fbContainer = document.createElement("div");
+    fbContainer.id = "project-feedback-container";
+    main.appendChild(fbContainer);
+
+    import("./feedback.js").then((mod) => {
+      mod.renderFeedbackWidget(fbContainer, project.id, project.category);
+    });
+
     const side = document.createElement("aside");
     side.className = "detail-side";
     const h2Side = document.createElement("h2");
