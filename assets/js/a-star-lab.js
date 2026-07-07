@@ -1,5 +1,6 @@
 const gridEl = document.getElementById("astar-grid");
 const statusEl = document.getElementById("astar-status");
+const cellDescriptionEl = document.getElementById("astar-cell-description");
 const widthEl = document.getElementById("astar-grid-width");
 const heightEl = document.getElementById("astar-grid-height");
 const themeEl = document.getElementById("astar-theme");
@@ -37,9 +38,15 @@ const solveTimeEl = document.getElementById("astar-time");
 const optimalityEl = document.getElementById("astar-optimality");
 const compareBodyEl = document.getElementById("astar-compare-body");
 
+const scrubberEl = document.getElementById("astar-scrubber");
+const playPauseBtn = document.getElementById("astar-play-pause");
+const scrubberLabelEl = document.getElementById("astar-scrubber-label");
+const showHeatmapEl = document.getElementById("astar-show-heatmap");
+
 const required = [
   gridEl,
   statusEl,
+  cellDescriptionEl,
   widthEl,
   heightEl,
   themeEl,
@@ -71,7 +78,11 @@ const required = [
   pathCostEl,
   solveTimeEl,
   optimalityEl,
-  compareBodyEl
+  compareBodyEl,
+  scrubberEl,
+  playPauseBtn,
+  scrubberLabelEl,
+  showHeatmapEl
 ];
 
 if (required.some((node) => !node)) {
@@ -108,7 +119,9 @@ const THEMES = {
     goalSymbol: "📡",
     blockedSymbol: "🪨",
     slowSymbol: "🟡",
-    narrative: "Navigate across the Martian surface to reach the rescue beacon while avoiding craters and slow sand zones."
+    narrative: "Navigate across the Martian surface to reach the rescue beacon while avoiding craters and slow sand zones.",
+    bg: "#f9ebe0",
+    bgDark: "#241814"
   },
   restaurant: {
     title: "Restaurant AI: Robot Waiter Route",
@@ -121,7 +134,9 @@ const THEMES = {
     goalSymbol: "🍽",
     blockedSymbol: "🪑",
     slowSymbol: "🧃",
-    narrative: "Train the restaurant robot to deliver food to the correct table while avoiding chairs and slippery spills."
+    narrative: "Train the restaurant robot to deliver food to the correct table while avoiding chairs and slippery spills.",
+    bg: "#f8fafc",
+    bgDark: "#0f172a"
   },
   car: {
     title: "City Navigator: Self-Driving Car",
@@ -134,7 +149,9 @@ const THEMES = {
     goalSymbol: "🏠",
     blockedSymbol: "🚧",
     slowSymbol: "🚦",
-    narrative: "Teach the car how to navigate city streets and reach the destination using the most efficient route."
+    narrative: "Teach the car how to navigate city streets and reach the destination using the most efficient route.",
+    bg: "#e2e8f0",
+    bgDark: "#1e293b"
   },
   drone: {
     title: "Delivery Drone: Urban Route Planning",
@@ -147,7 +164,9 @@ const THEMES = {
     goalSymbol: "📦",
     blockedSymbol: "🏢",
     slowSymbol: "🌬",
-    narrative: "Program the drone to deliver a package through the city while avoiding buildings and strong winds."
+    narrative: "Program the drone to deliver a package through the city while avoiding buildings and strong winds.",
+    bg: "#f0f9ff",
+    bgDark: "#0c4a6e"
   },
   firefighter: {
     title: "Emergency Route: Firefighter Rescue",
@@ -160,7 +179,9 @@ const THEMES = {
     goalSymbol: "🏠",
     blockedSymbol: "🚧",
     slowSymbol: "🌊",
-    narrative: "Find the fastest route through blocked streets to reach the emergency."
+    narrative: "Find the fastest route through blocked streets to reach the emergency.",
+    bg: "#f1f5f9",
+    bgDark: "#0f172a"
   },
   hospital: {
     title: "Care Route: Hospital Robot",
@@ -173,7 +194,9 @@ const THEMES = {
     goalSymbol: "🛏",
     blockedSymbol: "🚪",
     slowSymbol: "👥",
-    narrative: "Train the hospital robot to bring medicine to the patient as quickly as possible."
+    narrative: "Train the hospital robot to bring medicine to the patient as quickly as possible.",
+    bg: "#f0fdf4",
+    bgDark: "#064e3b"
   },
   treasure: {
     title: "Jungle Quest: Treasure Hunter",
@@ -186,7 +209,9 @@ const THEMES = {
     goalSymbol: "💰",
     blockedSymbol: "🌳",
     slowSymbol: "🐊",
-    narrative: "Find the safest path through the jungle to reach the treasure."
+    narrative: "Find the safest path through the jungle to reach the treasure.",
+    bg: "#ecfdf5",
+    bgDark: "#022c22"
   },
   mario: {
     title: "Grid Platformer: Mario Adventure",
@@ -199,7 +224,9 @@ const THEMES = {
     goalSymbol: "🏁",
     blockedSymbol: "🧱",
     slowSymbol: "🐢",
-    narrative: "Mario Adventure uses platformer physics: legal moves depend on support, gravity, jump height, and momentum, not just adjacent grid squares."
+    narrative: "Mario Adventure uses platformer physics: legal moves depend on support, gravity, jump height, and momentum, not just adjacent grid squares.",
+    bg: "#e0f2fe",
+    bgDark: "#0c4a6e"
   }
 };
 
@@ -222,6 +249,7 @@ const state = {
   theme: themeEl.value,
   aiName: aiNameEl.value.trim(),
   heuristic: heuristicEl.value,
+  showHeatmap: showHeatmapEl ? showHeatmapEl.checked : true,
   fuelLimit: Number(fuelInputEl.value),
   speed: Number(speedEl.value),
   frames: [],
@@ -963,12 +991,70 @@ function stopAnimation() {
     window.clearTimeout(state.timer);
     state.timer = null;
   }
+  if (playPauseBtn) {
+    playPauseBtn.textContent = "▶";
+    playPauseBtn.title = "Play Mission";
+  }
 }
 
 function resetInstruments() {
   instrumentG.textContent = "0.00";
   instrumentH.textContent = "0.00";
   instrumentF.textContent = "0.00";
+}
+
+function updateDecisionInspector(frame) {
+  const whyEl = document.getElementById("astar-decision-why");
+  const detailEl = document.getElementById("astar-decision-detail");
+  if (!whyEl || !detailEl) return;
+
+  if (!frame) {
+    whyEl.textContent = "Ready to inspect";
+    detailEl.textContent = "Click 'Run Mission' or step through the search to analyze the algorithm's decisions in real time.";
+    return;
+  }
+
+  const theme = getTheme();
+  const ai = getAiName();
+
+  if (frame.type === "event") {
+    whyEl.textContent = "⚠️ Dynamic Obstacle Shifted!";
+    detailEl.textContent = `${frame.message} The AI's existing path is blocked, triggering an immediate recalculation of the optimal route.`;
+    return;
+  }
+
+  const { x, y } = coordsFromKey(frame.currentKey || "0,0");
+  const colLetter = String.fromCharCode(65 + x);
+  const rowNum = y + 1;
+  const cellName = `${colLetter}${rowNum}`;
+
+  if (frame.type === "path") {
+    whyEl.textContent = `📍 Path Node: ${cellName}`;
+    detailEl.textContent = `This cell is confirmed as part of the optimal path to the ${theme.goalLabel.toLowerCase()}. Cost so far g(n) = ${frame.g.toFixed(2)}.`;
+  } else if (frame.type === "search") {
+    if (frame.currentKey === keyOf(state.goal.x, state.goal.y)) {
+      whyEl.textContent = `🏁 Goal Reached at ${cellName}!`;
+      detailEl.textContent = `A* has successfully found the target. It will now backtrack using parent pointers to draw the optimal path.`;
+    } else {
+      whyEl.textContent = `🔍 Expanding Cell: ${cellName}`;
+      
+      const heuristicName = HEURISTIC_LABEL[state.heuristic] || state.heuristic;
+      let heuristicExplanation = "";
+      if (state.heuristic === "zero") {
+        heuristicExplanation = "Dijkstra's algorithm has no directional heuristic (h = 0), so it expands cells in radial rings of uniform cost.";
+      } else if (state.heuristic === "manhattan") {
+        heuristicExplanation = "Manhattan distance measures horizontal + vertical steps. It assumes no diagonal movement.";
+      } else if (state.heuristic === "euclidean") {
+        heuristicExplanation = "Euclidean distance measures the direct straight-line distance, like a drone flying.";
+      }
+
+      detailEl.innerHTML = `
+        ${ai} selected <strong>${cellName}</strong> because it has the lowest total cost in the Open Set:
+        <br/><strong style="color: #3b82f6;">f(n) = ${frame.f.toFixed(2)}</strong> (g: ${frame.g.toFixed(2)} + h: ${frame.h.toFixed(2)}).
+        <br/><span style="font-size: 0.85rem; color: #64748b;">${heuristicExplanation}</span>
+      `;
+    }
+  }
 }
 
 function clearSearchOverlay() {
@@ -985,6 +1071,21 @@ function clearSearchOverlay() {
   optimalityEl.textContent = "Pending";
   resetInstruments();
 
+  if (scrubberEl) {
+    scrubberEl.max = 0;
+    scrubberEl.value = 0;
+    scrubberEl.disabled = true;
+  }
+  if (playPauseBtn) {
+    playPauseBtn.disabled = true;
+    playPauseBtn.textContent = "▶";
+    playPauseBtn.title = "Play Mission";
+  }
+  if (scrubberLabelEl) {
+    scrubberLabelEl.textContent = "0 / 0";
+  }
+  
+  updateDecisionInspector(null);
   renderGrid();
 }
 
@@ -1020,6 +1121,7 @@ function applyFrame(rawFrame) {
     updateStatus(`${getAiName()}: ${frame.message}`);
   }
 
+  updateDecisionInspector(frame);
   renderGrid(frame);
 }
 
@@ -1034,6 +1136,10 @@ function playAnimation() {
   }
 
   state.running = true;
+  if (playPauseBtn) {
+    playPauseBtn.textContent = "⏸";
+    playPauseBtn.title = "Pause Mission";
+  }
 
   const tick = () => {
     if (!state.running) return;
@@ -1049,6 +1155,14 @@ function playAnimation() {
     }
 
     applyFrame(state.frames[state.frameIndex]);
+    
+    if (scrubberEl) {
+      scrubberEl.value = state.frameIndex;
+    }
+    if (scrubberLabelEl) {
+      scrubberLabelEl.textContent = `${state.frameIndex + 1} / ${state.frames.length}`;
+    }
+
     state.frameIndex += 1;
     state.timer = window.setTimeout(tick, state.speed);
   };
@@ -1175,6 +1289,18 @@ function runMission() {
     return;
   }
 
+  if (scrubberEl) {
+    scrubberEl.max = Math.max(0, missionFrames.length - 1);
+    scrubberEl.value = 0;
+    scrubberEl.disabled = missionFrames.length === 0;
+  }
+  if (playPauseBtn) {
+    playPauseBtn.disabled = missionFrames.length === 0;
+  }
+  if (scrubberLabelEl) {
+    scrubberLabelEl.textContent = missionFrames.length > 0 ? `1 / ${missionFrames.length}` : "0 / 0";
+  }
+
   if (state.mode === "step") {
     renderGrid();
     updateStatus(`${ai} is ready in Step mode. Press Step Expansion to advance.`);
@@ -1195,6 +1321,14 @@ function stepMission() {
   }
 
   applyFrame(state.frames[state.frameIndex]);
+  
+  if (scrubberEl) {
+    scrubberEl.value = state.frameIndex;
+  }
+  if (scrubberLabelEl) {
+    scrubberLabelEl.textContent = `${state.frameIndex + 1} / ${state.frames.length}`;
+  }
+
   state.frameIndex += 1;
 
   if (state.frameIndex >= state.frames.length) {
@@ -1306,29 +1440,35 @@ function createDefaultGrid() {
 }
 
 function updateCellByTool(x, y) {
-  if (!inBounds(x, y)) return;
+  if (!inBounds(x, y)) return false;
 
   if (state.tool === "start") {
-    if (isGoal(x, y) || terrainAt(state.cells, x, y) === "blocked") return;
+    if (isGoal(x, y) || terrainAt(state.cells, x, y) === "blocked") return false;
+    if (state.start.x === x && state.start.y === y) return false;
     state.start = { x, y };
-    return;
+    return true;
   }
 
   if (state.tool === "goal") {
-    if (isStart(x, y) || terrainAt(state.cells, x, y) === "blocked") return;
+    if (isStart(x, y) || terrainAt(state.cells, x, y) === "blocked") return false;
+    if (state.goal.x === x && state.goal.y === y) return false;
     state.goal = { x, y };
-    return;
+    return true;
   }
 
-  if (isStart(x, y) || isGoal(x, y)) return;
+  if (isStart(x, y) || isGoal(x, y)) return false;
 
+  const oldTerrain = terrainAt(state.cells, x, y);
+  let newTerrain = "clear";
   if (state.tool === "blocked") {
-    state.cells[cellIndex(x, y)] = "blocked";
+    newTerrain = "blocked";
   } else if (state.tool === "sand") {
-    state.cells[cellIndex(x, y)] = "sand";
-  } else {
-    state.cells[cellIndex(x, y)] = "clear";
+    newTerrain = "sand";
   }
+
+  if (oldTerrain === newTerrain) return false;
+  state.cells[cellIndex(x, y)] = newTerrain;
+  return true;
 }
 
 function terrainClass(terrain) {
@@ -1339,11 +1479,12 @@ function terrainClass(terrain) {
 
 function describeCell(x, y, terrain, frame) {
   const theme = getTheme();
-  let desc = "Clear";
-  if (isStart(x, y)) desc = `${theme.startLabel} start`;
-  else if (isGoal(x, y)) desc = `${theme.goalLabel} goal`;
-  else if (terrain === "blocked") desc = `${theme.blockedLabel} blocked`;
-  else if (terrain === "sand") desc = `${theme.slowLabel} cost three`;
+  const cellName = `${String.fromCharCode(65 + x)}${y + 1}`;
+  let desc = `${cellName}: Clear`;
+  if (isStart(x, y)) desc = `${cellName}: ${theme.startLabel} start`;
+  else if (isGoal(x, y)) desc = `${cellName}: ${theme.goalLabel} goal`;
+  else if (terrain === "blocked") desc = `${cellName}: ${theme.blockedLabel} blocked`;
+  else if (terrain === "sand") desc = `${cellName}: ${theme.slowLabel} cost three`;
 
   const key = keyOf(x, y);
   if (frame?.currentKey === key) {
@@ -1404,11 +1545,15 @@ function renderGrid(frame = state.currentFrame) {
       } else if (terrain === "sand") {
         bgColor = isNight ? "#ca8a04" : "#fcd34d"; 
       } else {
-        const hVal = heuristicValue(state.heuristic, x, y, state.goal.x, state.goal.y);
-        const intensity = Math.max(0, 1 - (hVal / maxH));
-        const hue = 220 - (intensity * 175); // Blue to Gold
-        const light = isNight ? 20 + intensity * 20 : 90 - intensity * 20;
-        bgColor = `hsla(${hue}, 80%, ${light}%, 1)`;
+        if (state.showHeatmap) {
+          const hVal = heuristicValue(state.heuristic, x, y, state.goal.x, state.goal.y);
+          const intensity = Math.max(0, 1 - (hVal / maxH));
+          const hue = 220 - (intensity * 175); // Blue to Gold
+          const light = isNight ? 20 + intensity * 20 : 90 - intensity * 20;
+          bgColor = `hsla(${hue}, 80%, ${light}%, 1)`;
+        } else {
+          bgColor = isNight ? (theme.bgDark || "#1e293b") : (theme.bg || "#f1f5f9");
+        }
       }
       
       ctx.fillStyle = bgColor;
@@ -1417,6 +1562,17 @@ function renderGrid(frame = state.currentFrame) {
       } else {
         ctx.fillRect(cx, cy, size, size);
       }
+
+      // Draw grid coordinates in a very subtle font
+      ctx.save();
+      ctx.fillStyle = isNight ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)";
+      ctx.font = `${Math.max(8, Math.floor(size * 0.22))}px 'IBM Plex Mono', monospace`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      const colLetter = String.fromCharCode(65 + x);
+      const rowNum = y + 1;
+      ctx.fillText(`${colLetter}${rowNum}`, cx + 4, cy + 4);
+      ctx.restore();
 
       if (frame?.closedSet?.has(key) || state.lastResult?.closedSet?.has(key)) {
         ctx.fillStyle = isNight ? "rgba(148, 163, 184, 0.3)" : "rgba(148, 163, 184, 0.5)";
@@ -1430,8 +1586,18 @@ function renderGrid(frame = state.currentFrame) {
       }
       if (frame?.currentKey === key) {
         ctx.fillStyle = "rgba(251, 191, 36, 0.9)";
-        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(cx, cy, size, size, 4); ctx.fill(); } 
+        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(cx, cy, size, size, 4); ctx.fill(); }
         else { ctx.fillRect(cx, cy, size, size); }
+      }
+      if (frame?.type === "event" && frame.currentKey === key) {
+        ctx.save();
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = Math.max(2.5, size * 0.12);
+        ctx.shadowColor = "#ef4444";
+        ctx.shadowBlur = 12;
+        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(cx + 1, cy + 1, size - 2, size - 2, 4); ctx.stroke(); }
+        else { ctx.strokeRect(cx + 1, cy + 1, size - 2, size - 2); }
+        ctx.restore();
       }
 
       const parentKey = frame?.cameFrom?.get(key) || state.lastResult?.cameFrom?.get(key);
@@ -1579,14 +1745,20 @@ gridEl.addEventListener("pointermove", (event) => {
   const hx = Math.floor((event.clientX - rect.left) / cellW);
   const hy = Math.floor((event.clientY - rect.top) / cellW);
   if (inBounds(hx, hy)) {
+    const isNewCell = !state.hoveredCell || state.hoveredCell.x !== hx || state.hoveredCell.y !== hy;
     state.hoveredCell = { x: hx, y: hy };
     if (!state.running) requestAnimationFrame(() => renderGrid(state.currentFrame));
+    if (isNewCell) {
+      const terrain = terrainAt(state.cells, hx, hy);
+      cellDescriptionEl.textContent = describeCell(hx, hy, terrain, state.currentFrame);
+    }
   }
   handlePointer(event);
 });
 
 gridEl.addEventListener("pointerleave", () => {
   state.hoveredCell = null;
+  cellDescriptionEl.textContent = "";
   if (!state.running) requestAnimationFrame(() => renderGrid(state.currentFrame));
 });
 
@@ -1596,6 +1768,10 @@ window.addEventListener("pointerup", () => {
 
 window.addEventListener("pointercancel", () => {
   isPainting = false;
+});
+
+window.addEventListener("resize", () => {
+  renderGrid();
 });
 
 for (const button of toolButtons) {
@@ -1643,6 +1819,32 @@ stepBtn.addEventListener("click", stepMission);
 clearBtn.addEventListener("click", () => {
   clearSearchOverlay();
   updateStatus(`${getAiName()} reset search overlays. Grid terrain unchanged.`);
+});
+
+scrubberEl.addEventListener("input", (event) => {
+  stopAnimation();
+  const index = Number(event.target.value);
+  state.frameIndex = index;
+  applyFrame(state.frames[index]);
+  if (scrubberLabelEl) {
+    scrubberLabelEl.textContent = `${index + 1} / ${state.frames.length}`;
+  }
+});
+
+playPauseBtn.addEventListener("click", () => {
+  if (state.running) {
+    stopAnimation();
+  } else {
+    if (state.frameIndex >= state.frames.length) {
+      state.frameIndex = 0;
+    }
+    playAnimation();
+  }
+});
+
+showHeatmapEl.addEventListener("change", () => {
+  state.showHeatmap = showHeatmapEl.checked;
+  renderGrid();
 });
 
 setTool("start");

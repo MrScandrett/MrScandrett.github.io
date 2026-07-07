@@ -244,6 +244,72 @@
     @media (max-width: 960px) {
       .astar-grid-layout { grid-template-columns: 1fr; }
     }
+
+    /* Scrubber styling */
+    .astar-scrubber-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 1rem 0;
+      padding: 0.5rem 1rem;
+      background: rgba(0,0,0,0.03);
+      border: 1px solid var(--line, rgba(0,0,0,0.08));
+      border-radius: 10px;
+      transition: all 0.2s ease;
+    }
+    [data-theme="night"] .astar-scrubber-bar,
+    [data-theme="vaporwave"] .astar-scrubber-bar,
+    [data-theme="bark"] .astar-scrubber-bar {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .astar-scrubber-bar input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(0,0,0,0.1);
+      outline: none;
+      transition: background 0.2s ease;
+    }
+    [data-theme="night"] .astar-scrubber-bar input[type="range"],
+    [data-theme="vaporwave"] .astar-scrubber-bar input[type="range"],
+    [data-theme="bark"] .astar-scrubber-bar input[type="range"] {
+      background: rgba(255,255,255,0.15);
+    }
+    .astar-scrubber-bar input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--ll-accent, #d45a00);
+      cursor: pointer;
+      border: 2px solid var(--glass-fill-strong, #fff);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      transition: transform 0.1s ease;
+    }
+    .astar-scrubber-bar input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    .astar-scrubber-bar input[type="range"]:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .astar-scrubber-bar input[type="range"]:disabled::-webkit-slider-thumb {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #astar-decision-inspector {
+      color: #334155;
+    }
+    [data-theme="night"] #astar-decision-inspector,
+    [data-theme="vaporwave"] #astar-decision-inspector,
+    [data-theme="bark"] #astar-decision-inspector {
+      color: #e2e8f0;
+    }
   </style>
 </head>
 <body>
@@ -295,7 +361,14 @@
           <div class="astar-grid-layout">
             <section class="astar-grid-panel" aria-label="Mission map simulation panel">
               <canvas id="astar-grid" class="astar-grid-canvas" aria-label="Rescue mission grid"></canvas>
+              <p id="astar-cell-description" class="sr-only" aria-live="polite"></p>
               <p id="astar-status" class="astar-status" aria-live="polite">Build your grid, then run the mission.</p>
+
+              <div class="astar-scrubber-bar">
+                <button id="astar-play-pause" type="button" class="astar-tool" style="padding:0.3rem 0.6rem;font-size:0.8rem;min-width:32px;" title="Play Mission" disabled>▶</button>
+                <input id="astar-scrubber" type="range" min="0" max="0" value="0" step="1" style="flex:1;cursor:pointer;" disabled />
+                <span id="astar-scrubber-label" style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;min-width:70px;text-align:right;">0 / 0</span>
+              </div>
 
               <ul class="astar-legend" aria-label="Grid legend">
                 <li><span class="swatch rover"></span> <span id="astar-legend-start">Rover (Start)</span></li>
@@ -316,6 +389,14 @@
                   <li><span>Estimated Distance h(n)</span><strong id="astar-h">0.00</strong></li>
                   <li><span>Total Mission Cost f(n)</span><strong id="astar-f">0.00</strong></li>
                 </ul>
+              </section>
+
+              <section class="astar-panel">
+                <h3>Decision Inspector</h3>
+                <div id="astar-decision-inspector">
+                  <p id="astar-decision-why" style="margin:0 0 0.5rem;font-weight:600;color:var(--ll-accent,#d45a00);">Ready to inspect</p>
+                  <p id="astar-decision-detail" style="margin:0;color:#64748b;">Click "Run Mission" or step through the search to analyze the algorithm's decisions in real time.</p>
+                </div>
               </section>
 
               <section class="astar-panel">
@@ -486,6 +567,10 @@
               <option value="euclidean">Euclidean</option>
               <option value="zero">Zero Heuristic (Dijkstra)</option>
             </select>
+          </div>
+          <div class="ll-param" style="display:flex;align-items:center;gap:8px;margin-top:6px;margin-bottom:12px;">
+            <input id="astar-show-heatmap" type="checkbox" checked style="cursor:pointer;" />
+            <label for="astar-show-heatmap" style="font-size:0.8rem;color:var(--ll-tab-color);cursor:pointer;user-select:none;">Show Heuristic Heatmap</label>
           </div>
 
           <span class="ll-label">Animation Speed</span>
