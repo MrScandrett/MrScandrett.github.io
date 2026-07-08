@@ -280,12 +280,12 @@ function drawOrbit(ctx, month, showTilt, showDaylight, showPrecession) {
 
 function updateReadouts(month) {
   // Tilt angle relative to sun
-  const tiltCurve = Math.sin((month + 3) / 12 * Math.PI * 2) * 23.5;
+  const tiltCurve = Math.sin((month - 3) / 12 * Math.PI * 2) * 23.5;
   document.getElementById('sth-tilt-angle').textContent = tiltCurve.toFixed(1) + '°';
 
   // Sun altitude at 40°N
   const latitude = 40;
-  const declination = 23.5 * Math.sin((month - 9) / 12 * Math.PI * 2);
+  const declination = 23.5 * Math.sin((month - 3) / 12 * Math.PI * 2);
   const sunAngle = 90 - latitude + declination;
   document.getElementById('sth-sun-altitude').textContent = Math.max(0, sunAngle.toFixed(0)) + '°';
 
