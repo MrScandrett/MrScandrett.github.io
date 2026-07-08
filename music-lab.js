@@ -1237,15 +1237,34 @@ function initModularPatchbay() {
 
   const scopeCtx = scopeCanvas ? scopeCanvas.getContext('2d') : null;
   const spectrumCtx = spectrumCanvas ? spectrumCanvas.getContext('2d') : null;
-  const phosphor = '#39FF14';
+
+  // Screen colors follow the active site theme (--surface-elevated / --border-subtle /
+  // --module-osc) instead of a fixed dark CRT palette, so the scope stays legible in
+  // light themes like honey and goldfish.
+  let bgColor = '#101820';
+  let gridColor = 'rgba(148, 163, 184, 0.28)';
+  let traceColor = '#3357e5';
+
+  function readMonitorColors() {
+    const styles = getComputedStyle(document.documentElement);
+    const read = (name, fallback) => (styles.getPropertyValue(name) || '').trim() || fallback;
+    bgColor = read('--surface-elevated', bgColor);
+    gridColor = read('--border-subtle', gridColor);
+    traceColor = read('--module-osc', traceColor);
+  }
+  readMonitorColors();
+  window.addEventListener('classroomos:lightingchange', readMonitorColors);
 
   function paintMonitorShell(ctx, width, height) {
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#101820';
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = 'rgba(57, 255, 20, 0.04)';
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = gridColor;
     for (let x = 0; x < width; x += 44) ctx.fillRect(x, 0, 1, height);
     for (let y = 0; y < height; y += 28) ctx.fillRect(0, y, width, 1);
+    ctx.restore();
   }
 
   function drawScope(data) {
@@ -1254,18 +1273,22 @@ function initModularPatchbay() {
     const height = scopeCanvas.height;
     paintMonitorShell(scopeCtx, width, height);
 
-    scopeCtx.strokeStyle = 'rgba(57, 255, 20, 0.18)';
+    scopeCtx.save();
+    scopeCtx.globalAlpha = 0.4;
+    scopeCtx.strokeStyle = traceColor;
     scopeCtx.lineWidth = 1;
     scopeCtx.beginPath();
     scopeCtx.moveTo(0, height / 2);
     scopeCtx.lineTo(width, height / 2);
     scopeCtx.stroke();
+    scopeCtx.restore();
 
     if (!data) return;
 
-    scopeCtx.strokeStyle = phosphor;
-    scopeCtx.shadowColor = 'rgba(57, 255, 20, 0.55)';
-    scopeCtx.shadowBlur = 8;
+    scopeCtx.save();
+    scopeCtx.strokeStyle = traceColor;
+    scopeCtx.shadowColor = traceColor;
+    scopeCtx.shadowBlur = 5;
     scopeCtx.lineWidth = 2.1;
     scopeCtx.beginPath();
     const slice = width / data.length;
@@ -1277,7 +1300,7 @@ function initModularPatchbay() {
       x += slice;
     }
     scopeCtx.stroke();
-    scopeCtx.shadowBlur = 0;
+    scopeCtx.restore();
   }
 
   function drawSpectrum(data) {
@@ -1286,24 +1309,29 @@ function initModularPatchbay() {
     const height = spectrumCanvas.height;
     paintMonitorShell(spectrumCtx, width, height);
 
-    spectrumCtx.fillStyle = 'rgba(57, 255, 20, 0.08)';
+    spectrumCtx.save();
+    spectrumCtx.globalAlpha = 0.3;
+    spectrumCtx.fillStyle = traceColor;
     spectrumCtx.fillRect(0, height - 28, width, 28);
+    spectrumCtx.restore();
 
     if (!data) return;
 
     const bins = Math.min(144, data.length);
     const barWidth = width / bins;
-    spectrumCtx.shadowColor = 'rgba(57, 255, 20, 0.6)';
-    spectrumCtx.shadowBlur = 9;
+    spectrumCtx.save();
+    spectrumCtx.fillStyle = traceColor;
+    spectrumCtx.shadowColor = traceColor;
+    spectrumCtx.shadowBlur = 6;
     for (let i = 1; i < bins; i += 1) {
       const magnitude = data[i] / 255;
       const logIndex = Math.log2(i + 1) / Math.log2(bins + 1);
       const x = logIndex * (width - barWidth);
       const barHeight = Math.max(2, magnitude * (height - 18));
-      spectrumCtx.fillStyle = `rgba(57, 255, 20, ${0.2 + magnitude * 0.75})`;
+      spectrumCtx.globalAlpha = 0.35 + magnitude * 0.65;
       spectrumCtx.fillRect(x, height - barHeight - 6, Math.max(2, barWidth * 1.8), barHeight);
     }
-    spectrumCtx.shadowBlur = 0;
+    spectrumCtx.restore();
   }
 
   let timeData = null;
@@ -1566,7 +1594,7 @@ function initCircleOfFifths() {
     line.setAttribute('y1', cy + innerR * Math.sin(a));
     line.setAttribute('x2', cx + outerR * Math.cos(a));
     line.setAttribute('y2', cy + outerR * Math.sin(a));
-    line.setAttribute('stroke', 'rgba(255,255,255,0.05)');
+    line.setAttribute('stroke', 'var(--border-subtle)');
     line.setAttribute('stroke-width', '1');
     svg.appendChild(line);
   }
@@ -1586,8 +1614,9 @@ function initCircleOfFifths() {
       const path = makeSvg('path');
       path.setAttribute('d', arc(r1, r2, aStart, aEnd));
       path.setAttribute('class', 'fifths-segment');
-      // Subtle per-key tint
-      path.style.fill = `hsla(${hue}, 60%, 14%, 0.92)`;
+      // Subtle per-key tint, blended into the current theme's panel surface so it
+      // stays legible whether the active theme is light (honey, goldfish) or dark.
+      path.style.fill = `color-mix(in srgb, hsl(${hue}, 65%, 55%) 22%, var(--surface-panel-alt))`;
 
       const textR = r2 + (r1 - r2) / 2;
       const text  = makeSvg('text');
@@ -1618,8 +1647,8 @@ function initCircleOfFifths() {
   centerCircle.setAttribute('cx', cx);
   centerCircle.setAttribute('cy', cy);
   centerCircle.setAttribute('r', innerR - 2);
-  centerCircle.setAttribute('fill', '#0d1117');
-  centerCircle.setAttribute('stroke', 'rgba(255,255,255,0.06)');
+  centerCircle.setAttribute('fill', 'var(--surface-elevated)');
+  centerCircle.setAttribute('stroke', 'var(--border-subtle)');
   svg.appendChild(centerCircle);
 
   const centerText = makeSvg('text');
