@@ -17,6 +17,10 @@ const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg"]);
 const MODEL_EXTENSIONS = new Set([".stl", ".obj"]);
 const PIVOT_SOURCE_EXTENSIONS = new Set([".piv", ".stk"]);
 const PIVOT_PREVIEW_EXTENSIONS = [".webm", ".mp4", ".gif", ".mov"];
+const MARKER_FILE_NAME = "showcase.json";
+const MARKER_KINDS = new Set(["photo", "link", "file"]);
+const AUDIO_EXTENSIONS = new Set([".mp3", ".wav", ".ogg", ".m4a"]);
+const VIDEO_EXTENSIONS = new Set([".mp4", ".webm", ".mov"]);
 const MODEL_RESOURCE_EXTENSIONS = new Set([
   ".stl",
   ".obj",
@@ -67,6 +71,14 @@ function toSlug(input) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "") || "student-project";
+}
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function toTitleFromSlug(slug) {
@@ -375,6 +387,55 @@ function findPivotSources(rootDir, ignoreDirectories = []) {
   }
 
   return pivotProjects;
+}
+
+function findMarkerSources(rootDir, ignoreDirectories = []) {
+  const sources = [];
+  const stack = [rootDir];
+
+  while (stack.length) {
+    const current = stack.pop();
+    if (isInsideAnyDir(current, ignoreDirectories)) continue;
+
+    const entries = fssync.readdirSync(current, { withFileTypes: true });
+    const markerEntry = entries.find((entry) => entry.isFile() && entry.name === MARKER_FILE_NAME);
+
+    if (markerEntry) {
+      try {
+        const raw = fssync.readFileSync(path.join(current, MARKER_FILE_NAME), "utf8");
+        const meta = JSON.parse(raw);
+        const kind = String(meta.kind || "").toLowerCase();
+        if (MARKER_KINDS.has(kind)) {
+          const student = String(meta.student || studentFromPath(current)).trim() || "Student";
+          const title = String(meta.title || toTitleFromSlug(path.basename(current))).trim() || "Project";
+          sources.push({
+            kind: `marker-${kind}`,
+            dir: current,
+            meta,
+            student,
+            title,
+            slugBase: `${student}-${title}`,
+          });
+        } else {
+          logStep(`Skipping marker file with unknown kind "${kind}" at ${current}`);
+        }
+      } catch (error) {
+        logStep(`Skipping invalid marker file at ${current}: ${error.message}`);
+      }
+      // Marker directories are leaf project directories; do not descend further.
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (SKIP_DIR_NAMES.has(entry.name)) continue;
+      const full = path.join(current, entry.name);
+      if (isInsideAnyDir(full, ignoreDirectories)) continue;
+      stack.push(full);
+    }
+  }
+
+  return sources;
 }
 
 async function copyDirectoryRecursive(sourceDir, destinationDir, options = {}) {
@@ -930,6 +991,302 @@ async function processPivotProject(source, slug) {
   };
 }
 
+function viewerPageShell({ title, headline, subline, bodyHtml, footNote }) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${title}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0f172a;
+      color: #eff6ff;
+      font-family: "Segoe UI", Arial, sans-serif;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+    .head, .foot {
+      padding: 0.9rem 1rem;
+      background: #12213b;
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+    }
+    .foot {
+      border-top: 1px solid rgba(255,255,255,0.14);
+      border-bottom: 0;
+      color: #cddcf0;
+      font-size: 0.92rem;
+    }
+    .head h1 { margin: 0; font-size: 1.1rem; }
+    .head p { margin: 0.35rem 0 0 0; color: #c6d7ef; font-size: 0.92rem; }
+    main {
+      display: grid;
+      gap: 0.8rem;
+      padding: 0.9rem;
+      align-content: start;
+      justify-items: center;
+    }
+    main img, main video, main iframe {
+      width: min(96vw, 1100px);
+      max-height: 78vh;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: #0a0f1c;
+      object-fit: contain;
+    }
+    main iframe { height: min(72vh, 700px); background: #fff; }
+    main audio { width: min(96vw, 700px); }
+    .empty {
+      width: min(96vw, 900px);
+      border-radius: 12px;
+      border: 1px dashed rgba(255,255,255,0.35);
+      background: rgba(17, 32, 60, 0.8);
+      padding: 1rem;
+      color: #d8e7f9;
+      line-height: 1.5;
+      text-align: center;
+    }
+    p.desc {
+      color: #d8e7f9;
+      max-width: 900px;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .actions a {
+      color: #eff6ff;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 8px;
+      padding: 0.5rem 0.8rem;
+      background: #1b3156;
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+    .actions a:hover { background: #284679; }
+  </style>
+</head>
+<body>
+  <header class="head">
+    <h1>${headline}</h1>
+    <p>${subline}</p>
+  </header>
+  <main>
+    ${bodyHtml}
+  </main>
+  <footer class="foot">${footNote}</footer>
+</body>
+</html>`;
+}
+
+async function minifyViewerHtml(html) {
+  return minify(html, {
+    collapseWhitespace: true,
+    removeComments: true,
+    removeRedundantAttributes: true,
+    removeEmptyAttributes: true,
+    minifyCSS: true,
+    minifyJS: false,
+    keepClosingSlash: true,
+  });
+}
+
+async function processPhotoProject(source, slug) {
+  const { dir, meta } = source;
+  const outputDir = path.join(APPS_DIR, slug);
+  const studentLabel = source.student || "Student";
+  const title = source.title || "Photo";
+  const caption = String(meta.caption || meta.description || "").trim();
+
+  await fs.rm(outputDir, { recursive: true, force: true });
+  const mediaDir = path.join(outputDir, "assets", "media");
+  await ensureDir(mediaDir);
+
+  const requestedImages = Array.isArray(meta.images) ? meta.images : [];
+  const copied = [];
+  for (const imageName of requestedImages) {
+    const safeName = path.basename(String(imageName || ""));
+    if (!safeName) continue;
+    const srcPath = path.join(dir, safeName);
+    if (!exists(srcPath)) continue;
+    await fs.copyFile(srcPath, path.join(mediaDir, safeName));
+    copied.push(safeName);
+  }
+
+  if (copied.length === 0) {
+    throw new Error(`No valid image files found for photo project in ${dir}`);
+  }
+
+  const convertedWebps = await optimizeImagesToWebp(mediaDir);
+  const galleryHtml = copied
+    .map((name) => `<img src="./assets/media/${encodeURIComponent(name)}" alt="${escapeHtml(title)}" loading="lazy" />`)
+    .join("\n    ");
+
+  const html = viewerPageShell({
+    title: `${escapeHtml(title)} · Photo`,
+    headline: escapeHtml(title),
+    subline: `${escapeHtml(studentLabel)} &middot; Photo`,
+    bodyHtml: `${galleryHtml}${caption ? `\n    <p class="desc">${escapeHtml(caption)}</p>` : ""}`,
+    footNote: "Photo submitted to the classroom showcase.",
+  });
+
+  await fs.writeFile(path.join(outputDir, "index.html"), await minifyViewerHtml(html), "utf8");
+
+  const thumbnail = convertedWebps.length > 0
+    ? `./apps/${toPosixPath(path.relative(APPS_DIR, convertedWebps[0]))}`
+    : `./apps/${slug}/assets/media/${encodeURIComponent(copied[0])}`;
+
+  return {
+    name: title,
+    slug,
+    url: `./apps/${slug}/`,
+    thumbnail,
+    student: studentLabel,
+    category: "Photo",
+    program: "Student Upload",
+    tech: ["Photo"],
+    tags: ["student-upload", "photo"],
+    difficulty: "Beginner",
+    date_added: new Date().toISOString().slice(0, 10),
+  };
+}
+
+function extractTinkercadEmbedUrl(url) {
+  const match = String(url || "").match(/tinkercad\.com\/(?:things|circuits)\/([a-zA-Z0-9]+)/i);
+  if (!match) return "";
+  return `https://www.tinkercad.com/embed/${match[1]}?editbtn=1`;
+}
+
+async function processLinkProject(source, slug) {
+  const { dir, meta } = source;
+  const outputDir = path.join(APPS_DIR, slug);
+  const studentLabel = source.student || "Student";
+  const title = source.title || "Project Link";
+  const description = String(meta.description || "").trim();
+  const url = String(meta.url || "").trim();
+  const provider = String(meta.provider || "").trim() || "Web";
+
+  if (!/^https:\/\//i.test(url) && !/^http:\/\//i.test(url)) {
+    throw new Error(`Invalid or missing url for link project in ${dir}`);
+  }
+
+  await fs.rm(outputDir, { recursive: true, force: true });
+  await ensureDir(outputDir);
+
+  let screenshotRel = "";
+  if (meta.screenshot) {
+    const safeName = path.basename(String(meta.screenshot));
+    const srcPath = path.join(dir, safeName);
+    if (exists(srcPath)) {
+      const assetsDir = path.join(outputDir, "assets");
+      await ensureDir(assetsDir);
+      await fs.copyFile(srcPath, path.join(assetsDir, safeName));
+      screenshotRel = `./assets/${encodeURIComponent(safeName)}`;
+    }
+  }
+
+  const embedUrl = /tinkercad\.com/i.test(url) ? extractTinkercadEmbedUrl(url) : "";
+  const embedHtml = embedUrl
+    ? `<iframe src="${embedUrl}" title="${escapeHtml(title)}" allowfullscreen loading="lazy"></iframe>`
+    : screenshotRel
+    ? `<img src="${screenshotRel}" alt="${escapeHtml(title)} preview" />`
+    : `<div class="empty">Preview not available for this link. Use the button below to open the project.</div>`;
+
+  const html = viewerPageShell({
+    title: `${escapeHtml(title)} · ${escapeHtml(provider)}`,
+    headline: escapeHtml(title),
+    subline: `${escapeHtml(studentLabel)} &middot; ${escapeHtml(provider)}`,
+    bodyHtml: `${embedHtml}${description ? `\n    <p class="desc">${escapeHtml(description)}</p>` : ""}\n    <div class="actions"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Open in ${escapeHtml(provider)}</a></div>`,
+    footNote: "Linked project submitted to the classroom showcase.",
+  });
+
+  await fs.writeFile(path.join(outputDir, "index.html"), await minifyViewerHtml(html), "utf8");
+
+  const thumbnail = screenshotRel ? `./apps/${slug}/${screenshotRel.replace(/^\.\//, "")}` : await findShowcaseThumb(slug, studentLabel);
+
+  return {
+    name: title,
+    slug,
+    url: `./apps/${slug}/`,
+    thumbnail,
+    student: studentLabel,
+    category: /tinkercad/i.test(provider) ? "Circuits" : "Link",
+    program: "Student Upload",
+    tech: [provider],
+    tags: ["student-upload", "link", provider.toLowerCase().replace(/[^a-z0-9]+/g, "-")].filter(Boolean),
+    difficulty: "Beginner",
+    date_added: new Date().toISOString().slice(0, 10),
+  };
+}
+
+async function processFileProject(source, slug) {
+  const { dir, meta } = source;
+  const outputDir = path.join(APPS_DIR, slug);
+  const studentLabel = source.student || "Student";
+  const title = source.title || "Project File";
+  const description = String(meta.description || "").trim();
+  const filename = meta.filename ? path.basename(String(meta.filename)) : "";
+
+  if (!filename || !exists(path.join(dir, filename))) {
+    throw new Error(`Missing referenced file for file project in ${dir}`);
+  }
+
+  await fs.rm(outputDir, { recursive: true, force: true });
+  const mediaDir = path.join(outputDir, "assets", "media");
+  await ensureDir(mediaDir);
+  await fs.copyFile(path.join(dir, filename), path.join(mediaDir, filename));
+
+  const ext = path.extname(filename).toLowerCase();
+  const mediaRel = `./assets/media/${encodeURIComponent(filename)}`;
+
+  let embedHtml;
+  let thumbnail = null;
+  if (VIDEO_EXTENSIONS.has(ext)) {
+    embedHtml = `<video controls preload="metadata" src="${mediaRel}"></video>`;
+  } else if (AUDIO_EXTENSIONS.has(ext)) {
+    embedHtml = `<audio controls src="${mediaRel}"></audio>`;
+  } else if (ext === ".pdf") {
+    embedHtml = `<iframe src="${mediaRel}" title="${escapeHtml(title)}"></iframe>`;
+  } else if (IMAGE_EXTENSIONS.has(ext) || ext === ".gif" || ext === ".webp") {
+    embedHtml = `<img src="${mediaRel}" alt="${escapeHtml(title)}" />`;
+    thumbnail = `./apps/${slug}/${mediaRel.replace(/^\.\//, "")}`;
+  } else {
+    embedHtml = `<div class="empty">No inline preview for .${escapeHtml(ext.slice(1) || "this")} files. Use the download button below.</div>`;
+  }
+
+  const html = viewerPageShell({
+    title: `${escapeHtml(title)}`,
+    headline: escapeHtml(title),
+    subline: `${escapeHtml(studentLabel)} &middot; ${escapeHtml(ext.slice(1).toUpperCase() || "File")}`,
+    bodyHtml: `${embedHtml}${description ? `\n    <p class="desc">${escapeHtml(description)}</p>` : ""}\n    <div class="actions"><a href="${mediaRel}" download>Download ${escapeHtml(filename)}</a></div>`,
+    footNote: "File submitted to the classroom showcase.",
+  });
+
+  await fs.writeFile(path.join(outputDir, "index.html"), await minifyViewerHtml(html), "utf8");
+
+  return {
+    name: title,
+    slug,
+    url: `./apps/${slug}/`,
+    thumbnail: thumbnail || (await findShowcaseThumb(slug, studentLabel)),
+    student: studentLabel,
+    category: "Other",
+    program: "Student Upload",
+    tech: [ext.replace(".", "").toUpperCase() || "File"],
+    tags: ["student-upload", "file"],
+    difficulty: "Beginner",
+    date_added: new Date().toISOString().slice(0, 10),
+  };
+}
+
 function buildModelViewerScript({ modelUrl, mtlUrl, modelFormat, title, student, grade }) {
   return `import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -1433,15 +1790,16 @@ async function main() {
 
   const webSources = pruneNestedWebSources(findWebProjectSources(STUDENT_PROJECTS_DIR));
   const scratchSources = findScratchSources(STUDENT_PROJECTS_DIR);
-  const modelSources = findModelSources(
+  const markerSources = findMarkerSources(
     STUDENT_PROJECTS_DIR,
     webSources.map((item) => item.projectDir)
   );
-  const pivotSources = findPivotSources(
-    STUDENT_PROJECTS_DIR,
-    webSources.map((item) => item.projectDir)
-  );
-  const projectSources = webSources.concat(scratchSources, modelSources, pivotSources);
+  const ignoreForModelsAndPivot = webSources
+    .map((item) => item.projectDir)
+    .concat(markerSources.map((item) => item.dir));
+  const modelSources = findModelSources(STUDENT_PROJECTS_DIR, ignoreForModelsAndPivot);
+  const pivotSources = findPivotSources(STUDENT_PROJECTS_DIR, ignoreForModelsAndPivot);
+  const projectSources = webSources.concat(scratchSources, modelSources, pivotSources, markerSources);
 
   if (projectSources.length === 0) {
     await fs.writeFile(MANIFEST_PATH, JSON.stringify([], null, 2) + "\n", "utf8");
@@ -1467,6 +1825,12 @@ async function main() {
         entry = await processPivotProject(source, slug);
       } else if (source.kind === "model") {
         entry = await processModelProject(source, slug);
+      } else if (source.kind === "marker-photo") {
+        entry = await processPhotoProject(source, slug);
+      } else if (source.kind === "marker-link") {
+        entry = await processLinkProject(source, slug);
+      } else if (source.kind === "marker-file") {
+        entry = await processFileProject(source, slug);
       } else {
         entry = await processProject(source, slug);
       }

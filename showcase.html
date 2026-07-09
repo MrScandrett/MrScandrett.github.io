@@ -185,6 +185,7 @@
     <section class="page-hero">
       <h1 class="reveal">Student Showcase</h1>
       <p class="reveal" style="--i:1">Search by title, student, tags, or tech stack. Filter views are preserved in the URL.</p>
+      <p class="reveal" style="--i:2"><a id="upload-cta" class="resource-link" href="#" hidden><span class="emoji">📤</span> Upload Your Project</a></p>
     </section>
 
     <section id="browse-empty" class="empty-state" hidden>No projects match your current filters.</section>
@@ -477,6 +478,27 @@
 
         trapFocus(event);
       });
+    })();
+
+    // Student Upload CTA: only appears when the classroom upload portal is reachable
+    // (i.e. this page is being viewed on the same classroom WiFi as the teacher's laptop).
+    (function () {
+      const link = document.getElementById("upload-cta");
+      if (!link) return;
+      const portalBase = `${window.location.protocol}//${window.location.hostname}:8787`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1500);
+
+      fetch(`${portalBase}/health`, { cache: "no-store", signal: controller.signal })
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error("portal offline"))))
+        .then(() => {
+          link.href = `${portalBase}/student-upload`;
+          link.hidden = false;
+        })
+        .catch(() => {
+          // Portal isn't reachable from here (e.g. viewing the public site) — keep the button hidden.
+        })
+        .finally(() => clearTimeout(timeout));
     })();
 
     // Sticky Toolbar Position Synchronizer

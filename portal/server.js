@@ -4,6 +4,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { spawnSync } = require("child_process");
 
 const PORT = Number(process.env.PORT || "8787");
@@ -31,12 +32,115 @@ const OPEN_SESSION = Object.freeze({
   role: "teacher",
 });
 
+const PENDING_DIR = path.join(PORTAL_DIR, "pending");
+const STUDENT_PROJECTS_DIR = path.join(ROOT_DIR, "student-projects");
+const BUILD_SHOWCASE_SCRIPT = path.join(ROOT_DIR, "build-showcase.js");
+const SHOWCASE_MANIFEST_PATH = path.join(ROOT_DIR, "apps", "manifest.json");
+const MAX_STUDENT_UPLOAD_BYTES = 60 * 1024 * 1024;
+
+const KIND_LABELS = {
+  game: "Game / App",
+  model: "3D Model",
+  animation: "Pivot Animation",
+  photo: "Photo",
+  link: "Online Project Link",
+  other: "Something Else Cool",
+};
+
+const KIND_EXTENSIONS = {
+  game: new Set([".zip", ".sb3", ".html", ".htm"]),
+  model: new Set([".stl", ".obj", ".mtl", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".svg", ".tga"]),
+  animation: new Set([".piv", ".stk", ".webm", ".mp4", ".gif", ".mov"]),
+  photo: new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]),
+  link: new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]),
+  other: new Set([
+    ".pdf", ".mp3", ".wav", ".ogg", ".m4a",
+    ".mp4", ".webm", ".mov",
+    ".txt", ".md", ".csv",
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg",
+    ".mcworld", ".ino", ".gcode",
+  ]),
+};
+
+const KIND_MAX_FILES = {
+  game: 1,
+  model: 6,
+  animation: 2,
+  photo: 6,
+  link: 1,
+  other: 1,
+};
+
+// Broader allowlist for direct folder-picker uploads (kind "game"), which can contain a full
+// web project rather than a single archive.
+const WEB_FOLDER_EXTENSIONS = new Set([
+  ".html", ".htm", ".css", ".js", ".mjs", ".json",
+  ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico",
+  ".mp3", ".wav", ".ogg",
+  ".ttf", ".woff", ".woff2",
+  ".txt", ".map",
+]);
+const MAX_FOLDER_FILES = 300;
+
+function normalizeRelativePath(rawPath) {
+  const posixPath = String(rawPath || "").replace(/\\/g, "/");
+  const segments = posixPath.split("/").filter((seg) => seg && seg !== ".");
+  if (segments.some((seg) => seg === "..")) return null;
+  return segments.join("/");
+}
+
+// Browsers report webkitRelativePath starting with the picked folder's own name
+// (e.g. "MyGame/index.html"). Strip that shared top segment so index.html lands
+// directly at the project root, matching how build-showcase.js expects web projects.
+function stripCommonTopFolder(relativePaths) {
+  const withSegments = relativePaths.filter((p) => p.includes("/"));
+  if (withSegments.length !== relativePaths.length || relativePaths.length === 0) return relativePaths;
+  const firstSegments = new Set(relativePaths.map((p) => p.split("/")[0]));
+  if (firstSegments.size !== 1) return relativePaths;
+  return relativePaths.map((p) => p.split("/").slice(1).join("/"));
+}
+
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "CHAMPIONS4CHRIST";
+const ADMIN_SESSION_COOKIE = "portal_admin";
+const ADMIN_GATED_PATHS = ["/dashboard", "/review", "/upload", "/upload-model", "/pending-file/"];
+const adminSessions = new Set();
+
+function parseCookies(req) {
+  const header = req.headers.cookie || "";
+  const out = {};
+  header.split(";").forEach((pair) => {
+    const idx = pair.indexOf("=");
+    if (idx === -1) return;
+    const key = pair.slice(0, idx).trim();
+    const value = pair.slice(idx + 1).trim();
+    if (key) out[key] = decodeURIComponent(value);
+  });
+  return out;
+}
+
+function isAdminAuthenticated(req) {
+  const token = parseCookies(req)[ADMIN_SESSION_COOKIE];
+  return Boolean(token && adminSessions.has(token));
+}
+
+function isAdminGatedPath(url) {
+  return ADMIN_GATED_PATHS.some((prefix) => url === prefix || url.startsWith(prefix));
+}
+
+function requireAdmin(req, res) {
+  if (isAdminAuthenticated(req)) return false;
+  redirect(res, `/admin/login?next=${encodeURIComponent(req.url)}`);
+  return true;
+}
+
 function ensureDirs() {
   fs.mkdirSync(WORK_DIR, { recursive: true });
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   fs.mkdirSync(path.join(ROOT_DIR, "assets", "thumbs"), { recursive: true });
   fs.mkdirSync(path.join(ROOT_DIR, "assets", "heroes"), { recursive: true });
   fs.mkdirSync(MUSEUM_MODELS_DIR, { recursive: true });
+  fs.mkdirSync(PENDING_DIR, { recursive: true });
+  fs.mkdirSync(STUDENT_PROJECTS_DIR, { recursive: true });
 
   if (!fs.existsSync(HUB_DATA_FILE)) {
     fs.mkdirSync(path.dirname(HUB_DATA_FILE), { recursive: true });
@@ -50,6 +154,9 @@ function ensureDirs() {
 
   if (!fs.existsSync(PUBLISH_SCRIPT)) {
     throw new Error(`Missing publish script at ${PUBLISH_SCRIPT}`);
+  }
+  if (!fs.existsSync(BUILD_SHOWCASE_SCRIPT)) {
+    throw new Error(`Missing build script at ${BUILD_SHOWCASE_SCRIPT}`);
   }
 }
 
@@ -164,6 +271,7 @@ function parseContentDisposition(value) {
 function parseMultipart(bodyBuffer, boundary) {
   const fields = {};
   const files = {};
+  const fileLists = {};
   const boundaryBuf = Buffer.from(`--${boundary}`);
   const sections = splitBuffer(bodyBuffer, boundaryBuf).slice(1, -1);
 
@@ -192,17 +300,34 @@ function parseMultipart(bodyBuffer, boundary) {
     if (!name) return;
 
     if (disp.filename) {
-      files[name] = {
+      // Skip empty file inputs (browsers submit an empty-filename part for unfilled optional file fields).
+      if (!disp.filename.trim()) return;
+      const fileObj = {
         filename: path.basename(disp.filename),
+        // Preserves any "/" path segments (e.g. folder-picker uploads send "MyGame/index.html" as
+        // the filename). Only opt-in consumers should read this; everyone else uses the safe
+        // basename-only `filename` above.
+        rawFilename: disp.filename,
         contentType: headers["content-type"] || "application/octet-stream",
         data: content,
       };
+      files[name] = fileObj;
+      if (!fileLists[name]) fileLists[name] = [];
+      fileLists[name].push(fileObj);
     } else {
       fields[name] = content.toString("utf8");
     }
   });
 
-  return { fields, files };
+  return { fields, files, fileLists };
+}
+
+async function readUrlEncodedFields(req, maxBytes) {
+  const body = await readBody(req, maxBytes);
+  const params = new URLSearchParams(body.toString("utf8"));
+  const out = {};
+  for (const [key, value] of params.entries()) out[key] = value;
+  return out;
 }
 
 function sanitizeSlug(value, fallback) {
@@ -221,6 +346,38 @@ function normalizeUsername(value) {
 
 function normalizeModelSlug(value) {
   return sanitizeSlug(String(value || ""), "model");
+}
+
+function toFileSlug(value) {
+  return (
+    String(value || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "project"
+  );
+}
+
+function sanitizeDirName(value, fallback) {
+  const cleaned = String(value || "")
+    .replace(/[\/\\:*?"<>|\x00-\x1f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
+  return cleaned || fallback;
+}
+
+function copyDirRecursiveSync(sourceDir, destinationDir) {
+  fs.mkdirSync(destinationDir, { recursive: true });
+  for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
+    const srcPath = path.join(sourceDir, entry.name);
+    const destPath = path.join(destinationDir, entry.name);
+    if (entry.isDirectory()) {
+      copyDirRecursiveSync(srcPath, destPath);
+    } else if (entry.isFile()) {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
 }
 
 function readJson(file, fallback) {
@@ -368,7 +525,13 @@ function renderUploadForm(session) {
 
 function renderDashboard(session, flash = "") {
   const flashBlock = flash ? `<section class="panel"><p>${flash}</p></section>` : "";
-  return pageShell("Upload Dashboard", `${flashBlock}${renderUploadForm(session)}`);
+  const pendingCount = loadPendingItems().length;
+  const showcasePanel = `<section class="panel">
+    <h2>Student Showcase Uploads</h2>
+    <p>Share <code>/student-upload</code> with your class on the classroom WiFi so students can submit games, 3D models, Pivot animations, photos, TinkerCAD links, and more.</p>
+    <p><a href="/review">Review Queue${pendingCount ? ` <span class="pill warn">${pendingCount} pending</span>` : ""}</a> &middot; <a href="/student-upload">Open Student Upload Form</a> &middot; ${LOGOUT_LINK_HTML}</p>
+  </section>`;
+  return pageShell("Upload Dashboard", `${flashBlock}${showcasePanel}${renderUploadForm(session)}`);
 }
 
 function renderResult(title, lines, links) {
@@ -387,9 +550,304 @@ function renderResult(title, lines, links) {
   );
 }
 
+function renderAdminLogin(nextUrl, error) {
+  const safeNext = nextUrl && nextUrl.startsWith("/") ? nextUrl : "/review";
+  return pageShell(
+    "Teacher Sign-In",
+    `<section class="panel">
+      <h2>Enter the teacher password</h2>
+      ${error ? `<p style="color:var(--error);font-weight:600;">${escapeHtml(error)}</p>` : ""}
+      <form method="post" action="/admin/login" class="stack">
+        <input type="hidden" name="next" value="${escapeHtml(safeNext)}" />
+        <label>Password
+          <input type="password" name="password" autofocus required autocomplete="current-password" />
+        </label>
+        <button type="submit">Sign In</button>
+      </form>
+    </section>`
+  );
+}
+
+async function handleAdminLoginPost(req, res) {
+  const fields = await readUrlEncodedFields(req, 4096);
+  const password = String(fields.password || "");
+  const next = String(fields.next || "/review");
+
+  if (password !== ADMIN_PASSWORD) {
+    sendHtml(res, 401, renderAdminLogin(next, "Incorrect password. Try again."));
+    return;
+  }
+
+  const token = crypto.randomBytes(24).toString("hex");
+  adminSessions.add(token);
+  res.writeHead(302, {
+    Location: next.startsWith("/") ? next : "/review",
+    "Set-Cookie": `${ADMIN_SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Strict`,
+  });
+  res.end();
+}
+
+async function handleAdminLogout(req, res) {
+  const token = parseCookies(req)[ADMIN_SESSION_COOKIE];
+  if (token) adminSessions.delete(token);
+  res.writeHead(302, {
+    Location: "/admin/login",
+    "Set-Cookie": `${ADMIN_SESSION_COOKIE}=; Path=/; Max-Age=0`,
+  });
+  res.end();
+}
+
+const LOGOUT_LINK_HTML = `<form method="post" action="/admin/logout" style="display:inline;"><button type="submit" style="background:none;border:none;color:var(--accent);text-decoration:underline;cursor:pointer;padding:0;font:inherit;">Log out</button></form>`;
+
+function renderStudentUploadForm(flash = "") {
+  const flashBlock = flash ? `<section class="panel"><p>${flash}</p></section>` : "";
+  const body = `${flashBlock}<section class="panel">
+  <h2>Submit Your Project to the Showcase</h2>
+  <p>Pick what kind of project you made, fill in a few details, and attach your file(s). Mr. Scandrett will review it before it goes live.</p>
+  <form method="post" action="/student-upload" enctype="multipart/form-data" class="stack" id="student-upload-form">
+    <label>Your name
+      <input name="studentName" placeholder="Ava R" required maxlength="60" />
+    </label>
+
+    <label>Class / period (optional)
+      <input name="classPeriod" placeholder="3rd Period" maxlength="40" />
+    </label>
+
+    <label>What did you make?
+      <select name="kind" id="kind-select" required>
+        <option value="">Choose one...</option>
+        <option value="game">Game or App (pick your folder, zip it, or upload a .sb3 / .html)</option>
+        <option value="model">3D Model (.stl or .obj)</option>
+        <option value="animation">Pivot Stick-Figure Animation (.piv or .stk)</option>
+        <option value="photo">Photo of My Invention</option>
+        <option value="link">TinkerCAD Circuit or Other Online Project (paste a link)</option>
+        <option value="other">Something Else Cool</option>
+      </select>
+    </label>
+
+    <label>Project title
+      <input name="title" placeholder="My Robot Arm" required maxlength="80" />
+    </label>
+
+    <label>Tell us about it (optional)
+      <textarea name="description" rows="3" maxlength="600" placeholder="What does it do? How did you make it?"></textarea>
+    </label>
+
+    <label id="url-field" hidden>Link to your project
+      <input name="url" type="url" placeholder="https://www.tinkercad.com/things/..." maxlength="500" />
+    </label>
+
+    <label id="files-field">
+      <span id="files-label">File(s)</span>
+      <input type="file" name="files" id="files-input" />
+    </label>
+    <p id="files-hint" class="hint"></p>
+
+    <label id="folder-field" hidden>
+      <span>...or pick your whole project folder (no zip needed)</span>
+      <input type="file" id="folder-input" webkitdirectory directory multiple />
+    </label>
+    <p id="folder-hint" class="hint" hidden>Works in Chrome / Edge on a computer or Chromebook. On an iPad, use the zip option above instead (Files app can compress a folder for you).</p>
+
+    <button type="submit" id="submit-btn">Submit for Review</button>
+  </form>
+</section>
+<script>
+  (function () {
+    var HINTS = {
+      game: { accept: ".zip,.sb3,.html,.htm", multiple: false, label: "Zip your project folder, or upload a .sb3 / .html file", hint: "One file only. If your game has multiple files (HTML + CSS + JS + images), zip the whole folder first." },
+      model: { accept: ".stl,.obj,.mtl,.png,.jpg,.jpeg,.gif,.bmp,.webp,.svg,.tga", multiple: true, label: "3D model file(s)", hint: "Upload your .stl or .obj. If it's an .obj with a texture, also select the .mtl and image files (up to 6 files)." },
+      animation: { accept: ".piv,.stk,.webm,.mp4,.gif,.mov", multiple: true, label: "Pivot file + preview video (optional)", hint: "Upload your .piv/.stk file. Export a video or GIF from Pivot too, so it can play in the browser (up to 2 files)." },
+      photo: { accept: "image/*", multiple: true, label: "Photo(s)", hint: "Up to 6 photos of your invention." },
+      link: { accept: "image/*", multiple: false, label: "Screenshot (optional)", hint: "A screenshot helps your project look good on the showcase, but is not required." },
+      other: { accept: "", multiple: false, label: "File", hint: "PDF, audio, video, Minecraft world, Arduino sketch, and more are welcome. Ask your teacher if you're not sure." },
+    };
+    var form = document.getElementById("student-upload-form");
+    var kindSelect = document.getElementById("kind-select");
+    var urlField = document.getElementById("url-field");
+    var urlInput = urlField.querySelector("input");
+    var filesInput = document.getElementById("files-input");
+    var filesLabel = document.getElementById("files-label");
+    var filesHint = document.getElementById("files-hint");
+    var filesField = document.getElementById("files-field");
+    var folderField = document.getElementById("folder-field");
+    var folderInput = document.getElementById("folder-input");
+    var folderHint = document.getElementById("folder-hint");
+    var submitBtn = document.getElementById("submit-btn");
+
+    function sync() {
+      var kind = kindSelect.value;
+      var cfg = HINTS[kind];
+      var isLink = kind === "link";
+      urlField.hidden = !isLink;
+      urlInput.required = isLink;
+
+      var isGame = kind === "game";
+      folderField.hidden = !isGame;
+      folderHint.hidden = !isGame;
+      if (!isGame) {
+        folderInput.value = "";
+      }
+
+      if (!cfg) {
+        filesField.hidden = true;
+        filesInput.required = false;
+        return;
+      }
+      filesField.hidden = false;
+      filesInput.required = !isLink && folderInput.files.length === 0;
+      filesInput.accept = cfg.accept;
+      if (cfg.multiple) filesInput.setAttribute("multiple", "multiple");
+      else filesInput.removeAttribute("multiple");
+      filesLabel.textContent = cfg.label;
+      filesHint.textContent = cfg.hint;
+    }
+    kindSelect.addEventListener("change", sync);
+
+    // Picking a folder and picking a zip/file are alternatives — clear the other one so
+    // there's no ambiguity about which the student meant to submit.
+    folderInput.addEventListener("change", function () {
+      if (folderInput.files.length > 0) filesInput.value = "";
+      sync();
+    });
+    filesInput.addEventListener("change", function () {
+      if (filesInput.files.length > 0) folderInput.value = "";
+      sync();
+    });
+
+    form.addEventListener("submit", function (event) {
+      if (folderInput.files.length === 0) return; // normal file/zip path: let the browser submit natively
+      event.preventDefault();
+
+      var formData = new FormData();
+      Array.from(form.elements).forEach(function (el) {
+        if (!el.name || el.type === "file") return;
+        if ((el.type === "radio" || el.type === "checkbox") && !el.checked) return;
+        formData.append(el.name, el.value);
+      });
+      Array.from(folderInput.files).forEach(function (file) {
+        formData.append("files", file, file.webkitRelativePath || file.name);
+      });
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Uploading...";
+      fetch(form.action, { method: "POST", body: formData })
+        .then(function (res) { return res.text(); })
+        .then(function (html) {
+          document.open();
+          document.write(html);
+          document.close();
+        })
+        .catch(function () {
+          alert("Upload failed. Check your connection and try again.");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Submit for Review";
+        });
+    });
+
+    sync();
+  })();
+</script>`;
+  return pageShell("Submit to the Showcase", body);
+}
+
+function renderStudentThankYou() {
+  return pageShell(
+    "Thanks!",
+    `<section class="panel"><p>Your project was submitted. Mr. Scandrett will check it out and add it to the showcase soon.</p>
+    <p><a href="/student-upload">Submit another project</a></p></section>`
+  );
+}
+
+function formatTimestamp(iso) {
+  try {
+    return new Date(iso).toLocaleString();
+  } catch (_) {
+    return iso;
+  }
+}
+
+function renderPendingCard(item) {
+  const meta = item.meta;
+  const label = KIND_LABELS[meta.kind] || meta.kind;
+  const previewFile = (meta.files || []).find((f) => /\.(png|jpe?g|gif|webp)$/i.test(f.storedName));
+  const previewHtml = previewFile
+    ? `<img src="/pending-file/${encodeURIComponent(item.id)}/${encodeURIComponent(previewFile.storedName)}" alt="" style="max-width:220px;max-height:160px;border-radius:10px;border:1px solid var(--line);display:block;margin-bottom:8px;" />`
+    : "";
+  const fileListHtml = (meta.files || [])
+    .map((f) => `<li>${escapeHtml(f.originalName)}</li>`)
+    .join("");
+
+  return `<section class="panel">
+    <p class="pill">${escapeHtml(label)}</p>
+    <p><em>Submitted as</em> <strong>${escapeHtml(meta.title)}</strong> by ${escapeHtml(meta.studentName)}${meta.classPeriod ? ` &middot; ${escapeHtml(meta.classPeriod)}` : ""} &middot; ${escapeHtml(formatTimestamp(meta.submittedAt))}</p>
+    ${previewHtml}
+    ${fileListHtml ? `<ul>${fileListHtml}</ul>` : ""}
+
+    <form method="post" action="/review/approve" enctype="multipart/form-data" class="stack">
+      <input type="hidden" name="id" value="${escapeHtml(item.id)}" />
+      <label>Title
+        <input name="title" value="${escapeHtml(meta.title)}" required maxlength="80" />
+      </label>
+      <div class="stack" style="grid-template-columns: 1fr 1fr;">
+        <label>Student name
+          <input name="studentName" value="${escapeHtml(meta.studentName)}" required maxlength="60" />
+        </label>
+        <label>Class / period
+          <input name="classPeriod" value="${escapeHtml(meta.classPeriod || "")}" maxlength="40" />
+        </label>
+      </div>
+      <label>Description
+        <textarea name="description" rows="3" maxlength="600">${escapeHtml(meta.description || "")}</textarea>
+      </label>
+      ${meta.kind === "link" ? `<label>Link URL
+        <input name="url" type="url" value="${escapeHtml(meta.url || "")}" maxlength="500" />
+      </label>` : ""}
+      <label>Custom thumbnail (optional — overrides the auto-generated one)
+        <input type="file" name="thumbnail" accept="image/*" />
+      </label>
+      <div style="display:flex;gap:10px;">
+        <button type="submit">Approve &amp; Publish</button>
+      </div>
+    </form>
+    <form method="post" action="/review/reject" onsubmit="return confirm('Reject and delete this submission?');" style="margin-top:8px;">
+      <input type="hidden" name="id" value="${escapeHtml(item.id)}" />
+      <button type="submit" style="background:linear-gradient(180deg,#d9503f 0%,#b42318 100%);border-color:#8f1c13;">Reject</button>
+    </form>
+  </section>`;
+}
+
+function loadPendingItems() {
+  const ids = fs.existsSync(PENDING_DIR) ? fs.readdirSync(PENDING_DIR) : [];
+  const items = [];
+  for (const id of ids) {
+    const metaPath = path.join(PENDING_DIR, id, "meta.json");
+    if (!fs.existsSync(metaPath)) continue;
+    const meta = readJson(metaPath, null);
+    if (!meta) continue;
+    items.push({ id, meta });
+  }
+  items.sort((a, b) => new Date(a.meta.submittedAt) - new Date(b.meta.submittedAt));
+  return items;
+}
+
+function renderReviewQueue(flash = "") {
+  const items = loadPendingItems();
+  const flashBlock = flash ? `<section class="panel"><p>${flash}</p></section>` : "";
+  const toolbar = `<section class="panel"><p><a href="/dashboard">Dashboard</a> &middot; ${LOGOUT_LINK_HTML}</p></section>`;
+  const list = items.length
+    ? items.map(renderPendingCard).join("")
+    : `<section class="panel"><p>No pending submissions. Share <code>/student-upload</code> with your class.</p></section>`;
+  return pageShell("Showcase Review Queue", `${flashBlock}${toolbar}${list}`);
+}
+
 function commandExists(cmd) {
-  const result = spawnSync(cmd, ["--version"], { encoding: "utf8" });
-  return !result.error && result.status === 0;
+  // unzip has no --version flag (exits non-zero), only -v; check both.
+  for (const flag of ["--version", "-v"]) {
+    const result = spawnSync(cmd, [flag], { encoding: "utf8" });
+    if (!result.error && result.status === 0) return true;
+  }
+  return false;
 }
 
 function ensureBinaryChecks() {
@@ -772,6 +1230,450 @@ async function handleUploadModel(req, res) {
   }
 }
 
+async function handleStudentUpload(req, res) {
+  const contentType = req.headers["content-type"] || "";
+  if (!/multipart\/form-data/i.test(contentType)) {
+    throw new Error("Expected multipart form upload.");
+  }
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  const boundary = ((boundaryMatch && (boundaryMatch[1] || boundaryMatch[2])) || "").trim();
+  if (!boundary) throw new Error("Missing upload boundary.");
+
+  const body = await readBody(req, MAX_STUDENT_UPLOAD_BYTES);
+  const parsed = parseMultipart(body, boundary);
+
+  const studentName = String(parsed.fields.studentName || "").trim().slice(0, 60);
+  if (!studentName) throw new Error("Please enter your name.");
+
+  const classPeriod = String(parsed.fields.classPeriod || "").trim().slice(0, 40);
+  const kind = String(parsed.fields.kind || "").trim().toLowerCase();
+  if (!KIND_LABELS[kind]) throw new Error("Please choose a project type.");
+
+  const title = String(parsed.fields.title || "").trim().slice(0, 80);
+  if (!title) throw new Error("Please enter a project title.");
+
+  const description = String(parsed.fields.description || "").trim().slice(0, 600);
+  const url = String(parsed.fields.url || "").trim().slice(0, 500);
+
+  const uploadedFiles = parsed.fileLists.files || [];
+  const isFolderMode = kind === "game" && uploadedFiles.some((f) => f.rawFilename && f.rawFilename.includes("/"));
+
+  if (kind === "link") {
+    if (!/^https?:\/\//i.test(url)) {
+      throw new Error("Please paste a valid link starting with http:// or https://");
+    }
+  } else if (uploadedFiles.length === 0) {
+    throw new Error("Please attach at least one file, or pick your project folder.");
+  }
+
+  let folderRelativePaths = null;
+  if (isFolderMode) {
+    if (uploadedFiles.length > MAX_FOLDER_FILES) {
+      throw new Error(`That folder has too many files (max ${MAX_FOLDER_FILES}). Remove extra files and try again.`);
+    }
+    const normalized = uploadedFiles.map((f) => normalizeRelativePath(f.rawFilename));
+    if (normalized.some((p) => !p)) {
+      throw new Error("One of the selected files has an invalid path. Please try again.");
+    }
+    folderRelativePaths = stripCommonTopFolder(normalized);
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      const ext = path.extname(folderRelativePaths[i]).toLowerCase();
+      if (!WEB_FOLDER_EXTENSIONS.has(ext)) {
+        throw new Error(`"${uploadedFiles[i].filename}" isn't an allowed file type for a game folder. Ask your teacher if you think this is a mistake.`);
+      }
+    }
+    const hasIndex = folderRelativePaths.some((p) => p.toLowerCase() === "index.html" || p.toLowerCase().endsWith("/index.html"));
+    if (!hasIndex) {
+      throw new Error("Your folder needs an index.html file at its top level so the browser knows what to open.");
+    }
+  } else {
+    const maxFiles = KIND_MAX_FILES[kind] || 1;
+    if (uploadedFiles.length > maxFiles) {
+      throw new Error(`Too many files for this project type (max ${maxFiles}).`);
+    }
+
+    const allowedExtensions = KIND_EXTENSIONS[kind];
+    for (const file of uploadedFiles) {
+      const ext = path.extname(file.filename).toLowerCase();
+      if (!allowedExtensions.has(ext)) {
+        throw new Error(`"${file.filename}" isn't an allowed file type for ${KIND_LABELS[kind]}. Ask your teacher if you think this is a mistake.`);
+      }
+    }
+
+    if (kind === "animation") {
+      const sourceCount = uploadedFiles.filter((f) => [".piv", ".stk"].includes(path.extname(f.filename).toLowerCase())).length;
+      if (sourceCount !== 1) throw new Error("Attach exactly one .piv or .stk animation file (plus an optional preview video).");
+    }
+    if (kind === "model") {
+      const modelCount = uploadedFiles.filter((f) => [".stl", ".obj"].includes(path.extname(f.filename).toLowerCase())).length;
+      if (modelCount !== 1) throw new Error("Attach exactly one .stl or .obj model file (other files like textures are optional).");
+    }
+  }
+
+  const id = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+  const pendingDir = path.join(PENDING_DIR, id);
+  fs.mkdirSync(pendingDir, { recursive: true });
+
+  const fileMetas = uploadedFiles.map((file, index) => {
+    const ext = path.extname(file.filename).toLowerCase();
+    const storedName = `file-${index}${ext}`;
+    fs.writeFileSync(path.join(pendingDir, storedName), file.data);
+    return isFolderMode
+      ? { originalName: file.filename, storedName, relativePath: folderRelativePaths[index] }
+      : { originalName: file.filename, storedName };
+  });
+
+  const meta = {
+    id,
+    kind,
+    studentName,
+    classPeriod,
+    title,
+    description,
+    url: kind === "link" ? url : "",
+    files: fileMetas,
+    submittedAt: new Date().toISOString(),
+  };
+  fs.writeFileSync(path.join(pendingDir, "meta.json"), JSON.stringify(meta, null, 2));
+
+  sendHtml(res, 200, renderStudentThankYou());
+}
+
+const PENDING_FILE_MIME_TYPES = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".mov": "video/quicktime",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".ogg": "audio/ogg",
+  ".pdf": "application/pdf",
+};
+
+function servePendingFile(req, res) {
+  const match = req.url.match(/^\/pending-file\/([^/]+)\/([^/?]+)/);
+  if (!match) return false;
+  const id = path.basename(decodeURIComponent(match[1]));
+  const filename = path.basename(decodeURIComponent(match[2]));
+  const filePath = path.join(PENDING_DIR, id, filename);
+  if (!filePath.startsWith(PENDING_DIR) || !fs.existsSync(filePath)) {
+    res.writeHead(404);
+    res.end("Not found");
+    return true;
+  }
+  const ext = path.extname(filename).toLowerCase();
+  res.writeHead(200, { "Content-Type": PENDING_FILE_MIME_TYPES[ext] || "application/octet-stream" });
+  fs.createReadStream(filePath).pipe(res);
+  return true;
+}
+
+async function placeGameFiles(meta, pendingDir, projectDir) {
+  const files = meta.files || [];
+  if (files.length === 0) throw new Error("Missing game file.");
+
+  // Folder-picker uploads: every file carries a relativePath computed at submit time. Reconstruct
+  // the tree directly — no unzip needed, since the browser already sent the file structure.
+  if (files.every((f) => f.relativePath)) {
+    fs.mkdirSync(projectDir, { recursive: true });
+    for (const file of files) {
+      const destPath = path.join(projectDir, file.relativePath);
+      fs.mkdirSync(path.dirname(destPath), { recursive: true });
+      fs.copyFileSync(path.join(pendingDir, file.storedName), destPath);
+    }
+    return;
+  }
+
+  const file = files[0];
+  const ext = path.extname(file.originalName).toLowerCase();
+  const srcPath = path.join(pendingDir, file.storedName);
+
+  if (ext === ".zip") {
+    if (!commandExists("unzip")) throw new Error("unzip is required to extract ZIP files.");
+    const extractDir = path.join(WORK_DIR, `student-${Date.now()}`);
+    fs.mkdirSync(extractDir, { recursive: true });
+    try {
+      const unzip = spawnSync("unzip", ["-o", srcPath, "-d", extractDir], { encoding: "utf8" });
+      if (unzip.status !== 0) {
+        throw new Error(`Failed to unzip project: ${(unzip.stderr || unzip.stdout || "").trim()}`);
+      }
+      const scan = findProjectRoot(extractDir);
+      copyDirRecursiveSync(scan.projectRoot, projectDir);
+    } finally {
+      fs.rmSync(extractDir, { recursive: true, force: true });
+    }
+  } else if (ext === ".sb3") {
+    fs.mkdirSync(projectDir, { recursive: true });
+    fs.copyFileSync(srcPath, path.join(projectDir, `${toFileSlug(meta.title)}.sb3`));
+  } else if (ext === ".html" || ext === ".htm") {
+    fs.mkdirSync(projectDir, { recursive: true });
+    fs.copyFileSync(srcPath, path.join(projectDir, "index.html"));
+  } else {
+    throw new Error(`Unsupported game file type: ${ext}`);
+  }
+}
+
+function placeModelFiles(meta, pendingDir, projectDir) {
+  fs.mkdirSync(projectDir, { recursive: true });
+  const files = meta.files || [];
+  const primary = files.find((f) => [".stl", ".obj"].includes(path.extname(f.originalName).toLowerCase()));
+  if (!primary) throw new Error("Missing .stl/.obj model file.");
+
+  // Rename only the primary model file to carry the student's title (build-showcase.js derives
+  // the display title from this filename). Companion .mtl/texture files keep their original
+  // names since the .obj's internal `mtllib` reference must still resolve to them.
+  const primaryExt = path.extname(primary.originalName).toLowerCase();
+  const primaryName = `${toFileSlug(meta.title)}${primaryExt}`;
+  fs.copyFileSync(path.join(pendingDir, primary.storedName), path.join(projectDir, primaryName));
+
+  for (const file of files) {
+    if (file === primary) continue;
+    fs.copyFileSync(path.join(pendingDir, file.storedName), path.join(projectDir, file.originalName));
+  }
+}
+
+function placeAnimationFiles(meta, pendingDir, projectDir) {
+  fs.mkdirSync(projectDir, { recursive: true });
+  const files = meta.files || [];
+  const sourceFile = files.find((f) => [".piv", ".stk"].includes(path.extname(f.originalName).toLowerCase()));
+  if (!sourceFile) throw new Error("Missing .piv/.stk animation file.");
+  const previewFile = files.find((f) => f !== sourceFile);
+
+  // Source and preview share a basename (derived from the title) so build-showcase.js's
+  // preview-pairing logic (which matches files by identical basename) finds them.
+  const baseName = toFileSlug(meta.title);
+  const sourceExt = path.extname(sourceFile.originalName).toLowerCase();
+  fs.copyFileSync(path.join(pendingDir, sourceFile.storedName), path.join(projectDir, `${baseName}${sourceExt}`));
+
+  if (previewFile) {
+    const previewExt = path.extname(previewFile.originalName).toLowerCase();
+    fs.copyFileSync(path.join(pendingDir, previewFile.storedName), path.join(projectDir, `${baseName}${previewExt}`));
+  }
+}
+
+function placePhotoFiles(meta, pendingDir, projectDir) {
+  fs.mkdirSync(projectDir, { recursive: true });
+  const images = [];
+  (meta.files || []).forEach((file, index) => {
+    const ext = path.extname(file.originalName).toLowerCase();
+    const destName = `photo-${index}${ext}`;
+    fs.copyFileSync(path.join(pendingDir, file.storedName), path.join(projectDir, destName));
+    images.push(destName);
+  });
+  const showcaseMeta = {
+    kind: "photo",
+    title: meta.title,
+    student: meta.studentName,
+    grade: meta.classPeriod,
+    caption: meta.description,
+    images,
+  };
+  fs.writeFileSync(path.join(projectDir, "showcase.json"), JSON.stringify(showcaseMeta, null, 2));
+}
+
+function placeLinkFiles(meta, pendingDir, projectDir) {
+  fs.mkdirSync(projectDir, { recursive: true });
+  const screenshotFile = (meta.files || [])[0];
+  let screenshotName = "";
+  if (screenshotFile) {
+    const ext = path.extname(screenshotFile.originalName).toLowerCase();
+    screenshotName = `screenshot${ext}`;
+    fs.copyFileSync(path.join(pendingDir, screenshotFile.storedName), path.join(projectDir, screenshotName));
+  }
+  const provider = /tinkercad\.com/i.test(meta.url) ? "Tinkercad" : "Web";
+  const showcaseMeta = {
+    kind: "link",
+    title: meta.title,
+    student: meta.studentName,
+    grade: meta.classPeriod,
+    description: meta.description,
+    url: meta.url,
+    provider,
+    screenshot: screenshotName || undefined,
+  };
+  fs.writeFileSync(path.join(projectDir, "showcase.json"), JSON.stringify(showcaseMeta, null, 2));
+}
+
+function placeOtherFile(meta, pendingDir, projectDir) {
+  fs.mkdirSync(projectDir, { recursive: true });
+  const file = (meta.files || [])[0];
+  if (!file) throw new Error("Missing file.");
+  fs.copyFileSync(path.join(pendingDir, file.storedName), path.join(projectDir, file.originalName));
+  const showcaseMeta = {
+    kind: "file",
+    title: meta.title,
+    student: meta.studentName,
+    grade: meta.classPeriod,
+    description: meta.description,
+    filename: file.originalName,
+  };
+  fs.writeFileSync(path.join(projectDir, "showcase.json"), JSON.stringify(showcaseMeta, null, 2));
+}
+
+const MAX_APPROVE_BYTES = 15 * 1024 * 1024;
+
+// build-showcase.js derives each app's slug from a `slugBase` that differs by kind:
+//   - "game" web projects (zip/folder/html) -> the project folder's own basename
+//   - "game" Scratch (.sb3), model, animation, and marker (photo/link/file) kinds -> "student-title"
+// Both are deterministic from what we already know at approve time, so we can find the exact
+// manifest row build-showcase.js just wrote without guessing from fuzzy title text.
+function candidateManifestSlugs(kind, meta, projectDirName) {
+  const studentTitleSlug = toFileSlug(`${meta.studentName}-${meta.title}`);
+  if (kind === "game") return [toFileSlug(projectDirName), studentTitleSlug];
+  return [studentTitleSlug];
+}
+
+function findManifestIndexBySlug(manifest, candidateSlugs) {
+  if (!Array.isArray(manifest)) return -1;
+  return manifest.findIndex((item) => item && candidateSlugs.includes(item.slug));
+}
+
+async function handleApprove(req, res) {
+  if (!commandExists("git")) throw new Error("git is not installed.");
+
+  const contentType = req.headers["content-type"] || "";
+  if (!/multipart\/form-data/i.test(contentType)) {
+    throw new Error("Expected multipart form submission.");
+  }
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  const boundary = ((boundaryMatch && (boundaryMatch[1] || boundaryMatch[2])) || "").trim();
+  if (!boundary) throw new Error("Missing form boundary.");
+
+  const body = await readBody(req, MAX_APPROVE_BYTES);
+  const parsed = parseMultipart(body, boundary);
+
+  const id = path.basename(String(parsed.fields.id || ""));
+  const pendingDir = path.join(PENDING_DIR, id);
+  const metaPath = path.join(pendingDir, "meta.json");
+  if (!fs.existsSync(metaPath)) throw new Error("That submission no longer exists.");
+  const originalMeta = readJson(metaPath, null);
+  if (!originalMeta) throw new Error("Could not read submission metadata.");
+
+  // Teacher edits from the review form override what the student originally typed.
+  const editedTitle = String(parsed.fields.title || "").trim();
+  const editedStudentName = String(parsed.fields.studentName || "").trim();
+  const meta = {
+    ...originalMeta,
+    title: editedTitle || originalMeta.title,
+    studentName: editedStudentName || originalMeta.studentName,
+    classPeriod: String(parsed.fields.classPeriod || "").trim(),
+    description: String(parsed.fields.description || "").trim(),
+    url: originalMeta.kind === "link" ? (String(parsed.fields.url || "").trim() || originalMeta.url) : originalMeta.url,
+  };
+  if (!meta.title) throw new Error("Title cannot be blank.");
+  if (!meta.studentName) throw new Error("Student name cannot be blank.");
+  if (meta.kind === "link" && !/^https?:\/\//i.test(meta.url || "")) {
+    throw new Error("Link URL must start with http:// or https://");
+  }
+
+  const studentDir = sanitizeDirName(meta.studentName, "Student");
+  const projectDirName = `${sanitizeDirName(meta.title, "project")}-${id.slice(-6)}`;
+  const projectDir = path.join(STUDENT_PROJECTS_DIR, studentDir, projectDirName);
+  const notes = [];
+
+  try {
+    fs.rmSync(projectDir, { recursive: true, force: true });
+
+    if (meta.kind === "game") {
+      await placeGameFiles(meta, pendingDir, projectDir);
+    } else if (meta.kind === "model") {
+      placeModelFiles(meta, pendingDir, projectDir);
+    } else if (meta.kind === "animation") {
+      placeAnimationFiles(meta, pendingDir, projectDir);
+    } else if (meta.kind === "photo") {
+      placePhotoFiles(meta, pendingDir, projectDir);
+    } else if (meta.kind === "link") {
+      placeLinkFiles(meta, pendingDir, projectDir);
+    } else if (meta.kind === "other") {
+      placeOtherFile(meta, pendingDir, projectDir);
+    } else {
+      throw new Error(`Unknown submission kind: ${meta.kind}`);
+    }
+
+    notes.push(`[REVIEW] Placed files at student-projects/${path.relative(STUDENT_PROJECTS_DIR, projectDir)}`);
+
+    const build = spawnSync("node", [BUILD_SHOWCASE_SCRIPT], { cwd: ROOT_DIR, encoding: "utf8" });
+    const buildOutput = `${build.stdout || ""}${build.stderr || ""}`;
+    notes.push(...buildOutput.split(/\r?\n/).filter(Boolean));
+    if (build.status !== 0) {
+      throw new Error("Showcase build failed. The submission was kept in the review queue so you can fix and retry.");
+    }
+
+    const gitPaths = ["student-projects", "apps"];
+    const manifest = readJson(SHOWCASE_MANIFEST_PATH, []);
+    const manifestIdx = findManifestIndexBySlug(manifest, candidateManifestSlugs(meta.kind, meta, projectDirName));
+    let live = "";
+
+    if (manifestIdx === -1) {
+      notes.push("[REVIEW WARN] Could not find the manifest entry for this submission (title/thumbnail edits were not applied).");
+    } else {
+      live = manifest[manifestIdx].url;
+      // The approved title always wins over whatever the build derived (e.g. an HTML <title>
+      // tag baked into an uploaded game that doesn't match what's on the review form).
+      if (manifest[manifestIdx].name !== meta.title) {
+        manifest[manifestIdx].name = meta.title;
+        notes.push(`[REVIEW] Showcase title set to "${meta.title}".`);
+      }
+
+      const thumbnailFile = parsed.files.thumbnail;
+      if (thumbnailFile && thumbnailFile.data && thumbnailFile.data.length) {
+        const thumbExt = path.extname(thumbnailFile.filename).toLowerCase() || ".png";
+        const thumbDir = path.join(ROOT_DIR, "assets", "thumbs", "showcase");
+        fs.mkdirSync(thumbDir, { recursive: true });
+        const thumbFileName = `custom-${id}${thumbExt}`;
+        fs.writeFileSync(path.join(thumbDir, thumbFileName), thumbnailFile.data);
+        manifest[manifestIdx].thumbnail = `./assets/thumbs/showcase/${thumbFileName}`;
+        gitPaths.push("assets/thumbs/showcase");
+        notes.push("[REVIEW] Custom thumbnail applied.");
+      }
+
+      fs.writeFileSync(SHOWCASE_MANIFEST_PATH, JSON.stringify(manifest, null, 2) + "\n");
+    }
+
+    const add = safeGit(["add", "-A", "--", ...gitPaths]);
+    if (add.status !== 0) notes.push("[REVIEW WARN] Could not stage files with git.");
+
+    const diff = safeGit(["diff", "--cached", "--quiet"]);
+    if (diff.status === 1) {
+      const commit = safeGit([
+        "-c", "user.name=MrScandrett",
+        "-c", "user.email=mrscandrett@users.noreply.github.com",
+        "commit", "-m", `Add student showcase project: ${meta.title} (${meta.studentName})`,
+      ]);
+      if (commit.status !== 0) {
+        notes.push("[REVIEW WARN] Could not commit automatically.");
+      } else {
+        const push = safeGit(["push", "origin", "main"]);
+        if (push.status !== 0) {
+          notes.push("[REVIEW WARN] Could not push to origin/main. Push manually when ready.");
+          live = "";
+        }
+      }
+    } else {
+      notes.push("[REVIEW] Nothing new to commit.");
+    }
+
+    fs.rmSync(pendingDir, { recursive: true, force: true });
+
+    const links = [{ label: "Review Queue", url: "/review" }];
+    if (live) links.push({ label: "Live Project", url: `https://${GITHUB_OWNER.toLowerCase()}.github.io/${live.replace(/^\.\//, "")}` });
+    sendHtml(res, 200, renderResult("Published!", notes, links));
+  } catch (error) {
+    fs.rmSync(projectDir, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+async function handleReject(req, res) {
+  const fields = await readUrlEncodedFields(req, 4096);
+  const id = path.basename(String(fields.id || ""));
+  fs.rmSync(path.join(PENDING_DIR, id), { recursive: true, force: true });
+  redirect(res, "/review");
+}
+
 async function handle(req, res) {
   if (rejectIfRemote(req, res)) return;
 
@@ -780,9 +1682,36 @@ async function handle(req, res) {
   }
 
   if (req.method === "GET" && req.url === "/health") {
-    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-    res.end(JSON.stringify({ ok: true, time: new Date().toISOString() }));
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Access-Control-Allow-Origin": "*",
+    });
+    res.end(JSON.stringify({ ok: true, studentUploadUrl: "/student-upload", time: new Date().toISOString() }));
     return;
+  }
+
+  if (req.method === "GET" && req.url.startsWith("/admin/login")) {
+    const params = new URL(req.url, "http://portal.local").searchParams;
+    sendHtml(res, 200, renderAdminLogin(params.get("next") || "/review", ""));
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/admin/login") {
+    await handleAdminLoginPost(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/admin/logout") {
+    await handleAdminLogout(req, res);
+    return;
+  }
+
+  if (isAdminGatedPath(req.url)) {
+    if (requireAdmin(req, res)) return;
+  }
+
+  if (req.method === "GET" && req.url.startsWith("/pending-file/")) {
+    if (servePendingFile(req, res)) return;
   }
 
   if (req.method === "GET" && req.url === "/") {
@@ -807,6 +1736,31 @@ async function handle(req, res) {
 
   if (req.method === "POST" && req.url === "/upload-model") {
     await handleUploadModel(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/student-upload") {
+    sendHtml(res, 200, renderStudentUploadForm());
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/student-upload") {
+    await handleStudentUpload(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/review") {
+    sendHtml(res, 200, renderReviewQueue());
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/review/approve") {
+    await handleApprove(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/review/reject") {
+    await handleReject(req, res);
     return;
   }
 
