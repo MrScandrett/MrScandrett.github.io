@@ -1029,6 +1029,60 @@
         }
 
         var lessonCache = buildLessonCache();
+        var contentIndexStarted = false;
+
+        function extractLessonBodyText(html) {
+          var doc = new DOMParser().parseFromString(html, "text/html");
+          var root = doc.querySelector("#main-content") || doc.querySelector("main") || doc.body;
+          if (!root) return "";
+          var clone = root.cloneNode(true);
+          Array.prototype.slice.call(clone.querySelectorAll("script, style, nav, header, footer, noscript")).forEach(function(el) {
+            el.remove();
+          });
+          return normalizeText(clone.textContent).replace(/\s+/g, " ");
+        }
+
+        function indexLessonContent() {
+          if (contentIndexStarted) return;
+          contentIndexStarted = true;
+
+          var cacheKey = "steamLessonSearchIndex";
+          var stored;
+          try {
+            stored = JSON.parse(sessionStorage.getItem(cacheKey) || "{}");
+          } catch (err) {
+            stored = {};
+          }
+
+          var fetches = lessonCache.map(function(lesson) {
+            if (typeof stored[lesson.href] === "string") {
+              appendLessonContentText(lesson, stored[lesson.href]);
+              return Promise.resolve();
+            }
+            return fetch(lesson.href)
+              .then(function(response) { return response.ok ? response.text() : ""; })
+              .then(function(html) {
+                var contentText = html ? extractLessonBodyText(html) : "";
+                stored[lesson.href] = contentText;
+                appendLessonContentText(lesson, contentText);
+              })
+              .catch(function() {});
+          });
+
+          Promise.all(fetches).then(function() {
+            try { sessionStorage.setItem(cacheKey, JSON.stringify(stored)); } catch (err) {}
+            if (normalizeText(searchInput.value)) runSearch();
+          });
+        }
+
+        function appendLessonContentText(lesson, contentText) {
+          if (!contentText) return;
+          lesson.searchableText = (lesson.searchableText + " " + contentText).trim();
+          lesson.words = lesson.searchableText.split(/[^a-z0-9]+/).filter(Boolean);
+        }
+
+        searchInput.addEventListener("focus", indexLessonContent, { once: true });
+        searchInput.addEventListener("input", indexLessonContent, { once: true });
 
         function searchLessons(query) {
           var normalizedQuery = normalizeText(query);
@@ -1265,7 +1319,7 @@
           <div class="module-map-heading">
             <div>
               <strong>Natural Sciences</strong>
-              <small>60 live · physical, living, Earth, and space systems</small>
+              <small>61 live · physical, living, Earth, and space systems</small>
             </div>
             <span class="module-theme-pill">Science</span>
           </div>
@@ -1484,7 +1538,7 @@
           <p class="module-banner-sub">A K–12 ladder from physical intuition to measurement, classical mechanics, fields, systems, and modern physics</p>
           <span class="module-banner-level">K–12 Progression · Reality Modeling</span>
         </div>
-        <span class="module-banner-count">33 live · 6 chapters</span>
+        <span class="module-banner-count">34 live · 6 chapters</span>
         <span class="module-chevron" aria-hidden="true">▾</span>
       </div>
       <div class="module-drawer">
@@ -1582,6 +1636,11 @@
           <span class="tile-kicker">Skill · Four Forces · Friction · Pseudo Forces · Nuclear</span>
           <strong>Fundamental Forces</strong>
           <small>Only four fundamental forces govern everything in the universe. Explore gravity, electromagnetism, the weak force, and the strong force — plus friction, molecular forces, and the fictitious pseudo forces of rotating reference frames.</small>
+        </a>
+        <a class="tile" href="lessons/biomechanics-physics-of-sports.html" style="border-left:3.5px solid #fb923c;" data-added="2026-07-11">
+          <span class="tile-kicker">Skill · Biomechanics · Torque · Angular Momentum · Impulse</span>
+          <strong>Biomechanics: The Physics of Sports</strong>
+          <small>Apply kinematics, projectile motion, torque, conserved angular momentum, impulse, and elastic energy to real sports — free throws, javelin, figure-skating spins, and landings — with two interactive simulators.</small>
         </a>
         <a class="tile physics-motion-tile" href="lessons/3d-motion.html">
           <span class="tile-kicker">Skill · Kinematics · 2D &amp; 3D Motion · Vectors</span>
@@ -1796,7 +1855,7 @@
           <p class="module-banner-sub">A K–12 ladder from living things to cells, DNA, biological systems, evolution, and applied biotechnology</p>
           <span class="module-banner-level">K–12 Progression · Living Systems</span>
         </div>
-        <span class="module-banner-count">8 live · 6 chapters</span>
+        <span class="module-banner-count">9 live · 6 chapters</span>
         <span class="module-chevron" aria-hidden="true">▾</span>
       </div>
       <div class="module-drawer">
@@ -1871,6 +1930,11 @@
           <strong>Axolotls &amp; Neoteny</strong>
           <small>Explore how axolotls keep juvenile traits into adulthood, stay aquatic, regenerate complex tissues, and give us a metaphor for curiosity and beginner's mind.</small>
         </a>
+        <a class="tile" href="lessons/slime-mold-intelligence.html" style="border-left:3.5px solid #c8891a;" data-added="2026-07-11">
+          <span class="tile-kicker">Skill · Microbiology · Emergent Behavior · Stigmergy</span>
+          <strong>Slime Molds &amp; Swarm Intelligence</strong>
+          <small>Meet Physarum polycephalum, a brainless single cell that solves mazes and rebuilds rail networks. Grow a live swarm-intelligence simulation inspired by the 2010 Tokyo rail experiment.</small>
+        </a>
 
         <div class="module-cluster-label">
           <strong>Level 5 · Advanced &amp; Applied Biology (11–12)</strong>
@@ -1899,7 +1963,7 @@
           <p class="module-banner-sub">A K–12 ladder from Earth and sky to surface cycles, dynamic geology, climate systems, planetary behavior, and human impact</p>
           <span class="module-banner-level">K–12 Progression · Earth Systems</span>
         </div>
-        <span class="module-banner-count">8 live · 6 chapters</span>
+        <span class="module-banner-count">10 live · 6 chapters</span>
         <span class="module-chevron" aria-hidden="true">▾</span>
       </div>
       <div class="module-drawer">
@@ -1950,6 +2014,11 @@
           <strong>Volcano Simulator</strong>
           <small>Trigger historic eruptions in 3D to study geological pressure release. Analyze ash columns and pyroclastic flows to understand tectonic volatility.</small>
         </a>
+        <a class="tile" href="lessons/ocean-zones.html" style="border-left:3.5px solid #3ab0e8;" data-added="2026-07-11">
+          <span class="tile-kicker">Skill · Ocean Zones · Pressure · Light · Deep-Sea Life</span>
+          <strong>Ocean Zones &amp; Deep-Sea Life</strong>
+          <small>Dive from the sunlit surface to the Mariana Trench. Watch light vanish, pressure crush, and temperature plunge as anglerfish, giant squid, and hadal snailfish appear at their real-world depths.</small>
+        </a>
 
         <div class="module-cluster-label">
           <strong>Level 4 · Planetary Systems (9–10)</strong>
@@ -1964,6 +2033,11 @@
           <span class="tile-kicker">Bridge · Atmosphere · Water Droplets · Optics</span>
           <strong>Rainbows</strong>
           <small>Explore the physics of light dispersion, refraction, and reflection. Create and analyze rainbows to understand how water droplets split white light into the visible spectrum.</small>
+        </a>
+        <a class="tile geo-model-tile" href="lessons/structural-geology-modeler.html">
+          <span class="tile-kicker">Skill · Structural Geology · 3D Modeling · Data Interpolation</span>
+          <strong>Structural Geology: 3D Subsurface Modeler</strong>
+          <small>Turn sparse field data into full 3D geologic models — layer-cake stratigraphy, folds, faults, and unconformities — using the same implicit interpolation behind real geomodeling software.</small>
         </a>
 
         <div class="module-cluster-label">
@@ -2798,7 +2872,7 @@
           <p class="module-banner-sub">A six-chapter ladder for studying the operating systems of civilization: cooperation, trade, power, ideas, networks, and futures</p>
           <span class="module-banner-level">Human Systems &amp; Civilization Design</span>
         </div>
-        <span class="module-banner-count">7 live · 6 chapters</span>
+        <span class="module-banner-count">8 live · 6 chapters</span>
         <span class="module-chevron" aria-hidden="true">▾</span>
       </div>
       <div class="module-drawer">
@@ -2827,11 +2901,11 @@
           <strong>Chapter 3 · History, Civilization &amp; Power</strong>
           <small>Students model historical systems: ancient civilizations, empires, worldview systems, institutions, and society-changing technology.</small>
         </div>
-        <div class="tile tile-coming-soon">
-          <span class="tile-kicker">Future Slot · Empires · Institutions · Technology</span>
-          <strong>Civilization Systems Lab</strong>
-          <small>Trace how geography, law, religion, governance, tools, conflict, and trade interact across the rise and fall of societies.</small>
-        </div>
+        <a class="tile roma-roads-tile" href="lessons/roads-to-rome.html">
+          <span class="tile-kicker">Skill · Geography · Networks · Open Source</span>
+          <strong>The Roads to Rome</strong>
+          <small>Built on ORBIS, Stanford's open-source geospatial model of the Roman Empire. Explore how road, river, and sea — and the sailing season — turned map distance into travel time and cost.</small>
+        </a>
 
         <div class="module-cluster-label">
           <strong>Chapter 4 · Philosophy, Ethics &amp; Human Meaning</strong>

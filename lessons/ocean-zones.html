@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ocean Zones &amp; Deep-Sea Life · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Dive from the sunlit surface to the Mariana Trench — explore pressure, temperature, light loss, and the strange creatures that live at every depth." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    body { background: #01040a; color: #cfe4f0; margin: 0; overflow-x: hidden; }
+
+    /* ── Topbar ── */
+    .oz-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px);
+      background: rgba(2, 8, 16, 0.92);
+      border-bottom: 1px solid rgba(60, 160, 220, 0.2);
+    }
+    .oz-topbar-inner {
+      width: min(1440px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .oz-topbar a { color: #6ec6f0; text-decoration: none; font-size: 0.82rem; }
+    .oz-topbar a:hover { color: #fff; }
+    .oz-topbar-title { font-size: 0.9rem; font-weight: 700; color: #d8f0ff; }
+
+    /* ── Hero ── */
+    .oz-hero { padding: 0.8rem 1.5rem 0.5rem; text-align: center; max-width: 720px; margin: 0 auto; }
+    .oz-hero h1 { font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
+    .oz-hero p { font-size: 0.86rem; color: rgba(200, 226, 240, 0.72); margin: 0; line-height: 1.55; }
+
+    /* ── Main layout ── */
+    .oz-wrap { display: block; padding: 0 1.1rem 0.5rem; max-width: 1440px; margin: 0 auto; }
+
+    /* ── Canvas ── */
+    .ocean-outer {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #01040a;
+      aspect-ratio: 16/10;
+      max-height: calc(100dvh - 150px);
+      border: 1px solid rgba(80, 180, 230, 0.18);
+      box-shadow: 0 0 60px rgba(20, 100, 160, 0.14), inset 0 0 40px rgba(0,0,0,0.5);
+    }
+    #oz-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+    .oz-overlay { position: absolute; top: 12px; left: 14px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; z-index: 3; }
+    .oz-badge {
+      background: rgba(2, 10, 18, 0.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(80, 180, 230, 0.35);
+      border-radius: 999px; padding: 5px 14px;
+      font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; color: #7ed0f5;
+    }
+    .oz-depth-badge {
+      background: rgba(2, 10, 18, 0.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(80, 180, 230, 0.25);
+      border-radius: 999px; padding: 4px 12px;
+      font-size: 0.7rem; font-weight: 700; color: rgba(210, 235, 245, 0.85);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Depth ruler */
+    .oz-ruler {
+      position: absolute; right: 10px; top: 10px; bottom: 10px; width: 34px;
+      display: flex; flex-direction: column; border-radius: 8px; overflow: hidden;
+      border: 1px solid rgba(120, 200, 240, 0.25); z-index: 3;
+    }
+    .oz-ruler-seg { flex: 1; position: relative; }
+    .oz-ruler-marker {
+      position: absolute; left: -4px; width: calc(100% + 8px); height: 2px;
+      background: #ffd166; box-shadow: 0 0 6px rgba(255, 209, 102, 0.9);
+      transition: top 0.15s linear;
+    }
+
+    /* Dive controls under canvas */
+    .oz-dive-bar {
+      display: flex; align-items: center; gap: 10px; margin-top: 0.7rem;
+      background: rgba(6, 16, 26, 0.65); border: 1px solid rgba(80, 180, 230, 0.2);
+      border-radius: 13px; padding: 0.7rem 0.9rem;
+    }
+    .oz-dive-btn {
+      flex-shrink: 0; border: none; border-radius: 999px; padding: 8px 16px;
+      font-size: 0.76rem; font-weight: 800; letter-spacing: 0.03em; cursor: pointer;
+      background: linear-gradient(180deg, #3ab0e8, #1c7fc0); color: #fff;
+      box-shadow: 0 4px 14px rgba(30, 130, 200, 0.4);
+    }
+    .oz-dive-btn:hover { filter: brightness(1.1); }
+    .oz-dive-btn.active { background: linear-gradient(180deg, #e86a3a, #c04a1c); }
+    .oz-dive-slider-wrap { flex: 1; }
+    .oz-dive-label { display: flex; justify-content: space-between; font-size: 0.7rem; color: rgba(200,226,240,0.6); margin-bottom: 4px; }
+    .oz-dive-label strong { color: #7ed0f5; font-variant-numeric: tabular-nums; }
+
+    /* Zone cards (horizontal scroll) */
+    .zone-scroll {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+      scrollbar-width: thin; scrollbar-color: rgba(80,180,230,0.3) transparent;
+    }
+    .zone-scroll::-webkit-scrollbar { height: 3px; }
+    .zone-scroll::-webkit-scrollbar-thumb { background: rgba(80,180,230,0.3); border-radius: 99px; }
+    .zn-card {
+      flex-shrink: 0; width: 128px;
+      background: rgba(8, 20, 32, 0.7);
+      border: 1px solid rgba(70,160,210,0.25);
+      border-radius: 12px; padding: 9px 10px;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    }
+    .zn-card:hover { border-color: rgba(120,200,240,0.5); background: rgba(10,26,40,0.85); }
+    .zn-card.active { border-color: rgba(126,208,245,0.7); background: rgba(12,32,48,0.9); }
+    .zn-icon { font-size: 1.1rem; line-height: 1; }
+    .zn-name { font-size: 0.68rem; font-weight: 700; color: #cfeaf7; margin: 3px 0 2px; line-height: 1.25; }
+    .zn-range { font-size: 0.6rem; color: rgba(160,200,220,0.6); }
+
+    /* Creature cards */
+    .creature-scroll {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+      scrollbar-width: thin; scrollbar-color: rgba(80,180,230,0.3) transparent;
+    }
+    .creature-scroll::-webkit-scrollbar { height: 3px; }
+    .cr-card {
+      flex-shrink: 0; width: 108px;
+      background: rgba(8, 20, 32, 0.7);
+      border: 1px solid rgba(70,160,210,0.22);
+      border-radius: 12px; padding: 8px 9px; text-align: center;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    }
+    .cr-card:hover, .cr-card.active { border-color: rgba(126,208,245,0.6); background: rgba(12,32,48,0.85); }
+    .cr-emoji { font-size: 1.5rem; line-height: 1; }
+    .cr-name { font-size: 0.63rem; font-weight: 700; color: #cfeaf7; margin-top: 4px; line-height: 1.2; }
+
+    /* Controls card */
+    .oz-card {
+      background: rgba(6, 16, 26, 0.65);
+      border: 1px solid rgba(70,160,210,0.2);
+      border-radius: 15px; padding: 1rem 1.1rem; margin-bottom: 0.85rem;
+    }
+    .oz-card:last-child { margin-bottom: 0; }
+    .oz-card h3 {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em;
+      color: rgba(160,200,220,0.55); text-transform: uppercase; margin: 0 0 0.85rem;
+    }
+
+    /* Readouts */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .stat-card {
+      background: rgba(4, 12, 20, 0.6);
+      border: 1px solid rgba(70,160,210,0.18);
+      border-radius: 11px; padding: 9px 11px;
+    }
+    .stat-lbl { font-size: 0.63rem; font-weight: 700; letter-spacing: 0.05em; color: rgba(150,190,215,0.55); text-transform: uppercase; }
+    .stat-val { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-top: 2px; color: #cfeaf7; }
+    .stat-val.warm   { color: #ffb060; }
+    .stat-val.cold   { color: #7ed0f5; }
+    .stat-val.dark   { color: #b090e0; }
+    .stat-val.bright { color: #ffe066; }
+
+    /* Fact card */
+    .fact-card {
+      background: rgba(4, 12, 20, 0.6);
+      border: 1px solid rgba(70,160,210,0.15);
+      border-radius: 11px; padding: 10px 12px;
+      font-size: 0.76rem; line-height: 1.55;
+      color: rgba(200,226,240,0.78);
+    }
+    .fact-card strong { color: #7ed0f5; display: block; margin-bottom: 4px; font-size: 0.78rem; }
+
+    /* Guide info cards */
+    .info-row { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
+    .info-card { background: rgba(6, 16, 26, 0.65); border: 1px solid rgba(70,160,210,0.18); border-radius: 13px; padding: 1rem; }
+    .info-card h4 { font-size: 0.8rem; font-weight: 700; color: #7ed0f5; margin: 0 0 0.4rem; }
+    .info-card p  { font-size: 0.77rem; color: rgba(200,226,240,0.68); margin: 0; line-height: 1.55; }
+
+    /* ── Lesson-specific ll-viewport theming ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(4, 12, 20, 0.97);
+      --ll-panel-border:  rgba(70, 160, 210, 0.22);
+      --ll-tab-color:     rgba(150, 190, 215, 0.6);
+      --ll-tab-active-bg: rgba(70, 160, 210, 0.2);
+      --ll-tab-active:    #7ed0f5;
+      --ll-toggle-bg:     rgba(4, 12, 20, 0.97);
+    }
+  </style>
+</head>
+<body>
+<div class="ll-viewport ll-dark">
+
+  <nav class="oz-topbar ll-topbar">
+    <div class="oz-topbar-inner">
+      <a href="../steam-lessons.html">← Earth Science</a>
+      <span class="oz-topbar-title">🌊 Ocean Zones &amp; Deep-Sea Life</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage">
+
+    <div class="ll-sim">
+      <header class="oz-hero">
+        <h1>🌊 Ocean Zones &amp; Deep-Sea Life</h1>
+        <p>Descend from the sunlit surface to the Mariana Trench — 11 kilometers straight down. Watch light disappear, pressure crush, temperature plunge, and the ocean's strangest animals appear right on cue.</p>
+      </header>
+
+      <div class="oz-wrap">
+        <div class="ocean-outer" id="oz-outer">
+          <canvas id="oz-canvas"></canvas>
+          <div class="oz-overlay">
+            <span class="oz-badge" id="zone-name-badge">☀️ Sunlight Zone</span>
+            <span class="oz-depth-badge" id="depth-badge">0 m</span>
+          </div>
+          <div class="oz-ruler" id="oz-ruler"></div>
+        </div>
+
+        <div class="oz-dive-bar">
+          <button class="oz-dive-btn" id="dive-btn">🤿 Start the Dive</button>
+          <div class="oz-dive-slider-wrap">
+            <div class="oz-dive-label"><span>Depth</span><strong id="v-depth">0 m</strong></div>
+            <input type="range" id="s-depth" min="0" max="11000" value="0" step="10" />
+          </div>
+        </div>
+      </div>
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="oz-pane-explore">Explore</button>
+          <button class="ll-tab" aria-selected="false" data-pane="oz-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="oz-pane-explore">
+
+          <div class="oz-card">
+            <h3>Jump to a Zone</h3>
+            <div class="zone-scroll" id="zone-scroll"></div>
+          </div>
+
+          <div class="oz-card">
+            <h3>Depth Readings</h3>
+            <div class="stat-grid">
+              <div class="stat-card"><div class="stat-lbl">Depth</div><div class="stat-val" id="out-depth">0 m</div></div>
+              <div class="stat-card"><div class="stat-lbl">Pressure</div><div class="stat-val warm" id="out-pressure">1 atm</div></div>
+              <div class="stat-card"><div class="stat-lbl">Temperature</div><div class="stat-val cold" id="out-temp">20 °C</div></div>
+              <div class="stat-card"><div class="stat-lbl">Sunlight</div><div class="stat-val bright" id="out-light">100%</div></div>
+            </div>
+          </div>
+
+          <div class="oz-card">
+            <h3>Who Lives Here?</h3>
+            <div class="creature-scroll" id="creature-scroll"></div>
+          </div>
+
+          <div class="fact-card" id="fact-card">
+            <strong>Sunlight Zone (Epipelagic) · 0–200 m</strong>
+            Nearly all ocean life and virtually all light live here. Dolphins, sea turtles, and great white sharks hunt in water warmed by the sun.
+          </div>
+
+        </div><!-- #oz-pane-explore -->
+
+        <div class="ll-pane" id="oz-pane-guide">
+          <div class="oz-card" style="margin-bottom:1rem">
+            <h3>Ocean Science Essentials</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>🌈 Where Do the Colors Go?</h4>
+                <p>Water absorbs light color by color. <strong>Red</strong> vanishes by about 5 m, <strong>orange</strong> by 10 m, <strong>yellow</strong> by 20 m, and <strong>green</strong> by 30 m. <strong>Blue</strong> travels deepest — which is why the ocean looks blue — but even blue fades to black by roughly 1,000 m, the start of the "midnight zone."</p>
+              </div>
+              <div class="info-card">
+                <h4>💥 Pressure &amp; Adaptations</h4>
+                <p>Pressure rises by about 1 atmosphere every 10 m — at the bottom of the Mariana Trench it's over 1,000 atmospheres, like balancing 50 jumbo jets on your body. Deep-sea animals survive because they have no air-filled spaces to crush: no swim bladders, flexible bodies, and cells built to resist collapsing.</p>
+              </div>
+              <div class="info-card">
+                <h4>✨ Why Do They Glow?</h4>
+                <p>Below the sunlight zone, an estimated 90% of animals make their own light — <em>bioluminescence</em>. Anglerfish use it as bait, hatchetfish use it to erase their silhouette from predators below, and squid use it to startle attackers. It's chemistry, not electricity: a reaction between luciferin and oxygen.</p>
+              </div>
+              <div class="info-card">
+                <h4>🛶 Famous Dives</h4>
+                <p>In 1960, Jacques Piccard and Don Walsh rode the bathyscaphe <em>Trieste</em> to the Challenger Deep — the first humans to reach the ocean's deepest point. Filmmaker James Cameron repeated the feat solo in 2012. In 2019, Victor Vescovo's Five Deeps Expedition became the first to reach the deepest point of all five oceans.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #oz-pane-guide -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
+
+  <script>
+  (function () {
+    'use strict';
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    /* ══════════════════════════════════════════
+       ZONES
+    ══════════════════════════════════════════ */
+    const ZONES = [
+      { id: 'sunlight', name: 'Sunlight Zone',  latin: 'Epipelagic',    icon: '☀️', min: 0,     max: 200,   jump: 40,   color: [30, 130, 200],
+        desc: 'Nearly all ocean life and virtually all light live here. Dolphins, sea turtles, and great white sharks hunt in water warmed by the sun.' },
+      { id: 'twilight', name: 'Twilight Zone',  latin: 'Mesopelagic',   icon: '🌘', min: 200,   max: 1000,  jump: 500,  color: [8, 40, 90],
+        desc: 'Sunlight fades to a faint glow, then nothing. Animals here migrate upward every night to feed — the largest migration on Earth, by biomass.' },
+      { id: 'midnight', name: 'Midnight Zone',  latin: 'Bathypelagic',  icon: '🌑', min: 1000,  max: 4000,  jump: 2000, color: [2, 8, 22],
+        desc: 'Total darkness, near-freezing water, and crushing pressure. Anglerfish, gulper eels, and giant squid rule a world with no sunlight at all.' },
+      { id: 'abyss',    name: 'The Abyss',      latin: 'Abyssopelagic', icon: '⚫', min: 4000,  max: 6000,  jump: 5000, color: [1, 4, 12],
+        desc: 'Covers over half the ocean floor. Food is scarce — most animals here live off "marine snow," debris drifting down from far above.' },
+      { id: 'trench',   name: 'The Trenches',   latin: 'Hadalpelagic',  icon: '🔻', min: 6000,  max: 11000, jump: 10935,color: [0, 2, 7],
+        desc: "Named for Hades. Found only in deep ocean trenches. The Mariana Trench's Challenger Deep, at ~10,935 m, is the deepest known point on Earth." },
+    ];
+
+    function zoneAt(depth) {
+      for (const z of ZONES) if (depth >= z.min && depth < z.max) return z;
+      return ZONES[ZONES.length - 1];
+    }
+
+    /* ══════════════════════════════════════════
+       CREATURES
+    ══════════════════════════════════════════ */
+    const CREATURES = {
+      sunlight: [
+        { emoji: '🐬', name: 'Dolphin', fact: 'Bottlenose dolphins use echolocation to hunt fish and can dive over 250 m when chasing prey into the twilight zone.' },
+        { emoji: '🐢', name: 'Sea Turtle', fact: 'Sea turtles bask near the surface to warm their bodies before diving deep to feed on jellyfish and sponges.' },
+        { emoji: '🦈', name: 'Great White Shark', fact: 'Great whites patrol the sunlight zone but have been tracked diving over 1,200 m into total darkness.' },
+        { emoji: '🐟', name: 'Flying Fish', fact: 'Flying fish glide above the surface using wing-like fins to escape predators lurking just below.' },
+      ],
+      twilight: [
+        { emoji: '🦑', name: 'Vampire Squid', fact: "Despite its name, the vampire squid eats only marine snow. It can turn itself inside-out to look spiky and threatening." },
+        { emoji: '✨', name: 'Lanternfish', fact: 'Lanternfish make up more ocean fish biomass than any other group — they migrate to the surface every night to feed.' },
+        { emoji: '🐠', name: 'Hatchetfish', fact: 'Hatchetfish glow faint blue light from their bellies to match the dim sunlight above and hide their silhouette from below.' },
+      ],
+      midnight: [
+        { emoji: '🎣', name: 'Anglerfish', fact: 'A female anglerfish dangles a glowing lure to attract prey in total darkness — some males fuse permanently to a female as mates.' },
+        { emoji: '🐙', name: 'Giant Squid', fact: 'Giant squid can grow over 12 m long and have the largest eyes of any animal — built to catch the faintest flicker of light.' },
+        { emoji: '🐍', name: 'Gulper Eel', fact: "The gulper eel's mouth can unhinge to swallow prey far larger than its own body — useful when meals are rare." },
+      ],
+      abyss: [
+        { emoji: '🥒', name: 'Sea Cucumber', fact: 'Sea cucumbers crawl the abyssal floor eating sediment, recycling nutrients from marine snow that drifts down for weeks.' },
+        { emoji: '🦐', name: 'Giant Isopod', fact: "This relative of the pill bug can grow over 30 cm long and survive years between meals in the food-scarce abyss." },
+        { emoji: '🐡', name: 'Grenadier Fish', fact: 'Grenadiers, also called rattails, are among the most common fish on the entire abyssal plain.' },
+      ],
+      trench: [
+        { emoji: '🐟', name: 'Hadal Snailfish', fact: 'Filmed near 8,300 m, the snailfish is the deepest-living fish ever recorded — its gel-like body resists crushing pressure.' },
+        { emoji: '🦐', name: 'Giant Amphipod', fact: 'Supergiant amphipods, scavengers related to shrimp, thrive at Challenger Deep by eating whatever sinks that far down.' },
+        { emoji: '🧬', name: 'Xenophyophore', fact: 'A single giant cell up to 10 cm across — one of the largest single-celled organisms on Earth, found only in the deep trenches.' },
+      ],
+    };
+
+    /* ══════════════════════════════════════════
+       PHYSICS MODELS
+    ══════════════════════════════════════════ */
+    function pressureAtm(depth) { return 1 + depth / 10; }
+
+    function tempC(depth) {
+      if (depth <= 200) return lerp(20, 8, depth / 200);
+      if (depth <= 1000) return lerp(8, 4, (depth - 200) / 800);
+      if (depth <= 4000) return lerp(4, 2.2, (depth - 1000) / 3000);
+      return lerp(2.2, 1.0, clamp((depth - 4000) / 7000, 0, 1));
+    }
+
+    function lightPct(depth) {
+      if (depth >= 1000) return 0;
+      const v = 100 * Math.exp(-depth / 130);
+      return v < 0.5 ? 0 : v;
+    }
+
+    /* ══════════════════════════════════════════
+       COLOR-LOSS MODEL (real light-absorption order)
+    ══════════════════════════════════════════ */
+    function colorAtDepth(depth) {
+      // Surface tropical blue-green, fading band by band toward black.
+      const surface = [46, 150, 190];
+      const midBlue = [10, 70, 130];
+      const deepBlue = [2, 20, 55];
+      const dark = [1, 4, 11];
+      const black = [0, 1, 4];
+      let c;
+      if (depth < 30) c = lerpRGB(surface, midBlue, depth / 30);
+      else if (depth < 200) c = lerpRGB(midBlue, deepBlue, (depth - 30) / 170);
+      else if (depth < 1000) c = lerpRGB(deepBlue, dark, (depth - 200) / 800);
+      else c = lerpRGB(dark, black, clamp((depth - 1000) / 5000, 0, 1));
+      return c;
+    }
+    function lerpRGB(a, b, t) {
+      t = clamp(t, 0, 1);
+      return [Math.round(lerp(a[0], b[0], t)), Math.round(lerp(a[1], b[1], t)), Math.round(lerp(a[2], b[2], t))];
+    }
+    function rgbStr(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (a == null ? 1 : a) + ')'; }
+
+    /* ══════════════════════════════════════════
+       CANVAS SETUP
+    ══════════════════════════════════════════ */
+    const canvas = document.getElementById('oz-canvas');
+    const outer = document.getElementById('oz-outer');
+    const ctx = canvas.getContext('2d');
+    let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+    function resize() {
+      W = outer.clientWidth; H = outer.clientHeight;
+      canvas.width = W * DPR; canvas.height = H * DPR;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(resize);
+
+    /* ══════════════════════════════════════════
+       STATE + PARTICLES
+    ══════════════════════════════════════════ */
+    const state = { depth: 0, diving: false };
+    let spotlightCreature = null;
+
+    class Snow { constructor() { this.reset(true); } reset(initY) {
+      this.x = Math.random() * W; this.y = initY ? Math.random() * H : -4;
+      this.vy = 6 + Math.random() * 10; this.vx = (Math.random() - 0.5) * 4;
+      this.r = 0.6 + Math.random() * 1.4; this.a = 0.15 + Math.random() * 0.3;
+    } step(dt) { this.y += this.vy * dt; this.x += this.vx * dt;
+      if (this.y > H + 4) this.reset(false); } }
+
+    class Glow { constructor() { this.reset(); } reset() {
+      this.x = Math.random() * W; this.y = Math.random() * H;
+      this.r = 1 + Math.random() * 2; this.phase = Math.random() * Math.PI * 2;
+      this.speed = 1.4 + Math.random() * 2;
+      this.hue = Math.random() < 0.7 ? [90, 230, 200] : [140, 210, 255];
+    } step(dt, t) { this.x += Math.sin(t * 0.3 + this.phase) * 0.15;
+      this.y += Math.cos(t * 0.22 + this.phase) * 0.1;
+      this.blink = 0.35 + 0.65 * Math.max(0, Math.sin(t * this.speed + this.phase)); } }
+
+    const snowflakes = Array.from({ length: 90 }, () => new Snow());
+    const glows = Array.from({ length: 140 }, () => new Glow());
+
+    /* Creature sprite placement — stable per zone via seeded slots */
+    let creatureSlots = [];
+    function layoutCreatures(zone) {
+      const list = CREATURES[zone.id] || [];
+      creatureSlots = list.map((c, i) => ({
+        c, x: 0.16 + (i * 0.62) / Math.max(1, list.length - 1 || 1) + (list.length === 1 ? 0.2 : 0),
+        y: 0.28 + (i % 3) * 0.22 + Math.random() * 0.08,
+        bob: Math.random() * Math.PI * 2, dir: Math.random() < 0.5 ? -1 : 1,
+      }));
+    }
+
+    /* ══════════════════════════════════════════
+       DRAW
+    ══════════════════════════════════════════ */
+    let t0 = performance.now();
+
+    function draw(now) {
+      requestAnimationFrame(draw);
+      const dt = Math.min((now - t0) / 1000, 0.05); t0 = now;
+      if (!W || !H) return;
+
+      const depth = state.depth;
+      const zone = zoneAt(depth);
+      const light = lightPct(depth) / 100;
+
+      // Background gradient — local window around current depth
+      const topC = colorAtDepth(Math.max(0, depth - 260));
+      const botC = colorAtDepth(depth + 260);
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, rgbStr(topC));
+      g.addColorStop(1, rgbStr(botC));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      // Sunbeams near the surface
+      if (depth < 250) {
+        const beamAlpha = 0.18 * (1 - depth / 250);
+        for (let i = 0; i < 5; i++) {
+          const bx = (W / 6) * (i + 1) + Math.sin(now * 0.0004 + i) * 30;
+          ctx.save();
+          ctx.translate(bx, 0);
+          ctx.rotate(0.12 * Math.sin(now * 0.0003 + i));
+          const bg = ctx.createLinearGradient(0, 0, 0, H * 0.8);
+          bg.addColorStop(0, 'rgba(255,255,255,' + beamAlpha + ')');
+          bg.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = bg;
+          ctx.fillRect(-18, 0, 36, H * 0.8);
+          ctx.restore();
+        }
+      }
+
+      // Marine snow
+      ctx.fillStyle = '#dfeffa';
+      snowflakes.forEach(s => {
+        s.step(dt);
+        ctx.globalAlpha = s.a * clamp(1 - depth / 9000, 0.25, 1);
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      // Bioluminescence glow (fades in from twilight zone onward)
+      const bioAmt = clamp((depth - 150) / 700, 0, 1);
+      if (bioAmt > 0.02) {
+        glows.forEach(gl => {
+          gl.step(dt, now * 0.001);
+          const a = gl.blink * bioAmt * 0.9;
+          ctx.beginPath();
+          const rg = ctx.createRadialGradient(gl.x, gl.y, 0, gl.x, gl.y, gl.r * 5);
+          rg.addColorStop(0, 'rgba(' + gl.hue[0] + ',' + gl.hue[1] + ',' + gl.hue[2] + ',' + a + ')');
+          rg.addColorStop(1, 'rgba(' + gl.hue[0] + ',' + gl.hue[1] + ',' + gl.hue[2] + ',0)');
+          ctx.fillStyle = rg;
+          ctx.arc(gl.x, gl.y, gl.r * 5, 0, Math.PI * 2); ctx.fill();
+        });
+      }
+
+      // Creatures for current zone
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      creatureSlots.forEach(slot => {
+        slot.bob += dt * 0.8;
+        const cx = slot.x * W + Math.sin(slot.bob * 0.6) * 14 * slot.dir;
+        const cy = slot.y * H + Math.sin(slot.bob) * 10;
+        const size = Math.min(W, H) * 0.09;
+        const spotlighted = spotlightCreature === slot.c.name;
+        ctx.save();
+        ctx.globalAlpha = spotlighted ? 1 : 0.88;
+        ctx.font = size + 'px serif';
+        if (slot.dir < 0) { ctx.scale(-1, 1); ctx.fillText(slot.c.emoji, -cx, cy); }
+        else ctx.fillText(slot.c.emoji, cx, cy);
+        ctx.restore();
+        if (spotlighted) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(255,224,102,0.85)';
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(cx, cy, size * 0.62, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        }
+      });
+
+      // Submersible + headlight cone (fixed at vertical center)
+      const subX = W * 0.5, subY = H * 0.5;
+      if (light < 0.5) {
+        const coneA = (0.5 - light) * 0.9;
+        const cone = ctx.createRadialGradient(subX, subY, 4, subX, subY, W * 0.42);
+        cone.addColorStop(0, 'rgba(255,244,210,' + coneA + ')');
+        cone.addColorStop(1, 'rgba(255,244,210,0)');
+        ctx.fillStyle = cone;
+        ctx.beginPath(); ctx.arc(subX, subY, W * 0.42, 0, Math.PI * 2); ctx.fill();
+      }
+      drawSub(subX, subY, Math.min(W, H) * 0.075, now);
+
+      // Vignette
+      const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.25, W / 2, H / 2, Math.max(W, H) * 0.72);
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(1, 'rgba(0,0,0,0.45)');
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    }
+
+    function drawSub(x, y, r, now) {
+      const bob = Math.sin(now * 0.0012) * r * 0.12;
+      y += bob;
+      ctx.save();
+      ctx.translate(x, y);
+      // hull
+      ctx.fillStyle = '#e8b23a';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 1.5, r * 0.75, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // porthole
+      ctx.fillStyle = '#0a2436';
+      ctx.beginPath(); ctx.arc(r * 0.25, 0, r * 0.36, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#8fe0ff';
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath(); ctx.arc(r * 0.25, 0, r * 0.22, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+      // fin
+      ctx.fillStyle = '#c8901f';
+      ctx.beginPath();
+      ctx.moveTo(-r * 1.3, 0); ctx.lineTo(-r * 1.9, -r * 0.5); ctx.lineTo(-r * 1.9, r * 0.5);
+      ctx.closePath(); ctx.fill();
+      // headlight
+      ctx.fillStyle = '#fff4d2';
+      ctx.beginPath(); ctx.arc(r * 1.4, 0, r * 0.16, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+
+    requestAnimationFrame(draw);
+
+    /* ══════════════════════════════════════════
+       RULER
+    ══════════════════════════════════════════ */
+    const rulerEl = document.getElementById('oz-ruler');
+    ZONES.forEach(z => {
+      const seg = document.createElement('div');
+      seg.className = 'oz-ruler-seg';
+      seg.style.flexGrow = (z.max - z.min);
+      seg.style.background = rgbStr(z.color);
+      rulerEl.appendChild(seg);
+    });
+    const marker = document.createElement('div');
+    marker.className = 'oz-ruler-marker';
+    rulerEl.appendChild(marker);
+
+    function updateRulerMarker() {
+      const frac = clamp(state.depth / 11000, 0, 1);
+      marker.style.top = (frac * 100) + '%';
+    }
+
+    /* ══════════════════════════════════════════
+       UI: zone cards
+    ══════════════════════════════════════════ */
+    const zoneScroll = document.getElementById('zone-scroll');
+    ZONES.forEach(z => {
+      const card = document.createElement('div');
+      card.className = 'zn-card';
+      card.dataset.id = z.id;
+      card.innerHTML = '<div class="zn-icon">' + z.icon + '</div><div class="zn-name">' + z.name + '</div><div class="zn-range">' +
+        (z.max >= 11000 ? z.min.toLocaleString() + '+ m' : z.min.toLocaleString() + '–' + z.max.toLocaleString() + ' m') + '</div>';
+      card.addEventListener('click', () => setDepth(z.jump));
+      zoneScroll.appendChild(card);
+    });
+
+    function creatureScrollFor(zone) {
+      const scroll = document.getElementById('creature-scroll');
+      scroll.innerHTML = '';
+      spotlightCreature = null;
+      (CREATURES[zone.id] || []).forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'cr-card';
+        card.innerHTML = '<div class="cr-emoji">' + c.emoji + '</div><div class="cr-name">' + c.name + '</div>';
+        card.addEventListener('click', () => {
+          scroll.querySelectorAll('.cr-card').forEach(x => x.classList.remove('active'));
+          card.classList.add('active');
+          spotlightCreature = c.name;
+          document.getElementById('fact-card').innerHTML = '<strong>' + c.name + '</strong>' + c.fact;
+        });
+        scroll.appendChild(card);
+      });
+      layoutCreatures(zone);
+    }
+
+    let currentZoneId = null;
+    function updateUI() {
+      const depth = state.depth;
+      const zone = zoneAt(depth);
+
+      document.getElementById('v-depth').textContent = Math.round(depth).toLocaleString() + ' m';
+      document.getElementById('s-depth').value = depth;
+      document.getElementById('depth-badge').textContent = Math.round(depth).toLocaleString() + ' m';
+      document.getElementById('zone-name-badge').textContent = zone.icon + ' ' + zone.name;
+
+      document.getElementById('out-depth').textContent = Math.round(depth).toLocaleString() + ' m';
+      document.getElementById('out-pressure').textContent = Math.round(pressureAtm(depth)).toLocaleString() + ' atm';
+      document.getElementById('out-temp').textContent = tempC(depth).toFixed(1) + ' °C';
+      document.getElementById('out-light').textContent = (depth >= 1000 ? '0' : lightPct(depth).toFixed(depth > 100 ? 1 : 0)) + '%';
+
+      document.querySelectorAll('.zn-card').forEach(c => c.classList.toggle('active', c.dataset.id === zone.id));
+
+      if (zone.id !== currentZoneId) {
+        currentZoneId = zone.id;
+        creatureScrollFor(zone);
+        document.getElementById('fact-card').innerHTML = '<strong>' + zone.name + ' (' + zone.latin + ') · ' +
+          (zone.max >= 11000 ? zone.min.toLocaleString() + '+ m' : zone.min.toLocaleString() + '–' + zone.max.toLocaleString() + ' m') +
+          '</strong>' + zone.desc;
+      }
+
+      updateRulerMarker();
+    }
+
+    function setDepth(d) {
+      state.depth = clamp(d, 0, 11000);
+      updateUI();
+    }
+
+    document.getElementById('s-depth').addEventListener('input', function () {
+      stopDive();
+      setDepth(parseFloat(this.value));
+    });
+
+    /* ══════════════════════════════════════════
+       DIVE ANIMATION
+    ══════════════════════════════════════════ */
+    let diveRAF = null, diveStart = 0, diveFromDepth = 0;
+    const DIVE_MS = 22000;
+
+    function stopDive() {
+      state.diving = false;
+      document.getElementById('dive-btn').textContent = '🤿 Start the Dive';
+      document.getElementById('dive-btn').classList.remove('active');
+      if (diveRAF) cancelAnimationFrame(diveRAF);
+    }
+
+    function diveTick(ts) {
+      if (!state.diving) return;
+      if (!diveStart) diveStart = ts;
+      const t = clamp((ts - diveStart) / DIVE_MS, 0, 1);
+      const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      setDepth(lerp(diveFromDepth, 11000, eased));
+      if (t >= 1) { stopDive(); return; }
+      diveRAF = requestAnimationFrame(diveTick);
+    }
+
+    document.getElementById('dive-btn').addEventListener('click', function () {
+      if (state.diving) { stopDive(); return; }
+      state.diving = true;
+      diveStart = 0;
+      diveFromDepth = state.depth >= 10900 ? 0 : state.depth;
+      if (state.depth >= 10900) setDepth(0);
+      this.textContent = '⏸ Pause Dive';
+      this.classList.add('active');
+      diveRAF = requestAnimationFrame(diveTick);
+    });
+
+    /* ══════════════════════════════════════════
+       INIT
+    ══════════════════════════════════════════ */
+    setDepth(0);
+  })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+
+</body>
+</html>

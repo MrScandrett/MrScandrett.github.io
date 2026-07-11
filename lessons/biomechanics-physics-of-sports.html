@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Biomechanics: The Physics of Sports · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Physics Lesson — Biomechanics: apply kinematics, projectile motion, torque, angular momentum, and impulse to real sports with interactive simulators." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bio-bg: #0a0704;
+      --bio-panel: rgba(23,15,10,0.84);
+      --bio-line: rgba(240,222,206,0.13);
+      --bio-line-strong: rgba(240,222,206,0.22);
+      --bio-text: #faf1e6;
+      --bio-muted: rgba(250,241,230,0.68);
+      --bio-dim: rgba(250,241,230,0.44);
+      --bio-orange: #fb923c;
+      --bio-cyan: #22d3ee;
+      --bio-amber: #fbbf24;
+      --bio-rose: #fb7185;
+      --bio-green: #34d399;
+      --bio-radius: 8px;
+      --bio-shadow: 0 24px 64px rgba(0,0,0,0.32);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; font-family: var(--font-sans);
+      color: var(--bio-text);
+      background:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(180deg, #0c0805 0%, #100b06 45%, #0a0704 100%);
+      background-size: 36px 36px, 36px 36px, auto;
+      min-height: 100vh;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none;
+      background:
+        linear-gradient(115deg, rgba(251,146,60,0.09), transparent 32%),
+        linear-gradient(255deg, rgba(34,211,238,0.07), transparent 36%);
+      mask-image: linear-gradient(180deg, #000, transparent 78%);
+    }
+    .bio-shell { width: min(1280px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 4rem; display: grid; gap: 1rem; }
+
+    /* Topbar */
+    .bio-topbar { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(18px) saturate(150%); background: rgba(10,7,4,0.88); border-bottom: 1px solid var(--bio-line); }
+    .bio-topbar-inner { width: min(1280px, calc(100% - 2rem)); min-height: 54px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .bio-topbar a { color: #f0e0ce; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
+    .bio-topbar a:hover { color: #fff; }
+    .bio-brand { color: #fff6ec; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .bio-nav { display: flex; align-items: center; gap: 0.2rem; overflow-x: auto; scrollbar-width: none; }
+    .bio-nav::-webkit-scrollbar { display: none; }
+    .bio-nav a { display: inline-flex; align-items: center; min-height: 1.85rem; padding: 0 0.55rem; border-radius: var(--bio-radius); color: var(--bio-dim); white-space: nowrap; }
+    .bio-nav a:hover { color: var(--bio-text); background: rgba(255,255,255,0.06); }
+    .bio-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .bio-pill { display: inline-flex; align-items: center; height: 1.7rem; padding: 0 0.62rem; border-radius: var(--bio-radius); font-size: 0.69rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; border: 1px solid rgba(251,146,60,0.36); background: rgba(251,146,60,0.12); color: #ffd9b0; }
+    .bio-pill.cyan { border-color: rgba(34,211,238,0.36); background: rgba(34,211,238,0.1); color: #a8f0fb; }
+    @media (max-width:960px) { .bio-brand { display: none; } }
+    @media (max-width:740px) { .bio-nav { display: none; } }
+
+    /* Hero */
+    .bio-hero { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(280px,0.7fr); gap: 1rem; align-items: stretch; min-height: min(520px, calc(100vh - 88px)); }
+    @media (max-width:700px) { .bio-hero { grid-template-columns: 1fr; } }
+    .bio-hero-copy { border-radius: var(--bio-radius); border: 1px solid var(--bio-line-strong); background: linear-gradient(120deg, rgba(251,146,60,0.1), transparent 44%), linear-gradient(180deg, rgba(28,18,12,0.93), rgba(14,9,6,0.93)); box-shadow: var(--bio-shadow); padding: clamp(1.2rem,3vw,2.2rem); display: flex; flex-direction: column; justify-content: center; }
+    .bio-eyebrow { font-size: 0.71rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bio-orange); margin: 0 0 0.65rem; }
+    .bio-hero-copy h1 { margin: 0 0 0.65rem; max-width: 14ch; font-size: clamp(2.2rem,6vw,5.2rem); line-height: 0.93; letter-spacing: -0.055em; color: #fff; }
+    .bio-hero-copy h1 em { font-style: normal; color: var(--bio-orange); }
+    .bio-lede { max-width: 72ch; color: var(--bio-muted); font-size: clamp(0.93rem,1.4vw,1.04rem); line-height: 1.72; margin: 0 0 1rem; }
+    .bio-meta { display: flex; flex-wrap: wrap; gap: 0.38rem; }
+    .bio-quote-card { border-radius: var(--bio-radius); border: 1px solid rgba(34,211,238,0.24); background: linear-gradient(180deg, rgba(34,211,238,0.09), transparent 56%), rgba(23,15,10,0.82); padding: clamp(1.1rem,2.2vw,1.75rem); display: flex; flex-direction: column; justify-content: center; gap: 0.85rem; box-shadow: var(--bio-shadow); }
+    .bio-quote-mark { font-size: 2.8rem; line-height: 0.8; color: var(--bio-cyan); opacity: 0.6; }
+    .bio-quote-text { font-size: clamp(0.9rem,1.9vw,1.08rem); font-style: italic; line-height: 1.62; color: #eafdfd; margin: 0; }
+    .bio-quote-attr { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bio-cyan); opacity: 0.9; }
+
+    /* Cards */
+    .bio-card { border-radius: var(--bio-radius); border: 1px solid var(--bio-line); background: var(--bio-panel); backdrop-filter: blur(10px); padding: clamp(1.1rem,2vw,1.55rem); scroll-margin-top: 72px; }
+    .bio-card-orange { border-left: 4px solid var(--bio-orange); }
+    .bio-card-cyan { border-left: 4px solid var(--bio-cyan); }
+    .bio-card-amber { border-left: 4px solid var(--bio-amber); }
+    .bio-card-rose { border-left: 4px solid var(--bio-rose); }
+    .bio-card-green { border-left: 4px solid var(--bio-green); }
+    .bio-kicker { font-size: 0.69rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.4rem; }
+    .orange { color: var(--bio-orange); } .cyan { color: var(--bio-cyan); } .amber { color: var(--bio-amber); } .rose { color: var(--bio-rose); } .green { color: var(--bio-green); }
+    .bio-card h2 { margin: 0 0 0.7rem; font-size: clamp(1.18rem,2.3vw,1.6rem); letter-spacing: -0.03em; color: #fff; }
+    .bio-card h3 { margin: 1rem 0 0.32rem; font-size: 0.99rem; letter-spacing: -0.02em; color: #f3e6d8; }
+    .bio-card p, .bio-card li { color: var(--bio-muted); font-size: 0.9rem; line-height: 1.72; margin: 0 0 0.62rem; }
+    .bio-card p:last-child { margin-bottom: 0; }
+    .bio-card ul { padding-left: 1.35rem; margin: 0.35rem 0 0.65rem; }
+    .bio-card li { margin-bottom: 0.32rem; }
+    .bio-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width:600px) { .bio-two { grid-template-columns: 1fr; } }
+
+    /* Highlight */
+    .bio-box { border-radius: var(--bio-radius); padding: 0.95rem 1.15rem; margin: 0.85rem 0; }
+    .bio-box.orange { background: rgba(251,146,60,0.09); border: 1px solid rgba(251,146,60,0.26); }
+    .bio-box.amber { background: rgba(251,191,36,0.09); border: 1px solid rgba(251,191,36,0.26); }
+    .bio-box.cyan { background: rgba(34,211,238,0.09); border: 1px solid rgba(34,211,238,0.26); }
+    .bio-box.rose { background: rgba(251,113,133,0.08); border: 1px solid rgba(251,113,133,0.26); }
+    .bio-box strong { display: block; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.32rem; }
+    .bio-box.orange strong { color: var(--bio-orange); } .bio-box.amber strong { color: var(--bio-amber); } .bio-box.cyan strong { color: var(--bio-cyan); } .bio-box.rose strong { color: var(--bio-rose); }
+    .bio-box p { margin: 0; font-size: 0.87rem; color: rgba(250,241,230,0.8); line-height: 1.65; }
+
+    /* Equation */
+    .bio-eq { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: clamp(1rem,2.5vw,1.42rem); color: var(--bio-orange); text-align: center; padding: 0.95rem; letter-spacing: 0.04em; border-radius: var(--bio-radius); border: 1px solid rgba(251,146,60,0.22); background: rgba(251,146,60,0.07); margin: 0.8rem 0; }
+
+    /* Sim */
+    .bio-sim { border-radius: var(--bio-radius); border: 1px solid var(--bio-line); overflow: hidden; background: #0f0a06; position: relative; box-shadow: 0 16px 48px rgba(0,0,0,0.24); scroll-margin-top: 72px; }
+    .bio-sim-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.55rem; padding: 0.95rem 1.15rem 0.7rem; background: linear-gradient(180deg, rgba(255,255,255,0.042), transparent); }
+    .bio-sim-head-left { display: flex; flex-direction: column; gap: 0.18rem; }
+    .bio-sim-title { font-size: 0.77rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .bio-sim-sub { font-size: 0.77rem; color: rgba(240,225,208,0.48); }
+    .bio-sim canvas { display: block; width: 100%; background: linear-gradient(rgba(255,255,255,0.024) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px), #0f0a06; background-size: 24px 24px; }
+    .bio-sim-controls { display: flex; flex-wrap: wrap; gap: 0.48rem 0.85rem; padding: 0.75rem 1.15rem; background: rgba(0,0,0,0.28); border-top: 1px solid rgba(255,255,255,0.07); }
+    .bio-ctrl { display: flex; flex-direction: column; gap: 0.2rem; min-width: 110px; }
+    .bio-ctrl label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(240,225,208,0.48); }
+    .bio-ctrl input[type="range"] { accent-color: var(--bio-orange); cursor: pointer; width: 100%; }
+    .bio-ctrl-val { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.72rem; font-weight: 700; color: var(--bio-orange); }
+    .bio-readout { display: flex; flex-wrap: wrap; gap: 0.45rem; padding: 0.65rem 1.15rem; }
+    .bio-chip { display: flex; flex-direction: column; gap: 0.1rem; border-radius: var(--bio-radius); padding: 0.42rem 0.65rem; border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.03); }
+    .bio-chip-label { font-size: 0.61rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(240,225,208,0.4); }
+    .bio-chip-val { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.83rem; font-weight: 700; color: #f3e6d8; }
+    .bio-btn { padding: 0.44rem 0.88rem; border-radius: var(--bio-radius); border: 1px solid rgba(251,146,60,0.42); background: rgba(251,146,60,0.13); color: #ffd9b0; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 0.14s; }
+    .bio-btn:hover { background: rgba(251,146,60,0.22); }
+    .bio-btn.ghost { border-color: rgba(255,255,255,0.16); background: rgba(255,255,255,0.05); color: #f3e6d8; }
+    .bio-btn.ghost:hover { background: rgba(255,255,255,0.1); }
+    .bio-preset-row { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0 1.15rem 0.75rem; }
+
+    /* Small info grid (reused card layout) */
+    .bio-grid3 { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 0.65rem; margin: 0.85rem 0; }
+    @media (max-width:560px) { .bio-grid3 { grid-template-columns: 1fr; } }
+    .bio-mini { border-radius: var(--bio-radius); padding: 0.9rem 1rem; border: 1px solid var(--bio-line); background: rgba(255,255,255,0.03); }
+    .bio-mini .bio-mini-sym { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 1.6rem; font-weight: 800; line-height: 1; margin-bottom: 0.35rem; }
+    .bio-mini .bio-mini-name { font-size: 0.82rem; font-weight: 700; color: #f3e6d8; margin-bottom: 0.22rem; }
+    .bio-mini .bio-mini-def { font-size: 0.76rem; color: rgba(240,225,208,0.55); line-height: 1.48; }
+
+    .bio-footer { text-align: center; padding: 2rem 1rem; color: var(--bio-dim); font-size: 0.78rem; border-top: 1px solid var(--bio-line); background: rgba(10,7,4,0.66); }
+    .bio-footer a { color: var(--bio-orange); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="bio-topbar">
+  <div class="bio-topbar-inner">
+    <a href="../steam-lessons.html">← Lessons</a>
+    <span class="bio-brand">Mr. Scandrett's ClassroomOS</span>
+    <nav class="bio-nav">
+      <a href="#balance">Balance</a>
+      <a href="#projectile-idea">Projectile</a>
+      <a href="#launch-sim">Launch Lab</a>
+      <a href="#torque">Torque</a>
+      <a href="#spin-sim">Spin Lab</a>
+      <a href="#impulse">Impulse</a>
+      <a href="#energy">Energy</a>
+    </nav>
+    <div class="bio-pills">
+      <span class="bio-pill">Physics</span>
+      <span class="bio-pill cyan">Applied Mechanics</span>
+    </div>
+  </div>
+</div>
+
+<div class="bio-shell">
+
+  <!-- Hero -->
+  <div class="bio-hero">
+    <div class="bio-hero-copy">
+      <p class="bio-eyebrow">Classical Mechanics · Applied to Human Movement</p>
+      <h1>The Physics of <em>Sports</em></h1>
+      <p class="bio-lede">
+        Every jump shot, javelin throw, figure-skating spin, and tackle is a physics problem the body
+        solves in real time. Biomechanics is where kinematics, forces, torque, and energy stop being
+        abstract equations and start explaining why a bent knee absorbs a landing, why skaters pull in
+        their arms to spin faster, and why 45° isn't always the best angle to throw at.
+      </p>
+      <div class="bio-meta">
+        <span class="bio-pill">Kinematics · Forces · Torque · Energy</span>
+        <span class="bio-pill cyan">2 Simulations</span>
+        <span class="bio-pill">Grades 9–12</span>
+      </div>
+    </div>
+    <div class="bio-quote-card">
+      <div class="bio-quote-mark">"</div>
+      <p class="bio-quote-text">
+        You can know the name of a bird in all the languages of the world, but when you're finished,
+        you'll know absolutely nothing whatever about the bird. So let's look at the bird and see what
+        it's doing — that's what counts.
+      </p>
+      <div class="bio-quote-attr">— Richard Feynman</div>
+    </div>
+  </div>
+
+  <!-- Section 1: Center of Mass & Balance -->
+  <div class="bio-card bio-card-orange" id="balance">
+    <p class="bio-kicker orange">Idea 1 · Center of Mass &amp; Stability</p>
+    <h2>Balance Is a Physics Problem</h2>
+    <div class="bio-two">
+      <div>
+        <p>
+          Every object — including a human body — has a <strong>center of mass</strong>: the single point
+          where all its weight can be thought of as acting. An athlete is stable as long as their center
+          of mass stays above their <strong>base of support</strong> (the area under and between the feet,
+          hands, or skates touching the ground).
+        </p>
+        <p>
+          A wide stance, a low crouch, and a wide base of support all lower and enlarge that stability
+          zone — which is exactly why a wrestler crouches, a sprinter drives low out of the blocks, and a
+          football lineman keeps their center of gravity close to the ground.
+        </p>
+        <div class="bio-box orange">
+          <strong>The Fosbury Flop</strong>
+          <p>High jumpers arch their backs over the bar so violently that their <em>center of mass</em>
+          actually passes <em>underneath</em> the bar while their body passes over it. The athlete clears
+          a bar their own center of mass never crosses — a trick of geometry, not extra jump height.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Why Athletes Widen Their Stance</h3>
+        <p>
+          A narrow base of support means a small torque can tip the center of mass past the edge of that
+          base — and once gravity's torque acts outside the base, balance is lost and rotation (a fall)
+          begins. Widening the stance buys more angular room before that happens.
+        </p>
+        <ul>
+          <li><strong>Gymnasts</strong> stick a landing by absorbing momentum through bent knees while keeping their center of mass over their feet.</li>
+          <li><strong>Surfers &amp; skateboarders</strong> constantly shift their center of mass to stay above a moving base of support.</li>
+          <li><strong>Sumo wrestlers</strong> use an extremely wide, low stance to maximize the torque an opponent must generate to topple them.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Projectile Motion in Sport -->
+  <div class="bio-card bio-card-cyan" id="projectile-idea">
+    <p class="bio-kicker cyan">Idea 2 · Projectile Motion in Sport</p>
+    <h2>Every Throw, Jump, and Shot Is a Parabola</h2>
+    <div class="bio-two">
+      <div>
+        <p>
+          A basketball, a javelin, a long jumper's body in flight — once they leave contact with the
+          ground or the athlete's hand, only gravity acts on them (ignoring air resistance). Horizontal
+          velocity stays constant; vertical velocity changes at <strong>g = 9.8 m/s²</strong>. The result
+          is always a parabola.
+        </p>
+        <p>Accounting for the height the object is released from (h₀) above the landing point:</p>
+        <div class="bio-eq">y(t) = h₀ + v₀·sin(θ)·t − ½g·t²</div>
+        <div class="bio-eq">x(t) = v₀·cos(θ)·t</div>
+      </div>
+      <div>
+        <h3>Why 45° Isn't Always Best</h3>
+        <p>
+          For a launch and landing at the <em>same height</em>, 45° maximizes range. But most sports
+          release the object <em>above</em> the landing point — a basketball leaves the hand near the
+          shoulder or above the head; a shot put leaves the hand near the shoulder, landing at ground
+          level. That extra release height means the optimal angle drops <em>below</em> 45°.
+        </p>
+        <div class="bio-box cyan">
+          <strong>Real Release Angles</strong>
+          <p>Elite shot putters release near <strong>38–42°</strong>, not 45° — the extra height and the
+          speed they can generate at lower angles wins out. Basketball free throws are typically shot
+          near <strong>45–55°</strong> to arc over the front rim and drop steeply into the basket.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIM 1: Sport projectile launch simulator -->
+  <div class="bio-sim" id="launch-sim">
+    <div class="bio-sim-head">
+      <div class="bio-sim-head-left">
+        <span class="bio-sim-title orange">🏀 Sport Launch Lab</span>
+        <span class="bio-sim-sub">Release height changes the optimal angle — try a preset, then hunt for the max-range angle yourself</span>
+      </div>
+      <div style="display:flex; gap:0.4rem;">
+        <button class="bio-btn ghost" id="findOptimalBtn">Find Optimal Angle</button>
+        <button class="bio-btn" id="launchBtn">Launch</button>
+      </div>
+    </div>
+    <canvas id="launchCanvas" height="300"></canvas>
+    <div class="bio-preset-row">
+      <button class="bio-btn ghost" data-preset="basketball">🏀 Free Throw</button>
+      <button class="bio-btn ghost" data-preset="shotput">⚫ Shot Put</button>
+      <button class="bio-btn ghost" data-preset="javelin">🎯 Javelin</button>
+      <button class="bio-btn ghost" data-preset="longjump">🏃 Long Jump</button>
+    </div>
+    <div class="bio-sim-controls">
+      <div class="bio-ctrl">
+        <label>Release Height h₀ <span class="bio-ctrl-val" id="heightLabel">2.2 m</span></label>
+        <input type="range" id="heightSlider" min="0" max="2.5" value="2.2" step="0.1" />
+      </div>
+      <div class="bio-ctrl">
+        <label>Angle θ <span class="bio-ctrl-val" id="angleLabel">50°</span></label>
+        <input type="range" id="angleSlider" min="5" max="85" value="50" />
+      </div>
+      <div class="bio-ctrl">
+        <label>Speed v₀ <span class="bio-ctrl-val" id="speedLabel">7.5 m/s</span></label>
+        <input type="range" id="speedSlider" min="3" max="30" value="7.5" step="0.5" />
+      </div>
+      <div class="bio-readout" style="padding:0;align-self:flex-end;">
+        <span class="bio-chip"><span class="bio-chip-label">Range</span><span class="bio-chip-val" id="rangeVal">—</span></span>
+        <span class="bio-chip"><span class="bio-chip-label">Max Height</span><span class="bio-chip-val" id="heightVal">—</span></span>
+        <span class="bio-chip"><span class="bio-chip-label">Air Time</span><span class="bio-chip-val" id="timeVal">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Torque -->
+  <div class="bio-card bio-card-amber" id="torque">
+    <p class="bio-kicker amber">Idea 3 · Torque &amp; Rotational Motion</p>
+    <h2>Twisting Forces: Bats, Swings, and Joints</h2>
+    <div class="bio-two">
+      <div>
+        <p>
+          A force applied off-center doesn't just push — it <strong>rotates</strong>. That rotational
+          effect is <strong>torque</strong>: the product of the force, the distance from the pivot (the
+          <em>lever arm</em>), and the angle between them.
+        </p>
+        <div class="bio-eq">τ = F · r · sin(θ)</div>
+        <p>
+          Every human joint is a lever. A bicep curling a dumbbell, a pitcher's shoulder whipping a
+          baseball, a golfer's hips rotating before the arms — each is torque generated at a pivot and
+          transmitted outward.
+        </p>
+      </div>
+      <div>
+        <h3>The "Sweet Spot" on a Bat</h3>
+        <p>
+          A baseball or cricket bat has a <strong>center of percussion</strong> — the point where an
+          impact produces the least jarring reaction force back at the hands (the grip acts like a second
+          pivot). Hit there, and almost all the bat's rotational energy transfers to the ball instead of
+          stinging your palms.
+        </p>
+        <div class="bio-box amber">
+          <strong>Kinetic Chain</strong>
+          <p>A golf swing or pitch isn't one motion — it's a sequence: legs and hips rotate first, then
+          torso, then shoulder, then arm, then wrist, each segment adding speed to the next like a whip
+          cracking. Coaches call this sequencing the <em>kinetic chain</em>, and it's why swing timing
+          matters more than raw muscle.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Angular Momentum -->
+  <div class="bio-card bio-card-cyan" id="angular">
+    <p class="bio-kicker cyan">Idea 4 · Conservation of Angular Momentum</p>
+    <h2>Why Skaters Spin Faster With Arms In</h2>
+    <div class="bio-two">
+      <div>
+        <p>
+          Just as linear momentum (p = mv) is conserved with no outside force, <strong>angular
+          momentum</strong> (L = Iω) is conserved with no outside torque. Here <strong>I</strong> is
+          moment of inertia — how spread out an object's mass is from its spin axis — and
+          <strong>ω</strong> (omega) is angular velocity, how fast it spins.
+        </p>
+        <div class="bio-eq">L = I · ω &nbsp;&nbsp;(constant when no external torque acts)</div>
+        <p>
+          Pull mass closer to the spin axis and I shrinks. Since L must stay constant, ω has to grow to
+          compensate — the spinner speeds up automatically.
+        </p>
+      </div>
+      <div class="bio-grid3" style="grid-template-columns:1fr;">
+        <div class="bio-mini">
+          <div class="bio-mini-sym" style="color:#22d3ee;">I</div>
+          <div class="bio-mini-name">Moment of Inertia</div>
+          <div class="bio-mini-def">Mass × (distance from axis)². Arms out = large I. Arms tucked in = small I.</div>
+        </div>
+        <div class="bio-mini">
+          <div class="bio-mini-sym" style="color:#fbbf24;">ω</div>
+          <div class="bio-mini-name">Angular Velocity</div>
+          <div class="bio-mini-def">Rotation rate, in radians per second. Grows as I shrinks to keep L constant.</div>
+        </div>
+      </div>
+    </div>
+    <div class="bio-box cyan" style="margin-top:0.85rem;">
+      <strong>Same Trick, Different Sports</strong>
+      <p>Figure skaters pulling in their arms, divers tucking into a somersault, and even a falling cat
+      twisting to land on its feet all exploit the same conservation law. No muscle makes them spin
+      faster — repositioning mass around the spin axis does.</p>
+    </div>
+  </div>
+
+  <!-- SIM 2: Angular momentum / spinning skater -->
+  <div class="bio-sim" id="spin-sim">
+    <div class="bio-sim-head">
+      <div class="bio-sim-head-left">
+        <span class="bio-sim-title cyan">⛸️ Spin Lab: Conservation of Angular Momentum</span>
+        <span class="bio-sim-sub">Start the spin, then drag the arm slider in and out — watch ω change while L stays fixed</span>
+      </div>
+      <div style="display:flex; gap:0.4rem;">
+        <button class="bio-btn ghost" id="spinResetBtn">Reset</button>
+        <button class="bio-btn" id="spinStartBtn">Start Spin</button>
+      </div>
+    </div>
+    <canvas id="spinCanvas" height="300"></canvas>
+    <div class="bio-sim-controls">
+      <div class="bio-ctrl" style="min-width:220px;">
+        <label>Arm Extension r <span class="bio-ctrl-val" id="armLabel">1.00</span></label>
+        <input type="range" id="armSlider" min="0.3" max="1" value="1" step="0.01" />
+      </div>
+      <div class="bio-readout" style="padding:0;align-self:flex-end;">
+        <span class="bio-chip"><span class="bio-chip-label">I (rel.)</span><span class="bio-chip-val" id="iVal">—</span></span>
+        <span class="bio-chip"><span class="bio-chip-label">ω (rad/s)</span><span class="bio-chip-val" id="omegaVal">—</span></span>
+        <span class="bio-chip"><span class="bio-chip-label">L (rel., constant)</span><span class="bio-chip-val" id="lVal">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Impulse -->
+  <div class="bio-card bio-card-rose" id="impulse">
+    <p class="bio-kicker rose">Idea 5 · Impulse &amp; Impact</p>
+    <h2>Why Bending Your Knees Saves Your Bones</h2>
+    <div class="bio-two">
+      <div>
+        <p>
+          <strong>Impulse</strong> is force acting over time, and it always equals the change in
+          momentum — this is Newton's Second Law rearranged for collisions and impacts.
+        </p>
+        <div class="bio-eq">F · Δt = Δp = mΔv</div>
+        <p>
+          A given athlete landing from a given jump has a fixed Δp — their momentum has to go to zero
+          either way. The only variable is <strong>Δt</strong>, the time the impact takes. Stretch that
+          time out, and the average force drops proportionally.
+        </p>
+      </div>
+      <div>
+        <h3>Extending Time to Cut Force</h3>
+        <ul>
+          <li><strong>Bending your knees</strong> when landing spreads the stop over a longer time than a stiff-legged landing — dramatically lowering peak force on joints.</li>
+          <li><strong>Boxing gloves and padding</strong> extend impact time so the same punch delivers less peak force to bone and brain.</li>
+          <li><strong>Catching a ball with "give"</strong> — pulling your hands back as it arrives — softens the catch the same way.</li>
+        </ul>
+        <div class="bio-box rose">
+          <strong>The Flip Side: Follow-Through</strong>
+          <p>In a golf swing or a punch, athletes want <em>more</em> impulse delivered to the ball or
+          target, not less. A longer follow-through keeps the club or fist in contact (or accelerating)
+          longer, increasing Δt on the <em>giving</em> end and maximizing the momentum transferred.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Energy -->
+  <div class="bio-card bio-card-green" id="energy">
+    <p class="bio-kicker green">Idea 6 · Energy Transfer in Sport</p>
+    <h2>Springs, Tendons, and Stored Energy</h2>
+    <div class="bio-two">
+      <div>
+        <p>
+          Muscles aren't the only thing powering explosive movement — tendons and equipment store and
+          return <strong>elastic potential energy</strong> like a spring.
+        </p>
+        <div class="bio-eq">KE = ½mv² &nbsp;&nbsp; PE_elastic = ½kx²</div>
+        <p>
+          A pole vaulter's kinetic energy from the sprint bends the pole, storing elastic energy, which
+          then converts to gravitational potential energy as the pole straightens and launches the
+          vaulter upward — a two-stage energy relay.
+        </p>
+      </div>
+      <div>
+        <h3>Built-In Springs</h3>
+        <ul>
+          <li><strong>Achilles tendon</strong> stores and returns up to 35% of the energy in each running stride — a big reason running is far more efficient than walking at speed.</li>
+          <li><strong>Trampolines &amp; diving boards</strong> store an athlete's kinetic energy as elastic energy, then return it to launch them higher than their own muscles could.</li>
+          <li><strong>Running shoes &amp; track surfaces</strong> are engineered to maximize elastic energy return with each footstrike.</li>
+        </ul>
+        <div class="bio-box orange">
+          <strong>The Big Picture</strong>
+          <p>Biomechanics shows that world-class performance isn't just bigger muscles — it's better
+          physics: lower center of mass, smarter release angles, sequenced torque, conserved angular
+          momentum, longer impulse times, and elastic energy return, all working together.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="bio-footer site-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../steam-lessons.html">All Lessons</a> ·
+  Classical Mechanics · Biomechanics
+</footer>
+
+<script>
+/* ── SIM 1: Sport projectile launch lab ─────────────────────────────── */
+(function () {
+  const cv = document.getElementById('launchCanvas');
+  const ctx = cv.getContext('2d');
+  const heightSl = document.getElementById('heightSlider');
+  const angleSl = document.getElementById('angleSlider');
+  const speedSl = document.getElementById('speedSlider');
+  const heightLbl = document.getElementById('heightLabel');
+  const angleLbl = document.getElementById('angleLabel');
+  const speedLbl = document.getElementById('speedLabel');
+  const rangeLbl = document.getElementById('rangeVal');
+  const heightVal = document.getElementById('heightVal');
+  const timeLbl = document.getElementById('timeVal');
+  const g = 9.8;
+
+  const presets = {
+    basketball: { h0: 2.2, angle: 50, speed: 7.5 },
+    shotput:    { h0: 2.1, angle: 40, speed: 13 },
+    javelin:    { h0: 1.9, angle: 34, speed: 26 },
+    longjump:   { h0: 1.0, angle: 20, speed: 9.5 }
+  };
+
+  let proj = null, trail = [], launched = false;
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
+  resize(); window.addEventListener('resize', resize);
+
+  function getParams() {
+    const h0 = +heightSl.value, deg = +angleSl.value, spd = +speedSl.value;
+    const rad = deg * Math.PI / 180;
+    return { h0, vx: spd * Math.cos(rad), vy: spd * Math.sin(rad) };
+  }
+
+  function flightTime(h0, vy) {
+    // positive root of: -1/2 g t^2 + vy t + h0 = 0
+    const disc = vy * vy + 2 * g * h0;
+    return (vy + Math.sqrt(Math.max(disc, 0))) / g;
+  }
+
+  function updateStats() {
+    const { h0, vx, vy } = getParams();
+    const t = flightTime(h0, vy);
+    const range = vx * t;
+    const hMax = h0 + (vy * vy) / (2 * g);
+    rangeLbl.textContent = range.toFixed(1) + ' m';
+    heightVal.textContent = hMax.toFixed(1) + ' m';
+    timeLbl.textContent = t.toFixed(2) + ' s';
+  }
+
+  heightSl.oninput = () => { heightLbl.textContent = (+heightSl.value).toFixed(1) + ' m'; updateStats(); };
+  angleSl.oninput = () => { angleLbl.textContent = angleSl.value + '°'; updateStats(); };
+  speedSl.oninput = () => { speedLbl.textContent = (+speedSl.value).toFixed(1) + ' m/s'; updateStats(); };
+  updateStats();
+
+  document.querySelectorAll('[data-preset]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = presets[btn.dataset.preset];
+      if (!p) return;
+      heightSl.value = p.h0; angleSl.value = p.angle; speedSl.value = p.speed;
+      heightLbl.textContent = p.h0.toFixed(1) + ' m';
+      angleLbl.textContent = p.angle + '°';
+      speedLbl.textContent = p.speed.toFixed(1) + ' m/s';
+      updateStats();
+    });
+  });
+
+  document.getElementById('findOptimalBtn').onclick = () => {
+    const h0 = +heightSl.value, spd = +speedSl.value;
+    let bestAngle = 45, bestRange = -1;
+    for (let deg = 1; deg < 90; deg++) {
+      const rad = deg * Math.PI / 180;
+      const vx = spd * Math.cos(rad), vy = spd * Math.sin(rad);
+      const t = flightTime(h0, vy);
+      const range = vx * t;
+      if (range > bestRange) { bestRange = range; bestAngle = deg; }
+    }
+    angleSl.value = bestAngle;
+    angleLbl.textContent = bestAngle + '°';
+    updateStats();
+  };
+
+  document.getElementById('launchBtn').onclick = () => {
+    const { h0, vx, vy } = getParams();
+    const t = flightTime(h0, vy);
+    const range = Math.max(vx * t, 1);
+    const W = cv.width, H = cv.height;
+    const groundY = H - 26;
+    const scale = (W - 60) / range;
+    proj = { x: 30, vx, vy, h0, t: 0, scale, groundY };
+    trail = []; launched = true;
+  };
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    const groundY = H - 26;
+
+    // Ground
+    ctx.fillStyle = 'rgba(251,146,60,0.12)';
+    ctx.fillRect(0, groundY, W, 26);
+    ctx.strokeStyle = 'rgba(251,146,60,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
+
+    if (!launched) {
+      const { h0, vx, vy } = getParams();
+      const deg = +angleSl.value, rad = deg * Math.PI / 180;
+      const releaseY = groundY - h0 * 22;
+      // Release point + angle guide
+      ctx.strokeStyle = 'rgba(34,211,238,0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(30, groundY); ctx.lineTo(30, releaseY); ctx.stroke(); ctx.setLineDash([]);
+      const len = 55;
+      ctx.strokeStyle = 'rgba(251,191,36,0.55)'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(30, releaseY); ctx.lineTo(30 + len * Math.cos(rad), releaseY - len * Math.sin(rad)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(251,191,36,0.7)'; ctx.font = 'bold 11px Inter,sans-serif';
+      ctx.fillText(deg + '°', 40 + len * Math.cos(rad * 0.6), releaseY - len * Math.sin(rad * 0.6) - 4);
+      ctx.fillStyle = 'rgba(34,211,238,0.85)';
+      ctx.beginPath(); ctx.arc(30, releaseY, 5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    if (proj) {
+      const { h0, vx, vy, scale } = proj;
+      const tFlight = flightTime(h0, vy);
+
+      // Preview arc
+      ctx.strokeStyle = 'rgba(34,211,238,0.25)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+      ctx.beginPath();
+      for (let i = 0; i <= 80; i++) {
+        const tt = (i / 80) * tFlight;
+        const px = 30 + vx * tt * scale;
+        const py = groundY - (h0 + vy * tt - 0.5 * g * tt * tt) * 22;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+
+      // Trail
+      if (trail.length > 1) {
+        for (let i = 1; i < trail.length; i++) {
+          const tt = i / trail.length;
+          ctx.beginPath();
+          ctx.moveTo(trail[i-1].x, trail[i-1].y);
+          ctx.lineTo(trail[i].x, trail[i].y);
+          ctx.strokeStyle = `rgba(251,146,60,${0.06 + 0.58 * tt})`;
+          ctx.lineWidth = 1 + tt * 5.5;
+          ctx.shadowBlur = tt * 16;
+          ctx.shadowColor = '#fb923c';
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      const bx = 30 + vx * proj.t * scale;
+      const by = groundY - (h0 + vy * proj.t - 0.5 * g * proj.t * proj.t) * 22;
+      trail.push({ x: bx, y: by });
+      if (trail.length > 80) trail.shift();
+
+      ctx.shadowBlur = 22; ctx.shadowColor = '#fb923c';
+      ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2);
+      const grd = ctx.createRadialGradient(bx - 2, by - 2, 0, bx, by, 8);
+      grd.addColorStop(0, '#ffffff'); grd.addColorStop(0.35, '#fed7aa'); grd.addColorStop(1, '#fb923c');
+      ctx.fillStyle = grd; ctx.fill();
+      ctx.shadowBlur = 0;
+
+      proj.t += 0.035;
+      if (proj.t >= tFlight) { proj = null; launched = false; }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ── SIM 2: Angular momentum spin lab ──────────────────────────────── */
+(function () {
+  const cv = document.getElementById('spinCanvas');
+  const ctx = cv.getContext('2d');
+  const armSl = document.getElementById('armSlider');
+  const armLbl = document.getElementById('armLabel');
+  const iLbl = document.getElementById('iVal');
+  const omegaLbl = document.getElementById('omegaVal');
+  const lLbl = document.getElementById('lVal');
+
+  const I0 = 0.4; // torso + legs, constant baseline moment of inertia (relative units)
+  let angle = 0, spinning = false, L = 0;
+  let trail = [];
+
+  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
+  resize(); window.addEventListener('resize', resize);
+
+  function momentOfInertia(r) { return I0 + r * r; }
+
+  function updateReadouts() {
+    const r = +armSl.value;
+    const I = momentOfInertia(r);
+    armLbl.textContent = r.toFixed(2);
+    iLbl.textContent = I.toFixed(2);
+    if (spinning) {
+      const omega = L / I;
+      omegaLbl.textContent = omega.toFixed(2);
+      lLbl.textContent = L.toFixed(2);
+    } else {
+      omegaLbl.textContent = '—';
+      lLbl.textContent = '—';
+    }
+  }
+  armSl.oninput = updateReadouts;
+  updateReadouts();
+
+  document.getElementById('spinStartBtn').onclick = () => {
+    const r = +armSl.value;
+    const omega0 = 2.0; // rad/s, starting spin rate
+    L = momentOfInertia(r) * omega0;
+    spinning = true;
+    trail = [];
+    updateReadouts();
+  };
+  document.getElementById('spinResetBtn').onclick = () => {
+    spinning = false; angle = 0; trail = [];
+    armSl.value = 1;
+    updateReadouts();
+  };
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    const cx = W / 2, cy = H / 2;
+    const pxPerUnit = Math.min(W, H) * 0.34;
+
+    const r = +armSl.value;
+    const I = momentOfInertia(r);
+    const omega = spinning ? L / I : 0;
+
+    // Ice rink floor glow
+    const floorGrd = ctx.createRadialGradient(cx, cy, 10, cx, cy, Math.min(W, H) * 0.5);
+    floorGrd.addColorStop(0, 'rgba(34,211,238,0.12)');
+    floorGrd.addColorStop(1, 'rgba(34,211,238,0)');
+    ctx.fillStyle = floorGrd;
+    ctx.beginPath(); ctx.arc(cx, cy, Math.min(W, H) * 0.5, 0, Math.PI * 2); ctx.fill();
+
+    // Guide rings
+    [0.3, 0.65, 1.0].forEach(rr => {
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(cx, cy, rr * pxPerUnit, 0, Math.PI * 2); ctx.stroke();
+    });
+
+    if (spinning) angle += omega * 0.02;
+
+    // Arm mass trail (motion blur ring)
+    const armR = r * pxPerUnit;
+    const a1 = angle, a2 = angle + Math.PI;
+    if (spinning) {
+      trail.push({ a: angle, r: armR });
+      if (trail.length > 40) trail.shift();
+      trail.forEach((pt, i) => {
+        const tt = i / trail.length;
+        [pt.a, pt.a + Math.PI].forEach(aa => {
+          const px = cx + Math.cos(aa) * pt.r, py = cy + Math.sin(aa) * pt.r;
+          ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(34,211,238,${0.04 + 0.2 * tt})`;
+          ctx.fill();
+        });
+      });
+    }
+
+    // Rod (arms)
+    ctx.strokeStyle = 'rgba(240,225,208,0.6)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a1) * armR, cy + Math.sin(a1) * armR);
+    ctx.lineTo(cx + Math.cos(a2) * armR, cy + Math.sin(a2) * armR);
+    ctx.stroke();
+
+    // Torso
+    ctx.shadowBlur = 18; ctx.shadowColor = '#fb923c';
+    ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+    const bodyGrd = ctx.createRadialGradient(cx - 4, cy - 4, 0, cx, cy, 16);
+    bodyGrd.addColorStop(0, '#ffffff'); bodyGrd.addColorStop(0.4, '#fed7aa'); bodyGrd.addColorStop(1, '#fb923c');
+    ctx.fillStyle = bodyGrd; ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Arm masses (hands)
+    [a1, a2].forEach(aa => {
+      const px = cx + Math.cos(aa) * armR, py = cy + Math.sin(aa) * armR;
+      ctx.shadowBlur = 14; ctx.shadowColor = '#22d3ee';
+      ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2);
+      const g2 = ctx.createRadialGradient(px - 2, py - 2, 0, px, py, 7);
+      g2.addColorStop(0, '#ffffff'); g2.addColorStop(0.4, '#a8f0fb'); g2.addColorStop(1, '#22d3ee');
+      ctx.fillStyle = g2; ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    updateReadouts();
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

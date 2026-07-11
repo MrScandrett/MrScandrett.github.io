@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Slime Molds: Swarm Intelligence Without a Brain · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Life Sciences Lesson 05 — explore the biology, life cycle, and ecology of Physarum polycephalum, then grow a live swarm-intelligence simulation inspired by the Tokyo rail experiment." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport {
+      --ll-panel-w: 280px;
+      --ll-accent: #c8891a;
+      --ll-tab-active: #c8891a;
+      --ll-tab-active-bg: rgba(200, 137, 26, 0.14);
+    }
+
+    /* ── Slime Mold Page Tokens ── */
+    .slime-page {
+      font-family: var(--font-sans);
+      color: #2c2412;
+      background:
+        radial-gradient(circle at 8% 10%, rgba(212, 160, 23, 0.2), transparent 26%),
+        radial-gradient(circle at 90% 14%, rgba(107, 142, 74, 0.18), transparent 24%),
+        linear-gradient(180deg, #fdfbf3 0%, #f7f1de 100%);
+    }
+
+    .ll-viewport .ll-topbar {
+      background: rgba(253, 251, 243, 0.86);
+    }
+
+    .slime-shell {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3.6rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .slime-card {
+      border-radius: 24px;
+      border: 1px solid rgba(200, 137, 26, 0.2);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 20px 50px rgba(60, 46, 12, 0.08);
+      padding: 1.3rem;
+    }
+
+    .slime-hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .slime-eyebrow {
+      margin: 0 0 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #a06a0e;
+    }
+
+    .slime-hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3.6vw, 2.9rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      color: #3a2c0d;
+    }
+
+    .slime-lede {
+      margin: 0.85rem 0 0;
+      font-size: 1.02rem;
+      color: #5a4a24;
+      line-height: 1.66;
+    }
+
+    .slime-idlist {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: #5a4a24;
+      line-height: 1.75;
+      font-size: 0.94rem;
+    }
+    .slime-idlist li strong { color: #3a2c0d; }
+
+    .slime-h2 {
+      margin: 0 0 0.7rem;
+      font-size: 1.3rem;
+      color: #3a2c0d;
+      letter-spacing: -0.01em;
+    }
+
+    .slime-p {
+      margin: 0 0 0.7rem;
+      font-size: 0.95rem;
+      line-height: 1.68;
+      color: #4d3f1f;
+    }
+    .slime-p:last-child { margin-bottom: 0; }
+    .slime-p strong { color: #2c2412; }
+
+    /* ── Life cycle steps ── */
+    .slime-cycle {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.7rem;
+      margin: 0.9rem 0 1.1rem;
+    }
+    .slime-cycle-step {
+      padding: 0.8rem 0.7rem;
+      border-radius: 14px;
+      background: #fbf3dd;
+      border: 1px solid rgba(200, 137, 26, 0.22);
+      text-align: center;
+    }
+    .slime-cycle-step .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #c8891a;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 800;
+      margin-bottom: 0.4rem;
+    }
+    .slime-cycle-step strong {
+      display: block;
+      font-size: 0.82rem;
+      color: #3a2c0d;
+      margin-bottom: 0.25rem;
+    }
+    .slime-cycle-step span {
+      font-size: 0.74rem;
+      color: #6b5a30;
+      line-height: 1.4;
+      display: block;
+    }
+    .slime-cycle-arrow {
+      display: none;
+    }
+
+    /* ── Fact grid (ecology) ── */
+    .slime-fact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 0.9rem;
+    }
+    .slime-fact {
+      padding: 1rem 1.05rem;
+      border-radius: 16px;
+      background: #f3f7ea;
+      border: 1px solid rgba(107, 142, 74, 0.24);
+    }
+    .slime-fact h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.98rem;
+      color: #33421f;
+    }
+    .slime-fact p {
+      margin: 0;
+      font-size: 0.87rem;
+      color: #4c5c37;
+      line-height: 1.6;
+    }
+
+    /* ── Study cards (how humans study them) ── */
+    .slime-study-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+    .slime-study-card {
+      padding: 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(200, 137, 26, 0.18);
+      background: #fffaf0;
+      position: relative;
+    }
+    .slime-study-card .tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #fff;
+      background: #c8891a;
+      border-radius: 999px;
+      padding: 0.18rem 0.6rem;
+      margin-bottom: 0.55rem;
+    }
+    .slime-study-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+      color: #3a2c0d;
+    }
+    .slime-study-card p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: #5a4a24;
+      line-height: 1.62;
+    }
+
+    /* ── Simulation ── */
+    .slime-sim-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .slime-canvas-wrap {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #150f08;
+      border: 1px solid rgba(200, 137, 26, 0.28);
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+    }
+    .slime-canvas-wrap canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      cursor: crosshair;
+    }
+    .slime-canvas-hint {
+      position: absolute;
+      left: 0.7rem;
+      bottom: 0.6rem;
+      font-size: 0.7rem;
+      color: rgba(255, 230, 170, 0.72);
+      background: rgba(0,0,0,0.35);
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .slime-controls {
+      display: grid;
+      gap: 0.7rem;
+      align-content: start;
+    }
+    .slime-control-group {
+      display: grid;
+      gap: 0.3rem;
+    }
+    .slime-control-group label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #5a4a24;
+      display: flex;
+      justify-content: space-between;
+    }
+    .slime-control-group input[type="range"] {
+      width: 100%;
+      accent-color: #c8891a;
+    }
+    .slime-btn {
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid rgba(200, 137, 26, 0.4);
+      background: #fbf3dd;
+      color: #3a2c0d;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .slime-btn:hover { background: #f3e2b6; }
+    .slime-btn.primary {
+      background: #c8891a;
+      color: #fff;
+      border-color: #a06a0e;
+    }
+    .slime-btn.primary:hover { background: #b07a15; }
+
+    .slime-legend {
+      font-size: 0.78rem;
+      color: #5a4a24;
+      line-height: 1.6;
+      margin-top: 0.9rem;
+      padding-top: 0.8rem;
+      border-top: 1px dashed rgba(200, 137, 26, 0.3);
+    }
+    .slime-legend strong { color: #3a2c0d; }
+
+    /* ── Reflection ── */
+    .slime-reflect-list {
+      display: grid;
+      gap: 0.6rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .slime-reflect-list li {
+      padding: 0.75rem 0.9rem;
+      border-radius: 12px;
+      background: #fbf3dd;
+      border-left: 3px solid #c8891a;
+      font-size: 0.92rem;
+      color: #3a2c0d;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 900px) {
+      .slime-cycle { grid-template-columns: repeat(2, 1fr); }
+      .slime-sim-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 740px) {
+      .slime-hero { grid-template-columns: 1fr; }
+      .slime-cycle { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../video-library.html">Videos</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="slime-page">
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════════════ -->
+<div class="slime-shell">
+
+  <div class="slime-hero">
+    <div class="slime-card">
+      <p class="slime-eyebrow">Life Sciences · Lesson 05</p>
+      <h1>Slime Molds: Swarm Intelligence Without a Brain</h1>
+      <p class="slime-lede">
+        <em>Physarum polycephalum</em> — the "many-headed slime" — is a single cell
+        you can see with the naked eye. It has no brain, no neurons, and no central
+        control center, yet it can find the shortest path through a maze, connect
+        food sources with efficient networks, and even show signs of memory. Slime
+        molds are living proof that intelligent behavior can emerge from simple
+        local rules, repeated everywhere at once.
+      </p>
+    </div>
+
+    <div class="slime-card">
+      <p class="slime-eyebrow">Quick ID</p>
+      <ul class="slime-idlist">
+        <li><strong>Not</strong> a fungus, plant, or animal</li>
+        <li>Kingdom: <strong>Amoebozoa</strong>, order Physarales</li>
+        <li>~<strong>900 species</strong> known worldwide</li>
+        <li>Best-studied: <strong>Physarum polycephalum</strong></li>
+        <li>One giant cell, <strong>thousands of nuclei</strong>, zero neurons</li>
+      </ul>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 2 — LIFE CYCLE & BIOLOGY
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="slime-card">
+    <h2 class="slime-h2">Biology &amp; Life Cycle</h2>
+    <p class="slime-p">
+      A slime mold spends most of its life as a single wandering cell, but it gets
+      there through a strange five-stage cycle that alternates between many tiny
+      cells and one enormous one.
+    </p>
+    <div class="slime-cycle">
+      <div class="slime-cycle-step">
+        <span class="num">1</span>
+        <strong>Spore</strong>
+        <span>A tough, dormant capsule that can survive dry conditions for months.</span>
+      </div>
+      <div class="slime-cycle-step">
+        <span class="num">2</span>
+        <strong>Swarm Cell</strong>
+        <span>In moisture, spores hatch into amoeba-like or flagellated single cells.</span>
+      </div>
+      <div class="slime-cycle-step">
+        <span class="num">3</span>
+        <strong>Fusion</strong>
+        <span>Two compatible swarm cells fuse into a single zygote.</span>
+      </div>
+      <div class="slime-cycle-step">
+        <span class="num">4</span>
+        <strong>Plasmodium</strong>
+        <span>The zygote's nucleus divides again and again <em>without</em> the cell splitting — one cell, many nuclei.</span>
+      </div>
+      <div class="slime-cycle-step">
+        <span class="num">5</span>
+        <strong>Sporangium</strong>
+        <span>When food or water runs out, the plasmodium grows fruiting bodies that release new spores.</span>
+      </div>
+    </div>
+    <p class="slime-p">
+      Stage 4, the <strong>plasmodium</strong>, is the yellow, vein-like network most
+      people picture when they hear "slime mold." Biologically it is a
+      <strong>syncytium</strong>: a single cell membrane wrapped around thousands to
+      millions of nuclei, with no internal walls dividing them. A plasmodium can
+      grow to the size of a dinner plate — or, in record cases, a doormat — and
+      crawl across a forest floor at roughly a centimeter per hour. Inside, the
+      cytoplasm doesn't just sit still: it sloshes back and forth in rhythmic
+      pulses called <strong>shuttle streaming</strong>, reversing direction every
+      one to two minutes. This internal pumping distributes nutrients and chemical
+      signals through the whole organism in seconds — and, as you'll see below, it
+      also doubles as the organism's simplest possible "nervous system."
+    </p>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 3 — ECOLOGY / PLACE IN THE WORLD
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="slime-card">
+    <h2 class="slime-h2">Their Place in the World</h2>
+    <p class="slime-p">
+      Slime molds live almost everywhere there is shade and moisture — they've been
+      found on every continent except Antarctica.
+    </p>
+    <div class="slime-fact-grid">
+      <div class="slime-fact">
+        <h3>🌲 Habitat</h3>
+        <p>Rotting logs, leaf litter, tree bark, and damp forest soil. They avoid direct light and dry heat, which shrivels the plasmodium.</p>
+      </div>
+      <div class="slime-fact">
+        <h3>🍽️ Diet</h3>
+        <p>Bacteria, yeast, and fungal spores, engulfed whole through phagocytosis as the plasmodium flows over decaying wood and leaves.</p>
+      </div>
+      <div class="slime-fact">
+        <h3>♻️ Ecological Role</h3>
+        <p>Microbial recyclers: by grazing bacteria and fungi, they help cycle nutrients back into forest soil, much like earthworms do at a smaller scale.</p>
+      </div>
+      <div class="slime-fact">
+        <h3>🏷️ A Taxonomic Wanderer</h3>
+        <p>Because they form fungus-like spore-bearing fruiting bodies, slime molds were classified as fungi for over a century. Genetics eventually placed them in Amoebozoa — closer kin to amoebae than mushrooms.</p>
+      </div>
+      <div class="slime-fact">
+        <h3>🟡 Familiar Faces</h3>
+        <p><em>Fuligo septica</em>, the "dog vomit slime mold," is a bright yellow species that can appear on garden mulch overnight after rain.</p>
+      </div>
+      <div class="slime-fact">
+        <h3>🧬 Genome</h3>
+        <p><em>Physarum polycephalum</em> carries far more DNA per cell than a human cell — a reminder that genome size has little to do with complexity.</p>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 4 — SWARM INTELLIGENCE
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="slime-card">
+    <h2 class="slime-h2">Swarm Intelligence: Solving Problems With No Brain</h2>
+    <p class="slime-p">
+      A single plasmodium behaves like a decentralized swarm packed into one cell.
+      As it forages, it sends out thousands of finger-like tubes in every
+      direction at once. Tubes that reach food thicken and speed up their internal
+      flow; tubes that lead nowhere slow down, thin out, and are reabsorbed. That
+      simple push-and-pull — <strong>reinforce what works, let go of what
+      doesn't</strong> — is the same principle called <strong>stigmergy</strong>
+      that lets ant colonies build efficient trails using only pheromones, with no
+      ant ever seeing the whole picture. In Physarum, it happens without a single
+      neuron.
+    </p>
+    <p class="slime-p">
+      This process leaves a trace: unlike ants, a plasmodium avoids crossing ground
+      it has already explored because it leaves behind a non-living,
+      slippery <strong>extracellular slime trail</strong>. That trail acts as a
+      simple form of <strong>external spatial memory</strong> — a way to
+      "remember" where it's already been, recorded outside the cell entirely.
+      Researchers have also shown a subtler kind of memory: when a plasmodium
+      repeatedly crosses a harmless but irritating substance on its way to food, it
+      grows more tolerant over time — a basic form of <strong>habituation</strong>,
+      and that learned tolerance can even be passed to a naive plasmodium when the
+      two physically fuse together.
+    </p>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 5 — HOW HUMANS STUDY THEM
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="slime-card">
+    <h2 class="slime-h2">How Scientists Study Slime Molds</h2>
+    <div class="slime-study-grid">
+      <div class="slime-study-card">
+        <span class="tag">2000 · Nature</span>
+        <h3>The Maze Experiment</h3>
+        <p>Toshiyuki Nakagaki grew a plasmodium through a maze with food placed at two exits. Within about a day, the slime mold withdrew from every dead end, leaving behind the single shortest path connecting the food — an optimization problem solved with no eyes, no map, and no brain.</p>
+      </div>
+      <div class="slime-study-card">
+        <span class="tag">2010 · Science</span>
+        <h3>Rebuilding the Tokyo Rail Map</h3>
+        <p>Atsushi Tero, Nakagaki, and colleagues placed oat flakes on a map in the positions of Tokyo and its surrounding cities, with light (which Physarum avoids) marking mountains and water. The network the slime mold grew rivaled the real Tokyo rail system in efficiency, cost, and fault tolerance — a system engineers had spent decades refining.</p>
+      </div>
+      <div class="slime-study-card">
+        <span class="tag">Ig Nobel Prizes</span>
+        <h3>Serious Science, Silly-Sounding Prizes</h3>
+        <p>Both discoveries were honored with Ig Nobel Prizes — the maze study in Cognitive Science, the rail study in Transportation Planning — awards that celebrate research that "first makes people laugh, then makes them think."</p>
+      </div>
+      <div class="slime-study-card">
+        <span class="tag">Unconventional Computing</span>
+        <h3>Living Computers</h3>
+        <p>Researchers like Andrew Adamatzky have wired Physarum into logic gates, sensors, and even slime-mold-steered robots, using its growth and light-avoidance as a literal biological computing substrate.</p>
+      </div>
+      <div class="slime-study-card">
+        <span class="tag">Bio-Inspired Engineering</span>
+        <h3>Borrowing the Algorithm</h3>
+        <p>Engineers now write "Physarum-inspired" algorithms — reinforce, decay, avoid obstacles — to design resilient computer networks, transit systems, and disaster-logistics routes without any central controller.</p>
+      </div>
+      <div class="slime-study-card">
+        <span class="tag">Open Questions</span>
+        <h3>What Counts as Cognition?</h3>
+        <p>Because Physarum shows memory and habituation with zero neurons, it has become a key organism in debates over whether "learning" and "decision-making" require a nervous system at all.</p>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 6 — INTERACTIVE SIMULATION
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="slime-card">
+    <h2 class="slime-h2">Lab: Grow Your Own Swarm Network</h2>
+    <p class="slime-p">
+      This simulation models thousands of tiny "agents" using the same rule real
+      Physarum tubes follow: sense three points ahead, steer toward whichever
+      carries the strongest trail, then lay down more trail behind you. No agent
+      knows the big picture — the network below emerges purely from that local
+      rule, repeated thousands of times a second.
+    </p>
+    <div class="slime-sim-layout">
+      <div class="slime-canvas-wrap">
+        <canvas id="slimeCanvas" width="760" height="440"></canvas>
+        <span class="slime-canvas-hint">Click the canvas to drop a food source</span>
+      </div>
+      <div class="slime-controls">
+        <div class="slime-control-group">
+          <label>Population <span id="popVal">1500</span></label>
+          <input type="range" id="popSlider" min="300" max="4000" step="100" value="1500" />
+        </div>
+        <div class="slime-control-group">
+          <label>Sensor Angle <span id="sensorVal">25°</span></label>
+          <input type="range" id="sensorSlider" min="10" max="60" step="1" value="25" />
+        </div>
+        <div class="slime-control-group">
+          <label>Trail Persistence <span id="decayVal">0.94</span></label>
+          <input type="range" id="decaySlider" min="85" max="99" step="1" value="94" />
+        </div>
+        <button class="slime-btn primary" id="playPauseBtn">Pause</button>
+        <button class="slime-btn" id="scatterFoodBtn">Scatter Food</button>
+        <button class="slime-btn" id="railPresetBtn">Recreate a Rail Network</button>
+        <button class="slime-btn" id="clearFoodBtn">Clear Food</button>
+        <button class="slime-btn" id="resetSimBtn">Reset Simulation</button>
+        <div class="slime-legend">
+          <strong>Reading the map:</strong> dark = unexplored, amber = a reinforced
+          tube, bright gold = a heavily-used route. Gold dots are food sources —
+          the closer the layout resembles the "Recreate a Rail Network" preset,
+          the closer this is to the actual 2010 Tokyo-area experiment.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     SECTION 7 — REFLECTION
+     ════════════════════════════════════════════════════════════ -->
+
+  <div class="slime-card">
+    <h2 class="slime-h2">Discussion Prompts</h2>
+    <ul class="slime-reflect-list">
+      <li>Does intelligent behavior require a brain? What would you need to see to convince you a system is "solving a problem" versus just following a rule?</li>
+      <li>Where else do you see stigmergy — indirect communication through a shared environment — in nature or human systems (ants, traffic, wikis, city streets worn into "desire paths")?</li>
+      <li>The Tokyo rail experiment compared a slime mold's network to one designed by professional engineers. What does it mean that both converged on similar solutions?</li>
+      <li>If a single cell with no neurons can show habituation and memory, how should that change the way we define "learning"?</li>
+    </ul>
+  </div>
+
+</div><!-- /.slime-shell -->
+
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('slimeCanvas');
+  var ctx = canvas.getContext('2d');
+  var DISP_W = canvas.width;
+  var DISP_H = canvas.height;
+
+  var GRID_SCALE = 4;
+  var GRID_W = Math.floor(DISP_W / GRID_SCALE);
+  var GRID_H = Math.floor(DISP_H / GRID_SCALE);
+
+  var trailCanvas = document.createElement('canvas');
+  trailCanvas.width = GRID_W;
+  trailCanvas.height = GRID_H;
+  var trailCtx = trailCanvas.getContext('2d');
+  var imageData = trailCtx.createImageData(GRID_W, GRID_H);
+
+  var TRAIL_CAP = 6.0;
+  var FOOD_VALUE = 6.0;
+  var FOOD_RADIUS = 2;
+  var SENSOR_DIST = 8;
+  var TURN_ANGLE = 0.4;
+  var SPEED = 1.0;
+  var DEPOSIT = 0.9;
+
+  var sensorAngle = 25 * Math.PI / 180;
+  var decayFactor = 0.94;
+  var running = true;
+
+  var trail = new Float32Array(GRID_W * GRID_H);
+  var trailNext = new Float32Array(GRID_W * GRID_H);
+  var agents = [];
+  var foods = [];
+
+  function wrap(v, m) {
+    v = v % m;
+    return v < 0 ? v + m : v;
+  }
+
+  function cellIndex(gx, gy) {
+    return (wrap(Math.floor(gy), GRID_H) * GRID_W) + wrap(Math.floor(gx), GRID_W);
+  }
+
+  function makeAgent() {
+    return {
+      x: Math.random() * GRID_W,
+      y: Math.random() * GRID_H,
+      heading: Math.random() * Math.PI * 2
+    };
+  }
+
+  function setPopulation(n) {
+    while (agents.length < n) agents.push(makeAgent());
+    while (agents.length > n) agents.pop();
+  }
+
+  setPopulation(1500);
+
+  function sense(agent, angleOffset) {
+    var a = agent.heading + angleOffset;
+    var sx = agent.x + Math.cos(a) * SENSOR_DIST;
+    var sy = agent.y + Math.sin(a) * SENSOR_DIST;
+    return trail[cellIndex(sx, sy)];
+  }
+
+  function stepAgents() {
+    for (var i = 0; i < agents.length; i++) {
+      var ag = agents[i];
+      var f = sense(ag, 0);
+      var fl = sense(ag, -sensorAngle);
+      var fr = sense(ag, sensorAngle);
+
+      if (f > fl && f > fr) {
+        // keep heading, tiny jitter
+        ag.heading += (Math.random() - 0.5) * 0.15;
+      } else if (f < fl && f < fr) {
+        ag.heading += (Math.random() < 0.5 ? -1 : 1) * TURN_ANGLE;
+      } else if (fl < fr) {
+        ag.heading += TURN_ANGLE;
+      } else if (fr < fl) {
+        ag.heading -= TURN_ANGLE;
+      }
+
+      ag.x = wrap(ag.x + Math.cos(ag.heading) * SPEED, GRID_W);
+      ag.y = wrap(ag.y + Math.sin(ag.heading) * SPEED, GRID_H);
+
+      var idx = cellIndex(ag.x, ag.y);
+      trail[idx] = Math.min(TRAIL_CAP, trail[idx] + DEPOSIT);
+    }
+  }
+
+  function diffuseTrail() {
+    for (var y = 0; y < GRID_H; y++) {
+      var yUp = wrap(y - 1, GRID_H) * GRID_W;
+      var yMid = y * GRID_W;
+      var yDown = wrap(y + 1, GRID_H) * GRID_W;
+      for (var x = 0; x < GRID_W; x++) {
+        var xL = wrap(x - 1, GRID_W);
+        var xR = wrap(x + 1, GRID_W);
+        var sum =
+          trail[yUp + xL]  + trail[yUp + x]  + trail[yUp + xR] +
+          trail[yMid + xL] + trail[yMid + x] + trail[yMid + xR] +
+          trail[yDown + xL]+ trail[yDown + x]+ trail[yDown + xR];
+        trailNext[yMid + x] = (sum / 9) * decayFactor;
+      }
+    }
+    var tmp = trail;
+    trail = trailNext;
+    trailNext = tmp;
+
+    for (var fi = 0; fi < foods.length; fi++) {
+      var fd = foods[fi];
+      for (var dy = -FOOD_RADIUS; dy <= FOOD_RADIUS; dy++) {
+        for (var dx = -FOOD_RADIUS; dx <= FOOD_RADIUS; dx++) {
+          trail[cellIndex(fd.gx + dx, fd.gy + dy)] = FOOD_VALUE;
+        }
+      }
+    }
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function trailColor(v) {
+    var t = Math.max(0, Math.min(1, v / TRAIL_CAP));
+    var stops = [
+      [21, 15, 8],
+      [92, 58, 18],
+      [200, 133, 26],
+      [255, 226, 140]
+    ];
+    var seg = t * (stops.length - 1);
+    var i0 = Math.min(stops.length - 2, Math.floor(seg));
+    var localT = seg - i0;
+    var c0 = stops[i0], c1 = stops[i0 + 1];
+    return [
+      lerp(c0[0], c1[0], localT),
+      lerp(c0[1], c1[1], localT),
+      lerp(c0[2], c1[2], localT)
+    ];
+  }
+
+  function renderTrail() {
+    var data = imageData.data;
+    for (var i = 0; i < GRID_W * GRID_H; i++) {
+      var c = trailColor(trail[i]);
+      var p = i * 4;
+      data[p] = c[0];
+      data[p + 1] = c[1];
+      data[p + 2] = c[2];
+      data[p + 3] = 255;
+    }
+    trailCtx.putImageData(imageData, 0, 0);
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(trailCanvas, 0, 0, GRID_W, GRID_H, 0, 0, DISP_W, DISP_H);
+
+    for (var fi = 0; fi < foods.length; fi++) {
+      var fd = foods[fi];
+      var px = fd.gx * GRID_SCALE;
+      var py = fd.gy * GRID_SCALE;
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffe58a';
+      ctx.shadowColor = '#ffcf4d';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  function loop() {
+    if (running) {
+      stepAgents();
+      diffuseTrail();
+      renderTrail();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function addFood(px, py) {
+    var gx = Math.floor(px / GRID_SCALE);
+    var gy = Math.floor(py / GRID_SCALE);
+    foods.push({ gx: gx, gy: gy });
+  }
+
+  canvas.addEventListener('click', function (e) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = DISP_W / rect.width;
+    var scaleY = DISP_H / rect.height;
+    var px = (e.clientX - rect.left) * scaleX;
+    var py = (e.clientY - rect.top) * scaleY;
+    addFood(px, py);
+  });
+
+  document.getElementById('popSlider').addEventListener('input', function (e) {
+    var n = parseInt(e.target.value, 10);
+    document.getElementById('popVal').textContent = n;
+    setPopulation(n);
+  });
+
+  document.getElementById('sensorSlider').addEventListener('input', function (e) {
+    var deg = parseInt(e.target.value, 10);
+    document.getElementById('sensorVal').textContent = deg + '°';
+    sensorAngle = deg * Math.PI / 180;
+  });
+
+  document.getElementById('decaySlider').addEventListener('input', function (e) {
+    var raw = parseInt(e.target.value, 10);
+    decayFactor = raw / 100;
+    document.getElementById('decayVal').textContent = decayFactor.toFixed(2);
+  });
+
+  document.getElementById('playPauseBtn').addEventListener('click', function (e) {
+    running = !running;
+    e.target.textContent = running ? 'Pause' : 'Play';
+  });
+
+  document.getElementById('scatterFoodBtn').addEventListener('click', function () {
+    var count = 3 + Math.floor(Math.random() * 4);
+    for (var i = 0; i < count; i++) {
+      addFood(
+        DISP_W * (0.1 + Math.random() * 0.8),
+        DISP_H * (0.1 + Math.random() * 0.8)
+      );
+    }
+  });
+
+  document.getElementById('railPresetBtn').addEventListener('click', function () {
+    foods = [];
+    var cx = DISP_W * 0.5, cy = DISP_H * 0.52;
+    addFood(cx, cy); // Tokyo hub
+    var satellites = [
+      [0.02, -0.05], [0.05, 0.32], [-0.28, 0.18], [0.30, 0.22],
+      [-0.20, -0.30], [0.24, -0.28], [-0.36, -0.05], [0.38, 0.02],
+      [-0.08, 0.42], [0.14, -0.42]
+    ];
+    for (var i = 0; i < satellites.length; i++) {
+      addFood(cx + satellites[i][0] * DISP_W, cy + satellites[i][1] * DISP_H);
+    }
+  });
+
+  document.getElementById('clearFoodBtn').addEventListener('click', function () {
+    foods = [];
+  });
+
+  document.getElementById('resetSimBtn').addEventListener('click', function () {
+    trail.fill(0);
+    trailNext.fill(0);
+    foods = [];
+    var n = agents.length;
+    agents = [];
+    setPopulation(n);
+    running = true;
+    document.getElementById('playPauseBtn').textContent = 'Pause';
+  });
+
+  requestAnimationFrame(loop);
+}());
+</script>
+<script src="../assets/js/canvas-bg.js"></script>
+
+      </main>
+    </div>
+  </div>
+</div>
+</body>
+</html>

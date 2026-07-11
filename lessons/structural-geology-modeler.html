@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Structural Geology: 3D Subsurface Modeler · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Build 3D geologic models from sparse field data — layer-cake stratigraphy, folds, faults, and unconformities, interpolated the way real structural geology software works." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    body { background: #0a0c08; color: #ded4c0; margin: 0; overflow-x: hidden; }
+
+    .sg-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px);
+      background: rgba(8, 10, 6, 0.92);
+      border-bottom: 1px solid rgba(217, 164, 65, 0.2);
+    }
+    .sg-topbar-inner {
+      width: min(1440px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .sg-topbar a { color: #d9a441; text-decoration: none; font-size: 0.82rem; }
+    .sg-topbar a:hover { color: #fff; }
+    .sg-topbar-title { font-size: 0.9rem; font-weight: 700; color: #ecdcb8; }
+
+    .sg-hero { text-align: center; padding: 2rem 1.5rem 0.8rem; max-width: 760px; margin: 0 auto; }
+    .sg-hero h1 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
+    .sg-hero p { font-size: 0.88rem; color: rgba(220,205,180,0.72); margin: 0; line-height: 1.55; }
+
+    .sg-wrap {
+      display: grid; grid-template-columns: 1fr 360px; gap: 1rem;
+      padding: 0.8rem 1.1rem 1.5rem; max-width: 1440px; margin: 0 auto; align-items: start;
+    }
+    @media (max-width: 960px) { .sg-wrap { grid-template-columns: 1fr; } }
+
+    .sg-outer {
+      position: relative; border-radius: 18px; overflow: hidden;
+      background: #090a06; aspect-ratio: 4/3;
+      border: 1px solid rgba(217,164,65,0.2);
+      box-shadow: 0 0 60px rgba(150,110,20,0.10), inset 0 0 40px rgba(0,0,0,0.5);
+    }
+    #sg-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+    #sg-canvas:active { cursor: grabbing; }
+    .sg-overlay { position: absolute; top: 12px; left: 14px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+    .sg-badge {
+      background: rgba(10,8,4,0.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(217,164,65,0.35); border-radius: 999px; padding: 5px 14px;
+      font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; color: #ecc470;
+    }
+    .sg-badge-sub {
+      background: rgba(10,8,4,0.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(217,164,65,0.22); border-radius: 999px; padding: 4px 12px;
+      font-size: 0.7rem; font-weight: 700; color: rgba(220,205,180,0.75);
+    }
+    .drag-hint { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 0.68rem; color: rgba(200,180,120,0.4); pointer-events: none; white-space: nowrap; }
+
+    .sg-panel { display: flex; flex-direction: column; gap: 0.9rem; }
+    .sg-card {
+      background: rgba(20,17,8,0.7); border: 1px solid rgba(217,164,65,0.2);
+      border-radius: 14px; padding: 0.9rem 1rem;
+    }
+    .sg-card h3 { margin: 0 0 0.5rem; font-size: 0.78rem; letter-spacing: 0.05em; text-transform: uppercase; color: #ecc470; }
+
+    .scenario-scroll { display: flex; flex-direction: column; gap: 6px; }
+    .sc-card {
+      background: rgba(30,24,10,0.6); border: 1px solid rgba(217,164,65,0.2);
+      border-radius: 10px; padding: 8px 10px; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    }
+    .sc-card:hover { border-color: rgba(236,196,112,0.5); background: rgba(40,30,10,0.8); }
+    .sc-card.active { border-color: rgba(236,196,112,0.8); background: rgba(48,36,10,0.9); }
+    .sc-name { font-size: 0.78rem; font-weight: 700; color: #f0dcae; }
+    .sc-desc { font-size: 0.68rem; color: rgba(220,205,180,0.6); margin-top: 2px; line-height: 1.4; }
+
+    .sg-toggle-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.76rem; color: rgba(220,205,180,0.85); padding: 4px 0; }
+    .sg-toggle-row input[type="checkbox"] { accent-color: #d9a441; width: 15px; height: 15px; }
+    .sg-slice-row { display: flex; flex-direction: column; gap: 4px; padding: 6px 0 2px; }
+    .sg-slice-row input[type="range"] { accent-color: #d9a441; width: 100%; }
+    .sg-slice-label { font-size: 0.72rem; color: rgba(220,205,180,0.6); display: flex; justify-content: space-between; }
+
+    .legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: rgba(220,205,180,0.8); padding: 3px 0; }
+    .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,0.15) inset; }
+
+    .sg-explain { font-size: 0.72rem; line-height: 1.55; color: rgba(220,205,180,0.68); }
+    .sg-explain strong { color: #ecc470; }
+  </style>
+</head>
+<body>
+  <div class="sg-topbar">
+    <div class="sg-topbar-inner">
+      <a href="../steam-lessons.html#module-earth">← Earth Science</a>
+      <span class="sg-topbar-title">Structural Geology · 3D Subsurface Modeler</span>
+      <span></span>
+    </div>
+  </div>
+
+  <header class="sg-hero">
+    <h1>Structural Geology: 3D Subsurface Modeler</h1>
+    <p>Geologists never see the whole subsurface — only outcrops, boreholes, and scattered field readings. This lab shows how those sparse points get turned into a full 3D geologic model using <strong>implicit interpolation</strong>, the same core idea behind professional tools like GemPy.</p>
+  </header>
+
+  <div class="sg-wrap">
+    <div class="sg-outer" id="sg-outer">
+      <canvas id="sg-canvas"></canvas>
+      <div class="sg-overlay">
+        <span class="sg-badge" id="sg-title-badge">Layer-Cake Stratigraphy</span>
+        <span class="sg-badge-sub" id="sg-points-badge">— control points</span>
+      </div>
+      <div class="drag-hint">drag to orbit · scroll to zoom</div>
+    </div>
+
+    <div class="sg-panel">
+      <div class="sg-card">
+        <h3>Structural Scenarios</h3>
+        <div class="scenario-scroll" id="scenario-list"></div>
+      </div>
+
+      <div class="sg-card">
+        <h3>View Controls</h3>
+        <div class="sg-toggle-row">
+          <span>Show field data points</span>
+          <input type="checkbox" id="toggle-points" checked />
+        </div>
+        <div class="sg-toggle-row">
+          <span>Wireframe surfaces</span>
+          <input type="checkbox" id="toggle-wire" />
+        </div>
+        <div class="sg-slice-row">
+          <span class="sg-slice-label"><span>Cross-section slice (X)</span><span id="slice-val">off</span></span>
+          <input type="range" id="slice-slider" min="0" max="100" value="100" />
+        </div>
+      </div>
+
+      <div class="sg-card">
+        <h3>Rock Units</h3>
+        <div id="legend-list"></div>
+      </div>
+
+      <div class="sg-card">
+        <h3>How This Model Is Built</h3>
+        <p class="sg-explain" id="scenario-blurb"></p>
+        <p class="sg-explain">Each glowing dot is a real data point — an interface contact or borehole hit. The colored surfaces in between are <strong>not</strong> measured directly: they are interpolated by fitting a smooth implicit function through the known points, the same "sparse data in, continuous 3D surface out" workflow that drives real subsurface modeling software (GemPy, Leapfrog, GeoModeller). Drag the cross-section slider to slice through the block and see the layers the way a geologist draws a cross-section.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js" integrity="sha384-9EQoUIJYrv09/oYhSxnw1VpLcfPw3BM9dE7+D/3wGUPeLLa7F9Z6OAoD+i/M6FK9" crossorigin="anonymous"></script>
+  <script>
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+    const canvas = document.getElementById('sg-canvas');
+    const outer  = document.getElementById('sg-outer');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.setClearColor(0x0a0c08, 1);
+    renderer.localClippingEnabled = true;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0e0f0a, 0.012);
+
+    const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 500);
+    let camDist = 17, camTheta = 0.7, camPhi = 1.05;
+    const target = new THREE.Vector3(5, 4, 5);
+    function updateCam() {
+      camera.position.set(
+        target.x + camDist * Math.sin(camPhi) * Math.sin(camTheta),
+        target.y + camDist * Math.cos(camPhi),
+        target.z + camDist * Math.sin(camPhi) * Math.cos(camTheta)
+      );
+      camera.lookAt(target);
+    }
+    updateCam();
+
+    let isDrag = false, lastMX = 0, lastMY = 0;
+    canvas.addEventListener('mousedown', e => { isDrag = true; lastMX = e.clientX; lastMY = e.clientY; });
+    window.addEventListener('mouseup', () => { isDrag = false; });
+    canvas.addEventListener('mousemove', e => {
+      if (!isDrag) return;
+      camTheta -= (e.clientX - lastMX) * 0.009;
+      camPhi = clamp(camPhi - (e.clientY - lastMY) * 0.007, 0.15, 1.5);
+      lastMX = e.clientX; lastMY = e.clientY; updateCam();
+    });
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      camDist = clamp(camDist + e.deltaY * 0.03, 6, 40);
+      updateCam();
+    }, { passive: false });
+    let lTX = 0, lTY = 0;
+    canvas.addEventListener('touchstart', e => { if (e.touches.length === 1) { isDrag = true; lTX = e.touches[0].clientX; lTY = e.touches[0].clientY; } }, { passive: true });
+    canvas.addEventListener('touchend', () => { isDrag = false; });
+    canvas.addEventListener('touchmove', e => {
+      if (e.touches.length === 1 && isDrag) {
+        camTheta -= (e.touches[0].clientX - lTX) * 0.012;
+        camPhi = clamp(camPhi - (e.touches[0].clientY - lTY) * 0.009, 0.15, 1.5);
+        lTX = e.touches[0].clientX; lTY = e.touches[0].clientY; updateCam();
+      }
+    }, { passive: true });
+
+    scene.add(new THREE.AmbientLight(0xfff2d8, 0.55));
+    const sun = new THREE.DirectionalLight(0xffe8c0, 1.1);
+    sun.position.set(8, 14, 6);
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0x6090ff, 0.3);
+    fill.position.set(-8, 4, -6);
+    scene.add(fill);
+
+    const boxHelper = new THREE.Box3Helper(new THREE.Box3(new THREE.Vector3(0,0,0), new THREE.Vector3(10,10,10)), 0x594420);
+    scene.add(boxHelper);
+
+    const clipPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 10);
+    const clipPlaneHelper = new THREE.PlaneHelper(clipPlane, 10, 0xecc470);
+    clipPlaneHelper.visible = false;
+    scene.add(clipPlaneHelper);
+
+    let modelGroup = new THREE.Group();
+    scene.add(modelGroup);
+    let pointsGroup = new THREE.Group();
+    scene.add(pointsGroup);
+
+    let data = null;
+    let currentKey = null;
+    const order = ['layercake', 'fold', 'fault', 'unconformity'];
+
+    function buildHorizonMesh(h) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(h.positions, 3));
+      geo.setIndex(h.indices);
+      geo.computeVertexNormals();
+      const mat = new THREE.MeshStandardMaterial({
+        color: h.color, side: THREE.DoubleSide, roughness: 0.85, metalness: 0.02,
+        clippingPlanes: [clipPlane], wireframe: document.getElementById('toggle-wire').checked,
+      });
+      return new THREE.Mesh(geo, mat);
+    }
+
+    function loadScenario(key) {
+      currentKey = key;
+      modelGroup.clear();
+      pointsGroup.clear();
+      const sc = data[key];
+      document.getElementById('sg-title-badge').textContent = sc.title;
+      document.getElementById('sg-points-badge').textContent = sc.controlPoints.length + ' field data points';
+      document.getElementById('scenario-blurb').innerHTML = '<strong>' + sc.title + '.</strong> ' + sc.blurb;
+
+      sc.horizons.forEach(h => {
+        if (h.blocks) { h.blocks.forEach(b => modelGroup.add(buildHorizonMesh(b))); }
+        else { modelGroup.add(buildHorizonMesh(h)); }
+      });
+
+      const ptGeo = new THREE.SphereGeometry(0.09, 8, 8);
+      sc.controlPoints.forEach(p => {
+        const mat = new THREE.MeshBasicMaterial({ color: 0xecc470 });
+        const s = new THREE.Mesh(ptGeo, mat);
+        s.position.set(p.x, p.y, p.z);
+        pointsGroup.add(s);
+      });
+      pointsGroup.visible = document.getElementById('toggle-points').checked;
+
+      document.querySelectorAll('.sc-card').forEach(el => el.classList.toggle('active', el.dataset.key === key));
+
+      const legend = document.getElementById('legend-list');
+      legend.innerHTML = '';
+      const seen = new Set();
+      sc.horizons.forEach(h => {
+        const name = h.blocks ? h.name : h.name;
+        const color = h.blocks ? h.blocks[0].color : h.color;
+        if (seen.has(name)) return;
+        seen.add(name);
+        const row = document.createElement('div');
+        row.className = 'legend-row';
+        row.innerHTML = '<span class="legend-swatch" style="background:' + color + '"></span><span>' + name + '</span>';
+        legend.appendChild(row);
+      });
+    }
+
+    function buildScenarioList() {
+      const list = document.getElementById('scenario-list');
+      list.innerHTML = '';
+      order.forEach(key => {
+        const sc = data[key];
+        const card = document.createElement('div');
+        card.className = 'sc-card';
+        card.dataset.key = key;
+        card.innerHTML = '<div class="sc-name">' + sc.title + '</div><div class="sc-desc">' + sc.blurb + '</div>';
+        card.addEventListener('click', () => loadScenario(key));
+        list.appendChild(card);
+      });
+    }
+
+    document.getElementById('toggle-points').addEventListener('change', e => { pointsGroup.visible = e.target.checked; });
+    document.getElementById('toggle-wire').addEventListener('change', e => {
+      modelGroup.children.forEach(m => { m.material.wireframe = e.target.checked; });
+    });
+    document.getElementById('slice-slider').addEventListener('input', e => {
+      const v = Number(e.target.value);
+      const label = document.getElementById('slice-val');
+      if (v >= 100) {
+        label.textContent = 'off';
+        clipPlaneHelper.visible = false;
+        clipPlane.constant = 10;
+      } else {
+        const xPos = (v / 100) * 10;
+        label.textContent = xPos.toFixed(1);
+        clipPlaneHelper.visible = true;
+        clipPlane.constant = xPos;
+      }
+    });
+
+    fetch('../data/geomodels.json').then(r => r.json()).then(json => {
+      data = json;
+      buildScenarioList();
+      loadScenario('layercake');
+      animate();
+    });
+
+    function resize() {
+      const w = outer.clientWidth, h = outer.clientHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
+</html>
