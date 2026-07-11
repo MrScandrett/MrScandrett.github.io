@@ -1,0 +1,1100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cymatics: The Geometry of Sound · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Physics Lesson — Cymatics: real standing-wave physics (Bessel functions and modal superposition) rendered as 2D and 3D Chladni plates. Test sand, water, and non-Newtonian slime." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    .cy-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 320px; }
+    .cy-hero { padding: 0.4rem 0 1.3rem; }
+    .cy-hero h1 { max-width: 32ch; margin-left: 0; font-size: clamp(1.55rem,3.5vw,2.3rem); }
+    .cy-meta { display:flex;flex-wrap:wrap;gap:0.4rem 0.7rem;margin:0.5rem 0 0;font-size:0.82rem;color:#64748b; }
+    .cy-meta .dot { width:3px;height:3px;border-radius:50%;background:currentColor;opacity:0.4;display:inline-block;vertical-align:middle; }
+    .cy-lede { margin:0.65rem 0 0;max-width:70ch;color:#3f4f65;font-size:0.96rem;line-height:1.62; }
+    [data-theme="night"] .cy-lede,
+    [data-theme="vaporwave"] .cy-lede,
+    [data-theme="bark"] .cy-lede { color:rgba(245,245,247,0.7); }
+
+    .cy-card { background:var(--white,#fff);border:1px solid var(--line,#d2d2d7);border-left:3.5px solid var(--card-accent,#22d3ee);border-radius:var(--radius,18px);box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,0.08));padding:1.2rem 1.4rem;margin-bottom:1rem; }
+    .cy-card h2 { margin:0 0 0.55rem;font-size:1.2rem; }
+    .cy-card h3 { margin:0.9rem 0 0.35rem;font-size:1rem; }
+    .cy-card p  { margin:0 0 0.6rem;color:#3f4f65;font-size:0.88rem;line-height:1.65; }
+    .cy-card p:last-child { margin-bottom:0; }
+    [data-theme="night"] .cy-card,
+    [data-theme="vaporwave"] .cy-card,
+    [data-theme="bark"] .cy-card { background:#2c2c2e; }
+    [data-theme="night"] .cy-card p,
+    [data-theme="vaporwave"] .cy-card p,
+    [data-theme="bark"] .cy-card p { color:rgba(245,245,247,0.72); }
+
+    .cy-callout { border-radius:12px;padding:0.85rem 1rem;margin:0.8rem 0;font-size:0.84rem;line-height:1.6; }
+    .cy-callout.blue   { background:rgba(56,189,248,0.1);border-left:3px solid #38bdf8; }
+    .cy-callout.violet { background:rgba(167,139,250,0.12);border-left:3px solid #a78bfa; }
+    .cy-callout.amber  { background:rgba(245,180,0,0.12);border-left:3px solid #f5b400; }
+
+    .cy-history { list-style:none;margin:0.4rem 0 0;padding:0;display:grid;gap:0.55rem; }
+    .cy-history li { display:grid;grid-template-columns:66px 1fr;gap:0.7rem;font-size:0.85rem;line-height:1.55;color:#3f4f65; }
+    [data-theme="night"] .cy-history li,
+    [data-theme="vaporwave"] .cy-history li,
+    [data-theme="bark"] .cy-history li { color:rgba(245,245,247,0.72); }
+    .cy-history li b { color:#0f172a;font-weight:800; }
+    [data-theme="night"] .cy-history li b,
+    [data-theme="vaporwave"] .cy-history li b,
+    [data-theme="bark"] .cy-history li b { color:#f5f5f7; }
+    .cy-history .cy-yr { font-weight:800;color:#22d3ee;white-space:nowrap; }
+
+    .cy-mat-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:0.7rem;margin:0.8rem 0; }
+    .cy-mat-card { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.85rem; }
+    .cy-mat-icon { font-size:1.4rem;margin-bottom:0.25rem; }
+    .cy-mat-card strong { display:block;font-size:0.86rem;margin-bottom:0.25rem; }
+    .cy-mat-card small { font-size:0.77rem;color:#64748b;line-height:1.55;display:block; }
+
+    .cy-view-toggle { display:flex;gap:0.5rem;margin:0.7rem 0 0.7rem;flex-wrap:wrap; }
+    .cy-view-btn {
+      border:1px solid var(--line,#d2d2d7);border-radius:9px;padding:0.4rem 0.9rem;
+      background:transparent;color:#52647c;font:700 0.82rem/1 inherit;cursor:pointer;
+      transition:background 0.14s,color 0.14s,border-color 0.14s;
+    }
+    .cy-view-btn.active { background:#0891b2;border-color:#0891b2;color:#fff; }
+    [data-theme="night"] .cy-view-btn,
+    [data-theme="vaporwave"] .cy-view-btn,
+    [data-theme="bark"] .cy-view-btn { color:rgba(245,245,247,0.72); }
+
+    .cy-canvas-wrap { position:relative;border:1px solid var(--line,#d2d2d7);border-radius:14px;overflow:hidden;margin:0.4rem 0 0.8rem;background:#0b0e14; }
+    #cy-canvas2d, #cy-canvas3d { width:100%;height:420px;display:block;touch-action:none; }
+    .cy-webgl-fallback { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;color:#94a3b8;font-size:0.86rem;background:#0b0e14; }
+
+    .cy-readouts { display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.6rem 0; }
+    .cy-readout { background:rgba(0,0,0,0.04);border:1px solid var(--line,#d2d2d7);border-radius:10px;padding:0.55rem 0.7rem;text-align:center; }
+    [data-theme="night"] .cy-readout,
+    [data-theme="vaporwave"] .cy-readout,
+    [data-theme="bark"] .cy-readout { background:rgba(255,255,255,0.06); }
+    .cy-readout-label { font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;display:block;margin-bottom:0.2rem; }
+    .cy-readout-val { font-size:0.98rem;font-weight:700;color:#22d3ee; }
+    .cy-hint { font-size:0.78rem;color:#64748b;margin:0; }
+
+    .cy-apps { display:grid;grid-template-columns:repeat(2,1fr);gap:0.7rem;margin:0.8rem 0; }
+    .cy-app  { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.8rem; }
+    .cy-app-icon { font-size:1.5rem;margin-bottom:0.3rem; }
+    .cy-app strong { display:block;font-size:0.84rem;margin-bottom:0.2rem; }
+    .cy-app small  { font-size:0.77rem;color:#64748b;line-height:1.5;display:block; }
+
+    .cy-home-steps { margin:0.4rem 0 0.8rem;padding-left:1.2rem;font-size:0.87rem;line-height:1.7;color:#3f4f65; }
+    [data-theme="night"] .cy-home-steps,
+    [data-theme="vaporwave"] .cy-home-steps,
+    [data-theme="bark"] .cy-home-steps { color:rgba(245,245,247,0.72); }
+    .cy-home-table { width:100%;border-collapse:collapse;font-size:0.82rem;margin-top:0.4rem; }
+    .cy-home-table th, .cy-home-table td { text-align:left;padding:0.45rem 0.55rem;border-bottom:1px solid var(--line,#d2d2d7);vertical-align:top; }
+    .cy-home-table th { font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#64748b; }
+
+    .cy-practice .cy-problem { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.7rem; }
+    .cy-problem p { margin-bottom:0.5rem;font-size:0.88rem;color:#3f4f65;line-height:1.6; }
+    [data-theme="night"] .cy-problem p,
+    [data-theme="vaporwave"] .cy-problem p,
+    [data-theme="bark"] .cy-problem p { color:rgba(245,245,247,0.72); }
+    .cy-problem-row { display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap; }
+    .cy-ans-input { border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.35rem 0.6rem;font-size:0.88rem;width:120px;background:var(--white,#fff);color:var(--text,#1d1d1f); }
+    .cy-check-btn { background:#0891b2;color:#fff;border:none;border-radius:8px;padding:0.35rem 0.8rem;font-size:0.84rem;font-weight:600;cursor:pointer; }
+    .cy-check-btn:hover { background:#067388; }
+    .cy-feedback { font-size:0.82rem;font-weight:600; }
+    .cy-feedback.ok { color:#34c759; }
+    .cy-feedback.err { color:#ff3b30; }
+    .cy-fb-hint { font-size:0.78rem;color:#64748b;margin-top:0.4rem;display:none; }
+    .diff-easy { background:rgba(52,199,89,0.15);color:#248a3d;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .diff-mid  { background:rgba(255,149,0,0.15);color:#c07000;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .diff-hard { background:rgba(255,59,48,0.12);color:#c0392b;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+
+    /* ── Panel controls ── */
+    .cy-btn-row { display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.9rem; }
+    .cy-opt-btn {
+      flex:1 1 auto;border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.4rem 0.5rem;
+      background:transparent;color:#52647c;font:700 0.76rem/1 inherit;cursor:pointer;text-align:center;
+      transition:background 0.14s,color 0.14s,border-color 0.14s;
+    }
+    .cy-opt-btn.active { background:#0891b2;border-color:#0891b2;color:#fff; }
+    [data-theme="night"] .cy-opt-btn,
+    [data-theme="vaporwave"] .cy-opt-btn,
+    [data-theme="bark"] .cy-opt-btn { color:rgba(245,245,247,0.72); }
+    .cy-slider-block { margin-bottom:0.9rem; }
+    .cy-slider-block label { font-size:0.8rem;display:flex;justify-content:space-between;margin-bottom:0.15rem; }
+    .cy-preset-grid { display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-top:0.3rem; }
+    .cy-preset-chip {
+      border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.4rem 0.4rem;
+      background:transparent;color:#52647c;font:600 0.71rem/1.25 inherit;cursor:pointer;text-align:center;
+    }
+    .cy-preset-chip:hover { border-color:#0891b2;color:#0891b2; }
+    [data-theme="night"] .cy-preset-chip,
+    [data-theme="vaporwave"] .cy-preset-chip,
+    [data-theme="bark"] .cy-preset-chip { color:rgba(245,245,247,0.72); }
+    .cy-resprinkle {
+      width:100%;background:#0891b2;color:#fff;border:none;border-radius:9px;padding:0.55rem;
+      font:700 0.82rem/1 inherit;cursor:pointer;margin-top:0.3rem;
+    }
+    .cy-resprinkle:hover { background:#067388; }
+
+    @media (max-width: 720px) {
+      .cy-mat-grid, .cy-apps { grid-template-columns:1fr; }
+      #cy-canvas2d, #cy-canvas3d { height:320px; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li>
+          <li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li>
+          <li><a href="../video-library.html">Videos</a></li>
+          <li><a href="../recipe-book.html">Library</a></li>
+          <li><a href="../class-downloads.html">Downloads</a></li>
+          <li><a href="../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cy-page">
+
+        <section class="hero cy-hero">
+          <p class="eyebrow">Wave Physics · Standing Waves &amp; Resonance</p>
+          <h1>Cymatics: The Geometry of Sound</h1>
+          <div class="cy-meta">
+            <span>Standing Waves</span><span class="dot"></span>
+            <span>Resonant Modes</span><span class="dot"></span>
+            <span>Bessel Functions</span><span class="dot"></span>
+            <span>Nodes &amp; Antinodes</span>
+          </div>
+          <p class="cy-lede">Sprinkle sand on a metal plate, bow the edge, and the chaos-looking grains suddenly leap into a perfect geometric pattern — a mandala drawn by pure vibration. This is <strong>cymatics</strong>: making the invisible shape of a sound wave visible. Below is a real physics engine, not a canned animation — the patterns are generated from the same mathematics (modal superposition and Bessel functions) that predicts real Chladni figures.</p>
+        </section>
+
+        <section class="cy-card" style="--card-accent:#38bdf8;">
+          <h2>What Is Cymatics?</h2>
+          <p>When you vibrate a rigid surface at one of its natural <strong>resonant frequencies</strong>, most of it doesn't just shake randomly — the whole surface locks into a stationary interference pattern called a <strong>standing wave</strong>. Some regions barely move at all (<strong>nodes</strong>); others swing through the largest possible displacement (<strong>antinodes</strong>). Loose material on top gets thrown away from the antinodes and collects along the still, quiet nodal lines — tracing the invisible wave pattern in visible grains.</p>
+          <div class="cy-callout blue">
+            <strong>The key idea:</strong> a Chladni pattern is not drawn by anything — it is the <em>literal shape</em> of the plate's vibration, frozen in place by wherever the material happens to be undisturbed. Change the frequency and you excite a different resonant mode — a different standing-wave "shape" — and the whole picture reorganizes itself.
+          </div>
+          <h3>A short history</h3>
+          <ol class="cy-history">
+            <li><span class="cy-yr">1680</span><span><b>Robert Hooke</b> ran a violin bow along the edge of a flour-dusted glass plate and watched the flour leap into geometric patterns — the first recorded observation of the effect.</span></li>
+            <li><span class="cy-yr">1787</span><span><b>Ernst Chladni</b>, a German physicist and musician, systematized the technique with sand on bowed brass plates and published the patterns — still called <em>Chladni figures</em> today. He demonstrated them to Napoleon.</span></li>
+            <li><span class="cy-yr">1831</span><span><b>Michael Faraday</b> observed a related standing-wave effect on the surface of a vibrating fluid — now called <em>Faraday waves</em>.</span></li>
+            <li><span class="cy-yr">1800s</span><span><b>Lord Rayleigh</b> worked out the mathematics of plate vibration in detail, explaining why nodal-line counts scale with frequency the way they do.</span></li>
+            <li><span class="cy-yr">1967</span><span><b>Hans Jenny</b>, a Swiss physician, coined the word <em>cymatics</em> (from Greek <em>kyma</em>, "wave") and extended the experiments to fluids, pastes, and powders using electronic oscillators — the direct ancestor of the simulator below.</span></li>
+          </ol>
+        </section>
+
+        <section class="cy-card" style="--card-accent:#a78bfa;">
+          <h2>The Physics: Modes, Nodes &amp; Resonance</h2>
+          <p>A driven plate obeys a wave equation whose solutions — the <strong>eigenmodes</strong> — depend only on the plate's shape and boundary. Each mode is labeled by one or two integers that count how many times the pattern repeats across the surface. Drive the plate at the matching frequency and that mode "rings" strongly enough to organize loose material; every other frequency in between just produces noise.</p>
+          <h3>Square plates</h3>
+          <p>A rectangular plate's modes are built from two perpendicular standing waves, indexed by integers <em>(a, b)</em>. The simulator uses the classic superposition used throughout cymatics education:</p>
+          <div class="cy-callout violet" style="font-family:'IBM Plex Mono',monospace;">U(x,y) = cos(aπx)·cos(bπy) − cos(bπx)·cos(aπy)</div>
+          <p>Wherever U = 0 is a nodal line — the crossing grid of curves you see traced in sand.</p>
+          <h3>Circular plates</h3>
+          <p>A circular plate's modes separate into a radial part and an angular part: <strong>Bessel functions</strong> J<sub>n</sub>(kr) describe the concentric rings, and cos(nθ) describes the pie-slice symmetry. The simulator evaluates real Bessel functions (via Miller's recurrence algorithm) using their known zero crossings, so the ring spacing you see is mathematically accurate, not hand-drawn.</p>
+          <div class="cy-callout violet" style="font-family:'IBM Plex Mono',monospace;">U(r,θ) = J<sub>n</sub>(j<sub>n,k</sub>·r) · cos(nθ)</div>
+          <p style="font-size:0.78rem;">where j<sub>n,k</sub> is the k-th zero of J<sub>n</sub>, so the pattern naturally reaches zero at the plate's edge.</p>
+          <div class="cy-callout amber">
+            <strong>Honesty about the model:</strong> a real thin plate technically obeys the biharmonic (Kirchhoff–Love) plate equation, which is harder to solve in closed form. The membrane-mode formulas above are the standard teaching approximation — they reproduce the same nodal-line topology seen in real photographed Chladni figures, which is why they're used across physics education and most cymatics software, this lesson included.
+          </div>
+        </section>
+
+        <section class="cy-card" style="--card-accent:#f5b400;">
+          <h2>Why Sand, Water &amp; Slime Look So Different</h2>
+          <p>The underlying vibration is identical for all three — what changes is how each material <em>responds</em> to it. That's real, distinct physics for each material, not just a different paint job.</p>
+          <div class="cy-mat-grid">
+            <div class="cy-mat-card">
+              <div class="cy-mat-icon">🏜️</div>
+              <strong>Sand (granular)</strong>
+              <small>Grains are flung off the fast-moving antinodes by inelastic bouncing and randomly walk downhill in vibration energy until they get trapped on the motionless nodal lines. This traces the <em>node</em> pattern crisply — classic Chladni figures.</small>
+            </div>
+            <div class="cy-mat-card">
+              <div class="cy-mat-icon">💧</div>
+              <strong>Water (thin film)</strong>
+              <small>A thin liquid film can't "settle" anywhere — it simply follows the plate's actual height field, rising and falling with it. So water reveals the <em>whole</em> standing wave — both nodes and antinodes — as a rippling, shimmering surface.</small>
+            </div>
+            <div class="cy-mat-card">
+              <div class="cy-mat-icon">🧪</div>
+              <strong>Slime (non-Newtonian)</strong>
+              <small>A cornstarch-and-water suspension (oobleck) <em>shear-thickens</em> — the faster it's sheared, the more solid it acts. At antinodes it jams into rigid, momentary finger-like spikes instead of flowing smoothly; the simulator stylizes this jamming/spiking behavior rather than solving the true nonlinear fluid dynamics, which is genuinely chaotic.</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="cy-card" style="--card-accent:#22d3ee;">
+          <h2>Interactive Cymatics Simulator</h2>
+          <p style="font-size:0.84rem;color:#64748b;">Pick a plate shape and material in the panel, dial in a resonant mode (or tap a named preset), and watch the standing wave organize the surface in real time. Switch to 3D to orbit the actual vibrating plate.</p>
+          <div class="cy-view-toggle">
+            <button class="cy-view-btn active" id="cy-view-2d-btn" type="button">⬜ Top-Down (2D)</button>
+            <button class="cy-view-btn" id="cy-view-3d-btn" type="button">🧊 Rendered Plate (3D)</button>
+          </div>
+          <div class="cy-canvas-wrap">
+            <canvas id="cy-canvas2d" aria-label="Top-down 2D cymatics simulation of a vibrating plate"></canvas>
+            <canvas id="cy-canvas3d" aria-label="3D rendered vibrating Chladni plate, drag to orbit" style="display:none;"></canvas>
+            <div class="cy-webgl-fallback" id="cy-webgl-fallback" style="display:none;">WebGL is required for the 3D view — your browser or device doesn't support it. Try the 2D view instead.</div>
+          </div>
+          <div class="cy-readouts">
+            <div class="cy-readout"><span class="cy-readout-label">Mode</span><span class="cy-readout-val" id="cy-r-mode">—</span></div>
+            <div class="cy-readout"><span class="cy-readout-label">Plate</span><span class="cy-readout-val" id="cy-r-plate">—</span></div>
+            <div class="cy-readout"><span class="cy-readout-label">Approx. Frequency</span><span class="cy-readout-val" id="cy-r-freq">—</span></div>
+          </div>
+          <p class="cy-hint">The small center dot is the driving point — real Chladni plates are clamped or bowed there, and sand is always thrown outward from it. Drag to orbit in 3D; use "Re-Sprinkle" in the panel to reset material.</p>
+        </section>
+
+        <section class="cy-card" style="--card-accent:#34c759;">
+          <h2>Real-World Applications</h2>
+          <div class="cy-apps">
+            <div class="cy-app"><div class="cy-app-icon">🎻</div><strong>Instrument Making</strong><small>Luthiers sand and carve violin and guitar soundboards while checking their Chladni figures, tuning the plate's modes to match a target sound before final assembly.</small></div>
+            <div class="cy-app"><div class="cy-app-icon">🔊</div><strong>Loudspeaker Design</strong><small>Engineers use the same figures to find unwanted "breakup modes" in speaker cones — resonances that distort sound — and reshape the cone to push them out of the audible range.</small></div>
+            <div class="cy-app"><div class="cy-app-icon">🧲</div><strong>Acoustic Levitation</strong><small>Ultrasonic standing waves create stable nodes in mid-air strong enough to trap and hold small droplets or particles — used in contactless materials handling and microgravity research.</small></div>
+            <div class="cy-app"><div class="cy-app-icon">🌍</div><strong>Seismology</strong><small>After a huge earthquake, the entire Earth rings like a bell in its own normal modes for days — the same node/antinode mathematics, just planet-sized and far too low-pitched to hear.</small></div>
+            <div class="cy-app"><div class="cy-app-icon">🥣</div><strong>Singing Bowls</strong><small>A struck or rubbed metal bowl vibrates in circular Chladni modes; water or rice placed inside dances along the very node/antinode pattern this simulator computes for circular plates.</small></div>
+            <div class="cy-app"><div class="cy-app-icon">🔬</div><strong>Bioacoustics Research</strong><small>Researchers use cymatic imaging (e.g. the CymaScope) to visualize recorded animal sounds, such as dolphin vocalizations, as an exploratory tool for studying whether they carry structured patterns.</small></div>
+          </div>
+        </section>
+
+        <section class="cy-card" style="--card-accent:#ff9500;">
+          <h2>Try It At Home (Or In Class)</h2>
+          <p>The simulator is real physics, but nothing beats watching it happen for real. All three materials below can be tested on the same setup.</p>
+          <ol class="cy-home-steps">
+            <li>Stretch plastic wrap tightly over a large bowl, or use a thin metal baking sheet, and place it flat on top of a speaker or subwoofer (a phone speaker works for small-scale tests).</li>
+            <li>Open a free tone-generator app or website and start around 40–60 Hz.</li>
+            <li>Sprinkle a thin, even layer of table salt or fine sand on the surface.</li>
+            <li>Slowly sweep the frequency upward. Patterns will snap into focus at specific frequencies and dissolve into chaos in between — those focused moments are the resonant modes.</li>
+            <li>Swap materials between sweeps and compare what each one reveals.</li>
+          </ol>
+          <table class="cy-home-table">
+            <tr><th>Material</th><th>What you'll see</th><th>Notes</th></tr>
+            <tr><td>Table salt / fine sand</td><td>Crisp, thin nodal lines</td><td>Best all-around choice — classic Chladni figures</td></tr>
+            <tr><td>Flour</td><td>Similar lines, softer edges</td><td>Fluffier, easily disturbed by air currents</td></tr>
+            <tr><td>Thin water film</td><td>Shimmering ripples over the whole surface</td><td>Keep the film shallow and away from electronics</td></tr>
+            <tr><td>Cornstarch + water (oobleck)</td><td>Chaotic jumping fingers/spikes</td><td>The viral "oobleck on a speaker" effect — non-Newtonian jamming, not a clean mode shape</td></tr>
+          </table>
+        </section>
+
+        <section class="cy-card" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <div class="cy-practice">
+
+            <div class="cy-problem">
+              <p><span class="diff-easy">Easy</span>1. A standing wave has adjacent nodes spaced 0.25 m apart. Nodes on a standing wave are spaced λ/2 apart — what is the wavelength λ (in m)?</p>
+              <div class="cy-problem-row">
+                <input type="number" class="cy-ans-input" id="cyans-1" step="0.01" placeholder="m" />
+                <button class="cy-check-btn" type="button" onclick="cyCheck(1,0.5,0.02)">Check</button>
+                <span class="cy-feedback" id="cyfb-1"></span>
+              </div>
+              <div class="cy-fb-hint" id="cyhint-1">Hint: λ = 2 × 0.25 = 0.5 m</div>
+            </div>
+
+            <div class="cy-problem">
+              <p><span class="diff-easy">Easy</span>2. On a sand-covered Chladni plate, the grains collect where the plate's vertical displacement is…</p>
+              <div class="cy-problem-row">
+                <select class="cy-ans-input" id="cyans-2" style="width:160px;">
+                  <option value="">Choose…</option>
+                  <option value="zero">Zero (a node)</option>
+                  <option value="max">Maximum (an antinode)</option>
+                  <option value="edges">Only at the plate's edges</option>
+                </select>
+                <button class="cy-check-btn" type="button" onclick="cyCheckText(2,'zero')">Check</button>
+                <span class="cy-feedback" id="cyfb-2"></span>
+              </div>
+              <div class="cy-fb-hint" id="cyhint-2">Hint: material is thrown off the moving parts and collects where it's undisturbed.</div>
+            </div>
+
+            <div class="cy-problem">
+              <p><span class="diff-mid">Medium</span>3. Which material would you expect to reveal the <em>full</em> standing-wave height field — both crests and troughs — rather than only the nodal lines?</p>
+              <div class="cy-problem-row">
+                <select class="cy-ans-input" id="cyans-3" style="width:170px;">
+                  <option value="">Choose…</option>
+                  <option value="sand">Dry sand</option>
+                  <option value="water">A thin water film</option>
+                  <option value="slime">Non-Newtonian slime</option>
+                </select>
+                <button class="cy-check-btn" type="button" onclick="cyCheckText(3,'water')">Check</button>
+                <span class="cy-feedback" id="cyfb-3"></span>
+              </div>
+              <div class="cy-fb-hint" id="cyhint-3">Hint: a thin liquid film can't "settle" — it just follows the surface it's sitting on.</div>
+            </div>
+
+            <div class="cy-problem">
+              <p><span class="diff-hard">Challenge</span>4. Using this lesson's illustrative square-plate frequency estimate f ≈ 55·√(a² + b²) Hz, estimate the frequency for mode (a=3, b=4).</p>
+              <div class="cy-problem-row">
+                <input type="number" class="cy-ans-input" id="cyans-4" step="1" placeholder="Hz" />
+                <button class="cy-check-btn" type="button" onclick="cyCheck(4,275,5)">Check</button>
+                <span class="cy-feedback" id="cyfb-4"></span>
+              </div>
+              <div class="cy-fb-hint" id="cyhint-4">Hint: √(3² + 4²) = √25 = 5, so f ≈ 55 × 5 = 275 Hz.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+        </footer>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="cy-pane-controls">Controls</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cy-pane-modes">Modes</button>
+          <button class="ll-tab" aria-selected="false" data-pane="cy-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="cy-pane-controls">
+          <span class="ll-label">Plate Shape</span>
+          <div class="cy-btn-row">
+            <button class="cy-opt-btn" id="cy-shape-square" type="button">Square</button>
+            <button class="cy-opt-btn active" id="cy-shape-circle" type="button">Circle</button>
+          </div>
+          <span class="ll-label">Material</span>
+          <div class="cy-btn-row">
+            <button class="cy-opt-btn active" id="cy-mat-sand" type="button">🏜️ Sand</button>
+            <button class="cy-opt-btn" id="cy-mat-water" type="button">💧 Water</button>
+            <button class="cy-opt-btn" id="cy-mat-slime" type="button">🧪 Slime</button>
+          </div>
+          <div class="cy-slider-block">
+            <label>Vibration Amplitude <span id="cy-amp-val">0.7</span></label>
+            <input type="range" id="cy-amp-slider" min="20" max="100" value="70" style="width:100%;" />
+          </div>
+          <button class="cy-resprinkle" id="cy-resprinkle-btn" type="button">🔄 Re-Sprinkle Material</button>
+        </div>
+
+        <div class="ll-pane" id="cy-pane-modes">
+          <div class="cy-slider-block">
+            <label><span id="cy-modeA-label">Radial mode k</span> <span id="cy-modeA-val">3</span></label>
+            <input type="range" id="cy-modeA-slider" min="1" max="5" value="3" style="width:100%;" />
+          </div>
+          <div class="cy-slider-block">
+            <label><span id="cy-modeB-label">Angular mode n</span> <span id="cy-modeB-val">2</span></label>
+            <input type="range" id="cy-modeB-slider" min="0" max="6" value="2" style="width:100%;" />
+          </div>
+          <span class="ll-label">Named Presets</span>
+          <div class="cy-preset-grid" id="cy-preset-grid"></div>
+        </div>
+
+        <div class="ll-pane" id="cy-pane-guide">
+          <div class="ll-info"><strong>Node</strong>A point that stays (nearly) motionless — where standing-wave displacement is zero.</div>
+          <div class="ll-info"><strong>Antinode</strong>A point that swings through the largest displacement — the loudest, most energetic part of the pattern.</div>
+          <div class="ll-info"><strong>Resonance</strong>Driving a system at one of its natural frequencies makes a mode ring strongly; off-resonance energy just dissipates as noise.</div>
+          <div class="ll-info"><strong>Eigenmode</strong>A specific standing-wave shape allowed by a plate's geometry, indexed by one or two mode numbers.</div>
+          <div class="ll-info"><strong>Chladni's Law</strong>An empirical 19th-century relationship, f ∝ (n + 2k)ᵖ, linking a circular plate's mode numbers to its resonant frequency.</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+<script src="../assets/js/nav-mobile.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ══════════════════════════════════════════════════════════════
+     BESSEL FUNCTION J_n(x) — Miller's downward-recurrence algorithm
+     (stable for all n, x; self-normalizing, no seed values needed)
+     ══════════════════════════════════════════════════════════════ */
+  function besselJ(n, x) {
+    if (x === 0) return n === 0 ? 1 : 0;
+    const ax = Math.abs(x);
+    const tox = 2 / ax;
+    let m = Math.max(n, Math.ceil(ax)) + 24;
+    if (m % 2 !== 0) m++;
+    let bjp = 0, bj = 1, ans = 0, sum = 0, jsum = 0;
+    for (let j = m; j > 0; j--) {
+      const bjm = j * tox * bj - bjp;
+      bjp = bj; bj = bjm;
+      if (Math.abs(bj) > 1e10) { bj *= 1e-10; bjp *= 1e-10; ans *= 1e-10; sum *= 1e-10; }
+      if (jsum) sum += bj;
+      jsum = jsum ? 0 : 1;
+      if (j === n) ans = bjp;
+    }
+    sum = 2 * sum - bj;
+    return ans / sum;
+  }
+
+  /* First 5 positive zeros of J_n for n = 0..6 (Abramowitz & Stegun) */
+  const BESSEL_ZEROS = [
+    [2.4048, 5.5201, 8.6537, 11.7915, 14.9309],
+    [3.8317, 7.0156, 10.1735, 13.3237, 16.4706],
+    [5.1356, 8.4172, 11.6198, 14.7960, 17.9598],
+    [6.3802, 9.7610, 13.0152, 16.2235, 19.4094],
+    [7.5883, 11.0647, 14.3725, 17.6160, 20.8269],
+    [8.7715, 12.3386, 15.7002, 18.9801, 22.2178],
+    [9.9361, 13.5893, 17.0038, 20.3208, 23.5861]
+  ];
+
+  const LUT_STEPS = 400;
+  let radialLUT = null, radialLUTKey = '';
+  function buildRadialLUT(n, k) {
+    const key = n + '_' + k;
+    if (radialLUTKey === key) return;
+    const zero = BESSEL_ZEROS[n][k - 1];
+    const arr = new Float32Array(LUT_STEPS + 1);
+    let maxAbs = 1e-6;
+    for (let i = 0; i <= LUT_STEPS; i++) {
+      const r = i / LUT_STEPS;
+      const v = besselJ(n, zero * r);
+      arr[i] = v;
+      if (Math.abs(v) > maxAbs) maxAbs = Math.abs(v);
+    }
+    for (let i = 0; i <= LUT_STEPS; i++) arr[i] /= maxAbs;
+    radialLUT = arr;
+    radialLUTKey = key;
+  }
+  function radialValue(r) {
+    if (r > 1) return 0;
+    const f = r * LUT_STEPS;
+    const i0 = Math.floor(f), i1 = Math.min(LUT_STEPS, i0 + 1);
+    const t = f - i0;
+    return radialLUT[i0] * (1 - t) + radialLUT[i1] * t;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     SHARED STATE + PATTERN FUNCTION
+     ══════════════════════════════════════════════════════════════ */
+  const CymState = {
+    shape: 'circle',        // 'square' | 'circle'
+    material: 'sand',       // 'sand' | 'water' | 'slime'
+    amplitude: 0.7,
+    sq: { a: 3, b: 5 },
+    ci: { n: 2, k: 3 }
+  };
+  window.CymState = CymState;
+
+  function patternValue(x, y) {
+    if (CymState.shape === 'square') {
+      const u = (x + 1) / 2, v = (y + 1) / 2;
+      const a = CymState.sq.a, b = CymState.sq.b;
+      return (Math.cos(a * Math.PI * u) * Math.cos(b * Math.PI * v) -
+              Math.cos(b * Math.PI * u) * Math.cos(a * Math.PI * v)) / 2;
+    } else {
+      const r = Math.sqrt(x * x + y * y);
+      if (r > 1.0001) return 0;
+      const theta = Math.atan2(y, x);
+      buildRadialLUT(CymState.ci.n, CymState.ci.k);
+      return radialValue(Math.min(r, 1)) * Math.cos(CymState.ci.n * theta);
+    }
+  }
+  window.cymPatternValue = patternValue;
+
+  function approxFrequency() {
+    if (CymState.shape === 'circle') {
+      const { n, k } = CymState.ci;
+      return Math.round(40 * Math.pow(n + 2 * k, 1.5));
+    } else {
+      const { a, b } = CymState.sq;
+      return Math.round(55 * Math.sqrt(a * a + b * b));
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     PARTICLE PHYSICS (shared by 2D canvas and 3D scene)
+     ══════════════════════════════════════════════════════════════ */
+  let particles = [];
+  function spawnParticle() {
+    if (CymState.shape === 'circle') {
+      const r = Math.sqrt(Math.random()) * 0.98;
+      const th = Math.random() * Math.PI * 2;
+      return { x: r * Math.cos(th), y: r * Math.sin(th) };
+    }
+    return { x: (Math.random() * 2 - 1) * 0.97, y: (Math.random() * 2 - 1) * 0.97 };
+  }
+  function particleCount() {
+    return CymState.material === 'slime' ? 480 : 1500;
+  }
+  function resetParticles() {
+    const n = particleCount();
+    particles = new Array(n);
+    for (let i = 0; i < n; i++) particles[i] = spawnParticle();
+  }
+  window.cymResetParticles = resetParticles;
+  window.cymGetParticles = function () { return particles; };
+
+  const EPS = 0.012;
+  function updateParticles() {
+    if (CymState.material === 'water') return; // water is a height-field, not particles
+    const amp = CymState.amplitude;
+    const isSand = CymState.material === 'sand';
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      const u = patternValue(p.x, p.y);
+      const ux = (patternValue(p.x + EPS, p.y) - patternValue(p.x - EPS, p.y)) / (2 * EPS);
+      const uy = (patternValue(p.x, p.y + EPS) - patternValue(p.x, p.y - EPS)) / (2 * EPS);
+      const localAmp = Math.abs(u) * amp;
+      const gx = 2 * u * ux, gy = 2 * u * uy;
+
+      if (isSand) {
+        p.x -= gx * 0.020;
+        p.y -= gy * 0.020;
+        const jitter = localAmp * 0.045;
+        p.x += (Math.random() * 2 - 1) * jitter;
+        p.y += (Math.random() * 2 - 1) * jitter;
+      } else { // slime — shear-thickening jam behavior
+        const jamThresh = 0.32;
+        if (localAmp > jamThresh) {
+          if (Math.random() < 0.03) {
+            p.x += (Math.random() * 2 - 1) * 0.18;
+            p.y += (Math.random() * 2 - 1) * 0.18;
+          }
+        } else {
+          p.x -= gx * 0.009;
+          p.y -= gy * 0.009;
+          p.x += (Math.random() * 2 - 1) * localAmp * 0.01;
+          p.y += (Math.random() * 2 - 1) * localAmp * 0.01;
+        }
+      }
+
+      /* keep inside the plate; respawn if it wanders out */
+      if (CymState.shape === 'circle') {
+        const r2 = p.x * p.x + p.y * p.y;
+        if (r2 > 0.98) { const np = spawnParticle(); p.x = np.x; p.y = np.y; }
+      } else {
+        if (Math.abs(p.x) > 0.99 || Math.abs(p.y) > 0.99) { const np = spawnParticle(); p.x = np.x; p.y = np.y; }
+      }
+    }
+  }
+  window.cymUpdateParticles = updateParticles;
+
+  /* ══════════════════════════════════════════════════════════════
+     2D CANVAS RENDER
+     ══════════════════════════════════════════════════════════════ */
+  const canvas2d = document.getElementById('cy-canvas2d');
+  const ctx = canvas2d.getContext('2d');
+  const waterGrid = 90;
+  const waterOff = document.createElement('canvas');
+  waterOff.width = waterGrid; waterOff.height = waterGrid;
+  const waterCtx = waterOff.getContext('2d');
+  const waterImg = waterCtx.createImageData(waterGrid, waterGrid);
+
+  function heightColor(h) {
+    const t = Math.max(0, Math.min(1, (h + 1) / 2));
+    return [Math.round(10 + t * t * 210), Math.round(35 + t * 175), Math.round(90 + t * 140)];
+  }
+
+  let cyTime = 0;
+  let view3DActive = false;
+
+  function draw2D() {
+    const W = canvas2d.offsetWidth || 600, H = 420;
+    if (canvas2d.width !== W) canvas2d.width = W;
+    if (canvas2d.height !== H) canvas2d.height = H;
+
+    ctx.fillStyle = '#0b0e14';
+    ctx.fillRect(0, 0, W, H);
+
+    const side = Math.min(W, H) - 40;
+    const cx = W / 2, cy = H / 2;
+    const half = side / 2;
+
+    ctx.save();
+    ctx.beginPath();
+    if (CymState.shape === 'circle') ctx.arc(cx, cy, half, 0, Math.PI * 2);
+    else ctx.rect(cx - half, cy - half, side, side);
+    ctx.clip();
+
+    if (CymState.material === 'water') {
+      const breathe = 0.85 + 0.15 * Math.sin(cyTime * 1.4 * Math.PI * 2);
+      const data = waterImg.data;
+      for (let gy = 0; gy < waterGrid; gy++) {
+        for (let gx = 0; gx < waterGrid; gx++) {
+          const x = (gx / (waterGrid - 1)) * 2 - 1;
+          const y = (gy / (waterGrid - 1)) * 2 - 1;
+          const val = (CymState.shape === 'circle' && x * x + y * y > 1) ? 0 : patternValue(x, y);
+          const c = heightColor(val * breathe);
+          const idx = (gy * waterGrid + gx) * 4;
+          data[idx] = c[0]; data[idx + 1] = c[1]; data[idx + 2] = c[2]; data[idx + 3] = 255;
+        }
+      }
+      waterCtx.putImageData(waterImg, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.fillStyle = '#04121c';
+      ctx.fillRect(cx - half, cy - half, side, side);
+      ctx.drawImage(waterOff, cx - half, cy - half, side, side);
+    } else {
+      const plateGrad = ctx.createRadialGradient(cx, cy - half * 0.3, side * 0.1, cx, cy, side * 0.8);
+      plateGrad.addColorStop(0, '#5c5342');
+      plateGrad.addColorStop(1, '#332e24');
+      ctx.fillStyle = plateGrad;
+      ctx.fillRect(cx - half, cy - half, side, side);
+
+      updateParticles();
+      const isSand = CymState.material === 'sand';
+      ctx.fillStyle = isSand ? '#e9d9a8' : 'rgba(163,230,53,0.62)';
+      const dotR = isSand ? 1.3 : 3.1;
+      if (!isSand) { ctx.shadowColor = '#a3e635'; ctx.shadowBlur = 6; }
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const sx = cx + p.x * half, sy = cy + p.y * half;
+        ctx.beginPath();
+        ctx.arc(sx, sy, dotR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+
+    /* plate outline + center clamp point */
+    ctx.beginPath();
+    if (CymState.shape === 'circle') ctx.arc(cx, cy, half, 0, Math.PI * 2);
+    else ctx.rect(cx - half, cy - half, side, side);
+    ctx.strokeStyle = 'rgba(148,163,184,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#1e293b';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(226,232,240,0.7)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     MASTER ANIMATION LOOP
+     ══════════════════════════════════════════════════════════════ */
+  function tick() {
+    cyTime += 1 / 60;
+    if (!view3DActive) draw2D();
+    if (window.cym3DFrame) window.cym3DFrame(cyTime);
+    requestAnimationFrame(tick);
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     UI WIRING
+     ══════════════════════════════════════════════════════════════ */
+  const PRESETS_CIRCLE = [
+    { label: 'Single Ring', n: 0, k: 1 },
+    { label: 'Two-Lobe Bloom', n: 1, k: 1 },
+    { label: 'Four-Petal Flower', n: 2, k: 2 },
+    { label: 'Six-Point Star', n: 3, k: 2 },
+    { label: 'Snowflake', n: 4, k: 3 },
+    { label: 'Target Rings', n: 2, k: 4 }
+  ];
+  const PRESETS_SQUARE = [
+    { label: 'Basic Cross', a: 1, b: 2 },
+    { label: 'Nested Squares', a: 2, b: 3 },
+    { label: 'Grid Weave', a: 3, b: 4 },
+    { label: 'Fine Lattice', a: 4, b: 5 },
+    { label: 'Long Bars', a: 1, b: 4 },
+    { label: 'Dense Mesh', a: 5, b: 6 }
+  ];
+
+  function refreshReadouts() {
+    if (CymState.shape === 'circle') {
+      document.getElementById('cy-r-mode').textContent = 'n=' + CymState.ci.n + ', k=' + CymState.ci.k;
+    } else {
+      document.getElementById('cy-r-mode').textContent = 'a=' + CymState.sq.a + ', b=' + CymState.sq.b;
+    }
+    document.getElementById('cy-r-plate').textContent =
+      (CymState.shape === 'circle' ? 'Circle' : 'Square') + ' · ' +
+      CymState.material.charAt(0).toUpperCase() + CymState.material.slice(1);
+    document.getElementById('cy-r-freq').textContent = approxFrequency() + ' Hz';
+  }
+
+  function refreshModeLabels() {
+    const labelA = document.getElementById('cy-modeA-label');
+    const labelB = document.getElementById('cy-modeB-label');
+    const sliderA = document.getElementById('cy-modeA-slider');
+    const sliderB = document.getElementById('cy-modeB-slider');
+    if (CymState.shape === 'circle') {
+      labelA.textContent = 'Radial mode k';
+      labelB.textContent = 'Angular mode n';
+      sliderA.min = 1; sliderA.max = 5; sliderA.value = CymState.ci.k;
+      sliderB.min = 0; sliderB.max = 6; sliderB.value = CymState.ci.n;
+    } else {
+      labelA.textContent = 'Mode a';
+      labelB.textContent = 'Mode b';
+      sliderA.min = 1; sliderA.max = 7; sliderA.value = CymState.sq.a;
+      sliderB.min = 1; sliderB.max = 7; sliderB.value = CymState.sq.b;
+    }
+    document.getElementById('cy-modeA-val').textContent = sliderA.value;
+    document.getElementById('cy-modeB-val').textContent = sliderB.value;
+  }
+
+  function buildPresetChips() {
+    const grid = document.getElementById('cy-preset-grid');
+    grid.innerHTML = '';
+    const list = CymState.shape === 'circle' ? PRESETS_CIRCLE : PRESETS_SQUARE;
+    list.forEach(p => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'cy-preset-chip';
+      chip.textContent = p.label;
+      chip.addEventListener('click', () => {
+        if (CymState.shape === 'circle') { CymState.ci.n = p.n; CymState.ci.k = p.k; }
+        else { CymState.sq.a = p.a; CymState.sq.b = p.b; }
+        refreshModeLabels();
+        refreshReadouts();
+        resetParticles();
+      });
+      grid.appendChild(chip);
+    });
+  }
+
+  document.getElementById('cy-shape-square').addEventListener('click', () => {
+    CymState.shape = 'square';
+    document.getElementById('cy-shape-square').classList.add('active');
+    document.getElementById('cy-shape-circle').classList.remove('active');
+    refreshModeLabels(); buildPresetChips(); refreshReadouts(); resetParticles();
+    if (window.cym3DRebuild) window.cym3DRebuild();
+  });
+  document.getElementById('cy-shape-circle').addEventListener('click', () => {
+    CymState.shape = 'circle';
+    document.getElementById('cy-shape-circle').classList.add('active');
+    document.getElementById('cy-shape-square').classList.remove('active');
+    refreshModeLabels(); buildPresetChips(); refreshReadouts(); resetParticles();
+    if (window.cym3DRebuild) window.cym3DRebuild();
+  });
+
+  function setMaterial(mat) {
+    CymState.material = mat;
+    ['sand', 'water', 'slime'].forEach(m => document.getElementById('cy-mat-' + m).classList.toggle('active', m === mat));
+    refreshReadouts();
+    resetParticles();
+    if (window.cym3DMaterialChanged) window.cym3DMaterialChanged();
+  }
+  document.getElementById('cy-mat-sand').addEventListener('click', () => setMaterial('sand'));
+  document.getElementById('cy-mat-water').addEventListener('click', () => setMaterial('water'));
+  document.getElementById('cy-mat-slime').addEventListener('click', () => setMaterial('slime'));
+
+  document.getElementById('cy-amp-slider').addEventListener('input', e => {
+    CymState.amplitude = e.target.value / 100;
+    document.getElementById('cy-amp-val').textContent = CymState.amplitude.toFixed(2);
+  });
+
+  document.getElementById('cy-modeA-slider').addEventListener('input', e => {
+    const v = parseInt(e.target.value, 10);
+    if (CymState.shape === 'circle') CymState.ci.k = v; else CymState.sq.a = v;
+    document.getElementById('cy-modeA-val').textContent = v;
+    refreshReadouts();
+    resetParticles();
+  });
+  document.getElementById('cy-modeB-slider').addEventListener('input', e => {
+    const v = parseInt(e.target.value, 10);
+    if (CymState.shape === 'circle') CymState.ci.n = v; else CymState.sq.b = v;
+    document.getElementById('cy-modeB-val').textContent = v;
+    refreshReadouts();
+    resetParticles();
+  });
+
+  document.getElementById('cy-resprinkle-btn').addEventListener('click', resetParticles);
+
+  document.getElementById('cy-view-2d-btn').addEventListener('click', () => {
+    view3DActive = false;
+    document.getElementById('cy-view-2d-btn').classList.add('active');
+    document.getElementById('cy-view-3d-btn').classList.remove('active');
+    document.getElementById('cy-canvas2d').style.display = 'block';
+    document.getElementById('cy-canvas3d').style.display = 'none';
+  });
+  document.getElementById('cy-view-3d-btn').addEventListener('click', () => {
+    view3DActive = true;
+    document.getElementById('cy-view-3d-btn').classList.add('active');
+    document.getElementById('cy-view-2d-btn').classList.remove('active');
+    document.getElementById('cy-canvas2d').style.display = 'none';
+    document.getElementById('cy-canvas3d').style.display = 'block';
+    if (window.cym3DInit) window.cym3DInit();
+  });
+
+  window.addEventListener('resize', () => { canvas2d.width = 0; });
+
+  /* init */
+  refreshModeLabels();
+  buildPresetChips();
+  refreshReadouts();
+  resetParticles();
+  requestAnimationFrame(tick);
+
+  /* practice-problem checkers */
+  window.cyCheck = function (n, ans, tol) {
+    const val = parseFloat(document.getElementById('cyans-' + n).value);
+    const fb = document.getElementById('cyfb-' + n);
+    const hint = document.getElementById('cyhint-' + n);
+    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'cy-feedback err'; return; }
+    if (Math.abs(val - ans) <= tol) { fb.textContent = '✓ Correct!'; fb.className = 'cy-feedback ok'; }
+    else { fb.textContent = '✗ Try again.'; fb.className = 'cy-feedback err'; hint.style.display = 'block'; }
+  };
+  window.cyCheckText = function (n, ans) {
+    const el = document.getElementById('cyans-' + n);
+    const fb = document.getElementById('cyfb-' + n);
+    const hint = document.getElementById('cyhint-' + n);
+    if (el.value === ans) { fb.textContent = '✓ Correct!'; fb.className = 'cy-feedback ok'; }
+    else { fb.textContent = '✗ Try again.'; fb.className = 'cy-feedback err'; hint.style.display = 'block'; }
+  };
+})();
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+(function () {
+  const canvas = document.getElementById('cy-canvas3d');
+  if (!canvas) return;
+
+  let renderer, scene, camera, controls;
+  let plateMesh, plateGeom;
+  let sandPoints, slimePoints;
+  let baseU = null, baseV = null, vertsX = null, vertsZ = null;
+  let vertexCount = 0;
+  const GRID = 76;
+  let initialized = false;
+
+  function tryCreateRenderer() {
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function makeDotTexture(hex) {
+    const c = document.createElement('canvas');
+    c.width = 32; c.height = 32;
+    const g = c.getContext('2d');
+    const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+    grad.addColorStop(0, hex);
+    grad.addColorStop(0.7, hex);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 32, 32);
+    return new THREE.CanvasTexture(c);
+  }
+
+  function buildScene() {
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0b0e14, 0.12);
+
+    camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(1.9, 1.7, 1.9);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+    scene.add(ambient);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.1);
+    dir.position.set(2, 3, 1.5);
+    scene.add(dir);
+    const dir2 = new THREE.DirectionalLight(0x88bbff, 0.35);
+    dir2.position.set(-2, 1.5, -1.5);
+    scene.add(dir2);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 0);
+    controls.minDistance = 1.1;
+    controls.maxDistance = 5;
+    controls.maxPolarAngle = Math.PI * 0.49;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.6;
+    controls.update();
+
+    /* build plate geometry: GRID x GRID quad grid in the XZ plane */
+    vertexCount = (GRID + 1) * (GRID + 1);
+    baseU = new Float32Array(vertexCount);
+    baseV = new Float32Array(vertexCount);
+    vertsX = new Float32Array(vertexCount);
+    vertsZ = new Float32Array(vertexCount);
+    const positions = new Float32Array(vertexCount * 3);
+    const colors = new Float32Array(vertexCount * 3).fill(1);
+    const uvs = new Float32Array(vertexCount * 2);
+    let idx = 0;
+    for (let j = 0; j <= GRID; j++) {
+      for (let i = 0; i <= GRID; i++) {
+        const u = (i / GRID) * 2 - 1;
+        const v = (j / GRID) * 2 - 1;
+        baseU[idx] = u; baseV[idx] = v;
+        positions[idx * 3] = u; positions[idx * 3 + 1] = 0; positions[idx * 3 + 2] = v;
+        uvs[idx * 2] = i / GRID; uvs[idx * 2 + 1] = j / GRID;
+        idx++;
+      }
+    }
+    const indices = [];
+    for (let j = 0; j < GRID; j++) {
+      for (let i = 0; i < GRID; i++) {
+        const a = j * (GRID + 1) + i;
+        const b = a + 1;
+        const c = a + (GRID + 1);
+        const d = c + 1;
+        indices.push(a, c, b, b, c, d);
+      }
+    }
+    plateGeom = new THREE.BufferGeometry();
+    plateGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    plateGeom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    plateGeom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+    plateGeom.setIndex(indices);
+    plateGeom.computeVertexNormals();
+
+    const plateMat = new THREE.MeshStandardMaterial({
+      color: 0x8a7360, metalness: 0.55, roughness: 0.4,
+      vertexColors: true, side: THREE.DoubleSide
+    });
+    plateMesh = new THREE.Mesh(plateGeom, plateMat);
+    scene.add(plateMesh);
+
+    /* particle systems */
+    const sandTex = makeDotTexture('#e9d9a8');
+    const slimeTex = makeDotTexture('#a3e635');
+    const sandGeom = new THREE.BufferGeometry();
+    sandGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(1500 * 3), 3));
+    sandPoints = new THREE.Points(sandGeom, new THREE.PointsMaterial({
+      size: 0.018, map: sandTex, color: 0xe9d9a8, transparent: true, depthWrite: false, sizeAttenuation: true
+    }));
+    scene.add(sandPoints);
+
+    const slimeGeom = new THREE.BufferGeometry();
+    slimeGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(480 * 3), 3));
+    slimePoints = new THREE.Points(slimeGeom, new THREE.PointsMaterial({
+      size: 0.04, map: slimeTex, color: 0xa3e635, transparent: true, opacity: 0.85, depthWrite: false, sizeAttenuation: true
+    }));
+    scene.add(slimePoints);
+
+    rebuildVertexXZ();
+    resize();
+    window.addEventListener('resize', resize);
+  }
+
+  function rebuildVertexXZ() {
+    const posAttr = plateGeom.attributes.position;
+    for (let i = 0; i < vertexCount; i++) {
+      const u = baseU[i], v = baseV[i];
+      let px, pz;
+      if (window.CymState.shape === 'circle') {
+        px = u * Math.sqrt(Math.max(0, 1 - (v * v) / 2));
+        pz = v * Math.sqrt(Math.max(0, 1 - (u * u) / 2));
+      } else {
+        px = u; pz = v;
+      }
+      vertsX[i] = px; vertsZ[i] = pz;
+      posAttr.array[i * 3] = px;
+      posAttr.array[i * 3 + 2] = pz;
+    }
+    posAttr.needsUpdate = true;
+  }
+
+  function resize() {
+    const w = canvas.offsetWidth, h = canvas.offsetHeight;
+    if (!w || !h) return;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+  }
+
+  function heightColor01(h) {
+    const t = Math.max(0, Math.min(1, (h + 1) / 2));
+    return [(10 + t * t * 210) / 255, (35 + t * 175) / 255, (90 + t * 140) / 255];
+  }
+
+  function frame(t) {
+    if (!initialized) return;
+    const CymState = window.CymState;
+    const patternValue = window.cymPatternValue;
+    const breathe = 0.85 + 0.15 * Math.sin(t * 1.4 * Math.PI * 2);
+
+    const posAttr = plateGeom.attributes.position;
+    const colorAttr = plateGeom.attributes.color;
+    const isWater = CymState.material === 'water';
+    if (isWater !== plateMesh.userData.wasWater) {
+      plateMesh.material.color.setHex(isWater ? 0xffffff : 0x8a7360);
+      plateMesh.material.metalness = isWater ? 0.1 : 0.55;
+      plateMesh.material.roughness = isWater ? 0.15 : 0.4;
+      plateMesh.userData.wasWater = isWater;
+    }
+    for (let i = 0; i < vertexCount; i++) {
+      const val = patternValue(vertsX[i], vertsZ[i]);
+      const h = CymState.amplitude * val * breathe * 0.42;
+      posAttr.array[i * 3 + 1] = h;
+      if (isWater) {
+        const c = heightColor01(val * breathe);
+        colorAttr.array[i * 3] = c[0]; colorAttr.array[i * 3 + 1] = c[1]; colorAttr.array[i * 3 + 2] = c[2];
+      }
+    }
+    posAttr.needsUpdate = true;
+    if (isWater) colorAttr.needsUpdate = true;
+    else {
+      const arr = colorAttr.array;
+      for (let i = 0; i < arr.length; i++) arr[i] = 1;
+      colorAttr.needsUpdate = true;
+    }
+    plateGeom.computeVertexNormals();
+
+    if (!isWater) window.cymUpdateParticles();
+    const particles = window.cymGetParticles();
+    sandPoints.visible = CymState.material === 'sand';
+    slimePoints.visible = CymState.material === 'slime';
+    if (!isWater) {
+      const activePoints = CymState.material === 'sand' ? sandPoints : slimePoints;
+      const pAttr = activePoints.geometry.attributes.position;
+      const n = Math.min(particles.length, pAttr.array.length / 3);
+      for (let i = 0; i < n; i++) {
+        const p = particles[i];
+        const val = patternValue(p.x, p.y);
+        const h = CymState.amplitude * val * breathe * 0.42 + 0.01;
+        pAttr.array[i * 3] = p.x;
+        pAttr.array[i * 3 + 1] = h;
+        pAttr.array[i * 3 + 2] = p.y;
+      }
+      pAttr.needsUpdate = true;
+      activePoints.geometry.setDrawRange(0, n);
+    }
+
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  window.cym3DInit = function () {
+    if (initialized) { resize(); return; }
+    if (!tryCreateRenderer()) {
+      document.getElementById('cy-webgl-fallback').style.display = 'flex';
+      return;
+    }
+    buildScene();
+    initialized = true;
+  };
+  window.cym3DRebuild = function () { if (initialized) rebuildVertexXZ(); };
+  window.cym3DMaterialChanged = function () { /* handled per-frame via visibility */ };
+  window.cym3DFrame = frame;
+})();
+</script>
+
+<script src="../assets/js/classroom-animations.js"></script>
+  <script src="../assets/js/lesson-layout.js"></script>
+</body>
+</html>
