@@ -135,6 +135,15 @@
     [data-theme="bark"] .cy-opt-btn { color:rgba(245,245,247,0.72); }
     .cy-slider-block { margin-bottom:0.9rem; }
     .cy-slider-block label { font-size:0.8rem;display:flex;justify-content:space-between;margin-bottom:0.15rem; }
+
+    .cy-freqgen { margin-bottom:1.1rem;padding-bottom:1rem;border-bottom:1px solid var(--line,#d2d2d7); }
+    .cy-freq-readout-row { display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.35rem;gap:0.5rem; }
+    .cy-freq-big { font-size:1.35rem;font-weight:800;color:#22d3ee;font-family:monospace;white-space:nowrap; }
+    .cy-freq-status { font-size:0.68rem;font-weight:700;padding:0.18rem 0.5rem;border-radius:999px;white-space:nowrap; }
+    .cy-freq-status.locked { background:rgba(52,199,89,0.15);color:#248a3d; }
+    .cy-freq-status.unlocked { background:rgba(148,163,184,0.18);color:#64748b; }
+    .cy-freq-scale { display:flex;justify-content:space-between;font-size:0.66rem;color:#94a3b8;margin-top:0.15rem; }
+    .cy-freq-note { font-size:0.74rem;color:#64748b;line-height:1.5;margin:0.5rem 0 0; }
     .cy-preset-grid { display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-top:0.3rem; }
     .cy-preset-chip {
       border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.4rem 0.4rem;
@@ -249,7 +258,7 @@
 
         <section class="cy-card" style="--card-accent:#22d3ee;">
           <h2>Interactive Cymatics Simulator</h2>
-          <p style="font-size:0.84rem;color:#64748b;">Pick a plate shape and material in the panel, dial in a resonant mode (or tap a named preset), and watch the standing wave organize the surface in real time. Switch to 3D to orbit the actual vibrating plate.</p>
+          <p style="font-size:0.84rem;color:#64748b;">Pick a plate shape and material, then dial the <strong>signal generator</strong> anywhere from 0&nbsp;Hz to 20,000&nbsp;Hz — the full range of human hearing. It produces no actual sound; it only drives the simulated plate exactly the way a real function generator and speaker would. Most frequencies just jitter the material with no pattern — sweep slowly and watch a clean figure snap into focus only when you land on one of the plate's true resonances.</p>
           <div class="cy-view-toggle">
             <button class="cy-view-btn active" id="cy-view-2d-btn" type="button">⬜ Top-Down (2D)</button>
             <button class="cy-view-btn" id="cy-view-3d-btn" type="button">🧊 Rendered Plate (3D)</button>
@@ -264,7 +273,7 @@
             <div class="cy-readout"><span class="cy-readout-label">Plate</span><span class="cy-readout-val" id="cy-r-plate">—</span></div>
             <div class="cy-readout"><span class="cy-readout-label">Approx. Frequency</span><span class="cy-readout-val" id="cy-r-freq">—</span></div>
           </div>
-          <p class="cy-hint">The small center dot is the driving point — real Chladni plates are clamped or bowed there, and sand is always thrown outward from it. Drag to orbit in 3D; use "Re-Sprinkle" in the panel to reset material.</p>
+          <p class="cy-hint">The small center dot is the driving point — real Chladni plates are clamped or bowed there, and sand is always thrown outward from it. Drag to orbit in 3D; use "Sweep" or "Re-Sprinkle" in the panel to explore.</p>
         </section>
 
         <section class="cy-card" style="--card-accent:#34c759;">
@@ -343,13 +352,13 @@
             </div>
 
             <div class="cy-problem">
-              <p><span class="diff-hard">Challenge</span>4. Using this lesson's illustrative square-plate frequency estimate f ≈ 55·√(a² + b²) Hz, estimate the frequency for mode (a=3, b=4).</p>
+              <p><span class="diff-hard">Challenge</span>4. Using this lesson's illustrative square-plate frequency estimate f ≈ 175·√(a² + b²) Hz — the same formula driving the signal generator's resonance search — estimate the frequency for mode (a=3, b=4).</p>
               <div class="cy-problem-row">
                 <input type="number" class="cy-ans-input" id="cyans-4" step="1" placeholder="Hz" />
-                <button class="cy-check-btn" type="button" onclick="cyCheck(4,275,5)">Check</button>
+                <button class="cy-check-btn" type="button" onclick="cyCheck(4,875,15)">Check</button>
                 <span class="cy-feedback" id="cyfb-4"></span>
               </div>
-              <div class="cy-fb-hint" id="cyhint-4">Hint: √(3² + 4²) = √25 = 5, so f ≈ 55 × 5 = 275 Hz.</div>
+              <div class="cy-fb-hint" id="cyhint-4">Hint: √(3² + 4²) = √25 = 5, so f ≈ 175 × 5 = 875 Hz.</div>
             </div>
 
           </div>
@@ -373,6 +382,17 @@
       <div class="ll-panel-body">
 
         <div class="ll-pane ll-active" id="cy-pane-controls">
+          <div class="cy-freqgen">
+            <span class="ll-label">Signal Generator</span>
+            <div class="cy-freq-readout-row">
+              <span class="cy-freq-big" id="cy-freq-big">905 Hz</span>
+              <span class="cy-freq-status locked" id="cy-freq-status">● Resonant Lock</span>
+            </div>
+            <input type="range" id="cy-freq-slider" min="0" max="20000" step="1" value="905" style="width:100%;" />
+            <div class="cy-freq-scale"><span>0 Hz</span><span>20,000 Hz</span></div>
+            <button class="cy-opt-btn" id="cy-sweep-btn" type="button" style="width:100%;margin-top:0.5rem;">▶ Sweep</button>
+            <p class="cy-freq-note">Produces no actual sound — only the plate's simulated mechanical response. Most frequencies just jitter the material; clean figures only appear at true resonances.</p>
+          </div>
           <span class="ll-label">Plate Shape</span>
           <div class="cy-btn-row">
             <button class="cy-opt-btn" id="cy-shape-square" type="button">Square</button>
@@ -461,12 +481,13 @@
   ];
 
   const LUT_STEPS = 400;
-  let radialLUT = null, radialLUTKey = '';
-  function buildRadialLUT(n, k) {
+  const radialLUTCache = new Map();
+  function getRadialLUT(n, k) {
     const key = n + '_' + k;
-    if (radialLUTKey === key) return;
+    let arr = radialLUTCache.get(key);
+    if (arr) return arr;
     const zero = BESSEL_ZEROS[n][k - 1];
-    const arr = new Float32Array(LUT_STEPS + 1);
+    arr = new Float32Array(LUT_STEPS + 1);
     let maxAbs = 1e-6;
     for (let i = 0; i <= LUT_STEPS; i++) {
       const r = i / LUT_STEPS;
@@ -475,15 +496,59 @@
       if (Math.abs(v) > maxAbs) maxAbs = Math.abs(v);
     }
     for (let i = 0; i <= LUT_STEPS; i++) arr[i] /= maxAbs;
-    radialLUT = arr;
-    radialLUTKey = key;
+    radialLUTCache.set(key, arr);
+    return arr;
   }
-  function radialValue(r) {
+  function radialValueFromLUT(arr, r) {
     if (r > 1) return 0;
     const f = r * LUT_STEPS;
     const i0 = Math.floor(f), i1 = Math.min(LUT_STEPS, i0 + 1);
     const t = f - i0;
-    return radialLUT[i0] * (1 - t) + radialLUT[i1] * t;
+    return arr[i0] * (1 - t) + arr[i1] * t;
+  }
+
+  /* Pure mode-shape evaluators — reused for the locked pattern AND the
+     off-resonance reference blend below. */
+  function squarePatternRaw(a, b, x, y) {
+    const u = (x + 1) / 2, v = (y + 1) / 2;
+    if (a === b) return Math.cos(a * Math.PI * u) * Math.cos(b * Math.PI * v);
+    return (Math.cos(a * Math.PI * u) * Math.cos(b * Math.PI * v) -
+            Math.cos(b * Math.PI * u) * Math.cos(a * Math.PI * v)) / 2;
+  }
+  function circlePatternRaw(n, k, x, y) {
+    const r = Math.sqrt(x * x + y * y);
+    if (r > 1.0001) return 0;
+    const theta = Math.atan2(y, x);
+    const lut = getRadialLUT(n, k);
+    return radialValueFromLUT(lut, Math.min(r, 1)) * Math.cos(n * theta);
+  }
+
+  /* Illustrative frequency formulas — a small-plate calibration spread
+     across the signal generator's audible 0–20,000 Hz dial. Real plates
+     resonate lower as they grow larger; this plate simply doesn't have
+     clean modes below ~110 Hz or above ~3,500 Hz, which is honest and
+     is itself a teaching point (see the callout above the simulator). */
+  function squareFreq(a, b) { return 175 * Math.sqrt(a * a + b * b); }
+  function circleFreq(n, k) { return 40 * Math.pow(n + 2 * k, 1.5); }
+
+  const SQUARE_CANDIDATES = [];
+  for (let a = 1; a <= 14; a++) {
+    for (let b = a; b <= 14; b++) SQUARE_CANDIDATES.push({ a, b, freq: squareFreq(a, b) });
+  }
+  const CIRCLE_CANDIDATES = [];
+  for (let n = 0; n <= 7; n++) {
+    for (let k = 1; k <= 6; k++) CIRCLE_CANDIDATES.push({ n, k, freq: circleFreq(n, k) });
+  }
+  function findNearestCandidate(freq, shape) {
+    const list = shape === 'circle' ? CIRCLE_CANDIDATES : SQUARE_CANDIDATES;
+    let best = null, bestDiff = Infinity;
+    for (let i = 0; i < list.length; i++) {
+      const d = Math.abs(list[i].freq - freq);
+      if (d < bestDiff) { bestDiff = d; best = list[i]; }
+    }
+    if (!best) return null;
+    const tol = Math.max(6, best.freq * 0.025);
+    return bestDiff <= tol ? best : null;
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -494,35 +559,34 @@
     material: 'sand',       // 'sand' | 'water' | 'slime'
     amplitude: 0.7,
     sq: { a: 3, b: 5 },
-    ci: { n: 2, k: 3 }
+    ci: { n: 2, k: 3 },
+    freqHz: 905,
+    locked: true,
+    sweeping: false
   };
   window.CymState = CymState;
 
+  /* fixed off-resonance reference modes — an incoherent, never-settling
+     blend used whenever the dialed frequency doesn't match a resonance */
   function patternValue(x, y) {
-    if (CymState.shape === 'square') {
-      const u = (x + 1) / 2, v = (y + 1) / 2;
-      const a = CymState.sq.a, b = CymState.sq.b;
-      return (Math.cos(a * Math.PI * u) * Math.cos(b * Math.PI * v) -
-              Math.cos(b * Math.PI * u) * Math.cos(a * Math.PI * v)) / 2;
-    } else {
-      const r = Math.sqrt(x * x + y * y);
-      if (r > 1.0001) return 0;
-      const theta = Math.atan2(y, x);
-      buildRadialLUT(CymState.ci.n, CymState.ci.k);
-      return radialValue(Math.min(r, 1)) * Math.cos(CymState.ci.n * theta);
+    if (!CymState.locked) {
+      const t = cyTime;
+      const w1 = 0.5 + 0.5 * Math.sin(t * 0.53);
+      const w2 = 0.5 + 0.5 * Math.cos(t * 0.71 + 1.3);
+      let vA, vB;
+      if (CymState.shape === 'square') {
+        vA = squarePatternRaw(2, 3, x, y);
+        vB = squarePatternRaw(4, 5, x, y);
+      } else {
+        vA = circlePatternRaw(1, 2, x, y);
+        vB = circlePatternRaw(3, 3, x, y);
+      }
+      return 0.24 * (vA * w1 + vB * w2);
     }
+    if (CymState.shape === 'square') return squarePatternRaw(CymState.sq.a, CymState.sq.b, x, y);
+    return circlePatternRaw(CymState.ci.n, CymState.ci.k, x, y);
   }
   window.cymPatternValue = patternValue;
-
-  function approxFrequency() {
-    if (CymState.shape === 'circle') {
-      const { n, k } = CymState.ci;
-      return Math.round(40 * Math.pow(n + 2 * k, 1.5));
-    } else {
-      const { a, b } = CymState.sq;
-      return Math.round(55 * Math.sqrt(a * a + b * b));
-    }
-  }
 
   /* ══════════════════════════════════════════════════════════════
      PARTICLE PHYSICS (shared by 2D canvas and 3D scene)
@@ -552,32 +616,41 @@
     if (CymState.material === 'water') return; // water is a height-field, not particles
     const amp = CymState.amplitude;
     const isSand = CymState.material === 'sand';
+    const locked = CymState.locked;
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i];
-      const u = patternValue(p.x, p.y);
-      const ux = (patternValue(p.x + EPS, p.y) - patternValue(p.x - EPS, p.y)) / (2 * EPS);
-      const uy = (patternValue(p.x, p.y + EPS) - patternValue(p.x, p.y - EPS)) / (2 * EPS);
-      const localAmp = Math.abs(u) * amp;
-      const gx = 2 * u * ux, gy = 2 * u * uy;
 
-      if (isSand) {
-        p.x -= gx * 0.020;
-        p.y -= gy * 0.020;
-        const jitter = localAmp * 0.045;
-        p.x += (Math.random() * 2 - 1) * jitter;
-        p.y += (Math.random() * 2 - 1) * jitter;
-      } else { // slime — shear-thickening jam behavior
-        const jamThresh = 0.32;
-        if (localAmp > jamThresh) {
-          if (Math.random() < 0.03) {
-            p.x += (Math.random() * 2 - 1) * 0.18;
-            p.y += (Math.random() * 2 - 1) * 0.18;
+      if (!locked) {
+        /* off resonance: no eigenmode exists to seek — material just idles */
+        const j = 0.012 * amp;
+        p.x += (Math.random() * 2 - 1) * j;
+        p.y += (Math.random() * 2 - 1) * j;
+      } else {
+        const u = patternValue(p.x, p.y);
+        const ux = (patternValue(p.x + EPS, p.y) - patternValue(p.x - EPS, p.y)) / (2 * EPS);
+        const uy = (patternValue(p.x, p.y + EPS) - patternValue(p.x, p.y - EPS)) / (2 * EPS);
+        const localAmp = Math.abs(u) * amp;
+        const gx = 2 * u * ux, gy = 2 * u * uy;
+
+        if (isSand) {
+          p.x -= gx * 0.020;
+          p.y -= gy * 0.020;
+          const jitter = localAmp * 0.045;
+          p.x += (Math.random() * 2 - 1) * jitter;
+          p.y += (Math.random() * 2 - 1) * jitter;
+        } else { // slime — shear-thickening jam behavior
+          const jamThresh = 0.32;
+          if (localAmp > jamThresh) {
+            if (Math.random() < 0.03) {
+              p.x += (Math.random() * 2 - 1) * 0.18;
+              p.y += (Math.random() * 2 - 1) * 0.18;
+            }
+          } else {
+            p.x -= gx * 0.009;
+            p.y -= gy * 0.009;
+            p.x += (Math.random() * 2 - 1) * localAmp * 0.01;
+            p.y += (Math.random() * 2 - 1) * localAmp * 0.01;
           }
-        } else {
-          p.x -= gx * 0.009;
-          p.y -= gy * 0.009;
-          p.x += (Math.random() * 2 - 1) * localAmp * 0.01;
-          p.y += (Math.random() * 2 - 1) * localAmp * 0.01;
         }
       }
 
@@ -690,8 +763,16 @@
   /* ══════════════════════════════════════════════════════════════
      MASTER ANIMATION LOOP
      ══════════════════════════════════════════════════════════════ */
+  let sweepDir = 1;
+  const SWEEP_RATE = 250; // Hz per second
   function tick() {
     cyTime += 1 / 60;
+    if (CymState.sweeping) {
+      let nf = CymState.freqHz + sweepDir * (SWEEP_RATE / 60);
+      if (nf >= 20000) { nf = 20000; sweepDir = -1; }
+      if (nf <= 0) { nf = 0; sweepDir = 1; }
+      applyFrequency(Math.round(nf));
+    }
     if (!view3DActive) draw2D();
     if (window.cym3DFrame) window.cym3DFrame(cyTime);
     requestAnimationFrame(tick);
@@ -718,7 +799,9 @@
   ];
 
   function refreshReadouts() {
-    if (CymState.shape === 'circle') {
+    if (!CymState.locked) {
+      document.getElementById('cy-r-mode').textContent = '— off resonance —';
+    } else if (CymState.shape === 'circle') {
       document.getElementById('cy-r-mode').textContent = 'n=' + CymState.ci.n + ', k=' + CymState.ci.k;
     } else {
       document.getElementById('cy-r-mode').textContent = 'a=' + CymState.sq.a + ', b=' + CymState.sq.b;
@@ -726,9 +809,10 @@
     document.getElementById('cy-r-plate').textContent =
       (CymState.shape === 'circle' ? 'Circle' : 'Square') + ' · ' +
       CymState.material.charAt(0).toUpperCase() + CymState.material.slice(1);
-    document.getElementById('cy-r-freq').textContent = approxFrequency() + ' Hz';
+    document.getElementById('cy-r-freq').textContent = CymState.freqHz.toLocaleString() + ' Hz';
   }
 
+  /* label text + slider min/max only change with plate shape */
   function refreshModeLabels() {
     const labelA = document.getElementById('cy-modeA-label');
     const labelB = document.getElementById('cy-modeB-label');
@@ -737,16 +821,92 @@
     if (CymState.shape === 'circle') {
       labelA.textContent = 'Radial mode k';
       labelB.textContent = 'Angular mode n';
-      sliderA.min = 1; sliderA.max = 5; sliderA.value = CymState.ci.k;
-      sliderB.min = 0; sliderB.max = 6; sliderB.value = CymState.ci.n;
+      sliderA.min = 1; sliderA.max = 6; sliderB.min = 0; sliderB.max = 7;
     } else {
       labelA.textContent = 'Mode a';
       labelB.textContent = 'Mode b';
-      sliderA.min = 1; sliderA.max = 7; sliderA.value = CymState.sq.a;
-      sliderB.min = 1; sliderB.max = 7; sliderB.value = CymState.sq.b;
+      sliderA.min = 1; sliderA.max = 14; sliderB.min = 1; sliderB.max = 14;
+    }
+    refreshModeSliderPositions();
+  }
+
+  /* sync mode slider positions/readouts to current CymState without
+     touching min/max (safe to call whenever the locked mode changes) */
+  function refreshModeSliderPositions() {
+    const sliderA = document.getElementById('cy-modeA-slider');
+    const sliderB = document.getElementById('cy-modeB-slider');
+    if (CymState.shape === 'circle') {
+      sliderA.value = CymState.ci.k;
+      sliderB.value = CymState.ci.n;
+    } else {
+      sliderA.value = CymState.sq.a;
+      sliderB.value = CymState.sq.b;
     }
     document.getElementById('cy-modeA-val').textContent = sliderA.value;
     document.getElementById('cy-modeB-val').textContent = sliderB.value;
+  }
+
+  /* the single entry point for changing the signal generator's dial —
+     searches for a matching resonance, locks/unlocks accordingly, and
+     only resets particles when the actual mode (or lock state) changes */
+  let lastLockKey = null;
+  function applyFrequency(freq, opts) {
+    opts = opts || {};
+    freq = Math.max(0, Math.min(20000, Math.round(freq)));
+    CymState.freqHz = freq;
+
+    const slider = document.getElementById('cy-freq-slider');
+    if (Number(slider.value) !== freq) slider.value = freq;
+    document.getElementById('cy-freq-big').textContent = freq.toLocaleString() + ' Hz';
+
+    const match = findNearestCandidate(freq, CymState.shape);
+    let newKey = null;
+    if (match) {
+      CymState.locked = true;
+      if (CymState.shape === 'circle') { CymState.ci.n = match.n; CymState.ci.k = match.k; newKey = 'ci_' + match.n + '_' + match.k; }
+      else { CymState.sq.a = match.a; CymState.sq.b = match.b; newKey = 'sq_' + match.a + '_' + match.b; }
+    } else {
+      CymState.locked = false;
+    }
+
+    const statusEl = document.getElementById('cy-freq-status');
+    statusEl.textContent = CymState.locked ? '● Resonant Lock' : '○ No Resonance';
+    statusEl.className = 'cy-freq-status ' + (CymState.locked ? 'locked' : 'unlocked');
+
+    if (opts.forceReset || newKey !== lastLockKey) {
+      resetParticles();
+      lastLockKey = newKey;
+    }
+    refreshModeSliderPositions();
+    refreshReadouts();
+  }
+  window.cymApplyFrequency = applyFrequency;
+
+  /* called after a manual mode-slider drag or preset chip click — locks
+     directly onto the exact mode chosen (no resonance search). A search
+     would be wrong here: several distinct (n,k) pairs share the same
+     illustrative frequency — a real mode-degeneracy artifact of f ∝ n+2k
+     — so re-deriving the mode from frequency could silently swap in a
+     different pattern than the one just picked. */
+  function syncFreqFromMode() {
+    const freq = CymState.shape === 'circle'
+      ? circleFreq(CymState.ci.n, CymState.ci.k)
+      : squareFreq(CymState.sq.a, CymState.sq.b);
+    const roundedFreq = Math.max(0, Math.min(20000, Math.round(freq)));
+    CymState.freqHz = roundedFreq;
+    CymState.locked = true;
+
+    const slider = document.getElementById('cy-freq-slider');
+    if (Number(slider.value) !== roundedFreq) slider.value = roundedFreq;
+    document.getElementById('cy-freq-big').textContent = roundedFreq.toLocaleString() + ' Hz';
+    const statusEl = document.getElementById('cy-freq-status');
+    statusEl.textContent = '● Resonant Lock';
+    statusEl.className = 'cy-freq-status locked';
+
+    const newKey = CymState.shape === 'circle' ? ('ci_' + CymState.ci.n + '_' + CymState.ci.k) : ('sq_' + CymState.sq.a + '_' + CymState.sq.b);
+    if (newKey !== lastLockKey) { resetParticles(); lastLockKey = newKey; }
+    refreshModeSliderPositions();
+    refreshReadouts();
   }
 
   function buildPresetChips() {
@@ -761,9 +921,7 @@
       chip.addEventListener('click', () => {
         if (CymState.shape === 'circle') { CymState.ci.n = p.n; CymState.ci.k = p.k; }
         else { CymState.sq.a = p.a; CymState.sq.b = p.b; }
-        refreshModeLabels();
-        refreshReadouts();
-        resetParticles();
+        syncFreqFromMode();
       });
       grid.appendChild(chip);
     });
@@ -773,14 +931,16 @@
     CymState.shape = 'square';
     document.getElementById('cy-shape-square').classList.add('active');
     document.getElementById('cy-shape-circle').classList.remove('active');
-    refreshModeLabels(); buildPresetChips(); refreshReadouts(); resetParticles();
+    refreshModeLabels(); buildPresetChips();
+    applyFrequency(CymState.freqHz, { forceReset: true });
     if (window.cym3DRebuild) window.cym3DRebuild();
   });
   document.getElementById('cy-shape-circle').addEventListener('click', () => {
     CymState.shape = 'circle';
     document.getElementById('cy-shape-circle').classList.add('active');
     document.getElementById('cy-shape-square').classList.remove('active');
-    refreshModeLabels(); buildPresetChips(); refreshReadouts(); resetParticles();
+    refreshModeLabels(); buildPresetChips();
+    applyFrequency(CymState.freqHz, { forceReset: true });
     if (window.cym3DRebuild) window.cym3DRebuild();
   });
 
@@ -804,18 +964,30 @@
     const v = parseInt(e.target.value, 10);
     if (CymState.shape === 'circle') CymState.ci.k = v; else CymState.sq.a = v;
     document.getElementById('cy-modeA-val').textContent = v;
-    refreshReadouts();
-    resetParticles();
+    syncFreqFromMode();
   });
   document.getElementById('cy-modeB-slider').addEventListener('input', e => {
     const v = parseInt(e.target.value, 10);
     if (CymState.shape === 'circle') CymState.ci.n = v; else CymState.sq.b = v;
     document.getElementById('cy-modeB-val').textContent = v;
-    refreshReadouts();
-    resetParticles();
+    syncFreqFromMode();
   });
 
   document.getElementById('cy-resprinkle-btn').addEventListener('click', resetParticles);
+
+  document.getElementById('cy-freq-slider').addEventListener('input', e => {
+    CymState.sweeping = false;
+    document.getElementById('cy-sweep-btn').classList.remove('active');
+    document.getElementById('cy-sweep-btn').textContent = '▶ Sweep';
+    applyFrequency(parseInt(e.target.value, 10));
+  });
+
+  document.getElementById('cy-sweep-btn').addEventListener('click', () => {
+    CymState.sweeping = !CymState.sweeping;
+    const btn = document.getElementById('cy-sweep-btn');
+    btn.classList.toggle('active', CymState.sweeping);
+    btn.textContent = CymState.sweeping ? '⏸ Pause Sweep' : '▶ Sweep';
+  });
 
   document.getElementById('cy-view-2d-btn').addEventListener('click', () => {
     view3DActive = false;
@@ -838,8 +1010,7 @@
   /* init */
   refreshModeLabels();
   buildPresetChips();
-  refreshReadouts();
-  resetParticles();
+  syncFreqFromMode(); // locks to the exact default mode and syncs the dial
   requestAnimationFrame(tick);
 
   /* practice-problem checkers */
