@@ -11,7 +11,7 @@
   <meta property="og:description" content="Build something real today. Lessons, tools, student showcases, and weekly learning — all in one place." />
   <meta property="og:url" content="https://mrscandrett.github.io/" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
-<link rel="stylesheet" href="assets/css/pages/index.css" />
+  <link rel="stylesheet" href="assets/css/pages/index.css" />
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
   <script src="assets/js/theme-lighting.js"></script>
@@ -81,7 +81,19 @@
       </div>
     </section>
 
-    <section class="today-panel" aria-labelledby="today-panel-title">
+    <div class="home-tabs" role="tablist" aria-label="Homepage sections">
+      <button class="home-tab is-active" id="hometab-today" role="tab" aria-selected="true" aria-controls="tabpanel-today" type="button">
+        <span aria-hidden="true">📋</span> Today
+      </button>
+      <button class="home-tab" id="hometab-explore" role="tab" aria-selected="false" aria-controls="tabpanel-explore" tabindex="-1" type="button">
+        <span aria-hidden="true">🧭</span> Explore
+      </button>
+      <button class="home-tab" id="hometab-sandbox" role="tab" aria-selected="false" aria-controls="tabpanel-sandbox" tabindex="-1" type="button">
+        <span aria-hidden="true">✏️</span> Sandbox
+      </button>
+    </div>
+
+    <section class="today-panel home-tab-panel" id="tabpanel-today" aria-labelledby="today-panel-title hometab-today" role="tabpanel" tabindex="0">
       <div class="section-heading">
         <p class="home-widget-eyebrow">Launch Console</p>
         <h2 id="today-panel-title">What's happening today</h2>
@@ -335,6 +347,7 @@
       </div>
     </section>
 
+    <div class="home-tab-panel" id="tabpanel-explore" aria-labelledby="hometab-explore" role="tabpanel" tabindex="0" hidden>
     <section class="launch-grid-section" aria-labelledby="launch-grid-title">
       <div class="section-heading">
         <p class="home-widget-eyebrow">Major Destinations</p>
@@ -429,9 +442,10 @@
         <a class="spotlight-link" href="showcase.html">Open Creation Gallery →</a>
       </article>
     </section>
+    </div>
 
     <!-- Physics & Drawing Sandbox -->
-    <section class="phys-sandbox-section" aria-labelledby="phys-sandbox-title">
+    <section class="phys-sandbox-section home-tab-panel" id="tabpanel-sandbox" aria-labelledby="phys-sandbox-title hometab-sandbox" role="tabpanel" tabindex="0" hidden>
       <div class="section-heading">
         <p class="home-widget-eyebrow">Interactive Lab</p>
         <h2 id="phys-sandbox-title">Physics &amp; Drawing Board</h2>
@@ -544,6 +558,42 @@
   <script src="assets/js/nav-mobile.js"></script>
   <script src="assets/js/command-palette.js"></script>
   <script>
+    // ── Homepage section tabs (Today / Explore / Sandbox) ──────────────
+    (function () {
+      var tabs = Array.prototype.slice.call(document.querySelectorAll(".home-tab"));
+      if (!tabs.length) return;
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          if (tab.classList.contains("is-active")) return;
+
+          tabs.forEach(function (t) {
+            t.classList.remove("is-active");
+            t.setAttribute("aria-selected", "false");
+            t.setAttribute("tabindex", "-1");
+          });
+          tab.classList.add("is-active");
+          tab.setAttribute("aria-selected", "true");
+          tab.setAttribute("tabindex", "0");
+
+          document.querySelectorAll(".home-tab-panel").forEach(function (panel) {
+            panel.hidden = true;
+          });
+          var panel = document.getElementById(tab.getAttribute("aria-controls"));
+          if (!panel) return;
+          panel.hidden = false;
+
+          // The physics/drawing canvases measure their own width on first
+          // paint; if that happened while the Sandbox tab was hidden they'd
+          // size to zero, so re-trigger their resize handling now that the
+          // panel is visible.
+          if (panel.id === "tabpanel-sandbox") {
+            window.dispatchEvent(new Event("resize"));
+          }
+        });
+      });
+    })();
+
     const homeLaunchSettings = document.getElementById("home-launch-settings");
     if (homeLaunchSettings) {
       homeLaunchSettings.addEventListener("click", function () {
