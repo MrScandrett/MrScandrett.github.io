@@ -10,9 +10,9 @@
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
     .ll-viewport {
-      --ll-accent: #3b6ef6;
-      --ll-tab-active: #3b6ef6;
-      --ll-tab-active-bg: rgba(59, 110, 246, 0.10);
+      --ll-accent: var(--accent);
+      --ll-tab-active: var(--accent);
+      --ll-tab-active-bg: var(--theme-accent-soft);
     }
 
     .origins-article-page {
@@ -35,7 +35,7 @@
       margin: 0;
       max-width: 80ch;
       text-align: left;
-      color: #3f4f65;
+      color: var(--text-secondary);
       line-height: 1.6;
       font-size: 1.02rem;
     }
@@ -48,7 +48,7 @@
       gap: 0.45rem 0.72rem;
       margin: 0.62rem 0 0;
       font-size: 0.82rem;
-      color: #64748b;
+      color: var(--text-muted);
     }
 
     .origins-hero-meta .dot {
@@ -65,15 +65,28 @@
       display: grid;
       gap: 0.95rem;
       min-width: 0;
+      counter-reset: chapter;
     }
 
     .origins-section {
       border-radius: var(--radius);
-      background: #ffffff;
-      border: 1px solid rgba(210, 210, 215, 0.7);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
       border-left-width: 3px;
       box-shadow: var(--shadow);
       padding: 1rem;
+      counter-increment: chapter;
+    }
+
+    .origins-section::before {
+      content: "Chapter " counter(chapter, decimal-leading-zero);
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
     }
 
     /* Per-section accent colours */
@@ -84,10 +97,13 @@
       background:
         repeating-linear-gradient(
           135deg,
-          rgba(210, 180, 100, 0.04) 0px, rgba(210, 180, 100, 0.04) 1px,
+          color-mix(in srgb, #b8760a 8%, transparent) 0px, color-mix(in srgb, #b8760a 8%, transparent) 1px,
           transparent 1px, transparent 28px
         ),
-        linear-gradient(160deg, #fef9ec 0%, #fffdf5 45%, #fef8e6 100%);
+        linear-gradient(160deg,
+          color-mix(in srgb, var(--surface-elevated) 88%, #b8760a 12%) 0%,
+          var(--surface-elevated) 45%,
+          color-mix(in srgb, var(--surface-elevated) 90%, #b8760a 10%) 100%);
     }
     #ancient-computers { border-left-color: #10b981; }
     #fraud             { border-left-color: #ef4444; }
@@ -99,6 +115,7 @@
       margin: 0 0 0.68rem;
       font-size: 1.34rem;
       letter-spacing: -0.01em;
+      color: var(--text-strong);
     }
 
     /* Icon prefix per section */
@@ -115,11 +132,12 @@
       margin: 0.92rem 0 0.35rem;
       font-size: 1.03rem;
       letter-spacing: -0.01em;
+      color: var(--text-secondary);
     }
 
     .origins-section p {
       margin: 0 0 0.66rem;
-      color: #31455f;
+      color: var(--text-secondary);
       line-height: 1.58;
     }
 
@@ -130,7 +148,7 @@
     .origins-laws {
       margin: 0.2rem 0 0.7rem 1.2rem;
       padding: 0;
-      color: #31455f;
+      color: var(--text-secondary);
       line-height: 1.58;
     }
 
@@ -140,9 +158,9 @@
 
     .origins-captioned {
       margin: 0.88rem 0 0;
-      border: 1px solid #e0e7f1;
+      border: 1px solid var(--border-subtle);
       border-radius: 14px;
-      background: #f9fbff;
+      background: var(--surface-panel-alt);
       overflow: hidden;
     }
 
@@ -150,21 +168,23 @@
       display: block;
       width: 100%;
       height: auto;
-      border-bottom: 1px solid #e0e7f1;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     .origins-captioned figcaption {
       margin: 0;
       padding: 0.56rem 0.66rem;
-      color: #51657f;
+      color: var(--text-muted);
       font-size: 0.86rem;
       line-height: 1.46;
     }
 
     .origins-callout {
-      border: 1px solid #d6e2f4;
+      border: 1px solid var(--border-subtle);
       border-radius: 12px;
-      background: linear-gradient(180deg, #f7fbff 0%, #edf4ff 100%);
+      background: linear-gradient(180deg,
+        color-mix(in srgb, var(--accent) 6%, var(--surface-elevated) 94%) 0%,
+        color-mix(in srgb, var(--accent) 10%, var(--surface-elevated) 90%) 100%);
       padding: 0.7rem 0.76rem;
       margin-top: 0.74rem;
     }
@@ -172,12 +192,12 @@
     .origins-callout h4 {
       margin: 0 0 0.35rem;
       font-size: 0.93rem;
-      color: #1c3c63;
+      color: var(--accent-strong);
     }
 
     .origins-callout p {
       margin: 0;
-      color: #2e4e73;
+      color: var(--text-secondary);
       font-size: 0.91rem;
     }
 
@@ -199,9 +219,9 @@
     }
 
     .origins-timeline li {
-      border: 1px solid #e4e8ef;
+      border: 1px solid var(--border-subtle);
       border-radius: 12px;
-      background: #fbfcff;
+      background: var(--surface-panel-alt);
       padding: 0.6rem 0.66rem;
       display: grid;
       grid-template-columns: 1fr;
@@ -213,7 +233,7 @@
 
     .origins-timeline time {
       font-size: 0.8rem;
-      color: #5b6981;
+      color: var(--text-muted);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
@@ -221,13 +241,13 @@
 
     .origins-timeline strong {
       font-size: 0.95rem;
-      color: #1f324d;
+      color: var(--text-strong);
     }
 
     .origins-timeline p {
       margin: 0.22rem 0 0;
       font-size: 0.9rem;
-      color: #3f5168;
+      color: var(--text-secondary);
       line-height: 1.46;
     }
 
@@ -245,16 +265,16 @@
     }
 
     .origins-factlist li {
-      border: 1px solid #e4eaf4;
+      border: 1px solid var(--border-subtle);
       border-radius: 10px;
       padding: 0.45rem 0.52rem;
-      background: #f9fbff;
+      background: var(--surface-panel-alt);
       display: grid;
       gap: 0.15rem;
     }
 
     .origins-factlist span {
-      color: #53667f;
+      color: var(--text-muted);
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -262,7 +282,7 @@
     }
 
     .origins-factlist strong {
-      color: #25384f;
+      color: var(--text-strong);
       font-size: 0.9rem;
       line-height: 1.35;
     }
@@ -276,23 +296,23 @@
     }
 
     .origins-termlist li {
-      border: 1px solid #e4eaf4;
+      border: 1px solid var(--border-subtle);
       border-radius: 9px;
       padding: 0.38rem 0.5rem;
-      background: #f4f7fb;
+      background: var(--surface-panel-alt);
     }
 
     .origins-termlist strong {
       display: block;
       font-size: 0.83rem;
-      color: #1f324d;
+      color: var(--text-strong);
       margin-bottom: 0.1rem;
     }
 
     .origins-termlist span {
       display: block;
       font-size: 0.77rem;
-      color: #526070;
+      color: var(--text-muted);
       line-height: 1.38;
     }
 
@@ -325,9 +345,9 @@
       height: 152px;
       border-radius: 10px;
       overflow: hidden;
-      border: 2px solid #c7d4e8;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-      background: #e8e4dc;
+      border: 2px solid var(--border-subtle);
+      box-shadow: var(--shadow);
+      background: var(--surface-panel-alt);
     }
     .origins-bio-portrait img {
       width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block;
@@ -336,7 +356,7 @@
       width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
       font-size: 2.4rem; font-weight: 700; letter-spacing: -0.02em;
-      color: #8095b0; background: linear-gradient(160deg, #e8edf4 0%, #d8dfe8 100%);
+      color: var(--text-muted); background: linear-gradient(160deg, var(--surface-panel-alt) 0%, var(--surface-panel) 100%);
       user-select: none;
     }
 
@@ -353,8 +373,8 @@
       align-items: flex-start;
       padding: 0.6rem 0.75rem;
       border-radius: 10px;
-      border: 1px solid #e0e7f0;
-      background: #f7f9fc;
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-panel-alt);
     }
     .origins-philosopher-accent {
       flex-shrink: 0;
@@ -375,9 +395,9 @@
 
     .origins-feature-media {
       margin: 0;
-      border: 1px solid #e0e7f1;
+      border: 1px solid var(--border-subtle);
       border-radius: 12px;
-      background: #f9fbff;
+      background: var(--surface-panel-alt);
       overflow: hidden;
     }
 
@@ -397,7 +417,7 @@
     }
     .origins-feature-media figcaption {
       padding: 0.44rem 0.52rem;
-      color: #51657f;
+      color: var(--text-muted);
       font-size: 0.8rem;
       line-height: 1.4;
     }
@@ -419,7 +439,7 @@
       font-size: 0.75rem;
       line-height: 1.35;
       text-align: center;
-      color: #4a5e72;
+      color: var(--text-muted);
       flex: 1;
     }
     .origins-spectrum-labels span:first-child { text-align: left; }
@@ -439,7 +459,7 @@
       font-size: 1.1rem;
       font-style: italic;
       line-height: 1.5;
-      color: #4a5e72;
+      color: var(--text-secondary);
     }
 
     /* HAL 9000 hover quote */
@@ -495,21 +515,21 @@
     .origins-reference ul {
       margin: 0;
       padding-left: 1.1rem;
-      color: #334b66;
+      color: var(--text-secondary);
       line-height: 1.5;
     }
 
     .museum-exhibit {
       margin-top: 0.95rem;
-      border: 1px solid rgba(129, 151, 177, 0.3);
+      border: 1px solid var(--border-subtle);
       border-radius: 18px;
       overflow: hidden;
       background:
-        linear-gradient(rgba(59, 110, 246, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59, 110, 246, 0.05) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(252, 249, 239, 0.98), rgba(243, 238, 224, 0.98));
+        linear-gradient(color-mix(in srgb, var(--accent) 6%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--accent) 6%, transparent) 1px, transparent 1px),
+        linear-gradient(180deg, var(--surface-elevated), var(--surface-panel-alt));
       background-size: 20px 20px, 20px 20px, 100% 100%;
-      box-shadow: 0 18px 34px rgba(39, 52, 78, 0.08);
+      box-shadow: var(--shadow);
     }
 
     .museum-exhibit-head {
@@ -566,15 +586,17 @@
       margin: 0;
       padding: 0.75rem 0.88rem;
       border-radius: 14px;
-      background: rgba(255, 255, 255, 0.56);
-      border: 1px solid rgba(121, 141, 167, 0.2);
-      color: #39506c;
+      background: color-mix(in srgb, var(--surface-elevated) 60%, transparent);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
       font-size: 0.9rem;
       line-height: 1.56;
     }
 
-    .museum-note strong {
-      color: #17395d;
+    .museum-note strong,
+    .logic-control strong,
+    .ethics-head strong {
+      color: var(--text-strong);
     }
 
     .museum-chip-row {
@@ -589,9 +611,9 @@
       min-height: 1.9rem;
       padding: 0.3rem 0.72rem;
       border-radius: 999px;
-      border: 1px solid rgba(74, 103, 155, 0.24);
-      background: rgba(255, 255, 255, 0.68);
-      color: #214a75;
+      border: 1px solid var(--border-subtle);
+      background: color-mix(in srgb, var(--surface-elevated) 55%, transparent);
+      color: var(--text-secondary);
       font-size: 0.76rem;
       font-weight: 700;
       letter-spacing: 0.02em;
@@ -613,12 +635,12 @@
       padding: 0.65rem;
       border-radius: 50%;
       background:
-        radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0 18%, rgba(255, 255, 255, 0) 19%),
-        radial-gradient(circle at center, rgba(46, 79, 119, 0.08) 0 56%, rgba(46, 79, 119, 0) 57%),
-        radial-gradient(circle at center, rgba(184, 139, 49, 0.08) 0 78%, rgba(184, 139, 49, 0) 79%),
-        linear-gradient(180deg, rgba(255, 250, 240, 0.92), rgba(245, 239, 224, 0.94));
+        radial-gradient(circle at center, color-mix(in srgb, var(--surface-elevated) 40%, white 60%) 0 18%, transparent 19%),
+        radial-gradient(circle at center, rgba(46, 79, 119, 0.08) 0 56%, transparent 57%),
+        radial-gradient(circle at center, rgba(184, 139, 49, 0.08) 0 78%, transparent 79%),
+        linear-gradient(180deg, var(--surface-elevated), var(--surface-panel-alt));
       border: 1px solid rgba(126, 96, 41, 0.28);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55), 0 14px 28px rgba(51, 61, 84, 0.12);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface-elevated) 45%, white 55%), var(--shadow);
     }
 
     .logic-wheel-svg {
@@ -699,21 +721,20 @@
       gap: 0.65rem;
       padding: 0.7rem 0.8rem;
       border-radius: 14px;
-      background: rgba(255, 255, 255, 0.62);
-      border: 1px solid rgba(121, 141, 167, 0.18);
+      background: color-mix(in srgb, var(--surface-elevated) 55%, transparent);
+      border: 1px solid var(--border-subtle);
     }
 
     .logic-control strong,
     .ethics-head strong {
       display: block;
-      color: #17395d;
       font-size: 0.9rem;
     }
 
     .logic-control span,
     .ethics-head span {
       display: block;
-      color: #53708c;
+      color: var(--text-muted);
       font-size: 0.78rem;
       line-height: 1.4;
     }
@@ -722,9 +743,11 @@
     .museum-toggle,
     .ethics-choice {
       appearance: none;
-      border: 1px solid rgba(45, 83, 138, 0.22);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(231, 238, 248, 0.92));
-      color: #17395d;
+      border: 1px solid var(--border-subtle);
+      background: linear-gradient(180deg,
+        color-mix(in srgb, var(--surface-elevated) 92%, white 8%),
+        color-mix(in srgb, var(--surface-elevated) 92%, var(--accent) 8%));
+      color: var(--text-strong);
       border-radius: 999px;
       padding: 0.48rem 0.9rem;
       font: inherit;
@@ -738,8 +761,10 @@
     .museum-toggle:hover,
     .ethics-choice:hover {
       transform: translateY(-1px);
-      border-color: rgba(34, 78, 140, 0.38);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(219, 231, 247, 0.98));
+      border-color: var(--accent);
+      background: linear-gradient(180deg,
+        var(--surface-elevated),
+        color-mix(in srgb, var(--surface-elevated) 85%, var(--accent) 15%));
     }
     [data-logic-spin="0"] { border-color: rgba(184,139,49,0.45); color: #7a5310; background: linear-gradient(180deg,rgba(255,253,245,0.95),rgba(253,244,210,0.95)); }
     [data-logic-spin="1"] { border-color: rgba(37,99,235,0.38); color: #1e3a8a; background: linear-gradient(180deg,rgba(248,250,255,0.95),rgba(219,231,254,0.95)); }
@@ -751,16 +776,16 @@
     .proposition-glass {
       padding: 0.95rem 1rem;
       border-radius: 16px;
-      background: rgba(255, 255, 255, 0.5);
+      background: color-mix(in srgb, var(--surface-elevated) 45%, transparent);
       backdrop-filter: blur(10px);
-      border-left: 4px solid #3b6ef6;
-      border: 1px solid rgba(103, 126, 160, 0.2);
+      border-left: 4px solid var(--accent);
+      border: 1px solid var(--border-subtle);
       display: grid;
       gap: 0.32rem;
     }
 
     .proposition-glass span {
-      color: #5b7187;
+      color: var(--text-muted);
       font-size: 0.76rem;
       font-weight: 800;
       letter-spacing: 0.12em;
@@ -769,7 +794,7 @@
 
     .proposition-glass p {
       margin: 0;
-      color: #17395d;
+      color: var(--text-strong);
       font-size: 1.05rem;
       line-height: 1.48;
       font-family: Georgia, "Times New Roman", serif;
@@ -1001,9 +1026,9 @@
       min-height: 1.7rem;
       padding: 0.22rem 0.62rem;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.7);
+      background: color-mix(in srgb, var(--surface-elevated) 55%, transparent);
       border: 1px solid rgba(145, 110, 65, 0.22);
-      color: #73471d;
+      color: color-mix(in srgb, #8a5a22 60%, var(--text-primary) 40%);
       font-size: 0.75rem;
       font-weight: 800;
       letter-spacing: 0.06em;
@@ -1167,174 +1192,6 @@
       transition: height 0.18s ease, opacity 0.18s ease;
     }
 
-    /* ── Dark mode ─────────────────────────────────────────────── */
-    @media (prefers-color-scheme: dark) {
-      .origins-hero .origins-lede { color: #7a8ea8; }
-      .origins-hero-meta          { color: #4a5e72; }
-
-      .origins-section {
-        background: #1c1c1e;
-        border-color: rgba(255, 255, 255, 0.07);
-      }
-
-      #philosophy {
-        background:
-          repeating-linear-gradient(
-            135deg,
-            rgba(180, 130, 40, 0.04) 0px, rgba(180, 130, 40, 0.04) 1px,
-            transparent 1px, transparent 28px
-          ),
-          linear-gradient(160deg, #1e1a10 0%, #1a170d 45%, #1e1b11 100%);
-        border-left-color: #a0680a;
-      }
-
-      .origins-section h2 { color: #edf0f7; }
-      .origins-section h3 { color: #c4ccd8; }
-      .origins-section p  { color: #8fa0b8; }
-
-      .origins-laws         { color: #8898b0; }
-      .origins-reference ul { color: #7a8898; }
-
-      .origins-callout {
-        background: linear-gradient(180deg, #17203e 0%, #121930 100%);
-        border-color: #253060;
-      }
-
-      .origins-callout h4 { color: #88b8e8; }
-      .origins-callout p  { color: #6e9ac0; }
-
-      .origins-captioned {
-        background: #18181b;
-        border-color: #2a2a30;
-      }
-
-      .origins-captioned figcaption { color: #667888; }
-
-      .origins-feature-media {
-        background: #18181b;
-        border-color: #2a2a30;
-      }
-
-      .origins-feature-media figcaption { color: #667888; }
-
-      .origins-bio-monogram {
-        color: #6080a0;
-        background: linear-gradient(160deg, #1c2330 0%, #18202c 100%);
-      }
-      .origins-pull-quote {
-        color: #8fa0b8;
-        border-left-color: #a07828;
-      }
-      .origins-spectrum-labels span {
-        color: #7090a8;
-      }
-      .origins-philosopher-entry {
-        background: rgba(255,255,255,0.03);
-        border-color: rgba(255,255,255,0.07);
-      }
-
-      .origins-timeline li {
-        background: #18181b;
-        border-color: #2a2a30;
-      }
-
-      .origins-timeline time   { color: #5e7080; }
-      .origins-timeline strong { color: #b0bece; }
-      .origins-timeline p      { color: #667888; }
-
-      .origins-factlist li {
-        background: #242428;
-        border-color: #303038;
-      }
-
-      .origins-factlist span   { color: #607080; }
-      .origins-factlist strong { color: #b8c8dc; }
-
-      .origins-termlist li {
-        background: #242428;
-        border-color: #303038;
-      }
-
-      .origins-termlist strong { color: #b8c8dc; }
-      .origins-termlist span   { color: #607080; }
-
-      .museum-exhibit {
-        border-color: rgba(119, 140, 166, 0.22);
-        background:
-          linear-gradient(rgba(86, 111, 164, 0.08) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(86, 111, 164, 0.08) 1px, transparent 1px),
-          linear-gradient(180deg, rgba(17, 22, 35, 0.96), rgba(20, 24, 36, 0.98));
-        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.22);
-      }
-
-      .museum-note {
-        background: rgba(255, 255, 255, 0.04);
-        border-color: rgba(120, 140, 170, 0.16);
-        color: #91a4bc;
-      }
-
-      .museum-note strong,
-      .logic-control strong,
-      .ethics-head strong {
-        color: #e2ebf8;
-      }
-
-      .museum-chip {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(124, 147, 185, 0.18);
-        color: #b7c8df;
-      }
-
-      .logic-wheel-shell {
-        background:
-          radial-gradient(circle at center, rgba(35, 45, 63, 0.88) 0 18%, rgba(35, 45, 63, 0) 19%),
-          radial-gradient(circle at center, rgba(99, 128, 175, 0.1) 0 56%, rgba(99, 128, 175, 0) 57%),
-          radial-gradient(circle at center, rgba(184, 139, 49, 0.12) 0 78%, rgba(184, 139, 49, 0) 79%),
-          linear-gradient(180deg, rgba(24, 29, 39, 0.94), rgba(21, 24, 34, 0.96));
-        border-color: rgba(126, 96, 41, 0.18);
-      }
-
-      .logic-ring-path {
-        fill: rgba(31, 37, 48, 0.96);
-        stroke: rgba(185, 151, 84, 0.34);
-      }
-
-      .logic-ring-label,
-      .logic-control span,
-      .ethics-head span,
-      .proposition-glass span {
-        fill: #c9d5e5;
-        color: #9eb0c7;
-      }
-
-      .logic-wheel-core {
-        fill: rgba(18, 38, 65, 0.94);
-      }
-
-      .logic-control,
-      .proposition-glass {
-        background: rgba(255, 255, 255, 0.04);
-        border-color: rgba(129, 149, 179, 0.16);
-      }
-
-      .proposition-glass p {
-        color: #eff5ff;
-      }
-
-      .museum-btn,
-      .museum-toggle {
-        background: linear-gradient(180deg, rgba(33, 42, 58, 0.96), rgba(25, 33, 48, 0.96));
-        border-color: rgba(124, 147, 185, 0.18);
-        color: #dfebfb;
-      }
-
-      .turk-status-tag {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(186, 145, 81, 0.16);
-        color: #e8c693;
-      }
-    }
-
     @media (max-width: 980px) {
       .origins-subgrid {
         grid-template-columns: 1fr;
@@ -1350,6 +1207,78 @@
 
       .museum-grid-2 {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .origins-section {
+        padding: 0.85rem;
+      }
+
+      .origins-bio-row {
+        flex-direction: column;
+      }
+
+      .origins-bio-portrait {
+        width: 84px;
+        height: 128px;
+      }
+
+      .museum-exhibit-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .museum-caption {
+        max-width: none;
+        text-align: left;
+      }
+
+      .origins-spectrum-labels {
+        flex-wrap: wrap;
+        gap: 0.4rem 0.6rem;
+      }
+
+      .origins-spectrum-labels span {
+        flex: 1 1 40%;
+        text-align: left;
+      }
+
+      .origins-spectrum-labels span:first-child,
+      .origins-spectrum-labels span:last-child {
+        text-align: left;
+      }
+
+      .turk-cabinet {
+        min-height: 320px;
+      }
+
+      .logic-control {
+        grid-template-columns: 1fr;
+        justify-items: start;
+      }
+
+      .logic-control .museum-btn {
+        justify-self: stretch;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logic-wheel-ring,
+      .turk-door,
+      .turk-operator,
+      .turk-lever,
+      .turk-seat,
+      .hal-quote,
+      .hal-wave-bar,
+      .museum-btn,
+      .museum-toggle,
+      .ethics-choice {
+        transition: none;
+      }
+
+      .ethics-response.is-loop {
+        animation: none;
       }
     }
   </style>
@@ -1394,6 +1323,17 @@
               <span>Lesson 01 of AI series</span>
             </div>
           </section>
+
+          <nav class="ll-lesson-steps" aria-label="Chapters" id="originsChapterRail">
+            <a href="#overview">01 · Overview</a>
+            <a href="#myths">02 · Myths</a>
+            <a href="#philosophy">03 · Philosophy</a>
+            <a href="#ancient-computers">04 · First Computer</a>
+            <a href="#fraud">05 · Automata Age</a>
+            <a href="#fiction">06 · Science Fiction</a>
+            <a href="#timeline">07 · Timeline</a>
+            <a href="#classroom-use">08 · Classroom Use</a>
+          </nav>
 
           <article class="origins-main">
             <section class="origins-section" id="overview">
@@ -2226,6 +2166,37 @@
             bar.style.opacity = "0.8";
           });
         });
+      }
+
+      const chapterRail = document.getElementById("originsChapterRail");
+      if (chapterRail) {
+        const chapterLinks = Array.from(chapterRail.querySelectorAll("a"));
+        const chapterSections = chapterLinks
+          .map((link) => document.querySelector(link.getAttribute("href")))
+          .filter(Boolean);
+
+        const setActiveChapter = (id) => {
+          chapterLinks.forEach((link) => {
+            const isActive = link.getAttribute("href") === `#${id}`;
+            link.classList.toggle("ll-step-active", isActive);
+            if (isActive) {
+              link.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+            }
+          });
+        };
+
+        if ("IntersectionObserver" in window) {
+          const observer = new IntersectionObserver(
+            (entries) => {
+              const visible = entries
+                .filter((entry) => entry.isIntersecting)
+                .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+              if (visible) setActiveChapter(visible.target.id);
+            },
+            { rootMargin: "-15% 0px -70% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] }
+          );
+          chapterSections.forEach((section) => observer.observe(section));
+        }
       }
     })();
   </script>

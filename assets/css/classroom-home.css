@@ -14877,6 +14877,7 @@ body.theme-liquid-woodland.theme-home .sidepanel-component .vod-inner {
 .home-launch-card--settings { border-color: rgba(209, 213, 219, 0.3); }
 .home-launch-card--paths    { border-color: rgba(191, 90, 242, 0.3); }
 .home-launch-card--music    { border-color: rgba(244, 114, 182, 0.3); }
+.home-launch-card--quizzes  { border-color: rgba(45, 212, 191, 0.3); }
 
 /* Icon badge backgrounds */
 .home-launch-card--lessons  .card-emoji { background: rgba(99, 179, 237, 0.18); }
@@ -14887,6 +14888,7 @@ body.theme-liquid-woodland.theme-home .sidepanel-component .vod-inner {
 .home-launch-card--settings .card-emoji { background: rgba(209, 213, 219, 0.18); }
 .home-launch-card--paths    .card-emoji { background: rgba(191, 90, 242, 0.18); }
 .home-launch-card--music    .card-emoji { background: rgba(244, 114, 182, 0.18); }
+.home-launch-card--quizzes  .card-emoji { background: rgba(45, 212, 191, 0.18); }
 
 /* ── Holographic Launchpad System ────────────────────────────────────────── */
 
@@ -15856,6 +15858,19 @@ body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .weekly-fo
   color: #315e66;
 }
 
+/* Diamond theme flips this widget from a dark console panel to a light
+   one, but every text color in the widget (readings, forecast temps,
+   feels-like, solar/moon, clothing tips, precip %, lesson label) is
+   driven by these tokens — redefine them here instead of chasing each
+   selector, or new content silently renders white-on-white again. */
+body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather {
+  --weather-cyan: #087985;
+  --weather-pink: #c81d6b;
+  --weather-text-strong: #0a3d47;
+  --weather-text-soft: #2b5960;
+  --weather-text-dim: #4f7880;
+}
+
 body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather .home-weather-shell {
   background:
     radial-gradient(circle at top right, rgba(96, 232, 240, 0.24), transparent 30%),
@@ -15863,23 +15878,39 @@ body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widg
   color: #12343b;
 }
 
-body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather :is(.home-weather-condition, .home-weather-range, .home-weather-station, .home-weather-status, .stat-label, .forecast-day) {
-  color: #315e66;
-}
-
-/* Fix remaining white-on-white text in diamond's light weather panel */
-body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather .home-weather-city {
-  color: #086875;
-}
+/* Not variable-driven: it's a background-clip:text gradient, not a color.
+   The `background` shorthand resets background-clip to border-box, so it
+   must be re-asserted here or the number renders as a solid block. */
 body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather .home-weather-temp {
   background: linear-gradient(180deg, #0a3d47 0%, #086875 54%, #087985 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
   filter: none;
 }
 
-body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather :is(.weather-header, .home-weather-dashboard, .weather-forecast),
+body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather :is(.weather-header, .home-weather-dashboard, .weather-forecast, .forecast-slot, .weather-solar),
 body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather .telemetry-stat {
   background: rgba(255, 255, 255, 0.48);
   border-color: rgba(8, 121, 133, 0.14);
+}
+
+/* Divider lines only — no boxed background, so they don't nest inside
+   the panels above */
+body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather :is(.weather-primary, .solar-moon, .weather-precip-chart, .weather-lessons-bar) {
+  border-color: rgba(8, 121, 133, 0.14);
+}
+
+body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather .solar-track {
+  background-color: rgba(8, 121, 133, 0.08);
+  background-image: radial-gradient(circle, rgba(8, 121, 133, 0.35) 0.55px, transparent 0.55px);
+}
+
+/* Base style sets white hover text for the dark panel */
+body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather .weather-lesson-link:hover,
+body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--weather .weather-lesson-link:focus {
+  color: #0a3d47;
 }
 
 body.theme-liquid-woodland.theme-home[data-theme="diamond"] .cos-home .home-widget--votd .votd-immersion-container {

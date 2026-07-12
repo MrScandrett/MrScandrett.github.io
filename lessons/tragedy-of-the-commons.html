@@ -187,7 +187,28 @@
   </style>
 </head>
 <body class="commons-page">
+<a class="skip-link" href="#main-content">Skip to content</a>
 
+<header class="site-header">
+  <div class="nav-wrap">
+    <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+    <nav class="site-nav" aria-label="Primary">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+        <li><a href="../paths.html">Paths</a></li>
+        <li><a href="../showcase.html">Showcase</a></li>
+        <li><a href="../applications.html">Apps</a></li>
+        <li><a href="../video-library.html">Videos</a></li>
+        <li><a href="../recipe-book.html">Library</a></li>
+        <li><a href="../class-downloads.html">Downloads</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main-content">
 <!-- ════════════════════════════════════════════════════════════
      SECTION 1 — HERO
      ════════════════════════════════════════════════════════════ -->
@@ -318,58 +339,292 @@
   </div>
 
 </div><!-- /.commons-shell -->
+</main>
 
+<footer class="site-footer">
+  <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+</footer>
+
+<script src="../assets/js/nav-mobile.js"></script>
 <script>
 (function () {
   'use strict';
 
-  /* ── TODO: Full implementation ──
-   *
-   * SIMULATION MODEL
-   *   - pastureHealth: starts at 100, regenerates each round by a logistic function
-   *   - regeneration = growthRate * health * (1 - health/capacity)
-   *   - consumption = sum of all herds * consumptionPerAnimal
-   *   - newHealth = health + regeneration - consumption (clamped to 0–100)
-   *   - If health reaches 0 → collapse, game over
-   *
-   * AI FARMER STRATEGIES
-   *   - Greedy: always increases herd by 1 each round (up to max)
-   *   - Cooperative: keeps herd at sustainable level (totalCapacity / numFarmers)
-   *   - Tit-for-Tat: cooperates initially; if anyone overgrazes, matches next round
-   *   - Random: random herd size between 1 and 6
-   *
-   * WEALTH TRACKING
-   *   - Each round: farmer earns (herd size * pricePerAnimal * healthMultiplier)
-   *   - healthMultiplier drops as pasture degrades (animals produce less on poor grass)
-   *   - Cumulative wealth tracked per farmer
-   *
-   * PASTURE CANVAS (pastureCanvas)
-   *   - Top-down view of green pasture
-   *   - Grass color/density reflects health (lush green → brown/bare)
-   *   - Scatter animal dots per farmer (color-coded)
-   *   - Animate grazing movement
-   *
-   * HISTORY GRAPH (commonsGraph)
-   *   - X-axis = round number
-   *   - Green area = pasture health over time
-   *   - Colored lines = each farmer's cumulative wealth
-   *   - Vertical line at collapse point if it happens
-   *
-   * POLICY EXPERIMENTS (future extension)
-   *   - Toggle: carbon tax, quotas, privatisation
-   *   - See how each policy changes the outcome
-   */
+  var pastureCanvas = document.getElementById('pastureCanvas');
+  var graphCanvas = document.getElementById('commonsGraph');
+  if (!pastureCanvas || !graphCanvas) return;
+  var pctx = pastureCanvas.getContext('2d');
+  var gctx = graphCanvas.getContext('2d');
 
-  // Placeholder: wire slider display
-  var s = document.getElementById('f1Slider');
-  var l = document.getElementById('f1Label');
-  var h = document.getElementById('f1Herd');
-  if (s) {
-    s.addEventListener('input', function () {
-      l.textContent = s.value;
-      h.textContent = s.value;
+  var f1Slider = document.getElementById('f1Slider');
+  var f1Label = document.getElementById('f1Label');
+  var herdEls = {
+    f1: document.getElementById('f1Herd'),
+    f2: document.getElementById('f2Herd'),
+    f3: document.getElementById('f3Herd'),
+    f4: document.getElementById('f4Herd'),
+    f5: document.getElementById('f5Herd')
+  };
+  var healthFill = document.getElementById('healthFill');
+  var healthPct = document.getElementById('healthPct');
+  var advanceBtn = document.getElementById('advanceBtn');
+  var resetBtn = document.getElementById('resetBtn');
+
+  var FARMERS = ['f1', 'f2', 'f3', 'f4', 'f5'];
+  var COLORS = { f1: '#ef4444', f2: '#f97316', f3: '#06b6d4', f4: '#a855f7', f5: '#eab308' };
+
+  // ── Model constants ──
+  var CAPACITY = 100;
+  var GROWTH_RATE = 0.6;
+  var CONSUMPTION_PER_ANIMAL = 1;
+  var PRICE_PER_ANIMAL = 10;
+  var MAX_HERD = 10;
+  var SUSTAINABLE_TOTAL = (GROWTH_RATE * CAPACITY / 4) / CONSUMPTION_PER_ANIMAL;
+  var COOP_HERD = Math.max(1, Math.round(SUSTAINABLE_TOTAL / FARMERS.length));
+
+  var state, history, dots, collapsed;
+
+  function initState() {
+    state = {
+      health: CAPACITY,
+      herds: { f1: 3, f2: 3, f3: 3, f4: 3, f5: 3 },
+      wealth: { f1: 0, f2: 0, f3: 0, f4: 0, f5: 0 }
+    };
+    history = [{ round: 0, health: 100, wealth: { f1: 0, f2: 0, f3: 0, f4: 0, f5: 0 } }];
+    collapsed = false;
+    dots = {};
+    FARMERS.forEach(function (f) { dots[f] = []; });
+    syncDots();
+  }
+
+  function syncDots() {
+    FARMERS.forEach(function (f) {
+      var arr = dots[f];
+      var n = state.herds[f];
+      while (arr.length < n) {
+        arr.push({
+          x: Math.random(), y: Math.random(),
+          vx: (Math.random() - 0.5) * 0.06, vy: (Math.random() - 0.5) * 0.06
+        });
+      }
+      arr.length = n;
     });
   }
+
+  // ── AI strategies, driven off last round's herds ──
+  function aiHerd(farmer, prevHerds) {
+    if (farmer === 'f2') { // Greedy: always +1, up to the cap
+      return Math.min(MAX_HERD, (prevHerds.f2 || 3) + 1);
+    }
+    if (farmer === 'f3') { // Cooperative: holds the sustainable share
+      return COOP_HERD;
+    }
+    if (farmer === 'f4') { // Tit-for-tat: mirrors overgrazing, de-escalates otherwise
+      var others = ['f1', 'f2', 'f3', 'f5'].map(function (k) { return prevHerds[k]; });
+      var maxOther = Math.max.apply(null, others);
+      var cur = prevHerds.f4 || COOP_HERD;
+      if (maxOther > COOP_HERD + 1) return Math.min(MAX_HERD, cur + 1);
+      if (cur > COOP_HERD) return cur - 1;
+      return COOP_HERD;
+    }
+    if (farmer === 'f5') { // Random
+      return Math.floor(Math.random() * 6) + 1;
+    }
+    return prevHerds[farmer];
+  }
+
+  function advance() {
+    if (collapsed) return;
+
+    var prevHerds = state.herds;
+    var newHerds = {
+      f1: parseInt(f1Slider.value, 10),
+      f2: aiHerd('f2', prevHerds),
+      f3: aiHerd('f3', prevHerds),
+      f4: aiHerd('f4', prevHerds),
+      f5: aiHerd('f5', prevHerds)
+    };
+
+    var healthMultiplier = state.health / CAPACITY;
+    FARMERS.forEach(function (f) {
+      state.wealth[f] += newHerds[f] * PRICE_PER_ANIMAL * healthMultiplier;
+    });
+
+    var totalHerd = FARMERS.reduce(function (sum, f) { return sum + newHerds[f]; }, 0);
+    var regen = GROWTH_RATE * state.health * (1 - state.health / CAPACITY);
+    var consumption = totalHerd * CONSUMPTION_PER_ANIMAL;
+    state.health = Math.max(0, Math.min(CAPACITY, state.health + regen - consumption));
+    state.herds = newHerds;
+
+    history.push({
+      round: history.length,
+      health: state.health,
+      wealth: { f1: state.wealth.f1, f2: state.wealth.f2, f3: state.wealth.f3, f4: state.wealth.f4, f5: state.wealth.f5 }
+    });
+
+    syncDots();
+    updateHerdDisplays();
+    updateHealthMeter();
+    drawGraph();
+
+    if (state.health <= 0 && !collapsed) {
+      collapsed = true;
+      advanceBtn.disabled = true;
+      advanceBtn.textContent = 'Pasture Collapsed';
+    }
+  }
+
+  function updateHerdDisplays() {
+    FARMERS.forEach(function (f) {
+      if (herdEls[f]) herdEls[f].textContent = state.herds[f];
+    });
+  }
+
+  function updateHealthMeter() {
+    var pct = Math.round(state.health);
+    healthFill.style.width = pct + '%';
+    healthPct.textContent = pct;
+    var hue = Math.round((pct / 100) * 110); // 110 = lush green, 0 = red/dead
+    healthFill.style.background = 'linear-gradient(90deg, hsl(' + hue + ',65%,42%), hsl(' + hue + ',65%,34%))';
+  }
+
+  function fitCanvas(c) {
+    var rect = c.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    c.width = Math.max(1, Math.round(rect.width * dpr));
+    c.height = Math.max(1, Math.round(rect.height * dpr));
+    c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { width: rect.width, height: rect.height };
+  }
+
+  var pastureDims = { width: 0, height: 0 };
+  var graphDims = { width: 0, height: 0 };
+  function resizeAll() {
+    pastureDims = fitCanvas(pastureCanvas);
+    graphDims = fitCanvas(graphCanvas);
+    drawGraph();
+  }
+  window.addEventListener('resize', resizeAll);
+
+  function drawPasture() {
+    var w = pastureDims.width, h = pastureDims.height;
+    if (!w || !h) { requestAnimationFrame(drawPasture); return; }
+
+    var frac = state.health / CAPACITY;
+    var lush = [77, 124, 15];
+    var dead = [120, 53, 15];
+    var col = lush.map(function (c, i) { return Math.round(dead[i] + (c - dead[i]) * frac); });
+
+    pctx.fillStyle = 'rgb(' + col.join(',') + ')';
+    pctx.fillRect(0, 0, w, h);
+
+    pctx.fillStyle = 'rgba(255,255,255,0.05)';
+    for (var i = 0; i < 60; i++) {
+      pctx.fillRect((i * 47.3) % w, (i * 83.1) % h, 2, 6);
+    }
+
+    FARMERS.forEach(function (f) {
+      pctx.fillStyle = COLORS[f];
+      dots[f].forEach(function (d) {
+        d.x += d.vx * 0.01;
+        d.y += d.vy * 0.01;
+        if (d.x < 0 || d.x > 1) d.vx *= -1;
+        if (d.y < 0 || d.y > 1) d.vy *= -1;
+        d.x = Math.max(0, Math.min(1, d.x));
+        d.y = Math.max(0, Math.min(1, d.y));
+        pctx.beginPath();
+        pctx.arc(d.x * w, d.y * h, 5, 0, Math.PI * 2);
+        pctx.fill();
+      });
+    });
+
+    requestAnimationFrame(drawPasture);
+  }
+
+  function drawGraph() {
+    var w = graphDims.width, h = graphDims.height;
+    if (!w || !h) return;
+    gctx.clearRect(0, 0, w, h);
+    gctx.fillStyle = '#fafcf6';
+    gctx.fillRect(0, 0, w, h);
+    if (history.length < 2) return;
+
+    var n = history.length;
+    var maxWealth = 1;
+    history.forEach(function (p) {
+      FARMERS.forEach(function (f) { maxWealth = Math.max(maxWealth, p.wealth[f]); });
+    });
+
+    function xFor(i) { return (i / (n - 1)) * w; }
+    function yForHealth(v) { return h - (v / 100) * h; }
+    function yForWealth(v) { return h - (v / maxWealth) * h * 0.92; }
+
+    gctx.beginPath();
+    gctx.moveTo(xFor(0), h);
+    history.forEach(function (p, i) { gctx.lineTo(xFor(i), yForHealth(p.health)); });
+    gctx.lineTo(xFor(n - 1), h);
+    gctx.closePath();
+    gctx.fillStyle = 'rgba(101, 163, 13, 0.22)';
+    gctx.fill();
+
+    gctx.strokeStyle = '#65a30d';
+    gctx.lineWidth = 2;
+    gctx.beginPath();
+    history.forEach(function (p, i) {
+      var x = xFor(i), y = yForHealth(p.health);
+      if (i === 0) gctx.moveTo(x, y); else gctx.lineTo(x, y);
+    });
+    gctx.stroke();
+
+    FARMERS.forEach(function (f) {
+      gctx.strokeStyle = COLORS[f];
+      gctx.lineWidth = 1.6;
+      gctx.beginPath();
+      history.forEach(function (p, i) {
+        var x = xFor(i), y = yForWealth(p.wealth[f]);
+        if (i === 0) gctx.moveTo(x, y); else gctx.lineTo(x, y);
+      });
+      gctx.stroke();
+    });
+
+    if (collapsed) {
+      var x = xFor(history.length - 1);
+      gctx.strokeStyle = '#dc2626';
+      gctx.setLineDash([4, 4]);
+      gctx.beginPath();
+      gctx.moveTo(x, 0);
+      gctx.lineTo(x, h);
+      gctx.stroke();
+      gctx.setLineDash([]);
+      gctx.fillStyle = '#dc2626';
+      gctx.font = 'bold 11px monospace';
+      gctx.fillText('COLLAPSE', Math.min(x + 4, w - 66), 14);
+    }
+  }
+
+  function reset() {
+    initState();
+    f1Slider.value = 3;
+    f1Label.textContent = '3';
+    advanceBtn.disabled = false;
+    advanceBtn.textContent = 'Advance One Season';
+    updateHerdDisplays();
+    updateHealthMeter();
+    resizeAll();
+  }
+
+  f1Slider.addEventListener('input', function () {
+    f1Label.textContent = f1Slider.value;
+    herdEls.f1.textContent = f1Slider.value;
+  });
+  advanceBtn.addEventListener('click', advance);
+  resetBtn.addEventListener('click', reset);
+
+  initState();
+  resizeAll();
+  updateHerdDisplays();
+  updateHealthMeter();
+  requestAnimationFrame(drawPasture);
 }());
 </script>
 

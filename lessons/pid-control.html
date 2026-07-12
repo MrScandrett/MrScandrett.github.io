@@ -161,7 +161,28 @@
   </style>
 </head>
 <body class="pid-page">
+<a class="skip-link" href="#main-content">Skip to content</a>
 
+<header class="site-header">
+  <div class="nav-wrap">
+    <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+    <nav class="site-nav" aria-label="Primary">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+        <li><a href="../paths.html">Paths</a></li>
+        <li><a href="../showcase.html">Showcase</a></li>
+        <li><a href="../applications.html">Apps</a></li>
+        <li><a href="../video-library.html">Videos</a></li>
+        <li><a href="../recipe-book.html">Library</a></li>
+        <li><a href="../class-downloads.html">Downloads</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main-content">
 <!-- ════════════════════════════════════════════════════════════
      SECTION 1 — HERO
      ════════════════════════════════════════════════════════════ -->
@@ -285,59 +306,260 @@
   </div>
 
 </div><!-- /.pid-shell -->
+</main>
 
+<footer class="site-footer">
+  <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+</footer>
+
+<script src="../assets/js/nav-mobile.js"></script>
 <script>
 (function () {
   'use strict';
 
-  /* ── TODO: Full implementation ──
-   *
-   * PHYSICS MODEL
-   *   - Drone mass, gravity, thrust force
-   *   - Simple 1D vertical dynamics: F = m*a, with PID output as thrust adjustment
-   *   - Setpoint = red horizontal line (adjustable via click/drag on canvas)
-   *
-   * PID LOOP (runs at ~60 fps via requestAnimationFrame)
-   *   - error = setpoint - currentAltitude
-   *   - integral += error * dt  (with windup clamp)
-   *   - derivative = (error - prevError) / dt
-   *   - output = Kp * error + Ki * integral + Kd * derivative
-   *   - Apply output as upward thrust offset
-   *
-   * CANVAS RENDERING (pidCanvas)
-   *   - Sky gradient background
-   *   - Drone sprite (simple geometric quad-rotor)
-   *   - Red setpoint line with label
-   *   - Propeller spin speed proportional to thrust
-   *
-   * ERROR GRAPH (pidGraph)
-   *   - Scrolling time-series plot
-   *   - Blue line = setpoint, Orange line = actual altitude
-   *   - Shaded region between = error magnitude
-   *   - X-axis = time (last ~10 seconds), Y-axis = altitude
-   *
-   * SLIDER WIRING
-   *   - kpSlider → Kp gain, kiSlider → Ki gain, kdSlider → Kd gain
-   *   - Update displayed values in real time
-   *   - Reset integral accumulator when Ki changes (prevent windup spike)
-   *
-   * CHALLENGE MODE (future)
-   *   - Random lateral/vertical force impulses (wind gusts)
-   *   - Timer: measure settling time after each gust
-   *   - Score based on average settling time
-   */
+  var canvas = document.getElementById('pidCanvas');
+  var graphCanvas = document.getElementById('pidGraph');
+  if (!canvas || !graphCanvas) return;
 
-  // Placeholder: wire sliders to display values
-  var sliders = ['kp', 'ki', 'kd'];
-  sliders.forEach(function (id) {
-    var slider = document.getElementById(id + 'Slider');
-    var val = document.getElementById(id + 'Val');
-    if (slider && val) {
-      slider.addEventListener('input', function () {
-        val.textContent = parseFloat(slider.value).toFixed(id === 'ki' ? 2 : 1);
-      });
-    }
+  var ctx = canvas.getContext('2d');
+  var gctx = graphCanvas.getContext('2d');
+
+  var kpSlider = document.getElementById('kpSlider');
+  var kiSlider = document.getElementById('kiSlider');
+  var kdSlider = document.getElementById('kdSlider');
+  var kpVal = document.getElementById('kpVal');
+  var kiVal = document.getElementById('kiVal');
+  var kdVal = document.getElementById('kdVal');
+
+  var gains = {
+    kp: parseFloat(kpSlider.value),
+    ki: parseFloat(kiSlider.value),
+    kd: parseFloat(kdSlider.value)
+  };
+
+  // ── Sim state — altitude in abstract units, 0 = ground, ALT_MAX = ceiling ──
+  var ALT_MAX = 10;
+  var GRAVITY = 1.5;
+  var MAX_THRUST = 12;
+  var altitude = 3;
+  var velocity = 0;
+  var setpoint = 6;
+  var integral = 0;
+  var prevError = 0;
+  var lastThrust = 0;
+  var propAngle = 0;
+
+  function wireSlider(slider, valEl, key, decimals) {
+    slider.addEventListener('input', function () {
+      gains[key] = parseFloat(slider.value);
+      valEl.textContent = gains[key].toFixed(decimals);
+      if (key === 'ki') integral = 0; // prevent a windup spike when the gain itself changes
+    });
+  }
+  wireSlider(kpSlider, kpVal, 'kp', 1);
+  wireSlider(kiSlider, kiVal, 'ki', 2);
+  wireSlider(kdSlider, kdVal, 'kd', 1);
+
+  var history = [];
+  var startTime = performance.now();
+
+  var simDims = { width: 0, height: 0 };
+  var graphDims = { width: 0, height: 0 };
+
+  function fitCanvas(c) {
+    var rect = c.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    c.width = Math.max(1, Math.round(rect.width * dpr));
+    c.height = Math.max(1, Math.round(rect.height * dpr));
+    c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { width: rect.width, height: rect.height };
+  }
+
+  function resizeAll() {
+    simDims = fitCanvas(canvas);
+    graphDims = fitCanvas(graphCanvas);
+  }
+  window.addEventListener('resize', resizeAll);
+  resizeAll();
+
+  // ── Drag the red setpoint line up/down ──
+  var dragging = false;
+  canvas.style.cursor = 'ns-resize';
+
+  function altFromClientY(clientY) {
+    var rect = canvas.getBoundingClientRect();
+    var y = clientY - rect.top;
+    return Math.max(0.2, Math.min(ALT_MAX - 0.2, ((rect.height - y) / rect.height) * ALT_MAX));
+  }
+  canvas.addEventListener('pointerdown', function (e) {
+    dragging = true;
+    setpoint = altFromClientY(e.clientY);
   });
+  window.addEventListener('pointermove', function (e) {
+    if (dragging) setpoint = altFromClientY(e.clientY);
+  });
+  window.addEventListener('pointerup', function () { dragging = false; });
+
+  function drawSim() {
+    var w = simDims.width, h = simDims.height;
+    if (!w || !h) return;
+
+    var sky = ctx.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, '#0b1928');
+    sky.addColorStop(1, '#132c47');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    for (var i = 0; i < 26; i++) {
+      ctx.fillRect((i * 53.7) % w, (i * 91.3) % (h * 0.6), 1.4, 1.4);
+    }
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '11px monospace';
+    ctx.lineWidth = 1;
+    [0, 5, 10].forEach(function (v) {
+      var y = h - (v / ALT_MAX) * h;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(10, y);
+      ctx.stroke();
+      ctx.fillText(v + 'm', 14, y + 4);
+    });
+
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.08)';
+    ctx.fillRect(0, h - 4, w, 4);
+
+    var spY = h - (setpoint / ALT_MAX) * h;
+    ctx.strokeStyle = '#f87171';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 5]);
+    ctx.beginPath();
+    ctx.moveTo(0, spY);
+    ctx.lineTo(w, spY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#f87171';
+    ctx.font = 'bold 11px monospace';
+    ctx.fillText('SETPOINT', w - 84, spY - 6);
+
+    var dx = w * 0.5;
+    var dy = h - (altitude / ALT_MAX) * h;
+    var thrustRatio = lastThrust / MAX_THRUST;
+
+    ctx.fillStyle = 'rgba(56, 189, 248, ' + (0.15 + thrustRatio * 0.25) + ')';
+    ctx.beginPath();
+    ctx.ellipse(dx, dy + 16, 26, 8 + thrustRatio * 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(dx, dy);
+
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-26, -8); ctx.lineTo(26, -8);
+    ctx.moveTo(-26, -8); ctx.lineTo(-32, -14);
+    ctx.moveTo(26, -8); ctx.lineTo(32, -14);
+    ctx.stroke();
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(-14, -6, 28, 12);
+
+    propAngle += 0.3 + thrustRatio * 1.4;
+    [-32, 32].forEach(function (px) {
+      ctx.save();
+      ctx.translate(px, -14);
+      ctx.rotate(propAngle);
+      ctx.strokeStyle = 'rgba(226, 232, 240, 0.85)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-9, 0); ctx.lineTo(9, 0);
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    ctx.restore();
+  }
+
+  function drawGraph() {
+    var w = graphDims.width, h = graphDims.height;
+    if (!w || !h) return;
+    gctx.clearRect(0, 0, w, h);
+    gctx.fillStyle = '#fafcfe';
+    gctx.fillRect(0, 0, w, h);
+    if (history.length < 2) return;
+
+    var now = history[history.length - 1].t;
+    var span = 10;
+    function xFor(t) { return w - ((now - t) / span) * w; }
+    function yFor(v) { return h - (v / ALT_MAX) * h; }
+
+    gctx.beginPath();
+    history.forEach(function (p, i) {
+      var x = xFor(p.t), y = yFor(p.altitude);
+      if (i === 0) gctx.moveTo(x, y); else gctx.lineTo(x, y);
+    });
+    for (var i = history.length - 1; i >= 0; i--) {
+      gctx.lineTo(xFor(history[i].t), yFor(history[i].setpoint));
+    }
+    gctx.closePath();
+    gctx.fillStyle = 'rgba(148, 163, 184, 0.28)';
+    gctx.fill();
+
+    gctx.strokeStyle = '#0071e3';
+    gctx.lineWidth = 2;
+    gctx.beginPath();
+    history.forEach(function (p, i) {
+      var x = xFor(p.t), y = yFor(p.setpoint);
+      if (i === 0) gctx.moveTo(x, y); else gctx.lineTo(x, y);
+    });
+    gctx.stroke();
+
+    gctx.strokeStyle = '#f97316';
+    gctx.lineWidth = 2;
+    gctx.beginPath();
+    history.forEach(function (p, i) {
+      var x = xFor(p.t), y = yFor(p.altitude);
+      if (i === 0) gctx.moveTo(x, y); else gctx.lineTo(x, y);
+    });
+    gctx.stroke();
+  }
+
+  var lastFrame = performance.now();
+
+  function step(now) {
+    var dt = Math.min(0.05, (now - lastFrame) / 1000);
+    lastFrame = now;
+
+    var error = setpoint - altitude;
+    integral = Math.max(-8, Math.min(8, integral + error * dt));
+    var derivative = dt > 0 ? (error - prevError) / dt : 0;
+    prevError = error;
+
+    var output = gains.kp * error + gains.ki * integral + gains.kd * derivative;
+    var thrust = Math.max(0, Math.min(MAX_THRUST, output));
+    lastThrust = thrust;
+
+    velocity += (thrust - GRAVITY) * dt;
+    velocity = Math.max(-8, Math.min(8, velocity));
+    altitude += velocity * dt;
+
+    if (altitude <= 0) { altitude = 0; velocity = Math.max(0, velocity * -0.2); }
+    if (altitude >= ALT_MAX) { altitude = ALT_MAX; velocity = Math.min(0, velocity); }
+
+    var t = (now - startTime) / 1000;
+    history.push({ t: t, setpoint: setpoint, altitude: altitude });
+    while (history.length > 2 && t - history[0].t > 10) history.shift();
+
+    drawSim();
+    drawGraph();
+
+    requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
 }());
 </script>
 
