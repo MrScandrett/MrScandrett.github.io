@@ -1,0 +1,2 @@
+make the spikes in line with the pads, add boost pads and improve the counter to count how many pads you have touched in top right as just a number counter that calculates if you double jumped to skip a pad and add clouds in the background
+seperate the spikes from the pads, have them as moving objects to time jumps
