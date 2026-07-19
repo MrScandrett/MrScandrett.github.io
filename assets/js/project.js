@@ -42,6 +42,16 @@ function renderLinks(project, mount) {
     count += 1;
   });
 
+  if (project.remixZip) {
+    const a = document.createElement("a");
+    a.href = project.remixZip;
+    a.setAttribute("download", "");
+    a.className = "button secondary";
+    a.textContent = "🔧 Remix This Project (Download)";
+    list.appendChild(a);
+    count += 1;
+  }
+
   if (count > 0) mount.appendChild(list);
 }
 

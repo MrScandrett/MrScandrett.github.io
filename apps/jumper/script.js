@@ -56,29 +56,7 @@ const keys = {};
 addEventListener('keydown', e=>{ keys[e.key.toLowerCase()]=true; if(e.code==='Space') e.preventDefault(); });
 addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 
-function bindHoldButton(id, key) {
-  const btn = document.getElementById(id);
-  if (!btn) return;
-  const down = (e) => {
-    if (e) e.preventDefault();
-    keys[key] = true;
-    if (!running) start();
-  };
-  const up = (e) => {
-    if (e) e.preventDefault();
-    keys[key] = false;
-  };
-  btn.addEventListener('touchstart', down, { passive: false });
-  btn.addEventListener('touchend', up);
-  btn.addEventListener('touchcancel', up);
-  btn.addEventListener('mousedown', down);
-  btn.addEventListener('mouseup', up);
-  btn.addEventListener('mouseleave', up);
-}
-
-bindHoldButton('left', 'arrowleft');
-bindHoldButton('right', 'arrowright');
-bindHoldButton('jump', ' ');
+// touch controls already wired to keys in index.html
 
 function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
@@ -586,5 +564,3 @@ function equipSkin(skin){ localStorage.setItem('lb_equipped', skin); applySkin(s
 
 function applySkin(skin){ const mapping = {gold:'#ffd700', white:'#ffffff', black:'#000000', green:'#2ecc71', camo:'#6b8e23'}; player.color = mapping[skin] || '#2ecc71'; player.skin = (skin === 'camo') ? 'camo' : 'solid'; localStorage.setItem('lb_equipped', skin); }
 
-// Start the game loop
-loop();

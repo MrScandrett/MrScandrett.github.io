@@ -1,0 +1,10 @@
+import { chromium } from "playwright";
+const browser = await chromium.launch({ headless: true, executablePath: "/usr/bin/google-chrome" });
+const page = await browser.newPage({ viewport: { width: 1400, height: 1400 } });
+await page.route(/https?:\/\/(?!localhost:8080).*/, (route) => route.abort());
+await page.goto("http://localhost:8080/index.html", { waitUntil: "domcontentloaded" });
+await page.evaluate(() => window.ClassroomOSThemeLighting && window.ClassroomOSThemeLighting.setTheme("diamond"));
+await page.waitForTimeout(400);
+await page.locator(".home-widget--vod").scrollIntoViewIfNeeded();
+await page.locator(".home-widget--vod").screenshot({ path: "/tmp/claude-1000/-home-evanscandrett/160c4abd-c58a-4ea9-9ceb-ecf32d7fa553/scratchpad/vod-diamond.png" });
+await browser.close();

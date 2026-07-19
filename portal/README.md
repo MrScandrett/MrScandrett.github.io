@@ -9,10 +9,24 @@ What it adds:
 - Student Showcase Uploads: a kid-facing form (`/student-upload`) where students submit games,
   3D models, Pivot animations, photos, TinkerCAD/online project links, or other files. Game
   projects can be a zip, a `.sb3`/`.html`, or a folder picked directly (Chrome/Edge) — no zipping
-  required. Submissions land in a password-protected review queue (`/review`) where you can edit
-  the title/student/description and optionally attach a custom thumbnail before approving —
-  nothing goes live until you click Approve, which drops the files into `student-projects/`, runs
-  `build-showcase.js`, and commits + pushes.
+  required. Students also pick which showcase the project belongs to (25-26 School Year or 2026
+  Summer Camp). Submissions land in a password-protected review queue (`/review`) where you can
+  edit the title/student/description/showcase and optionally attach a custom thumbnail before
+  approving — nothing goes live until you click Approve, which drops the files into
+  `student-projects/`, runs `build-showcase.js`, packages a "remix" zip of the raw submission, and
+  commits + pushes.
+- Remix downloads: approving a submission also zips the exact files the student submitted (before
+  minification) into `apps/<slug>/remix-download.zip` and commits it alongside the published app.
+  The public showcase shows a "Remix This Project" button on every approved project that downloads
+  this zip directly from GitHub Pages — no portal or teacher machine needs to be running for a
+  student to grab it at home.
+- Live Projects (`/live`, password-protected): lists every currently published project and lets you
+  remove (unpublish) one — it deletes the raw `student-projects/` folder, re-runs the showcase
+  build (which also cleans up the generated `/apps/<slug>/` output), and commits + pushes.
+  **Submission rule:** an updated version of a project should only be approved after the prior
+  version has been removed here, so a student never has two live copies of the same project at
+  once. The review queue shows a non-blocking warning if a student already has other live project
+  folders when you're about to approve a new one, as a reminder to check `/live` first.
 
 ## Start
 
@@ -38,13 +52,24 @@ Open:
 - `GET /dashboard` upload + publish dashboard **(password-protected)**
 - `POST /upload` publish and add project to hub **(password-protected)**
 - `GET /review` teacher review queue — edit + Approve/Reject **(password-protected)**
-- `POST /review/approve` apply edits, place files, run the showcase build, commit + push
-  **(password-protected)**
+- `POST /review/approve` apply edits, place files, run the showcase build, package the remix zip,
+  commit + push **(password-protected)**
 - `POST /review/reject` discard a pending submission **(password-protected)**
+- `GET /live` list currently published projects **(password-protected)**
+- `POST /live/remove` unpublish a project (deletes its source, rebuilds, commits + pushes)
+  **(password-protected)**
 
 The teacher password is `CHAMPIONS4CHRIST` by default — set `ADMIN_PASSWORD` to change it. Sign-in
 uses a session cookie scoped to the portal (not the main site); it resets whenever the portal
 process restarts.
+
+## Browsing the public showcase by cohort
+
+`showcase.html` shows a "What would you like to browse?" panel on a visitor's first arrival, with
+buttons for each cohort (25-26 School Year / 2026 Summer Camp) plus "See Everything". The choice is
+remembered in the browser (`localStorage`) so returning visitors land straight on their showcase
+without re-picking; a "🏫 Class / Camp" button in the toolbar reopens the panel to switch. This is
+pure static-site filtering (`?cohort=` query param) — no portal needed to browse.
 
 ## Data files
 

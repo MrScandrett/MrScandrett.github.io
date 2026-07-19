@@ -36,6 +36,7 @@ const PENDING_DIR = path.join(PORTAL_DIR, "pending");
 const STUDENT_PROJECTS_DIR = path.join(ROOT_DIR, "student-projects");
 const BUILD_SHOWCASE_SCRIPT = path.join(ROOT_DIR, "build-showcase.js");
 const SHOWCASE_MANIFEST_PATH = path.join(ROOT_DIR, "apps", "manifest.json");
+const MANIFEST_OVERRIDES_PATH = path.join(ROOT_DIR, "data", "manifest-overrides.json");
 const MAX_STUDENT_UPLOAD_BYTES = 60 * 1024 * 1024;
 
 const KIND_LABELS = {
@@ -46,6 +47,11 @@ const KIND_LABELS = {
   link: "Online Project Link",
   other: "Something Else Cool",
 };
+
+// The showcase is browsed by cohort first (a picker panel on arrival) — every submission must
+// belong to exactly one of these. Keep this list in sync with the picker in showcase.html.
+const COHORT_OPTIONS = ["25-26 School Year", "2026 Summer Camp"];
+const DEFAULT_COHORT = COHORT_OPTIONS[0];
 
 const KIND_EXTENSIONS = {
   game: new Set([".zip", ".sb3", ".html", ".htm"]),
@@ -102,7 +108,7 @@ function stripCommonTopFolder(relativePaths) {
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "CHAMPIONS4CHRIST";
 const ADMIN_SESSION_COOKIE = "portal_admin";
-const ADMIN_GATED_PATHS = ["/dashboard", "/review", "/upload", "/upload-model", "/pending-file/"];
+const ADMIN_GATED_PATHS = ["/dashboard", "/review", "/upload", "/upload-model", "/pending-file/", "/live"];
 const adminSessions = new Set();
 
 function parseCookies(req) {
@@ -392,6 +398,47 @@ function writeJson(file, value) {
   fs.writeFileSync(file, JSON.stringify(value, null, 2));
 }
 
+// build-showcase.js fully regenerates apps/manifest.json from student-projects/ on every run
+// (triggered by every approval), which would otherwise wipe the cohort/classPeriod/sourceDir/
+// remixZip/custom-thumbnail/title fields this function just set on *other* already-approved
+// projects, not only the one being approved right now. Persisting them here means
+// build-showcase.js's own override-merge step (data/manifest-overrides.json) re-applies them on
+// every subsequent rebuild, no matter which submission triggered it.
+// build-showcase.js wipes and rebuilds every apps/<slug>/ directory from scratch on every run
+// (not just the project currently being approved), which would silently delete every other
+// project's remix-download.zip too. Re-zip everything with a recorded sourceDir after each
+// rebuild so zips never go stale or disappear, no matter which submission triggered the rebuild.
+function regenerateRemixZips(manifest, notes) {
+  const withSource = manifest.filter((item) => item && item.sourceDir && item.slug);
+  if (withSource.length === 0) return;
+  if (!commandExists("zip")) {
+    notes.push("[REVIEW WARN] `zip` is not installed on this machine — remix downloads were not (re)created this build.");
+    return;
+  }
+  for (const entry of withSource) {
+    const sourcePath = path.join(STUDENT_PROJECTS_DIR, entry.sourceDir);
+    const outputDir = path.join(ROOT_DIR, "apps", entry.slug);
+    if (!fs.existsSync(sourcePath) || !fs.existsSync(outputDir)) continue;
+    const zipDest = path.join(outputDir, "remix-download.zip");
+    const zipResult = spawnSync("zip", ["-r", "-X", "-q", zipDest, "."], { cwd: sourcePath, encoding: "utf8" });
+    if (zipResult.status === 0) {
+      entry.remixZip = `./apps/${entry.slug}/remix-download.zip`;
+    } else {
+      notes.push(
+        `[REVIEW WARN] Could not (re)create remix download zip for ${entry.name || entry.slug}: ${(zipResult.stderr || zipResult.stdout || "").trim()}`
+      );
+    }
+  }
+}
+
+function mergeManifestOverride(slug, fields) {
+  if (!slug) return;
+  const overrides = readJson(MANIFEST_OVERRIDES_PATH, {});
+  overrides[slug] = { ...(overrides[slug] || {}), ...fields };
+  fs.mkdirSync(path.dirname(MANIFEST_OVERRIDES_PATH), { recursive: true });
+  writeJson(MANIFEST_OVERRIDES_PATH, overrides);
+}
+
 function pageShell(title, body, banner = "") {
   const subtitle = ALLOW_REMOTE_PORTAL
     ? `Publish portal for <code>${escapeHtml(GITHUB_OWNER)}</code>.`
@@ -456,6 +503,12 @@ function renderUploadForm(session) {
         <option>Monday Lab</option>
         <option>Camp</option>
         <option>Independent</option>
+      </select>
+    </label>
+
+    <label>Showcase (School Year / Camp)
+      <select name="cohort">
+        ${COHORT_OPTIONS.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join("")}
       </select>
     </label>
 
@@ -529,7 +582,7 @@ function renderDashboard(session, flash = "") {
   const showcasePanel = `<section class="panel">
     <h2>Student Showcase Uploads</h2>
     <p>Share <code>/student-upload</code> with your class on the classroom WiFi so students can submit games, 3D models, Pivot animations, photos, TinkerCAD links, and more.</p>
-    <p><a href="/review">Review Queue${pendingCount ? ` <span class="pill warn">${pendingCount} pending</span>` : ""}</a> &middot; <a href="/student-upload">Open Student Upload Form</a> &middot; ${LOGOUT_LINK_HTML}</p>
+    <p><a href="/review">Review Queue${pendingCount ? ` <span class="pill warn">${pendingCount} pending</span>` : ""}</a> &middot; <a href="/live">Live Projects</a> &middot; <a href="/student-upload">Open Student Upload Form</a> &middot; ${LOGOUT_LINK_HTML}</p>
   </section>`;
   return pageShell("Upload Dashboard", `${flashBlock}${showcasePanel}${renderUploadForm(session)}`);
 }
@@ -611,6 +664,12 @@ function renderStudentUploadForm(flash = "") {
 
     <label>Class / period (optional)
       <input name="classPeriod" placeholder="3rd Period" maxlength="40" />
+    </label>
+
+    <label>Which showcase does this belong to?
+      <select name="cohort" required>
+        ${COHORT_OPTIONS.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join("")}
+      </select>
     </label>
 
     <label>What did you make?
@@ -780,7 +839,7 @@ function renderPendingCard(item) {
 
   return `<section class="panel">
     <p class="pill">${escapeHtml(label)}</p>
-    <p><em>Submitted as</em> <strong>${escapeHtml(meta.title)}</strong> by ${escapeHtml(meta.studentName)}${meta.classPeriod ? ` &middot; ${escapeHtml(meta.classPeriod)}` : ""} &middot; ${escapeHtml(formatTimestamp(meta.submittedAt))}</p>
+    <p><em>Submitted as</em> <strong>${escapeHtml(meta.title)}</strong> by ${escapeHtml(meta.studentName)}${meta.classPeriod ? ` &middot; ${escapeHtml(meta.classPeriod)}` : ""} &middot; ${escapeHtml(meta.cohort || DEFAULT_COHORT)} &middot; ${escapeHtml(formatTimestamp(meta.submittedAt))}</p>
     ${previewHtml}
     ${fileListHtml ? `<ul>${fileListHtml}</ul>` : ""}
 
@@ -797,6 +856,14 @@ function renderPendingCard(item) {
           <input name="classPeriod" value="${escapeHtml(meta.classPeriod || "")}" maxlength="40" />
         </label>
       </div>
+      <label>Showcase (School Year / Camp)
+        <select name="cohort">
+          ${COHORT_OPTIONS.map(
+            (option) =>
+              `<option value="${escapeHtml(option)}" ${meta.cohort === option ? "selected" : ""}>${escapeHtml(option)}</option>`
+          ).join("")}
+        </select>
+      </label>
       <label>Description
         <textarea name="description" rows="3" maxlength="600">${escapeHtml(meta.description || "")}</textarea>
       </label>
@@ -834,11 +901,106 @@ function loadPendingItems() {
 function renderReviewQueue(flash = "") {
   const items = loadPendingItems();
   const flashBlock = flash ? `<section class="panel"><p>${flash}</p></section>` : "";
-  const toolbar = `<section class="panel"><p><a href="/dashboard">Dashboard</a> &middot; ${LOGOUT_LINK_HTML}</p></section>`;
+  const toolbar = `<section class="panel"><p><a href="/dashboard">Dashboard</a> &middot; <a href="/live">Live Projects</a> &middot; ${LOGOUT_LINK_HTML}</p></section>`;
   const list = items.length
     ? items.map(renderPendingCard).join("")
     : `<section class="panel"><p>No pending submissions. Share <code>/student-upload</code> with your class.</p></section>`;
   return pageShell("Showcase Review Queue", `${flashBlock}${toolbar}${list}`);
+}
+
+function renderLiveProjectCard(entry) {
+  const cohort = entry.cohort || DEFAULT_COHORT;
+  const classPeriodHtml = entry.classPeriod ? ` &middot; ${escapeHtml(entry.classPeriod)}` : "";
+  const liveUrl = entry.url ? `https://${GITHUB_OWNER.toLowerCase()}.github.io/${String(entry.url).replace(/^\.\//, "")}` : "";
+  return `<section class="panel">
+    <p class="pill">${escapeHtml(cohort)}</p>
+    <p><strong>${escapeHtml(entry.name || entry.slug)}</strong> by ${escapeHtml(entry.student || "Student")}${classPeriodHtml}</p>
+    ${liveUrl ? `<p><a href="${escapeHtml(liveUrl)}" target="_blank" rel="noreferrer">View live</a></p>` : ""}
+    <form method="post" action="/live/remove" onsubmit="return confirm('Remove this project from the showcase? The student can resubmit an updated version afterward.');">
+      <input type="hidden" name="slug" value="${escapeHtml(entry.slug)}" />
+      <button type="submit" style="background:linear-gradient(180deg,#d9503f 0%,#b42318 100%);border-color:#8f1c13;">Remove (unpublish)</button>
+    </form>
+  </section>`;
+}
+
+function renderLiveProjects(flash = "") {
+  const manifest = readJson(SHOWCASE_MANIFEST_PATH, []);
+  const items = Array.isArray(manifest) ? manifest : [];
+  const flashBlock = flash ? `<section class="panel"><p>${flash}</p></section>` : "";
+  const toolbar = `<section class="panel"><p><a href="/dashboard">Dashboard</a> &middot; <a href="/review">Review Queue</a> &middot; ${LOGOUT_LINK_HTML}</p>
+    <p>Per the class update policy, remove a project's prior version here before approving a resubmission — students should only have one live version of a project at a time.</p>
+  </section>`;
+  const list = items.length
+    ? items.map(renderLiveProjectCard).join("")
+    : `<section class="panel"><p>No live student projects yet.</p></section>`;
+  return pageShell("Live Projects", `${flashBlock}${toolbar}${list}`);
+}
+
+async function handleLiveRemove(req, res) {
+  const fields = await readUrlEncodedFields(req, 4096);
+  const slug = sanitizeSlug(String(fields.slug || ""), "");
+  if (!slug) throw new Error("Missing project slug.");
+
+  const manifest = readJson(SHOWCASE_MANIFEST_PATH, []);
+  const entry = Array.isArray(manifest) ? manifest.find((item) => item && item.slug === slug) : null;
+  if (!entry) throw new Error("That project is not in the current manifest (already removed?).");
+
+  const notes = [`[LIVE] Removing: ${entry.name || slug} (${entry.student || "Student"})`];
+
+  const overrides = readJson(MANIFEST_OVERRIDES_PATH, {});
+  if (overrides[slug]) {
+    delete overrides[slug];
+    writeJson(MANIFEST_OVERRIDES_PATH, overrides);
+  }
+
+  if (entry.sourceDir) {
+    const sourcePath = path.join(STUDENT_PROJECTS_DIR, entry.sourceDir);
+    if (sourcePath.startsWith(STUDENT_PROJECTS_DIR) && fs.existsSync(sourcePath)) {
+      fs.rmSync(sourcePath, { recursive: true, force: true });
+      notes.push(`[LIVE] Deleted source: student-projects/${entry.sourceDir}`);
+    } else {
+      notes.push("[LIVE WARN] Source folder was already missing; only removing the published listing.");
+    }
+  } else {
+    notes.push(
+      "[LIVE WARN] No recorded source folder for this entry (it predates the removal feature) — remove its student-projects folder manually, then re-run the showcase build."
+    );
+  }
+
+  const build = spawnSync("node", [BUILD_SHOWCASE_SCRIPT], { cwd: ROOT_DIR, encoding: "utf8" });
+  const buildOutput = `${build.stdout || ""}${build.stderr || ""}`;
+  notes.push(...buildOutput.split(/\r?\n/).filter(Boolean));
+  if (build.status !== 0) {
+    throw new Error("Showcase rebuild failed after removal. Check the log and retry.");
+  }
+
+  // The rebuild above just wiped and rebuilt every surviving project's apps/<slug>/ directory,
+  // which deletes their remix-download.zip too — recreate them all.
+  const rebuiltManifest = readJson(SHOWCASE_MANIFEST_PATH, []);
+  regenerateRemixZips(rebuiltManifest, notes);
+  fs.writeFileSync(SHOWCASE_MANIFEST_PATH, JSON.stringify(rebuiltManifest, null, 2) + "\n");
+
+  const add = safeGit(["add", "-A", "--", "student-projects", "apps", "data/manifest-overrides.json"]);
+  if (add.status !== 0) notes.push("[LIVE WARN] Could not stage files with git.");
+
+  const diff = safeGit(["diff", "--cached", "--quiet"]);
+  if (diff.status === 1) {
+    const commit = safeGit([
+      "-c", "user.name=MrScandrett",
+      "-c", "user.email=mrscandrett@users.noreply.github.com",
+      "commit", "-m", `Remove student showcase project: ${entry.name || slug} (${entry.student || "Student"})`,
+    ]);
+    if (commit.status !== 0) {
+      notes.push("[LIVE WARN] Could not commit automatically.");
+    } else {
+      const push = safeGit(["push", "origin", "main"]);
+      if (push.status !== 0) notes.push("[LIVE WARN] Could not push to origin/main. Push manually when ready.");
+    }
+  } else {
+    notes.push("[LIVE] Nothing new to commit.");
+  }
+
+  sendHtml(res, 200, renderResult("Removed From Showcase", notes, [{ label: "Live Projects", url: "/live" }]));
 }
 
 function commandExists(cmd) {
@@ -973,6 +1135,7 @@ function appendProjectAndPublishHubEntry(meta, publishResult) {
     year: meta.year,
     term: meta.term,
     program: meta.program,
+    cohort: meta.cohort || DEFAULT_COHORT,
     category: meta.category,
     type: meta.type,
     jam: meta.jam,
@@ -1113,6 +1276,9 @@ async function handleUpload(req, res) {
         year,
         term: String(parsed.fields.term || "Q1").trim(),
         program: String(parsed.fields.program || "Independent").trim(),
+        cohort: COHORT_OPTIONS.includes(String(parsed.fields.cohort || "").trim())
+          ? String(parsed.fields.cohort).trim()
+          : DEFAULT_COHORT,
         category: String(parsed.fields.category || "Web").trim(),
         type: String(parsed.fields.type || "Solo").trim(),
         jam: parsed.fields.jam === "on",
@@ -1246,6 +1412,9 @@ async function handleStudentUpload(req, res) {
   if (!studentName) throw new Error("Please enter your name.");
 
   const classPeriod = String(parsed.fields.classPeriod || "").trim().slice(0, 40);
+  const cohort = COHORT_OPTIONS.includes(String(parsed.fields.cohort || "").trim())
+    ? String(parsed.fields.cohort).trim()
+    : DEFAULT_COHORT;
   const kind = String(parsed.fields.kind || "").trim().toLowerCase();
   if (!KIND_LABELS[kind]) throw new Error("Please choose a project type.");
 
@@ -1328,6 +1497,7 @@ async function handleStudentUpload(req, res) {
     kind,
     studentName,
     classPeriod,
+    cohort,
     title,
     description,
     url: kind === "link" ? url : "",
@@ -1560,6 +1730,9 @@ async function handleApprove(req, res) {
     title: editedTitle || originalMeta.title,
     studentName: editedStudentName || originalMeta.studentName,
     classPeriod: String(parsed.fields.classPeriod || "").trim(),
+    cohort: COHORT_OPTIONS.includes(String(parsed.fields.cohort || "").trim())
+      ? String(parsed.fields.cohort).trim()
+      : originalMeta.cohort || DEFAULT_COHORT,
     description: String(parsed.fields.description || "").trim(),
     url: originalMeta.kind === "link" ? (String(parsed.fields.url || "").trim() || originalMeta.url) : originalMeta.url,
   };
@@ -1573,6 +1746,23 @@ async function handleApprove(req, res) {
   const projectDirName = `${sanitizeDirName(meta.title, "project")}-${id.slice(-6)}`;
   const projectDir = path.join(STUDENT_PROJECTS_DIR, studentDir, projectDirName);
   const notes = [];
+
+  // Soft nudge, not a hard block: the class rule is that an updated version of a project should
+  // only be approved after the teacher removes the prior live version (via /live). We can't
+  // reliably tell "an update" from "a genuinely new project" from folder names alone, so this
+  // just flags that the student already has other live folders and lets the teacher judge it.
+  const studentRootDir = path.join(STUDENT_PROJECTS_DIR, studentDir);
+  const priorSiblings = fs.existsSync(studentRootDir)
+    ? fs
+        .readdirSync(studentRootDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory() && entry.name !== projectDirName)
+        .map((entry) => entry.name)
+    : [];
+  if (priorSiblings.length > 0) {
+    notes.push(
+      `[REVIEW WARN] ${meta.studentName} already has ${priorSiblings.length} other live project folder(s) in the showcase (${priorSiblings.join(", ")}). If this submission replaces one of them, remove the old version first at /live — the class rule is one live version per project at a time.`
+    );
+  }
 
   try {
     fs.rmSync(projectDir, { recursive: true, force: true });
@@ -1618,6 +1808,22 @@ async function handleApprove(req, res) {
         notes.push(`[REVIEW] Showcase title set to "${meta.title}".`);
       }
 
+      manifest[manifestIdx].cohort = meta.cohort || DEFAULT_COHORT;
+      if (meta.classPeriod) manifest[manifestIdx].classPeriod = meta.classPeriod;
+      // Recorded so /live can find and delete the raw source when a teacher unpublishes this
+      // project later — the manifest entry alone doesn't otherwise carry this path.
+      manifest[manifestIdx].sourceDir = path.relative(STUDENT_PROJECTS_DIR, projectDir).split(path.sep).join("/");
+
+      const slug = manifest[manifestIdx].slug;
+
+      // Package the raw (unminified) submitted files as a downloadable zip so a student can pick
+      // up this exact project at home and keep editing it — "remix" is only meaningful against
+      // the original source, not the minified /apps/<slug>/ build output. This repairs every
+      // project's zip (not just this one), since the build above just wiped and rebuilt all of
+      // them from scratch.
+      regenerateRemixZips(manifest, notes);
+      if (manifest[manifestIdx].remixZip) notes.push("[REVIEW] Remix download package created.");
+
       const thumbnailFile = parsed.files.thumbnail;
       if (thumbnailFile && thumbnailFile.data && thumbnailFile.data.length) {
         const thumbExt = path.extname(thumbnailFile.filename).toLowerCase() || ".png";
@@ -1629,6 +1835,15 @@ async function handleApprove(req, res) {
         gitPaths.push("assets/thumbs/showcase");
         notes.push("[REVIEW] Custom thumbnail applied.");
       }
+
+      mergeManifestOverride(slug, {
+        name: manifest[manifestIdx].name,
+        cohort: manifest[manifestIdx].cohort,
+        classPeriod: manifest[manifestIdx].classPeriod,
+        sourceDir: manifest[manifestIdx].sourceDir,
+        ...(thumbnailFile && thumbnailFile.data && thumbnailFile.data.length ? { thumbnail: manifest[manifestIdx].thumbnail } : {}),
+      });
+      gitPaths.push("data/manifest-overrides.json");
 
       fs.writeFileSync(SHOWCASE_MANIFEST_PATH, JSON.stringify(manifest, null, 2) + "\n");
     }
@@ -1761,6 +1976,16 @@ async function handle(req, res) {
 
   if (req.method === "POST" && req.url === "/review/reject") {
     await handleReject(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/live") {
+    sendHtml(res, 200, renderLiveProjects());
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/live/remove") {
+    await handleLiveRemove(req, res);
     return;
   }
 

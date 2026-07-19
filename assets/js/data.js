@@ -64,6 +64,7 @@ function normalizeProjects(projects) {
         year: p.year || new Date().getFullYear(),
         term: p.term || "Q1",
         program: p.program || "Independent",
+        cohort: p.cohort || "25-26 School Year",
         category: p.category || "Web",
         type: p.type || "Solo",
         jam: Boolean(p.jam),
@@ -79,6 +80,7 @@ function normalizeProjects(projects) {
         featured: Boolean(p.featured),
         date_added: p.date_added || "1970-01-01",
         appUrl: p.appUrl || null,
+        remixZip: p.remixZip || null,
       };
     })
     .sort((a, b) => new Date(b.date_added).getTime() - new Date(a.date_added).getTime());
@@ -118,6 +120,7 @@ function normalizeManifestApps(payload) {
       const term = item.term && String(item.term).trim() ? String(item.term).trim() : "Live";
       const program = item.program && String(item.program).trim() ? String(item.program).trim() : "Student Upload";
       const difficulty = item.difficulty && String(item.difficulty).trim() ? String(item.difficulty).trim() : "Beginner";
+      const cohort = item.cohort && String(item.cohort).trim() ? String(item.cohort).trim() : "25-26 School Year";
 
       return {
         id: `app-${slug}`,
@@ -126,6 +129,7 @@ function normalizeManifestApps(payload) {
         year,
         term,
         program,
+        cohort,
         category,
         type: "Solo",
         jam: false,
@@ -141,6 +145,7 @@ function normalizeManifestApps(payload) {
         featured: false,
         date_added: item.date_added || today,
         appUrl: item.url,
+        remixZip: item.remixZip || null,
       };
     });
 }

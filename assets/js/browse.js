@@ -9,7 +9,10 @@ import {
   uniqueValues,
 } from "./ui.js";
 
-const FILTER_KEYS = ["category", "tech", "difficulty", "year", "term", "type", "program"];
+const FILTER_KEYS = ["category", "tech", "difficulty", "year", "term", "type", "program", "cohort"];
+
+// Fixed display order for the cohort picker (School Year before Camp), not alphabetical.
+const COHORT_ORDER = ["25-26 School Year", "2026 Summer Camp"];
 
 function blankState() {
   return {
@@ -22,6 +25,7 @@ function blankState() {
     term: new Set(),
     type: new Set(),
     program: new Set(),
+    cohort: new Set(),
   };
 }
 
@@ -171,10 +175,15 @@ function init() {
       const termValues = uniqueValues(projects, "term").sort();
       const typeValues = uniqueValues(projects, "type").sort();
       const programValues = uniqueValues(projects, "program").sort();
+      const cohortValues = uniqueValues(projects, "cohort").sort((a, b) => {
+        const order = COHORT_ORDER.indexOf(a) - COHORT_ORDER.indexOf(b);
+        return order !== 0 ? order : a.localeCompare(b);
+      });
 
       // Render filter panels once on load
       dom.groups.innerHTML = "";
       const filterConfig = [
+        { title: "Class / Camp", key: "cohort", values: cohortValues },
         { title: "Category", key: "category", values: categoryValues },
         { title: "Tech", key: "tech", values: techValues },
         { title: "Difficulty", key: "difficulty", values: difficultyValues },

@@ -225,7 +225,7 @@
       '[data-theme="night"] .nav-auto-note, [data-lighting="night"] .nav-auto-note { color: #fcd34d; }' +
       '.nav-auto-note.is-visible { display: block; }' +
       '.nav-theme-chip[aria-disabled="true"], .nav-tone-pill[aria-disabled="true"] { cursor: not-allowed; }' +
-      '@media (max-width: 768px) {' +
+      '@media (max-width: 1120px) {' +
         '.site-nav {' +
           'transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, visibility 0s 0.3s;' +
         '}' +
@@ -557,7 +557,7 @@
   var trapFocusHandler = null;
 
   if (!isThemeIndependent) {
-    settingsContainer = document.createElement(nav.querySelector("ul") ? "li" : "div");
+    settingsContainer = document.createElement("div");
     settingsContainer.className = "nav-settings nav-settings--lighting";
 
     var panelId = nav.id + "-settings-panel";
@@ -600,9 +600,8 @@
         '</div>' +
       "</div>";
 
-    var navList = nav.querySelector("ul");
-    if (navList) navList.appendChild(settingsContainer);
-    else nav.appendChild(settingsContainer);
+    /* Settings always lives in the nav-wrap row, never inside the hamburger */
+    nav.parentNode.appendChild(settingsContainer);
 
     settingsToggle = settingsContainer.querySelector(".nav-settings-toggle");
     settingsPanel = settingsContainer.querySelector(".nav-settings-panel");
@@ -934,6 +933,208 @@
   }
 
   ensureCanvasBackgroundEngine();
+}());
+
+// ── Nav dropdowns ───────────────────────────────────────────────────
+(function () {
+  var TINKERCAD_CLASSES = [
+    { label: "Microschool",       url: "https://www.tinkercad.com/joinclass/DEATHJGMC" },
+    { label: "K-2",               url: "https://www.tinkercad.com/joinclass/KTAE7QDDZ" },
+    { label: "2nd Period",        url: "https://www.tinkercad.com/joinclass/TDASB5WIG" },
+    { label: "3rd Period",        url: "https://www.tinkercad.com/joinclass/JJHQDD8YD" },
+    { label: "Friday Study Hall", url: "https://www.tinkercad.com/joinclass/CWR9GNTKT" },
+    { label: "Summer Camp",       url: "https://www.tinkercad.com/joinclass/CHNHTUPI5" }
+  ];
+
+  /* Which nav link labels get a dropdown, and what goes inside */
+  var DROPDOWN_CONFIG = {
+    "Showcase": {
+      items: [
+        { label: "🎨 Browse All",    href: "showcase.html" },
+        { label: "🏫 Class Groups",  action: "cohort-picker" },
+        { label: "📐 Tinkercad",     action: "tinkercad-picker" }
+      ]
+    },
+    "Apps": {
+      items: [
+        { label: "🧩 Scratch",       href: "https://scratch.mit.edu/", external: true },
+        { label: "📝 VS Code",       href: "https://vscode.dev/",     external: true },
+        { label: "🏫 Code.org",      href: "https://studio.code.org/", external: true },
+        { label: "🎵 Music Lab",     href: "https://musiclab.chromeexperiments.com/", external: true },
+        { label: "🚶 Pivot",         href: "https://pivotanimator.net/", external: true },
+        { divider: true },
+        { label: "📐 Tinkercad class…", sub: TINKERCAD_CLASSES },
+        { divider: true },
+        { label: "⬇️ Downloads",      href: "class-downloads.html" },
+        { label: "View all apps →",  href: "applications.html" }
+      ]
+    },
+    "Library": {
+      items: [
+        { label: "📖 Recipe Book",   href: "recipe-book.html" },
+        { label: "📚 Classics",      href: "recipe-book.html#section-classics" },
+        { divider: true },
+        { label: "🎬 Video Library", href: "video-library.html" }
+      ]
+    }
+  };
+
+  /* Open a modal that's already on the current page, or navigate to it */
+  function triggerAction(action) {
+    var el = document.getElementById(action);
+    if (el) {
+      el.hidden = false;
+      el.classList.remove("hidden");
+      var first = el.querySelector("button, [href], input");
+      if (first) first.focus();
+    } else {
+      /* Navigate to showcase.html and let it open the modal via hash */
+      window.location.href = "showcase.html#" + action;
+    }
+  }
+
+  function buildPanel(items) {
+    var panel = document.createElement("div");
+    panel.className = "nav-dd-panel";
+    panel.setAttribute("role", "menu");
+
+    items.forEach(function (item) {
+      if (item.divider) {
+        var hr = document.createElement("div");
+        hr.className = "nav-dd-divider";
+        panel.appendChild(hr);
+        return;
+      }
+
+      if (item.sub) {
+        /* Expandable sub-list (e.g. Tinkercad class picker) */
+        var subWrap = document.createElement("div");
+
+        var subBtn = document.createElement("button");
+        subBtn.type = "button";
+        subBtn.className = "nav-dd-item";
+        subBtn.setAttribute("aria-expanded", "false");
+        subBtn.textContent = item.label;
+
+        var subList = document.createElement("div");
+        subList.className = "nav-dd-sub";
+        subList.hidden = true;
+
+        item.sub.forEach(function (s) {
+          var a = document.createElement("a");
+          a.href = s.url;
+          a.target = "_blank";
+          a.rel = "noreferrer noopener";
+          a.setAttribute("role", "menuitem");
+          a.textContent = s.label;
+          subList.appendChild(a);
+        });
+
+        subBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var open = !subList.hidden;
+          subList.hidden = open;
+          subBtn.setAttribute("aria-expanded", String(!open));
+        });
+
+        subWrap.appendChild(subBtn);
+        subWrap.appendChild(subList);
+        panel.appendChild(subWrap);
+        return;
+      }
+
+      if (item.action) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "nav-dd-item";
+        btn.setAttribute("role", "menuitem");
+        btn.textContent = item.label;
+        btn.addEventListener("click", function () { triggerAction(item.action); });
+        panel.appendChild(btn);
+        return;
+      }
+
+      var a = document.createElement("a");
+      a.href = item.href || "#";
+      a.setAttribute("role", "menuitem");
+      if (item.external) { a.target = "_blank"; a.rel = "noreferrer noopener"; }
+      a.textContent = item.label;
+      panel.appendChild(a);
+    });
+
+    return panel;
+  }
+
+  function initDropdowns() {
+    var siteNav = document.querySelector(".site-nav");
+    if (!siteNav) return;
+
+    var links = siteNav.querySelectorAll("a[href]");
+    var openDd = null;
+
+    links.forEach(function (link) {
+      var label = link.textContent.trim();
+      var config = DROPDOWN_CONFIG[label];
+      if (!config) return;
+
+      var li = link.parentNode;
+      li.classList.add("nav-dd-wrap");
+
+      /* Replace bare link with trigger button + keep page link on label */
+      var trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "nav-dd-trigger";
+      trigger.setAttribute("aria-haspopup", "true");
+      trigger.setAttribute("aria-expanded", "false");
+      trigger.innerHTML =
+        '<a href="' + link.getAttribute("href") + '" class="nav-dd-label"' +
+        (link.getAttribute("aria-current") ? ' aria-current="' + link.getAttribute("aria-current") + '"' : '') +
+        '>' + label + '</a>' +
+        '<span class="nav-dd-caret" aria-hidden="true">▾</span>';
+
+      var panel = buildPanel(config.items);
+      li.replaceChild(trigger, link);
+      li.appendChild(panel);
+
+      /* Intercept clicks on the label link (navigate) vs caret (open dropdown) */
+      trigger.addEventListener("click", function (e) {
+        if (e.target.closest(".nav-dd-label")) return; /* let link navigate */
+        e.preventDefault();
+        var isOpen = li.classList.contains("is-open");
+        if (openDd && openDd !== li) {
+          openDd.classList.remove("is-open");
+          openDd.querySelector(".nav-dd-trigger").setAttribute("aria-expanded", "false");
+        }
+        li.classList.toggle("is-open", !isOpen);
+        trigger.setAttribute("aria-expanded", String(!isOpen));
+        openDd = isOpen ? null : li;
+      });
+    });
+
+    document.addEventListener("click", function (e) {
+      if (openDd && !openDd.contains(e.target)) {
+        openDd.classList.remove("is-open");
+        var t = openDd.querySelector(".nav-dd-trigger");
+        if (t) t.setAttribute("aria-expanded", "false");
+        openDd = null;
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && openDd) {
+        openDd.classList.remove("is-open");
+        var t = openDd.querySelector(".nav-dd-trigger");
+        if (t) { t.setAttribute("aria-expanded", "false"); t.focus(); }
+        openDd = null;
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initDropdowns);
+  } else {
+    initDropdowns();
+  }
 }());
 
 // ── Command Palette (Cmd+K / Ctrl+K global search) ──────────────────

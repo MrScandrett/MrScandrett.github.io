@@ -11,6 +11,7 @@ const ROOT = process.cwd();
 const STUDENT_PROJECTS_DIR = path.join(ROOT, "student-projects");
 const APPS_DIR = path.join(ROOT, "apps");
 const MANIFEST_PATH = path.join(APPS_DIR, "manifest.json");
+const MANIFEST_OVERRIDES_PATH = path.join(ROOT, "data", "manifest-overrides.json");
 const SHOWCASE_THUMBS_DIR = path.join(ROOT, "assets", "thumbs", "showcase");
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg"]);
@@ -1729,6 +1730,24 @@ async function processModelProject(source, slug) {
   };
 }
 
+// build-showcase.js fully regenerates every manifest entry from student-projects/ on each run,
+// which would otherwise silently reset hand-curated display names/categories/tags/thumbnails
+// (set via manual manifest edits, not through the portal) back to generic auto-derived values.
+// data/manifest-overrides.json holds those curated fields per slug so they survive rebuilds.
+function applyManifestOverrides(manifest) {
+  if (!exists(MANIFEST_OVERRIDES_PATH)) return;
+  let overrides;
+  try {
+    overrides = JSON.parse(fssync.readFileSync(MANIFEST_OVERRIDES_PATH, "utf8"));
+  } catch (error) {
+    logStep(`Skipping manifest overrides because ${MANIFEST_OVERRIDES_PATH} could not be read: ${error.message}`);
+    return;
+  }
+  for (const item of manifest) {
+    if (item && overrides[item.slug]) Object.assign(item, overrides[item.slug]);
+  }
+}
+
 function ensureUniqueSlugs(projectSources) {
   const used = new Set();
   const pairs = [];
@@ -1844,6 +1863,7 @@ async function main() {
   }
 
   await removeStaleAppDirs(manifest.map((item) => item.slug));
+  applyManifestOverrides(manifest);
   await fs.writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + "\n", "utf8");
   logStep(`Wrote manifest with ${manifest.length} project(s): ${MANIFEST_PATH}`);
 

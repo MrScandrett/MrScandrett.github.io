@@ -47,6 +47,7 @@ export function createProjectCard(project, options = {}) {
   article.dataset.difficulty = project.difficulty;
   article.dataset.type = project.type;
   article.dataset.program = project.program;
+  article.dataset.cohort = project.cohort;
   article.dataset.term = project.term;
   article.dataset.year = String(project.year);
   article.dataset.tech = (project.tech || []).join("|").toLowerCase();
@@ -360,6 +361,7 @@ export function projectMatches(project, state) {
   if (state.term.size > 0 && !state.term.has(project.term)) return false;
   if (state.type.size > 0 && !state.type.has(project.type)) return false;
   if (state.program.size > 0 && !state.program.has(project.program)) return false;
+  if (state.cohort.size > 0 && !state.cohort.has(project.cohort)) return false;
 
   return true;
 }
