@@ -963,7 +963,7 @@
         { label: "🎵 Music Lab",     href: "https://musiclab.chromeexperiments.com/", external: true },
         { label: "🚶 Pivot",         href: "https://pivotanimator.net/", external: true },
         { divider: true },
-        { label: "📐 Tinkercad class…", sub: TINKERCAD_CLASSES },
+        { label: "📐 Tinkercad class…", action: "tinkercad-picker" },
         { divider: true },
         { label: "⬇️ Downloads",      href: "class-downloads.html" },
         { label: "View all apps →",  href: "applications.html" }
@@ -979,7 +979,7 @@
     }
   };
 
-  /* Open a modal that's already on the current page, or navigate to it */
+  /* Open a modal that's already on the current page, or build one on the fly */
   function triggerAction(action) {
     var el = document.getElementById(action);
     if (el) {
@@ -987,9 +987,88 @@
       el.classList.remove("hidden");
       var first = el.querySelector("button, [href], input");
       if (first) first.focus();
-    } else {
-      /* Navigate to showcase.html and let it open the modal via hash */
-      window.location.href = "showcase.html#" + action;
+      return;
+    }
+
+    if (action === "tinkercad-picker") {
+      openTinkercadOverlay();
+      return;
+    }
+
+    /* Fallback: navigate to showcase.html and let it open the modal via hash */
+    window.location.href = "showcase.html#" + action;
+  }
+
+  function openTinkercadOverlay() {
+    /* Remove any stale overlay from a previous open */
+    var old = document.getElementById("nav-tinkercad-overlay");
+    if (old) old.remove();
+
+    var overlay = document.createElement("section");
+    overlay.id = "nav-tinkercad-overlay";
+    overlay.className = "class-picker";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-labelledby", "nav-tc-title");
+
+    var backdrop = document.createElement("div");
+    backdrop.className = "class-picker-backdrop";
+
+    var panel = document.createElement("div");
+    panel.className = "class-picker-panel";
+    panel.setAttribute("tabindex", "-1");
+
+    var h2 = document.createElement("h2");
+    h2.id = "nav-tc-title";
+    h2.textContent = "What class are you in?";
+
+    var p = document.createElement("p");
+    p.textContent = "Pick your class to open the correct Tinkercad join code. Then type your name on the next screen.";
+
+    var grid = document.createElement("div");
+    grid.className = "class-picker-grid";
+    grid.setAttribute("role", "group");
+    grid.setAttribute("aria-label", "Tinkercad class links");
+
+    TINKERCAD_CLASSES.forEach(function (cls) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = cls.label;
+      btn.addEventListener("click", function () {
+        window.open(cls.url, "_blank", "noreferrer noopener");
+        close();
+      });
+      grid.appendChild(btn);
+    });
+
+    var actions = document.createElement("div");
+    actions.className = "class-picker-actions";
+    var cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", close);
+    actions.appendChild(cancelBtn);
+
+    panel.appendChild(h2);
+    panel.appendChild(p);
+    panel.appendChild(grid);
+    panel.appendChild(actions);
+    overlay.appendChild(backdrop);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    panel.focus();
+
+    backdrop.addEventListener("click", close);
+
+    var onKey = function (e) {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onKey);
+
+    function close() {
+      overlay.remove();
+      document.removeEventListener("keydown", onKey);
     }
   }
 
