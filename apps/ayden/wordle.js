@@ -271,6 +271,16 @@
       btn.addEventListener('click', () => handleKey(letter));
       keyboard.appendChild(btn);
     });
+    const enterBtn = document.createElement('button');
+    enterBtn.className = 'key key-wide';
+    enterBtn.textContent = 'Enter';
+    enterBtn.addEventListener('click', () => handleKey('ENTER'));
+    keyboard.appendChild(enterBtn);
+    const backBtn = document.createElement('button');
+    backBtn.className = 'key key-wide';
+    backBtn.textContent = '⌫';
+    backBtn.addEventListener('click', () => handleKey('BACKSPACE'));
+    keyboard.appendChild(backBtn);
   }
 
   function handleKey(letter){

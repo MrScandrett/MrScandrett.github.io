@@ -438,6 +438,7 @@ function draw(){
 }
 
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
+loop();
 
 function updateScoreboard(){
   // Display numeric total pads touched in top-right

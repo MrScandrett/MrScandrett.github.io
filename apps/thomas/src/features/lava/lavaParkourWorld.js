@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PLAYER } from '/src/app/config.js';
+import { PLAYER } from '../../app/config.js';
 
 export function createLavaParkourWorld(scene) {
     const group = new THREE.Group();
