@@ -104,8 +104,15 @@ const bridgeState = {
 const SEQ_STEPS  = 16;
 const SEQ_DRUMS  = ['kick','snare','hat','clap','tom1','tom2','perc','crash'];
 const SEQ_LABELS = ['Kick','Snare','Hi-Hat','Clap','Tom','Low Tom','Perc','Crash'];
+const SEQ_COLORS = ['#e05252','#4a90e2','#7ab648','#c27cf0','#e8954e','#7ecfce','#e8c84e','#e070b8'];
 
 let seqGrid    = SEQ_DRUMS.map(() => Array(SEQ_STEPS).fill(false));
+let seqMuted = SEQ_DRUMS.map(() => false);
+
+// Default groove: kick on 1+3, snare on 2+4, hi-hat every 8th note
+[0, 8].forEach(s => seqGrid[0][s] = true);          // kick
+[4, 12].forEach(s => seqGrid[1][s] = true);          // snare
+[0,2,4,6,8,10,12,14].forEach(s => seqGrid[2][s] = true); // hi-hat
 let seqStep    = 0;
 let seqPlaying = false;
 let seqTimerId = null;
@@ -795,6 +802,15 @@ function makePianoKey(note, keyClass, leftPct, widthPct) {
   key.style.left  = `${leftPct}%`;
   key.style.width = `${widthPct}%`;
 
+  const qwertyKey = NOTE_TO_KEY[note];
+  if (qwertyKey) {
+    const hint = document.createElement('span');
+    hint.className = 'key-qwerty';
+    hint.textContent = qwertyKey;
+    hint.setAttribute('aria-hidden', 'true');
+    key.appendChild(hint);
+  }
+
   key.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     pianoState.pointerDown = true;
@@ -992,6 +1008,52 @@ function updateKeyOverlays() {
 // ───── ADSR display helpers ─────
 function fmtMs(ms) { return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`; }
 
+function drawAdsrCurve() {
+  const svg = document.getElementById('adsrCurve');
+  if (!svg) return;
+  const W = 400, H = 80;
+  const pad = { l: 14, r: 14, t: 10, b: 16 };
+  const w = W - pad.l - pad.r;
+  const h = H - pad.t - pad.b;
+
+  const sustainDur = 0.28;
+  const total = adsr.a + adsr.d + sustainDur + adsr.r;
+
+  function tx(t) { return pad.l + (t / total) * w; }
+  function ty(v) { return pad.t + h - v * h; }
+
+  const x0 = tx(0),                          y0 = ty(0);
+  const x1 = tx(adsr.a),                     y1 = ty(1);
+  const x2 = tx(adsr.a + adsr.d),            y2 = ty(adsr.s);
+  const x3 = tx(adsr.a + adsr.d + sustainDur), y3 = ty(adsr.s);
+  const x4 = tx(total),                      y4 = ty(0);
+
+  const path = `M ${x0} ${y0} L ${x1} ${y1} L ${x2} ${y2} L ${x3} ${y3} L ${x4} ${y4}`;
+  const fill = `${path} L ${x4} ${ty(0)} L ${x0} ${ty(0)} Z`;
+
+  const lx = (a, b) => ((a + b) / 2).toFixed(1);
+  const ly = H - 3;
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="adsrGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--module-osc,#3357e5)" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="var(--module-osc,#3357e5)" stop-opacity="0.03"/>
+      </linearGradient>
+    </defs>
+    <line x1="${pad.l}" y1="${ty(0).toFixed(1)}" x2="${W-pad.r}" y2="${ty(0).toFixed(1)}" stroke="var(--border-subtle)" stroke-width="1"/>
+    <line x1="${pad.l}" y1="${ty(1).toFixed(1)}" x2="${W-pad.r}" y2="${ty(1).toFixed(1)}" stroke="var(--border-subtle)" stroke-width="1" stroke-dasharray="3 4"/>
+    <path d="${fill}" fill="url(#adsrGrad)"/>
+    <path d="${path}" fill="none" stroke="var(--module-osc,#3357e5)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3" fill="var(--module-osc,#3357e5)"/>
+    <circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="3" fill="var(--module-osc,#3357e5)"/>
+    <text x="${lx(x0,x1)}" y="${ly}" text-anchor="middle" font-size="8" fill="var(--text-muted,#94a3b8)">A</text>
+    <text x="${lx(x1,x2)}" y="${ly}" text-anchor="middle" font-size="8" fill="var(--text-muted,#94a3b8)">D</text>
+    <text x="${lx(x2,x3)}" y="${ly}" text-anchor="middle" font-size="8" fill="var(--text-muted,#94a3b8)">S</text>
+    <text x="${lx(x3,x4)}" y="${ly}" text-anchor="middle" font-size="8" fill="var(--text-muted,#94a3b8)">R</text>
+  `;
+}
+
 function readAdsr() {
   adsr.a = Number(els.adsrA.value) / 1000;
   adsr.d = Number(els.adsrD.value) / 1000;
@@ -1001,6 +1063,7 @@ function readAdsr() {
   els.adsrDVal.textContent = fmtMs(Number(els.adsrD.value));
   els.adsrSVal.textContent = `${els.adsrS.value}%`;
   els.adsrRVal.textContent = fmtMs(Number(els.adsrR.value));
+  drawAdsrCurve();
 }
 
 // ───── Modular Patchbay ─────
@@ -1367,20 +1430,72 @@ function buildSeqGrid() {
   if (!container) return;
   container.innerHTML = '';
 
+  // ── Beat ruler ──
+  const ruler = document.createElement('div');
+  ruler.className = 'ml-seq-row ml-seq-ruler-row';
+
+  const rulerHead = document.createElement('div');
+  rulerHead.className = 'ml-seq-track-head';
+  ruler.appendChild(rulerHead);
+
+  const rulerSteps = document.createElement('div');
+  rulerSteps.className = 'ml-seq-steps';
+  for (let step = 0; step < SEQ_STEPS; step++) {
+    if (step > 0 && step % 4 === 0) {
+      const gap = document.createElement('span');
+      gap.className = 'ml-seq-beat-gap';
+      rulerSteps.appendChild(gap);
+    }
+    const cell = document.createElement('span');
+    cell.className = 'ml-seq-ruler-cell' + (step % 4 === 0 ? ' is-beat' : '');
+    cell.textContent = step % 4 === 0 ? String(step / 4 + 1) : '·';
+    rulerSteps.appendChild(cell);
+  }
+  ruler.appendChild(rulerSteps);
+  container.appendChild(ruler);
+
+  // ── Track rows ──
   SEQ_DRUMS.forEach((drum, rowIdx) => {
     const row = document.createElement('div');
     row.className = 'ml-seq-row';
+    row.dataset.row = String(rowIdx);
+    row.style.setProperty('--seq-track-color', SEQ_COLORS[rowIdx]);
 
-    const label = document.createElement('span');
-    label.className   = 'ml-seq-label';
-    label.textContent = SEQ_LABELS[rowIdx];
-    row.appendChild(label);
+    // Track head: dot + name + mute button
+    const head = document.createElement('div');
+    head.className = 'ml-seq-track-head';
+
+    const dot = document.createElement('span');
+    dot.className = 'ml-seq-track-dot';
+    dot.style.background = SEQ_COLORS[rowIdx];
+    head.appendChild(dot);
+
+    const name = document.createElement('span');
+    name.className = 'ml-seq-track-name';
+    name.textContent = SEQ_LABELS[rowIdx];
+    head.appendChild(name);
+
+    const muteBtn = document.createElement('button');
+    muteBtn.type = 'button';
+    muteBtn.className = 'ml-seq-mute-btn';
+    muteBtn.textContent = 'M';
+    muteBtn.title = `Mute ${SEQ_LABELS[rowIdx]}`;
+    muteBtn.setAttribute('aria-label', `Mute ${SEQ_LABELS[rowIdx]}`);
+    muteBtn.setAttribute('aria-pressed', 'false');
+    muteBtn.addEventListener('click', () => {
+      seqMuted[rowIdx] = !seqMuted[rowIdx];
+      muteBtn.classList.toggle('is-muted', seqMuted[rowIdx]);
+      muteBtn.setAttribute('aria-pressed', seqMuted[rowIdx] ? 'true' : 'false');
+      row.classList.toggle('is-muted', seqMuted[rowIdx]);
+    });
+    head.appendChild(muteBtn);
+
+    row.appendChild(head);
 
     const stepsWrap = document.createElement('div');
     stepsWrap.className = 'ml-seq-steps';
 
     for (let step = 0; step < SEQ_STEPS; step++) {
-      // Visual beat gap every 4 steps
       if (step > 0 && step % 4 === 0) {
         const gap = document.createElement('span');
         gap.className = 'ml-seq-beat-gap';
@@ -1392,8 +1507,10 @@ function buildSeqGrid() {
       btn.className = 'ml-seq-step';
       btn.dataset.row  = String(rowIdx);
       btn.dataset.step = String(step);
-      btn.setAttribute('aria-label',   `${SEQ_LABELS[rowIdx]} step ${step + 1}`);
-      btn.setAttribute('aria-pressed', 'false');
+      btn.setAttribute('aria-label', `${SEQ_LABELS[rowIdx]} step ${step + 1}`);
+      const initOn = seqGrid[rowIdx][step];
+      if (initOn) btn.classList.add('on');
+      btn.setAttribute('aria-pressed', initOn ? 'true' : 'false');
 
       btn.addEventListener('click', () => {
         seqGrid[rowIdx][step] = !seqGrid[rowIdx][step];
@@ -1429,12 +1546,14 @@ function scheduleStep(step, time) {
     const prev = (step + SEQ_STEPS - 1) % SEQ_STEPS;
     seqSetCurrent(prev, false);
     seqSetCurrent(step, true);
+    const transport = document.getElementById('seqTransport');
+    if (transport) transport.textContent = `${Math.floor(step / 4) + 1}.${(step % 4) + 1}`;
   }, msUntilBeat);
   seqVisualTimers.push(timerId);
 
   // Schedule audio exactly on the audio clock
   for (let r = 0; r < SEQ_DRUMS.length; r++) {
-    if (seqGrid[r][step]) triggerDrum(SEQ_DRUMS[r], time);
+    if (!seqMuted[r] && seqGrid[r][step]) triggerDrum(SEQ_DRUMS[r], time);
   }
 }
 
@@ -1477,6 +1596,8 @@ function seqStop() {
   seqStep = 0;
   els.seqPlay.textContent = '▶ Play';
   els.seqPlay.classList.remove('btn-active');
+  const transport = document.getElementById('seqTransport');
+  if (transport) transport.textContent = '1.1';
 }
 
 function seqClearAll() {
@@ -1697,7 +1818,7 @@ function playChordFromCircle(item, isMinor, groupEl) {
     duration: 700,
     label: `${chordLabel} ${chordType} chord`,
     solfege: chordNotes.map((note) => {
-      const match = THEORY_NOTES.find((entry) => entry.midi % 12 === note % 12);
+      const match = BASE_THEORY.find((entry, idx) => idx === note % 12);
       return match ? match.solfege : NOTE_NAMES[note % 12];
     }).join('-')
   });
@@ -1717,6 +1838,7 @@ const KEY_TO_NOTE = {
   'a': 60, 'w': 61, 's': 62, 'e': 63, 'd': 64, 'f': 65, 't': 66,
   'g': 67, 'y': 68, 'h': 69, 'u': 70, 'j': 71, 'k': 72,
 };
+const NOTE_TO_KEY = Object.fromEntries(Object.entries(KEY_TO_NOTE).map(([k, v]) => [v, k.toUpperCase()]));
 const activeQwertyNotes = new Set();
 
 function handleQwertyKeyDown(e) {
@@ -1826,12 +1948,9 @@ function buildChordTheoryUI() {
     const rootName = NOTE_NAMES[root];
     const typeLabel = typeSelect.options[typeSelect.selectedIndex].text.split('(')[0].trim();
 
-    // Play all notes simultaneously
-    chordNotes.forEach(note => {
-      os_triggerNote(note, 0.6, {
-        duration: 2.5,
-        hudLabel: `${rootName} ${typeLabel}`,
-      });
+    os_triggerChord(chordNotes, {
+      duration: 2500,
+      label: `${rootName} ${typeLabel}`,
     });
   }
 
