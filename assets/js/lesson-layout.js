@@ -273,7 +273,7 @@
 
     var panel = document.createElement('aside');
     panel.className = 'll-panel';
-    panel.setAttribute('aria-hidden', 'false');
+    panel.setAttribute('aria-hidden', 'true');
 
     var head = document.createElement('div');
     head.className = 'll-panel-head';
@@ -463,8 +463,13 @@
   }
 
   function initPanel() {
+    /* Always start collapsed — panel opens on user demand */
     document.querySelectorAll('.ll-panel').forEach(function (panel) {
-      setPanelInteractivity(panel, panel.getAttribute('aria-hidden') !== 'true');
+      panel.setAttribute('aria-hidden', 'true');
+    });
+
+    document.querySelectorAll('.ll-panel').forEach(function (panel) {
+      setPanelInteractivity(panel, false);
     });
 
     /* Close / collapse button */
