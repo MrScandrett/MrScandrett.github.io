@@ -472,6 +472,18 @@
       setPanelInteractivity(panel, false);
     });
 
+    /* Ensure every panel has a close button (static HTML panels may not) */
+    document.querySelectorAll('.ll-panel').forEach(function (panel) {
+      if (panel.querySelector('.ll-panel-close')) return;
+      var inner = panel.querySelector('.ll-panel-inner') || panel;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'll-panel-close';
+      btn.setAttribute('aria-label', 'Collapse panel');
+      btn.innerHTML = '&times;';
+      inner.insertBefore(btn, inner.firstChild);
+    });
+
     /* Close / collapse button */
     document.querySelectorAll('.ll-panel-close').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
