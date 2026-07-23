@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Build Your Student Page · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Build your own page for mrscandrett.github.io in a live editor: HTML structure, CSS styled with real color theory, and one interactive element in JavaScript. Your work saves automatically." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    body { background: #0c0f14; color: #e8ecf2; margin: 0; overflow-x: hidden; }
+
+    /* ── Topbar ── */
+    .sp-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px);
+      background: rgba(12, 15, 20, 0.94);
+      border-bottom: 1px solid rgba(80, 200, 170, 0.24);
+    }
+    .sp-topbar-inner {
+      width: min(1440px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .sp-topbar a { color: #50c8aa; text-decoration: none; font-size: 0.82rem; }
+    .sp-topbar a:hover { color: #fff; }
+    .sp-topbar-title { font-size: 0.9rem; font-weight: 700; color: #eef4f0; }
+
+    /* ── Hero ── */
+    .sp-hero { padding: 0.8rem 1.5rem 0.5rem; text-align: center; max-width: 760px; margin: 0 auto; }
+    .sp-hero h1 { font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
+    .sp-hero p { font-size: 0.86rem; color: rgba(232, 236, 242, 0.66); margin: 0; line-height: 1.55; }
+
+    .sp-wrap { padding: 0 1.1rem 1rem; max-width: 1440px; margin: 0 auto; }
+
+    /* ── Week mission cards ── */
+    .week-row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 0.85rem; }
+    @media (min-width: 860px) { .week-row { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+    .week-card {
+      background: rgba(16, 20, 27, 0.8);
+      border: 1px solid rgba(120, 140, 160, 0.2);
+      border-radius: 14px; padding: 0.85rem 1rem;
+    }
+    .week-card.done { border-color: rgba(80, 200, 130, 0.55); box-shadow: 0 0 16px rgba(70, 190, 120, 0.12); }
+    .week-head { display: flex; align-items: center; gap: 8px; margin-bottom: 0.55rem; }
+    .week-num {
+      width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+      display: grid; place-items: center; font-size: 0.78rem; font-weight: 800; color: #0c0f14;
+    }
+    .week-title { font-size: 0.8rem; font-weight: 800; }
+    .week-badge { margin-left: auto; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em; color: rgba(200,215,225,0.4); }
+    .week-card.done .week-badge { color: #58d888; }
+    .check-list { display: flex; flex-direction: column; gap: 4px; }
+    .check-item {
+      display: flex; gap: 7px; align-items: flex-start;
+      font-size: 0.7rem; line-height: 1.4; color: rgba(215, 225, 235, 0.6);
+    }
+    .check-item .tick {
+      flex-shrink: 0; width: 14px; height: 14px; margin-top: 1px;
+      border-radius: 5px; border: 1px solid rgba(140,160,180,0.4);
+      display: grid; place-items: center; font-size: 0.6rem; color: transparent;
+      transition: all 0.15s;
+    }
+    .check-item.ok { color: #cde8d5; }
+    .check-item.ok .tick { background: #2fae62; border-color: #2fae62; color: #fff; }
+    .check-item code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.66rem; background: rgba(120,140,160,0.15); border-radius: 4px; padding: 0 4px; }
+
+    /* ── Editor + preview ── */
+    .studio { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
+    @media (min-width: 980px) { .studio { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; } }
+
+    .editor-card {
+      background: #0d1015;
+      border: 1px solid rgba(120, 140, 160, 0.25);
+      border-radius: 15px; overflow: hidden;
+      display: flex; flex-direction: column;
+      min-height: 460px;
+    }
+    .editor-tabs { display: flex; background: rgba(20, 25, 33, 0.9); border-bottom: 1px solid rgba(120,140,160,0.2); }
+    .ed-tab {
+      border: none; background: transparent; cursor: pointer;
+      padding: 9px 16px; font-size: 0.72rem; font-weight: 800;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      color: rgba(200, 212, 225, 0.5);
+      border-bottom: 2px solid transparent;
+    }
+    .ed-tab.active-html { color: #ff7a59; border-bottom-color: #e34f26; background: rgba(227,79,38,0.08); }
+    .ed-tab.active-css  { color: #7a9bff; border-bottom-color: #264de4; background: rgba(38,77,228,0.1); }
+    .ed-tab.active-js   { color: #f7df1e; border-bottom-color: #f7df1e; background: rgba(247,223,30,0.07); }
+    .editor-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; padding-right: 8px; }
+    .ed-mini-btn {
+      border: 1px solid rgba(140,160,180,0.3); border-radius: 999px;
+      background: rgba(16,20,27,0.8); color: rgba(215,225,235,0.7);
+      padding: 4px 10px; font-size: 0.62rem; font-weight: 800; cursor: pointer;
+    }
+    .ed-mini-btn:hover { border-color: #50c8aa; color: #50c8aa; }
+    .code-input {
+      flex: 1; width: 100%; resize: none; border: none; outline: none;
+      background: #0d1015; color: #e8ecf2;
+      font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+      font-size: 0.76rem; line-height: 1.6;
+      padding: 12px 14px; tab-size: 2;
+      caret-color: #50c8aa;
+    }
+    .code-input:focus-visible { outline: 2px solid rgba(80,200,170,0.4); outline-offset: -2px; }
+
+    .preview-card {
+      background: #0d1015;
+      border: 1px solid rgba(120, 140, 160, 0.25);
+      border-radius: 15px; overflow: hidden;
+      display: flex; flex-direction: column;
+      min-height: 460px;
+    }
+    .preview-head {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(20, 25, 33, 0.9);
+      border-bottom: 1px solid rgba(120,140,160,0.2);
+      padding: 7px 12px;
+    }
+    .url-pill {
+      flex: 1; background: rgba(12,15,20,0.9);
+      border: 1px solid rgba(120,140,160,0.25);
+      border-radius: 999px; padding: 5px 14px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.66rem; color: rgba(180, 230, 210, 0.75);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #preview-frame { flex: 1; width: 100%; border: none; background: #fff; }
+
+    .save-note {
+      font-size: 0.66rem; color: rgba(200,215,225,0.42);
+      margin-top: 0.55rem; text-align: center; line-height: 1.5;
+    }
+    .save-note strong { color: #50c8aa; }
+
+    /* Guide info cards */
+    .info-row { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
+    .info-card { background: rgba(16,20,27,0.8); border: 1px solid rgba(120,140,160,0.18); border-radius: 13px; padding: 1rem; }
+    .info-card h4 { font-size: 0.8rem; font-weight: 700; color: #50c8aa; margin: 0 0 0.4rem; }
+    .info-card p  { font-size: 0.77rem; color: rgba(232,236,242,0.66); margin: 0 0 0.4rem; line-height: 1.55; }
+    .info-card p:last-child { margin-bottom: 0; }
+    .info-card code {
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.7rem;
+      background: rgba(80,200,170,0.13); border-radius: 4px; padding: 1px 5px; color: #8fdcc4;
+    }
+    .sp-card {
+      background: rgba(16,20,27,0.8);
+      border: 1px solid rgba(80,200,170,0.16);
+      border-radius: 15px; padding: 1rem 1.1rem; margin-bottom: 0.85rem;
+    }
+    .sp-card h3 {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em;
+      color: rgba(160, 210, 195, 0.55); text-transform: uppercase; margin: 0 0 0.85rem;
+    }
+    .dl-btn {
+      display: block; width: 100%;
+      border: none; border-radius: 999px; padding: 10px 0;
+      font-size: 0.78rem; font-weight: 800; cursor: pointer;
+      background: linear-gradient(180deg, #38b892, #23805f); color: #fff;
+      box-shadow: 0 4px 14px rgba(50, 170, 130, 0.3);
+    }
+    .dl-btn:hover { filter: brightness(1.1); }
+
+    /* ── ll-panel theming ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(12, 15, 20, 0.97);
+      --ll-panel-border:  rgba(80, 200, 170, 0.22);
+      --ll-tab-color:     rgba(160, 210, 195, 0.6);
+      --ll-tab-active-bg: rgba(80, 200, 170, 0.16);
+      --ll-tab-active:    #50c8aa;
+      --ll-toggle-bg:     rgba(12, 15, 20, 0.97);
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport ll-dark">
+
+  <nav class="sp-topbar ll-topbar">
+    <div class="sp-topbar-inner">
+      <a href="../steam-lessons.html">← Computer Science</a>
+      <span class="sp-topbar-title">🏠 Build Your Student Page</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+
+    <div class="ll-sim">
+      <header class="sp-hero">
+        <h1>🏠 Build Your Student Page</h1>
+        <p>This is the page you'll publish on <strong style="color:#50c8aa">mrscandrett.github.io</strong> — built by you, in three weeks, in three languages. Type in the editor and watch the preview update live. The checklists grade themselves, and your work saves automatically in this browser.</p>
+      </header>
+
+      <div class="sp-wrap">
+
+        <div class="week-row">
+          <div class="week-card" id="wk-1">
+            <div class="week-head">
+              <span class="week-num" style="background:#e34f26">1</span>
+              <span class="week-title" style="color:#ff8f70">HTML · Structure</span>
+              <span class="week-badge" id="wk-1-badge">0/5</span>
+            </div>
+            <div class="check-list" id="wk-1-list"></div>
+          </div>
+          <div class="week-card" id="wk-2">
+            <div class="week-head">
+              <span class="week-num" style="background:#264de4; color:#fff">2</span>
+              <span class="week-title" style="color:#8aa5ff">CSS · Style &amp; Color</span>
+              <span class="week-badge" id="wk-2-badge">0/5</span>
+            </div>
+            <div class="check-list" id="wk-2-list"></div>
+          </div>
+          <div class="week-card" id="wk-3">
+            <div class="week-head">
+              <span class="week-num" style="background:#f7df1e">3</span>
+              <span class="week-title" style="color:#f7df1e">JavaScript · Interaction</span>
+              <span class="week-badge" id="wk-3-badge">0/4</span>
+            </div>
+            <div class="check-list" id="wk-3-list"></div>
+          </div>
+        </div>
+
+        <div class="studio">
+          <div class="editor-card">
+            <div class="editor-tabs" role="tablist" aria-label="Code files">
+              <button class="ed-tab active-html" id="tab-html" type="button" aria-selected="true">index.html</button>
+              <button class="ed-tab" id="tab-css" type="button" aria-selected="false">style.css</button>
+              <button class="ed-tab" id="tab-js" type="button" aria-selected="false">script.js</button>
+              <div class="editor-actions">
+                <button class="ed-mini-btn" id="btn-example" type="button">✨ Example</button>
+                <button class="ed-mini-btn" id="btn-reset" type="button">↺ Reset</button>
+              </div>
+            </div>
+            <textarea class="code-input" id="code-input" spellcheck="false" autocapitalize="off" autocomplete="off"
+              aria-label="Code editor"></textarea>
+          </div>
+
+          <div class="preview-card">
+            <div class="preview-head">
+              <span style="font-size:0.85rem" aria-hidden="true">🌐</span>
+              <span class="url-pill">mrscandrett.github.io/students/<span id="url-name">your-name</span>.html</span>
+            </div>
+            <iframe id="preview-frame" title="Live preview of your page" sandbox="allow-scripts"></iframe>
+          </div>
+        </div>
+
+        <p class="save-note"><strong>Auto-saved</strong> in this browser — close the tab, come back tomorrow, and your page will be here. Use <strong>⧉ Download</strong> in the side panel to take a copy with you or hand it in.</p>
+
+      </div><!-- .sp-wrap -->
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="true">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="sp-pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="sp-pane-publish">Publish</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="sp-pane-guide">
+          <div class="sp-card" style="margin-bottom:1rem">
+            <h3>Web Building Essentials</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>🦴 Week 1 — HTML Is the Skeleton</h4>
+                <p>HTML is nested boxes with names. <code>&lt;h1&gt;</code> is your page's one big title; <code>&lt;h2&gt;</code> starts each section; <code>&lt;p&gt;</code> holds paragraphs; <code>&lt;a href="..."&gt;</code> links out; <code>&lt;img src="..." alt="..."&gt;</code> shows a picture.</p>
+                <p>The <code>alt</code> text on images isn't optional — it's what screen readers speak and what appears if the image breaks. Describe the picture like you'd describe it over the phone.</p>
+              </div>
+              <div class="info-card">
+                <h4>🎨 Week 2 — CSS Is the Paint (Use Color Theory!)</h4>
+                <p>A CSS rule is a <em>selector</em> plus <em>declarations</em>: <code>h1 { color: teal; }</code>. Style all sections at once with an element selector, or invent your own names with a class: <code>.card { ... }</code> matches <code>class="card"</code>.</p>
+                <p>From the Color Theory Lab: pick <strong>one background, one text color, one accent</strong>. Check your contrast — light text on light backgrounds is the #1 beginner mistake. Your accent color should appear at least twice so the page feels designed, not random.</p>
+              </div>
+              <div class="info-card">
+                <h4>⚡ Week 3 — JavaScript Is the Nervous System</h4>
+                <p>Three moves power almost everything: <strong>find</strong> an element (<code>document.getElementById</code>), <strong>listen</strong> for something (<code>addEventListener('click', ...)</code>), and <strong>change</strong> the page (<code>.textContent</code>, <code>.style</code>, <code>.classList</code>).</p>
+                <p>Your mission is one interactive element — a button that counts, a color-changer, a toggle. Small and working beats big and broken.</p>
+              </div>
+              <div class="info-card">
+                <h4>🧭 Required Sections</h4>
+                <p>Per the class plan, your page needs at least three sections: <strong>About</strong> (who you are), <strong>Lab</strong> (your STEAM builds — rockets, prints, robots), and <strong>Games</strong> (link your Scratch or Pygame projects). You'll add photos and write-ups to Lab all year, so give it room to grow.</p>
+              </div>
+              <div class="info-card">
+                <h4>🆘 When It Breaks</h4>
+                <p>Something not showing? Check the three classics: a tag you opened but never closed, a quote mark you opened but never closed, or a name that doesn't match (<code>getElementById('Btn')</code> won't find <code>id="btn"</code>). Read your code out loud — your ear catches what your eye skips.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #sp-pane-guide -->
+
+        <div class="ll-pane" id="sp-pane-publish">
+          <div class="sp-card" style="margin-bottom:1rem">
+            <h3>Ship It 🚀</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>⧉ Step 1 — Download Your Page</h4>
+                <p>This bundles your HTML, CSS, and JavaScript into one finished file, named and ready to hand in.</p>
+                <p style="margin-top:0.6rem"><button class="dl-btn" id="btn-download" type="button">⧉ Download my page</button></p>
+              </div>
+              <div class="info-card">
+                <h4>🌿 Step 2 — Add It to the Class Branch</h4>
+                <p>In class, we add your file to the class GitHub branch — that's the same version control system professional teams use. Once it's merged, GitHub Pages publishes it automatically. No servers, no uploads: the repository <em>is</em> the website.</p>
+              </div>
+              <div class="info-card">
+                <h4>🌍 Step 3 — You're Live</h4>
+                <p>Your page becomes a real URL on <code>mrscandrett.github.io</code> — a node on the same internet that connects 5 billion people. Anyone you send the link to can visit it. That's not a simulation of web publishing; it's the real thing.</p>
+              </div>
+              <div class="info-card">
+                <h4>📈 Keep It Growing</h4>
+                <p>This page is your home base all year. Each quarter adds to it: Lab photos and build write-ups in Q1–Q2, your VR museum model and animations in Q3, and your capstone project page in Q4. Come back to this editor any time — your work is saved here.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #sp-pane-publish -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ══════════════════════════════════════════
+     STARTER + EXAMPLE CODE
+  ══════════════════════════════════════════ */
+  const STARTER = {
+    html: [
+      '<!-- Week 1: build your skeleton.',
+      '     Add a big title, an About section,',
+      '     a Lab section, and a Games section. -->',
+      '',
+      '<h1>My Page</h1>',
+      '<p>Hi! I\'m ... and this is my page.</p>',
+      '',
+      '<!-- try adding:',
+      '  <h2>About Me</h2>',
+      '  <img src="..." alt="describe it">',
+      '  <a href="https://scratch.mit.edu">my game</a>',
+      '-->',
+      '',
+    ].join('\n'),
+    css: [
+      '/* Week 2: paint it. Pick one background,',
+      '   one text color, one accent - and check',
+      '   your contrast! */',
+      '',
+      'body {',
+      '  font-family: sans-serif;',
+      '}',
+      '',
+    ].join('\n'),
+    js: [
+      '// Week 3: make it respond.',
+      '// 1) find an element',
+      '// 2) listen for a click',
+      '// 3) change something',
+      '',
+    ].join('\n'),
+  };
+
+  const EXAMPLE = {
+    html: [
+      '<h1>Alex\'s Launch Pad</h1>',
+      '<p>Grade 7 · builder of rockets and pixel worlds.</p>',
+      '',
+      '<h2>About Me</h2>',
+      '<p>I like 3D printing, astronomy, and my dog Mo.</p>',
+      '<img src="https://mrscandrett.github.io/assets/thumbs/dna.png" alt="Colorful DNA artwork">',
+      '',
+      '<h2>My Lab</h2>',
+      '<p>Week 5: my bottle rocket flew 41 feet! Fin angle: 12&deg;.</p>',
+      '',
+      '<h2>My Games</h2>',
+      '<p><a href="https://scratch.mit.edu">Play my Scratch game</a></p>',
+      '',
+      '<button id="color-btn">Change the vibe</button>',
+    ].join('\n'),
+    css: [
+      'body {',
+      '  font-family: sans-serif;',
+      '  background: #10141c;',
+      '  color: #e8ecf2;',
+      '  padding: 24px;',
+      '}',
+      '',
+      'h1 {',
+      '  color: #50c8aa;',
+      '}',
+      '',
+      'h2 {',
+      '  color: #ffb454;',
+      '  border-bottom: 2px solid #ffb454;',
+      '  padding-bottom: 4px;',
+      '}',
+      '',
+      'img {',
+      '  max-width: 200px;',
+      '  border-radius: 12px;',
+      '}',
+      '',
+      '.party {',
+      '  background: #2a1f3d;',
+      '}',
+      '',
+      'button {',
+      '  background: #50c8aa;',
+      '  border: none;',
+      '  padding: 10px 18px;',
+      '  border-radius: 999px;',
+      '  font-weight: bold;',
+      '  cursor: pointer;',
+      '}',
+    ].join('\n'),
+    js: [
+      'var btn = document.getElementById("color-btn");',
+      '',
+      'var clicks = 0;',
+      'btn.addEventListener("click", function () {',
+      '  clicks = clicks + 1;',
+      '  document.body.classList.toggle("party");',
+      '  btn.textContent = "Vibes changed x" + clicks;',
+      '});',
+    ].join('\n'),
+  };
+
+  /* ══════════════════════════════════════════
+     STATE + PERSISTENCE
+  ══════════════════════════════════════════ */
+  const LS_KEY = 'student-page-code-v1';
+  let code = { html: STARTER.html, css: STARTER.css, js: STARTER.js };
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+    if (saved && typeof saved.html === 'string') code = saved;
+  } catch (e) { /* fresh start */ }
+
+  let current = 'html';
+  const input = document.getElementById('code-input');
+  const tabs = { html: document.getElementById('tab-html'), css: document.getElementById('tab-css'), js: document.getElementById('tab-js') };
+
+  function selectTab(which) {
+    code[current] = input.value;
+    current = which;
+    input.value = code[which];
+    Object.keys(tabs).forEach(function (k) {
+      tabs[k].className = 'ed-tab' + (k === which ? ' active-' + which : '');
+      tabs[k].setAttribute('aria-selected', k === which ? 'true' : 'false');
+    });
+  }
+  tabs.html.addEventListener('click', function () { selectTab('html'); });
+  tabs.css.addEventListener('click', function () { selectTab('css'); });
+  tabs.js.addEventListener('click', function () { selectTab('js'); });
+
+  /* Tab key inserts two spaces instead of leaving the editor?
+     No — keep Tab for keyboard navigation (accessibility). Students indent with spaces. */
+
+  function persist() {
+    code[current] = input.value;
+    try { localStorage.setItem(LS_KEY, JSON.stringify(code)); } catch (e) { /* storage full/blocked */ }
+  }
+
+  /* ══════════════════════════════════════════
+     LIVE PREVIEW
+  ══════════════════════════════════════════ */
+  const frame = document.getElementById('preview-frame');
+  function buildDoc() {
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+      '<style>' + code.css + '<\/style></head><body>' + code.html +
+      '<script>try{' + code.js + '}catch(e){}<\/script></body></html>';
+  }
+  let renderTimer = null;
+  function scheduleRender() {
+    if (renderTimer) clearTimeout(renderTimer);
+    renderTimer = setTimeout(function () {
+      frame.srcdoc = buildDoc();
+      runChecks();
+    }, 350);
+  }
+
+  input.addEventListener('input', function () {
+    persist();
+    scheduleRender();
+  });
+
+  /* ══════════════════════════════════════════
+     CHECKLISTS — auto-graded missions
+  ══════════════════════════════════════════ */
+  function parseHTML() {
+    return new DOMParser().parseFromString('<body>' + code.html + '</body>', 'text/html');
+  }
+
+  const WEEKS = [
+    { id: 1, checks: [
+      { label: 'One big <code>&lt;h1&gt;</code> title', test: function (d) { return d.querySelectorAll('h1').length >= 1; } },
+      { label: 'A paragraph <code>&lt;p&gt;</code> about you', test: function (d) { return Array.from(d.querySelectorAll('p')).some(function (p) { return p.textContent.trim().length > 10; }); } },
+      { label: '3+ sections with <code>&lt;h2&gt;</code> (About · Lab · Games)', test: function (d) { return d.querySelectorAll('h2').length >= 3; } },
+      { label: 'An image with <code>alt</code> text', test: function (d) { return Array.from(d.querySelectorAll('img')).some(function (i) { return (i.getAttribute('alt') || '').trim().length > 2; }); } },
+      { label: 'A link <code>&lt;a href&gt;</code> to one of your projects', test: function (d) { return Array.from(d.querySelectorAll('a')).some(function (a) { return (a.getAttribute('href') || '').length > 3; }); } },
+    ]},
+    { id: 2, checks: [
+      { label: 'Style the <code>body</code> (font, background…)', test: function () { return /body\s*\{[^}]*[a-z-]+\s*:/i.test(code.css); } },
+      { label: 'Set a <code>background</code> somewhere', test: function () { return /background(-color)?\s*:/i.test(code.css); } },
+      { label: 'Set a text <code>color</code>', test: function () { return /(^|[^-])color\s*:/im.test(code.css); } },
+      { label: 'Invent a class selector <code>.name { }</code>', test: function () { return /\.[a-zA-Z][\w-]*\s*\{/.test(code.css); } },
+      { label: 'At least 3 style rules', test: function () { return (code.css.match(/\{/g) || []).length >= 3; } },
+    ]},
+    { id: 3, checks: [
+      { label: 'A <code>&lt;button&gt;</code> on your page', test: function (d) { return d.querySelectorAll('button').length >= 1; } },
+      { label: 'Find an element (<code>getElementById</code> / <code>querySelector</code>)', test: function () { return /(getElementById|querySelector)/.test(code.js); } },
+      { label: 'Listen with <code>addEventListener</code>', test: function () { return /addEventListener/.test(code.js); } },
+      { label: 'Change the page (<code>textContent</code>, <code>style</code>, <code>classList</code>…)', test: function () { return /(textContent|innerHTML|classList|\.style\b|setAttribute)/.test(code.js); } },
+    ]},
+  ];
+
+  /* build checklist DOM */
+  WEEKS.forEach(function (week) {
+    const list = document.getElementById('wk-' + week.id + '-list');
+    week.els = week.checks.map(function (chk) {
+      const item = document.createElement('div');
+      item.className = 'check-item';
+      item.innerHTML = '<span class="tick" aria-hidden="true">✓</span><span>' + chk.label + '</span>';
+      list.appendChild(item);
+      return item;
+    });
+  });
+
+  function runChecks() {
+    const doc = parseHTML();
+    WEEKS.forEach(function (week) {
+      let passed = 0;
+      week.checks.forEach(function (chk, i) {
+        let ok = false;
+        try { ok = !!chk.test(doc); } catch (e) { ok = false; }
+        week.els[i].classList.toggle('ok', ok);
+        if (ok) passed++;
+      });
+      const card = document.getElementById('wk-' + week.id);
+      const badge = document.getElementById('wk-' + week.id + '-badge');
+      const done = passed === week.checks.length;
+      card.classList.toggle('done', done);
+      badge.textContent = done ? '✓ COMPLETE' : passed + '/' + week.checks.length;
+    });
+  }
+
+  /* ══════════════════════════════════════════
+     EXAMPLE / RESET / DOWNLOAD
+  ══════════════════════════════════════════ */
+  document.getElementById('btn-example').addEventListener('click', function () {
+    if (!window.confirm('Load the finished example? This replaces everything in all three files.')) return;
+    code = { html: EXAMPLE.html, css: EXAMPLE.css, js: EXAMPLE.js };
+    input.value = code[current];
+    persist();
+    scheduleRender();
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', function () {
+    if (!window.confirm('Reset all three files back to the starter code? Your current work will be erased.')) return;
+    code = { html: STARTER.html, css: STARTER.css, js: STARTER.js };
+    input.value = code[current];
+    persist();
+    scheduleRender();
+  });
+
+  document.getElementById('btn-download').addEventListener('click', function () {
+    code[current] = input.value;
+    const doc = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+      '<title>My Student Page</title>\n<style>\n' + code.css + '\n</style>\n</head>\n<body>\n' +
+      code.html + '\n<script>\n' + code.js + '\n<\/script>\n</body>\n</html>\n';
+    const blob = new Blob([doc], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'my-student-page.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  });
+
+  /* ══════════════════════════════════════════
+     INIT
+  ══════════════════════════════════════════ */
+  input.value = code[current];
+  frame.srcdoc = buildDoc();
+  runChecks();
+})();
+</script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
+
+</body>
+</html>
