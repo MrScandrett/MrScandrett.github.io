@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Python &amp; Pygame: The Game Loop · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Every game ever built runs on the same loop: input, update, render. Learn it in real Python and Pygame code, watch each phase fire live, break your frame rate on purpose, and master AABB collision." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    body { background: #0b0e16; color: #e6e9f2; margin: 0; overflow-x: hidden; }
+
+    /* ── Topbar ── */
+    .pg-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px);
+      background: rgba(11, 14, 22, 0.94);
+      border-bottom: 1px solid rgba(255, 212, 59, 0.22);
+    }
+    .pg-topbar-inner {
+      width: min(1440px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .pg-topbar a { color: #ffd43b; text-decoration: none; font-size: 0.82rem; }
+    .pg-topbar a:hover { color: #fff; }
+    .pg-topbar-title { font-size: 0.9rem; font-weight: 700; color: #f0f2f8; }
+
+    /* ── Hero ── */
+    .pg-hero { padding: 0.8rem 1.5rem 0.5rem; text-align: center; max-width: 760px; margin: 0 auto; }
+    .pg-hero h1 { font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
+    .pg-hero p { font-size: 0.86rem; color: rgba(230, 233, 242, 0.66); margin: 0; line-height: 1.55; }
+
+    .pg-wrap { padding: 0 1.1rem 1rem; max-width: 1440px; margin: 0 auto; }
+
+    /* ── Main lab grid: sim + code ── */
+    .loop-grid { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
+    @media (min-width: 980px) { .loop-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+
+    /* Sim */
+    .sim-outer {
+      position: relative; border-radius: 16px; overflow: hidden;
+      background: #0f1220;
+      border: 1px solid rgba(55, 118, 171, 0.4);
+      aspect-ratio: 4/3;
+      box-shadow: 0 0 40px rgba(55, 118, 171, 0.12), inset 0 0 30px rgba(0,0,0,0.5);
+    }
+    #pg-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .sim-hud {
+      position: absolute; top: 10px; left: 12px; right: 12px; z-index: 3;
+      display: flex; justify-content: space-between; gap: 8px; pointer-events: none;
+    }
+    .hud-badge {
+      background: rgba(8, 10, 18, 0.82); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 212, 59, 0.3);
+      border-radius: 999px; padding: 4px 12px;
+      font-size: 0.7rem; font-weight: 700; color: #ffd43b;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Phase ring */
+    .phase-row { display: flex; gap: 6px; margin-top: 0.7rem; }
+    .phase-pill {
+      flex: 1; text-align: center; border-radius: 999px;
+      border: 1px solid rgba(120, 140, 180, 0.25);
+      background: rgba(16, 20, 34, 0.8);
+      padding: 7px 4px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em;
+      color: rgba(200, 210, 230, 0.45);
+      transition: all 0.12s ease;
+    }
+    .phase-pill.lit-input  { border-color: #4dd0a0; color: #4dd0a0; background: rgba(30, 70, 55, 0.4); box-shadow: 0 0 14px rgba(77, 208, 160, 0.25); }
+    .phase-pill.lit-update { border-color: #ffd43b; color: #ffd43b; background: rgba(80, 66, 16, 0.4); box-shadow: 0 0 14px rgba(255, 212, 59, 0.25); }
+    .phase-pill.lit-render { border-color: #6ab0f0; color: #6ab0f0; background: rgba(24, 52, 88, 0.45); box-shadow: 0 0 14px rgba(106, 176, 240, 0.25); }
+
+    .sim-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 0.7rem; }
+    .pg-btn {
+      border: 1px solid rgba(120, 140, 180, 0.3); border-radius: 999px;
+      background: rgba(16, 20, 34, 0.85); color: #dfe4f0;
+      padding: 7px 14px; font-size: 0.72rem; font-weight: 800; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .pg-btn:hover { border-color: rgba(255, 212, 59, 0.6); }
+    .pg-btn.active { border-color: #ffd43b; background: rgba(80, 66, 16, 0.5); color: #ffd43b; }
+    .arrow-btns { display: flex; gap: 6px; margin-left: auto; }
+    .arrow-btn {
+      width: 40px; height: 34px; border-radius: 9px;
+      border: 1px solid rgba(120,140,180,0.3);
+      background: rgba(16,20,34,0.85); color: #dfe4f0;
+      font-size: 0.95rem; cursor: pointer; user-select: none; touch-action: none;
+    }
+    .arrow-btn:active { border-color: #4dd0a0; color: #4dd0a0; }
+    .sim-note { font-size: 0.68rem; color: rgba(200,210,230,0.5); width: 100%; line-height: 1.4; }
+
+    /* Code panel */
+    .code-card {
+      background: #0d1018;
+      border: 1px solid rgba(55, 118, 171, 0.35);
+      border-radius: 16px; overflow: hidden;
+    }
+    .code-head {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(55, 118, 171, 0.14);
+      border-bottom: 1px solid rgba(55, 118, 171, 0.3);
+      padding: 8px 14px;
+    }
+    .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .code-title { font-size: 0.72rem; font-weight: 700; color: rgba(230,233,242,0.7); margin-left: 4px; font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; }
+    .code-body {
+      font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+      font-size: 0.72rem; line-height: 1.62;
+      padding: 12px 0; overflow-x: auto;
+      counter-reset: line;
+    }
+    .cl {
+      display: block; white-space: pre; padding: 0 14px 0 44px; position: relative;
+      transition: background 0.1s;
+    }
+    .cl::before {
+      counter-increment: line; content: counter(line);
+      position: absolute; left: 0; width: 32px; text-align: right;
+      color: rgba(140, 155, 185, 0.35); font-size: 0.64rem;
+    }
+    .cl.hl-input  { background: rgba(77, 208, 160, 0.13); box-shadow: inset 3px 0 0 #4dd0a0; }
+    .cl.hl-update { background: rgba(255, 212, 59, 0.11); box-shadow: inset 3px 0 0 #ffd43b; }
+    .cl.hl-render { background: rgba(106, 176, 240, 0.12); box-shadow: inset 3px 0 0 #6ab0f0; }
+    .k  { color: #ff79a8; }           /* keyword */
+    .fn { color: #6ab0f0; }           /* function */
+    .st { color: #a8e07a; }           /* string */
+    .nm { color: #ffd43b; }           /* number */
+    .cm { color: rgba(140,155,185,0.55); font-style: italic; }  /* comment */
+    .va { color: #e6e9f2; }
+
+    /* ── Cards ── */
+    .pg-card {
+      background: rgba(15, 18, 30, 0.78);
+      border: 1px solid rgba(55, 118, 171, 0.28);
+      border-radius: 15px; padding: 1rem 1.1rem; margin-bottom: 0.85rem;
+    }
+    .pg-card:last-child { margin-bottom: 0; }
+    .pg-card h3 {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em;
+      color: rgba(180, 200, 230, 0.55); text-transform: uppercase; margin: 0 0 0.85rem;
+    }
+
+    .lab-row { display: grid; grid-template-columns: 1fr; gap: 0.85rem; margin-top: 0.85rem; }
+    @media (min-width: 980px) { .lab-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+
+    /* FPS lab */
+    .fps-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.7rem; }
+    .mode-toggle { display: flex; gap: 6px; margin-bottom: 0.8rem; }
+    .mode-btn {
+      flex: 1; border: 1px solid rgba(120,140,180,0.3); border-radius: 11px;
+      background: rgba(16,20,34,0.85); color: #dfe4f0;
+      padding: 8px 6px; font-size: 0.66rem; font-weight: 800; cursor: pointer; line-height: 1.4;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+    }
+    .mode-btn.active { border-color: #ffd43b; background: rgba(80,66,16,0.5); color: #ffd43b; }
+    .race-track {
+      position: relative; height: 64px; border-radius: 11px; overflow: hidden;
+      background: #0d1018; border: 1px solid rgba(120,140,180,0.25);
+    }
+    .race-runner {
+      position: absolute; top: 50%; width: 26px; height: 26px; margin-top: -13px;
+      border-radius: 7px; display: grid; place-items: center; font-size: 1rem;
+    }
+    .race-finish { position: absolute; right: 10px; top: 0; bottom: 0; width: 3px; background: repeating-linear-gradient(0deg, #fff 0 5px, #222 5px 10px); opacity: 0.5; }
+    .fps-verdict {
+      margin-top: 0.7rem; border-radius: 11px; padding: 9px 12px;
+      font-size: 0.74rem; font-weight: 600; line-height: 1.5;
+      background: rgba(10,12,20,0.7); border: 1px solid rgba(120,140,180,0.2);
+      color: rgba(230,233,242,0.75);
+    }
+    .fps-verdict strong { color: #ffd43b; }
+
+    /* AABB lab */
+    .aabb-stage {
+      position: relative; border-radius: 12px; overflow: hidden;
+      background: #0d1018; border: 1px solid rgba(120,140,180,0.25);
+      height: 190px; touch-action: none; cursor: grab;
+    }
+    .aabb-rect {
+      position: absolute; border-radius: 6px;
+      display: grid; place-items: center;
+      font-size: 0.64rem; font-weight: 800; letter-spacing: 0.05em;
+      user-select: none;
+    }
+    .aabb-a { width: 90px; height: 64px; background: rgba(55, 118, 171, 0.55); border: 2px solid #6ab0f0; color: #cfe4f8; }
+    .aabb-b { width: 70px; height: 84px; background: rgba(255, 212, 59, 0.35); border: 2px solid #ffd43b; color: #ffe9a0; }
+    .aabb-stage.hit .aabb-a, .aabb-stage.hit .aabb-b { border-color: #ff6a55; box-shadow: 0 0 16px rgba(255, 90, 70, 0.5); }
+    .aabb-checks { margin-top: 0.7rem; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .aabb-check {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.66rem; padding: 6px 9px; border-radius: 8px;
+      background: rgba(10,12,20,0.7); border: 1px solid rgba(120,140,180,0.2);
+      color: rgba(200,210,230,0.55);
+    }
+    .aabb-check.true { border-color: rgba(77, 208, 160, 0.55); color: #4dd0a0; }
+    .aabb-result {
+      margin-top: 0.55rem; text-align: center;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.74rem; font-weight: 700; padding: 8px; border-radius: 9px;
+      background: rgba(10,12,20,0.7); border: 1px solid rgba(120,140,180,0.2);
+      color: rgba(200,210,230,0.6);
+    }
+    .aabb-result.hit { border-color: #ff6a55; color: #ff8a70; }
+
+    /* Copy code */
+    .copy-btn {
+      border: 1px solid rgba(255,212,59,0.4); border-radius: 999px;
+      background: rgba(80,66,16,0.3); color: #ffd43b;
+      padding: 6px 14px; font-size: 0.7rem; font-weight: 800; cursor: pointer;
+      margin-left: auto;
+    }
+    .copy-btn:hover { background: rgba(80,66,16,0.55); }
+
+    /* Guide info cards */
+    .info-row { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
+    .info-card { background: rgba(15,18,30,0.78); border: 1px solid rgba(55,118,171,0.25); border-radius: 13px; padding: 1rem; }
+    .info-card h4 { font-size: 0.8rem; font-weight: 700; color: #ffd43b; margin: 0 0 0.4rem; }
+    .info-card p  { font-size: 0.77rem; color: rgba(230,233,242,0.66); margin: 0 0 0.4rem; line-height: 1.55; }
+    .info-card p:last-child { margin-bottom: 0; }
+    .info-card code {
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.72rem;
+      background: rgba(55,118,171,0.18); border-radius: 4px; padding: 1px 5px; color: #a8d4f5;
+    }
+
+    /* ── ll-panel theming ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(11, 14, 22, 0.97);
+      --ll-panel-border:  rgba(255, 212, 59, 0.2);
+      --ll-tab-color:     rgba(180, 200, 230, 0.6);
+      --ll-tab-active-bg: rgba(255, 212, 59, 0.16);
+      --ll-tab-active:    #ffd43b;
+      --ll-toggle-bg:     rgba(11, 14, 22, 0.97);
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport ll-dark">
+
+  <nav class="pg-topbar ll-topbar">
+    <div class="pg-topbar-inner">
+      <a href="../steam-lessons.html">← Game Design</a>
+      <span class="pg-topbar-title">🐍 Python &amp; Pygame: The Game Loop</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+
+    <div class="ll-sim">
+      <header class="pg-hero">
+        <h1>🐍 Python &amp; Pygame: The Game Loop</h1>
+        <p>Every game ever built — Pong, Minecraft, whatever you make next — runs on the same three-beat loop: <strong style="color:#4dd0a0">INPUT</strong> → <strong style="color:#ffd43b">UPDATE</strong> → <strong style="color:#6ab0f0">RENDER</strong>. This is that loop in real Pygame code, running live. Use ← → (or the buttons) to catch the ball.</p>
+      </header>
+
+      <div class="pg-wrap">
+
+        <div class="loop-grid">
+
+          <div>
+            <div class="sim-outer" id="sim-outer">
+              <canvas id="pg-canvas"></canvas>
+              <div class="sim-hud">
+                <span class="hud-badge" id="hud-score">SCORE 0</span>
+                <span class="hud-badge" id="hud-fps">60 FPS</span>
+              </div>
+            </div>
+            <div class="phase-row" aria-hidden="true">
+              <div class="phase-pill" id="ph-input">1 · INPUT</div>
+              <div class="phase-pill" id="ph-update">2 · UPDATE</div>
+              <div class="phase-pill" id="ph-render">3 · RENDER</div>
+            </div>
+            <div class="sim-controls">
+              <button class="pg-btn active" id="btn-run" type="button">▶ Running</button>
+              <button class="pg-btn" id="btn-slow" type="button">🐢 Slow Motion (2 FPS)</button>
+              <button class="pg-btn" id="btn-step" type="button">⏭ Step 1 Frame</button>
+              <div class="arrow-btns">
+                <button class="arrow-btn" id="btn-left" type="button" aria-label="Move paddle left">◀</button>
+                <button class="arrow-btn" id="btn-right" type="button" aria-label="Move paddle right">▶</button>
+              </div>
+              <span class="sim-note">Slow Motion runs the exact same loop 2 times per second — watch each phase light up in the code, one beat at a time.</span>
+            </div>
+          </div>
+
+          <div class="code-card">
+            <div class="code-head">
+              <span class="code-dot" style="background:#ff5f57"></span>
+              <span class="code-dot" style="background:#febc2e"></span>
+              <span class="code-dot" style="background:#28c840"></span>
+              <span class="code-title">catch.py — running live on the left</span>
+            </div>
+            <div class="code-body" id="code-body"></div>
+          </div>
+
+        </div><!-- .loop-grid -->
+
+        <div class="lab-row">
+
+          <div class="pg-card">
+            <h3>⏱ Frame Rate Lab — what breaks when FPS drops?</h3>
+            <div class="fps-btns" role="group" aria-label="Frame rate">
+              <button class="pg-btn fps-btn active" data-fps="60" type="button">60 FPS</button>
+              <button class="pg-btn fps-btn" data-fps="30" type="button">30 FPS</button>
+              <button class="pg-btn fps-btn" data-fps="10" type="button">10 FPS</button>
+              <button class="pg-btn fps-btn" data-fps="5"  type="button">5 FPS</button>
+            </div>
+            <div class="mode-toggle" role="group" aria-label="Movement mode">
+              <button class="mode-btn active" id="mode-naive" type="button">x += 4<br><span style="opacity:0.6">pixels per FRAME</span></button>
+              <button class="mode-btn" id="mode-dt" type="button">x += 240 * dt<br><span style="opacity:0.6">pixels per SECOND</span></button>
+            </div>
+            <div class="race-track" id="race-track">
+              <div class="race-finish"></div>
+              <div class="race-runner" id="race-runner" style="background:rgba(55,118,171,0.6); border:2px solid #6ab0f0;">🚀</div>
+            </div>
+            <div class="fps-verdict" id="fps-verdict">At 60 FPS both versions look identical. Now drop to 10 FPS and compare the two movement modes…</div>
+          </div>
+
+          <div class="pg-card">
+            <h3>📦 AABB Collision — drag the boxes together</h3>
+            <div class="aabb-stage" id="aabb-stage">
+              <div class="aabb-rect aabb-a" id="aabb-a">player</div>
+              <div class="aabb-rect aabb-b" id="aabb-b">coin</div>
+            </div>
+            <div class="aabb-checks">
+              <div class="aabb-check" id="chk-0">a.right &gt; b.left</div>
+              <div class="aabb-check" id="chk-1">a.left &lt; b.right</div>
+              <div class="aabb-check" id="chk-2">a.bottom &gt; b.top</div>
+              <div class="aabb-check" id="chk-3">a.top &lt; b.bottom</div>
+            </div>
+            <div class="aabb-result" id="aabb-result">player.colliderect(coin) → False</div>
+          </div>
+
+        </div><!-- .lab-row -->
+
+      </div><!-- .pg-wrap -->
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="true">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="pg-pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pg-pane-starter">Starter Code</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="pg-pane-guide">
+          <div class="pg-card" style="margin-bottom:1rem">
+            <h3>Game Loop Essentials</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>🔁 Three Beats, Forever</h4>
+                <p><strong>INPUT</strong> — drain the event queue and read the keyboard. <strong>UPDATE</strong> — move every object, check every collision, change the game's state. <strong>RENDER</strong> — wipe the screen and redraw everything from scratch.</p>
+                <p>That's it. Pong is this loop. Minecraft is this loop with more update. Your capstone game will be this loop too.</p>
+              </div>
+              <div class="info-card">
+                <h4>📬 The Event Queue</h4>
+                <p>Pygame collects everything that happens — key presses, mouse clicks, the window's ✕ button — into a queue. <code>pygame.event.get()</code> hands you the list and empties it. If you never drain the queue, the OS thinks your game froze. That's why the event loop comes first, every frame, no exceptions.</p>
+              </div>
+              <div class="info-card">
+                <h4>🖼 Why Redraw Everything?</h4>
+                <p>Games don't "move" a sprite — they erase the whole screen with <code>screen.fill(...)</code> and repaint every object at its new position, 60 times a second. Your eye does the rest. Skip the fill and every frame smears over the last one — try deleting that line in your own build and watch the ghosting.</p>
+              </div>
+              <div class="info-card">
+                <h4>⏱ clock.tick(60) and dt</h4>
+                <p><code>clock.tick(60)</code> does two jobs: it sleeps just long enough to cap the loop at 60 frames per second, and it <em>returns how many milliseconds the last frame took</em>. Divide by 1000 and you have <code>dt</code> — delta time, the length of one frame in seconds.</p>
+                <p>Multiply every speed by <code>dt</code> and your game runs at the same real-world speed on a slow Chromebook and a gaming PC. The Frame Rate Lab on this page is exactly that experiment.</p>
+              </div>
+              <div class="info-card">
+                <h4>📦 Rects Are Everything</h4>
+                <p>A <code>pygame.Rect</code> is just x, y, width, height — but it gives you <code>.left .right .top .bottom .center</code> for free, and <code>a.colliderect(b)</code> runs the same four AABB comparisons you just dragged around in the lab. Player, enemies, coins, walls, buttons: in Pygame, everything is a Rect until proven otherwise.</p>
+              </div>
+              <div class="info-card">
+                <h4>🧭 Where This Fits</h4>
+                <p>Once you can build this loop from memory, you've earned the fun stuff: sprites and spritesheets, your Breakout clone, and game feel. And when you meet a JavaScript engine in <em>2D Game Engines</em> or build one raw in <em>From Scratch: Browser Game</em>, you'll recognize the same three beats under different names.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #pg-pane-guide -->
+
+        <div class="ll-pane" id="pg-pane-starter">
+          <div class="pg-card" style="margin-bottom:1rem">
+            <h3 style="display:flex; align-items:center;">Your Starter File <button class="copy-btn" id="copy-btn" type="button">⧉ Copy</button></h3>
+            <div class="info-card" style="margin-bottom:0.7rem">
+              <h4>🚀 Run It For Real</h4>
+              <p>1 · Install Python from <code>python.org</code> (check "Add to PATH").</p>
+              <p>2 · In a terminal: <code>pip install pygame</code></p>
+              <p>3 · Save the code below as <code>catch.py</code>, then run <code>python catch.py</code></p>
+              <p>This is the same game running on this page — catch the ball with the paddle. Then break it on purpose: delete the <code>screen.fill</code> line, remove <code>* dt</code>, change the colors. Breaking it is the fastest way to learn what every line does.</p>
+            </div>
+            <div class="code-card">
+              <div class="code-head">
+                <span class="code-dot" style="background:#ff5f57"></span>
+                <span class="code-dot" style="background:#febc2e"></span>
+                <span class="code-dot" style="background:#28c840"></span>
+                <span class="code-title">catch.py — complete &amp; runnable</span>
+              </div>
+              <div class="code-body" id="starter-body"></div>
+            </div>
+          </div>
+        </div><!-- #pg-pane-starter -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
+
+<script>
+(function () {
+  'use strict';
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  /* ══════════════════════════════════════════
+     PYTHON CODE — displayed and phase-synced
+     Each line: [phase, html]
+  ══════════════════════════════════════════ */
+  function py(parts) { return parts; }
+  const CODE = [
+    ['',       '<span class="k">import</span> <span class="va">pygame</span>'],
+    ['',       ''],
+    ['',       '<span class="va">pygame</span>.<span class="fn">init</span>()'],
+    ['',       '<span class="va">screen</span> = <span class="va">pygame</span>.display.<span class="fn">set_mode</span>((<span class="nm">640</span>, <span class="nm">480</span>))'],
+    ['',       '<span class="va">clock</span>  = <span class="va">pygame</span>.time.<span class="fn">Clock</span>()'],
+    ['',       '<span class="va">player</span> = <span class="va">pygame</span>.<span class="fn">Rect</span>(<span class="nm">280</span>, <span class="nm">440</span>, <span class="nm">80</span>, <span class="nm">16</span>)'],
+    ['',       '<span class="va">ball</span>   = <span class="va">pygame</span>.<span class="fn">Rect</span>(<span class="nm">80</span>, <span class="nm">60</span>, <span class="nm">24</span>, <span class="nm">24</span>)'],
+    ['',       '<span class="va">vx</span>, <span class="va">vy</span>, <span class="va">score</span>, <span class="va">dt</span> = <span class="nm">200</span>, <span class="nm">160</span>, <span class="nm">0</span>, <span class="nm">0</span>'],
+    ['',       ''],
+    ['',       '<span class="va">running</span> = <span class="k">True</span>'],
+    ['',       '<span class="k">while</span> <span class="va">running</span>:'],
+    ['input',  '    <span class="cm"># ── 1 · INPUT ──────────────────────</span>'],
+    ['input',  '    <span class="k">for</span> <span class="va">event</span> <span class="k">in</span> <span class="va">pygame</span>.event.<span class="fn">get</span>():'],
+    ['input',  '        <span class="k">if</span> <span class="va">event</span>.type == <span class="va">pygame</span>.QUIT:'],
+    ['input',  '            <span class="va">running</span> = <span class="k">False</span>'],
+    ['input',  '    <span class="va">keys</span> = <span class="va">pygame</span>.key.<span class="fn">get_pressed</span>()'],
+    ['',       ''],
+    ['update', '    <span class="cm"># ── 2 · UPDATE ─────────────────────</span>'],
+    ['update', '    <span class="k">if</span> <span class="va">keys</span>[<span class="va">pygame</span>.K_LEFT]:  <span class="va">player</span>.x -= <span class="nm">300</span> * <span class="va">dt</span>'],
+    ['update', '    <span class="k">if</span> <span class="va">keys</span>[<span class="va">pygame</span>.K_RIGHT]: <span class="va">player</span>.x += <span class="nm">300</span> * <span class="va">dt</span>'],
+    ['update', '    <span class="va">ball</span>.x += <span class="va">vx</span> * <span class="va">dt</span>'],
+    ['update', '    <span class="va">ball</span>.y += <span class="va">vy</span> * <span class="va">dt</span>'],
+    ['update', '    <span class="k">if</span> <span class="va">ball</span>.left &lt; <span class="nm">0</span> <span class="k">or</span> <span class="va">ball</span>.right &gt; <span class="nm">640</span>: <span class="va">vx</span> = -<span class="va">vx</span>'],
+    ['update', '    <span class="k">if</span> <span class="va">ball</span>.top &lt; <span class="nm">0</span>: <span class="va">vy</span> = -<span class="va">vy</span>'],
+    ['update', '    <span class="k">if</span> <span class="va">player</span>.<span class="fn">colliderect</span>(<span class="va">ball</span>):'],
+    ['update', '        <span class="va">score</span> += <span class="nm">1</span>'],
+    ['update', '        <span class="va">ball</span>.topleft = (<span class="nm">80</span>, <span class="nm">60</span>)'],
+    ['',       ''],
+    ['render', '    <span class="cm"># ── 3 · RENDER ─────────────────────</span>'],
+    ['render', '    <span class="va">screen</span>.<span class="fn">fill</span>((<span class="nm">15</span>, <span class="nm">18</span>, <span class="nm">32</span>))'],
+    ['render', '    <span class="va">pygame</span>.draw.<span class="fn">rect</span>(<span class="va">screen</span>, (<span class="nm">55</span>, <span class="nm">118</span>, <span class="nm">171</span>), <span class="va">player</span>)'],
+    ['render', '    <span class="va">pygame</span>.draw.<span class="fn">ellipse</span>(<span class="va">screen</span>, (<span class="nm">255</span>, <span class="nm">212</span>, <span class="nm">59</span>), <span class="va">ball</span>)'],
+    ['render', '    <span class="va">pygame</span>.display.<span class="fn">flip</span>()'],
+    ['render', '    <span class="va">dt</span> = <span class="va">clock</span>.<span class="fn">tick</span>(<span class="nm">60</span>) / <span class="nm">1000</span>'],
+    ['',       ''],
+    ['',       '<span class="va">pygame</span>.<span class="fn">quit</span>()'],
+  ];
+
+  const codeBody = document.getElementById('code-body');
+  const lineEls = CODE.map(function (row) {
+    const el = document.createElement('span');
+    el.className = 'cl';
+    el.dataset.phase = row[0];
+    el.innerHTML = row[1] || ' ';
+    codeBody.appendChild(el);
+    return el;
+  });
+
+  /* Starter panel shows the same code (independent copy for the copy button) */
+  const starterBody = document.getElementById('starter-body');
+  CODE.forEach(function (row) {
+    const el = document.createElement('span');
+    el.className = 'cl';
+    el.innerHTML = row[1] || ' ';
+    starterBody.appendChild(el);
+  });
+
+  document.getElementById('copy-btn').addEventListener('click', function () {
+    const text = Array.from(starterBody.children).map(function (el) { return el.textContent; }).join('\n');
+    const btn = this;
+    navigator.clipboard.writeText(text).then(function () {
+      btn.textContent = '✓ Copied!';
+      setTimeout(function () { btn.textContent = '⧉ Copy'; }, 1600);
+    });
+  });
+
+  /* ══════════════════════════════════════════
+     THE GAME — a faithful port of catch.py
+     Logic space: 640 x 480, scaled to canvas
+  ══════════════════════════════════════════ */
+  const GW = 640, GH = 480;
+  const game = {
+    player: { x: 280, y: 440, w: 80, h: 16 },
+    ball: { x: 80, y: 60, w: 24, h: 24 },
+    vx: 200, vy: 160, score: 0, dt: 1 / 60,
+    left: false, right: false,
+    flash: 0,
+  };
+
+  const canvas = document.getElementById('pg-canvas');
+  const outer = document.getElementById('sim-outer');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize() {
+    W = outer.clientWidth; H = outer.clientHeight;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(DPR * W / GW, 0, 0, DPR * H / GH, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  requestAnimationFrame(resize);
+
+  /* keyboard input (the real INPUT phase) */
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft')  { game.left = true;  e.preventDefault(); }
+    if (e.key === 'ArrowRight') { game.right = true; e.preventDefault(); }
+  });
+  window.addEventListener('keyup', function (e) {
+    if (e.key === 'ArrowLeft')  game.left = false;
+    if (e.key === 'ArrowRight') game.right = false;
+  });
+  function holdBtn(id, prop) {
+    const el = document.getElementById(id);
+    ['pointerdown'].forEach(function (ev) { el.addEventListener(ev, function (e) { game[prop] = true; e.preventDefault(); }); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { el.addEventListener(ev, function () { game[prop] = false; }); });
+  }
+  holdBtn('btn-left', 'left');
+  holdBtn('btn-right', 'right');
+
+  /* phase highlighting */
+  const phEls = { input: document.getElementById('ph-input'), update: document.getElementById('ph-update'), render: document.getElementById('ph-render') };
+  function litPhase(phase) {
+    Object.keys(phEls).forEach(function (k) { phEls[k].classList.remove('lit-input', 'lit-update', 'lit-render'); });
+    lineEls.forEach(function (el) { el.classList.remove('hl-input', 'hl-update', 'hl-render'); });
+    if (!phase) return;
+    phEls[phase].classList.add('lit-' + phase);
+    lineEls.forEach(function (el) { if (el.dataset.phase === phase) el.classList.add('hl-' + phase); });
+  }
+
+  /* one full frame of the game — mirrors catch.py exactly */
+  function phaseInput() {
+    /* keys were captured by listeners; nothing to drain in JS */
+  }
+  function phaseUpdate(dt) {
+    const g = game;
+    if (g.left)  g.player.x -= 300 * dt;
+    if (g.right) g.player.x += 300 * dt;
+    g.player.x = clamp(g.player.x, 0, GW - g.player.w);
+    g.ball.x += g.vx * dt;
+    g.ball.y += g.vy * dt;
+    if (g.ball.x < 0)              { g.ball.x = 0; g.vx = -g.vx; }
+    if (g.ball.x + g.ball.w > GW)  { g.ball.x = GW - g.ball.w; g.vx = -g.vx; }
+    if (g.ball.y < 0)              { g.ball.y = 0; g.vy = -g.vy; }
+    if (g.ball.y + g.ball.h > GH)  { g.ball.y = GH - g.ball.h; g.vy = -g.vy; } /* floor bounce so browser demo never stalls */
+    const a = g.player, b = g.ball;
+    if (a.x + a.w > b.x && a.x < b.x + b.w && a.y + a.h > b.y && a.y < b.y + b.h) {
+      g.score += 1;
+      g.flash = 1;
+      g.ball.x = 40 + Math.random() * (GW - 120);
+      g.ball.y = 60;
+      if (g.vy < 0) g.vy = -g.vy;
+      document.getElementById('hud-score').textContent = 'SCORE ' + g.score;
+    }
+    if (g.flash > 0) g.flash = Math.max(0, g.flash - dt * 3);
+  }
+  function phaseRender() {
+    const g = game;
+    ctx.fillStyle = g.flash > 0 ? 'rgb(' + Math.round(15 + 40 * g.flash) + ',' + Math.round(18 + 60 * g.flash) + ',32)' : '#0f1220';
+    ctx.fillRect(0, 0, GW, GH);
+    /* faint grid — helps the "everything is redrawn" idea land */
+    ctx.strokeStyle = 'rgba(55,118,171,0.08)';
+    ctx.lineWidth = 1;
+    for (let gx = 0; gx <= GW; gx += 64) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, GH); ctx.stroke(); }
+    for (let gy = 0; gy <= GH; gy += 64) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(GW, gy); ctx.stroke(); }
+    ctx.fillStyle = '#3776ab';
+    ctx.fillRect(g.player.x, g.player.y, g.player.w, g.player.h);
+    ctx.fillStyle = '#ffd43b';
+    ctx.beginPath();
+    ctx.ellipse(g.ball.x + g.ball.w / 2, g.ball.y + g.ball.h / 2, g.ball.w / 2, g.ball.h / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /* ── run modes: 60fps / slow-motion / paused-step ── */
+  let mode = 'run'; /* run | slow | pause */
+  let slowTimer = null, slowStep = 0;
+  const btnRun = document.getElementById('btn-run');
+  const btnSlow = document.getElementById('btn-slow');
+  const btnStep = document.getElementById('btn-step');
+
+  function setMode(m) {
+    mode = m;
+    btnRun.classList.toggle('active', m === 'run');
+    btnRun.textContent = m === 'run' ? '▶ Running' : '▶ Run';
+    btnSlow.classList.toggle('active', m === 'slow');
+    if (slowTimer) { clearInterval(slowTimer); slowTimer = null; }
+    if (m === 'slow') {
+      slowStep = 0;
+      slowTimer = setInterval(slowBeat, 500 / 3); /* 3 sub-beats per 2fps frame */
+      document.getElementById('hud-fps').textContent = '2 FPS';
+    } else if (m === 'run') {
+      litPhase(null);
+      document.getElementById('hud-fps').textContent = '60 FPS';
+    } else {
+      document.getElementById('hud-fps').textContent = 'PAUSED';
+    }
+  }
+  btnRun.addEventListener('click', function () { setMode('run'); });
+  btnSlow.addEventListener('click', function () { setMode(mode === 'slow' ? 'pause' : 'slow'); });
+  btnStep.addEventListener('click', function () {
+    if (mode !== 'pause') setMode('pause');
+    stepPhases();
+  });
+
+  function slowBeat() {
+    const phases = ['input', 'update', 'render'];
+    const p = phases[slowStep % 3];
+    litPhase(p);
+    if (p === 'input') phaseInput();
+    if (p === 'update') phaseUpdate(0.5);   /* slow-mo dt: half a second per frame */
+    if (p === 'render') phaseRender();
+    slowStep++;
+  }
+  let pauseStep = 0;
+  function stepPhases() {
+    const phases = ['input', 'update', 'render'];
+    const p = phases[pauseStep % 3];
+    litPhase(p);
+    if (p === 'input') phaseInput();
+    if (p === 'update') phaseUpdate(1 / 60);
+    if (p === 'render') phaseRender();
+    pauseStep++;
+  }
+
+  let last = performance.now();
+  function mainLoop(now) {
+    requestAnimationFrame(mainLoop);
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    if (!W || !H) return;
+    if (mode === 'run') {
+      phaseInput();
+      phaseUpdate(dt);
+      phaseRender();
+    }
+  }
+  requestAnimationFrame(mainLoop);
+
+  /* ══════════════════════════════════════════
+     FRAME RATE LAB
+  ══════════════════════════════════════════ */
+  let labFps = 60, labMode = 'naive';
+  let runnerX = 0, labAcc = 0, crossStart = performance.now(), lastCross = null;
+  const runner = document.getElementById('race-runner');
+  const track = document.getElementById('race-track');
+
+  document.querySelectorAll('.fps-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.fps-btn').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      labFps = parseInt(b.dataset.fps, 10);
+      updateFpsVerdict();
+    });
+  });
+  const modeNaive = document.getElementById('mode-naive');
+  const modeDt = document.getElementById('mode-dt');
+  modeNaive.addEventListener('click', function () { labMode = 'naive'; modeNaive.classList.add('active'); modeDt.classList.remove('active'); updateFpsVerdict(); });
+  modeDt.addEventListener('click', function () { labMode = 'dt'; modeDt.classList.add('active'); modeNaive.classList.remove('active'); updateFpsVerdict(); });
+
+  function updateFpsVerdict() {
+    const v = document.getElementById('fps-verdict');
+    if (labMode === 'naive') {
+      if (labFps >= 60) v.innerHTML = '<strong>x += 4 per frame</strong> at 60 FPS = 240 pixels per second. Looks fine… but the speed is secretly chained to the frame rate.';
+      else v.innerHTML = '<strong>Broken!</strong> Same code, but at ' + labFps + ' FPS the rocket only moves ' + (4 * labFps) + ' px/s instead of 240. On a slow computer, your whole game runs in slow motion — enemies, jumps, everything.';
+    } else {
+      v.innerHTML = '<strong>x += 240 * dt</strong> — dt is the real time the last frame took. Fewer frames → bigger dt → bigger steps. It looks choppier at ' + labFps + ' FPS, but it arrives at the same time. Speed now lives in the real world, not in the frame rate.';
+    }
+  }
+
+  let labLast = performance.now();
+  setInterval(function () {
+    const now = performance.now();
+    const elapsed = (now - labLast) / 1000;
+    labLast = now;
+    labAcc += elapsed;
+    const frameTime = 1 / labFps;
+    while (labAcc >= frameTime) {
+      labAcc -= frameTime;
+      /* one simulated frame */
+      if (labMode === 'naive') runnerX += 4;           /* pixels per frame */
+      else runnerX += 240 * frameTime;                  /* pixels per second */
+    }
+    const tw = track.clientWidth - 40;
+    if (runnerX > tw) {
+      lastCross = ((now - crossStart) / 1000).toFixed(2);
+      crossStart = now;
+      runnerX = 0;
+    }
+    runner.style.left = (6 + runnerX) + 'px';
+  }, 1000 / 60);
+
+  /* ══════════════════════════════════════════
+     AABB LAB
+  ══════════════════════════════════════════ */
+  const stage = document.getElementById('aabb-stage');
+  const rects = { a: document.getElementById('aabb-a'), b: document.getElementById('aabb-b') };
+  const pos = { a: { x: 30, y: 60 }, b: { x: 210, y: 40 } };
+
+  function placeRects() {
+    rects.a.style.left = pos.a.x + 'px'; rects.a.style.top = pos.a.y + 'px';
+    rects.b.style.left = pos.b.x + 'px'; rects.b.style.top = pos.b.y + 'px';
+    checkAABB();
+  }
+
+  function checkAABB() {
+    const a = { left: pos.a.x, top: pos.a.y, right: pos.a.x + 90, bottom: pos.a.y + 64 };
+    const b = { left: pos.b.x, top: pos.b.y, right: pos.b.x + 70, bottom: pos.b.y + 84 };
+    const checks = [a.right > b.left, a.left < b.right, a.bottom > b.top, a.top < b.bottom];
+    checks.forEach(function (ok, i) {
+      document.getElementById('chk-' + i).classList.toggle('true', ok);
+    });
+    const hit = checks.every(Boolean);
+    stage.classList.toggle('hit', hit);
+    const res = document.getElementById('aabb-result');
+    res.textContent = 'player.colliderect(coin) → ' + (hit ? 'True' : 'False');
+    res.classList.toggle('hit', hit);
+  }
+
+  let drag = null;
+  stage.addEventListener('pointerdown', function (e) {
+    const key = e.target === rects.a ? 'a' : (e.target === rects.b ? 'b' : null);
+    if (!key) return;
+    const sr = stage.getBoundingClientRect();
+    drag = { key: key, dx: e.clientX - sr.left - pos[key].x, dy: e.clientY - sr.top - pos[key].y };
+    stage.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    const sr = stage.getBoundingClientRect();
+    const w = drag.key === 'a' ? 90 : 70, h = drag.key === 'a' ? 64 : 84;
+    pos[drag.key].x = clamp(e.clientX - sr.left - drag.dx, 0, sr.width - w);
+    pos[drag.key].y = clamp(e.clientY - sr.top - drag.dy, 0, sr.height - h);
+    placeRects();
+  });
+  ['pointerup', 'pointercancel'].forEach(function (ev) {
+    stage.addEventListener(ev, function () { drag = null; });
+  });
+
+  /* keyboard access for the AABB lab */
+  [rects.a, rects.b].forEach(function (el) {
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', 'Draggable box — use arrow keys to move');
+    el.addEventListener('keydown', function (e) {
+      const key = el === rects.a ? 'a' : 'b';
+      const step = 8;
+      const sr = stage.getBoundingClientRect();
+      const w = key === 'a' ? 90 : 70, h = key === 'a' ? 64 : 84;
+      if (e.key === 'ArrowLeft')  { pos[key].x = clamp(pos[key].x - step, 0, sr.width - w); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { pos[key].x = clamp(pos[key].x + step, 0, sr.width - w); e.preventDefault(); }
+      if (e.key === 'ArrowUp')    { pos[key].y = clamp(pos[key].y - step, 0, sr.height - h); e.preventDefault(); }
+      if (e.key === 'ArrowDown')  { pos[key].y = clamp(pos[key].y + step, 0, sr.height - h); e.preventDefault(); }
+      placeRects();
+    });
+  });
+
+  /* init */
+  placeRects();
+  updateFpsVerdict();
+})();
+</script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
+
+</body>
+</html>
