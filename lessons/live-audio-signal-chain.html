@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Audio Signal Chain · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Trace a voice from microphone to speaker. Learn every stage of the live audio signal chain, set gain without clipping, and identify XLR, TRS, and TS cables." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    body { background: #0a0a0d; color: #e8e4da; margin: 0; overflow-x: hidden; }
+
+    /* ── Topbar ── */
+    .sc-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px);
+      background: rgba(12, 12, 16, 0.94);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.22);
+    }
+    .sc-topbar-inner {
+      width: min(1440px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .sc-topbar a { color: #f0b448; text-decoration: none; font-size: 0.82rem; }
+    .sc-topbar a:hover { color: #fff; }
+    .sc-topbar-title { font-size: 0.9rem; font-weight: 700; color: #f5ecd8; }
+
+    /* ── Hero ── */
+    .sc-hero { padding: 0.8rem 1.5rem 0.5rem; text-align: center; max-width: 740px; margin: 0 auto; }
+    .sc-hero h1 { font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
+    .sc-hero p { font-size: 0.86rem; color: rgba(232, 228, 218, 0.68); margin: 0; line-height: 1.55; }
+
+    .sc-wrap { padding: 0 1.1rem 1rem; max-width: 1440px; margin: 0 auto; }
+
+    /* ── Signal chain diagram ── */
+    .chain-outer {
+      background: linear-gradient(180deg, #101014, #0b0b0f);
+      border: 1px solid rgba(245, 158, 11, 0.16);
+      border-radius: 18px; padding: 1.1rem 1rem 0.9rem;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+    }
+    .chain-row {
+      display: flex; align-items: stretch; gap: 4px;
+      overflow-x: auto; padding-bottom: 6px;
+      scrollbar-width: thin; scrollbar-color: rgba(245,158,11,0.3) transparent;
+    }
+    .chain-stage {
+      flex: 1 1 0; min-width: 86px;
+      background: rgba(24, 24, 30, 0.85);
+      border: 1px solid rgba(140, 140, 160, 0.2);
+      border-radius: 12px; padding: 10px 6px 8px;
+      text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      position: relative;
+    }
+    .chain-stage:hover { border-color: rgba(240, 180, 72, 0.55); transform: translateY(-2px); }
+    .chain-stage.active { border-color: #f0b448; background: rgba(50, 38, 16, 0.85); box-shadow: 0 0 18px rgba(240, 180, 72, 0.25); }
+    .chain-stage .st-icon { font-size: 1.4rem; line-height: 1; }
+    .chain-stage .st-name { font-size: 0.66rem; font-weight: 800; color: #f5ecd8; margin-top: 5px; line-height: 1.2; }
+    .chain-stage .st-sub  { font-size: 0.57rem; color: rgba(220, 210, 190, 0.5); margin-top: 2px; }
+    .chain-arrow {
+      flex-shrink: 0; align-self: center; color: rgba(240, 180, 72, 0.55);
+      font-size: 0.9rem; padding: 0 1px; user-select: none;
+    }
+    .chain-pulse-track { height: 4px; margin: 10px 4px 0; border-radius: 99px; background: rgba(255,255,255,0.06); position: relative; overflow: hidden; }
+    .chain-pulse {
+      position: absolute; top: 0; bottom: 0; width: 12%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, transparent, #f0b448, transparent);
+      animation: pulse-travel 2.8s linear infinite;
+    }
+    @keyframes pulse-travel { from { left: -14%; } to { left: 102%; } }
+    @media (prefers-reduced-motion: reduce) { .chain-pulse { animation: none; left: 44%; } }
+
+    /* ── Cards ── */
+    .sc-card {
+      background: rgba(16, 16, 22, 0.72);
+      border: 1px solid rgba(245, 158, 11, 0.15);
+      border-radius: 15px; padding: 1rem 1.1rem; margin-bottom: 0.85rem;
+    }
+    .sc-card:last-child { margin-bottom: 0; }
+    .sc-card h3 {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em;
+      color: rgba(220, 200, 160, 0.55); text-transform: uppercase; margin: 0 0 0.85rem;
+    }
+
+    .fact-card {
+      background: rgba(10, 10, 14, 0.7);
+      border: 1px solid rgba(245, 158, 11, 0.14);
+      border-radius: 12px; padding: 11px 13px;
+      font-size: 0.78rem; line-height: 1.55;
+      color: rgba(230, 224, 210, 0.8);
+      margin-top: 0.8rem;
+    }
+    .fact-card strong { color: #f0b448; display: block; margin-bottom: 4px; font-size: 0.8rem; }
+
+    /* ── Gain staging lab ── */
+    .lab-grid { display: grid; grid-template-columns: 1fr; gap: 0.85rem; margin-top: 0.85rem; }
+    @media (min-width: 900px) { .lab-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
+
+    .console {
+      background: linear-gradient(180deg, #17171d, #101014);
+      border: 1px solid rgba(150, 150, 170, 0.18);
+      border-radius: 15px; padding: 1rem 1.1rem;
+    }
+    .console h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; color: rgba(220, 200, 160, 0.55); text-transform: uppercase; margin: 0 0 0.9rem; }
+    .ctl-row { margin-bottom: 0.9rem; }
+    .ctl-row:last-child { margin-bottom: 0; }
+    .ctl-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.72rem; font-weight: 700; color: rgba(232,228,218,0.75); margin-bottom: 5px; }
+    .ctl-label output { color: #f0b448; font-variant-numeric: tabular-nums; font-size: 0.72rem; }
+    .ctl-row input[type="range"] { width: 100%; accent-color: #f0b448; }
+
+    .tone-btn {
+      border: none; border-radius: 999px; padding: 9px 18px;
+      font-size: 0.78rem; font-weight: 800; letter-spacing: 0.03em; cursor: pointer;
+      background: linear-gradient(180deg, #3fae5a, #237a3c); color: #fff;
+      box-shadow: 0 4px 14px rgba(45, 150, 80, 0.35);
+    }
+    .tone-btn:hover { filter: brightness(1.1); }
+    .tone-btn.on { background: linear-gradient(180deg, #e8563a, #b4361c); box-shadow: 0 4px 14px rgba(200, 70, 40, 0.4); }
+
+    /* Meters */
+    .meters { display: flex; gap: 14px; justify-content: space-around; align-items: flex-end; padding: 0.4rem 0 0.2rem; }
+    .meter-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+    .meter-shell {
+      width: 30px; height: 170px; border-radius: 7px;
+      background: #060608; border: 1px solid rgba(150,150,170,0.22);
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column-reverse;
+    }
+    .meter-fill { width: 100%; transition: height 0.08s linear; background: linear-gradient(180deg, #e84030 0%, #e8a030 18%, #eec83a 30%, #4cc060 45%, #2f9e4a 100%); background-size: 100% 170px; background-position: bottom; }
+    .meter-unity { position: absolute; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.55); top: 26%; }
+    .meter-unity::after { content: "0"; position: absolute; right: 2px; top: -11px; font-size: 0.5rem; color: rgba(255,255,255,0.6); }
+    .meter-name { font-size: 0.62rem; font-weight: 800; color: rgba(232,228,218,0.65); text-transform: uppercase; letter-spacing: 0.04em; }
+    .meter-db { font-size: 0.66rem; color: #f0b448; font-variant-numeric: tabular-nums; }
+    .clip-led {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #3a1512; border: 1px solid rgba(255,90,60,0.35);
+      transition: background 0.1s, box-shadow 0.1s;
+    }
+    .clip-led.lit { background: #ff4530; box-shadow: 0 0 12px rgba(255, 70, 45, 0.9); }
+    .clip-caption { font-size: 0.55rem; color: rgba(255,120,90,0.7); font-weight: 700; letter-spacing: 0.05em; }
+
+    .verdict {
+      margin-top: 0.8rem; border-radius: 11px; padding: 9px 12px;
+      font-size: 0.76rem; font-weight: 700; line-height: 1.45;
+      background: rgba(10,10,14,0.7); border: 1px solid rgba(150,150,170,0.18);
+      color: rgba(232,228,218,0.75);
+    }
+    .verdict.good { border-color: rgba(76, 192, 96, 0.5); color: #7ade90; }
+    .verdict.bad  { border-color: rgba(255, 90, 60, 0.5);  color: #ff9078; }
+
+    /* ── Cable quiz ── */
+    .cable-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+    .cable-card {
+      background: rgba(10, 10, 14, 0.7);
+      border: 1px solid rgba(150,150,170,0.2);
+      border-radius: 12px; padding: 10px 8px; text-align: center;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    }
+    .cable-card:hover { border-color: rgba(240,180,72,0.5); }
+    .cable-card.picked { border-color: #f0b448; background: rgba(50,38,16,0.6); }
+    .cable-card.correct { border-color: #4cc060; background: rgba(18,48,26,0.6); }
+    .cable-card.wrong { border-color: #ff5a3c; background: rgba(58,20,16,0.55); }
+    .cable-card svg { width: 100%; max-width: 96px; height: auto; }
+    .cable-name { font-size: 0.68rem; font-weight: 800; color: #f5ecd8; margin-top: 5px; }
+    .quiz-q {
+      background: rgba(50,38,16,0.4); border: 1px solid rgba(240,180,72,0.3);
+      border-radius: 11px; padding: 9px 12px; font-size: 0.78rem; line-height: 1.5;
+      color: #f0dcb0; margin-bottom: 0.7rem;
+    }
+    .quiz-score { font-size: 0.72rem; color: rgba(232,228,218,0.6); margin-top: 0.6rem; }
+
+    /* Guide info cards */
+    .info-row { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
+    .info-card { background: rgba(16,16,22,0.72); border: 1px solid rgba(245,158,11,0.13); border-radius: 13px; padding: 1rem; }
+    .info-card h4 { font-size: 0.8rem; font-weight: 700; color: #f0b448; margin: 0 0 0.4rem; }
+    .info-card p  { font-size: 0.77rem; color: rgba(230,224,210,0.68); margin: 0 0 0.4rem; line-height: 1.55; }
+    .info-card p:last-child { margin-bottom: 0; }
+
+    /* ── ll-panel theming ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(12, 12, 16, 0.97);
+      --ll-panel-border:  rgba(245, 158, 11, 0.2);
+      --ll-tab-color:     rgba(220, 200, 160, 0.6);
+      --ll-tab-active-bg: rgba(245, 158, 11, 0.18);
+      --ll-tab-active:    #f0b448;
+      --ll-toggle-bg:     rgba(12, 12, 16, 0.97);
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport ll-dark">
+
+  <nav class="sc-topbar ll-topbar">
+    <div class="sc-topbar-inner">
+      <a href="../steam-lessons.html">← Engineering</a>
+      <span class="sc-topbar-title">🎤 Live Audio Signal Chain</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+
+    <div class="ll-sim">
+      <header class="sc-hero">
+        <h1>🎤 Live Audio Signal Chain</h1>
+        <p>Trace a voice from the microphone all the way to the speaker. Click every stage to learn what it does, set your gain without clipping, and prove you can tell an XLR from a TRS from a TS by sight.</p>
+      </header>
+
+      <div class="sc-wrap">
+
+        <div class="chain-outer">
+          <div class="chain-row" id="chain-row" role="tablist" aria-label="Signal chain stages"></div>
+          <div class="chain-pulse-track" aria-hidden="true"><div class="chain-pulse"></div></div>
+          <div class="fact-card" id="stage-fact">
+            <strong>Pick a stage</strong>
+            Click any block above to see what it does to your signal — and what goes wrong when it's set up badly.
+          </div>
+        </div>
+
+        <div class="lab-grid">
+
+          <div class="console">
+            <h3>🎚 Gain Staging Lab</h3>
+            <div class="ctl-row">
+              <div class="ctl-label"><span>Singer's voice (source)</span><output id="v-src">Medium</output></div>
+              <input type="range" id="s-src" min="0" max="100" value="45" aria-label="Source level: how loud the singer is" />
+            </div>
+            <div class="ctl-row">
+              <div class="ctl-label"><span>Gain / Trim (preamp)</span><output id="v-gain">+20 dB</output></div>
+              <input type="range" id="s-gain" min="0" max="60" value="20" aria-label="Preamp gain in decibels" />
+            </div>
+            <div class="ctl-row">
+              <div class="ctl-label"><span>Channel fader</span><output id="v-fader">0 dB</output></div>
+              <input type="range" id="s-fader" min="-60" max="10" value="0" aria-label="Channel fader in decibels" />
+            </div>
+            <div class="ctl-row">
+              <div class="ctl-label"><span>Master fader</span><output id="v-master">0 dB</output></div>
+              <input type="range" id="s-master" min="-60" max="10" value="0" aria-label="Master fader in decibels" />
+            </div>
+            <div class="ctl-row" style="display:flex; align-items:center; gap:10px;">
+              <button class="tone-btn" id="tone-btn" type="button">🔊 Hear the Test Tone</button>
+              <span style="font-size:0.66rem; color:rgba(232,228,218,0.5); line-height:1.4;">Turn up the gain too far and listen to what clipping actually sounds like.</span>
+            </div>
+          </div>
+
+          <div class="console">
+            <h3>📊 Meters — watch every stage</h3>
+            <div class="meters">
+              <div class="meter-col">
+                <div class="clip-led" id="clip-pre"></div>
+                <div class="clip-caption">CLIP</div>
+                <div class="meter-shell"><div class="meter-fill" id="m-pre" style="height:0%"></div><div class="meter-unity"></div></div>
+                <div class="meter-name">Preamp</div>
+                <div class="meter-db" id="db-pre">-∞</div>
+              </div>
+              <div class="meter-col">
+                <div class="clip-led" id="clip-ch"></div>
+                <div class="clip-caption">CLIP</div>
+                <div class="meter-shell"><div class="meter-fill" id="m-ch" style="height:0%"></div><div class="meter-unity"></div></div>
+                <div class="meter-name">Channel</div>
+                <div class="meter-db" id="db-ch">-∞</div>
+              </div>
+              <div class="meter-col">
+                <div class="clip-led" id="clip-out"></div>
+                <div class="clip-caption">CLIP</div>
+                <div class="meter-shell"><div class="meter-fill" id="m-out" style="height:0%"></div><div class="meter-unity"></div></div>
+                <div class="meter-name">Master</div>
+                <div class="meter-db" id="db-out">-∞</div>
+              </div>
+            </div>
+            <div class="verdict" id="verdict" aria-live="polite">Adjust the controls to bring all three meters into a healthy range.</div>
+          </div>
+
+        </div><!-- .lab-grid -->
+
+      </div><!-- .sc-wrap -->
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="true">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="sc-pane-explore">Cables</button>
+          <button class="ll-tab" aria-selected="false" data-pane="sc-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="sc-pane-explore">
+          <div class="sc-card">
+            <h3>🔌 Cable ID Challenge</h3>
+            <div class="quiz-q" id="quiz-q" aria-live="polite">Loading…</div>
+            <div class="cable-grid" id="cable-grid"></div>
+            <div class="quiz-score" id="quiz-score"></div>
+          </div>
+          <div class="sc-card">
+            <h3>Know Your Connectors</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>XLR — 3 pins, balanced</h4>
+                <p>The standard microphone cable. Three pins carry the signal twice — once flipped upside-down — so any noise picked up along the way cancels itself out. Locks in place so it can't be yanked out mid-show.</p>
+              </div>
+              <div class="info-card">
+                <h4>TRS — Tip · Ring · Sleeve</h4>
+                <p>A ¼″ jack with <strong>two</strong> dark rings. Balanced like XLR, so it can run long distances cleanly. You'll find it on headphone outputs, monitor sends, and balanced line connections.</p>
+              </div>
+              <div class="info-card">
+                <h4>TS — Tip · Sleeve</h4>
+                <p>A ¼″ jack with <strong>one</strong> dark ring. Unbalanced — fine for a short guitar cable, but it picks up hum and buzz over long runs. Never use a long TS cable where a balanced cable would fit.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #sc-pane-explore -->
+
+        <div class="ll-pane" id="sc-pane-guide">
+          <div class="sc-card" style="margin-bottom:1rem">
+            <h3>Live Sound Essentials</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>⛓ The Chain Is Only as Strong…</h4>
+                <p>Every live sound system is the same story: <strong>capture → carry → control → amplify → deliver</strong>. A $5,000 console cannot fix a badly placed $100 microphone, and a perfect mix dies in a bad speaker. Fix problems at the <em>earliest</em> stage they appear.</p>
+              </div>
+              <div class="info-card">
+                <h4>🎚 Gain Staging &amp; Unity</h4>
+                <p>Set the <strong>gain (trim)</strong> so the loudest moment of the source sits just below clipping at the preamp — that's your headroom. Then leave the fader near <strong>unity (0 dB)</strong>, where the console neither boosts nor cuts. Mixing happens with faders; gain is set once and left alone.</p>
+                <p>Golden rule: if the preamp clips, <em>no fader below it can undo the damage</em>. Distortion recorded at the first stage travels through every stage after it.</p>
+              </div>
+              <div class="info-card">
+                <h4>📣 Why Clipping Sounds Awful</h4>
+                <p>An audio signal is a smooth wave. When a stage runs out of voltage to describe the wave's peaks, it flattens them — literally slicing the tops off. Those squared-off edges add harsh new frequencies that were never in the singer's voice. Once clipped, the wave can't be un-flattened.</p>
+              </div>
+              <div class="info-card">
+                <h4>🔁 Feedback in 10 Seconds</h4>
+                <p>Feedback is a loop: the mic hears the speaker, the speaker replays the mic, and one frequency snowballs into a howl. Break the loop by moving the mic behind the speakers, pointing it away from them, or cutting the ringing frequency on the EQ. Turning everything down is the last resort, not the first.</p>
+              </div>
+              <div class="info-card">
+                <h4>🎭 In Our Productions</h4>
+                <p>This is the same chain you run for <em>Newsies</em> and <em>Wonka Jr.</em>: a wireless lav is the mic, its receiver feeds the console preamp, the channel fader rides the vocal, and the master feeds the mains. When something goes silent mid-show, walk the chain from the mic forward — the break is almost always at a connection.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #sc-pane-guide -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ══════════════════════════════════════════
+     SIGNAL CHAIN STAGES
+  ══════════════════════════════════════════ */
+  const STAGES = [
+    { icon: '🎤', name: 'Microphone', sub: 'capture',
+      fact: '<strong>Microphone — sound becomes electricity</strong>A mic turns air pressure waves into a tiny electrical signal — so small it\'s called <em>mic level</em>. Dynamic mics (like an SM58) are rugged and reject noise; condenser mics are sensitive and detailed but need power. Placement matters more than price: an inch closer to the mouth can beat any EQ move.' },
+    { icon: '🔌', name: 'XLR Cable', sub: 'carry',
+      fact: '<strong>XLR Cable — the balanced lifeline</strong>Three pins: ground, signal, and the same signal flipped upside-down. At the far end the console flips it back — and any hum the cable picked up along the way gets cancelled out. This trick is called <em>balanced audio</em>, and it\'s why a mic cable can run 100 feet without buzzing.' },
+    { icon: '🎛', name: 'Preamp / Gain', sub: 'boost',
+      fact: '<strong>Preamp — the most important knob on the console</strong>The gain (trim) knob boosts the tiny mic-level signal up to <em>line level</em>, which the rest of the console works with. Too little gain and you\'re boosting hiss later; too much and you clip — permanent distortion. Set gain so the loudest note sits just below the red, then leave it alone.' },
+    { icon: '🎚', name: 'EQ', sub: 'shape',
+      fact: '<strong>EQ — sculpting the sound</strong>The equalizer boosts or cuts frequency ranges: cut low "mud" around 200–400 Hz, add vocal presence around 3–5 kHz, add "air" above 10 kHz. Pro habit: <em>cut first, boost second</em> — removing a problem always sounds more natural than piling on more of something else.' },
+    { icon: '🎛️', name: 'Fader', sub: 'mix',
+      fact: '<strong>Channel fader — where mixing actually happens</strong>The fader sets how loud this one voice sits in the mix. Unity (0 dB) means "no change" — a healthy channel lives near unity, leaving room to push a solo up or tuck a voice back. If you find every fader jammed at the top, your gain staging is wrong, not your mix.' },
+    { icon: '🎼', name: 'Master', sub: 'sum',
+      fact: '<strong>Master fader — the whole mix in one hand</strong>Every channel sums into the master bus. The master fader controls the entire show\'s level to the amplifier. It\'s your emergency brake: one smooth pull silences everything without touching a single channel.' },
+    { icon: '⚡', name: 'Amplifier', sub: 'power',
+      fact: '<strong>Amplifier — muscle, not brains</strong>The amp takes the line-level mix and turns it into watts — enough electrical power to physically move a speaker cone. Powered speakers hide the amp inside the cabinet. The amp amplifies <em>everything</em> it receives, including distortion from earlier stages — garbage in, louder garbage out.' },
+    { icon: '🔊', name: 'Speaker', sub: 'deliver',
+      fact: '<strong>Speaker — electricity becomes sound again</strong>The speaker is a mic in reverse: electrical current pushes a magnet-driven cone that shoves air back and forth, recreating the original wave — hopefully. Where you point it decides who hears the show and whether the mic feeds back. Mains face the audience; monitors face the performers.' },
+  ];
+
+  const chainRow = document.getElementById('chain-row');
+  const stageFact = document.getElementById('stage-fact');
+  STAGES.forEach(function (st, i) {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'chain-stage';
+    el.setAttribute('aria-label', st.name);
+    el.innerHTML = '<div class="st-icon">' + st.icon + '</div><div class="st-name">' + st.name + '</div><div class="st-sub">' + st.sub + '</div>';
+    el.addEventListener('click', function () {
+      chainRow.querySelectorAll('.chain-stage').forEach(function (x) { x.classList.remove('active'); });
+      el.classList.add('active');
+      stageFact.innerHTML = st.fact;
+    });
+    chainRow.appendChild(el);
+    if (i < STAGES.length - 1) {
+      const ar = document.createElement('span');
+      ar.className = 'chain-arrow';
+      ar.textContent = '▸';
+      ar.setAttribute('aria-hidden', 'true');
+      chainRow.appendChild(ar);
+    }
+  });
+
+  /* ══════════════════════════════════════════
+     GAIN STAGING MODEL
+     Source is normalized: 45 ≈ a typical singer.
+     Mic level ≈ -50 dBFS at source=45; gain lifts it.
+  ══════════════════════════════════════════ */
+  const sSrc = document.getElementById('s-src');
+  const sGain = document.getElementById('s-gain');
+  const sFader = document.getElementById('s-fader');
+  const sMaster = document.getElementById('s-master');
+
+  const SRC_WORDS = ['Silent', 'Whisper', 'Quiet', 'Medium', 'Strong', 'Belting'];
+
+  function srcDb() {
+    const v = parseFloat(sSrc.value);
+    if (v <= 0) return -Infinity;
+    /* -70 dBFS (whisper) → -30 dBFS (belting) at the mic */
+    return -70 + (v / 100) * 40;
+  }
+
+  function fmtDb(db) {
+    if (db === -Infinity || db < -80) return '-∞';
+    return (db > 0 ? '+' : '') + db.toFixed(1) + ' dB';
+  }
+
+  /* Meter maps -60..+6 dBFS to 0..100% height; unity line sits at 0 dBFS (74%). */
+  function meterPct(db) {
+    if (db === -Infinity) return 0;
+    const pct = ((db + 60) / 66) * 100;
+    return Math.max(0, Math.min(100, pct));
+  }
+
+  const els = {
+    mPre: document.getElementById('m-pre'),  dbPre: document.getElementById('db-pre'),  clipPre: document.getElementById('clip-pre'),
+    mCh:  document.getElementById('m-ch'),   dbCh:  document.getElementById('db-ch'),   clipCh:  document.getElementById('clip-ch'),
+    mOut: document.getElementById('m-out'),  dbOut: document.getElementById('db-out'),  clipOut: document.getElementById('clip-out'),
+    verdict: document.getElementById('verdict'),
+  };
+
+  let wobble = 0;
+  function levels() {
+    /* small live wobble so meters feel alive */
+    const w = Math.sin(wobble) * 1.6 + Math.sin(wobble * 2.7) * 0.8;
+    const pre = srcDb() + parseFloat(sGain.value) + w;
+    const preClipped = pre > 0;
+    const preOut = Math.min(pre, 0); /* clipping flattens the wave at 0 dBFS */
+    const ch = preOut + parseFloat(sFader.value);
+    const chClipped = ch > 0;
+    const chOut = Math.min(ch, 0);
+    const out = chOut + parseFloat(sMaster.value);
+    const outClipped = out > 0;
+    return { pre: pre, ch: ch, out: out, preClipped: preClipped, chClipped: chClipped, outClipped: outClipped };
+  }
+
+  let clipHold = { pre: -1e9, ch: -1e9, out: -1e9 };
+
+  function updateLab() {
+    const L = levels();
+    const now = performance.now();
+    if (L.preClipped) clipHold.pre = now;
+    if (L.chClipped)  clipHold.ch = now;
+    if (L.outClipped) clipHold.out = now;
+
+    els.mPre.style.height = meterPct(L.pre) + '%';
+    els.mCh.style.height  = meterPct(L.ch) + '%';
+    els.mOut.style.height = meterPct(L.out) + '%';
+    els.dbPre.textContent = fmtDb(L.pre);
+    els.dbCh.textContent  = fmtDb(L.ch);
+    els.dbOut.textContent = fmtDb(L.out);
+    els.clipPre.classList.toggle('lit', now - clipHold.pre < 900);
+    els.clipCh.classList.toggle('lit',  now - clipHold.ch < 900);
+    els.clipOut.classList.toggle('lit', now - clipHold.out < 900);
+
+    const srcV = parseFloat(sSrc.value);
+    document.getElementById('v-src').textContent = SRC_WORDS[Math.min(5, Math.floor(srcV / 20))];
+    document.getElementById('v-gain').textContent = '+' + sGain.value + ' dB';
+    document.getElementById('v-fader').textContent = fmtDb(parseFloat(sFader.value));
+    document.getElementById('v-master').textContent = fmtDb(parseFloat(sMaster.value));
+
+    /* Verdict */
+    let msg, cls;
+    if (srcV <= 0) {
+      msg = 'The singer is silent — bring up the source to start staging gain.'; cls = '';
+    } else if (L.preClipped) {
+      msg = '🔴 The PREAMP is clipping. No fader below it can fix this — pull the GAIN down until the clip light stays dark.'; cls = 'bad';
+    } else if (L.chClipped || L.outClipped) {
+      msg = '🔴 Clipping after the preamp — pull the ' + (L.chClipped ? 'channel fader' : 'master fader') + ' down toward unity (0 dB).'; cls = 'bad';
+    } else if (L.pre < -30) {
+      msg = 'Signal is too quiet at the preamp — you\'d be boosting hiss later in the chain. Raise the GAIN.'; cls = '';
+    } else if (L.pre <= -6 && Math.abs(parseFloat(sFader.value)) <= 6 && Math.abs(parseFloat(sMaster.value)) <= 6 && L.out > -20) {
+      msg = '🟢 Healthy gain staging! Hot preamp signal with headroom, faders near unity, clean master. This is what a show-ready channel looks like.'; cls = 'good';
+    } else {
+      msg = 'Getting there — aim for a strong preamp level just below clipping, with both faders near unity (0 dB).'; cls = '';
+    }
+    els.verdict.textContent = msg;
+    els.verdict.className = 'verdict' + (cls ? ' ' + cls : '');
+  }
+
+  [sSrc, sGain, sFader, sMaster].forEach(function (s) { s.addEventListener('input', updateLab); });
+
+  /* ══════════════════════════════════════════
+     WEB AUDIO — hear the chain (starts on click)
+  ══════════════════════════════════════════ */
+  let actx = null, nodes = null, toneOn = false;
+  const toneBtn = document.getElementById('tone-btn');
+
+  function makeClipCurve() {
+    const n = 1024, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      curve[i] = Math.max(-1, Math.min(1, x)); /* hard clip at ±1 */
+    }
+    return curve;
+  }
+
+  function buildAudio() {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = actx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 196; /* G3 — comfortable "voice" register */
+    const vib = actx.createOscillator();
+    vib.frequency.value = 5.5;
+    const vibGain = actx.createGain();
+    vibGain.gain.value = 4;
+    vib.connect(vibGain).connect(osc.frequency);
+
+    const srcGain = actx.createGain();     /* singer volume */
+    const trimGain = actx.createGain();    /* preamp gain */
+    const clip = actx.createWaveShaper();  /* clipping stage */
+    clip.curve = makeClipCurve();
+    const faderGain = actx.createGain();
+    const masterGain = actx.createGain();
+    const safety = actx.createGain();
+    safety.gain.value = 0.28; /* keep classroom volumes sane */
+
+    osc.connect(srcGain).connect(trimGain).connect(clip).connect(faderGain).connect(masterGain).connect(safety).connect(actx.destination);
+    osc.start(); vib.start();
+    nodes = { srcGain: srcGain, trimGain: trimGain, faderGain: faderGain, masterGain: masterGain };
+  }
+
+  function dbToLin(db) { return db === -Infinity ? 0 : Math.pow(10, db / 20); }
+
+  function updateAudio() {
+    if (!toneOn || !nodes) return;
+    /* Map model to audio: source scaled so gain must do real work.
+       srcDb -70..-30 → linear; trim in dB; clip stage saturates at 1.0. */
+    nodes.srcGain.gain.value = dbToLin(srcDb());
+    nodes.trimGain.gain.value = dbToLin(parseFloat(sGain.value));
+    nodes.faderGain.gain.value = dbToLin(Math.min(parseFloat(sFader.value), 0) * 1 + Math.max(0, parseFloat(sFader.value)) * 0.5);
+    nodes.masterGain.gain.value = dbToLin(Math.min(parseFloat(sMaster.value), 6));
+  }
+
+  toneBtn.addEventListener('click', function () {
+    if (!actx) buildAudio();
+    if (actx.state === 'suspended') actx.resume();
+    toneOn = !toneOn;
+    if (nodes) nodes.srcGain.gain.value = toneOn ? dbToLin(srcDb()) : 0;
+    if (!toneOn && nodes) { nodes.masterGain.gain.value = 0; }
+    toneBtn.textContent = toneOn ? '🔇 Stop the Tone' : '🔊 Hear the Test Tone';
+    toneBtn.classList.toggle('on', toneOn);
+    if (toneOn) updateAudio();
+  });
+
+  /* ══════════════════════════════════════════
+     CABLE ID QUIZ
+  ══════════════════════════════════════════ */
+  const CABLE_SVGS = {
+    xlr: '<svg viewBox="0 0 96 64" role="img" aria-label="XLR connector: round barrel with three pins"><rect x="6" y="22" width="44" height="20" rx="6" fill="#3a3a44"/><circle cx="66" cy="32" r="22" fill="#4a4a56" stroke="#8a8a9a" stroke-width="2"/><circle cx="60" cy="24" r="4.5" fill="#d8d8e2"/><circle cx="74" cy="32" r="4.5" fill="#d8d8e2"/><circle cx="60" cy="40" r="4.5" fill="#d8d8e2"/></svg>',
+    trs: '<svg viewBox="0 0 96 64" role="img" aria-label="TRS quarter-inch plug with two separator rings"><rect x="4" y="24" width="30" height="16" rx="5" fill="#3a3a44"/><rect x="34" y="26" width="34" height="12" rx="2" fill="#c8c8d4"/><rect x="46" y="26" width="5" height="12" fill="#14141a"/><rect x="58" y="26" width="5" height="12" fill="#14141a"/><path d="M68 26 h12 q10 6 0 12 h-12 z" fill="#c8c8d4"/></svg>',
+    ts:  '<svg viewBox="0 0 96 64" role="img" aria-label="TS quarter-inch plug with one separator ring"><rect x="4" y="24" width="30" height="16" rx="5" fill="#3a3a44"/><rect x="34" y="26" width="34" height="12" rx="2" fill="#c8c8d4"/><rect x="52" y="26" width="5" height="12" fill="#14141a"/><path d="M68 26 h12 q10 6 0 12 h-12 z" fill="#c8c8d4"/></svg>',
+  };
+
+  const QUIZ = [
+    { q: 'The lead\'s vocal mic needs a 50-foot run to the console. Which cable?', a: 'xlr',
+      why: 'XLR — balanced and lockable. Long mic runs are exactly what it\'s for.' },
+    { q: 'You\'re plugging a guitar straight into an amp 6 feet away. Which cable?', a: 'ts',
+      why: 'TS — one ring, unbalanced instrument cable. Fine for short runs.' },
+    { q: 'A balanced line from the console to a powered monitor. Which ¼″ cable?', a: 'trs',
+      why: 'TRS — two rings, balanced. It cancels noise the way XLR does.' },
+    { q: 'Which connector physically LOCKS so it can\'t be pulled out mid-show?', a: 'xlr',
+      why: 'XLR has a latch — that click is your show insurance.' },
+    { q: 'Which cable picks up hum and buzz on long runs because it\'s unbalanced?', a: 'ts',
+      why: 'TS — with no second copy of the signal, it can\'t cancel interference.' },
+    { q: 'Count the dark rings: TWO rings on a ¼″ plug means…', a: 'trs',
+      why: 'Tip-Ring-Sleeve. Two rings = three contacts = balanced (or stereo).' },
+  ];
+
+  const NAMES = { xlr: 'XLR', trs: 'TRS ¼″', ts: 'TS ¼″' };
+  let quizIdx = 0, quizScore = 0, quizLock = false;
+  const cableGrid = document.getElementById('cable-grid');
+  const quizQ = document.getElementById('quiz-q');
+  const quizScoreEl = document.getElementById('quiz-score');
+
+  ['xlr', 'trs', 'ts'].forEach(function (key) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'cable-card';
+    card.dataset.key = key;
+    card.innerHTML = CABLE_SVGS[key] + '<div class="cable-name">' + NAMES[key] + '</div>';
+    card.addEventListener('click', function () { answer(key, card); });
+    cableGrid.appendChild(card);
+  });
+
+  function askQuestion() {
+    quizLock = false;
+    cableGrid.querySelectorAll('.cable-card').forEach(function (c) { c.className = 'cable-card'; });
+    if (quizIdx >= QUIZ.length) {
+      quizQ.innerHTML = '🏁 <strong>Round complete — ' + quizScore + '/' + QUIZ.length + '.</strong> ' +
+        (quizScore === QUIZ.length ? 'Perfect. You\'re ready to wire a stage.' : 'Run it again and go for a clean sweep.');
+      quizScoreEl.innerHTML = '<button type="button" class="tone-btn" id="quiz-restart" style="padding:6px 14px;font-size:0.7rem;">↺ Play Again</button>';
+      document.getElementById('quiz-restart').addEventListener('click', function () {
+        quizIdx = 0; quizScore = 0; askQuestion();
+      });
+      return;
+    }
+    quizQ.textContent = 'Q' + (quizIdx + 1) + ' of ' + QUIZ.length + ': ' + QUIZ[quizIdx].q;
+    quizScoreEl.textContent = 'Score: ' + quizScore + '/' + quizIdx;
+  }
+
+  function answer(key, card) {
+    if (quizLock || quizIdx >= QUIZ.length) return;
+    quizLock = true;
+    const item = QUIZ[quizIdx];
+    const correct = key === item.a;
+    if (correct) quizScore++;
+    card.classList.add(correct ? 'correct' : 'wrong');
+    if (!correct) {
+      const right = cableGrid.querySelector('[data-key="' + item.a + '"]');
+      if (right) right.classList.add('correct');
+    }
+    quizQ.innerHTML = (correct ? '✅ ' : '❌ ') + item.why;
+    quizIdx++;
+    setTimeout(askQuestion, 2100);
+  }
+
+  askQuestion();
+  updateLab();
+
+  /* animation ticker — last, so every binding above exists */
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function tick() {
+    wobble += 0.11;
+    updateLab();
+    updateAudio();
+    if (!reduceMotion) requestAnimationFrame(tick);
+  })();
+  if (reduceMotion) setInterval(function () { wobble += 0.11; updateLab(); updateAudio(); }, 250);
+})();
+</script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
+
+</body>
+</html>

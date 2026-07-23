@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stage Lighting Design Lab · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Light a virtual stage: mix RGB washes, aim front, side, and back light at a performer, build cues, and play back your own lighting design." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    body { background: #08070c; color: #eae6f2; margin: 0; overflow-x: hidden; }
+
+    /* ── Topbar ── */
+    .lx-topbar {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(14px);
+      background: rgba(10, 9, 16, 0.94);
+      border-bottom: 1px solid rgba(168, 120, 240, 0.24);
+    }
+    .lx-topbar-inner {
+      width: min(1440px, calc(100% - 2rem));
+      margin: 0 auto; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .lx-topbar a { color: #b48ef0; text-decoration: none; font-size: 0.82rem; }
+    .lx-topbar a:hover { color: #fff; }
+    .lx-topbar-title { font-size: 0.9rem; font-weight: 700; color: #ece4fa; }
+
+    /* ── Hero ── */
+    .lx-hero { padding: 0.8rem 1.5rem 0.5rem; text-align: center; max-width: 740px; margin: 0 auto; }
+    .lx-hero h1 { font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
+    .lx-hero p { font-size: 0.86rem; color: rgba(234, 230, 242, 0.66); margin: 0; line-height: 1.55; }
+
+    .lx-wrap { padding: 0 1.1rem 1rem; max-width: 1440px; margin: 0 auto; }
+
+    /* ── Stage canvas ── */
+    .stage-outer {
+      position: relative;
+      border-radius: 18px; overflow: hidden;
+      background: #05050a;
+      aspect-ratio: 16/9;
+      max-height: calc(100dvh - 210px);
+      border: 1px solid rgba(168, 120, 240, 0.18);
+      box-shadow: 0 0 60px rgba(110, 70, 190, 0.12), inset 0 0 40px rgba(0,0,0,0.55);
+      margin: 0 auto;
+    }
+    #lx-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .stage-badge {
+      position: absolute; top: 12px; left: 14px; z-index: 3;
+      background: rgba(8, 6, 14, 0.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(168, 120, 240, 0.35);
+      border-radius: 999px; padding: 5px 14px;
+      font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; color: #c9aaf5;
+    }
+
+    /* ── Control cards ── */
+    .lx-card {
+      background: rgba(14, 12, 22, 0.75);
+      border: 1px solid rgba(168, 120, 240, 0.16);
+      border-radius: 15px; padding: 1rem 1.1rem; margin-bottom: 0.85rem;
+    }
+    .lx-card:last-child { margin-bottom: 0; }
+    .lx-card h3 {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em;
+      color: rgba(190, 165, 230, 0.55); text-transform: uppercase; margin: 0 0 0.85rem;
+    }
+
+    .board-grid { display: grid; grid-template-columns: 1fr; gap: 0.85rem; margin-top: 0.85rem; }
+    @media (min-width: 900px) { .board-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+
+    /* Fixture selector */
+    .fixture-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 6px; margin-bottom: 0.9rem; }
+    .fx-btn {
+      border: 1px solid rgba(160,140,200,0.25); border-radius: 11px;
+      background: rgba(10, 8, 18, 0.7); color: #d8ccf0;
+      padding: 8px 4px; font-size: 0.66rem; font-weight: 800; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .fx-btn .fx-ico { font-size: 1.05rem; line-height: 1; }
+    .fx-btn:hover { border-color: rgba(180,142,240,0.55); }
+    .fx-btn.active { border-color: #b48ef0; background: rgba(52, 36, 84, 0.65); color: #fff; }
+    .fx-swatch { width: 100%; height: 6px; border-radius: 99px; background: #333; }
+    .fx-btn .fx-onoff { font-size: 0.55rem; letter-spacing: 0.05em; color: rgba(200,180,240,0.5); }
+
+    .ctl-row { margin-bottom: 0.75rem; }
+    .ctl-row:last-child { margin-bottom: 0; }
+    .ctl-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.72rem; font-weight: 700; color: rgba(234,230,242,0.75); margin-bottom: 5px; }
+    .ctl-label output { font-variant-numeric: tabular-nums; font-size: 0.72rem; }
+    .ctl-row input[type="range"] { width: 100%; }
+    #s-r { accent-color: #f05050; } #s-g { accent-color: #40c860; } #s-b { accent-color: #4880f0; }
+    #s-int, #s-mast { accent-color: #b48ef0; }
+
+    .mix-preview {
+      display: flex; align-items: center; gap: 10px; margin-top: 0.7rem;
+      background: rgba(8,6,14,0.7); border: 1px solid rgba(160,140,200,0.2);
+      border-radius: 11px; padding: 8px 12px;
+    }
+    .mix-chip { width: 42px; height: 42px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18); flex-shrink: 0; }
+    .mix-text { font-size: 0.72rem; line-height: 1.45; color: rgba(234,230,242,0.72); }
+    .mix-text strong { color: #fff; }
+
+    .onoff-btn {
+      width: 100%; margin-top: 0.6rem;
+      border: 1px solid rgba(160,140,200,0.3); border-radius: 999px;
+      background: rgba(10,8,18,0.7); color: #d8ccf0;
+      padding: 7px 0; font-size: 0.72rem; font-weight: 800; cursor: pointer;
+    }
+    .onoff-btn.on { background: linear-gradient(180deg, #7a52c8, #5636a0); border-color: transparent; color: #fff; }
+
+    /* Presets */
+    .preset-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 6px; }
+    @media (max-width: 640px) { .preset-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    .preset-btn {
+      border: 1px solid rgba(160,140,200,0.22); border-radius: 11px;
+      background: rgba(10,8,18,0.7); color: #e4dcf5;
+      padding: 8px 4px 7px; font-size: 0.62rem; font-weight: 800; cursor: pointer; line-height: 1.3;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .preset-btn:hover { border-color: rgba(180,142,240,0.6); transform: translateY(-1px); }
+    .preset-dot { width: 22px; height: 12px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.2); }
+
+    /* Cue list */
+    .cue-actions { display: flex; gap: 8px; margin-bottom: 0.7rem; }
+    .cue-btn {
+      border: none; border-radius: 999px; padding: 8px 16px;
+      font-size: 0.74rem; font-weight: 800; letter-spacing: 0.03em; cursor: pointer;
+    }
+    .cue-btn-save { background: linear-gradient(180deg, #7a52c8, #5636a0); color: #fff; box-shadow: 0 4px 14px rgba(120, 80, 200, 0.35); }
+    .cue-btn-go { background: linear-gradient(180deg, #3fae5a, #237a3c); color: #fff; box-shadow: 0 4px 14px rgba(45, 150, 80, 0.35); flex: 1; }
+    .cue-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+    .cue-btn:not(:disabled):hover { filter: brightness(1.12); }
+    .cue-list { display: flex; flex-direction: column; gap: 5px; }
+    .cue-item {
+      display: flex; align-items: center; gap: 9px;
+      background: rgba(8,6,14,0.7); border: 1px solid rgba(160,140,200,0.18);
+      border-radius: 10px; padding: 6px 9px;
+    }
+    .cue-item.live { border-color: #4cc060; box-shadow: 0 0 12px rgba(70,190,95,0.2); }
+    .cue-item.standby { border-color: #eec83a; }
+    .cue-num { font-size: 0.68rem; font-weight: 800; color: #b48ef0; width: 38px; flex-shrink: 0; }
+    .cue-chips { display: flex; gap: 3px; flex-shrink: 0; }
+    .cue-chip { width: 13px; height: 13px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.18); }
+    .cue-name-input {
+      flex: 1; min-width: 0; background: transparent; border: none; color: #eae6f2;
+      font-size: 0.72rem; font-weight: 600; padding: 2px 4px; border-radius: 5px;
+    }
+    .cue-name-input:focus { background: rgba(120,80,200,0.15); outline: 1px solid rgba(180,142,240,0.5); }
+    .cue-del {
+      border: none; background: transparent; color: rgba(255,120,100,0.6);
+      cursor: pointer; font-size: 0.85rem; padding: 2px 5px; border-radius: 5px; flex-shrink: 0;
+    }
+    .cue-del:hover { color: #ff7860; background: rgba(255,90,60,0.12); }
+    .cue-empty { font-size: 0.72rem; color: rgba(200,180,240,0.45); line-height: 1.5; }
+    .cue-status { font-size: 0.68rem; color: rgba(200,180,240,0.55); margin-top: 0.55rem; }
+
+    /* Guide info cards */
+    .info-row { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
+    .info-card { background: rgba(14,12,22,0.75); border: 1px solid rgba(168,120,240,0.14); border-radius: 13px; padding: 1rem; }
+    .info-card h4 { font-size: 0.8rem; font-weight: 700; color: #b48ef0; margin: 0 0 0.4rem; }
+    .info-card p  { font-size: 0.77rem; color: rgba(234,230,242,0.66); margin: 0 0 0.4rem; line-height: 1.55; }
+    .info-card p:last-child { margin-bottom: 0; }
+
+    /* ── ll-panel theming ── */
+    .ll-viewport {
+      --ll-panel-bg:      rgba(10, 8, 16, 0.97);
+      --ll-panel-border:  rgba(168, 120, 240, 0.22);
+      --ll-tab-color:     rgba(190, 165, 230, 0.6);
+      --ll-tab-active-bg: rgba(168, 120, 240, 0.18);
+      --ll-tab-active:    #b48ef0;
+      --ll-toggle-bg:     rgba(10, 8, 16, 0.97);
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport ll-dark">
+
+  <nav class="lx-topbar ll-topbar">
+    <div class="lx-topbar-inner">
+      <a href="../steam-lessons.html">← Engineering</a>
+      <span class="lx-topbar-title">💡 Stage Lighting Design Lab</span>
+      <a href="../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+
+    <div class="ll-sim">
+      <header class="lx-hero">
+        <h1>💡 Stage Lighting Design Lab</h1>
+        <p>You're at the lighting console. Mix red, green, and blue light into any color, aim it from the front, sides, or behind your performer, save every look as a cue — then press GO and run your show.</p>
+      </header>
+
+      <div class="lx-wrap">
+
+        <div class="stage-outer" id="lx-outer">
+          <canvas id="lx-canvas"></canvas>
+          <span class="stage-badge" id="look-badge">🎭 Design your first look</span>
+        </div>
+
+        <div class="board-grid">
+
+          <div class="lx-card">
+            <h3>💡 Fixtures — pick a light, then mix its color</h3>
+            <div class="fixture-row" id="fixture-row"></div>
+            <div class="ctl-row">
+              <div class="ctl-label"><span style="color:#ff8a80">Red</span><output id="v-r">255</output></div>
+              <input type="range" id="s-r" min="0" max="255" value="255" aria-label="Red level for the selected light" />
+            </div>
+            <div class="ctl-row">
+              <div class="ctl-label"><span style="color:#8ae09a">Green</span><output id="v-g">180</output></div>
+              <input type="range" id="s-g" min="0" max="255" value="180" aria-label="Green level for the selected light" />
+            </div>
+            <div class="ctl-row">
+              <div class="ctl-label"><span style="color:#90b4ff">Blue</span><output id="v-b">80</output></div>
+              <input type="range" id="s-b" min="0" max="255" value="80" aria-label="Blue level for the selected light" />
+            </div>
+            <div class="ctl-row">
+              <div class="ctl-label"><span>Fixture intensity</span><output id="v-int">80%</output></div>
+              <input type="range" id="s-int" min="0" max="100" value="80" aria-label="Intensity of the selected light" />
+            </div>
+            <button class="onoff-btn" id="onoff-btn" type="button">Turn Fixture Off</button>
+            <div class="mix-preview">
+              <div class="mix-chip" id="mix-chip"></div>
+              <div class="mix-text" id="mix-text"><strong>Warm amber.</strong> High red, medium green, low blue — the classic "warm" stage wash.</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="lx-card">
+              <h3>🎨 Looks — one-click starting points</h3>
+              <div class="preset-grid" id="preset-grid"></div>
+            </div>
+            <div class="lx-card">
+              <h3>🎬 Cue Stack — save looks, then run the show</h3>
+              <div class="cue-actions">
+                <button class="cue-btn cue-btn-save" id="cue-save" type="button">＋ Save Look as Cue</button>
+                <button class="cue-btn cue-btn-go" id="cue-go" type="button" disabled>▶ GO</button>
+              </div>
+              <div class="cue-list" id="cue-list"><div class="cue-empty">No cues yet. Design a look above, then save it. Save two or more and the GO button will fade between them — exactly how a real show runs.</div></div>
+              <div class="cue-status" id="cue-status"></div>
+            </div>
+          </div>
+
+        </div><!-- .board-grid -->
+
+      </div><!-- .lx-wrap -->
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="true">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true"  data-pane="lx-pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="lx-pane-teacher">Design Briefs</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="lx-pane-guide">
+          <div class="lx-card" style="margin-bottom:1rem">
+            <h3>Lighting Design Essentials</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>🔴🟢🔵 Light Adds Up</h4>
+                <p>Stage lights mix <em>additively</em> — the opposite of paint. Red + green light makes <strong>yellow</strong>, green + blue makes <strong>cyan</strong>, red + blue makes <strong>magenta</strong>, and all three at full power make <strong>white</strong>. Try it on the sliders: start at zero and build colors up.</p>
+              </div>
+              <div class="info-card">
+                <h4>🔥❄️ Warm vs. Cool</h4>
+                <p>When a director asks for a "warm" scene, they mean amber, gold, and soft pink — colors that read as sunlight, candlelight, comfort, and energy. "Cool" means blues and lavenders — night, moonlight, sadness, distance. The same set can feel like a summer afternoon or a lonely midnight with nothing changed but the color of the light.</p>
+              </div>
+              <div class="info-card">
+                <h4>🧭 Direction Tells the Story</h4>
+                <p><strong>Front light</strong> makes faces visible — necessary, but flat on its own. <strong>Side light</strong> sculpts: it carves out bodies in space, which is why dance is lit almost entirely from the sides. <strong>Back light</strong> separates the performer from the background with a rim of light — kill the front light and it becomes pure silhouette, the most dramatic look on stage.</p>
+              </div>
+              <div class="info-card">
+                <h4>🎚 Intensity Is Time of Day</h4>
+                <p>A wash at 100% feels like noon; the same color at 40% feels like evening. Brightness sets energy: full intensity for a dance number, a dim pool of light for a confession. If a scene feels wrong and the color is right, try the intensity before anything else.</p>
+              </div>
+              <div class="info-card">
+                <h4>🎬 Cues Are Storytelling</h4>
+                <p>A lighting cue is a saved "look" — every fixture's color and level — that plays back on the word <strong>GO</strong>. Shows are a stack of cues fired in order, each fade timed to the scene. A slow 5-second sunset fade and a snap blackout tell completely different stories with the same two looks.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #lx-pane-guide -->
+
+        <div class="ll-pane" id="lx-pane-teacher">
+          <div class="lx-card" style="margin-bottom:1rem">
+            <h3>Production Design Briefs</h3>
+            <div class="info-row">
+              <div class="info-card">
+                <h4>🗞 Brief 1 — Newsboy Energy</h4>
+                <p>It's 1899 New York at dawn and the newsboys are waking up the city. Build a look that says <em>grit, hope, and hustle</em> — think warm but not cozy. Save it as a cue named "Carrying the Banner."</p>
+              </div>
+              <div class="info-card">
+                <h4>✊ Brief 2 — Revolution</h4>
+                <p>The strike begins. What RGB values say <em>defiance</em>? Design the biggest, boldest look you can, then decide: does the back light make them heroes or shadows? Save it as "The World Will Know."</p>
+              </div>
+              <div class="info-card">
+                <h4>🍫 Brief 3 — Pure Imagination</h4>
+                <p>Now flip worlds completely: the gates of the Chocolate Factory swing open. Candy-colored, saturated, magical — nothing that could ever appear in 1899 New York. Save it as "The Factory Reveal."</p>
+              </div>
+              <div class="info-card">
+                <h4>🏚 Brief 4 — The Bucket Shack</h4>
+                <p>Poverty, cold, and love in a broken little house. How <em>little</em> color can still be beautiful? Dim, grey-blue, one fixture doing most of the work. Save it as "Bucket Shack," then GO between it and "The Factory Reveal" — that contrast is the whole show.</p>
+              </div>
+              <div class="info-card">
+                <h4>🌇 Brief 5 — Run Your Show</h4>
+                <p>Put all four cues in order and press GO through the sequence. Watch the fades: does each transition serve the story? A designer's job isn't pretty pictures — it's the <em>journey between them</em>.</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- #lx-pane-teacher -->
+
+      </div><!-- .ll-panel-body -->
+    </aside><!-- .ll-panel -->
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+</div><!-- .ll-viewport -->
+
+<script>
+(function () {
+  'use strict';
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  /* ══════════════════════════════════════════
+     STATE — four fixtures
+  ══════════════════════════════════════════ */
+  const FIXTURES = [
+    { id: 'front', ico: '⬇️', name: 'Front',  r: 255, g: 180, b: 80,  int: 80, on: true },
+    { id: 'sideL', ico: '➡️', name: 'Side L', r: 80,  g: 120, b: 255, int: 0,  on: false },
+    { id: 'sideR', ico: '⬅️', name: 'Side R', r: 255, g: 80,  b: 160, int: 0,  on: false },
+    { id: 'back',  ico: '⬆️', name: 'Back',   r: 120, g: 80,  b: 255, int: 0,  on: false },
+  ];
+  let selected = 0;
+
+  /* Render state = what's on stage right now (fades happen here) */
+  const live = FIXTURES.map(function (f) { return { r: f.r, g: f.g, b: f.b, amt: f.on ? f.int / 100 : 0 }; });
+
+  const PRESETS = [
+    { name: 'Warm Amber',   set: [[255,170,60,85,1],[255,190,90,35,1],[255,150,60,35,1],[255,200,120,25,1]] },
+    { name: 'Cool Night',   set: [[70,110,230,45,1],[60,90,220,55,1],[90,110,240,40,1],[80,90,255,60,1]] },
+    { name: 'Neutral White',set: [[255,240,220,80,1],[240,240,255,30,1],[240,240,255,30,1],[255,255,255,35,1]] },
+    { name: 'Revolution',   set: [[255,60,30,90,1],[255,90,30,60,1],[200,40,40,60,1],[255,60,60,80,1]] },
+    { name: 'Candy Pop',    set: [[255,80,200,80,1],[80,255,180,60,1],[255,200,60,60,1],[140,80,255,85,1]] },
+    { name: 'Moonlight',    set: [[120,150,255,25,1],[100,130,240,45,1],[0,0,0,0,0],[150,170,255,55,1]] },
+    { name: 'Silhouette',   set: [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[255,140,60,95,1]] },
+    { name: 'Blackout',     set: [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]] },
+  ];
+
+  /* ══════════════════════════════════════════
+     FIXTURE UI
+  ══════════════════════════════════════════ */
+  const fixtureRow = document.getElementById('fixture-row');
+  FIXTURES.forEach(function (f, i) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'fx-btn' + (i === 0 ? ' active' : '');
+    btn.setAttribute('aria-label', f.name + ' light');
+    btn.innerHTML = '<span class="fx-ico">' + f.ico + '</span>' + f.name +
+      '<span class="fx-swatch"></span><span class="fx-onoff"></span>';
+    btn.addEventListener('click', function () { selectFixture(i); });
+    fixtureRow.appendChild(btn);
+  });
+
+  const sR = document.getElementById('s-r'), sG = document.getElementById('s-g'), sB = document.getElementById('s-b'), sInt = document.getElementById('s-int');
+  const onoffBtn = document.getElementById('onoff-btn');
+
+  function selectFixture(i) {
+    selected = i;
+    fixtureRow.querySelectorAll('.fx-btn').forEach(function (b, j) { b.classList.toggle('active', j === i); });
+    const f = FIXTURES[i];
+    sR.value = f.r; sG.value = f.g; sB.value = f.b; sInt.value = f.int;
+    syncUI();
+  }
+
+  function describeColor(r, g, b) {
+    if (r + g + b < 40) return '<strong>Blackout.</strong> No light at all — the boldest cue in theatre.';
+    const mx = Math.max(r, g, b);
+    if (r > 200 && g > 200 && b > 200) return '<strong>White light.</strong> All three colors at full — clean, neutral, honest.';
+    if (r === mx && g > r * 0.55 && b < r * 0.5) return '<strong>Warm amber.</strong> High red, medium green, low blue — the classic "warm" stage wash.';
+    if (b === mx && r < b * 0.7) return '<strong>Cool blue.</strong> Night, moonlight, melancholy — the definitive "cool" stage color.';
+    if (r === mx && b > r * 0.6 && g < r * 0.6) return '<strong>Magenta.</strong> Red + blue — theatrical, showbiz, unnatural on purpose.';
+    if (g === mx && b > g * 0.6 && r < g * 0.6) return '<strong>Cyan.</strong> Green + blue — underwater, eerie, cold machinery.';
+    if (r > 180 && g > 130 && b < 100) return '<strong>Yellow-gold.</strong> Red + green light adds up to yellow — sunshine and optimism.';
+    if (g === mx) return '<strong>Green.</strong> Nature, sickness, or something supernatural — context decides.';
+    if (r === mx) return '<strong>Red.</strong> Danger, passion, revolution — the strongest emotional color on stage.';
+    return '<strong>Custom mix.</strong> Watch how it lands on the performer — the stage is the only judge that matters.';
+  }
+
+  function syncUI() {
+    const f = FIXTURES[selected];
+    document.getElementById('v-r').textContent = f.r;
+    document.getElementById('v-g').textContent = f.g;
+    document.getElementById('v-b').textContent = f.b;
+    document.getElementById('v-int').textContent = f.int + '%';
+    onoffBtn.textContent = f.on ? 'Turn Fixture Off' : 'Turn Fixture On';
+    onoffBtn.classList.toggle('on', f.on);
+    document.getElementById('mix-chip').style.background = 'rgb(' + f.r + ',' + f.g + ',' + f.b + ')';
+    document.getElementById('mix-text').innerHTML = describeColor(f.r, f.g, f.b);
+    fixtureRow.querySelectorAll('.fx-btn').forEach(function (b, j) {
+      const ff = FIXTURES[j];
+      b.querySelector('.fx-swatch').style.background = ff.on ? 'rgb(' + ff.r + ',' + ff.g + ',' + ff.b + ')' : '#26222e';
+      b.querySelector('.fx-onoff').textContent = ff.on ? ff.int + '%' : 'OFF';
+    });
+  }
+
+  function onSlider() {
+    const f = FIXTURES[selected];
+    f.r = parseInt(sR.value, 10); f.g = parseInt(sG.value, 10); f.b = parseInt(sB.value, 10);
+    f.int = parseInt(sInt.value, 10);
+    if (!f.on && (f.int > 0)) f.on = true;
+    cancelFade();
+    syncUI();
+  }
+  [sR, sG, sB, sInt].forEach(function (s) { s.addEventListener('input', onSlider); });
+
+  onoffBtn.addEventListener('click', function () {
+    const f = FIXTURES[selected];
+    f.on = !f.on;
+    cancelFade();
+    syncUI();
+  });
+
+  /* Presets */
+  const presetGrid = document.getElementById('preset-grid');
+  PRESETS.forEach(function (p) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'preset-btn';
+    const c = p.set[0];
+    const dotColor = (c[4] && c[3] > 0) ? 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')' : (p.name === 'Silhouette' ? 'rgb(255,140,60)' : '#16131e');
+    btn.innerHTML = '<span class="preset-dot" style="background:' + dotColor + '"></span>' + p.name;
+    btn.addEventListener('click', function () {
+      p.set.forEach(function (v, i) {
+        FIXTURES[i].r = v[0]; FIXTURES[i].g = v[1]; FIXTURES[i].b = v[2];
+        FIXTURES[i].int = v[3]; FIXTURES[i].on = !!v[4];
+      });
+      cancelFade();
+      selectFixture(selected);
+      document.getElementById('look-badge').textContent = '🎭 ' + p.name;
+    });
+    presetGrid.appendChild(btn);
+  });
+
+  /* ══════════════════════════════════════════
+     CUE STACK
+  ══════════════════════════════════════════ */
+  let cues = [], liveCue = -1, standbyCue = -1, fadeRAF = null;
+  const cueList = document.getElementById('cue-list');
+  const cueGo = document.getElementById('cue-go');
+  const cueStatus = document.getElementById('cue-status');
+
+  function snapshot() {
+    return FIXTURES.map(function (f) { return { r: f.r, g: f.g, b: f.b, int: f.int, on: f.on }; });
+  }
+
+  document.getElementById('cue-save').addEventListener('click', function () {
+    cues.push({ name: 'Cue ' + (cues.length + 1), snap: snapshot() });
+    if (standbyCue < 0) standbyCue = cues.length - 1;
+    renderCues();
+  });
+
+  function renderCues() {
+    cueList.innerHTML = '';
+    if (!cues.length) {
+      cueList.innerHTML = '<div class="cue-empty">No cues yet. Design a look above, then save it. Save two or more and the GO button will fade between them — exactly how a real show runs.</div>';
+      cueGo.disabled = true;
+      cueStatus.textContent = '';
+      return;
+    }
+    cues.forEach(function (cue, i) {
+      const item = document.createElement('div');
+      item.className = 'cue-item' + (i === liveCue ? ' live' : (i === standbyCue ? ' standby' : ''));
+      const chips = cue.snap.map(function (s) {
+        const col = s.on && s.int > 0 ? 'rgb(' + s.r + ',' + s.g + ',' + s.b + ')' : '#16131e';
+        return '<span class="cue-chip" style="background:' + col + '"></span>';
+      }).join('');
+      item.innerHTML = '<span class="cue-num">' + (i === liveCue ? '● ' : (i === standbyCue ? '▸ ' : '')) + (i + 1) + '</span>' +
+        '<span class="cue-chips">' + chips + '</span>';
+      const nameInput = document.createElement('input');
+      nameInput.className = 'cue-name-input';
+      nameInput.value = cue.name;
+      nameInput.setAttribute('aria-label', 'Cue ' + (i + 1) + ' name');
+      nameInput.addEventListener('change', function () { cue.name = nameInput.value || ('Cue ' + (i + 1)); });
+      nameInput.addEventListener('click', function (e) { e.stopPropagation(); });
+      item.appendChild(nameInput);
+      const del = document.createElement('button');
+      del.className = 'cue-del';
+      del.type = 'button';
+      del.setAttribute('aria-label', 'Delete cue ' + (i + 1));
+      del.textContent = '✕';
+      del.addEventListener('click', function (e) {
+        e.stopPropagation();
+        cues.splice(i, 1);
+        if (liveCue >= cues.length) liveCue = -1;
+        if (standbyCue >= cues.length) standbyCue = cues.length ? 0 : -1;
+        renderCues();
+      });
+      item.appendChild(del);
+      item.addEventListener('click', function () { standbyCue = i; renderCues(); });
+      cueList.appendChild(item);
+    });
+    cueGo.disabled = standbyCue < 0;
+    cueStatus.textContent = standbyCue >= 0
+      ? 'Standby: "' + cues[standbyCue].name + '" — press GO to fade into it. Click any cue to set it as next.'
+      : '';
+  }
+
+  cueGo.addEventListener('click', function () {
+    if (standbyCue < 0 || !cues[standbyCue]) return;
+    const target = cues[standbyCue];
+    fadeTo(target.snap, 2000);
+    document.getElementById('look-badge').textContent = '🎬 ' + target.name;
+    liveCue = standbyCue;
+    standbyCue = (standbyCue + 1) % cues.length;
+    renderCues();
+  });
+
+  /* ══════════════════════════════════════════
+     FADE ENGINE
+  ══════════════════════════════════════════ */
+  function cancelFade() { if (fadeRAF) { cancelAnimationFrame(fadeRAF); fadeRAF = null; } }
+
+  function fadeTo(snap, ms) {
+    cancelFade();
+    const from = live.map(function (l) { return { r: l.r, g: l.g, b: l.b, amt: l.amt }; });
+    const to = snap.map(function (s) { return { r: s.r, g: s.g, b: s.b, amt: s.on ? s.int / 100 : 0 }; });
+    const start = performance.now();
+    /* the console state jumps to the cue immediately; the STAGE fades */
+    snap.forEach(function (s, i) {
+      FIXTURES[i].r = s.r; FIXTURES[i].g = s.g; FIXTURES[i].b = s.b;
+      FIXTURES[i].int = s.int; FIXTURES[i].on = s.on;
+    });
+    selectFixture(selected);
+    function step(now) {
+      const t = clamp((now - start) / ms, 0, 1);
+      const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      live.forEach(function (l, i) {
+        l.r = lerp(from[i].r, to[i].r, e);
+        l.g = lerp(from[i].g, to[i].g, e);
+        l.b = lerp(from[i].b, to[i].b, e);
+        l.amt = lerp(from[i].amt, to[i].amt, e);
+      });
+      if (t < 1) fadeRAF = requestAnimationFrame(step);
+      else fadeRAF = null;
+    }
+    fadeRAF = requestAnimationFrame(step);
+  }
+
+  /* When not fading, live state tracks the console directly */
+  function trackConsole() {
+    if (fadeRAF) return;
+    FIXTURES.forEach(function (f, i) {
+      live[i].r = f.r; live[i].g = f.g; live[i].b = f.b;
+      live[i].amt = f.on ? f.int / 100 : 0;
+    });
+  }
+
+  /* ══════════════════════════════════════════
+     STAGE RENDER
+  ══════════════════════════════════════════ */
+  const canvas = document.getElementById('lx-canvas');
+  const outer = document.getElementById('lx-outer');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize() {
+    W = outer.clientWidth; H = outer.clientHeight;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  requestAnimationFrame(resize);
+
+  function rgba(l, a) { return 'rgba(' + Math.round(l.r) + ',' + Math.round(l.g) + ',' + Math.round(l.b) + ',' + a + ')'; }
+
+  function performerPath(cx, baseY, s) {
+    /* simple standing figure: head, torso, arms slightly out, legs */
+    ctx.beginPath();
+    ctx.arc(cx, baseY - s * 2.55, s * 0.34, 0, Math.PI * 2);            /* head */
+    ctx.moveTo(cx - s * 0.3, baseY - s * 2.1);
+    ctx.quadraticCurveTo(cx - s * 0.42, baseY - s * 1.2, cx - s * 0.3, baseY - s * 1.05); /* torso L */
+    ctx.lineTo(cx - s * 0.42, baseY);                                    /* leg L */
+    ctx.lineTo(cx - s * 0.18, baseY);
+    ctx.lineTo(cx - s * 0.05, baseY - s * 0.95);
+    ctx.lineTo(cx + s * 0.05, baseY - s * 0.95);
+    ctx.lineTo(cx + s * 0.18, baseY);
+    ctx.lineTo(cx + s * 0.42, baseY);                                    /* leg R */
+    ctx.lineTo(cx + s * 0.3, baseY - s * 1.05);
+    ctx.quadraticCurveTo(cx + s * 0.42, baseY - s * 1.2, cx + s * 0.3, baseY - s * 2.1); /* torso R */
+    ctx.closePath();
+    /* arms */
+    ctx.moveTo(cx - s * 0.28, baseY - s * 2.0);
+    ctx.lineTo(cx - s * 0.62, baseY - s * 1.35);
+    ctx.lineTo(cx - s * 0.5, baseY - s * 1.28);
+    ctx.lineTo(cx - s * 0.26, baseY - s * 1.75);
+    ctx.closePath();
+    ctx.moveTo(cx + s * 0.28, baseY - s * 2.0);
+    ctx.lineTo(cx + s * 0.62, baseY - s * 1.35);
+    ctx.lineTo(cx + s * 0.5, baseY - s * 1.28);
+    ctx.lineTo(cx + s * 0.26, baseY - s * 1.75);
+    ctx.closePath();
+  }
+
+  function draw() {
+    requestAnimationFrame(draw);
+    if (!W || !H) return;
+    trackConsole();
+
+    const F = live[0], SL = live[1], SR = live[2], B = live[3];
+    const floorY = H * 0.86;
+    const cx = W * 0.5;
+    const s = H * 0.19;
+
+    /* base darkness */
+    ctx.fillStyle = '#040309';
+    ctx.fillRect(0, 0, W, H);
+
+    /* backdrop wash = additive blend of all fixtures, weighted */
+    ctx.globalCompositeOperation = 'lighter';
+
+    /* back light floods the backdrop */
+    if (B.amt > 0.01) {
+      const g = ctx.createRadialGradient(cx, H * 0.3, 10, cx, H * 0.35, W * 0.62);
+      g.addColorStop(0, rgba(B, 0.55 * B.amt));
+      g.addColorStop(1, rgba(B, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, floorY);
+    }
+    /* front wash lights backdrop + floor gently */
+    if (F.amt > 0.01) {
+      const g = ctx.createLinearGradient(0, H * 0.1, 0, floorY);
+      g.addColorStop(0, rgba(F, 0.10 * F.amt));
+      g.addColorStop(1, rgba(F, 0.30 * F.amt));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, floorY);
+    }
+    /* side beams — visible cones from the wings */
+    if (SL.amt > 0.01) {
+      const g = ctx.createLinearGradient(0, 0, W * 0.62, 0);
+      g.addColorStop(0, rgba(SL, 0.5 * SL.amt));
+      g.addColorStop(1, rgba(SL, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(0, H * 0.32);
+      ctx.lineTo(W * 0.62, floorY - s * 1.6);
+      ctx.lineTo(W * 0.62, floorY);
+      ctx.lineTo(0, floorY);
+      ctx.closePath(); ctx.fill();
+    }
+    if (SR.amt > 0.01) {
+      const g = ctx.createLinearGradient(W, 0, W * 0.38, 0);
+      g.addColorStop(0, rgba(SR, 0.5 * SR.amt));
+      g.addColorStop(1, rgba(SR, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(W, H * 0.32);
+      ctx.lineTo(W * 0.38, floorY - s * 1.6);
+      ctx.lineTo(W * 0.38, floorY);
+      ctx.lineTo(W, floorY);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    /* stage floor */
+    const floorG = ctx.createLinearGradient(0, floorY, 0, H);
+    floorG.addColorStop(0, '#100d16');
+    floorG.addColorStop(1, '#060509');
+    ctx.fillStyle = floorG;
+    ctx.fillRect(0, floorY, W, H - floorY);
+    /* floor color reflections */
+    ctx.globalCompositeOperation = 'lighter';
+    [F, SL, SR, B].forEach(function (l) {
+      if (l.amt < 0.01) return;
+      const g = ctx.createLinearGradient(0, floorY, 0, H);
+      g.addColorStop(0, rgba(l, 0.13 * l.amt));
+      g.addColorStop(1, rgba(l, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, floorY, W, H - floorY);
+    });
+    ctx.globalCompositeOperation = 'source-over';
+
+    /* back-light halo behind performer */
+    if (B.amt > 0.01) {
+      ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(cx, floorY - s * 1.5, s * 0.2, cx, floorY - s * 1.5, s * 1.7);
+      g.addColorStop(0, rgba(B, 0.65 * B.amt));
+      g.addColorStop(1, rgba(B, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, floorY - s * 1.5, s * 1.7, 0, Math.PI * 2); ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    /* performer body: base color = front light; sides add rims */
+    const bodyR = F.r * F.amt * 0.85, bodyG = F.g * F.amt * 0.85, bodyB = F.b * F.amt * 0.85;
+    performerPath(cx, floorY, s);
+    ctx.fillStyle = 'rgb(' + Math.round(clamp(bodyR + 8, 6, 255)) + ',' + Math.round(clamp(bodyG + 7, 5, 255)) + ',' + Math.round(clamp(bodyB + 10, 8, 255)) + ')';
+    ctx.fill();
+
+    /* side-light sculpting: clip to performer, paint gradient rims */
+    ctx.save();
+    performerPath(cx, floorY, s);
+    ctx.clip();
+    ctx.globalCompositeOperation = 'lighter';
+    if (SL.amt > 0.01) {
+      const g = ctx.createLinearGradient(cx - s * 0.65, 0, cx + s * 0.2, 0);
+      g.addColorStop(0, rgba(SL, 0.95 * SL.amt));
+      g.addColorStop(1, rgba(SL, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(cx - s, floorY - s * 3.1, s * 2, s * 3.2);
+    }
+    if (SR.amt > 0.01) {
+      const g = ctx.createLinearGradient(cx + s * 0.65, 0, cx - s * 0.2, 0);
+      g.addColorStop(0, rgba(SR, 0.95 * SR.amt));
+      g.addColorStop(1, rgba(SR, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(cx - s, floorY - s * 3.1, s * 2, s * 3.2);
+    }
+    /* back light rim along the top/edges */
+    if (B.amt > 0.01) {
+      const g = ctx.createLinearGradient(0, floorY - s * 3.0, 0, floorY - s * 1.2);
+      g.addColorStop(0, rgba(B, 0.5 * B.amt));
+      g.addColorStop(1, rgba(B, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(cx - s, floorY - s * 3.1, s * 2, s * 2);
+    }
+    ctx.restore();
+
+    /* performer shadow */
+    const totalAmt = F.amt + SL.amt + SR.amt + B.amt;
+    if (totalAmt > 0.02) {
+      ctx.fillStyle = 'rgba(0,0,0,' + clamp(0.5 * totalAmt, 0, 0.55) + ')';
+      ctx.beginPath();
+      ctx.ellipse(cx, floorY + 6, s * 0.75, s * 0.13, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    /* light bar fixtures (drawn last, always visible) */
+    drawBar(cx - W * 0.28, H * 0.055, W * 0.56, F, '⬇ FRONT BAR');
+    drawSideFixture(14, H * 0.36, SL, false);
+    drawSideFixture(W - 14, H * 0.36, SR, true);
+
+    /* proscenium vignette */
+    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.75);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,0.5)');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawBar(x, y, w, l, label) {
+    ctx.fillStyle = '#1a1722';
+    ctx.strokeStyle = 'rgba(160,140,200,0.3)';
+    ctx.lineWidth = 1;
+    roundRect(x, y, w, 10, 5); ctx.fill(); ctx.stroke();
+    const n = 8;
+    for (let i = 0; i < n; i++) {
+      const lx = x + (w / n) * (i + 0.5);
+      ctx.beginPath(); ctx.arc(lx, y + 5, 3, 0, Math.PI * 2);
+      ctx.fillStyle = l.amt > 0.01 ? rgba(l, clamp(0.3 + l.amt * 0.7, 0, 1)) : '#0c0a12';
+      ctx.fill();
+      if (l.amt > 0.05) {
+        ctx.globalCompositeOperation = 'lighter';
+        const g = ctx.createRadialGradient(lx, y + 5, 1, lx, y + 5, 9);
+        g.addColorStop(0, rgba(l, 0.5 * l.amt)); g.addColorStop(1, rgba(l, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(lx, y + 5, 9, 0, Math.PI * 2); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    }
+  }
+
+  function drawSideFixture(x, y, l, flip) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (flip) ctx.scale(-1, 1);
+    ctx.fillStyle = '#1a1722';
+    ctx.strokeStyle = 'rgba(160,140,200,0.3)';
+    roundRect(-4, -16, 12, 32, 4); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(6, 0, 4, 0, Math.PI * 2);
+    ctx.fillStyle = l.amt > 0.01 ? rgba(l, clamp(0.3 + l.amt * 0.7, 0, 1)) : '#0c0a12';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  requestAnimationFrame(draw);
+
+  /* init */
+  selectFixture(0);
+  renderCues();
+})();
+</script>
+<script src="../assets/js/classroom-animations.js"></script>
+<script src="../assets/js/lesson-layout.js"></script>
+
+</body>
+</html>
