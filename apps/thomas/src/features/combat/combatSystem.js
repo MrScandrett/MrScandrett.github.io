@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { COMBAT } from '../../app/config.js';
+import { COMBAT } from '/src/app/config.js';
 
 const BOT_HEIGHT = 2.15;
 

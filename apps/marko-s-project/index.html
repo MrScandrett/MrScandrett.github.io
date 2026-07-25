@@ -1,6 +1,7 @@
-<!DOCTYPE html><html><head><title>Pixel Universe</title><style>body{margin:0;overflow:hidden;background:#000}canvas{display:block}#ui{position:absolute;top:10px;left:10px;color:#fff;font-family:monospace}</style></head><body><div id="ui">Alive</div><canvas id="universe"></canvas><script>const canvas=document.getElementById("universe");
+<!DOCTYPE html><html><head><title>Pixel Universe</title><style>body{margin:0;overflow:hidden;background:#000}canvas{display:block}#ui{position:absolute;top:10px;left:10px;color:#fff;font-family:monospace}#stats{position:absolute;top:34px;left:10px;color:#fff;font-family:monospace;font-size:.9em}</style></head><body><div id="ui">Alive</div><div id="stats">Planets Destroyed: 0 | Best Time: 0s</div><canvas id="universe"></canvas><script>const canvas=document.getElementById("universe");
 const ctx=canvas.getContext("2d");
 const ui=document.getElementById("ui");
+const stats=document.getElementById("stats");
 
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
@@ -13,6 +14,10 @@ let particles=[];
 let explosions=[];
 let planets=[];
 let alive=true;
+
+let planetsDestroyed=0;
+let survivalStart=performance.now();
+let bestTime=Number(localStorage.getItem("pixelUniverseBestTime"))||0;
 
 let player={
 x:canvas.width/2,
@@ -43,6 +48,8 @@ let dx=canvas.width/2-x;
 let dy=canvas.height/2-y;
 let len=Math.sqrt(dx*dx+dy*dy);
 
+if(len===0){ dx=1; dy=0; len=1; }
+
 dx/=len;
 dy/=len;
 
@@ -65,6 +72,9 @@ radius:50
 }
 
 for(let i=0;i<3;i++)spawnPlanet();
+updateStats();
+// IDEA: give the player a small speed boost or bigger radius for every few
+// planets destroyed, so late-game survival feels different from the start.
 
 function distance(x1,y1,x2,y2){
 let dx=x1-x2;
@@ -83,9 +93,20 @@ life:40
 }
 }
 
+function updateStats(){
+stats.textContent=`Planets Destroyed: ${planetsDestroyed} | Best Time: ${bestTime.toFixed(1)}s`;
+}
+
 function resetGame(){
 alive=false;
 ui.textContent="You Died - Restarting...";
+
+const survived=(performance.now()-survivalStart)/1000;
+if(survived>bestTime){
+bestTime=survived;
+localStorage.setItem("pixelUniverseBestTime",bestTime);
+}
+updateStats();
 
 createExplosion(player.x,player.y,60);
 
@@ -98,6 +119,7 @@ for(let i=0;i<3;i++)spawnPlanet();
 player.x=canvas.width/2;
 player.y=canvas.height/2;
 
+survivalStart=performance.now();
 alive=true;
 ui.textContent="Alive";
 },1500);
@@ -132,7 +154,7 @@ let dx=player.x-pl.x;
 let dy=player.y-pl.y;
 let dist=Math.sqrt(dx*dx+dy*dy);
 
-if(dist<player.radius+pl.radius){
+if(dist<player.radius+pl.radius&&dist>0){
 
 let overlap=(player.radius+pl.radius)-dist;
 
@@ -148,7 +170,9 @@ player.y+=ny*overlap;
 
 /* PARTICLE MOVE */
 
-for(let p of particles){
+for(let pIndex=particles.length-1;pIndex>=0;pIndex--){
+
+let p=particles[pIndex];
 
 p.x+=p.vx;
 p.y+=p.vy;
@@ -162,6 +186,7 @@ let dist=Math.sqrt(dx*dx+dy*dy);
 
 if(dist<player.radius+(pixelSize*p.size)/2){
 resetGame();
+break;
 }
 
 for(let i=planets.length-1;i>=0;i--){
@@ -174,12 +199,14 @@ pl.radius-=pixelSize;
 
 createExplosion(p.x,p.y,10);
 
-particles.splice(particles.indexOf(p),1);
+particles.splice(pIndex,1);
 
 if(pl.radius<=player.radius){
 
 createExplosion(pl.x,pl.y,100);
 planets.splice(i,1);
+planetsDestroyed++;
+updateStats();
 
 }
 

@@ -166,6 +166,7 @@ function randomFly() {
     bob: lfsrRandom() * Math.PI * 2,
     state: "calm", // hysteresis state: "calm" | "fleeing"
     alive: true,
+    golden: lfsrRandom() < 0.12, // rare bonus fly worth extra points
   };
 }
 
@@ -187,6 +188,7 @@ function startGame() {
   score2El.textContent = "0";
   timeLeft = ROUND_SECONDS;
   timerEl.textContent = timeLeft;
+  suddenDeath = false;
   resetFlies();
   particles = [];
   running = true;
@@ -197,10 +199,19 @@ function startGame() {
     timeLeft--;
     timerEl.textContent = Math.max(timeLeft, 0);
     if (timeLeft <= 0) {
-      endGame();
+      if (p1.score === p2.score && !suddenDeath) {
+        suddenDeath = true;
+        timeLeft = SUDDEN_DEATH_SECONDS;
+        timerEl.textContent = timeLeft;
+      } else {
+        endGame();
+      }
     }
   }, 1000);
 }
+
+const SUDDEN_DEATH_SECONDS = 15;
+let suddenDeath = false;
 
 function endGame() {
   running = false;
@@ -263,7 +274,7 @@ function updateFrog(frog, now) {
     const dist = manhattan(frog.targetFly.x, frog.targetFly.y, frog.x, frog.y);
     if (dist <= CATCH_MANHATTAN) {
       frog.targetFly.alive = false;
-      frog.score++;
+      frog.score += frog.targetFly.golden ? 3 : 1;
       frog.tongueFlashUntil = now + TONGUE_FLASH_MS;
       spawnParticles(frog.targetFly.x, frog.targetFly.y, frog.tongueColor);
       const idx = flies.indexOf(frog.targetFly);
@@ -481,7 +492,7 @@ function drawFly(fly) {
   if (!fly.alive) return;
   ctx.save();
   ctx.translate(fly.x, fly.y);
-  ctx.fillStyle = fly.state === "fleeing" ? "#4a1a1a" : "#12100f";
+  ctx.fillStyle = fly.golden ? "#d4af0a" : fly.state === "fleeing" ? "#4a1a1a" : "#12100f";
   ctx.beginPath();
   ctx.ellipse(0, 0, 5, 3.5, 0, 0, Math.PI * 2);
   ctx.fill();

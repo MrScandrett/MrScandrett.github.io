@@ -92,6 +92,8 @@ const customerTypeDefs = {
   },
 };
 
+// IDEA: add a weekly special event (own entry here + a case in rollDayEvent)
+// that unlocks a limited-time recipe for bonus tips.
 const dayEventDefs = {
   none: {
     label: "None",
@@ -268,6 +270,8 @@ const ui = {
   restartBtn: document.getElementById("restartBtn"),
   nextDayBtn: document.getElementById("nextDayBtn"),
   shopGrid: document.getElementById("shopGrid"),
+  recipeList: document.getElementById("recipeList"),
+  recipeUnlockStatus: document.getElementById("recipeUnlockStatus"),
   deliveryGrid: document.getElementById("deliveryGrid"),
   deliveryStatus: document.getElementById("deliveryStatus"),
   hireBtn: document.getElementById("hireBtn"),
@@ -930,13 +934,16 @@ function servePizza() {
     tip += result.bake.tipDelta;
     tip = Math.max(0, tip);
 
-    state.money += base + tip;
+    const comboMilestone = result.perfect && state.combo > 0 && state.combo % 5 === 0;
+    const milestoneBonus = comboMilestone ? 5 : 0;
+
+    state.money += base + tip + milestoneBonus;
     state.served += 1;
     const repGain = (result.perfect ? 3 : 1) + customer.repGainBonus + (result.perfect ? event.perfectRepBonus : 0);
     state.reputation = clamp(state.reputation + repGain + drink.repDelta, 0, 100);
     const drinkText = drink.requested ? `, ${drink.note}` : "";
     setStatus(
-      `Served ${recipe.label} (${result.bake.label} bake${drinkText}). +$${base}${tip ? ` +$${tip} tip` : ""}${state.combo ? ` (Combo ${state.combo}x)` : ""}`,
+      `Served ${recipe.label} (${result.bake.label} bake${drinkText}). +$${base}${tip ? ` +$${tip} tip` : ""}${state.combo ? ` (Combo ${state.combo}x)` : ""}${comboMilestone ? ` Combo streak bonus +$${milestoneBonus}!` : ""}`,
       "good",
     );
     showServedRecipeNotice(recipe.label);

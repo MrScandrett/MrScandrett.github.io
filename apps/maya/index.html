@@ -20,6 +20,8 @@ const skins={
 };
 
 const skinKeys=["classic","neon","fire","galaxy","gold"];
+// IDEA: track dashCooldown (already computed above) as a small bar near the
+// score so the player can see when Shift-dash is ready again.
 
 const player={
   size:30,
@@ -70,6 +72,26 @@ function spawnDebris(){
   });
 }
 setInterval(spawnDebris,600);
+
+const powerUpTypes={
+  shield:{color:"deepskyblue",duration:300},
+  slow:{color:"violet",duration:300},
+  double:{color:"yellow",duration:300}
+};
+const powerUpKeys=Object.keys(powerUpTypes);
+
+function spawnPowerUp(){
+  if(gameOver)return;
+  const type=powerUpKeys[Math.floor(Math.random()*powerUpKeys.length)];
+  powerUps.push({
+    x:Math.random()*canvas.width,
+    y:-30,
+    size:16,
+    speed:2.5,
+    type
+  });
+}
+setInterval(spawnPowerUp,8000);
 
 function neon(color){
   ctx.shadowBlur=25;
@@ -132,6 +154,41 @@ function update(){
 
   debris=debris.filter(d=>d.y<canvas.height+50);
   if(dashCooldown>0) dashCooldown--;
+
+  powerUps.forEach(p=>{
+    p.y+=p.speed;
+    if(
+      player.x<p.x+p.size &&
+      player.x+player.size>p.x &&
+      player.y<p.y+p.size &&
+      player.y+player.size>p.y
+    ){
+      p.collected=true;
+      const duration=powerUpTypes[p.type].duration;
+      if(p.type==="shield") shield=duration;
+      if(p.type==="slow") slowTime=duration;
+      if(p.type==="double") doubleScore=duration;
+    }
+  });
+  powerUps=powerUps.filter(p=>!p.collected&&p.y<canvas.height+50);
+
+  if(shield>0) shield--;
+  if(slowTime>0) slowTime--;
+  if(doubleScore>0) doubleScore--;
+}
+
+function restartGame(){
+  debris=[];
+  particles=[];
+  powerUps=[];
+  score=0;
+  shield=0;
+  slowTime=0;
+  doubleScore=0;
+  dashCooldown=0;
+  player.x=canvas.width/2;
+  player.y=canvas.height/2;
+  gameOver=false;
 }
 
 function drawPlayer(){
@@ -152,11 +209,29 @@ function drawPlayer(){
   ctx.shadowBlur=0;
 }
 
+function drawPowerUp(p){
+  neon(powerUpTypes[p.type].color);
+  ctx.fillStyle=powerUpTypes[p.type].color;
+  ctx.beginPath();
+  ctx.arc(p.x,p.y,p.size/2,0,Math.PI*2);
+  ctx.fill();
+  ctx.shadowBlur=0;
+}
+
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   debris.forEach(drawShape);
+  powerUps.forEach(drawPowerUp);
   drawPlayer();
+
+  if(shield>0){
+    ctx.strokeStyle="deepskyblue";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.arc(player.x+player.size/2,player.y+player.size/2,player.size,0,Math.PI*2);
+    ctx.stroke();
+  }
 
   ctx.fillStyle="white";
   ctx.font="18px Arial";
@@ -165,6 +240,11 @@ function draw(){
   ctx.fillText("Skin: "+currentSkin,20,80);
 
   ctx.fillText("1-5 to change skins",20,110);
+
+  let buffY=135;
+  if(shield>0){ ctx.fillText("Shield: "+Math.ceil(shield/60)+"s",20,buffY); buffY+=22; }
+  if(slowTime>0){ ctx.fillText("Slow-Mo: "+Math.ceil(slowTime/60)+"s",20,buffY); buffY+=22; }
+  if(doubleScore>0){ ctx.fillText("2x Score: "+Math.ceil(doubleScore/60)+"s",20,buffY); }
 
   if(gameOver){
     ctx.textAlign="center";

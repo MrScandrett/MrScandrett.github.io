@@ -14,6 +14,8 @@ const config = {
 
 const game = new Phaser.Game(config);
 let player, cursors, platforms, bgFar, bgMid;
+let coins, score, scoreText;
+let jumpsLeft, maxJumps = 2;
 
 function preload() {
     this.load.image('ground', 'https://labs.phaser.io/assets/sprites/platform.png');
@@ -48,6 +50,29 @@ function create() {
 
     this.physics.add.collider(player, platforms);
     cursors = this.input.keyboard.createCursorKeys();
+    jumpsLeft = maxJumps;
+
+    // Coins
+    const coinGfx = this.add.graphics();
+    coinGfx.fillStyle(0xffe066, 1);
+    coinGfx.fillCircle(8, 8, 8);
+    coinGfx.generateTexture('coin', 16, 16);
+    coinGfx.destroy();
+
+    coins = this.physics.add.group({ allowGravity: false });
+    [500, 900, 1400, 1900, 2500].forEach((x) => coins.create(x, 400, 'coin'));
+    this.physics.add.overlap(player, coins, collectCoin, null, this);
+
+    score = 0;
+    scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '20px', fill: '#fff' }).setScrollFactor(0);
+    // IDEA: add a hazard (e.g. a tinted spike platform) that resets the
+    // player to the start position on touch, using this.physics.add.overlap.
+}
+
+function collectCoin(player, coin) {
+    coin.disableBody(true, true);
+    score += 10;
+    scoreText.setText('Score: ' + score);
 }
 
 function update() {
@@ -64,8 +89,12 @@ function update() {
         player.setVelocityX(0);
     }
 
-    if (Phaser.Input.Keyboard.JustDown(cursors.up) && player.body.touching.down) {
+    if (player.body.touching.down) {
+        jumpsLeft = maxJumps;
+    }
+    if (Phaser.Input.Keyboard.JustDown(cursors.up) && jumpsLeft > 0) {
         player.setVelocityY(-650);
+        jumpsLeft -= 1;
     }
     if (cursors.up.isUp && player.body.velocity.y < 0) {
         player.setVelocityY(player.body.velocity.y * 0.5);

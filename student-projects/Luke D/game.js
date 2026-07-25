@@ -189,6 +189,8 @@ window.addEventListener('keydown',e=>{
 /* =========================
    ENEMIES
 ========================= */
+// IDEA: add a second enemy type (e.g. a ranged "sniper" that shoots the
+// player from a distance instead of chasing) to mix up encounters.
 const enemies=[];
 
 function createHealthBar(){
@@ -236,7 +238,7 @@ function spawnEnemy(){
 }
 
 for(let i=0;i<5;i++) spawnEnemy();
-setInterval(spawnEnemy,5000);
+setInterval(()=>{ if(gameStarted&&!ended) spawnEnemy(); },5000);
 
 /* =========================
    STORM (MOVING CENTER)
@@ -457,6 +459,10 @@ function animate(){
             updateHealth();
             cameraShake=0.5;
             isBeingHit=true;
+
+            if(dist>0.001){
+                knockbackVelocity.addScaledVector(dir.clone().normalize(),0.15);
+            }
         }
 
         const scale=minimap.clientWidth/(MAP_SIZE*2);

@@ -24,24 +24,25 @@ const cdOverlays = {
 
 const worldWidth = 2000;
 const worldHeight = 2000;
+let enemiesDefeated = 0; // declared early: spawnEnemies() below reads this for the difficulty ramp
 
 // =========================
 // SPRITE
 // =========================
 const godzillaImg = new Image();
-godzillaImg.src = "/assets/sprites/godzilla.png";
+godzillaImg.src = "assets/sprites/godzilla.png";
 
 const kongImg = new Image();
-kongImg.src = "/assets/sprites/kong.png";
+kongImg.src = "assets/sprites/kong.png";
 
 const mothraImg = new Image();
-mothraImg.src = "/assets/sprites/mothra.png";
+mothraImg.src = "assets/sprites/mothra.png";
 
 const rodanImg = new Image();
-rodanImg.src = "/assets/sprites/rodan.png";
+rodanImg.src = "assets/sprites/rodan.png";
 
 const mechaImg = new Image();
-mechaImg.src = "/assets/sprites/mecha.png";
+mechaImg.src = "assets/sprites/mecha.png";
 
 // =========================
 // ENTITY
@@ -142,11 +143,13 @@ let enemies = [];
 spawnEnemies();
 
 function spawnEnemies() {
-    enemies = [
-        new Entity(700, 200),
-        new Entity(800, 400),
-        new Entity(600, 100)
+    // Difficulty ramp: one extra enemy for every 3 defeated, capped so it stays playable
+    const extra = Math.min(4, Math.floor(enemiesDefeated / 3));
+    const spots = [
+        [700, 200], [800, 400], [600, 100],
+        [900, 600], [400, 700], [1100, 300], [300, 900]
     ];
+    enemies = spots.slice(0, 3 + extra).map(([x, y]) => new Entity(x, y));
 }
 
 let civilians = [];
@@ -208,6 +211,8 @@ let ultimateCharge = 0;
 const projectiles = []; // tailwind
 const effects = [];     // visual effects
 const pendingUltimates = []; // delayed attacks
+// IDEA: nothing pushes into pendingUltimates yet - wire fireBurningBreath up to it
+// (push {attacker, timer, type:"burning"} and show a charge-up effect) for a windup ultimate.
 
 // ultimate beam
 let beamTimer = 0;
@@ -220,7 +225,6 @@ let selectedKaiju = "godzilla";
 let gCells = parseInt(localStorage.getItem("kaiju_gcells")) || 0;
 let unlockedKaijus = JSON.parse(localStorage.getItem("kaiju_unlocked")) || ["godzilla"];
 let isGameRunning = false;
-let enemiesDefeated = 0;
 let bossActive = false;
 let gameMode = "survival";
 let isPaused = false;
@@ -949,6 +953,7 @@ function setupMatch() {
     regenTimer = 0;
     enemiesDefeated = 0;
     bossActive = false;
+    player.thermoTimer = 0; // Don't carry the glow/kill-aura into a fresh match
 
     if (gameMode === "boss") {
         spawnBoss();

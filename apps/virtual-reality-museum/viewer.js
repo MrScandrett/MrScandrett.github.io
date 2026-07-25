@@ -250,6 +250,10 @@ function renderScene() {
     pedestal.setAttribute("color", "#34455e");
     pedestal.setAttribute("material", "roughness: 0.48; metalness: 0.16");
     pedestal.setAttribute("shadow", "cast: true; receive: true");
+    pedestal.addEventListener("click", (event) => {
+      event.stopPropagation();
+      selectModel(model.id, { focusCamera: true });
+    });
     wrapper.appendChild(pedestal);
 
     const plaque = document.createElement("a-entity");
@@ -367,6 +371,9 @@ function fitModelToPedestal(modelEntity, model, wrapper) {
   modelEntity.setAttribute("position", `${offsetX} ${offsetY} ${offsetZ}`);
 }
 
+// IDEA: handleModelError only swaps in a red fallback box - a student could
+// add a "retry" click handler on the fallback that re-sets modelEntity's
+// src and clears it from state.failedIds.
 function handleModelError(model, modelEntity) {
   state.failedIds.add(model.id);
   state.loadedIds.delete(model.id);
@@ -526,6 +533,8 @@ scene.addEventListener("exit-vr", () => {
 });
 
 document.addEventListener("keydown", (event) => {
+  const tag = event.target.tagName;
+  if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
   if (event.key === "r" || event.key === "R") {
     rig.setAttribute("position", "0 1.6 7");
     setBanner("Camera reset.");
@@ -533,6 +542,14 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     clearSelection();
     setBanner("Selection cleared.");
+  }
+  if (event.key === "n" || event.key === "p") {
+    const list = state.filteredModels;
+    if (!list.length) return;
+    const currentIndex = list.findIndex((entry) => entry.id === state.selectedId);
+    const delta = event.key === "n" ? 1 : -1;
+    const nextIndex = (currentIndex + delta + list.length) % list.length;
+    selectModel(list[nextIndex].id, { focusCamera: true });
   }
 });
 
