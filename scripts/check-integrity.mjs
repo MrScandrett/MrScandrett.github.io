@@ -91,6 +91,9 @@ function shouldCheckReference(value) {
   if (isExternalReference(trimmed)) return false;
   if (/^(?:data|mailto|tel|javascript):/i.test(trimmed)) return false;
   if (trimmed.includes("{{") || trimmed.includes("${")) return false;
+  // Ellipsis stand-ins from prose that teaches HTML, e.g. <code>&lt;a href="..."&gt;</code>
+  // in build-your-student-page.html. Never a real path, so don't report them missing.
+  if (/^[.…]+$/.test(trimmed)) return false;
   return true;
 }
 
