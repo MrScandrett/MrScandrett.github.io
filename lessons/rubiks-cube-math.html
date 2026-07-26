@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>The Math of the Rubik's Cube · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
-  <meta name="description" content="Mathematics Lesson — group theory, permutations, algorithms, 3D thinking, and pattern recognition through the Rubik's Cube, with a live 3D solver." />
+  <meta name="description" content="Mathematics Lesson — type in the colours on your own Rubik's Cube and get a full step-by-step solution, then explore the group theory, permutations and algorithms behind it." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -56,76 +56,208 @@
               in a 3-inch plastic package with <strong>43 quintillion possible positions</strong>.
               Only one of them is solved.
             </p>
+            <p class="rc-lede rc-lede-cta">
+              <strong>Got a cube in front of you?</strong> Type in the colours you can see and
+              this page will work out every move you need — then walk you through them one turn
+              at a time. <a href="#rc-lab">Start with your cube ↓</a>
+            </p>
           </section>
 
-          <!-- 3D CUBE LAB -->
-          <section class="rc-lab" aria-label="3D Rubik's Cube laboratory">
+          <!-- CUBE SOLVER LAB -->
+          <section class="rc-lab" id="rc-lab" aria-label="Rubik's Cube solver">
             <div class="rc-lab-head">
-              <div class="rc-lab-badge"><span class="rc-live-dot"></span>Interactive 3D Cube</div>
-              <h2>Play, Scramble &amp; Watch the AI Solve It</h2>
-              <p>Drag to rotate the view. Use the move buttons or scramble, then press AI Solve to see it solved move by move.</p>
+              <div class="rc-lab-badge"><span class="rc-live-dot"></span>Bring your own cube</div>
+              <h2>Type in your cube. Get the moves.</h2>
+              <p>
+                Enter the colours you can actually see. The page checks that your cube is a real
+                one, works out a complete solution, and then walks you through it a single turn at
+                a time while a 3D copy makes the same move.
+              </p>
             </div>
 
-            <div class="rc-canvas-wrap">
-              <canvas id="rc-canvas" aria-label="3D Rubik's Cube — interactive"></canvas>
+            <!-- Step 1: orientation -->
+            <div class="rc-hold">
+              <h3><span class="rc-step-num">1</span> Hold your cube like this</h3>
+              <p>
+                <strong>White face on the bottom. Green face pointing at you.</strong>
+                Keep it that way for the whole solve — never spin the whole cube around, only turn
+                the faces the moves ask for.
+              </p>
+              <ul class="rc-hold-list">
+                <li data-colour="Y"><span></span>Top is yellow</li>
+                <li data-colour="W"><span></span>Bottom is white</li>
+                <li data-colour="G"><span></span>Front is green</li>
+                <li data-colour="B"><span></span>Back is blue</li>
+                <li data-colour="R"><span></span>Left is red</li>
+                <li data-colour="O"><span></span>Right is orange</li>
+              </ul>
+              <p class="rc-hold-note">
+                Standard cubes always land this way round: put white down and green in front and
+                red really will be on your left. Centres never move relative to each other, which
+                is why they can be printed in for you below.
+              </p>
             </div>
 
-            <!-- Move buttons -->
-            <div class="rc-move-groups" id="rc-move-grid">
-              <div class="rc-move-group">
-                <span>Up (U)</span>
-                <div class="rc-move-group-btns">
-                  <button class="rc-move-btn" data-move="U" title="Up face clockwise">↻</button>
-                  <button class="rc-move-btn" data-move="U'" title="Up face counterclockwise">↺</button>
+            <!-- Step 2: input + live 3D -->
+            <div class="rc-build">
+              <div class="rc-build-input">
+                <h3><span class="rc-step-num">2</span> Fill in the 54 squares</h3>
+                <p class="rc-build-hint">
+                  Pick a colour and click squares — or click one square and just type
+                  <kbd>w</kbd> <kbd>y</kbd> <kbd>g</kbd> <kbd>b</kbd> <kbd>o</kbd> <kbd>r</kbd>,
+                  and the cursor walks along by itself. Arrow keys move it, backspace clears.
+                </p>
+
+                <div class="rc-palette" id="rc-palette" role="group" aria-label="Colour to paint with"></div>
+                <div class="rc-net" id="rc-net" aria-label="Your cube, unfolded"></div>
+                <p class="rc-net-note">
+                  This is your cube unfolded flat, the way a cardboard box opens out. If you lose
+                  track of which square is which, check the 3D cube — it shows exactly what you
+                  have typed so far.
+                </p>
+                <div class="rc-status is-waiting" id="rc-status" role="status" aria-live="polite"></div>
+
+                <div class="rc-input-actions">
+                  <button class="rc-action-btn rc-btn-solve" id="rc-solve" type="button">Solve it →</button>
+                  <button class="rc-action-btn rc-btn-ghost" id="rc-clear" type="button">Clear &amp; enter my cube</button>
+                  <button class="rc-action-btn rc-btn-ghost" id="rc-random" type="button">Random scramble</button>
+                  <button class="rc-action-btn rc-btn-ghost" id="rc-reset-cube" type="button">Solved cube</button>
                 </div>
               </div>
-              <div class="rc-move-group">
-                <span>Down (D)</span>
-                <div class="rc-move-group-btns">
-                  <button class="rc-move-btn" data-move="D" title="Down face clockwise">↻</button>
-                  <button class="rc-move-btn" data-move="D'" title="Down face counterclockwise">↺</button>
+
+              <div class="rc-build-view">
+                <div class="rc-canvas-wrap">
+                  <canvas id="rc-canvas" aria-label="3D model of the cube you have typed in"></canvas>
                 </div>
-              </div>
-              <div class="rc-move-group">
-                <span>Right (R)</span>
-                <div class="rc-move-group-btns">
-                  <button class="rc-move-btn" data-move="R" title="Right face clockwise">↻</button>
-                  <button class="rc-move-btn" data-move="R'" title="Right face counterclockwise">↺</button>
-                </div>
-              </div>
-              <div class="rc-move-group">
-                <span>Left (L)</span>
-                <div class="rc-move-group-btns">
-                  <button class="rc-move-btn" data-move="L" title="Left face clockwise">↻</button>
-                  <button class="rc-move-btn" data-move="L'" title="Left face counterclockwise">↺</button>
-                </div>
-              </div>
-              <div class="rc-move-group">
-                <span>Front (F)</span>
-                <div class="rc-move-group-btns">
-                  <button class="rc-move-btn" data-move="F" title="Front face clockwise">↻</button>
-                  <button class="rc-move-btn" data-move="F'" title="Front face counterclockwise">↺</button>
-                </div>
-              </div>
-              <div class="rc-move-group">
-                <span>Back (B)</span>
-                <div class="rc-move-group-btns">
-                  <button class="rc-move-btn" data-move="B" title="Back face clockwise">↻</button>
-                  <button class="rc-move-btn" data-move="B'" title="Back face counterclockwise">↺</button>
-                </div>
+                <p class="rc-canvas-note">Drag to spin the view. This is your cube — it updates as you type.</p>
+
+                <details class="rc-freeplay">
+                  <summary>Turn this cube by hand instead</summary>
+                  <div class="rc-move-groups">
+                    <div class="rc-move-group">
+                      <span>Up (U)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="U" type="button" aria-label="Up face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="U'" type="button" aria-label="Up face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                    <div class="rc-move-group">
+                      <span>Down (D)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="D" type="button" aria-label="Down face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="D'" type="button" aria-label="Down face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                    <div class="rc-move-group">
+                      <span>Right (R)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="R" type="button" aria-label="Right face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="R'" type="button" aria-label="Right face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                    <div class="rc-move-group">
+                      <span>Left (L)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="L" type="button" aria-label="Left face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="L'" type="button" aria-label="Left face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                    <div class="rc-move-group">
+                      <span>Front (F)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="F" type="button" aria-label="Front face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="F'" type="button" aria-label="Front face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                    <div class="rc-move-group">
+                      <span>Back (B)</span>
+                      <div class="rc-move-group-btns">
+                        <button class="rc-move-btn" data-move="B" type="button" aria-label="Back face clockwise">↻</button>
+                        <button class="rc-move-btn" data-move="B'" type="button" aria-label="Back face anticlockwise">↺</button>
+                      </div>
+                    </div>
+                  </div>
+                </details>
               </div>
             </div>
 
-            <div class="rc-action-row">
-              <button class="rc-action-btn rc-btn-scramble" id="rc-scramble-btn">Scramble (20 moves)</button>
-              <button class="rc-action-btn rc-btn-solve" id="rc-solve-btn">AI Solve</button>
-              <button class="rc-action-btn rc-btn-reset" id="rc-reset-btn">Reset</button>
-              <div class="rc-status">Moves: <span id="rc-move-count">0</span></div>
+            <!-- Step 3: the player -->
+            <div class="rc-player" id="rc-player" hidden>
+              <h3><span class="rc-step-num">3</span> Do these moves on your cube</h3>
+              <div class="rc-move-card" id="rc-move-card"></div>
+              <div class="rc-progress"><div class="rc-progress-fill" id="rc-progress-fill"></div></div>
+              <p class="rc-progress-text" id="rc-progress-text" aria-live="polite"></p>
+              <div class="rc-player-row">
+                <button class="rc-action-btn rc-btn-ghost" id="rc-prev" type="button">← Back</button>
+                <button class="rc-action-btn rc-btn-solve" id="rc-next" type="button">Next move →</button>
+                <button class="rc-action-btn rc-btn-scramble" id="rc-play" type="button">▶ Play all</button>
+                <button class="rc-action-btn rc-btn-ghost" id="rc-restart" type="button">Start over</button>
+                <button class="rc-action-btn rc-btn-ghost" id="rc-copy" type="button">Copy the moves</button>
+                <label class="rc-speed-label">Speed
+                  <input type="range" id="rc-speed" min="200" max="1700" value="1000" aria-label="Playback speed" />
+                </label>
+              </div>
+              <p class="rc-player-tip">Tip: use the ← and → arrow keys to step through without hunting for the buttons.</p>
             </div>
 
-            <div class="rc-solution-wrap" id="rc-solution-wrap">
-              <h3>Solution sequence (<span id="rc-sol-count">0</span> moves):</h3>
-              <div class="rc-solution-moves" id="rc-solution-moves"></div>
+            <div class="rc-plan" id="rc-plan"></div>
+          </section>
+
+          <!-- HOW THE SOLVER THINKS -->
+          <section class="rc-card" style="--card-accent:#0ea5e9;">
+            <h2>How This Page Knows Your Cube Is Impossible</h2>
+            <p>
+              Before it tries to solve anything, the page runs five checks on the colours you
+              typed in. The first two are obvious. The last three are theorems.
+            </p>
+            <ol class="rc-check-list">
+              <li><strong>Nine of each colour.</strong> Six colours, fifty-four stickers.</li>
+              <li><strong>Every corner is a real corner, every edge a real edge.</strong> There is no
+                white-yellow edge on a cube, because white and yellow are on opposite sides.</li>
+              <li><strong>Corner twists add up to a multiple of 3.</strong> You can never twist just
+                one corner in place. Twist one, and another two must be twisted to compensate.</li>
+              <li><strong>Edge flips add up to an even number.</strong> Same idea: edges only ever
+                flip in pairs.</li>
+              <li><strong>Corner swaps and edge swaps have matching parity.</strong> Swapping two
+                corners forces two edges to swap as well.</li>
+            </ol>
+            <div class="rc-callout">
+              <strong>This is where the "divide by 12" comes from.</strong> If you pulled a cube apart
+              and reassembled it at random, only 1 in 12 of the arrangements could ever be twisted
+              back to solved — 3 for corner twists, 2 for edge flips, 2 for parity. So if the page
+              tells you your cube can't be solved, it is not being difficult: either a sticker got
+              mistyped, or somebody once forced a piece back in the wrong way.
+            </div>
+          </section>
+
+          <!-- THE METHOD -->
+          <section class="rc-card" style="--card-accent:#14b8a6;">
+            <h2>The Seven Stages of the Solution</h2>
+            <p>
+              The solution above is the <strong>beginner's method</strong> — the route almost every
+              cuber learns first. Instead of solving the cube all at once, it breaks an impossible
+              problem into seven possible ones, and never undoes work it has already done.
+            </p>
+            <div class="rc-method-grid">
+              <div class="rc-method-card"><span>1</span><strong>White cross</strong><em>Four edges around the white centre, matching the side colours too.</em></div>
+              <div class="rc-method-card"><span>2</span><strong>White corners</strong><em>The bottom layer finished, one corner at a time.</em></div>
+              <div class="rc-method-card"><span>3</span><strong>Middle layer</strong><em>Four edges slotted in from above. Two layers done.</em></div>
+              <div class="rc-method-card"><span>4</span><strong>Yellow cross</strong><em>Turn the top edges the right way up — position comes later.</em></div>
+              <div class="rc-method-card"><span>5</span><strong>Yellow face</strong><em>Sune and its mirror twist the last corners upright.</em></div>
+              <div class="rc-method-card"><span>6</span><strong>Corners home</strong><em>Cycle the corners into their proper places.</em></div>
+              <div class="rc-method-card"><span>7</span><strong>Edges home</strong><em>One three-edge cycle finishes the cube.</em></div>
+            </div>
+            <p>
+              Notice what stages 4 and 5 do: one fixes <em>which way up</em> pieces are, the other
+              fixes <em>where they are</em>. Separating orientation from position is the single idea
+              that makes the last layer solvable by a human. Every serious method — CFOP, Roux,
+              ZZ — is a different way of splitting the same two questions.
+            </p>
+            <div class="rc-callout rc-callout--purple">
+              <strong>Why so many moves?</strong> A beginner solve runs about 130 moves. A speedcuber
+              using CFOP averages around 55. The shortest possible solution for <em>any</em> scramble
+              is 20. The difference is memory: fewer moves means more patterns you have to recognise
+              on sight.
             </div>
           </section>
 
@@ -441,13 +573,13 @@
               </div>
 
               <div class="rc-problem" id="rc-prob-5">
-                <label for="rc-ans-5">5. A group requires four properties. Name them by counting: how many properties does a mathematical group have?</label>
+                <label for="rc-ans-5">5. Take a cube apart and rebuild it with the pieces in random places. Only <strong>1 in N</strong> of those rebuilds can ever be twisted back to solved. What is N?</label>
                 <div class="rc-problem-input-row">
                   <input type="text" class="rc-ans-input" id="rc-ans-5" placeholder="Number">
-                  <button class="rc-check-btn" onclick="rcCheck(5,4,0)">Check</button>
+                  <button class="rc-check-btn" onclick="rcCheck(5,12,0)">Check</button>
                   <span class="rc-feedback" id="rc-fb-5"></span>
                 </div>
-                <div class="rc-hint" id="rc-hint-5">Hint: Closure, Associativity, Identity, Inverse — count them.</div>
+                <div class="rc-hint" id="rc-hint-5">Hint: 3 ways the corner twists can land, times 2 for edge flips, times 2 for parity. Multiply them.</div>
               </div>
 
               <div class="rc-problem" id="rc-prob-6">
@@ -471,340 +603,9 @@
   <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
 
-  <!-- RUBIK'S CUBE ENGINE -->
-  <script>
-  (function () {
-    'use strict';
-
-    /* ── Scene setup ─────────────────────────────── */
-    const canvas   = document.getElementById('rc-canvas');
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x08000f, 1);
-
-    const scene  = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.set(4, 3.5, 5);
-    camera.lookAt(0, 0, 0);
-
-    // Lights
-    const amb = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(amb);
-    const dir1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    dir1.position.set(5, 8, 5);
-    scene.add(dir1);
-    const dir2 = new THREE.DirectionalLight(0x8888ff, 0.3);
-    dir2.position.set(-5, -3, -5);
-    scene.add(dir2);
-
-    // Cube root group (for orbit drag)
-    const cubeRoot = new THREE.Group();
-    scene.add(cubeRoot);
-
-    /* ── Colors ──────────────────────────────────── */
-    const C = {
-      W: 0xfafafa,  // White  — Up
-      Y: 0xffe000,  // Yellow — Down
-      G: 0x00b050,  // Green  — Front
-      B: 0x0050c8,  // Blue   — Back
-      O: 0xff6a00,  // Orange — Left
-      R: 0xd00000,  // Red    — Right
-      X: 0x111111,  // Inner (black)
-    };
-
-    /* ── Build 27 cubelets ───────────────────────── */
-    const cubelets = [];
-    const GAP = 1.04;
-
-    for (let xi = -1; xi <= 1; xi++) {
-      for (let yi = -1; yi <= 1; yi++) {
-        for (let zi = -1; zi <= 1; zi++) {
-          // BoxGeometry face order: +X, -X, +Y, -Y, +Z, -Z
-          const mats = [
-            new THREE.MeshLambertMaterial({ color: xi ===  1 ? C.R : C.X }),
-            new THREE.MeshLambertMaterial({ color: xi === -1 ? C.O : C.X }),
-            new THREE.MeshLambertMaterial({ color: yi ===  1 ? C.W : C.X }),
-            new THREE.MeshLambertMaterial({ color: yi === -1 ? C.Y : C.X }),
-            new THREE.MeshLambertMaterial({ color: zi ===  1 ? C.G : C.X }),
-            new THREE.MeshLambertMaterial({ color: zi === -1 ? C.B : C.X }),
-          ];
-          const geo  = new THREE.BoxGeometry(0.93, 0.93, 0.93);
-          const mesh = new THREE.Mesh(geo, mats);
-          mesh.position.set(xi * GAP, yi * GAP, zi * GAP);
-          cubeRoot.add(mesh);
-          cubelets.push(mesh);
-        }
-      }
-    }
-
-    /* ── Resize ──────────────────────────────────── */
-    function resize() {
-      const w = canvas.parentElement.clientWidth;
-      const h = 320;
-      renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    /* ── Render loop ─────────────────────────────── */
-    let animating = false;
-    function render() { renderer.render(scene, camera); }
-    function loop()   { requestAnimationFrame(loop); renderer.render(scene, camera); }
-    loop();
-
-    /* ── Orbit drag ──────────────────────────────── */
-    let drag = false, dragPrev = { x: 0, y: 0 };
-    function onPointerDown(e) {
-      drag = true;
-      const pt = e.touches ? e.touches[0] : e;
-      dragPrev = { x: pt.clientX, y: pt.clientY };
-    }
-    function onPointerMove(e) {
-      if (!drag || isAnimating) return;
-      const pt = e.touches ? e.touches[0] : e;
-      const dx = pt.clientX - dragPrev.x;
-      const dy = pt.clientY - dragPrev.y;
-      cubeRoot.rotation.y += dx * 0.012;
-      cubeRoot.rotation.x += dy * 0.012;
-      dragPrev = { x: pt.clientX, y: pt.clientY };
-    }
-    function onPointerUp() { drag = false; }
-
-    canvas.addEventListener('mousedown',  onPointerDown);
-    canvas.addEventListener('touchstart', onPointerDown, { passive: true });
-    window.addEventListener('mousemove',  onPointerMove);
-    window.addEventListener('touchmove',  onPointerMove, { passive: true });
-    window.addEventListener('mouseup',    onPointerUp);
-    window.addEventListener('touchend',   onPointerUp);
-
-    /* ── Move engine ─────────────────────────────── */
-    let isAnimating = false;
-    const moveQueue = [];
-    const moveHistory = [];
-    let moveCount = 0;
-
-    // face → { axis, layer, baseAngle }
-    const FACE_DEF = {
-      U: { axis: 'y', layer:  1, baseAngle: -Math.PI / 2 },
-      D: { axis: 'y', layer: -1, baseAngle:  Math.PI / 2 },
-      R: { axis: 'x', layer:  1, baseAngle: -Math.PI / 2 },
-      L: { axis: 'x', layer: -1, baseAngle:  Math.PI / 2 },
-      F: { axis: 'z', layer:  1, baseAngle: -Math.PI / 2 },
-      B: { axis: 'z', layer: -1, baseAngle:  Math.PI / 2 },
-    };
-
-    function parseNotation(n) {
-      const face = n[0];
-      const mod  = n.slice(1);
-      const def  = FACE_DEF[face];
-      if (!def) return null;
-      let angle = def.baseAngle;
-      if (mod === "'")  angle = -angle;
-      if (mod === '2')  return [
-        { axis: def.axis, layer: def.layer, angle: def.baseAngle },
-        { axis: def.axis, layer: def.layer, angle: def.baseAngle },
-      ];
-      return [{ axis: def.axis, layer: def.layer, angle }];
-    }
-
-    function enqueue(notation, trackHistory = true) {
-      const steps = parseNotation(notation);
-      if (!steps) return;
-      steps.forEach(s => moveQueue.push({ ...s, notation }));
-      if (trackHistory) moveHistory.push(notation);
-      if (trackHistory) {
-        moveCount++;
-        document.getElementById('rc-move-count').textContent = moveCount;
-      }
-      if (!isAnimating) processQueue();
-    }
-
-    function processQueue() {
-      if (moveQueue.length === 0) { isAnimating = false; onQueueEmpty(); return; }
-      isAnimating = true;
-      setButtons(false);
-      const step = moveQueue.shift();
-      animateStep(step, () => { processQueue(); });
-    }
-
-    function animateStep({ axis, layer, angle }, done) {
-      const pivot = new THREE.Group();
-      cubeRoot.add(pivot);
-
-      const EPS = 0.1;
-      const affected = cubelets.filter(c => {
-        const wp = new THREE.Vector3();
-        c.getWorldPosition(wp);
-        // Transform to cubeRoot local space
-        const lp = cubeRoot.worldToLocal(wp.clone());
-        return Math.abs(lp[axis] - layer * GAP) < EPS;
-      });
-
-      affected.forEach(c => pivot.attach(c));
-
-      const DURATION = 180; // ms
-      const start = performance.now();
-      const startAngle = pivot.rotation[axis];
-      const endAngle   = startAngle + angle;
-
-      function tick(now) {
-        const t  = Math.min((now - start) / DURATION, 1);
-        const et = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
-        pivot.rotation[axis] = startAngle + (endAngle - startAngle) * et;
-        if (t < 1) { requestAnimationFrame(tick); return; }
-        pivot.rotation[axis] = endAngle;
-        pivot.updateMatrixWorld(true);
-        affected.forEach(c => {
-          cubeRoot.attach(c);
-          c.position.x = Math.round(c.position.x / GAP) * GAP;
-          c.position.y = Math.round(c.position.y / GAP) * GAP;
-          c.position.z = Math.round(c.position.z / GAP) * GAP;
-        });
-        cubeRoot.remove(pivot);
-        done();
-      }
-      requestAnimationFrame(tick);
-    }
-
-    /* ── Queue callbacks ─────────────────────────── */
-    let solveSequence = [];
-    let solveIndex    = 0;
-
-    function onQueueEmpty() {
-      if (solveSequence.length > 0 && solveIndex >= solveSequence.length) {
-        // Solve complete
-        solveSequence = [];
-        solveIndex    = 0;
-        setButtons(true);
-        return;
-      }
-      setButtons(true);
-    }
-
-    /* ── UI helpers ──────────────────────────────── */
-    function setButtons(enabled) {
-      document.querySelectorAll('.rc-move-btn, #rc-scramble-btn, #rc-solve-btn, #rc-reset-btn').forEach(b => {
-        b.disabled = !enabled;
-      });
-    }
-
-    /* ── Scramble ────────────────────────────────── */
-    const MOVES_LIST = ['U','U\'','D','D\'','R','R\'','L','L\'','F','F\'','B','B\''];
-
-    document.getElementById('rc-scramble-btn').addEventListener('click', () => {
-      moveHistory.length = 0;
-      moveCount = 0;
-      document.getElementById('rc-move-count').textContent = 0;
-      hideSolution();
-      const seq = [];
-      let last = '';
-      for (let i = 0; i < 20; i++) {
-        let m;
-        do { m = MOVES_LIST[Math.floor(Math.random() * MOVES_LIST.length)]; } while (m[0] === last);
-        last = m[0];
-        seq.push(m);
-      }
-      seq.forEach(m => enqueue(m, true));
-    });
-
-    /* ── AI Solve ────────────────────────────────── */
-    document.getElementById('rc-solve-btn').addEventListener('click', () => {
-      if (moveHistory.length === 0) return;
-
-      function invertMove(n) {
-        if (n.endsWith("'")) return n.slice(0, -1);
-        if (n.endsWith('2')) return n;
-        return n + "'";
-      }
-      solveSequence = [...moveHistory].reverse().map(invertMove);
-      solveIndex    = 0;
-      moveHistory.length = 0;
-      moveCount = 0;
-      document.getElementById('rc-move-count').textContent = 0;
-
-      showSolution(solveSequence);
-      let si = 0;
-
-      function nextSolveMove() {
-        if (si >= solveSequence.length) return;
-        markSolveStep(si);
-        enqueue(solveSequence[si], false);
-        si++;
-        if (si < solveSequence.length) {
-          setTimeout(nextSolveMove, 220);
-        }
-      }
-      nextSolveMove();
-    });
-
-    /* ── Reset ───────────────────────────────────── */
-    document.getElementById('rc-reset-btn').addEventListener('click', () => {
-      moveQueue.length = 0;
-      moveHistory.length = 0;
-      isAnimating = false;
-      moveCount = 0;
-      document.getElementById('rc-move-count').textContent = 0;
-      hideSolution();
-      // Rebuild cubelets in place
-      cubelets.forEach(c => cubeRoot.remove(c));
-      cubelets.length = 0;
-      for (let xi = -1; xi <= 1; xi++) {
-        for (let yi = -1; yi <= 1; yi++) {
-          for (let zi = -1; zi <= 1; zi++) {
-            const mats = [
-              new THREE.MeshLambertMaterial({ color: xi ===  1 ? C.R : C.X }),
-              new THREE.MeshLambertMaterial({ color: xi === -1 ? C.O : C.X }),
-              new THREE.MeshLambertMaterial({ color: yi ===  1 ? C.W : C.X }),
-              new THREE.MeshLambertMaterial({ color: yi === -1 ? C.Y : C.X }),
-              new THREE.MeshLambertMaterial({ color: zi ===  1 ? C.G : C.X }),
-              new THREE.MeshLambertMaterial({ color: zi === -1 ? C.B : C.X }),
-            ];
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.93, 0.93, 0.93), mats);
-            mesh.position.set(xi * GAP, yi * GAP, zi * GAP);
-            cubeRoot.add(mesh);
-            cubelets.push(mesh);
-          }
-        }
-      }
-      cubeRoot.rotation.set(0.3, -0.4, 0);
-      setButtons(true);
-    });
-
-    // Initial tilt
-    cubeRoot.rotation.set(0.3, -0.4, 0);
-
-    /* ── Manual move buttons ─────────────────────── */
-    document.querySelectorAll('.rc-move-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        hideSolution();
-        enqueue(btn.dataset.move, true);
-      });
-    });
-
-    /* ── Solution display ────────────────────────── */
-    function showSolution(seq) {
-      const wrap = document.getElementById('rc-solution-wrap');
-      const cont = document.getElementById('rc-solution-moves');
-      document.getElementById('rc-sol-count').textContent = seq.length;
-      cont.innerHTML = seq.map((m, i) =>
-        `<span class="rc-sol-move" id="rc-sm-${i}">${m}</span>`
-      ).join('');
-      wrap.style.display = 'block';
-    }
-    function hideSolution() {
-      document.getElementById('rc-solution-wrap').style.display = 'none';
-    }
-    function markSolveStep(i) {
-      document.querySelectorAll('.rc-sol-move').forEach((el, j) => {
-        el.classList.toggle('done',    j < i);
-        el.classList.toggle('current', j === i);
-      });
-    }
-
-  })();
-  </script>
+  <!-- CUBE MODEL, SOLVER, AND THE INTERACTIVE LAB -->
+  <script src="../assets/js/lessons/rubiks-cube-solver.js"></script>
+  <script src="../assets/js/lessons/rubiks-cube-lab.js"></script>
 
   <!-- PRACTICE PROBLEMS -->
   <script>
