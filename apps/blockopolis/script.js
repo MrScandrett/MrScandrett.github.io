@@ -23,17 +23,24 @@ const TOOLS = {
   plant: { cost: 500 },
 };
 
+// Palette pulled from the KayKit "City Builder Bits" kit: chunky toy-block
+// buildings in flat saturated colors with dark outlines and pale rooftops.
 const COLORS = {
-  grass: "#5fae5f",
-  road: "#3a3f47",
+  grassA: "#5fbf62",
+  grassB: "#57b25a",
+  outline: "#26301f",
+  road: "#4a4d55",
+  roadLine: "#f4c430",
   power: "#8a8a2f",
-  plant: "#4a4a4a",
-  rzoneEmpty: "#bfe3bf",
-  czoneEmpty: "#bfd7ea",
-  izoneEmpty: "#e9dcae",
-  rzone: ["#d8ecc7", "#9fd18a", "#5fae4a", "#3d8a35"],
-  czone: ["#cfe6f7", "#8fc7ec", "#4a9fd6", "#2f78ad"],
-  izone: ["#f2e4b8", "#e0bd6f", "#c98f3a", "#a3691f"],
+  plant: "#454951",
+  rzoneEmpty: "#cdeccb",
+  czoneEmpty: "#cfe3f5",
+  izoneEmpty: "#f0e2bd",
+  // building body colors by level (1-3), KayKit brick red / mustard / teal-blue
+  rzone: ["#f2b64e", "#e2704a", "#4f9d69", "#3d7a55"],
+  czone: ["#7fb8e8", "#4a90d9", "#3d6fae", "#2f5588"],
+  izone: ["#e2704a", "#d94f3d", "#b8402f", "#8f3324"],
+  roof: "#e7ecef",
 };
 
 let grid = [];
@@ -191,29 +198,73 @@ function applyTool(r, c) {
   updateHUD();
 }
 
+function roundRectPath(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
 function drawZoneBuilding(x, y, type, level, powered) {
   const colors = COLORS[type];
   const emptyColor = COLORS[`${type}Empty`];
-  ctx.fillStyle = level === 0 ? emptyColor : colors[level - 1];
-  ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
+  const bx = x + 2;
+  const by = y + 2;
+  const bw = TILE - 4;
+  const bh = TILE - 4;
 
-  if (level > 0) {
-    // little windows to suggest a building, more of them at higher levels
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    const dots = level + 1;
-    for (let i = 0; i < dots; i++) {
-      for (let j = 0; j < dots; j++) {
-        const dx = x + 4 + i * ((TILE - 8) / dots);
-        const dy = y + 4 + j * ((TILE - 8) / dots);
-        ctx.fillRect(dx, dy, 2, 2);
-      }
+  if (level === 0) {
+    roundRectPath(bx, by, bw, bh, 2);
+    ctx.fillStyle = emptyColor;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = 0.75;
+    ctx.stroke();
+    return;
+  }
+
+  // chunky toy-block building: colored body, pale flat roof cap, dark outline
+  roundRectPath(bx, by, bw, bh, 2);
+  ctx.fillStyle = colors[level - 1];
+  ctx.fill();
+  ctx.strokeStyle = COLORS.outline;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const roofH = Math.max(2, bh * 0.28);
+  roundRectPath(bx + 1, by + 1, bw - 2, roofH, 1.5);
+  ctx.fillStyle = COLORS.roof;
+  ctx.fill();
+
+  // window grid to suggest floors, more of them at higher levels
+  ctx.fillStyle = "rgba(255,255,255,0.6)";
+  const dots = level + 1;
+  const winTop = by + roofH + 2;
+  const winH = Math.max(1, by + bh - 3 - winTop);
+  for (let i = 0; i < dots; i++) {
+    for (let j = 0; j < dots; j++) {
+      const dx = bx + 3 + i * ((bw - 6) / dots);
+      const dy = winTop + j * (winH / dots);
+      ctx.fillRect(dx, dy, 1.6, 1.6);
     }
   }
 
+  // water tower accent on the tallest buildings, KayKit-style rooftop flair
+  if (level === 3) {
+    ctx.fillStyle = "#8a5a3c";
+    ctx.beginPath();
+    ctx.arc(bx + bw - 3, by + 2, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   if (!powered) {
-    ctx.strokeStyle = "rgba(200,40,40,0.7)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x + 2, y + 2, TILE - 4, TILE - 4);
+    ctx.strokeStyle = "rgba(217,79,61,0.85)";
+    ctx.lineWidth = 1.25;
+    roundRectPath(bx, by, bw, bh, 2);
+    ctx.stroke();
   }
 }
 
@@ -224,13 +275,18 @@ function draw() {
       const y = r * TILE;
       const t = grid[r][c];
 
-      ctx.fillStyle = COLORS.grass;
+      // KayKit-style two-tone checkerboard ground tile
+      ctx.fillStyle = (r + c) % 2 === 0 ? COLORS.grassA : COLORS.grassB;
       ctx.fillRect(x, y, TILE, TILE);
 
       if (t.type === "road") {
         ctx.fillStyle = COLORS.road;
         ctx.fillRect(x, y, TILE, TILE);
-        ctx.strokeStyle = "#e8d24a";
+        ctx.strokeStyle = COLORS.outline;
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
+        ctx.strokeStyle = COLORS.roadLine;
+        ctx.lineWidth = 1.5;
         ctx.setLineDash([3, 3]);
         ctx.beginPath();
         ctx.moveTo(x, y + TILE / 2);
@@ -244,15 +300,21 @@ function draw() {
         ctx.moveTo(x, y + TILE / 2);
         ctx.lineTo(x + TILE, y + TILE / 2);
         ctx.stroke();
-        ctx.fillStyle = "#3a3f47";
+        ctx.fillStyle = COLORS.outline;
         ctx.fillRect(x + TILE / 2 - 2, y + 3, 4, TILE - 6);
       } else if (t.type === "plant") {
+        roundRectPath(x + 1, y + 1, TILE - 2, TILE - 2, 2);
         ctx.fillStyle = COLORS.plant;
-        ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
-        ctx.fillStyle = "#c0392b";
+        ctx.fill();
+        ctx.strokeStyle = COLORS.outline;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = "#d94f3d";
         ctx.fillRect(x + 4, y + 2, 4, 8);
         ctx.fillStyle = "#ffe14d";
-        ctx.fillRect(x + 8, y + 6, 3, 3);
+        ctx.beginPath();
+        ctx.arc(x + 9.5, y + 7.5, 2, 0, Math.PI * 2);
+        ctx.fill();
       } else if (t.type === "rzone" || t.type === "czone" || t.type === "izone") {
         drawZoneBuilding(x, y, t.type, t.level, t.powered);
       }
