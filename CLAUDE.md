@@ -54,13 +54,6 @@ Project metadata (display name, student, tags, thumbnail) comes from
 - `npm run check:themes` — theme contrast
 - `npm run a11y` — pa11y-ci
 
-## Known source drift
-
-`apps/horse-v1/` (Raegen, "Horse Adventure") contains a full 3D rebuild — `src/`
-modules, models, textures — but `student-projects/Raegen/horse-v1/` still holds
-only the original `game.html`, `script.js`, `style.css`. **Do not run
-`npm run build` until that source is restored**, or the rebuild will be lost.
-
 ## Verifying game/app changes
 
 Dev server: `node serve-local.js`. Playwright is a devDependency but only the full
