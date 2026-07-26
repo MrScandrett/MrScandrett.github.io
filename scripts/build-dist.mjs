@@ -73,7 +73,17 @@ async function minifyCssFiles() {
     const originalSize = (await stat(file)).size;
     // --inline none: minify each file standalone, don't inline @import targets
     // (several stylesheets @import a huge shared file; inlining would duplicate it).
-    const run = spawnSync(cleancss, ["-O2", "--inline", "none", file], { encoding: "utf8", maxBuffer: 1024 * 1024 * 64 });
+    //
+    // Run from the stylesheet's own directory and pass a bare filename. clean-css
+    // rebases relative url()/@import targets against its working directory, so
+    // invoking it from the repo root rewrote "./classroom-fonts.css" to
+    // "dist/assets/css/classroom-fonts.css" — a path that 404s once deployed, and
+    // that grew another prefix on every rebuild.
+    const run = spawnSync(cleancss, ["-O2", "--inline", "none", path.basename(file)], {
+      cwd: path.dirname(file),
+      encoding: "utf8",
+      maxBuffer: 1024 * 1024 * 64,
+    });
     if (run.status !== 0) {
       console.warn(`  CSS minify skipped for ${path.relative(DIST, file)}: ${run.stderr || "unknown error"}`);
       continue;
