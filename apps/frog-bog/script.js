@@ -13,23 +13,57 @@ const WATER_Y = H - 110; // waterline, side-on view: sky above, pond below
 const JUMP_DURATION = 340; // ms
 const ROUND_SECONDS = 60;
 const FLY_COUNT = 5;
-const FLY_MIN_Y = 70;
-const FLY_MAX_Y = WATER_Y - 50;
+const FLY_MIN_Y = 150; // stay below the clouds so flies don't get lost against them
+const FLY_MAX_Y = WATER_Y - 40;
 
-const FROG_SCALE = 1.1;
+const FROG_SCALE = 0.7; // smaller frogs leave more open lily-pad to move around on
 const IDLE_FRAME_W = 96;
 const IDLE_FRAMES = 2;
 const JUMP_FRAME_W = 96;
 const JUMP_FRAMES = 8;
 const TONGUE_FRAME_W = 288;
 const TONGUE_FRAMES = 3;
-const TONGUE_FLASH_MS = 160;
 
-// A big fused lily-pad "island" replaces the old small pad + shore trees,
-// matching the original Frog Bog art direction: two broad leaves meeting in
-// the middle of the pond instead of separate pads near the shore.
-const PAD_RADIUS_X = 175;
-const PAD_RADIUS_Y = 95;
+// Two distinct lily pads, one per frog, kept well apart so they read as
+// separate islands instead of fusing into one shapeless blob. Notches face
+// each other across the gap so each frog looks like it's facing its rival.
+const PAD_RADIUS_X = 92;
+const PAD_RADIUS_Y = 50;
+
+// The whole set of lily pads frogs can hop between -- two big "home" pads
+// plus a few smaller stepping-stone pads scattered across the pond. Frogs
+// hop pad-to-pad (see hop()); missing a pad means landing in open water.
+const PADS = [
+  { x: W * 0.3, y: WATER_Y + 6, scale: 1, home: 1 },
+  { x: W * 0.7, y: WATER_Y + 6, scale: 1, home: 2 },
+  { x: W * 0.5, y: WATER_Y + 30, scale: 0.34 },
+  { x: W * 0.14, y: WATER_Y + 55, scale: 0.24 },
+  { x: W * 0.86, y: WATER_Y + 55, scale: 0.24 },
+];
+
+function padStandY(pad) {
+  return pad.y - 6;
+}
+
+// A hop must land within this fraction of a pad's radius to count as a safe
+// landing; anything wider than that overshoots the pad and hits open water.
+const PAD_LANDING_SLACK = 0.85;
+const HOP_DISTANCE = 140; // how far a directional hop covers, pad-to-pad
+const DROWN_MS = 550; // "split second" a frog is stuck flailing in the water
+
+function findLandingPad(x) {
+  let best = null;
+  let bestDist = Infinity;
+  for (const pad of PADS) {
+    const rx = PAD_RADIUS_X * pad.scale * PAD_LANDING_SLACK;
+    const d = Math.abs(x - pad.x);
+    if (d <= rx && d < bestDist) {
+      bestDist = d;
+      best = pad;
+    }
+  }
+  return best;
+}
 
 /* ------------------------------------------------------------------------
  * 1980s-arcade-style procedural generation
@@ -98,19 +132,25 @@ const sprites = {
   tongue: loadImage("assets/frog-tongue.png"),
 };
 
-function makeFrog(padX, tongueColor, faceDir, filter) {
+function makeFrog(homePad, tongueColor, faceDir, filter) {
+  const y = padStandY(homePad);
   return {
-    padX,
-    padY: WATER_Y - 6,
-    x: padX,
-    y: WATER_Y - 6,
+    homePad,
+    pad: homePad, // the pad the frog is currently standing on (null while in water)
+    x: homePad.x,
+    y,
     tongueColor,
     faceDir, // 1 = faces right, -1 = faces left
     filter, // CSS canvas filter string used to recolor the (green) sprite art
     jumping: false,
     jumpStart: 0,
-    from: { x: padX, y: WATER_Y - 6 },
-    to: { x: padX, y: WATER_Y - 6 },
+    from: { x: homePad.x, y },
+    to: { x: homePad.x, y },
+    action: "catch", // "catch" (tongue lunge back to pad) or "hop" (pad-to-pad move)
+    pendingPad: null,
+    inWater: false,
+    drownUntil: 0,
+    caught: false,
     facing: 0,
     score: 0,
   };
@@ -118,8 +158,8 @@ function makeFrog(padX, tongueColor, faceDir, filter) {
 
 // Sprite art is drawn green; recolor with a canvas filter to match the
 // original's pink-and-white frog pair instead of two identical green frogs.
-const p1 = makeFrog(W * 0.42, "#ff6f91", 1, "hue-rotate(210deg) saturate(2.4) brightness(1.2)");
-const p2 = makeFrog(W * 0.58, "#ff6f91", -1, "grayscale(1) brightness(1.5) contrast(0.85)");
+const p1 = makeFrog(PADS[0], "#ff6f91", 1, "hue-rotate(210deg) saturate(2.4) brightness(1.2)");
+const p2 = makeFrog(PADS[1], "#ff6f91", -1, "grayscale(1) brightness(1.5) contrast(0.85)");
 const frogs = [p1, p2];
 
 let flies = [];
@@ -175,15 +215,23 @@ function resetFlies() {
   for (let i = 0; i < FLY_COUNT; i++) flies.push(randomFly());
 }
 
+function resetFrog(frog) {
+  frog.pad = frog.homePad;
+  frog.x = frog.homePad.x;
+  frog.y = padStandY(frog.homePad);
+  frog.jumping = false;
+  frog.inWater = false;
+  frog.drownUntil = 0;
+  frog.targetFly = null;
+  frog.pendingPad = null;
+  frog.caught = false;
+}
+
 function startGame() {
   p1.score = 0;
   p2.score = 0;
-  p1.x = p1.padX;
-  p1.y = p1.padY;
-  p2.x = p2.padX;
-  p2.y = p2.padY;
-  p1.jumping = false;
-  p2.jumping = false;
+  resetFrog(p1);
+  resetFrog(p2);
   score1El.textContent = "0";
   score2El.textContent = "0";
   timeLeft = ROUND_SECONDS;
@@ -229,7 +277,7 @@ function nearestFly(frog) {
   let bestDist = Infinity;
   for (const fly of flies) {
     if (!fly.alive) continue;
-    const dist = manhattan(fly.x, fly.y, frog.padX, frog.padY);
+    const dist = manhattan(fly.x, fly.y, frog.x, frog.y);
     if (dist <= JUMP_RANGE && dist < bestDist) {
       bestDist = dist;
       best = fly;
@@ -238,8 +286,12 @@ function nearestFly(frog) {
   return best;
 }
 
+// Tongue-catch attack: lunges toward the nearest fly (or a plain forward hop
+// if none is in range) and always lands back on the pad the frog is
+// currently standing on. Can't be used while treading water -- no solid
+// footing to launch a tongue strike from.
 function jump(frog) {
-  if (!running || frog.jumping) return;
+  if (!running || frog.jumping || frog.inWater) return;
   const target = nearestFly(frog);
   let dest;
   if (target) {
@@ -250,32 +302,76 @@ function jump(frog) {
       y: target.y,
     };
   } else {
-    dest = { x: frog.padX + frog.faceDir * 30, y: frog.padY - 130 };
+    dest = { x: frog.x + frog.faceDir * 30, y: frog.y - 130 };
   }
-  frog.from = { x: frog.padX, y: frog.padY };
+  frog.from = { x: frog.x, y: frog.y };
   frog.to = dest;
+  frog.action = "catch";
   frog.jumping = true;
   frog.jumpStart = performance.now();
   frog.targetFly = target;
-  frog.facing = Math.atan2(dest.y - frog.padY, dest.x - frog.padX);
+  frog.facing = Math.atan2(dest.y - frog.y, dest.x - frog.x);
 }
+
+// Directional hop: leap toward the next lily pad in that direction. If the
+// hop overshoots every pad within reach, the frog splashes down in open
+// water instead and has to hop again to find safety.
+function hop(frog, dir) {
+  if (!running || frog.jumping) return;
+  if (frog.inWater && performance.now() < frog.drownUntil) return; // stuck flailing
+  const originX = frog.x;
+  const originY = frog.y;
+  const destX = Math.max(14, Math.min(W - 14, originX + dir * HOP_DISTANCE));
+  const landingPad = findLandingPad(destX);
+  frog.from = { x: originX, y: originY };
+  frog.to = landingPad ? { x: landingPad.x, y: padStandY(landingPad) } : { x: destX, y: WATER_Y + 20 };
+  frog.pendingPad = landingPad;
+  frog.action = "hop";
+  frog.jumping = true;
+  frog.jumpStart = performance.now();
+  frog.targetFly = null;
+  frog.faceDir = dir;
+  frog.facing = Math.atan2(frog.to.y - originY, frog.to.x - originX);
+}
+
+// The window (around the lunge's t=0.5 apex) where a catch can land and the
+// tongue sprite shows -- shared so the visual and the hit-test agree exactly.
+const CATCH_WINDOW = 0.18;
 
 function updateFrog(frog, now) {
   if (!frog.jumping) return;
   const t = Math.min((now - frog.jumpStart) / JUMP_DURATION, 1);
-  // ease out/in for the horizontal travel, plus a parabolic arc for height
-  const linear = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-  frog.x = frog.from.x + (frog.to.x - frog.from.x) * linear;
-  const arc = Math.sin(t * Math.PI); // 0 -> 1 -> 0
-  const baseY = frog.from.y + (frog.to.y - frog.from.y) * linear;
-  frog.y = baseY - arc * 40;
+  const arc = Math.sin(t * Math.PI); // 0 -> 1 -> 0, vertical hop arc
 
-  if (t >= 0.35 && t <= 0.75 && frog.targetFly && frog.targetFly.alive) {
+  if (frog.action === "catch") {
+    // Tongue-catch is a there-and-back lunge: ease out to the target for the
+    // first half, then retrace the exact same path back to the pad for the
+    // second half, so landing is a smooth continuation of the motion instead
+    // of a hard cut back to the pad position.
+    const half = t < 0.5 ? t * 2 : (1 - t) * 2; // 0 -> 1 -> 0
+    const eased = half < 0.5 ? 2 * half * half : -1 + (4 - 2 * half) * half;
+    frog.x = frog.from.x + (frog.to.x - frog.from.x) * eased;
+    frog.y = frog.from.y + (frog.to.y - frog.from.y) * eased - arc * 40;
+  } else {
+    // ease out/in for the horizontal travel, plus a parabolic arc for height
+    const linear = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    frog.x = frog.from.x + (frog.to.x - frog.from.x) * linear;
+    const baseY = frog.from.y + (frog.to.y - frog.from.y) * linear;
+    frog.y = baseY - arc * 40;
+  }
+
+  if (
+    frog.action === "catch" &&
+    t >= 0.5 - CATCH_WINDOW &&
+    t <= 0.5 + CATCH_WINDOW &&
+    frog.targetFly &&
+    frog.targetFly.alive
+  ) {
     const dist = manhattan(frog.targetFly.x, frog.targetFly.y, frog.x, frog.y);
     if (dist <= CATCH_MANHATTAN) {
       frog.targetFly.alive = false;
       frog.score += frog.targetFly.golden ? 3 : 1;
-      frog.tongueFlashUntil = now + TONGUE_FLASH_MS;
+      frog.caught = true;
       spawnParticles(frog.targetFly.x, frog.targetFly.y, frog.tongueColor);
       const idx = flies.indexOf(frog.targetFly);
       if (idx >= 0) flies[idx] = randomFly();
@@ -286,9 +382,26 @@ function updateFrog(frog, now) {
 
   if (t >= 1) {
     frog.jumping = false;
-    frog.x = frog.padX;
-    frog.y = frog.padY;
     frog.targetFly = null;
+    frog.caught = false;
+    if (frog.action === "hop") {
+      frog.x = frog.to.x;
+      frog.y = frog.to.y;
+      if (frog.pendingPad) {
+        frog.pad = frog.pendingPad;
+        frog.inWater = false;
+      } else {
+        frog.pad = null;
+        frog.inWater = true;
+        frog.drownUntil = now + DROWN_MS;
+        spawnSplash(frog.x, WATER_Y + 8);
+      }
+      frog.pendingPad = null;
+    } else {
+      // the round-trip lunge already eases back to exactly the pad position
+      frog.x = frog.pad.x;
+      frog.y = padStandY(frog.pad);
+    }
   }
 }
 
@@ -301,6 +414,37 @@ function spawnParticles(x, y, color) {
       vy: (lfsrRandom() * 2 - 1) * 2.5,
       life: 1,
       color,
+      size: 3,
+    });
+  }
+}
+
+// A wide, flat splash when a frog belly-flops into open water.
+function spawnSplash(x, y) {
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      x,
+      y,
+      vx: (lfsrRandom() * 2 - 1) * 3.5,
+      vy: -1.5 - lfsrRandom() * 1.5,
+      life: 1,
+      color: "rgba(210,230,255,0.9)",
+      size: 2 + lfsrRandom() * 2,
+    });
+  }
+}
+
+// Small rising bubbles for a frog treading water, waiting to hop to safety.
+function spawnBubbles(x, y) {
+  for (let i = 0; i < 2; i++) {
+    particles.push({
+      x: x + (lfsrRandom() * 2 - 1) * 10,
+      y,
+      vx: (lfsrRandom() * 2 - 1) * 0.3,
+      vy: -0.5 - lfsrRandom() * 0.5,
+      life: 1,
+      color: "rgba(255,255,255,0.85)",
+      size: 1.5 + lfsrRandom() * 1.5,
     });
   }
 }
@@ -312,7 +456,7 @@ function updateFlies(dt) {
     // FLEE_EXIT -- the gap between the two stops jittery flip-flopping.
     let nearestPadDist = Infinity;
     for (const frog of frogs) {
-      const d = manhattan(fly.x, fly.y, frog.padX, frog.padY);
+      const d = manhattan(fly.x, fly.y, frog.x, frog.y);
       if (d < nearestPadDist) nearestPadDist = d;
     }
     if (fly.state === "calm" && nearestPadDist < FLEE_ENTER) {
@@ -454,36 +598,42 @@ function drawReeds() {
   }
 }
 
-// Two broad lily-pad leaves fused together in the middle of the pond, each
-// with a wedge notch and radiating veins -- the classic Frog Bog "island".
+// Draw every pad in PADS -- the two home pads get radiating veins and a
+// notch facing the other home pad, the smaller stepping-stone pads don't.
 function drawLilyPadIsland() {
-  drawLilyLeaf(p1.padX, Math.PI); // notch faces outward (left)
-  drawLilyLeaf(p2.padX, 0); // notch faces outward (right)
+  for (const pad of PADS) {
+    if (pad.home === 1) drawLilyLeaf(pad.x, pad.y, 0, pad.scale, true);
+    else if (pad.home === 2) drawLilyLeaf(pad.x, pad.y, Math.PI, pad.scale, true);
+    else drawLilyLeaf(pad.x, pad.y, 0, pad.scale, false);
+  }
 }
 
-function drawLilyLeaf(cx, notchAngle) {
+function drawLilyLeaf(cx, cy, notchAngle, scale, withVeins) {
   const notchWidth = 0.55;
+  const rx = PAD_RADIUS_X * scale;
   ctx.save();
-  ctx.translate(cx, WATER_Y + 6);
+  ctx.translate(cx, cy);
   ctx.scale(1, PAD_RADIUS_Y / PAD_RADIUS_X);
   ctx.fillStyle = "#3fbf3f";
   ctx.beginPath();
-  ctx.arc(0, 0, PAD_RADIUS_X, notchAngle + notchWidth / 2, notchAngle - notchWidth / 2 + Math.PI * 2);
+  ctx.arc(0, 0, rx, notchAngle + notchWidth / 2, notchAngle - notchWidth / 2 + Math.PI * 2);
   ctx.lineTo(0, 0);
   ctx.closePath();
   ctx.fill();
   ctx.strokeStyle = "#1f7a2f";
-  ctx.lineWidth = 5;
+  ctx.lineWidth = withVeins ? 5 : 3;
   ctx.stroke();
 
-  ctx.strokeStyle = "#1f7a2f";
-  ctx.lineWidth = 3;
-  for (let a = -1.3; a <= 1.3; a += 0.42) {
-    if (Math.abs(((a - notchAngle + Math.PI) % (Math.PI * 2)) - Math.PI) < notchWidth) continue;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(Math.cos(a) * PAD_RADIUS_X * 0.92, Math.sin(a) * PAD_RADIUS_X * 0.92);
-    ctx.stroke();
+  if (withVeins) {
+    ctx.strokeStyle = "#1f7a2f";
+    ctx.lineWidth = 3;
+    for (let a = -1.3; a <= 1.3; a += 0.42) {
+      if (Math.abs(((a - notchAngle + Math.PI) % (Math.PI * 2)) - Math.PI) < notchWidth) continue;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a) * rx * 0.92, Math.sin(a) * rx * 0.92);
+      ctx.stroke();
+    }
   }
   ctx.restore();
 }
@@ -503,27 +653,59 @@ function drawFly(fly) {
 function drawFrog(frog, now) {
   const t = frog.jumping ? Math.min((now - frog.jumpStart) / JUMP_DURATION, 1) : 0;
   const dir = frog.jumping ? (frog.to.x >= frog.from.x ? 1 : -1) : frog.faceDir;
-  const flashing = frog.tongueFlashUntil && now < frog.tongueFlashUntil;
+  // Show the tongue sprite exactly around the lunge's reach (same window the
+  // catch hit-test uses) instead of a real-time timer, so the tongue frame
+  // always lines up with how far out the frog actually is, never popping in
+  // on a body that has already landed.
+  const flashing = frog.action === "catch" && frog.jumping && frog.caught && Math.abs(t - 0.5) <= CATCH_WINDOW;
+  const drowning = frog.inWater && !frog.jumping;
+  const bob = drowning ? Math.sin(now * 0.01) * 3 : 0;
 
   ctx.save();
-  ctx.translate(frog.x, frog.y);
+  ctx.translate(frog.x, frog.y + bob);
+
+  if (drowning) {
+    // ripple ring around a frog treading water, drawn unmirrored so it stays symmetric
+    ctx.strokeStyle = "rgba(200,225,255,0.55)";
+    ctx.lineWidth = 2;
+    const r = 15 + Math.sin(now * 0.008) * 3;
+    ctx.beginPath();
+    ctx.ellipse(0, 10, r, r * 0.35, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
   ctx.scale(dir, 1);
-  ctx.filter = frog.filter || "none";
+  ctx.filter = (frog.filter || "none") + (drowning ? " saturate(0.5) brightness(0.85)" : "");
 
   if (flashing && sprites.tongue.complete) {
+    // Animate out through the tongue frames as the lunge reaches its apex,
+    // then back in as it retracts, instead of popping to a single frame.
+    const localT = Math.min(1, Math.max(0, (t - (0.5 - CATCH_WINDOW)) / (CATCH_WINDOW * 2)));
+    const reach = localT < 0.5 ? localT * 2 : (1 - localT) * 2;
+    const frame = Math.min(TONGUE_FRAMES - 1, Math.floor(reach * TONGUE_FRAMES));
     const w = TONGUE_FRAME_W * FROG_SCALE;
     const h = 96 * FROG_SCALE;
-    ctx.drawImage(sprites.tongue, TONGUE_FRAME_W * 2, 0, TONGUE_FRAME_W, 96, -w * 0.28, -h * 0.62, w, h);
+    ctx.drawImage(sprites.tongue, frame * TONGUE_FRAME_W, 0, TONGUE_FRAME_W, 96, -w * 0.28, -h * 0.62, w, h);
   } else if (frog.jumping && sprites.jump.complete) {
     const frame = Math.min(JUMP_FRAMES - 1, Math.floor(t * JUMP_FRAMES));
     const w = JUMP_FRAME_W * FROG_SCALE;
     const h = 96 * FROG_SCALE;
     ctx.drawImage(sprites.jump, frame * JUMP_FRAME_W, 0, JUMP_FRAME_W, 96, -w / 2, -h * 0.62, w, h);
   } else if (sprites.idle.complete) {
-    const frame = Math.floor(now / 500) % IDLE_FRAMES;
+    const frame = Math.floor(now / (drowning ? 180 : 500)) % IDLE_FRAMES;
     const w = IDLE_FRAME_W * FROG_SCALE;
     const h = 96 * FROG_SCALE;
-    ctx.drawImage(sprites.idle, frame * IDLE_FRAME_W, 0, IDLE_FRAME_W, 96, -w / 2, -h * 0.62, w, h);
+    if (drowning) {
+      // clip so only the top of the sprite pokes out of the water
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(-w, -h * 0.62, w * 2, h * 0.62 * 0.85);
+      ctx.clip();
+      ctx.drawImage(sprites.idle, frame * IDLE_FRAME_W, 0, IDLE_FRAME_W, 96, -w / 2, -h * 0.62, w, h);
+      ctx.restore();
+    } else {
+      ctx.drawImage(sprites.idle, frame * IDLE_FRAME_W, 0, IDLE_FRAME_W, 96, -w / 2, -h * 0.62, w, h);
+    }
   }
 
   ctx.restore();
@@ -534,7 +716,7 @@ function drawParticles() {
     ctx.globalAlpha = Math.max(p.life, 0);
     ctx.fillStyle = p.color;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, p.size || 3, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
@@ -612,6 +794,9 @@ function loop(now) {
     updateFlies(dt);
     updateFrog(p1, now);
     updateFrog(p2, now);
+    for (const frog of frogs) {
+      if (frog.inWater && !frog.jumping && frameCounter % 12 === 0) spawnBubbles(frog.x, WATER_Y + 4);
+    }
     updateParticles();
   }
   draw();
@@ -620,12 +805,23 @@ function loop(now) {
 
 window.addEventListener("keydown", (e) => {
   if (e.repeat) return;
-  if (e.code === "Space") {
+  const key = e.key;
+  if (e.code === "Space" || key === " " || key === "Spacebar") {
     e.preventDefault();
     jump(p1);
-  } else if (e.code === "Enter") {
+  } else if (e.code === "Enter" || key === "Enter") {
     e.preventDefault();
     jump(p2);
+  } else if (e.code === "KeyA" || key === "a" || key === "A") {
+    hop(p1, -1);
+  } else if (e.code === "KeyD" || key === "d" || key === "D") {
+    hop(p1, 1);
+  } else if (e.code === "ArrowLeft" || key === "ArrowLeft") {
+    e.preventDefault();
+    hop(p2, -1);
+  } else if (e.code === "ArrowRight" || key === "ArrowRight") {
+    e.preventDefault();
+    hop(p2, 1);
   }
 });
 

@@ -95,16 +95,14 @@ const game = {
     },
 
     gatherWood: function() {
-        const bonus = this.sun.position.y < 0 ? 2 : 1; // Night gathering pays double
-        this.wood += bonus;
-        this.log(bonus > 1 ? "You chopped some wood (night bonus x2)." : "You chopped some wood.");
+        this.wood++;
+        this.log("You chopped some wood.");
         this.updateUI();
     },
 
     gatherQuartz: function() {
-        const bonus = this.sun.position.y < 0 ? 2 : 1; // Night gathering pays double
-        this.quartz += bonus;
-        this.log(bonus > 1 ? "You mined a Quartz block (night bonus x2)." : "You mined a Quartz block.");
+        this.quartz++;
+        this.log("You mined a Quartz block.");
         this.updateUI();
     },
 
@@ -248,8 +246,6 @@ const game = {
     ride: function() {
         this.log(`You saddled up ${this.horseName} and went for a ride! Game Over (You Win!)`);
         alert(`You win! You are riding ${this.horseName}!`);
-        // IDEA: instead of ending the game here, attach the camera to tamedHorseMesh and
-        // speed up player movement so "riding" actually changes how you move around the world.
     },
 
     // --- 3D Engine Logic ---
@@ -411,7 +407,7 @@ const game = {
 
         // AI Horses (Complex Mesh)
         const textureLoader = new THREE.TextureLoader();
-        const horseTexture = textureLoader.load('sprites/textures/horsetexture.jpg');
+        const horseTexture = textureLoader.load('horse/sprites/textures/horsetexture.jpg');
         horseTexture.magFilter = THREE.NearestFilter;
         horseTexture.minFilter = THREE.NearestFilter;
 
@@ -652,16 +648,9 @@ const game = {
 
     updateMobs: function(delta) {
         this.mobs.forEach(h => {
+            // Don't move if tamed (or implement follow logic later)
             if (h.mesh === this.tamedHorseMesh) {
-                const playerPos = this.controls.getObject().position;
-                h.mesh.lookAt(playerPos.x, 4, playerPos.z);
-                const dist = h.mesh.position.distanceTo(playerPos);
-                if (dist > 25) { // Follow once it falls too far behind
-                    const toPlayer = playerPos.clone().sub(h.mesh.position);
-                    toPlayer.y = 0;
-                    toPlayer.normalize();
-                    h.mesh.position.addScaledVector(toPlayer, 8 * delta);
-                }
+                h.mesh.lookAt(this.controls.getObject().position.x, 4, this.controls.getObject().position.z);
                 return;
             }
 

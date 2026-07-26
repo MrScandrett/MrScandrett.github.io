@@ -10,11 +10,11 @@
     // to avoid a flash of the unfiltered grid. "__all__" means they previously chose "See
     // Everything" and should not be redirected or re-prompted.
     (function () {
-      if (new URLSearchParams(window.location.search).has("cohort")) return;
+      if (new URLSearchParams(window.location.search).has("category")) return;
       var stored;
       try { stored = localStorage.getItem("showcase-cohort"); } catch (e) { stored = null; }
       if (stored && stored !== "__all__") {
-        window.location.replace("showcase.html?cohort=" + encodeURIComponent(stored));
+        window.location.replace("showcase.html?category=" + encodeURIComponent(stored));
       }
     })();
   </script>
@@ -184,7 +184,7 @@
 
         <button id="filter-toggle" type="button" class="secondary sc-btn" aria-expanded="false" aria-controls="filter-panel">Filters ▾</button>
         <button id="clear-filters" type="button" class="secondary sc-btn" aria-label="Clear all filters">Clear</button>
-        <button id="change-cohort-btn" type="button" class="secondary sc-btn" aria-haspopup="dialog" aria-controls="cohort-picker">🏫 Class / Camp</button>
+        <button id="change-cohort-btn" type="button" class="secondary sc-btn" aria-haspopup="dialog" aria-controls="cohort-picker">🗂️ Browse Category</button>
         <p class="sc-count" id="result-count" aria-live="polite">Loading…</p>
       </div>
 
@@ -377,16 +377,18 @@
     });
   </script>
 
-  <!-- Showcase Cohort Picker Modal: shown on arrival so visitors browse one showcase at a time -->
+  <!-- Showcase Category Picker Modal: shown on arrival so visitors pick what kind of work to browse -->
   <section id="cohort-picker" class="class-picker hidden" hidden role="dialog" aria-modal="true" aria-labelledby="cohort-picker-title">
     <div class="class-picker-backdrop" data-close-cohort-picker="true"></div>
     <div class="class-picker-panel" tabindex="-1">
       <h2 id="cohort-picker-title">What would you like to browse?</h2>
-      <p>Pick a showcase to explore. You can change this anytime from the "Class / Camp" button in the toolbar.</p>
+      <p>Pick a category to explore. You can change this anytime from the "Browse Category" button in the toolbar.</p>
 
-      <div class="class-picker-grid" role="group" aria-label="Showcase cohort links">
-        <button type="button" data-cohort="25-26 School Year">🏫 25-26 School Year</button>
-        <button type="button" data-cohort="2026 Summer Camp">☀️ 2026 Summer Camp</button>
+      <div class="class-picker-grid" role="group" aria-label="Showcase category links">
+        <button type="button" data-category="Game">🎮 Games</button>
+        <button type="button" data-category="3D,Animation">🎨 Art <span class="class-picker-sub">3D models, 2D art</span></button>
+        <button type="button" data-category="Student Films">🎬 Student Films</button>
+        <button type="button" data-category="Project Gallery">📸 Project Gallery <span class="class-picker-sub">Hardware, real-life projects, dev journals</span></button>
       </div>
 
       <div class="class-picker-actions">
@@ -396,7 +398,7 @@
   </section>
 
   <script>
-    // Showcase Cohort Picker Controller
+    // Showcase Category Picker Controller
     (function () {
       var STORAGE_KEY = "showcase-cohort";
       var picker = document.getElementById("cohort-picker");
@@ -408,8 +410,8 @@
       var focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
       var lastFocused = null;
 
-      function currentCohortParam() {
-        return new URLSearchParams(window.location.search).get("cohort");
+      function currentCategoryParam() {
+        return new URLSearchParams(window.location.search).get("category");
       }
 
       function focusableElements(root) {
@@ -467,15 +469,15 @@
         }
       }
 
-      function chooseCohort(value) {
+      function chooseCategory(value) {
         try { localStorage.setItem(STORAGE_KEY, value); } catch (e) {}
-        window.location.href = "showcase.html?cohort=" + encodeURIComponent(value);
+        window.location.href = "showcase.html?category=" + encodeURIComponent(value);
       }
 
       function chooseSeeEverything() {
         try { localStorage.setItem(STORAGE_KEY, "__all__"); } catch (e) {}
-        if (currentCohortParam()) {
-          // Strip the active cohort filter (and any other filters) so "See Everything" really does.
+        if (currentCategoryParam()) {
+          // Strip the active category filter (and any other filters) so "See Everything" really does.
           window.location.href = "showcase.html";
           return;
         }
@@ -483,9 +485,9 @@
       }
 
       picker.addEventListener("click", function (event) {
-        var cohortBtn = event.target.closest("[data-cohort]");
-        if (cohortBtn) {
-          chooseCohort(cohortBtn.getAttribute("data-cohort"));
+        var categoryBtn = event.target.closest("[data-category]");
+        if (categoryBtn) {
+          chooseCategory(categoryBtn.getAttribute("data-category"));
           return;
         }
         if (event.target.closest("[data-close-cohort-picker='true']")) {
@@ -509,7 +511,7 @@
       // First-arrival gate: show only if nothing has been decided yet for this browser.
       var stored;
       try { stored = localStorage.getItem(STORAGE_KEY); } catch (e) { stored = null; }
-      if (!currentCohortParam() && stored !== "__all__") {
+      if (!currentCategoryParam() && stored !== "__all__") {
         showPicker();
       }
     })();

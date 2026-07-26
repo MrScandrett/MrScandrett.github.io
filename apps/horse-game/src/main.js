@@ -85,21 +85,10 @@ const horseActions = {
 
 window.addEventListener('keydown', (event) => {
   keysDown.add(event.code);
-
-  if (event.code === 'KeyR' && horseRig) {
-    horseRig.position.set(0, horseRig.position.y, 0);
-    state.speed = 0;
-    alignHorseToGround(true);
-  }
 });
 
 window.addEventListener('keyup', (event) => {
   keysDown.delete(event.code);
-});
-
-window.addEventListener('blur', () => {
-  // Prevent keys from getting "stuck" held-down when alt-tabbing away mid-key-press
-  keysDown.clear();
 });
 
 canvas.addEventListener('mousedown', (event) => {
@@ -500,11 +489,10 @@ function updateHorseMovement(delta) {
   const reverse = keysDown.has('KeyS');
   const turnLeft = keysDown.has('KeyA');
   const turnRight = keysDown.has('KeyD');
-  const sprinting = keysDown.has('ShiftLeft') || keysDown.has('ShiftRight');
 
-  const maxForward = sprinting ? 14.5 : 9.6;
+  const maxForward = 9.6;
   const maxReverse = -3.6;
-  const acceleration = sprinting ? 22 : 16;
+  const acceleration = 16;
   const reverseAccel = 12;
   const drag = 10;
   const brake = 18;
@@ -547,8 +535,6 @@ function updateHorseMovement(delta) {
   tmpForward.set(0, 0, -1).applyAxisAngle(yAxis, state.heading);
   horseRig.position.addScaledVector(tmpForward, state.speed * delta);
 
-  // IDEA: groundCollisionMeshes only stops the horse sinking through snow -
-  // add a simple radius check against tree trunk positions to stop riding through them.
   const radius = Math.hypot(horseRig.position.x, horseRig.position.z);
   if (radius > state.worldRadius) {
     const clamp = state.worldRadius / radius;
