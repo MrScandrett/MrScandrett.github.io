@@ -3,21 +3,6 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script>
-    // Cohort redirect: if the visitor has a remembered showcase (School Year / Camp) and this
-    // URL doesn't already say which one, bounce to the remembered one immediately — before
-    // anything renders — so returning visitors never have to re-pick. Runs as early as possible
-    // to avoid a flash of the unfiltered grid. "__all__" means they previously chose "See
-    // Everything" and should not be redirected or re-prompted.
-    (function () {
-      if (new URLSearchParams(window.location.search).has("category")) return;
-      var stored;
-      try { stored = localStorage.getItem("showcase-cohort"); } catch (e) { stored = null; }
-      if (stored && stored !== "__all__") {
-        window.location.replace("showcase.html?category=" + encodeURIComponent(stored));
-      }
-    })();
-  </script>
   <title>Student Showcase · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
   <meta name="description" content="Explore, filter, and sort student projects with instant discovery tools." />
@@ -385,10 +370,14 @@
       <p>Pick a category to explore. You can change this anytime from the "Browse Category" button in the toolbar.</p>
 
       <div class="class-picker-grid" role="group" aria-label="Showcase category links">
+        <!-- Each tile lists the category names it collects, comma-separated (the browse filter
+             OR's them together). Names that no project uses yet are intentional: they're the
+             taxonomy students submit into, and their tiles fill in as work arrives. Categories
+             currently in apps/manifest.json: Game, 3D, Animation, Simulation, Web, Music. -->
         <button type="button" data-category="Game">🎮 Games</button>
-        <button type="button" data-category="3D,Animation">🎨 Art <span class="class-picker-sub">3D models, 2D art</span></button>
-        <button type="button" data-category="Student Films">🎬 Student Films</button>
-        <button type="button" data-category="Project Gallery">📸 Project Gallery <span class="class-picker-sub">Hardware, real-life projects, dev journals</span></button>
+        <button type="button" data-category="3D,Art">🎨 Art <span class="class-picker-sub">3D models, 2D art</span></button>
+        <button type="button" data-category="Student Films,Animation">🎬 Student Films <span class="class-picker-sub">Animated shorts, live action</span></button>
+        <button type="button" data-category="Project Gallery,Simulation,Web,Music">📸 Project Gallery <span class="class-picker-sub">Hardware, real-life projects, dev journals</span></button>
       </div>
 
       <div class="class-picker-actions">
@@ -470,12 +459,10 @@
       }
 
       function chooseCategory(value) {
-        try { localStorage.setItem(STORAGE_KEY, value); } catch (e) {}
         window.location.href = "showcase.html?category=" + encodeURIComponent(value);
       }
 
       function chooseSeeEverything() {
-        try { localStorage.setItem(STORAGE_KEY, "__all__"); } catch (e) {}
         if (currentCategoryParam()) {
           // Strip the active category filter (and any other filters) so "See Everything" really does.
           window.location.href = "showcase.html";
@@ -508,12 +495,14 @@
         trapFocus(event);
       });
 
-      // First-arrival gate: show only if nothing has been decided yet for this browser.
-      var stored;
-      try { stored = localStorage.getItem(STORAGE_KEY); } catch (e) { stored = null; }
-      if (!currentCategoryParam() && stored !== "__all__") {
+      // Front door: the category tiles are the first thing every visitor sees. Only an explicit
+      // ?category= in the URL (i.e. they already picked) skips the picker — nothing is remembered
+      // between visits, so landing on showcase.html always offers the four genres again.
+      if (!currentCategoryParam()) {
         showPicker();
       }
+      // Clear the old sticky preference so browsers that stored one aren't stuck past the picker.
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     })();
   </script>
 
