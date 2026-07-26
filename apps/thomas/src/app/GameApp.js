@@ -1,21 +1,22 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { COMBAT, PLAYER } from '/src/app/config.js';
+import { enableTouchLook } from '../touch-look.js';
+import { COMBAT, PLAYER } from './config.js';
 // Default player values to prevent NaN errors if config is missing values.
 const PLAYER_STAND_HEIGHT = PLAYER.STAND_HEIGHT || 5.0;
 const PLAYER_SLIDE_HEIGHT = PLAYER.SLIDE_HEIGHT || 2.5;
-import { createTerrainSystem } from '/src/features/world/terrainSystem.js';
-import { createTowerSystem } from '/src/features/structures/towerSystem.js';
-import { createHealthDisplay } from '/src/ui/hud.js';
-import { createMinimap } from '/src/ui/minimap.js';
-import { createFpsMeter } from '/src/diagnostics/fpsMeter.js';
-import { LOBBY_GAMES } from '/src/app/gameRegistry.js';
-import { createLobbyWorld } from '/src/features/lobby/lobbyWorld.js';
-import { createLavaParkourWorld } from '/src/features/lava/lavaParkourWorld.js';
-import { createVegetationSystem, createStarfield } from '/src/features/world/vegetationSystem.js';
-import { createParticleSystem } from '/src/features/world/particleSystem.js';
-import { createBot, shootBotSnowball, createProjectileMesh } from '/src/features/combat/combatSystem.js';
-import { createShopUi, WEAPONS } from '/src/ui/shopUi.js';
+import { createTerrainSystem } from '../features/world/terrainSystem.js';
+import { createTowerSystem } from '../features/structures/towerSystem.js';
+import { createHealthDisplay } from '../ui/hud.js';
+import { createMinimap } from '../ui/minimap.js';
+import { createFpsMeter } from '../diagnostics/fpsMeter.js';
+import { LOBBY_GAMES } from './gameRegistry.js';
+import { createLobbyWorld } from '../features/lobby/lobbyWorld.js';
+import { createLavaParkourWorld } from '../features/lava/lavaParkourWorld.js';
+import { createVegetationSystem, createStarfield } from '../features/world/vegetationSystem.js';
+import { createParticleSystem } from '../features/world/particleSystem.js';
+import { createBot, shootBotSnowball, createProjectileMesh } from '../features/combat/combatSystem.js';
+import { createShopUi, WEAPONS } from '../ui/shopUi.js';
 
 export function startGame() {
     const scene = new THREE.Scene();
@@ -278,7 +279,18 @@ export function startGame() {
         }
     }
 
-    instructions.addEventListener('click', () => controls.lock());
+    // Phones and tablets can't pointer-lock, so tap-to-play plus drag-to-look
+    // stands in for it; on a mouse this returns null and lock works as before.
+    const touchLook = enableTouchLook({
+        controls,
+        camera,
+        domElement: renderer.domElement,
+        blocker: instructions,
+    });
+
+    instructions.addEventListener('click', () => {
+        if (!touchLook) controls.lock();
+    });
     const interactionPrompt = document.createElement('div');
     interactionPrompt.style.position = 'absolute';
     interactionPrompt.style.left = '50%';
@@ -357,7 +369,8 @@ export function startGame() {
             mediaRecorder.stop();
         }
         if (!keepLocked && controls.isLocked) {
-            controls.unlock();
+            if (touchLook) touchLook.setLocked(false);
+            else controls.unlock();
         }
     }
 

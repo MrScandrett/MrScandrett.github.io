@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PLAYER } from '/src/app/config.js';
+import { PLAYER } from '../../app/config.js';
 
 // Default player height to prevent NaN errors if config is missing values.
 const PLAYER_STAND_HEIGHT = PLAYER.STAND_HEIGHT || 5.0;

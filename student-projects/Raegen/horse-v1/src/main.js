@@ -3,6 +3,7 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 import { loadAllSpecies } from './assets.js';
 import { SPECIES, populate, updateCreatures, flatDistance } from './creatures.js';
 import { buildWorld, WORLD_RADIUS } from './world.js';
+import { enableTouchLook } from './touch-look.js';
 import {
   advanceDay,
   canRide,
@@ -140,7 +141,19 @@ updateHud();
 
 // --- Input ----------------------------------------------------------------
 
-dom.instructions.addEventListener('click', () => controls.lock());
+// Phones and tablets can't pointer-lock, so they get tap-to-play plus
+// drag-to-look instead; on a mouse this returns null and nothing changes.
+const touchLook = enableTouchLook({
+  controls,
+  camera,
+  domElement: renderer.domElement,
+  blocker: dom.blocker,
+  canLook: () => !inventoryOpen && dom.namePanel.classList.contains('hidden'),
+});
+
+dom.instructions.addEventListener('click', () => {
+  if (!touchLook) controls.lock();
+});
 
 controls.addEventListener('lock', () => dom.blocker.classList.add('hidden'));
 controls.addEventListener('unlock', () => {
@@ -254,9 +267,16 @@ function placementSpot() {
   return player.position.clone().addScaledVector(direction, 80);
 }
 
+// Touch mode has no real pointer lock, so flip the flag the game reads instead.
+function setLocked(locked) {
+  if (touchLook) touchLook.setLocked(locked);
+  else if (locked) controls.lock();
+  else controls.unlock();
+}
+
 function openNamePanel() {
   dom.namePanel.classList.remove('hidden');
-  controls.unlock();
+  setLocked(false);
   dom.nameInput.focus();
 }
 
@@ -265,14 +285,14 @@ function submitName() {
   if (!game.horseName) return;
   dom.namePanel.classList.add('hidden');
   updateHud();
-  controls.lock();
+  setLocked(true);
 }
 
 function toggleInventory() {
   inventoryOpen = !inventoryOpen;
   dom.panel.classList.toggle('expanded', inventoryOpen);
-  if (inventoryOpen) controls.unlock();
-  else controls.lock();
+  if (inventoryOpen) setLocked(false);
+  else setLocked(true);
 }
 
 // --- HUD ------------------------------------------------------------------

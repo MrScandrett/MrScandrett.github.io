@@ -18,6 +18,8 @@ const MANIFEST_OVERRIDES_PATH = path.join(ROOT, "data", "manifest-overrides.json
 const SHOWCASE_THUMBS_DIR = path.join(ROOT, "assets", "thumbs", "showcase");
 const PIV_ENGINE_PATH = path.join(ROOT, "lib", "piv-engine.js");
 const PIV_PLAYER_PATH = path.join(ROOT, "lib", "piv-player.js");
+const TOUCH_CONTROLS_PATH = path.join(ROOT, "lib", "touch-controls.js");
+const TOUCH_CONTROLS_CONFIG_PATH = path.join(ROOT, "data", "touch-controls.json");
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg"]);
 const MODEL_EXTENSIONS = new Set([".stl", ".obj"]);
@@ -164,6 +166,52 @@ function rewriteHtmlPaths(html, options = {}) {
   });
 
   return out;
+}
+
+// Without this a phone lays the page out at ~980px and zooms out, which makes
+// every game unreadable. Several student pages predate anyone testing on a
+// phone, so guarantee it at build time rather than chasing each one.
+function ensureViewportMeta(html) {
+  if (/<meta[^>]+name\s*=\s*["']viewport["']/i.test(html)) return html;
+  const meta = '<meta name="viewport" content="width=device-width, initial-scale=1" />';
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => `${m}\n${meta}`);
+  return `${meta}\n${html}`;
+}
+
+let touchControlsSourcePromise = null;
+function touchControlsSource() {
+  if (!touchControlsSourcePromise) {
+    touchControlsSourcePromise = fs
+      .readFile(TOUCH_CONTROLS_PATH, "utf8")
+      .then((code) => esbuild.transform(code, { minify: true, loader: "js" }))
+      .then((result) => result.code);
+  }
+  return touchControlsSourcePromise;
+}
+
+let touchControlsConfigPromise = null;
+function touchControlsConfig() {
+  if (!touchControlsConfigPromise) {
+    touchControlsConfigPromise = fs
+      .readFile(TOUCH_CONTROLS_CONFIG_PATH, "utf8")
+      .then((raw) => JSON.parse(raw))
+      .catch(() => ({}));
+  }
+  return touchControlsConfigPromise;
+}
+
+// Appends the on-screen gamepad for slugs that declare one. Config first, then
+// the layer, so the script sees window.__TOUCH_CONTROLS__ already set.
+async function injectTouchControls(html, slug) {
+  const config = (await touchControlsConfig())[slug];
+  if (!config) return html;
+  const payload = JSON.stringify(config).replace(/</g, "\\u003c");
+  const block =
+    `<script>window.__TOUCH_CONTROLS__=${payload}</script>` +
+    `<script>${await touchControlsSource()}</script>`;
+  return /<\/body>/i.test(html)
+    ? html.replace(/<\/body>/i, `${block}</body>`)
+    : html + block;
 }
 
 function rewriteCssPaths(css) {
@@ -643,7 +691,9 @@ async function processProject(source, slug) {
   const sourceHtml = await fs.readFile(sourceIndexPath, "utf8");
   const projectTitle = getHtmlTitle(sourceHtml) || `${toTitleFromSlug(slug)} Project`;
 
-  const rewrittenHtml = rewriteHtmlPaths(sourceHtml, { hasStyle, hasScript });
+  let rewrittenHtml = rewriteHtmlPaths(sourceHtml, { hasStyle, hasScript });
+  rewrittenHtml = ensureViewportMeta(rewrittenHtml);
+  rewrittenHtml = await injectTouchControls(rewrittenHtml, slug);
   const minifiedHtml = await minify(rewrittenHtml, {
     collapseWhitespace: true,
     removeComments: true,
@@ -703,7 +753,12 @@ async function processScratchProject(source, slug) {
       color: #eef4ff;
       display: grid;
       grid-template-rows: auto 1fr auto;
+      /* Grid items won't shrink past their content without this, which on a
+         narrow phone widened the page and produced a sideways scroll. */
+      overflow-x: hidden;
     }
+    body > * { min-width: 0; }
+
     .head, .foot {
       padding: 0.8rem 1rem;
       border-bottom: 1px solid rgba(255,255,255,0.14);
@@ -924,7 +979,12 @@ async function processPivotProject(source, slug) {
       font-family: "Segoe UI", Arial, sans-serif;
       display: grid;
       grid-template-rows: auto 1fr auto;
+      /* Grid items won't shrink past their content without this, which on a
+         narrow phone widened the page and produced a sideways scroll. */
+      overflow-x: hidden;
     }
+    body > * { min-width: 0; }
+
     .head, .foot {
       padding: 0.9rem 1rem;
       background: #12213b;
@@ -1139,7 +1199,12 @@ function viewerPageShell({ title, headline, subline, bodyHtml, footNote }) {
       font-family: "Segoe UI", Arial, sans-serif;
       display: grid;
       grid-template-rows: auto 1fr auto;
+      /* Grid items won't shrink past their content without this, which on a
+         narrow phone widened the page and produced a sideways scroll. */
+      overflow-x: hidden;
     }
+    body > * { min-width: 0; }
+
     .head, .foot {
       padding: 0.9rem 1rem;
       background: #12213b;
@@ -1792,7 +1857,7 @@ async function processModelProject(source, slug) {
 
   await fs.rm(viewerEntryPath, { force: true });
 
-  const style = `*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#0f1726;color:#f3f6fb;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;display:grid;grid-template-rows:auto 1fr auto}.top,.foot{display:flex;justify-content:space-between;gap:.8rem;align-items:center;padding:.7rem 1rem;background:#132039;border-bottom:1px solid rgba(255,255,255,.15)}.foot{border-top:1px solid rgba(255,255,255,.15);border-bottom:0;font-size:.9rem;color:#d4deef}.title{font-size:1.05rem;font-weight:700}.sub{font-size:.9rem;color:#c5d4ec}.actions{display:flex;gap:.45rem;flex-wrap:wrap}.actions button{border:1px solid rgba(255,255,255,.25);background:#1b2e4f;color:#f4f8ff;border-radius:8px;padding:.5rem .7rem;font:600 .84rem/1.2 "Segoe UI",Arial,sans-serif;cursor:pointer}.actions button:hover{background:#24406f}main{padding:.7rem}.viewport{width:min(98vw,1200px);height:min(78vh,760px);margin:0 auto;border:1px solid rgba(255,255,255,.2);border-radius:12px;overflow:hidden;background:#edf2fa}.status{padding:.55rem .9rem;color:#dbe5f6;font-size:.9rem;text-align:center}@media (max-width:900px){.top{flex-direction:column;align-items:flex-start}.actions{width:100%}}`;
+  const style = `*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#0f1726;color:#f3f6fb;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;display:grid;grid-template-rows:auto 1fr auto;overflow-x:hidden}body>*{min-width:0}.top,.foot{display:flex;justify-content:space-between;gap:.8rem;align-items:center;padding:.7rem 1rem;background:#132039;border-bottom:1px solid rgba(255,255,255,.15)}.foot{border-top:1px solid rgba(255,255,255,.15);border-bottom:0;font-size:.9rem;color:#d4deef}.title{font-size:1.05rem;font-weight:700}.sub{font-size:.9rem;color:#c5d4ec}.actions{display:flex;gap:.45rem;flex-wrap:wrap}.actions button{border:1px solid rgba(255,255,255,.25);background:#1b2e4f;color:#f4f8ff;border-radius:8px;padding:.5rem .7rem;font:600 .84rem/1.2 "Segoe UI",Arial,sans-serif;cursor:pointer}.actions button:hover{background:#24406f}main{padding:.7rem}.viewport{width:min(100%,1200px);height:min(78vh,760px);margin:0 auto;border:1px solid rgba(255,255,255,.2);border-radius:12px;overflow:hidden;background:#edf2fa}.status{padding:.55rem .9rem;color:#dbe5f6;font-size:.9rem;text-align:center}@media (max-width:900px){.top{flex-direction:column;align-items:flex-start}.actions{width:100%}}`;
   await fs.writeFile(path.join(outputDir, "style.min.css"), style, "utf8");
 
   const html = `<!doctype html>

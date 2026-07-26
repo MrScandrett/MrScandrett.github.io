@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SPAWN_FLAT_RADIUS, TERRAIN_SEGMENTS, WORLD_RADIUS } from '/src/app/config.js';
+import { SPAWN_FLAT_RADIUS, TERRAIN_SEGMENTS, WORLD_RADIUS } from '../../app/config.js';
 
 export function createTerrainSystem(scene) {
     function isInsideWorld(x, z, margin = 0) {

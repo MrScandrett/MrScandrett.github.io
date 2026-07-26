@@ -1,4 +1,4 @@
-import { COMBAT } from '/src/app/config.js';
+import { COMBAT } from '../app/config.js';
 
 export const WEAPONS = [
     {

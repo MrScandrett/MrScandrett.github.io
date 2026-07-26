@@ -144,3 +144,30 @@ button:active{ transform:translateY(1px) }
 @keyframes flashFade{ 0%{ opacity:.55 } 100%{ opacity:0 } }
 
 @media (max-width:720px){ .container{ flex-direction:column; align-items:center } .sidebar{ width:100%; max-width:360px } .sidebar-left{ width:100%; max-width:360px; order:-1 } }
+
+/* The board is a fixed 240x480, which is taller than a landscape phone and,
+   once the sidebars stack, taller than a portrait one too. Size it from the
+   viewport instead — the 1:2 ratio is preserved so the pixels stay square. */
+@media (max-height: 700px) and (orientation: landscape) {
+  .container { flex-direction: row; align-items: center; padding: 8px; gap: 10px; }
+  .board-wrap,
+  .board-wrap #board,
+  .board-wrap #fx {
+    height: calc(100dvh - 24px);
+    width: calc((100dvh - 24px) / 2);
+  }
+  .sidebar, .sidebar-left { width: auto; max-width: 34vw; font-size: 12px; }
+  .sidebar h1 { font-size: 1.1rem; }
+  #hold { width: 56px; height: 56px; }
+}
+
+@media (max-width: 720px) and (orientation: portrait) {
+  .container { padding: 10px; gap: 10px; }
+  .board-wrap,
+  .board-wrap #board,
+  .board-wrap #fx {
+    height: min(480px, calc(100dvh - 260px));
+    width: min(240px, calc((100dvh - 260px) / 2));
+  }
+  .sidebar, .sidebar-left { max-width: 92vw; }
+}
