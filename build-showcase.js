@@ -3,9 +3,12 @@
 const fs = require("fs/promises");
 const fssync = require("fs");
 const path = require("path");
+const zlib = require("zlib");
 const { spawnSync } = require("child_process");
 const esbuild = require("esbuild");
 const { minify } = require("html-minifier-terser");
+const pivEngine = require("./lib/piv-engine.js");
+const { buildPivotFrameThumbSvg } = require("./lib/piv-thumb.js");
 
 const ROOT = process.cwd();
 const STUDENT_PROJECTS_DIR = path.join(ROOT, "student-projects");
@@ -13,6 +16,8 @@ const APPS_DIR = path.join(ROOT, "apps");
 const MANIFEST_PATH = path.join(APPS_DIR, "manifest.json");
 const MANIFEST_OVERRIDES_PATH = path.join(ROOT, "data", "manifest-overrides.json");
 const SHOWCASE_THUMBS_DIR = path.join(ROOT, "assets", "thumbs", "showcase");
+const PIV_ENGINE_PATH = path.join(ROOT, "lib", "piv-engine.js");
+const PIV_PLAYER_PATH = path.join(ROOT, "lib", "piv-player.js");
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg"]);
 const MODEL_EXTENSIONS = new Set([".stl", ".obj"]);
@@ -817,6 +822,38 @@ function buildPivotThumbSvg({ title, student }) {
 `;
 }
 
+// Reads a .piv and returns the parsed document, or null when the file is a
+// variant this engine doesn't understand (a .stk figure, say). Callers fall back
+// to the "export a preview video" page in that case.
+function readPivotDocument(filePath) {
+  // .stk holds a single figure rather than an animation — nothing to play.
+  if (path.extname(filePath).toLowerCase() !== ".piv") return null;
+  try {
+    const raw = fssync.readFileSync(filePath);
+    return pivEngine.parsePiv(new Uint8Array(zlib.inflateSync(raw)));
+  } catch (error) {
+    console.warn(`  ! ${path.basename(filePath)}: ${error.message}`);
+    return null;
+  }
+}
+
+let pivotScriptPromise = null;
+// The engine and player are shared source; each Pivot page inlines a minified
+// copy so the viewer stays a single self-contained file.
+function pivotInlineScript() {
+  if (!pivotScriptPromise) {
+    pivotScriptPromise = (async () => {
+      const source = [
+        await fs.readFile(PIV_ENGINE_PATH, "utf8"),
+        await fs.readFile(PIV_PLAYER_PATH, "utf8"),
+      ].join("\n");
+      const result = await esbuild.transform(source, { minify: true, loader: "js" });
+      return result.code;
+    })();
+  }
+  return pivotScriptPromise;
+}
+
 async function processPivotProject(source, slug) {
   const outputDir = path.join(APPS_DIR, slug);
   const sourceFileName = path.basename(source.filePath);
@@ -844,11 +881,32 @@ async function processPivotProject(source, slug) {
 
   const pivotRel = `./assets/media/${encodeURIComponent(sourcePivotOutName)}`;
   const isVideoPreview = hasPreview && previewExt !== ".gif";
-  const embed = hasPreview
-    ? isVideoPreview
+
+  // Play the .piv itself where we can. A preview video is only a fallback now,
+  // and the "export a video first" placeholder is the last resort.
+  const pivDoc = readPivotDocument(source.filePath);
+  const inlineScript = pivDoc ? await pivotInlineScript() : "";
+
+  let embed;
+  if (pivDoc) {
+    embed = `<div class="piv" data-piv-src="${pivotRel}" data-piv-title="${title}">
+      <canvas data-piv-canvas width="${pivDoc.width}" height="${pivDoc.height}" role="img" aria-label="${title}"></canvas>
+      <p class="piv-status" data-piv-status>Loading animation…</p>
+      <div class="piv-controls" data-piv-controls hidden>
+        <button type="button" data-piv-toggle aria-pressed="false">Play</button>
+        <button type="button" data-piv-step="-1" aria-label="Previous frame">&#9664;</button>
+        <button type="button" data-piv-step="1" aria-label="Next frame">&#9654;</button>
+        <input type="range" data-piv-scrub aria-label="Frame" value="0" min="0" max="0" />
+        <span class="piv-counter" data-piv-counter aria-live="off"></span>
+      </div>
+    </div>`;
+  } else if (hasPreview) {
+    embed = isVideoPreview
       ? `<video controls autoplay loop muted playsinline preload="metadata"><source src="${previewRel}" /></video>`
-      : `<img src="${previewRel}" alt="${title} animation preview" loading="eager" decoding="async" />`
-    : `<div class="empty">No preview media found yet. Add a .webm, .mp4, .gif, or .mov with the same filename as the Pivot file to enable in-browser playback.</div>`;
+      : `<img src="${previewRel}" alt="${title} animation preview" loading="eager" decoding="async" />`;
+  } else {
+    embed = `<div class="empty">No preview media found yet. Add a .webm, .mp4, .gif, or .mov with the same filename as the Pivot file to enable in-browser playback.</div>`;
+  }
 
   const html = `<!doctype html>
 <html lang="en">
@@ -930,6 +988,65 @@ async function processPivotProject(source, slug) {
     .actions a:hover {
       background: #284679;
     }
+    .piv {
+      display: grid;
+      gap: 0.7rem;
+      justify-items: center;
+      width: min(96vw, 1200px);
+    }
+    .piv canvas {
+      width: 100%;
+      max-height: 72vh;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: #ffffff;
+    }
+    .piv-status {
+      margin: 0;
+      color: #cddcf0;
+      font-size: 0.92rem;
+    }
+    .piv-status.is-error {
+      color: #ffd7d7;
+    }
+    .piv-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .piv-controls button {
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #eff6ff;
+      background: #1b3156;
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 8px;
+      padding: 0.45rem 0.8rem;
+      cursor: pointer;
+      min-width: 3rem;
+    }
+    .piv-controls button:hover {
+      background: #284679;
+    }
+    .piv-controls input[type="range"] {
+      flex: 1 1 14rem;
+      max-width: 30rem;
+      accent-color: #7fb2ff;
+    }
+    .piv-counter {
+      font-variant-numeric: tabular-nums;
+      color: #cddcf0;
+      font-size: 0.92rem;
+      min-width: 6ch;
+      text-align: center;
+    }
+    :focus-visible {
+      outline: 3px solid #9fd0ff;
+      outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
@@ -944,8 +1061,15 @@ async function processPivotProject(source, slug) {
     </div>
   </main>
   <footer class="foot">
-    ${hasPreview ? "Playback uses the exported preview media file stored with this Pivot project." : "Export a preview video or GIF to watch this animation directly in the browser."}
+    ${
+      pivDoc
+        ? `${pivDoc.frames.length} frames at ${pivDoc.fps} fps, drawn straight from the original Pivot file — no video export needed.`
+        : hasPreview
+          ? "Playback uses the exported preview media file stored with this Pivot project."
+          : "Export a preview video or GIF to watch this animation directly in the browser."
+    }
   </footer>
+  ${inlineScript ? `<script>${inlineScript}</script>` : ""}
 </body>
 </html>`;
 
@@ -970,7 +1094,9 @@ async function processPivotProject(source, slug) {
     if (showcaseThumb) {
       thumbnail = showcaseThumb;
     } else {
-      const thumbSvg = buildPivotThumbSvg({ title, student: studentLabel });
+      const thumbSvg = pivDoc
+        ? buildPivotFrameThumbSvg({ title, student: studentLabel, doc: pivDoc })
+        : buildPivotThumbSvg({ title, student: studentLabel });
       await ensureDir(path.join(outputDir, "assets"));
       await fs.writeFile(path.join(outputDir, "assets", "thumb.svg"), thumbSvg, "utf8");
       thumbnail = `./apps/${slug}/assets/thumb.svg`;
@@ -985,8 +1111,12 @@ async function processPivotProject(source, slug) {
     student: studentLabel,
     category: "Animation",
     program: "Student Upload",
-    tech: ["Pivot Animator", hasPreview ? path.extname(previewOutName).slice(1).toUpperCase() : pivotExt],
-    tags: ["student-upload", "pivot-animation"],
+    tech: pivDoc
+      ? ["Pivot Animator", pivotExt, "Canvas"]
+      : ["Pivot Animator", hasPreview ? path.extname(previewOutName).slice(1).toUpperCase() : pivotExt],
+    tags: pivDoc
+      ? ["student-upload", "pivot-animation", "playable"]
+      : ["student-upload", "pivot-animation"],
     difficulty: "Beginner",
     date_added: new Date().toISOString().slice(0, 10),
   };
