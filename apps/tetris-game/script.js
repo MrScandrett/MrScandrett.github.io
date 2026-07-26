@@ -1,7 +1,31 @@
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
+const fxCanvas = document.getElementById('fx');
+const fxCtx = fxCanvas.getContext('2d');
 const nextCanvas = document.getElementById('next');
 const nextCtx = nextCanvas.getContext('2d');
+const holdCanvas = document.getElementById('hold');
+const holdCtx = holdCanvas.getContext('2d');
+const holdBtn = document.getElementById('holdBtn');
+
+const flashOverlay = document.createElement('div');
+flashOverlay.className = 'flash-overlay';
+document.body.appendChild(flashOverlay);
+function flashScreen(){
+	flashOverlay.classList.remove('hit');
+	void flashOverlay.offsetWidth; // restart animation
+	flashOverlay.classList.add('hit');
+}
+function shakeBoard(){
+	canvas.classList.remove('board-shake');
+	void canvas.offsetWidth;
+	canvas.classList.add('board-shake');
+}
+function popScore(){
+	scoreEl.classList.remove('pop');
+	void scoreEl.offsetWidth;
+	scoreEl.classList.add('pop');
+}
 
 const scoreEl = document.getElementById('score');
 const levelEl = document.getElementById('level');
@@ -93,6 +117,10 @@ function randomPiece(){
 	return { shape: rom, type:k, rot:rotation };
 }
 
+function pieceFromType(type){
+	return { shape: TETROMINOS[type], type, rot:0 };
+}
+
 function rotate(matrix, dir){
 	for(let y=0;y<matrix.length;y++){
 		for(let x=0;x<y;x++){
@@ -102,12 +130,101 @@ function rotate(matrix, dir){
 	if(dir>0) matrix.forEach(row=>row.reverse()); else matrix.reverse();
 }
 
+function shade(hex, amt){
+	const n = parseInt(hex.slice(1),16);
+	let r = Math.min(255, Math.max(0, (n>>16) + amt));
+	let g = Math.min(255, Math.max(0, ((n>>8)&0xff) + amt));
+	let b = Math.min(255, Math.max(0, (n&0xff) + amt));
+	return `rgb(${r},${g},${b})`;
+}
+
 function drawCell(x,y, val, alpha=1){
 	if(!val) return;
+	const px = x*BLOCK, py = y*BLOCK, s = BLOCK-1;
+	const base = colors[val];
+	ctx.save();
 	ctx.globalAlpha = alpha;
-	ctx.fillStyle = colors[val];
-	ctx.fillRect(x*BLOCK, y*BLOCK, BLOCK-1, BLOCK-1);
-	ctx.globalAlpha = 1;
+
+	// glow
+	ctx.shadowColor = base;
+	ctx.shadowBlur = 8;
+
+	// beveled body via gradient
+	const grad = ctx.createLinearGradient(px, py, px+s, py+s);
+	grad.addColorStop(0, shade(base, 70));
+	grad.addColorStop(0.5, base);
+	grad.addColorStop(1, shade(base, -60));
+	ctx.fillStyle = grad;
+	ctx.fillRect(px, py, s, s);
+	ctx.shadowBlur = 0;
+
+	// top-left highlight bevel
+	ctx.fillStyle = 'rgba(255,255,255,0.55)';
+	ctx.beginPath();
+	ctx.moveTo(px, py+s);
+	ctx.lineTo(px, py);
+	ctx.lineTo(px+s, py);
+	ctx.lineTo(px+s-4, py+4);
+	ctx.lineTo(px+4, py+4);
+	ctx.lineTo(px+4, py+s-4);
+	ctx.closePath();
+	ctx.fill();
+
+	// bottom-right shadow bevel
+	ctx.fillStyle = 'rgba(0,0,0,0.45)';
+	ctx.beginPath();
+	ctx.moveTo(px+s, py);
+	ctx.lineTo(px+s, py+s);
+	ctx.lineTo(px, py+s);
+	ctx.lineTo(px+4, py+s-4);
+	ctx.lineTo(px+s-4, py+s-4);
+	ctx.lineTo(px+s-4, py+4);
+	ctx.closePath();
+	ctx.fill();
+
+	// inner core
+	ctx.fillStyle = base;
+	ctx.fillRect(px+4, py+4, s-8, s-8);
+
+	ctx.restore();
+}
+
+// ---------- Particle effects ----------
+let particles = [];
+function spawnLineParticles(rowY, colorList){
+	for(let x=0;x<COLS;x++){
+		const c = colorList[x] || '#ff6ec4';
+		for(let i=0;i<6;i++){
+			particles.push({
+				x: x*BLOCK + BLOCK/2,
+				y: rowY*BLOCK + BLOCK/2,
+				vx: (Math.random()-0.5)*6,
+				vy: -Math.random()*5 - 1,
+				life: 1,
+				color: c,
+				size: Math.random()*3+2
+			});
+		}
+	}
+}
+function updateParticles(dt){
+	fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+	particles.forEach(p=>{
+		p.x += p.vx;
+		p.y += p.vy;
+		p.vy += 0.25; // gravity
+		p.life -= dt/600;
+	});
+	particles = particles.filter(p=>p.life>0);
+	particles.forEach(p=>{
+		fxCtx.globalAlpha = Math.max(p.life,0);
+		fxCtx.fillStyle = p.color;
+		fxCtx.shadowColor = p.color;
+		fxCtx.shadowBlur = 10;
+		fxCtx.fillRect(p.x-p.size/2, p.y-p.size/2, p.size, p.size);
+	});
+	fxCtx.globalAlpha = 1;
+	fxCtx.shadowBlur = 0;
 }
 
 function draw(){
@@ -166,6 +283,8 @@ function sweep(){
 		for(let x=0;x<COLS;x++){
 			if(arena[y][x] === 0) continue outer;
 		}
+		const rowColors = arena[y].map(v=>colors[v]);
+		spawnLineParticles(y, rowColors);
 		const row = arena.splice(y,1)[0].fill(0);
 		arena.unshift(row);
 		y++;
@@ -176,6 +295,9 @@ function sweep(){
 		score += (rowCount === 1 ? 40 : rowCount === 2 ? 100 : rowCount === 3 ? 300 : 1200) * level;
 		level = Math.floor(lines/10) +1;
 		updateStats();
+		popScore();
+		shakeBoard();
+		flashScreen();
 	}
 }
 
@@ -246,6 +368,7 @@ function getGhostY(){
 function spawnPiece(){
 	current = next;
 	next = randomPiece();
+	holdLocked = false;
 	// center based on current rotation matrix
 	const m = currentMatrix();
 	pos.x = Math.floor((COLS - m[0].length) / 2);
@@ -279,9 +402,57 @@ function drawNext(){
 	nextCtx.restore();
 }
 
+function drawHold(){
+	holdCtx.clearRect(0,0,holdCanvas.width,holdCanvas.height);
+	holdCtx.fillStyle = '#000';
+	holdCtx.fillRect(0,0,holdCanvas.width,holdCanvas.height);
+	if(!held) return;
+	const m = TETROMINOS[held][0];
+	const size = 16;
+	holdCtx.save();
+	holdCtx.translate(8,8);
+	for(let y=0;y<m.length;y++){
+		for(let x=0;x<m[y].length;x++){
+			if(m[y][x]){
+				holdCtx.fillStyle = colors[m[y][x]];
+				holdCtx.fillRect(x*size, y*size, size-2, size-2);
+			}
+		}
+	}
+	holdCtx.restore();
+	holdCanvas.classList.toggle('held-locked', holdLocked);
+}
+
+function setHoldTint(type){
+	const col = type ? colors[TETROMINOS[type][0].flat().find(v=>v)] : null;
+	document.documentElement.style.setProperty('--hold-color', col || 'transparent');
+}
+
+function holdPiece(){
+	if(!running || paused || holdLocked) return;
+	if(!held){
+		held = current.type;
+		current = next;
+		next = randomPiece();
+	} else {
+		const swap = held;
+		held = current.type;
+		current = pieceFromType(swap);
+	}
+	const m = currentMatrix();
+	pos.x = Math.floor((COLS - m[0].length) / 2);
+	pos.y = 0;
+	holdLocked = true;
+	setHoldTint(held);
+	drawHold();
+	drawNext();
+}
+
 let arena = createMatrix(COLS, ROWS);
 let current = null;
 let next = randomPiece();
+let held = null;
+let holdLocked = false;
 let pos = {x:0,y:0};
 
 let dropCounter = 0;
@@ -293,6 +464,7 @@ let running = false, paused = false;
 function update(time=0){
 	const dt = time - lastTime;
 	lastTime = time;
+	updateParticles(Math.min(dt,100));
 	if(!running || paused){ requestAnimationFrame(update); return; }
 	dropCounter += dt;
 	dropInterval = Math.max(100, 1000 - (level-1)*100);
@@ -309,7 +481,10 @@ document.addEventListener('keydown', e=>{
 	else if(e.key === 'ArrowUp' || e.key.toLowerCase()==='x') rotatePiece(1);
 	else if(e.code === 'Space'){ e.preventDefault(); hardDrop(); }
 	else if(e.key.toLowerCase()==='p'){ paused = !paused; pauseBtn.textContent = paused? 'Resume' : 'Pause'; }
+	else if(e.key.toLowerCase()==='c'){ holdPiece(); }
 });
+
+holdBtn.addEventListener('click', ()=>{ holdPiece(); });
 
 startBtn.addEventListener('click', ()=>{
 	if(!running){
@@ -327,6 +502,9 @@ function resetGame(){
 	next = randomPiece();
 	current = next;
 	next = randomPiece();
+	held = null;
+	holdLocked = false;
+	setHoldTint(null);
 	const m = currentMatrix();
 	pos.x = Math.floor((COLS - m[0].length) / 2);
 	pos.y = 0;
@@ -337,6 +515,7 @@ function resetGame(){
 	pauseBtn.textContent = 'Pause';
 	updateStats();
 	drawNext();
+	drawHold();
 	hideGameOver();
 }
 
