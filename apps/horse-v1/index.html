@@ -1,1 +1,71 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Horse Adventure</title><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script><link rel="stylesheet" href="style.min.css"></head><body><div id="blocker"><div id="instructions"><span style="font-size:36px">Click to Play</span><br/><br/>Move: W, A, S, D<br/>Look: Mouse<br/>Interact: Left Click<br/>Inventory: I</div></div><div id="crosshair">+</div><div class="game-container"><h1>Horse Builder Adventure</h1><div class="status-area"><div class="slot"><img src="https://placehold.co/64x64/5c3a21/ffffff?text=Wood" alt="Wood"> <span id="wood">0</span></div><div class="slot"><img src="https://placehold.co/64x64/e3e3e3/000000?text=Qtz" alt="Quartz"> <span id="quartz">0</span></div><div class="slot"><img id="horse-img" src="https://placehold.co/64x64/333/ffffff?text=?" alt="Horse"> <span id="horse">None</span></div><div class="slot"><img src="https://placehold.co/64x64/7289da/ffffff?text=House" alt="House"> <span id="house-status">No</span></div><div class="slot"><img src="https://placehold.co/64x64/8b4513/ffffff?text=Stable" alt="Stable"> <span id="stable-status">No</span></div><div class="slot"><img src="https://placehold.co/64x64/d2691e/ffffff?text=Gear" alt="Gear"> <span id="gear">None</span></div></div><div id="log" class="log-area">Welcome! Find a horse, gather resources, build a home, and ride!</div><div class="controls"><button id="btn-house" onclick="game.buildHouse()" disabled="disabled">Build House (20 Wood)</button> <button id="btn-stable" onclick="game.buildStable()" disabled="disabled">Build Stable (10 Wood, 5 Quartz)</button> <button id="btn-ride" onclick="game.ride()" disabled="disabled">Ride Horse</button></div><div id="name-area" class="input-group hidden"><input id="horse-name-input" placeholder="Enter horse name..."> <button onclick="game.nameHorse()">Name It</button></div></div><script src="app.min.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Horse Adventure</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="scene"></div>
+
+    <div id="loading">Loading animals…</div>
+
+    <div id="blocker" class="hidden">
+      <div id="instructions">
+        <h1>Horse Adventure</h1>
+        <p class="tagline">Tame a wild horse on a field that is already busy without you.</p>
+        <ul>
+          <li><b>W A S D</b> — move &nbsp; <b>Shift</b> — run</li>
+          <li><b>Mouse</b> — look &nbsp; <b>Click</b> or <b>E</b> — interact</li>
+          <li><b>F</b> — dig &nbsp; <b>I</b> — inventory &nbsp; <b>Esc</b> — release mouse</li>
+        </ul>
+        <p class="hint">
+          Horses bolt from anyone running at them. Toucans circle above buried caches. The komodo
+          hunts the herd, and the pond belongs to the crocodile.
+        </p>
+        <p class="cta">Click to play</p>
+      </div>
+    </div>
+
+    <div id="crosshair">+</div>
+    <div id="prompt"></div>
+
+    <div id="panel">
+      <div class="objective-row">
+        <span class="objective-label">Next</span>
+        <span id="objective">—</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="key">Wood</span><span id="stat-wood">0</span></div>
+        <div class="stat"><span class="key">Quartz</span><span id="stat-quartz">0</span></div>
+        <div class="stat"><span class="key">Feed</span><span id="stat-feed">0</span></div>
+        <div class="stat"><span class="key">Snails</span><span id="stat-snails">0/6</span></div>
+        <div class="stat"><span class="key">Horse</span><span id="stat-horse">None</span></div>
+        <div class="stat"><span class="key">Gear</span><span id="stat-gear">None</span></div>
+      </div>
+      <div class="controls">
+        <button id="btn-house" disabled>Build House · 20 wood</button>
+        <button id="btn-stable" disabled>Build Stable · 10 wood, 5 quartz</button>
+        <button id="btn-ride" disabled>Ride</button>
+      </div>
+      <div id="log" class="log"></div>
+    </div>
+
+    <div id="name-panel" class="hidden">
+      <label for="horse-name-input">Name your horse</label>
+      <input id="horse-name-input" maxlength="24" placeholder="Juniper" />
+      <button id="name-submit">Name it</button>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
