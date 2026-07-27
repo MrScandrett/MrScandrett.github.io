@@ -3,15 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Measuring Length · Mr. Scandrett's ClassroomOS</title>
+  <title>Measuring Length &amp; Every Other Unit · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
-  <meta name="description" content="Mathematics Lesson — explore length from the Planck scale to the observable universe, the ancient history of cubits and the king's foot, and every measuring tool from a ruler to a laser." />
+  <meta name="description" content="Mathematics Lesson — length from the Planck scale to the observable universe, plus every other unit humans measure with: temperature, pressure, electricity, energy, light, sound, radiation, and data. Interactive labs, an SI unit library, and a universal converter." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
+    /* The Chicago bitmap webfont ships U+00D7 as a zero-width glyph, so every
+       "6.022 × 10²³" on this page rendered as a blank gap. Route just that one
+       codepoint to a system face; everything else still uses Chicago. */
+    @font-face {
+      font-family: "Classroom Chicago";
+      font-style: normal;
+      font-weight: 400 900;
+      src: local("Arial"), local("Helvetica"), local("Liberation Sans"), local("DejaVu Sans");
+      unicode-range: U+00D7;
+    }
+
     .ll-viewport { --ll-panel-w: 300px; --ll-accent: #f59e0b; --ll-tab-active: #f59e0b; --ll-tab-active-bg: rgba(245,158,11,0.12); }
 
     /* ── Page ─────────────────────────────────────────── */
@@ -208,6 +219,15 @@
       display: none;
     }
     .ml-scale-object::before, .ml-scale-object::after { content: ''; position: absolute; inset: 0; }
+    /* Real figure artwork sits above the animated canvas backdrop. */
+    .ml-scale-object[data-shape="figure"] {
+      display: block;
+      z-index: 3;
+      top: 40%;
+      filter: drop-shadow(0 14px 30px rgba(0,0,0,0.45));
+    }
+    .ml-scale-object[data-shape="figure"]::before,
+    .ml-scale-object[data-shape="figure"]::after { content: none; }
     .ml-scale-object[data-shape="dot"] {
       border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.96), var(--accent-soft, rgba(245,158,11,0.85)) 55%, transparent 72%);
@@ -297,10 +317,15 @@
       position: absolute; top: 50%; transform: translate(-50%, -50%);
       transition: opacity 0.35s ease, transform 0.35s ease;
     }
+    .ml-scale-marker { top: 90%; }
     .ml-scale-ghost {
       width: var(--ghost-w, 24px); height: var(--ghost-h, 24px); border-radius: 50%;
       background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); opacity: var(--ghost-o, 0.45);
       box-shadow: 0 0 18px rgba(255,255,255,0.08);
+    }
+    .ml-scale-ghost.is-figure {
+      border-radius: 0; background: none; border: none; box-shadow: none;
+      filter: grayscale(0.35);
     }
     .ml-scale-marker {
       display: flex; flex-direction: column; align-items: center; gap: 0.3rem; color: rgba(255,255,255,0.5); font-size: 0.68rem;
@@ -684,6 +709,258 @@
       80% { transform: translateX(4px); }
     }
     .ml-shake { animation: ml-shake 0.4s ease; }
+    /* ══════════════════════════════════════════════════
+       MEASUREMENT UNIVERSE — every quantity, every unit
+       ══════════════════════════════════════════════════ */
+
+    /* ── Sticky section jump nav ──────────────────────── */
+    .mu-jump {
+      position: sticky; top: 0; z-index: 30;
+      display: flex; flex-wrap: wrap; gap: 0.35rem;
+      padding: 0.55rem 0.6rem; margin: 0 0 1.1rem;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(10,15,30,0.94), rgba(15,31,46,0.94));
+      border: 1px solid rgba(245,158,11,0.22);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    }
+    /* Anchor targets have to clear the sticky bar above them. */
+    .ml-page > section[id] { scroll-margin-top: 4.5rem; }
+    .mu-jump-label {
+      font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(252,211,77,0.85); align-self: center; padding: 0 0.3rem;
+    }
+    .mu-jump a {
+      font-size: 0.72rem; font-weight: 700; text-decoration: none; white-space: nowrap;
+      color: rgba(255,255,255,0.74); padding: 0.26rem 0.62rem; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.13); background: rgba(255,255,255,0.05);
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    .mu-jump a:hover, .mu-jump a:focus-visible { color: #08111d; background: #f59e0b; border-color: transparent; }
+
+    /* ── Generic dark lab shell ───────────────────────── */
+    .mu-lab {
+      --mu-accent: #f59e0b;
+      background:
+        radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--mu-accent) 18%, transparent), transparent 22rem),
+        radial-gradient(circle at 92% 8%, rgba(59,130,246,0.14), transparent 22rem),
+        linear-gradient(135deg, #0a0f1e 0%, #10192b 100%);
+      border: 1px solid color-mix(in srgb, var(--mu-accent) 22%, transparent);
+      border-radius: 8px; padding: 1.8rem 1.4rem; margin-bottom: 1rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+    @supports not (background: color-mix(in srgb, red 10%, transparent)) {
+      .mu-lab { background: linear-gradient(135deg, #0a0f1e 0%, #10192b 100%); border-color: rgba(245,158,11,0.22); }
+    }
+    .mu-lab h2 { color: #fff; margin: 0 0 0.25rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .mu-lab h3 { color: #fff; font-size: 0.95rem; margin: 1.2rem 0 0.5rem; }
+    .mu-lab > p { color: rgba(255,255,255,0.55); font-size: 0.84rem; margin: 0 0 1.2rem; line-height: 1.65; max-width: 82ch; }
+    .mu-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: color-mix(in srgb, var(--mu-accent) 20%, transparent);
+      border: 1px solid color-mix(in srgb, var(--mu-accent) 42%, transparent);
+      border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.72rem; font-weight: 700;
+      color: #fff; margin-bottom: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .mu-subhead {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.42); margin: 1.1rem 0 0.5rem;
+    }
+
+    /* ── SI base unit cards ───────────────────────────── */
+    .mu-base-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.7rem; }
+    .mu-base-card {
+      position: relative; overflow: hidden;
+      background: linear-gradient(150deg, rgba(255,255,255,0.075), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.95rem 1rem 1rem;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .mu-base-card::after {
+      content: ''; position: absolute; right: -30%; top: -60%; width: 160px; height: 160px;
+      border-radius: 50%; background: radial-gradient(circle, var(--bu, #f59e0b), transparent 68%);
+      opacity: 0.28; pointer-events: none; transition: opacity 0.25s ease;
+    }
+    .mu-base-card:hover { transform: translateY(-3px); border-color: var(--bu, #f59e0b); box-shadow: 0 16px 34px rgba(0,0,0,0.34); }
+    .mu-base-card:hover::after { opacity: 0.45; }
+    .mu-bu-symbol {
+      font-family: 'IBM Plex Mono', monospace; font-size: 1.85rem; font-weight: 600;
+      color: var(--bu, #f59e0b); line-height: 1; margin-bottom: 0.3rem;
+    }
+    .mu-bu-quantity { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+    .mu-bu-name { font-size: 1rem; font-weight: 700; color: #fff; margin: 0.1rem 0 0.35rem; }
+    .mu-bu-def { font-size: 0.78rem; color: rgba(255,255,255,0.6); line-height: 1.55; margin: 0 0 0.5rem; position: relative; z-index: 1; }
+    .mu-bu-const {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--bu, #f59e0b);
+      background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 7px; padding: 0.35rem 0.5rem; line-height: 1.5; display: block; position: relative; z-index: 1;
+    }
+
+    /* ── SI prefix ladder ─────────────────────────────── */
+    .mu-prefix-scroll { overflow-x: auto; padding-bottom: 0.4rem; }
+    .mu-prefix-ladder { display: flex; flex-direction: column; gap: 2px; min-width: 520px; }
+    .mu-prefix-row {
+      display: grid; grid-template-columns: 5.2rem 3.4rem 1fr 9rem; align-items: center; gap: 0.5rem;
+      background: rgba(255,255,255,0.035); border: 1px solid transparent; border-radius: 7px;
+      padding: 0.28rem 0.55rem; cursor: pointer; text-align: left; width: 100%;
+      color: rgba(255,255,255,0.72); font-size: 0.76rem; transition: background 0.18s ease, border-color 0.18s ease;
+    }
+    .mu-prefix-row:hover { background: rgba(255,255,255,0.08); }
+    .mu-prefix-row.is-base { background: rgba(245,158,11,0.14); border-color: rgba(245,158,11,0.4); }
+    .mu-prefix-row.active { background: rgba(59,130,246,0.2); border-color: #60a5fa; color: #fff; }
+    .mu-prefix-name { font-weight: 700; }
+    .mu-prefix-sym { font-family: 'IBM Plex Mono', monospace; color: #fcd34d; font-weight: 600; }
+    .mu-prefix-bar-track { position: relative; height: 9px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; }
+    .mu-prefix-bar-fill {
+      position: absolute; top: 0; bottom: 0; left: 50%;
+      background: linear-gradient(90deg, #3b82f6, #f59e0b); border-radius: 999px;
+    }
+    .mu-prefix-pow { font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.55); text-align: right; }
+    .mu-prefix-readout {
+      margin-top: 0.8rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 0.85rem 1rem;
+    }
+    .mu-prefix-readout .pr-main { font-family: 'IBM Plex Mono', monospace; font-size: 1.05rem; color: #fcd34d; font-weight: 600; }
+    .mu-prefix-readout .pr-sub { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-top: 0.3rem; line-height: 1.6; }
+
+    /* ── Unit library (the big one) ───────────────────── */
+    .mu-lib-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.9rem; }
+    .mu-lib-search {
+      flex: 1 1 220px; min-width: 180px;
+      background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.16);
+      border-radius: 10px; padding: 0.5rem 0.8rem; color: #fff; font-size: 0.85rem; outline: none;
+    }
+    .mu-lib-search::placeholder { color: rgba(255,255,255,0.35); }
+    .mu-lib-search:focus { border-color: #f59e0b; }
+    .mu-lib-count { font-size: 0.76rem; color: rgba(255,255,255,0.45); font-family: 'IBM Plex Mono', monospace; }
+    .mu-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .mu-chip {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 999px; padding: 0.35rem 0.75rem; color: rgba(255,255,255,0.72);
+      font-size: 0.74rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease;
+    }
+    .mu-chip:hover { background: rgba(255,255,255,0.12); }
+    .mu-chip.active { color: #08111d; background: var(--chip, #f59e0b); border-color: transparent; }
+    .mu-lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 0.7rem; }
+    .mu-unit-card {
+      background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.1);
+      border-left: 3px solid var(--uc, #f59e0b); border-radius: 10px; padding: 0.85rem 0.95rem;
+      display: flex; flex-direction: column; gap: 0.4rem;
+    }
+    .mu-unit-head { display: flex; align-items: baseline; gap: 0.5rem; }
+    .mu-unit-sym {
+      font-family: 'IBM Plex Mono', monospace; font-size: 1.15rem; font-weight: 600;
+      color: var(--uc, #f59e0b); min-width: 2.4rem; flex: 0 0 auto; white-space: nowrap;
+    }
+    .mu-unit-head > span:last-child { min-width: 0; }
+    .mu-unit-title { font-size: 0.9rem; font-weight: 700; color: #fff; line-height: 1.25; }
+    .mu-unit-si { font-size: 0.72rem; color: rgba(255,255,255,0.45); }
+    .mu-unit-desc { font-size: 0.78rem; color: rgba(255,255,255,0.62); line-height: 1.55; margin: 0; }
+    .mu-unit-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.71rem; color: rgba(255,255,255,0.5); line-height: 1.5; }
+    .mu-unit-meta b { color: rgba(255,255,255,0.75); font-weight: 600; font-family: 'Inter', sans-serif; }
+    .mu-unit-others { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+    .mu-unit-others span {
+      font-size: 0.68rem; font-family: 'IBM Plex Mono', monospace;
+      background: color-mix(in srgb, var(--uc, #f59e0b) 16%, transparent);
+      border: 1px solid color-mix(in srgb, var(--uc, #f59e0b) 32%, transparent);
+      color: rgba(255,255,255,0.82); border-radius: 999px; padding: 0.12rem 0.5rem;
+    }
+    .mu-lib-empty { color: rgba(255,255,255,0.5); font-size: 0.85rem; padding: 1rem 0; }
+
+    /* ── Feel-the-unit mini labs ──────────────────────── */
+    .mu-mini-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.8rem; }
+    .mu-mini {
+      background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 1rem 1.05rem;
+    }
+    .mu-mini h3 { margin: 0 0 0.2rem; font-size: 0.95rem; color: #fff; }
+    .mu-mini > p { font-size: 0.77rem; color: rgba(255,255,255,0.5); margin: 0 0 0.8rem; line-height: 1.55; }
+    .mu-mini svg { display: block; width: 100%; height: auto; }
+    .mu-fig { width: 100%; aspect-ratio: var(--fig-ratio, 2); }
+    .mu-fig svg { display: block; width: 100%; height: 100%; }
+    .ml-scale-ghost.is-figure svg { border-radius: 6px; overflow: hidden; }
+    .mu-slider {
+      width: 100%; height: 6px; cursor: pointer; accent-color: var(--mini-accent, #f59e0b); margin: 0.6rem 0 0.2rem;
+    }
+    .mu-slider-label { display: flex; justify-content: space-between; font-size: 0.66rem; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.35); }
+    .mu-readout-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 0.35rem; margin-top: 0.7rem; }
+    .mu-readout {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 8px; padding: 0.4rem 0.5rem; text-align: center;
+    }
+    .mu-readout .ro-label { font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.42); }
+    .mu-readout .ro-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.9rem; font-weight: 600; color: var(--mini-accent, #f59e0b); margin-top: 0.1rem; }
+    .mu-mini-note {
+      margin-top: 0.65rem; font-size: 0.76rem; line-height: 1.55; color: rgba(255,255,255,0.62);
+      background: rgba(0,0,0,0.24); border-radius: 8px; padding: 0.5rem 0.65rem;
+      border-left: 2px solid var(--mini-accent, #f59e0b);
+    }
+    .mu-preset-row { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem; }
+    .mu-preset {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.13); border-radius: 7px;
+      color: rgba(255,255,255,0.7); font-size: 0.7rem; padding: 0.22rem 0.55rem; cursor: pointer; transition: all 0.18s ease;
+    }
+    .mu-preset:hover { background: var(--mini-accent, #f59e0b); color: #08111d; border-color: transparent; }
+
+    /* ── Universal converter ──────────────────────────── */
+    .mu-conv-cats { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.9rem; }
+    .mu-conv-cat {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(34,197,94,0.22); border-radius: 999px;
+      color: rgba(209,250,229,0.75); font-size: 0.73rem; font-weight: 700; padding: 0.32rem 0.7rem; cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .mu-conv-cat:hover { background: rgba(34,197,94,0.16); }
+    .mu-conv-cat.active { background: #22c55e; border-color: transparent; color: #04210f; }
+    .mu-conv-formula {
+      margin-top: 0.75rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem;
+      color: rgba(209,250,229,0.62); background: rgba(0,0,0,0.28); border: 1px solid rgba(34,197,94,0.18);
+      border-radius: 8px; padding: 0.5rem 0.7rem; line-height: 1.6;
+    }
+
+    /* ── Odd & logarithmic scales ─────────────────────── */
+    .mu-odd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.7rem; }
+    .mu-odd-card {
+      background: linear-gradient(150deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.1); border-top: 3px solid var(--oc, #a78bfa);
+      border-radius: 10px; padding: 0.85rem 0.95rem;
+    }
+    .mu-lab .mu-odd-card h3 { margin: 0 0 0.15rem; font-size: 0.92rem; color: #fff; }
+    .mu-odd-card .oc-kind { font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--oc, #a78bfa); font-weight: 800; }
+    .mu-odd-card p { margin: 0.3rem 0 0; font-size: 0.78rem; color: rgba(255,255,255,0.6); line-height: 1.55; }
+    .mu-odd-card .oc-scale { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; }
+
+    /* ── Unit failures / style rules ──────────────────── */
+    .mu-fail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.7rem; }
+    .mu-fail {
+      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.28);
+      border-radius: 10px; padding: 0.85rem 0.95rem;
+    }
+    .mu-lab .mu-fail h3 { margin: 0 0 0.15rem; font-size: 0.9rem; color: #fecaca; }
+    .mu-fail .mf-cost { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: #f87171; font-weight: 600; }
+    .mu-fail p { margin: 0.3rem 0 0; font-size: 0.78rem; color: rgba(255,255,255,0.65); line-height: 1.55; }
+    .mu-rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.55rem; }
+    .mu-rule {
+      background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); border-radius: 9px;
+      padding: 0.6rem 0.75rem; font-size: 0.78rem; color: rgba(255,255,255,0.7); line-height: 1.55;
+    }
+    .mu-rule b { color: #86efac; }
+    .mu-rule code { font-family: 'IBM Plex Mono', monospace; color: #fcd34d; }
+
+    @media (max-width: 760px) {
+      .mu-lab { padding: 1rem; }
+      .mu-prefix-row { grid-template-columns: 4.6rem 2.6rem 1fr 7rem; font-size: 0.7rem; }
+      /* Stuck-and-wrapped, this nav would eat a third of a phone screen —
+         so on small screens it scrolls sideways in place instead. */
+      .mu-jump {
+        position: static; flex-wrap: nowrap; overflow-x: auto;
+        padding: 0.45rem; scrollbar-width: thin;
+      }
+      .mu-jump-label { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mu-base-card, .mu-base-card:hover { transition: none; transform: none; }
+      .mu-flow-dot { animation: none !important; }
+    }
+
     @media (max-width: 760px) {
       .ml-page { padding-inline: 0.85rem; }
       .ml-mission-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -729,22 +1006,30 @@
 
           <!-- ── HERO ─────────────────────────────────── -->
           <section class="hero ml-hero">
-            <p class="eyebrow">Mathematics · Measurement</p>
-            <h1>Measuring Length</h1>
+            <p class="eyebrow">Mathematics · Measurement · Every Unit</p>
+            <h1>Measuring Length — and Everything Else</h1>
             <div class="ml-hero-meta">
               <span>Planck to Universe</span>
               <span class="dot"></span>
               <span>Ancient Cubits</span>
               <span class="dot"></span>
-              <span>Rulers &amp; Lasers</span>
+              <span>7 SI Base Units</span>
               <span class="dot"></span>
-              <span>Metric &amp; Imperial</span>
+              <span>Temperature · Pressure · Electricity</span>
+              <span class="dot"></span>
+              <span>Light · Sound · Radiation · Data</span>
             </div>
             <p class="ml-lede">
               Length is the most fundamental measurement humans ever made — and we've been arguing
               about how to do it correctly for at least 5,000 years. From a pharaoh's forearm to
               a laser bouncing off the moon, this lesson traces every tool and every unit we've
               invented to answer one deceptively simple question: <em>how long is it?</em>
+            </p>
+            <p class="ml-lede">
+              Then it keeps going. Every other thing we measure — how hot, how heavy, how fast,
+              how loud, how bright, how much voltage, how much radiation, how many bytes — is built
+              from just <strong>seven base units</strong>. Learn those seven and the prefix ladder that
+              stretches them, and you can read any measurement in science.
             </p>
             <div class="ml-mission-grid" aria-label="Lesson highlights">
               <div class="ml-mission-tile">
@@ -758,9 +1043,9 @@
                 <div class="ml-mission-note">Align, measure, estimate, and report units clearly.</div>
               </div>
               <div class="ml-mission-tile">
-                <div class="ml-mission-kicker">Systems</div>
-                <div class="ml-mission-value">Metric + Imperial</div>
-                <div class="ml-mission-note">Convert with exact factors and sensible rounding.</div>
+                <div class="ml-mission-kicker">Every Quantity</div>
+                <div class="ml-mission-value">7 base · 22 derived</div>
+                <div class="ml-mission-note">Heat, pressure, current, light, sound, radiation, data.</div>
               </div>
               <div class="ml-mission-tile">
                 <div class="ml-mission-kicker">Tools</div>
@@ -770,8 +1055,26 @@
             </div>
           </section>
 
+          <!-- ── SECTION JUMP NAV ────────────────────── -->
+          <nav class="mu-jump" aria-label="Jump to a section">
+            <a href="#sec-scale">Scale</a>
+            <a href="#sec-history">History</a>
+            <a href="#sec-systems">Systems</a>
+            <a href="#sec-base">Base Units</a>
+            <a href="#sec-prefixes">Prefixes</a>
+            <a href="#sec-derived">Derived</a>
+            <a href="#sec-library">Library</a>
+            <a href="#sec-feel">Feel It</a>
+            <a href="#sec-tools">Instruments</a>
+            <a href="#sec-ruler">Ruler</a>
+            <a href="#sec-convert">Convert</a>
+            <a href="#sec-odd">Odd Scales</a>
+            <a href="#sec-mistakes">Failures</a>
+            <a href="#sec-practice">Practice</a>
+          </nav>
+
           <!-- ── SCALE EXPLORER ──────────────────────── -->
-          <section class="ml-scale-lab" aria-label="Scale of the universe length explorer">
+          <section class="ml-scale-lab" id="sec-scale" aria-label="Scale of the universe length explorer">
             <div class="ml-scale-badge">Interactive Scale Explorer</div>
             <h2>From the Planck Length to the Observable Universe</h2>
             <p>Move the instrument through powers of ten and watch the scene, anchors, and math layer shift with it. This is built as a camera through scale, not just a list of facts.</p>
@@ -917,7 +1220,7 @@
           </section>
 
           <!-- ── ANCIENT HISTORY ─────────────────────── -->
-          <section class="ml-card" style="--card-accent:#f59e0b;">
+          <section class="ml-card" id="sec-history" style="--card-accent:#f59e0b;">
             <h2>The Ancient History of Measurement</h2>
             <p>
               Every civilization that built a monument, traded goods, or planned a field needed
@@ -1050,7 +1353,7 @@
           </section>
 
           <!-- ── METRIC vs IMPERIAL ──────────────────── -->
-          <section class="ml-card" style="--card-accent:#22c55e;">
+          <section class="ml-card" id="sec-systems" style="--card-accent:#22c55e;">
             <h2>Metric vs. Imperial — Two Systems, One World</h2>
             <p>
               The metric system is built on powers of 10, making conversions as simple as moving
@@ -1099,8 +1402,279 @@
             </div>
           </section>
 
+          <!-- ── THE SEVEN SI BASE UNITS ─────────────── -->
+          <section class="mu-lab" id="sec-base" style="--mu-accent:#38bdf8;" aria-label="The seven SI base units">
+            <div class="mu-badge">Foundation</div>
+            <h2>The Seven Base Units Everything Else Is Built From</h2>
+            <p>
+              Here is the surprise at the center of measurement: there are only <strong>seven</strong>
+              independent things to measure. Length, mass, time, electric current, temperature, amount
+              of substance, and luminous intensity. Every other unit in science — the newton, the volt,
+              the pascal, the watt, the sievert — is those seven multiplied and divided together.
+              Since 2019, none of them depend on a physical object anymore. All seven are defined by
+              fixing a constant of nature to an exact number.
+            </p>
+
+            <div class="mu-base-grid">
+              <div class="mu-base-card" style="--bu:#f59e0b;">
+                <div class="mu-bu-symbol">m</div>
+                <div class="mu-bu-quantity">Length</div>
+                <div class="mu-bu-name">metre</div>
+                <p class="mu-bu-def">How far apart two things are. The distance light travels in 1/299,792,458 of a second — so the speed of light is exact <em>by definition</em>, and the metre rides along with it.</p>
+                <code class="mu-bu-const">fixes c = 299 792 458 m/s</code>
+              </div>
+              <div class="mu-base-card" style="--bu:#22c55e;">
+                <div class="mu-bu-symbol">kg</div>
+                <div class="mu-bu-quantity">Mass</div>
+                <div class="mu-bu-name">kilogram</div>
+                <p class="mu-bu-def">How much matter something contains — not how heavy it feels, which is weight (a force). Until 2019 this was a literal metal cylinder in a vault near Paris that was slowly losing mass.</p>
+                <code class="mu-bu-const">fixes h = 6.626 070 15 × 10⁻³⁴ J·s</code>
+              </div>
+              <div class="mu-base-card" style="--bu:#a78bfa;">
+                <div class="mu-bu-symbol">s</div>
+                <div class="mu-bu-quantity">Time</div>
+                <div class="mu-bu-name">second</div>
+                <p class="mu-bu-def">Duration. Defined by counting the vibrations of a caesium-133 atom — the world's clocks agree because they all count the same atomic hum.</p>
+                <code class="mu-bu-const">fixes Δν(Cs) = 9 192 631 770 Hz</code>
+              </div>
+              <div class="mu-base-card" style="--bu:#38bdf8;">
+                <div class="mu-bu-symbol">A</div>
+                <div class="mu-bu-quantity">Electric current</div>
+                <div class="mu-bu-name">ampere</div>
+                <p class="mu-bu-def">How much electric charge flows past a point each second. One ampere is about 6.24 × 10¹⁸ electrons streaming by every second.</p>
+                <code class="mu-bu-const">fixes e = 1.602 176 634 × 10⁻¹⁹ C</code>
+              </div>
+              <div class="mu-base-card" style="--bu:#f472b6;">
+                <div class="mu-bu-symbol">K</div>
+                <div class="mu-bu-quantity">Temperature</div>
+                <div class="mu-bu-name">kelvin</div>
+                <p class="mu-bu-def">How much random jiggling energy the particles in a substance have. Zero kelvin is absolute zero — no jiggle left to remove. A kelvin is the same size as a degree Celsius.</p>
+                <code class="mu-bu-const">fixes k = 1.380 649 × 10⁻²³ J/K</code>
+              </div>
+              <div class="mu-base-card" style="--bu:#34d399;">
+                <div class="mu-bu-symbol">mol</div>
+                <div class="mu-bu-quantity">Amount of substance</div>
+                <div class="mu-bu-name">mole</div>
+                <p class="mu-bu-def">A counting unit for atoms and molecules, the way "dozen" is a counting unit for eggs — just much, much bigger. Chemists weigh grams but react in moles.</p>
+                <code class="mu-bu-const">fixes N(A) = 6.022 140 76 × 10²³ mol⁻¹</code>
+              </div>
+              <div class="mu-base-card" style="--bu:#fbbf24;">
+                <div class="mu-bu-symbol">cd</div>
+                <div class="mu-bu-quantity">Luminous intensity</div>
+                <div class="mu-bu-name">candela</div>
+                <p class="mu-bu-def">How bright a light source looks <em>to a human eye</em> in one direction. It is the only base unit tuned to human biology — our eyes are most sensitive to green, so the definition uses green light.</p>
+                <code class="mu-bu-const">fixes K(cd) = 683 lm/W at 540 THz</code>
+              </div>
+            </div>
+
+            <div class="mu-subhead">Why it matters</div>
+            <p style="margin-bottom:0;">
+              A physicist in Nairobi, an engineer in Seoul, and a nurse in Ohio can trade numbers
+              without ever comparing objects, because all three are counting the same photons,
+              electrons, and atomic vibrations. That is what "a standard" really buys you.
+            </p>
+          </section>
+
+          <!-- ── SI PREFIX LADDER ────────────────────── -->
+          <section class="mu-lab" id="sec-prefixes" style="--mu-accent:#3b82f6;" aria-label="SI prefix ladder">
+            <div class="mu-badge">Interactive</div>
+            <h2>One Ladder, Sixty Orders of Magnitude</h2>
+            <p>
+              This is the metric system's superpower: you never learn a new unit for a bigger or
+              smaller amount, you just bolt a prefix onto the front. The same 24 prefixes work on
+              <em>every</em> unit — metres, grams, watts, bytes, pascals, sieverts. Pick a rung and
+              see what it does to any unit you choose.
+            </p>
+
+            <div class="mu-lib-controls">
+              <label class="mu-lib-count" for="mu-prefix-unit">Apply prefixes to:</label>
+              <select class="ml-conv-select" id="mu-prefix-unit" aria-label="Base unit for prefix ladder">
+                <option value="m|metre|length">metre (m) — length</option>
+                <option value="g|gram|mass">gram (g) — mass</option>
+                <option value="s|second|time">second (s) — time</option>
+                <option value="W|watt|power">watt (W) — power</option>
+                <option value="B|byte|data">byte (B) — data</option>
+                <option value="Pa|pascal|pressure">pascal (Pa) — pressure</option>
+                <option value="Hz|hertz|frequency">hertz (Hz) — frequency</option>
+                <option value="V|volt|voltage">volt (V) — voltage</option>
+                <option value="Sv|sievert|radiation dose">sievert (Sv) — radiation dose</option>
+              </select>
+            </div>
+
+            <div class="mu-prefix-scroll">
+              <div class="mu-prefix-ladder" id="mu-prefix-ladder" role="group" aria-label="SI prefixes from quetta to quecto"></div>
+            </div>
+
+            <div class="mu-prefix-readout" id="mu-prefix-readout" aria-live="polite">
+              <div class="pr-main">Select a rung on the ladder.</div>
+              <div class="pr-sub">Every step is a power of ten — moving the decimal point, nothing more.</div>
+            </div>
+
+            <div class="mu-subhead">The rule for the whole system</div>
+            <div class="mu-rules">
+              <div class="mu-rule"><b>Going up?</b> Divide. 5,000 m = <code>5 km</code> because kilo is 10³ bigger, so the number gets 1,000× smaller.</div>
+              <div class="mu-rule"><b>Going down?</b> Multiply. 0.004 s = <code>4 ms</code> because milli is 10⁻³, so the number gets 1,000× bigger.</div>
+              <div class="mu-rule"><b>Capitalization is data.</b> <code>mW</code> is a milliwatt; <code>MW</code> is a megawatt — a billion times bigger. Get it wrong and you've mis-sized a power plant.</div>
+              <div class="mu-rule"><b>One prefix only.</b> There is no such thing as a "millikilogram." The kilogram is the odd one out: its prefixes attach to the <em>gram</em>.</div>
+            </div>
+          </section>
+
+          <!-- ── DERIVED UNITS ───────────────────────── -->
+          <section class="ml-card" id="sec-derived" style="--card-accent:#8b5cf6;">
+            <h2>Derived Units — Building the Other 99% From Seven Bricks</h2>
+            <p>
+              A derived unit is just base units multiplied and divided. Speed is length ÷ time.
+              Force is mass × acceleration. Pressure is force ÷ area. Twenty-two of these combinations
+              are so useful they were given their own names and symbols — but you can always take them
+              apart back into metres, kilograms, seconds, amperes, kelvins, moles, and candelas.
+            </p>
+
+            <div class="ml-fact-row">
+              <span class="ml-fact">1 N = 1 kg·m/s²</span>
+              <span class="ml-fact">1 J = 1 N·m</span>
+              <span class="ml-fact">1 W = 1 J/s</span>
+              <span class="ml-fact">1 V = 1 W/A</span>
+              <span class="ml-fact">1 Pa = 1 N/m²</span>
+            </div>
+
+            <table class="ml-table">
+              <thead>
+                <tr><th>Quantity</th><th>Unit</th><th>Symbol</th><th>In other units</th><th>In base units</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Frequency</td><td>hertz</td><td class="mono">Hz</td><td class="mono">—</td><td class="mono">s⁻¹</td></tr>
+                <tr><td>Angle (plane)</td><td>radian</td><td class="mono">rad</td><td class="mono">m/m</td><td class="mono">1</td></tr>
+                <tr><td>Angle (solid)</td><td>steradian</td><td class="mono">sr</td><td class="mono">m²/m²</td><td class="mono">1</td></tr>
+                <tr><td>Force, weight</td><td>newton</td><td class="mono">N</td><td class="mono">J/m</td><td class="mono">kg·m·s⁻²</td></tr>
+                <tr><td>Pressure, stress</td><td>pascal</td><td class="mono">Pa</td><td class="mono">N/m²</td><td class="mono">kg·m⁻¹·s⁻²</td></tr>
+                <tr><td>Energy, work, heat</td><td>joule</td><td class="mono">J</td><td class="mono">N·m = W·s</td><td class="mono">kg·m²·s⁻²</td></tr>
+                <tr><td>Power, radiant flux</td><td>watt</td><td class="mono">W</td><td class="mono">J/s</td><td class="mono">kg·m²·s⁻³</td></tr>
+                <tr><td>Electric charge</td><td>coulomb</td><td class="mono">C</td><td class="mono">A·s</td><td class="mono">s·A</td></tr>
+                <tr><td>Voltage, potential</td><td>volt</td><td class="mono">V</td><td class="mono">W/A = J/C</td><td class="mono">kg·m²·s⁻³·A⁻¹</td></tr>
+                <tr><td>Capacitance</td><td>farad</td><td class="mono">F</td><td class="mono">C/V</td><td class="mono">kg⁻¹·m⁻²·s⁴·A²</td></tr>
+                <tr><td>Resistance</td><td>ohm</td><td class="mono">Ω</td><td class="mono">V/A</td><td class="mono">kg·m²·s⁻³·A⁻²</td></tr>
+                <tr><td>Conductance</td><td>siemens</td><td class="mono">S</td><td class="mono">A/V</td><td class="mono">kg⁻¹·m⁻²·s³·A²</td></tr>
+                <tr><td>Magnetic flux</td><td>weber</td><td class="mono">Wb</td><td class="mono">V·s</td><td class="mono">kg·m²·s⁻²·A⁻¹</td></tr>
+                <tr><td>Magnetic flux density</td><td>tesla</td><td class="mono">T</td><td class="mono">Wb/m²</td><td class="mono">kg·s⁻²·A⁻¹</td></tr>
+                <tr><td>Inductance</td><td>henry</td><td class="mono">H</td><td class="mono">Wb/A</td><td class="mono">kg·m²·s⁻²·A⁻²</td></tr>
+                <tr><td>Celsius temperature</td><td>degree Celsius</td><td class="mono">°C</td><td class="mono">K − 273.15</td><td class="mono">K</td></tr>
+                <tr><td>Luminous flux</td><td>lumen</td><td class="mono">lm</td><td class="mono">cd·sr</td><td class="mono">cd</td></tr>
+                <tr><td>Illuminance</td><td>lux</td><td class="mono">lx</td><td class="mono">lm/m²</td><td class="mono">cd·m⁻²</td></tr>
+                <tr><td>Radioactivity</td><td>becquerel</td><td class="mono">Bq</td><td class="mono">decays/s</td><td class="mono">s⁻¹</td></tr>
+                <tr><td>Absorbed dose</td><td>gray</td><td class="mono">Gy</td><td class="mono">J/kg</td><td class="mono">m²·s⁻²</td></tr>
+                <tr><td>Dose equivalent</td><td>sievert</td><td class="mono">Sv</td><td class="mono">J/kg</td><td class="mono">m²·s⁻²</td></tr>
+                <tr><td>Catalytic activity</td><td>katal</td><td class="mono">kat</td><td class="mono">mol/s</td><td class="mono">mol·s⁻¹</td></tr>
+              </tbody>
+            </table>
+
+            <h3>The gray and the sievert are the same size — and not the same thing</h3>
+            <p style="margin-bottom:0;">
+              Both are one joule of energy per kilogram of tissue. But the sievert weights that energy
+              by how much biological damage the <em>type</em> of radiation does: alpha particles get
+              multiplied by 20, gamma rays by 1. Same physics, different question. This happens a lot in
+              measurement — two units with identical dimensions can still answer different questions,
+              which is exactly why unit names matter.
+            </p>
+          </section>
+
+          <!-- ── UNIT LIBRARY ────────────────────────── -->
+          <section class="mu-lab" id="sec-library" style="--mu-accent:#f59e0b;" aria-label="Searchable unit library">
+            <div class="mu-badge">Reference · Searchable</div>
+            <h2>The Unit Library — Everything We Measure</h2>
+            <p>
+              Filter by family or search for anything: <em>volt</em>, <em>knot</em>, <em>decibel</em>,
+              <em>pascal</em>, <em>mole</em>, <em>lumen</em>, <em>byte</em>. Each card gives you the SI
+              unit, what it's built from, the other units people actually use, the instrument that reads
+              it, and one everyday anchor so the number means something.
+            </p>
+
+            <div class="mu-lib-controls">
+              <input type="search" class="mu-lib-search" id="mu-lib-search" placeholder="Search units, quantities, instruments…" aria-label="Search the unit library">
+              <span class="mu-lib-count" id="mu-lib-count"></span>
+            </div>
+            <div class="mu-chip-row" id="mu-lib-chips" role="group" aria-label="Filter by unit family"></div>
+            <div class="mu-lib-grid" id="mu-lib-grid"></div>
+            <p class="mu-lib-empty" id="mu-lib-empty" hidden>No units match that search. Try "pressure", "light", or "dose".</p>
+          </section>
+
+          <!-- ── FEEL THE UNITS (mini labs) ──────────── -->
+          <section class="mu-lab" id="sec-feel" style="--mu-accent:#f472b6;" aria-label="Interactive unit labs for temperature, electricity, and pressure">
+            <div class="mu-badge">Three Interactive Labs</div>
+            <h2>Feel the Units: Heat, Electricity, Pressure</h2>
+            <p>
+              Reading a table tells you a kelvin exists. Dragging a slider tells you what 300 K feels
+              like on your skin, what happens to current when resistance doubles, and why your ears
+              pop in an elevator. Move each control and watch every unit for that quantity update
+              together — they are all describing the same physical thing.
+            </p>
+
+            <div class="mu-mini-grid">
+
+              <!-- Temperature -->
+              <div class="mu-mini" style="--mini-accent:#f472b6;">
+                <h3>🌡️ Temperature — one heat, four scales</h3>
+                <p>Kelvin starts at absolute zero. Celsius starts at water's freezing point. Fahrenheit starts at a 1724 brine mixture. Rankine is Fahrenheit-sized degrees from absolute zero.</p>
+                <div class="mu-fig" id="mu-therm-fig" style="--fig-ratio:300/96" role="img" aria-label="Thermometer showing the selected temperature against reference points"></div>
+                <input type="range" class="mu-slider" id="mu-therm-slider" min="0" max="1200" value="293" step="0.05" aria-label="Temperature in kelvin">
+                <div class="mu-slider-label"><span>0 K — absolute zero</span><span>1200 K</span></div>
+                <div class="mu-readout-grid">
+                  <div class="mu-readout"><div class="ro-label">Kelvin</div><div class="ro-val" id="mu-t-k">293 K</div></div>
+                  <div class="mu-readout"><div class="ro-label">Celsius</div><div class="ro-val" id="mu-t-c">19.9 °C</div></div>
+                  <div class="mu-readout"><div class="ro-label">Fahrenheit</div><div class="ro-val" id="mu-t-f">67.7 °F</div></div>
+                  <div class="mu-readout"><div class="ro-label">Rankine</div><div class="ro-val" id="mu-t-r">527 °R</div></div>
+                </div>
+                <div class="mu-preset-row">
+                  <button class="mu-preset" type="button" data-temp="0">Absolute zero</button>
+                  <button class="mu-preset" type="button" data-temp="77">Liquid nitrogen</button>
+                  <button class="mu-preset" type="button" data-temp="273.15">Ice melts</button>
+                  <button class="mu-preset" type="button" data-temp="310.15">Human body</button>
+                  <button class="mu-preset" type="button" data-temp="373.15">Water boils</button>
+                  <button class="mu-preset" type="button" data-temp="505">Solder melts</button>
+                  <button class="mu-preset" type="button" data-temp="1200">Lava</button>
+                </div>
+                <div class="mu-mini-note" id="mu-t-note">A kelvin and a degree Celsius are exactly the same size — only the zero point moved. That's why you write "a rise of 5 K" and "a rise of 5 °C" interchangeably, but never "5 K" and "5 °C" for the same reading.</div>
+              </div>
+
+              <!-- Electricity -->
+              <div class="mu-mini" style="--mini-accent:#38bdf8;">
+                <h3>⚡ Electricity — volts, amps, ohms, watts</h3>
+                <p>A real circuit: a battery, a resistor, an ammeter, and a lamp. Voltage is the push, resistance is how hard the path fights back, current is what actually flows, and power is the work it does. (Think of water in a pipe if it helps — pressure, narrowness, flow.)</p>
+                <div class="mu-fig" id="mu-ohm-fig" style="--fig-ratio:300/150" role="img" aria-label="Circuit diagram: battery, resistor, ammeter and lamp, with charge flowing"></div>
+                <label class="mu-slider-label" for="mu-ohm-v" style="margin-top:.5rem;"><span>Voltage (V)</span><span id="mu-ohm-v-lbl">12 V</span></label>
+                <input type="range" class="mu-slider" id="mu-ohm-v" min="1" max="240" value="12" step="1" aria-label="Voltage in volts">
+                <label class="mu-slider-label" for="mu-ohm-r"><span>Resistance (Ω)</span><span id="mu-ohm-r-lbl">6 Ω</span></label>
+                <input type="range" class="mu-slider" id="mu-ohm-r" min="1" max="500" value="6" step="1" aria-label="Resistance in ohms">
+                <div class="mu-readout-grid">
+                  <div class="mu-readout"><div class="ro-label">Current</div><div class="ro-val" id="mu-ohm-i">2 A</div></div>
+                  <div class="mu-readout"><div class="ro-label">Power</div><div class="ro-val" id="mu-ohm-p">24 W</div></div>
+                  <div class="mu-readout"><div class="ro-label">Charge / min</div><div class="ro-val" id="mu-ohm-q">120 C</div></div>
+                  <div class="mu-readout"><div class="ro-label">Energy / hr</div><div class="ro-val" id="mu-ohm-e">24 Wh</div></div>
+                </div>
+                <div class="mu-mini-note" id="mu-ohm-note">Ohm's law: one volt across one ohm pushes exactly one ampere.</div>
+              </div>
+
+              <!-- Pressure -->
+              <div class="mu-mini" style="--mini-accent:#34d399;">
+                <h3>🌊 Pressure — force spread over area</h3>
+                <p>A pascal is one newton pressed onto one square metre — tiny. Real life uses kilopascals, bars, atmospheres, psi, and millimetres of mercury. Move up a mountain or down into the ocean and watch them all move together.</p>
+                <div class="mu-fig" id="mu-press-fig" style="--fig-ratio:300/150" role="img" aria-label="Cross-section from ocean depth to the upper atmosphere, marking the selected altitude"></div>
+                <input type="range" class="mu-slider" id="mu-press-slider" min="-1000" max="20000" value="0" step="10" aria-label="Altitude in metres, negative values are ocean depth">
+                <div class="mu-slider-label"><span>1 km underwater</span><span>20 km up</span></div>
+                <div class="mu-readout-grid">
+                  <div class="mu-readout"><div class="ro-label">Kilopascal</div><div class="ro-val" id="mu-p-kpa">101 kPa</div></div>
+                  <div class="mu-readout"><div class="ro-label">Atmospheres</div><div class="ro-val" id="mu-p-atm">1.00 atm</div></div>
+                  <div class="mu-readout"><div class="ro-label">Bar</div><div class="ro-val" id="mu-p-bar">1.01 bar</div></div>
+                  <div class="mu-readout"><div class="ro-label">psi</div><div class="ro-val" id="mu-p-psi">14.7 psi</div></div>
+                  <div class="mu-readout"><div class="ro-label">mmHg</div><div class="ro-val" id="mu-p-mmhg">760 mmHg</div></div>
+                </div>
+                <div class="mu-mini-note" id="mu-p-note">At sea level the air pushes on every square centimetre of you with about 1 kg of force. You don't notice because you push back equally.</div>
+              </div>
+
+            </div>
+          </section>
+
           <!-- ── TOOLS OF MEASUREMENT ────────────────── -->
-          <section class="ml-card" style="--card-accent:#3b82f6;">
+          <section class="ml-card" id="sec-tools" style="--card-accent:#3b82f6;">
             <h2>Tools of Measurement</h2>
             <p>
               Different jobs demand different tools. A surgeon measuring a blood vessel, a carpenter
@@ -1145,10 +1719,68 @@
                 <div class="tc-range" style="color:#f472b6;">Range: meters to billions of light-years</div>
               </div>
             </div>
+
+            <div class="ml-sep"></div>
+            <h3>Instruments for Everything Else</h3>
+            <p>
+              Every quantity has its own instrument, and every instrument is really the same trick:
+              turn the thing you can't see into something you <em>can</em> — a column that rises, a
+              needle that swings, a number on a display, a click you can hear.
+            </p>
+            <div class="ml-tools-grid">
+              <div class="ml-tool-card" style="--tc-from:#1a0012;--tc-to:#14000d;--tc-accent:#f472b6;">
+                <div class="tc-icon">🌡️</div>
+                <h3>Thermometer</h3>
+                <p>Measures <strong>temperature</strong>. Liquid types work because alcohol or mercury expands predictably with heat. Digital ones use a <em>thermistor</em> — a resistor whose resistance changes with temperature — and infrared ones read the heat radiation an object emits without touching it.</p>
+                <div class="tc-range" style="color:#f472b6;">Reads: K, °C, °F</div>
+              </div>
+              <div class="ml-tool-card" style="--tc-from:#001a12;--tc-to:#00140d;--tc-accent:#34d399;">
+                <div class="tc-icon">🧭</div>
+                <h3>Barometer &amp; Manometer</h3>
+                <p>Measures <strong>pressure</strong>. Torricelli's 1643 barometer balanced a column of mercury against the weight of the atmosphere — which is why blood pressure is still quoted in <em>millimetres of mercury</em>. A manometer does the same for gas in a pipe; a tyre gauge reads pressure above atmospheric.</p>
+                <div class="tc-range" style="color:#34d399;">Reads: Pa, kPa, bar, atm, psi, mmHg</div>
+              </div>
+              <div class="ml-tool-card" style="--tc-from:#001220;--tc-to:#000c18;--tc-accent:#38bdf8;">
+                <div class="tc-icon">🔌</div>
+                <h3>Multimeter</h3>
+                <p>Measures <strong>electricity</strong> — three instruments in one. A <em>voltmeter</em> goes across a component (high resistance, so it barely disturbs the circuit). An <em>ammeter</em> goes in series with it (low resistance). An <em>ohmmeter</em> sends its own tiny current through an unpowered component and measures what comes back.</p>
+                <div class="tc-range" style="color:#38bdf8;">Reads: V, A, Ω, and often F and Hz</div>
+              </div>
+              <div class="ml-tool-card" style="--tc-from:#12001a;--tc-to:#0d0014;--tc-accent:#c084fc;">
+                <div class="tc-icon">⚖️</div>
+                <h3>Balance &amp; Scale</h3>
+                <p>Measures <strong>mass</strong> — and there's a real difference between the two. A <em>balance</em> compares your object to known masses, so it reads the same on the Moon. A <em>spring scale</em> measures weight (a force) and would read one-sixth as much there. Bathroom scales are secretly force meters.</p>
+                <div class="tc-range" style="color:#c084fc;">Reads: kg, g, mg — or N if it's honest</div>
+              </div>
+              <div class="ml-tool-card" style="--tc-from:#1a1400;--tc-to:#140f00;--tc-accent:#fbbf24;">
+                <div class="tc-icon">🔊</div>
+                <h3>Sound Level Meter</h3>
+                <p>Measures <strong>sound</strong> in decibels — a logarithmic unit, so +10 dB is ten times the power but only about twice as loud to your ears. The "A-weighting" (dBA) filters the reading to match human hearing sensitivity, which is why safety limits are always quoted in dBA.</p>
+                <div class="tc-range" style="color:#fbbf24;">Reads: dB, dBA, Pa (sound pressure)</div>
+              </div>
+              <div class="ml-tool-card" style="--tc-from:#1a0800;--tc-to:#140600;--tc-accent:#fb923c;">
+                <div class="tc-icon">☢️</div>
+                <h3>Geiger Counter &amp; Dosimeter</h3>
+                <p>Measures <strong>radiation</strong>. A Geiger–Müller tube clicks once per ionising particle — that's activity, in becquerels. A dosimeter measures how much energy your body actually absorbed, in grays, and weights it for biological harm, in sieverts. Counting decays and measuring damage are different jobs.</p>
+                <div class="tc-range" style="color:#fb923c;">Reads: Bq, cpm, Gy, Sv, µSv/h</div>
+              </div>
+              <div class="ml-tool-card" style="--tc-from:#001a1a;--tc-to:#001414;--tc-accent:#22d3ee;">
+                <div class="tc-icon">💡</div>
+                <h3>Light Meter &amp; Spectrometer</h3>
+                <p>Measures <strong>light</strong>. A lux meter reads how much light lands on a surface — photographers and classroom designers both care. A spectrometer splits light into wavelengths, letting chemists identify a substance and astronomers measure a star's temperature and speed from across the galaxy.</p>
+                <div class="tc-range" style="color:#22d3ee;">Reads: lx, lm, cd, nm</div>
+              </div>
+              <div class="ml-tool-card" style="--tc-from:#0a1a00;--tc-to:#071400;--tc-accent:#a3e635;">
+                <div class="tc-icon">⏱️</div>
+                <h3>Clock &amp; Frequency Counter</h3>
+                <p>Measures <strong>time and frequency</strong> — the most precisely measured quantities in existence. A quartz watch counts a crystal vibrating 32,768 times a second. An atomic clock counts caesium at 9,192,631,770 Hz and would drift less than a second over the age of the universe.</p>
+                <div class="tc-range" style="color:#a3e635;">Reads: s, ms, ns, Hz, ppm drift</div>
+              </div>
+            </div>
           </section>
 
           <!-- ── HOW TO USE A RULER ──────────────────── -->
-          <section class="ml-ruler-lab" aria-label="Interactive ruler">
+          <section class="ml-ruler-lab" id="sec-ruler" aria-label="Interactive ruler">
             <h2>Interactive Ruler</h2>
             <p>Select an object below to see how it measures up. Toggle between inches and centimeters.</p>
 
@@ -1194,27 +1826,17 @@
             </div>
           </section>
 
-          <!-- ── UNIT CONVERTER ─────────────────────── -->
-          <section class="ml-converter-lab" aria-label="Length unit converter">
-            <h2>Unit Converter</h2>
-            <p>Type any length and choose your units — the converter handles the rest instantly.</p>
+          <!-- ── UNIVERSAL UNIT CONVERTER ───────────── -->
+          <section class="ml-converter-lab" id="sec-convert" aria-label="Universal unit converter">
+            <h2>Universal Unit Converter</h2>
+            <p>Pick a quantity, type a number, choose your units. Length, mass, temperature, pressure, energy, power, speed, data, angle, radiation — all of it, with the exact conversion factor shown so you can check the arithmetic yourself.</p>
+
+            <div class="mu-conv-cats" id="mu-conv-cats" role="group" aria-label="Quantity to convert"></div>
 
             <div class="ml-conv-row">
               <div class="ml-conv-side">
-                <input type="number" class="ml-conv-input" id="ml-conv-from-val" value="1" min="0" aria-label="Value to convert">
-                <select class="ml-conv-select" id="ml-conv-from-unit" aria-label="From unit">
-                  <option value="mm">Millimeters (mm)</option>
-                  <option value="cm">Centimeters (cm)</option>
-                  <option value="m" selected>Meters (m)</option>
-                  <option value="km">Kilometers (km)</option>
-                  <option value="in">Inches (in)</option>
-                  <option value="ft">Feet (ft)</option>
-                  <option value="yd">Yards (yd)</option>
-                  <option value="mi">Miles (mi)</option>
-                  <option value="nmi">Nautical Miles</option>
-                  <option value="ly">Light-years</option>
-                  <option value="au">Astronomical Units</option>
-                </select>
+                <input type="number" class="ml-conv-input" id="ml-conv-from-val" value="1" aria-label="Value to convert">
+                <select class="ml-conv-select" id="ml-conv-from-unit" aria-label="From unit"></select>
               </div>
               <div class="ml-conv-arrow">→</div>
               <div class="ml-conv-side">
@@ -1222,43 +1844,137 @@
                   <div class="conv-val" id="ml-conv-result-val">—</div>
                   <div class="conv-label" id="ml-conv-result-label"></div>
                 </div>
-                <select class="ml-conv-select" id="ml-conv-to-unit" aria-label="To unit">
-                  <option value="mm">Millimeters (mm)</option>
-                  <option value="cm">Centimeters (cm)</option>
-                  <option value="m">Meters (m)</option>
-                  <option value="km">Kilometers (km)</option>
-                  <option value="in">Inches (in)</option>
-                  <option value="ft" selected>Feet (ft)</option>
-                  <option value="yd">Yards (yd)</option>
-                  <option value="mi">Miles (mi)</option>
-                  <option value="nmi">Nautical Miles</option>
-                  <option value="ly">Light-years</option>
-                  <option value="au">Astronomical Units</option>
-                </select>
+                <select class="ml-conv-select" id="ml-conv-to-unit" aria-label="To unit"></select>
               </div>
             </div>
 
-            <div class="ml-conv-quick">
-              <button class="ml-conv-quick-btn" type="button" onclick="mlQuick(1,'m','ft')">1 m → ft</button>
-              <button class="ml-conv-quick-btn" type="button" onclick="mlQuick(1,'mi','km')">1 mile → km</button>
-              <button class="ml-conv-quick-btn" type="button" onclick="mlQuick(1,'ft','cm')">1 foot → cm</button>
-              <button class="ml-conv-quick-btn" type="button" onclick="mlQuick(1,'in','mm')">1 inch → mm</button>
-              <button class="ml-conv-quick-btn" type="button" onclick="mlQuick(1,'km','mi')">1 km → miles</button>
-              <button class="ml-conv-quick-btn" type="button" onclick="mlQuick(1,'au','km')">1 AU → km</button>
-              <button class="ml-conv-quick-btn" type="button" onclick="mlQuick(1,'ly','km')">1 light-year → km</button>
+            <div class="mu-conv-formula" id="mu-conv-formula" aria-live="polite"></div>
+
+            <div class="ml-conv-quick" id="mu-conv-quick"></div>
+          </section>
+
+          <!-- ── STRANGE SCALES ─────────────────────── -->
+          <section class="mu-lab" id="sec-odd" style="--mu-accent:#a78bfa;" aria-label="Logarithmic and non-standard measurement scales">
+            <div class="mu-badge">The Weird Ones</div>
+            <h2>Scales That Don't Play by the Rules</h2>
+            <p>
+              Not every measurement is a straight line of units. Some scales are <strong>logarithmic</strong>
+              — each step multiplies instead of adds, because the thing being measured spans a range too
+              huge for ordinary numbers. Others are <strong>ordinal</strong>: rankings where the gaps
+              between steps aren't even equal. Knowing which kind you're holding stops you from doing
+              arithmetic that looks fine and is completely wrong.
+            </p>
+            <div class="mu-odd-grid">
+              <div class="mu-odd-card" style="--oc:#fbbf24;">
+                <div class="oc-kind">Logarithmic</div>
+                <h3>Decibel (dB) — sound</h3>
+                <p>A ratio, not an amount. +10 dB is ten times the power; +20 dB is a hundred times. Two 60 dB speakers together make 63 dB, not 120. Zero dB isn't silence — it's the quietest sound a young human ear can detect.</p>
+                <div class="oc-scale">0 whisper-threshold · 60 talking · 90 mower · 120 pain · 194 max in air</div>
+              </div>
+              <div class="mu-odd-card" style="--oc:#ef4444;">
+                <div class="oc-kind">Logarithmic</div>
+                <h3>Moment magnitude — earthquakes</h3>
+                <p>The modern replacement for the Richter scale. Each whole number is about 32× more energy released. A magnitude 7 isn't "a bit worse" than a 6 — it's thirty-two times the energy, and a 9 is a million times a 5.</p>
+                <div class="oc-scale">2 unfelt · 5 rattles dishes · 7 major · 9.5 largest ever recorded (Chile, 1960)</div>
+              </div>
+              <div class="mu-odd-card" style="--oc:#34d399;">
+                <div class="oc-kind">Logarithmic</div>
+                <h3>pH — acidity</h3>
+                <p>The negative log of hydrogen-ion concentration. pH 3 is ten times more acidic than pH 4 and a hundred times more than pH 5. Lower is more acidic, 7 is neutral, higher is basic — and the scale runs backwards from your intuition.</p>
+                <div class="oc-scale">0 battery acid · 2 lemon · 7 pure water · 8.1 seawater · 14 drain cleaner</div>
+              </div>
+              <div class="mu-odd-card" style="--oc:#c4b5fd;">
+                <div class="oc-kind">Logarithmic · Backwards</div>
+                <h3>Apparent magnitude — star brightness</h3>
+                <p>Inherited from Hipparchus around 130 BC, which is why it's so strange: <em>smaller means brighter</em>, and negative numbers are brightest of all. Each step of 1 is about 2.512× the brightness, so 5 steps is exactly 100×.</p>
+                <div class="oc-scale">−26.7 Sun · −12.6 full Moon · −1.5 Sirius · 6 naked-eye limit · 30 Webb telescope</div>
+              </div>
+              <div class="mu-odd-card" style="--oc:#f472b6;">
+                <div class="oc-kind">Ordinal</div>
+                <h3>Mohs hardness — minerals</h3>
+                <p>A ranking, not a measurement: 10 (diamond) is roughly 4× harder than 9 (corundum), but 2 to 3 is a much smaller jump. It only tells you what scratches what. Useful in the field, useless in a formula.</p>
+                <div class="oc-scale">1 talc · 2.5 fingernail · 5.5 steel knife · 7 quartz · 10 diamond</div>
+              </div>
+              <div class="mu-odd-card" style="--oc:#fb923c;">
+                <div class="oc-kind">Sensory · Dilution</div>
+                <h3>Scoville heat units — chilli peppers</h3>
+                <p>Originally how many times you had to dilute a pepper extract before a panel of tasters stopped noticing heat. Now measured chemically by capsaicin content and converted back, keeping a subjective scale alive with objective data.</p>
+                <div class="oc-scale">0 bell pepper · 5,000 jalapeño · 300,000 habanero · 2,000,000+ hottest cultivars</div>
+              </div>
+              <div class="mu-odd-card" style="--oc:#38bdf8;">
+                <div class="oc-kind">Ratio · Purity</div>
+                <h3>Karat &amp; carat — two different things</h3>
+                <p><strong>Karat</strong> is gold purity in 24ths: 18K gold is 18/24 = 75% gold. <strong>Carat</strong> is gemstone mass: exactly 200 mg. Same pronunciation, unrelated quantities — one is a fraction, one is a mass.</p>
+                <div class="oc-scale">24K = pure · 18K = 75% · 1 carat = 0.2 g</div>
+              </div>
+              <div class="mu-odd-card" style="--oc:#a3e635;">
+                <div class="oc-kind">Historical Survivor</div>
+                <h3>Knots &amp; nautical miles</h3>
+                <p>One nautical mile is one minute of latitude — a unit defined by the size of the Earth, so navigators can read distance straight off a chart. Sailors once timed a knotted rope paid out behind the ship; the knots per half-minute gave the speed, and the name stuck.</p>
+                <div class="oc-scale">1 nmi = 1,852 m · 1 knot = 1 nmi/h = 0.514 m/s</div>
+              </div>
+              <div class="mu-odd-card" style="--oc:#f59e0b;">
+                <div class="oc-kind">Energy · Legacy</div>
+                <h3>Calorie, BTU, horsepower</h3>
+                <p>Three units science replaced with joules and watts, and nobody gave up. A food "Calorie" is really a kilocalorie — 1,000 of the physics kind, which is why the capital C matters. Horsepower was James Watt's marketing device to sell steam engines against actual horses.</p>
+                <div class="oc-scale">1 cal = 4.184 J · 1 kcal = 4,184 J · 1 BTU = 1,055 J · 1 hp = 745.7 W</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── WHEN UNITS FAIL ────────────────────── -->
+          <section class="mu-lab" id="sec-mistakes" style="--mu-accent:#ef4444;" aria-label="Famous unit errors and how to write units correctly">
+            <div class="mu-badge">Consequences</div>
+            <h2>When Units Go Wrong</h2>
+            <p>
+              A number without a unit isn't data — it's a rumour. These are the moments when
+              professionals forgot that, and it cost them a spacecraft, a plane, and a bridge.
+            </p>
+            <div class="mu-fail-grid">
+              <div class="mu-fail">
+                <h3>Mars Climate Orbiter · 1999</h3>
+                <div class="mf-cost">Lost: $327 million spacecraft</div>
+                <p>Lockheed Martin's software reported thruster impulse in <strong>pound-force seconds</strong>. NASA's navigation software read those numbers as <strong>newton-seconds</strong>. The two units differ by a factor of 4.45, so the orbiter's course drifted for nine months until it entered the Martian atmosphere about 170 km too low and broke apart.</p>
+              </div>
+              <div class="mu-fail">
+                <h3>The Gimli Glider · 1983</h3>
+                <div class="mf-cost">Fuel loaded: 22,300 lb instead of 22,300 kg</div>
+                <p>Air Canada was switching to metric. The crew calculated fuel in pounds using a factor meant for kilograms and boarded less than half the fuel they needed. Both engines quit at 41,000 feet. The captain, a glider pilot, dead-sticked a Boeing 767 onto a decommissioned airstrip. Everyone survived.</p>
+              </div>
+              <div class="mu-fail">
+                <h3>Laufenburg Bridge · 2003</h3>
+                <div class="mf-cost">Mismatch: 54 cm of height</div>
+                <p>A bridge built from both banks of the Rhine. Germany measures elevation from the North Sea, Switzerland from the Mediterranean — a 27 cm difference. The correction was applied in the wrong direction, doubling the error to 54 cm. Engineers caught it before the halves met and lowered the German side.</p>
+              </div>
+              <div class="mu-fail">
+                <h3>Columbus's Miles · 1492</h3>
+                <div class="mf-cost">Error: about 25% of Earth's circumference</div>
+                <p>Columbus used Arabic miles for Earth's size but Roman miles for his sailing distances — the Arabic mile is roughly 25% longer. He convinced himself Asia was reachable across a much smaller ocean than actually exists. A unit error is arguably why he sailed at all.</p>
+              </div>
+            </div>
+
+            <div class="mu-subhead">Write units so this never happens to you</div>
+            <div class="mu-rules">
+              <div class="mu-rule"><b>Always attach the unit.</b> <code>5</code> is meaningless. <code>5 mL</code> is a dose. <code>5 L</code> is a medical emergency.</div>
+              <div class="mu-rule"><b>Space between number and unit.</b> <code>25 kg</code>, not <code>25kg</code>. The exceptions are degree, minute, and second of angle: <code>90°</code>.</div>
+              <div class="mu-rule"><b>Symbols aren't abbreviations.</b> No plural s and no period: <code>5 km</code>, never <code>5 kms</code> or <code>5 km.</code></div>
+              <div class="mu-rule"><b>Capitals mean a person.</b> Units named after people take a lowercase name but a capital symbol: newton → <code>N</code>, pascal → <code>Pa</code>, kelvin → <code>K</code>.</div>
+              <div class="mu-rule"><b>Carry units through the algebra.</b> If the units on both sides don't match, the equation is wrong — before you've even checked the numbers.</div>
+              <div class="mu-rule"><b>State the system at the top.</b> Every handoff between teams is where a factor of 4.45 hides. Label the file, not just the number.</div>
             </div>
           </section>
 
           <!-- ── PRACTICE PROBLEMS ──────────────────── -->
-          <section class="ml-card" style="--card-accent:#22c55e;">
+          <section class="ml-card" id="sec-practice" style="--card-accent:#22c55e;">
             <h2>Practice Problems</h2>
-            <div class="ml-score-bar"><span id="ml-score">0 / 7 correct</span></div>
+            <div class="ml-score-bar"><span id="ml-score">0 / 15 correct</span></div>
+            <p>Questions 1–7 cover length. Questions 8–15 use every other unit in the lesson.</p>
             <div class="ml-practice">
 
               <div class="ml-problem" id="ml-prob-1">
                 <p>1. A ruler is 30 cm long. How many millimeters is that?</p>
                 <div class="ml-problem-input-row">
-                  <input type="text" class="ml-ans-input" id="ml-ans-1" placeholder="mm">
+                  <input type="text" class="ml-ans-input" id="ml-ans-1" aria-label="Question 1. Answer in millimeters" placeholder="mm">
                   <button class="ml-check-btn" onclick="mlCheck(1,300,0)">Check</button>
                   <span class="ml-feedback" id="ml-fb-1"></span>
                 </div>
@@ -1268,7 +1984,7 @@
               <div class="ml-problem" id="ml-prob-2">
                 <p>2. How many inches are in 1 foot?</p>
                 <div class="ml-problem-input-row">
-                  <input type="text" class="ml-ans-input" id="ml-ans-2" placeholder="inches">
+                  <input type="text" class="ml-ans-input" id="ml-ans-2" aria-label="Question 2. Answer in inches" placeholder="inches">
                   <button class="ml-check-btn" onclick="mlCheck(2,12,0)">Check</button>
                   <span class="ml-feedback" id="ml-fb-2"></span>
                 </div>
@@ -1278,7 +1994,7 @@
               <div class="ml-problem" id="ml-prob-3">
                 <p>3. The Royal Egyptian Cubit was approximately how many centimeters? (Enter the number from the lesson — 52)</p>
                 <div class="ml-problem-input-row">
-                  <input type="text" class="ml-ans-input" id="ml-ans-3" placeholder="cm">
+                  <input type="text" class="ml-ans-input" id="ml-ans-3" aria-label="Question 3. Answer in centimeters" placeholder="cm">
                   <button class="ml-check-btn" onclick="mlCheck(3,52,1)">Check</button>
                   <span class="ml-feedback" id="ml-fb-3"></span>
                 </div>
@@ -1288,7 +2004,7 @@
               <div class="ml-problem" id="ml-prob-4">
                 <p>4. How many feet are in 1 mile?</p>
                 <div class="ml-problem-input-row">
-                  <input type="text" class="ml-ans-input" id="ml-ans-4" placeholder="feet">
+                  <input type="text" class="ml-ans-input" id="ml-ans-4" aria-label="Question 4. Answer in feet" placeholder="feet">
                   <button class="ml-check-btn" onclick="mlCheck(4,5280,0)">Check</button>
                   <span class="ml-feedback" id="ml-fb-4"></span>
                 </div>
@@ -1298,7 +2014,7 @@
               <div class="ml-problem" id="ml-prob-5">
                 <p>5. A laser measurer fires a pulse and it returns after 0.000001 seconds (1 microsecond). Light travels at 299,792,458 m/s. Approximately how far away is the wall? (distance = speed × time ÷ 2, round to nearest meter)</p>
                 <div class="ml-problem-input-row">
-                  <input type="text" class="ml-ans-input" id="ml-ans-5" placeholder="meters">
+                  <input type="text" class="ml-ans-input" id="ml-ans-5" aria-label="Question 5. Answer in meters" placeholder="meters">
                   <button class="ml-check-btn" onclick="mlCheck(5,150,5)">Check</button>
                   <span class="ml-feedback" id="ml-fb-5"></span>
                 </div>
@@ -1308,7 +2024,7 @@
               <div class="ml-problem" id="ml-prob-6">
                 <p>6. How many centimeters are in 1 meter?</p>
                 <div class="ml-problem-input-row">
-                  <input type="text" class="ml-ans-input" id="ml-ans-6" placeholder="cm">
+                  <input type="text" class="ml-ans-input" id="ml-ans-6" aria-label="Question 6. Answer in centimeters" placeholder="cm">
                   <button class="ml-check-btn" onclick="mlCheck(6,100,0)">Check</button>
                   <span class="ml-feedback" id="ml-fb-6"></span>
                 </div>
@@ -1318,11 +2034,91 @@
               <div class="ml-problem" id="ml-prob-7">
                 <p>7. A person is 5 feet 6 inches tall. How many total inches is that?</p>
                 <div class="ml-problem-input-row">
-                  <input type="text" class="ml-ans-input" id="ml-ans-7" placeholder="inches">
+                  <input type="text" class="ml-ans-input" id="ml-ans-7" aria-label="Question 7. Answer in inches" placeholder="inches">
                   <button class="ml-check-btn" onclick="mlCheck(7,66,0)">Check</button>
                   <span class="ml-feedback" id="ml-fb-7"></span>
                 </div>
                 <div class="ml-hint" id="ml-hint-7">Hint: 5 × 12 = 60, then add 6 more inches.</div>
+              </div>
+
+              <div class="ml-problem" id="ml-prob-8">
+                <p>8. Room temperature is 20 °C. What is that in kelvin? (K = °C + 273.15 — round to the nearest whole number)</p>
+                <div class="ml-problem-input-row">
+                  <input type="text" class="ml-ans-input" id="ml-ans-8" aria-label="Question 8. Answer in kelvin" placeholder="K">
+                  <button class="ml-check-btn" onclick="mlCheck(8,293,0.5)">Check</button>
+                  <span class="ml-feedback" id="ml-fb-8"></span>
+                </div>
+                <div class="ml-hint" id="ml-hint-8">Hint: 20 + 273.15 = 293.15, which rounds to 293 K.</div>
+              </div>
+
+              <div class="ml-problem" id="ml-prob-9">
+                <p>9. A 12-volt battery pushes current through a 4-ohm resistor. How many amperes flow? (Ohm's law: I = V ÷ R)</p>
+                <div class="ml-problem-input-row">
+                  <input type="text" class="ml-ans-input" id="ml-ans-9" aria-label="Question 9. Answer in amperes" placeholder="amperes">
+                  <button class="ml-check-btn" onclick="mlCheck(9,3,0)">Check</button>
+                  <span class="ml-feedback" id="ml-fb-9"></span>
+                </div>
+                <div class="ml-hint" id="ml-hint-9">Hint: 12 V ÷ 4 Ω = 3 A. Try it in the electricity lab above.</div>
+              </div>
+
+              <div class="ml-problem" id="ml-prob-10">
+                <p>10. That same 12 V battery and 4 Ω resistor — how many watts of power is the resistor dissipating? (P = V × I)</p>
+                <div class="ml-problem-input-row">
+                  <input type="text" class="ml-ans-input" id="ml-ans-10" aria-label="Question 10. Answer in watts" placeholder="watts">
+                  <button class="ml-check-btn" onclick="mlCheck(10,36,0)">Check</button>
+                  <span class="ml-feedback" id="ml-fb-10"></span>
+                </div>
+                <div class="ml-hint" id="ml-hint-10">Hint: You found I = 3 A in the last question. 12 × 3 = 36 W.</div>
+              </div>
+
+              <div class="ml-problem" id="ml-prob-11">
+                <p>11. A megawatt is how many kilowatts?</p>
+                <div class="ml-problem-input-row">
+                  <input type="text" class="ml-ans-input" id="ml-ans-11" aria-label="Question 11. Answer in kilowatts" placeholder="kilowatts">
+                  <button class="ml-check-btn" onclick="mlCheck(11,1000,0)">Check</button>
+                  <span class="ml-feedback" id="ml-fb-11"></span>
+                </div>
+                <div class="ml-hint" id="ml-hint-11">Hint: Mega is 10⁶, kilo is 10³. The gap between them is 10³ = 1,000.</div>
+              </div>
+
+              <div class="ml-problem" id="ml-prob-12">
+                <p>12. Standard atmospheric pressure is 101,325 Pa. How many kilopascals is that? (Round to the nearest whole number.)</p>
+                <div class="ml-problem-input-row">
+                  <input type="text" class="ml-ans-input" id="ml-ans-12" aria-label="Question 12. Answer in kilopascals" placeholder="kPa">
+                  <button class="ml-check-btn" onclick="mlCheck(12,101,0.5)">Check</button>
+                  <span class="ml-feedback" id="ml-fb-12"></span>
+                </div>
+                <div class="ml-hint" id="ml-hint-12">Hint: Kilo means 1,000, so divide by 1,000 → 101.325 kPa ≈ 101 kPa.</div>
+              </div>
+
+              <div class="ml-problem" id="ml-prob-13">
+                <p>13. A quiet library measures 40 dB. A vacuum cleaner measures 70 dB. The vacuum is how many <em>times</em> more sound power? (Every +10 dB multiplies the power by 10.)</p>
+                <div class="ml-problem-input-row">
+                  <input type="text" class="ml-ans-input" id="ml-ans-13" aria-label="Question 13. Answer as a number of times" placeholder="times">
+                  <button class="ml-check-btn" onclick="mlCheck(13,1000,0)">Check</button>
+                  <span class="ml-feedback" id="ml-fb-13"></span>
+                </div>
+                <div class="ml-hint" id="ml-hint-13">Hint: 70 − 40 = 30 dB, which is three steps of ten: 10 × 10 × 10 = 1,000.</div>
+              </div>
+
+              <div class="ml-problem" id="ml-prob-14">
+                <p>14. A food label says a snack contains 200 Calories (the food kind, with a capital C). How many kilojoules is that? (1 Calorie = 4.184 kJ — round to the nearest whole number.)</p>
+                <div class="ml-problem-input-row">
+                  <input type="text" class="ml-ans-input" id="ml-ans-14" aria-label="Question 14. Answer in kilojoules" placeholder="kJ">
+                  <button class="ml-check-btn" onclick="mlCheck(14,837,1)">Check</button>
+                  <span class="ml-feedback" id="ml-fb-14"></span>
+                </div>
+                <div class="ml-hint" id="ml-hint-14">Hint: 200 × 4.184 = 836.8 kJ ≈ 837 kJ.</div>
+              </div>
+
+              <div class="ml-problem" id="ml-prob-15">
+                <p>15. How many SI base units are there — the ones every other unit in science is built from?</p>
+                <div class="ml-problem-input-row">
+                  <input type="text" class="ml-ans-input" id="ml-ans-15" aria-label="Question 15. Answer as a count" placeholder="how many">
+                  <button class="ml-check-btn" onclick="mlCheck(15,7,0)">Check</button>
+                  <span class="ml-feedback" id="ml-fb-15"></span>
+                </div>
+                <div class="ml-hint" id="ml-hint-15">Hint: metre, kilogram, second, ampere, kelvin, mole, candela.</div>
               </div>
 
             </div>
@@ -1333,31 +2129,34 @@
     </div>
   </div>
 
+  <!-- Shared figure library — must load before the lesson scripts below. -->
+  <script src="../assets/js/lesson-figures.js"></script>
+
   <!-- ── SCALE EXPLORER SCRIPT ──────────────────────── -->
   <script>
   (function () {
     const scales = [
-      { name: 'Planck Length', cat: 'Quantum Physics', exp: -35, mantissa: 1.616, theme: '#8b5cf6', scene: 'quantum', shape: 'dot', size: { w: 26, h: 26 }, familiar: 'A proton would feel absurdly gigantic here.', wow: 'About 10²⁰ times smaller than a proton.', application: 'This is the edge of theories about quantum gravity and spacetime itself.', story: 'At this zoom, a proton is impossibly huge compared to the Planck scale.', desc: 'The smallest meaningful length in physics. Below this scale, space and time as we know them cease to have meaning. Named after Max Planck.', cmps: ['10²⁰ times smaller than a proton','The scale where quantum gravity effects dominate','Cannot be directly observed by any instrument'] },
-      { name: 'Quark', cat: 'Particle Physics', exp: -18, mantissa: 1, theme: '#6366f1', scene: 'quantum', shape: 'dot', size: { w: 34, h: 34 }, familiar: 'Smaller than anything any optical tool can ever show you.', wow: 'Roughly 10¹⁷ times smaller than an atom.', application: 'Particle accelerators probe this realm by smashing matter at extreme energies.', story: 'You are inside the hidden architecture of protons and neutrons.', desc: 'The building blocks of protons and neutrons. Quarks are so small they cannot be isolated — they are always bound together inside hadrons.', cmps: ['~10¹⁷ times smaller than an atom','Held together by the strong nuclear force','Discovered in experiments at SLAC in 1968'] },
-      { name: 'Proton / Neutron', cat: 'Particle Physics', exp: -15, mantissa: 1, theme: '#3b82f6', scene: 'quantum', shape: 'ring', size: { w: 74, h: 74 }, familiar: 'Atoms are still about 100,000 times wider than this.', wow: 'The Large Hadron Collider explores events at this scale.', application: 'Nuclear physics, particle beams, and the structure of atoms live here.', story: 'At this zoom, the nucleus of an atom becomes a place, not an idea.', desc: 'The nucleus of a hydrogen atom is a single proton — about 1 femtometer across. Protons and neutrons are made of three quarks each.', cmps: ['~100,000 times smaller than an atom','The scale explored at CERN\'s LHC','Rutherford discovered the nucleus in 1911'] },
-      { name: 'DNA Double Helix Width', cat: 'Molecular Biology', exp: -9, mantissa: 2, theme: '#14b8a6', scene: 'micro', shape: 'strand', size: { w: 170, h: 34 }, familiar: 'A human hair is about 35,000 DNA widths across.', wow: 'Every cell hides meters of DNA folded into a tiny nucleus.', application: 'Biotechnology, genetics, and nanoscience all work in this range.', story: 'You are now at the scale where the ladder of DNA has measurable width.', desc: 'The width of a DNA strand — 2 nanometers. DNA is so thin that all the DNA in a single human cell, stretched out, would be about 2 meters long.', cmps: ['~2 nm wide','Visible only with electron microscopes','Structure discovered by Watson & Crick in 1953'] },
-      { name: 'Bacterium', cat: 'Biology', exp: -6, mantissa: 2, theme: '#22c55e', scene: 'micro', shape: 'line', size: { w: 120, h: 18 }, familiar: 'About 35 bacteria could line up across one human hair.', wow: 'A human is about a million times larger.', application: 'This is the scale of cells, microbes, and light microscope work.', story: 'You are now at the scale where cells become visible under microscopes.', desc: 'A typical bacterium is 1–10 micrometers long. A human hair is about 70 micrometers wide — and roughly 10–70 bacteria could fit across it.', cmps: ['Visible under a light microscope','~1,000× smaller than a sand grain','The first living things on Earth ~3.8 billion years ago'] },
-      { name: 'Human Hair Width', cat: 'Biology', exp: -5, mantissa: 7, theme: '#84cc16', scene: 'micro', shape: 'line', size: { w: 200, h: 16 }, familiar: 'A hair is around 70 micrometers wide.', wow: 'A hair is about 100,000 nanometers wide.', application: 'Microscopy often uses hair, fibers, and grains of pollen as familiar anchors.', story: 'This is a threshold where invisible life starts to connect to the everyday world.', desc: 'A human hair is roughly 70 micrometers in diameter — invisible to the naked eye in cross-section but used as a comparison scale in microscopy.', cmps: ['About 70 μm across','~10× wider than a bacterium','Visible but hard to see without magnification'] },
-      { name: 'Ant', cat: 'Biology', exp: -3, mantissa: 1, theme: '#f59e0b', scene: 'everyday', shape: 'line', size: { w: 116, h: 22 }, familiar: 'About 1,000 ants lined up would stretch one meter.', wow: 'Scale is why ants can lift so much relative to their mass.', application: 'This is the world of insects, grains, and precise small-object measurement.', story: 'You have reached the scale of creatures small enough to fit on a fingertip.', desc: 'A common ant is about 1–2 mm long. Ants can carry up to 50 times their own body weight — a feat that scales of size make possible.', cmps: ['~1,000 ants = 1 meter','Visible to the naked eye','Antennae sense the world at millimeter precision'] },
-      { name: 'Human Hand', cat: 'Human Scale', exp: -1, mantissa: 2, theme: '#f97316', scene: 'everyday', shape: 'line', size: { w: 190, h: 26 }, familiar: 'The hand gave rise to handbreadths, palms, and cubits.', wow: 'Horse height is still measured in hands today.', application: 'Body-based units connect ancient measuring practice to modern standard units.', story: 'This is the scale where your own body becomes a measuring instrument.', desc: 'The average adult hand is about 18–20 cm from wrist to middle fingertip — the basis of the ancient cubit (elbow to fingertip ≈ 45 cm).', cmps: ['The origin of "handbreadth" = 4 fingers','1 hand = 4 inches in horse measurement','Our first and most natural measuring tool'] },
-      { name: 'Average Human Height', cat: 'Human Scale', exp: 0, mantissa: 1.7, theme: '#fb7185', scene: 'everyday', shape: 'human', size: { w: 56, h: 150 }, familiar: 'Think pencil, desk, door, person.', wow: 'Earth is roughly 10⁷ times wider than a human.', application: 'Architecture, sports, and most daily measurements are centered on this scale.', story: 'You are standing at the human reference scale for almost all everyday measurement.', desc: 'The global average adult height is about 1.7 meters. The meter was originally defined as 1/10,000,000 of the distance from pole to equator.', cmps: ['~1,760 humans stacked = 1 mile high','Our height fits ~6 times in a fathom','The reference scale for most everyday measurements'] },
-      { name: 'Blue Whale', cat: 'Biology', exp: 1, mantissa: 3, theme: '#06b6d4', scene: 'everyday', shape: 'line', size: { w: 240, h: 32 }, familiar: 'Longer than two school buses parked end to end.', wow: 'Its heart is about the size of a small car.', application: 'Large animal biology stretches the everyday scale into surprising territory.', story: 'Now the familiar meter becomes a building block for creatures the size of buses.', desc: 'The blue whale, the largest animal ever known to have lived, reaches up to 30 meters — longer than two school buses end to end.', cmps: ['Weighs up to 200 tonnes','Heart the size of a small car','Tongue weighs as much as an elephant'] },
-      { name: 'Eiffel Tower', cat: 'Engineering', exp: 2, mantissa: 3.3, theme: '#eab308', scene: 'everyday', shape: 'line', size: { w: 230, h: 18 }, familiar: 'A skyscraper-scale landmark measured in hundreds of meters.', wow: 'Iron expands and shrinks enough to change its height seasonally.', application: 'Surveying, engineering, and city planning often work across this scale.', story: 'Human-made structures now dominate the frame.', desc: 'The Eiffel Tower stands 330 meters tall including its antenna. Its height was the world record for 41 years after its construction in 1889.', cmps: ['330 m / 1,083 ft tall','Made of 7,300 tonnes of iron','Shrinks ~6 inches in cold weather'] },
-      { name: 'Mount Everest', cat: 'Geography', exp: 3, mantissa: 8.849, theme: '#f97316', scene: 'terrain', shape: 'mountain', size: { w: 220, h: 128 }, familiar: 'A mountain skyline replaces city blocks here.', wow: 'Jetliners cruise only a little higher than Everest.', application: 'Topographic maps, GPS surveying, and geography become the key tools.', story: 'This is the scale where landscapes, not buildings, become the reference.', desc: 'Earth\'s highest point above sea level at 8,849 meters. First measured precisely by the Great Trigonometric Survey of India in 1856.', cmps: ['8,849 m / 29,032 ft above sea level','Height remeasured in 2020 using GPS','Commercial flights cruise ~10,000 m above this'] },
-      { name: 'Earth\'s Diameter', cat: 'Planetary Science', exp: 7, mantissa: 1.27, theme: '#38bdf8', scene: 'planetary', shape: 'globe', size: { w: 180, h: 180 }, familiar: 'A human is tiny enough to vanish completely at this zoom.', wow: 'Earth is about 10⁷ times wider than a person.', application: 'Global mapping, satellite orbits, and climate systems all use this scale.', story: 'The whole planet fits inside the frame.', desc: 'Earth\'s diameter is about 12,742 km. Eratosthenes estimated Earth\'s circumference to within 2% accuracy using shadow angles around 240 BC.', cmps: ['12,742 km in diameter','40,075 km circumference at the equator','Eratosthenes\' estimate was remarkably accurate'] },
-      { name: 'Distance to the Moon', cat: 'Astronomy', exp: 8, mantissa: 3.84, theme: '#cbd5e1', scene: 'planetary', shape: 'line', size: { w: 240, h: 14 }, familiar: 'Light needs about 1.28 seconds to cross this gap.', wow: 'Laser ranging can still measure it to about a centimeter.', application: 'Orbital mechanics and laser ranging make this scale measurable.', story: 'Earth and Moon stop feeling adjacent and start feeling dramatically separated.', desc: 'The Moon is on average 384,400 km away. NASA\'s Lunar Laser Ranging experiment (using Apollo retroreflectors) measures this to centimeter accuracy.', cmps: ['~1.28 light-seconds away','384,400 km average','Retroreflectors measure it to ±1 cm today'] },
-      { name: 'Distance to the Sun', cat: 'Astronomy', exp: 11, mantissa: 1.496, theme: '#fbbf24', scene: 'planetary', shape: 'line', size: { w: 250, h: 12 }, familiar: 'This is one Astronomical Unit, the yardstick of our Solar System.', wow: 'Sunlight takes about 8 minutes 19 seconds to arrive.', application: 'Planetary science uses AU as the natural unit here.', story: 'You are now using sunlight time and orbital motion as measuring tools.', desc: 'One Astronomical Unit (AU) is exactly 149,597,870,700 meters by IAU definition. It is close to Earth\'s average distance from the Sun.', cmps: ['1 AU = 149,597,870,700 m exactly','Light travel time: ~8 min 19 sec','Earth orbits at ~30 km/s to stay near this distance'] },
-      { name: 'Heliosphere Boundary', cat: 'Astronomy', exp: 13, mantissa: 1.84, theme: '#f59e0b', scene: 'planetary', shape: 'orbits', size: { w: 220, h: 220 }, familiar: 'Planet orbits become small compared with the solar-wind bubble.', wow: 'Voyager 1 needed decades to cross this boundary.', application: 'Spacecraft telemetry and plasma measurements define this scale.', story: 'The Solar System becomes a bubble carved by the solar wind.', desc: 'The heliopause, where the solar wind gives way to interstellar space, is roughly 123 AU from the Sun in Voyager 1\'s crossing direction — about 1.84 × 10^13 m. The Oort Cloud is far beyond this and should not be collapsed into the same number.', cmps: ['Voyager 1 crossed the heliopause in 2012','~123 AU from the Sun in one measured direction','Oort Cloud estimates belong nearer 10^16 m, not 10^13 m'] },
-      { name: 'Nearest Star (Proxima Centauri)', cat: 'Astronomy', exp: 16, mantissa: 4.02, theme: '#a78bfa', scene: 'cosmic', shape: 'line', size: { w: 260, h: 10 }, familiar: 'Interstellar space is mostly emptiness, not stars packed together.', wow: 'Voyager 1 would need over 73,000 years to arrive.', application: 'Light-years become the necessary language of distance here.', story: 'You have crossed from our Solar System into the true emptiness between stars.', desc: 'The nearest star to our Sun is 4.24 light-years away. It would take Voyager 1 (at its current speed) over 73,000 years to reach it.', cmps: ['4.24 light-years away','~268,770 AU from Earth','No human-made object has come remotely close'] },
-      { name: 'Milky Way Diameter', cat: 'Cosmology', exp: 21, mantissa: 9.46, theme: '#8b5cf6', scene: 'cosmic', shape: 'spiral', size: { w: 220, h: 220 }, familiar: 'Our Sun is just one star far from the galactic center.', wow: 'The Milky Way contains hundreds of billions of stars.', application: 'Radio astronomy and galactic mapping operate across this scale.', story: 'A galaxy becomes a visible disk of structure, not just a smear of light.', desc: 'Our galaxy is roughly 100,000 light-years in diameter, containing 200–400 billion stars. Light from the far edge set out before Homo sapiens evolved.', cmps: ['~100,000 light-years across','200–400 billion stars','Our Sun is ~26,000 light-years from the center'] },
-      { name: 'Distance to Andromeda', cat: 'Cosmology', exp: 22, mantissa: 2.37, theme: '#7c3aed', scene: 'cosmic', shape: 'line', size: { w: 260, h: 12 }, familiar: 'Galaxies themselves become the comparison objects.', wow: 'Andromeda contains about a trillion stars.', application: 'Extragalactic astronomy uses redshift, brightness, and long-baseline observations here.', story: 'The nearest large galaxy is still so far away that naked-eye light left millions of years ago.', desc: 'The Andromeda Galaxy — the nearest large galaxy to the Milky Way — is 2.537 million light-years away. On a clear night it\'s visible to the naked eye.', cmps: ['~2.5 million light-years away','Contains ~1 trillion stars','Will collide with the Milky Way in ~4.5 billion years'] },
-      { name: 'Hubble Deep Field Depth', cat: 'Cosmology', exp: 25, mantissa: 1.2, theme: '#ec4899', scene: 'cosmic', shape: 'web', size: { w: 230, h: 230 }, familiar: 'A tiny patch of sky holds thousands of galaxies.', wow: 'The light started traveling before Earth existed.', application: 'Deep-field astronomy turns time itself into a distance-measuring tool.', story: 'You are looking so far that distance also means seeing deep into the past.', desc: 'The Hubble Deep Field captured galaxies 13 billion light-years away — objects whose light left before Earth even existed, revealing the ancient universe.', cmps: ['~13 billion light-years deep','Contains over 3,000 galaxies in a tiny sky patch','Light left these galaxies ~13 billion years ago'] },
-      { name: 'Observable Universe', cat: 'Cosmology', exp: 26, mantissa: 8.8, theme: '#f472b6', scene: 'cosmic', shape: 'web', size: { w: 250, h: 250 }, familiar: 'Galaxies become points in a cosmic web.', wow: 'The observable universe contains roughly 2 trillion galaxies.', application: 'Cosmology uses background radiation, expansion, and relativity at this range.', story: 'This is the widest frame we can ever observe: the cosmic horizon itself.', desc: 'The farthest we can possibly observe — about 93 billion light-years in diameter. Beyond this, light hasn\'t had time to reach us since the Big Bang.', cmps: ['93 billion light-years in diameter','Contains ~2 trillion galaxies','Edge set by the age of the universe × speed of light'] },
+      { name: 'Planck Length', fig: 'quantum-foam', cat: 'Quantum Physics', exp: -35, mantissa: 1.616, theme: '#8b5cf6', scene: 'quantum', shape: 'dot', size: { w: 26, h: 26 }, familiar: 'A proton would feel absurdly gigantic here.', wow: 'About 10²⁰ times smaller than a proton.', application: 'This is the edge of theories about quantum gravity and spacetime itself.', story: 'At this zoom, a proton is impossibly huge compared to the Planck scale.', desc: 'The smallest meaningful length in physics. Below this scale, space and time as we know them cease to have meaning. Named after Max Planck.', cmps: ['10²⁰ times smaller than a proton','The scale where quantum gravity effects dominate','Cannot be directly observed by any instrument'] },
+      { name: 'Quark', fig: 'quark', cat: 'Particle Physics', exp: -18, mantissa: 1, theme: '#6366f1', scene: 'quantum', shape: 'dot', size: { w: 34, h: 34 }, familiar: 'Smaller than anything any optical tool can ever show you.', wow: 'Roughly 10¹⁷ times smaller than an atom.', application: 'Particle accelerators probe this realm by smashing matter at extreme energies.', story: 'You are inside the hidden architecture of protons and neutrons.', desc: 'The building blocks of protons and neutrons. Quarks are so small they cannot be isolated — they are always bound together inside hadrons.', cmps: ['~10¹⁷ times smaller than an atom','Held together by the strong nuclear force','Discovered in experiments at SLAC in 1968'] },
+      { name: 'Proton / Neutron', fig: 'proton', cat: 'Particle Physics', exp: -15, mantissa: 1, theme: '#3b82f6', scene: 'quantum', shape: 'ring', size: { w: 74, h: 74 }, familiar: 'Atoms are still about 100,000 times wider than this.', wow: 'The Large Hadron Collider explores events at this scale.', application: 'Nuclear physics, particle beams, and the structure of atoms live here.', story: 'At this zoom, the nucleus of an atom becomes a place, not an idea.', desc: 'The nucleus of a hydrogen atom is a single proton — about 1 femtometer across. Protons and neutrons are made of three quarks each.', cmps: ['~100,000 times smaller than an atom','The scale explored at CERN\'s LHC','Rutherford discovered the nucleus in 1911'] },
+      { name: 'DNA Double Helix Width', fig: 'dna', cat: 'Molecular Biology', exp: -9, mantissa: 2, theme: '#14b8a6', scene: 'micro', shape: 'strand', size: { w: 170, h: 34 }, familiar: 'A human hair is about 35,000 DNA widths across.', wow: 'Every cell hides meters of DNA folded into a tiny nucleus.', application: 'Biotechnology, genetics, and nanoscience all work in this range.', story: 'You are now at the scale where the ladder of DNA has measurable width.', desc: 'The width of a DNA strand — 2 nanometers. DNA is so thin that all the DNA in a single human cell, stretched out, would be about 2 meters long.', cmps: ['~2 nm wide','Visible only with electron microscopes','Structure discovered by Watson & Crick in 1953'] },
+      { name: 'Bacterium', fig: 'bacterium', cat: 'Biology', exp: -6, mantissa: 2, theme: '#22c55e', scene: 'micro', shape: 'line', size: { w: 120, h: 18 }, familiar: 'About 35 bacteria could line up across one human hair.', wow: 'A human is about a million times larger.', application: 'This is the scale of cells, microbes, and light microscope work.', story: 'You are now at the scale where cells become visible under microscopes.', desc: 'A typical bacterium is 1–10 micrometers long. A human hair is about 70 micrometers wide — and roughly 10–70 bacteria could fit across it.', cmps: ['Visible under a light microscope','~1,000× smaller than a sand grain','The first living things on Earth ~3.8 billion years ago'] },
+      { name: 'Human Hair Width', fig: 'hair', cat: 'Biology', exp: -5, mantissa: 7, theme: '#84cc16', scene: 'micro', shape: 'line', size: { w: 200, h: 16 }, familiar: 'A hair is around 70 micrometers wide.', wow: 'A hair is about 100,000 nanometers wide.', application: 'Microscopy often uses hair, fibers, and grains of pollen as familiar anchors.', story: 'This is a threshold where invisible life starts to connect to the everyday world.', desc: 'A human hair is roughly 70 micrometers in diameter — invisible to the naked eye in cross-section but used as a comparison scale in microscopy.', cmps: ['About 70 μm across','~10× wider than a bacterium','Visible but hard to see without magnification'] },
+      { name: 'Ant', fig: 'ant', cat: 'Biology', exp: -3, mantissa: 1, theme: '#f59e0b', scene: 'everyday', shape: 'line', size: { w: 116, h: 22 }, familiar: 'About 1,000 ants lined up would stretch one meter.', wow: 'Scale is why ants can lift so much relative to their mass.', application: 'This is the world of insects, grains, and precise small-object measurement.', story: 'You have reached the scale of creatures small enough to fit on a fingertip.', desc: 'A common ant is about 1–2 mm long. Ants can carry up to 50 times their own body weight — a feat that scales of size make possible.', cmps: ['~1,000 ants = 1 meter','Visible to the naked eye','Antennae sense the world at millimeter precision'] },
+      { name: 'Human Hand', fig: 'hand', cat: 'Human Scale', exp: -1, mantissa: 2, theme: '#f97316', scene: 'everyday', shape: 'line', size: { w: 190, h: 26 }, familiar: 'The hand gave rise to handbreadths, palms, and cubits.', wow: 'Horse height is still measured in hands today.', application: 'Body-based units connect ancient measuring practice to modern standard units.', story: 'This is the scale where your own body becomes a measuring instrument.', desc: 'The average adult hand is about 18–20 cm from wrist to middle fingertip — the basis of the ancient cubit (elbow to fingertip ≈ 45 cm).', cmps: ['The origin of "handbreadth" = 4 fingers','1 hand = 4 inches in horse measurement','Our first and most natural measuring tool'] },
+      { name: 'Average Human Height', fig: 'human', cat: 'Human Scale', exp: 0, mantissa: 1.7, theme: '#fb7185', scene: 'everyday', shape: 'human', size: { w: 56, h: 150 }, familiar: 'Think pencil, desk, door, person.', wow: 'Earth is roughly 10⁷ times wider than a human.', application: 'Architecture, sports, and most daily measurements are centered on this scale.', story: 'You are standing at the human reference scale for almost all everyday measurement.', desc: 'The global average adult height is about 1.7 meters. The meter was originally defined as 1/10,000,000 of the distance from pole to equator.', cmps: ['~1,760 humans stacked = 1 mile high','Our height fits ~6 times in a fathom','The reference scale for most everyday measurements'] },
+      { name: 'Blue Whale', fig: 'blue-whale', cat: 'Biology', exp: 1, mantissa: 3, theme: '#06b6d4', scene: 'everyday', shape: 'line', size: { w: 240, h: 32 }, familiar: 'Longer than two school buses parked end to end.', wow: 'Its heart is about the size of a small car.', application: 'Large animal biology stretches the everyday scale into surprising territory.', story: 'Now the familiar meter becomes a building block for creatures the size of buses.', desc: 'The blue whale, the largest animal ever known to have lived, reaches up to 30 meters — longer than two school buses end to end.', cmps: ['Weighs up to 200 tonnes','Heart the size of a small car','Tongue weighs as much as an elephant'] },
+      { name: 'Eiffel Tower', fig: 'eiffel-tower', cat: 'Engineering', exp: 2, mantissa: 3.3, theme: '#eab308', scene: 'everyday', shape: 'line', size: { w: 230, h: 18 }, familiar: 'A skyscraper-scale landmark measured in hundreds of meters.', wow: 'Iron expands and shrinks enough to change its height seasonally.', application: 'Surveying, engineering, and city planning often work across this scale.', story: 'Human-made structures now dominate the frame.', desc: 'The Eiffel Tower stands 330 meters tall including its antenna. Its height was the world record for 41 years after its construction in 1889.', cmps: ['330 m / 1,083 ft tall','Made of 7,300 tonnes of iron','Shrinks ~6 inches in cold weather'] },
+      { name: 'Mount Everest', fig: 'everest', cat: 'Geography', exp: 3, mantissa: 8.849, theme: '#f97316', scene: 'terrain', shape: 'mountain', size: { w: 220, h: 128 }, familiar: 'A mountain skyline replaces city blocks here.', wow: 'Jetliners cruise only a little higher than Everest.', application: 'Topographic maps, GPS surveying, and geography become the key tools.', story: 'This is the scale where landscapes, not buildings, become the reference.', desc: 'Earth\'s highest point above sea level at 8,849 meters. First measured precisely by the Great Trigonometric Survey of India in 1856.', cmps: ['8,849 m / 29,032 ft above sea level','Height remeasured in 2020 using GPS','Commercial flights cruise ~10,000 m above this'] },
+      { name: 'Earth\'s Diameter', fig: 'earth', cat: 'Planetary Science', exp: 7, mantissa: 1.27, theme: '#38bdf8', scene: 'planetary', shape: 'globe', size: { w: 180, h: 180 }, familiar: 'A human is tiny enough to vanish completely at this zoom.', wow: 'Earth is about 10⁷ times wider than a person.', application: 'Global mapping, satellite orbits, and climate systems all use this scale.', story: 'The whole planet fits inside the frame.', desc: 'Earth\'s diameter is about 12,742 km. Eratosthenes estimated Earth\'s circumference to within 2% accuracy using shadow angles around 240 BC.', cmps: ['12,742 km in diameter','40,075 km circumference at the equator','Eratosthenes\' estimate was remarkably accurate'] },
+      { name: 'Distance to the Moon', fig: 'earth-moon', cat: 'Astronomy', exp: 8, mantissa: 3.84, theme: '#cbd5e1', scene: 'planetary', shape: 'line', size: { w: 240, h: 14 }, familiar: 'Light needs about 1.28 seconds to cross this gap.', wow: 'Laser ranging can still measure it to about a centimeter.', application: 'Orbital mechanics and laser ranging make this scale measurable.', story: 'Earth and Moon stop feeling adjacent and start feeling dramatically separated.', desc: 'The Moon is on average 384,400 km away. NASA\'s Lunar Laser Ranging experiment (using Apollo retroreflectors) measures this to centimeter accuracy.', cmps: ['~1.28 light-seconds away','384,400 km average','Retroreflectors measure it to ±1 cm today'] },
+      { name: 'Distance to the Sun', fig: 'earth-sun', cat: 'Astronomy', exp: 11, mantissa: 1.496, theme: '#fbbf24', scene: 'planetary', shape: 'line', size: { w: 250, h: 12 }, familiar: 'This is one Astronomical Unit, the yardstick of our Solar System.', wow: 'Sunlight takes about 8 minutes 19 seconds to arrive.', application: 'Planetary science uses AU as the natural unit here.', story: 'You are now using sunlight time and orbital motion as measuring tools.', desc: 'One Astronomical Unit (AU) is exactly 149,597,870,700 meters by IAU definition. It is close to Earth\'s average distance from the Sun.', cmps: ['1 AU = 149,597,870,700 m exactly','Light travel time: ~8 min 19 sec','Earth orbits at ~30 km/s to stay near this distance'] },
+      { name: 'Heliosphere Boundary', fig: 'heliosphere', cat: 'Astronomy', exp: 13, mantissa: 1.84, theme: '#f59e0b', scene: 'planetary', shape: 'orbits', size: { w: 220, h: 220 }, familiar: 'Planet orbits become small compared with the solar-wind bubble.', wow: 'Voyager 1 needed decades to cross this boundary.', application: 'Spacecraft telemetry and plasma measurements define this scale.', story: 'The Solar System becomes a bubble carved by the solar wind.', desc: 'The heliopause, where the solar wind gives way to interstellar space, is roughly 123 AU from the Sun in Voyager 1\'s crossing direction — about 1.84 × 10^13 m. The Oort Cloud is far beyond this and should not be collapsed into the same number.', cmps: ['Voyager 1 crossed the heliopause in 2012','~123 AU from the Sun in one measured direction','Oort Cloud estimates belong nearer 10^16 m, not 10^13 m'] },
+      { name: 'Nearest Star (Proxima Centauri)', fig: 'star-gap', cat: 'Astronomy', exp: 16, mantissa: 4.02, theme: '#a78bfa', scene: 'cosmic', shape: 'line', size: { w: 260, h: 10 }, familiar: 'Interstellar space is mostly emptiness, not stars packed together.', wow: 'Voyager 1 would need over 73,000 years to arrive.', application: 'Light-years become the necessary language of distance here.', story: 'You have crossed from our Solar System into the true emptiness between stars.', desc: 'The nearest star to our Sun is 4.24 light-years away. It would take Voyager 1 (at its current speed) over 73,000 years to reach it.', cmps: ['4.24 light-years away','~268,770 AU from Earth','No human-made object has come remotely close'] },
+      { name: 'Milky Way Diameter', fig: 'milky-way', cat: 'Cosmology', exp: 21, mantissa: 9.46, theme: '#8b5cf6', scene: 'cosmic', shape: 'spiral', size: { w: 220, h: 220 }, familiar: 'Our Sun is just one star far from the galactic center.', wow: 'The Milky Way contains hundreds of billions of stars.', application: 'Radio astronomy and galactic mapping operate across this scale.', story: 'A galaxy becomes a visible disk of structure, not just a smear of light.', desc: 'Our galaxy is roughly 100,000 light-years in diameter, containing 200–400 billion stars. Light from the far edge set out before Homo sapiens evolved.', cmps: ['~100,000 light-years across','200–400 billion stars','Our Sun is ~26,000 light-years from the center'] },
+      { name: 'Distance to Andromeda', fig: 'galaxy-pair', cat: 'Cosmology', exp: 22, mantissa: 2.37, theme: '#7c3aed', scene: 'cosmic', shape: 'line', size: { w: 260, h: 12 }, familiar: 'Galaxies themselves become the comparison objects.', wow: 'Andromeda contains about a trillion stars.', application: 'Extragalactic astronomy uses redshift, brightness, and long-baseline observations here.', story: 'The nearest large galaxy is still so far away that naked-eye light left millions of years ago.', desc: 'The Andromeda Galaxy — the nearest large galaxy to the Milky Way — is 2.537 million light-years away. On a clear night it\'s visible to the naked eye.', cmps: ['~2.5 million light-years away','Contains ~1 trillion stars','Will collide with the Milky Way in ~4.5 billion years'] },
+      { name: 'Hubble Deep Field Depth', fig: 'deep-field', cat: 'Cosmology', exp: 25, mantissa: 1.2, theme: '#ec4899', scene: 'cosmic', shape: 'web', size: { w: 230, h: 230 }, familiar: 'A tiny patch of sky holds thousands of galaxies.', wow: 'The light started traveling before Earth existed.', application: 'Deep-field astronomy turns time itself into a distance-measuring tool.', story: 'You are looking so far that distance also means seeing deep into the past.', desc: 'The Hubble Deep Field captured galaxies 13 billion light-years away — objects whose light left before Earth even existed, revealing the ancient universe.', cmps: ['~13 billion light-years deep','Contains over 3,000 galaxies in a tiny sky patch','Light left these galaxies ~13 billion years ago'] },
+      { name: 'Observable Universe', fig: 'cosmic-web', cat: 'Cosmology', exp: 26, mantissa: 8.8, theme: '#f472b6', scene: 'cosmic', shape: 'web', size: { w: 250, h: 250 }, familiar: 'Galaxies become points in a cosmic web.', wow: 'The observable universe contains roughly 2 trillion galaxies.', application: 'Cosmology uses background radiation, expansion, and relativity at this range.', story: 'This is the widest frame we can ever observe: the cosmic horizon itself.', desc: 'The farthest we can possibly observe — about 93 billion light-years in diameter. Beyond this, light hasn\'t had time to reach us since the Big Bang.', cmps: ['93 billion light-years in diameter','Contains ~2 trillion galaxies','Edge set by the age of the universe × speed of light'] },
     ];
 
     const storySequence = ['Planck Length', 'Proton / Neutron', 'Bacterium', 'Ant', 'Average Human Height', 'Eiffel Tower', 'Mount Everest', 'Earth\'s Diameter', 'Heliosphere Boundary', 'Milky Way Diameter', 'Observable Universe'];
@@ -1551,6 +2350,25 @@
       ctx.restore();
     }
 
+    // When the shared figure library supplies real artwork for this scale, the
+    // canvas drops its generic stand-in subject and paints only the ambient
+    // backdrop — otherwise a rounded rectangle sits behind an actual whale.
+    function hasFigure(scale) {
+      return !!(scale.fig && window.LessonFigures && window.LessonFigures.has(scale.fig));
+    }
+
+    function drawAmbientMotes(scale, time) {
+      for (let i = 0; i < 22; i++) {
+        const x = ((Math.sin(i * 12.9898) * 43758.5453) % 1 + 1) % 1 * canvasW;
+        const drift = (time * (6 + (i % 5) * 4)) % (canvasH + 40);
+        const y = (((Math.sin(i * 78.233) * 24634.6345) % 1 + 1) % 1 * canvasH + drift) % canvasH;
+        ctx.fillStyle = rgba(scale.theme, 0.1 + (i % 4) * 0.04);
+        ctx.beginPath();
+        ctx.arc(x, y, 1.5 + (i % 3), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
     function drawQuantum(scale, time) {
       drawGrid(time, scale.theme);
       const cx = canvasW / 2;
@@ -1572,19 +2390,22 @@
         ctx.ellipse(cx, cy, 54 + i * 28, 18 + i * 9, time * 0.3 + i, 0, Math.PI * 2);
         ctx.stroke();
       }
-      ctx.fillStyle = rgba(scale.theme, 0.95);
-      ctx.shadowColor = rgba(scale.theme, 0.85);
-      ctx.shadowBlur = 26;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 12 + Math.sin(time * 4) * 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      if (!hasFigure(scale)) {
+        ctx.fillStyle = rgba(scale.theme, 0.95);
+        ctx.shadowColor = rgba(scale.theme, 0.85);
+        ctx.shadowBlur = 26;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 12 + Math.sin(time * 4) * 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
     }
 
     function drawMicro(scale, time) {
       const cx = canvasW / 2;
       const cy = canvasH / 2;
       drawGrid(time * 0.4, scale.theme);
+      if (hasFigure(scale)) { drawAmbientMotes(scale, time); return; }
       ctx.save();
       ctx.translate(cx, cy);
       if (scale.shape === 'strand') {
@@ -1638,6 +2459,7 @@
       ctx.lineTo(canvasW * 0.88, ground);
       ctx.stroke();
       const cx = canvasW / 2;
+      if (hasFigure(scale)) { drawAmbientMotes(scale, time); return; }
       if (scale.shape === 'human') {
         ctx.fillStyle = rgba(scale.theme, 0.82);
         ctx.beginPath();
@@ -1666,6 +2488,7 @@
     }
 
     function drawTerrain(scale, time) {
+      if (hasFigure(scale)) return;
       const base = canvasH * 0.78;
       const peaks = [
         [0.05, 0.9], [0.2, 0.52], [0.32, 0.72], [0.5, 0.18], [0.68, 0.62], [0.82, 0.42], [0.96, 0.86]
@@ -1700,6 +2523,14 @@
         ctx.beginPath();
         ctx.ellipse(cx, cy, 48 + i * 34, 28 + i * 20, -0.18, 0, Math.PI * 2);
         ctx.stroke();
+      }
+      if (hasFigure(scale)) {
+        ctx.strokeStyle = rgba(scale.theme, 0.45);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, Math.min(canvasW, canvasH) * 0.42 + Math.sin(time) * 6, 0, Math.PI * 2);
+        ctx.stroke();
+        return;
       }
       if (scale.shape === 'globe') {
         const grad = ctx.createRadialGradient(cx - 34, cy - 42, 10, cx, cy, 96);
@@ -1751,6 +2582,7 @@
         ctx.fillStyle = `rgba(255,255,255,${0.15 + (i % 7) * 0.08})`;
         ctx.fillRect(px, py, 1.2, 1.2);
       }
+      if (hasFigure(scale)) return;
       if (scale.shape === 'spiral') {
         for (let arm = 0; arm < 3; arm++) {
           ctx.strokeStyle = arm === 0 ? rgba(scale.theme, 0.78) : 'rgba(255,255,255,0.2)';
@@ -1842,12 +2674,22 @@
 
     function buildGhosts(index) {
       const neighbors = [index - 1, index + 1, index - 2].filter(i => i >= 0 && i < scales.length);
+      const figures = window.LessonFigures;
       ghostsEl.innerHTML = neighbors.map((i, offset) => {
+        const scale = scales[i];
         const left = 26 + (offset * 22) + ((i > index) ? 26 : 0);
         const opacity = i === index - 1 || i === index + 1 ? 0.42 : 0.22;
-        const width = Math.max(20, Math.min(110, scales[i].size.w * 0.66));
-        const height = Math.max(20, Math.min(110, scales[i].size.h * 0.66));
-        return `<div class="ml-scale-ghost" style="left:${left}%;--ghost-w:${width}px;--ghost-h:${height}px;--ghost-o:${opacity}" title="${scales[i].name}"></div>`;
+        // Neighbours are drawn with their own artwork, so the ghosts read as
+        // "the next thing up the ladder" instead of anonymous grey blobs.
+        if (scale.fig && figures && figures.has(scale.fig)) {
+          const h = 54;
+          const w = Math.min(120, h * figures.aspect(scale.fig));
+          return `<div class="ml-scale-ghost is-figure" style="left:${left}%;--ghost-w:${w}px;--ghost-h:${h}px;--ghost-o:${opacity}" title="${scale.name}">`
+               + figures.markup(scale.fig, { accent: scale.theme }) + '</div>';
+        }
+        const width = Math.max(20, Math.min(110, scale.size.w * 0.66));
+        const height = Math.max(20, Math.min(110, scale.size.h * 0.66));
+        return `<div class="ml-scale-ghost" style="left:${left}%;--ghost-w:${width}px;--ghost-h:${height}px;--ghost-o:${opacity}" title="${scale.name}"></div>`;
       }).join('');
     }
 
@@ -1879,9 +2721,24 @@
       };
       visualEl.dataset.themeScene = scale.scene;
       visualEl.style.setProperty('--scale-accent', scale.theme);
-      objectEl.dataset.shape = scale.shape;
-      objectEl.style.setProperty('--object-w', `${scale.size.w}px`);
-      objectEl.style.setProperty('--object-h', `${scale.size.h}px`);
+      // Real artwork when the shared figure library is available; the old
+      // CSS shapes stay as the fallback so the lab still works without it.
+      const figures = window.LessonFigures;
+      if (scale.fig && figures && figures.has(scale.fig)) {
+        const aspect = figures.aspect(scale.fig);
+        let w = Math.min(300, Math.max(140, scale.size.w * 1.35));
+        let h = w / aspect;
+        if (h > 250) { h = 250; w = h * aspect; }
+        objectEl.dataset.shape = 'figure';
+        objectEl.style.setProperty('--object-w', `${Math.round(w)}px`);
+        objectEl.style.setProperty('--object-h', `${Math.round(h)}px`);
+        figures.render(objectEl, scale.fig, { accent: scale.theme });
+      } else {
+        objectEl.dataset.shape = scale.shape;
+        objectEl.innerHTML = '';
+        objectEl.style.setProperty('--object-w', `${scale.size.w}px`);
+        objectEl.style.setProperty('--object-h', `${scale.size.h}px`);
+      }
       objectEl.style.setProperty('--accent-soft', scale.theme);
       cameraEl.innerHTML = `Zoom ${formatPower(scale.exp)}`;
       contextEl.textContent = `Anchor: ${scale.name}`;
@@ -2232,67 +3089,393 @@
   <!-- ── UNIT CONVERTER SCRIPT ─────────────────────── -->
   <script>
   (function () {
-    // All conversion factors to meters
-    const toMeters = {
-      mm:   0.001,
-      cm:   0.01,
-      m:    1,
-      km:   1000,
-      in:   0.0254,
-      ft:   0.3048,
-      yd:   0.9144,
-      mi:   1609.344,
-      nmi:  1852,
-      ly:   9.461e15,
-      au:   1.496e11,
+    // ── Universal converter ────────────────────────────────────
+    // Every category is a map of unit key → { label, f } where f is the
+    // factor to that category's SI unit. Temperature is affine, so it
+    // carries explicit to/from SI functions instead of a factor.
+    const CATEGORIES = {
+      length: {
+        label: 'Length', si: 'metre (m)',
+        units: {
+          nm:  { label: 'Nanometers (nm)',        f: 1e-9 },
+          um:  { label: 'Micrometers (µm)',       f: 1e-6 },
+          mm:  { label: 'Millimeters (mm)',       f: 0.001 },
+          cm:  { label: 'Centimeters (cm)',       f: 0.01 },
+          m:   { label: 'Meters (m)',             f: 1 },
+          km:  { label: 'Kilometers (km)',        f: 1000 },
+          in:  { label: 'Inches (in)',            f: 0.0254 },
+          ft:  { label: 'Feet (ft)',              f: 0.3048 },
+          yd:  { label: 'Yards (yd)',             f: 0.9144 },
+          fath:{ label: 'Fathoms',                f: 1.8288 },
+          fur: { label: 'Furlongs',               f: 201.168 },
+          mi:  { label: 'Miles (mi)',             f: 1609.344 },
+          nmi: { label: 'Nautical Miles (nmi)',   f: 1852 },
+          au:  { label: 'Astronomical Units (au)',f: 1.495978707e11 },
+          ly:  { label: 'Light-years (ly)',       f: 9.4607304725808e15 },
+          pc:  { label: 'Parsecs (pc)',           f: 3.0856775814913673e16 },
+        },
+        quick: [[1,'m','ft'], [1,'mi','km'], [1,'in','mm'], [1,'au','km'], [1,'ly','km']],
+      },
+      mass: {
+        label: 'Mass', si: 'kilogram (kg)',
+        units: {
+          ug:  { label: 'Micrograms (µg)',    f: 1e-9 },
+          mg:  { label: 'Milligrams (mg)',    f: 1e-6 },
+          g:   { label: 'Grams (g)',          f: 0.001 },
+          kg:  { label: 'Kilograms (kg)',     f: 1 },
+          t:   { label: 'Tonnes (t)',         f: 1000 },
+          ct:  { label: 'Carats (ct)',        f: 0.0002 },
+          oz:  { label: 'Ounces (oz)',        f: 0.028349523125 },
+          lb:  { label: 'Pounds (lb)',        f: 0.45359237 },
+          st:  { label: 'Stone (st)',         f: 6.35029318 },
+          ton: { label: 'US short tons',      f: 907.18474 },
+          u:   { label: 'Atomic mass units (u)', f: 1.66053906892e-27 },
+        },
+        quick: [[1,'kg','lb'], [1,'lb','g'], [1,'oz','g'], [1,'t','lb'], [1,'ct','mg']],
+      },
+      temperature: {
+        label: 'Temperature', si: 'kelvin (K)', affine: true,
+        units: {
+          K:  { label: 'Kelvin (K)',        to: v => v,                   from: v => v },
+          C:  { label: 'Celsius (°C)',      to: v => v + 273.15,          from: v => v - 273.15 },
+          F:  { label: 'Fahrenheit (°F)',   to: v => (v - 32) * 5/9 + 273.15, from: v => (v - 273.15) * 9/5 + 32 },
+          R:  { label: 'Rankine (°R)',      to: v => v * 5/9,             from: v => v * 9/5 },
+        },
+        quick: [[0,'C','F'], [100,'C','F'], [98.6,'F','C'], [0,'K','C'], [72,'F','C']],
+      },
+      area: {
+        label: 'Area', si: 'square metre (m²)',
+        units: {
+          mm2: { label: 'Square millimeters (mm²)', f: 1e-6 },
+          cm2: { label: 'Square centimeters (cm²)', f: 1e-4 },
+          m2:  { label: 'Square meters (m²)',       f: 1 },
+          ha:  { label: 'Hectares (ha)',            f: 10000 },
+          km2: { label: 'Square kilometers (km²)',  f: 1e6 },
+          in2: { label: 'Square inches (in²)',      f: 0.00064516 },
+          ft2: { label: 'Square feet (ft²)',        f: 0.09290304 },
+          ac:  { label: 'Acres',                    f: 4046.8564224 },
+          mi2: { label: 'Square miles (mi²)',       f: 2589988.110336 },
+        },
+        quick: [[1,'m2','ft2'], [1,'ac','m2'], [1,'ha','ac'], [1,'km2','mi2']],
+      },
+      volume: {
+        label: 'Volume', si: 'cubic metre (m³)',
+        units: {
+          ml:  { label: 'Milliliters (mL)',      f: 1e-6 },
+          l:   { label: 'Liters (L)',            f: 0.001 },
+          m3:  { label: 'Cubic meters (m³)',     f: 1 },
+          cm3: { label: 'Cubic centimeters (cm³)', f: 1e-6 },
+          ft3: { label: 'Cubic feet (ft³)',      f: 0.028316846592 },
+          tsp: { label: 'Teaspoons (US)',        f: 4.92892159375e-6 },
+          tbsp:{ label: 'Tablespoons (US)',      f: 1.478676478125e-5 },
+          floz:{ label: 'Fluid ounces (US)',     f: 2.95735295625e-5 },
+          cup: { label: 'Cups (US)',             f: 2.365882365e-4 },
+          pt:  { label: 'Pints (US)',            f: 4.73176473e-4 },
+          qt:  { label: 'Quarts (US)',           f: 9.46352946e-4 },
+          gal: { label: 'Gallons (US)',          f: 0.003785411784 },
+          bbl: { label: 'Oil barrels',           f: 0.158987294928 },
+        },
+        quick: [[1,'l','gal'], [1,'gal','l'], [1,'cup','ml'], [1,'m3','l'], [1,'floz','ml']],
+      },
+      speed: {
+        label: 'Speed', si: 'metre per second (m/s)',
+        units: {
+          mps:  { label: 'Meters per second (m/s)', f: 1 },
+          kph:  { label: 'Kilometers per hour (km/h)', f: 1/3.6 },
+          mph:  { label: 'Miles per hour (mph)',    f: 0.44704 },
+          kn:   { label: 'Knots (kn)',              f: 0.514444444 },
+          fps:  { label: 'Feet per second (ft/s)',  f: 0.3048 },
+          mach: { label: 'Mach (sea level, 20 °C)', f: 343 },
+          c:    { label: 'Speed of light (c)',      f: 299792458 },
+        },
+        quick: [[1,'mps','kph'], [60,'mph','kph'], [1,'kn','kph'], [1,'mach','mph'], [1,'c','kph']],
+      },
+      force: {
+        label: 'Force', si: 'newton (N)',
+        units: {
+          N:   { label: 'Newtons (N)',        f: 1 },
+          kN:  { label: 'Kilonewtons (kN)',   f: 1000 },
+          dyn: { label: 'Dynes (dyn)',        f: 1e-5 },
+          kgf: { label: 'Kilograms-force (kgf)', f: 9.80665 },
+          lbf: { label: 'Pounds-force (lbf)', f: 4.4482216152605 },
+        },
+        quick: [[1,'N','lbf'], [1,'lbf','N'], [1,'kgf','N'], [1,'kN','lbf']],
+      },
+      pressure: {
+        label: 'Pressure', si: 'pascal (Pa)',
+        units: {
+          Pa:   { label: 'Pascals (Pa)',        f: 1 },
+          hPa:  { label: 'Hectopascals (hPa)',  f: 100 },
+          kPa:  { label: 'Kilopascals (kPa)',   f: 1000 },
+          MPa:  { label: 'Megapascals (MPa)',   f: 1e6 },
+          mbar: { label: 'Millibars (mbar)',    f: 100 },
+          bar:  { label: 'Bars (bar)',          f: 100000 },
+          atm:  { label: 'Atmospheres (atm)',   f: 101325 },
+          psi:  { label: 'Pounds per sq. inch (psi)', f: 6894.757293168 },
+          mmHg: { label: 'Millimeters of mercury (mmHg / torr)', f: 133.322387415 },
+          inHg: { label: 'Inches of mercury (inHg)', f: 3386.389 },
+          mH2O: { label: 'Meters of water',     f: 9806.65 },
+        },
+        quick: [[1,'atm','kPa'], [1,'bar','psi'], [32,'psi','kPa'], [760,'mmHg','atm'], [1,'atm','psi']],
+      },
+      energy: {
+        label: 'Energy', si: 'joule (J)',
+        units: {
+          J:    { label: 'Joules (J)',            f: 1 },
+          kJ:   { label: 'Kilojoules (kJ)',       f: 1000 },
+          MJ:   { label: 'Megajoules (MJ)',       f: 1e6 },
+          cal:  { label: 'Calories, physics (cal)', f: 4.184 },
+          kcal: { label: 'Calories, food (kcal / Cal)', f: 4184 },
+          Wh:   { label: 'Watt-hours (Wh)',       f: 3600 },
+          kWh:  { label: 'Kilowatt-hours (kWh)',  f: 3.6e6 },
+          BTU:  { label: 'British thermal units (BTU)', f: 1055.05585262 },
+          eV:   { label: 'Electronvolts (eV)',    f: 1.602176634e-19 },
+          therm:{ label: 'Therms (US)',           f: 1.054804e8 },
+          tTNT: { label: 'Tons of TNT',           f: 4.184e9 },
+        },
+        quick: [[1,'kcal','kJ'], [1,'kWh','MJ'], [1,'BTU','J'], [2000,'kcal','kWh'], [1,'eV','J']],
+      },
+      power: {
+        label: 'Power', si: 'watt (W)',
+        units: {
+          mW:   { label: 'Milliwatts (mW)',   f: 0.001 },
+          W:    { label: 'Watts (W)',         f: 1 },
+          kW:   { label: 'Kilowatts (kW)',    f: 1000 },
+          MW:   { label: 'Megawatts (MW)',    f: 1e6 },
+          GW:   { label: 'Gigawatts (GW)',    f: 1e9 },
+          hp:   { label: 'Horsepower (hp)',   f: 745.6998715822702 },
+          BTUh: { label: 'BTU per hour',      f: 0.29307107 },
+          cals: { label: 'Calories per second', f: 4.184 },
+        },
+        quick: [[1,'hp','kW'], [100,'W','hp'], [1,'MW','hp'], [12000,'BTUh','kW']],
+      },
+      frequency: {
+        label: 'Frequency', si: 'hertz (Hz)',
+        units: {
+          Hz:  { label: 'Hertz (Hz)',       f: 1 },
+          kHz: { label: 'Kilohertz (kHz)',  f: 1000 },
+          MHz: { label: 'Megahertz (MHz)',  f: 1e6 },
+          GHz: { label: 'Gigahertz (GHz)',  f: 1e9 },
+          THz: { label: 'Terahertz (THz)',  f: 1e12 },
+          rpm: { label: 'Revolutions per minute (rpm)', f: 1/60 },
+          bpm: { label: 'Beats per minute (bpm)', f: 1/60 },
+        },
+        quick: [[1,'GHz','MHz'], [3000,'rpm','Hz'], [440,'Hz','rpm'], [1,'THz','GHz']],
+      },
+      charge: {
+        label: 'Charge', si: 'coulomb (C)',
+        units: {
+          C:   { label: 'Coulombs (C)',      f: 1 },
+          mC:  { label: 'Millicoulombs (mC)',f: 0.001 },
+          uC:  { label: 'Microcoulombs (µC)',f: 1e-6 },
+          Ah:  { label: 'Ampere-hours (Ah)', f: 3600 },
+          mAh: { label: 'Milliampere-hours (mAh)', f: 3.6 },
+          e:   { label: 'Elementary charges (e)', f: 1.602176634e-19 },
+        },
+        quick: [[1,'Ah','C'], [5000,'mAh','C'], [1,'C','e']],
+      },
+      voltage: {
+        label: 'Voltage', si: 'volt (V)',
+        units: {
+          uV: { label: 'Microvolts (µV)', f: 1e-6 },
+          mV: { label: 'Millivolts (mV)', f: 0.001 },
+          V:  { label: 'Volts (V)',       f: 1 },
+          kV: { label: 'Kilovolts (kV)',  f: 1000 },
+          MV: { label: 'Megavolts (MV)',  f: 1e6 },
+        },
+        quick: [[1,'kV','V'], [1.5,'V','mV'], [230,'V','kV']],
+      },
+      data: {
+        label: 'Data', si: 'bit (b)',
+        units: {
+          b:   { label: 'Bits (b)',        f: 1 },
+          B:   { label: 'Bytes (B)',       f: 8 },
+          kB:  { label: 'Kilobytes (kB, 10³)', f: 8e3 },
+          MB:  { label: 'Megabytes (MB, 10⁶)', f: 8e6 },
+          GB:  { label: 'Gigabytes (GB, 10⁹)', f: 8e9 },
+          TB:  { label: 'Terabytes (TB, 10¹²)', f: 8e12 },
+          KiB: { label: 'Kibibytes (KiB, 2¹⁰)', f: 8 * 1024 },
+          MiB: { label: 'Mebibytes (MiB, 2²⁰)', f: 8 * 1048576 },
+          GiB: { label: 'Gibibytes (GiB, 2³⁰)', f: 8 * 1073741824 },
+        },
+        quick: [[1,'GB','MB'], [1,'GiB','GB'], [1,'TB','GiB'], [1,'B','b']],
+      },
+      angle: {
+        label: 'Angle', si: 'radian (rad)',
+        units: {
+          rad:    { label: 'Radians (rad)',    f: 1 },
+          deg:    { label: 'Degrees (°)',      f: Math.PI / 180 },
+          arcmin: { label: 'Arcminutes (′)',   f: Math.PI / 10800 },
+          arcsec: { label: 'Arcseconds (″)',   f: Math.PI / 648000 },
+          grad:   { label: 'Gradians (gon)',   f: Math.PI / 200 },
+          turn:   { label: 'Turns (full circles)', f: 2 * Math.PI },
+        },
+        quick: [[180,'deg','rad'], [1,'turn','deg'], [1,'deg','arcmin'], [1,'rad','deg']],
+      },
+      radiation: {
+        label: 'Radiation', si: 'sievert (Sv)',
+        units: {
+          Sv:  { label: 'Sieverts (Sv)',      f: 1 },
+          mSv: { label: 'Millisieverts (mSv)',f: 0.001 },
+          uSv: { label: 'Microsieverts (µSv)',f: 1e-6 },
+          rem: { label: 'Rem',                f: 0.01 },
+          mrem:{ label: 'Millirem',           f: 1e-5 },
+          Gy:  { label: 'Grays (Gy, ×1 for X-rays)', f: 1 },
+          mGy: { label: 'Milligrays (mGy)',   f: 0.001 },
+          rad: { label: 'Rads',               f: 0.01 },
+        },
+        quick: [[1,'mSv','uSv'], [1,'rem','mSv'], [100,'uSv','mrem']],
+      },
+      light: {
+        label: 'Light', si: 'lux (lx)',
+        units: {
+          lx:  { label: 'Lux (lx)',              f: 1 },
+          klx: { label: 'Kilolux (klx)',         f: 1000 },
+          fc:  { label: 'Foot-candles (fc)',     f: 10.763910417 },
+          phot:{ label: 'Phots (ph)',            f: 10000 },
+          nox: { label: 'Nox',                   f: 0.001 },
+        },
+        quick: [[1,'fc','lx'], [500,'lx','fc'], [100000,'lx','klx']],
+      },
     };
 
+    const catRow   = document.getElementById('mu-conv-cats');
+    const quickRow = document.getElementById('mu-conv-quick');
+    const formula  = document.getElementById('mu-conv-formula');
     const fromVal  = document.getElementById('ml-conv-from-val');
     const fromUnit = document.getElementById('ml-conv-from-unit');
     const toUnit   = document.getElementById('ml-conv-to-unit');
     const resVal   = document.getElementById('ml-conv-result-val');
     const resLbl   = document.getElementById('ml-conv-result-label');
+    if (!catRow || !fromUnit) return;
+
+    let current = 'length';
+
+    function fmt(n) {
+      if (!isFinite(n)) return '—';
+      if (n === 0) return '0';
+      const a = Math.abs(n);
+      if (a >= 1e12 || a < 1e-6) return n.toExponential(4);
+      if (a >= 1000) return n.toLocaleString('en-US', { maximumFractionDigits: 3 });
+      return parseFloat(n.toPrecision(6)).toString();
+    }
+
+    function toSI(cat, key, v) {
+      const u = cat.units[key];
+      return cat.affine ? u.to(v) : v * u.f;
+    }
+    function fromSI(cat, key, v) {
+      const u = cat.units[key];
+      return cat.affine ? u.from(v) : v / u.f;
+    }
+
+    function fillSelects(catKey, fromKey, toKey) {
+      const cat  = CATEGORIES[catKey];
+      const keys = Object.keys(cat.units);
+      [fromUnit, toUnit].forEach((sel, i) => {
+        sel.innerHTML = '';
+        keys.forEach(k => {
+          const o = document.createElement('option');
+          o.value = k;
+          o.textContent = cat.units[k].label;
+          sel.appendChild(o);
+        });
+        const want = i === 0 ? fromKey : toKey;
+        sel.value = keys.includes(want) ? want : keys[i === 0 ? 0 : Math.min(1, keys.length - 1)];
+      });
+    }
+
+    function buildQuick(catKey) {
+      const cat = CATEGORIES[catKey];
+      quickRow.innerHTML = '';
+      (cat.quick || []).forEach(([v, a, b]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ml-conv-quick-btn';
+        btn.textContent = `${v} ${shortLabel(cat, a)} → ${shortLabel(cat, b)}`;
+        btn.addEventListener('click', () => {
+          fromVal.value = v; fromUnit.value = a; toUnit.value = b; convert();
+        });
+        quickRow.appendChild(btn);
+      });
+    }
+
+    function shortLabel(cat, key) {
+      const m = cat.units[key].label.match(/\(([^)]+)\)\s*$/);
+      return m ? m[1] : cat.units[key].label;
+    }
 
     function convert() {
-      const v    = parseFloat(fromVal.value);
-      const from = fromUnit.value;
-      const to   = toUnit.value;
-      if (isNaN(v)) { resVal.textContent = '—'; resLbl.textContent = ''; return; }
-      const meters = v * toMeters[from];
-      const result = meters / toMeters[to];
-
-      let display;
-      if (result === 0) display = '0';
-      else if (Math.abs(result) >= 1e12 || (Math.abs(result) < 1e-6 && result !== 0)) {
-        display = result.toExponential(4);
-      } else if (Math.abs(result) >= 1000) {
-        display = result.toLocaleString('en-US', { maximumFractionDigits: 3 });
-      } else {
-        display = parseFloat(result.toPrecision(6)).toString();
+      const cat = CATEGORIES[current];
+      const v   = parseFloat(fromVal.value);
+      const a   = fromUnit.value;
+      const b   = toUnit.value;
+      if (isNaN(v) || !cat.units[a] || !cat.units[b]) {
+        resVal.textContent = '—'; resLbl.textContent = '';
+        formula.textContent = 'Enter a number to convert.';
+        return;
       }
-      resVal.textContent = display;
-      resLbl.textContent = toUnit.options[toUnit.selectedIndex].text;
+      const result = fromSI(cat, b, toSI(cat, a, v));
+      resVal.textContent = fmt(result);
+      resLbl.textContent = cat.units[b].label;
+
+      if (cat.affine) {
+        formula.textContent =
+          `${fmt(v)} ${shortLabel(cat, a)} → K → ${shortLabel(cat, b)}   ·   `
+          + `every scale here measures the same heat, only the zero point and the degree size change. `
+          + `Absolute zero = 0 K = −273.15 °C = −459.67 °F.`;
+      } else {
+        const one = fromSI(cat, b, toSI(cat, a, 1));
+        formula.textContent =
+          `1 ${shortLabel(cat, a)} = ${fmt(one)} ${shortLabel(cat, b)}   ·   `
+          + `both are defined against the SI unit: the ${cat.si}.`;
+      }
     }
+
+    function selectCategory(key) {
+      current = key;
+      catRow.querySelectorAll('.mu-conv-cat').forEach(b => {
+        const on = b.dataset.cat === key;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      const q = (CATEGORIES[key].quick || [])[0];
+      fillSelects(key, q ? q[1] : null, q ? q[2] : null);
+      if (q) fromVal.value = q[0];
+      buildQuick(key);
+      convert();
+    }
+
+    Object.keys(CATEGORIES).forEach(key => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mu-conv-cat';
+      b.dataset.cat = key;
+      b.textContent = CATEGORIES[key].label;
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => selectCategory(key));
+      catRow.appendChild(b);
+    });
 
     fromVal.addEventListener('input', convert);
     fromUnit.addEventListener('change', convert);
     toUnit.addEventListener('change', convert);
 
+    // Kept for any external/legacy callers: jump straight to a length conversion.
     window.mlQuick = function (val, from, to) {
-      fromVal.value = val;
-      fromUnit.value = from;
-      toUnit.value = to;
+      selectCategory('length');
+      fromVal.value = val; fromUnit.value = from; toUnit.value = to;
       convert();
     };
 
-    convert();
+    selectCategory('length');
   })();
   </script>
 
   <!-- ── PRACTICE PROBLEMS SCRIPT ──────────────────── -->
   <script>
   (function () {
-    const total  = 7;
+    const total  = 15;
     const solved = new Set();
 
     function updateScore() {
@@ -2339,6 +3522,510 @@
     });
 
     updateScore();
+  })();
+  </script>
+
+  <!-- ── SI PREFIX LADDER ──────────────────────────── -->
+  <script>
+  (function () {
+    const PREFIXES = [
+      ['quetta','Q',30],  ['ronna','R',27],   ['yotta','Y',24],  ['zetta','Z',21],
+      ['exa','E',18],     ['peta','P',15],    ['tera','T',12],   ['giga','G',9],
+      ['mega','M',6],     ['kilo','k',3],     ['hecto','h',2],   ['deca','da',1],
+      ['—','',0],
+      ['deci','d',-1],    ['centi','c',-2],   ['milli','m',-3],  ['micro','µ',-6],
+      ['nano','n',-9],    ['pico','p',-12],   ['femto','f',-15], ['atto','a',-18],
+      ['zepto','z',-21],  ['yocto','y',-24],  ['ronto','r',-27], ['quecto','q',-30],
+    ];
+
+    // One vivid anchor per rung, keyed by the base unit chosen in the dropdown.
+    const ANCHORS = {
+      m: { 26:'The observable universe is about 880 Ym across.', 21:'The Milky Way is roughly 1 Zm wide.',
+           12:'Saturn orbits about 1.4 Tm from the Sun.', 9:'The Sun is 1.4 Gm across.',
+           6:'Earth is 12.7 Mm from pole to pole.', 3:'A 20-minute walk is about 1.5 km.',
+           0:'A tall child, a doorway, a big step.', '-2':'The width of your fingernail is about 1 cm.',
+           '-3':'A grain of sand is roughly 1 mm.', '-6':'A red blood cell is about 7 µm.',
+           '-9':'A water molecule is about 0.3 nm.', '-12':'An atomic nucleus is a few pm across at most.' },
+      g: { 9:'A loaded semi-truck weighs about 40 Gg… usually written 40 tonnes.',
+           6:'A blue whale is roughly 150 Mg (150 tonnes).', 3:'A litre of water is exactly 1 kg.',
+           0:'A paperclip is about 1 g.', '-3':'A grain of salt is about 0.06 mg.',
+           '-6':'A single human cell is around 1 µg (a nanogram for small ones).',
+           '-9':'A speck of dust can be a few ng.' },
+      s: { 9:'A human lifetime is about 2.5 Gs.', 6:'11.6 days is one megasecond.',
+           3:'A kilosecond is about 17 minutes.', 0:'One heartbeat, roughly.',
+           '-3':'A camera flash lasts about 1 ms.', '-6':'A CPU takes about 1 µs to do a slow thing.',
+           '-9':'Light travels 30 cm in 1 ns — this is why chip layout matters.',
+           '-15':'A femtosecond laser pulse can watch a chemical bond break.' },
+      W: { 12:'Global electricity use averages about 3 TW.', 9:'A large nuclear plant is about 1 GW.',
+           6:'A wind turbine peaks around 3 MW.', 3:'A hair dryer or kettle is 1–2 kW.',
+           0:'An LED nightlight is about 1 W.', '-3':'A laser pointer is a few mW.',
+           '-6':'A quartz watch runs on about 1 µW.' },
+      B: { 15:'A large data centre stores petabytes and beyond.', 12:'A big hard drive is a few TB.',
+           9:'A movie download is a few GB.', 6:'A photo is a few MB.',
+           3:'A page of plain text is a few kB.', 0:'One byte holds one letter.' },
+      Pa:{ 9:'Pressure at the centre of the Earth is about 360 GPa.', 6:'A hydraulic press works in MPa.',
+           3:'Atmospheric pressure is 101 kPa.', 2:'Weather maps use hectopascals: 1013 hPa is normal.',
+           0:'One pascal is a sheet of paper resting on your hand.' },
+      Hz:{ 15:'Visible light sits around 500 THz.', 12:'Terahertz waves see through clothing at airports.',
+           9:'Wi-Fi runs at 2.4 and 5 GHz.', 6:'FM radio is about 100 MHz.',
+           3:'A dog whistle is around 20 kHz.', 0:'One hertz is one tick per second.' },
+      V: { 6:'A lightning bolt can reach 100 MV.', 3:'Power transmission lines run at 100–800 kV.',
+           0:'A single nerve impulse is about 0.07 V.', '-3':'An ECG reads heart signals in mV.',
+           '-6':'Brain waves on an EEG are measured in µV.' },
+      Sv:{ 0:'A single sievert all at once causes acute radiation sickness.',
+           '-3':'A chest CT scan is about 7 mSv; background is ~3 mSv a year.',
+           '-6':'A dental X-ray is about 5 µSv; a banana is about 0.1 µSv.' },
+    };
+
+    const ladder  = document.getElementById('mu-prefix-ladder');
+    const readout = document.getElementById('mu-prefix-readout');
+    const unitSel = document.getElementById('mu-prefix-unit');
+    if (!ladder || !unitSel) return;
+
+    let selected = 3; // kilo
+
+    function unitInfo() {
+      const [sym, name, quantity] = unitSel.value.split('|');
+      return { sym, name, quantity };
+    }
+
+    function groupedNumber(exp) {
+      if (exp === 0) return '1';
+      if (exp > 0) return ('1' + '0'.repeat(exp)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return '0.' + '0'.repeat(-exp - 1) + '1';
+    }
+
+    function render() {
+      const { sym, name } = unitInfo();
+      ladder.innerHTML = '';
+      PREFIXES.forEach(([pname, psym, exp]) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'mu-prefix-row' + (exp === 0 ? ' is-base' : '') + (exp === selected ? ' active' : '');
+        row.setAttribute('aria-pressed', exp === selected ? 'true' : 'false');
+
+        const width = Math.abs(exp) / 30 * 50; // % of half-track
+        const left  = exp >= 0 ? 50 : 50 - width;
+        row.innerHTML =
+          `<span class="mu-prefix-name">${exp === 0 ? '(no prefix)' : pname}</span>` +
+          `<span class="mu-prefix-sym">${psym + sym}</span>` +
+          `<span class="mu-prefix-bar-track"><span class="mu-prefix-bar-fill" style="left:${left}%;width:${Math.max(width, 0.6)}%"></span></span>` +
+          `<span class="mu-prefix-pow">10${sup(exp)} ${sym}</span>`;
+        row.addEventListener('click', () => { selected = exp; render(); });
+        ladder.appendChild(row);
+      });
+      updateReadout();
+    }
+
+    function sup(n) {
+      const map = { '-':'⁻', '0':'⁰', '1':'¹', '2':'²', '3':'³', '4':'⁴', '5':'⁵', '6':'⁶', '7':'⁷', '8':'⁸', '9':'⁹' };
+      return String(n).split('').map(c => map[c] || c).join('');
+    }
+
+    function updateReadout() {
+      const { sym, name, quantity } = unitInfo();
+      const row = PREFIXES.find(p => p[2] === selected);
+      const [pname, psym, exp] = row;
+      const full = exp === 0 ? name : pname + name;
+      const anchorSet = ANCHORS[sym] || {};
+      const anchor = anchorSet[exp] || anchorSet[String(exp)] || '';
+
+      readout.querySelector('.pr-main').textContent =
+        exp === 0
+          ? `1 ${sym} = 1 ${name} — the unprefixed unit of ${quantity}.`
+          : `1 ${psym}${sym} = ${groupedNumber(exp)} ${sym}   (1 ${full} = 10${sup(exp)} ${name}s)`;
+
+      readout.querySelector('.pr-sub').textContent =
+        (exp === 0
+          ? 'Everything above this line multiplies; everything below divides. '
+          : `"${pname}" always means ×10${sup(exp)}, on any unit you attach it to. `)
+        + anchor;
+    }
+
+    unitSel.addEventListener('change', render);
+    render();
+  })();
+  </script>
+
+  <!-- ── UNIT LIBRARY ──────────────────────────────── -->
+  <script>
+  (function () {
+    const FAMILIES = [
+      { key: 'all',     label: 'Everything',            color: '#f59e0b' },
+      { key: 'base',    label: 'SI Base',               color: '#38bdf8' },
+      { key: 'space',   label: 'Space & Motion',        color: '#f59e0b' },
+      { key: 'matter',  label: 'Matter & Force',        color: '#c084fc' },
+      { key: 'energy',  label: 'Energy & Heat',         color: '#ef4444' },
+      { key: 'electric',label: 'Electricity & Magnetism', color: '#22d3ee' },
+      { key: 'wave',    label: 'Light & Sound',         color: '#fbbf24' },
+      { key: 'radchem', label: 'Radiation & Chemistry', color: '#34d399' },
+      { key: 'info',    label: 'Time & Information',    color: '#a3e635' },
+    ];
+    const COLOR = Object.fromEntries(FAMILIES.map(f => [f.key, f.color]));
+
+    // quantity, unit, symbol, family, base-unit expression, what it measures,
+    // other units in use, the instrument, and one everyday anchor.
+    const UNITS = [
+      ['Length','metre','m','base','m','How far apart two points are.',['km','cm','mm','inch','foot','mile','light-year'],'Ruler, tape, laser rangefinder','A doorway is about 2 m tall.'],
+      ['Mass','kilogram','kg','base','kg','How much matter an object contains.',['g','mg','tonne','pound','ounce','carat'],'Balance','A litre of water is exactly 1 kg.'],
+      ['Time','second','s','base','s','How long something lasts.',['ms','minute','hour','day','year'],'Clock, atomic clock','A caesium atom vibrates 9,192,631,770 times per second.'],
+      ['Electric current','ampere','A','base','A','How much charge flows past a point per second.',['mA','µA','kA'],'Ammeter','A phone charger draws about 2 A.'],
+      ['Temperature','kelvin','K','base','K','How much thermal energy the particles carry.',['°C','°F','°R'],'Thermometer','Room temperature is about 293 K.'],
+      ['Amount of substance','mole','mol','base','mol','How many particles — 6.022 × 10²³ of them.',['mmol','µmol'],'Analytical balance + molar mass','18 g of water is one mole of molecules.'],
+      ['Luminous intensity','candela','cd','base','cd','How bright a source appears to the human eye in one direction.',['mcd','candlepower'],'Photometer','A household candle is roughly 1 cd.'],
+
+      ['Area','square metre','m²','space','m²','How much surface something covers.',['cm²','hectare','acre','ft²','mi²'],'Ruler + arithmetic, planimeter','A parking space is about 12 m².'],
+      ['Volume','cubic metre','m³','space','m³','How much space something occupies.',['litre','mL','gallon','ft³','cup'],'Graduated cylinder, flow meter','A bathtub holds roughly 0.2 m³ (200 L).'],
+      ['Speed','metre per second','m/s','space','m·s⁻¹','How fast position changes.',['km/h','mph','knot','Mach','c'],'Speedometer, radar gun','A brisk walk is about 1.5 m/s.'],
+      ['Acceleration','metre per second squared','m/s²','space','m·s⁻²','How fast speed changes.',['g (9.81 m/s²)','ft/s²'],'Accelerometer','Earth’s gravity accelerates you at 9.81 m/s².'],
+      ['Plane angle','radian','rad','space','1','How much of a turn.',['degree','arcminute','arcsecond','gradian'],'Protractor, theodolite','A right angle is π/2 rad = 90°.'],
+      ['Solid angle','steradian','sr','space','1','How much of a sphere a cone of view covers.',['square degree'],'Optical bench','A full sphere is 4π sr ≈ 12.57 sr.'],
+      ['Frequency','hertz','Hz','space','s⁻¹','How many cycles happen per second.',['kHz','MHz','GHz','rpm','bpm'],'Frequency counter, oscilloscope','Concert-pitch A is 440 Hz.'],
+
+      ['Force','newton','N','matter','kg·m·s⁻²','A push or pull.',['kN','pound-force','dyne','kgf'],'Force gauge, load cell','Holding a small apple takes about 1 N.'],
+      ['Weight','newton','N','matter','kg·m·s⁻²','The force gravity exerts on a mass — not the same as mass.',['pound-force','kgf'],'Spring scale','A 70 kg person weighs about 687 N on Earth, 114 N on the Moon.'],
+      ['Pressure','pascal','Pa','matter','kg·m⁻¹·s⁻²','Force spread over an area.',['kPa','bar','atm','psi','mmHg','inHg'],'Barometer, manometer, tyre gauge','Sea-level air pressure is 101,325 Pa.'],
+      ['Density','kilogram per cubic metre','kg/m³','matter','kg·m⁻³','How much mass is packed into a volume.',['g/cm³','lb/ft³'],'Hydrometer, pycnometer','Water is 1,000 kg/m³; lead is 11,340.'],
+      ['Momentum','kilogram metre per second','kg·m/s','matter','kg·m·s⁻¹','How hard something is to stop.',['N·s'],'Calculated from mass × velocity','A sprinting adult carries about 800 kg·m/s.'],
+      ['Torque','newton metre','N·m','matter','kg·m²·s⁻²','Twisting force around an axis.',['lb·ft','kgf·m'],'Torque wrench','Car wheel nuts are torqued to about 120 N·m.'],
+      ['Viscosity','pascal second','Pa·s','matter','kg·m⁻¹·s⁻¹','How much a fluid resists flowing.',['poise','centipoise'],'Viscometer','Water is 0.001 Pa·s; honey is about 10.'],
+      ['Flow rate','cubic metre per second','m³/s','matter','m³·s⁻¹','How much fluid passes per second.',['L/min','gal/min','cfm'],'Flow meter','A garden hose delivers roughly 0.0003 m³/s (18 L/min).'],
+
+      ['Energy','joule','J','energy','kg·m²·s⁻²','The capacity to do work — heat, motion, chemistry, all the same currency.',['kJ','calorie','kcal','kWh','BTU','eV'],'Calorimeter, energy meter','Lifting an apple one metre takes about 1 J.'],
+      ['Power','watt','W','energy','kg·m²·s⁻³','Energy delivered per second.',['kW','MW','horsepower','BTU/h'],'Wattmeter, dynamometer','A human at rest burns about 100 W.'],
+      ['Heat','joule','J','energy','kg·m²·s⁻²','Energy moving because of a temperature difference.',['calorie','BTU','therm'],'Calorimeter','Heating 1 kg of water by 1 °C takes 4,184 J.'],
+      ['Specific heat capacity','joule per kilogram kelvin','J/(kg·K)','energy','m²·s⁻²·K⁻¹','How much energy it takes to warm a material.',['cal/(g·°C)'],'Calorimeter','Water’s 4,184 J/(kg·K) is why oceans stabilise climate.'],
+      ['Entropy','joule per kelvin','J/K','energy','kg·m²·s⁻²·K⁻¹','How much energy is unavailable to do work — disorder, quantified.',['k(B) units'],'Calculated, not directly read','Melting ice raises entropy; it never goes back on its own.'],
+      ['Celsius temperature','degree Celsius','°C','energy','K','Everyday temperature, zeroed at water’s freezing point.',['K','°F','°R'],'Thermometer','Body temperature is 37 °C.'],
+
+      ['Electric charge','coulomb','C','electric','s·A','How much electricity there is.',['mAh','Ah','elementary charge'],'Coulomb meter, integrating ammeter','A lightning bolt moves about 15 C.'],
+      ['Voltage','volt','V','electric','kg·m²·s⁻³·A⁻¹','The push that moves charge — energy per unit of charge.',['mV','kV','MV'],'Voltmeter','An AA battery is 1.5 V; a wall socket is 120 or 230 V.'],
+      ['Resistance','ohm','Ω','electric','kg·m²·s⁻³·A⁻²','How much a material fights the flow of current.',['kΩ','MΩ'],'Ohmmeter','A typical LED resistor is 220 Ω.'],
+      ['Conductance','siemens','S','electric','kg⁻¹·m⁻²·s³·A²','The opposite of resistance — how easily current flows.',['mS','µS'],'Conductivity meter','Water quality is often quoted in µS/cm.'],
+      ['Capacitance','farad','F','electric','kg⁻¹·m⁻²·s⁴·A²','How much charge a component can store per volt.',['µF','nF','pF'],'LCR meter','A camera flash capacitor is a few hundred µF.'],
+      ['Inductance','henry','H','electric','kg·m²·s⁻²·A⁻²','How strongly a coil resists changes in current.',['mH','µH'],'LCR meter','A radio tuning coil is a few µH.'],
+      ['Magnetic flux density','tesla','T','electric','kg·s⁻²·A⁻¹','How strong a magnetic field is.',['gauss (10⁻⁴ T)','mT'],'Gaussmeter, Hall probe','Earth’s field is about 50 µT; an MRI is 1.5–3 T.'],
+      ['Magnetic flux','weber','Wb','electric','kg·m²·s⁻²·A⁻¹','Total magnetic field passing through a loop.',['maxwell'],'Fluxmeter','Changing flux is what makes every generator work.'],
+
+      ['Wavelength','metre','m','wave','m','The distance between two wave crests.',['nm','µm','cm','Å'],'Spectrometer, diffraction grating','Green light is about 550 nm.'],
+      ['Sound pressure level','decibel','dB','wave','ratio (log)','How loud a sound is, on a logarithmic ratio scale.',['dBA','dBC','Pa'],'Sound level meter','Normal conversation is about 60 dB.'],
+      ['Luminous flux','lumen','lm','wave','cd·sr','Total visible light a source pours out in every direction.',['—'],'Integrating sphere','A 60 W-equivalent LED bulb emits about 800 lm.'],
+      ['Illuminance','lux','lx','wave','cd·m⁻²','How much light lands on a surface.',['foot-candle','phot'],'Lux meter','A well-lit classroom is 300–500 lx; direct sun is 100,000 lx.'],
+      ['Luminance','candela per square metre','cd/m²','wave','cd·m⁻²','How bright a surface looks — the "nits" on a screen spec.',['nit','stilb'],'Luminance meter','A phone screen outdoors runs 1,000–2,000 nits.'],
+      ['Radiant flux','watt','W','wave','kg·m²·s⁻³','Total light energy per second, counting light your eye can’t see.',['mW','W/m²'],'Radiometer, bolometer','Sunlight at Earth delivers about 1,361 W/m².'],
+
+      ['Radioactivity','becquerel','Bq','radchem','s⁻¹','How many atomic nuclei decay each second.',['curie (3.7 × 10¹⁰ Bq)','cpm'],'Geiger counter, scintillation detector','A banana is about 15 Bq of potassium-40.'],
+      ['Absorbed dose','gray','Gy','radchem','m²·s⁻²','How much radiation energy a kilogram of tissue soaked up.',['rad','mGy'],'Dosimeter','Radiotherapy delivers 60–80 Gy to a tumour, in fractions.'],
+      ['Dose equivalent','sievert','Sv','radchem','m²·s⁻²','Absorbed dose weighted by how much biological harm it does.',['mSv','µSv','rem'],'Personal dosimeter','Natural background is about 3 mSv a year.'],
+      ['Catalytic activity','katal','kat','radchem','mol·s⁻¹','How fast an enzyme converts substrate.',['enzyme unit U'],'Spectrophotometric assay','Used on clinical lab reports for liver enzymes.'],
+      ['Concentration','mole per cubic metre','mol/m³','radchem','mol·m⁻³','How much of a substance sits in a given volume.',['molar (mol/L)','ppm','mg/dL'],'Titration, spectrophotometer','Seawater is about 0.6 molar in salt.'],
+      ['Acidity','pH','pH','radchem','log(mol/L)','How acidic or basic a solution is, on a backwards log scale.',['pOH'],'pH meter, indicator paper','Lemon juice is pH 2; blood is tightly held at 7.4.'],
+
+      ['Data','bit','b','info','—','The smallest unit of information: one yes-or-no.',['byte','kB','MB','GB','TB','KiB','MiB'],'Counted by the machine itself','One byte — eight bits — holds one letter of text.'],
+      ['Data rate','bit per second','b/s','info','s⁻¹','How fast information moves.',['kbps','Mbps','Gbps'],'Network analyser, speed test','Streaming HD video needs about 5 Mbps.'],
+      ['Clock speed','hertz','Hz','info','s⁻¹','How many operations a processor steps through per second.',['MHz','GHz'],'Frequency counter','A laptop CPU runs around 3 GHz.'],
+      ['Duration','second','s','info','s','How long something takes.',['ms','µs','ns','minute','hour','day','year'],'Clock, stopwatch, atomic clock','Light crosses this room in about 10 ns.'],
+      ['Computing throughput','floating-point operations per second','FLOPS','info','s⁻¹','How much arithmetic a machine can do per second.',['GFLOPS','TFLOPS','PFLOPS'],'Benchmark suite','A phone does teraFLOPS; the fastest supercomputers do exaFLOPS.'],
+    ];
+
+    const grid    = document.getElementById('mu-lib-grid');
+    const chipRow = document.getElementById('mu-lib-chips');
+    const search  = document.getElementById('mu-lib-search');
+    const countEl = document.getElementById('mu-lib-count');
+    const emptyEl = document.getElementById('mu-lib-empty');
+    if (!grid || !chipRow) return;
+
+    let activeFamily = 'all';
+
+    FAMILIES.forEach(f => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mu-chip' + (f.key === 'all' ? ' active' : '');
+      b.style.setProperty('--chip', f.color);
+      b.dataset.family = f.key;
+      b.textContent = f.label;
+      b.setAttribute('aria-pressed', f.key === 'all' ? 'true' : 'false');
+      b.addEventListener('click', () => {
+        activeFamily = f.key;
+        chipRow.querySelectorAll('.mu-chip').forEach(c => {
+          const on = c.dataset.family === f.key;
+          c.classList.toggle('active', on);
+          c.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        render();
+      });
+      chipRow.appendChild(b);
+    });
+
+    function card(u) {
+      const [quantity, unitName, sym, family, base, desc, others, instrument, anchor] = u;
+      const el = document.createElement('article');
+      el.className = 'mu-unit-card';
+      el.style.setProperty('--uc', COLOR[family] || '#f59e0b');
+      // Long symbols need to step down a size or they collide with the title.
+      const symSize = sym.length > 4 ? '0.85rem' : sym.length > 2 ? '1rem' : '1.15rem';
+      el.innerHTML =
+        `<div class="mu-unit-head">
+           <span class="mu-unit-sym" style="font-size:${symSize}">${sym}</span>
+           <span><span class="mu-unit-title">${quantity}</span><br>
+                 <span class="mu-unit-si">SI unit: ${unitName} · ${base}</span></span>
+         </div>
+         <p class="mu-unit-desc">${desc}</p>
+         <div class="mu-unit-others">${others.map(o => `<span>${o}</span>`).join('')}</div>
+         <div class="mu-unit-meta"><b>Instrument:</b> ${instrument}</div>
+         <div class="mu-unit-meta"><b>Anchor:</b> ${anchor}</div>`;
+      return el;
+    }
+
+    function render() {
+      const q = (search && search.value || '').trim().toLowerCase();
+      const rows = UNITS.filter(u => {
+        if (activeFamily !== 'all' && u[3] !== activeFamily) return false;
+        if (!q) return true;
+        return u.join(' ').toLowerCase().includes(q);
+      });
+      grid.innerHTML = '';
+      rows.forEach(u => grid.appendChild(card(u)));
+      countEl.textContent = `${rows.length} of ${UNITS.length} quantities`;
+      emptyEl.hidden = rows.length > 0;
+    }
+
+    if (search) search.addEventListener('input', render);
+    render();
+  })();
+  </script>
+
+  <!-- ── FEEL-THE-UNITS MINI LABS ──────────────────── -->
+  <script>
+  (function () {
+    const round = (n, d) => {
+      const p = Math.pow(10, d);
+      return Math.round(n * p) / p;
+    };
+
+    /* ── Temperature ─────────────────────────────── */
+    (function () {
+      const slider = document.getElementById('mu-therm-slider');
+      const host = document.getElementById('mu-therm-fig');
+      if (!slider || !host || !window.LessonFigures) return;
+      LessonFigures.render(host, 'thermometer', { accent: '#f472b6' });
+
+      const mercury = host.querySelector('[data-fig="mercury"]');
+      const reading = host.querySelector('[data-fig="reading"]');
+      const scene   = host.querySelector('[data-fig="scene"]');
+      const note    = document.getElementById('mu-t-note');
+      const out = {
+        k: document.getElementById('mu-t-k'), c: document.getElementById('mu-t-c'),
+        f: document.getElementById('mu-t-f'), r: document.getElementById('mu-t-r'),
+      };
+      const MAX = 1200;
+      const TUBE_X = 45, TUBE_W = 236;
+      const POINTS = [
+        [0,   'Absolute zero',   '#1e3a8a', 'Nothing moves. There is no lower temperature — you cannot remove energy that isn\u2019t there.'],
+        [77,  'Liquid nitrogen', '#1d4ed8', 'Nitrogen boils at 77 K. Below this, air itself is a liquid.'],
+        [195, 'Dry ice',         '#0891b2', 'Solid CO\u2082 skips liquid entirely and turns straight to gas at 195 K.'],
+        [273, 'Ice melts',       '#22d3ee', '273.15 K = 0 \u00b0C = 32 \u00b0F. Three numbers, one physical event.'],
+        [293, 'Room temperature','#14b8a6', 'A comfortable room. Note how ordinary this is on the Kelvin scale — most of the universe is far colder.'],
+        [310.15, 'Human body',   '#84cc16', '310 K = 37 \u00b0C = 98.6 \u00b0F. A fever of 3 K would be serious.'],
+        [373, 'Water boils',     '#facc15', '373.15 K = 100 \u00b0C = 212 \u00b0F, at sea level. Up a mountain, water boils cooler.'],
+        [505, 'Solder melts',    '#f59e0b', 'Tin melts at 505 K — hot enough to burn, cool enough for a classroom soldering iron.'],
+        [800, 'Wood fire',       '#f97316', 'A campfire flame runs 800–1,100 K.'],
+        [1200,'Flowing lava',    '#ef4444', 'Basaltic lava erupts around 1,200 K and glows orange-white.'],
+      ];
+
+      function nearest(k) {
+        return POINTS.reduce((best, p) => Math.abs(p[0] - k) < Math.abs(best[0] - k) ? p : best, POINTS[0]);
+      }
+
+      function update() {
+        const k = parseFloat(slider.value);
+        const c = k - 273.15;
+        out.k.textContent = round(k, 1) + ' K';
+        out.c.textContent = round(c, 1) + ' \u00b0C';
+        out.f.textContent = round(c * 9 / 5 + 32, 1) + ' \u00b0F';
+        out.r.textContent = round(k * 9 / 5, 1) + ' \u00b0R';
+
+        const frac = Math.max(0, Math.min(1, k / MAX));
+        mercury.setAttribute('width', Math.max(3, frac * TUBE_W));
+        const near = nearest(k);
+        const close = Math.abs(near[0] - k) <= 25;
+        scene.setAttribute('fill', near[2]);
+        scene.setAttribute('opacity', 0.05 + frac * 0.1);
+        reading.textContent = close ? near[1] : round(k, 0) + ' K';
+        note.textContent = close
+          ? near[3]
+          : 'A kelvin and a degree Celsius are exactly the same size — only the zero point moved. Fahrenheit degrees are 5/9 as big, which is why its numbers change faster.';
+      }
+
+      slider.addEventListener('input', update);
+      document.querySelectorAll('[data-temp]').forEach(btn => {
+        btn.addEventListener('click', () => { slider.value = btn.dataset.temp; update(); });
+      });
+      update();
+    })();
+
+    /* ── Ohm's law ───────────────────────────────── */
+    (function () {
+      const vS = document.getElementById('mu-ohm-v');
+      const rS = document.getElementById('mu-ohm-r');
+      const host = document.getElementById('mu-ohm-fig');
+      if (!vS || !rS || !host || !window.LessonFigures) return;
+      LessonFigures.render(host, 'circuit', { accent: '#38bdf8' });
+
+      const lamp  = host.querySelector('[data-fig="lamp-glow"]');
+      const vLbl  = host.querySelector('[data-fig="v-label"]');
+      const rLbl  = host.querySelector('[data-fig="r-label"]');
+      const iLbl  = host.querySelector('[data-fig="i-label"]');
+      const charges = Array.from(host.querySelectorAll('.fig-electron'));
+      const note = document.getElementById('mu-ohm-note');
+      const out = {
+        v: document.getElementById('mu-ohm-v-lbl'), r: document.getElementById('mu-ohm-r-lbl'),
+        i: document.getElementById('mu-ohm-i'), p: document.getElementById('mu-ohm-p'),
+        q: document.getElementById('mu-ohm-q'), e: document.getElementById('mu-ohm-e'),
+      };
+
+      // The circuit loop, as drawn in the figure: (46,44)-(254,44)-(254,112)-(46,112).
+      const LOOP = [[46, 44], [254, 44], [254, 112], [46, 112]];
+      const SEGS = LOOP.map((p, i) => {
+        const q = LOOP[(i + 1) % LOOP.length];
+        return { x: p[0], y: p[1], dx: q[0] - p[0], dy: q[1] - p[1], len: Math.hypot(q[0] - p[0], q[1] - p[1]) };
+      });
+      const PERIM = SEGS.reduce((t, sg) => t + sg.len, 0);
+
+      function pointAt(d) {
+        let rest = ((d % PERIM) + PERIM) % PERIM;
+        for (const sg of SEGS) {
+          if (rest <= sg.len) {
+            const t = rest / sg.len;
+            return [sg.x + sg.dx * t, sg.y + sg.dy * t];
+          }
+          rest -= sg.len;
+        }
+        return [LOOP[0][0], LOOP[0][1]];
+      }
+
+      let current = 2;
+      let offset = 0;
+      let last = 0;
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function frame(now) {
+        const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
+        last = now;
+        // Speed tracks current, compressed so 0.02 A and 40 A both stay watchable.
+        offset = (offset + dt * (14 + Math.sqrt(current) * 46)) % PERIM;
+        charges.forEach((c, i) => {
+          const [x, y] = pointAt(offset + (i * PERIM) / charges.length);
+          c.setAttribute('cx', x.toFixed(1));
+          c.setAttribute('cy', y.toFixed(1));
+        });
+        requestAnimationFrame(frame);
+      }
+
+      function fmtSI(n, unit) {
+        const a = Math.abs(n);
+        if (a >= 1000) return round(n / 1000, 2) + ' k' + unit;
+        if (a < 0.01 && a > 0) return round(n * 1000, 2) + ' m' + unit;
+        return round(n, a < 1 ? 3 : 2) + ' ' + unit;
+      }
+
+      function update() {
+        const v = parseFloat(vS.value);
+        const r = parseFloat(rS.value);
+        current = v / r;
+        const p = v * current;
+        out.v.textContent = v + ' V';
+        out.r.textContent = r + ' \u03a9';
+        out.i.textContent = fmtSI(current, 'A');
+        out.p.textContent = fmtSI(p, 'W');
+        out.q.textContent = fmtSI(current * 60, 'C');
+        out.e.textContent = fmtSI(p, 'Wh');
+
+        vLbl.textContent = v + ' V';
+        rLbl.textContent = r + ' \u03a9';
+        iLbl.textContent = fmtSI(current, 'A');
+        // Lamp brightness follows power, on a log curve so it is readable across
+        // four orders of magnitude instead of saturating instantly.
+        lamp.setAttribute('opacity', Math.max(0.05, Math.min(0.85, Math.log10(p + 1) / 3.4)).toFixed(2));
+
+        note.textContent = current >= 10
+          ? `${round(current, 1)} A is serious current — house circuits trip at 15–20 A, and ${round(p, 0)} W would heat a small room.`
+          : p >= 500
+            ? `${round(p, 0)} W is appliance territory — a kettle, a heater, a microwave. Notice you can reach it with high volts or low ohms.`
+            : current >= 0.5
+              ? `${round(current, 2)} A at ${v} V delivers ${round(p, 1)} W — the range a phone charger, a lamp, or a laptop lives in.`
+              : `Raise the resistance and the current falls in exact proportion: I = V \u00f7 R. Right now ${v} V \u00f7 ${r} \u03a9 = ${round(current, 3)} A.`;
+      }
+
+      vS.addEventListener('input', update);
+      rS.addEventListener('input', update);
+      update();
+      if (!reduce) requestAnimationFrame(frame);
+      else charges.forEach((c, i) => {
+        const [x, y] = pointAt((i * PERIM) / charges.length);
+        c.setAttribute('cx', x.toFixed(1)); c.setAttribute('cy', y.toFixed(1));
+      });
+    })();
+
+    /* ── Pressure ────────────────────────────────── */
+    (function () {
+      const slider = document.getElementById('mu-press-slider');
+      const host = document.getElementById('mu-press-fig');
+      if (!slider || !host || !window.LessonFigures) return;
+      LessonFigures.render(host, 'altitude-column', { accent: '#34d399' });
+      const dot   = host.querySelector('[data-fig="marker"]');
+      const place = host.querySelector('[data-fig="place"]');
+      const altEl = host.querySelector('[data-fig="alt"]');
+      const note  = document.getElementById('mu-p-note');
+      const out = {
+        kpa: document.getElementById('mu-p-kpa'), atm: document.getElementById('mu-p-atm'),
+        bar: document.getElementById('mu-p-bar'), psi: document.getElementById('mu-p-psi'),
+        mmhg: document.getElementById('mu-p-mmhg'),
+      };
+      const P0 = 101325;
+
+      const PLACES = [
+        [-1000, 'Deep ocean',    'Every 10 m of water adds another atmosphere. At 1 km down, the pressure is about 100× what you feel at the surface.'],
+        [-100,  'Scuba limit',   'At 100 m a diver is under 11 atmospheres — which is why breathing gas mixes and slow ascents matter.'],
+        [-10,   'Ten metres down','Ten metres of water doubles the pressure on you. Your ears notice immediately.'],
+        [0,     'Sea level',     'At sea level the air pushes on every square centimetre of you with about 1 kg of force. You don’t notice because you push back equally.'],
+        [1600,  'Denver, Colorado','A mile up, pressure is 17% lower — water boils at 95 °C and recipes need adjusting.'],
+        [4000,  'High altitude', 'Above 4,000 m there is a third less oxygen in every breath, because there is a third less air pressure.'],
+        [8849,  'Mount Everest', 'On the summit, pressure is about a third of sea level. That is why almost everyone carries oxygen.'],
+        [12000, 'Cruising airliner','Outside the window it is about 0.2 atm. The cabin is pumped up to roughly the pressure of Denver.'],
+        [20000, 'Armstrong limit','Above about 19 km, water boils at body temperature. Past here you need a pressure suit, not just oxygen.'],
+      ];
+
+      function pressureAt(h) {
+        if (h < 0) return P0 + 1025 * 9.80665 * (-h); // seawater density
+        return P0 * Math.exp(-h / 8434);
+      }
+
+      function nearest(h) {
+        return PLACES.reduce((best, p) => Math.abs(p[0] - h) < Math.abs(best[0] - h) ? p : best, PLACES[0]);
+      }
+
+      function update() {
+        const h = parseFloat(slider.value);
+        const p = pressureAt(h);
+        out.kpa.textContent  = round(p / 1000, p > 1e6 ? 0 : 1) + ' kPa';
+        out.atm.textContent  = round(p / 101325, 2) + ' atm';
+        out.bar.textContent  = round(p / 100000, 2) + ' bar';
+        out.psi.textContent  = round(p / 6894.757, 1) + ' psi';
+        out.mmhg.textContent = round(p / 133.322, 0) + ' mmHg';
+
+        // Map −1000 → bottom of the water band, +20000 → top of the sky band.
+        const y = h >= 0 ? 81 - (h / 20000) * 68 : 81 + (-h / 1000) * 52;
+        dot.setAttribute('cy', y);
+        const near = nearest(h);
+        place.textContent = near[1];
+        altEl.textContent = h < 0 ? `${Math.abs(h)} m below sea level` : `${h.toLocaleString('en-US')} m above sea level`;
+        note.textContent = near[2];
+      }
+
+      slider.addEventListener('input', update);
+      update();
+    })();
   })();
   </script>
 

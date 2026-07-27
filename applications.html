@@ -3907,7 +3907,7 @@
     })();
   </script>
   <script type="module">
-    import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+    import * as d3 from "./assets/vendor/d3-galaxy.min.js";
     import { categoryMeta, gradeOptions, utilityOptions, steamGalaxyNodes } from "./assets/js/app-registry.js";
 
     const explorer = window.applicationsExplorer || null;
@@ -5681,9 +5681,57 @@
         ctx.globalAlpha = 1;
       }
 
+      // The force layout is a pure function of the stage size: buildSimulationNodes()
+      // and buildLinks() read only static registry data plus the derived world box.
+      // That makes it safe to (a) skip work when the size has not changed and
+      // (b) reuse solved positions across loads, keyed by the stage size.
+      const LAYOUT_TICKS = 520;
+      // Bump the version when the layout maths change; the node/link counts cover
+      // the registry itself growing or shrinking.
+      const LAYOUT_CACHE_PREFIX = "steam-galaxy-layout-v1";
+      let lastLayoutKey = "";
+      let pendingSolve = null;
+      let lastSolveRender = 0;
+
+      function layoutCacheKey(sizeKey, nodeCount, linkCount) {
+        return `${LAYOUT_CACHE_PREFIX}:${LAYOUT_TICKS}:${nodeCount}:${linkCount}:${sizeKey}`;
+      }
+
+      function readLayoutCache(key) {
+        try {
+          const raw = window.localStorage.getItem(key);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          return parsed && typeof parsed === "object" ? parsed : null;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function writeLayoutCache(key, positions) {
+        try {
+          window.localStorage.setItem(key, JSON.stringify(positions));
+        } catch (error) {
+          /* quota or private mode — the layout just gets recomputed next time */
+        }
+      }
+
       function runLayout() {
+        // Never solve against an unmeasured stage — the result is wrong and would be
+        // cached under a size the user never actually sees.
+        if (!stage.clientWidth || !stage.clientHeight) return;
+
         viewportWidth = Math.max(stage.clientWidth, 320);
         viewportHeight = Math.max(stage.clientHeight, 560);
+
+        const layoutKey = `${viewportWidth}x${viewportHeight}`;
+        // ResizeObserver fires once on observe() and again for any incidental
+        // reflow; without this guard each one re-solves the whole simulation.
+        if (layoutKey === lastLayoutKey && layoutNodes.length) {
+          return;
+        }
+        lastLayoutKey = layoutKey;
+
         const wideViewport = viewportWidth >= 1200;
         worldWidth = Math.max(Math.round(viewportWidth * (wideViewport ? 3.7 : 3.2)), wideViewport ? 3400 : 2500);
         worldHeight = Math.max(Math.round(viewportHeight * (wideViewport ? 3.35 : 3.45)), wideViewport ? 2700 : 2400);
@@ -5697,6 +5745,63 @@
         const simulationNodes = buildSimulationNodes(targets);
 
         const simulationLinks = buildLinks();
+
+        const cacheKey = layoutCacheKey(layoutKey, simulationNodes.length, simulationLinks.length);
+        const cached = readLayoutCache(cacheKey);
+        const cacheHit = cached && simulationNodes.every((node) => cached[node.id]);
+
+        // A solve already in flight is for a stale size — abandon it.
+        if (pendingSolve) {
+          window.clearTimeout(pendingSolve);
+          pendingSolve = null;
+        }
+
+        // Decided up front: fitting the camera during the solve would otherwise make
+        // the transform non-identity and change which branch the finish takes.
+        const shouldFit = currentTransform.k === 1 && currentTransform.x === 0 && currentTransform.y === 0;
+
+        function finishLayout() {
+          simulationNodes.forEach((node) => clampNodeToWorld(node, worldWidth, worldHeight));
+          if (!cacheHit) {
+            const positions = {};
+            simulationNodes.forEach((node) => { positions[node.id] = [node.x, node.y]; });
+            writeLayoutCache(cacheKey, positions);
+          }
+          renderFrame(latestTime);
+          if (shouldFit) {
+            fitVisibleNodes(0);
+          } else {
+            setCameraTransform(currentTransform, 0);
+          }
+          stage.dataset.galaxySolving = "false";
+        }
+
+        function publishLayout() {
+          layoutNodes = simulationNodes;
+          linkData = simulationLinks;
+          drawNodes();
+          renderPanel();
+          renderFrame(latestTime);
+          svgSelection.call(zoomBehavior);
+          svgSelection.on("dblclick.zoom", null);
+          stage.dataset.focusMode = String(state.focusMode);
+        }
+
+        if (cacheHit) {
+          simulationNodes.forEach((node) => {
+            node.x = cached[node.id][0];
+            node.y = cached[node.id][1];
+          });
+          // forceLink normally rewrites link endpoints from ids to node objects and
+          // the render path depends on that, so resolve them when the solve is skipped.
+          simulationLinks.forEach((link) => {
+            if (typeof link.source !== "object") link.source = simulationNodes.find((node) => node.id === link.source);
+            if (typeof link.target !== "object") link.target = simulationNodes.find((node) => node.id === link.target);
+          });
+          publishLayout();
+          finishLayout();
+          return;
+        }
 
         const simulation = d3.forceSimulation(simulationNodes)
           .force("link", d3.forceLink(simulationLinks).id((node) => node.id).distance((link) => {
@@ -5714,26 +5819,37 @@
           .force("collide", d3.forceCollide((node) => getNodeVisualRadius(node) + (node.type === "anchor" ? 54 : 34)).iterations(14))
           .stop();
 
-        for (let tick = 0; tick < 520; tick += 1) simulation.tick();
-        simulation.stop();
+        // Show the map straight away at its seeded orbital positions, then run the
+        // solve in frame-sized slices. Same 520 ticks and the same final layout as a
+        // blocking loop, but the page stays responsive and the map visibly settles
+        // instead of freezing everything until it is done.
+        stage.dataset.galaxySolving = "true";
+        publishLayout();
+        if (shouldFit) fitVisibleNodes(0);
 
-        simulationNodes.forEach((node) => clampNodeToWorld(node, worldWidth, worldHeight));
-
-        layoutNodes = simulationNodes;
-        linkData = simulationLinks;
-        drawNodes();
-        renderPanel();
-        renderFrame(latestTime);
-        svgSelection.call(zoomBehavior);
-        svgSelection.on("dblclick.zoom", null);
-        if (stage) {
-          stage.dataset.focusMode = String(state.focusMode);
+        // Chunks are scheduled with setTimeout rather than rAF: rAF would cap us at
+        // one chunk per 16ms frame and stretch a ~7s solve to nearly a minute. A
+        // generous per-chunk budget keeps total time close to a blocking loop while
+        // still yielding often enough that clicks, scrolling and tab switches land.
+        let ticksDone = 0;
+        function solveSlice() {
+          const budgetEnd = performance.now() + 64;
+          while (ticksDone < LAYOUT_TICKS && performance.now() < budgetEnd) {
+            simulation.tick();
+            ticksDone += 1;
+          }
+          if (ticksDone < LAYOUT_TICKS) {
+            // No repaint here on purpose: animate() is already running a rAF loop that
+            // redraws from layoutNodes every frame, so the map shows itself settling
+            // for free. Painting here as well just competes with the solve for CPU.
+            pendingSolve = window.setTimeout(solveSlice, 0);
+            return;
+          }
+          simulation.stop();
+          pendingSolve = null;
+          finishLayout();
         }
-        if (currentTransform.k === 1 && currentTransform.x === 0 && currentTransform.y === 0) {
-          fitVisibleNodes(0);
-        } else {
-          setCameraTransform(currentTransform, 0);
-        }
+        solveSlice();
       }
 
       // ── Node glow filter ────────────────────────────────────────────────────
@@ -5866,7 +5982,13 @@
           animationFrameId = null;
           return;
         }
-        renderFrame(time);
+        // While the layout is solving, a full 60fps redraw of every node, link and
+        // star starves the solve of CPU and roughly doubles how long it takes to
+        // settle. A few frames a second is plenty to show it converging.
+        if (pendingSolve === null || time - lastSolveRender > 150) {
+          lastSolveRender = time;
+          renderFrame(time);
+        }
         animationFrameId = window.requestAnimationFrame(animate);
       }
 
@@ -5909,7 +6031,34 @@
       buildControls();
       renderControls();
       d3.select("#knowledge-atlas").on("mousedown.poke touchstart.poke wheel.poke click.poke", pokeEngine);
-      runLayout();
+      // Solving the layout is the single most expensive thing on this page, so it
+      // runs off the critical path: the document paints and becomes interactive
+      // first, and the map solves once it is actually on screen with a real size.
+      // Solving at 0x0 (hidden pane, display:none, background tab) would both waste
+      // the work and poison the size-keyed cache with a throwaway layout.
+      stage.dataset.galaxyState = "pending";
+
+      function galaxyIsMeasurable() {
+        return stage.clientWidth > 0 && stage.clientHeight > 0;
+      }
+
+      function solveGalaxyLayout() {
+        if (stage.dataset.galaxyState === "ready" || !galaxyIsMeasurable()) return false;
+        stage.dataset.galaxyState = "ready";
+        runLayout();
+        return true;
+      }
+
+      if ("IntersectionObserver" in window) {
+        const visibilityObserver = new IntersectionObserver((entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          if (solveGalaxyLayout()) visibilityObserver.disconnect();
+        }, { rootMargin: "200px" });
+        visibilityObserver.observe(stage);
+      } else {
+        window.setTimeout(solveGalaxyLayout, 0);
+      }
+
       showHelp(true);
       syncGalaxyPanelToggle();
       setProjectConstellation(missionBridgeMeta.game.constellation);
@@ -5961,13 +6110,24 @@
         });
       });
 
+      // Debounced: ResizeObserver fires on observe() and repeatedly while a window
+      // is being dragged, and each unguarded call used to re-solve the layout.
+      let resizeTimer = null;
+      function scheduleResizeLayout() {
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(() => {
+          if (!galaxyIsMeasurable()) return;
+          // A stage that only just gained a size is the initial solve, not a resize.
+          if (stage.dataset.galaxyState !== "ready") solveGalaxyLayout();
+          else runLayout();
+        }, 150);
+      }
+
       if ("ResizeObserver" in window) {
-        const observer = new ResizeObserver(() => {
-          runLayout();
-        });
+        const observer = new ResizeObserver(scheduleResizeLayout);
         observer.observe(stage);
       } else {
-        window.addEventListener("resize", runLayout);
+        window.addEventListener("resize", scheduleResizeLayout);
       }
     }
   </script>
