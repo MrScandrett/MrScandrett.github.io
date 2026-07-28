@@ -7,26 +7,35 @@ const PLAYER_STAND_HEIGHT = PLAYER.STAND_HEIGHT || 5.0;
 const PLAYER_SLIDE_HEIGHT = PLAYER.SLIDE_HEIGHT || 2.5;
 import { createTerrainSystem } from '../features/world/terrainSystem.js';
 import { createTowerSystem } from '../features/structures/towerSystem.js';
-import { createHealthDisplay } from '../ui/hud.js';
+import { createHud } from '../ui/hud.js';
+import { createRunSummary, loadBestRun } from '../ui/runSummary.js';
+import { createFeedback } from '../ui/feedback.js';
+import { createWaveRunner, killReward, clearBonus } from '../features/combat/waveSystem.js';
+import { sfx, unlock as unlockAudio, setMuted, isMuted } from '../audio/sfx.js';
 import { createMinimap } from '../ui/minimap.js';
 import { createFpsMeter } from '../diagnostics/fpsMeter.js';
+import { createAdaptiveResolution } from '../diagnostics/adaptiveResolution.js';
 import { LOBBY_GAMES } from './gameRegistry.js';
 import { createLobbyWorld } from '../features/lobby/lobbyWorld.js';
 import { createLavaParkourWorld } from '../features/lava/lavaParkourWorld.js';
 import { createVegetationSystem, createStarfield } from '../features/world/vegetationSystem.js';
 import { createParticleSystem } from '../features/world/particleSystem.js';
-import { createBot, shootBotSnowball, createProjectileMesh } from '../features/combat/combatSystem.js';
-import { createShopUi, WEAPONS } from '../ui/shopUi.js';
+import { createBot, shootBotSnowball, createProjectileMesh, disposeBot } from '../features/combat/combatSystem.js';
+import { createShopUi, WEAPONS, UPGRADES } from '../ui/shopUi.js';
 
 export function startGame() {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050510);
     scene.fog = new THREE.FogExp2(0x050510, 0.015);
 
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // The arena reaches WORLD_RADIUS in every direction, so a 1000-unit far
+    // plane used to slice the corners of the map off against the sky.
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.5, 2600);
     const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance", stencil: false, depth: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(0.5);
+    // Render scale is chosen at runtime from measured frame times rather than
+    // hardcoded, so the same build stays smooth on a phone and sharp on a desktop.
+    const adaptiveResolution = createAdaptiveResolution(renderer);
     renderer.shadowMap.enabled = false;
     renderer.shadowMap.type = THREE.BasicShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -34,46 +43,77 @@ export function startGame() {
     renderer.toneMappingExposure = 1.0;
     document.body.appendChild(renderer.domElement);
 
-    camera.position.set(0, PLAYER_STAND_HEIGHT, 20);
-    scene.add(camera);
+    // PointerLockControls owns the pitch of whatever object it drives, so the
+    // flip used to fight it: writing camera.rotation.x got overwritten on the
+    // next mouse move and left the aim snapped somewhere else. Giving the rig
+    // its own object means look-direction and stunt-rotation stop sharing an
+    // axis -- `aim` is the player and is what controls steers, while `camera`
+    // rides along as its child and is free to tumble.
+    const aim = new THREE.Object3D();
+    aim.position.set(0, PLAYER_STAND_HEIGHT, 20);
+    aim.add(camera);
+    scene.add(aim);
 
     const light = new THREE.DirectionalLight(0xffffff, 2.0);
     light.position.set(20, 50, 20);
     light.castShadow = false;
-    light.shadow.mapSize.width = 512;
-    light.shadow.mapSize.height = 512;
-    light.shadow.bias = -0.0001;
     scene.add(light);
 
-    const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x050510, 0.6);
+    // The old ground colour was nearly black, so every surface facing away from
+    // the sun crushed to a silhouette -- trees and towers rendered as cut-outs.
+    const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x2b3550, 0.85);
     scene.add(hemiLight);
 
-    createStarfield(scene);
+    // Everything belonging to the snowball arena hangs off one group. The lobby
+    // and lava worlds already had their own, but the arena used to be parented
+    // straight to the scene, so its terrain, trees, rocks and starfield were
+    // still drawn while you stood in the lobby -- which is why stars showed
+    // through the lobby walls and an idle menu ran at ~23fps.
+    const arenaGroup = new THREE.Group();
+    scene.add(arenaGroup);
 
-    const terrain = createTerrainSystem(scene);
+    createStarfield(arenaGroup);
+
+    const terrain = createTerrainSystem(arenaGroup);
     const { WORLD_RADIUS, getTerrainHeight, randomPointInWorld, isInsideWorld } = terrain;
 
-    const vegSystem = createVegetationSystem(scene, getTerrainHeight);
+    const vegSystem = createVegetationSystem(arenaGroup, getTerrainHeight);
     const snowSystem = vegSystem ? vegSystem.snowSystem : null;
 
-    const towerSystem = createTowerSystem(scene, getTerrainHeight, randomPointInWorld, WORLD_RADIUS);
+    const towerSystem = createTowerSystem(arenaGroup, getTerrainHeight, randomPointInWorld, WORLD_RADIUS);
+    // Solid, climbable geometry -- what the grapple is allowed to catch on.
+    const grappleTargets = [terrain.terrainMesh, ...towerSystem.towers, ...towerSystem.bridges];
     const lobbyWorld = createLobbyWorld(scene, LOBBY_GAMES);
-    lobbyWorld.setVisible(true);
     const lavaParkourWorld = createLavaParkourWorld(scene);
 
-    const controls = new PointerLockControls(camera, document.body);
+    // The interiors are small enough that the original dense fog never showed,
+    // but in a 900-unit arena it hid the map from about 100 units out.
+    const FOG_DENSITY = { lobby: 0.015, library: 0.015, arena: 0.0035, lava: 0.015 };
+
+    // Single place that decides which world is on screen, so a mode can never
+    // leave another world's geometry rendering behind it.
+    function setActiveWorld(name) {
+        arenaGroup.visible = name === 'arena';
+        lobbyWorld.setVisible(name === 'lobby' || name === 'library');
+        lavaParkourWorld.setVisible(name === 'lava');
+        scene.fog.density = FOG_DENSITY[name] ?? FOG_DENSITY.lobby;
+    }
+    setActiveWorld('lobby');
+
+    const controls = new PointerLockControls(aim, document.body);
 
     // --- GRAPPLE HOOK ---
     let isGrappling = false;
     const grapplePoint = new THREE.Vector3();
     const grappleRaycaster = new THREE.Raycaster();
     grappleRaycaster.far = 200;
+    const _screenCentre = new THREE.Vector2(0, 0);
     const grappleLineMat = new THREE.LineBasicMaterial({ color: 0x00ff00 });
     const grappleLineGeo = new THREE.BufferGeometry();
     const grappleLine = new THREE.Line(grappleLineGeo, grappleLineMat);
     grappleLine.frustumCulled = false;
     grappleLine.visible = false;
-    scene.add(grappleLine);
+    arenaGroup.add(grappleLine);
 
     // --- CROSSHAIR ---
     const crosshair = document.createElement('div');
@@ -135,9 +175,16 @@ export function startGame() {
         instructionsSubtitle.innerText = subtitle;
     }
 
-    setInstructionsText('Click to Enter Lobby', '(WASD = Move, V = Dash, E = Grapple, B = Shop)');
+    setInstructionsText('Click to Enter Lobby', 'WASD move  ·  SPACE jump  ·  SHIFT slide  ·  V dash  ·  E grapple  ·  F flip  ·  B workshop  ·  M mute');
 
     let useMic = false;
+    let micStream = null;
+
+    function releaseMicStream() {
+        if (!micStream) return;
+        micStream.getTracks().forEach((track) => track.stop());
+        micStream = null;
+    }
     const micBtn = document.createElement('button');
     micBtn.innerText = 'Microphone: OFF';
     micBtn.style.display = 'block';
@@ -153,7 +200,11 @@ export function startGame() {
         }
         if (!useMic) {
             try {
-                await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Held onto rather than discarded: the old code opened a stream
+                // here purely to trigger the permission prompt, then opened a
+                // second one to record with and never stopped either, so the
+                // browser's "mic in use" indicator stayed lit for good.
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 useMic = true;
                 micBtn.innerText = 'Microphone: ON';
                 micBtn.style.backgroundColor = '#44ff44';
@@ -162,6 +213,7 @@ export function startGame() {
             }
         } else {
             useMic = false;
+            releaseMicStream();
             micBtn.innerText = 'Microphone: OFF';
             micBtn.style.backgroundColor = '';
         }
@@ -211,11 +263,10 @@ export function startGame() {
             const canvasStream = renderer.domElement.captureStream(30);
             finalStream = canvasStream;
 
-            if (useMic) {
-                const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (useMic && micStream) {
                 finalStream = new MediaStream([
                     ...canvasStream.getVideoTracks(),
-                    ...audioStream.getAudioTracks()
+                    ...micStream.getAudioTracks()
                 ]);
             }
 
@@ -271,7 +322,7 @@ export function startGame() {
                 itemContainer.appendChild(saveBtn);
                 itemContainer.appendChild(deleteBtn);
                 libraryContainer.appendChild(itemContainer);
-                finalStream.getTracks().forEach(track => track.stop());
+                canvasStream.getTracks().forEach(track => track.stop());
             };
             mediaRecorder.start();
         } catch (e) {
@@ -283,7 +334,7 @@ export function startGame() {
     // stands in for it; on a mouse this returns null and lock works as before.
     const touchLook = enableTouchLook({
         controls,
-        camera,
+        camera: aim,
         domElement: renderer.domElement,
         blocker: instructions,
     });
@@ -337,18 +388,29 @@ export function startGame() {
     const player = controls.getObject();
     player.position.copy(lobbyWorld.spawnPosition);
 
+    // Leaving the arena has to take its live entities with it, or they pile up
+    // across visits and the bot cap silently blocks new spawns.
+    function clearArenaEntities() {
+        for (const bot of bots) {
+            arenaGroup.remove(bot);
+            disposeBot(bot);
+        }
+        bots.length = 0;
+        for (const snowball of snowballs) arenaGroup.remove(snowball);
+        snowballs.length = 0;
+    }
+
     function returnToLobby(keepLocked = false) {
         if (mode !== 'game' && mode !== 'library' && mode !== 'lava') return;
         mode = 'lobby';
-        lobbyWorld.setVisible(true);
-        lavaParkourWorld.setVisible(false);
+        setActiveWorld('lobby');
         interactionPrompt.style.display = 'none';
         combatHud.style.display = 'none';
-        healthUi.element.style.display = 'none';
+        hud.setVisible(false);
         minimap.canvas.style.display = 'none';
         lavaHud.style.display = 'none';
         libraryContainer.style.display = 'none';
-        setInstructionsText('Click to Enter Lobby', '(WASD = Move, V = Dash, E = Grapple, B = Shop)');
+        setInstructionsText('Click to Enter Lobby', 'WASD move  ·  SPACE jump  ·  SHIFT slide  ·  V dash  ·  E grapple  ·  F flip  ·  B workshop  ·  M mute');
         instructions.style.display = keepLocked ? 'none' : 'block';
         lobbyReturnBtn.style.display = 'none';
         player.position.copy(lobbyWorld.spawnPosition);
@@ -362,9 +424,17 @@ export function startGame() {
         jumpQueuedUntil = -Infinity;
         lastGroundedAt = -Infinity;
         isShielding = false;
+        wantsShield = false;
+        wantsToFire = false;
         shieldMesh.visible = false;
         isGrappling = false;
         grappleLine.visible = false;
+        runActive = false;
+        playerDead = false;
+        runSummary.hide();
+        feedback.hideAll();
+        feedback.setCritical(false);
+        clearArenaEntities();
         if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
         }
@@ -380,6 +450,9 @@ export function startGame() {
     };
 
     controls.addEventListener('lock', () => {
+        // Browsers only allow audio to start from a real interaction, and the
+        // click that grabs pointer lock is the first one we're guaranteed.
+        unlockAudio();
         instructions.style.display = 'none';
         lobbyReturnBtn.style.display = 'none';
         prevTime = performance.now();
@@ -403,6 +476,13 @@ export function startGame() {
             instructions.style.display = 'none';
             return;
         }
+        // A finished run has its own screen; a "Paused / Click to Continue"
+        // panel on top of it would be nonsense.
+        if (playerDead) {
+            instructions.style.display = 'none';
+            combatHud.style.display = 'none';
+            return;
+        }
         instructions.style.display = 'block';
         if (mode === 'game') {
             setInstructionsText('Paused', 'Click to Continue');
@@ -418,12 +498,14 @@ export function startGame() {
             lobbyReturnBtn.style.display = 'block';
             lavaHud.style.display = 'none';
         } else {
-            setInstructionsText('Click to Enter Lobby', '(WASD = Move, V = Dash, E = Grapple, B = Shop)');
+            setInstructionsText('Click to Enter Lobby', 'WASD move  ·  SPACE jump  ·  SHIFT slide  ·  V dash  ·  E grapple  ·  F flip  ·  B workshop  ·  M mute');
             libraryContainer.style.display = 'none';
             lobbyReturnBtn.style.display = 'none';
             lavaHud.style.display = 'none';
         }
         isShielding = false;
+        wantsShield = false;
+        wantsToFire = false;
         shieldMesh.visible = false;
         combatHud.style.display = 'none';
         isGrappling = false;
@@ -433,34 +515,153 @@ export function startGame() {
         }
     });
 
-    const healthUi = createHealthDisplay();
+    const hud = createHud();
     const minimap = createMinimap(WORLD_RADIUS);
     const fpsMeter = createFpsMeter();
-    healthUi.element.style.display = 'none';
+    const feedback = createFeedback(camera);
     minimap.canvas.style.display = 'none';
 
-    let playerHealth = 100;
-    let playerLevel = 1;
+    // ── run state ──────────────────────────────────────────────────────────
+    // A "run" is one attempt at the wave ladder. Everything here resets when a
+    // new run starts; nothing carries over, so every attempt is a fair comparison.
+    const BASE_MAX_HEALTH = 100;
+    const waveRunner = createWaveRunner();
+    const upgradeLevels = { parka: 0, warmers: 0, rations: 0 };
+
+    let runActive = false;
+    let playerDead = false;
+    let maxHealth = BASE_MAX_HEALTH;
+    let playerHealth = BASE_MAX_HEALTH;
     let score = 0;
+    let kills = 0;
+    let shotsFired = 0;
+    let shotsHit = 0;
+    let runStartedAt = 0;
     let lastDashTime = 0;
     const DASH_COOLDOWN = 1500;
+    const DASH_SPEED = 420;
     let lastDamageTime = 0;
 
-    function updateHealthDisplay() {
-        healthUi.update(playerHealth, playerLevel, score);
+    function upgradeCount(id) {
+        return upgradeLevels[id] || 0;
     }
-    updateHealthDisplay();
+
+    // Damage reduction is bought, not accrued. The old code handed out 5% per
+    // kill with no ceiling, so by roughly level 20 the player was untouchable
+    // and the rest of the run had no stakes.
+    function incomingDamageMultiplier() {
+        return Math.max(0.3, 1 - upgradeCount('parka') * 0.12);
+    }
+
+    function refreshHud() {
+        hud.updateHealth(playerHealth, maxHealth);
+        hud.updateScore(score, kills, upgradeCount('parka'), upgradeCount('warmers'), upgradeCount('rations'));
+    }
+
+    function damagePlayer(amount, { shake = 0.5 } = {}) {
+        if (playerDead || isShielding) return;
+        const dealt = amount * incomingDamageMultiplier();
+        playerHealth = Math.max(0, playerHealth - dealt);
+        lastDamageTime = performance.now();
+        feedback.flashDamage(Math.min(1, dealt / 18));
+        feedback.shake(shake);
+        sfx.playerHurt();
+        refreshHud();
+        if (playerHealth <= 0) endRun();
+    }
+
+    function startRun() {
+        const now = performance.now();
+        clearArenaEntities();
+        waveRunner.reset(now);
+        for (const key of Object.keys(upgradeLevels)) upgradeLevels[key] = 0;
+        maxHealth = BASE_MAX_HEALTH;
+        playerHealth = BASE_MAX_HEALTH;
+        score = 0;
+        kills = 0;
+        shotsFired = 0;
+        shotsHit = 0;
+        runStartedAt = now;
+        runActive = true;
+        playerDead = false;
+        unlockedWeapons = [0];
+        currentWeaponIndex = 0;
+        player.position.set(0, PLAYER.STAND_HEIGHT, 20);
+        velocity.set(0, 0, 0);
+        jumpQueuedUntil = -Infinity;
+        lastGroundedAt = -Infinity;
+        shieldEnergy = SHIELD_MAX;
+        shieldBroken = false;
+        wantsShield = false;
+        wantsToFire = false;
+        lastShotAt = -Infinity;
+        fireQueuedUntil = -Infinity;
+        feedback.hideAll();
+        feedback.showBanner('HOLD THE CITADEL', 'Wave 1 incoming', 2600);
+        refreshHud();
+        hud.updateWave(0, 0, 4);
+        hud.setVisible(true);
+    }
+
+    function endRun() {
+        if (playerDead) return;
+        playerDead = true;
+        runActive = false;
+        feedback.hideAll();
+        feedback.setCritical(false);
+        sfx.gameOver();
+        clearArenaEntities();
+        hud.setVisible(false);
+        if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+        if (controls.isLocked) {
+            if (touchLook) touchLook.setLocked(false);
+            else controls.unlock();
+        }
+        runSummary.show({
+            wave: waveRunner.waveNumber,
+            kills,
+            score: Math.floor(score),
+            shots: shotsFired,
+            hits: shotsHit,
+            survivedMs: performance.now() - runStartedAt
+        });
+    }
+
+    const runSummary = createRunSummary({
+        onRetry: () => {
+            startRun();
+            if (touchLook) touchLook.setLocked(true);
+            else controls.lock();
+        },
+        onReturnToLobby: () => {
+            playerDead = false;
+            returnToLobby();
+        }
+    });
 
     const shopUi = createShopUi(
         controls,
         (index) => { currentWeaponIndex = index; },
         (index, cost) => {
-            if (score >= cost) {
-                score -= cost;
-                updateHealthDisplay();
-                return true;
+            if (score < cost) { sfx.denied(); return false; }
+            score -= cost;
+            sfx.purchase();
+            refreshHud();
+            return true;
+        },
+        (id, cost) => {
+            if (score < cost) { sfx.denied(); return false; }
+            score -= cost;
+            upgradeLevels[id] = upgradeCount(id) + 1;
+            if (id === 'rations') {
+                // Buying max health grants the new headroom immediately, so it
+                // reads as a heal rather than an empty bar extension.
+                maxHealth = BASE_MAX_HEALTH + upgradeCount('rations') * 25;
+                playerHealth = Math.min(maxHealth, playerHealth + 25);
             }
-            return false;
+            sfx.purchase();
+            refreshHud();
+            return true;
         }
     );
 
@@ -476,6 +677,7 @@ export function startGame() {
     const velocity = new THREE.Vector3();
     const direction = new THREE.Vector3();
     const snowballs = [];
+    const SNOWBALL_MAX_RANGE_SQ = 900 * 900;
     const bots = [];
     const JUMP_VELOCITY = 165;
     const JUMP_BUFFER_MS = 140;
@@ -498,7 +700,65 @@ export function startGame() {
         velocity.y = Math.max(velocity.y, JUMP_VELOCITY);
         canJump = false;
         jumpQueuedUntil = -Infinity;
+        sfx.jump();
         return true;
+    }
+
+    function updateStanceAndFov(delta) {
+        const targetHeight = isSliding ? PLAYER_SLIDE_HEIGHT : PLAYER_STAND_HEIGHT;
+        currentHeight += (targetHeight - currentHeight) * 10.0 * delta;
+        const targetFOV = isSliding ? PLAYER.SLIDE_FOV : PLAYER.BASE_FOV;
+        if (Math.abs(camera.fov - targetFOV) > 0.1) {
+            camera.fov += (targetFOV - camera.fov) * 10.0 * delta;
+            camera.updateProjectionMatrix();
+        }
+    }
+
+    // Every mode moves the player identically; this used to be the same ~40
+    // lines copy-pasted into the lobby, library, lava and arena branches, so a
+    // fix to one of them silently left the other three behind.
+    //
+    // Callers run their own ground/collision pass afterwards and set `canJump`
+    // from it. `slideFriction` is for the modes that let you keep speed in a
+    // slide; `ladder` overrides normal movement with a climb.
+    function updatePlayerMovement(delta, time, { slideFriction = false, ladder = null } = {}) {
+        if (canJump) lastGroundedAt = time;
+
+        const friction = (slideFriction && isSliding && canJump) ? 2.0 : 10.0;
+        const damping = Math.max(0, 1 - friction * delta);
+        velocity.x *= damping;
+        velocity.z *= damping;
+
+        direction.z = Number(moveForward) - Number(moveBackward);
+        direction.x = Number(moveRight) - Number(moveLeft);
+        direction.normalize();
+
+        if (ladder) {
+            velocity.y = 0;
+            if (moveForward) velocity.y = 25;
+            if (moveBackward) velocity.y = -20;
+            player.position.x += (ladder.position.x - player.position.x) * 0.35;
+            player.position.z += (ladder.position.z - player.position.z) * 0.35;
+            velocity.x *= 0.2;
+            velocity.z *= 0.2;
+            canJump = true;
+            lastGroundedAt = time;
+        } else {
+            tryConsumeJump(time);
+            applyGravity(delta);
+            // Cleared every frame so walking off a ledge can't leave you with a
+            // stale mid-air jump; the caller's ground check restores it, and
+            // coyote time still covers the honest last-moment jump.
+            canJump = false;
+            if (moveForward || moveBackward) velocity.z -= direction.z * PLAYER.MOVE_FORCE * delta;
+            if (moveLeft || moveRight) velocity.x -= direction.x * PLAYER.MOVE_FORCE * delta;
+        }
+
+        controls.moveRight(-velocity.x * delta);
+        controls.moveForward(-velocity.z * delta);
+        player.position.y += velocity.y * delta;
+
+        updateStanceAndFov(delta);
     }
 
     const onKeyDown = (e) => {
@@ -520,26 +780,39 @@ export function startGame() {
             const now = performance.now();
             if (now - lastDashTime > DASH_COOLDOWN && mode === 'game') {
                 lastDashTime = now;
+                // Dash along the ground you're facing, not the full look
+                // vector -- aiming up used to fling you clean out of the map.
                 const dashDir = new THREE.Vector3();
-                controls.getObject().getWorldDirection(dashDir);
-                velocity.add(dashDir.multiplyScalar(800));
-                velocity.y += 20; // Small hop
+                player.getWorldDirection(dashDir);
+                dashDir.y = 0;
+                if (dashDir.lengthSq() < 1e-6) dashDir.set(0, 0, -1);
+                dashDir.normalize();
+                velocity.addScaledVector(dashDir, DASH_SPEED);
+                velocity.y = Math.max(velocity.y, 20); // small hop
+                sfx.dash();
+                feedback.shake(0.3);
             }
+        }
+        if (e.code === 'KeyM') {
+            setMuted(!isMuted());
+            feedback.showBanner('', isMuted() ? 'Sound off' : 'Sound on', 1100);
         }
         if (e.code === 'KeyB' && mode === 'game') {
             if (shopUi && shopUi.isOpen()) {
                 shopUi.toggleShop(false);
             } else if (shopUi) {
-                shopUi.updateState(score, unlockedWeapons, currentWeaponIndex);
+                shopUi.updateState(score, unlockedWeapons, currentWeaponIndex, upgradeLevels);
                 shopUi.toggleShop(true);
                 instructions.style.display = 'none';
             }
         }
         if (e.code === 'KeyE' && mode === 'game') {
-            grappleRaycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            const intersects = grappleRaycaster.intersectObjects(scene.children, true);
+            grappleRaycaster.setFromCamera(_screenCentre, camera);
+            // Only the things worth grappling to. This used to walk the whole
+            // arena recursively -- snowfall, starfield and every merged scenery
+            // mesh included -- on each press, which hitched the frame.
+            const intersects = grappleRaycaster.intersectObjects(grappleTargets, false);
             for (const hit of intersects) {
-                if (hit.object.type === 'Points') continue;
                 if (hit.distance > 2) {
                     isGrappling = true;
                     grapplePoint.copy(hit.point);
@@ -563,14 +836,31 @@ export function startGame() {
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
 
-    const particleSystem = createParticleSystem(scene);
+    const particleSystem = createParticleSystem(arenaGroup);
 
     const shieldGeometry = new THREE.SphereGeometry(1.5, 32, 32);
     const shieldMaterial = new THREE.MeshBasicMaterial({ color: 0x00aaff, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
     const shieldMesh = new THREE.Mesh(shieldGeometry, shieldMaterial);
     shieldMesh.visible = false;
-    scene.add(shieldMesh);
+    arenaGroup.add(shieldMesh);
     let isShielding = false;
+    let wantsShield = false;
+    let wantsToFire = false;
+    let lastShotAt = -Infinity;
+    let fireQueuedUntil = -Infinity;
+    const FIRE_BUFFER_MS = 220;
+
+    // The shield used to be free and unlimited: holding right click made you
+    // immune for the whole run, which cancelled the entire difficulty curve.
+    // It's now a short, recharging burst you have to spend deliberately.
+    const SHIELD_MAX = 100;
+    const SHIELD_DRAIN_PER_SEC = 55;      // ~1.8s of uptime from full
+    const SHIELD_RECHARGE_PER_SEC = 32;
+    const SHIELD_RECHARGE_DELAY_MS = 900;
+    const SHIELD_MIN_TO_RAISE = 25;       // must recover this much after a break
+    let shieldEnergy = SHIELD_MAX;
+    let shieldBroken = false;
+    let shieldLoweredAt = -Infinity;
 
     function createSnowball() {
         const weapon = WEAPONS[currentWeaponIndex];
@@ -585,59 +875,78 @@ export function startGame() {
         return snowball;
     }
 
+    // Both buttons only record intent. The arena loop decides whether a shot is
+    // off cooldown and whether the shield still has the energy to be up, so the
+    // rate of fire can't be beaten by clicking faster.
     document.addEventListener('mousedown', (event) => {
         if (!controls.isLocked || mode !== 'game') return;
+        if (playerDead) return;
         if (event.button === 0) {
-            const snowball = createSnowball();
-            snowballs.push(snowball);
-            scene.add(snowball);
-        } else if (event.button === 2) {
-            isShielding = true;
-            shieldMesh.visible = true;
+            wantsToFire = true;
+            // A quick tap can begin and end between two frames, so latch it the
+            // same way jumps are buffered -- otherwise clicking rather than
+            // holding would throw nothing at all.
+            fireQueuedUntil = performance.now() + FIRE_BUFFER_MS;
         }
+        else if (event.button === 2) wantsShield = true;
     });
 
     document.addEventListener('mouseup', (event) => {
         if (mode !== 'game') return;
-        if (event.button === 2) {
-            isShielding = false;
-            shieldMesh.visible = false;
-        }
+        if (event.button === 0) wantsToFire = false;
+        else if (event.button === 2) wantsShield = false;
     });
     document.addEventListener('contextmenu', (event) => event.preventDefault());
 
-    let lastBotSpawn = 0;
     let prevTime = performance.now();
+
+    // Waves arrive from somewhere you can see. The old spawner picked any point
+    // in a 900-unit world, so most snowmen spent the whole wave walking toward
+    // you across empty ground and a lot of them never arrived at all.
+    const _spawnPoint = { x: 0, z: 0 };
+    function spawnPointNearPlayer(playerPos) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 58 + Math.random() * 46;
+        let x = playerPos.x + Math.cos(angle) * distance;
+        let z = playerPos.z + Math.sin(angle) * distance;
+        // Fold anything that lands outside the arena back in along the same ray.
+        const fromCentre = Math.hypot(x, z);
+        const limit = WORLD_RADIUS - 30;
+        if (fromCentre > limit) {
+            const scale = limit / fromCentre;
+            x *= scale;
+            z *= scale;
+        }
+        _spawnPoint.x = x;
+        _spawnPoint.z = z;
+        return _spawnPoint;
+    }
 
     function startSelectedGame(gameId) {
         lastPortalTrigger = performance.now();
         if (gameId === LOCAL_GAME_ID) {
             mode = 'game';
-            lobbyWorld.setVisible(false);
-            lavaParkourWorld.setVisible(false);
+            setActiveWorld('arena');
+            clearArenaEntities();
             interactionPrompt.style.display = 'none';
-            healthUi.element.style.display = 'block';
+            hud.setVisible(true);
             minimap.canvas.style.display = 'block';
             lavaHud.style.display = 'none';
             libraryContainer.style.display = 'none';
             instructions.style.display = 'none';
             combatHud.style.display = 'block';
-            player.position.set(0, PLAYER.STAND_HEIGHT, 20);
-            velocity.set(0, 0, 0);
-            jumpQueuedUntil = -Infinity;
-            lastGroundedAt = -Infinity;
+            startRun();
             if (controls.isLocked) {
                 startRecording();
             }
         } else if (gameId === LAVA_GAME_ID) {
             mode = 'lava';
-            lobbyWorld.setVisible(false);
-            lavaParkourWorld.setVisible(true);
+            setActiveWorld('lava');
             lavaParkourWorld.reset();
             lavaRunStart = performance.now();
             lavaDeaths = 0;
             interactionPrompt.style.display = 'none';
-            healthUi.element.style.display = 'none';
+            hud.setVisible(false);
             minimap.canvas.style.display = 'none';
             lavaHud.style.display = 'block';
             libraryContainer.style.display = 'none';
@@ -653,10 +962,9 @@ export function startGame() {
     function startLibraryMode() {
         mode = 'library';
         lastPortalTrigger = performance.now();
-        lobbyWorld.setVisible(true);
-        lavaParkourWorld.setVisible(false);
+        setActiveWorld('library');
         interactionPrompt.style.display = 'none';
-        healthUi.element.style.display = 'none';
+        hud.setVisible(false);
         minimap.canvas.style.display = 'none';
         lavaHud.style.display = 'none';
         libraryContainer.style.display = controls.isLocked ? 'block' : 'none';
@@ -684,31 +992,7 @@ export function startGame() {
 
         if (controls.isLocked) {
             if (mode === 'lobby') {
-                if (canJump) lastGroundedAt = time;
-                tryConsumeJump(time);
-                const friction = 10.0;
-                const damping = Math.max(0, 1 - friction * delta);
-                velocity.x *= damping;
-                velocity.z *= damping;
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.x = Number(moveRight) - Number(moveLeft);
-                direction.normalize();
-
-                if (moveForward || moveBackward) velocity.z -= direction.z * PLAYER.MOVE_FORCE * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * PLAYER.MOVE_FORCE * delta;
-                applyGravity(delta);
-
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
-                player.position.y += velocity.y * delta;
-
-                const targetHeight = isSliding ? PLAYER_SLIDE_HEIGHT : PLAYER_STAND_HEIGHT;
-                currentHeight += (targetHeight - currentHeight) * 10.0 * delta;
-                const targetFOV = isSliding ? PLAYER.SLIDE_FOV : PLAYER.BASE_FOV;
-                if (Math.abs(camera.fov - targetFOV) > 0.1) {
-                    camera.fov += (targetFOV - camera.fov) * 10.0 * delta;
-                    camera.updateProjectionMatrix();
-                }
+                updatePlayerMovement(delta, time);
 
                 const groundedInLobby = lobbyWorld.constrainPlayerToLobby(player, velocity, currentHeight, 'lobby');
                 if (groundedInLobby) {
@@ -733,31 +1017,7 @@ export function startGame() {
                     }
                 }
             } else if (mode === 'library') {
-                if (canJump) lastGroundedAt = time;
-                tryConsumeJump(time);
-                const friction = 10.0;
-                const damping = Math.max(0, 1 - friction * delta);
-                velocity.x *= damping;
-                velocity.z *= damping;
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.x = Number(moveRight) - Number(moveLeft);
-                direction.normalize();
-
-                if (moveForward || moveBackward) velocity.z -= direction.z * PLAYER.MOVE_FORCE * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * PLAYER.MOVE_FORCE * delta;
-                applyGravity(delta);
-
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
-                player.position.y += velocity.y * delta;
-
-                const targetHeight = isSliding ? PLAYER_SLIDE_HEIGHT : PLAYER_STAND_HEIGHT;
-                currentHeight += (targetHeight - currentHeight) * 10.0 * delta;
-                const targetFOV = isSliding ? PLAYER.SLIDE_FOV : PLAYER.BASE_FOV;
-                if (Math.abs(camera.fov - targetFOV) > 0.1) {
-                    camera.fov += (targetFOV - camera.fov) * 10.0 * delta;
-                    camera.updateProjectionMatrix();
-                }
+                updatePlayerMovement(delta, time);
 
                 const groundedInLibrary = lobbyWorld.constrainPlayerToLobby(player, velocity, currentHeight, 'library');
                 if (groundedInLibrary) {
@@ -773,32 +1033,7 @@ export function startGame() {
                     }
                 }
             } else if (mode === 'lava') {
-                if (canJump) lastGroundedAt = time;
-                tryConsumeJump(time);
-                const friction = (isSliding && canJump) ? 2.0 : 10.0;
-                const damping = Math.max(0, 1 - friction * delta);
-                velocity.x *= damping;
-                velocity.z *= damping;
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.x = Number(moveRight) - Number(moveLeft);
-                direction.normalize();
-                applyGravity(delta);
-                canJump = false;
-
-                if (moveForward || moveBackward) velocity.z -= direction.z * PLAYER.MOVE_FORCE * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * PLAYER.MOVE_FORCE * delta;
-
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
-                player.position.y += velocity.y * delta;
-
-                const targetHeight = isSliding ? PLAYER_SLIDE_HEIGHT : PLAYER_STAND_HEIGHT;
-                currentHeight += (targetHeight - currentHeight) * 10.0 * delta;
-                const targetFOV = isSliding ? PLAYER.SLIDE_FOV : PLAYER.BASE_FOV;
-                if (Math.abs(camera.fov - targetFOV) > 0.1) {
-                    camera.fov += (targetFOV - camera.fov) * 10.0 * delta;
-                    camera.updateProjectionMatrix();
-                }
+                updatePlayerMovement(delta, time, { slideFriction: true });
 
                 lavaParkourWorld.constrainPlayer(player, velocity, currentHeight);
                 if (lavaParkourWorld.resolvePlatformCollision(player, velocity, currentHeight)) {
@@ -832,9 +1067,53 @@ export function startGame() {
                 }
             } else {
             
+            const weapon = WEAPONS[currentWeaponIndex];
+
+            // Rate-limited fire. Holding the button throws at the weapon's own
+            // cadence, so the Ice Dart's speed and the Glacier Orb's punch are
+            // an actual trade instead of "click as fast as you physically can".
+            const firing = wantsToFire || time <= fireQueuedUntil;
+            if (firing && !playerDead && time - lastShotAt >= weapon.fireRate) {
+                const snowball = createSnowball();
+                snowballs.push(snowball);
+                arenaGroup.add(snowball);
+                shotsFired += 1;
+                lastShotAt = time;
+                fireQueuedUntil = -Infinity;
+                sfx.throwSnowball();
+            }
+
+            // Shield energy: drains while up, recharges after a beat once lowered,
+            // and a full drain breaks it until it has recovered enough to re-raise.
+            const shieldAvailable = !shieldBroken && shieldEnergy > 0 && !playerDead;
+            isShielding = wantsShield && shieldAvailable;
+            if (isShielding) {
+                shieldEnergy = Math.max(0, shieldEnergy - SHIELD_DRAIN_PER_SEC * delta);
+                shieldLoweredAt = time;
+                if (shieldEnergy <= 0) {
+                    shieldBroken = true;
+                    isShielding = false;
+                    sfx.shieldBreak();
+                    feedback.shake(0.45);
+                    feedback.showBanner('', 'Shield broken', 900);
+                }
+            } else if (time - shieldLoweredAt > SHIELD_RECHARGE_DELAY_MS) {
+                shieldEnergy = Math.min(SHIELD_MAX, shieldEnergy + SHIELD_RECHARGE_PER_SEC * delta);
+                if (shieldBroken && shieldEnergy >= SHIELD_MIN_TO_RAISE) shieldBroken = false;
+            }
+            shieldMesh.visible = isShielding;
+            if (isShielding) {
+                // Fades from blue to red as it runs down, so the wearer can see
+                // it failing without looking away from the fight.
+                shieldMaterial.color.setHSL(0.55 * (shieldEnergy / SHIELD_MAX), 0.85, 0.55);
+            }
+            hud.updateShield(shieldEnergy, SHIELD_MAX, isShielding, shieldBroken);
+
             // Combat HUD Update
             const dashReady = (time - lastDashTime > DASH_COOLDOWN);
-            combatHud.innerHTML = `<span style="font-size:16px; color:${dashReady ? '#0f0' : '#555'}">DASH [V]</span>`;
+            combatHud.innerHTML =
+                `<span style="font-size:15px;color:#9fd0ff">${weapon.name}</span>` +
+                `<span style="font-size:16px;color:${dashReady ? '#0f0' : '#555'};margin-left:14px">DASH [V]</span>`;
 
             // Snow System Follow
             if (snowSystem) {
@@ -844,7 +1123,7 @@ export function startGame() {
 
             if (isGrappling) {
                 const playerPos = player.position;
-                const handOffset = new THREE.Vector3(0.5, -0.5, -0.5).applyQuaternion(camera.quaternion);
+                const handOffset = new THREE.Vector3(0.5, -0.5, -0.5).applyQuaternion(aim.quaternion);
                 const start = playerPos.clone().add(handOffset);
                 grappleLineGeo.setFromPoints([start, grapplePoint]);
                 
@@ -862,49 +1141,9 @@ export function startGame() {
                 grappleLine.visible = false;
             }
 
-            if (canJump) lastGroundedAt = time;
-            const friction = (isSliding && canJump) ? 2.0 : 10.0;
-            const damping = Math.max(0, 1 - friction * delta);
-            velocity.x *= damping;
-            velocity.z *= damping;
-            direction.z = Number(moveForward) - Number(moveBackward);
-            direction.x = Number(moveRight) - Number(moveLeft);
-            direction.normalize();
-
             const playerPos = player.position;
             const activeLadder = towerSystem.getLadderAt(playerPos);
-            if (activeLadder) {
-                velocity.y = 0;
-                if (moveForward) velocity.y = 25;
-                if (moveBackward) velocity.y = -20;
-                player.position.x += (activeLadder.position.x - player.position.x) * 0.35;
-                player.position.z += (activeLadder.position.z - player.position.z) * 0.35;
-                canJump = true;
-                lastGroundedAt = time;
-            } else {
-                tryConsumeJump(time);
-                applyGravity(delta);
-            }
-
-            if (!activeLadder) {
-                if (moveForward || moveBackward) velocity.z -= direction.z * PLAYER.MOVE_FORCE * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * PLAYER.MOVE_FORCE * delta;
-            } else {
-                velocity.x *= 0.2;
-                velocity.z *= 0.2;
-            }
-
-            controls.moveRight(-velocity.x * delta);
-            controls.moveForward(-velocity.z * delta);
-            player.position.y += velocity.y * delta;
-
-            const targetHeight = isSliding ? PLAYER_SLIDE_HEIGHT : PLAYER_STAND_HEIGHT;
-            currentHeight += (targetHeight - currentHeight) * 10.0 * delta;
-            const targetFOV = isSliding ? PLAYER.SLIDE_FOV : PLAYER.BASE_FOV;
-            if (Math.abs(camera.fov - targetFOV) > 0.1) {
-                camera.fov += (targetFOV - camera.fov) * 10.0 * delta;
-                camera.updateProjectionMatrix();
-            }
+            updatePlayerMovement(delta, time, { slideFriction: true, ladder: activeLadder });
 
             const groundHeight = getTerrainHeight(playerPos.x, playerPos.z);
             if (player.position.y < groundHeight + currentHeight) {
@@ -942,18 +1181,43 @@ export function startGame() {
 
             shieldMesh.position.copy(player.position);
 
-            // Health Regen
-            if (time - lastDamageTime > 5000 && playerHealth < 100) {
-                playerHealth = Math.min(100, playerHealth + 10 * delta);
-                updateHealthDisplay();
+            // Out-of-combat regen. Hand Warmers make the breather between waves
+            // meaningfully shorter, which is most of why they're worth buying.
+            const regenDelay = 5000 - upgradeCount('warmers') * 900;
+            if (time - lastDamageTime > regenDelay && playerHealth < maxHealth) {
+                const regenRate = 8 + upgradeCount('warmers') * 8;
+                playerHealth = Math.min(maxHealth, playerHealth + regenRate * delta);
+                refreshHud();
             }
 
-            if (time - lastBotSpawn > 3000 && bots.length < 3) {
-                const spawn = randomPointInWorld(WORLD_RADIUS - 30);
-                const bot = createBot(spawn.x, spawn.z, getTerrainHeight);
-                scene.add(bot);
-                bots.push(bot);
-                lastBotSpawn = time;
+            // Health is low enough that the next hit could matter -- say so.
+            feedback.setCritical(!playerDead && playerHealth > 0 && playerHealth / maxHealth <= 0.25);
+
+            // ── wave progression ───────────────────────────────────────────
+            if (runActive) {
+                const waveEvents = waveRunner.update(time, bots.length);
+
+                if (waveEvents.waveStarted) {
+                    sfx.waveStart();
+                    feedback.showBanner(`WAVE ${waveRunner.waveNumber}`, `${waveRunner.totalThisWave} snowmen inbound`);
+                }
+
+                if (waveEvents.spawn) {
+                    const spawn = spawnPointNearPlayer(playerPos);
+                    const bot = createBot(spawn.x, spawn.z, getTerrainHeight, waveRunner.config);
+                    arenaGroup.add(bot);
+                    bots.push(bot);
+                }
+
+                if (waveEvents.waveCleared) {
+                    const bonus = clearBonus(waveRunner.waveNumber);
+                    score += bonus;
+                    sfx.waveCleared();
+                    feedback.showBanner(`WAVE ${waveRunner.waveNumber} CLEARED`, `+${bonus} score  ·  press B to spend it`, 2600);
+                    refreshHud();
+                }
+
+                hud.updateWave(waveRunner.waveNumber, waveRunner.remaining, waveEvents.secondsToNextWave);
             }
 
             for (let i = 0; i < bots.length; i++) {
@@ -964,7 +1228,26 @@ export function startGame() {
                 }
 
                 _botDir.set(playerPos.x - bot.position.x, 0, playerPos.z - bot.position.z).normalize();
-                bot.position.add(_botDir.multiplyScalar(3.5 * delta));
+                bot.position.add(_botDir.multiplyScalar((bot.speed || 3.5) * delta));
+
+                // Light mutual repulsion. Without it a wave converges into one
+                // stack of overlapping snowmen that reads as a single enemy.
+                for (let j = i + 1; j < bots.length; j++) {
+                    const other = bots[j];
+                    const dx = other.position.x - bot.position.x;
+                    const dz = other.position.z - bot.position.z;
+                    const distSq = dx * dx + dz * dz;
+                    if (distSq > 0.0001 && distSq < 9) {
+                        const dist = Math.sqrt(distSq);
+                        const push = (3 - dist) * 0.5 * delta * 6;
+                        const nx = dx / dist;
+                        const nz = dz / dist;
+                        bot.position.x -= nx * push;
+                        bot.position.z -= nz * push;
+                        other.position.x += nx * push;
+                        other.position.z += nz * push;
+                    }
+                }
 
                 const botDist = Math.hypot(bot.position.x, bot.position.z);
                 const maxBotRadius = WORLD_RADIUS - 1.5;
@@ -975,16 +1258,18 @@ export function startGame() {
                 }
                 bot.position.y = getTerrainHeight(bot.position.x, bot.position.z) + (bot.userData.heightOffset || 3.0);
 
-                if (time - bot.lastShot > 2000) {
-                    shootBotSnowball(bot, playerPos, scene, snowballs);
+                if (time - bot.lastShot > (bot.fireRate || 2000)) {
+                    shootBotSnowball(bot, playerPos, arenaGroup, snowballs, 8 + waveRunner.waveNumber);
                     bot.lastShot = time;
                 }
 
-                if (bot.position.distanceToSquared(playerPos) < 2.25 && !isShielding) {
-                    const damageMultiplier = Math.max(0.1, 1 - (playerLevel * 5) / 100);
-                    playerHealth = Math.max(0, playerHealth - (20 * delta) * damageMultiplier);
-                    lastDamageTime = time;
-                    updateHealthDisplay();
+                // Compared in the horizontal plane: the bot's origin sits about
+                // 2.85 units below the camera, so the old 3D check could never
+                // drop under its 1.5-unit threshold and melee never once fired.
+                const botTouchDistSq = (bot.position.x - playerPos.x) ** 2 + (bot.position.z - playerPos.z) ** 2;
+                const botTouchDy = Math.abs(bot.position.y - playerPos.y);
+                if (botTouchDistSq < 4.0 && botTouchDy < 5.0) {
+                    damagePlayer(22 * delta, { shake: 0.12 });
                 }
             }
 
@@ -998,7 +1283,7 @@ export function startGame() {
 
                 if (towerSystem.snowballHitsStructure(snowball)) {
                     particleSystem.createExplosion(snowball.position);
-                    scene.remove(snowball);
+                    arenaGroup.remove(snowball);
                     snowballs.splice(i, 1);
                     i--;
                     continue;
@@ -1007,13 +1292,8 @@ export function startGame() {
                 if (snowball.isEnemy) {
                     if (snowball.position.distanceToSquared(player.position) < 2.25) {
                         particleSystem.createExplosion(snowball.position);
-                        if (!isShielding) {
-                            const damageMultiplier = Math.max(0.1, 1 - (playerLevel * 5) / 100);
-                            playerHealth = Math.max(0, playerHealth - (10 * damageMultiplier));
-                            lastDamageTime = time;
-                            updateHealthDisplay();
-                        }
-                        scene.remove(snowball);
+                        damagePlayer(snowball.damage || 10, { shake: 0.55 });
+                        arenaGroup.remove(snowball);
                         snowballs.splice(i, 1);
                         i--;
                         continue;
@@ -1022,25 +1302,37 @@ export function startGame() {
                     let hitBot = false;
                     for (let j = 0; j < bots.length; j++) {
                         const bot = bots[j];
-                        if (snowball.position.distanceToSquared(bot.position) < 2.25) {
+                        // Slightly generous, and measured against the bot's chest
+                        // rather than its base, so shots that visibly connect count.
+                        const hitRadiusSq = 3.2 * (bot.scale.x || 1) ** 2;
+                        if (snowball.position.distanceToSquared(bot.position) < hitRadiusSq) {
                             particleSystem.createExplosion(snowball.position);
                             bot.health -= snowball.damage || 25;
-                            bot.healthBar.scale.x = Math.max(0, bot.health / 100);
+                            bot.healthBar.scale.x = Math.max(0, bot.health / bot.maxHealth);
+                            shotsHit += 1;
+                            feedback.showHitMarker();
+                            sfx.hit();
 
                             if (bot.health <= 0) {
                                 particleSystem.createExplosion(bot.position);
-                                scene.remove(bot);
+                                arenaGroup.remove(bot);
+                                disposeBot(bot);
                                 bots.splice(j, 1);
-                                playerLevel += 1;
-                                score += 100;
-                                updateHealthDisplay();
+                                kills += 1;
+                                waveRunner.recordKill();
+                                const reward = killReward(waveRunner.waveNumber);
+                                score += reward;
+                                feedback.scorePopup(`+${reward}`);
+                                feedback.shake(0.16);
+                                sfx.kill();
+                                refreshHud();
                             }
                             hitBot = true;
                             break;
                         }
                     }
                     if (hitBot) {
-                        scene.remove(snowball);
+                        arenaGroup.remove(snowball);
                         snowballs.splice(i, 1);
                         i--;
                         continue;
@@ -1050,14 +1342,17 @@ export function startGame() {
                 if (snowball.position.y <= getTerrainHeight(snowball.position.x, snowball.position.z) + 0.5 ||
                     !isInsideWorld(snowball.position.x, snowball.position.z)) {
                     particleSystem.createExplosion(snowball.position);
-                    scene.remove(snowball);
+                    arenaGroup.remove(snowball);
                     snowballs.splice(i, 1);
                     i--;
                     continue;
                 }
 
-                if (snowball.position.distanceToSquared(player.position) > 10000) {
-                    scene.remove(snowball);
+                // Backstop for anything that escapes the terrain and world
+                // bounds checks. The old limit was 100 units, so shots
+                // evaporated mid-flight in a 900-unit arena.
+                if (snowball.position.distanceToSquared(player.position) > SNOWBALL_MAX_RANGE_SQ) {
+                    arenaGroup.remove(snowball);
                     snowballs.splice(i, 1);
                     i--;
                 }
@@ -1072,6 +1367,9 @@ export function startGame() {
         if (mode === 'game' && frameCount % 3 === 0) {
             minimap.render(towerSystem.towers, bots, controls.getObject().position);
         }
+        // Runs outside the isLocked branch so a shake still settles while paused.
+        feedback.update(delta);
+        adaptiveResolution.update(delta, time);
         fpsMeter.update(delta);
         prevTime = time;
         renderer.render(scene, camera);

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createGeometryBatcher } from './meshMerge.js';
 
 function createSnowField() {
     const count = 500;
@@ -65,6 +66,8 @@ export function createVegetationSystem(scene, getTerrainHeight) {
         metalness: 0.04
     });
 
+    const rockBatcher = createGeometryBatcher();
+
     for (let i = 0; i < 70; i++) {
         const angle = Math.random() * Math.PI * 2;
         const radius = 18 + Math.sqrt(Math.random()) * 820;
@@ -82,10 +85,10 @@ export function createVegetationSystem(scene, getTerrainHeight) {
         rock.scale.setScalar(1.0 + Math.random() * 0.9);
         rock.scale.y *= scaleY;
         rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-        rock.castShadow = true;
-        rock.receiveShadow = true;
-        scene.add(rock);
+        rockBatcher.absorb(rock);
     }
+
+    rockBatcher.flush(scene);
 
     const snowSystem = createSnowField();
     scene.add(snowSystem);

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { SPAWN_FLAT_RADIUS, TERRAIN_SEGMENTS, WORLD_RADIUS } from '../../app/config.js';
+import { createGeometryBatcher } from './meshMerge.js';
 
 export function createTerrainSystem(scene) {
     function isInsideWorld(x, z, margin = 0) {
@@ -69,6 +70,8 @@ export function createTerrainSystem(scene) {
         roughness: 0.88,
         metalness: 0.0
     });
+
+    const sceneryBatcher = createGeometryBatcher();
 
     function createTree(x, z) {
         const tree = new THREE.Group();
@@ -147,7 +150,7 @@ export function createTerrainSystem(scene) {
 
         tree.rotation.y = Math.random() * Math.PI * 2;
         tree.position.set(x, getTerrainHeight(x, z), z);
-        scene.add(tree);
+        sceneryBatcher.absorb(tree);
     }
 
     const grassMaterial = new THREE.MeshStandardMaterial({
@@ -174,7 +177,7 @@ export function createTerrainSystem(scene) {
         patch.add(blade2);
 
         patch.position.set(x, getTerrainHeight(x, z), z);
-        scene.add(patch);
+        sceneryBatcher.absorb(patch);
     }
 
     for (let i = 0; i < 40; i++) {
@@ -189,7 +192,13 @@ export function createTerrainSystem(scene) {
         createGrassPatch(point.x, point.z);
     }
 
+    // ~800 tree parts and ~520 grass blades collapse into four merged meshes.
+    sceneryBatcher.flush(scene);
+
     return {
+        // Exposed so callers can raycast against the ground without walking
+        // the whole scene graph.
+        terrainMesh: terrain,
         WORLD_RADIUS,
         SPAWN_FLAT_RADIUS,
         isInsideWorld,
