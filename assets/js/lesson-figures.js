@@ -725,6 +725,1214 @@ const LessonFigures = (() => {
       },
     },
 
+    /* ---------- scale-ladder fillers ----------
+       These sit between the landmark figures above so a continuous zoom
+       through the scale of the universe never has to fall back on an
+       anonymous coloured blob. Same rules as everything else: real
+       proportions, drawn locally, no external assets. */
+
+    'nucleus-heavy': {
+      viewBox: '0 0 120 120',
+      draw(a, id) {
+        // Nucleons pack like marbles in a bag, not in a lattice.
+        const rand = rng(23);
+        let pack = '';
+        const placed = [];
+        for (let i = 0; i < 60 && placed.length < 34; i++) {
+          const ang = rand() * Math.PI * 2;
+          const rad = Math.sqrt(rand()) * 33;
+          const x = 60 + Math.cos(ang) * rad, y = 60 + Math.sin(ang) * rad;
+          if (placed.some(p => Math.hypot(p[0] - x, p[1] - y) < 9)) continue;
+          placed.push([x, y]);
+        }
+        placed.sort((p, q) => p[1] - q[1]).forEach(([x, y], i) => {
+          const proton = i % 5 < 2;
+          const c = proton ? shade(a, 0.3) : shade(a, -0.3);
+          pack += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="${c}"/>
+                   <circle cx="${(x - 1.8).toFixed(1)}" cy="${(y - 2).toFixed(1)}" r="1.9"
+                     fill="#fff" opacity="0.4"/>`;
+        });
+        return `${glow(id + 'g', 2.5)}
+          <circle cx="60" cy="60" r="42" fill="${a}" opacity="0.1"/>
+          <g filter="url(#${id}g)">${pack}</g>
+          <circle cx="60" cy="60" r="40" fill="none" stroke="${shade(a, 0.4)}"
+                  stroke-width="1.2" opacity="0.45" stroke-dasharray="4 5"/>`;
+      },
+    },
+
+    'gamma-wave': {
+      viewBox: '0 0 240 90',
+      draw(a, id) {
+        // Very short wavelength, drawn against a measured bracket.
+        let d = 'M12 48';
+        for (let i = 0; i < 24; i++) {
+          const x = 12 + i * 9;
+          d += ` Q${x + 2.25} ${i % 2 ? 70 : 26} ${x + 4.5} 48 T${x + 9} 48`;
+        }
+        return `${glow(id + 'g', 3)}
+          <g filter="url(#${id}g)">
+            <path d="${d}" fill="none" stroke="${a}" stroke-width="3" stroke-linecap="round"/>
+          </g>
+          <path d="M12 78 L21 78 M12 74 L12 82 M21 74 L21 82" stroke="#fff"
+                stroke-width="1.2" opacity="0.5"/>
+          <path d="M198 48 l22 0 m-7 -6 l7 6 l-7 6" fill="none" stroke="${shade(a, 0.5)}"
+                stroke-width="2" opacity="0.65" stroke-linecap="round" stroke-linejoin="round"/>`;
+      },
+    },
+
+    'hydrogen-atom': {
+      viewBox: '0 0 140 140',
+      draw(a, id) {
+        // An electron is a probability cloud, not a planet — so the cloud is
+        // the figure and the "orbit" is only a faint guide.
+        const rand = rng(91);
+        let cloud = '';
+        for (let i = 0; i < 260; i++) {
+          const ang = rand() * Math.PI * 2;
+          // densest near the Bohr radius, thinning inward and outward
+          const rad = 24 + (rand() + rand() + rand() - 1.5) * 24;
+          if (rad < 8) continue;
+          cloud += `<circle cx="${(70 + Math.cos(ang) * rad).toFixed(1)}"
+                      cy="${(70 + Math.sin(ang) * rad).toFixed(1)}"
+                      r="${(1.2 + rand() * 2.2).toFixed(2)}" fill="${shade(a, 0.55)}"
+                      opacity="${(0.3 + rand() * 0.5).toFixed(2)}"/>`;
+        }
+        return `${glow(id + 'g', 3)}
+          <defs>
+            <radialGradient id="${id}s" cx="50%" cy="50%">
+              <stop offset="0%" stop-color="${a}" stop-opacity="0.05"/>
+              <stop offset="45%" stop-color="${a}" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="${a}" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="70" cy="70" r="58" fill="url(#${id}s)"/>
+          <g filter="url(#${id}g)">${cloud}</g>
+          <circle cx="70" cy="70" r="34" fill="none" stroke="${a}" stroke-width="0.8"
+                  opacity="0.28" stroke-dasharray="3 6"/>
+          <circle cx="70" cy="70" r="6" fill="${shade(a, 0.2)}"/>
+          <circle cx="68" cy="68" r="2" fill="#fff" opacity="0.55"/>`;
+      },
+    },
+
+    'water-molecule': {
+      viewBox: '0 0 160 140',
+      draw(a, id) {
+        // Bent, not linear: the H–O–H angle really is about 104.5°.
+        const O = [80, 58], r = 34, hr = 20;
+        const ang = (104.5 / 2) * Math.PI / 180;
+        const H = [
+          [O[0] - Math.sin(ang) * 46, O[1] + Math.cos(ang) * 46],
+          [O[0] + Math.sin(ang) * 46, O[1] + Math.cos(ang) * 46],
+        ];
+        const bond = ([x, y]) =>
+          `<line x1="${O[0]}" y1="${O[1]}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"
+             stroke="${shade(a, -0.25)}" stroke-width="9" stroke-linecap="round" opacity="0.85"/>`;
+        const atom = ([x, y], rad, c) =>
+          `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rad}" fill="${c}"/>
+           <circle cx="${(x - rad * 0.3).toFixed(1)}" cy="${(y - rad * 0.35).toFixed(1)}"
+             r="${(rad * 0.3).toFixed(1)}" fill="#fff" opacity="0.45"/>`;
+        return `${glow(id + 'g', 3)}
+          <g filter="url(#${id}g)">
+            ${bond(H[0])}${bond(H[1])}
+            ${atom(H[0], hr, '#e2e8f0')}${atom(H[1], hr, '#e2e8f0')}
+            ${atom(O, r, a)}
+          </g>
+          <path d="M${(O[0] - 15).toFixed(1)} ${(O[1] + 26).toFixed(1)}
+                   A 30 30 0 0 0 ${(O[0] + 15).toFixed(1)} ${(O[1] + 26).toFixed(1)}"
+                fill="none" stroke="#fff" stroke-width="1" opacity="0.35"/>`;
+      },
+    },
+
+    transistor: {
+      viewBox: '0 0 220 130',
+      draw(a, id) {
+        // Cross-section of a fin transistor: substrate, fin, wrapped gate.
+        return `${glow(id + 'g', 2)}
+          <rect x="8" y="88" width="204" height="34" rx="4" fill="${shade(a, -0.55)}"/>
+          <rect x="8" y="88" width="204" height="6" fill="${shade(a, -0.3)}" opacity="0.8"/>
+          <g filter="url(#${id}g)">
+            <!-- source and drain -->
+            <rect x="26" y="46" width="46" height="44" rx="4" fill="${shade(a, 0.25)}"/>
+            <rect x="148" y="46" width="46" height="44" rx="4" fill="${shade(a, 0.25)}"/>
+            <!-- the fin running between them -->
+            <rect x="72" y="62" width="76" height="28" fill="${shade(a, -0.05)}"/>
+            <!-- gate stack wrapped over the fin -->
+            <rect x="88" y="26" width="44" height="64" rx="3" fill="${a}"/>
+          </g>
+          <rect x="88" y="26" width="44" height="64" rx="3" fill="none"
+                stroke="${shade(a, 0.5)}" stroke-width="1.4" opacity="0.8"/>
+          <rect x="92" y="30" width="10" height="56" fill="#fff" opacity="0.18"/>
+          <g fill="#fff" opacity="0.45" font-family="monospace" font-size="11">
+            <text x="34" y="40">S</text><text x="104" y="20">G</text><text x="156" y="40">D</text>
+          </g>
+          <!-- a few atoms wide: the scale bar says so -->
+          <g stroke="#fff" opacity="0.3" stroke-width="1">
+            <path d="M88 104 L132 104 M88 100 L88 108 M132 100 L132 108"/>
+          </g>`;
+      },
+    },
+
+    'cell-membrane': {
+      viewBox: '0 0 240 120',
+      draw(a, id) {
+        // Phospholipid bilayer: two sheets of heads, tails facing inward.
+        let lipids = '';
+        for (let i = 0; i < 24; i++) {
+          const x = 10 + i * 9.6;
+          lipids += `<circle cx="${x}" cy="34" r="4.2" fill="${a}"/>
+                     <path d="M${x - 1.6} 38 l-1 16 M${x + 1.6} 38 l1 16"
+                       stroke="${shade(a, -0.2)}" stroke-width="1.6" opacity="0.8"/>
+                     <circle cx="${x}" cy="86" r="4.2" fill="${a}"/>
+                     <path d="M${x - 1.6} 82 l-1 -16 M${x + 1.6} 82 l1 -16"
+                       stroke="${shade(a, -0.2)}" stroke-width="1.6" opacity="0.8"/>`;
+        }
+        return `${glow(id + 'g', 2)}
+          <g filter="url(#${id}g)">${lipids}</g>
+          <!-- an integral protein punching through both leaflets -->
+          <path d="M150 24 q22 -4 30 10 q8 14 0 28 q-8 20 2 34 q-20 6 -32 -8
+                   q-10 -16 -2 -30 q8 -16 2 -34 z" fill="${shade(a, 0.45)}" opacity="0.9"/>
+          <path d="M156 30 q14 -2 18 8" fill="none" stroke="#fff" stroke-width="1.4" opacity="0.3"/>
+          <ellipse cx="60" cy="30" rx="34" ry="5" fill="#fff" opacity="0.14"/>`;
+      },
+    },
+
+    'virus-capsid': {
+      viewBox: '0 0 130 130',
+      draw(a, id) {
+        // Icosahedral capsid: a ring of triangular facets, shaded by angle.
+        const p = (t, r) => `${(65 + Math.cos(t) * r).toFixed(1)},${(65 + Math.sin(t) * r).toFixed(1)}`;
+        // Outline is the decagon silhouette of an icosahedron seen face-on;
+        // the facets are the triangles between the rim and an inner ring.
+        let rim = '';
+        for (let i = 0; i < 10; i++) rim += p(-Math.PI / 2 + (i / 10) * Math.PI * 2, 56) + ' ';
+        let facets = '';
+        for (let i = 0; i < 5; i++) {
+          const t0 = -Math.PI / 2 + (i / 5) * Math.PI * 2;
+          const t1 = -Math.PI / 2 + ((i + 1) / 5) * Math.PI * 2;
+          const tm = (t0 + t1) / 2;
+          // upper-left facets catch the light, lower-right fall into shadow
+          const lit = Math.cos(tm + 2.4) * 0.22;
+          facets += `<polygon points="${p(t0, 56)} ${p(t1, 56)} ${p(tm, 22)}"
+                       fill="${shade(a, lit)}" stroke="${shade(a, 0.5)}"
+                       stroke-width="1" opacity="0.9"/>
+                     <polygon points="${p(t0, 56)} ${p(tm, 22)} ${p(tm - Math.PI * 0.4, 22)}"
+                       fill="${shade(a, lit - 0.16)}" stroke="${shade(a, 0.5)}"
+                       stroke-width="1" opacity="0.9"/>`;
+        }
+        let studs = '';
+        for (let i = 0; i < 10; i++) {
+          const t = -Math.PI / 2 + (i / 10) * Math.PI * 2 + Math.PI / 10;
+          studs += `<circle cx="${(65 + Math.cos(t) * 38).toFixed(1)}"
+                      cy="${(65 + Math.sin(t) * 38).toFixed(1)}" r="3"
+                      fill="#fff" opacity="0.28"/>`;
+        }
+        return `${glow(id + 'g', 3)}
+          <circle cx="65" cy="65" r="60" fill="${a}" opacity="0.1"/>
+          <g filter="url(#${id}g)">
+            <polygon points="${rim.trim()}" fill="${a}"/>
+            ${facets}
+          </g>
+          <polygon points="${rim.trim()}" fill="none" stroke="${shade(a, 0.55)}" stroke-width="1.6"/>
+          ${studs}
+          <ellipse cx="46" cy="38" rx="15" ry="8" fill="#fff" opacity="0.18"
+                   transform="rotate(-30 46 38)"/>`;
+      },
+    },
+
+    'virus-enveloped': {
+      viewBox: '0 0 140 140',
+      draw(a, id) {
+        // Lipid envelope studded with glycoproteins, conical core inside.
+        let spikes = '';
+        for (let i = 0; i < 22; i++) {
+          const t = (i / 22) * Math.PI * 2;
+          const x1 = 70 + Math.cos(t) * 46, y1 = 70 + Math.sin(t) * 46;
+          const x2 = 70 + Math.cos(t) * 58, y2 = 70 + Math.sin(t) * 58;
+          spikes += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}"
+                       x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+                       stroke="${shade(a, 0.3)}" stroke-width="2.4" stroke-linecap="round"/>
+                     <circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="4"
+                       fill="${shade(a, 0.5)}"/>`;
+        }
+        return `${glow(id + 'g', 3)}
+          <g filter="url(#${id}g)">
+            ${spikes}
+            <circle cx="70" cy="70" r="46" fill="${a}" opacity="0.85"/>
+            <circle cx="70" cy="70" r="46" fill="none" stroke="${shade(a, 0.45)}" stroke-width="2"/>
+            <!-- the cone-shaped capsid HIV is recognised by -->
+            <path d="M52 44 L88 54 L80 96 L58 96 Z" fill="${shade(a, -0.35)}" opacity="0.95"/>
+          </g>
+          <path d="M58 54 q12 16 16 36" fill="none" stroke="#fff" stroke-width="2" opacity="0.3"/>
+          <ellipse cx="54" cy="50" rx="14" ry="8" fill="#fff" opacity="0.14"
+                   transform="rotate(-35 54 50)"/>`;
+      },
+    },
+
+    'light-wave': {
+      viewBox: '0 0 240 100',
+      draw(a, id) {
+        // One wavelength called out with a bracket — the unit being measured.
+        let d = 'M10 50';
+        for (let i = 0; i < 5; i++) {
+          const x = 10 + i * 44;
+          d += ` C${x + 11} 8 ${x + 33} 92 ${x + 44} 50`;
+        }
+        return `${glow(id + 'g', 3.5)}
+          <g filter="url(#${id}g)">
+            <path d="${d}" fill="none" stroke="${a}" stroke-width="3.4" stroke-linecap="round"/>
+          </g>
+          <g stroke="#fff" opacity="0.55" stroke-width="1.2">
+            <path d="M54 84 L98 84 M54 79 L54 89 M98 79 L98 89"/>
+          </g>
+          <text x="62" y="98" fill="#fff" opacity="0.5" font-family="monospace" font-size="10">λ</text>
+          <path d="M198 50 l30 0 m-9 -6 l9 6 l-9 6" fill="none" stroke="${shade(a, 0.5)}"
+                stroke-width="2" opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+      },
+    },
+
+    mitochondrion: {
+      viewBox: '0 0 220 110',
+      draw(a, id) {
+        // The cristae are folds of the inner membrane — drawn as a continuous
+        // ribbon, not as free-floating stripes.
+        let cristae = '';
+        for (let i = 0; i < 9; i++) {
+          const x = 30 + i * 18;
+          const dir = i % 2 ? 1 : -1;
+          cristae += `<path d="M${x} ${55 - dir * 26} q9 ${dir * 16} 0 ${dir * 32} q-9 ${dir * 16} 0 ${dir * 20}"
+                        fill="none" stroke="${shade(a, 0.4)}" stroke-width="3.4"
+                        opacity="0.75" stroke-linecap="round"/>`;
+        }
+        return `${glow(id + 'g', 2.5)}
+          <g filter="url(#${id}g)">
+            <ellipse cx="110" cy="55" rx="102" ry="44" fill="${a}"/>
+          </g>
+          <ellipse cx="110" cy="55" rx="102" ry="44" fill="none"
+                   stroke="${shade(a, 0.45)}" stroke-width="2" opacity="0.85"/>
+          <ellipse cx="110" cy="55" rx="94" ry="36" fill="${shade(a, -0.25)}" opacity="0.75"/>
+          <g clip-path="url(#${id}c)">${cristae}</g>
+          <clipPath id="${id}c"><ellipse cx="110" cy="55" rx="94" ry="36"/></clipPath>
+          <ellipse cx="74" cy="30" rx="30" ry="8" fill="#fff" opacity="0.14"/>`;
+      },
+    },
+
+    'red-blood-cell': {
+      viewBox: '0 0 140 120',
+      draw(a, id) {
+        // Biconcave disc seen at a tilt: rim thick, centre dimpled and pale.
+        return `${glow(id + 'g', 3)}
+          <g filter="url(#${id}g)">
+            <ellipse cx="70" cy="62" rx="60" ry="44" fill="${a}"/>
+          </g>
+          <ellipse cx="70" cy="62" rx="60" ry="44" fill="none"
+                   stroke="${shade(a, -0.3)}" stroke-width="2" opacity="0.6"/>
+          <!-- the biconcave dimple: dark well, bright lip on the lit side -->
+          <ellipse cx="70" cy="62" rx="34" ry="24" fill="${shade(a, -0.5)}" opacity="0.9"/>
+          <ellipse cx="70" cy="62" rx="34" ry="24" fill="none" stroke="${shade(a, 0.35)}"
+                   stroke-width="2.5" opacity="0.55"/>
+          <path d="M40 56 A 34 24 0 0 1 92 44" fill="none" stroke="#fff"
+                stroke-width="3" opacity="0.3" stroke-linecap="round"/>
+          <ellipse cx="70" cy="62" rx="22" ry="15" fill="${shade(a, -0.65)}" opacity="0.55"/>
+          <!-- thick rim catching the light -->
+          <path d="M14 54 A 60 44 0 0 1 74 18" fill="none" stroke="#fff"
+                stroke-width="5" opacity="0.25" stroke-linecap="round"/>
+          <ellipse cx="70" cy="62" rx="52" ry="37" fill="none" stroke="${shade(a, 0.4)}"
+                   stroke-width="1.2" opacity="0.3"/>`;
+      },
+    },
+
+    'pollen-grain': {
+      viewBox: '0 0 140 140',
+      draw(a, id) {
+        // Echinate (spiny) grain — the ragweed-type shape everyone recognises.
+        const rand = rng(53);
+        let spines = '';
+        for (let i = 0; i < 30; i++) {
+          const t = (i / 30) * Math.PI * 2 + rand() * 0.06;
+          const base = 44, tip = 44 + 9 + rand() * 4;
+          const x1 = 70 + Math.cos(t) * base, y1 = 70 + Math.sin(t) * base;
+          const x2 = 70 + Math.cos(t) * tip, y2 = 70 + Math.sin(t) * tip;
+          spines += `<path d="M${(x1 - Math.sin(t) * 4).toFixed(1)} ${(y1 + Math.cos(t) * 4).toFixed(1)}
+                       L${x2.toFixed(1)} ${y2.toFixed(1)}
+                       L${(x1 + Math.sin(t) * 4).toFixed(1)} ${(y1 - Math.cos(t) * 4).toFixed(1)} Z"
+                       fill="${shade(a, -0.2)}"/>`;
+        }
+        let pores = '';
+        for (let i = 0; i < 5; i++) {
+          const t = (i / 5) * Math.PI * 2 + 0.4;
+          pores += `<circle cx="${(70 + Math.cos(t) * 26).toFixed(1)}"
+                      cy="${(70 + Math.sin(t) * 22).toFixed(1)}" r="5"
+                      fill="${shade(a, -0.4)}" opacity="0.7"/>`;
+        }
+        return `${glow(id + 'g', 2.5)}
+          <g filter="url(#${id}g)">
+            ${spines}
+            <circle cx="70" cy="70" r="45" fill="${a}"/>
+          </g>
+          ${pores}
+          <ellipse cx="54" cy="50" rx="18" ry="11" fill="#fff" opacity="0.2"
+                   transform="rotate(-30 54 50)"/>`;
+      },
+    },
+
+    'skin-cell': {
+      viewBox: '0 0 160 130',
+      draw(a, id) {
+        // Squamous cells are flat, irregular polygons that tile against
+        // their neighbours — so the neighbours are part of the picture.
+        const cell = (pts, fill, op) =>
+          `<polygon points="${pts}" fill="${fill}" opacity="${op}"
+             stroke="${shade(a, 0.45)}" stroke-width="1.4"/>`;
+        return `${glow(id + 'g', 2)}
+          ${cell('4,30 42,10 60,24 44,64 8,58', shade(a, -0.35), 0.55)}
+          ${cell('110,8 156,20 152,60 116,54 100,26', shade(a, -0.35), 0.55)}
+          ${cell('16,86 56,74 78,108 40,126 12,112', shade(a, -0.35), 0.55)}
+          ${cell('104,70 148,78 156,116 112,124 92,98', shade(a, -0.35), 0.55)}
+          <g filter="url(#${id}g)">
+            ${cell('48,20 96,14 122,44 108,88 62,98 34,64', a, 1)}
+          </g>
+          <ellipse cx="78" cy="54" rx="17" ry="14" fill="${shade(a, -0.45)}" opacity="0.9"/>
+          <ellipse cx="74" cy="50" rx="6" ry="5" fill="#fff" opacity="0.25"/>
+          <path d="M52 26 q22 -6 40 -2" fill="none" stroke="#fff" stroke-width="1.6" opacity="0.22"/>`;
+      },
+    },
+
+    'egg-cell': {
+      viewBox: '0 0 160 160',
+      draw(a, id) {
+        // Ovum: corona radiata of follicle cells, zona pellucida, then the
+        // cell itself with its nucleus.
+        const rand = rng(11);
+        let corona = '';
+        for (let i = 0; i < 26; i++) {
+          const t = (i / 26) * Math.PI * 2;
+          const r = 62 + rand() * 6;
+          corona += `<ellipse cx="${(80 + Math.cos(t) * r).toFixed(1)}"
+                       cy="${(80 + Math.sin(t) * r).toFixed(1)}" rx="9" ry="7"
+                       fill="${shade(a, 0.35)}" opacity="0.45"
+                       transform="rotate(${(t * 180 / Math.PI).toFixed(0)}
+                         ${(80 + Math.cos(t) * r).toFixed(1)} ${(80 + Math.sin(t) * r).toFixed(1)})"/>`;
+        }
+        return `${glow(id + 'g', 3)}
+          ${corona}
+          <circle cx="80" cy="80" r="56" fill="${shade(a, 0.5)}" opacity="0.22"/>
+          <circle cx="80" cy="80" r="56" fill="none" stroke="${shade(a, 0.4)}"
+                  stroke-width="3" opacity="0.5"/>
+          <g filter="url(#${id}g)">
+            <circle cx="80" cy="80" r="46" fill="${a}"/>
+          </g>
+          <circle cx="88" cy="74" r="17" fill="${shade(a, -0.4)}" opacity="0.9"/>
+          <circle cx="88" cy="74" r="6" fill="${shade(a, 0.5)}" opacity="0.8"/>
+          <ellipse cx="58" cy="58" rx="18" ry="11" fill="#fff" opacity="0.22"
+                   transform="rotate(-35 58 58)"/>`;
+      },
+    },
+
+    'dust-mite': {
+      viewBox: '0 0 200 150',
+      draw(a, id) {
+        // Eight legs, no antennae, no waist: an arachnid, not an insect.
+        const leg = d => `<path d="${d}" fill="none" stroke="${shade(a, -0.3)}"
+                            stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`;
+        let hairs = '';
+        for (let i = 0; i < 9; i++) {
+          const t = -0.6 + i * 0.35;
+          hairs += `<path d="M${(110 + Math.cos(t) * 52).toFixed(1)} ${(78 + Math.sin(t) * 42).toFixed(1)}
+                      l${(Math.cos(t) * 16).toFixed(1)} ${(Math.sin(t) * 13).toFixed(1)}"
+                      stroke="${shade(a, -0.2)}" stroke-width="2" opacity="0.7" stroke-linecap="round"/>`;
+        }
+        return `${glow(id + 'g', 2.5)}
+          <g>
+            ${leg('M74 62 L48 42 L30 40')}${leg('M74 86 L46 92 L28 104')}
+            ${leg('M96 58 L86 30 L70 18')}${leg('M96 100 L86 128 L70 140')}
+            ${leg('M136 58 L146 30 L164 20')}${leg('M136 102 L148 130 L166 140')}
+            ${leg('M152 68 L182 54 L194 44')}${leg('M152 92 L184 100 L196 112')}
+          </g>
+          ${hairs}
+          <g filter="url(#${id}g)">
+            <ellipse cx="112" cy="78" rx="54" ry="44" fill="${a}"/>
+            <ellipse cx="58" cy="74" rx="24" ry="20" fill="${shade(a, -0.15)}"/>
+          </g>
+          <!-- chelicerae -->
+          <path d="M38 68 l-18 -6 M38 80 l-18 8" stroke="${shade(a, -0.35)}"
+                stroke-width="4" stroke-linecap="round"/>
+          <ellipse cx="96" cy="52" rx="26" ry="12" fill="#fff" opacity="0.16"
+                   transform="rotate(-16 96 52)"/>
+          <path d="M78 60 q34 22 66 20" fill="none" stroke="${shade(a, -0.3)}"
+                stroke-width="1.4" opacity="0.35"/>`;
+      },
+    },
+
+    'sand-grain': {
+      viewBox: '0 0 140 130',
+      draw(a, id) {
+        // A weathered quartz grain: sub-angular, with conchoidal facets.
+        return `${glow(id + 'g', 2)}
+          <g filter="url(#${id}g)">
+            <path d="M22 52 L52 16 L100 12 L128 46 L120 92 L82 120 L36 110 L14 78 Z"
+                  fill="${a}"/>
+          </g>
+          <!-- conchoidal facets: each catches the light differently, which is
+               what makes a quartz grain read as a hard broken crystal -->
+          <g>
+            <path d="M22 52 L52 16 L74 58 Z" fill="${shade(a, 0.5)}" opacity="0.75"/>
+            <path d="M52 16 L100 12 L74 58 Z" fill="${shade(a, 0.28)}" opacity="0.7"/>
+            <path d="M100 12 L128 46 L74 58 Z" fill="${shade(a, -0.2)}" opacity="0.7"/>
+            <path d="M128 46 L120 92 L74 58 Z" fill="${shade(a, -0.45)}" opacity="0.8"/>
+            <path d="M120 92 L82 120 L74 58 Z" fill="${shade(a, -0.55)}" opacity="0.75"/>
+            <path d="M82 120 L36 110 L74 58 Z" fill="${shade(a, -0.35)}" opacity="0.7"/>
+            <path d="M36 110 L14 78 L74 58 Z" fill="${shade(a, -0.1)}" opacity="0.6"/>
+            <path d="M14 78 L22 52 L74 58 Z" fill="${shade(a, 0.18)}" opacity="0.6"/>
+          </g>
+          <g stroke="${shade(a, 0.45)}" stroke-width="0.9" opacity="0.4" fill="none">
+            <path d="M22 52 L74 58 M52 16 L74 58 M100 12 L74 58 M128 46 L74 58
+                     M120 92 L74 58 M82 120 L74 58 M36 110 L74 58 M14 78 L74 58"/>
+          </g>
+          <path d="M22 52 L52 16 L100 12 L128 46 L120 92 L82 120 L36 110 L14 78 Z"
+                fill="none" stroke="${shade(a, 0.5)}" stroke-width="1.6" opacity="0.7"/>
+          <path d="M40 40 q18 -14 40 -12" fill="none" stroke="#fff" stroke-width="3"
+                opacity="0.28" stroke-linecap="round"/>
+          <circle cx="60" cy="34" r="4" fill="#fff" opacity="0.3"/>`;
+      },
+    },
+
+    'sesame-seed': {
+      viewBox: '0 0 180 110',
+      draw(a, id) {
+        // A sesame seed is a flattened teardrop: pointed at the hilum end,
+        // broad and rounded at the other, with a raised rim around the face.
+        const body = `M16 55 C26 30 66 14 116 20 C152 24 170 40 170 55
+                      C170 70 152 86 116 90 C66 96 26 80 16 55 Z`;
+        return `${glow(id + 'g', 2)}
+          <g filter="url(#${id}g)"><path d="${body}" fill="${a}"/></g>
+          <path d="${body}" fill="none" stroke="${shade(a, -0.45)}" stroke-width="2.4" opacity="0.8"/>
+          <!-- rim, then the slightly sunken face inside it -->
+          <path d="M34 55 C44 38 74 26 114 30 C142 34 156 44 156 55
+                   C156 66 142 78 114 82 C74 86 44 72 34 55 Z"
+                fill="${shade(a, -0.18)}" opacity="0.55"/>
+          <path d="M48 44 C68 32 98 30 128 36" fill="none" stroke="#fff"
+                stroke-width="5" opacity="0.3" stroke-linecap="round"/>
+          <path d="M54 72 C78 82 110 80 138 68" fill="none" stroke="${shade(a, -0.5)}"
+                stroke-width="1.6" opacity="0.45"/>
+          <!-- hilum: the scar where the seed was attached -->
+          <ellipse cx="20" cy="55" rx="6" ry="8" fill="${shade(a, -0.55)}" opacity="0.85"/>`;
+      },
+    },
+
+    honeybee: {
+      viewBox: '0 0 220 140',
+      draw(a, id) {
+        const leg = d => `<path d="${d}" fill="none" stroke="${shade(a, -0.55)}"
+                            stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+        return `${glow(id + 'g', 2.5)}
+          <!-- wings sit above the body and are barely tinted -->
+          <g opacity="0.4">
+            <ellipse cx="118" cy="40" rx="52" ry="20" fill="#e0f2fe"
+                     transform="rotate(-16 118 40)"/>
+            <ellipse cx="96" cy="46" rx="36" ry="14" fill="#e0f2fe"
+                     transform="rotate(-8 96 46)"/>
+            <path d="M70 44 q46 -10 96 -6" fill="none" stroke="#fff" stroke-width="0.9" opacity="0.6"/>
+          </g>
+          <g>${leg('M84 92 L74 118 L60 126')}${leg('M104 96 L102 122 L88 132')}
+             ${leg('M124 94 L134 120 L150 126')}</g>
+          <g filter="url(#${id}g)">
+            <ellipse cx="150" cy="78" rx="52" ry="34" fill="${a}"/>
+            <ellipse cx="98" cy="74" rx="26" ry="26" fill="${shade(a, -0.45)}"/>
+            <ellipse cx="60" cy="72" rx="24" ry="21" fill="${shade(a, -0.6)}"/>
+          </g>
+          <!-- abdominal banding -->
+          <g fill="${shade(a, -0.7)}" opacity="0.85">
+            <path d="M126 50 q10 28 0 56 q12 4 18 2 q9 -30 0 -60 q-8 -1 -18 2 z"/>
+            <path d="M160 50 q10 28 0 56 q11 -3 15 -8 q7 -20 0 -40 q-5 -6 -15 -8 z"/>
+          </g>
+          <path d="M198 78 l14 6" stroke="${shade(a, -0.7)}" stroke-width="3" stroke-linecap="round"/>
+          <path d="M44 58 L26 40 M44 66 L24 56" stroke="${shade(a, -0.6)}"
+                stroke-width="3" stroke-linecap="round"/>
+          <circle cx="50" cy="66" r="7" fill="#0b1220" opacity="0.8"/>
+          <ellipse cx="140" cy="58" rx="22" ry="8" fill="#fff" opacity="0.18"/>`;
+      },
+    },
+
+    coin: {
+      viewBox: '0 0 130 130',
+      draw(a, id) {
+        // Milled (reeded) edge and a raised relief — read as struck metal.
+        let reeds = '';
+        for (let i = 0; i < 72; i++) {
+          const t = (i / 72) * Math.PI * 2;
+          reeds += `<line x1="${(65 + Math.cos(t) * 56).toFixed(1)}" y1="${(65 + Math.sin(t) * 56).toFixed(1)}"
+                      x2="${(65 + Math.cos(t) * 61).toFixed(1)}" y2="${(65 + Math.sin(t) * 61).toFixed(1)}"
+                      stroke="${shade(a, -0.35)}" stroke-width="1.6" opacity="0.55"/>`;
+        }
+        return `${glow(id + 'g', 2)}
+          <g filter="url(#${id}g)">
+            <circle cx="65" cy="65" r="61" fill="${a}"/>
+          </g>
+          ${reeds}
+          <circle cx="65" cy="65" r="56" fill="${shade(a, 0.15)}"/>
+          <circle cx="65" cy="65" r="48" fill="none" stroke="${shade(a, -0.35)}"
+                  stroke-width="1.6" opacity="0.55"/>
+          <!-- struck relief: a profile bust, kept abstract -->
+          <path d="M50 92 q2 -22 12 -30 q-6 -14 6 -22 q14 -8 20 6 q4 12 -4 20
+                   q10 8 12 26 z" fill="${shade(a, -0.3)}" opacity="0.8"/>
+          <path d="M28 44 A 44 44 0 0 1 78 20" fill="none" stroke="#fff"
+                stroke-width="3" opacity="0.25" stroke-linecap="round"/>`;
+      },
+    },
+
+    'soccer-ball': {
+      viewBox: '0 0 130 130',
+      draw(a, id) {
+        // Truncated-icosahedron panelling: one facing pentagon, five around it.
+        const pent = (cx, cy, r, rot, fill) => {
+          let pts = '';
+          for (let i = 0; i < 5; i++) {
+            const t = rot + (i / 5) * Math.PI * 2;
+            pts += `${(cx + Math.cos(t) * r).toFixed(1)},${(cy + Math.sin(t) * r).toFixed(1)} `;
+          }
+          return `<polygon points="${pts.trim()}" fill="${fill}"
+                    stroke="${shade(a, -0.6)}" stroke-width="1.6"/>`;
+        };
+        let ring = '';
+        for (let i = 0; i < 5; i++) {
+          const t = -Math.PI / 2 + (i / 5) * Math.PI * 2;
+          ring += pent(65 + Math.cos(t) * 40, 65 + Math.sin(t) * 40, 15,
+                       t + Math.PI / 5, shade(a, -0.62));
+        }
+        return `${glow(id + 'g', 2.5)}
+          <g filter="url(#${id}g)">
+            <circle cx="65" cy="65" r="61" fill="${a}"/>
+          </g>
+          <circle cx="65" cy="65" r="61" fill="none" stroke="${shade(a, -0.5)}"
+                  stroke-width="1.4" opacity="0.5"/>
+          ${ring}
+          ${pent(65, 65, 20, -Math.PI / 2, shade(a, -0.7))}
+          <path d="M28 40 A 46 46 0 0 1 66 12" fill="none" stroke="#fff"
+                stroke-width="5" opacity="0.35" stroke-linecap="round"/>
+          <ellipse cx="65" cy="120" rx="34" ry="6" fill="#000" opacity="0.18"/>`;
+      },
+    },
+
+    giraffe: {
+      viewBox: '0 0 180 240',
+      draw(a, id) {
+        // Proportions matter here: the neck is long, but the legs are
+        // longer still — that is what makes a giraffe tall.
+        const rand = rng(67);
+        let patches = '';
+        const spots = [[62, 92], [84, 104], [66, 126], [90, 140], [64, 158],
+                       [92, 172], [104, 88], [110, 118], [72, 190], [100, 200],
+                       [96, 62], [104, 44], [110, 28]];
+        spots.forEach(([x, y]) => {
+          const r = 7 + rand() * 5;
+          patches += `<path d="M${x - r} ${y} l${r} ${-r * 0.8} l${r} ${r * 0.8}
+                        l${-r * 0.5} ${r} l${-r} 0 z" fill="${shade(a, -0.45)}" opacity="0.75"/>`;
+        });
+        return `${glow(id + 'g', 2.5)}
+          <g filter="url(#${id}g)" fill="${a}">
+            <!-- legs -->
+            <path d="M58 168 l10 0 l4 66 l-11 0 z"/>
+            <path d="M78 172 l10 0 l3 62 l-11 0 z"/>
+            <path d="M104 168 l10 0 l5 66 l-11 0 z"/>
+            <path d="M122 172 l10 0 l4 62 l-11 0 z"/>
+            <!-- body, sloping down from shoulder to rump -->
+            <path d="M52 120 q22 -22 56 -18 q30 4 32 26 q2 26 -12 44 q-40 8 -74 -2
+                     q-10 -22 -2 -50 z"/>
+            <!-- neck and head -->
+            <path d="M60 128 q-8 -56 26 -96 l18 6 q-26 40 -20 92 z"/>
+            <path d="M84 32 q-4 -12 8 -16 q14 -4 22 6 l14 4 q6 3 2 8 l-16 4
+                     q-12 6 -22 0 z"/>
+            <!-- tail -->
+            <path d="M140 132 q10 26 4 44 l-5 0 q2 -20 -6 -40 z"/>
+          </g>
+          ${patches}
+          <!-- ossicones and ear -->
+          <g fill="${shade(a, -0.4)}">
+            <path d="M92 18 q-2 -12 3 -14 q5 -1 5 12 z"/>
+            <path d="M104 16 q0 -12 5 -13 q5 0 3 13 z"/>
+            <path d="M112 26 q14 -8 20 -2 q-8 8 -20 6 z"/>
+          </g>
+          <circle cx="104" cy="26" r="3.2" fill="#0b1220" opacity="0.8"/>
+          <path d="M64 126 q-6 -50 24 -88" fill="none" stroke="#fff"
+                stroke-width="3" opacity="0.16" stroke-linecap="round"/>
+          <ellipse cx="90" cy="182" rx="46" ry="7" fill="#000" opacity="0.14"/>`;
+      },
+    },
+
+    sequoia: {
+      viewBox: '0 0 180 260',
+      draw(a, id) {
+        // A sequoia is a fluted, buttressed column with a narrow crown —
+        // not the round lollipop tree of a child's drawing.
+        const rand = rng(29);
+        // The signature of a sequoia is the column: a huge fluted trunk that
+        // runs most of the height, bare of branches, with a narrow crown.
+        let foliage = '';
+        for (let i = 0; i < 30; i++) {
+          const t = i / 30;
+          const y = 16 + t * 120;
+          // widest a third of the way down, tapering to a rounded top
+          const spread = 12 + Math.sin(Math.pow(t, 0.7) * Math.PI) * 40;
+          const x = 90 + (rand() - 0.5) * spread * 1.8;
+          foliage += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}"
+                        rx="${(11 + rand() * 14).toFixed(1)}" ry="${(7 + rand() * 7).toFixed(1)}"
+                        fill="${shade(a, i % 3 ? 0.05 : -0.3)}" opacity="0.9"/>`;
+        }
+        let branches = '';
+        for (let i = 0; i < 7; i++) {
+          const y = 60 + i * 12;
+          const dir = i % 2 ? 1 : -1;
+          branches += `<path d="M90 ${y} q${dir * 18} -3 ${dir * 34} -10"
+                         fill="none" stroke="${shade(a, -0.55)}" stroke-width="3"
+                         opacity="0.7" stroke-linecap="round"/>`;
+        }
+        return `${glow(id + 'g', 3)}
+          <!-- trunk first: a broad, buttressed column carrying the crown -->
+          <path d="M60 252 q-18 0 -22 -5 q14 -9 18 -34 l6 -84 q2 -22 8 -46 l18 0
+                   q8 24 10 46 l7 84 q4 25 18 34 q-5 5 -23 5 z" fill="${shade(a, -0.55)}"/>
+          ${branches}
+          <g filter="url(#${id}g)">${foliage}</g>
+          <!-- fluted bark: vertical grooves, converging as the trunk tapers -->
+          <g stroke="${shade(a, -0.75)}" stroke-width="2.4" opacity="0.55" fill="none">
+            <path d="M68 244 q4 -80 8 -156"/><path d="M82 246 q2 -82 3 -158"/>
+            <path d="M96 246 q-1 -82 -1 -158"/><path d="M110 244 q-4 -80 -8 -156"/>
+          </g>
+          <path d="M62 240 q6 -84 10 -152" fill="none" stroke="#fff"
+                stroke-width="3" opacity="0.16" stroke-linecap="round"/>
+          <!-- a person at the base, to scale: the trunk is wider than they are tall -->
+          <g fill="#e2e8f0" opacity="0.75">
+            <circle cx="146" cy="234" r="4.5"/>
+            <path d="M141 241 l10 0 l2 13 l-3 0 l-2 -7 l-2 7 l-3 0 z"/>
+          </g>
+          <ellipse cx="94" cy="254" rx="70" ry="6" fill="#000" opacity="0.2"/>`;
+      },
+    },
+
+    'burj-khalifa': {
+      viewBox: '0 0 140 260',
+      draw(a, id) {
+        // Three-winged plan spiralling into setbacks, then the spire.
+        let setbacks = '';
+        for (let i = 0; i < 14; i++) {
+          const y = 60 + i * 12;
+          const w = 34 - i * 2.1;
+          const side = i % 2 ? 1 : -1;
+          setbacks += `<rect x="${(70 - w / 2 + side * 3).toFixed(1)}" y="${y}"
+                         width="${w.toFixed(1)}" height="13"
+                         fill="${shade(a, i % 2 ? 0.12 : -0.08)}"/>`;
+        }
+        let floors = '';
+        for (let i = 0; i < 22; i++) {
+          floors += `<line x1="46" y1="${(70 + i * 8).toFixed(0)}" x2="94" y2="${(70 + i * 8).toFixed(0)}"
+                       stroke="${shade(a, -0.45)}" stroke-width="0.8" opacity="0.35"/>`;
+        }
+        return `${glow(id + 'g', 3)}
+          <g filter="url(#${id}g)">
+            <!-- broad tripod base -->
+            <path d="M34 250 L44 96 L96 96 L106 250 Z" fill="${a}"/>
+            <path d="M44 96 L52 62 L88 62 L96 96 Z" fill="${shade(a, 0.1)}"/>
+            ${setbacks}
+            <rect x="66" y="30" width="8" height="36" fill="${shade(a, 0.3)}"/>
+            <path d="M70 2 L73 30 L67 30 Z" fill="${shade(a, 0.5)}"/>
+          </g>
+          <g clip-path="url(#${id}c)">${floors}</g>
+          <clipPath id="${id}c"><path d="M34 250 L44 96 L96 96 L106 250 Z"/></clipPath>
+          <path d="M46 244 L54 98" fill="none" stroke="#fff" stroke-width="3" opacity="0.2"/>
+          <ellipse cx="70" cy="252" rx="52" ry="6" fill="#000" opacity="0.2"/>`;
+      },
+    },
+
+    'city-island': {
+      viewBox: '0 0 260 140',
+      draw(a, id) {
+        // Manhattan read from across the water: a long, narrow island whose
+        // skyline spikes at the two business districts.
+        const rand = rng(83);
+        let towers = '';
+        let lights = '';
+        let x = 8;
+        while (x < 250) {
+          const t = x / 250;
+          // two humps of height: the Financial District and Midtown
+          const hump = Math.exp(-Math.pow((t - 0.18) / 0.11, 2)) +
+                       Math.exp(-Math.pow((t - 0.62) / 0.15, 2));
+          const h = 14 + hump * 56 + rand() * 14;
+          const w = 7 + rand() * 9;
+          const top = 104 - h;
+          const lit = rand() > 0.5;
+          towers += `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}"
+                       width="${w.toFixed(1)}" height="${h.toFixed(1)}"
+                       fill="${shade(a, lit ? 0.05 : -0.35)}"/>`;
+          // setback crown on the tall ones, then a mast
+          if (h > 52) {
+            towers += `<rect x="${(x + w * 0.2).toFixed(1)}" y="${(top - 8).toFixed(1)}"
+                         width="${(w * 0.6).toFixed(1)}" height="8"
+                         fill="${shade(a, lit ? 0.15 : -0.25)}"/>
+                       <rect x="${(x + w / 2 - 0.7).toFixed(1)}" y="${(top - 20).toFixed(1)}"
+                         width="1.4" height="12" fill="${shade(a, 0.45)}"/>`;
+          }
+          // lit windows, on the building's own grid
+          for (let wy = top + 4; wy < 100; wy += 5) {
+            for (let wx = x + 2; wx < x + w - 2; wx += 4) {
+              if (rand() > 0.55) continue;
+              lights += `<rect x="${wx.toFixed(1)}" y="${wy.toFixed(1)}" width="1.8" height="2.4"
+                           fill="#fde68a" opacity="${(0.25 + rand() * 0.55).toFixed(2)}"/>`;
+            }
+          }
+          x += w + 1 + rand() * 3;
+        }
+        return `${glow(id + 'g', 3)}
+          <g filter="url(#${id}g)">${towers}</g>
+          ${lights}
+          <rect x="0" y="104" width="260" height="4" fill="${shade(a, -0.45)}"/>
+          <rect x="0" y="108" width="260" height="32" fill="#0b1e3a" opacity="0.85"/>
+          <g stroke="#fff" opacity="0.14" stroke-width="1">
+            <path d="M20 116 q28 4 56 0"/><path d="M120 124 q30 4 60 0"/>
+            <path d="M60 132 q30 4 60 0"/>
+          </g>`;
+      },
+    },
+
+    'island-britain': {
+      viewBox: '0 0 160 240',
+      draw(a, id) {
+        // A recognisable coastline: Scotland's ragged north, the Wash, the
+        // south-west peninsula, and Wales' bulge.
+        return `${glow(id + 'g', 3)}
+          <g filter="url(#${id}g)">
+            <path d="M74 10 L86 6 L92 20 L104 16 L100 34 L110 40 L100 52 L108 66
+                     L98 76 L106 92 L96 104 L104 118 L120 122 L132 138 L126 152
+                     L136 160 L128 172 L106 176 L92 190 L74 200 L52 214 L34 224
+                     L26 216 L44 202 L58 186 L46 180 L38 166 L48 156 L40 142
+                     L52 132 L44 118 L56 108 L48 92 L58 80 L52 62 L62 50 L56 32
+                     L66 24 Z" fill="${a}"/>
+          </g>
+          <path d="M74 10 L86 6 L92 20 L104 16 L100 34 L110 40 L100 52 L108 66
+                   L98 76 L106 92 L96 104 L104 118 L120 122 L132 138 L126 152
+                   L136 160 L128 172 L106 176 L92 190 L74 200 L52 214 L34 224
+                   L26 216 L44 202 L58 186 L46 180 L38 166 L48 156 L40 142
+                   L52 132 L44 118 L56 108 L48 92 L58 80 L52 62 L62 50 L56 32
+                   L66 24 Z" fill="none" stroke="${shade(a, 0.5)}" stroke-width="1.6" opacity="0.8"/>
+          <!-- Ireland, off to the west -->
+          <path d="M14 150 L28 140 L34 152 L30 172 L16 180 L6 168 Z"
+                fill="${shade(a, -0.3)}" opacity="0.75"/>
+          <!-- highland shading and a couple of city dots -->
+          <path d="M62 26 L84 20 L92 42 L70 54 Z" fill="${shade(a, -0.35)}" opacity="0.45"/>
+          <circle cx="102" cy="166" r="3.4" fill="#fff" opacity="0.7"/>
+          <circle cx="76" cy="132" r="2.6" fill="#fff" opacity="0.5"/>
+          <circle cx="70" cy="34" r="2.4" fill="#fff" opacity="0.45"/>`;
+      },
+    },
+
+    'coral-reef': {
+      viewBox: '0 0 240 130',
+      draw(a, id) {
+        const rand = rng(37);
+        let coral = '';
+        for (let i = 0; i < 22; i++) {
+          const x = 12 + rand() * 216, y = 74 + rand() * 34;
+          const s = 8 + rand() * 12;
+          if (i % 3 === 0) {
+            // branching staghorn
+            coral += `<g stroke="${shade(a, rand() > 0.5 ? 0.3 : -0.1)}" stroke-width="${(s / 5).toFixed(1)}"
+                        fill="none" stroke-linecap="round" opacity="0.9">
+                        <path d="M${x} ${y + s} L${x} ${y} M${x} ${y + s * 0.5} l${-s * 0.6} ${-s * 0.5}
+                                 M${x} ${y + s * 0.6} l${s * 0.6} ${-s * 0.6}"/></g>`;
+          } else if (i % 3 === 1) {
+            // brain coral
+            coral += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(s * 0.7).toFixed(1)}"
+                        fill="${shade(a, 0.15)}" opacity="0.9"/>
+                      <path d="M${(x - s * 0.5).toFixed(1)} ${y} q${(s * 0.25).toFixed(1)} -5
+                               ${(s * 0.5).toFixed(1)} 0 t${(s * 0.5).toFixed(1)} 0"
+                        fill="none" stroke="${shade(a, -0.4)}" stroke-width="1" opacity="0.6"/>`;
+          } else {
+            // plate coral
+            coral += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${s.toFixed(1)}"
+                        ry="${(s * 0.35).toFixed(1)}" fill="${shade(a, -0.2)}" opacity="0.85"/>`;
+          }
+        }
+        let fish = '';
+        for (let i = 0; i < 9; i++) {
+          const x = 20 + rand() * 200, y = 16 + rand() * 44;
+          fish += `<path d="M${x} ${y} q6 -4 12 0 q-6 4 -12 0 z M${x} ${y} l-4 -3 l0 6 z"
+                     fill="#fff" opacity="${(0.3 + rand() * 0.4).toFixed(2)}"/>`;
+        }
+        return `${glow(id + 'g', 3)}
+          <rect width="240" height="130" fill="#062a45" opacity="0.65"/>
+          <!-- the reef crest and the deep water beyond it -->
+          <path d="M0 96 q40 -18 82 -10 q50 10 96 -6 q34 -12 62 -4 l0 44 L0 130 Z"
+                fill="${shade(a, -0.55)}" opacity="0.9"/>
+          <g filter="url(#${id}g)">${coral}</g>
+          ${fish}
+          <g stroke="#e0f2fe" opacity="0.16" stroke-width="2">
+            <path d="M20 12 q40 8 80 0"/><path d="M120 22 q40 8 80 0"/>
+          </g>`;
+      },
+    },
+
+    moon: {
+      viewBox: '0 0 200 200',
+      draw(a, id) {
+        const rand = rng(613);
+        let craters = '';
+        for (let i = 0; i < 34; i++) {
+          const ang = rand() * Math.PI * 2;
+          const rad = Math.sqrt(rand()) * 86;
+          const x = 100 + Math.cos(ang) * rad, y = 100 + Math.sin(ang) * rad;
+          const r = 3 + rand() * 11;
+          craters += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}"
+                        fill="${shade(a, -0.35)}" opacity="0.75"/>
+                      <path d="M${(x - r).toFixed(1)} ${y.toFixed(1)}
+                               A ${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${(x + r).toFixed(1)} ${y.toFixed(1)}"
+                        fill="none" stroke="#fff" stroke-width="1" opacity="0.22"/>`;
+        }
+        return `${glow(id + 'g', 3)}
+          <defs>
+            <radialGradient id="${id}s" cx="34%" cy="30%">
+              <stop offset="0%" stop-color="${shade(a, 0.35)}"/>
+              <stop offset="72%" stop-color="${a}"/>
+              <stop offset="100%" stop-color="${shade(a, -0.55)}"/>
+            </radialGradient>
+          </defs>
+          <g filter="url(#${id}g)"><circle cx="100" cy="100" r="94" fill="url(#${id}s)"/></g>
+          <g clip-path="url(#${id}c)">
+            <!-- maria: the dark basalt plains -->
+            <ellipse cx="76" cy="72" rx="34" ry="26" fill="${shade(a, -0.4)}" opacity="0.6"
+                     transform="rotate(-20 76 72)"/>
+            <ellipse cx="118" cy="62" rx="22" ry="18" fill="${shade(a, -0.4)}" opacity="0.5"/>
+            <ellipse cx="62" cy="122" rx="26" ry="20" fill="${shade(a, -0.4)}" opacity="0.45"/>
+            ${craters}
+          </g>
+          <clipPath id="${id}c"><circle cx="100" cy="100" r="94"/></clipPath>`;
+      },
+    },
+
+    jupiter: {
+      viewBox: '0 0 200 200',
+      draw(a, id) {
+        const rand = rng(211);
+        let bands = '';
+        for (let i = 0; i < 13; i++) {
+          const y = -94 + i * 15;
+          const h = 8 + rand() * 7;
+          bands += `<rect x="-100" y="${y.toFixed(1)}" width="200" height="${h.toFixed(1)}"
+                      fill="${shade(a, i % 2 ? 0.28 : -0.32)}" opacity="0.8"/>`;
+        }
+        let swirls = '';
+        for (let i = 0; i < 10; i++) {
+          const y = -80 + rand() * 160;
+          swirls += `<path d="M${(-90 + rand() * 60).toFixed(1)} ${y.toFixed(1)}
+                       q20 ${(rand() * 10 - 5).toFixed(1)} 40 0 t40 0"
+                       fill="none" stroke="#fff" stroke-width="1.2"
+                       opacity="${(0.1 + rand() * 0.2).toFixed(2)}"/>`;
+        }
+        return `${glow(id + 'g', 3)}
+          <defs>
+            <radialGradient id="${id}s" cx="36%" cy="32%">
+              <stop offset="0%" stop-color="#fff" stop-opacity="0.3"/>
+              <stop offset="60%" stop-color="#fff" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#000" stop-opacity="0.45"/>
+            </radialGradient>
+          </defs>
+          <g filter="url(#${id}g)"><circle cx="100" cy="100" r="94" fill="${a}"/></g>
+          <!-- clip on the outer g, transform on an inner one: a transform on the
+               clipped element moves its clip path too. -->
+          <g clip-path="url(#${id}c)"><g transform="translate(100 100)">
+            ${bands}${swirls}
+            <!-- the Great Red Spot: a storm wider than Earth -->
+            <ellipse cx="-26" cy="30" rx="30" ry="17" fill="#b91c1c" opacity="0.85"/>
+            <ellipse cx="-26" cy="30" rx="20" ry="10" fill="#ef4444" opacity="0.7"/>
+            <ellipse cx="-26" cy="30" rx="9" ry="4" fill="#fecaca" opacity="0.5"/>
+          </g></g>
+          <clipPath id="${id}c"><circle cx="100" cy="100" r="94"/></clipPath>
+          <circle cx="100" cy="100" r="94" fill="url(#${id}s)"/>`;
+      },
+    },
+
+    sun: {
+      viewBox: '0 0 220 220',
+      draw(a, id) {
+        const rand = rng(907);
+        let granules = '';
+        for (let i = 0; i < 260; i++) {
+          const ang = rand() * Math.PI * 2;
+          const rad = Math.sqrt(rand()) * 82;
+          // Granulation is a boiling mosaic: bright cells, dark lanes between.
+          granules += `<circle cx="${(110 + Math.cos(ang) * rad).toFixed(1)}"
+                         cy="${(110 + Math.sin(ang) * rad).toFixed(1)}"
+                         r="${(3 + rand() * 5).toFixed(1)}"
+                         fill="${rand() > 0.42 ? shade(a, 0.6) : shade(a, -0.4)}"
+                         opacity="${(0.35 + rand() * 0.45).toFixed(2)}"/>`;
+        }
+        let prominences = '';
+        for (let i = 0; i < 5; i++) {
+          const t = rand() * Math.PI * 2;
+          const x = 110 + Math.cos(t) * 84, y = 110 + Math.sin(t) * 84;
+          prominences += `<path d="M${x.toFixed(1)} ${y.toFixed(1)}
+                            q${(Math.cos(t) * 22).toFixed(1)} ${(Math.sin(t) * 22).toFixed(1)}
+                            ${(Math.cos(t + 0.5) * 26).toFixed(1)} ${(Math.sin(t + 0.5) * 26).toFixed(1)}"
+                            fill="none" stroke="${shade(a, 0.3)}" stroke-width="5"
+                            opacity="0.5" stroke-linecap="round"/>`;
+        }
+        return `${glow(id + 'g', 6)}
+          <circle cx="110" cy="110" r="106" fill="${a}" opacity="0.14"/>
+          <circle cx="110" cy="110" r="94" fill="${a}" opacity="0.25"/>
+          <g filter="url(#${id}g)">
+            ${prominences}
+            <circle cx="110" cy="110" r="84" fill="${a}"/>
+          </g>
+          <g clip-path="url(#${id}c)">
+            ${granules}
+            <!-- sunspots, with dark umbra and lighter penumbra -->
+            <ellipse cx="80" cy="126" rx="13" ry="9" fill="${shade(a, -0.5)}" opacity="0.8"/>
+            <ellipse cx="80" cy="126" rx="6" ry="4" fill="#3b1d05" opacity="0.85"/>
+            <ellipse cx="134" cy="82" rx="9" ry="6" fill="${shade(a, -0.5)}" opacity="0.7"/>
+            <!-- limb darkening: the edge of the disk really is dimmer -->
+            <circle cx="110" cy="110" r="76" fill="none" stroke="${shade(a, -0.5)}"
+                    stroke-width="18" opacity="0.45"/>
+            <circle cx="110" cy="110" r="84" fill="none" stroke="${shade(a, -0.6)}"
+                    stroke-width="8" opacity="0.45"/>
+          </g>
+          <clipPath id="${id}c"><circle cx="110" cy="110" r="84"/></clipPath>`;
+      },
+    },
+
+    'red-supergiant': {
+      viewBox: '0 0 240 240',
+      draw(a, id) {
+        const rand = rng(151);
+        let cells = '';
+        for (let i = 0; i < 40; i++) {
+          const ang = rand() * Math.PI * 2;
+          const rad = Math.sqrt(rand()) * 80;
+          cells += `<circle cx="${(120 + Math.cos(ang) * rad).toFixed(1)}"
+                      cy="${(120 + Math.sin(ang) * rad).toFixed(1)}"
+                      r="${(8 + rand() * 18).toFixed(1)}"
+                      fill="${shade(a, rand() > 0.55 ? 0.35 : -0.3)}"
+                      opacity="${(0.25 + rand() * 0.3).toFixed(2)}"/>`;
+        }
+        return `${glow(id + 'g', 7)}
+          <circle cx="120" cy="120" r="118" fill="${a}" opacity="0.1"/>
+          <!-- the bloated, dusty envelope a supergiant sheds -->
+          <circle cx="120" cy="120" r="104" fill="${a}" opacity="0.18"/>
+          <g filter="url(#${id}g)"><circle cx="120" cy="120" r="88" fill="${a}"/></g>
+          <g clip-path="url(#${id}c)">${cells}
+            <circle cx="120" cy="120" r="88" fill="none" stroke="${shade(a, -0.5)}"
+                    stroke-width="16" opacity="0.3"/>
+          </g>
+          <clipPath id="${id}c"><circle cx="120" cy="120" r="88"/></clipPath>
+          <!-- our Sun at the same scale, for comparison -->
+          <circle cx="212" cy="212" r="3" fill="#fde68a"/>
+          <text x="184" y="232" fill="#fff" opacity="0.4" font-family="monospace"
+                font-size="9">Sun</text>`;
+      },
+    },
+
+    'outer-orbit': {
+      viewBox: '0 0 240 200',
+      draw(a, id) {
+        // Orbits drawn as ellipses seen at a tilt, with the Sun at a focus.
+        const ring = (rx, ry, op, w) =>
+          `<ellipse cx="120" cy="100" rx="${rx}" ry="${ry}" fill="none"
+             stroke="${shade(a, 0.35)}" stroke-width="${w}" opacity="${op}"/>`;
+        return `${glow(id + 'g', 4)}
+          ${starfield(77, 40, 240, 200, 0.6)}
+          ${ring(24, 9, 0.25, 1)}${ring(40, 15, 0.25, 1)}${ring(56, 21, 0.25, 1)}
+          ${ring(74, 28, 0.3, 1.1)}
+          ${ring(102, 39, 0.45, 1.4)}${ring(114, 44, 0.5, 1.6)}
+          <g filter="url(#${id}g)">
+            <circle cx="120" cy="100" r="9" fill="#fde68a"/>
+            <circle cx="120" cy="100" r="15" fill="#fde68a" opacity="0.3"/>
+          </g>
+          <!-- Neptune, out on the last ring -->
+          <circle cx="234" cy="100" r="6" fill="${shade(a, 0.2)}"/>
+          <circle cx="232" cy="98" r="2" fill="#fff" opacity="0.4"/>
+          <circle cx="18" cy="100" r="5" fill="${shade(a, -0.1)}" opacity="0.8"/>
+          <circle cx="194" cy="88" r="3.4" fill="${shade(a, 0.1)}" opacity="0.8"/>`;
+      },
+    },
+
+    'oort-cloud': {
+      viewBox: '0 0 240 240',
+      draw(a, id) {
+        const rand = rng(431);
+        let shell = '';
+        for (let i = 0; i < 240; i++) {
+          // hollow shell: sample a radius band, not a filled ball
+          const ang = rand() * Math.PI * 2;
+          const rad = 74 + (rand() + rand()) * 22;
+          shell += `<circle cx="${(120 + Math.cos(ang) * rad).toFixed(1)}"
+                      cy="${(120 + Math.sin(ang) * rad * 0.96).toFixed(1)}"
+                      r="${(0.6 + rand() * 1.5).toFixed(2)}" fill="#fff"
+                      opacity="${(0.25 + rand() * 0.55).toFixed(2)}"/>`;
+        }
+        return `${glow(id + 'g', 3)}
+          <circle cx="120" cy="120" r="112" fill="${a}" opacity="0.06"/>
+          <g filter="url(#${id}g)">${shell}</g>
+          <circle cx="120" cy="120" r="74" fill="none" stroke="${a}"
+                  stroke-width="1" opacity="0.2" stroke-dasharray="3 7"/>
+          <!-- the whole planetary system is the speck in the middle -->
+          <circle cx="120" cy="120" r="14" fill="${shade(a, 0.4)}" opacity="0.12"/>
+          <circle cx="120" cy="120" r="3" fill="#fde68a"/>
+          <circle cx="120" cy="120" r="7" fill="#fde68a" opacity="0.25"/>`;
+      },
+    },
+
+    nebula: {
+      viewBox: '0 0 240 200',
+      draw(a, id) {
+        const rand = rng(263);
+        let clouds = '';
+        for (let i = 0; i < 22; i++) {
+          const x = 20 + rand() * 200, y = 20 + rand() * 160;
+          clouds += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}"
+                       rx="${(22 + rand() * 44).toFixed(1)}" ry="${(16 + rand() * 30).toFixed(1)}"
+                       fill="${shade(a, rand() > 0.5 ? 0.35 : -0.15)}"
+                       opacity="${(0.08 + rand() * 0.16).toFixed(2)}"
+                       transform="rotate(${(rand() * 180).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+        }
+        let young = '';
+        for (let i = 0; i < 6; i++) {
+          const x = 60 + rand() * 120, y = 50 + rand() * 100;
+          young += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(2 + rand() * 2).toFixed(1)}"
+                      fill="#fff"/>
+                    <path d="M${(x - 9).toFixed(1)} ${y.toFixed(1)} h18 M${x.toFixed(1)} ${(y - 9).toFixed(1)} v18"
+                      stroke="#fff" stroke-width="0.9" opacity="0.55"/>`;
+        }
+        return `${glow(id + 'g', 6)}
+          <rect width="240" height="200" fill="#05070f"/>
+          ${starfield(199, 90, 240, 200, 0.7)}
+          <g filter="url(#${id}g)">${clouds}</g>
+          <!-- dark dust lane cutting across the glow -->
+          <path d="M0 128 q56 -30 108 -8 q54 22 132 -14 l0 20 q-78 34 -132 12
+                   q-52 -22 -108 8 z" fill="#04060d" opacity="0.75"/>
+          ${young}`;
+      },
+    },
+
+    'galactic-core': {
+      viewBox: '0 0 260 120',
+      draw(a, id) {
+        const rand = rng(347);
+        let field = '';
+        for (let i = 0; i < 60; i++) {
+          const x = rand() * 260;
+          // star density rises steeply toward the core on the right
+          const conc = Math.pow(x / 260, 2.2);
+          if (rand() > 0.25 + conc * 0.7) continue;
+          field += `<circle cx="${x.toFixed(1)}" cy="${(20 + rand() * 80).toFixed(1)}"
+                      r="${(0.6 + rand() * 1.6).toFixed(2)}" fill="#fff"
+                      opacity="${(0.25 + rand() * 0.5).toFixed(2)}"/>`;
+        }
+        return `${glow(id + 'g', 5)}
+          <rect width="260" height="120" fill="#05070f"/>
+          <!-- the disk, seen edge-on from inside it -->
+          <path d="M0 52 q80 -16 130 -14 q60 -2 130 12 l0 20 q-70 -12 -130 -10
+                   q-50 2 -130 16 z" fill="${a}" opacity="0.2"/>
+          <g filter="url(#${id}g)">
+            <ellipse cx="222" cy="60" rx="40" ry="26" fill="${a}" opacity="0.4"/>
+            <ellipse cx="222" cy="60" rx="22" ry="15" fill="${shade(a, 0.45)}" opacity="0.7"/>
+            <circle cx="222" cy="60" r="6" fill="#fff"/>
+          </g>
+          ${field}
+          <path d="M0 60 q40 -6 90 -4" fill="none" stroke="#0b0f1c" stroke-width="7" opacity="0.5"/>
+          <!-- our Sun, out in the suburbs -->
+          <circle cx="34" cy="58" r="3.2" fill="#fde68a"/>
+          <circle cx="34" cy="58" r="8" fill="none" stroke="#fde68a" stroke-width="1" opacity="0.5"/>
+          <path d="M46 58 L188 58" stroke="#fff" stroke-width="1" opacity="0.35"
+                stroke-dasharray="4 5"/>
+          <path d="M182 54 l8 4 l-8 4" fill="none" stroke="#fff" stroke-width="1.2" opacity="0.5"/>`;
+      },
+    },
+
+    'local-group': {
+      viewBox: '0 0 240 200',
+      draw(a, id) {
+        const rand = rng(89);
+        // Two big spirals, one mid-sized, and a swarm of dwarfs.
+        const spiral = (cx, cy, r, rot, op) => {
+          let arms = '';
+          for (let k = 0; k < 2; k++) {
+            let d = `M${cx} ${cy}`;
+            for (let s = 0; s <= 18; s++) {
+              const t = rot + k * Math.PI + s * 0.26;
+              const rr = (s / 18) * r;
+              d += ` L${(cx + Math.cos(t) * rr).toFixed(1)} ${(cy + Math.sin(t) * rr * 0.5).toFixed(1)}`;
+            }
+            arms += `<path d="${d}" fill="none" stroke="${a}" stroke-width="${(r / 14).toFixed(1)}"
+                       opacity="${op}" stroke-linecap="round"/>`;
+          }
+          return `<g>${arms}
+            <ellipse cx="${cx}" cy="${cy}" rx="${(r * 0.28).toFixed(1)}" ry="${(r * 0.15).toFixed(1)}"
+              fill="#fff" opacity="${(op * 0.85).toFixed(2)}"/>
+            <ellipse cx="${cx}" cy="${cy}" rx="${(r * 0.9).toFixed(1)}" ry="${(r * 0.45).toFixed(1)}"
+              fill="${a}" opacity="${(op * 0.2).toFixed(2)}"/></g>`;
+        };
+        let dwarfs = '';
+        for (let i = 0; i < 16; i++) {
+          const x = 16 + rand() * 208, y = 16 + rand() * 168;
+          dwarfs += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}"
+                       rx="${(3 + rand() * 5).toFixed(1)}" ry="${(2 + rand() * 3).toFixed(1)}"
+                       fill="${shade(a, 0.4)}" opacity="${(0.2 + rand() * 0.3).toFixed(2)}"/>`;
+        }
+        return `${glow(id + 'g', 4)}
+          <rect width="240" height="200" fill="#05070f"/>
+          ${starfield(151, 70, 240, 200, 0.5)}
+          ${dwarfs}
+          <g filter="url(#${id}g)">
+            ${spiral(68, 128, 44, 0.4, 0.85)}
+            ${spiral(172, 66, 54, 2.1, 0.9)}
+            ${spiral(196, 148, 20, 1.2, 0.6)}
+          </g>
+          <text x="42" y="182" fill="#fff" opacity="0.35" font-family="monospace"
+                font-size="9">Milky Way</text>
+          <text x="150" y="30" fill="#fff" opacity="0.35" font-family="monospace"
+                font-size="9">Andromeda</text>`;
+      },
+    },
+
+    supercluster: {
+      viewBox: '0 0 240 240',
+      draw(a, id) {
+        const rand = rng(509);
+        // Galaxies strung along filaments that drain into a dense node.
+        const nodes = [[120, 118, 12]];
+        for (let i = 0; i < 7; i++) {
+          const t = (i / 7) * Math.PI * 2 + 0.3;
+          nodes.push([120 + Math.cos(t) * (60 + rand() * 40),
+                      120 + Math.sin(t) * (60 + rand() * 40), 5 + rand() * 5]);
+        }
+        let filaments = '';
+        let galaxies = '';
+        nodes.slice(1).forEach(([x, y]) => {
+          filaments += `<path d="M120 118 Q${((x + 120) / 2 + (rand() - 0.5) * 40).toFixed(1)}
+                          ${((y + 118) / 2 + (rand() - 0.5) * 40).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}"
+                          fill="none" stroke="${a}" stroke-width="2.4" opacity="0.28"/>`;
+          for (let k = 0; k < 7; k++) {
+            const f = 0.15 + rand() * 0.85;
+            galaxies += `<ellipse cx="${(120 + (x - 120) * f + (rand() - 0.5) * 14).toFixed(1)}"
+                           cy="${(118 + (y - 118) * f + (rand() - 0.5) * 14).toFixed(1)}"
+                           rx="${(1.6 + rand() * 3).toFixed(1)}" ry="${(0.9 + rand() * 1.6).toFixed(1)}"
+                           fill="#fff" opacity="${(0.3 + rand() * 0.5).toFixed(2)}"
+                           transform="rotate(${(rand() * 180).toFixed(0)}
+                             ${(120 + (x - 120) * f).toFixed(1)} ${(118 + (y - 118) * f).toFixed(1)})"/>`;
+          }
+        });
+        let knots = '';
+        nodes.forEach(([x, y, r]) => {
+          knots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r * 2.2).toFixed(1)}"
+                      fill="${a}" opacity="0.16"/>
+                    <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r * 0.55).toFixed(1)}"
+                      fill="#fff" opacity="0.75"/>`;
+        });
+        return `${glow(id + 'g', 4)}
+          <rect width="240" height="240" fill="#04060d"/>
+          ${starfield(613, 50, 240, 240, 0.4)}
+          <g filter="url(#${id}g)">${filaments}${knots}</g>
+          ${galaxies}`;
+      },
+    },
+
     /* ---------- instruments (animated by the lesson) ---------- */
 
     /**
