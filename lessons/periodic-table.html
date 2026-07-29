@@ -416,6 +416,86 @@
       line-height: 1.45;
       color: #64748b;
     }
+    .ep-earth-card {
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 14px;
+      padding: 0.9rem;
+      background: rgba(255,255,255,0.78);
+      display: grid;
+      gap: 0.65rem;
+    }
+    .ep-earth-title {
+      margin: 0;
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--text, #1d1d1f);
+    }
+    .ep-source-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.4rem;
+    }
+    .ep-source-pill {
+      min-height: 3.2rem;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.07);
+      background: rgba(248,250,252,0.82);
+      color: #64748b;
+      display: grid;
+      place-items: center;
+      gap: 0.08rem;
+      padding: 0.45rem 0.25rem;
+      text-align: center;
+      font-size: 0.58rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .ep-source-pill.is-active {
+      color: #0b58d6;
+      border-color: rgba(0,113,227,0.28);
+      background: rgba(0,113,227,0.09);
+    }
+    .ep-source-icon {
+      font-size: 1.05rem;
+      line-height: 1;
+    }
+    .ep-flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+    .ep-flow-step {
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 12px;
+      padding: 0.62rem;
+      background: rgba(255,255,255,0.72);
+      min-width: 0;
+    }
+    .ep-flow-label {
+      display: block;
+      color: #64748b;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.18rem;
+    }
+    .ep-flow-value {
+      display: block;
+      color: var(--text, #1d1d1f);
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+    .ep-media-note {
+      border-radius: 12px;
+      border: 1px dashed rgba(0,113,227,0.26);
+      background: rgba(0,113,227,0.06);
+      padding: 0.7rem;
+      color: #35506d;
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
     .ep-close { background: none; border: 1px solid var(--line, #d2d2d7);
       border-radius: 8px; padding: 4px 10px; font-size: 0.76rem; cursor: pointer;
       color: #777; font-family: inherit; margin-left: auto; flex-shrink: 0; }
@@ -514,6 +594,8 @@
       .pt-primer-grid { grid-template-columns: 1fr; }
       .ep-stat-grid,
       .ep-usage-grid,
+      .ep-source-grid,
+      .ep-flow,
       .pt-heatmap-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -521,6 +603,8 @@
     @media (max-width: 560px) {
       .ep-stat-grid,
       .ep-usage-grid,
+      .ep-source-grid,
+      .ep-flow,
       .pt-heatmap-row {
         grid-template-columns: 1fr;
       }
@@ -552,6 +636,15 @@
     [data-theme="night"] .ep-usage-item,
     [data-theme="vaporwave"] .ep-usage-item,
     [data-theme="bark"] .ep-usage-item,
+    [data-theme="night"] .ep-earth-card,
+    [data-theme="vaporwave"] .ep-earth-card,
+    [data-theme="bark"] .ep-earth-card,
+    [data-theme="night"] .ep-flow-step,
+    [data-theme="vaporwave"] .ep-flow-step,
+    [data-theme="bark"] .ep-flow-step,
+    [data-theme="night"] .ep-source-pill,
+    [data-theme="vaporwave"] .ep-source-pill,
+    [data-theme="bark"] .ep-source-pill,
     [data-theme="night"] .pt-command-dialog,
     [data-theme="vaporwave"] .pt-command-dialog,
     [data-theme="bark"] .pt-command-dialog,
@@ -593,6 +686,12 @@
     [data-theme="night"] .ep-usage-copy,
     [data-theme="vaporwave"] .ep-usage-copy,
     [data-theme="bark"] .ep-usage-copy,
+    [data-theme="night"] .ep-flow-label,
+    [data-theme="vaporwave"] .ep-flow-label,
+    [data-theme="bark"] .ep-flow-label,
+    [data-theme="night"] .ep-media-note,
+    [data-theme="vaporwave"] .ep-media-note,
+    [data-theme="bark"] .ep-media-note,
     [data-theme="night"] .ep-stat-label,
     [data-theme="vaporwave"] .ep-stat-label,
     [data-theme="bark"] .ep-stat-label,
@@ -722,6 +821,7 @@
         <div class="ep-stat-grid" id="ep-stats"></div>
         <div class="ep-config" id="ep-config"></div>
         <div class="ep-usage-grid" id="ep-usage"></div>
+        <section class="ep-earth-card" id="ep-earth" aria-label="Earth sources and image requirements"></section>
         <p class="ep-desc" id="ep-desc"></p>
       </div>
     </div>
@@ -991,6 +1091,41 @@
       ln: [{ icon: '🧲', title: 'Rare-earth magnetics', copy: 'Lanthanides power magnets, lasers, phosphors, and precision optics.' }],
       ac: [{ icon: '☢️', title: 'Radiation science', copy: 'Actinides dominate nuclear energy, radiotherapy, and isotope research.' }]
     };
+    const SOURCE_DEFS = {
+      crust: { label: "Crust", icon: "rock" },
+      ocean: { label: "Ocean", icon: "water" },
+      air: { label: "Air", icon: "gas" },
+      life: { label: "Life", icon: "bio" },
+      synthetic: { label: "Synthetic", icon: "lab" }
+    };
+    const SOURCE_ICONS = { rock: "◆", water: "≈", gas: "○", bio: "✚", lab: "⚗" };
+    const CATEGORY_EARTH = {
+      ak: { sources: ["crust", "ocean"], forms: ["salts and reactive minerals"], extraction: "Separated from mineral salts or molten compounds", occurrence: "Too reactive to occur as pure metal in nature", mediaPrompt: "Photograph a mineral salt, stored metal sample, or everyday battery use." },
+      ae: { sources: ["crust", "ocean", "life"], forms: ["carbonates, sulfates, silicates"], extraction: "Mined from minerals, then refined chemically or electrolytically", occurrence: "Commonly locked inside rocks, shells, bones, or seawater salts", mediaPrompt: "Photograph a mineral, shell, bone-safe classroom model, or refined sample." },
+      tm: { sources: ["crust"], forms: ["ores, native metals, alloys"], extraction: "Mined as ore, concentrated, smelted, and refined", occurrence: "Usually found in oxide, sulfide, or carbonate ores", mediaPrompt: "Photograph an ore specimen, native metal, alloy, or engineered object." },
+      pt: { sources: ["crust"], forms: ["ores, oxides, sulfides, alloys"], extraction: "Recovered from ores or as byproducts of other metal refining", occurrence: "Often found dispersed through crustal minerals", mediaPrompt: "Photograph an ore, refined sample, crystal, or common product." },
+      ml: { sources: ["crust"], forms: ["silicates, oxides, sulfides, semiconductors"], extraction: "Mined from minerals and purified for glass, alloy, or semiconductor use", occurrence: "Concentrated in specific minerals rather than pure deposits", mediaPrompt: "Photograph a mineral, wafer, glass, or semiconductor form." },
+      nm: { sources: ["crust", "air", "ocean", "life"], forms: ["gases, minerals, biomolecules, molecular solids"], extraction: "Collected from air, mined compounds, water, or biological materials depending on the element", occurrence: "Often cycles through air, water, rocks, and living systems", mediaPrompt: "Photograph a pure sample where safe, mineral form, gas container, or biological/common form." },
+      ha: { sources: ["crust", "ocean"], forms: ["salts and halide minerals"], extraction: "Separated from brines, seawater, or halide minerals", occurrence: "Highly reactive, so natural forms are usually compounds", mediaPrompt: "Photograph a safe salt, mineral, antiseptic, or sealed sample." },
+      ng: { sources: ["air"], forms: ["trace atmospheric gases"], extraction: "Separated by fractional distillation of liquefied air", occurrence: "Mostly found as individual atoms in the atmosphere", mediaPrompt: "Photograph a discharge tube, lighting use, gas cylinder, or balloon context." },
+      ln: { sources: ["crust"], forms: ["rare-earth minerals such as monazite and bastnasite"], extraction: "Mined from rare-earth ores, then separated by solvent extraction and ion exchange", occurrence: "Not usually rare individually, but hard to separate from similar neighbors", mediaPrompt: "Photograph a rare-earth mineral, magnet, phosphor, lens, or refined oxide." },
+      ac: { sources: ["crust", "synthetic"], forms: ["radioactive minerals, reactor products, accelerator-made atoms"], extraction: "Recovered from uranium/thorium ores or produced in reactors and accelerators", occurrence: "Heavy actinides are radioactive; many are synthetic or exist only in trace amounts", mediaPrompt: "Use public-domain lab, detector, ore, or reactor-context images instead of unsafe samples." }
+    };
+    const ELEMENT_EARTH = {
+      H: { sources: ["ocean", "air", "life"], forms: ["water, hydrocarbons, organic molecules"], extraction: "Produced from water electrolysis or natural gas reforming", occurrence: "Earth holds most hydrogen bound in water and organic compounds", mediaPrompt: "Use water, a fuel cell, or a gas discharge tube image." },
+      He: { sources: ["air", "crust"], forms: ["natural gas deposits, trace atmosphere"], extraction: "Recovered from helium-rich natural gas", occurrence: "Light helium escapes the atmosphere, so usable helium comes from underground gas fields", mediaPrompt: "Use a balloon, cryogenic tank, or discharge tube image." },
+      C: { sources: ["crust", "air", "life"], forms: ["graphite, diamond, carbon dioxide, limestone, living tissue"], extraction: "Mined as graphite or diamond, and cycled biologically as carbon compounds", occurrence: "Carbon moves through rocks, air, oceans, and living organisms", mediaPrompt: "Use graphite, diamond, charcoal, limestone, or plant matter." },
+      O: { sources: ["air", "ocean", "crust", "life"], forms: ["oxygen gas, water, oxides, silicates"], extraction: "Separated from liquefied air or produced by electrolysis of water", occurrence: "The most abundant element in Earth crust by mass and essential in water and air", mediaPrompt: "Use liquid oxygen, water, oxide minerals, or breathing/medical oxygen imagery." },
+      Na: { sources: ["ocean", "crust"], forms: ["halite, seawater salts, sodium minerals"], extraction: "Produced by electrolysis of molten sodium chloride", occurrence: "Common in seawater and evaporite salt deposits", mediaPrompt: "Use halite, table salt, or a sealed sodium sample." },
+      Al: { sources: ["crust"], forms: ["bauxite, aluminosilicate minerals"], extraction: "Refined from bauxite to alumina, then electrolyzed by the Hall-Heroult process", occurrence: "The most abundant metal in Earth crust, but almost never native", mediaPrompt: "Use bauxite, aluminum metal, foil, aircraft, or cans." },
+      Si: { sources: ["crust"], forms: ["quartz, sand, silicate rocks, silicon wafers"], extraction: "Reduced from silica and purified for electronics or solar cells", occurrence: "Extremely abundant in rocks and sand as silicate minerals", mediaPrompt: "Use quartz, sand, a wafer, solar cell, or chip image." },
+      Fe: { sources: ["crust"], forms: ["hematite, magnetite, iron meteorites, steel"], extraction: "Smelted from iron ore in blast furnaces or direct-reduction systems", occurrence: "Common in crustal ores and dominant in Earth core", mediaPrompt: "Use hematite, magnetite, steel, rust, or meteorite images." },
+      Cu: { sources: ["crust"], forms: ["native copper, chalcopyrite, malachite, copper wiring"], extraction: "Mined from sulfide and oxide ores, then smelted or leached", occurrence: "Found in ore bodies and sometimes as native metal", mediaPrompt: "Use native copper, malachite, chalcopyrite, or wiring." },
+      Au: { sources: ["crust"], forms: ["native gold, placer deposits, quartz veins"], extraction: "Mined from hard-rock veins or placer sediments, then refined", occurrence: "Often found as native metal because it resists reaction", mediaPrompt: "Use native gold, flakes, nuggets, or electronics contacts." },
+      Hg: { sources: ["crust"], forms: ["cinnabar ore, liquid mercury"], extraction: "Roasted from cinnabar ore and condensed as liquid metal", occurrence: "Mostly found as mercury sulfide; toxic forms can move through ecosystems", mediaPrompt: "Use cinnabar or sealed educational/sample imagery only." },
+      U: { sources: ["crust"], forms: ["uraninite, carnotite, uranium oxides"], extraction: "Mined from uranium ores, milled, converted, and enriched for some uses", occurrence: "Naturally radioactive and dispersed through crustal rocks", mediaPrompt: "Use uranium ore, fuel pellet diagrams, or public-domain lab images." }
+    };
+
     const ELEMENT_APPLICATIONS = {
       H: [{ icon: '🚀', title: 'Rocket fuel', copy: 'Hydrogen powers fuel cells and high-efficiency propulsion systems.' }],
       He: [{ icon: '🎈', title: 'Party balloon', copy: 'Helium lifts balloons and cools MRI magnets without reacting.' }],
@@ -1135,6 +1270,24 @@
       return { label: 'Metal lattice', note: 'Positive metal ions sit in a repeating lattice with mobile electrons flowing around them.', mode: 'metal' };
     }
 
+    function getEarthProfile(symbol, cat) {
+      const fallback = CATEGORY_EARTH[cat] || CATEGORY_EARTH.tm;
+      const specific = ELEMENT_EARTH[symbol] || {};
+      const sources = specific.sources || fallback.sources || [];
+      const forms = specific.forms || fallback.forms || [];
+      return {
+        sources,
+        forms,
+        extraction: specific.extraction || fallback.extraction,
+        occurrence: specific.occurrence || fallback.occurrence,
+        mediaPrompt: specific.mediaPrompt || fallback.mediaPrompt,
+        imageStatus: specific.image ? "ready" : "needed",
+        image: specific.image || null,
+        imageCredit: specific.imageCredit || "Image sourcing required in the licensed media phase",
+        imageLicense: specific.imageLicense || "Pending"
+      };
+    }
+
     function rebuildElements() {
       elements = BASE_ELEMENTS.map((base) => {
         const ref = propertyRefBySymbol[base.symbol] || {};
@@ -1149,6 +1302,7 @@
           summary: ref.summary || base.description,
           applications: getApplications(base.symbol, base.cat),
           crystal: getCrystalProfile(base.symbol, base.cat),
+          earth: getEarthProfile(base.symbol, base.cat),
           rarity: estimateRarity(base, ref)
         });
       });
@@ -1392,6 +1546,25 @@
       document.getElementById('ep-usage').innerHTML = element.applications.map((item) => '<article class="ep-usage-item"><span class="ep-usage-icon">' + item.icon + '</span><span class="ep-usage-title">' + item.title + '</span><span class="ep-usage-copy">' + item.copy + '</span></article>').join('');
     }
 
+    function renderEarthProfile(element) {
+      const earth = element.earth || getEarthProfile(element.symbol, element.cat);
+      const activeSources = new Set(earth.sources || []);
+      const sourceHtml = Object.entries(SOURCE_DEFS).map(([key, meta]) => {
+        const active = activeSources.has(key);
+        return `<span class=\"ep-source-pill${active ? " is-active" : ""}\"><span class=\"ep-source-icon\">${SOURCE_ICONS[meta.icon]}</span>${meta.label}</span>`;
+      }).join("");
+      const flow = [
+        ["Earth source", earth.occurrence],
+        ["Common forms", (earth.forms || []).join("; ")],
+        ["Production", earth.extraction],
+        ["Media target", earth.mediaPrompt]
+      ].map(([label, value]) => `<div class=\"ep-flow-step\"><span class=\"ep-flow-label\">${label}</span><span class=\"ep-flow-value\">${value}</span></div>`).join("");
+      const mediaNote = earth.imageStatus === "ready"
+        ? `Image ready: ${earth.imageCredit} (${earth.imageLicense}).`
+        : `Image required: source a real-life, licensed photo for this element form. ${earth.imageCredit}.`;
+      document.getElementById("ep-earth").innerHTML = `<h3 class=\"ep-earth-title\">Where it is found on Earth</h3><div class=\"ep-source-grid\">${sourceHtml}</div><div class=\"ep-flow\">${flow}</div><div class=\"ep-media-note\">${mediaNote}</div>`;
+    }
+
     function showElement(element, shouldScroll) {
       selectedSymbol = element.symbol;
       const state = getState(element, currentTemp);
@@ -1413,6 +1586,7 @@
       document.getElementById('ep-desc').textContent = element.summary || element.description;
       renderStats(element);
       renderUsage(element);
+      renderEarthProfile(element);
       detailPanel.classList.remove('ep-open');
       void detailPanel.offsetWidth;
       detailPanel.classList.add('ep-open');
