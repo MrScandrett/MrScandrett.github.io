@@ -211,8 +211,11 @@
       state.scores[respondent] = score;
       const meter = document.getElementById(`meter-${respondent}`);
       const scoreEl = document.getElementById(`score-${respondent}`);
-      if (meter) meter.style.height = `${score}%`;
-      if (scoreEl) scoreEl.textContent = `${Math.round(score)}%`;
+      if (meter) meter.style.width = `${score}%`;
+      if (scoreEl) {
+        scoreEl.textContent = `${Math.round(score)}%`;
+        scoreEl.setAttribute('aria-label', `Respondent ${respondent.toUpperCase()} humanity score: ${Math.round(score)} percent`);
+      }
     });
   }
 
@@ -368,8 +371,69 @@
     if (machineMode) machineMode.checked = true;
   }
 
+  function initQuiz() {
+    const questions = Array.from(document.querySelectorAll('.tt-quiz-q'));
+    const score = document.getElementById('tt-quiz-score');
+    if (!questions.length || !score) return;
+
+    let correctCount = 0;
+    let answeredCount = 0;
+
+    questions.forEach((question) => {
+      const correctIndex = Number(question.dataset.correct);
+      const options = Array.from(question.querySelectorAll('.tt-option'));
+      const feedback = question.querySelector('.tt-feedback-light');
+
+      options.forEach((option, optionIndex) => {
+        option.addEventListener('click', () => {
+          if (question.dataset.answered === 'true') return;
+          question.dataset.answered = 'true';
+          answeredCount += 1;
+
+          const isCorrect = optionIndex === correctIndex;
+          if (isCorrect) correctCount += 1;
+
+          options.forEach((button, index) => {
+            button.disabled = true;
+            if (index === correctIndex) button.classList.add('correct');
+          });
+          if (!isCorrect) option.classList.add('wrong');
+
+          if (feedback) {
+            feedback.classList.add('show');
+            feedback.textContent = `${isCorrect ? 'Correct. ' : 'Not quite. '}${feedback.textContent}`;
+          }
+          score.textContent = `${correctCount} / ${questions.length} correct · ${answeredCount} answered`;
+        });
+      });
+    });
+  }
+
+  function initJourney() {
+    const links = Array.from(document.querySelectorAll('.tt-journey a'));
+    if (!links.length || !('IntersectionObserver' in window)) return;
+
+    const linkById = new Map(links.map((link) => [link.getAttribute('href').slice(1), link]));
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+      links.forEach((link) => link.classList.remove('is-active'));
+      const activeLink = linkById.get(visible.target.id);
+      if (activeLink) activeLink.classList.add('is-active');
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 0.25, 0.6] });
+
+    linkById.forEach((link, id) => {
+      const section = document.getElementById(id);
+      if (section) observer.observe(section);
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     init();
+    initQuiz();
+    initJourney();
     document.getElementById('tl-vote-a').addEventListener('click', () => handleVote('a'));
     document.getElementById('tl-vote-b').addEventListener('click', () => handleVote('b'));
     document.getElementById('tl-reset').addEventListener('click', init);

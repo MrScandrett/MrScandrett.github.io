@@ -104,6 +104,18 @@
 
     /* ── Scale comparison ─────────────────────────────── */
     .sol-scale { margin: 0.9rem 0; display: flex; flex-direction: column; gap: 0.55rem; }
+    .sol-scale-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.42rem 0.62rem;
+      border-radius: 999px;
+      background: rgba(0,122,255,0.08);
+      border: 1px solid rgba(0,122,255,0.14);
+      color: #52647d !important;
+      font-size: 0.74rem !important;
+      line-height: 1.35 !important;
+    }
     .sol-scale-row { display: flex; align-items: center; gap: 0.7rem; }
     .sol-scale-label { width: 140px; flex-shrink: 0; font-size: 0.78rem; font-weight: 600;
       color: var(--text,#1d1d1f); line-height: 1.35; }
@@ -114,13 +126,15 @@
     [data-theme="bark"] .sol-scale-bar-wrap { background: rgba(255,255,255,0.08); }
     .sol-scale-bar { height: 100%; border-radius: 4px; display: flex; align-items: center;
       padding: 0 6px; font-size: 0.66rem; font-weight: 800; color: #fff;
-      white-space: nowrap; transition: width 0.6s; }
+      white-space: nowrap; transition: width 0.6s;
+      box-shadow: 0 0 14px color-mix(in srgb, currentColor 28%, transparent); }
     .sol-scale-val { width: 70px; text-align: right; font-size: 0.74rem; font-weight: 700;
       color: #64748b; flex-shrink: 0; }
 
     /* ── Travel time table ────────────────────────────── */
     .sol-table { width: 100%; border-collapse: collapse; margin: 0.8rem 0;
       font-size: 0.84rem; }
+    .sol-table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .sol-table th { text-align: left; font-size: 0.72rem; font-weight: 700;
       letter-spacing: 0.05em; text-transform: uppercase; color: #64748b;
       padding: 0.4rem 0.6rem; border-bottom: 2px solid var(--line,#d2d2d7); }
@@ -143,6 +157,160 @@
     [data-theme="vaporwave"] .sol-ly-box,
     [data-theme="bark"] .sol-ly-box { color: rgba(245,245,247,0.72); }
     .sol-ly-box strong { color: var(--text,#1d1d1f); }
+
+    /* ── Cosmic lookback timeline ─────────────────────── */
+    .sol-lookback-lab {
+      margin-top: 1rem;
+      overflow: hidden;
+      border: 1px solid rgba(88,86,214,0.2);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 84% 18%, rgba(88,86,214,0.16), transparent 26%),
+        linear-gradient(145deg, rgba(4,10,28,0.98), rgba(14,20,49,0.98));
+      color: #f8fafc;
+    }
+    .sol-lookback-head {
+      padding: 1rem 1rem 0.7rem;
+      border-bottom: 1px solid rgba(148,163,184,0.18);
+    }
+    .sol-lookback-head h3 { margin: 0; color: #fff; }
+    .sol-lookback-head p {
+      margin: 0.3rem 0 0;
+      color: rgba(226,232,240,0.7);
+    }
+    .sol-lookback-scroll {
+      overflow-x: auto;
+      padding: 1rem 1rem 0.7rem;
+      scrollbar-color: rgba(129,140,248,0.45) transparent;
+    }
+    .sol-lookback-stage {
+      --lookback-pos: 16%;
+      position: relative;
+      min-width: 720px;
+      height: 178px;
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 18% 42%, rgba(255,204,0,0.13), transparent 16%),
+        linear-gradient(180deg, rgba(15,23,42,0.7), rgba(2,6,23,0.45));
+      overflow: hidden;
+    }
+    .sol-lookback-stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.3;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle, #fff 0 1px, transparent 1.3px),
+        radial-gradient(circle, rgba(129,140,248,0.9) 0 1px, transparent 1.3px);
+      background-position: 7px 13px, 41px 29px;
+      background-size: 67px 59px, 101px 83px;
+    }
+    .sol-lookback-axis {
+      position: absolute;
+      z-index: 1;
+      left: 4%;
+      right: 3%;
+      top: 82px;
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.2);
+    }
+    .sol-lookback-fill {
+      display: block;
+      width: var(--lookback-pos);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffe066, #ff9500 24%, #818cf8 72%, #c084fc);
+      box-shadow: 0 0 18px rgba(129,140,248,0.5);
+      transition: width 0.3s ease;
+    }
+    .sol-lookback-axis-label {
+      position: absolute;
+      z-index: 2;
+      top: 103px;
+      color: rgba(203,213,225,0.54);
+      font: 700 0.57rem/1.3 "Space Mono", monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .sol-lookback-axis-label:first-of-type { left: 4%; }
+    .sol-lookback-axis-label:last-of-type { right: 3%; }
+    .sol-lookback-marker {
+      position: absolute;
+      z-index: 3;
+      left: var(--marker-pos);
+      top: 55px;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      translate: -50% 0;
+      border: 3px solid #111936;
+      border-radius: 50%;
+      background: #94a3b8;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.3), 0 0 14px rgba(148,163,184,0.38);
+      cursor: pointer;
+      font: inherit;
+      transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+    .sol-lookback-marker::before {
+      content: attr(data-short);
+      position: absolute;
+      left: 50%;
+      bottom: 23px;
+      translate: -50% 0;
+      width: max-content;
+      max-width: 112px;
+      color: rgba(226,232,240,0.72);
+      font: 700 0.62rem/1.25 "Space Mono", monospace;
+      text-align: center;
+    }
+    .sol-lookback-marker:hover,
+    .sol-lookback-marker[aria-pressed="true"] {
+      transform: scale(1.28);
+      background: #ffe066;
+      box-shadow: 0 0 0 2px rgba(255,224,102,0.2), 0 0 20px rgba(255,224,102,0.72);
+    }
+    .sol-lookback-readout {
+      display: grid;
+      grid-template-columns: minmax(150px, 0.65fr) minmax(0, 1.35fr);
+      gap: 0.85rem;
+      align-items: center;
+      margin: 0 1rem 1rem;
+      padding: 0.85rem;
+      border: 1px solid rgba(129,140,248,0.2);
+      border-radius: 13px;
+      background: rgba(255,255,255,0.055);
+    }
+    .sol-lookback-swipe {
+      display: none;
+      padding: 0 1rem 0.65rem;
+      color: rgba(203,213,225,0.58);
+      font: 700 0.62rem/1.3 "Space Mono", monospace;
+      text-align: right;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .sol-lookback-time strong {
+      display: block;
+      color: #ffe066;
+      font: 900 clamp(1.05rem,2.2vw,1.45rem)/1.1 "Space Mono", monospace;
+    }
+    .sol-lookback-time span {
+      display: block;
+      margin-top: 0.28rem;
+      color: rgba(203,213,225,0.62);
+      font-size: 0.69rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .sol-lookback-copy strong { display: block; color: #fff; font-size: 0.9rem; }
+    .sol-lookback-copy p {
+      margin: 0.28rem 0 0;
+      color: rgba(226,232,240,0.7);
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
 
     /* ── Signal delay lab ─────────────────────────────── */
     .sol-delay-lab {
@@ -215,59 +383,138 @@
       gap: 0.85rem;
     }
     .sol-delay-route {
-      min-height: 150px;
+      min-height: 210px;
       border-radius: 14px;
       border: 1px solid rgba(15,23,42,0.1);
-      background: linear-gradient(180deg, #071225, #0b1630);
+      background:
+        radial-gradient(circle at 16% 50%, rgba(41,151,255,0.2), transparent 17%),
+        radial-gradient(circle at 84% 50%, color-mix(in srgb, var(--target-color, #ff3b30) 26%, transparent), transparent 18%),
+        linear-gradient(180deg, #071225, #0b1630);
       position: relative;
       overflow: hidden;
       padding: 1rem;
+      --signal-duration: 2.6s;
+    }
+    .sol-delay-route::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.36;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle, #fff 0 1px, transparent 1.4px),
+        radial-gradient(circle, rgba(116,192,252,0.8) 0 1px, transparent 1.4px);
+      background-position: 13px 19px, 57px 43px;
+      background-size: 73px 61px, 109px 83px;
     }
     .sol-delay-route::before {
       content: "";
       position: absolute;
-      left: 12%;
-      right: 12%;
+      left: 14%;
+      right: 14%;
       top: 50%;
       height: 2px;
-      background: linear-gradient(90deg, rgba(77,171,247,0.2), rgba(255,214,0,0.9), rgba(77,171,247,0.2));
+      background: repeating-linear-gradient(90deg, rgba(77,171,247,0.2) 0 10px, transparent 10px 18px);
+      box-shadow: 0 0 16px rgba(77,171,247,0.18);
+    }
+    .sol-delay-route-hud {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      color: rgba(226,232,240,0.72);
+      font: 700 0.63rem/1.3 "Space Mono", monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .sol-delay-route-hud span:last-child {
+      color: #ffe066;
+      text-align: right;
     }
     .sol-delay-world {
       position: absolute;
       top: 50%;
-      width: 42px;
-      height: 42px;
-      margin-top: -21px;
+      width: 54px;
+      height: 54px;
+      margin-top: -27px;
       border-radius: 50%;
       display: grid;
       place-items: center;
       color: #fff;
-      font-size: 1.2rem;
+      font: 900 1rem/1 "Space Mono", monospace;
       box-shadow: 0 0 22px rgba(77,171,247,0.32);
+      z-index: 2;
     }
-    .sol-delay-earth { left: 8%; background: linear-gradient(135deg, #2f80ed, #1f9d55); }
-    .sol-delay-target { right: 8%; background: var(--target-color, #ff9500); }
+    .sol-delay-world::after {
+      position: absolute;
+      top: calc(100% + 10px);
+      color: rgba(255,255,255,0.78);
+      font: 700 0.58rem/1 "Space Mono", monospace;
+      letter-spacing: 0.09em;
+    }
+    .sol-delay-earth { left: 7%; background: radial-gradient(circle at 35% 30%, #72d6ff, #2f80ed 45%, #17653b 48%, #0d3b66); }
+    .sol-delay-earth::after { content: "EARTH"; }
+    .sol-delay-target { right: 7%; background: radial-gradient(circle at 35% 30%, #fff1c7, var(--target-color, #ff9500) 52%, #552211); }
+    .sol-delay-target::after { content: attr(data-label); }
     .sol-delay-pulse {
       position: absolute;
       top: calc(50% - 5px);
-      left: 13%;
+      left: 14%;
       width: 10px;
       height: 10px;
       border-radius: 50%;
       background: #ffe000;
       box-shadow: 0 0 22px #ffe000;
-      animation: sol-delay-pulse 2.2s ease-in-out infinite;
+      z-index: 4;
+      animation: sol-delay-outbound var(--signal-duration) cubic-bezier(0.4,0,0.6,1) infinite;
+    }
+    .sol-delay-pulse::after {
+      content: "";
+      position: absolute;
+      right: 5px;
+      top: 3px;
+      width: 58px;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(255,224,0,0.68));
     }
     .sol-delay-pulse.return {
-      animation-delay: 1.1s;
-      animation-direction: reverse;
+      left: auto;
+      right: 14%;
       background: #4dabf7;
       box-shadow: 0 0 22px #4dabf7;
+      animation-name: sol-delay-return;
+      animation-delay: var(--signal-half, 1.3s);
+      opacity: 0;
     }
-    @keyframes sol-delay-pulse {
-      from { transform: translateX(0); opacity: 0.2; }
-      18%, 82% { opacity: 1; }
-      to { transform: translateX(var(--pulse-distance, 520px)); opacity: 0.25; }
+    .sol-delay-pulse.return::after {
+      left: 5px;
+      right: auto;
+      background: linear-gradient(90deg, rgba(77,171,247,0.68), transparent);
+    }
+    @keyframes sol-delay-outbound {
+      0%, 5% { left: 14%; opacity: 0; }
+      12% { opacity: 1; }
+      45% { left: 82%; opacity: 1; }
+      50%, 100% { left: 82%; opacity: 0; }
+    }
+    @keyframes sol-delay-return {
+      0%, 5% { right: 14%; opacity: 0; }
+      12% { opacity: 1; }
+      45% { right: 82%; opacity: 1; }
+      50%, 100% { right: 82%; opacity: 0; }
+    }
+    .sol-delay-caption {
+      position: absolute;
+      z-index: 3;
+      left: 1rem;
+      right: 1rem;
+      bottom: 0.7rem;
+      text-align: center;
+      color: rgba(226,232,240,0.64);
+      font-size: 0.66rem;
+      line-height: 1.35;
     }
     .sol-delay-readouts {
       display: grid;
@@ -312,7 +559,9 @@
 
     /* ── Interactive light-travel simulator ───────────── */
     .sol-sim {
-      background: var(--white,#fff);
+      background:
+        radial-gradient(circle at 88% 12%, rgba(255,149,0,0.08), transparent 24%),
+        var(--white,#fff);
       border: 1px solid var(--line,#d2d2d7);
       border-left: 3.5px solid #ff9500;
       border-radius: var(--radius,18px);
@@ -324,10 +573,51 @@
     [data-theme="bark"] .sol-sim { background: var(--white,#2c2c2e); }
     .sol-sim h2 { margin: 0 0 0.2rem; font-size: 1.2rem; letter-spacing: -0.02em; }
     .sol-sim-sub { margin: 0 0 1rem; font-size: 0.84rem; color: #64748b; }
+    .sol-sim-command {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 0.75rem;
+      align-items: end;
+      margin: 0 0 0.85rem;
+      padding: 0.8rem;
+      border-radius: 13px;
+      background: rgba(255,149,0,0.07);
+      border: 1px solid rgba(255,149,0,0.18);
+    }
+    .sol-sim-visual {
+      position: relative;
+      overflow: hidden;
+      padding: 0.75rem;
+      border: 1px solid rgba(116,192,252,0.24);
+      border-radius: 16px;
+      background: linear-gradient(180deg, #07101f, #0a1025);
+      box-shadow: inset 0 1px rgba(255,255,255,0.05), 0 16px 34px rgba(7,18,37,0.18);
+    }
+    .sol-sim-visual-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0 0.2rem 0.55rem;
+      color: rgba(226,232,240,0.72);
+      font: 700 0.65rem/1.3 "Space Mono", monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .sol-model-badge {
+      padding: 0.25rem 0.48rem;
+      border: 1px solid rgba(255,224,102,0.28);
+      border-radius: 999px;
+      color: #ffe066;
+      background: rgba(255,224,102,0.08);
+      white-space: nowrap;
+    }
 
     .sol-sim-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem;
       align-items: flex-end; margin-bottom: 1rem; }
     .sol-sim-field { display: flex; flex-direction: column; gap: 0.25rem; }
+    .sol-sim-command .sol-sim-field { min-width: 0; }
+    .sol-sim-command .sol-sim-select { width: 100%; min-width: 0; max-width: 100%; }
     .sol-sim-field label { font-size: 0.76rem; font-weight: 700; color: #64748b;
       letter-spacing: 0.04em; text-transform: uppercase; }
     .sol-sim-select {
@@ -349,7 +639,23 @@
 
     /* Canvas track */
     #sol-canvas { display: block; border-radius: 10px; width: 100%;
-      background: #0a0a1a; }
+      height: 220px; background: #0a0a1a; }
+    .sol-sim-progress {
+      height: 5px;
+      margin-top: 0.55rem;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+    }
+    .sol-sim-progress span {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #4dabf7, #ffe066, #ff9500);
+      box-shadow: 0 0 12px rgba(255,224,102,0.6);
+      transition: width 0.08s linear;
+    }
     .sol-sim-result { margin-top: 0.7rem; font-size: 0.86rem;
       font-weight: 700; color: var(--text,#1d1d1f); min-height: 1.4em; }
     .sol-sim-result span { color: #ff9500; }
@@ -477,6 +783,157 @@
     [data-theme="night"] .sol-relativity-note,
     [data-theme="vaporwave"] .sol-relativity-note,
     [data-theme="bark"] .sol-relativity-note { color: rgba(245,245,247,0.72); }
+    .sol-rel-visuals {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.9rem;
+    }
+    .sol-rel-visual {
+      min-width: 0;
+      padding: 0.8rem;
+      border: 1px solid rgba(88,86,214,0.18);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.7);
+    }
+    [data-theme="night"] .sol-rel-visual,
+    [data-theme="vaporwave"] .sol-rel-visual,
+    [data-theme="bark"] .sol-rel-visual { background: rgba(255,255,255,0.05); }
+    .sol-rel-visual-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: baseline;
+      margin-bottom: 0.55rem;
+    }
+    .sol-rel-visual-head strong { font-size: 0.87rem; }
+    .sol-rel-visual-head span {
+      color: #64748b;
+      font: 700 0.62rem/1.3 "Space Mono", monospace;
+      text-align: right;
+    }
+    .sol-rel-canvas-wrap {
+      overflow: hidden;
+      border-radius: 11px;
+      border: 1px solid rgba(88,86,214,0.16);
+      background: linear-gradient(180deg, #090e24, #111633);
+    }
+    .sol-rel-canvas {
+      display: block;
+      width: 100%;
+      height: 240px;
+    }
+    .sol-rel-visual p {
+      margin: 0.6rem 0 0;
+      color: #64748b;
+      font-size: 0.74rem;
+      line-height: 1.48;
+    }
+
+    /* ── Public-domain historical plates ─────────────── */
+    .sol-archive {
+      margin: 0.9rem 0 1rem;
+      padding: 1rem;
+      border: 1px solid rgba(120,87,47,0.22);
+      border-radius: 16px;
+      background:
+        linear-gradient(rgba(255,252,242,0.94), rgba(247,239,218,0.9)),
+        repeating-linear-gradient(0deg, rgba(98,72,42,0.03) 0 1px, transparent 1px 4px);
+    }
+    .sol-archive-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.8rem;
+    }
+    .sol-archive-head h3 { margin: 0; color: #33271d; }
+    .sol-archive-head span {
+      color: #806b55;
+      font: 700 0.62rem/1.3 "Space Mono", monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .sol-archive-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+    .sol-archive-plate {
+      display: grid;
+      grid-template-rows: 330px auto;
+      min-width: 0;
+      margin: 0;
+      overflow: hidden;
+      border: 1px solid rgba(104,77,46,0.2);
+      border-radius: 13px;
+      background: rgba(255,255,255,0.74);
+      box-shadow: 0 8px 22px rgba(80,57,32,0.08);
+    }
+    .sol-archive-plate.wide {
+      grid-column: 1 / -1;
+      grid-template-rows: 260px auto;
+    }
+    .sol-archive-image {
+      position: relative;
+      min-height: 0;
+      background:
+        linear-gradient(90deg, rgba(102,72,37,0.03), transparent 20%, transparent 80%, rgba(102,72,37,0.03)),
+        #fffdf7;
+    }
+    .sol-archive-image img {
+      position: absolute;
+      inset: 0.75rem;
+      display: block;
+      width: calc(100% - 1.5rem);
+      height: calc(100% - 1.5rem);
+      object-fit: contain;
+      filter: sepia(0.12) contrast(1.04);
+    }
+    .sol-archive-plate figcaption {
+      padding: 0.85rem;
+      border-top: 1px solid rgba(104,77,46,0.14);
+      color: #594838;
+    }
+    .sol-archive-year {
+      display: block;
+      color: #9a5b1f;
+      font: 800 0.62rem/1.3 "Space Mono", monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .sol-archive-plate figcaption strong {
+      display: block;
+      margin-top: 0.22rem;
+      color: #2f251c;
+      font-size: 0.9rem;
+    }
+    .sol-archive-plate figcaption p {
+      margin: 0.34rem 0 0;
+      color: #675543;
+      font-size: 0.76rem;
+      line-height: 1.5;
+    }
+    .sol-archive-source {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem 0.55rem;
+      margin-top: 0.55rem;
+      font-size: 0.67rem;
+      line-height: 1.4;
+    }
+    .sol-archive-source a {
+      color: #7b4a1d;
+      font-weight: 750;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+    [data-theme="night"] .sol-archive,
+    [data-theme="vaporwave"] .sol-archive,
+    [data-theme="bark"] .sol-archive { background: linear-gradient(145deg, rgba(45,37,29,0.96), rgba(29,25,23,0.96)); }
+    [data-theme="night"] .sol-archive-head h3,
+    [data-theme="vaporwave"] .sol-archive-head h3,
+    [data-theme="bark"] .sol-archive-head h3 { color: #f8ead7; }
 
     /* ── History timeline ─────────────────────────────── */
     .sol-timeline { list-style: none; padding: 0; margin: 0.7rem 0 0;
@@ -545,6 +1002,34 @@
       .sol-conseq { grid-template-columns: 1fr; }
       .sol-scale-label { width: 100px; font-size: 0.72rem; }
       .sol-relativity-control { grid-template-columns: 1fr; }
+      .sol-rel-visuals,
+      .sol-lookback-readout,
+      .sol-archive-grid { grid-template-columns: 1fr; }
+      .sol-archive-plate.wide { grid-column: auto; }
+      .sol-archive-plate { grid-template-rows: 360px auto; }
+      .sol-archive-plate.wide { grid-template-rows: 190px auto; }
+      .sol-archive-head { align-items: flex-start; flex-direction: column; }
+      .sol-sim-command { grid-template-columns: 1fr; }
+      .sol-sim-btn { width: 100%; }
+      .sol-telemetry { grid-template-columns: 1fr; }
+      #sol-canvas { height: 190px; }
+      .sol-delay-route { min-height: 220px; }
+      .sol-delay-world { width: 46px; height: 46px; margin-top: -23px; }
+      .sol-delay-route-hud { font-size: 0.54rem; }
+      .sol-delay-caption { bottom: 0.55rem; }
+      .sol-table { min-width: 720px; }
+      .sol-rel-canvas { height: 220px; }
+      .sol-lookback-swipe { display: block; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sol-delay-pulse { animation: none; }
+      .sol-delay-pulse.return { display: none; }
+      .sol-delay-pulse { left: 48%; opacity: 1; }
+      .sol-scale-bar,
+      .sol-lookback-fill,
+      .sol-sim-progress span,
+      .sol-relativity-fill { transition: none; }
     }
 
     /* ── Layout overrides ─────────────────────────────── */
@@ -593,7 +1078,7 @@
         <span class="dot"></span>
         <span>Light-years</span>
       </div>
-      <p class="sol-lede">Light travels at exactly 299,792,458 metres per second in a vacuum — the fastest anything in the universe can move. Understanding this one number unlocks GPS, telescopes, nuclear energy, and Einstein's theory of relativity.</p>
+      <p class="sol-lede">Light travels at exactly 299,792,458 metres per second in a vacuum. More fundamentally, <strong>c</strong> is the fastest speed at which information, energy, or cause and effect can propagate locally. Understanding this one constant connects space communication, telescopes, GPS, and Einstein's theory of relativity.</p>
       <div class="sol-hero-stats" aria-label="Speed of light quick anchors">
         <div class="sol-stat-card">
           <strong>1.28 s</strong>
@@ -613,7 +1098,7 @@
     <!-- ── What is c? ── -->
     <section class="sol-card" style="--card-accent:#ff9500;">
       <h2>The Speed of Light — c</h2>
-      <p>Physicists use the letter <strong>c</strong> (from the Latin <em>celeritas</em>, meaning swiftness) to represent the speed of light in a vacuum. It is one of the most precisely measured constants in all of science.</p>
+      <p>Physicists use the letter <strong>c</strong> (associated with the Latin <em>celeritas</em>, meaning swiftness) to represent the speed of light in a vacuum. It is now one of the defining constants of the International System of Units.</p>
 
       <div class="sol-c-box" role="img" aria-label="c equals 299,792,458 metres per second">
         <span class="sol-c-sym">c</span>
@@ -621,45 +1106,46 @@
           299,792,458 m/s
           <small>≈ 300,000 km/s &nbsp;·&nbsp; ≈ 186,282 miles/s</small>
         </div>
-        <div class="sol-c-label">Exact by definition since 1983 — the metre is defined using c.</div>
+        <div class="sol-c-label">Its numerical value is exact in SI units because the metre is defined using c.</div>
       </div>
 
-      <p>To put that in perspective: in one second, light travels nearly <strong>7.5 times around the entire Earth</strong>. In one minute it covers the distance from the Earth to the Moon. In 8 minutes it crosses the entire Earth–Sun gap.</p>
+      <p>To put that in perspective: in one second, light travels nearly <strong>7.5 times around Earth</strong> and reaches the Moon in about 1.28 seconds. In one minute it could cross the average Earth–Moon distance about <strong>47 times</strong>. Sunlight reaches Earth in about 8 minutes 20 seconds.</p>
 
       <h3>How does it compare to things we know?</h3>
-      <div class="sol-scale">
+      <p class="sol-scale-note"><strong>Logarithmic scale:</strong> each step represents a multiplication in speed, allowing vastly different speeds to remain visible.</p>
+      <div class="sol-scale" aria-label="Logarithmic comparison of familiar speeds">
         <div class="sol-scale-row">
           <div class="sol-scale-label">Walking pace</div>
           <div class="sol-scale-bar-wrap">
-            <div class="sol-scale-bar" style="width:0.0000005%;background:#64748b;">~1.4 m/s</div>
+            <div class="sol-scale-bar" style="width:2%;background:#64748b;"></div>
           </div>
           <div class="sol-scale-val">1.4 m/s</div>
         </div>
         <div class="sol-scale-row">
           <div class="sol-scale-label">Commercial jet</div>
           <div class="sol-scale-bar-wrap">
-            <div class="sol-scale-bar" style="width:0.0003%;background:#5856d6;">250 m/s</div>
+            <div class="sol-scale-bar" style="width:28%;background:#5856d6;"></div>
           </div>
           <div class="sol-scale-val">250 m/s</div>
         </div>
         <div class="sol-scale-row">
           <div class="sol-scale-label">Sound (in air)</div>
           <div class="sol-scale-bar-wrap">
-            <div class="sol-scale-bar" style="width:0.001%;background:#34c759;">343 m/s</div>
+            <div class="sol-scale-bar" style="width:30%;background:#34c759;"></div>
           </div>
           <div class="sol-scale-val">343 m/s</div>
         </div>
         <div class="sol-scale-row">
           <div class="sol-scale-label">ISS in orbit</div>
           <div class="sol-scale-bar-wrap">
-            <div class="sol-scale-bar" style="width:0.026%;background:#007aff;">7,700 m/s</div>
+            <div class="sol-scale-bar" style="width:46%;background:#007aff;"></div>
           </div>
           <div class="sol-scale-val">7,700 m/s</div>
         </div>
         <div class="sol-scale-row">
           <div class="sol-scale-label">Speed of light c</div>
           <div class="sol-scale-bar-wrap">
-            <div class="sol-scale-bar" style="width:100%;background:#ff9500;">299,792,458 m/s</div>
+            <div class="sol-scale-bar" style="width:100%;background:#ff9500;"></div>
           </div>
           <div class="sol-scale-val">3×10⁸ m/s</div>
         </div>
@@ -670,6 +1156,7 @@
     <section class="sol-card" style="--card-accent:#007aff;">
       <h2>How Long Does Light Take to Travel?</h2>
       <p>Light is incredibly fast — but the universe is so enormous that even light takes a long time to cross it. These travel times reveal just how vast space really is.</p>
+      <div class="sol-table-wrap">
       <table class="sol-table" aria-label="Light travel times to various destinations">
         <thead>
           <tr>
@@ -714,7 +1201,7 @@
             <td class="dest">Proxima Centauri</td>
             <td class="dist">4.24 light-years</td>
             <td class="time">4.24 years</td>
-            <td class="note">The closest star — light from it left before many students were born</td>
+            <td class="note">We see the nearest star as it was a little over four years ago</td>
           </tr>
           <tr>
             <td class="dest">Andromeda Galaxy</td>
@@ -723,16 +1210,49 @@
             <td class="note">That light left when early humans first walked the Earth</td>
           </tr>
           <tr>
-            <td class="dest">Edge of observable universe</td>
-            <td class="dist">46.5 billion light-years</td>
-            <td class="time">46.5 billion years</td>
-            <td class="note">We are literally looking back in time when we use telescopes</td>
+            <td class="dest">Cosmic microwave background</td>
+            <td class="dist">Source region now ~46 billion ly away</td>
+            <td class="time">~13.8 billion years</td>
+            <td class="note">Space expanded while the light traveled, so present distance and travel time differ</td>
           </tr>
         </tbody>
       </table>
+      </div>
 
       <div class="sol-ly-box">
         <strong>What is a light-year?</strong> A light-year is not a unit of time — it is a unit of <em>distance</em>. It is the distance light travels in one year: about <strong>9.46 trillion kilometres</strong> (9.46 × 10¹² km). Astronomers use light-years because numbers like "40 trillion kilometres" are too unwieldy. Saying "Proxima Centauri is 4.24 light-years away" is much cleaner.
+      </div>
+
+      <div class="sol-lookback-lab">
+        <div class="sol-lookback-head">
+          <h3>Cosmic Lookback Timeline</h3>
+          <p>Choose a source to connect distance with the age of the light arriving now. The axis is logarithmic so seconds and billions of years can share one view.</p>
+        </div>
+        <div class="sol-lookback-scroll">
+          <div class="sol-lookback-stage" id="sol-lookback-stage">
+            <div class="sol-lookback-axis" aria-hidden="true">
+              <span class="sol-lookback-fill"></span>
+            </div>
+            <span class="sol-lookback-axis-label">Now</span>
+            <span class="sol-lookback-axis-label">Early universe</span>
+            <button class="sol-lookback-marker" type="button" style="--marker-pos:4%;" data-lookback="moon" data-short="Moon" aria-label="Moon, 1.28 seconds of lookback time" aria-pressed="false"></button>
+            <button class="sol-lookback-marker" type="button" style="--marker-pos:18%;" data-lookback="sun" data-short="Sun" aria-label="Sun, 8 minutes 20 seconds of lookback time" aria-pressed="true"></button>
+            <button class="sol-lookback-marker" type="button" style="--marker-pos:48%;" data-lookback="proxima" data-short="Proxima" aria-label="Proxima Centauri, 4.24 years of lookback time" aria-pressed="false"></button>
+            <button class="sol-lookback-marker" type="button" style="--marker-pos:79%;" data-lookback="andromeda" data-short="Andromeda" aria-label="Andromeda, 2.5 million years of lookback time" aria-pressed="false"></button>
+            <button class="sol-lookback-marker" type="button" style="--marker-pos:96%;" data-lookback="cmb" data-short="CMB" aria-label="Cosmic microwave background, about 13.8 billion years of lookback time" aria-pressed="false"></button>
+          </div>
+        </div>
+        <div class="sol-lookback-swipe" aria-hidden="true">Swipe to travel farther back →</div>
+        <div class="sol-lookback-readout" aria-live="polite">
+          <div class="sol-lookback-time">
+            <strong id="sol-lookback-time">8 min 20 sec</strong>
+            <span>Lookback time</span>
+          </div>
+          <div class="sol-lookback-copy">
+            <strong id="sol-lookback-title">The Sun</strong>
+            <p id="sol-lookback-copy">The sunlight reaching your eyes now left the Sun about eight minutes ago. You never see the Sun exactly as it is “right now.”</p>
+          </div>
+        </div>
       </div>
 
       <div class="sol-delay-lab">
@@ -762,10 +1282,15 @@
 
           <div class="sol-delay-console">
             <div class="sol-delay-route" id="sol-delay-route">
+              <div class="sol-delay-route-hud">
+                <span>Two-way communication path</span>
+                <span id="sol-delay-scale">Time-compressed · 6 min represented</span>
+              </div>
               <div class="sol-delay-world sol-delay-earth" aria-hidden="true">E</div>
-              <div class="sol-delay-world sol-delay-target" id="sol-delay-target" aria-hidden="true">M</div>
+              <div class="sol-delay-world sol-delay-target" id="sol-delay-target" data-label="ROVER" aria-hidden="true">R</div>
               <div class="sol-delay-pulse" aria-hidden="true"></div>
               <div class="sol-delay-pulse return" aria-hidden="true"></div>
+              <div class="sol-delay-caption">Yellow travels outward; blue represents the reply. Animation speed is illustrative, not real time.</div>
             </div>
             <div class="sol-delay-readouts">
               <div class="sol-delay-readout">
@@ -789,9 +1314,29 @@
 
     <!-- ── Interactive Simulator ── -->
     <section class="sol-sim">
-      <h2>Light-Travel Simulator: Realistic Scales</h2>
-      <p class="sol-sim-sub">Fire a photon and watch it travel in real time. See why Mars rovers can't be controlled in real-time, and why even the closest star takes 4 years for light to reach.</p>
-      <canvas id="sol-canvas" height="120" aria-label="Light travel animation"></canvas>
+      <h2>Light-Travel Simulator: Time-Compressed Model</h2>
+      <p class="sol-sim-sub">Launch a signal and compare destinations on a five-second model timeline. The displayed travel time is physically meaningful; the animation itself is deliberately compressed.</p>
+      <div class="sol-sim-command">
+        <div class="sol-sim-field">
+          <label for="sol-dest">Signal destination</label>
+          <select class="sol-sim-select" id="sol-dest">
+            <option value="moon">Moon — 1.28 seconds</option>
+            <option value="sun" selected>Sun — 8 minutes 20 seconds</option>
+            <option value="mars">Mars at closest approach — about 3 minutes</option>
+            <option value="voyager">Deep-space probe — about 23 hours</option>
+            <option value="alpha">Alpha Centauri system — 4.37 years</option>
+          </select>
+        </div>
+        <button class="sol-sim-btn" id="sol-launch-btn">Launch signal ›</button>
+      </div>
+      <div class="sol-sim-visual">
+        <div class="sol-sim-visual-head">
+          <span>Earth → selected destination</span>
+          <span class="sol-model-badge" id="sol-compression">5-second model</span>
+        </div>
+        <canvas id="sol-canvas" height="220" role="img" aria-label="Time-compressed animation of a light signal traveling from Earth to the selected destination">A visual model showing a light signal traveling from Earth to the selected destination.</canvas>
+        <div class="sol-sim-progress" aria-hidden="true"><span id="sol-sim-progress"></span></div>
+      </div>
       <div class="sol-sim-result" id="sol-sim-result">Select a destination and press Launch to begin.</div>
 
       <div class="sol-mission-control">
@@ -817,23 +1362,23 @@
       </div>
 
       <div class="sol-context-box" id="sol-context-info">
-        ℹ️ <strong>Launch a photon</strong> to see real-time travel. Check the destination dropdown for special insights on each destination.
+        ℹ️ <strong>Launch a signal</strong> to compare its model journey with the physical travel time.
       </div>
     </section>
 
     <!-- ── Why is c the speed limit? ── -->
     <section class="sol-card" style="--card-accent:#5856d6;">
-      <h2>Why Nothing Can Go Faster</h2>
-      <p>The speed of light is not just how fast light happens to travel — it is a fundamental limit baked into the structure of the universe. Einstein's <strong>Special Theory of Relativity</strong> (1905) showed why:</p>
-      <h3>Mass increases with speed</h3>
-      <p>As any object with mass accelerates, it gains energy — and that energy acts like additional mass. The faster you go, the heavier you get. To reach the speed of light, you would need <em>infinite energy</em>, which is impossible. Only massless particles (like photons of light) can travel at exactly c.</p>
-      <h3>E = mc²</h3>
-      <p>Einstein's famous equation connects mass (m), energy (E), and the speed of light (c). That tiny squared c — 90,000,000,000,000,000 — is why a tiny amount of mass contains an enormous amount of energy. It is the reason nuclear reactors and the Sun produce so much power from so little fuel.</p>
+      <h2>Why Massive Objects Cannot Reach c</h2>
+      <p>The speed of light is not merely how fast light happens to travel. In special relativity, <strong>c</strong> is the invariant speed that every inertial observer measures the same way and the upper limit for causal signals.</p>
+      <h3>The energy requirement grows without limit</h3>
+      <p>An object's invariant mass does <em>not</em> increase as it accelerates. Instead, its total energy and momentum grow ever more steeply as its speed approaches c. Reaching c would require unbounded energy, so an object with mass can approach—but never reach—the limit. Massless particles, including photons in a vacuum, travel at c.</p>
+      <h3>E = mc² describes rest energy</h3>
+      <p>Einstein's famous equation says that an object at rest has energy <strong>E₀ = mc²</strong>. Because c² is about 9 × 10¹⁶ m²/s², a small change in mass can correspond to a large release of energy, as in the Sun and nuclear reactions.</p>
       <div style="text-align:center;padding:0.7rem 0;font-size:1.5rem;font-weight:900;letter-spacing:-0.02em;">
-        E = m<span style="color:#ff9500;">c</span><sup style="font-size:0.6em;vertical-align:super;">2</sup>
+        E<sub style="font-size:0.55em;">0</sub> = m<span style="color:#ff9500;">c</span><sup style="font-size:0.6em;vertical-align:super;">2</sup>
       </div>
       <h3>Time dilation and length contraction</h3>
-      <p>Moving clocks run slow. Moving objects shrink in the direction of travel. These are not illusions — they are real, measurable effects that GPS satellites must correct for every single day. At the speed of light, time would stop entirely from the photon's perspective.</p>
+      <p>Relative to an observer, a moving clock accumulates less elapsed time and a moving object's length along its direction of motion is shorter. These are measurable relationships between reference frames. GPS calculations account for both special-relativistic motion and general-relativistic gravity. A photon has no valid rest frame, so relativity does not define a “photon's perspective.”</p>
 
       <div class="sol-relativity-lab">
         <h3>Relativity Ramp</h3>
@@ -862,6 +1407,28 @@
             <span>Length measured along the direction of travel.</span>
           </div>
         </div>
+        <div class="sol-rel-visuals">
+          <div class="sol-rel-visual">
+            <div class="sol-rel-visual-head">
+              <strong>Light Clock</strong>
+              <span id="sol-clock-caption">Straight path vs. diagonal path</span>
+            </div>
+            <div class="sol-rel-canvas-wrap">
+              <canvas class="sol-rel-canvas" id="sol-light-clock" height="240" role="img" aria-label="Comparison of a light clock in its own frame and as observed moving from Earth">A diagram comparing the straight and diagonal paths of light in a moving clock.</canvas>
+            </div>
+            <p>Because every observer measures the same c, the longer diagonal path corresponds to more elapsed Earth-frame time between ticks.</p>
+          </div>
+          <div class="sol-rel-visual">
+            <div class="sol-rel-visual-head">
+              <strong>Energy Near the Limit</strong>
+              <span id="sol-energy-caption">E = 1.67 mc²</span>
+            </div>
+            <div class="sol-rel-canvas-wrap">
+              <canvas class="sol-rel-canvas" id="sol-energy-graph" height="240" role="img" aria-label="Graph of total relativistic energy rising as speed approaches the speed of light">A graph showing total energy increasing sharply near the speed of light.</canvas>
+            </div>
+            <p>The vertical axis is logarithmic. Total energy is shown in multiples of rest energy, E/(mc²) = γ.</p>
+          </div>
+        </div>
         <div class="sol-relativity-note" id="sol-rel-note">At 0.8c, a 10-year trip measured from Earth feels like about 6 years onboard. Fast, but still below the speed limit.</div>
       </div>
     </section>
@@ -870,6 +1437,58 @@
     <section class="sol-card" style="--card-accent:#34c759;">
       <h2>How We Measured the Speed of Light</h2>
       <p>Figuring out how fast light travels required centuries of increasingly clever experiments.</p>
+      <div class="sol-archive" aria-label="Public-domain historical illustrations of speed-of-light experiments">
+        <div class="sol-archive-head">
+          <h3>From the Historical Record</h3>
+          <span>Original diagrams · Public domain</span>
+        </div>
+        <div class="sol-archive-grid">
+          <figure class="sol-archive-plate">
+            <div class="sol-archive-image">
+              <img src="../assets/images/lessons/speed-of-light/roemer-1676-jupiter-io.jpg" width="436" height="825" loading="lazy" decoding="async" alt="Rømer's 1676 diagram showing the Sun at A, Earth's orbit as the large circle, and Jupiter and Io above it" />
+            </div>
+            <figcaption>
+              <span class="sol-archive-year">1676 · Rømer</span>
+              <strong>A planetary clock reveals that light takes time</strong>
+              <p>The large circle represents Earth's orbit around the Sun at A. Jupiter is marked B above it. Rømer compared the timing of Io's eclipses as Earth moved between nearer and farther parts of its orbit.</p>
+              <div class="sol-archive-source">
+                <a href="https://commons.wikimedia.org/wiki/File:Illustration_from_1676_article_on_Ole_R%C3%B8mer%27s_measurement_of_the_speed_of_light.jpg" target="_blank" rel="noopener">Source scan</a>
+                <a href="https://creativecommons.org/publicdomain/mark/1.0/" target="_blank" rel="noopener">Public Domain Mark</a>
+              </div>
+            </figcaption>
+          </figure>
+
+          <figure class="sol-archive-plate">
+            <div class="sol-archive-image">
+              <img src="../assets/images/lessons/speed-of-light/fizeau-1874-apparatus.jpg" width="295" height="670" loading="lazy" decoding="async" alt="Nineteenth-century technical engraving of Fizeau's rotating cogwheel and optical viewing apparatus" />
+            </div>
+            <figcaption>
+              <span class="sol-archive-year">1874 engraving · Fizeau apparatus</span>
+              <strong>Turning light's flight into a mechanical measurement</strong>
+              <p>A rotating toothed wheel chopped the beam into pulses. At the right wheel speed, a tooth blocked the returning light; wheel rate, tooth spacing, and mirror distance supplied the travel time.</p>
+              <div class="sol-archive-source">
+                <a href="https://commons.wikimedia.org/wiki/File:Fizeau1849.jpg" target="_blank" rel="noopener">Source scan</a>
+                <a href="https://creativecommons.org/publicdomain/mark/1.0/" target="_blank" rel="noopener">Public Domain Mark</a>
+              </div>
+            </figcaption>
+          </figure>
+
+          <figure class="sol-archive-plate wide">
+            <div class="sol-archive-image">
+              <img src="../assets/images/lessons/speed-of-light/michelson-1930-vacuum-tube.jpg" width="1168" height="470" loading="lazy" decoding="async" alt="1930 photograph and technical cutaway of Michelson's mile-long vacuum tube, mirrors, arc light, and spinning eight-sided mirror" />
+            </div>
+            <figcaption>
+              <span class="sol-archive-year">1930 · Michelson, Pease, and Pearson</span>
+              <strong>A ten-mile optical path inside a mile-long vacuum tube</strong>
+              <p>Mirrors sent the beam through the tube ten times. During that flight an eight-sided mirror rotated slightly, changing the returning beam's angle and allowing the experimenters to calculate its travel time.</p>
+              <div class="sol-archive-source">
+                <a href="https://commons.wikimedia.org/wiki/File:Michelson_speed_of_light_measurement_1930.jpg" target="_blank" rel="noopener">Source publication image</a>
+                <span>Public domain in the United States · copyright not renewed</span>
+              </div>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
       <ul class="sol-timeline">
         <li>
           <span class="sol-timeline-year">1676</span>
@@ -889,7 +1508,7 @@
         </li>
         <li>
           <span class="sol-timeline-year">1983</span>
-          <span>The speed of light was declared an <strong>exact, defined constant</strong>: 299,792,458 m/s. The metre is now defined as the distance light travels in 1/299,792,458 of a second — meaning c can never change, by definition.</span>
+          <span>The speed of light was assigned the <strong>exact SI numerical value</strong> 299,792,458 m/s. The metre is now defined from the distance light travels in vacuum during 1/299,792,458 of a second.</span>
         </li>
       </ul>
     </section>
@@ -910,7 +1529,7 @@
           <span class="sol-conseq-icon">🔭</span>
           <div class="sol-conseq-text">
             <strong>Telescopes Are Time Machines</strong>
-            <small>Every telescope is a time machine. When the James Webb Space Telescope observes galaxies 13 billion light-years away, it sees them as they were 13 billion years ago — just 700 million years after the Big Bang.</small>
+            <small>Every telescope is a time machine. When a telescope collects light with a 13-billion-year lookback time, it sees a galaxy as it was when the universe was less than a billion years old.</small>
           </div>
         </div>
         <div class="sol-conseq-card">
@@ -999,28 +1618,16 @@
   </main>
   </div><!-- /.ll-sim -->
 
-  <aside class="ll-panel" aria-hidden="false">
+  <aside class="ll-panel" aria-hidden="true">
     <div class="ll-panel-head">
       <div class="ll-tabs">
-        <button class="ll-tab" aria-selected="true" data-pane="sol-params">Controls</button>
+        <button class="ll-tab" aria-selected="true" data-pane="sol-params">Overview</button>
         <button class="ll-tab" aria-selected="false" data-pane="sol-guide">Guide</button>
       </div>
       <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
     </div>
     <div class="ll-panel-body">
       <div class="ll-pane ll-active" id="sol-params">
-        <span class="ll-label">Destination</span>
-        <div class="sol-sim-field" style="margin-bottom:0.75rem;">
-          <select class="sol-sim-select" id="sol-dest" style="width:100%;">
-            <option value="moon">Moon (1.3 s)</option>
-            <option value="sun" selected>Sun (8.3 min)</option>
-            <option value="mars">Mars — closest (3 min)</option>
-            <option value="voyager">Voyager 1 (22.5 h)</option>
-            <option value="alpha">Alpha Centauri (4.4 years)</option>
-          </select>
-        </div>
-        <button class="sol-sim-btn" id="sol-launch-btn" style="width:100%;margin-bottom:1rem;">Launch photon ›</button>
-        <hr class="ll-hr">
         <span class="ll-label">Key Facts</span>
         <div class="ll-readouts">
           <div class="ll-readout">
@@ -1106,11 +1713,11 @@
         context: '🤖 The "Mars Latency Problem": NASA rovers can\'t be controlled in real-time because of the light-speed delay. Commands take 3-22 minutes one-way (depending on orbit). Engineers must program rovers to act autonomously.'
       },
       voyager: {
-        label: 'Voyager 1',
-        travelSec: 81000,
-        dist: '~24 billion km',
+        label: 'Deep-space probe',
+        travelSec: 82800,
+        dist: '~25 billion km',
         color: '#7b9fc4',
-        context: '🛸 Voyager 1, humanity\'s most distant spacecraft (22.5 light-hours away), takes 22.5 hours for commands to reach it one-way. Two-way communication takes 45 hours. It\'s the longest game of hide-and-seek ever played.'
+        context: '🛸 A probe about 23 light-hours away receives a command nearly a day after it is sent. A reply cannot return until almost two days after the original transmission.'
       },
       alpha: {
         label: 'Alpha Centauri',
@@ -1128,10 +1735,11 @@
     const contextInfo = document.getElementById('sol-context-info');
     const launchBtn = document.getElementById('sol-launch-btn');
     const destSelect = document.getElementById('sol-dest');
+    const progressBar = document.getElementById('sol-sim-progress');
+    const compressionBadge = document.getElementById('sol-compression');
 
     let animFrame = null;
     let isAnimating = false;
-    let simSpeed = 1; // Normal speed
 
     function formatTime(sec) {
       if (sec < 60) return sec.toFixed(2) + ' s';
@@ -1154,28 +1762,36 @@
         oneWay: 1.28,
         live: 'Yes',
         target: 'M',
+        label: 'MOON',
         color: '#94a3b8',
+        modelDuration: 2,
         note: 'Moon communication has a noticeable pause, but astronauts can still hold a conversation with Mission Control.'
       },
       mars: {
         oneWay: 180,
         live: 'No',
         target: 'R',
+        label: 'ROVER',
         color: '#ff3b30',
+        modelDuration: 2.6,
         note: 'A Mars rover needs autonomy: by the time a driver sees a rock, sends a turn command, and receives confirmation, several minutes have passed.'
       },
       jupiter: {
         oneWay: 2100,
         live: 'No',
         target: 'J',
+        label: 'JUPITER',
         color: '#c0843f',
+        modelDuration: 3.2,
         note: 'Jupiter missions rely on carefully sequenced commands. A quick correction can take more than an hour round trip.'
       },
       alpha: {
         oneWay: 137840000,
         live: 'No',
         target: 'A',
+        label: 'A. CENTAURI',
         color: '#ff1493',
+        modelDuration: 4,
         note: 'A message to Alpha Centauri would take about 4.37 years to arrive. The earliest reply would come back 8.7 years after you sent it.'
       }
     };
@@ -1192,12 +1808,69 @@
       document.getElementById('sol-delay-note').textContent = data.note;
       const target = document.getElementById('sol-delay-target');
       target.textContent = data.target;
+      target.dataset.label = data.label;
       target.style.setProperty('--target-color', data.color);
+      const route = document.getElementById('sol-delay-route');
+      route.style.setProperty('--target-color', data.color);
+      route.style.setProperty('--signal-duration', `${data.modelDuration}s`);
+      route.style.setProperty('--signal-half', `${data.modelDuration / 2}s`);
+      document.getElementById('sol-delay-scale').textContent =
+        `Time-compressed · ${formatTime(data.oneWay * 2)} represented`;
     }
 
     document.querySelectorAll('[data-delay-dest]').forEach((button) => {
       button.addEventListener('click', () => updateDelayLab(button.dataset.delayDest));
     });
+
+    const LOOKBACK_DESTS = {
+      moon: {
+        fill: '0%',
+        time: '1.28 seconds',
+        title: 'The Moon',
+        copy: 'The Moon you see is already 1.28 seconds in the past. A reflected laser pulse needs about 2.56 seconds to make the complete Earth–Moon–Earth trip.'
+      },
+      sun: {
+        fill: '15%',
+        time: '8 min 20 sec',
+        title: 'The Sun',
+        copy: 'The sunlight reaching your eyes now left the Sun about eight minutes ago. You never see the Sun exactly as it is “right now.”'
+      },
+      proxima: {
+        fill: '47%',
+        time: '4.24 years',
+        title: 'Proxima Centauri',
+        copy: 'Today’s view of the nearest star shows it as it was a little over four years ago. A reply to a message would require at least another 4.24 years.'
+      },
+      andromeda: {
+        fill: '81%',
+        time: '2.5 million years',
+        title: 'Andromeda Galaxy',
+        copy: 'The light entering a telescope tonight began its trip around the time early members of the genus Homo were living on Earth.'
+      },
+      cmb: {
+        fill: '99%',
+        time: '~13.8 billion years',
+        title: 'Cosmic Microwave Background',
+        copy: 'This ancient light was released when the universe became transparent, about 380,000 years after the Big Bang. Expansion carried its source region much farther away while the light traveled.'
+      }
+    };
+
+    function updateLookback(key) {
+      const data = LOOKBACK_DESTS[key];
+      if (!data) return;
+      document.querySelectorAll('[data-lookback]').forEach((button) => {
+        button.setAttribute('aria-pressed', button.dataset.lookback === key ? 'true' : 'false');
+      });
+      document.getElementById('sol-lookback-stage').style.setProperty('--lookback-pos', data.fill);
+      document.getElementById('sol-lookback-time').textContent = data.time;
+      document.getElementById('sol-lookback-title').textContent = data.title;
+      document.getElementById('sol-lookback-copy').textContent = data.copy;
+    }
+
+    document.querySelectorAll('[data-lookback]').forEach((button) => {
+      button.addEventListener('click', () => updateLookback(button.dataset.lookback));
+    });
+    updateLookback('sun');
 
     const relSpeed = document.getElementById('sol-rel-speed');
     const relSpeedPill = document.getElementById('sol-rel-speed-pill');
@@ -1206,6 +1879,233 @@
     const relLength = document.getElementById('sol-rel-length');
     const relFill = document.getElementById('sol-rel-fill');
     const relNote = document.getElementById('sol-rel-note');
+    const lightClockCanvas = document.getElementById('sol-light-clock');
+    const energyCanvas = document.getElementById('sol-energy-graph');
+    const clockCaption = document.getElementById('sol-clock-caption');
+    const energyCaption = document.getElementById('sol-energy-caption');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let currentBeta = Number(relSpeed.value) / 100;
+
+    function prepareRelCanvas(canvas) {
+      const W = canvas.offsetWidth || 500;
+      const H = canvas.clientHeight || 240;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const pixelW = Math.round(W * dpr);
+      const pixelH = Math.round(H * dpr);
+      if (canvas.width !== pixelW || canvas.height !== pixelH) {
+        canvas.width = pixelW;
+        canvas.height = pixelH;
+      }
+      const context = canvas.getContext('2d');
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      context.clearRect(0, 0, W, H);
+      return { context, W, H };
+    }
+
+    function drawEnergyGraph(beta) {
+      if (!energyCanvas) return;
+      const { context: graph, W, H } = prepareRelCanvas(energyCanvas);
+      const pad = { left: 42, right: 18, top: 22, bottom: 36 };
+      const plotW = W - pad.left - pad.right;
+      const plotH = H - pad.top - pad.bottom;
+      const maxBeta = 0.999;
+      const maxGamma = 1 / Math.sqrt(1 - maxBeta * maxBeta);
+      const gammaFor = (value) => 1 / Math.sqrt(1 - value * value);
+      const xFor = (value) => pad.left + (value / maxBeta) * plotW;
+      const yFor = (gamma) => pad.top + plotH - (Math.log(gamma) / Math.log(maxGamma)) * plotH;
+
+      const bg = graph.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#11183a');
+      bg.addColorStop(1, '#070b1d');
+      graph.fillStyle = bg;
+      graph.fillRect(0, 0, W, H);
+
+      graph.font = '600 9px "Space Mono", monospace';
+      graph.textAlign = 'right';
+      graph.textBaseline = 'middle';
+      [1, 2, 5, 10, 20].forEach((value) => {
+        const y = yFor(value);
+        graph.strokeStyle = 'rgba(148,163,184,0.16)';
+        graph.lineWidth = 1;
+        graph.beginPath();
+        graph.moveTo(pad.left, y);
+        graph.lineTo(W - pad.right, y);
+        graph.stroke();
+        graph.fillStyle = 'rgba(203,213,225,0.6)';
+        graph.fillText(`${value}×`, pad.left - 7, y);
+      });
+
+      graph.textAlign = 'center';
+      graph.textBaseline = 'top';
+      [0, 0.5, 0.9, 0.99].forEach((value) => {
+        const x = xFor(value);
+        graph.strokeStyle = 'rgba(148,163,184,0.13)';
+        graph.beginPath();
+        graph.moveTo(x, pad.top);
+        graph.lineTo(x, H - pad.bottom);
+        graph.stroke();
+        graph.fillStyle = 'rgba(203,213,225,0.58)';
+        graph.fillText(value === 0 ? '0' : `${value}c`, x, H - pad.bottom + 9);
+      });
+
+      const area = graph.createLinearGradient(0, pad.top, 0, H - pad.bottom);
+      area.addColorStop(0, 'rgba(255,149,0,0.38)');
+      area.addColorStop(1, 'rgba(88,86,214,0.06)');
+      graph.beginPath();
+      graph.moveTo(xFor(0), yFor(1));
+      for (let i = 0; i <= 220; i++) {
+        const value = (i / 220) * maxBeta;
+        graph.lineTo(xFor(value), yFor(gammaFor(value)));
+      }
+      graph.lineTo(xFor(maxBeta), H - pad.bottom);
+      graph.lineTo(xFor(0), H - pad.bottom);
+      graph.closePath();
+      graph.fillStyle = area;
+      graph.fill();
+
+      graph.beginPath();
+      for (let i = 0; i <= 220; i++) {
+        const value = (i / 220) * maxBeta;
+        const x = xFor(value);
+        const y = yFor(gammaFor(value));
+        if (i === 0) graph.moveTo(x, y);
+        else graph.lineTo(x, y);
+      }
+      graph.strokeStyle = '#ff9f0a';
+      graph.lineWidth = 3;
+      graph.shadowBlur = 12;
+      graph.shadowColor = 'rgba(255,159,10,0.58)';
+      graph.stroke();
+      graph.shadowBlur = 0;
+
+      const gamma = gammaFor(beta);
+      const markerX = xFor(Math.min(beta, maxBeta));
+      const markerY = yFor(Math.min(gamma, maxGamma));
+      graph.setLineDash([4, 4]);
+      graph.strokeStyle = 'rgba(255,224,102,0.5)';
+      graph.beginPath();
+      graph.moveTo(markerX, markerY);
+      graph.lineTo(markerX, H - pad.bottom);
+      graph.stroke();
+      graph.setLineDash([]);
+      graph.fillStyle = '#ffe066';
+      graph.shadowBlur = 16;
+      graph.shadowColor = '#ffe066';
+      graph.beginPath();
+      graph.arc(markerX, markerY, 5.5, 0, Math.PI * 2);
+      graph.fill();
+      graph.shadowBlur = 0;
+
+      graph.fillStyle = 'rgba(226,232,240,0.72)';
+      graph.font = '700 9px "Space Mono", monospace';
+      graph.textAlign = 'left';
+      graph.textBaseline = 'top';
+      graph.fillText('TOTAL ENERGY / REST ENERGY', pad.left, 7);
+      graph.textAlign = 'right';
+      graph.fillText('SPEED → c', W - pad.right, H - 15);
+    }
+
+    function drawLightClock(beta, timestamp) {
+      if (!lightClockCanvas) return;
+      const { context: clock, W, H } = prepareRelCanvas(lightClockCanvas);
+      const gamma = 1 / Math.sqrt(1 - beta * beta);
+      const half = W / 2;
+      const topY = 64;
+      const bottomY = H - 54;
+      const restX = half * 0.5;
+      const movingX = half + half * 0.5;
+      const spread = Math.min(half * 0.29, 14 + Math.log2(gamma + 1) * 17);
+      const restPhase = reduceMotion.matches ? 0.35 : (timestamp % 1400) / 1400;
+      const movingPeriod = 1400 * gamma;
+      const movingPhase = reduceMotion.matches ? 0.35 : (timestamp % movingPeriod) / movingPeriod;
+      const triangle = (phase) => phase < 0.5 ? phase * 2 : (1 - phase) * 2;
+
+      const bg = clock.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#101736');
+      bg.addColorStop(1, '#070b1d');
+      clock.fillStyle = bg;
+      clock.fillRect(0, 0, W, H);
+      clock.strokeStyle = 'rgba(148,163,184,0.18)';
+      clock.beginPath();
+      clock.moveTo(half, 16);
+      clock.lineTo(half, H - 16);
+      clock.stroke();
+
+      clock.fillStyle = 'rgba(226,232,240,0.72)';
+      clock.font = '700 9px "Space Mono", monospace';
+      clock.textAlign = 'center';
+      clock.fillText('CLOCK FRAME', restX, 22);
+      clock.fillText('EARTH FRAME', movingX, 22);
+
+      function mirror(x, y, width) {
+        const grad = clock.createLinearGradient(x - width / 2, y, x + width / 2, y);
+        grad.addColorStop(0, 'rgba(116,192,252,0.28)');
+        grad.addColorStop(0.5, '#dbeafe');
+        grad.addColorStop(1, 'rgba(116,192,252,0.28)');
+        clock.strokeStyle = grad;
+        clock.lineWidth = 5;
+        clock.beginPath();
+        clock.moveTo(x - width / 2, y);
+        clock.lineTo(x + width / 2, y);
+        clock.stroke();
+      }
+
+      mirror(restX, topY, 54);
+      mirror(restX, bottomY, 54);
+      clock.strokeStyle = 'rgba(255,224,102,0.5)';
+      clock.lineWidth = 2;
+      clock.setLineDash([5, 5]);
+      clock.beginPath();
+      clock.moveTo(restX, bottomY);
+      clock.lineTo(restX, topY);
+      clock.stroke();
+
+      mirror(movingX - spread, bottomY, 48);
+      mirror(movingX, topY, 48);
+      mirror(movingX + spread, bottomY, 48);
+      clock.strokeStyle = 'rgba(255,159,10,0.58)';
+      clock.beginPath();
+      clock.moveTo(movingX - spread, bottomY);
+      clock.lineTo(movingX, topY);
+      clock.lineTo(movingX + spread, bottomY);
+      clock.stroke();
+      clock.setLineDash([]);
+
+      function photon(x, y, color) {
+        clock.fillStyle = color;
+        clock.shadowBlur = 18;
+        clock.shadowColor = color;
+        clock.beginPath();
+        clock.arc(x, y, 5.5, 0, Math.PI * 2);
+        clock.fill();
+        clock.shadowBlur = 0;
+      }
+
+      const restTravel = triangle(restPhase);
+      photon(restX, bottomY - restTravel * (bottomY - topY), '#ffe066');
+
+      const movingOutbound = movingPhase < 0.5;
+      const movingLeg = movingOutbound ? movingPhase * 2 : (movingPhase - 0.5) * 2;
+      photon(
+        movingOutbound
+          ? movingX - spread + spread * movingLeg
+          : movingX + spread * movingLeg,
+        movingOutbound
+          ? bottomY - movingLeg * (bottomY - topY)
+          : topY + movingLeg * (bottomY - topY),
+        '#ff9f0a'
+      );
+
+      clock.fillStyle = 'rgba(203,213,225,0.58)';
+      clock.font = '600 8px "Space Mono", monospace';
+      clock.fillText('STRAIGHT PATH', restX, H - 23);
+      clock.fillText('LONGER DIAGONAL PATH', movingX, H - 23);
+    }
+
+    function animateLightClock(timestamp) {
+      drawLightClock(currentBeta, timestamp || 0);
+      if (!reduceMotion.matches) requestAnimationFrame(animateLightClock);
+    }
 
     function updateRelativityRamp() {
       if (!relSpeed) return;
@@ -1218,6 +2118,11 @@
       relShipTime.textContent = `${shipYears.toFixed(1)} y`;
       relLength.textContent = `${lengthPercent.toFixed(0)}%`;
       relFill.style.width = `${Number(relSpeed.value)}%`;
+      currentBeta = beta;
+      clockCaption.textContent = `Moving clock runs at ${(100 / gamma).toFixed(0)}% of Earth’s rate`;
+      energyCaption.textContent = `E = ${gamma.toFixed(2)} mc²`;
+      drawEnergyGraph(beta);
+      if (reduceMotion.matches) drawLightClock(beta, 0);
 
       if (beta < 0.5) {
         relNote.textContent = 'At everyday spacecraft speeds, relativistic effects are real but tiny. The universe still behaves almost Newtonian.';
@@ -1231,123 +2136,147 @@
     if (relSpeed) {
       relSpeed.addEventListener('input', updateRelativityRamp);
       updateRelativityRamp();
+      animateLightClock(performance.now());
     }
     updateDelayLab('mars');
 
     function updateTelemetry(dest, elapsedRealTime) {
-      const actualTime = elapsedRealTime * simSpeed;
       document.getElementById('sol-distance').textContent = dest.dist;
-      document.getElementById('sol-elapsed').textContent = formatTime(actualTime);
+      document.getElementById('sol-elapsed').textContent = formatTime(elapsedRealTime);
       document.getElementById('sol-status').textContent = isAnimating ? 'IN FLIGHT' : 'IDLE';
     }
 
     function drawTrack(progress, dest) {
       const W = canvas.offsetWidth || 800;
-      canvas.width = W;
-      const H = canvas.height;
-      const PAD = 40;
+      const H = canvas.clientHeight || 220;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const PAD = Math.max(48, Math.min(72, W * 0.1));
       const trackW = W - PAD * 2;
+      const trackY = H * 0.5;
+      const planetR = W < 520 ? 18 : 23;
+      const destX = PAD + trackW;
 
       ctx.clearRect(0, 0, W, H);
 
-      // Space background with subtle gradient
-      const bg = ctx.createLinearGradient(0, 0, W, 0);
-      bg.addColorStop(0, '#0a0a1a');
-      bg.addColorStop(0.5, '#0a0a2a');
-      bg.addColorStop(1, '#0a0a1a');
+      const bg = ctx.createRadialGradient(W * 0.52, trackY, 10, W * 0.52, trackY, W * 0.72);
+      bg.addColorStop(0, '#111c3a');
+      bg.addColorStop(0.5, '#0a1229');
+      bg.addColorStop(1, '#050b17');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
 
-      // Twinkling stars
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      for (let i = 0; i < 15; i++) {
-        const x = (PAD + (i / 15) * trackW) + Math.sin(Date.now() / 3000 + i) * 4;
-        const y = (H * 0.3) + Math.cos(Date.now() / 4000 + i) * 3;
-        const size = 0.5 + Math.sin(Date.now() / 1500 + i) * 0.3;
+      // Deterministic star field keeps the model calm while the signal moves.
+      for (let i = 0; i < 46; i++) {
+        const x = (i * 83 + 29) % W;
+        const y = (i * 47 + 17) % H;
+        const size = i % 9 === 0 ? 1.15 : 0.55;
+        ctx.fillStyle = i % 7 === 0 ? 'rgba(116,192,252,0.72)' : 'rgba(255,255,255,0.46)';
         ctx.beginPath();
         ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Track line with markers
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([10, 8]);
+      // Signal corridor and fractional route markers. The route is normalized,
+      // so equal screen distance does not imply equal astronomical distance.
+      ctx.save();
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = 'rgba(77,171,247,0.34)';
+      ctx.strokeStyle = 'rgba(116,192,252,0.28)';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(PAD, H / 2);
-      ctx.lineTo(PAD + trackW, H / 2);
+      ctx.moveTo(PAD, trackY);
+      ctx.lineTo(destX, trackY);
       ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.restore();
 
-      // Distance markers
-      ctx.fillStyle = 'rgba(255,255,255,0.2)';
-      ctx.font = 'bold 9px Inter,sans-serif';
+      ctx.font = '700 9px "Space Mono", monospace';
       ctx.textAlign = 'center';
       for (let i = 0; i <= 4; i++) {
         const mx = PAD + (i / 4) * trackW;
-        ctx.fillRect(mx - 0.5, H / 2 - 4, 1, 8);
+        ctx.fillStyle = 'rgba(203,213,225,0.32)';
+        ctx.fillRect(mx - 0.5, trackY - 8, 1, 16);
+        if (i > 0 && i < 4) {
+          ctx.fillStyle = 'rgba(203,213,225,0.48)';
+          ctx.fillText(`${i * 25}%`, mx, trackY + 25);
+        }
       }
 
       // Earth
-      const earthGrad = ctx.createRadialGradient(PAD, H / 2, 0, PAD, H / 2, 14);
-      earthGrad.addColorStop(0, '#4a90e2');
-      earthGrad.addColorStop(1, '#0052cc');
+      const earthGrad = ctx.createRadialGradient(PAD - 7, trackY - 8, 2, PAD, trackY, planetR);
+      earthGrad.addColorStop(0, '#d8f3ff');
+      earthGrad.addColorStop(0.28, '#55b9ff');
+      earthGrad.addColorStop(0.58, '#2f80ed');
+      earthGrad.addColorStop(0.62, '#26945d');
+      earthGrad.addColorStop(1, '#082e5d');
+      ctx.save();
+      ctx.shadowBlur = 22;
+      ctx.shadowColor = '#2997ff';
       ctx.beginPath();
-      ctx.arc(PAD, H / 2, 14, 0, Math.PI * 2);
+      ctx.arc(PAD, trackY, planetR, 0, Math.PI * 2);
       ctx.fillStyle = earthGrad;
       ctx.fill();
-      ctx.strokeStyle = '#0052cc';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(168,224,255,0.75)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
+      ctx.restore();
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 9px monospace';
+      ctx.font = '700 10px "Space Mono", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('EARTH', PAD, H / 2 + 26);
+      ctx.fillText('EARTH', PAD, trackY + planetR + 22);
 
       // Destination
-      const destX = PAD + trackW;
-      const destGrad = ctx.createRadialGradient(destX, H / 2, 0, destX, H / 2, 14);
-      destGrad.addColorStop(0, dest.color);
-      destGrad.addColorStop(0.7, dest.color);
-      destGrad.addColorStop(1, 'rgba(0,0,0,0.3)');
+      const destGrad = ctx.createRadialGradient(destX - 7, trackY - 8, 1, destX, trackY, planetR);
+      destGrad.addColorStop(0, '#fff7df');
+      destGrad.addColorStop(0.32, dest.color);
+      destGrad.addColorStop(1, '#24142f');
+      ctx.save();
+      ctx.shadowBlur = 22;
+      ctx.shadowColor = dest.color;
       ctx.beginPath();
-      ctx.arc(destX, H / 2, 14, 0, Math.PI * 2);
+      ctx.arc(destX, trackY, planetR, 0, Math.PI * 2);
       ctx.fillStyle = destGrad;
       ctx.fill();
-      ctx.strokeStyle = dest.color;
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(255,255,255,0.62)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
+      ctx.restore();
       ctx.fillStyle = '#fff';
-      ctx.fillText(dest.label.split(' ')[0], destX, H / 2 + 26);
+      const shortLabel = dest.label === 'Alpha Centauri' ? 'A. CENTAURI' : dest.label.toUpperCase();
+      ctx.fillText(shortLabel, destX, trackY + planetR + 22);
 
-      // Photon and trail
+      // Signal and luminous trail
       if (progress > 0) {
         const px = PAD + progress * trackW;
-
-        // Glow trail
-        const trail = ctx.createLinearGradient(PAD, H / 2, px, H / 2);
+        const trail = ctx.createLinearGradient(PAD, trackY, px, trackY);
         trail.addColorStop(0, 'rgba(255,230,0,0)');
-        trail.addColorStop(0.5, 'rgba(255,200,0,0.15)');
-        trail.addColorStop(1, 'rgba(255,230,100,0.3)');
+        trail.addColorStop(0.55, 'rgba(255,200,0,0.12)');
+        trail.addColorStop(1, 'rgba(255,230,100,0.7)');
         ctx.fillStyle = trail;
-        ctx.fillRect(PAD, H / 2 - 3, px - PAD, 6);
+        ctx.fillRect(PAD, trackY - 3, Math.max(0, px - PAD), 6);
 
-        // Photon core with multiple glow layers
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = '#ffe000';
-        ctx.fillStyle = '#ffff00';
+        ctx.save();
+        ctx.shadowBlur = 26;
+        ctx.shadowColor = '#ffe066';
+        ctx.fillStyle = '#fff7ad';
         ctx.beginPath();
-        ctx.arc(px, H / 2, 6, 0, Math.PI * 2);
+        ctx.arc(px, trackY, 7, 0, Math.PI * 2);
         ctx.fill();
-
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = 'rgba(255,230,0,0.5)';
-        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.shadowBlur = 6;
+        ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.arc(px, H / 2, 3, 0, Math.PI * 2);
+        ctx.arc(px, trackY, 2.5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.restore();
       }
+
+      ctx.fillStyle = 'rgba(203,213,225,0.58)';
+      ctx.font = '600 9px "Space Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('NORMALIZED ROUTE · SCREEN DISTANCE IS NOT TO SCALE', W / 2, H - 11);
     }
 
     launchBtn.addEventListener('click', function () {
@@ -1356,17 +2285,20 @@
       const dest = DESTS[key];
       launchBtn.disabled = true;
       isAnimating = true;
+      progressBar.style.width = '0%';
 
       // Update context
       contextInfo.innerHTML = '📡 ' + dest.context;
+      compressionBadge.textContent = `5 sec model = ${formatTime(dest.travelSec)}`;
 
-      const SIM_DURATION = 5000; // 5 seconds for animation
+      const SIM_DURATION = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 500 : 5000;
       let start = performance.now();
 
       function frame(now) {
         const elapsed = now - start;
         const progress = Math.min(elapsed / SIM_DURATION, 1);
         drawTrack(progress, dest);
+        progressBar.style.width = `${progress * 100}%`;
 
         const actualTime = progress * dest.travelSec;
         updateTelemetry(dest, actualTime);
@@ -1377,6 +2309,7 @@
         } else {
           result.innerHTML = `✓ <span>ARRIVED at ${dest.label}</span> — Total travel time: <span>${formatTimeFull(dest.travelSec)}</span>`;
           isAnimating = false;
+          document.getElementById('sol-status').textContent = 'ARRIVED';
           launchBtn.disabled = false;
         }
       }
@@ -1389,13 +2322,25 @@
         const dest = DESTS[this.value];
         contextInfo.innerHTML = '📡 ' + dest.context;
         drawTrack(0, dest);
+        progressBar.style.width = '0%';
+        compressionBadge.textContent = `5 sec model = ${formatTime(dest.travelSec)}`;
         document.getElementById('sol-distance').textContent = dest.dist;
+        document.getElementById('sol-elapsed').textContent = '0.00 s';
+        document.getElementById('sol-status').textContent = 'IDLE';
       }
     });
 
     // Initial draw
     drawTrack(0, DESTS['sun']);
     contextInfo.innerHTML = '☀️ ' + DESTS['sun'].context;
+    compressionBadge.textContent = `5 sec model = ${formatTime(DESTS.sun.travelSec)}`;
+    document.getElementById('sol-distance').textContent = DESTS.sun.dist;
+
+    window.addEventListener('resize', () => {
+      if (!isAnimating) drawTrack(0, DESTS[destSelect.value]);
+      drawEnergyGraph(currentBeta);
+      if (reduceMotion.matches) drawLightClock(currentBeta, 0);
+    });
 
     /* ── Practice checker ─────────────────────────────── */
     window.solCheck = function (num, correct, tol) {

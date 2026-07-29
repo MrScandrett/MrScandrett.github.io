@@ -120,6 +120,14 @@ Maintained to demonstrate good-faith educational use and to credit creators.
 
 ---
 
+## Open-Source Educational Illustrations
+
+| Files | Description | License | Attribution |
+|------|-------------|---------|-------------|
+| lessons/constellations/*.webp | Modern constellation figure illustrations with matched star anchors | GPL-2.0 | Stellarium modern sky culture; see `lessons/constellations/SOURCE.md` |
+
+---
+
 ## Educational Fair Use (17 U.S.C. § 107)
 *Thumbnail-size, non-monetized, educational use only. All rights remain with original holders.*
 

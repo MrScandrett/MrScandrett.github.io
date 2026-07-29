@@ -251,40 +251,42 @@
           </div>
         </div>
 
-        <!-- Word of the Day -->
-        <div class="home-widget home-widget--wotd" aria-label="Word of the Day">
-          <p class="home-widget-eyebrow">Word of the Day</p>
-          <span class="wotd-subject-badge" id="wotd-badge">Science</span>
-          <h3 class="wotd-term" id="wotd-term"><span class="skeleton skeleton-text" style="width:44%"></span></h3>
-          <p class="wotd-pron" id="wotd-pron"></p>
-          <p class="wotd-grade" id="wotd-grade"></p>
-          <p class="wotd-def" id="wotd-def" aria-live="polite">
-            <span class="skeleton skeleton-text" style="width:90%"></span>
-            <span class="skeleton skeleton-text" style="width:68%"></span>
-          </p>
-          <blockquote class="wotd-example" id="wotd-example"></blockquote>
-          <div class="wotd-fact-box" id="wotd-fact-box">
-            <span class="wotd-fact-icon" aria-hidden="true">💡</span>
-            <span id="wotd-fact"></span>
+        <div class="daily-discovery-stack" aria-label="Daily discoveries">
+          <!-- Word of the Day -->
+          <div class="home-widget home-widget--wotd" aria-label="Word of the Day">
+            <p class="home-widget-eyebrow">Word of the Day</p>
+            <span class="wotd-subject-badge" id="wotd-badge">Science</span>
+            <h3 class="wotd-term" id="wotd-term"><span class="skeleton skeleton-text" style="width:44%"></span></h3>
+            <p class="wotd-pron" id="wotd-pron"></p>
+            <p class="wotd-grade" id="wotd-grade"></p>
+            <p class="wotd-def" id="wotd-def" aria-live="polite">
+              <span class="skeleton skeleton-text" style="width:90%"></span>
+              <span class="skeleton skeleton-text" style="width:68%"></span>
+            </p>
+            <blockquote class="wotd-example" id="wotd-example"></blockquote>
+            <div class="wotd-fact-box" id="wotd-fact-box">
+              <span class="wotd-fact-icon" aria-hidden="true">💡</span>
+              <span id="wotd-fact"></span>
+            </div>
+            <a class="wotd-lesson-link" id="wotd-lesson-link" href="#" hidden>Explore in Lessons →</a>
           </div>
-          <a class="wotd-lesson-link" id="wotd-lesson-link" href="#" hidden>Explore in Lessons →</a>
-        </div>
 
-        <!-- Lesson of the Day -->
-        <div class="home-widget home-widget--lotd" id="lotd-widget" aria-label="Lesson of the Day" aria-live="polite">
-          <div class="lotd-photo" id="lotd-photo" aria-hidden="true"></div>
-          <div class="lotd-main">
-            <div class="lotd-header">
-              <p class="home-widget-eyebrow" style="margin:0">Lesson of the Day</p>
-              <button class="lotd-shuffle" id="lotd-shuffle" type="button" aria-label="Try a different lesson">↺ Shuffle</button>
+          <!-- Lesson of the Day -->
+          <div class="home-widget home-widget--lotd" id="lotd-widget" aria-label="Lesson of the Day" aria-live="polite">
+            <div class="lotd-photo" id="lotd-photo" aria-hidden="true"></div>
+            <div class="lotd-main">
+              <div class="lotd-header">
+                <p class="home-widget-eyebrow" style="margin:0">Lesson of the Day</p>
+                <button class="lotd-shuffle" id="lotd-shuffle" type="button" aria-label="Try a different lesson">↺ Shuffle</button>
+              </div>
+              <div class="lotd-meta">
+                <span class="lotd-subject-badge" id="lotd-badge">Science</span>
+                <span class="lotd-track" id="lotd-track">Loading…</span>
+              </div>
+              <h3 class="lotd-title" id="lotd-title">—</h3>
+              <p class="lotd-desc" id="lotd-desc">—</p>
+              <a class="lotd-cta" href="#" id="lotd-link" aria-label="Open today's lesson">Open Lesson →</a>
             </div>
-            <div class="lotd-meta">
-              <span class="lotd-subject-badge" id="lotd-badge">Science</span>
-              <span class="lotd-track" id="lotd-track">Loading…</span>
-            </div>
-            <h3 class="lotd-title" id="lotd-title">—</h3>
-            <p class="lotd-desc" id="lotd-desc">—</p>
-            <a class="lotd-cta" href="#" id="lotd-link" aria-label="Open today's lesson">Open Lesson →</a>
           </div>
         </div>
 
@@ -558,7 +560,6 @@
   <script src="assets/js/canvas-bg.js"></script>
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js"></script>
-  <script src="assets/js/command-palette.js"></script>
   <script>
     // ── Homepage section tabs (Today / Explore / Sandbox) ──────────────
     (function () {
@@ -592,6 +593,21 @@
           if (panel.id === "tabpanel-sandbox") {
             window.dispatchEvent(new Event("resize"));
           }
+        });
+
+        tab.addEventListener("keydown", function (event) {
+          var currentIndex = tabs.indexOf(tab);
+          var nextIndex = currentIndex;
+
+          if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
+          else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+          else if (event.key === "Home") nextIndex = 0;
+          else if (event.key === "End") nextIndex = tabs.length - 1;
+          else return;
+
+          event.preventDefault();
+          tabs[nextIndex].focus();
+          tabs[nextIndex].click();
         });
       });
     })();
