@@ -1,1 +1,110 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Blockopolis</title><link rel="stylesheet" href="style.min.css"/></head><body><div class="wrap"><h1>🏙️ Blockopolis</h1><p class="subtitle">A tribute to 1989's original city-building sim. Zone, wire, and pave your way to a thriving town.</p><div class="stats"><div class="stat"><span class="label">Funds</span><span class="value" id="funds">$10,000</span></div><div class="stat"><span class="label">Population</span><span class="value" id="population">0</span></div><div class="stat"><span class="label">Date</span><span class="value" id="date">Jan 1900</span></div><div class="stat tax"><span class="label">Tax Rate</span> <input type="range" id="taxRate" min="0" max="20" value="9"/> <span class="value" id="taxRateValue">9%</span></div></div><div class="toolbar" id="toolbar"><button data-tool="bulldoze" class="tool active" title="Bulldoze ($1)">🧨<span>Bulldoze</span></button> <button data-tool="road" class="tool" title="Road ($10)">🛣️<span>Road</span></button> <button data-tool="rzone" class="tool" title="Residential Zone ($20)">🏠<span>Residential</span></button> <button data-tool="czone" class="tool" title="Commercial Zone ($25)">🏬<span>Commercial</span></button> <button data-tool="izone" class="tool" title="Industrial Zone ($25)">🏭<span>Industrial</span></button> <button data-tool="power" class="tool" title="Power Line ($15)">⚡<span>Power Line</span></button> <button data-tool="plant" class="tool" title="Power Plant ($500)">🔌<span>Power Plant</span></button></div><div class="stage"><canvas id="game" width="900" height="560"></canvas><div id="loading">Loading the city kit…</div></div><div class="controls"><button id="newCityBtn">New City</button> <button id="pauseBtn">Pause</button> <span class="hint">Left-click or drag to build. Right-drag to orbit, scroll to zoom. Zoned lots grow on their own once they're powered and touch a road.</span></div><p class="credit">City models: <a href="https://kaylousberg.com" rel="noopener">KayKit City Builder Bits</a> by Kay Lousberg (CC0).</p></div><script src="app.min.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blockopolis</title>
+  <link rel="stylesheet" href="style.min.css">
+</head>
+<body>
+  <div class="mac-menubar" role="menubar" aria-label="Blockopolis menu bar">
+    <span class="mac-mark" aria-hidden="true">◆</span>
+    <strong>Blockopolis</strong>
+    <button id="menuNewCityBtn" role="menuitem">New City</button>
+    <button id="menuPauseBtn" role="menuitem">Pause</button>
+    <span class="menu-edition">PREVIEW EDITION</span>
+    <time id="menuClock" aria-label="Current time">12:00 PM</time>
+  </div>
+  <main class="wrap">
+    <header class="masthead">
+      <div class="title-lines" aria-hidden="true"></div>
+      <h1>Blockopolis 1.0</h1>
+      <div class="title-lines" aria-hidden="true"></div>
+    </header>
+    <p class="subtitle"><span>MACROMUNICIPAL SYSTEMS</span> Build a balanced, healthy city where people want to live.</p>
+
+    <section class="stats" aria-label="City statistics">
+      <div class="stat"><span class="label">Funds</span><span class="value" id="funds">$10,000</span></div>
+      <div class="stat"><span class="label">Population</span><span class="value" id="population">0</span></div>
+      <div class="stat"><span class="label">Happiness</span><span class="value" id="happiness">50%</span></div>
+      <div class="stat"><span class="label">Quality of life</span><span class="value" id="qualityOfLife">50%</span></div>
+      <div class="stat"><span class="label">Employment</span><span class="value" id="employment">100%</span></div>
+      <div class="stat"><span class="label">Date</span><span class="value" id="date">Jan 1900</span></div>
+      <label class="stat tax">
+        <span class="label">Tax rate</span>
+        <input type="range" id="taxRate" min="0" max="20" value="9">
+        <span class="value" id="taxRateValue">9%</span>
+      </label>
+    </section>
+
+    <section class="demand-panel" aria-label="Zone demand">
+      <div class="demand">
+        <span>Residential</span>
+        <div class="meter"><i id="residentialDemand"></i></div>
+        <strong id="residentialDemandValue">50</strong>
+      </div>
+      <div class="demand">
+        <span>Commercial</span>
+        <div class="meter"><i id="commercialDemand"></i></div>
+        <strong id="commercialDemandValue">50</strong>
+      </div>
+      <div class="demand">
+        <span>Industrial</span>
+        <div class="meter"><i id="industrialDemand"></i></div>
+        <strong id="industrialDemandValue">50</strong>
+      </div>
+      <p id="advisor" class="advisor" aria-live="polite">Zone homes and jobs, then connect them to roads and power.</p>
+    </section>
+    <section class="coverage-panel" aria-label="Service coverage">
+      <span>Coverage</span>
+      <span>School <b id="schoolCoverage">0%</b></span>
+      <span>Police <b id="policeCoverage">0%</b></span>
+      <span>Hospital <b id="hospitalCoverage">0%</b></span>
+      <span>Parks <b id="parkCoverage">0%</b></span>
+      <span>Library <b id="libraryCoverage">0%</b></span>
+      <span>Water <b id="waterCoverage">0%</b></span>
+      <span>Fire <b id="fireCoverage">0%</b></span>
+      <span>Waste <b id="sanitationCoverage">0%</b></span>
+      <span>Transit <b id="transitCoverage">0%</b></span>
+      <span>Civic <b id="cityhallCoverage">0%</b></span>
+    </section>
+
+    <nav class="tool-groups" id="toolbar" aria-label="Build tools">
+      <div class="toolbar" aria-label="Infrastructure and zoning">
+        <button data-tool="bulldoze" class="tool active" title="Bulldoze ($1)" aria-label="Bulldoze"><b>⌫</b><span>Bulldoze</span></button>
+        <button data-tool="road" class="tool" title="Road ($10)" aria-label="Road"><b>━</b><span>Road</span></button>
+        <button data-tool="rzone" class="tool residential" title="Residential zone ($20)" aria-label="Residential zone"><b>R</b><span>Residential</span></button>
+        <button data-tool="czone" class="tool commercial" title="Commercial zone ($25)" aria-label="Commercial zone"><b>C</b><span>Commercial</span></button>
+        <button data-tool="izone" class="tool industrial" title="Industrial zone ($25)" aria-label="Industrial zone"><b>I</b><span>Industrial</span></button>
+        <button data-tool="power" class="tool" title="Power line ($15)" aria-label="Power line"><b>⚡</b><span>Power</span></button>
+        <button data-tool="plant" class="tool" title="Power plant ($500)" aria-label="Power plant"><b>▥</b><span>Plant</span></button>
+        <button data-tool="water" class="tool" title="Water tower ($350)" aria-label="Water tower"><b>◉</b><span>Water</span></button>
+      </div>
+      <div class="toolbar services" aria-label="City services">
+        <button data-tool="school" class="tool" title="School ($800, $28/month)" aria-label="School"><b>ABC</b><span>School</span></button>
+        <button data-tool="police" class="tool" title="Police station ($900, $35/month)" aria-label="Police station"><b>★</b><span>Police</span></button>
+        <button data-tool="hospital" class="tool" title="Hospital ($1,200, $45/month)" aria-label="Hospital"><b>+</b><span>Hospital</span></button>
+        <button data-tool="park" class="tool" title="Park ($300, $12/month)" aria-label="Park"><b>♣</b><span>Park</span></button>
+        <button data-tool="library" class="tool" title="Library ($650, $22/month)" aria-label="Library"><b>▤</b><span>Library</span></button>
+        <button data-tool="fire" class="tool" title="Fire station ($950, $36/month)" aria-label="Fire station"><b>F</b><span>Fire</span></button>
+        <button data-tool="sanitation" class="tool" title="Sanitation depot ($700, $30/month)" aria-label="Sanitation depot"><b>♻</b><span>Waste</span></button>
+        <button data-tool="transit" class="tool" title="Transit depot ($850, $32/month)" aria-label="Transit depot"><b>T</b><span>Transit</span></button>
+        <button data-tool="cityhall" class="tool" title="City hall ($1,500, $55/month)" aria-label="City hall"><b>◆</b><span>City Hall</span></button>
+      </div>
+    </nav>
+
+    <div class="stage">
+      <canvas id="game" width="900" height="560"></canvas>
+      <div id="loading">Loading the city kit...</div>
+    </div>
+
+    <div class="controls">
+      <button id="newCityBtn">New city</button>
+      <button id="pauseBtn">Pause</button>
+      <span class="hint">Build with left-click or drag. Right-drag to orbit; scroll to zoom.</span>
+    </div>
+    <p class="credit">City models: <a href="https://kaylousberg.com" rel="noopener">KayKit City Builder Bits</a> by Kay Lousberg (CC0).</p>
+  </main>
+  <script src="app.min.js"></script>
+</body>
+</html>
