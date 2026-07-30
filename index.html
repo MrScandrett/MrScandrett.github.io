@@ -453,11 +453,23 @@
       <div class="section-heading">
         <p class="home-widget-eyebrow">Interactive Lab</p>
         <h2 id="phys-sandbox-title">Physics &amp; Drawing Board</h2>
+        <p class="phys-sandbox-lede">Sketch an idea, turn it into matter, then test what happens when forces take over.</p>
       </div>
       <div class="home-widget home-widget--phys">
-        <div class="phys-tabs" role="tablist" aria-label="Sandbox mode">
-          <button class="phys-tab is-active" id="ptab-draw" role="tab" aria-selected="true" aria-controls="ppanel-draw" type="button">✏️ Draw</button>
-          <button class="phys-tab" id="ptab-phys" role="tab" aria-selected="false" aria-controls="ppanel-phys" type="button">⚡ Physics</button>
+        <div class="phys-lab-header">
+          <div class="phys-tabs" role="tablist" aria-label="Sandbox mode">
+            <button class="phys-tab is-active" id="ptab-draw" role="tab" aria-selected="true" aria-controls="ppanel-draw" type="button"><span aria-hidden="true">✏️</span> Design</button>
+            <button class="phys-tab" id="ptab-phys" role="tab" aria-selected="false" aria-controls="ppanel-phys" type="button"><span aria-hidden="true">⚡</span> Simulate</button>
+          </div>
+          <span class="phys-lab-status"><span class="phys-status-light" aria-hidden="true"></span> Lab online</span>
+        </div>
+        <div class="phys-mission" aria-live="polite">
+          <span class="phys-mission-icon" aria-hidden="true">💡</span>
+          <div>
+            <span class="phys-mission-label">Mini challenge</span>
+            <strong id="phys-mission-text">Build a machine from three shapes, then make it move.</strong>
+          </div>
+          <button class="phys-mission-refresh" id="phys-mission-refresh" type="button" aria-label="Show another mini challenge">New challenge ↻</button>
         </div>
 
         <!-- Draw panel -->
@@ -488,8 +500,15 @@
             <button class="ptool" id="pdraw-undo"     title="Undo (Ctrl+Z)" type="button">↩</button>
             <button class="ptool" id="pdraw-download" title="Save as PNG"   type="button">⬇</button>
             <button class="ptool ptool-clear" id="pdraw-clear" title="Clear canvas" type="button">🗑️</button>
+            <button class="phys-primary-action" id="pdraw-launch" type="button" disabled>Make it move <span aria-hidden="true">→</span></button>
           </div>
-          <canvas id="pdraw-canvas" class="phys-canvas" aria-label="Drawing canvas"></canvas>
+          <div class="phys-canvas-wrap">
+            <canvas id="pdraw-canvas" class="phys-canvas" aria-label="Drawing canvas"></canvas>
+            <div class="phys-canvas-coach" id="pdraw-coach" aria-hidden="true">
+              <span>Draw your invention</span>
+              <small>Try a circle, box, or freehand shape</small>
+            </div>
+          </div>
           <div class="phys-info-bar" id="pdraw-ruler-bar" hidden>
             <span class="phys-eq-pill">d = √((x₂−x₁)² + (y₂−y₁)²)</span>
             <span class="phys-ruler-val" id="pdraw-ruler-val"></span>
@@ -523,15 +542,30 @@
               <input type="checkbox" id="pphys-vectors">
               <span>Vectors</span>
             </label>
+            <label class="ptool-gravity">
+              <input type="checkbox" id="pphys-trails">
+              <span>Trails</span>
+            </label>
             <span class="ptool-sep" aria-hidden="true"></span>
+            <button class="ptool ptool-wide" id="pphys-demo" title="Load a Galileo drop experiment" type="button">🧪 Demo</button>
+            <button class="ptool ptool-wide" id="pphys-burst" title="Release a shower of objects" type="button">☄️ Shower</button>
+            <button class="ptool ptool-wide" id="pphys-pause" title="Pause simulation (Space)" type="button">⏸ Pause</button>
             <button class="ptool ptool-clear" id="pphys-clear" title="Clear all objects" type="button">🗑️</button>
           </div>
-          <canvas id="pphys-canvas" class="phys-canvas" aria-label="Physics sandbox — click to drop objects, drag to throw"></canvas>
+          <div class="phys-canvas-wrap">
+            <canvas id="pphys-canvas" class="phys-canvas" aria-label="Physics sandbox — click to drop objects, drag to throw"></canvas>
+            <div class="phys-canvas-coach" id="pphys-coach" aria-hidden="true">
+              <span>Tap to create · drag to throw</span>
+              <small>Change gravity while objects are moving</small>
+            </div>
+          </div>
           <div class="phys-info-bar">
             <span class="phys-eq-pill" title="Newton's Second Law">F = ma</span>
             <span class="phys-eq-pill" title="Kinetic Energy">KE = ½mv²</span>
             <span class="phys-eq-pill" title="Momentum">p = mv</span>
             <span class="phys-eq-pill" title="Gravitational acceleration">g = 9.8 m/s²</span>
+            <span class="phys-metric" id="pphys-object-count">0 bodies</span>
+            <span class="phys-metric" id="pphys-energy">0.0 J</span>
             <span class="phys-eq-live" id="pphys-readout" aria-live="polite"></span>
           </div>
         </div>
@@ -1496,6 +1530,21 @@
     var dCtx = drawCanvas.getContext('2d');
     var pCtx = physCanvas.getContext('2d');
     var DPR  = window.devicePixelRatio || 1;
+    var missions = [
+      'Build a machine from three shapes, then make it move.',
+      'Can two different masses fall at the same rate? Build a test.',
+      'Create the longest-lasting bounce without turning gravity off.',
+      'Draw a creature, bring it to life, and send it sideways.',
+      'Make two objects collide while their velocity vectors are visible.',
+      'Invent a shape that behaves differently when gravity points up.'
+    ];
+    var missionIndex = 0;
+    var missionText = document.getElementById('phys-mission-text');
+    var missionRefresh = document.getElementById('phys-mission-refresh');
+    if (missionRefresh) missionRefresh.addEventListener('click', function () {
+      missionIndex = (missionIndex + 1 + Math.floor(Math.random() * (missions.length - 1))) % missions.length;
+      if (missionText) missionText.textContent = missions[missionIndex];
+    });
 
     // ── Tab switching ──────────────────────────────────────
     document.querySelectorAll('.phys-tab').forEach(function (tab) {
@@ -1527,9 +1576,17 @@
     var drawTool = 'pencil', drawColor = '#2563eb', drawFillColor = '#93c5fd', drawSize = 3, drawFill = false;
     var strokes = [], curStroke = null, drawing = false, shapeStart = null;
     var rulerPts = [];
+    var drawLaunch = document.getElementById('pdraw-launch');
+    var drawCoach = document.getElementById('pdraw-coach');
+
+    function updateDrawUi() {
+      var hasArtwork = strokes.some(function (s) { return s.type !== 'eraser' && s.type !== 'ruler'; });
+      if (drawLaunch) drawLaunch.disabled = !hasArtwork;
+      if (drawCoach) drawCoach.classList.toggle('is-hidden', hasArtwork || drawing);
+    }
 
     function resizeD() {
-      var w = drawCanvas.offsetWidth, h = 480;
+      var w = drawCanvas.offsetWidth, h = window.innerWidth <= 560 ? 320 : 480;
       drawCanvas.width  = Math.round(w * DPR);
       drawCanvas.height = Math.round(h * DPR);
       drawCanvas.style.height = h + 'px';
@@ -1586,6 +1643,7 @@
     function dDown(e) {
       e.preventDefault();
       var p = dPos(e); drawing = true; shapeStart = p;
+      updateDrawUi();
       if (drawTool === 'pencil' || drawTool === 'eraser') {
         curStroke = { type: drawTool, color: drawColor, size: drawTool === 'eraser' ? drawSize * 4 : drawSize, pts: [p] };
       } else if (drawTool === 'ruler') {
@@ -1597,7 +1655,7 @@
         var val = document.getElementById('pdraw-ruler-val');
         if (bar) bar.hidden = false;
         if (val) val.textContent = dist + ' px ≈ ' + (dist / 37.8).toFixed(1) + ' cm (96 dpi)';
-        rulerPts = []; drawing = false; redrawD();
+        rulerPts = []; drawing = false; redrawD(); updateDrawUi();
       }
     }
 
@@ -1619,11 +1677,11 @@
     function dUp(e) {
       if (!drawing) return; drawing = false;
       if (curStroke) { strokes.push(curStroke); curStroke = null; }
-      redrawD();
+      redrawD(); updateDrawUi();
     }
 
     function undoDraw() {
-      if (strokes.length) { strokes.pop(); redrawD(); }
+      if (strokes.length) { strokes.pop(); redrawD(); updateDrawUi(); }
     }
 
     function downloadDraw() {
@@ -1634,6 +1692,43 @@
       tCtx.drawImage(drawCanvas, 0, 0);
       var a = document.createElement('a');
       a.href = tmp.toDataURL('image/png'); a.download = 'drawing.png'; a.click();
+    }
+
+    function strokeBounds(s) {
+      if (s.type === 'circle') return { x:s.cx-s.r, y:s.cy-s.r, w:s.r*2, h:s.r*2 };
+      if (s.type === 'rect') return { x:Math.min(s.x,s.x+s.w), y:Math.min(s.y,s.y+s.h), w:Math.abs(s.w), h:Math.abs(s.h) };
+      if (s.type === 'line') return { x:Math.min(s.x1,s.x2), y:Math.min(s.y1,s.y2), w:Math.abs(s.x2-s.x1), h:Math.abs(s.y2-s.y1) };
+      if (s.pts && s.pts.length) {
+        var xs=s.pts.map(function (p) { return p.x; }), ys=s.pts.map(function (p) { return p.y; });
+        var minX=Math.min.apply(Math,xs), maxX=Math.max.apply(Math,xs), minY=Math.min.apply(Math,ys), maxY=Math.max.apply(Math,ys);
+        return { x:minX, y:minY, w:maxX-minX, h:maxY-minY };
+      }
+      return null;
+    }
+
+    function launchDrawing() {
+      var artwork = strokes.filter(function (s) { return s.type !== 'eraser' && s.type !== 'ruler'; }).slice(-18);
+      if (!artwork.length) return;
+      var sourceW = Math.max(drawCanvas.offsetWidth,1), sourceH = Math.max(drawCanvas.offsetHeight,1);
+      document.getElementById('ptab-phys').click();
+      var sx = PW()/sourceW, sy = PH()/sourceH;
+      artwork.forEach(function (s, index) {
+        var b = strokeBounds(s);
+        if (!b) return;
+        var cx=(b.x+b.w/2)*sx, cy=(b.y+b.h/2)*sy;
+        var opts={ color:s.color || COLORS[index%COLORS.length] };
+        if (s.type === 'circle') {
+          opts.type='ball'; opts.r=Math.max(10,Math.min(42,(b.w+b.h)*0.25*sx));
+        } else {
+          opts.type='box';
+          opts.w=Math.max(12,Math.min(90,b.w*sx || s.size*3));
+          opts.h=Math.max(12,Math.min(70,b.h*sy || s.size*3));
+          if (s.type === 'line') opts.angle=Math.atan2(s.y2-s.y1,s.x2-s.x1);
+        }
+        spawnObj(Math.max(12,Math.min(PW()-12,cx)),Math.max(12,Math.min(PH()-12,cy)),(index-artwork.length/2)*7,-30-index*3,opts);
+      });
+      liveMsg = artwork.length+' sketch '+(artwork.length===1?'body':'bodies')+' entered the simulation';
+      if (missionText) missionText.textContent = 'Experiment: change gravity and discover what your drawing does next.';
     }
 
     drawCanvas.addEventListener('mousedown', dDown);
@@ -1658,10 +1753,11 @@
     document.getElementById('pdraw-fill')      && document.getElementById('pdraw-fill').addEventListener('change', function () { drawFill = this.checked; });
     document.getElementById('pdraw-undo')      && document.getElementById('pdraw-undo').addEventListener('click', undoDraw);
     document.getElementById('pdraw-download')  && document.getElementById('pdraw-download').addEventListener('click', downloadDraw);
+    drawLaunch && drawLaunch.addEventListener('click', launchDrawing);
     document.getElementById('pdraw-clear')     && document.getElementById('pdraw-clear').addEventListener('click', function () {
       strokes = []; curStroke = null; rulerPts = [];
       var bar = document.getElementById('pdraw-ruler-bar'); if (bar) bar.hidden = true;
-      redrawD();
+      redrawD(); updateDrawUi();
     });
 
     // Keyboard shortcuts (active when draw panel is visible)
@@ -1683,6 +1779,8 @@
     var windForce = 0;
     var bounceScale = 0.72;
     var showVectors = false;
+    var showTrails = false;
+    var physPaused = false;
     var objs = [], rafId = null, lastT = null;
     var physMode = 'ball';
     var dragObj = null, dragOx = 0, dragOy = 0, prevP = null, prevPT = 0, throwVx = 0, throwVy = 0;
@@ -1691,7 +1789,7 @@
     var ci = 0;
 
     function resizeP() {
-      var w = physCanvas.offsetWidth, h = 480;
+      var w = physCanvas.offsetWidth, h = window.innerWidth <= 560 ? 320 : 480;
       physCanvas.width  = Math.round(w * DPR);
       physCanvas.height = Math.round(h * DPR);
       physCanvas.style.height = h + 'px';
@@ -1701,20 +1799,23 @@
     function PW() { return physCanvas.offsetWidth; }
     function PH() { return physCanvas.offsetHeight; }
 
-    function spawnObj(x, y, vx, vy) {
+    function spawnObj(x, y, vx, vy, options) {
       if (objs.length >= 25) objs.shift();
-      var color = COLORS[ci++ % COLORS.length];
+      var opts = options || {};
+      var color = opts.color || COLORS[ci++ % COLORS.length];
       var e = bounceScale;
-      if (physMode === 'ball') {
-        var r = 16 + Math.random() * 10;
-        objs.push({ type: 'ball', x: x, y: y, vx: vx||0, vy: vy||0, r: r, mass: r/10, color: color, e: e, angle: 0, omega: 0 });
-      } else if (physMode === 'box') {
-        var s = 26 + Math.random() * 14;
-        objs.push({ type: 'box', x: x, y: y, vx: vx||0, vy: vy||0, w: s, h: s, mass: s/8, color: color, e: e*0.7, angle: 0, omega: 0 });
+      var type = opts.type || physMode;
+      if (type === 'ball') {
+        var r = opts.r || 16 + Math.random() * 10;
+        objs.push({ type: 'ball', x: x, y: y, vx: vx||0, vy: vy||0, r: r, mass: r/10, color: color, e: e, angle: opts.angle||0, omega: 0, trail:[] });
+      } else if (type === 'box') {
+        var s = 26 + Math.random() * 14, ow=opts.w||s, oh=opts.h||s;
+        objs.push({ type: 'box', x: x, y: y, vx: vx||0, vy: vy||0, w: ow, h: oh, mass: Math.sqrt(ow*oh)/8, color: color, e: e*0.7, angle: opts.angle||0, omega: 0, trail:[] });
       } else {
-        var r2 = 18 + Math.random() * 10;
-        objs.push({ type: 'tri', x: x, y: y, vx: vx||0, vy: vy||0, r: r2, mass: r2/10, color: color, e: e*0.8, angle: 0, omega: 0 });
+        var r2 = opts.r || 18 + Math.random() * 10;
+        objs.push({ type: 'tri', x: x, y: y, vx: vx||0, vy: vy||0, r: r2, mass: r2/10, color: color, e: e*0.8, angle: opts.angle||0, omega: 0, trail:[] });
       }
+      var coach=document.getElementById('pphys-coach'); if (coach) coach.classList.add('is-hidden');
     }
 
     function hit(o, x, y) {
@@ -1886,6 +1987,26 @@
         pCtx.restore();
       }
 
+      if (showTrails) {
+        objs.forEach(function (o) {
+          var last=o.trail[o.trail.length-1];
+          if (!last || Math.hypot(o.x-last.x,o.y-last.y)>3) {
+            o.trail.push({x:o.x,y:o.y});
+            if (o.trail.length>42) o.trail.shift();
+          }
+          if (o.trail.length>1) {
+            pCtx.save();
+            pCtx.strokeStyle=o.color;
+            pCtx.globalAlpha=0.28;
+            pCtx.lineWidth=2;
+            pCtx.beginPath();
+            o.trail.forEach(function (point,i) { i?pCtx.lineTo(point.x,point.y):pCtx.moveTo(point.x,point.y); });
+            pCtx.stroke();
+            pCtx.restore();
+          }
+        });
+      }
+
       // Floor/wall line (follows gravity direction)
       pCtx.save(); pCtx.strokeStyle='rgba(100,130,200,0.22)'; pCtx.lineWidth=2;
       if (gravDir.y > 0)      { pCtx.beginPath(); pCtx.moveTo(0,H); pCtx.lineTo(W,H); pCtx.stroke(); }
@@ -1936,13 +2057,21 @@
       });
 
       var ro = document.getElementById('pphys-readout');
-      if (ro) ro.textContent = liveMsg || (objs.length ? objs.length+' object'+(objs.length!==1?'s':'') : 'Click or tap to spawn');
+      var totalEnergy=objs.reduce(function (sum,o) {
+        var v=Math.hypot(o.vx,o.vy)/PPM;
+        return sum+0.5*o.mass*v*v;
+      },0);
+      var count=document.getElementById('pphys-object-count');
+      var energy=document.getElementById('pphys-energy');
+      if (count) count.textContent=objs.length+' '+(objs.length===1?'body':'bodies');
+      if (energy) energy.textContent=totalEnergy.toFixed(1)+' J';
+      if (ro) ro.textContent = physPaused ? 'Experiment paused' : (liveMsg || (objs.length ? 'Drag a body to add force' : 'Click or tap to spawn'));
     }
 
     function loop(ts) {
       if (!lastT) lastT = ts;
       var dt = Math.min((ts-lastT)/1000, 0.05); lastT = ts;
-      for (var s=0;s<3;s++) step(dt/3);
+      if (!physPaused) for (var s=0;s<3;s++) step(dt/3);
       drawObjs();
       rafId = requestAnimationFrame(loop);
     }
@@ -1972,7 +2101,52 @@
     });
     document.getElementById('pphys-wind')    && document.getElementById('pphys-wind').addEventListener('input', function () { windForce = +this.value * 3; });
     document.getElementById('pphys-vectors') && document.getElementById('pphys-vectors').addEventListener('change', function () { showVectors = this.checked; });
-    document.getElementById('pphys-clear')   && document.getElementById('pphys-clear').addEventListener('click', function () { objs=[]; liveMsg=''; drawObjs(); });
+    document.getElementById('pphys-trails') && document.getElementById('pphys-trails').addEventListener('change', function () {
+      showTrails=this.checked;
+      if (!showTrails) objs.forEach(function (o) { o.trail=[]; });
+    });
+
+    function setPaused(next) {
+      physPaused=next;
+      var btn=document.getElementById('pphys-pause');
+      if (btn) {
+        btn.innerHTML=physPaused?'▶ Resume':'⏸ Pause';
+        btn.classList.toggle('is-active',physPaused);
+        btn.setAttribute('aria-pressed',physPaused?'true':'false');
+      }
+      drawObjs();
+    }
+
+    document.getElementById('pphys-pause') && document.getElementById('pphys-pause').addEventListener('click', function () { setPaused(!physPaused); });
+    document.getElementById('pphys-demo') && document.getElementById('pphys-demo').addEventListener('click', function () {
+      objs=[]; physPaused=false;
+      gravDir={x:0,y:1};
+      document.querySelectorAll('#ppanel-phys .ptool-grav').forEach(function (b) { b.classList.toggle('is-active',b.dataset.grav==='down'); });
+      var gap=PW()/4;
+      spawnObj(gap,78,0,0,{type:'ball',r:12,color:'#38bdf8'});
+      spawnObj(gap*2,68,0,0,{type:'ball',r:22,color:'#f59e0b'});
+      spawnObj(gap*3,56,0,0,{type:'ball',r:34,color:'#8b5cf6'});
+      liveMsg='Galileo drop: different masses, same acceleration';
+      if (missionText) missionText.textContent='Observe: do the three masses reach the floor at the same time?';
+      setPaused(false);
+    });
+    document.getElementById('pphys-burst') && document.getElementById('pphys-burst').addEventListener('click', function () {
+      var types=['ball','box','tri'];
+      for (var i=0;i<12;i++) spawnObj(30+Math.random()*Math.max(40,PW()-60),20+Math.random()*45,(Math.random()-.5)*240,Math.random()*-80,{type:types[i%3]});
+      liveMsg='Object shower: watch energy move through collisions';
+      setPaused(false);
+    });
+    document.getElementById('pphys-clear')   && document.getElementById('pphys-clear').addEventListener('click', function () {
+      objs=[]; liveMsg=''; drawObjs();
+      var coach=document.getElementById('pphys-coach'); if (coach) coach.classList.remove('is-hidden');
+    });
+
+    document.addEventListener('keydown',function (e) {
+      var panel=document.getElementById('tabpanel-sandbox');
+      if (e.code!=='Space'||panel.hidden||!document.getElementById('ppanel-phys').classList.contains('is-active')) return;
+      if (e.target.tagName==='INPUT'||e.target.tagName==='BUTTON') return;
+      e.preventDefault(); setPaused(!physPaused);
+    });
 
     document.getElementById('ptab-phys') && document.getElementById('ptab-phys').addEventListener('click', function () { resizeP(); startPhys(); });
     document.getElementById('ptab-draw') && document.getElementById('ptab-draw').addEventListener('click', function () { stopPhys(); resizeD(); });
@@ -1984,6 +2158,7 @@
 
     if (document.getElementById('ppanel-phys').classList.contains('is-active')) { resizeP(); startPhys(); }
     else resizeD();
+    updateDrawUi();
   })();
   </script>
 
@@ -2016,6 +2191,7 @@
       { title: 'The Pendulum', url: 'lessons/pendulum.html', subject: 'Physics', track: 'Periodic Motion', color: '#f97316', desc: "Explore how a pendulum's period depends only on its length — not its mass or swing angle — and discover simple harmonic motion.", impact: 'Pendulum physics introduced humanity to precise timekeeping, and the same mathematics describes springs, LC circuits, and orbiting planets.', photo: 'assets/thumbs/foucault-pendulum.jpg' },
       { title: "Coulomb's Law", url: 'lessons/coulombs-law.html', subject: 'Physics', track: 'Electromagnetism', color: '#f97316', desc: 'Visualize electric force between charges and discover that electrostatics follows the same inverse-square mathematics as gravity.', impact: "Coulomb's Law is the foundation of all circuit theory, chemical bonding, and materials science — it is the reason atoms hold together at all.", photo: 'assets/thumbs/coulomb.png' },
       { title: "Faraday's Law", url: 'lessons/faradays-law.html', subject: 'Physics', track: 'Electromagnetic Induction', color: '#f97316', desc: 'Discover how a changing magnetic field generates an electric current — the principle powering every generator, transformer, and wireless charger.', impact: "Faraday's Law is the engine of the electric grid. Without it there would be no power plants, no electric motors, and no modern infrastructure.", photo: 'assets/thumbs/faraday.jpg' },
+      { title: 'Albert Einstein', url: 'lessons/albert-einstein.html', subject: 'Physics', track: 'Relativity & Quantum Theory', color: '#2563eb', desc: 'Explore Einstein’s accomplishments from light quanta and atomic evidence to E = mc² and curved spacetime, then test time dilation with an interactive light clock.', impact: 'Einstein’s ideas power solar cells, GPS corrections, nuclear physics, black-hole astronomy, and our modern understanding of space, time, matter, and light.', photo: 'assets/thumbs/albert-einstein-1921.jpg' },
       { title: 'Thermodynamics', url: 'lessons/thermodynamics.html', subject: 'Physics', track: 'Energy & Heat', color: '#f97316', desc: 'Explore the four laws of thermodynamics through simulations of heat engines, efficiency limits, and energy transfer between systems.', impact: 'Thermodynamics sets the absolute limits on what any engine or machine can do — understanding it is essential for clean energy, climate science, and aerospace design.', photo: 'assets/thumbs/watt-steam.jpg' },
       { title: 'Entropy', url: 'lessons/entropy.html', subject: 'Physics', track: 'Thermodynamics', color: '#f97316', desc: 'Explore why disorder always increases in a closed system and what entropy reveals about the direction time flows.', impact: 'Entropy explains why time only moves forward, why heat flows from hot to cold, and why information theory and thermodynamics turn out to be secretly the same subject.', photo: 'assets/thumbs/boltzmann.jpg' },
       { title: 'The Speed of Light', url: 'lessons/speed-of-light.html', subject: 'Physics', track: 'Special Relativity', color: '#f97316', desc: 'Trace historical experiments that measured the speed of light and explore why nothing in the universe can exceed it.', impact: "The constancy of the speed of light is the foundation of Einstein's relativity — grasping it reframes your understanding of space, time, mass, and energy forever.", photo: 'assets/thumbs/earth-sun-distance.png' },

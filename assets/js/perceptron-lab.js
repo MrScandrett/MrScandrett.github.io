@@ -714,63 +714,78 @@ async function animateParamTransition(fromParams, toParams) {
 async function trainEpochs(count) {
   if (state.trainingBusy) return;
   state.trainingBusy = true;
+  consoleRoot.classList.add("is-training");
+  consoleRoot.setAttribute("aria-busy", "true");
+  train1Button.disabled = true;
+  train5Button.disabled = true;
+  resetButton.disabled = true;
+  for (const button of presetButtons) button.disabled = true;
 
-  const dataset = currentDataset();
-  const era = ERA_META[state.eraMode];
-  setLiveStatus(
-    `Training ${datasetName(state.datasetKey)} for ${count} round${count === 1 ? "" : "s"}. Watch the line move when a point is wrong.`
-  );
+  try {
+    const dataset = currentDataset();
+    const era = ERA_META[state.eraMode];
+    setLiveStatus(
+      `Training ${datasetName(state.datasetKey)} for ${count} round${count === 1 ? "" : "s"}. Watch the line move when a point is wrong.`
+    );
 
-  for (let epoch = 0; epoch < count; epoch += 1) {
-    let params = readParams();
+    for (let epoch = 0; epoch < count; epoch += 1) {
+      let params = readParams();
 
-    for (let i = 0; i < dataset.samples.length; i += 1) {
-      const sample = dataset.samples[i];
-      state.activeSampleIndex = i;
+      for (let i = 0; i < dataset.samples.length; i += 1) {
+        const sample = dataset.samples[i];
+        state.activeSampleIndex = i;
 
-      const noisyX1 = clamp(sample.x1 + (Math.random() * 2 - 1) * era.noise, 0, 1);
-      const noisyX2 = clamp(sample.x2 + (Math.random() * 2 - 1) * era.noise, 0, 1);
+        const noisyX1 = clamp(sample.x1 + (Math.random() * 2 - 1) * era.noise, 0, 1);
+        const noisyX2 = clamp(sample.x2 + (Math.random() * 2 - 1) * era.noise, 0, 1);
 
-      const result = predict(noisyX1, noisyX2, params);
-      const error = sample.y - result.yHat;
+        const result = predict(noisyX1, noisyX2, params);
+        const error = sample.y - result.yHat;
 
-      if (error !== 0) {
-        setLiveStatus(
-          `Point (${sample.x1}, ${sample.x2}) was wrong, so the line moved to learn from it.`
-        );
-        const nextParams = {
-          ...params,
-          w1: params.w1 + params.lr * error * noisyX1,
-          w2: params.w2 + params.lr * error * noisyX2,
-          bias: params.bias + params.lr * error
-        };
-        await animateParamTransition(params, nextParams);
-        params = nextParams;
-      } else {
-        setLiveStatus(
-          `Point (${sample.x1}, ${sample.x2}) was already correct, so the line stayed where it was.`
-        );
+        if (error !== 0) {
+          setLiveStatus(
+            `Point (${sample.x1}, ${sample.x2}) was wrong, so the line moved to learn from it.`
+          );
+          const nextParams = {
+            ...params,
+            w1: params.w1 + params.lr * error * noisyX1,
+            w2: params.w2 + params.lr * error * noisyX2,
+            bias: params.bias + params.lr * error
+          };
+          await animateParamTransition(params, nextParams);
+          params = nextParams;
+        } else {
+          setLiveStatus(
+            `Point (${sample.x1}, ${sample.x2}) was already correct, so the line stayed where it was.`
+          );
+          renderAll({ save: false });
+          await wait(Math.floor(era.stepDelay * 0.5));
+        }
+
+        writeParams(params);
         renderAll({ save: false });
-        await wait(Math.floor(era.stepDelay * 0.5));
+        await wait(era.stepDelay);
       }
 
-      writeParams(params);
-      renderAll({ save: false });
-      await wait(era.stepDelay);
+      state.epochs += 1;
     }
 
-    state.epochs += 1;
+    const finalEvaluation = evaluateDataset(readParams());
+    setLiveStatus(
+      `Training finished. The line now gets ${finalEvaluation.correct} of ${finalEvaluation.total} points right for ${datasetName(
+        state.datasetKey
+      )}.`
+    );
+  } finally {
+    state.activeSampleIndex = null;
+    state.trainingBusy = false;
+    consoleRoot.classList.remove("is-training");
+    consoleRoot.removeAttribute("aria-busy");
+    train1Button.disabled = false;
+    train5Button.disabled = false;
+    resetButton.disabled = false;
+    for (const button of presetButtons) button.disabled = false;
+    renderAll();
   }
-
-  state.activeSampleIndex = null;
-  state.trainingBusy = false;
-  renderAll();
-  const finalEvaluation = evaluateDataset(readParams());
-  setLiveStatus(
-    `Training finished. The line now gets ${finalEvaluation.correct} of ${finalEvaluation.total} points right for ${datasetName(
-      state.datasetKey
-    )}.`
-  );
 }
 
 function resetParameters({ announce = true } = {}) {

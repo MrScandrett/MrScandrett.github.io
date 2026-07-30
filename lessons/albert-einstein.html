@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Albert Einstein · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <meta name="description" content="Explore Albert Einstein's life and accomplishments, from relativity and E=mc² to the photoelectric effect, with an interactive time-dilation lab and connected STEAM lessons." />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <style>
+    :root {
+      --ae-blue: #2563eb;
+      --ae-violet: #7c3aed;
+      --ae-gold: #d97706;
+      --ae-cyan: #0891b2;
+      --ae-green: #059669;
+      --ae-red: #dc2626;
+    }
+    .ae-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 280px; }
+    .ae-hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(240px,.65fr); gap:clamp(1.2rem,3vw,2.4rem); align-items:stretch; margin:.35rem 0 1rem; padding:clamp(1.35rem,3vw,2.35rem); text-align:left; overflow:hidden; color:#fff; border:1px solid rgba(96,165,250,.35); border-radius:22px; background:radial-gradient(circle at 18% 20%,rgba(37,99,235,.42),transparent 34%),linear-gradient(135deg,#07152f 0%,#172554 58%,#312e81 100%); box-shadow:0 18px 45px rgba(15,23,42,.2); }
+    .ae-hero-copy { display:flex; flex-direction:column; justify-content:center; min-width:0; }
+    .ae-hero .eyebrow { color:#bfdbfe; }
+    .ae-hero h1 { max-width:18ch; margin:.35rem 0 0; color:#fff; font-size:clamp(2rem,4.5vw,3.45rem); line-height:1.02; letter-spacing:-.045em; }
+    .ae-meta { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem .7rem; margin:.8rem 0 0; font-size:.78rem; color:#bfdbfe; }
+    .ae-meta .dot { width:3px; height:3px; border-radius:50%; background:currentColor; opacity:.45; }
+    .ae-hero .ae-lede { margin:.9rem 0 0; max-width:60ch; color:#dbeafe; font-size:clamp(.92rem,1.6vw,1.05rem); line-height:1.7; text-align:left; }
+    .ae-hero-photo { align-self:stretch; margin:0; display:flex; flex-direction:column; min-height:390px; }
+    .ae-hero-photo img { width:100%; min-height:0; flex:1; object-fit:cover; object-position:center 22%; border-radius:15px; border:1px solid rgba(255,255,255,.25); filter:contrast(1.03); }
+    .ae-hero-photo figcaption { margin-top:.55rem; color:#bfdbfe; font-size:.68rem; line-height:1.45; }
+    .ae-hero-photo a { color:#fff; }
+    .ae-roadmap { display:grid; grid-template-columns:repeat(4,1fr); gap:.55rem; margin:0 0 1.15rem; }
+    .ae-roadmap a { display:flex; gap:.55rem; align-items:center; min-height:54px; padding:.65rem .75rem; border:1px solid var(--line,#d2d2d7); border-radius:11px; background:rgba(255,255,255,.78); color:inherit; text-decoration:none; font-size:.76rem; line-height:1.35; }
+    .ae-roadmap span { display:grid; place-items:center; flex:0 0 26px; height:26px; border-radius:50%; background:#dbeafe; color:#1d4ed8; font-weight:900; }
+    .ae-roadmap strong { display:block; color:#334155; }
+    .ae-card { position:relative; background:var(--white,#fff); border:1px solid var(--line,#d2d2d7); border-top:4px solid var(--card-accent,var(--ae-blue)); border-radius:16px; box-shadow:0 6px 22px rgba(15,23,42,.055); padding:clamp(1.15rem,2.5vw,1.7rem); margin-bottom:1.15rem; scroll-margin-top:1rem; }
+    .ae-card h2 { margin:0 0 .7rem; font-size:clamp(1.18rem,2vw,1.4rem); letter-spacing:-.025em; }
+    .ae-card h3 { margin:.8rem 0 .28rem; font-size:.98rem; }
+    .ae-card p { margin:0 0 .72rem; color:#3f4f65; font-size:.88rem; line-height:1.72; }
+    .ae-card p:last-child { margin-bottom:0; }
+    .ae-chapter { display:inline-block; margin-bottom:.42rem; color:var(--card-accent,var(--ae-blue)); font-size:.66rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+    .ae-intro-grid { display:grid; grid-template-columns:minmax(0,1fr) 230px; gap:1.4rem; align-items:start; }
+    .ae-facts { border-radius:12px; padding:.9rem 1rem; background:#f8fafc; border:1px solid #e2e8f0; }
+    .ae-facts h3 { margin:0 0 .6rem; font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; color:#64748b; }
+    .ae-facts dl { margin:0; }
+    .ae-facts div { padding:.45rem 0; border-top:1px solid #e2e8f0; }
+    .ae-facts dt { color:#64748b; font-size:.65rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+    .ae-facts dd { margin:.12rem 0 0; color:#1e293b; font-size:.78rem; line-height:1.4; font-weight:700; }
+    .ae-grid-2, .ae-grid-4 { display:grid; gap:.75rem; margin:.8rem 0; }
+    .ae-grid-2 { grid-template-columns:repeat(2,1fr); }
+    .ae-grid-4 { grid-template-columns:repeat(2,1fr); }
+    .ae-mini { border:1px solid var(--line,#d2d2d7); border-radius:13px; padding:.88rem; background:rgba(37,99,235,.025); }
+    .ae-mini .icon { font-size:1.5rem; display:block; margin-bottom:.3rem; }
+    .ae-mini strong { display:block; font-size:.86rem; margin-bottom:.25rem; }
+    .ae-mini p { font-size:.78rem; line-height:1.52; color:#64748b; margin:0; }
+    .ae-year { display:inline-block; padding:.09rem .42rem; border-radius:5px; background:var(--ae-violet); color:#fff; font-size:.7rem; font-weight:800; margin-right:.4rem; }
+    .ae-timeline { list-style:none; padding:0 0 0 36px; margin:.8rem 0; position:relative; }
+    .ae-timeline::before { content:""; position:absolute; left:16px; top:3px; bottom:4px; width:2px; border-radius:2px; background:rgba(124,58,237,.3); }
+    .ae-timeline li { position:relative; margin:0 0 .72rem; color:#3f4f65; font-size:.86rem; line-height:1.55; }
+    .ae-timeline li::before { content:""; position:absolute; left:-24px; top:5px; width:10px; height:10px; border-radius:50%; background:var(--ae-violet); box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ae-violet); }
+    .ae-equation { margin:.8rem 0; padding:1rem; border-radius:14px; color:#e2e8f0; background:linear-gradient(135deg,#0f172a,#312e81); text-align:center; }
+    .ae-equation strong { display:block; color:#fff; font-family:Georgia,serif; font-size:clamp(1.7rem,5vw,2.7rem); margin-bottom:.3rem; }
+    .ae-equation small { color:#cbd5e1; line-height:1.5; }
+    .ae-callout { border-radius:12px; padding:.85rem 1rem; margin:.8rem 0; font-size:.84rem; line-height:1.6; background:rgba(217,119,6,.1); border-left:3px solid var(--ae-gold); }
+    .ae-photo { margin:.8rem 0; }
+    .ae-photo img { display:block; width:100%; border-radius:11px; border:1px solid var(--line,#d2d2d7); box-shadow:0 8px 24px rgba(15,23,42,.12); }
+    .ae-photo figcaption { margin-top:.42rem; color:#64748b; font-size:.7rem; line-height:1.45; }
+    .ae-photo figcaption a { color:var(--ae-blue); }
+    .ae-life-layout { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(250px,.72fr); gap:1.5rem; align-items:start; }
+    .ae-life-photo { position:sticky; top:1rem; padding:.85rem; border-radius:14px; background:#f8fafc; border:1px solid #e2e8f0; }
+    .ae-life-photo .ae-photo { margin:0 0 .8rem; }
+    .ae-life-photo h3 { margin:.2rem 0 .35rem; }
+    .ae-life-photo p { font-size:.79rem; line-height:1.6; }
+    .ae-wide-photo { margin:1.15rem auto .25rem; max-width:900px; padding:.65rem; border:1px solid #e2e8f0; border-radius:14px; background:#f8fafc; }
+    .ae-wide-photo img { object-fit:contain; }
+    .ae-lab { border-radius:14px; overflow:hidden; background:#07152f; border:1px solid #1e3a8a; margin:.8rem 0; }
+    #ae-canvas { width:100%; height:300px; display:block; }
+    .ae-readouts { display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; margin:.65rem 0; }
+    .ae-readout { border:1px solid var(--line,#d2d2d7); border-radius:10px; padding:.6rem .45rem; text-align:center; background:rgba(37,99,235,.04); }
+    .ae-readout span { display:block; color:#64748b; font-size:.65rem; font-weight:800; letter-spacing:.055em; text-transform:uppercase; }
+    .ae-readout strong { display:block; color:var(--ae-blue); font-size:1rem; margin-top:.2rem; }
+    .ae-related { display:grid; grid-template-columns:repeat(2,1fr); gap:.65rem; margin-top:.8rem; }
+    .ae-related a { display:block; padding:.85rem; border:1px solid var(--line,#d2d2d7); border-radius:12px; text-decoration:none; color:inherit; transition:transform .15s ease,border-color .15s ease; }
+    .ae-related a:hover { transform:translateY(-2px); border-color:var(--ae-blue); }
+    .ae-related strong { display:block; color:var(--ae-blue); font-size:.86rem; margin-bottom:.2rem; }
+    .ae-related small { color:#64748b; font-size:.76rem; line-height:1.45; }
+    .ae-question { padding:.9rem 1rem; border:1px solid var(--line,#d2d2d7); border-radius:12px; margin-bottom:.7rem; }
+    .ae-question p { margin-bottom:.55rem; }
+    .ae-options { display:grid; gap:.4rem; }
+    .ae-option { border:1px solid var(--line,#d2d2d7); border-radius:8px; padding:.48rem .65rem; background:transparent; color:inherit; text-align:left; cursor:pointer; font-size:.82rem; }
+    .ae-option:hover { border-color:var(--ae-blue); }
+    .ae-option.correct { border-color:var(--ae-green); background:rgba(5,150,105,.1); }
+    .ae-option.wrong { border-color:var(--ae-red); background:rgba(220,38,38,.08); }
+    .ae-feedback { min-height:1.2em; margin-top:.4rem; font-size:.78rem; font-weight:700; color:#64748b; }
+    [data-theme="night"] .ae-card,[data-theme="vaporwave"] .ae-card,[data-theme="bark"] .ae-card { background:var(--white,#2c2c2e); }
+    [data-theme="night"] .ae-roadmap a,[data-theme="vaporwave"] .ae-roadmap a,[data-theme="bark"] .ae-roadmap a,[data-theme="night"] .ae-facts,[data-theme="vaporwave"] .ae-facts,[data-theme="bark"] .ae-facts,[data-theme="night"] .ae-life-photo,[data-theme="vaporwave"] .ae-life-photo,[data-theme="bark"] .ae-life-photo { background:rgba(255,255,255,.06); }
+    [data-theme="night"] .ae-card p,[data-theme="night"] .ae-timeline li,[data-theme="vaporwave"] .ae-card p,[data-theme="vaporwave"] .ae-timeline li,[data-theme="bark"] .ae-card p,[data-theme="bark"] .ae-timeline li { color:rgba(245,245,247,.72); }
+    @media (max-width:840px) {
+      .ae-hero { grid-template-columns:minmax(0,1fr) 220px; }
+      .ae-roadmap { grid-template-columns:repeat(2,1fr); }
+      .ae-intro-grid { grid-template-columns:1fr; }
+      .ae-facts { display:grid; grid-template-columns:repeat(2,1fr); gap:0 .8rem; }
+      .ae-facts h3 { grid-column:1/-1; }
+      .ae-life-layout { grid-template-columns:1fr; }
+      .ae-life-photo { position:static; display:grid; grid-template-columns:minmax(190px,.7fr) minmax(0,1fr); gap:1rem; align-items:center; }
+      .ae-life-photo .ae-photo { margin:0; }
+    }
+    @media (max-width:620px) {
+      .ae-hero { grid-template-columns:1fr; padding:1.15rem; }
+      .ae-hero h1 { font-size:clamp(2rem,10vw,2.75rem); }
+      .ae-hero-photo { min-height:0; }
+      .ae-hero-photo img { max-height:410px; object-position:center 20%; }
+      .ae-roadmap { grid-template-columns:1fr 1fr; }
+      .ae-grid-2,.ae-grid-4,.ae-related { grid-template-columns:1fr; }
+      .ae-readouts { grid-template-columns:1fr; }
+      .ae-facts { grid-template-columns:1fr; }
+      .ae-life-photo { grid-template-columns:1fr; }
+    }
+    @media (prefers-reduced-motion:reduce) { .ae-related a { transition:none; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../paths.html">Paths</a></li>
+            <li><a href="../showcase.html">Showcase</a></li>
+            <li><a href="../applications.html">Apps</a></li>
+            <li><a href="../recipe-book.html">Library</a></li>
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ae-page">
+          <section class="hero ae-hero">
+            <div class="ae-hero-copy">
+              <p class="eyebrow">Physics · Relativity · Quantum Theory · History of Science</p>
+              <h1>Albert Einstein: Reimagining Space, Time &amp; Light</h1>
+              <div class="ae-meta">
+                <span>Special Relativity</span><span class="dot"></span>
+                <span>General Relativity</span><span class="dot"></span>
+                <span>Photoelectric Effect</span><span class="dot"></span>
+                <span>E = mc²</span>
+              </div>
+              <p class="ae-lede">Albert Einstein changed physics by asking deceptively simple questions: What would it be like to ride beside a beam of light? How would gravity feel inside a falling elevator? His answers connected matter and energy, joined space with time, and helped launch quantum physics.</p>
+            </div>
+            <figure class="ae-hero-photo">
+              <img src="../assets/thumbs/albert-einstein-1921.jpg" alt="Black-and-white portrait of Albert Einstein in 1921" />
+              <figcaption>Albert Einstein, 1921. Harris &amp; Ewing Studio / Smithsonian National Portrait Gallery. <a href="https://commons.wikimedia.org/wiki/File:Albert_Einstein_1921.jpg">CC0 public domain source</a>.</figcaption>
+            </figure>
+          </section>
+
+          <nav class="ae-roadmap" aria-label="In this lesson">
+            <a href="#life"><span>1</span><strong>Life &amp; context</strong></a>
+            <a href="#breakthroughs"><span>2</span><strong>Major breakthroughs</strong></a>
+            <a href="#relativity"><span>3</span><strong>Relativity lab</strong></a>
+            <a href="#connections"><span>4</span><strong>STEAM connections</strong></a>
+          </nav>
+
+          <section class="ae-card" id="life" style="--card-accent:#d97706">
+            <span class="ae-chapter">Chapter 1 · The person</span>
+            <h2>From Curious Student to World-Famous Physicist</h2>
+            <div class="ae-intro-grid">
+              <div>
+                <p><strong>Albert Einstein (March 14, 1879–April 18, 1955)</strong> was born in Ulm in the German Empire and grew up in Munich. Fascinated by a compass as a child, he became convinced that invisible laws must govern nature. He later studied physics and mathematics at the Swiss Federal Polytechnic in Zürich.</p>
+                <p>Unable to find a university post after graduating, Einstein worked at the Swiss Patent Office in Bern. That ordinary-looking job gave him time to think deeply about clocks, signals, motion, atoms, and light. In 1905—his “miracle year”—he published four papers that transformed modern physics.</p>
+              </div>
+              <aside class="ae-facts" aria-label="Einstein at a glance">
+                <h3>At a glance</h3>
+                <dl>
+                  <div><dt>Born</dt><dd>March 14, 1879<br>Ulm, Germany</dd></div>
+                  <div><dt>Known for</dt><dd>Relativity, photons, Brownian motion</dd></div>
+                  <div><dt>Nobel Prize</dt><dd>1921 Physics Prize</dd></div>
+                  <div><dt>Died</dt><dd>April 18, 1955<br>Princeton, New Jersey</dd></div>
+                </dl>
+              </aside>
+            </div>
+            <div class="ae-callout"><strong>Relatable idea:</strong> Einstein did not begin his greatest work in a famous laboratory. He developed it while working a day job, talking with friends, playing violin, and using thought experiments. Scientific creativity often begins with a clear question, not expensive equipment.</div>
+          </section>
+
+          <section class="ae-card" style="--card-accent:#7c3aed">
+            <span class="ae-chapter">Chapter 1 · Timeline</span>
+            <h2>A Life of Ideas</h2>
+            <div class="ae-life-layout">
+              <ol class="ae-timeline">
+                <li><span class="ae-year">1879</span>Born in Ulm, Germany.</li>
+                <li><span class="ae-year">1902</span>Begins work as a technical expert at the Swiss Patent Office in Bern.</li>
+                <li><span class="ae-year">1905</span>Publishes landmark papers on light quanta, Brownian motion, special relativity, and mass–energy equivalence.</li>
+                <li><span class="ae-year">1915</span>Completes the field equations of general relativity, describing gravity as curved spacetime.</li>
+                <li><span class="ae-year">1919</span>Measurements during a solar eclipse support his prediction that gravity bends light; Einstein becomes internationally famous.</li>
+                <li><span class="ae-year">1922</span>Receives the 1921 Nobel Prize in Physics, especially for explaining the photoelectric effect.</li>
+                <li><span class="ae-year">1933</span>Leaves Nazi Germany and settles in the United States, joining the Institute for Advanced Study in Princeton.</li>
+                <li><span class="ae-year">1955</span>Dies in Princeton, New Jersey, leaving unfinished work toward a unified theory of physics.</li>
+              </ol>
+              <aside class="ae-life-photo">
+                <figure class="ae-photo">
+                  <img src="../assets/thumbs/einstein-patent-office.jpg" alt="Portrait of a young Albert Einstein during his years at the Swiss Patent Office in Bern" />
+                  <figcaption>Einstein during his Swiss Patent Office years in Bern, 1902–1909. Photographer unknown / ETH Zürich. <a href="https://commons.wikimedia.org/wiki/File:Einstein_patentoffice.jpg">Public Domain Mark source</a>.</figcaption>
+                </figure>
+                <h3>A “day job” beside a scientific revolution</h3>
+                <p>As a patent examiner, Einstein evaluated inventions involving electrical and mechanical systems. The work sharpened his habit of reducing complicated devices to their essential principles—exactly the kind of thinking behind his experiments with imaginary clocks, trains, elevators, and beams of light.</p>
+              </aside>
+            </div>
+          </section>
+
+          <section class="ae-card" id="breakthroughs" style="--card-accent:#2563eb">
+            <span class="ae-chapter">Chapter 2 · The miracle year</span>
+            <h2>1905: Four Papers, Four Revolutions</h2>
+            <div class="ae-grid-4">
+              <article class="ae-mini">
+                <span class="icon" aria-hidden="true">💡</span>
+                <strong>Light comes in packets</strong>
+                <p>Einstein explained the photoelectric effect by proposing that light transfers energy in discrete quanta, later called photons. This became a foundation of quantum physics.</p>
+              </article>
+              <article class="ae-mini">
+                <span class="icon" aria-hidden="true">🔬</span>
+                <strong>Atoms are real</strong>
+                <p>His mathematical explanation of Brownian motion showed how invisible molecules jostle visible particles, providing powerful evidence for atoms.</p>
+              </article>
+              <article class="ae-mini">
+                <span class="icon" aria-hidden="true">🚆</span>
+                <strong>Time depends on motion</strong>
+                <p>Special relativity showed that observers can disagree about time and distance while still measuring the same speed of light.</p>
+              </article>
+              <article class="ae-mini">
+                <span class="icon" aria-hidden="true">☀️</span>
+                <strong>Mass stores energy</strong>
+                <p>The equation E = mc² revealed that a small amount of mass corresponds to an enormous amount of energy.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="ae-card" id="relativity" style="--card-accent:#0891b2">
+            <span class="ae-chapter">Chapter 3 · Interactive investigation</span>
+            <h2>Special Relativity: When Clocks Disagree</h2>
+            <p>Einstein began with two rules: the laws of physics work the same in every non-accelerating frame, and every observer measures light in a vacuum moving at the same speed, <em>c</em>. To keep both rules true, measurements of space and time must depend on the observer's motion.</p>
+            <div class="ae-equation">
+              <strong>γ = 1 / √(1 − v²/c²)</strong>
+              <small>The Lorentz factor γ tells us how strongly time dilation and length contraction appear at speed v.</small>
+            </div>
+            <div class="ae-lab">
+              <canvas id="ae-canvas" aria-label="Animated comparison of a stationary light clock and a fast-moving light clock"></canvas>
+            </div>
+            <div class="ae-readouts" aria-live="polite">
+              <div class="ae-readout"><span>Ship speed</span><strong id="ae-speed-out">0.80 c</strong></div>
+              <div class="ae-readout"><span>Lorentz factor</span><strong id="ae-gamma-out">1.667</strong></div>
+              <div class="ae-readout"><span>Earth time per ship year</span><strong id="ae-time-out">1.67 years</strong></div>
+            </div>
+            <div class="ae-callout"><strong>Try this:</strong> Use the speed control in the side panel. At everyday speeds, γ is almost exactly 1. Near light speed, a year for the traveler can correspond to many years on Earth. This is not science fiction—precision clocks and GPS systems must account for relativistic time shifts.</div>
+          </section>
+
+          <section class="ae-card" style="--card-accent:#059669">
+            <span class="ae-chapter">Chapter 3 · Curved spacetime</span>
+            <h2>General Relativity: Gravity Is Geometry</h2>
+            <p>Einstein's “happiest thought” was that a person falling freely does not feel their own weight. From this equivalence between gravity and acceleration, he developed a new picture: mass and energy curve spacetime, and objects follow the straightest possible paths through that curved geometry.</p>
+            <div class="ae-grid-2">
+              <article class="ae-mini"><span class="icon" aria-hidden="true">🌞</span><strong>Light bends near mass</strong><p>Starlight passing the Sun follows curved spacetime, an effect famously tested during the 1919 eclipse.</p></article>
+              <article class="ae-mini"><span class="icon" aria-hidden="true">🕳️</span><strong>Black holes</strong><p>The equations allow regions where spacetime curves so strongly that not even light can escape.</p></article>
+              <article class="ae-mini"><span class="icon" aria-hidden="true">〰️</span><strong>Gravitational waves</strong><p>Accelerating masses can send ripples through spacetime; these waves were directly detected a century later.</p></article>
+              <article class="ae-mini"><span class="icon" aria-hidden="true">🛰️</span><strong>GPS timing</strong><p>Satellite clocks experience motion and gravity differently from clocks on Earth, so navigation systems apply relativistic corrections.</p></article>
+            </div>
+          </section>
+
+          <section class="ae-card" style="--card-accent:#d97706">
+            <span class="ae-chapter">Chapter 3 · Mass and energy</span>
+            <h2>What E = mc² Really Means</h2>
+            <div class="ae-equation"><strong>E = mc²</strong><small>Energy equals mass multiplied by the speed of light squared.</small></div>
+            <p>Mass is a concentrated form of energy. Because <em>c²</em> is enormous, even a tiny change in mass can release a tremendous amount of energy. The equation helps explain why the Sun shines: nuclear fusion produces products with slightly less mass than the starting nuclei, and the difference appears as energy.</p>
+            <p>The equation does <strong>not</strong> mean that every object automatically releases all of its mass as usable energy. A physical process must convert part of the system's mass into another form of energy while conserving total energy and momentum.</p>
+          </section>
+
+          <section class="ae-card" style="--card-accent:#7c3aed">
+            <span class="ae-chapter">Chapter 3 · Legacy</span>
+            <h2>Einstein's Broader Impact</h2>
+            <div class="ae-grid-2">
+              <article class="ae-mini"><span class="icon" aria-hidden="true">🏅</span><strong>Quantum physics</strong><p>His Nobel-recognized explanation of the photoelectric effect underlies solar cells, digital cameras, and light sensors.</p></article>
+              <article class="ae-mini"><span class="icon" aria-hidden="true">🧊</span><strong>Bose–Einstein statistics</strong><p>Working from Satyendra Nath Bose's ideas, Einstein predicted a new state of matter now called a Bose–Einstein condensate.</p></article>
+              <article class="ae-mini"><span class="icon" aria-hidden="true">⚛️</span><strong>Atomic evidence</strong><p>Brownian motion connected microscopic molecular collisions to measurements people could observe.</p></article>
+              <article class="ae-mini"><span class="icon" aria-hidden="true">🕊️</span><strong>Public responsibility</strong><p>Einstein spoke publicly about war, nuclear weapons, civil rights, refugees, and international cooperation—sometimes changing his views as events changed.</p></article>
+            </div>
+            <figure class="ae-photo ae-wide-photo">
+              <img src="../assets/thumbs/solvay-conference-1927.jpg" alt="Scientists gathered for the fifth Solvay Conference in Brussels in 1927, with Albert Einstein seated in the front row" />
+              <figcaption>The Fifth Solvay Conference, Brussels, 1927. Einstein is seated at the center of the front row, alongside Marie Curie, Max Planck, Niels Bohr, and other founders of quantum physics. Photograph by Benjamin Couprie / Institut International de Physique Solvay. <a href="https://commons.wikimedia.org/wiki/File:Solvay_conference_1927.jpg">Public domain source</a>.</figcaption>
+            </figure>
+          </section>
+
+          <section class="ae-card" id="connections" style="--card-accent:#2563eb">
+            <span class="ae-chapter">Chapter 4 · Keep exploring</span>
+            <h2>Continue the Idea Across STEAM</h2>
+            <p>Each lesson below connects directly to a question Einstein worked on. Follow the links to turn his biography into a learning path.</p>
+            <div class="ae-related">
+              <a href="speed-of-light.html"><strong>⚡ The Speed of Light</strong><small>Start here to see why a constant value of c reshapes space and time.</small></a>
+              <a href="clocks-and-time.html"><strong>🕰️ Clocks &amp; Telling Time</strong><small>Connect ordinary timekeeping to Einstein's idea that clocks are physical measuring devices.</small></a>
+              <a href="universal-gravitation.html"><strong>🌍 Universal Gravitation</strong><small>Compare Newton's force-based model with Einstein's curved-spacetime model.</small></a>
+              <a href="event-horizon-telescope.html"><strong>🕳️ Event Horizon Telescope</strong><small>See how scientists image the environment around a black hole predicted by relativity.</small></a>
+              <a href="world-quantum-day-2026.html"><strong>⚛️ World Quantum Day</strong><small>Extend Einstein's light quanta into superposition, measurement, and qubits.</small></a>
+              <a href="feynman-atoms.html"><strong>🔬 Feynman: Everything Is Made of Atoms</strong><small>Relate Brownian motion to the particle model of matter.</small></a>
+              <a href="conservation-of-energy.html"><strong>♻️ Conservation of Energy</strong><small>Place mass–energy equivalence inside the larger conservation story.</small></a>
+              <a href="james-clerk-maxwell.html"><strong>🌈 James Clerk Maxwell</strong><small>Meet the physicist whose equations showed that light is electromagnetic—and set the stage for relativity.</small></a>
+            </div>
+          </section>
+
+          <section class="ae-card" style="--card-accent:#dc2626">
+            <span class="ae-chapter">Chapter 4 · Review</span>
+            <h2>Check Your Understanding</h2>
+            <div class="ae-question" data-answer="b">
+              <p><strong>1.</strong> Which accomplishment earned Einstein the Nobel Prize?</p>
+              <div class="ae-options"><button class="ae-option" data-choice="a">General relativity</button><button class="ae-option" data-choice="b">The photoelectric effect</button><button class="ae-option" data-choice="c">E = mc² alone</button></div>
+              <div class="ae-feedback"></div>
+            </div>
+            <div class="ae-question" data-answer="c">
+              <p><strong>2.</strong> What does the light-clock lab show as a ship approaches light speed?</p>
+              <div class="ae-options"><button class="ae-option" data-choice="a">Light slows down</button><button class="ae-option" data-choice="b">Mass disappears</button><button class="ae-option" data-choice="c">Less time passes for the moving traveler between the same events</button></div>
+              <div class="ae-feedback"></div>
+            </div>
+            <div class="ae-question" data-answer="a">
+              <p><strong>3.</strong> In general relativity, what do we experience as gravity?</p>
+              <div class="ae-options"><button class="ae-option" data-choice="a">Motion through curved spacetime</button><button class="ae-option" data-choice="b">Air pushing objects downward</button><button class="ae-option" data-choice="c">Light losing all its energy</button></div>
+              <div class="ae-feedback"></div>
+            </div>
+          </section>
+
+          <footer class="site-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p>
+          </footer>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="ae-controls">Relativity Lab</button>
+            <button class="ll-tab" aria-selected="false" data-pane="ae-summary">Summary</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ae-controls">
+            <span class="ll-label">Ship speed</span>
+            <label style="font-size:.8rem;display:flex;justify-content:space-between;margin-bottom:.35rem;">Fraction of light speed <span id="ae-slider-label">0.80 c</span></label>
+            <input id="ae-speed" class="nl-slider" type="range" min="0" max="99" value="80" style="width:100%" />
+            <hr class="ll-hr">
+            <button class="ll-preset" data-speed="10" style="width:100%;margin-bottom:.4rem">Breezy: 0.10 c</button>
+            <button class="ll-preset" data-speed="80" style="width:100%;margin-bottom:.4rem">Fast: 0.80 c</button>
+            <button class="ll-preset" data-speed="95" style="width:100%;margin-bottom:.4rem">Extreme: 0.95 c</button>
+            <button class="ll-preset" data-speed="99" style="width:100%">Near light: 0.99 c</button>
+            <div class="ll-info" style="margin-top:.9rem"><strong>Reading the animation</strong>The left clock is at rest. The right clock moves horizontally. Its light follows a longer diagonal route while every observer still measures light at c.</div>
+          </div>
+          <div class="ll-pane" id="ae-summary">
+            <div class="ll-info"><strong>Special relativity</strong>Constant light speed requires moving observers to measure space and time differently.</div>
+            <div class="ll-info"><strong>General relativity</strong>Mass-energy curves spacetime; free objects follow that geometry.</div>
+            <div class="ll-info"><strong>Quantum theory</strong>Light transfers energy in discrete packets called photons.</div>
+            <div class="ll-info"><strong>Mass-energy</strong>E = mc² shows that mass contributes to the total energy of a system.</div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel"><span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span></button>
+    </div>
+  </div>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function () {
+    const speed = document.getElementById('ae-speed');
+    const canvas = document.getElementById('ae-canvas');
+    const ctx = canvas.getContext('2d');
+    let phase = 0;
+
+    document.querySelectorAll('.ll-tab').forEach(function (button) {
+      button.addEventListener('click', function () {
+        document.querySelectorAll('.ll-tab').forEach(function (tab) { tab.setAttribute('aria-selected','false'); });
+        document.querySelectorAll('.ll-pane').forEach(function (pane) { pane.classList.remove('ll-active'); });
+        button.setAttribute('aria-selected','true');
+        document.getElementById(button.dataset.pane).classList.add('ll-active');
+      });
+    });
+    const panel = document.querySelector('.ll-panel');
+    const panelHead = document.querySelector('.ll-panel-head');
+    function setPanelOpen(isOpen) {
+      panel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    }
+    document.querySelector('.ll-panel-close').addEventListener('click', function (event) {
+      event.stopPropagation();
+      setPanelOpen(false);
+    });
+    document.querySelector('.ll-open-btn').addEventListener('click', function () {
+      setPanelOpen(true);
+    });
+    panelHead.addEventListener('click', function () {
+      if (panel.getAttribute('aria-hidden') === 'true') setPanelOpen(true);
+    });
+    if (window.matchMedia('(max-width: 960px)').matches) setPanelOpen(false);
+    document.querySelectorAll('[data-speed]').forEach(function (button) {
+      button.addEventListener('click', function () { speed.value = button.dataset.speed; update(); });
+    });
+
+    function update() {
+      const beta = Number(speed.value) / 100;
+      const gamma = 1 / Math.sqrt(1 - beta * beta);
+      document.getElementById('ae-slider-label').textContent = beta.toFixed(2) + ' c';
+      document.getElementById('ae-speed-out').textContent = beta.toFixed(2) + ' c';
+      document.getElementById('ae-gamma-out').textContent = gamma.toFixed(3);
+      document.getElementById('ae-time-out').textContent = gamma.toFixed(2) + ' years';
+    }
+    speed.addEventListener('input', update);
+
+    function drawClock(cx, top, height, moving, beta) {
+      const bottom = top + height;
+      ctx.strokeStyle = moving ? '#a78bfa' : '#60a5fa';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(cx - 52, top); ctx.lineTo(cx + 52, top); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - 52, bottom); ctx.lineTo(cx + 52, bottom); ctx.stroke();
+      const ping = (Math.sin(phase) + 1) / 2;
+      const y = top + ping * height;
+      const drift = moving ? (ping - .5) * 86 * beta : 0;
+      ctx.strokeStyle = moving ? 'rgba(253,224,71,.6)' : 'rgba(125,211,252,.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx - (moving ? 43 * beta : 0), top); ctx.lineTo(cx + (moving ? 43 * beta : 0), bottom); ctx.stroke();
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath(); ctx.arc(cx + drift, y, 7, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function draw() {
+      const ratio = window.devicePixelRatio || 1;
+      const width = canvas.clientWidth;
+      const height = 300;
+      if (canvas.width !== width * ratio || canvas.height !== height * ratio) {
+        canvas.width = width * ratio; canvas.height = height * ratio;
+      }
+      ctx.setTransform(ratio,0,0,ratio,0,0);
+      const gradient = ctx.createLinearGradient(0,0,width,height);
+      gradient.addColorStop(0,'#07152f'); gradient.addColorStop(1,'#312e81');
+      ctx.fillStyle = gradient; ctx.fillRect(0,0,width,height);
+      ctx.fillStyle = 'rgba(255,255,255,.06)';
+      for (let x=20;x<width;x+=40) for (let y=20;y<height;y+=40) { ctx.beginPath(); ctx.arc(x,y,1,0,Math.PI*2); ctx.fill(); }
+      const beta = Number(speed.value) / 100;
+      const left = width * .27, right = width * .73;
+      ctx.fillStyle = '#e2e8f0'; ctx.font = '700 14px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('STATIONARY CLOCK',left,35); ctx.fillText('MOVING CLOCK',right,35);
+      drawClock(left,72,150,false,beta); drawClock(right,72,150,true,beta);
+      ctx.fillStyle = '#94a3b8'; ctx.font = '12px system-ui';
+      ctx.fillText('straight light path',left,255); ctx.fillText('longer diagonal path',right,255);
+      phase += .035;
+      requestAnimationFrame(draw);
+    }
+
+    document.querySelectorAll('.ae-question').forEach(function (question) {
+      question.querySelectorAll('.ae-option').forEach(function (option) {
+        option.addEventListener('click', function () {
+          question.querySelectorAll('.ae-option').forEach(function (button) { button.classList.remove('correct','wrong'); });
+          const correct = option.dataset.choice === question.dataset.answer;
+          option.classList.add(correct ? 'correct' : 'wrong');
+          if (!correct) question.querySelector('[data-choice="' + question.dataset.answer + '"]').classList.add('correct');
+          question.querySelector('.ae-feedback').textContent = correct ? '✓ Correct!' : 'Not quite—the correct answer is highlighted.';
+        });
+      });
+    });
+
+    update();
+    draw();
+  })();
+  </script>
+</body>
+</html>
