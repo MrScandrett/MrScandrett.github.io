@@ -45,7 +45,7 @@ function generateMap() {
 
     // Clear Spawn Area
     const cx = Math.floor(MAP_WIDTH / 2);
-    for(let y = 0; y < 15; y++) { 
+    for(let y = 0; y < 15; y++) {
         for(let x = cx - 3; x <= cx + 3; x++) {
             if(y < MAP_HEIGHT && x >= 0 && x < MAP_WIDTH) map[y][x] = 0;
         }

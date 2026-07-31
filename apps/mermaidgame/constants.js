@@ -54,13 +54,19 @@ const MAP_HEIGHT = 240; // Increased for Trench Depth
 
 // Physics - REFINED ECCO FEEL
 const SURFACE_Y = 60; // Lower surface to give more sky room
-const GRAVITY = 0.4;
+const GRAVITY = 0.32;
 const WATER_ACCEL = 0.4;
 const AIR_ACCEL = 0.25;
 const MAX_WATER_SPEED = 3.5;
-const MAX_AIR_SPEED_X = 2.5;
-const MAX_AIR_SPEED_Y = 6;
+const MAX_AIR_SPEED_X = 5.5;
+const MAX_AIR_SPEED_Y = 9;
 const WATER_DRAG = 0.90;
+
+// Surface-breach tuning: a fast upward swim becomes a committed aerial arc.
+const BREACH_MIN_SPEED = 2.4;
+const BREACH_LAUNCH_SPEED = 6.8;
+const BREACH_MAX_SPEED = 8.8;
+const BREACH_DASH_BONUS = 1.25;
 
 const CONFIG = {
     PLAYER_SPEED: MAX_WATER_SPEED * 2, // Adjusted for game feel
@@ -73,26 +79,71 @@ const BIOME_CONFIG = {
     name: "Coral Reef Realm",
     difficulty: 1,
     desc: "The Shallows. Colorful but corrupted.",
-    colors: { bgTop: '#22d3ee', bgBot: '#0ea5e9', rock: '#0f172a' }
+    colors: {
+      bgTop: '#22d3ee', bgBot: '#0ea5e9',
+      rock: '#465348', rockDark: '#17241d', rockMid: '#687361',
+      rockLight: '#a4aa8d', rockEdge: '#879779'
+    }
   },
   [BiomeType.BAYOU]: {
     name: "Bayou Realm",
     difficulty: 2,
     desc: "Toxic roots and murky illusions.",
-    colors: { bgTop: '#14532d', bgBot: '#052e16', rock: '#1a2e05' }
+    colors: {
+      bgTop: '#14532d', bgBot: '#052e16',
+      rock: '#34442b', rockDark: '#111b12', rockMid: '#56643d',
+      rockLight: '#879064', rockEdge: '#6d7f50'
+    }
   },
   [BiomeType.ARCTIC]: {
     name: "Arctic Realm",
     difficulty: 3,
     desc: "Freezing currents and jagged ice.",
-    colors: { bgTop: '#7dd3fc', bgBot: '#0c4a6e', rock: '#e0f2fe' }
+    colors: {
+      bgTop: '#7dd3fc', bgBot: '#0c4a6e',
+      rock: '#66899c', rockDark: '#294756', rockMid: '#8bb3c2',
+      rockLight: '#d7eef0', rockEdge: '#b6dce2'
+    }
   },
   [BiomeType.TRENCH]: {
     name: "Marianas Trench",
     difficulty: 4,
     desc: "The Void. Dan's Fortress lies below.",
-    colors: { bgTop: '#1e1b4b', bgBot: '#020617', rock: '#000000' }
+    colors: {
+      bgTop: '#1e1b4b', bgBot: '#020617',
+      rock: '#252139', rockDark: '#080913', rockMid: '#413958',
+      rockLight: '#716582', rockEdge: '#554a69'
+    }
   }
+};
+
+// Non-hostile fish communities. Shapes and markings are rendered procedurally,
+// while these palettes keep each depth band ecologically distinct.
+const FISH_SPECIES = {
+  [BiomeType.CORAL]: [
+    { id: 'CLOWNFISH', body: '#f97316', accent: '#fff7ed', dark: '#431407', pattern: 'BANDS', shape: 'ROUND', size: 0.85, speed: 0.34 },
+    { id: 'BUTTERFLYFISH', body: '#facc15', accent: '#f8fafc', dark: '#172554', pattern: 'MASK', shape: 'TALL', size: 1.0, speed: 0.28 },
+    { id: 'BLUE_TANG', body: '#2563eb', accent: '#facc15', dark: '#172554', pattern: 'SWOOP', shape: 'TALL', size: 1.05, speed: 0.32 },
+    { id: 'ANTHIAS', body: '#f472b6', accent: '#fbcfe8', dark: '#831843', pattern: 'SPOTS', shape: 'SLENDER', size: 0.72, speed: 0.42 }
+  ],
+  [BiomeType.BAYOU]: [
+    { id: 'MANGROVE_SNAPPER', body: '#b45309', accent: '#fbbf24', dark: '#422006', pattern: 'LINE', shape: 'ROUND', size: 1.0, speed: 0.28 },
+    { id: 'NEEDLEFISH', body: '#84a98c', accent: '#d8f3dc', dark: '#1b4332', pattern: 'LINE', shape: 'SLENDER', size: 1.15, speed: 0.38 },
+    { id: 'MUD_MINNOW', body: '#78716c', accent: '#a3e635', dark: '#292524', pattern: 'SPOTS', shape: 'ROUND', size: 0.72, speed: 0.25 },
+    { id: 'CATFISH', body: '#64748b', accent: '#cbd5e1', dark: '#1e293b', pattern: 'WHISKERS', shape: 'LONG', size: 1.15, speed: 0.22 }
+  ],
+  [BiomeType.ARCTIC]: [
+    { id: 'ARCTIC_COD', body: '#94a3b8', accent: '#e0f2fe', dark: '#334155', pattern: 'MOTTLED', shape: 'LONG', size: 1.05, speed: 0.3 },
+    { id: 'CAPELIN', body: '#67e8f9', accent: '#f8fafc', dark: '#155e75', pattern: 'LINE', shape: 'SLENDER', size: 0.72, speed: 0.45 },
+    { id: 'ICEFISH', body: '#bae6fd', accent: '#ffffff', dark: '#3b82a0', pattern: 'GLASS', shape: 'SLENDER', size: 0.9, speed: 0.25 },
+    { id: 'ARCTIC_CHAR', body: '#64748b', accent: '#fb7185', dark: '#1e293b', pattern: 'SPOTS', shape: 'LONG', size: 1.1, speed: 0.32 }
+  ],
+  [BiomeType.TRENCH]: [
+    { id: 'LANTERNFISH', body: '#172554', accent: '#67e8f9', dark: '#020617', pattern: 'GLOW', shape: 'LONG', size: 0.78, speed: 0.22 },
+    { id: 'HATCHETFISH', body: '#4c1d95', accent: '#c4b5fd', dark: '#09090b', pattern: 'GLOW', shape: 'TALL', size: 0.85, speed: 0.18 },
+    { id: 'SNAILFISH', body: '#a855f7', accent: '#f0abfc', dark: '#3b0764', pattern: 'MOTTLED', shape: 'ROUND', size: 0.95, speed: 0.16 },
+    { id: 'VIPERFISH', body: '#334155', accent: '#a5f3fc', dark: '#020617', pattern: 'FANGS', shape: 'SLENDER', size: 1.05, speed: 0.2 }
+  ]
 };
 
 const COLORS = {
@@ -141,10 +192,14 @@ const FIN_COLORS = [
   '#fbbf24', '#f59e0b', '#d97706'  // Golds
 ];
 
+const HAIR_COLORS = [
+  '#39245f', '#512b81', '#24345f', '#542b3f', '#182f38'
+];
+
 const APPEARANCE_OPTIONS = {
   HAIR: ['LONG', 'WAVY', 'BUN'],
-  EYES: ['DOT', 'ANIME' , 'LASHES'],
-  MOUTHS: ['SMILE', 'SMIRK', 'OPEN']
+  EYES: ['FOCUSED', 'LINED', 'LASHES'],
+  MOUTHS: ['STERN', 'NEUTRAL', 'OPEN']
 };
 
 const PET_STATS = {

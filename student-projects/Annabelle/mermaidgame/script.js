@@ -356,7 +356,7 @@ window.onload = function() {
 
     function update() {
         frameCount++;
-        
+
         if (gameState === 'CHARACTER_SELECT') {
             // Rotate preview
             player.angle += 0.05;
@@ -791,16 +791,16 @@ window.onload = function() {
         } else if (gameState === 'HUMAN') {
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
-            
+
             ctx.fillStyle = 'white';
             ctx.font = '16px "Press Start 2P"';
             ctx.textAlign = 'center';
             ctx.fillText('HUMAN WORLD', V_WIDTH / 2, V_HEIGHT / 2 - 40);
-            
+
             ctx.font = '10px "Press Start 2P"';
             ctx.fillText(`To be continued...`, V_WIDTH / 2, V_HEIGHT / 2 - 10);
             ctx.fillText(`Press ENTER to Restart`, V_WIDTH / 2, V_HEIGHT / 2 + 10);
-            
+
         }
     }
 

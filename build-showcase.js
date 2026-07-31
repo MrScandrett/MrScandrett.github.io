@@ -1977,6 +1977,17 @@ async function readManifestSlugs() {
   }
 }
 
+async function readExistingManifest() {
+  if (!exists(MANIFEST_PATH)) return [];
+  try {
+    const manifest = JSON.parse(await fs.readFile(MANIFEST_PATH, "utf8"));
+    return Array.isArray(manifest) ? manifest : [];
+  } catch (error) {
+    logStep(`Could not preserve the existing manifest during a targeted build: ${error.message}`);
+    return [];
+  }
+}
+
 async function removeStaleAppDirs(validSlugs) {
   const keep = new Set(validSlugs);
   const previousGeneratedSlugs = await readManifestSlugs();
@@ -1994,6 +2005,8 @@ async function removeStaleAppDirs(validSlugs) {
 
 async function main() {
   const strictMode = process.argv.includes("--strict");
+  const onlyArg = process.argv.find((arg) => arg.startsWith("--only="));
+  const onlySlug = onlyArg ? toSlug(onlyArg.slice("--only=".length)) : null;
   logStep("Starting showcase build.");
 
   if (!exists(STUDENT_PROJECTS_DIR)) {
@@ -2022,12 +2035,18 @@ async function main() {
   }
 
   const uniqueProjects = ensureUniqueSlugs(projectSources);
-  logStep(`Found ${uniqueProjects.length} project(s).`);
+  const selectedProjects = onlySlug
+    ? uniqueProjects.filter(({ slug }) => slug === onlySlug)
+    : uniqueProjects;
+  if (onlySlug && selectedProjects.length === 0) {
+    fail(`No student project resolves to slug "${onlySlug}".`);
+  }
+  logStep(`Found ${uniqueProjects.length} project(s); building ${onlySlug || "all projects"}.`);
 
-  const manifest = [];
+  const manifest = onlySlug ? await readExistingManifest() : [];
   const failures = [];
 
-  for (const { source, slug } of uniqueProjects) {
+  for (const { source, slug } of selectedProjects) {
     const sourcePath = source.projectDir || source.filePath || "unknown";
     logStep(`Building ${slug} from ${sourcePath}`);
 
@@ -2048,7 +2067,9 @@ async function main() {
       } else {
         entry = await processProject(source, slug);
       }
-      manifest.push(entry);
+      const existingIndex = manifest.findIndex((item) => item && item.slug === slug);
+      if (existingIndex >= 0) manifest[existingIndex] = entry;
+      else manifest.push(entry);
       logStep(`Built /apps/${slug}/`);
     } catch (error) {
       await fs.rm(path.join(APPS_DIR, slug), { recursive: true, force: true });
@@ -2057,7 +2078,7 @@ async function main() {
     }
   }
 
-  await removeStaleAppDirs(manifest.map((item) => item.slug));
+  if (!onlySlug) await removeStaleAppDirs(manifest.map((item) => item.slug));
   applyManifestOverrides(manifest);
   await fs.writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + "\n", "utf8");
   logStep(`Wrote manifest with ${manifest.length} project(s): ${MANIFEST_PATH}`);
