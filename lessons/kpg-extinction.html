@@ -8,21 +8,128 @@
   <meta name="description" content="A systems lesson on the end-Cretaceous extinction: asteroid impact, impact winter, Deccan volcanism, marine food webs, survivorship, and 3D extinct species." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
   <style>
-    .ll-viewport { --ll-panel-w: 320px; --ll-accent: #b45309; --ll-tab-active: #b45309; --ll-tab-active-bg: rgba(180,83,9,0.12); }
+    .ll-viewport {
+      --ll-panel-w: 340px;
+      --ll-accent: #f59e0b;
+      --ll-tab-active: #fbbf24;
+      --ll-tab-active-bg: rgba(245, 158, 11, 0.14);
+      --ll-panel-bg: #0b1115;
+      --ll-panel-border: rgba(255,255,255,0.12);
+      --ll-tab-color: rgba(255,255,255,0.62);
+      background: #090d0c;
+    }
+    .ll-sim { position: relative; background: #172019; }
+    .kpg-world {
+      position: sticky;
+      z-index: 0;
+      top: 0;
+      height: 100%;
+      margin-bottom: -100vh;
+      overflow: hidden;
+      pointer-events: none;
+      background: #172019 url("../assets/images/kpg-cretaceous-backdrop.webp") center / cover no-repeat;
+    }
+    .kpg-world::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(4,10,12,0.12), rgba(5,12,10,0.18) 50%, rgba(5,9,8,0.62));
+      transition: background 2s ease, backdrop-filter 2s ease;
+    }
+    .kpg-atmosphere, .kpg-fire, .kpg-flash, .kpg-ash { position: absolute; inset: 0; opacity: 0; }
+    .kpg-event-canvas { position:absolute; inset:0; z-index:7; width:100%; height:100%; }
+    .kpg-diegetic-hud {
+      position:absolute; z-index:9; top:clamp(1rem,3vw,2rem); left:50%; transform:translate(-50%,-18px);
+      display:flex; align-items:center; gap:.65rem; opacity:0; padding:.55rem .8rem; border:1px solid rgba(255,186,82,.45);
+      border-radius:6px; color:#fff3d0; background:rgba(23,8,3,.78); box-shadow:0 8px 30px rgba(0,0,0,.32),inset 0 0 20px rgba(255,82,15,.08);
+      font:700 .66rem/1 "IBM Plex Mono",monospace; letter-spacing:.12em; text-transform:uppercase; transition:opacity .25s,transform .25s;
+    }
+    .kpg-world[data-show="running"] .kpg-diegetic-hud { opacity:1; transform:translate(-50%,0); }
+    .kpg-hud-light { width:8px; height:8px; border-radius:50%; background:#ff5b24; box-shadow:0 0 14px #ff3d00; animation:kpg-hud-pulse .8s ease-in-out infinite alternate; }
+    .kpg-hud-time { color:#fbbf24; }
+    .kpg-world.is-warning::before {
+      content:""; position:absolute; z-index:6; inset:0; opacity:0; box-shadow:inset 0 0 12vw 3vw rgba(180,18,5,.72);
+      animation:kpg-warning-light 1s ease-in-out 3; pointer-events:none;
+    }
+    .kpg-atmosphere { background: radial-gradient(circle at 72% 38%, rgba(255,91,27,.82), transparent 33%); mix-blend-mode: screen; }
+    .kpg-fire { bottom: -20%; top: 42%; background: radial-gradient(ellipse at 55% 100%, rgba(255,119,24,.9), rgba(143,26,4,.52) 35%, transparent 70%); filter: blur(5px); }
+    .kpg-flash { background: #fffbe5; z-index: 5; }
+    .kpg-ash {
+      background-image: radial-gradient(circle, rgba(235,224,201,.8) 0 1px, transparent 1.5px), radial-gradient(circle, rgba(33,26,21,.8) 0 1.5px, transparent 2px);
+      background-size: 21px 21px, 35px 35px;
+      background-position: 0 0, 12px 8px;
+      animation: kpg-ash-fall 1.8s linear infinite paused;
+      z-index: 6;
+    }
+    .kpg-meteor {
+      position: absolute;
+      z-index: 4;
+      top: 7%;
+      right: -18%;
+      width: 44px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      opacity: 0;
+      background: radial-gradient(circle at 32% 30%, #fff7d1 0 8%, #ffb52e 24%, #7c2209 68%, #160905 100%);
+      box-shadow: 0 0 22px 8px #fff3a0, 0 0 70px 26px rgba(255,88,16,.85);
+    }
+    .kpg-meteor::before {
+      content: "";
+      position: absolute;
+      right: 60%;
+      top: 38%;
+      width: 38vw;
+      height: 14px;
+      border-radius: 100%;
+      transform-origin: right;
+      transform: rotate(-9deg);
+      background: linear-gradient(90deg, transparent, rgba(255,89,19,.26), #ffd36b 82%, #fff);
+      filter: blur(4px);
+    }
+    .kpg-shockwave {
+      position: absolute;
+      z-index: 4;
+      left: 54%;
+      top: 54%;
+      width: 12px;
+      height: 12px;
+      border: 6px solid rgba(255,244,201,.9);
+      border-radius: 50%;
+      opacity: 0;
+      transform: translate(-50%,-50%) scale(.1);
+    }
+    .kpg-world.is-impacting .kpg-flash { animation: kpg-flash 1.35s ease-out forwards; }
+    .kpg-world.is-impacting .kpg-shockwave { animation: kpg-shock 1.9s ease-out forwards; }
+    .kpg-world.is-firestorm .kpg-atmosphere { opacity:.58; transition:opacity 1s; }
+    .kpg-world.is-firestorm .kpg-fire { animation: kpg-fire 7s ease-out forwards; }
+    .kpg-world.is-winter::after { background: rgba(8,13,17,.83); backdrop-filter: grayscale(.72) sepia(.16) contrast(1.1); }
+    .kpg-world.is-winter .kpg-ash { opacity: .52; animation-play-state: running; }
+    @keyframes kpg-meteor { 0% { opacity:0; transform:translate(0,0) scale(.35); } 8% { opacity:1; } 100% { opacity:1; transform:translate(-64vw,43vh) scale(1.55); } }
+    @keyframes kpg-flash { 0% { opacity:0; } 10% { opacity:1; } 100% { opacity:0; } }
+    @keyframes kpg-shock { 0% { opacity:1; transform:translate(-50%,-50%) scale(.1); } 100% { opacity:0; transform:translate(-50%,-50%) scale(72); } }
+    @keyframes kpg-burn { 0% { opacity:0; } 22% { opacity:.92; } 100% { opacity:.18; } }
+    @keyframes kpg-fire { 0% { opacity:0; transform:translateY(18%); } 20% { opacity:1; } 100% { opacity:.2; transform:translateY(-8%); } }
+    @keyframes kpg-ash-fall { to { background-position: 24px 54px, -18px 78px; } }
+    @keyframes kpg-hud-pulse { to { opacity:.35; transform:scale(.7); } }
+    @keyframes kpg-warning-light { 0%,100% { opacity:0; } 50% { opacity:1; } }
+    @keyframes kpg-stage-shake { 0%,100%{transform:translate(0)} 15%{transform:translate(-9px,5px)} 30%{transform:translate(7px,-5px)} 45%{transform:translate(-5px,-3px)} 60%{transform:translate(5px,3px)} 75%{transform:translate(-2px,2px)} }
+    .ll-sim.is-shaking { animation:kpg-stage-shake .55s linear 4; }
     .kpg-page {
-      --kpg-ink: #172033;
-      --kpg-muted: #53657d;
-      --kpg-line: rgba(86, 104, 126, 0.24);
-      --kpg-amber: #b45309;
+      position: relative;
+      z-index: 2;
+      --kpg-ink: #f9fafb;
+      --kpg-muted: rgba(240,245,240,.76);
+      --kpg-line: rgba(255,255,255,.18);
+      --kpg-amber: #fbbf24;
       --kpg-red: #b91c1c;
       --kpg-blue: #2563eb;
       --kpg-green: #15803d;
       color: var(--kpg-ink);
-      padding: 1rem clamp(1rem, 3vw, 2rem) 3rem;
+      padding: clamp(1rem,3vw,2.5rem) clamp(1rem,4vw,4.5rem) 4rem;
     }
     [data-theme="night"] .kpg-page,
     [data-theme="vaporwave"] .kpg-page,
@@ -37,10 +144,11 @@
     .kpg-hero-copy, .kpg-brief, .kpg-card, .kpg-embed-card, .kpg-table-card {
       border: 1px solid var(--kpg-line);
       border-radius: 16px;
-      background: color-mix(in srgb, var(--surface-1, #fff) 91%, transparent);
-      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+      background: linear-gradient(145deg, rgba(10,18,17,.86), rgba(15,25,24,.7));
+      backdrop-filter: blur(18px) saturate(1.08);
+      box-shadow: 0 20px 55px rgba(0,0,0,.28);
     }
-    .kpg-hero-copy { padding: clamp(1rem, 2.8vw, 1.7rem); }
+    .kpg-hero-copy { padding: clamp(1.25rem, 3.4vw, 2.5rem); border-left: 4px solid var(--kpg-amber); }
     .kpg-eyebrow {
       margin: 0 0 0.45rem;
       color: var(--kpg-amber);
@@ -52,10 +160,11 @@
     .kpg-hero h1 {
       margin: 0;
       max-width: 10ch;
-      color: #111827;
-      font-size: clamp(2.2rem, 6vw, 4.75rem);
-      line-height: 0.92;
-      letter-spacing: 0;
+      color: #fff;
+      font-size: clamp(2.45rem, 6vw, 5.2rem);
+      line-height: .9;
+      letter-spacing: -.055em;
+      text-shadow: 0 4px 25px rgba(0,0,0,.4);
     }
     [data-theme="night"] .kpg-hero h1,
     [data-theme="vaporwave"] .kpg-hero h1,
@@ -72,7 +181,7 @@
       border: 1px solid rgba(180, 83, 9, 0.32);
       border-radius: 999px;
       background: rgba(180, 83, 9, 0.1);
-      color: #92400e;
+      color: #fde68a;
       padding: 0.28rem 0.6rem;
       font-size: 0.73rem;
       font-weight: 800;
@@ -83,8 +192,8 @@
     .kpg-brief {
       padding: clamp(1rem, 2.4vw, 1.3rem);
       background:
-        linear-gradient(180deg, rgba(15, 23, 42, 0.04), transparent 34%),
-        color-mix(in srgb, var(--surface-1, #fff) 89%, transparent);
+        linear-gradient(180deg, rgba(251,191,36,.09), transparent 34%),
+        rgba(9,17,18,.75);
     }
     .kpg-number-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
     .kpg-stat {
@@ -92,7 +201,7 @@
       border: 1px solid var(--kpg-line);
       border-radius: 10px;
       padding: 0.75rem;
-      background: rgba(255, 255, 255, 0.5);
+      background: rgba(255,255,255,.06);
     }
     [data-theme="night"] .kpg-stat,
     [data-theme="vaporwave"] .kpg-stat,
@@ -105,7 +214,7 @@
       letter-spacing: 0;
     }
     .kpg-stat span { display: block; margin-top: 0.25rem; color: var(--kpg-muted); font-size: 0.79rem; line-height: 1.45; }
-    .kpg-section-title { margin: 1.25rem 0 0.7rem; font-size: 1.24rem; letter-spacing: 0; }
+    .kpg-section-title { margin: 2.5rem 0 .8rem; font-size: 1.3rem; letter-spacing: -.02em; text-shadow: 0 2px 12px #000; }
     .kpg-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
     .kpg-card { padding: 1rem; border-top: 4px solid var(--card-color, var(--kpg-amber)); }
     .kpg-card h3 { margin: 0 0 0.45rem; font-size: 1rem; letter-spacing: 0; }
@@ -126,7 +235,8 @@
       border-left: 4px solid var(--phase-color, var(--kpg-amber));
       border-radius: 12px;
       padding: 0.8rem 0.9rem;
-      background: color-mix(in srgb, var(--surface-1, #fff) 88%, transparent);
+      background: rgba(10,18,18,.82);
+      backdrop-filter: blur(15px);
     }
     .kpg-time {
       font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -158,7 +268,7 @@
     .kpg-table-card { overflow: hidden; }
     .kpg-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
     .kpg-table th, .kpg-table td { padding: 0.75rem 0.9rem; text-align: left; border-bottom: 1px solid var(--kpg-line); vertical-align: top; }
-    .kpg-table th { color: #7c2d12; background: rgba(180, 83, 9, 0.1); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .kpg-table th { color: #fde68a; background: rgba(180, 83, 9, 0.2); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
     [data-theme="night"] .kpg-table th,
     [data-theme="vaporwave"] .kpg-table th,
     [data-theme="bark"] .kpg-table th { color: #fed7aa; }
@@ -168,13 +278,147 @@
     .kpg-question {
       border: 1px solid rgba(37, 99, 235, 0.24);
       border-radius: 14px;
-      background: rgba(37, 99, 235, 0.07);
+      background: rgba(10,18,18,.82);
+      backdrop-filter: blur(15px);
       padding: 1rem;
       color: var(--kpg-muted);
       line-height: 1.62;
     }
     .kpg-question strong { color: var(--kpg-ink); }
     .kpg-panel-list { margin: 0.45rem 0 0; padding-left: 1rem; color: var(--kpg-muted); font-size: 0.86rem; line-height: 1.58; }
+    .ll-panel { color: #edf5ef; box-shadow: -18px 0 42px rgba(0,0,0,.28); }
+    .ll-panel-head { background: #080d10; }
+    .ll-panel-close { color:#fff; background:rgba(255,255,255,.08); }
+    .kpg-control { padding: .35rem .15rem 1rem; }
+    .kpg-control-kicker { margin:0 0 .35rem; color:#fbbf24; font:700 .68rem/1.2 "IBM Plex Mono",monospace; letter-spacing:.12em; text-transform:uppercase; }
+    .kpg-control h2 { margin:0; color:#fff; font-size:1.6rem; letter-spacing:-.04em; }
+    .kpg-control-copy { color:rgba(255,255,255,.65); font-size:.82rem; line-height:1.55; }
+    .kpg-impact-btn {
+      width:100%; border:1px solid rgba(255,193,74,.78); border-radius:12px; padding:1rem .8rem; cursor:pointer;
+      color:#fff8e6; background:linear-gradient(135deg,#c2410c,#7f1d1d); box-shadow:0 10px 30px rgba(194,65,12,.32), inset 0 1px rgba(255,255,255,.18);
+      font:800 .79rem/1 "IBM Plex Mono",monospace; letter-spacing:.1em; text-transform:uppercase; transition:transform .18s,filter .18s;
+    }
+    .kpg-impact-btn:hover { transform:translateY(-2px); filter:brightness(1.12); }
+    .kpg-impact-btn:disabled { cursor:wait; opacity:.72; transform:none; }
+    .kpg-reset-btn { width:100%; margin-top:.55rem; border:1px solid rgba(255,255,255,.14); border-radius:9px; padding:.65rem; color:rgba(255,255,255,.7); background:rgba(255,255,255,.045); cursor:pointer; font:700 .7rem "IBM Plex Mono",monospace; }
+    .kpg-show-options { display:flex; align-items:center; justify-content:space-between; gap:.6rem; margin:.7rem 0 0; padding:.65rem .7rem; border:1px solid rgba(255,255,255,.1); border-radius:9px; background:rgba(255,255,255,.035); }
+    .kpg-show-options span { color:rgba(255,255,255,.6); font:600 .66rem/1.3 "IBM Plex Mono",monospace; }
+    .kpg-sound-btn { flex:none; border:1px solid rgba(255,255,255,.16); border-radius:999px; padding:.38rem .58rem; color:rgba(255,255,255,.72); background:#11191d; cursor:pointer; font:700 .62rem "IBM Plex Mono",monospace; }
+    .kpg-sound-btn[aria-pressed="true"] { color:#1b1204; background:#fbbf24; border-color:#fbbf24; }
+    .kpg-event-log { list-style:none; margin:1.15rem 0 0; padding:0; display:grid; gap:.72rem; }
+    .kpg-event-log li { display:grid; grid-template-columns:26px 1fr; gap:.6rem; color:rgba(255,255,255,.38); font-size:.74rem; line-height:1.4; transition:color .3s; }
+    .kpg-event-log li::before { content:attr(data-step); display:grid; place-items:center; width:24px; height:24px; border:1px solid rgba(255,255,255,.16); border-radius:50%; font:700 .62rem "IBM Plex Mono",monospace; }
+    .kpg-event-log li.is-active { color:#fff; }
+    .kpg-event-log li.is-active::before { color:#171006; background:#fbbf24; border-color:#fbbf24; box-shadow:0 0 18px rgba(251,191,36,.45); }
+    .kpg-event-log strong { display:block; color:inherit; }
+    .kpg-status { min-height:2.7em; margin:.9rem 0 0; color:#fcd34d; font:600 .72rem/1.5 "IBM Plex Mono",monospace; }
+    .kpg-map-card {
+      position:relative; overflow:hidden; margin:1rem 0 0; border:1px solid var(--kpg-line); border-radius:16px;
+      background:linear-gradient(145deg,rgba(5,15,19,.93),rgba(7,27,34,.82)); box-shadow:0 20px 55px rgba(0,0,0,.3); backdrop-filter:blur(18px);
+    }
+    .kpg-map-head { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding:1rem 1.15rem .75rem; border-bottom:1px solid rgba(255,255,255,.1); }
+    .kpg-map-head h2 { margin:0; color:#fff; font-size:1.15rem; letter-spacing:-.02em; }
+    .kpg-map-head p { margin:.28rem 0 0; max-width:68ch; color:var(--kpg-muted); font-size:.78rem; line-height:1.5; }
+    .kpg-map-clock { flex:none; min-width:86px; border:1px solid rgba(64,214,255,.25); border-radius:8px; padding:.48rem .6rem; color:#6ee7ff; background:rgba(7,39,50,.62); text-align:center; font:800 .72rem "IBM Plex Mono",monospace; }
+    .kpg-map-wrap { position:relative; aspect-ratio:2/1; min-height:250px; background:radial-gradient(circle at 27% 39%,rgba(22,132,161,.34),transparent 25%),radial-gradient(circle at 75% 75%,rgba(18,74,113,.28),transparent 34%),linear-gradient(#0a3445,#041923); }
+    .kpg-map { display:block; width:100%; height:100%; }
+    .kpg-map-grid { fill:none; stroke:rgba(145,214,224,.11); stroke-width:1; }
+    .kpg-land { fill:url(#kpg-land-gradient); stroke:#e1e8ad; stroke-width:2.15; stroke-linejoin:round; filter:drop-shadow(0 4px 5px rgba(0,0,0,.38)); }
+    .kpg-shallow { fill:none; stroke:rgba(91,205,218,.2); stroke-width:12; }
+    .kpg-coastline { fill:none; stroke:rgba(246,250,205,.72); stroke-width:.85; vector-effect:non-scaling-stroke; }
+    .kpg-coast-detail { fill:none; stroke:rgba(234,241,188,.28); stroke-width:.7; stroke-dasharray:2 3; }
+    .kpg-heat { opacity:0; mix-blend-mode:screen; }
+    .kpg-heat-core { fill:url(#kpg-heat-core); filter:url(#kpg-heat-blur); }
+    .kpg-heat-atlantic,.kpg-heat-pacific,.kpg-heat-global { fill:none; stroke-linecap:round; filter:url(#kpg-heat-blur); }
+    .kpg-heat-atlantic { stroke:url(#kpg-heat-strong); stroke-width:86; }
+    .kpg-heat-pacific { stroke:url(#kpg-heat-pacific-gradient); stroke-width:72; }
+    .kpg-heat-global { stroke:#34c7e8; stroke-width:54; opacity:0; }
+    .kpg-map-card.is-tsunami .kpg-heat-core { animation:kpg-heat-reveal .8s ease-out forwards; }
+    .kpg-map-card.is-tsunami .kpg-heat-atlantic { animation:kpg-heat-reveal 1.4s 1s ease-out forwards; }
+    .kpg-map-card.is-tsunami .kpg-heat-pacific { animation:kpg-heat-reveal 1.8s 2.2s ease-out forwards; }
+    .kpg-map-card.is-tsunami .kpg-heat-global { animation:kpg-heat-global 2.2s 4s ease-out forwards; }
+    .kpg-tsunami-ring { fill:none; stroke:#b9f5ff; stroke-width:3; opacity:0; filter:drop-shadow(0 0 5px #16bfe6); vector-effect:non-scaling-stroke; }
+    .kpg-tsunami-route { fill:none; stroke:#a5f3fc; stroke-width:3; opacity:0; stroke-dasharray:10 12; stroke-dashoffset:180; filter:drop-shadow(0 0 6px #22d3ee); }
+    .kpg-impact-halo { fill:none; stroke:#ffba38; stroke-width:3; opacity:.7; animation:kpg-impact-pin 1.5s ease-out infinite; transform-origin:241px 183px; }
+    .kpg-impact-dot { fill:#fff4be; stroke:#ff6b18; stroke-width:5; filter:drop-shadow(0 0 10px #ff5a0a); }
+    .kpg-map-label { fill:#fef3c7; font:800 15px "IBM Plex Mono",monospace; paint-order:stroke; stroke:#071317; stroke-width:5px; stroke-linejoin:round; }
+    .kpg-map-sub { fill:#9de9f4; font:600 11px "IBM Plex Mono",monospace; paint-order:stroke; stroke:#071317; stroke-width:4px; }
+    .kpg-ocean-label { fill:rgba(153,229,239,.55); font:600 10px "IBM Plex Mono",monospace; letter-spacing:.14em; }
+    .kpg-feature-label { fill:rgba(235,243,198,.67); font:600 8px "IBM Plex Mono",monospace; letter-spacing:.06em; paint-order:stroke; stroke:#071c24; stroke-width:3px; }
+    .kpg-continent-label { fill:rgba(255,255,224,.78); font:800 10px "IBM Plex Mono",monospace; letter-spacing:.12em; paint-order:stroke; stroke:#40503b; stroke-width:3px; }
+    .kpg-terrane-line { fill:none; stroke:rgba(50,61,42,.58); stroke-width:1; stroke-dasharray:4 3; }
+    .kpg-map-card.is-tsunami .kpg-tsunami-ring { animation:kpg-map-wave 8s cubic-bezier(.16,.45,.35,1) forwards; }
+    .kpg-map-card.is-tsunami .kpg-tsunami-ring:nth-child(2) { animation-delay:1.1s; }
+    .kpg-map-card.is-tsunami .kpg-tsunami-ring:nth-child(3) { animation-delay:2.2s; }
+    .kpg-map-card.is-tsunami .kpg-tsunami-route { animation:kpg-map-route 6.5s 1s linear forwards; }
+    .kpg-map-card.is-global .kpg-map-wrap { box-shadow:inset 0 0 70px rgba(34,211,238,.16); }
+    .kpg-map-legend { display:flex; flex-wrap:wrap; align-items:center; gap:.55rem 1rem; padding:.7rem 1.15rem .9rem; color:rgba(255,255,255,.62); font-size:.68rem; line-height:1.45; }
+    .kpg-map-legend span { display:flex; align-items:center; gap:.38rem; }
+    .kpg-key { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--key); box-shadow:0 0 8px var(--key); }
+    .kpg-map-note { margin-left:auto; }
+    .kpg-map-note a { color:#67e8f9; font-weight:800; text-decoration:none; }
+    .kpg-heat-legend { display:grid; grid-template-columns:auto minmax(150px,220px); gap:.3rem .55rem; align-items:center; }
+    .kpg-heat-bar { height:9px; border:1px solid rgba(255,255,255,.22); border-radius:999px; background:linear-gradient(90deg,#1aaed0 0%,#73e8d3 28%,#ffe66d 55%,#ff8a28 76%,#e21818 100%); box-shadow:0 0 12px rgba(255,116,31,.28); }
+    .kpg-heat-ticks { grid-column:2; display:flex!important; justify-content:space-between; color:rgba(255,255,255,.5); font:600 .56rem "IBM Plex Mono",monospace; }
+    @keyframes kpg-impact-pin { from{transform:scale(.45);opacity:1} to{transform:scale(2.4);opacity:0} }
+    @keyframes kpg-map-wave { 0%{r:8;opacity:.95;stroke-width:7} 82%{opacity:.65} 100%{r:690;opacity:0;stroke-width:2} }
+    @keyframes kpg-map-route { 0%{opacity:0;stroke-dashoffset:180} 12%{opacity:.85} 100%{opacity:.15;stroke-dashoffset:0} }
+    @keyframes kpg-heat-reveal { from{opacity:0} to{opacity:.78} }
+    @keyframes kpg-heat-global { from{opacity:0} to{opacity:.34} }
+    .kpg-ledger {
+      margin:1rem 0 0; overflow:hidden; border:1px solid rgba(255,91,71,.3); border-radius:16px;
+      background:linear-gradient(145deg,rgba(12,12,13,.96),rgba(25,8,9,.9)); box-shadow:0 20px 55px rgba(0,0,0,.34); backdrop-filter:blur(18px);
+    }
+    .kpg-ledger-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:1rem; align-items:center; padding:1rem 1.15rem; border-bottom:1px solid rgba(255,93,74,.22); }
+    .kpg-ledger-kicker { margin:0 0 .25rem; color:#ff7a62; font:800 .64rem "IBM Plex Mono",monospace; letter-spacing:.14em; text-transform:uppercase; }
+    .kpg-ledger h2 { margin:0; color:#fff; font-size:1.18rem; letter-spacing:-.02em; }
+    .kpg-ledger-copy { margin:.35rem 0 0; max-width:72ch; color:rgba(255,255,255,.6); font-size:.74rem; line-height:1.5; }
+    .kpg-loss-counter { min-width:156px; text-align:right; }
+    .kpg-loss-counter strong { display:block; color:#ff6654; font:900 clamp(2.3rem,5vw,4rem)/.85 "IBM Plex Mono",monospace; letter-spacing:-.08em; text-shadow:0 0 24px rgba(255,53,35,.35); }
+    .kpg-loss-counter span { display:block; margin-top:.35rem; color:rgba(255,255,255,.5); font:700 .58rem "IBM Plex Mono",monospace; letter-spacing:.08em; text-transform:uppercase; }
+    .kpg-loss-track { height:5px; margin:0 1.15rem; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.08); }
+    .kpg-loss-fill { width:0%; height:100%; background:linear-gradient(90deg,#ffb323,#ff4b35,#ba1018); box-shadow:0 0 14px #ef3728; transition:width .2s linear; }
+    .kpg-ledger-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px; padding:1px; background:rgba(255,255,255,.075); }
+    .kpg-taxon { position:relative; display:grid; grid-template-columns:64px minmax(0,1fr) auto; gap:.62rem; align-items:center; min-height:76px; padding:.58rem .65rem; overflow:hidden; cursor:help; background:rgba(8,12,13,.96); transition:background .28s,border-color .28s,filter .28s; }
+    .kpg-taxon:hover,.kpg-taxon:focus-visible { z-index:2; outline:none; background:rgba(20,28,29,.98); box-shadow:inset 0 0 0 1px rgba(103,232,249,.62); }
+    .kpg-taxon::after { content:""; position:absolute; inset:0; opacity:0; background:linear-gradient(105deg,transparent 25%,rgba(255,47,28,.28),transparent 72%); transform:translateX(-100%); }
+    .kpg-taxon.is-lost::after { animation:kpg-ledger-scan .65s ease-out; }
+    .kpg-taxon-mark { display:grid; place-items:center; width:40px; height:40px; border:1px solid rgba(255,255,255,.17); border-radius:50%; color:rgba(255,255,255,.58); background:rgba(255,255,255,.04); font:800 .58rem "IBM Plex Mono",monospace; transition:.3s; }
+    .kpg-taxon-thumb { display:block; width:62px; height:48px; border:1px solid rgba(255,255,255,.18); border-radius:7px; object-fit:cover; filter:grayscale(.3) sepia(.16) contrast(1.08); transition:filter .3s,opacity .3s,border-color .3s; }
+    .kpg-taxon-name { min-width:0; }
+    .kpg-taxon-name strong { display:block; overflow:hidden; color:rgba(255,255,255,.87); font-size:.72rem; text-overflow:ellipsis; white-space:nowrap; }
+    .kpg-taxon-name span { display:block; margin-top:.18rem; color:rgba(255,255,255,.38); font-size:.61rem; line-height:1.25; }
+    .kpg-taxon-status { color:#f0b56d; font:800 .53rem "IBM Plex Mono",monospace; letter-spacing:.08em; text-transform:uppercase; }
+    .kpg-taxon.is-lost { background:linear-gradient(110deg,rgba(71,8,9,.95),rgba(18,10,11,.98)); }
+    .kpg-taxon.is-lost .kpg-taxon-mark { color:#fff; border-color:#ff5441; background:#a9161c; box-shadow:0 0 18px rgba(255,49,36,.35); }
+    .kpg-taxon.is-lost .kpg-taxon-thumb { opacity:.5; border-color:#ff5441; filter:grayscale(1) sepia(.7) saturate(2) hue-rotate(315deg) contrast(1.3); }
+    .kpg-taxon.is-lost .kpg-taxon-name strong { color:#ffb2a6; }
+    .kpg-taxon.is-lost .kpg-taxon-status { color:#ff5441; }
+    .kpg-ledger-foot { display:flex; justify-content:space-between; gap:1rem; padding:.7rem 1.15rem .85rem; color:rgba(255,255,255,.45); font-size:.63rem; line-height:1.45; }
+    .kpg-ledger-total { flex:none; color:#ff8c78; font:800 .62rem "IBM Plex Mono",monospace; text-transform:uppercase; }
+    .kpg-media-credits { border-top:1px solid rgba(255,255,255,.08); color:rgba(255,255,255,.5); background:rgba(0,0,0,.18); font-size:.64rem; }
+    .kpg-media-credits summary { padding:.65rem 1.15rem; cursor:pointer; color:rgba(255,255,255,.68); font:700 .61rem "IBM Plex Mono",monospace; letter-spacing:.07em; text-transform:uppercase; }
+    .kpg-media-credits p { margin:0; padding:0 1.15rem .85rem; line-height:1.65; }
+    .kpg-media-credits a { color:#67e8f9; font-weight:700; text-decoration:none; }
+    .kpg-taxon-popover { position:fixed; z-index:10060; width:min(360px,calc(100vw - 24px)); padding:.9rem; opacity:0; visibility:hidden; transform:translateY(5px); border:1px solid rgba(103,232,249,.38); border-radius:13px; color:#eefcff; background:linear-gradient(145deg,rgba(5,20,25,.98),rgba(12,14,17,.98)); box-shadow:0 22px 65px rgba(0,0,0,.58),inset 0 1px rgba(255,255,255,.08); pointer-events:none; transition:opacity .14s,transform .14s,visibility .14s; }
+    .kpg-taxon-popover.is-visible { opacity:1; visibility:visible; transform:translateY(0); }
+    .kpg-taxon-popover.is-pinned { pointer-events:auto; }
+    .kpg-popover-kicker { margin:0 0 .3rem; color:#67e8f9; font:800 .57rem "IBM Plex Mono",monospace; letter-spacing:.13em; text-transform:uppercase; }
+    .kpg-taxon-popover h3 { margin:0; color:#fff; font-size:1.08rem; letter-spacing:-.02em; }
+    .kpg-popover-taxonomy { margin:.35rem 0 .7rem; color:#a5f3fc; font:600 .64rem/1.5 "IBM Plex Mono",monospace; }
+    .kpg-popover-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.35rem; }
+    .kpg-popover-grid div { min-width:0; padding:.45rem .5rem; border:1px solid rgba(255,255,255,.09); border-radius:7px; background:rgba(255,255,255,.035); }
+    .kpg-popover-grid span { display:block; color:rgba(255,255,255,.4); font:700 .52rem "IBM Plex Mono",monospace; letter-spacing:.09em; text-transform:uppercase; }
+    .kpg-popover-grid strong { display:block; margin-top:.17rem; color:rgba(255,255,255,.86); font-size:.66rem; line-height:1.3; }
+    .kpg-popover-fact { margin:.7rem 0 0; color:rgba(255,255,255,.7); font-size:.7rem; line-height:1.5; }
+    .kpg-popover-source { display:inline-block; margin-top:.58rem; color:#67e8f9; font:700 .58rem "IBM Plex Mono",monospace; text-decoration:none; pointer-events:auto; }
+    @keyframes kpg-ledger-scan { 0%{opacity:0;transform:translateX(-100%)} 30%{opacity:1} 100%{opacity:0;transform:translateX(100%)} }
+    @media (prefers-reduced-motion: reduce) {
+      .kpg-world *, .kpg-world::after { animation-duration:.01ms !important; animation-delay:0s !important; transition-duration:.01ms !important; }
+      .ll-sim.is-shaking { animation:none; }
+      .kpg-taxon.is-lost::after { animation:none; }
+      .kpg-loss-fill { transition:none; }
+    }
     @media (max-width: 920px) {
       .kpg-hero, .kpg-grid, .kpg-embed-grid { grid-template-columns: 1fr; }
     }
@@ -182,6 +426,16 @@
       .kpg-page { padding-inline: 0.85rem; }
       .kpg-number-grid { grid-template-columns: 1fr; }
       .kpg-timeline li { grid-template-columns: 1fr; gap: 0.25rem; }
+      .kpg-map-head { display:block; }
+      .kpg-map-clock { display:inline-block; margin-top:.65rem; }
+      .kpg-map-wrap { min-height:220px; aspect-ratio:auto; }
+      .kpg-map-note { width:100%; margin-left:0; }
+      .kpg-ledger-head { grid-template-columns:1fr; }
+      .kpg-loss-counter { text-align:left; }
+      .kpg-ledger-grid { grid-template-columns:1fr; }
+      .kpg-ledger-foot { display:block; }
+      .kpg-ledger-total { display:block; margin-top:.45rem; }
+      .kpg-taxon-popover { left:12px!important; right:12px!important; top:auto!important; bottom:62px; width:auto; max-height:calc(100vh - 86px); overflow:auto; }
     }
   </style>
 </head>
@@ -208,6 +462,12 @@
 
     <div class="ll-stage">
       <div class="ll-sim">
+        <div class="kpg-world" aria-hidden="true">
+          <canvas class="kpg-event-canvas"></canvas>
+          <div class="kpg-atmosphere"></div><div class="kpg-fire"></div><div class="kpg-meteor"></div>
+          <div class="kpg-shockwave"></div><div class="kpg-flash"></div><div class="kpg-ash"></div>
+          <div class="kpg-diegetic-hud"><span class="kpg-hud-light"></span><span data-kpg-hud-label>Extinction event in progress</span><span class="kpg-hud-time" data-kpg-hud-time>00:18</span></div>
+        </div>
         <main id="main-content" class="kpg-page">
           <section class="kpg-hero">
             <div class="kpg-hero-copy">
@@ -231,6 +491,111 @@
               </div>
             </aside>
           </section>
+
+          <section class="kpg-map-card" data-kpg-map aria-labelledby="kpg-map-title">
+            <div class="kpg-map-head">
+              <div><h2 id="kpg-map-title">Impact Site &amp; Global Tsunami</h2><p>Maastrichtian paleogeography near 66 Ma, with definitive reconstructed coastlines, an open Central American Seaway, island-rich Europe, and isolated India. Political borders are omitted because countries did not yet exist.</p></div>
+              <div class="kpg-map-clock" data-kpg-map-clock>PRE-IMPACT</div>
+            </div>
+            <div class="kpg-map-wrap">
+              <svg class="kpg-map" viewBox="0 0 960 480" role="img" aria-labelledby="kpg-map-svg-title kpg-map-svg-desc" preserveAspectRatio="xMidYMid meet">
+                <title id="kpg-map-svg-title">Chicxulub impact site and global tsunami propagation</title>
+                <desc id="kpg-map-svg-desc">Late Cretaceous paleogeographic reconstruction. Chicxulub is marked near the Yucatán Peninsula. An animated heat field shows extreme strength in the Gulf, strong North Atlantic and South Pacific pathways, and lower strength in shielded ocean basins.</desc>
+                <defs>
+                  <linearGradient id="kpg-land-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a5ad70"/><stop offset=".52" stop-color="#707d52"/><stop offset="1" stop-color="#4b5c43"/></linearGradient>
+                  <radialGradient id="kpg-heat-core"><stop offset="0" stop-color="#fff4a8" stop-opacity="1"/><stop offset=".22" stop-color="#ff521d" stop-opacity=".96"/><stop offset=".58" stop-color="#e31717" stop-opacity=".7"/><stop offset="1" stop-color="#d7191c" stop-opacity="0"/></radialGradient>
+                  <linearGradient id="kpg-heat-strong" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f21d16"/><stop offset=".3" stop-color="#ff8b28"/><stop offset=".68" stop-color="#ffe86c"/><stop offset="1" stop-color="#55ddde" stop-opacity=".2"/></linearGradient>
+                  <linearGradient id="kpg-heat-pacific-gradient" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7c24"/><stop offset=".34" stop-color="#ffe66d"/><stop offset=".72" stop-color="#57ded8"/><stop offset="1" stop-color="#219dc6" stop-opacity=".2"/></linearGradient>
+                  <filter id="kpg-heat-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="17"/></filter>
+                  <g id="kpg-land-shapes">
+                    <path fill-rule="evenodd" d="M46 69 L83 42 124 34 153 43 184 38 217 54 237 75 267 91 286 119 274 143 249 151 257 169 247 194 229 199 214 186 198 181 183 201 159 208 138 194 115 190 101 169 74 158 57 137 38 112Z M147 66 C158 79 157 101 166 118 C177 137 175 153 164 172 C151 163 145 142 137 125 C128 103 132 79 147 66Z"/>
+                    <path d="M212 222 L235 208 258 213 279 235 292 267 288 298 278 331 261 356 249 389 225 420 209 390 208 350 199 322 186 292 189 259 201 240Z"/>
+                    <path d="M321 57 L348 42 370 51 382 78 369 104 343 112 319 94Z"/>
+                    <path d="M399 102 L420 91 438 98 445 112 463 103 480 111 473 125 455 130 437 123 421 135 404 129Z"/>
+                    <path d="M484 77 L523 61 566 65 601 77 631 70 668 78 703 68 748 76 782 90 824 93 864 112 904 140 892 165 859 177 822 171 789 184 758 174 728 187 694 175 660 182 633 165 598 160 572 143 550 150 529 135 501 132 474 113Z"/>
+                    <path d="M428 178 L456 162 489 166 520 186 541 218 539 256 526 289 504 322 479 348 457 326 444 293 430 263 412 229 417 198Z"/>
+                    <path d="M604 220 L625 211 642 225 637 251 619 267 602 250Z"/>
+                    <path d="M670 244 L693 229 716 239 725 264 710 286 683 282 667 263Z"/>
+                    <path d="M761 304 L791 291 825 295 854 310 872 337 863 360 837 370 808 360 780 367 757 347 748 325Z"/>
+                    <path d="M823 360 L839 377 843 407 833 421 817 399 811 374Z"/>
+                    <path d="M731 381 L770 374 805 382 836 378 869 390 905 414 891 437 855 447 816 438 781 440 748 427 719 409Z"/>
+                    <path d="M0 428 L72 416 139 421 205 414 270 426 340 417 406 429 468 419 536 435 604 422 670 431 734 423 802 437 868 454 925 449 960 462 960 480 0 480Z"/>
+                  </g>
+                  <mask id="kpg-ocean-mask"><rect width="960" height="480" fill="white"/><use href="#kpg-land-shapes" fill="black" stroke="black" stroke-width="7"/></mask>
+                </defs>
+                <g class="kpg-map-grid">
+                  <path d="M0 120H960M0 240H960M0 360H960M240 0V480M480 0V480M720 0V480"/>
+                </g>
+                <g class="kpg-shallow"><use href="#kpg-land-shapes"/></g>
+                <g class="kpg-land"><use href="#kpg-land-shapes"/></g>
+                <g mask="url(#kpg-ocean-mask)">
+                  <g class="kpg-heat-field">
+                    <ellipse class="kpg-heat kpg-heat-core" cx="241" cy="183" rx="116" ry="92"/>
+                    <path class="kpg-heat kpg-heat-atlantic" d="M242 183 C310 150 358 132 407 149 S449 190 476 235"/>
+                    <path class="kpg-heat kpg-heat-pacific" d="M241 184 C174 204 112 236 18 278 M954 282 C874 300 794 337 719 382"/>
+                    <path class="kpg-heat kpg-heat-global" d="M241 185 C300 256 368 324 474 366 S671 403 783 385 M492 180 C596 185 700 212 811 260"/>
+                  </g>
+                  <g class="kpg-wave-group"><circle class="kpg-tsunami-ring" cx="241" cy="183" r="8"/><circle class="kpg-tsunami-ring" cx="241" cy="183" r="8"/><circle class="kpg-tsunami-ring" cx="241" cy="183" r="8"/></g>
+                  <path class="kpg-tsunami-route" d="M241 183 C333 165 407 173 503 212 S674 279 792 268 S904 229 958 205"/>
+                  <path class="kpg-tsunami-route" d="M241 183 C170 200 98 242 2 273 M958 273 C872 293 792 326 706 365"/>
+                  <path class="kpg-tsunami-route" d="M241 183 C298 246 348 306 438 352 S626 406 756 389"/>
+                </g>
+                <g class="kpg-coastline"><use href="#kpg-land-shapes"/></g>
+                <g class="kpg-coast-detail"><path d="M78 81 Q106 62 131 58 M183 57 Q213 72 238 98 M209 252 Q231 237 254 248 M451 196 Q476 181 503 198 M501 82 Q552 77 591 93 M771 322 Q814 307 850 331"/></g>
+                <g class="kpg-terrane-line"><path d="M102 97 Q124 110 145 121 M177 166 Q205 164 225 177 M515 104 Q565 103 610 115 M684 114 Q732 120 774 139 M459 224 Q488 235 524 238"/></g>
+                <circle class="kpg-impact-halo" cx="241" cy="183" r="13"/><circle class="kpg-impact-dot" cx="241" cy="183" r="7"/>
+                <path d="M252 175 L294 149" stroke="#fbbf24" stroke-width="2"/>
+                <text class="kpg-map-label" x="302" y="145">CHICXULUB</text><text class="kpg-map-sub" x="302" y="163">Yucatán · shallow sea</text>
+                <text class="kpg-ocean-label" x="350" y="237">ATLANTIC</text><text class="kpg-ocean-label" x="72" y="302">PACIFIC</text><text class="kpg-ocean-label" x="842" y="267">PACIFIC</text><text class="kpg-ocean-label" x="589" y="337">INDIAN</text>
+                <text class="kpg-feature-label" x="116" y="113" transform="rotate(71 116 113)">WESTERN INTERIOR SEAWAY</text><text class="kpg-feature-label" x="182" y="220">CENTRAL AMERICAN SEAWAY</text><text class="kpg-feature-label" x="520" y="155">TETHYS OCEAN</text>
+                <text class="kpg-continent-label" x="72" y="141">NORTH AMERICA</text><text class="kpg-continent-label" x="207" y="303" transform="rotate(73 207 303)">SOUTH AMERICA</text><text class="kpg-continent-label" x="448" y="253" transform="rotate(71 448 253)">AFRICA</text><text class="kpg-continent-label" x="638" y="118">EURASIA</text><text class="kpg-continent-label" x="669" y="263">INDIA</text><text class="kpg-continent-label" x="776" y="337">AUSTRALIA</text><text class="kpg-continent-label" x="414" y="456">ANTARCTICA</text>
+              </svg>
+            </div>
+            <div class="kpg-map-legend">
+              <span><i class="kpg-key" style="--key:#ff7a22"></i>Impact site</span>
+              <div class="kpg-heat-legend"><span>Modeled relative strength</span><i class="kpg-heat-bar"></i><span class="kpg-heat-ticks"><b>Lower</b><b>&gt;1 m</b><b>&gt;10 m</b><b>&gt;100 m Gulf</b></span></div>
+              <span class="kpg-map-note">Animated interpretation of modeled offshore amplitudes—not a precise forecast · <a href="https://repository.library.noaa.gov/view/noaa/50553" target="_blank" rel="noopener">Range et al. 2022</a></span>
+            </div>
+          </section>
+
+          <section class="kpg-ledger" data-kpg-ledger aria-labelledby="kpg-ledger-title">
+            <div class="kpg-ledger-head">
+              <div><p class="kpg-ledger-kicker">Biosphere status · illustrative sample</p><h2 id="kpg-ledger-title">K–Pg Extinction Ledger</h2><p class="kpg-ledger-copy">The fossil record cannot provide a literal death order. This compressed sequence tracks representative taxa and moves toward the estimated global loss of roughly three out of every four species.</p></div>
+              <div class="kpg-loss-counter"><strong data-kpg-loss-percent>0%</strong><span>estimated global species loss</span></div>
+            </div>
+            <div class="kpg-loss-track" aria-hidden="true"><div class="kpg-loss-fill" data-kpg-loss-fill></div></div>
+            <div class="kpg-ledger-grid" aria-label="Representative taxa affected at the K-Pg boundary">
+              <article class="kpg-taxon" tabindex="0" data-taxon="Calcareous phytoplankton" data-taxonomy="Ecological guild › coccolithophores and other marine calcifiers" data-diet="Photosynthesis" data-time="Late Cretaceous oceans" data-place="Global marine waters" data-size="Microscopic" data-fact="When darkness interrupted photosynthesis, losses among primary producers removed energy from the base of marine food webs." data-source="https://ocean.si.edu/through-time/ocean-through-time" data-source-label="Smithsonian Ocean"><img class="kpg-taxon-thumb" src="../assets/images/kpg-ledger/phytoplankton.webp" alt="NASA illustration of several phytoplankton forms" loading="lazy" /><div class="kpg-taxon-name"><strong>Calcareous phytoplankton</strong><span>Marine primary producers</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Planktonic foraminifera" data-taxonomy="Eukaryota › Rhizaria › Retaria › Foraminifera" data-diet="Planktonic feeding" data-time="Cretaceous–present" data-place="Global oceans" data-size="Mostly under 1 mm" data-fact="Their tiny shells preserve one of the clearest marine records of abrupt turnover at the K–Pg boundary." data-source="https://ocean.si.edu/through-time/ocean-through-time" data-source-label="Smithsonian Ocean"><img class="kpg-taxon-thumb" src="../assets/images/kpg-ledger/foraminifera.webp" alt="NOAA photograph of planktonic foraminifera tests" loading="lazy" /><div class="kpg-taxon-name"><strong>Planktonic foraminifera</strong><span>Many boundary-crossing species lost</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Rudist bivalves" data-taxonomy="Animalia › Mollusca › Bivalvia › Hippuritida" data-diet="Filter feeding" data-time="Jurassic–end Cretaceous" data-place="Warm shallow seas" data-size="Shells from cm to over 1 m" data-fact="Rudists built major Cretaceous reefs, filling an ecological role often associated with corals today." data-source="https://ocean.si.edu/through-time/ocean-through-time" data-source-label="Smithsonian Ocean"><span class="kpg-taxon-mark">RUDIST</span><div class="kpg-taxon-name"><strong>Rudist bivalves</strong><span>Cretaceous reef builders</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Ammonites" data-taxonomy="Animalia › Mollusca › Cephalopoda › Ammonoidea" data-diet="Predator / scavenger" data-time="Devonian–end Cretaceous" data-place="Oceans worldwide" data-size="Shells from cm to over 1 m" data-fact="Ammonites were shelled relatives of squid and octopuses. Their entire long-lived lineage ended at the K–Pg boundary." data-source="https://ocean.si.edu/through-time/ocean-through-time" data-source-label="Smithsonian Ocean"><img class="kpg-taxon-thumb" src="../assets/images/kpg-ledger/ammonite.webp" alt="Public-domain line illustration of an ammonite shell" loading="lazy" /><div class="kpg-taxon-name"><strong>Ammonites</strong><span>Marine cephalopod lineage</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Mosasaurs" data-taxonomy="Animalia › Chordata › Reptilia › Squamata › Mosasauridae" data-diet="Carnivorous" data-time="Late Cretaceous" data-place="Oceans worldwide" data-size="Some exceeded 10 m" data-fact="Mosasaurs were marine lizards—not dinosaurs—and occupied the upper levels of Late Cretaceous ocean food webs." data-source="https://naturalhistory.si.edu/education/teaching-resources/paleontology/extinction-over-time" data-source-label="Smithsonian NMNH"><img class="kpg-taxon-thumb" src="../assets/images/kpg-ledger/mosasaurus.webp" alt="Historical public-domain painting of mosasaurs" loading="lazy" /><div class="kpg-taxon-name"><strong>Mosasaurs</strong><span>Large marine reptiles</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Pterosaurs" data-taxonomy="Animalia › Chordata › Reptilia › Pterosauria" data-diet="Varied by species" data-time="Triassic–end Cretaceous" data-place="Global" data-size="Wingspans from under 1 m to 10+ m" data-fact="Pterosaurs were flying reptiles, not dinosaurs. Every pterosaur lineage disappeared at the end of the Cretaceous." data-source="https://naturalhistory.si.edu/education/teaching-resources/paleontology/extinction-over-time" data-source-label="Smithsonian NMNH"><img class="kpg-taxon-thumb" src="../assets/images/kpg-ledger/pterosaur.webp" alt="CC0 photograph of a pterosaur model" loading="lazy" /><div class="kpg-taxon-name"><strong>Pterosaurs</strong><span>Non-avian flying reptiles</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Enantiornithine birds" data-taxonomy="Animalia › Chordata › Dinosauria › Aves › Enantiornithes" data-diet="Varied by species" data-time="Early–end Cretaceous" data-place="Global fossil record" data-size="Mostly small-bodied" data-fact="These widespread archaic birds vanished, while crown-group relatives of modern birds crossed the boundary." data-source="https://naturalhistory.si.edu/education/teaching-resources/paleontology/extinction-over-time" data-source-label="Smithsonian NMNH"><span class="kpg-taxon-mark">ENAN</span><div class="kpg-taxon-name"><strong>Enantiornithine birds</strong><span>Major archaic bird lineage</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Edmontosaurus annectens" data-taxonomy="Dinosauria › Ornithischia › Ornithopoda › Hadrosauridae › Edmontosaurus" data-diet="Herbivorous" data-time="Late Cretaceous · to 66 Ma" data-place="Western North America" data-size="Up to about 13 m" data-fact="A broad beak and batteries of grinding teeth processed tough vegetation. Some fossils preserve skin impressions." data-source="https://www.nhm.ac.uk/discover/dino-directory/edmontosaurus.html" data-source-label="NHM Dino Directory"><img class="kpg-taxon-thumb" src="../assets/images/kpg-ledger/edmontosaurus.webp" alt="Public-domain historical photograph of an Edmontosaurus mummy fossil" loading="lazy" /><div class="kpg-taxon-name"><strong>Edmontosaurus annectens</strong><span>Large hadrosaur</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Ankylosaurus magniventris" data-taxonomy="Dinosauria › Ornithischia › Thyreophora › Ankylosauria › Ankylosauridae" data-diet="Herbivorous" data-time="68–66 Ma" data-place="Western North America" data-size="About 8 m" data-fact="Bony armor protected its back and flanks, while a heavy tail club could swing sideways against predators." data-source="https://www.nhm.ac.uk/discover/dino-directory/ankylosaurus.html" data-source-label="NHM Dino Directory"><span class="kpg-taxon-mark">ANK</span><div class="kpg-taxon-name"><strong>Ankylosaurus magniventris</strong><span>Armored herbivore</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Triceratops horridus" data-taxonomy="Dinosauria › Ornithischia › Marginocephalia › Ceratopsia › Ceratopsidae" data-diet="Herbivorous" data-time="Late Cretaceous · to 66 Ma" data-place="Western North America" data-size="About 9 m" data-fact="Its three horns and large bony frill may have served defense, display, species recognition, or several functions at once." data-source="https://www.nhm.ac.uk/discover/dino-directory/triceratops.html" data-source-label="NHM Dino Directory"><img class="kpg-taxon-thumb" src="../assets/images/kpg-ledger/trex-triceratops.webp" alt="Charles R. Knight public-domain painting of Triceratops and Tyrannosaurus" loading="lazy" /><div class="kpg-taxon-name"><strong>Triceratops horridus</strong><span>Ceratopsian herbivore</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Pachycephalosaurus wyomingensis" data-taxonomy="Dinosauria › Ornithischia › Marginocephalia › Pachycephalosauria › Pachycephalosauridae" data-diet="Mostly herbivorous; uncertain" data-time="69–66 Ma" data-place="Western North America" data-size="About 3 m" data-fact="Its thick skull dome may have been used for display, combat, or both. Whether it regularly ate meat remains uncertain." data-source="https://www.nhm.ac.uk/discover/dino-directory/pachycephalosaurus" data-source-label="NHM Dino Directory"><img class="kpg-taxon-thumb" src="../assets/images/kpg-ledger/pachycephalosaurus.webp" alt="Public-domain photograph of a Pachycephalosaurus skull cast" loading="lazy" /><div class="kpg-taxon-name"><strong>Pachycephalosaurus</strong><span>Dome-headed ornithischian</span></div><span class="kpg-taxon-status">At risk</span></article>
+              <article class="kpg-taxon" tabindex="0" data-taxon="Tyrannosaurus rex" data-taxonomy="Dinosauria › Saurischia › Theropoda › Tyrannosauroidea › Tyrannosauridae" data-diet="Carnivorous" data-time="68–66 Ma" data-place="Western North America" data-size="About 12 m" data-fact="Roughly 60 serrated teeth and extremely powerful jaws allowed T. rex to bite through bone; it both hunted and scavenged." data-source="https://www.nhm.ac.uk/discover/dino-directory/tyrannosaurus.html" data-source-label="NHM Dino Directory"><img class="kpg-taxon-thumb" src="../assets/images/kpg-ledger/trex-triceratops.webp" alt="Charles R. Knight public-domain painting of Tyrannosaurus and Triceratops" loading="lazy" /><div class="kpg-taxon-name"><strong>Tyrannosaurus rex</strong><span>Large theropod predator</span></div><span class="kpg-taxon-status">At risk</span></article>
+            </div>
+            <div class="kpg-ledger-foot"><span>Representative examples only. Losses unfolded through interconnected land and ocean systems over time—not in this exact order.</span><span class="kpg-ledger-total" data-kpg-ledger-count aria-live="polite">0 of 12 representative taxa marked</span></div>
+            <details class="kpg-media-credits"><summary>Image sources &amp; public-domain status</summary><p>
+              <a href="https://commons.wikimedia.org/wiki/File:Phytoplankton_types.jpg" target="_blank" rel="noopener">Phytoplankton</a> (NASA, public domain) ·
+              <a href="https://commons.wikimedia.org/wiki/File:Planktonic_foraminifera.jpg" target="_blank" rel="noopener">Foraminifera</a> (NOAA, public domain) ·
+              <a href="https://commons.wikimedia.org/wiki/File:Ammonite_(PSF).png" target="_blank" rel="noopener">Ammonite</a> (Pearson Scott Foresman, public domain) ·
+              <a href="https://commons.wikimedia.org/wiki/File:Mosasaurus_ichthyosaurus.jpg" target="_blank" rel="noopener">Mosasaurs</a> (Heinrich Harder, 1912, public domain) ·
+              <a href="https://commons.wikimedia.org/wiki/File:Pteranodon.jpg" target="_blank" rel="noopener">Pterosaur model</a> (Archbob, CC0) ·
+              <a href="https://commons.wikimedia.org/wiki/File:Edmontosaurusmummy.jpg" target="_blank" rel="noopener">Edmontosaurus fossil</a> (1912, public domain) ·
+              <a href="https://commons.wikimedia.org/wiki/File:Gfp-pachycephlosaurus.jpg" target="_blank" rel="noopener">Pachycephalosaurus fossil</a> (Yinan Chen, public-domain dedication) ·
+              <a href="https://commons.wikimedia.org/wiki/File:Triceratops_and_Tyrannosaurus_by_Knight.jpg" target="_blank" rel="noopener">Triceratops and Tyrannosaurus</a> (Charles R. Knight, c. 1928, public domain).
+            </p></details>
+          </section>
+
+          <aside class="kpg-taxon-popover" id="kpg-taxon-popover" role="tooltip" aria-hidden="true">
+            <p class="kpg-popover-kicker">Taxon profile</p><h3 data-kpg-popover-name></h3><p class="kpg-popover-taxonomy" data-kpg-popover-taxonomy></p>
+            <div class="kpg-popover-grid"><div><span>Diet / role</span><strong data-kpg-popover-diet></strong></div><div><span>Time</span><strong data-kpg-popover-time></strong></div><div><span>Range</span><strong data-kpg-popover-place></strong></div><div><span>Scale</span><strong data-kpg-popover-size></strong></div></div>
+            <p class="kpg-popover-fact" data-kpg-popover-fact></p><a class="kpg-popover-source" data-kpg-popover-source target="_blank" rel="noopener">Reference ↗</a>
+          </aside>
 
           <h2 class="kpg-section-title">Misconceptions to Retire</h2>
           <section class="kpg-grid" aria-label="Misconception cards">
@@ -300,13 +665,32 @@
       <aside class="ll-panel" aria-hidden="false">
         <div class="ll-panel-head">
           <div class="ll-tabs">
-            <button class="ll-tab" aria-selected="true" data-pane="kpg-guide">Guide</button>
+            <button class="ll-tab" aria-selected="true" data-pane="kpg-event">Impact</button>
+            <button class="ll-tab" aria-selected="false" data-pane="kpg-guide">Guide</button>
             <button class="ll-tab" aria-selected="false" data-pane="kpg-prompts">Prompts</button>
           </div>
           <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
         </div>
         <div class="ll-panel-body">
-          <div class="ll-pane ll-active" id="kpg-guide">
+          <div class="ll-pane ll-active" id="kpg-event">
+            <div class="kpg-control">
+              <p class="kpg-control-kicker">Chicxulub simulator</p>
+              <h2>66 million years ago</h2>
+              <p class="kpg-control-copy">A theatrical 18-second show compresses atmospheric entry, impact, firestorm, and years of ecological change.</p>
+              <button class="kpg-impact-btn" id="kpg-impact" type="button">Begin extinction experience</button>
+              <button class="kpg-reset-btn" id="kpg-reset" type="button">Reset the Cretaceous</button>
+              <div class="kpg-show-options"><span>Optional synthesized rumble</span><button class="kpg-sound-btn" id="kpg-sound" type="button" aria-pressed="false">Sound off</button></div>
+              <p class="kpg-status" id="kpg-status" aria-live="polite">System stable · Late Cretaceous</p>
+              <ol class="kpg-event-log" aria-label="Impact sequence">
+                <li data-step="01"><span><strong>Warning</strong>The sky changes as the object approaches.</span></li>
+                <li data-step="02"><span><strong>Atmospheric entry</strong>A superheated trail crosses the horizon.</span></li>
+                <li data-step="03"><span><strong>Impact</strong>Flash, ejecta, shock waves, and tsunamis.</span></li>
+                <li data-step="04"><span><strong>Firestorm</strong>Radiant heat and falling debris ignite landscapes.</span></li>
+                <li data-step="05"><span><strong>Impact winter</strong>Dust and aerosols shut down food webs.</span></li>
+              </ol>
+            </div>
+          </div>
+          <div class="ll-pane" id="kpg-guide">
             <span class="ll-label">Teacher Moves</span>
             <div class="ll-info"><strong>Start with the myth</strong> Ask students to write the one-sentence version they already know, then revise it after the timeline.</div>
             <div class="ll-info"><strong>Use the 3D models</strong> Pause each model and ask: what did this animal eat, and what happens when that food source disappears?</div>
@@ -331,6 +715,7 @@
   </div>
 
   <script src="../assets/js/lesson-layout.js"></script>
+  <script src="../assets/js/kpg-event-engine.js"></script>
   <script>
     document.querySelectorAll(".ll-tab").forEach(function (tab) {
       tab.addEventListener("click", function () {
@@ -349,6 +734,154 @@
     document.querySelector(".ll-open-btn").addEventListener("click", function () {
       document.querySelector(".ll-panel").setAttribute("aria-hidden", "false");
     });
+
+    (function () {
+      var impact = document.querySelector("#kpg-impact");
+      var reset = document.querySelector("#kpg-reset");
+      var sound = document.querySelector("#kpg-sound");
+      var status = document.querySelector("#kpg-status");
+      var steps = Array.from(document.querySelectorAll(".kpg-event-log li"));
+      function setStep(index, message) {
+        steps.forEach(function (step, i) { step.classList.toggle("is-active", i <= index); });
+        status.textContent = message;
+      }
+      var engine = new window.KpgEventEngine({
+        world: document.querySelector(".kpg-world"),
+        canvas: document.querySelector(".kpg-event-canvas"),
+        stage: document.querySelector(".ll-sim"),
+        map: document.querySelector("[data-kpg-map]"),
+        ledger: document.querySelector("[data-kpg-ledger]"),
+        onCue: function (cue) {
+          if (cue.step >= 0) setStep(cue.step, cue.message);
+          impact.textContent = cue.button || "Event in progress";
+          impact.disabled = cue.running;
+        }
+      });
+
+      function resetWorld() {
+        engine.reset();
+        steps.forEach(function (step) { step.classList.remove("is-active"); });
+        status.textContent = "System stable · Late Cretaceous";
+        impact.disabled = false;
+        impact.textContent = "Begin extinction experience";
+      }
+
+      impact.addEventListener("click", function () {
+        resetWorld();
+        engine.start({ sound: sound.getAttribute("aria-pressed") === "true" });
+      });
+      reset.addEventListener("click", resetWorld);
+      sound.addEventListener("click", function () {
+        var enabled = sound.getAttribute("aria-pressed") !== "true";
+        sound.setAttribute("aria-pressed", enabled ? "true" : "false");
+        sound.textContent = enabled ? "Sound on" : "Sound off";
+      });
+
+      window.addEventListener("DOMContentLoaded", function () {
+        window.setTimeout(function () {
+          if (window.LessonLayout && window.innerWidth > 680) window.LessonLayout.openPanel(true);
+        }, 0);
+      });
+    }());
+
+    (function () {
+      var taxa = Array.from(document.querySelectorAll(".kpg-taxon"));
+      var popover = document.querySelector("#kpg-taxon-popover");
+      if (!taxa.length || !popover) return;
+
+      var fields = {
+        name: popover.querySelector("[data-kpg-popover-name]"),
+        taxonomy: popover.querySelector("[data-kpg-popover-taxonomy]"),
+        diet: popover.querySelector("[data-kpg-popover-diet]"),
+        time: popover.querySelector("[data-kpg-popover-time]"),
+        place: popover.querySelector("[data-kpg-popover-place]"),
+        size: popover.querySelector("[data-kpg-popover-size]"),
+        fact: popover.querySelector("[data-kpg-popover-fact]"),
+        source: popover.querySelector("[data-kpg-popover-source]")
+      };
+      var activeTaxon = null;
+      var pinned = false;
+      var hideTimer = 0;
+
+      function cancelHide() {
+        window.clearTimeout(hideTimer);
+      }
+
+      function positionPopover(taxon) {
+        if (!taxon || window.innerWidth <= 620) return;
+        var anchor = taxon.getBoundingClientRect();
+        var box = popover.getBoundingClientRect();
+        var gutter = 12;
+        var left = anchor.left + (anchor.width - box.width) / 2;
+        left = Math.max(gutter, Math.min(left, window.innerWidth - box.width - gutter));
+        var top = anchor.top - box.height - 10;
+        if (top < gutter) top = anchor.bottom + 10;
+        top = Math.max(gutter, Math.min(top, window.innerHeight - box.height - gutter));
+        popover.style.left = Math.round(left) + "px";
+        popover.style.top = Math.round(top) + "px";
+      }
+
+      function showPopover(taxon, shouldPin) {
+        cancelHide();
+        activeTaxon = taxon;
+        pinned = Boolean(shouldPin);
+        fields.name.textContent = taxon.dataset.taxon;
+        fields.taxonomy.textContent = taxon.dataset.taxonomy;
+        fields.diet.textContent = taxon.dataset.diet;
+        fields.time.textContent = taxon.dataset.time;
+        fields.place.textContent = taxon.dataset.place;
+        fields.size.textContent = taxon.dataset.size;
+        fields.fact.textContent = taxon.dataset.fact;
+        fields.source.href = taxon.dataset.source;
+        fields.source.textContent = "Source: " + taxon.dataset.sourceLabel + " ↗";
+        popover.classList.add("is-visible");
+        popover.classList.toggle("is-pinned", pinned);
+        popover.setAttribute("aria-hidden", "false");
+        positionPopover(taxon);
+      }
+
+      function hidePopover(force) {
+        if (pinned && !force) return;
+        cancelHide();
+        pinned = false;
+        activeTaxon = null;
+        popover.classList.remove("is-visible", "is-pinned");
+        popover.setAttribute("aria-hidden", "true");
+      }
+
+      function scheduleHide() {
+        cancelHide();
+        hideTimer = window.setTimeout(function () { hidePopover(false); }, 140);
+      }
+
+      taxa.forEach(function (taxon) {
+        taxon.setAttribute("aria-describedby", "kpg-taxon-popover");
+        taxon.addEventListener("pointerenter", function (event) {
+          if (event.pointerType !== "touch" && !pinned) showPopover(taxon, false);
+        });
+        taxon.addEventListener("pointerleave", scheduleHide);
+        taxon.addEventListener("focusin", function () { showPopover(taxon, false); });
+        taxon.addEventListener("focusout", scheduleHide);
+        taxon.addEventListener("click", function (event) {
+          event.stopPropagation();
+          showPopover(taxon, true);
+        });
+      });
+
+      popover.addEventListener("pointerenter", cancelHide);
+      popover.addEventListener("pointerleave", scheduleHide);
+      popover.addEventListener("click", function (event) { event.stopPropagation(); });
+      document.addEventListener("click", function () { hidePopover(true); });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") hidePopover(true);
+      });
+      window.addEventListener("resize", function () {
+        if (activeTaxon) positionPopover(activeTaxon);
+      });
+      window.addEventListener("scroll", function () {
+        if (activeTaxon) positionPopover(activeTaxon);
+      }, { passive:true });
+    }());
   </script>
 </body>
 </html>
