@@ -47,7 +47,7 @@
   const presetButtons = Array.from(document.querySelectorAll("button[data-preset]"));
   const compactPanelButtons = Array.from(document.querySelectorAll("button[data-compact-panel]"));
   const compactPanelPanels = Array.from(document.querySelectorAll("[data-compact-panel-group]"));
-  const compactLayoutMedia = window.matchMedia("(max-width: 980px), (max-height: 820px)");
+  const compactLayoutMedia = window.matchMedia("(max-width: 880px)");
 
   const required = [
     corpusEl,
@@ -181,7 +181,7 @@
         lengthHelp: "How many new words to write.",
         temp: "Randomness",
         tempHelp: "Lower is safer. Higher is wilder.",
-        predictionHeading: "Top Next-Word Guesses"
+        predictionHeading: "Why That Word?"
       }
     },
     explorer: {
@@ -230,7 +230,7 @@
     highContrast: false,
     dyslexicFont: false,
     renderVersion: 0,
-    compactPanel: "play"
+    compactPanel: "tune"
   };
 
   let model = null;
@@ -513,8 +513,6 @@
   }
 
   function applyCompactPanels() {
-    const isCompact = compactLayoutMedia.matches;
-
     for (const button of compactPanelButtons) {
       const active = button.dataset.compactPanel === state.compactPanel;
       button.classList.toggle("is-active", active);
@@ -523,9 +521,8 @@
 
     for (const panel of compactPanelPanels) {
       const active = panel.dataset.compactPanelGroup === state.compactPanel;
-      const visible = isCompact ? active : true;
-      panel.classList.toggle("is-active", visible);
-      panel.hidden = !visible;
+      panel.classList.toggle("is-active", active);
+      panel.hidden = !active;
     }
   }
 
@@ -972,7 +969,6 @@
   }
 
   async function buildModel(options) {
-    setCompactPanel("play");
     const corpusText = (corpusEl.value || "").trim();
     if (!corpusText) {
       model = null;
@@ -1005,6 +1001,7 @@
 
     model = new NGramModel(Math.max(1, Number(nEl.value) || 2), smoothingEl.value);
     model.train(tokens);
+    setCompactPanel("play");
 
     if (!(seedEl.value || "").trim()) {
       seedEl.value = PRESETS[state.presetKey]?.seed || "our class";
@@ -1186,5 +1183,5 @@
     status: "waiting"
   });
 
-  loadPreset(state.presetKey, { autoBuild: true });
+  loadPreset(state.presetKey, { autoBuild: false });
 })();

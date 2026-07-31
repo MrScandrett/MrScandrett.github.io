@@ -1502,18 +1502,25 @@ const statusEl = document.getElementById("stl-status");
 const subtitleEl = document.getElementById("stl-subtitle");
 const projectionBtn = document.getElementById("projection-btn");
 const rotateBtn = document.getElementById("rotate-btn");
+const gridBtn = document.getElementById("grid-btn");
 const resetBtn = document.getElementById("reset-btn");
 const fullscreenBtn = document.getElementById("fullscreen-btn");
+const viewButtons = Array.from(document.querySelectorAll("[data-view]"));
 
 subtitleEl.textContent = GRADE ? STUDENT + " · " + GRADE : STUDENT;
 statusEl.textContent = "Loading model...";
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf2f5fb);
+scene.background = new THREE.Color(0xe8edf5);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
 viewport.appendChild(renderer.domElement);
+renderer.domElement.setAttribute("aria-label", TITLE + " interactive 3D model");
+renderer.domElement.setAttribute("tabindex", "0");
 
 const perspectiveCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
 const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -10000, 10000);
@@ -1524,26 +1531,33 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.autoRotate = false;
 controls.autoRotateSpeed = 0.9;
+controls.screenSpacePanning = true;
 controls.target.set(0, 0, 0);
 
-const hemi = new THREE.HemisphereLight(0xffffff, 0x90a2bf, 1.0);
+const hemi = new THREE.HemisphereLight(0xffffff, 0x71809a, 1.7);
 scene.add(hemi);
-const key = new THREE.DirectionalLight(0xffffff, 1.05);
-key.position.set(3, 5, 4);
+const key = new THREE.DirectionalLight(0xffffff, 2.4);
+key.position.set(4, 7, 5);
 scene.add(key);
-const fill = new THREE.DirectionalLight(0xffffff, 0.45);
+const fill = new THREE.DirectionalLight(0xbcd7ff, 1.1);
 fill.position.set(-4, 2, -3);
 scene.add(fill);
+const rim = new THREE.DirectionalLight(0xfff0d0, 0.8);
+rim.position.set(1, 2, -5);
+scene.add(rim);
 
-const grid = new THREE.GridHelper(240, 24, 0x8fa0bc, 0xc8d2e2);
-grid.position.y = -32;
+const grid = new THREE.GridHelper(240, 20, 0x637899, 0xb8c4d6);
+grid.material.transparent = true;
+grid.material.opacity = 0.58;
 scene.add(grid);
 
 let modelRoot = null;
 let modelRadius = 60;
+let modelCenter = new THREE.Vector3(0, 0, 0);
 let projectionMode = "Perspective";
 let homePosition = new THREE.Vector3(120, 120, 120);
 let homeTarget = new THREE.Vector3(0, 0, 0);
+let viewDistance = 180;
 
 function updateProjectionLabel() {
   projectionBtn.textContent = "Projection: " + projectionMode;
@@ -1559,7 +1573,7 @@ function resize() {
   renderer.setSize(w, h, false);
   perspectiveCamera.aspect = w / h;
   perspectiveCamera.updateProjectionMatrix();
-  const halfHeight = Math.max(modelRadius * 1.45, 36);
+  const halfHeight = Math.max(modelRadius * 1.18, 1);
   const halfWidth = halfHeight * (w / h);
   orthoCamera.left = -halfWidth;
   orthoCamera.right = halfWidth;
@@ -1574,22 +1588,57 @@ function fitCameraFromObject(root) {
   root.position.sub(center);
   const fittedBox = new THREE.Box3().setFromObject(root);
   const size = fittedBox.getSize(new THREE.Vector3());
-  const safeRadius = Math.max(size.length() * 0.5, 40);
+  const safeRadius = Math.max(size.length() * 0.5, 0.01);
   modelRadius = safeRadius;
-  const fov = (perspectiveCamera.fov * Math.PI) / 180;
-  const distance = safeRadius / Math.tan(fov / 2) * 1.05;
-  perspectiveCamera.position.set(distance * 0.9, distance * 0.65, distance * 0.9);
-  perspectiveCamera.lookAt(0, 0, 0);
-  controls.target.set(0, 0, 0);
+  modelCenter.set(0, 0, 0);
+  grid.scale.setScalar(Math.max((safeRadius * 4) / 240, 0.001));
+  grid.position.y = fittedBox.min.y - Math.max(safeRadius * 0.015, 0.001);
+  const verticalFov = (perspectiveCamera.fov * Math.PI) / 180;
+  const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * Math.max(perspectiveCamera.aspect, 0.1));
+  const limitingFov = Math.min(verticalFov, horizontalFov);
+  viewDistance = safeRadius / Math.sin(limitingFov / 2) * 1.12;
+  perspectiveCamera.near = Math.max(viewDistance / 1000, 0.001);
+  perspectiveCamera.far = Math.max(viewDistance * 20, 100);
+  perspectiveCamera.updateProjectionMatrix();
+  controls.minDistance = Math.max(safeRadius * 0.15, 0.01);
+  controls.maxDistance = safeRadius * 18;
+  setView("isometric", false);
   controls.update();
   homePosition.copy(perspectiveCamera.position);
   homeTarget.copy(controls.target);
   resize();
 }
 
+const VIEW_DIRECTIONS = {
+  front: new THREE.Vector3(0, 0, 1),
+  back: new THREE.Vector3(0, 0, -1),
+  left: new THREE.Vector3(-1, 0, 0),
+  right: new THREE.Vector3(1, 0, 0),
+  top: new THREE.Vector3(0, 1, 0),
+  bottom: new THREE.Vector3(0, -1, 0),
+  isometric: new THREE.Vector3(1, 0.75, 1),
+};
+
+function setView(name, announce = true) {
+  const direction = VIEW_DIRECTIONS[name] || VIEW_DIRECTIONS.isometric;
+  controls.target.copy(modelCenter);
+  activeCamera.position.copy(modelCenter).add(direction.clone().normalize().multiplyScalar(viewDistance));
+  activeCamera.up.set(0, 1, 0);
+  if (name === "top" || name === "bottom") activeCamera.up.set(0, 0, name === "top" ? -1 : 1);
+  activeCamera.lookAt(modelCenter);
+  if (activeCamera.isOrthographicCamera) activeCamera.zoom = 1;
+  activeCamera.updateProjectionMatrix();
+  controls.update();
+  viewButtons.forEach((button) => button.classList.toggle("active", button.dataset.view === name));
+  if (announce) setStatus(name.charAt(0).toUpperCase() + name.slice(1) + " view");
+}
+
 function setModelRoot(root) {
   if (modelRoot) scene.remove(modelRoot);
   modelRoot = root;
+  // CAD exports (including Tinkercad) use Z as up; Three.js uses Y as up.
+  modelRoot.rotation.x = -Math.PI / 2;
+  modelRoot.updateMatrixWorld(true);
   scene.add(modelRoot);
   fitCameraFromObject(modelRoot);
   setStatus("Loaded: " + TITLE);
@@ -1605,20 +1654,34 @@ function switchProjection() {
     activeCamera = perspectiveCamera;
   }
   activeCamera.position.copy(previous.position);
+  activeCamera.up.copy(previous.up);
+  activeCamera.lookAt(controls.target);
   controls.object = activeCamera;
   controls.update();
   updateProjectionLabel();
 }
 
 resetBtn.addEventListener("click", () => {
+  activeCamera.up.set(0, 1, 0);
   activeCamera.position.copy(homePosition);
   controls.target.copy(homeTarget);
   controls.update();
 });
 
+viewButtons.forEach((button) => {
+  button.addEventListener("click", () => setView(button.dataset.view));
+});
+
 rotateBtn.addEventListener("click", () => {
   controls.autoRotate = !controls.autoRotate;
+  rotateBtn.setAttribute("aria-pressed", String(controls.autoRotate));
   rotateBtn.textContent = controls.autoRotate ? "Auto-Rotate: On" : "Auto-Rotate: Off";
+});
+
+gridBtn.addEventListener("click", () => {
+  grid.visible = !grid.visible;
+  gridBtn.setAttribute("aria-pressed", String(grid.visible));
+  gridBtn.textContent = grid.visible ? "Grid: On" : "Grid: Off";
 });
 
 projectionBtn.addEventListener("click", switchProjection);
@@ -1636,6 +1699,16 @@ fullscreenBtn.addEventListener("click", async () => {
 });
 
 window.addEventListener("resize", resize);
+window.addEventListener("keydown", (event) => {
+  if (event.target instanceof HTMLButtonElement) return;
+  const shortcutViews = { "1": "front", "2": "right", "3": "top", "0": "isometric" };
+  if (shortcutViews[event.key]) setView(shortcutViews[event.key]);
+  if (event.key.toLowerCase() === "r") resetBtn.click();
+});
+document.addEventListener("fullscreenchange", () => {
+  fullscreenBtn.textContent = document.fullscreenElement ? "Exit Fullscreen" : "Fullscreen";
+  requestAnimationFrame(resize);
+});
 updateProjectionLabel();
 resize();
 
@@ -1667,27 +1740,29 @@ function loadStl() {
   );
 }
 
-function applyObjFallbackMaterials(object) {
+function applyObjMaterials(object, forceFallback = false) {
   object.traverse((child) => {
     if (!child.isMesh) return;
-    if (child.material) return;
-    child.material = new THREE.MeshStandardMaterial({
-      color: 0x96a9c8,
-      roughness: 0.45,
-      metalness: 0.1,
-    });
+    if (forceFallback || !child.material) {
+      child.material = new THREE.MeshStandardMaterial({
+        color: 0x8ba7ce,
+        roughness: 0.58,
+        metalness: 0.04,
+      });
+    }
   });
 }
 
 function loadObj() {
   const objLoader = new OBJLoader();
   const onObject = (object) => {
-    applyObjFallbackMaterials(object);
+    applyObjMaterials(object, !MTL_URL);
     setModelRoot(object);
   };
 
   if (MTL_URL) {
     const mtlLoader = new MTLLoader();
+    mtlLoader.setResourcePath("./assets/models/");
     mtlLoader.load(
       MTL_URL,
       (materials) => {
@@ -1705,9 +1780,13 @@ function loadObj() {
       },
       undefined,
       () => {
+        setStatus("Materials unavailable; loading model with a standard finish...");
         objLoader.load(
           MODEL_URL,
-          onObject,
+          (object) => {
+            applyObjMaterials(object, true);
+            setModelRoot(object);
+          },
           undefined,
           (error) => {
             console.error(error);
@@ -1857,36 +1936,53 @@ async function processModelProject(source, slug) {
 
   await fs.rm(viewerEntryPath, { force: true });
 
-  const style = `*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#0f1726;color:#f3f6fb;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;display:grid;grid-template-rows:auto 1fr auto;overflow-x:hidden}body>*{min-width:0}.top,.foot{display:flex;justify-content:space-between;gap:.8rem;align-items:center;padding:.7rem 1rem;background:#132039;border-bottom:1px solid rgba(255,255,255,.15)}.foot{border-top:1px solid rgba(255,255,255,.15);border-bottom:0;font-size:.9rem;color:#d4deef}.title{font-size:1.05rem;font-weight:700}.sub{font-size:.9rem;color:#c5d4ec}.actions{display:flex;gap:.45rem;flex-wrap:wrap}.actions button{border:1px solid rgba(255,255,255,.25);background:#1b2e4f;color:#f4f8ff;border-radius:8px;padding:.5rem .7rem;font:600 .84rem/1.2 "Segoe UI",Arial,sans-serif;cursor:pointer}.actions button:hover{background:#24406f}main{padding:.7rem}.viewport{width:min(100%,1200px);height:min(78vh,760px);margin:0 auto;border:1px solid rgba(255,255,255,.2);border-radius:12px;overflow:hidden;background:#edf2fa}.status{padding:.55rem .9rem;color:#dbe5f6;font-size:.9rem;text-align:center}@media (max-width:900px){.top{flex-direction:column;align-items:flex-start}.actions{width:100%}}`;
-  await fs.writeFile(path.join(outputDir, "style.min.css"), style, "utf8");
+  const style = `:root{color-scheme:dark;--ink:#f5f8ff;--muted:#b8c7dc;--panel:#111d31;--panel-2:#182944;--line:rgba(255,255,255,.14);--accent:#78b7ff;--accent-ink:#07182c}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#09111f;color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}body{min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;overflow-x:hidden}.top{display:flex;justify-content:space-between;gap:1rem;align-items:center;padding:.85rem clamp(.8rem,2vw,1.5rem);background:linear-gradient(135deg,#101d32,#142744);border-bottom:1px solid var(--line);box-shadow:0 8px 30px rgba(0,0,0,.18);z-index:2}.top>*{min-width:0}.identity{display:flex;gap:.75rem;align-items:center;min-width:12rem}.model-icon{display:grid;place-items:center;width:2.55rem;height:2.55rem;border-radius:.75rem;background:linear-gradient(145deg,#87c2ff,#4f8fde);color:#07182c;font-size:1.25rem;box-shadow:inset 0 1px rgba(255,255,255,.55)}.eyebrow{margin:0 0 .12rem;color:var(--accent);font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.title{font-size:clamp(1rem,2vw,1.25rem);font-weight:750;line-height:1.15}.sub{margin-top:.2rem;font-size:.82rem;color:var(--muted)}.actions{display:flex;align-items:center;justify-content:flex-end;gap:.42rem;min-width:0;max-width:100%;flex-wrap:wrap}.control-group{display:flex;gap:.32rem;padding:.28rem;border:1px solid var(--line);border-radius:.75rem;background:rgba(4,11,22,.32)}button{appearance:none;border:1px solid transparent;background:transparent;color:var(--ink);border-radius:.52rem;padding:.47rem .64rem;font:650 .78rem/1.15 inherit;cursor:pointer;white-space:nowrap}button:hover{background:rgba(255,255,255,.1)}button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}button.active,button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}main{min-width:0;padding:clamp(.55rem,1.5vw,1rem);display:grid;place-items:center}.viewer-shell{position:relative;width:min(100%,1440px);height:clamp(30rem,calc(100vh - 10.5rem),850px);border:1px solid var(--line);border-radius:1rem;overflow:hidden;background:#e8edf5;box-shadow:0 20px 60px rgba(0,0,0,.28)}.viewport,.viewport canvas{display:block;width:100%;height:100%}.viewport{position:absolute;inset:0}.status{position:absolute;left:50%;bottom:.8rem;transform:translateX(-50%);max-width:calc(100% - 2rem);margin:0;padding:.45rem .75rem;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:rgba(7,17,31,.78);backdrop-filter:blur(8px);color:#f5f8ff;font-size:.78rem;text-align:center;pointer-events:none}.hint{position:absolute;top:.8rem;left:.8rem;margin:0;padding:.5rem .65rem;border-radius:.65rem;background:rgba(7,17,31,.72);backdrop-filter:blur(8px);color:#e7eef8;font-size:.76rem;pointer-events:none}.foot{display:flex;justify-content:center;gap:1rem;padding:.6rem 1rem;border-top:1px solid var(--line);background:#0e1a2d;color:var(--muted);font-size:.78rem}.key{display:inline-grid;place-items:center;min-width:1.35rem;height:1.25rem;margin:0 .12rem;padding:0 .25rem;border:1px solid rgba(255,255,255,.25);border-bottom-width:2px;border-radius:.3rem;background:#1b2c46;color:#fff;font-size:.68rem}@media(max-width:900px){.top{align-items:flex-start;flex-direction:column}.actions{justify-content:flex-start;width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:.15rem}.control-group{flex:0 0 auto}.viewer-shell{height:calc(100dvh - 13.5rem);min-height:24rem}.foot{display:none}}@media(max-width:520px){.model-icon{display:none}.identity{min-width:0}.viewer-shell{height:calc(100dvh - 12rem);min-height:22rem}.hint{display:none}button{padding:.45rem .55rem}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}`;
+  const responsiveStyle = style.replace(".top{", "body>*{min-width:0}.top{");
+  await fs.writeFile(path.join(outputDir, "style.min.css"), responsiveStyle, "utf8");
 
   const html = `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${title} · 3D Viewer</title>
+  <title>${escapeHtml(title)} · 3D Viewer</title>
   <link rel="stylesheet" href="style.min.css" />
 </head>
 <body>
   <header class="top">
-    <div>
-      <div class="title">${title}</div>
-      <div id="stl-subtitle" class="sub"></div>
+    <div class="identity">
+      <span class="model-icon" aria-hidden="true">◇</span>
+      <div>
+        <p class="eyebrow">Interactive 3D model</p>
+        <div class="title">${escapeHtml(title)}</div>
+        <div id="stl-subtitle" class="sub"></div>
+      </div>
     </div>
     <div class="actions" aria-label="Viewer controls">
-      <button id="reset-btn" type="button">Reset View</button>
-      <button id="rotate-btn" type="button">Auto-Rotate: Off</button>
-      <button id="projection-btn" type="button">Projection: Perspective</button>
-      <button id="fullscreen-btn" type="button">Fullscreen</button>
+      <div class="control-group" role="group" aria-label="Camera views">
+        <button type="button" data-view="front">Front</button>
+        <button type="button" data-view="right">Side</button>
+        <button type="button" data-view="top">Top</button>
+        <button type="button" data-view="isometric">3D</button>
+      </div>
+      <div class="control-group" role="group" aria-label="Display options">
+        <button id="reset-btn" type="button" title="Reset view (R)">Reset</button>
+        <button id="rotate-btn" type="button" aria-pressed="false">Auto-Rotate: Off</button>
+        <button id="grid-btn" type="button" aria-pressed="true">Grid: On</button>
+        <button id="projection-btn" type="button">Projection: Perspective</button>
+        <button id="fullscreen-btn" type="button">Fullscreen</button>
+      </div>
     </div>
   </header>
   <main>
-    <div id="stl-viewport" class="viewport" aria-label="Interactive 3D model viewer"></div>
-    <p id="stl-status" class="status">Loading model...</p>
+    <section class="viewer-shell" aria-label="3D viewer">
+      <div id="stl-viewport" class="viewport"></div>
+      <p class="hint">Drag to orbit · Scroll or pinch to zoom · Two-finger drag to pan</p>
+      <p id="stl-status" class="status" role="status" aria-live="polite">Loading model...</p>
+    </section>
   </main>
   <footer class="foot">
-    Drag to rotate. Scroll to zoom. Right-click (or two-finger drag) to pan.
+    Keyboard views: <span class="key">1</span> Front <span class="key">2</span> Side <span class="key">3</span> Top <span class="key">0</span> 3D <span class="key">R</span> Reset
   </footer>
   <script src="app.min.js"></script>
 </body>

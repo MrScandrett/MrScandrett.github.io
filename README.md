@@ -55,7 +55,10 @@ Output:
 
 - Built apps in `apps/<slug>/`
 - Showcase manifest in `apps/manifest.json`
-- STL/OBJ models auto-render in an interactive viewer (orbit/zoom/pan, projection toggle, fullscreen)
+- STL/OBJ models auto-render in a shared interactive viewer with camera presets,
+  orbit/zoom/pan, projection and grid controls, fullscreen, touch support, and
+  accessible status messages. See [MODEL_PROJECTS.md](MODEL_PROJECTS.md) for the
+  rules used by Isaiah's example and every future model.
 
 ## Portal backend (local-only by default)
 
