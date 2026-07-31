@@ -39,6 +39,62 @@
       gap: 1.05rem;
     }
     .aa-main > * { min-width: 0; }
+    .aa-card[id] { scroll-margin-top: 118px; }
+
+    /* ── lesson map + progress ── */
+    .aa-progress {
+      position: fixed;
+      inset: 0 0 auto;
+      height: 4px;
+      z-index: 1000;
+      background: rgba(124,58,237,0.1);
+    }
+    .aa-progress-bar {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #7c3aed, #2563eb, #16a34a);
+      box-shadow: 0 0 12px rgba(124,58,237,0.45);
+      transition: width 0.1s linear;
+    }
+    .aa-lesson-map {
+      position: sticky;
+      top: 52px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      overflow-x: auto;
+      padding: 0.62rem;
+      border: 1px solid rgba(124,58,237,0.18);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.86);
+      box-shadow: 0 12px 30px rgba(45,20,90,0.1);
+      backdrop-filter: blur(18px);
+      scrollbar-width: none;
+    }
+    .aa-lesson-map::-webkit-scrollbar { display: none; }
+    .aa-map-label {
+      flex: 0 0 auto;
+      padding: 0 0.4rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #8b79ac;
+    }
+    .aa-map-link {
+      flex: 0 0 auto;
+      padding: 0.42rem 0.72rem;
+      border-radius: 10px;
+      color: #5c4a8a;
+      font-size: 0.78rem;
+      font-weight: 750;
+      text-decoration: none;
+      transition: 0.18s ease;
+    }
+    .aa-map-link:hover,
+    .aa-map-link.is-current { color: #fff; background: #6d28d9; }
 
     /* ── card base ── */
     .aa-card {
@@ -542,6 +598,181 @@
       color: #4a3870;
       min-height: 48px;
     }
+    .aa-builder-tools { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.75rem; }
+    .aa-preset {
+      border: 1px solid rgba(124,58,237,0.18);
+      border-radius: 999px;
+      background: #fff;
+      color: #5b21b6;
+      padding: 0.34rem 0.65rem;
+      font: 700 0.72rem var(--font-sans);
+      cursor: pointer;
+    }
+    .aa-preset:hover { background: #f3efff; border-color: rgba(124,58,237,0.4); }
+    .aa-sequence-line {
+      margin: 0;
+      min-height: 1.5rem;
+      color: #5b21b6;
+      font: 700 0.78rem "IBM Plex Mono", monospace;
+      overflow-wrap: anywhere;
+    }
+    .aa-fold-stage {
+      position: relative;
+      min-height: 230px;
+      overflow: hidden;
+      border: 1px solid rgba(124,58,237,0.15);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(124,58,237,0.09), transparent 42%),
+        linear-gradient(145deg, rgba(248,245,255,0.9), rgba(239,248,255,0.85));
+    }
+    .aa-fold-stage svg { display: block; width: 100%; height: 230px; }
+    .aa-fold-empty {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+      color: #8b79ac;
+      text-align: center;
+      font-size: 0.84rem;
+      pointer-events: none;
+    }
+    .aa-fold-legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.55rem; color: #6b5a9e; font-size: 0.72rem; }
+    .aa-fold-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 0.3rem; border-radius: 50%; background: var(--legend); }
+
+    /* ── retrieval practice ── */
+    .aa-quiz-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin-top: 1rem; }
+    .aa-question { border: 1px solid rgba(124,58,237,0.14); border-radius: 16px; padding: 1rem; background: rgba(248,245,255,0.72); }
+    .aa-question legend { width: 100%; padding: 0; color: #1a0a3d; font-weight: 750; font-size: 0.94rem; line-height: 1.45; }
+    .aa-options { display: grid; gap: 0.42rem; margin-top: 0.7rem; }
+    .aa-option {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      border: 1px solid rgba(124,58,237,0.12);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.85);
+      padding: 0.52rem 0.65rem;
+      color: #4a3870;
+      font-size: 0.84rem;
+      cursor: pointer;
+    }
+    .aa-option:hover { border-color: rgba(124,58,237,0.35); }
+    .aa-question.is-correct { border-color: rgba(22,163,74,0.38); background: rgba(240,253,244,0.8); }
+    .aa-question.is-wrong { border-color: rgba(220,38,38,0.3); background: rgba(254,242,242,0.8); }
+    .aa-answer { min-height: 1.25rem; margin: 0.55rem 0 0; font-size: 0.78rem !important; line-height: 1.4 !important; }
+    .aa-quiz-result { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.9rem; padding: 0.8rem 1rem; border-radius: 14px; background: rgba(124,58,237,0.08); }
+    .aa-score { font-size: 1.6rem; font-weight: 800; color: #6d28d9; }
+    .aa-quiz-result p { margin: 0; font-size: 0.85rem; }
+
+    /* ── textbook chapters ── */
+    .aa-chapter-intro {
+      max-width: 78ch;
+      margin: 0.35rem 0 0;
+      color: #4a3870;
+      font-size: 0.97rem;
+      line-height: 1.7;
+    }
+    .aa-note {
+      margin-top: 1rem;
+      padding: 0.9rem 1rem;
+      border-left: 4px solid var(--note, #7c3aed);
+      border-radius: 0 14px 14px 0;
+      background: var(--note-bg, rgba(124,58,237,0.07));
+      color: #433566;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+    .aa-note strong { color: #241642; }
+
+    /* discovery timeline */
+    .aa-timeline {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(210px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1.1rem;
+      overflow-x: auto;
+      padding: 0.2rem 0.1rem 0.8rem;
+      scroll-snap-type: x proximity;
+    }
+    .aa-time-card {
+      position: relative;
+      min-height: 350px;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid rgba(124,58,237,0.15);
+      border-radius: 16px;
+      background: linear-gradient(155deg, rgba(255,255,255,0.95), rgba(245,240,255,0.82));
+      scroll-snap-align: start;
+    }
+    .aa-time-photo { position: relative; margin: 0; height: 145px; overflow: hidden; background: #e8e1f5; }
+    .aa-time-photo::after { content: ""; position: absolute; inset: auto 0 0; height: 45%; background: linear-gradient(transparent, rgba(26,10,61,0.42)); pointer-events: none; }
+    .aa-time-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: var(--photo-position, center 28%); filter: sepia(0.12) saturate(0.85) contrast(1.04); transition: transform 0.35s ease, filter 0.35s ease; }
+    .aa-time-card:hover .aa-time-photo img { transform: scale(1.035); filter: sepia(0) saturate(1) contrast(1.04); }
+    .aa-time-photo figcaption { position: absolute; right: 0.55rem; bottom: 0.42rem; z-index: 1; color: rgba(255,255,255,0.92); font-size: 0.58rem; line-height: 1.25; text-shadow: 0 1px 4px rgba(0,0,0,0.65); }
+    .aa-time-photo a { color: inherit; }
+    .aa-time-copy { padding: 0.9rem 1rem 1rem; }
+    .aa-time-year { display: block; color: #7c3aed; font: 800 1.45rem "IBM Plex Mono", monospace; }
+    .aa-time-era { display: block; margin: 0.12rem 0 0.6rem; color: #9d80cc; font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .aa-time-card h3 { font-size: 0.98rem; }
+    .aa-time-card p { margin: 0.35rem 0 0; font-size: 0.8rem; line-height: 1.5; }
+
+    /* ionization lab */
+    .aa-chemistry-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr); gap: 1rem; margin-top: 1rem; }
+    .aa-ph-lab, .aa-reference-panel { border: 1px solid rgba(124,58,237,0.14); border-radius: 18px; padding: 1rem; background: rgba(248,245,255,0.7); }
+    .aa-ph-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+    .aa-ph-value { color: #6d28d9; font: 800 1.25rem "IBM Plex Mono", monospace; }
+    .aa-ph-slider { width: 100%; margin: 1rem 0 0.25rem; accent-color: #7c3aed; }
+    .aa-ph-scale { display: flex; justify-content: space-between; color: #8673aa; font-size: 0.68rem; }
+    .aa-ion-state {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 15px;
+      background: #fff;
+      border: 1px solid rgba(124,58,237,0.12);
+      text-align: center;
+    }
+    .aa-ion-group { padding: 0.65rem 0.4rem; border-radius: 10px; background: rgba(124,58,237,0.08); color: #271548; font: 700 0.9rem "IBM Plex Mono", monospace; }
+    .aa-ion-bond { color: #9d80cc; font-weight: 800; }
+    .aa-net-charge { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; color: #4a3870; font-size: 0.84rem; }
+    .aa-charge-orb { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #fff; background: #64748b; font: 800 1rem "IBM Plex Mono", monospace; }
+    .aa-reference-list { display: grid; gap: 0.7rem; margin-top: 0.7rem; }
+    .aa-reference-row { display: grid; grid-template-columns: 105px 1fr; gap: 0.65rem; padding-top: 0.65rem; border-top: 1px solid rgba(124,58,237,0.1); }
+    .aa-reference-row:first-child { border-top: 0; padding-top: 0; }
+    .aa-reference-row strong { color: #29164f; font-size: 0.84rem; }
+    .aa-reference-row span { color: #5c4a8a; font-size: 0.8rem; line-height: 1.45; }
+
+    /* gene-to-protein and structure levels */
+    .aa-code-flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 0.55rem; align-items: stretch; margin-top: 1rem; }
+    .aa-code-step { position: relative; min-height: 145px; padding: 1rem; border: 1px solid rgba(124,58,237,0.15); border-radius: 16px; background: rgba(255,255,255,0.84); }
+    .aa-code-step-num { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: #fff; background: #7c3aed; font-weight: 800; font-size: 0.75rem; }
+    .aa-code-step h3 { margin-top: 0.65rem; }
+    .aa-code-step p { margin: 0.3rem 0 0; font-size: 0.8rem; line-height: 1.5; }
+    .aa-code-example { display: block; margin-top: 0.65rem; color: #5b21b6; font: 700 0.76rem "IBM Plex Mono", monospace; }
+    .aa-code-arrow { align-self: center; color: #7c3aed; font-size: 1.4rem; font-weight: 800; }
+    .aa-levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem; }
+    .aa-level-card { overflow: hidden; border: 1px solid rgba(124,58,237,0.14); border-radius: 16px; background: rgba(255,255,255,0.82); }
+    .aa-level-visual { height: 120px; display: grid; place-items: center; background: linear-gradient(145deg, rgba(241,236,255,0.9), rgba(237,248,255,0.8)); }
+    .aa-level-visual svg { width: 100%; height: 100%; }
+    .aa-level-copy { padding: 0.85rem; }
+    .aa-level-copy span { color: #7c3aed; font: 800 0.68rem "IBM Plex Mono", monospace; text-transform: uppercase; }
+    .aa-level-copy h3 { margin-top: 0.15rem; }
+    .aa-level-copy p { margin: 0.3rem 0 0; font-size: 0.78rem; line-height: 1.5; }
+
+    /* glossary + sources */
+    .aa-glossary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin: 1rem 0 0; }
+    .aa-glossary div { padding: 0.75rem; border: 1px solid rgba(124,58,237,0.12); border-radius: 13px; background: rgba(248,245,255,0.7); }
+    .aa-glossary dt { color: #29164f; font-weight: 800; font-size: 0.84rem; }
+    .aa-glossary dd { margin: 0.25rem 0 0; color: #5c4a8a; font-size: 0.78rem; line-height: 1.45; }
+    .aa-sources { columns: 2; column-gap: 2rem; padding-left: 1.2rem; }
+    .aa-sources li { break-inside: avoid; margin-bottom: 0.55rem; font-size: 0.8rem; }
+    .aa-sources a { color: #5b21b6; font-weight: 700; }
 
     /* ── essential amino acids card ── */
     .aa-essential-grid {
@@ -650,17 +881,43 @@
     @media (max-width: 720px) {
       .aa-hero { grid-template-columns: 1fr; }
       .aa-hero-mol { display: none; }
+      .aa-lesson-map { position: static; }
       .aa-anatomy-grid { grid-template-columns: 1fr; }
       .aa-builder-layout { grid-template-columns: 1fr; }
       .aa-bond-grid { grid-template-columns: 1fr; }
       .aa-function-grid { grid-template-columns: 1fr; }
       .aa-essential-grid { grid-template-columns: 1fr 1fr; }
+      .aa-quiz-grid { grid-template-columns: 1fr; }
+      .aa-timeline { grid-template-columns: repeat(8, minmax(240px, 1fr)); }
+      .aa-chemistry-grid { grid-template-columns: 1fr; }
+      .aa-code-flow { grid-template-columns: 1fr; }
+      .aa-code-arrow { transform: rotate(90deg); justify-self: center; }
+      .aa-levels { grid-template-columns: 1fr 1fr; }
+      .aa-glossary { grid-template-columns: 1fr 1fr; }
+      .aa-sources { columns: 1; }
       .aa-grid-2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .aa-main { width: min(100% - 1rem, 1160px); }
+      .aa-card { border-radius: 18px; }
+      .aa-essential-grid { grid-template-columns: 1fr; }
+      .aa-map-label { display: none; }
+      .aa-detail.is-open { grid-template-columns: 1fr; }
+      .aa-detail-svg { display: none; }
+      .aa-levels, .aa-glossary { grid-template-columns: 1fr; }
+      .aa-ion-state { grid-template-columns: 1fr; }
+      .aa-ion-bond { transform: rotate(90deg); }
+      .aa-reference-row { grid-template-columns: 1fr; gap: 0.2rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .aa-orb, .aa-chain-aa { animation: none; }
+      .aa-page * { scroll-behavior: auto !important; }
     }
   </style>
 </head>
 <body class="aa-page">
 <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="aa-progress" aria-hidden="true"><span class="aa-progress-bar" id="lesson-progress"></span></div>
 
   <header class="site-header">
     <div class="nav-wrap">
@@ -682,7 +939,7 @@
   <main class="aa-main" id="main-content">
 
     <!-- ── HERO ── -->
-    <section class="aa-card aa-hero">
+    <section class="aa-card aa-hero" id="intro" data-lesson-section="Intro">
       <div class="aa-hero-orbs" aria-hidden="true">
         <div class="aa-orb" style="width:120px;height:120px;top:10%;left:62%;background:radial-gradient(circle, rgba(167,139,250,0.4), transparent 70%);animation-delay:0s;"></div>
         <div class="aa-orb" style="width:80px;height:80px;top:55%;left:78%;background:radial-gradient(circle, rgba(96,165,250,0.35), transparent 70%);animation-delay:2s;"></div>
@@ -694,7 +951,7 @@
         <h1>Amino<br><em>Acids</em></h1>
         <p class="aa-lede">The molecular alphabet of life — 21 building blocks that link together to form every protein in your body, from your hair to your enzymes to the antibodies in your blood.</p>
         <div class="aa-meta">
-          <span class="aa-pill">21 Proteinogenic</span>
+          <span class="aa-pill">21 Human Proteinogenic</span>
           <span class="aa-pill">9 Essential</span>
           <span class="aa-pill">Peptide Bonds</span>
           <span class="aa-pill">4 Categories</span>
@@ -719,8 +976,22 @@
       </div>
     </section>
 
+    <nav class="aa-lesson-map" aria-label="On this page">
+      <span class="aa-map-label">Lesson map</span>
+      <a class="aa-map-link is-current" href="#intro">Start</a>
+      <a class="aa-map-link" href="#structure">Structure</a>
+      <a class="aa-map-link" href="#history">Discovery</a>
+      <a class="aa-map-link" href="#explorer">Explore 21</a>
+      <a class="aa-map-link" href="#chemistry">Chemistry</a>
+      <a class="aa-map-link" href="#bonding">Bonding</a>
+      <a class="aa-map-link" href="#builder">Build + fold</a>
+      <a class="aa-map-link" href="#protein-shape">Protein shape</a>
+      <a class="aa-map-link" href="#nutrition">Nutrition</a>
+      <a class="aa-map-link" href="#check">Check</a>
+    </nav>
+
     <!-- ── STRUCTURE ANATOMY ── -->
-    <section class="aa-card">
+    <section class="aa-card" id="structure" data-lesson-section="Structure">
       <p class="aa-kicker">Structure</p>
       <h2>Anatomy of an amino acid</h2>
       <p style="color:#4a3870;font-size:0.97rem;margin:0.2rem 0 0;">Every amino acid shares the same core backbone — the unique <strong>R group (side chain)</strong> is what makes each one different.</p>
@@ -729,9 +1000,9 @@
           <svg viewBox="0 0 300 200" width="260" fill="none" xmlns="http://www.w3.org/2000/svg">
             <!-- Backbone line art -->
             <!-- COOH -->
-            <text x="80" y="30" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#ef4444" font-weight="700">O⁻</text>
+            <text x="80" y="30" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#ef4444" font-weight="700">O</text>
             <text x="80" y="46" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#ef4444">‖</text>
-            <text x="50" y="62" text-anchor="end" font-family="IBM Plex Mono" font-size="14" fill="#ef4444" font-weight="700">O</text>
+            <text x="50" y="62" text-anchor="end" font-family="IBM Plex Mono" font-size="14" fill="#ef4444" font-weight="700">O⁻</text>
             <text x="80" y="62" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#222" font-weight="700">C</text>
             <line x1="52" y1="57" x2="72" y2="57" stroke="#ef4444" stroke-width="2"/>
             <!-- C to alpha -->
@@ -796,11 +1067,53 @@
       </div>
     </section>
 
+    <!-- ── DISCOVERY HISTORY ── -->
+    <section class="aa-card" id="history" data-lesson-section="Discovery">
+      <p class="aa-kicker">History of science</p>
+      <h2>How scientists discovered the molecular alphabet</h2>
+      <p class="aa-chapter-intro">Amino acids were not found all at once. Chemists first isolated unfamiliar crystals from plants, animal tissues, and even urinary stones. A century of purification and elemental analysis revealed the individual building blocks; another half-century connected their order to genes and protein shape.</p>
+      <div class="aa-timeline" tabindex="0" aria-label="Timeline of amino acid and protein discoveries; scroll horizontally on small screens">
+        <article class="aa-time-card">
+          <figure class="aa-time-photo"><img src="../assets/images/amino-acids-history/vauquelin.jpg" alt="Engraved portrait of chemist Louis-Nicolas Vauquelin" loading="lazy" decoding="async"><figcaption>Vauquelin · Rijksmuseum / <a href="https://commons.wikimedia.org/wiki/File:Portret_van_Nicolas-Louis_Vauquelin,_RP-P-1910-5198.jpg" target="_blank" rel="noopener">CC0</a></figcaption></figure>
+          <div class="aa-time-copy"><span class="aa-time-year">1806</span><span class="aa-time-era">The first</span><h3>Asparagine from asparagus</h3><p>Louis-Nicolas Vauquelin and Pierre Jean Robiquet isolated asparagine from asparagus juice. It is generally recognized as the first amino acid discovered.</p></div>
+        </article>
+        <article class="aa-time-card">
+          <figure class="aa-time-photo"><img src="../assets/images/amino-acids-history/wollaston.jpg" alt="Engraved portrait of physician and chemist William Hyde Wollaston" loading="lazy" decoding="async"><figcaption>Wollaston · J. Thomson / <a href="https://commons.wikimedia.org/wiki/File:William_Hyde_Wollaston,_portrait_(jpeg).jpg" target="_blank" rel="noopener">public domain</a></figcaption></figure>
+          <div class="aa-time-copy"><span class="aa-time-year">1810–1820</span><span class="aa-time-era">Early isolates</span><h3>Cystine, glycine, and leucine</h3><p>William Hyde Wollaston described cystine in a urinary stone. Henri Braconnot later obtained “sugar of gelatin” (glycine) and leucine by hydrolyzing proteins.</p></div>
+        </article>
+        <article class="aa-time-card">
+          <figure class="aa-time-photo"><img src="../assets/images/amino-acids-history/ritthausen.jpg" alt="Portrait of agricultural chemist Karl Heinrich Ritthausen" loading="lazy" decoding="async"><figcaption>Ritthausen · T. B. Osborne / <a href="https://commons.wikimedia.org/wiki/File:Karl_Heinrich_Ritthausen.jpg" target="_blank" rel="noopener">public domain</a></figcaption></figure>
+          <div class="aa-time-copy"><span class="aa-time-year">1866–1886</span><span class="aa-time-era">Plant chemistry</span><h3>Glutamate and arginine</h3><p>Karl Heinrich Ritthausen isolated glutamic acid from wheat gluten. Ernst Schulze and Ernst Steiger later isolated arginine from lupin seedlings.</p></div>
+        </article>
+        <article class="aa-time-card">
+          <figure class="aa-time-photo"><img src="../assets/images/amino-acids-history/fischer.jpg" alt="Portrait study of chemist Emil Fischer" loading="lazy" decoding="async"><figcaption>Fischer · William Pape / <a href="https://commons.wikimedia.org/wiki/File:William_Pape_-_Portraitstudie_Emil_Fischer,_Chemiker_und_Nobelpreistr%C3%A4ger._Entwurf_zu_dem_verschollenen_Gem%C3%A4lde_%22Letzte_Sitzung_der_Preu%C3%9Fischen_Akademie_der_Wissenschaften_im_alten_Haus%22_-_BG-M_6524-92_-_Berlinische_Galerie.jpg" target="_blank" rel="noopener">public domain</a></figcaption></figure>
+          <div class="aa-time-copy"><span class="aa-time-year">1901–1902</span><span class="aa-time-era">Making chains</span><h3>Fischer builds peptides</h3><p>Emil Fischer developed methods for separating amino acids, introduced the term <em>peptide</em>, and synthesized short chains—evidence that proteins could be built from amino-acid units.</p></div>
+        </article>
+        <article class="aa-time-card">
+          <figure class="aa-time-photo"><img src="../assets/images/amino-acids-history/rose.jpg" alt="Yearbook portrait of biochemist William Cumming Rose" loading="lazy" decoding="async"><figcaption>Rose · Carnegie Mellon / <a href="https://commons.wikimedia.org/wiki/File:William_Rose_(1930_yearbook_photo).jpg" target="_blank" rel="noopener">public domain</a></figcaption></figure>
+          <div class="aa-time-copy"><span class="aa-time-year">1935</span><span class="aa-time-era">The standard twenty</span><h3>Threonine completes the set</h3><p>William Cumming Rose and colleagues identified threonine while studying essential nutrients. It was the last of the 20 standard amino acids to be discovered.</p></div>
+        </article>
+        <article class="aa-time-card">
+          <figure class="aa-time-photo" style="--photo-position:center 22%;"><img src="../assets/images/amino-acids-history/sanger.jpg" alt="Photograph of biochemist Frederick Sanger" loading="lazy" decoding="async"><figcaption>Sanger · <a href="https://commons.wikimedia.org/wiki/File:Frederick_Sanger.jpg" target="_blank" rel="noopener">Wikimedia Commons, public domain</a></figcaption></figure>
+          <div class="aa-time-copy"><span class="aa-time-year">1951–1955</span><span class="aa-time-era">Sequence and shape</span><h3>Proteins become readable</h3><p>Linus Pauling and colleagues proposed the α-helix and β-sheet. Frederick Sanger then established insulin’s complete amino-acid sequence, proving proteins have a defined order.</p></div>
+        </article>
+        <article class="aa-time-card">
+          <figure class="aa-time-photo"><img src="../assets/images/amino-acids-history/nirenberg.jpg" alt="Photograph of geneticist Marshall Nirenberg" loading="lazy" decoding="async"><figcaption>Nirenberg · NLM / <a href="https://commons.wikimedia.org/wiki/File:Marshall_Nirenberg_(2002,_by_National_Institutes_of_Health,_U.S.).jpg" target="_blank" rel="noopener">no restrictions</a></figcaption></figure>
+          <div class="aa-time-copy"><span class="aa-time-year">1961–1968</span><span class="aa-time-era">Cracking the code</span><h3>Codons meet amino acids</h3><p>Marshall Nirenberg and J. Heinrich Matthaei showed that UUU directs phenylalanine. Nirenberg, Har Gobind Khorana, and Robert Holley shared the 1968 Nobel Prize for interpreting the genetic code.</p></div>
+        </article>
+        <article class="aa-time-card">
+          <figure class="aa-time-photo" style="--photo-position:center 42%;"><img src="../assets/images/amino-acids-history/stadtman.png" alt="Biochemists Earl and Thressa Stadtman working together" loading="lazy" decoding="async"><figcaption>Earl &amp; Thressa Stadtman · NIH / <a href="https://commons.wikimedia.org/wiki/File:Drs._Earl_and_Thressa_Stadtman_(30819776834).png" target="_blank" rel="noopener">public domain</a></figcaption></figure>
+          <div class="aa-time-copy"><span class="aa-time-year">1970s–1990s</span><span class="aa-time-era">A 21st amino acid</span><h3>Selenocysteine changes the count</h3><p>Researchers found selenium built directly into enzymes, then uncovered the special machinery that recodes UGA to insert selenocysteine instead of stopping translation.</p></div>
+        </article>
+      </div>
+      <div class="aa-note"><strong>Science keeps refining categories.</strong> Pyrrolysine is sometimes called the 22nd genetically encoded amino acid, but it occurs in certain archaea and bacteria—not in human proteins. That is why this lesson focuses on the 21 used by humans.</div>
+    </section>
+
     <!-- ── AMINO ACID EXPLORER ── -->
-    <section class="aa-card">
+    <section class="aa-card" id="explorer" data-lesson-section="Explore 21">
       <p class="aa-kicker">Explorer</p>
-      <h2>The 21 proteinogenic amino acids</h2>
-      <p style="color:#4a3870;font-size:0.95rem;margin:0.25rem 0 1rem;">Tap any card for details. The standard genetic code encodes 20; selenocysteine (Sec/U) is the 21st.</p>
+      <h2>The 21 human proteinogenic amino acids</h2>
+      <p style="color:#4a3870;font-size:0.95rem;margin:0.25rem 0 1rem;">Tap any card for details. The standard genetic code directly assigns 20; human cells can also recode UGA to insert selenocysteine (Sec/U).</p>
 
       <div class="aa-tab-bar" role="tablist" aria-label="Amino acid categories">
         <button class="aa-tab is-active" role="tab" aria-selected="true"  data-cat="charged"     style="--tab-color:#7c3aed;">⚡ Charged</button>
@@ -972,8 +1285,37 @@
       </div>
     </section>
 
+    <!-- ── ACID-BASE CHEMISTRY ── -->
+    <section class="aa-card" id="chemistry" data-lesson-section="Chemistry">
+      <p class="aa-kicker">Chemical behavior</p>
+      <h2>One molecule, different charge states</h2>
+      <p class="aa-chapter-intro">Amino acids are <strong>amphoteric</strong>: the carboxyl group can donate H⁺ while the amino group can accept H⁺. Their charge therefore changes with pH. Near physiological pH, most free amino acids are <strong>zwitterions</strong>—they carry both a positive and a negative charge while their total charge may be zero.</p>
+      <div class="aa-chemistry-grid">
+        <div class="aa-ph-lab">
+          <div class="aa-ph-head"><div><div class="aa-palette-label">Ionization model</div><strong>Move through the pH scale</strong></div><output class="aa-ph-value" id="ph-value" for="ph-slider">pH 7.0</output></div>
+          <input class="aa-ph-slider" id="ph-slider" type="range" min="1" max="13" step="0.1" value="7" aria-label="Solution pH">
+          <div class="aa-ph-scale"><span>acidic</span><span>neutral</span><span>basic</span></div>
+          <div class="aa-ion-state" id="ion-state" aria-live="polite">
+            <span class="aa-ion-group" id="ion-amino">H₃N⁺</span><span class="aa-ion-bond">—</span><span class="aa-ion-group">CαH(R)</span><span class="aa-ion-bond">—</span><span class="aa-ion-group" id="ion-carboxyl">COO⁻</span>
+          </div>
+          <div class="aa-net-charge"><span class="aa-charge-orb" id="charge-orb">0</span><span id="charge-copy">Zwitterion: opposite charges, approximately zero net charge.</span></div>
+          <p style="font-size:0.75rem;color:#746298;margin:0.8rem 0 0;line-height:1.5;">This simplified model uses approximate backbone pK<sub>a</sub> values of 2.3 and 9.6. Ionizable side chains create additional transitions.</p>
+        </div>
+        <aside class="aa-reference-panel">
+          <div class="aa-palette-label">Reading the chemistry</div>
+          <div class="aa-reference-list">
+            <div class="aa-reference-row"><strong>pK<sub>a</sub></strong><span>The pH at which a group is 50% protonated. Below its pK<sub>a</sub>, a group tends to hold H⁺; above it, the group tends to lose H⁺.</span></div>
+            <div class="aa-reference-row"><strong>pI</strong><span>The isoelectric point: the pH where an amino acid or protein has zero average net charge and often its lowest solubility.</span></div>
+            <div class="aa-reference-row"><strong>L configuration</strong><span>Ribosomes overwhelmingly build proteins from L-amino acids. Glycine is the exception because its two hydrogen substituents make it achiral.</span></div>
+            <div class="aa-reference-row"><strong>Side-chain pK<sub>a</sub></strong><span>Aspartate, glutamate, histidine, cysteine, tyrosine, lysine, and arginine can gain or lose protons in their side chains.</span></div>
+          </div>
+        </aside>
+      </div>
+      <div class="aa-note" style="--note:#2563eb;--note-bg:rgba(37,99,235,0.06);"><strong>Categories overlap.</strong> “Polar,” “charged,” and “hydrophobic” are useful models, not rigid boxes. Tyrosine has an aromatic hydrophobic ring and a polar hydroxyl; histidine’s charge changes near physiological pH; cysteine can be neutral or negatively charged depending on its environment.</div>
+    </section>
+
     <!-- ── PEPTIDE BOND ── -->
-    <section class="aa-card">
+    <section class="aa-card" id="bonding" data-lesson-section="Bonding">
       <p class="aa-kicker">Bonding</p>
       <h2>Peptide bonds: linking amino acids</h2>
       <div class="aa-bond-grid">
@@ -1028,19 +1370,24 @@
             <text x="140" y="46" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="#0ea5e9" font-weight="700">+ H₂O ↑</text>
             <text x="140" y="56" text-anchor="middle" font-family="Manrope" font-size="8" fill="#0369a1">(released)</text>
           </svg>
-          <div style="font-size:0.83rem;color:#4a3870;text-align:center;max-width:26ch;line-height:1.5;">Chains of 2–49 residues = peptide. 50+ residues = polypeptide. A folded polypeptide = protein.</div>
+          <div style="font-size:0.83rem;color:#4a3870;text-align:center;max-width:28ch;line-height:1.5;">Short chains are often called peptides; longer chains are polypeptides. There is no universal length cutoff, and one or more folded chains can make a functional protein.</div>
         </div>
       </div>
     </section>
 
     <!-- ── PEPTIDE BUILDER ── -->
-    <section class="aa-card">
+    <section class="aa-card" id="builder" data-lesson-section="Build + fold">
       <p class="aa-kicker">Interactive Lab</p>
       <h2>Build a peptide chain</h2>
       <p style="color:#4a3870;font-size:0.95rem;margin:0.2rem 0 0;">Click amino acids to add them to your chain. Peptide bonds form automatically between each residue.</p>
       <div class="aa-builder-layout">
         <div class="aa-builder-palette">
           <div class="aa-palette-label">Amino acid palette</div>
+          <div class="aa-builder-tools" aria-label="Example sequences">
+            <button class="aa-preset" type="button" data-preset="surface">Try surface protein</button>
+            <button class="aa-preset" type="button" data-preset="core">Try hydrophobic core</button>
+            <button class="aa-preset" type="button" data-preset="mixed">Try mixed chain</button>
+          </div>
           <div class="aa-palette-grid" id="palette">
             <!-- filled by JS -->
           </div>
@@ -1050,16 +1397,67 @@
             <span class="aa-chain-empty" id="chain-empty">Click amino acids to start your chain →</span>
           </div>
           <div class="aa-chain-info" id="chain-info">Add amino acids to see chain properties.</div>
+          <p class="aa-sequence-line" id="sequence-line" aria-live="polite"></p>
           <div class="aa-chain-controls">
             <button class="aa-btn aa-btn-ghost" id="undo-btn">← Undo</button>
             <button class="aa-btn aa-btn-ghost" id="clear-btn">Clear</button>
+            <button class="aa-btn aa-btn-primary" id="copy-btn">Copy sequence</button>
           </div>
         </div>
       </div>
+      <div style="margin-top:1rem;">
+        <div class="aa-palette-label">Sequence → shape preview</div>
+        <div class="aa-fold-stage" aria-label="Simplified two-dimensional folding preview">
+          <svg id="fold-preview" viewBox="0 0 900 230" role="img" aria-labelledby="fold-title fold-desc">
+            <title id="fold-title">Simplified peptide folding preview</title>
+            <desc id="fold-desc">A conceptual view showing hydrophobic residues drawn toward the center and charged or polar residues toward the water-facing exterior.</desc>
+          </svg>
+          <div class="aa-fold-empty" id="fold-empty">Build a chain of at least 3 residues to see how side-chain chemistry can influence folding.</div>
+        </div>
+        <div class="aa-fold-legend" aria-hidden="true">
+          <span style="--legend:#7c3aed">charged</span><span style="--legend:#2563eb">polar</span><span style="--legend:#d97706">special</span><span style="--legend:#16a34a">hydrophobic</span>
+        </div>
+        <p style="font-size:0.78rem;color:#6b5a9e;margin:0.55rem 0 0;"><strong>Model note:</strong> this is a concept model, not a structure prediction. Real folding also depends on sequence order, temperature, pH, solvent, chaperones, and many other interactions.</p>
+      </div>
+    </section>
+
+    <!-- ── FROM CODE TO PROTEIN ── -->
+    <section class="aa-card" id="protein-shape" data-lesson-section="Protein shape">
+      <p class="aa-kicker">From information to function</p>
+      <h2>How a gene becomes a working protein</h2>
+      <p class="aa-chapter-intro">A protein’s amino-acid order is its <strong>primary structure</strong>. That sequence constrains how the chain folds, and the resulting three-dimensional shape controls what the protein can bind, catalyze, carry, or support.</p>
+      <div class="aa-code-flow" aria-label="Flow from DNA to folded protein">
+        <article class="aa-code-step"><span class="aa-code-step-num">1</span><h3>DNA stores the recipe</h3><p>A gene contains nucleotide bases. During transcription, one DNA strand acts as a template for messenger RNA.</p><span class="aa-code-example">DNA: TAC–AAA–CGG</span></article>
+        <span class="aa-code-arrow" aria-hidden="true">→</span>
+        <article class="aa-code-step"><span class="aa-code-step-num">2</span><h3>mRNA carries codons</h3><p>The ribosome reads mRNA three bases at a time. Each three-base codon specifies an amino acid or a stop signal.</p><span class="aa-code-example">mRNA: AUG–UUU–GCC</span></article>
+        <span class="aa-code-arrow" aria-hidden="true">→</span>
+        <article class="aa-code-step"><span class="aa-code-step-num">3</span><h3>The chain folds</h3><p>tRNAs deliver amino acids. The ribosome links them N-terminus to C-terminus; interactions then guide folding and modification.</p><span class="aa-code-example">Met–Phe–Ala → shape</span></article>
+      </div>
+
+      <h3 style="margin-top:1.2rem;font-size:1.08rem;color:#1a0a3d;">The four levels of protein structure</h3>
+      <div class="aa-levels">
+        <article class="aa-level-card">
+          <div class="aa-level-visual"><svg viewBox="0 0 220 120" aria-hidden="true"><path d="M18 60H202" stroke="#b9a8d5" stroke-width="4"/><g fill="#7c3aed" stroke="white" stroke-width="2"><circle cx="24" cy="60" r="12"/><circle cx="52" cy="60" r="12" fill="#16a34a"/><circle cx="80" cy="60" r="12" fill="#2563eb"/><circle cx="108" cy="60" r="12" fill="#d97706"/><circle cx="136" cy="60" r="12" fill="#16a34a"/><circle cx="164" cy="60" r="12" fill="#2563eb"/><circle cx="192" cy="60" r="12"/></g></svg></div>
+          <div class="aa-level-copy"><span>Level 1</span><h3>Primary</h3><p>The covalent amino-acid sequence. A single substitution can alter folding or function, as in sickle-cell hemoglobin.</p></div>
+        </article>
+        <article class="aa-level-card">
+          <div class="aa-level-visual"><svg viewBox="0 0 220 120" aria-hidden="true"><path d="M25 68C35 22 60 22 70 68S105 114 115 68 150 22 160 68 195 114 202 65" fill="none" stroke="#7c3aed" stroke-width="7" stroke-linecap="round"/><path d="M24 92H194M35 80V104M60 80V104M85 80V104M110 80V104M135 80V104M160 80V104M185 80V104" stroke="#2563eb" stroke-width="3" opacity=".7"/></svg></div>
+          <div class="aa-level-copy"><span>Level 2</span><h3>Secondary</h3><p>Local α-helices, β-sheets, and turns stabilized mainly by hydrogen bonds between backbone groups.</p></div>
+        </article>
+        <article class="aa-level-card">
+          <div class="aa-level-visual"><svg viewBox="0 0 220 120" aria-hidden="true"><path d="M24 65C36 14 82 106 106 54S165 20 194 72C162 111 115 80 86 101S32 95 24 65Z" fill="none" stroke="#7c3aed" stroke-width="7" stroke-linecap="round"/><circle cx="98" cy="62" r="9" fill="#16a34a"/><circle cx="155" cy="65" r="9" fill="#16a34a"/><path d="M107 62H146" stroke="#d97706" stroke-width="4" stroke-dasharray="4 4"/></svg></div>
+          <div class="aa-level-copy"><span>Level 3</span><h3>Tertiary</h3><p>The overall 3-D shape of one chain, stabilized by hydrophobic packing, hydrogen bonds, ionic attractions, and disulfide bonds.</p></div>
+        </article>
+        <article class="aa-level-card">
+          <div class="aa-level-visual"><svg viewBox="0 0 220 120" aria-hidden="true"><path d="M24 58C33 17 76 20 91 54S65 106 31 86" fill="none" stroke="#7c3aed" stroke-width="8"/><path d="M196 58C187 17 144 20 129 54S155 106 189 86" fill="none" stroke="#2563eb" stroke-width="8"/><circle cx="110" cy="60" r="13" fill="#d97706" stroke="white" stroke-width="3"/></svg></div>
+          <div class="aa-level-copy"><span>Level 4</span><h3>Quaternary</h3><p>Two or more folded polypeptide subunits assembled together. Hemoglobin, for example, contains four subunits.</p></div>
+        </article>
+      </div>
+      <div class="aa-note" style="--note:#16a34a;--note-bg:rgba(22,163,74,0.06);"><strong>Why folding matters:</strong> heat, extreme pH, or chemicals can disrupt the interactions holding a protein’s shape. This <em>denaturation</em> often destroys function without breaking the primary sequence—like egg white changing from clear to opaque as its proteins unfold and aggregate.</div>
     </section>
 
     <!-- ── ESSENTIAL AMINO ACIDS ── -->
-    <section class="aa-card" style="--card-border:rgba(245,158,11,0.25);">
+    <section class="aa-card" id="nutrition" data-lesson-section="Nutrition" style="--card-border:rgba(245,158,11,0.25);">
       <p class="aa-kicker" style="--kicker-color:#d97706;">Nutrition</p>
       <h2>The 9 essential amino acids</h2>
       <p style="color:#4a3870;font-size:0.95rem;margin:0.2rem 0 0.8rem;">Your body cannot synthesize these — they must come from food. Complete protein sources (meat, fish, eggs, soy, quinoa) contain all nine.</p>
@@ -1074,6 +1472,36 @@
         <div class="aa-ess-item"><strong>Tryptophan</strong><span>Trp · W</span><div class="aa-ess-desc">Sole precursor to serotonin and melatonin — mood and sleep.</div></div>
         <div class="aa-ess-item"><strong>Valine</strong><span>Val · V</span><div class="aa-ess-desc">BCAA; fuel source for muscles during exercise; cognitive function.</div></div>
       </div>
+    </section>
+
+    <!-- ── KNOWLEDGE CHECK ── -->
+    <section class="aa-card" id="check" data-lesson-section="Check">
+      <p class="aa-kicker">Retrieval practice</p>
+      <h2>Can you think like a protein?</h2>
+      <p style="color:#4a3870;font-size:0.95rem;margin:0.2rem 0 0;">Choose one answer for each question. Feedback appears immediately, and you can change your answer.</p>
+      <div class="aa-quiz-grid" id="quiz-grid">
+        <fieldset class="aa-question" data-answer="b">
+          <legend>1. Which part gives each amino acid its chemical personality?</legend>
+          <div class="aa-options"><label class="aa-option"><input type="radio" name="q1" value="a"> Amino group</label><label class="aa-option"><input type="radio" name="q1" value="b"> R group</label><label class="aa-option"><input type="radio" name="q1" value="c"> Alpha carbon</label></div>
+          <p class="aa-answer" aria-live="polite"></p>
+        </fieldset>
+        <fieldset class="aa-question" data-answer="c">
+          <legend>2. A chain has 14 residues. How many peptide bonds does it contain?</legend>
+          <div class="aa-options"><label class="aa-option"><input type="radio" name="q2" value="a"> 14</label><label class="aa-option"><input type="radio" name="q2" value="b"> 12</label><label class="aa-option"><input type="radio" name="q2" value="c"> 13</label></div>
+          <p class="aa-answer" aria-live="polite"></p>
+        </fieldset>
+        <fieldset class="aa-question" data-answer="a">
+          <legend>3. Which residues usually cluster inside a soluble folded protein?</legend>
+          <div class="aa-options"><label class="aa-option"><input type="radio" name="q3" value="a"> Hydrophobic</label><label class="aa-option"><input type="radio" name="q3" value="b"> Charged</label><label class="aa-option"><input type="radio" name="q3" value="c"> All equally</label></div>
+          <p class="aa-answer" aria-live="polite"></p>
+        </fieldset>
+        <fieldset class="aa-question" data-answer="b">
+          <legend>4. Why are nine amino acids called essential?</legend>
+          <div class="aa-options"><label class="aa-option"><input type="radio" name="q4" value="a"> They are found only in animals</label><label class="aa-option"><input type="radio" name="q4" value="b"> The body cannot make enough of them</label><label class="aa-option"><input type="radio" name="q4" value="c"> Every protein contains all nine</label></div>
+          <p class="aa-answer" aria-live="polite"></p>
+        </fieldset>
+      </div>
+      <div class="aa-quiz-result" aria-live="polite"><span class="aa-score" id="quiz-score">0/4</span><p id="quiz-message">Answer all four to complete the check.</p></div>
     </section>
 
     <!-- ── FUNCTIONS ── -->
@@ -1114,6 +1542,32 @@
       </div>
     </section>
 
+    <!-- ── GLOSSARY + SOURCES ── -->
+    <section class="aa-card" id="reference">
+      <p class="aa-kicker">Textbook reference</p>
+      <h2>Key vocabulary</h2>
+      <dl class="aa-glossary">
+        <div><dt>Amino acid</dt><dd>An organic molecule with amino and carboxyl groups; α-amino acids are the monomers used to build proteins.</dd></div>
+        <div><dt>Residue</dt><dd>An amino acid after it has joined a chain and lost the atoms used to form peptide bonds.</dd></div>
+        <div><dt>Peptide bond</dt><dd>The planar covalent amide link, –CO–NH–, joining one residue to the next.</dd></div>
+        <div><dt>N-terminus</dt><dd>The end of a peptide with the free amino group; conventionally written on the left.</dd></div>
+        <div><dt>C-terminus</dt><dd>The end with the free carboxyl group; conventionally written on the right.</dd></div>
+        <div><dt>Codon</dt><dd>A three-nucleotide mRNA word that specifies an amino acid or translation stop signal.</dd></div>
+        <div><dt>Essential</dt><dd>Required from the diet because the body cannot synthesize enough to meet its needs.</dd></div>
+        <div><dt>Zwitterion</dt><dd>A molecule carrying positive and negative formal charges at the same time.</dd></div>
+        <div><dt>Denaturation</dt><dd>Loss of a protein’s native folding and activity without necessarily breaking its peptide backbone.</dd></div>
+      </dl>
+      <h3 style="margin-top:1.25rem;font-size:1.05rem;color:#1a0a3d;">Further reading and historical sources</h3>
+      <ol class="aa-sources">
+        <li><a href="https://www.ncbi.nlm.nih.gov/books/NBK557845/" target="_blank" rel="noopener">NCBI Bookshelf: Biochemistry, Amino Acids</a> — structure, classification, ionization, and nutritional roles.</li>
+        <li><a href="https://www.ncbi.nlm.nih.gov/books/NBK26830/" target="_blank" rel="noopener">NCBI Bookshelf: Protein Structure and Function</a> — sequence, folding, and levels of organization.</li>
+        <li><a href="https://www.nobelprize.org/prizes/chemistry/1958/summary/" target="_blank" rel="noopener">1958 Nobel Prize in Chemistry</a> — Frederick Sanger’s work on protein structure, especially insulin.</li>
+        <li><a href="https://www.nobelprize.org/prizes/medicine/1968/summary/" target="_blank" rel="noopener">1968 Nobel Prize in Physiology or Medicine</a> — interpretation of the genetic code and protein synthesis.</li>
+        <li><a href="https://pubmed.ncbi.nlm.nih.gov/14816373/" target="_blank" rel="noopener">Pauling, Corey &amp; Branson (1951)</a> — original α-helix and protein-structure paper.</li>
+        <li><a href="https://www.genome.gov/genetics-glossary/Genetic-Code" target="_blank" rel="noopener">National Human Genome Research Institute: Genetic Code</a> — codons and translation overview.</li>
+      </ol>
+    </section>
+
     <!-- ── REFLECTION ── -->
     <section class="aa-card">
       <p class="aa-kicker">Reflect</p>
@@ -1147,7 +1601,7 @@
       glu: { name: "Glutamic Acid",  code3: "Glu", code1: "E", essential: false, cat: "charged",     charge: "negative", rgroup: "–(CH₂)₂–COO⁻ (pKa ~4.15)", role: "The brain's primary excitatory neurotransmitter. Glutamate is central to the TCA cycle as a carbon backbone donor and in nitrogen metabolism via transamination reactions.", color: "#dc2626" },
       ser: { name: "Serine",         code3: "Ser", code1: "S", essential: false, cat: "polar",       charge: "none",     rgroup: "–CH₂–OH (hydroxyl)", role: "A major phosphorylation site — kinases attach phosphate to serine to activate or silence signaling pathways. Part of the catalytic triad in serine proteases (like trypsin).", color: "#2563eb" },
       thr: { name: "Threonine",      code3: "Thr", code1: "T", essential: true,  cat: "polar",       charge: "none",     rgroup: "–CH(OH)–CH₃", role: "Like serine, threonine can be phosphorylated. It is important in intestinal mucus (O-glycosylated forms) and is a precursor to glycine and pyruvate.", color: "#2563eb" },
-      asn: { name: "Asparagine",     code3: "Asn", code1: "N", essential: false, cat: "polar",       charge: "none",     rgroup: "–CH₂–CO–NH₂ (amide)", role: "A key N-glycosylation site: sugar chains are attached to the nitrogen of asparagine in the ER. First amino acid ever sequenced (in insulin, 1955).", color: "#2563eb" },
+      asn: { name: "Asparagine",     code3: "Asn", code1: "N", essential: false, cat: "polar",       charge: "none",     rgroup: "–CH₂–CO–NH₂ (amide)", role: "A key N-glycosylation site: sugar chains can be attached to asparagine side chains in the endoplasmic reticulum. Its amide group makes it useful for hydrogen bonding.", color: "#2563eb" },
       gln: { name: "Glutamine",      code3: "Gln", code1: "Q", essential: false, cat: "polar",       charge: "none",     rgroup: "–(CH₂)₂–CO–NH₂", role: "The most abundant free amino acid in blood. Major vehicle for nitrogen transport between tissues. Critical fuel for rapidly dividing cells (intestinal epithelium, immune cells).", color: "#2563eb" },
       cys: { name: "Cysteine",       code3: "Cys", code1: "C", essential: false, cat: "special",     charge: "none",     rgroup: "–CH₂–SH (thiol, pKa ~8.1)", role: "Forms disulfide (–S–S–) bridges that stabilize protein 3D structure (e.g. insulin, antibodies). A key component of glutathione, the cell's main antioxidant.", color: "#d97706" },
       sec: { name: "Selenocysteine", code3: "Sec", code1: "U", essential: false, cat: "special",     charge: "none",     rgroup: "–CH₂–SeH (selenol, pKa ~5.2)", role: "The 21st proteinogenic amino acid — encoded by UGA (normally a stop codon) via a special SECIS RNA element. Found in glutathione peroxidase, which neutralizes reactive oxygen species.", color: "#d97706" },
@@ -1157,7 +1611,7 @@
       val: { name: "Valine",         code3: "Val", code1: "V", essential: true,  cat: "hydrophobic", charge: "none",     rgroup: "–CH(CH₃)₂ (isopropyl)", role: "Branched-chain amino acid (BCAA). A single mutation (Glu→Val at position 6 of hemoglobin) causes sickle cell disease — a dramatic example of how one amino acid can alter protein function.", color: "#16a34a" },
       ile: { name: "Isoleucine",     code3: "Ile", code1: "I", essential: true,  cat: "hydrophobic", charge: "none",     rgroup: "Branched 4-carbon (two chiral centers)", role: "BCAA. Has two chiral centers — one of the few amino acids with more than one stereocentre. Metabolized to both acetyl-CoA and succinyl-CoA; enters both fat and carbohydrate metabolism.", color: "#16a34a" },
       leu: { name: "Leucine",        code3: "Leu", code1: "L", essential: true,  cat: "hydrophobic", charge: "none",     rgroup: "–CH₂–CH(CH₃)₂", role: "Most abundant BCAA; accounts for ~8% of protein residues. A key activator of mTORC1 — the master switch for muscle protein synthesis. Critical for athletes and growing children.", color: "#16a34a" },
-      met: { name: "Methionine",     code3: "Met", code1: "M", essential: true,  cat: "hydrophobic", charge: "none",     rgroup: "–(CH₂)₂–S–CH₃ (thioether)", role: "The universal start amino acid — every protein begins with methionine (often cleaved later). As SAM (S-adenosylmethionine), it donates methyl groups in epigenetic DNA methylation and many biosynthesis reactions.", color: "#16a34a" },
+      met: { name: "Methionine",     code3: "Met", code1: "M", essential: true,  cat: "hydrophobic", charge: "none",     rgroup: "–(CH₂)₂–S–CH₃ (thioether)", role: "Translation usually starts with methionine (or formylmethionine in bacteria), although that first residue is often removed later. As SAM, methionine donates methyl groups in DNA methylation and many biosynthesis reactions.", color: "#16a34a" },
       phe: { name: "Phenylalanine",  code3: "Phe", code1: "F", essential: true,  cat: "hydrophobic", charge: "none",     rgroup: "–CH₂–C₆H₅ (benzyl)", role: "Aromatic and very hydrophobic. Precursor to tyrosine (via phenylalanine hydroxylase — the enzyme missing in PKU). Also a precursor to several neurotransmitters via the tyrosine pathway.", color: "#16a34a" },
       tyr: { name: "Tyrosine",       code3: "Tyr", code1: "Y", essential: false, cat: "hydrophobic", charge: "none",     rgroup: "–CH₂–C₆H₄–OH (pKa ~10.1)", role: "Although mostly hydrophobic, the –OH makes it a target for phosphorylation (by receptor tyrosine kinases in major signaling cascades). Also the precursor to dopamine, thyroid hormone, and melanin.", color: "#16a34a" },
       trp: { name: "Tryptophan",     code3: "Trp", code1: "W", essential: true,  cat: "hydrophobic", charge: "none",     rgroup: "Indole ring (largest standard amino acid)", role: "Sole dietary precursor to serotonin (mood) and melatonin (sleep). The rarest amino acid in proteins. Strongly absorbs UV at 280 nm — used in labs to measure protein concentration.", color: "#16a34a" },
@@ -1186,16 +1640,25 @@
       if (!panel) return;
 
       // deselect previous in this cat
-      document.querySelectorAll('#cat-' + aa.cat + ' .aa-acid-card').forEach(c => c.classList.remove('is-selected'));
+      document.querySelectorAll('#cat-' + aa.cat + ' .aa-acid-card').forEach(function(c) {
+        c.classList.remove('is-selected');
+        c.setAttribute('aria-pressed', 'false');
+      });
       // select this one
       const card = document.querySelector('[data-id="' + id + '"]');
-      if (card) card.classList.add('is-selected');
+      if (card) {
+        card.classList.add('is-selected');
+        card.setAttribute('aria-pressed', 'true');
+      }
 
       // if already open on this AA, close
       if (panel.classList.contains('is-open') && panel.dataset.open === id) {
         panel.classList.remove('is-open');
         panel.dataset.open = '';
-        if (card) card.classList.remove('is-selected');
+        if (card) {
+          card.classList.remove('is-selected');
+          card.setAttribute('aria-pressed', 'false');
+        }
         return;
       }
 
@@ -1236,6 +1699,9 @@
 
     /* attach click/keyboard to all aa cards */
     document.querySelectorAll('.aa-acid-card').forEach(function(card) {
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-pressed', 'false');
+      card.setAttribute('aria-label', 'Open details for ' + AA_DATA[card.dataset.id].name);
       card.addEventListener('click', function() { openDetail(card.dataset.id); });
       card.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(card.dataset.id); }
@@ -1243,13 +1709,21 @@
     });
 
     /* ─── tabs ─── */
-    document.querySelectorAll('.aa-tab').forEach(function(btn) {
+      document.querySelectorAll('.aa-tab').forEach(function(btn) {
       btn.addEventListener('click', function() {
         document.querySelectorAll('.aa-tab').forEach(t => { t.classList.remove('is-active'); t.setAttribute('aria-selected','false'); });
         document.querySelectorAll('.aa-cat-panel').forEach(p => p.classList.remove('is-active'));
         btn.classList.add('is-active');
         btn.setAttribute('aria-selected','true');
         document.getElementById('cat-' + btn.dataset.cat).classList.add('is-active');
+      });
+      btn.addEventListener('keydown', function(e) {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        const tabs = Array.from(document.querySelectorAll('.aa-tab'));
+        const next = (tabs.indexOf(btn) + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        tabs[next].focus();
+        tabs[next].click();
       });
     });
 
@@ -1288,8 +1762,12 @@
     const chainDisplay= document.getElementById('chain-display');
     const chainEmpty  = document.getElementById('chain-empty');
     const chainInfo   = document.getElementById('chain-info');
+    const sequenceLine= document.getElementById('sequence-line');
+    const foldPreview = document.getElementById('fold-preview');
+    const foldEmpty   = document.getElementById('fold-empty');
     const undoBtn     = document.getElementById('undo-btn');
     const clearBtn    = document.getElementById('clear-btn');
+    const copyBtn     = document.getElementById('copy-btn');
 
     let chain = [];
 
@@ -1300,6 +1778,7 @@
       btn.className = 'aa-palette-btn';
       btn.innerHTML = '<span class="dot" style="background:' + c.dot + ';"></span>' + aa.code3;
       btn.title = aa.name;
+      btn.setAttribute('aria-label', 'Add ' + aa.name + ' to peptide');
       btn.setAttribute('data-id', item.id);
       btn.addEventListener('click', function() { addToChain(item.id); });
       paletteEl.appendChild(btn);
@@ -1315,6 +1794,8 @@
         chainDisplay.innerHTML = '';
         chainDisplay.appendChild(chainEmpty);
         chainInfo.textContent = 'Add amino acids to see chain properties.';
+        sequenceLine.textContent = '';
+        renderFold();
         return;
       }
       chainEmpty.remove();
@@ -1340,11 +1821,85 @@
       let infoText = chain.length + ' residue' + (chain.length !== 1 ? 's' : '');
       if (bondCount > 0) infoText += ' · ' + bondCount + ' peptide bond' + (bondCount !== 1 ? 's' : '') + ' · ' + waterReleased + ' H₂O released';
       if (chain.length >= 2) infoText += ' · ' + hydrophobic + ' hydrophobic · ' + charged + ' charged · ' + essential + ' essential';
-      if (chain.length >= 50) infoText += ' — polypeptide! Could fold into a protein.';
-      else if (chain.length >= 10) infoText += ' — short polypeptide.';
-      else if (chain.length >= 2) infoText += ' — ' + (chain.length <= 10 ? 'oligopeptide' : 'peptide') + '.';
+      if (chain.length >= 20) infoText += ' — polypeptide-scale chain for this model.';
+      else if (chain.length >= 2) infoText += ' — peptide.';
       chainInfo.textContent = infoText;
+      sequenceLine.textContent = 'N–' + chain.map(id => AA_DATA[id].code1).join('') + '–C';
+      renderFold();
     }
+
+    function renderFold() {
+      foldPreview.innerHTML = '<title id="fold-title">Simplified peptide folding preview</title><desc id="fold-desc">A conceptual view showing hydrophobic residues drawn toward the center and charged or polar residues toward the water-facing exterior.</desc>';
+      foldEmpty.hidden = chain.length >= 3;
+      if (chain.length < 3) return;
+
+      const canvasWidth = Math.max(300, Math.round(foldPreview.getBoundingClientRect().width));
+      foldPreview.setAttribute('viewBox', '0 0 ' + canvasWidth + ' 230');
+      const centerX = canvasWidth / 2;
+      const centerY = 115;
+      const horizontalScale = Math.min(2.45, canvasWidth / 360);
+      const points = chain.map(function(id, i) {
+        const aa = AA_DATA[id];
+        const angle = (i * 2.18) - Math.PI / 2;
+        const hydrophobicRadius = 25 + (i % 3) * 10;
+        const waterFacingRadius = 70 + (i % 4) * 11;
+        const radius = aa.cat === 'hydrophobic' ? hydrophobicRadius : waterFacingRadius;
+        return {
+          x: centerX + Math.cos(angle) * radius * horizontalScale,
+          y: centerY + Math.sin(angle) * radius,
+          id: id,
+          aa: aa
+        };
+      });
+
+      const ns = 'http://www.w3.org/2000/svg';
+      const water = document.createElementNS(ns, 'ellipse');
+      water.setAttribute('cx', centerX); water.setAttribute('cy', centerY);
+      water.setAttribute('rx', '285'); water.setAttribute('ry', '103');
+      water.setAttribute('fill', 'rgba(59,130,246,0.035)');
+      water.setAttribute('stroke', 'rgba(59,130,246,0.12)');
+      water.setAttribute('stroke-dasharray', '5 7');
+      foldPreview.appendChild(water);
+
+      points.forEach(function(point, i) {
+        if (i > 0) {
+          const line = document.createElementNS(ns, 'line');
+          line.setAttribute('x1', points[i - 1].x); line.setAttribute('y1', points[i - 1].y);
+          line.setAttribute('x2', point.x); line.setAttribute('y2', point.y);
+          line.setAttribute('stroke', '#b9a8d5'); line.setAttribute('stroke-width', '3');
+          line.setAttribute('stroke-linecap', 'round');
+          foldPreview.appendChild(line);
+        }
+      });
+      points.forEach(function(point) {
+        const group = document.createElementNS(ns, 'g');
+        const circle = document.createElementNS(ns, 'circle');
+        circle.setAttribute('cx', point.x); circle.setAttribute('cy', point.y); circle.setAttribute('r', '15');
+        circle.setAttribute('fill', CAT_COLORS[point.aa.cat].dot);
+        circle.setAttribute('stroke', '#fff'); circle.setAttribute('stroke-width', '3');
+        const label = document.createElementNS(ns, 'text');
+        label.setAttribute('x', point.x); label.setAttribute('y', point.y + 4);
+        label.setAttribute('text-anchor', 'middle'); label.setAttribute('fill', '#fff');
+        label.setAttribute('font-family', 'IBM Plex Mono'); label.setAttribute('font-size', '10'); label.setAttribute('font-weight', '700');
+        label.textContent = point.aa.code1;
+        const title = document.createElementNS(ns, 'title');
+        title.textContent = point.aa.name + ' — ' + point.aa.cat;
+        group.appendChild(title); group.appendChild(circle); group.appendChild(label);
+        foldPreview.appendChild(group);
+      });
+    }
+
+    const PRESETS = {
+      surface: ['lys','ser','glu','asn','arg','thr','asp','gln'],
+      core: ['leu','val','ile','phe','ala','met','trp','leu'],
+      mixed: ['met','lys','val','ser','leu','asp','gly','phe','thr','ala']
+    };
+    document.querySelectorAll('.aa-preset').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        chain = PRESETS[btn.dataset.preset].slice();
+        renderChain();
+      });
+    });
 
     undoBtn.addEventListener('click', function() {
       chain.pop();
@@ -1355,6 +1910,96 @@
       chain = [];
       renderChain();
     });
+
+    copyBtn.addEventListener('click', function() {
+      if (!chain.length) return;
+      const sequence = chain.map(id => AA_DATA[id].code1).join('');
+      navigator.clipboard.writeText(sequence).then(function() {
+        copyBtn.textContent = 'Copied!';
+        window.setTimeout(function() { copyBtn.textContent = 'Copy sequence'; }, 1200);
+      }).catch(function() {
+        sequenceLine.textContent = 'Sequence: ' + sequence + ' (select and copy)';
+      });
+    });
+
+    /* ── ionization model ── */
+    const phSlider = document.getElementById('ph-slider');
+    const phValue = document.getElementById('ph-value');
+    const ionAmino = document.getElementById('ion-amino');
+    const ionCarboxyl = document.getElementById('ion-carboxyl');
+    const chargeOrb = document.getElementById('charge-orb');
+    const chargeCopy = document.getElementById('charge-copy');
+    function updateIonization() {
+      const ph = Number(phSlider.value);
+      phValue.textContent = 'pH ' + ph.toFixed(1);
+      if (ph < 2.3) {
+        ionAmino.textContent = 'H₃N⁺';
+        ionCarboxyl.textContent = 'COOH';
+        chargeOrb.textContent = '+1';
+        chargeOrb.style.background = '#7c3aed';
+        chargeCopy.textContent = 'Cation: the molecule is more protonated in strongly acidic solution.';
+      } else if (ph < 9.6) {
+        ionAmino.textContent = 'H₃N⁺';
+        ionCarboxyl.textContent = 'COO⁻';
+        chargeOrb.textContent = '0';
+        chargeOrb.style.background = '#64748b';
+        chargeCopy.textContent = 'Zwitterion: opposite charges, approximately zero net charge.';
+      } else {
+        ionAmino.textContent = 'H₂N';
+        ionCarboxyl.textContent = 'COO⁻';
+        chargeOrb.textContent = '−1';
+        chargeOrb.style.background = '#2563eb';
+        chargeCopy.textContent = 'Anion: the molecule is more deprotonated in basic solution.';
+      }
+    }
+    phSlider.addEventListener('input', updateIonization);
+    updateIonization();
+
+    /* ── retrieval practice ── */
+    const explanations = [
+      'The R group varies; the backbone stays the same.',
+      'A chain of n residues has n − 1 peptide bonds: 14 − 1 = 13.',
+      'Hydrophobic side chains avoid water and tend to pack into the core.',
+      'Essential means the body cannot synthesize enough, so food must supply them.'
+    ];
+    const questions = Array.from(document.querySelectorAll('.aa-question'));
+    questions.forEach(function(question, index) {
+      question.addEventListener('change', function(e) {
+        const correct = e.target.value === question.dataset.answer;
+        question.classList.toggle('is-correct', correct);
+        question.classList.toggle('is-wrong', !correct);
+        question.querySelector('.aa-answer').textContent = (correct ? '✓ ' : 'Try again. ') + explanations[index];
+        updateScore();
+      });
+    });
+    function updateScore() {
+      const answered = questions.filter(q => q.querySelector('input:checked')).length;
+      const score = questions.filter(q => q.querySelector('input:checked') && q.querySelector('input:checked').value === q.dataset.answer).length;
+      document.getElementById('quiz-score').textContent = score + '/4';
+      document.getElementById('quiz-message').textContent = answered < 4
+        ? (4 - answered) + ' question' + (4 - answered === 1 ? '' : 's') + ' left.'
+        : (score === 4 ? 'Strong work — you connected structure, bonding, and behavior.' : 'Review the feedback, then revise any answer.');
+    }
+
+    /* ── reading progress + active lesson map ── */
+    const progressBar = document.getElementById('lesson-progress');
+    const mapLinks = Array.from(document.querySelectorAll('.aa-map-link'));
+    const lessonSections = Array.from(document.querySelectorAll('[data-lesson-section]'));
+    function updateLessonPosition() {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      progressBar.style.width = (scrollable > 0 ? Math.min(100, Math.max(0, window.scrollY / scrollable * 100)) : 0) + '%';
+      let current = lessonSections[0].id;
+      lessonSections.forEach(function(section) {
+        if (section.getBoundingClientRect().top <= 180) current = section.id;
+      });
+      mapLinks.forEach(link => link.classList.toggle('is-current', link.getAttribute('href') === '#' + current));
+    }
+    window.addEventListener('scroll', updateLessonPosition, { passive: true });
+    window.addEventListener('resize', function() {
+      updateLessonPosition();
+      if (chain.length >= 3) renderFold();
+    });
+    updateLessonPosition();
 
   }());
   </script>

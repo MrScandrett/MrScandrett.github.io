@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AC vs. DC Electricity · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Compare alternating current and direct current with an interactive waveform lab, transmission-loss calculator, applications, safety guidance, and quiz." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../assets/css/electricity-path.css" />
+  <style>
+    :root { --acd-blue:#0284c7; --acd-orange:#ea580c; --acd-purple:#7c3aed; --acd-green:#15803d; }
+    .acd-page { width:min(100%,1120px); margin:0 auto; padding:1rem clamp(1rem,3vw,1.6rem) 1.5rem; }
+    .acd-hero,.acd-card { border:1px solid var(--line,#d2d2d7); border-radius:18px; background:var(--white,#fff); box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,.08)); }
+    .acd-hero { position:relative; overflow:hidden; padding:clamp(1.2rem,4vw,2rem); margin-bottom:1rem; background:radial-gradient(circle at 92% 10%,rgba(124,58,237,.18),transparent 32%),linear-gradient(135deg,rgba(2,132,199,.12),rgba(234,88,12,.08)); }
+    .acd-hero::after { content:'∿  ⎓'; position:absolute; right:clamp(1rem,5vw,3rem); bottom:-.35rem; color:rgba(2,132,199,.12); font-size:clamp(4rem,11vw,8rem); font-weight:900; letter-spacing:.08em; pointer-events:none; }
+    .acd-hero > * { position:relative; z-index:1; }
+    .acd-eyebrow { margin:0 0 .35rem; color:var(--acd-blue); font-size:.72rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+    .acd-hero h1 { margin:0; max-width:15ch; font-size:clamp(2rem,6vw,3.8rem); letter-spacing:-.05em; }
+    .acd-lede { max-width:68ch; margin:.7rem 0 0; color:#475569; line-height:1.65; }
+    .acd-pills { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.85rem; }
+    .acd-pill { padding:.25rem .55rem; border:1px solid rgba(2,132,199,.28); border-radius:999px; background:rgba(255,255,255,.65); color:#075985; font-size:.72rem; font-weight:700; }
+    .acd-card { padding:clamp(1rem,3vw,1.45rem); margin-bottom:1rem; }
+    .acd-card h2 { margin:0 0 .45rem; font-size:clamp(1.2rem,3vw,1.55rem); }
+    .acd-card > p { color:#475569; font-size:.9rem; line-height:1.65; }
+    .acd-grid-2,.acd-grid-3 { display:grid; gap:.8rem; }
+    .acd-grid-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .acd-grid-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .acd-type { padding:1rem; border:1px solid var(--line,#d2d2d7); border-radius:14px; }
+    .acd-type.ac { border-top:4px solid var(--acd-blue); }
+    .acd-type.dc { border-top:4px solid var(--acd-orange); }
+    .acd-type h3 { margin:0 0 .35rem; font-size:1rem; }
+    .acd-type p,.acd-type li { color:#475569; font-size:.83rem; line-height:1.55; }
+    .acd-type ul { margin:.55rem 0 0; padding-left:1.15rem; }
+    .acd-symbol { float:right; font-size:1.7rem; font-weight:800; }
+    .acd-type.ac .acd-symbol { color:var(--acd-blue); }
+    .acd-type.dc .acd-symbol { color:var(--acd-orange); }
+    .acd-table-wrap { overflow-x:auto; }
+    .acd-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+    .acd-table th,.acd-table td { padding:.65rem; border-bottom:1px solid var(--line,#d2d2d7); text-align:left; vertical-align:top; }
+    .acd-table th { color:#334155; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; }
+    .acd-lab { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(220px,.5fr); gap:1rem; }
+    .acd-scope { width:100%; height:300px; display:block; border:1px solid #1e3a5f; border-radius:14px; background:#07111f; }
+    .acd-controls { display:grid; gap:.65rem; align-content:start; }
+    .acd-control { padding:.7rem; border:1px solid var(--line,#d2d2d7); border-radius:12px; }
+    .acd-control label { display:flex; justify-content:space-between; gap:.5rem; margin-bottom:.35rem; font-size:.78rem; font-weight:700; }
+    .acd-control input[type="range"] { width:100%; accent-color:var(--acd-blue); }
+    .acd-toggle { display:grid; grid-template-columns:1fr 1fr; gap:.35rem; }
+    .acd-toggle button,.acd-check { border:0; border-radius:9px; padding:.55rem .7rem; color:#fff; font-weight:750; cursor:pointer; }
+    .acd-toggle button { background:#64748b; }
+    .acd-toggle button.active[data-kind="ac"] { background:var(--acd-blue); }
+    .acd-toggle button.active[data-kind="dc"] { background:var(--acd-orange); }
+    .acd-readout { padding:.75rem; border-radius:12px; background:rgba(2,132,199,.08); color:#334155; font-size:.79rem; line-height:1.55; }
+    .acd-readout strong { color:var(--acd-blue); }
+    .acd-calc { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.6rem; margin:.8rem 0; }
+    .acd-field { display:grid; gap:.25rem; }
+    .acd-field label { font-size:.72rem; font-weight:750; color:#475569; }
+    .acd-field input { width:100%; box-sizing:border-box; padding:.55rem; border:1px solid var(--line,#d2d2d7); border-radius:9px; background:var(--white,#fff); color:var(--text,#111827); }
+    .acd-results { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; }
+    .acd-result { padding:.75rem; border-radius:12px; background:rgba(124,58,237,.08); text-align:center; }
+    .acd-result span { display:block; color:#64748b; font-size:.68rem; font-weight:750; text-transform:uppercase; }
+    .acd-result strong { display:block; margin-top:.15rem; color:var(--acd-purple); font-size:1.05rem; }
+    .acd-callout { margin:.8rem 0; padding:.8rem 1rem; border-left:4px solid var(--acd-purple); border-radius:10px; background:rgba(124,58,237,.08); color:#475569; font-size:.83rem; line-height:1.6; }
+    .acd-callout.safety { border-color:#dc2626; background:rgba(220,38,38,.07); }
+    .acd-app { padding:.85rem; border:1px solid var(--line,#d2d2d7); border-radius:13px; }
+    .acd-app b { display:block; margin:.25rem 0; }
+    .acd-app p { margin:0; color:#64748b; font-size:.78rem; line-height:1.5; }
+    .acd-quiz { display:grid; gap:.7rem; }
+    .acd-question { padding:.85rem; border:1px solid var(--line,#d2d2d7); border-radius:13px; }
+    .acd-question p { margin:0 0 .55rem; font-size:.86rem; font-weight:700; }
+    .acd-options { display:flex; flex-wrap:wrap; gap:.4rem; }
+    .acd-check { background:var(--acd-purple); }
+    .acd-select { padding:.5rem; border:1px solid var(--line,#d2d2d7); border-radius:8px; background:var(--white,#fff); color:var(--text,#111827); }
+    .acd-feedback { min-height:1.2em; margin:.4rem 0 0; font-size:.78rem; font-weight:700; }
+    .acd-feedback.ok { color:var(--acd-green); } .acd-feedback.no { color:#b91c1c; }
+    [data-theme="night"] .acd-lede,[data-theme="night"] .acd-card > p,[data-theme="night"] .acd-type p,[data-theme="night"] .acd-type li,[data-theme="night"] .acd-callout,
+    [data-theme="vaporwave"] .acd-lede,[data-theme="vaporwave"] .acd-card > p,[data-theme="vaporwave"] .acd-type p,[data-theme="vaporwave"] .acd-type li,[data-theme="vaporwave"] .acd-callout,
+    [data-theme="bark"] .acd-lede,[data-theme="bark"] .acd-card > p,[data-theme="bark"] .acd-type p,[data-theme="bark"] .acd-type li,[data-theme="bark"] .acd-callout { color:rgba(245,245,247,.72); }
+    @media (max-width:760px) { .acd-lab,.acd-grid-3 { grid-template-columns:1fr; } .acd-calc { grid-template-columns:repeat(2,1fr); } }
+    @media (max-width:560px) { .acd-grid-2,.acd-results { grid-template-columns:1fr; } .acd-scope { height:240px; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary"><ul>
+          <li><a href="../index.html">Home</a></li><li><a href="../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../paths.html">Paths</a></li><li><a href="../showcase.html">Showcase</a></li>
+          <li><a href="../applications.html">Apps</a></li><li><a href="../recipe-book.html">Library</a></li><li><a href="../about.html">About</a></li>
+        </ul></nav>
+      </div>
+    </header>
+
+    <main id="main-content" class="acd-page">
+      <section class="acd-hero">
+        <p class="acd-eyebrow">Physics · Electrical Engineering</p>
+        <h1>AC vs. DC Electricity</h1>
+        <p class="acd-lede">Both are moving electric charge. The difference is direction: direct current keeps one polarity, while alternating current repeatedly reverses polarity. That simple distinction shapes batteries, outlets, motors, electronics, and the power grid.</p>
+        <div class="acd-pills"><span class="acd-pill">Grades 7–12</span><span class="acd-pill">Interactive waveform lab</span><span class="acd-pill">Transmission calculator</span><span class="acd-pill">~25 minutes</span></div>
+      </section>
+
+      <section class="acd-card">
+        <h2>Start with the current</h2>
+        <p>Electric current is the rate at which charge passes a point, measured in amperes (A). “AC” and “DC” describe how that current—and usually the voltage driving it—changes with time.</p>
+        <div class="acd-grid-2">
+          <article class="acd-type dc"><span class="acd-symbol" aria-hidden="true">⎓</span><h3>Direct current (DC)</h3><p>Charge has one net direction. The voltage keeps the same polarity, though its value does not have to be perfectly constant.</p><ul><li>Batteries and solar cells produce DC</li><li>Phones, computers, LEDs, and chips operate internally on DC</li><li>Shown as a flat line when the voltage is steady</li></ul></article>
+          <article class="acd-type ac"><span class="acd-symbol" aria-hidden="true">∿</span><h3>Alternating current (AC)</h3><p>Charge reverses direction periodically. Utility AC is close to a sine wave and completes 60 cycles each second in North America.</p><ul><li>Wall outlets and conventional power grids supply AC</li><li>Transformers easily change AC voltage</li><li>Described by frequency, amplitude, phase, and waveform</li></ul></article>
+        </div>
+        <div class="acd-callout"><strong>Electron motion is not energy delivery.</strong> In an AC wire, individual electrons mostly drift back and forth over tiny distances. Energy still travels from generator to load through the circuit’s electromagnetic field.</div>
+      </section>
+
+      <section class="acd-card">
+        <h2>Interactive waveform lab</h2>
+        <p>Switch sources and adjust voltage and frequency. The graph shows instantaneous voltage versus time; conventional current in a resistive load follows the same shape.</p>
+        <div class="acd-lab">
+          <canvas id="acd-scope" class="acd-scope" role="img" aria-label="Voltage waveform graph"></canvas>
+          <div class="acd-controls">
+            <div class="acd-toggle" aria-label="Current type"><button type="button" class="active" data-kind="ac">AC ∿</button><button type="button" data-kind="dc">DC ⎓</button></div>
+            <div class="acd-control"><label for="acd-voltage">Voltage <output id="acd-voltage-out">120 V RMS</output></label><input id="acd-voltage" type="range" min="1" max="240" value="120" /></div>
+            <div class="acd-control" id="acd-frequency-control"><label for="acd-frequency">Frequency <output id="acd-frequency-out">60 Hz</output></label><input id="acd-frequency" type="range" min="1" max="120" value="60" /></div>
+            <div class="acd-readout" id="acd-readout" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="acd-card">
+        <h2>Side-by-side comparison</h2>
+        <div class="acd-table-wrap"><table class="acd-table">
+          <thead><tr><th>Question</th><th>AC</th><th>DC</th></tr></thead>
+          <tbody>
+            <tr><td>Which way does current flow?</td><td>Reverses periodically</td><td>One net direction</td></tr>
+            <tr><td>Typical sources</td><td>Alternators, wall outlets</td><td>Batteries, solar panels, USB supplies</td></tr>
+            <tr><td>Changing voltage</td><td>Simple with a transformer</td><td>Uses electronic DC–DC converters</td></tr>
+            <tr><td>Common uses</td><td>Grid distribution, induction motors, large appliances</td><td>Digital electronics, storage, vehicles, LEDs</td></tr>
+            <tr><td>Can it transmit long distances?</td><td>Yes; high-voltage AC dominates interconnected grids</td><td>Yes; high-voltage DC is excellent for long lines and undersea cables</td></tr>
+            <tr><td>Can it be dangerous?</td><td>Yes</td><td>Yes</td></tr>
+          </tbody>
+        </table></div>
+        <div class="acd-callout"><strong>Important modern update:</strong> AC won early distribution because transformers made voltage conversion practical. Today, power electronics can efficiently convert DC voltage too. Modern grids use both: HVAC for broad networks and HVDC for selected long-distance, undersea, and grid-to-grid links.</div>
+      </section>
+
+      <section class="acd-card">
+        <h2>Why high voltage reduces wire loss</h2>
+        <p>For the same delivered power, raising transmission voltage lowers current: <strong>I = P ÷ V</strong>. Since resistive heating is <strong>P<sub>loss</sub> = I²R</strong>, reducing current sharply reduces wasted energy. Compare two transmission voltages below.</p>
+        <div class="acd-calc">
+          <div class="acd-field"><label for="acd-power">Power (kW)</label><input id="acd-power" type="number" min="1" value="1000" /></div>
+          <div class="acd-field"><label for="acd-resistance">Line resistance (Ω)</label><input id="acd-resistance" type="number" min="0.01" step="0.01" value="2" /></div>
+          <div class="acd-field"><label for="acd-vlow">Lower voltage (kV)</label><input id="acd-vlow" type="number" min="0.1" step="0.1" value="10" /></div>
+          <div class="acd-field"><label for="acd-vhigh">Higher voltage (kV)</label><input id="acd-vhigh" type="number" min="0.1" step="0.1" value="100" /></div>
+        </div>
+        <div class="acd-results" aria-live="polite"><div class="acd-result"><span>Current at low V</span><strong id="acd-ilow">100 A</strong></div><div class="acd-result"><span>Current at high V</span><strong id="acd-ihigh">10 A</strong></div><div class="acd-result"><span>Loss reduction</span><strong id="acd-saving">99%</strong></div></div>
+        <p style="font-size:.76rem;color:#64748b">This simplified model uses a resistive line and compares current-related loss only. Real AC systems also involve reactance, power factor, transformers, and three-phase power.</p>
+      </section>
+
+      <section class="acd-card">
+        <h2>Conversion is everywhere</h2>
+        <div class="acd-grid-3">
+          <article class="acd-app"><span aria-hidden="true">🔌</span><b>Phone charger</b><p>A rectifier and switching converter turn outlet AC into regulated low-voltage DC.</p></article>
+          <article class="acd-app"><span aria-hidden="true">☀️</span><b>Solar inverter</b><p>Solar panels make DC; an inverter synchronizes it as AC for a building or grid.</p></article>
+          <article class="acd-app"><span aria-hidden="true">🚗</span><b>Electric vehicle</b><p>The battery stores DC. Power electronics create controlled AC for many traction motors.</p></article>
+          <article class="acd-app"><span aria-hidden="true">💻</span><b>Computer</b><p>The power supply converts AC to several DC rails used by processors, memory, and drives.</p></article>
+          <article class="acd-app"><span aria-hidden="true">🏭</span><b>Variable-speed motor</b><p>A drive rectifies AC to DC, then synthesizes variable-frequency AC to control speed.</p></article>
+          <article class="acd-app"><span aria-hidden="true">🌐</span><b>HVDC link</b><p>Converter stations connect AC grids through a controllable high-voltage DC line.</p></article>
+        </div>
+        <div class="acd-callout safety"><strong>Safety:</strong> Never experiment with a wall outlet or mains wiring. Both AC and DC can shock, burn, start fires, or stop the heart. Classroom circuit work should use current-limited, extra-low-voltage supplies under teacher supervision.</div>
+      </section>
+
+      <section class="acd-card">
+        <h2>Tesla, Edison, and the modern grid</h2>
+        <p>In the late 1800s, Edison’s systems distributed low-voltage DC. Westinghouse deployed practical AC systems, while Nikola Tesla’s polyphase patents and induction motor helped make AC useful for industry. The contest involved many engineers, inventors, financiers, patents, and public-safety campaigns—not just two lone rivals.</p>
+        <p>AC became the foundation of public power systems because transformers could efficiently raise voltage for transmission and lower it near users. That history does not mean DC “lost forever”: batteries, electronics, solar arrays, EVs, data centers, and HVDC transmission make DC essential today.</p>
+        <p><a href="nikola-tesla.html">Continue to the Nikola Tesla profile and Tesla coil simulator →</a></p>
+      </section>
+
+      <section class="acd-card">
+        <h2>Check your understanding</h2>
+        <div class="acd-quiz">
+          <div class="acd-question" data-answer="b" data-explain="Frequency counts complete cycles per second. At 60 Hz, the polarity reverses twice during each cycle."><p>1. What does 60 Hz mean?</p><select class="acd-select"><option value="">Choose…</option><option value="a">60 volts pass each second</option><option value="b">60 complete cycles occur each second</option><option value="c">Current travels at 60 metres per second</option></select><button class="acd-check" type="button">Check</button><div class="acd-feedback"></div></div>
+          <div class="acd-question" data-answer="c" data-explain="A battery maintains one polarity, so its output is DC."><p>2. Which source normally produces DC?</p><select class="acd-select"><option value="">Choose…</option><option value="a">A wall outlet</option><option value="b">A utility alternator</option><option value="c">A battery</option></select><button class="acd-check" type="button">Check</button><div class="acd-feedback"></div></div>
+          <div class="acd-question" data-answer="a" data-explain="At fixed power, higher voltage means lower current; lower current causes much less I²R heating."><p>3. Why transmit power at high voltage?</p><select class="acd-select"><option value="">Choose…</option><option value="a">It reduces current and resistive loss</option><option value="b">It makes electrons move at light speed</option><option value="c">It makes electricity harmless</option></select><button class="acd-check" type="button">Check</button><div class="acd-feedback"></div></div>
+        </div>
+      </section>
+
+      <section class="electricity-path" aria-labelledby="electricity-path-title">
+        <p class="electricity-path__eyebrow">Electricity learning path</p><h2 id="electricity-path-title">From electric charge to working electronics</h2>
+        <p class="electricity-path__intro">Follow the core sequence in order, or jump to the idea you need. Electricity is the physics of charge and fields; electronics uses components to control current and information.</p>
+        <nav class="electricity-path__links" aria-label="Electricity lesson sequence"><a class="electricity-path__link" href="coulombs-law.html">1 <span>Charge &amp; force</span></a><a class="electricity-path__link" href="ohms-law.html">2 <span>Voltage, current &amp; resistance</span></a><a class="electricity-path__link" href="ac-vs-dc.html" aria-current="page">3 <span>AC vs. DC</span></a><a class="electricity-path__link" href="faradays-law.html">4 <span>Induction &amp; transformers</span></a><a class="electricity-path__link" href="electronic-components.html">5 <span>Components</span></a><a class="electricity-path__link" href="electronic-schematics.html">6 <span>Schematics</span></a><a class="electricity-path__link" href="breadboard-basics.html">7 <span>Build a circuit</span></a><a class="electricity-path__link" href="sensor-modules.html">8 <span>Sensors &amp; control</span></a></nav>
+        <p class="electricity-path__more">Related profiles and labs: <a href="nikola-tesla.html">Nikola Tesla</a>, <a href="james-clerk-maxwell.html">James Clerk Maxwell</a>, and <a href="falling-coil.html">the falling coil</a>.</p>
+      </section>
+    </main>
+    <footer class="site-footer"><p>Mr. Scandrett's ClassroomOS — <a href="../index.html">Home</a> · <a href="../steam-lessons.html">Lessons</a></p></footer>
+  </div>
+
+  <script src="../assets/js/nav-mobile.js"></script>
+  <script>
+  (function(){
+    'use strict';
+    var kind='ac', phase=0;
+    var canvas=document.getElementById('acd-scope'),ctx=canvas.getContext('2d');
+    var voltage=document.getElementById('acd-voltage'),frequency=document.getElementById('acd-frequency');
+    function fit(){var dpr=Math.min(window.devicePixelRatio||1,2),r=canvas.getBoundingClientRect();canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+    function draw(){var w=canvas.clientWidth,h=canvas.clientHeight;ctx.clearRect(0,0,w,h);ctx.strokeStyle='rgba(125,211,252,.13)';ctx.lineWidth=1;for(var x=0;x<=w;x+=w/10){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(var y=0;y<=h;y+=h/8){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}ctx.strokeStyle='rgba(226,232,240,.45)';ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();var amp=Math.min(h*.38,(+voltage.value/240)*h*.38);ctx.strokeStyle=kind==='ac'?'#38bdf8':'#fb923c';ctx.lineWidth=3;ctx.beginPath();for(var px=0;px<=w;px++){var yy=kind==='ac'?h/2-Math.sin((px/w)*Math.PI*4+phase)*amp:h/2-amp;px?ctx.lineTo(px,yy):ctx.moveTo(px,yy)}ctx.stroke();ctx.fillStyle='#cbd5e1';ctx.font='12px system-ui';ctx.fillText(kind==='ac'?'alternating voltage':'steady direct voltage',12,20);ctx.fillText('0 V',8,h/2-7);phase+=(kind==='ac'?.025:0);requestAnimationFrame(draw)}
+    function update(){var v=+voltage.value,f=+frequency.value;document.getElementById('acd-voltage-out').textContent=v+(kind==='ac'?' V RMS':' V');document.getElementById('acd-frequency-out').textContent=f+' Hz';document.getElementById('acd-frequency-control').style.opacity=kind==='ac'?'1':'.45';frequency.disabled=kind!=='ac';document.getElementById('acd-readout').innerHTML=kind==='ac'?'<strong>Peak voltage: '+(v*Math.sqrt(2)).toFixed(1)+' V</strong><br>One cycle lasts '+(1000/f).toFixed(2)+' ms. Polarity reverses '+(f*2)+' times each second.':'<strong>Polarity stays fixed</strong><br>Frequency is 0 Hz. A steady '+v+' V source graphs as a horizontal line.'}
+    document.querySelectorAll('.acd-toggle button').forEach(function(b){b.addEventListener('click',function(){kind=b.dataset.kind;document.querySelectorAll('.acd-toggle button').forEach(function(x){x.classList.toggle('active',x===b)});update()})});
+    voltage.addEventListener('input',update);frequency.addEventListener('input',update);window.addEventListener('resize',fit);fit();update();draw();
+    var calcInputs=['acd-power','acd-resistance','acd-vlow','acd-vhigh'].map(function(id){return document.getElementById(id)});
+    function calculate(){var p=Math.max(0,+calcInputs[0].value)*1000,r=Math.max(0,+calcInputs[1].value),vl=Math.max(.001,+calcInputs[2].value)*1000,vh=Math.max(.001,+calcInputs[3].value)*1000,il=p/vl,ih=p/vh,ll=il*il*r,lh=ih*ih*r,s=ll?100*(1-lh/ll):0;document.getElementById('acd-ilow').textContent=il.toLocaleString(undefined,{maximumFractionDigits:1})+' A';document.getElementById('acd-ihigh').textContent=ih.toLocaleString(undefined,{maximumFractionDigits:1})+' A';document.getElementById('acd-saving').textContent=s.toFixed(1)+'%'}
+    calcInputs.forEach(function(i){i.addEventListener('input',calculate)});calculate();
+    document.querySelectorAll('.acd-question').forEach(function(q){q.querySelector('.acd-check').addEventListener('click',function(){var ok=q.querySelector('select').value===q.dataset.answer,f=q.querySelector('.acd-feedback');f.className='acd-feedback '+(ok?'ok':'no');f.textContent=(ok?'Correct. ':'Try again. ')+q.dataset.explain})});
+  })();
+  </script>
+  <script src="../assets/js/classroom-animations.js"></script>
+</body>
+</html>
