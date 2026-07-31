@@ -31,10 +31,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # apps/mermaidgame is generated. Rebuild it from its canonical student
-      # source so Pages can never deploy a stale committed copy.
-      - name: Rebuild Mermaid game from canonical student source
-        run: node build-showcase.js --only=mermaidgame --strict
+      # These showcase apps are generated. Rebuild them from their canonical
+      # student sources so Pages can never deploy stale committed copies.
+      - name: Rebuild updated games from canonical student sources
+        run: |
+          node build-showcase.js --only=mermaidgame --strict
+          node build-showcase.js --only=kael --strict
 
       - name: Build minified dist/
         run: npm run build:dist
