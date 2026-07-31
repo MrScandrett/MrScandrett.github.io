@@ -87,6 +87,86 @@ function generateFlora(map, biome) {
     return flora;
 }
 
+function generateWildlife(map) {
+    const fish = [];
+    const ranges = {
+        [BIOME_TYPES.CORAL]: { min: 5, max: 69, schools: 32, schoolMin: 3, schoolMax: 6 },
+        [BIOME_TYPES.BAYOU]: { min: 70, max: 129, schools: 12, schoolMin: 2, schoolMax: 5 },
+        [BIOME_TYPES.ARCTIC]: { min: 130, max: 189, schools: 11, schoolMin: 2, schoolMax: 5 },
+        [BIOME_TYPES.TRENCH]: { min: 190, max: MAP_HEIGHT - 3, schools: 9, schoolMin: 1, schoolMax: 4 }
+    };
+
+    Object.entries(ranges).forEach(([biome, range]) => {
+        const speciesList = FISH_SPECIES[biome];
+        for (let school = 0; school < range.schools; school++) {
+            let anchor = null;
+            for (let attempt = 0; attempt < 50 && !anchor; attempt++) {
+                const tx = 2 + Math.floor(Math.random() * (MAP_WIDTH - 4));
+                const ty = range.min + Math.floor(Math.random() * (range.max - range.min + 1));
+                if (map[ty] && map[ty][tx] === 0) {
+                    anchor = { x: tx * TILE_SIZE + TILE_SIZE / 2, y: ty * TILE_SIZE + TILE_SIZE / 2 };
+                }
+            }
+            if (!anchor) continue;
+
+            const speciesIndex = school % speciesList.length;
+            const count = range.schoolMin + Math.floor(Math.random() * (range.schoolMax - range.schoolMin + 1));
+            const facing = Math.random() < 0.5 ? -1 : 1;
+            for (let member = 0; member < count; member++) {
+                const x = anchor.x - facing * member * (10 + Math.random() * 7);
+                const y = anchor.y + (member % 2 ? 1 : -1) * Math.ceil(member / 2) * 6;
+                if (x < TILE_SIZE * 1.5 || x > MAP_WIDTH * TILE_SIZE - TILE_SIZE * 1.5) continue;
+                if (checkWallCollision({ x, y }, 4, map)) continue;
+                fish.push({
+                    x, y,
+                    homeY: y,
+                    minY: range.min * TILE_SIZE + 6,
+                    maxY: (range.max + 1) * TILE_SIZE - 6,
+                    biome,
+                    speciesIndex,
+                    school,
+                    facing,
+                    speedScale: 0.82 + Math.random() * 0.36,
+                    phase: Math.random() * Math.PI * 2,
+                    turnCooldown: 0
+                });
+            }
+        }
+    });
+
+    // The map generator deliberately clears this central surface corridor.
+    // Seed one compact school of every reef species here so a new game always
+    // opens with visible biodiversity rather than relying entirely on chance.
+    const starterSchools = [
+        { x: MAP_WIDTH * TILE_SIZE * 0.49, y: 132, speciesIndex: 0, facing: 1 },
+        { x: MAP_WIDTH * TILE_SIZE * 0.51, y: 168, speciesIndex: 1, facing: -1 },
+        { x: MAP_WIDTH * TILE_SIZE * 0.49, y: 228, speciesIndex: 2, facing: 1 },
+        { x: MAP_WIDTH * TILE_SIZE * 0.51, y: 282, speciesIndex: 3, facing: -1 }
+    ];
+    starterSchools.forEach((starter, schoolIndex) => {
+        for (let member = 0; member < 5; member++) {
+            const x = starter.x - starter.facing * member * 12;
+            const y = starter.y + (member % 2 ? 1 : -1) * Math.ceil(member / 2) * 6;
+            if (checkWallCollision({ x, y }, 4, map)) continue;
+            fish.push({
+                x, y,
+                homeY: y,
+                minY: 5 * TILE_SIZE + 6,
+                maxY: 69 * TILE_SIZE,
+                biome: BIOME_TYPES.CORAL,
+                speciesIndex: starter.speciesIndex,
+                school: 100 + schoolIndex,
+                facing: starter.facing,
+                speedScale: 0.9 + member * 0.04,
+                phase: member * 0.7,
+                turnCooldown: 0
+            });
+        }
+    });
+
+    return fish;
+}
+
 function generateOxygen(map) {
     const bubbles = [];
     for (let y = 10; y < MAP_HEIGHT; y += 5) {
@@ -153,4 +233,22 @@ function checkCollisionCircle(rect, circle) {
             rect.x + rect.width > circle.x - circle.radius &&
             rect.y < circle.y + circle.radius &&
             rect.y + rect.height > circle.y - circle.radius);
+}
+
+// Lighten/darken a hex color by a percentage (-100 to 100)
+function shadeColor(hexColor, percent) {
+    const num = parseInt(hexColor.slice(1), 16);
+    const target = percent < 0 ? 0 : 255;
+    const p = Math.abs(percent) / 100;
+    const r = num >> 16, g = (num >> 8) & 0xff, b = num & 0xff;
+    const newR = Math.round((target - r) * p) + r;
+    const newG = Math.round((target - g) * p) + g;
+    const newB = Math.round((target - b) * p) + b;
+    return `#${(0x1000000 + newR * 0x10000 + newG * 0x100 + newB).toString(16).slice(1)}`;
+}
+
+// Deterministic pseudo-random 0..1 from world-space coordinates (stable across frames)
+function hashCoord(x, y) {
+    const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+    return s - Math.floor(s);
 }

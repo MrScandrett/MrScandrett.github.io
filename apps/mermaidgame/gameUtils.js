@@ -154,3 +154,21 @@ function checkCollisionCircle(rect, circle) {
             rect.y < circle.y + circle.radius &&
             rect.y + rect.height > circle.y - circle.radius);
 }
+
+// Lighten/darken a hex color by a percentage (-100 to 100)
+function shadeColor(hexColor, percent) {
+    const num = parseInt(hexColor.slice(1), 16);
+    const target = percent < 0 ? 0 : 255;
+    const p = Math.abs(percent) / 100;
+    const r = num >> 16, g = (num >> 8) & 0xff, b = num & 0xff;
+    const newR = Math.round((target - r) * p) + r;
+    const newG = Math.round((target - g) * p) + g;
+    const newB = Math.round((target - b) * p) + b;
+    return `#${(0x1000000 + newR * 0x10000 + newG * 0x100 + newB).toString(16).slice(1)}`;
+}
+
+// Deterministic pseudo-random 0..1 from world-space coordinates (stable across frames)
+function hashCoord(x, y) {
+    const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+    return s - Math.floor(s);
+}

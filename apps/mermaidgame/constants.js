@@ -85,7 +85,7 @@ const BIOME_CONFIG = {
     name: "Arctic Realm",
     difficulty: 3,
     desc: "Freezing currents and jagged ice.",
-    colors: { bgTop: '#cbd5e1', bgBot: '#475569', rock: '#f1f5f9' }
+    colors: { bgTop: '#7dd3fc', bgBot: '#0c4a6e', rock: '#e0f2fe' }
   },
   [BiomeType.TRENCH]: {
     name: "Marianas Trench",
@@ -199,6 +199,13 @@ const WEAPON_STATS = {
   [WeaponType.FORK_DAGGER]: { damage: 4, range: 40, cooldown: 15, color: '#94a3b8' },
   [WeaponType.BOOT_MACE]: { damage: 8, range: 35, cooldown: 40, color: '#78350f' },
   [WeaponType.TRIDENT_SPEAR]: { damage: 6, range: 70, cooldown: 20, color: '#bef264' },
+};
+
+const ITEM_ICONS = {
+  [EntityType.ITEM_SHELL]: { color: '#fca5a5', glow: 'rgba(252,165,165,0.55)' },
+  [EntityType.ITEM_FORK]: { color: '#e2e8f0', glow: 'rgba(226,232,240,0.5)' },
+  [EntityType.ITEM_BOTTLE]: { color: '#5eead4', glow: 'rgba(94,234,212,0.5)' },
+  [EntityType.ITEM_BOOT]: { color: '#c084fc', glow: 'rgba(192,132,252,0.5)' },
 };
 
 const STORE_CATALOG = [
