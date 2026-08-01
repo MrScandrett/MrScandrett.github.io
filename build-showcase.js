@@ -363,7 +363,10 @@ function findModelSources(rootDir, ignoreDirectories = []) {
       if (!MODEL_EXTENSIONS.has(ext)) continue;
       if (isInsideAnyDir(full, ignoreDirectories)) continue;
 
-      const student = studentFromPath(full);
+      // Dedicated folders let a student add models without placing them inside
+      // an existing web project. Keep the public credit to the first-name label.
+      const pathStudent = studentFromPath(full);
+      const student = pathStudent.replace(/\s+(?:3D\s+)?Models?$/i, "") || pathStudent;
       const grade = gradeFromPath(full);
       const modelTitle = displayTitleFromFileName(entry.name) || "3D Model";
       modelProjects.push({
