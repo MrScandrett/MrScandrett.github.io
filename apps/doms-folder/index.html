@@ -1,1 +1,84 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kaiju Battleground</title><link rel="stylesheet" href="style.min.css"><style>body{margin:0;overflow:hidden;background:#111;font-family:sans-serif}.hidden{display:none!important}#home-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a1a1a,#000);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000}#home-screen h1{font-size:64px;margin-bottom:20px;text-shadow:0 0 20px red}.kaiju-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:30px}.kaiju-btn{width:120px;height:120px;background:#333;border:3px solid #555;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:.2s;display:flex;flex-direction:column;align-items:center;justify-content:center}.kaiju-btn:hover{background:#444;border-color:#888}.kaiju-btn.selected{border-color:#0f0;background:#222;box-shadow:0 0 15px #0f0}.kaiju-btn:disabled{opacity:.3;cursor:default;border-color:#333}#play-btn{padding:15px 60px;font-size:32px;background:#0f0;border:none;border-radius:5px;cursor:pointer;font-weight:700;text-transform:uppercase;box-shadow:0 0 20px rgba(0,255,0,.5)}#play-btn:hover{background:#32ff32;transform:scale(1.05)}.mode-btn{padding:10px 20px;background:#333;border:2px solid #555;color:#fff;cursor:pointer;font-weight:700;font-family:sans-serif;text-transform:uppercase}.mode-btn:hover{background:#444}.mode-btn.selected{background:#0af;border-color:#fff;box-shadow:0 0 10px #0af}#pause-menu{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);color:#fff;display:flex;align-items:center;justify-content:center;z-index:2000}.pause-content{text-align:center;background:#1a1a1a;padding:40px 80px;border:2px solid #555;box-shadow:0 0 20px #000}.pause-content h2{font-size:48px;margin-top:0;margin-bottom:30px}.pause-content button{display:block;width:100%;padding:15px;margin-bottom:10px;font-size:24px;background:#444;border:2px solid #666;color:#fff;cursor:pointer}.pause-content button:hover{background:#555;border-color:#888}</style></head><body><div id="home-screen"><h1>KAIJU BATTLEGROUND</h1><div id="home-gcells" style="font-size:24px;color:gold;margin-bottom:20px;text-shadow:0 0 5px orange">Gcells: 0</div><p>Select your Monster</p><div class="kaiju-grid" id="kaiju-grid"></div><div id="mode-select-container" style="margin-bottom:20px;text-align:center"><p style="margin:10px 0;color:#aaa">Select Game Mode</p><div style="display:flex;gap:10px;justify-content:center"><button id="mode-survival" class="mode-btn selected">Survival</button> <button id="mode-boss" class="mode-btn">Boss Battle</button></div></div><div id="ult-select-container" style="margin-bottom:20px;text-align:center"><p style="margin:10px 0;color:#aaa">Select Ultimate Move</p><div style="display:flex;gap:10px;justify-content:center"><button id="ult-thermo" class="mode-btn selected">Thermo Pulse</button> <button id="ult-burning" class="mode-btn">Burning Breath</button></div></div><button id="play-btn">PLAY</button></div><h1 id="game-title" class="hidden">Kaiju Battleground</h1><div id="game-gcells" class="hidden" style="position:absolute;top:20px;right:20px;font-size:24px;color:gold;font-weight:700;text-shadow:2px 2px 0 #000;z-index:10">Gcells: 0</div><div id="top-ui" class="hidden"><div id="healthContainer"><span>Health</span><div class="bar"><div id="playerHealth"></div></div></div><div id="ultimateContainer"><span>Ultimate</span><div class="bar"><div id="ultimateBar"></div></div></div></div><canvas id="gameCanvas" width="1000" height="600" class="hidden"></canvas><div id="pause-menu" class="hidden"><div class="pause-content"><h2>PAUSED</h2><button id="resume-btn">Resume</button> <button id="quit-btn">Quit to Menu</button></div></div><div id="bottom-ui" class="hidden"><div class="move-slot" data-move="1"><div class="move-label">1: Tailwhip</div><div class="cooldown-overlay" id="cd-1"></div></div><div class="move-slot" data-move="2"><div class="move-label">2: Stomp</div><div class="cooldown-overlay" id="cd-2"></div></div><div class="move-slot" data-move="3"><div class="move-label">3: Bite</div><div class="cooldown-overlay" id="cd-3"></div></div><div class="move-slot" data-move="4"><div class="move-label">4: Beam</div><div class="cooldown-overlay" id="cd-4"></div></div></div><p id="log" class="hidden"></p><script src="app.min.js"></script><script>window.__TOUCH_CONTROLS__={"landscape":true,"clusters":[{"side":"left","pad":{"up":"KeyW","down":"KeyS","left":"KeyA","right":"KeyD"}},{"side":"right","buttons":[{"code":"KeyR","label":"Retry","hold":false}]}]}</script><script>(function(){"use strict";var m=window.__TOUCH_CONTROLS__;if(!m)return;var v={ArrowUp:["ArrowUp",38],ArrowDown:["ArrowDown",40],ArrowLeft:["ArrowLeft",37],ArrowRight:["ArrowRight",39],Space:[" ",32],Enter:["Enter",13],Escape:["Escape",27],ShiftLeft:["Shift",16],ShiftRight:["Shift",16],Tab:["Tab",9],Backspace:["Backspace",8]};function k(e){if(v[e])return{code:e,key:v[e][0],keyCode:v[e][1]};if(/^Key[A-Z]$/.test(e)){var t=e.slice(3);return{code:e,key:t.toLowerCase(),keyCode:t.charCodeAt(0)}}if(/^Digit[0-9]$/.test(e)){var i=e.slice(5);return{code:e,key:i,keyCode:i.charCodeAt(0)}}return{code:e,key:e,keyCode:0}}function h(e,t){var i=document.body||document.documentElement,d=new KeyboardEvent(e,{key:t.key,code:t.code,bubbles:!0,cancelable:!0});try{Object.defineProperty(d,"keyCode",{get:function(){return t.keyCode}}),Object.defineProperty(d,"which",{get:function(){return t.keyCode}})}catch{}i.dispatchEvent(d)}function C(){return window.matchMedia&&window.matchMedia("(pointer: coarse)").matches}function L(){if(!C())return"desktop";var e=Math.min(window.innerWidth,window.innerHeight);return e>=700?"tablet":"phone"}var A=[".tc-root{position:fixed;inset:0;z-index:2147483000;pointer-events:none;","font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;","padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right))"," max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));}",".tc-root[hidden]{display:none}",".tc-cluster{position:absolute;bottom:max(14px,env(safe-area-inset-bottom));","display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}",".tc-cluster.tc-left{left:max(14px,env(safe-area-inset-left))}",".tc-cluster.tc-right{right:max(14px,env(safe-area-inset-right))}",".tc-label{font:700 11px/1 system-ui,sans-serif;letter-spacing:.08em;color:#f8fafc;","background:rgba(15,23,42,.6);border-radius:999px;padding:4px 10px;text-transform:uppercase}",".tc-pad{display:grid;gap:8px;touch-action:none;","grid-template-columns:repeat(3,var(--tc-size));grid-template-rows:repeat(2,var(--tc-size))}",".tc-pad.tc-flat{grid-template-columns:repeat(2,var(--tc-size));grid-template-rows:var(--tc-size)}",".tc-actions{display:flex;gap:8px;align-items:flex-end;touch-action:none}",".tc-btn{pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent;","user-select:none;-webkit-user-select:none;appearance:none;","display:flex;align-items:center;justify-content:center;","width:var(--tc-size);height:var(--tc-size);border-radius:50%;","background:rgba(15,23,42,.55);color:#f8fafc;","border:2px solid rgba(248,250,252,.5);backdrop-filter:blur(4px);","font-size:var(--tc-font);font-weight:700;line-height:1;padding:0;cursor:pointer}",".tc-btn.tc-wide{width:auto;min-width:var(--tc-size);padding:0 16px;border-radius:999px}",".tc-btn:active,.tc-btn.tc-on{background:rgba(56,189,248,.85);border-color:#f8fafc;transform:scale(.94)}",".tc-toggle{position:absolute;top:max(10px,env(safe-area-inset-top));","right:max(10px,env(safe-area-inset-right));pointer-events:auto;","font:600 12px/1 system-ui,sans-serif;color:#f8fafc;background:rgba(15,23,42,.65);","border:1px solid rgba(248,250,252,.4);border-radius:999px;padding:7px 11px;cursor:pointer}",".tc-rotate{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;","align-items:center;justify-content:center;text-align:center;pointer-events:auto;","background:rgba(2,6,23,.93);color:#e2e8f0;font-size:16px;padding:24px}",".tc-rotate strong{font-size:19px}",".tc-rotate button{margin-top:6px;font:600 14px/1 system-ui,sans-serif;color:#0f172a;","background:#38bdf8;border:0;border-radius:999px;padding:11px 20px;cursor:pointer}","@media (prefers-reduced-motion:reduce){.tc-btn:active,.tc-btn.tc-on{transform:none}}"].join(""),D={phone:["58px","17px"],tablet:["76px","21px"],desktop:["62px","18px"]},r,u=[];function g(){u.splice(0).forEach(function(e){e.button.classList.remove("tc-on"),h("keyup",e.descriptor)})}function y(e,t,i){var d=i||{},l=k(e),n=document.createElement("button");n.type="button",n.className="tc-btn"+(d.wide?" tc-wide":""),n.textContent=t,n.setAttribute("aria-label",d.ariaLabel||t),d.area&&(n.style.gridArea=d.area);var p=!1,a=d.hold!==!1;function x(s){s.preventDefault(),!p&&(p=!0,n.classList.add("tc-on"),h("keydown",l),a?u.push({button:n,descriptor:l}):h("keyup",l))}function E(s){if(s&&s.preventDefault(),!!p&&(p=!1,n.classList.remove("tc-on"),a)){for(var f=u.length-1;f>=0;f--)u[f].button===n&&u.splice(f,1);h("keyup",l)}}return n.addEventListener("pointerdown",function(s){if(n.setPointerCapture)try{n.setPointerCapture(s.pointerId)}catch{}x(s)}),n.addEventListener("pointerup",E),n.addEventListener("pointercancel",E),n.addEventListener("contextmenu",function(s){s.preventDefault()}),n.addEventListener("click",function(s){s.preventDefault(),s.stopPropagation()}),n}function w(){var e=document.createElement("style");e.textContent=A,document.head.appendChild(e),r=document.createElement("div"),r.className="tc-root",(m.clusters||[]).forEach(function(t){r.appendChild(N(t))}),document.body.appendChild(r),b()}var S={up:"1/2",left:"2/1",down:"2/2",right:"2/3"},z={up:"\u25B2",down:"\u25BC",left:"\u25C0",right:"\u25B6"},P={up:"Up",down:"Down",left:"Left",right:"Right"};function N(e){var t=document.createElement("div");if(t.className="tc-cluster tc-"+(e.side==="right"?"right":"left"),e.label){var i=document.createElement("span");i.className="tc-label",i.textContent=e.label,t.appendChild(i)}if(e.pad){var d=["up","left","down","right"].filter(function(a){return e.pad[a]}),l=d.length===2&&e.pad.left&&e.pad.right,n=document.createElement("div");n.className="tc-pad"+(l?" tc-flat":""),d.forEach(function(a){var x=e.label?e.label+" ":"";n.appendChild(y(e.pad[a],z[a],{area:l?null:S[a],ariaLabel:x+P[a]}))}),t.appendChild(n)}if(e.buttons&&e.buttons.length){var p=document.createElement("div");p.className="tc-actions",e.buttons.forEach(function(a){p.appendChild(y(a.code,a.label,{hold:a.hold,wide:(a.label||"").length>2,ariaLabel:(e.label?e.label+" ":"")+(a.ariaLabel||a.label)}))}),t.appendChild(p)}return t}function b(){var e=L(),t=D[e];r.style.setProperty("--tc-size",t[0]),r.style.setProperty("--tc-font",t[1]),e==="desktop"?(r.hidden=!0,T()):r.hidden=!1,H(e)}var c;function T(){if(!c){c=document.createElement("button"),c.type="button",c.className="tc-toggle",c.textContent="Touch controls",c.addEventListener("click",function(){r.hidden=!r.hidden,c.textContent=r.hidden?"Touch controls":"Hide controls",r.hidden&&g()});var e=document.createElement("div");e.className="tc-root",e.style.pointerEvents="none",e.appendChild(c),document.body.appendChild(e)}}var o;function H(e){if(!m.landscape||e!=="phone"){o&&(o.remove(),o=null);return}var t=window.innerHeight>window.innerWidth;if(!t||o){!t&&o&&(o.remove(),o=null);return}o=document.createElement("div"),o.className="tc-rotate",o.innerHTML="<strong>Turn your phone sideways</strong><span>This game is built wide, so it plays much better in landscape.</span>";var i=document.createElement("button");i.type="button",i.textContent="Play anyway",i.addEventListener("click",function(){m.landscape=!1,o.remove(),o=null}),o.appendChild(i),r.appendChild(o)}window.addEventListener("resize",function(){r&&b()}),window.addEventListener("orientationchange",function(){r&&setTimeout(b,120)}),window.addEventListener("blur",g),document.addEventListener("visibilitychange",function(){document.hidden&&g()}),document.readyState==="loading"?document.addEventListener("DOMContentLoaded",w):w()})();</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kaiju Battleground</title>
+  <link rel="icon" href="../../assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.min.css">
+</head>
+<body>
+  <main id="home-screen">
+    <h1>KAIJU<br><span>BATTLEGROUND</span></h1>
+    <div id="home-gcells" class="gcells">G-Cells: 0</div>
+    <p class="section-label">Choose your titan</p>
+    <div class="kaiju-grid" id="kaiju-grid"></div>
+
+    <div class="menu-options">
+      <section>
+        <p class="section-label">Game mode</p>
+        <div class="button-row">
+          <button id="mode-survival" class="mode-btn selected">Survival</button>
+          <button id="mode-boss" class="mode-btn">Boss Battle</button>
+        </div>
+      </section>
+      <section>
+        <p class="section-label">Ultimate move</p>
+        <div class="button-row">
+          <button id="ult-thermo" class="mode-btn selected">Thermo Pulse</button>
+          <button id="ult-burning" class="mode-btn">Burning Breath</button>
+        </div>
+      </section>
+    </div>
+    <button id="play-btn">Enter the city</button>
+    <p class="menu-hint">Move with WASD · Attack with 1–4 · Ultimate with 5 · Pause with Esc</p>
+  </main>
+
+  <section id="game-shell" aria-label="Kaiju battle">
+    <div id="top-ui" class="hidden">
+      <div id="healthContainer" class="meter">
+        <span>Health</span>
+        <div class="bar"><div id="playerHealth"></div></div>
+      </div>
+      <div id="ultimateContainer" class="meter">
+        <span>Ultimate</span>
+        <div class="bar"><div id="ultimateBar"></div></div>
+      </div>
+      <div id="game-gcells" class="gcells hidden">G-Cells: 0</div>
+      <button id="pause-btn" class="hud-button hidden" aria-label="Pause game">Ⅱ</button>
+    </div>
+
+    <canvas id="gameCanvas" width="1000" height="600" class="hidden"></canvas>
+    <div id="battle-status" class="hidden" aria-live="polite">
+      <span id="wave-status">Wave 1 / 3</span>
+      <span id="combo-status">Combo ×1</span>
+    </div>
+    <p id="log" class="hidden" role="status" aria-live="polite"></p>
+
+    <div id="bottom-ui" class="hidden" aria-label="Attacks">
+      <button class="move-slot" data-move="1"><span class="key-label">1</span><span>Tailwhip</span><span class="cooldown-overlay" id="cd-1"></span></button>
+      <button class="move-slot" data-move="2"><span class="key-label">2</span><span>Stomp</span><span class="cooldown-overlay" id="cd-2"></span></button>
+      <button class="move-slot" data-move="3"><span class="key-label">3</span><span>Bite</span><span class="cooldown-overlay" id="cd-3"></span></button>
+      <button class="move-slot" data-move="4"><span class="key-label">4</span><span>Beam</span><span class="cooldown-overlay" id="cd-4"></span></button>
+      <button class="move-slot ultimate-slot" data-move="5"><span class="key-label">5</span><span>Ultimate</span></button>
+      <button id="dash-btn" class="move-slot dash-slot"><span class="key-label">Space</span><span>Dash</span></button>
+    </div>
+    <div id="touch-pad" class="hidden" aria-label="Movement controls">
+      <button data-key="w" class="touch-up" aria-label="Move up">▲</button>
+      <button data-key="a" aria-label="Move left">◀</button>
+      <button data-key="s" aria-label="Move down">▼</button>
+      <button data-key="d" aria-label="Move right">▶</button>
+    </div>
+  </section>
+
+  <div id="pause-menu" class="hidden" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+    <div class="pause-content">
+      <h2 id="pause-title">Paused</h2>
+      <button id="resume-btn">Resume</button>
+      <button id="quit-btn">Quit to menu</button>
+    </div>
+  </div>
+
+  <script src="app.min.js"></script>
+</body>
+</html>

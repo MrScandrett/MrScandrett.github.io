@@ -1,5 +1,6 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
 
 const homeScreen = document.getElementById("home-screen");
 const kaijuGrid = document.getElementById("kaiju-grid");
@@ -14,6 +15,12 @@ const ultimateBar = document.getElementById("ultimateBar");
 const pauseMenu = document.getElementById("pause-menu");
 const resumeBtn = document.getElementById("resume-btn");
 const quitBtn = document.getElementById("quit-btn");
+const pauseBtn = document.getElementById("pause-btn");
+const touchPad = document.getElementById("touch-pad");
+const battleStatus = document.getElementById("battle-status");
+const waveStatus = document.getElementById("wave-status");
+const comboStatus = document.getElementById("combo-status");
+const dashBtn = document.getElementById("dash-btn");
 
 const cdOverlays = {
     1: document.getElementById("cd-1"),
@@ -24,24 +31,26 @@ const cdOverlays = {
 
 const worldWidth = 2000;
 const worldHeight = 2000;
+let enemiesDefeated = 0;
+let currentWave = 1;
+const totalWaves = 3;
+let combo = 1;
+let comboTimer = 0;
 
 // =========================
 // SPRITE
 // =========================
-const godzillaImg = new Image();
-godzillaImg.src = "/assets/sprites/godzilla.png";
+function loadSprite(filename) {
+    const image = new Image();
+    image.src = `./assets/sprites/${filename}`;
+    return image;
+}
 
-const kongImg = new Image();
-kongImg.src = "/assets/sprites/kong.png";
-
-const mothraImg = new Image();
-mothraImg.src = "/assets/sprites/mothra.png";
-
-const rodanImg = new Image();
-rodanImg.src = "/assets/sprites/rodan.png";
-
-const mechaImg = new Image();
-mechaImg.src = "/assets/sprites/mecha.png";
+const godzillaImg = loadSprite("godzilla-detailed.webp");
+const titanKongImg = loadSprite("titan-kong-detailed.webp");
+const solarKaijuImg = loadSprite("solar-kaiju-detailed.webp");
+const magmaKaijuImg = loadSprite("magma-kaiju-detailed.webp");
+const mechaGodzillaImg = loadSprite("mecha-godzilla-detailed.webp");
 
 // =========================
 // ENTITY
@@ -65,6 +74,14 @@ class Entity {
         this.isBoss = false;
         this.thermoTimer = 0; // Timer for Thermo Nuclear state
         this.img = godzillaImg;
+        this.tint = "none";
+        this.damageMultiplier = 1;
+        this.archetype = "Raider";
+        this.flashTimer = 0;
+        this.dashTimer = 0;
+        this.dashCooldown = 0;
+        this.dashX = 0;
+        this.dashY = 0;
     }
 
     draw() {
@@ -78,7 +95,7 @@ class Entity {
 
         ctx.save();
         ctx.translate(this.x + this.size / 2, this.y - this.z); // Draw sprite higher based on Z
-        
+
         // Thermo Nuclear Effect (Glow)
         if (this.thermoTimer > 0) {
             const pulseFactor = Math.abs(Math.sin(this.thermoTimer * 0.1));
@@ -88,6 +105,10 @@ class Entity {
         }
 
         ctx.scale(this.facing, 1);
+        const filters = [];
+        if (this.tint !== "none") filters.push(this.tint);
+        if (this.flashTimer > 0) filters.push("brightness(2.4)");
+        ctx.filter = filters.join(" ") || "none";
         ctx.drawImage(this.img, -this.size / 2, 0, this.size, this.size);
         ctx.restore();
 
@@ -139,18 +160,47 @@ class Entity {
 // =========================
 const player = new Entity(200, 200, true);
 let enemies = [];
-spawnEnemies();
 
 function spawnEnemies() {
-    enemies = [
-        new Entity(700, 200),
-        new Entity(800, 400),
-        new Entity(600, 100)
+    const spots = [
+        [700, 200], [800, 400], [600, 100], [900, 600],
+        [400, 700], [1100, 300], [300, 900]
     ];
+    const count = Math.min(spots.length, 2 + currentWave);
+    enemies = spots.slice(0, count).map(([x, y], index) => {
+        const enemy = new Entity(x, y);
+        const type = (index + currentWave) % 3;
+        if (type === 0) {
+            enemy.archetype = "Brute";
+            enemy.size = 100;
+            enemy.maxHealth = 165 + currentWave * 25;
+            enemy.speed = 1.05;
+            enemy.damageMultiplier = 1.35;
+            enemy.img = titanKongImg;
+            enemy.tint = "brightness(.82) saturate(.9)";
+        } else if (type === 1) {
+            enemy.archetype = "Stalker";
+            enemy.size = 70;
+            enemy.maxHealth = 75 + currentWave * 15;
+            enemy.speed = 2.25;
+            enemy.damageMultiplier = .8;
+            enemy.img = magmaKaijuImg;
+            enemy.tint = "brightness(.85) hue-rotate(18deg)";
+        } else {
+            enemy.archetype = "Raider";
+            enemy.size = 82;
+            enemy.maxHealth = 105 + currentWave * 20;
+            enemy.speed = 1.55;
+            enemy.img = godzillaImg;
+            enemy.tint = "brightness(.78) hue-rotate(285deg)";
+        }
+        enemy.health = enemy.maxHealth;
+        return enemy;
+    });
+    updateBattleStatus();
 }
 
 let civilians = [];
-spawnCivilians();
 
 function spawnCivilians() {
     civilians = [];
@@ -161,13 +211,20 @@ function spawnCivilians() {
 
 function spawnBoss() {
     bossActive = true;
-    const boss = new Entity(worldWidth - 200, worldHeight / 2 - 75);
-    boss.size = 150;
+    const bossX = Math.min(worldWidth - 200, player.x + 700);
+    const bossY = Math.min(worldHeight - 200, player.y + 250);
+    const boss = new Entity(bossX, bossY);
+    boss.size = 190;
     boss.maxHealth = 3000;
     boss.health = boss.maxHealth;
     boss.speed = 2.5;
     boss.isBoss = true;
+    boss.archetype = "Alpha Titan";
+    boss.damageMultiplier = 1.6;
+    boss.img = mechaGodzillaImg;
+    boss.tint = "brightness(.82) contrast(1.15)";
     enemies = [boss];
+    updateBattleStatus();
     log.textContent = "⚠️ BOSS BATTLE STARTED! ⚠️";
 }
 
@@ -176,7 +233,7 @@ function createCivilian() {
     const roadOffset = 100;
     const isCar = Math.random() > 0.7;
     const isVertical = Math.random() > 0.5;
-    
+
     let x, y, dirX, dirY;
 
     if (isVertical) {
@@ -217,24 +274,32 @@ const floatingTexts = [];
 let isGameOver = false;
 let regenTimer = 0;
 let selectedKaiju = "godzilla";
-let gCells = parseInt(localStorage.getItem("kaiju_gcells")) || 0;
-let unlockedKaijus = JSON.parse(localStorage.getItem("kaiju_unlocked")) || ["godzilla"];
+let gCells = Number.parseInt(localStorage.getItem("kaiju_gcells"), 10) || 0;
+let unlockedKaijus;
+try {
+    const savedUnlocks = JSON.parse(localStorage.getItem("kaiju_unlocked"));
+    unlockedKaijus = Array.isArray(savedUnlocks) ? savedUnlocks : ["godzilla"];
+} catch {
+    unlockedKaijus = ["godzilla"];
+}
 let isGameRunning = false;
-let enemiesDefeated = 0;
 let bossActive = false;
 let gameMode = "survival";
 let isPaused = false;
 let selectedUltimate = "thermo";
 let isVictory = false;
+let animationFrameId = null;
 
 // =========================
 // SOUND SYSTEM (Web Audio API)
 // =========================
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const audioCtx = new AudioContext();
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
 
 function playSound(type) {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (!AudioContextClass) return;
+    if (!audioCtx) audioCtx = new AudioContextClass();
+    if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
 
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
@@ -291,14 +356,21 @@ const moveCooldowns = {
 // INPUT
 // =========================
 document.addEventListener("keydown", e => {
-    keys[e.key] = true;
+    const key = e.key.toLowerCase();
+    keys[key] = true;
 
-    if ((isGameOver || isVictory) && e.key.toLowerCase() === "r") {
+    if ((isGameOver || isVictory) && key === "r") {
         returnToMenu();
         return;
     }
-    if (e.key.toLowerCase() === "escape" && isGameRunning && !isGameOver && !isVictory) {
+    if (key === "escape" && isGameRunning && !isGameOver && !isVictory) {
         togglePause();
+        return;
+    }
+
+    if (key === " " && !e.repeat) {
+        e.preventDefault();
+        startDash();
         return;
     }
 
@@ -308,7 +380,28 @@ document.addEventListener("keydown", e => {
 });
 
 document.addEventListener("keyup", e => {
-    keys[e.key] = false;
+    keys[e.key.toLowerCase()] = false;
+});
+
+window.addEventListener("blur", () => {
+    Object.keys(keys).forEach(key => { keys[key] = false; });
+});
+
+touchPad.querySelectorAll("button").forEach(button => {
+    const key = button.dataset.key;
+    const release = event => {
+        event.preventDefault();
+        keys[key] = false;
+        button.classList.remove("pressed");
+    };
+    button.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        keys[key] = true;
+        button.classList.add("pressed");
+        button.setPointerCapture?.(event.pointerId);
+    });
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
 });
 
 document.querySelectorAll(".move-slot").forEach(button => {
@@ -324,6 +417,13 @@ resumeBtn.addEventListener("click", () => {
     if (isPaused) togglePause();
 });
 
+canvas.addEventListener("click", () => {
+    if (isGameOver || isVictory) returnToMenu();
+});
+
+pauseBtn.addEventListener("click", togglePause);
+dashBtn.addEventListener("click", startDash);
+
 quitBtn.addEventListener("click", () => {
     if (isPaused) togglePause();
     returnToMenu();
@@ -332,7 +432,22 @@ quitBtn.addEventListener("click", () => {
 function togglePause() {
     if (!isGameRunning || isGameOver) return;
     isPaused = !isPaused;
+    Object.keys(keys).forEach(key => { keys[key] = false; });
     pauseMenu.classList.toggle("hidden", !isPaused);
+}
+
+function startDash() {
+    if (!isGameRunning || isPaused || isGameOver || isVictory || player.dashCooldown > 0) return;
+    let dx = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+    let dy = (keys.s ? 1 : 0) - (keys.w ? 1 : 0);
+    if (!dx && !dy) dx = player.facing;
+    const length = Math.hypot(dx, dy) || 1;
+    player.dashX = dx / length;
+    player.dashY = dy / length;
+    player.dashTimer = 12;
+    player.dashCooldown = 90;
+    addEffect("tailAura", { x: player.x + player.size / 2, y: player.y + player.size / 2 }, 14);
+    shakeAmount = Math.max(shakeAmount, 3);
 }
 
 // =========================
@@ -393,7 +508,7 @@ function drawEffects() {
                 ctx.globalCompositeOperation = "lighter";
                 const color = e.data.color || "blue";
                 const isRed = color === "orange" || color === "red";
-                
+
                 // Outer glow
                 ctx.shadowBlur = 20;
                 ctx.shadowColor = isRed ? `rgba(255, 50, 0, ${alpha})` : `rgba(0, 100, 255, ${alpha})`;
@@ -417,7 +532,7 @@ function drawEffects() {
                 const cx = owner.x + owner.size / 2;
                 const cy = owner.y + owner.size / 2;
                 const chargeRatio = 1 - (e.timer / e.max);
-                
+
                 ctx.shadowBlur = 15 * chargeRatio;
                 ctx.shadowColor = "cyan";
                 ctx.fillStyle = `rgba(0, 255, 255, ${chargeRatio})`;
@@ -453,7 +568,7 @@ function drawBackground(camX, camY) {
     // Asphalt base
     ctx.fillStyle = "#1a1a1a";
     ctx.fillRect(0, 0, worldWidth, worldHeight);
-    
+
     const blockSize = 200;
     const centerX = camX + canvas.width / 2;
     const centerY = camY + canvas.height / 2;
@@ -468,7 +583,7 @@ function drawBackground(camX, camY) {
     ctx.strokeStyle = "#555";
     ctx.lineWidth = 4;
     ctx.setLineDash([20, 20]);
-    
+
     for (let x = startX; x <= endX; x += blockSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -482,7 +597,7 @@ function drawBackground(camX, camY) {
         ctx.stroke();
     }
     ctx.setLineDash([]);
-    
+
     // Draw city blocks
     for (let x = startX - 200; x <= endX; x += blockSize) {
         for (let y = startY - 200; y <= endY; y += blockSize) {
@@ -494,7 +609,7 @@ function drawBackground(camX, camY) {
             const seed = (x * 17 + y * 23);
             const hue = Math.abs(seed) % 360;
             const inset = 25;
-            
+
             // Base Rect
             const bX = x + inset;
             const bY = y + inset;
@@ -517,11 +632,11 @@ function drawBackground(camX, camY) {
             ctx.beginPath(); ctx.moveTo(bX + bW, bY); ctx.lineTo(bX + bW, bY + bH); ctx.lineTo(rX + bW, rY + bH); ctx.lineTo(rX + bW, rY); ctx.fill(); // Right
             ctx.beginPath(); ctx.moveTo(bX + bW, bY + bH); ctx.lineTo(bX, bY + bH); ctx.lineTo(rX, rY + bH); ctx.lineTo(rX + bW, rY + bH); ctx.fill(); // Bottom
             ctx.beginPath(); ctx.moveTo(bX, bY + bH); ctx.lineTo(bX, bY); ctx.lineTo(rX, rY); ctx.lineTo(rX, rY + bH); ctx.fill(); // Left
-            
+
             // Draw Roof (Lighter)
             ctx.fillStyle = `hsl(${hue}, 15%, 25%)`;
             ctx.fillRect(rX, rY, bW, bH);
-            
+
             // Roof Detail
             ctx.fillStyle = "rgba(0,0,0,0.3)";
             if (seed % 2 === 0) {
@@ -553,7 +668,7 @@ function canUseMove(move, attacker) {
 }
 
 function useMove(move, attacker) {
-    if (isGameOver) return;
+    if (!isGameRunning || isPaused || isGameOver || isVictory) return;
     if (!canUseMove(move, attacker)) {
         if (attacker.isPlayer && move === 5 && ultimateCharge < 100) {
             log.textContent = "Ultimate not ready!";
@@ -618,7 +733,7 @@ function startCooldown(move) {
 
 // Tailwhip: projectile + knockback
 function tailwhip(attacker) {
-    const damage = 12;
+    const damage = Math.round(12 * attacker.damageMultiplier);
     const dir = attacker.facing;
     const proj = {
         x: attacker.x + (dir === 1 ? attacker.size : -40),
@@ -641,14 +756,14 @@ function stomp(attacker) {
 }
 
 function triggerStompLand(attacker) {
-    const damage = 20;
+    const damage = Math.round(20 * attacker.damageMultiplier);
     const cx = attacker.x + attacker.size / 2;
     const cy = attacker.y + attacker.size / 2;
     const r = 80;
-    
+
     const hitbox = circleHitbox(cx, cy, r);
     const targets = getTargets(attacker);
-    
+
     addEffect("stomp", { x: cx, y: cy, r }, 15);
     applyDamage(hitbox, attacker, targets, damage, 0);
 
@@ -668,7 +783,7 @@ function triggerStompLand(attacker) {
 
 // Bite: front
 function bite(attacker) {
-    const damage = 30;
+    const damage = Math.round(30 * attacker.damageMultiplier);
     const w = 40, h = 40;
     const x = attacker.facing === 1 ? attacker.x + attacker.size : attacker.x - w;
     const y = attacker.y + 10;
@@ -682,7 +797,7 @@ function bite(attacker) {
 
 // Punch: front
 function punch(attacker) {
-    const damage = 40;
+    const damage = Math.round(40 * attacker.damageMultiplier);
     const w = 50, h = 50;
     const x = attacker.facing === 1 ? attacker.x + attacker.size : attacker.x - w;
     const y = attacker.y + 5;
@@ -722,8 +837,8 @@ function fireBeam(attacker) {
     beamData = { attacker, w, h, color: "blue" };
     beamTimer = 40; // Shorter duration for regular move
 
-    applyDamage(hitbox, attacker, targets, 50, 15); // Reduced damage for regular move
-    
+    applyDamage(hitbox, attacker, targets, Math.round(50 * attacker.damageMultiplier), 15);
+
     if (attacker.isPlayer) {
         // log.textContent = "Atomic Breath!";
         playSound("laser");
@@ -735,15 +850,17 @@ function fireBeam(attacker) {
 // =========================
 function getTargets(attacker) {
     if (attacker.isPlayer) return enemies;
-    return [player, ...enemies.filter(e => e !== attacker)];
+    return [player];
 }
 
 function applyDamage(hitbox, attacker, targets, damage, knockback) {
     targets.forEach(target => {
+        if (target.isPlayer && target.dashTimer > 0) return;
         if (target.health > 0 && hitboxCollides(hitbox, target)) {
             target.health -= damage;
+            target.flashTimer = 6;
             playSound("hit");
-            
+
             if (damage >= 10000) {
                 addFloatingText(target.x + target.size / 2, target.y, "MELTED!", "orange");
             } else {
@@ -758,25 +875,38 @@ function applyDamage(hitbox, attacker, targets, damage, knockback) {
 
             if (attacker.isPlayer && damage > 0 && damage < 120) {
                 ultimateCharge = Math.min(100, ultimateCharge + damage * 0.5);
+                registerComboHit();
             }
 
-            if (target.health <= 0 && attacker.isPlayer) {
-                log.textContent = "Enemy defeated!";
-                let reward = 10;
-                if (target.isBoss) {
-                    reward = 500;
-                    log.textContent = "BOSS SLAIN! +500 G";
-                } else {
-                    enemiesDefeated++;
-                }
-
-                gCells += reward;
-                localStorage.setItem("kaiju_gcells", gCells);
-                updateGCellsUI();
-                addFloatingText(target.x + target.size / 2, target.y, `+${reward} G`, "255, 215, 0");
-            }
+            if (target.health <= 0 && attacker.isPlayer) rewardDefeat(target);
         }
     });
+}
+
+function rewardDefeat(target) {
+    if (target.rewarded) return;
+    target.rewarded = true;
+    const baseReward = target.isBoss ? 500 : 10;
+    const reward = Math.round(baseReward * Math.min(2, 1 + (combo - 1) * .1));
+    if (!target.isBoss) enemiesDefeated++;
+    gCells += reward;
+    localStorage.setItem("kaiju_gcells", String(gCells));
+    updateGCellsUI();
+    log.textContent = target.isBoss ? `BOSS SLAIN! +${reward} G` : `Enemy defeated! +${reward} G`;
+    addFloatingText(target.x + target.size / 2, target.y, `+${reward} G`, "255, 215, 0");
+}
+
+function registerComboHit() {
+    combo = Math.min(10, combo + 1);
+    comboTimer = 180;
+    updateBattleStatus();
+}
+
+function updateBattleStatus() {
+    if (!waveStatus || !comboStatus) return;
+    waveStatus.textContent = bossActive ? "Boss · Alpha Titan" : `Wave ${currentWave} / ${totalWaves}`;
+    comboStatus.textContent = `Combo ×${combo}`;
+    comboStatus.classList.toggle("active", combo > 1);
 }
 
 // =========================
@@ -784,8 +914,16 @@ function applyDamage(hitbox, attacker, targets, damage, knockback) {
 // =========================
 function aiBehavior(enemy) {
     if (enemy.attackCooldown > 0) enemy.attackCooldown--;
+    if (enemy.isBoss && !enemy.enraged && enemy.health <= enemy.maxHealth * .5) {
+        enemy.enraged = true;
+        enemy.speed *= 1.3;
+        enemy.damageMultiplier *= 1.25;
+        enemy.tint += " brightness(1.3) saturate(1.4)";
+        log.textContent = "The Alpha Titan is enraged!";
+        shakeAmount = 14;
+    }
 
-    const targets = [player, ...enemies.filter(e => e !== enemy)];
+    const targets = [player];
     let nearest = null;
     let distSq = Infinity;
 
@@ -807,8 +945,9 @@ function aiBehavior(enemy) {
 
         // Chase behavior
         if (dist > 60) {
-            enemy.dirX = Math.sign(dx) * 0.8; // Move towards target
-            enemy.dirY = Math.sign(dy) * 0.8;
+            const length = Math.hypot(dx, dy) || 1;
+            enemy.dirX = dx / length;
+            enemy.dirY = dy / length;
         } else {
             enemy.dirX = 0;
             enemy.dirY = 0;
@@ -852,7 +991,7 @@ function updateFacing(entity, dx) {
 
     const targets = entity.isPlayer
         ? enemies.filter(e => e.health > 0)
-        : [player, ...enemies.filter(e => e !== entity && e.health > 0)];
+        : [player];
 
     if (targets.length === 0) {
         entity.facing = 1;
@@ -906,7 +1045,7 @@ function drawGameOver() {
     ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
 
     ctx.font = "24px sans-serif";
-    ctx.fillText("Press 'R' to Return to Menu", canvas.width / 2, canvas.height / 2 + 40);
+    ctx.fillText("Press R or tap to return to menu", canvas.width / 2, canvas.height / 2 + 40);
     ctx.restore();
 }
 
@@ -926,7 +1065,7 @@ function drawVictory() {
     ctx.font = "24px sans-serif";
     ctx.shadowBlur = 0;
     ctx.fillText("Boss Defeated! +1000 GCells", canvas.width / 2, canvas.height / 2 + 20);
-    ctx.fillText("Press 'R' to Return to Menu", canvas.width / 2, canvas.height / 2 + 60);
+    ctx.fillText("Press R or tap to return to menu", canvas.width / 2, canvas.height / 2 + 60);
     ctx.restore();
 }
 
@@ -936,19 +1075,38 @@ function setupMatch() {
     player.health = player.maxHealth;
     player.speed = stats.speed;
     player.img = stats.img;
+    player.tint = stats.tint;
+    player.size = stats.size;
     player.x = 200;
     player.y = 200;
-    
+    player.z = 0;
+    player.vz = 0;
+    player.isStomping = false;
+    player.thermoTimer = 0;
+    player.attackCooldown = 0;
+    player.dashTimer = 0;
+    player.dashCooldown = 0;
+
     projectiles.length = 0;
     effects.length = 0;
     pendingUltimates.length = 0;
+    floatingTexts.length = 0;
+    beamTimer = 0;
+    beamData = null;
+    shakeAmount = 0;
     ultimateCharge = 0;
     isGameOver = false;
     isVictory = false;
     isPaused = false;
     regenTimer = 0;
     enemiesDefeated = 0;
+    currentWave = 1;
+    combo = 1;
+    comboTimer = 0;
     bossActive = false;
+    Object.values(moveCooldowns).forEach(cooldown => {
+        cooldown.remaining = 0;
+    });
 
     if (gameMode === "boss") {
         spawnBoss();
@@ -956,27 +1114,66 @@ function setupMatch() {
         spawnEnemies();
     }
     spawnCivilians();
+    updateBattleStatus();
     log.textContent = "Battle Start!";
 }
 
 function updateGCellsUI() {
-    homeGCells.textContent = `Gcells: ${gCells}`;
-    gameGCells.textContent = `Gcells: ${gCells}`;
+    homeGCells.textContent = `G-Cells: ${gCells}`;
+    gameGCells.textContent = `G-Cells: ${gCells}`;
+}
+
+function drawMinimap(camX, camY) {
+    const width = 132;
+    const height = 88;
+    const x = canvas.width - width - 14;
+    const y = 48;
+    ctx.save();
+    ctx.fillStyle = "rgba(2, 8, 11, .78)";
+    ctx.strokeStyle = "rgba(113, 226, 245, .55)";
+    ctx.lineWidth = 2;
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeRect(x, y, width, height);
+
+    ctx.strokeStyle = "rgba(255, 255, 255, .28)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(
+        x + camX / worldWidth * width,
+        y + camY / worldHeight * height,
+        canvas.width / worldWidth * width,
+        canvas.height / worldHeight * height
+    );
+
+    const drawDot = (entity, color, radius) => {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(
+            x + (entity.x + entity.size / 2) / worldWidth * width,
+            y + (entity.y + entity.size / 2) / worldHeight * height,
+            radius,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+    };
+    enemies.filter(enemy => enemy.health > 0).forEach(enemy => drawDot(enemy, enemy.isBoss ? "#ffc247" : "#ff5d68", enemy.isBoss ? 4 : 2.5));
+    drawDot(player, "#55ecff", 3.5);
+    ctx.restore();
 }
 
 // =========================
 // GAME LOOP
 // =========================
 function update() {
-    // If the game is paused or not running, we keep the animation loop alive
-    // but skip all game logic and drawing updates.
-    if (isPaused || !isGameRunning) {
-        requestAnimationFrame(update);
+    animationFrameId = null;
+    if (!isGameRunning) return;
+    if (isPaused) {
+        animationFrameId = requestAnimationFrame(update);
         return;
     }
 
     ctx.save();
-    
+
     // Camera Logic
     let camX = player.x + player.size / 2 - canvas.width / 2;
     let camY = player.y + player.size / 2 - canvas.height / 2;
@@ -996,13 +1193,13 @@ function update() {
     // Thermo Nuclear Pulse Logic
     if (player.thermoTimer > 0) {
         player.thermoTimer--;
-        
+
         // Pulse Effect every 60 frames (slower cooldown)
         if (player.thermoTimer % 120 === 0) {
-            addEffect("thermoPulse", { 
-                x: player.x + player.size / 2, 
-                y: player.y + player.size / 2, 
-                r: 400 
+            addEffect("thermoPulse", {
+                x: player.x + player.size / 2,
+                y: player.y + player.size / 2,
+                r: 400
             }, 30);
             shakeAmount = 10;
         }
@@ -1018,17 +1215,13 @@ function update() {
                         addFloatingText(e.x + e.size/2, e.y, "5", "orange");
                     }
                     if (e.health <= 0) {
-                        // Manual reward since we bypass applyDamage
-                        gCells += 500;
-                        localStorage.setItem("kaiju_gcells", gCells);
-                        updateGCellsUI();
-                        addFloatingText(e.x + e.size / 2, e.y, "+500 G", "255, 215, 0");
-                        log.textContent = "BOSS SLAIN! +500 G";
+                        rewardDefeat(e);
                     }
                 } else {
                     e.health = 0; // Instant Kill
                     addFloatingText(e.x, e.y, "MELTED!", "red");
                     addEffect("splat", {x: e.x, y: e.y}, 20);
+                    rewardDefeat(e);
                 }
             }
         });
@@ -1058,7 +1251,7 @@ function update() {
             const footY = player.y + player.size - 20;
             const footW = player.size - 30;
             const footH = 20;
-            
+
             if (c.x > footX && c.x < footX + footW && c.y > footY && c.y < footY + footH) {
                 addEffect("splat", { x: c.x, y: c.y }, 20);
                 civilians.splice(i, 1);
@@ -1082,7 +1275,7 @@ function update() {
         enemies.forEach(e => e.draw());
         ctx.restore(); // Restore to screen coordinates for UI
         drawGameOver();
-        requestAnimationFrame(update);
+        animationFrameId = requestAnimationFrame(update);
         return;
     }
 
@@ -1091,7 +1284,7 @@ function update() {
         enemies.forEach(e => e.draw());
         ctx.restore();
         drawVictory();
-        requestAnimationFrame(update);
+        animationFrameId = requestAnimationFrame(update);
         return;
     }
 
@@ -1117,8 +1310,21 @@ function update() {
     if (keys["s"]) dy = 1;
     if (keys["a"]) dx = -1;
     if (keys["d"]) dx = 1;
-    player.move(dx, dy);
-    updateFacing(player, dx);
+    if (dx && dy) {
+        dx *= Math.SQRT1_2;
+        dy *= Math.SQRT1_2;
+    }
+    if (player.dashTimer > 0) {
+        player.move(player.dashX * 3.25, player.dashY * 3.25);
+        player.dashTimer--;
+        if (player.dashTimer % 2 === 0) {
+            addEffect("tailAura", { x: player.x + player.size / 2, y: player.y + player.size / 2 }, 8);
+        }
+    } else {
+        player.move(dx, dy);
+    }
+    updateFacing(player, player.dashTimer > 0 ? player.dashX : dx);
+    if (player.dashCooldown > 0) player.dashCooldown--;
 
     if (player.attackCooldown > 0) player.attackCooldown--;
 
@@ -1149,7 +1355,9 @@ function update() {
 
         targets.forEach(target => {
             if (target.health > 0 && hitboxCollides(hitbox, target)) {
+                if (target.isPlayer && target.dashTimer > 0) return;
                 target.health -= p.damage;
+                target.flashTimer = 6;
                 addFloatingText(target.x + target.size / 2, target.y, p.damage);
 
                 const dirX = Math.sign(target.x - p.owner.x) || 1;
@@ -1158,7 +1366,8 @@ function update() {
 
                 if (p.owner.isPlayer) {
                     ultimateCharge = Math.min(100, ultimateCharge + p.damage * 0.5);
-                    if (target.health <= 0) log.textContent = "Enemy defeated!";
+                    registerComboHit();
+                    if (target.health <= 0) rewardDefeat(target);
                 }
             }
         });
@@ -1187,11 +1396,13 @@ function update() {
             localStorage.setItem("kaiju_gcells", gCells);
             updateGCellsUI();
             log.textContent = "VICTORY! +1000 G";
-        } else if (enemiesDefeated >= 10) {
+        } else if (currentWave >= totalWaves) {
             spawnBoss();
         } else {
+            currentWave++;
             spawnEnemies();
-            log.textContent = "New enemies have appeared!";
+            player.health = Math.min(player.maxHealth, player.health + Math.round(player.maxHealth * .12));
+            log.textContent = `Wave ${currentWave}! New titans incoming.`;
         }
     }
 
@@ -1247,6 +1458,18 @@ function update() {
     // Effects
     drawEffects();
 
+    [player, ...enemies].forEach(entity => {
+        if (entity.flashTimer > 0) entity.flashTimer--;
+    });
+
+    if (comboTimer > 0) {
+        comboTimer--;
+        if (comboTimer === 0) {
+            combo = 1;
+            updateBattleStatus();
+        }
+    }
+
     // Floating Texts
     ctx.font = "bold 24px sans-serif";
     ctx.textAlign = "center";
@@ -1254,19 +1477,25 @@ function update() {
         const ft = floatingTexts[i];
         ft.y += ft.vy;
         ft.life--;
-        ctx.fillStyle = `rgba(${ft.color}, ${ft.life / 40})`;
+        const alpha = ft.life / 40;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = ft.color.includes(",") ? `rgb(${ft.color})` : ft.color;
         ctx.strokeStyle = `rgba(0, 0, 0, ${ft.life / 40})`;
         ctx.lineWidth = 3;
         ctx.strokeText(ft.text, ft.x, ft.y);
         ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.globalAlpha = 1;
         if (ft.life <= 0) floatingTexts.splice(i, 1);
     }
 
     ctx.restore(); // End shake
+    drawMinimap(camX, camY);
 
     // UI
     healthBar.style.width = Math.max(0, (player.health / player.maxHealth) * 100) + "%";
     ultimateBar.style.width = ultimateCharge + "%";
+    dashBtn.classList.toggle("cooling", player.dashCooldown > 0);
+    dashBtn.setAttribute("aria-disabled", String(player.dashCooldown > 0));
 
     // Cooldowns
     for (let m = 1; m <= 4; m++) {
@@ -1280,18 +1509,18 @@ function update() {
         }
     }
 
-    requestAnimationFrame(update);
+    animationFrameId = requestAnimationFrame(update);
 }
 
 // =========================
 // MENU & KAIJU SELECTION
 // =========================
 const kaijuData = {
-    godzilla: { name: "Godzilla", hp: 500, speed: 3, desc: "Balanced", price: 0, img: godzillaImg },
-    kong: { name: "Kong", hp: 700, speed: 2.5, desc: "Tank", price: 500, img: kongImg },
-    mothra: { name: "Mothra", hp: 300, speed: 5, desc: "Speedster", price: 300, img: mothraImg },
-    rodan: { name: "Rodan", hp: 400, speed: 4, desc: "Aerial", price: 100, img: rodanImg },
-    mecha: { name: "Mecha Godzilla", hp: 450, speed: 3.5, desc: "Attacker", price: 1000, img: mechaImg }
+    godzilla: { name: "Godzilla", hp: 500, speed: 3, size: 90, desc: "Balanced", price: 0, img: godzillaImg, tint: "none" },
+    kong: { name: "Titan Kong", hp: 700, speed: 2.5, size: 94, desc: "Tank", price: 500, img: titanKongImg, tint: "none" },
+    mothra: { name: "Solar Kaiju", hp: 300, speed: 5, size: 92, desc: "Speedster", price: 300, img: solarKaijuImg, tint: "none" },
+    rodan: { name: "Magma Kaiju", hp: 400, speed: 4, size: 94, desc: "Aerial", price: 100, img: magmaKaijuImg, tint: "none" },
+    mecha: { name: "Mecha Godzilla", hp: 450, speed: 3.5, size: 92, desc: "Attacker", price: 1000, img: mechaGodzillaImg, tint: "none" }
 };
 
 document.getElementById("mode-survival").onclick = () => setGameMode("survival");
@@ -1321,10 +1550,10 @@ function initMenu() {
         const isUnlocked = unlockedKaijus.includes(key);
         const btn = document.createElement("div");
         btn.className = "kaiju-btn";
-        
+
         if (isUnlocked) {
             if (key === selectedKaiju) btn.classList.add("selected");
-            btn.innerHTML = `<span>${k.name}</span><span style='font-size:10px; color:#aaa'>${k.desc}</span>`;
+            btn.innerHTML = `<img class="kaiju-portrait" src="${k.img.src}" alt=""><span>${k.name}</span><span class="kaiju-desc">${k.desc}</span>`;
             btn.onclick = () => {
                 selectedKaiju = key;
                 initMenu(); // Redraw to update selection highlight
@@ -1333,7 +1562,7 @@ function initMenu() {
             // Locked State
             btn.style.borderColor = "#550000";
             btn.style.opacity = "0.8";
-            btn.innerHTML = `<span style="color:red">LOCKED</span><span style='font-size:12px; color:gold'>${k.price} G</span>`;
+            btn.innerHTML = `<img class="kaiju-portrait locked" src="${k.img.src}" alt=""><span class="locked-label">Locked</span><span class="kaiju-price">${k.price} G</span>`;
             btn.onclick = () => {
                 if (gCells >= k.price) {
                     gCells -= k.price;
@@ -1376,16 +1605,22 @@ function startGame() {
     document.getElementById("gameCanvas").classList.remove("hidden");
     document.getElementById("log").classList.remove("hidden");
     document.getElementById("game-gcells").classList.remove("hidden");
+    battleStatus.classList.remove("hidden");
+    pauseBtn.classList.remove("hidden");
+    touchPad.classList.remove("hidden");
 
     // Start Loop if not already running
-    if (!isGameRunning) {
-        isGameRunning = true;
-        update();
-    }
+    if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+    isGameRunning = true;
+    update();
 }
 
 function returnToMenu() {
     isGameRunning = false;
+    if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
     isPaused = false;
     pauseMenu.classList.add("hidden");
     homeScreen.classList.remove("hidden");
@@ -1394,6 +1629,9 @@ function returnToMenu() {
     document.getElementById("gameCanvas").classList.add("hidden");
     document.getElementById("log").classList.add("hidden");
     document.getElementById("game-gcells").classList.add("hidden");
+    battleStatus.classList.add("hidden");
+    pauseBtn.classList.add("hidden");
+    touchPad.classList.add("hidden");
     updateGCellsUI();
 }
 
