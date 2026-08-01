@@ -3,9 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Chess Through History · Mr. Scandrett's ClassroomOS</title>
+  <title>ChronoChess 3D · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
-  <meta name="description" content="Play chess against classroom models inspired by historical AI systems from 1951 to today." />
+  <meta name="description" content="Play ChronoChess 3D against historical AI styles from 1951 to today in an interactive Three.js arena by Mr. Scandrett." />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../assets/js/three/three.module.min.js",
+        "three/addons/": "../assets/js/three/addons/"
+      }
+    }
+  </script>
   <link rel="stylesheet" href="../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../assets/css/lessons/chess-ai-core.css" />
   <link rel="stylesheet" href="../assets/css/lesson-layout.css" />
@@ -440,15 +448,21 @@
     <div class="ll-sim" id="main-content">
 
       <div class="ll-hero">
-        <p class="eyebrow">AI Timeline · Lesson 05</p>
-        <h1>AI Chess Through History</h1>
-        <p>One lesson, multiple historical opponents: compare how chess AI evolved from early heuristic play to modern engines.</p>
+        <div class="chess-academic-seal" aria-label="Scholars' Chess Society, established 1951">
+          <span class="chess-academic-seal-piece" aria-hidden="true">♜</span>
+          <span>Scholars' Chess Society</span>
+          <small>Est. MCMLI</small>
+        </div>
+        <p class="eyebrow">The Society presents · A game by Mr. Scandrett</p>
+        <h1>ChronoChess 3D</h1>
+        <div class="chess-academic-rule" aria-hidden="true"><span>♞</span></div>
+        <p>Challenge four generations of chess intelligence on an interactive 3D board, from Turing's hand-built logic to modern positional engines.</p>
       </div>
 
       <section class="section" id="chess-live">
         <div class="section-head">
-          <h2>Play Against Historical AI Models</h2>
-          <p>Play as White on a full 8x8 board, then switch AI eras to see how search depth and heuristics change behavior.</p>
+          <h2>Choose an era. Enter the arena.</h2>
+          <p>Play as White on a full 8×8 board, then switch opponents to feel how search depth and evaluation changed across computing history.</p>
         </div>
         <article class="card chess-lab" id="chess-lab" data-model-theme="deepblue1997">
           <div class="chess-board-wrap">
@@ -458,7 +472,21 @@
                 <div class="chess-advantage-center"></div>
               </div>
               <div class="chess-board-stack">
-                <div class="chess-board" id="chess-board" role="grid" aria-label="8 by 8 chess board"></div>
+                <div class="chess-3d-stage" id="chess-3d-stage">
+                  <canvas id="chess-3d-canvas" aria-label="Interactive 3D chess board. Drag to orbit, scroll or pinch to zoom, and select pieces and squares to move."></canvas>
+                  <div class="chess-3d-loading" id="chess-3d-loading" role="status">
+                    <span class="chess-3d-loader" aria-hidden="true"></span>
+                    <span>Building the board…</span>
+                  </div>
+                  <div class="chess-3d-help" aria-hidden="true">
+                    <span>Drag to orbit</span><span>Scroll to zoom</span><span>Click to move</span>
+                  </div>
+                  <div class="chess-3d-toolbar" aria-label="3D board view controls">
+                    <button type="button" id="chess-camera-home" title="Reset camera">Home view</button>
+                    <button type="button" id="chess-camera-flip" title="View from Black's side">Flip board</button>
+                  </div>
+                </div>
+                <div class="chess-board chess-board-accessible" id="chess-board" role="grid" aria-label="8 by 8 chess board"></div>
                 <svg class="chess-ghost-layer" id="chess-ghost-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
               </div>
             </div>
@@ -469,9 +497,29 @@
               <strong id="advantage-text">0.0</strong>
               <span>Black Pressure</span>
             </div>
-            <p><strong>Control heatmap:</strong> faint red squares show where the current black engine is exerting influence.</p>
+            <p id="chess-board-description"><strong>3D analysis board:</strong> warm squares show Black's influence. Drag to orbit, scroll or pinch to zoom, and use the view buttons to reset or flip the table.</p>
           </div>
           <p class="chess-status" id="chess-status" aria-live="polite"></p>
+          <section class="chess-blunder-meter" id="chess-blunder-meter" data-grade="idle" aria-labelledby="chess-blunder-heading">
+            <div class="chess-blunder-head">
+              <div>
+                <span class="chess-blunder-kicker">Scholars' Review</span>
+                <strong id="chess-blunder-heading">Awaiting your first move</strong>
+              </div>
+              <span class="chess-blunder-count" id="chess-blunder-count">0 blunders</span>
+            </div>
+            <div class="chess-blunder-track" role="meter" aria-label="Move quality loss" aria-valuemin="0" aria-valuemax="250" aria-valuenow="0" aria-valuetext="No move analyzed yet">
+              <span class="chess-blunder-zone is-excellent">Excellent</span>
+              <span class="chess-blunder-zone is-inaccuracy">Inaccuracy</span>
+              <span class="chess-blunder-zone is-mistake">Mistake</span>
+              <span class="chess-blunder-zone is-blunder">Blunder</span>
+              <i class="chess-blunder-marker" aria-hidden="true"></i>
+            </div>
+            <div class="chess-blunder-foot" aria-live="polite">
+              <span id="chess-blunder-detail">Your moves will be compared with the engine's preferred line.</span>
+              <strong id="chess-blunder-loss">—</strong>
+            </div>
+          </section>
           <div class="chess-model-note" id="chess-model-note" aria-live="polite"></div>
           <ol class="chess-log" id="chess-log"></ol>
         </article>
@@ -554,6 +602,14 @@
       <div class="ll-panel-body">
 
         <div class="ll-pane ll-active" id="chess-params">
+          <span class="ll-label" id="chess-view-label">Board Presentation</span>
+          <div class="ll-param chess-view-switch" role="group" aria-labelledby="chess-view-label">
+            <button type="button" class="chess-view-option" data-chess-view-option="3d" aria-pressed="true">3D Table</button>
+            <button type="button" class="chess-view-option" data-chess-view-option="2d" aria-pressed="false">2D Classic</button>
+          </div>
+
+          <hr class="ll-hr" />
+
           <label class="ll-label" for="chess-model">AI Model Era</label>
           <div class="ll-param">
             <select id="chess-model" class="chess-control-select">
@@ -621,6 +677,10 @@
           <div class="ll-info">
             <strong>What to Watch For</strong>
             Switch eras mid-session and compare how quickly the AI develops pieces, how aggressively it attacks, and how often it misses tactics at depth 1 vs depth 3.
+          </div>
+          <div class="ll-info">
+            <strong>Scholars' Review</strong>
+            After every White move, the blunder meter compares your choice with the engine's preferred continuation. Evaluation loss is shown in pawn units: lower is better.
           </div>
         </div><!-- /#chess-guide -->
 

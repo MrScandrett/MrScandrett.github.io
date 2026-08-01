@@ -1,4 +1,13 @@
+import { ChessBoard3D } from "./chess-3d-board.js";
+
 const boardElement = document.getElementById("chess-board");
+const board3dStage = document.getElementById("chess-3d-stage");
+const board3dCanvas = document.getElementById("chess-3d-canvas");
+const board3dLoading = document.getElementById("chess-3d-loading");
+const cameraHomeButton = document.getElementById("chess-camera-home");
+const cameraFlipButton = document.getElementById("chess-camera-flip");
+const boardDescription = document.getElementById("chess-board-description");
+const viewButtons = [...document.querySelectorAll("[data-chess-view-option]")];
 const statusElement = document.getElementById("chess-status");
 const logElement = document.getElementById("chess-log");
 const resetButton = document.getElementById("chess-reset");
@@ -13,9 +22,22 @@ const heuristicHud = document.getElementById("heuristic-hud");
 const radarElement = document.getElementById("chess-radar");
 const eraNoteElement = document.getElementById("chess-era-note");
 const evalLabelElement = document.getElementById("chess-eval-label");
+const blunderMeter = document.getElementById("chess-blunder-meter");
+const blunderHeading = document.getElementById("chess-blunder-heading");
+const blunderCount = document.getElementById("chess-blunder-count");
+const blunderDetail = document.getElementById("chess-blunder-detail");
+const blunderLoss = document.getElementById("chess-blunder-loss");
+const blunderTrack = blunderMeter?.querySelector(".chess-blunder-track");
 
 if (
   !boardElement ||
+  !board3dStage ||
+  !board3dCanvas ||
+  !board3dLoading ||
+  !cameraHomeButton ||
+  !cameraFlipButton ||
+  !boardDescription ||
+  viewButtons.length !== 2 ||
   !statusElement ||
   !logElement ||
   !resetButton ||
@@ -29,7 +51,13 @@ if (
   !heuristicHud ||
   !radarElement ||
   !eraNoteElement ||
-  !evalLabelElement
+  !evalLabelElement ||
+  !blunderMeter ||
+  !blunderHeading ||
+  !blunderCount ||
+  !blunderDetail ||
+  !blunderLoss ||
+  !blunderTrack
 ) {
   throw new Error("Chess lesson could not initialize. Missing required DOM nodes.");
 }
@@ -45,6 +73,21 @@ const PIECE_TEXT = {
   WR: "♖",
   WQ: "♕",
   WK: "♔",
+  BP: "♟",
+  BN: "♞",
+  BB: "♝",
+  BR: "♜",
+  BQ: "♛",
+  BK: "♚"
+};
+
+const FLAT_PIECE_TEXT = {
+  WP: "♟",
+  WN: "♞",
+  WB: "♝",
+  WR: "♜",
+  WQ: "♛",
+  WK: "♚",
   BP: "♟",
   BN: "♞",
   BB: "♝",
@@ -98,7 +141,7 @@ const MODEL_PROFILES = {
     pawnAdvanceWeight: 0.8,
     checkBonus: 9,
     captureBias: 0.12,
-    thinkDelay: 1800
+    thinkDelay: 850
   },
   machack1967: {
     label: "Mac Hack VI (1967)",
@@ -219,8 +262,28 @@ const state = {
   inCheckColor: null,
   log: [],
   aiPreviewMoves: [],
-  latestEval: 0
+  latestEval: 0,
+  lastMove: null,
+  aiGeneration: 0,
+  viewMode: "3d",
+  blunderGeneration: 0,
+  blunderCount: 0,
+  blunder: {
+    status: "idle",
+    grade: "idle",
+    loss: 0,
+    detail: "Your moves will be compared with the engine's preferred line."
+  }
 };
+
+try {
+  if (localStorage.getItem("chronochess-view") === "2d") state.viewMode = "2d";
+} catch (_) {
+  // Storage can be unavailable in privacy-restricted classroom browsers.
+}
+
+let board3d = null;
+const boardButtons = [];
 
 const initialModelId = new URLSearchParams(window.location.search).get("model");
 if (initialModelId && MODEL_PROFILES[initialModelId]) {
@@ -262,6 +325,31 @@ function opposite(color) {
 
 function toCoord(index) {
   return `${FILES[colOf(index)]}${SIZE - rowOf(index)}`;
+}
+
+function setViewMode(mode, persist = true) {
+  state.viewMode = mode === "2d" ? "2d" : "3d";
+  document.body.dataset.chessView = state.viewMode;
+  const is3d = state.viewMode === "3d";
+
+  viewButtons.forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.chessViewOption === state.viewMode));
+  });
+  board3dStage.setAttribute("aria-hidden", String(!is3d));
+  board3dCanvas.tabIndex = is3d ? 0 : -1;
+  boardDescription.innerHTML = is3d
+    ? "<strong>3D analysis board:</strong> warm squares show Black's influence. Drag to orbit, scroll or pinch to zoom, and use the view buttons to reset or flip the table."
+    : "<strong>2D classical board:</strong> select a piece, then choose a highlighted square. Coordinate labels and Black's pressure remain visible.";
+
+  if (persist) {
+    try {
+      localStorage.setItem("chronochess-view", state.viewMode);
+    } catch (_) {
+      // The selection still works for this session if storage is blocked.
+    }
+  }
+
+  if (state.board.length) renderBoard();
 }
 
 function findKing(board, color) {
@@ -816,10 +904,12 @@ function scoreForDisplay(board) {
   return evaluate(board, "W", activeModel());
 }
 
-function minimax(board, turn, depth, alpha, beta, perspective, profile, ply = 0) {
-  if (depth <= 0) {
+function minimax(board, turn, depth, alpha, beta, perspective, profile, ply = 0, searchContext = null) {
+  if (depth <= 0 || (searchContext && performance.now() >= searchContext.deadline)) {
     return { score: evaluate(board, perspective, profile), move: null };
   }
+
+  if (searchContext) searchContext.nodes += 1;
 
   const analysis = analyzePosition(board, turn);
   if (analysis.over) {
@@ -836,11 +926,12 @@ function minimax(board, turn, depth, alpha, beta, perspective, profile, ply = 0)
     let bestScore = -Infinity;
 
     for (const move of moves) {
+      if (bestMove && searchContext && performance.now() >= searchContext.deadline) break;
       const captured = board[move.to];
       const piece = board[move.from];
       board[move.from] = null;
       board[move.to] = move.promotion || piece;
-      const result = minimax(board, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1);
+      const result = minimax(board, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1, searchContext);
       board[move.from] = piece;
       board[move.to] = captured;
 
@@ -859,11 +950,12 @@ function minimax(board, turn, depth, alpha, beta, perspective, profile, ply = 0)
   let bestScore = Infinity;
 
   for (const move of moves) {
+    if (bestMove && searchContext && performance.now() >= searchContext.deadline) break;
     const captured = board[move.to];
     const piece = board[move.from];
     board[move.from] = null;
     board[move.to] = move.promotion || piece;
-    const result = minimax(board, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1);
+    const result = minimax(board, opposite(turn), depth - 1, alpha, beta, perspective, profile, ply + 1, searchContext);
     board[move.from] = piece;
     board[move.to] = captured;
 
@@ -884,13 +976,13 @@ function resolveSearchDepth(profile) {
   return Math.max(1, Math.min(4, profile.baseDepth + (budget - 2)));
 }
 
-function scoreCandidateMove(board, move, depth, profile) {
+function scoreCandidateMove(board, move, depth, profile, searchContext = null) {
   const next = applyMove(board, move);
   if (depth <= 1) {
     return evaluate(next, state.aiColor, profile);
   }
 
-  const result = minimax(next, opposite(state.aiColor), depth - 1, -Infinity, Infinity, state.aiColor, profile, 1);
+  const result = minimax(next, opposite(state.aiColor), depth - 1, -Infinity, Infinity, state.aiColor, profile, 1, searchContext);
   let score = result.score;
 
   if (move.capture) {
@@ -900,22 +992,146 @@ function scoreCandidateMove(board, move, depth, profile) {
   return score;
 }
 
-function getAiCandidateMoves(board, profile) {
+async function getAiCandidateMovesAsync(board, profile, isCancelled) {
   const analysis = analyzePosition(board, state.aiColor);
   if (analysis.over || analysis.moves.length === 0) return [];
 
   const depth = resolveSearchDepth(profile);
-  const scored = analysis.moves.map((move) => ({
-    move,
-    score: scoreCandidateMove(board, move, depth, profile)
-  }));
+  const selectedBudget = Math.max(1, Math.min(3, Number(depthSelect.value) || 2));
+  const timeBudget = selectedBudget === 1 ? 180 : selectedBudget === 2 ? 650 : 1200;
+  const searchContext = { deadline: performance.now() + timeBudget, nodes: 0 };
+  const scored = [];
+  let sliceStartedAt = performance.now();
+
+  for (const move of analysis.moves) {
+    if (isCancelled()) return [];
+    scored.push({ move, score: scoreCandidateMove(board, move, depth, profile, searchContext) });
+
+    if (performance.now() - sliceStartedAt > 12) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      sliceStartedAt = performance.now();
+    }
+  }
 
   scored.sort((a, b) => b.score - a.score);
   return scored;
 }
 
-function chooseAiMove(board, profile) {
-  const scored = getAiCandidateMoves(board, profile);
+function blunderGrade(loss) {
+  if (loss < 25) return { id: "excellent", label: loss < 8 ? "Best Move" : "Excellent" };
+  if (loss < 60) return { id: "inaccuracy", label: "Inaccuracy" };
+  if (loss < 120) return { id: "mistake", label: "Mistake" };
+  return { id: "blunder", label: "Blunder" };
+}
+
+async function scoreHumanCandidate(board, move, profile, isCancelled) {
+  const next = applyMove(board, move);
+  const replyAnalysis = analyzePosition(next, state.aiColor);
+
+  if (replyAnalysis.over) {
+    if (replyAnalysis.winner === state.humanColor) return MATE_SCORE;
+    if (replyAnalysis.winner === "D") return 0;
+  }
+
+  let worstReplyScore = Infinity;
+  let sliceStartedAt = performance.now();
+
+  for (const reply of replyAnalysis.moves) {
+    if (isCancelled()) return null;
+    const replyBoard = applyMove(next, reply);
+    const score = evaluate(replyBoard, state.humanColor, profile);
+    if (score < worstReplyScore) worstReplyScore = score;
+
+    if (performance.now() - sliceStartedAt > 10) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      sliceStartedAt = performance.now();
+    }
+  }
+
+  return Number.isFinite(worstReplyScore)
+    ? worstReplyScore
+    : evaluate(next, state.humanColor, profile);
+}
+
+async function analyzeHumanMove(boardBefore, playedMove, profile, generation) {
+  const isCancelled = () => generation !== state.blunderGeneration;
+  const legal = legalMoves(boardBefore, state.humanColor);
+  const ordered = [
+    playedMove,
+    ...legal.filter((move) => move.from !== playedMove.from || move.to !== playedMove.to)
+  ];
+  const results = [];
+
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+
+  for (const move of ordered) {
+    if (isCancelled()) return;
+    const score = await scoreHumanCandidate(boardBefore, move, profile, isCancelled);
+    if (score === null || isCancelled()) return;
+    results.push({ move, score });
+  }
+
+  results.sort((a, b) => b.score - a.score);
+  const best = results[0];
+  const played = results.find((entry) => entry.move.from === playedMove.from && entry.move.to === playedMove.to);
+  if (!best || !played || isCancelled()) return;
+
+  const loss = Math.max(0, Math.round(best.score - played.score));
+  const grade = blunderGrade(loss);
+  if (grade.id === "blunder") state.blunderCount += 1;
+
+  const bestCoordinate = `${toCoord(best.move.from)}–${toCoord(best.move.to)}`;
+  const playedCoordinate = `${toCoord(playedMove.from)}–${toCoord(playedMove.to)}`;
+  const matchedBest = best.move.from === playedMove.from && best.move.to === playedMove.to;
+  state.blunder = {
+    status: "complete",
+    grade: grade.id,
+    label: grade.label,
+    loss,
+    detail: matchedBest
+      ? `The engine agrees: ${playedCoordinate} was its top continuation.`
+      : loss < 8
+        ? `${playedCoordinate} was nearly equal to the preferred ${bestCoordinate}.`
+        : `The engine preferred ${bestCoordinate}; your move surrendered ${(loss / 100).toFixed(2)} pawn units.`
+  };
+  renderBlunderMeter();
+}
+
+function renderBlunderMeter() {
+  const review = state.blunder;
+  blunderMeter.dataset.grade = review.grade;
+  blunderCount.textContent = `${state.blunderCount} ${state.blunderCount === 1 ? "blunder" : "blunders"}`;
+
+  if (review.status === "analyzing") {
+    blunderHeading.textContent = "Reviewing your move…";
+    blunderDetail.textContent = "Comparing your choice with every legal continuation.";
+    blunderLoss.textContent = "…";
+    blunderMeter.style.setProperty("--blunder-position", "2%");
+    blunderTrack.setAttribute("aria-valuenow", "0");
+    blunderTrack.setAttribute("aria-valuetext", "Analysis in progress");
+    return;
+  }
+
+  if (review.status !== "complete") {
+    blunderHeading.textContent = "Awaiting your first move";
+    blunderDetail.textContent = review.detail;
+    blunderLoss.textContent = "—";
+    blunderMeter.style.setProperty("--blunder-position", "2%");
+    blunderTrack.setAttribute("aria-valuenow", "0");
+    blunderTrack.setAttribute("aria-valuetext", "No move analyzed yet");
+    return;
+  }
+
+  const meterValue = clamp(review.loss, 0, 250);
+  blunderHeading.textContent = review.label;
+  blunderDetail.textContent = review.detail;
+  blunderLoss.textContent = `${(review.loss / 100).toFixed(2)} loss`;
+  blunderMeter.style.setProperty("--blunder-position", `${clamp(meterValue / 2.5, 2, 98)}%`);
+  blunderTrack.setAttribute("aria-valuenow", String(meterValue));
+  blunderTrack.setAttribute("aria-valuetext", `${review.label}, ${(review.loss / 100).toFixed(2)} pawn units lost`);
+}
+
+function chooseAiMove(scored, profile) {
   const best = scored[0];
   if (!best) return null;
 
@@ -993,8 +1209,23 @@ function renderModelNote() {
   `;
 }
 
+function ensureBoardButtons() {
+  if (boardButtons.length === SIZE * SIZE) return;
+
+  for (let index = 0; index < SIZE * SIZE; index += 1) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.setAttribute("role", "gridcell");
+    button.dataset.index = String(index);
+    button.dataset.coordinate = toCoord(index);
+    button.addEventListener("click", () => onSquareClick(index));
+    boardButtons.push(button);
+    boardElement.appendChild(button);
+  }
+}
+
 function renderBoard() {
-  boardElement.innerHTML = "";
+  ensureBoardButtons();
 
   const checkSquare = state.inCheckColor ? findKing(state.board, state.inCheckColor) : -1;
   const controlHeatmap = computeControlHeatmap(state.board, state.aiColor, activeModel());
@@ -1004,11 +1235,8 @@ function renderBoard() {
     const col = colOf(i);
     const piece = state.board[i];
 
-    const button = document.createElement("button");
-    button.type = "button";
+    const button = boardButtons[i];
     button.className = `chess-square ${(row + col) % 2 === 0 ? "light" : "dark"}`;
-    button.setAttribute("role", "gridcell");
-    button.dataset.index = String(i);
     button.style.setProperty("--control-alpha", (controlHeatmap[i] * 0.42).toFixed(3));
 
     if (state.selected === i) button.classList.add("selected");
@@ -1016,7 +1244,9 @@ function renderBoard() {
     if (checkSquare === i) button.classList.add("in-check");
 
     if (piece) {
-      button.textContent = PIECE_TEXT[piece] || piece;
+      button.textContent = state.viewMode === "2d"
+        ? FLAT_PIECE_TEXT[piece] || piece
+        : PIECE_TEXT[piece] || piece;
       button.classList.add(colorOf(piece) === "W" ? "chess-piece-white" : "chess-piece-black");
       button.setAttribute("aria-label", `${PIECE_NAME[piece]} on ${toCoord(i)}`);
     } else {
@@ -1024,21 +1254,30 @@ function renderBoard() {
       button.setAttribute("aria-label", `Empty square ${toCoord(i)}`);
     }
 
-    button.addEventListener("click", () => {
-      onSquareClick(i);
-    });
-
-    boardElement.appendChild(button);
   }
 
   depthSelect.disabled = state.aiThinking;
   modelSelect.disabled = state.aiThinking;
+  labElement.classList.toggle("is-thinking", state.aiThinking);
 
   state.latestEval = scoreForDisplay(state.board);
   updateAdvantage(state.latestEval);
   updateHeuristicHud();
   renderModelNote();
   renderGhostLines();
+  if (board3d) {
+    board3d.currentSelected = state.selected;
+    board3d.render({
+      board: state.board,
+      selected: state.selected,
+      targets: state.legalTargets,
+      checkSquare,
+      heatmap: controlHeatmap,
+      previews: state.aiPreviewMoves,
+      lastMove: state.lastMove,
+      theme: activeModel().eraSkin || state.aiModelId
+    });
+  }
   statusElement.textContent = statusText();
   renderLog();
 }
@@ -1053,19 +1292,32 @@ function updateGameStatus() {
 function performMove(move, actorLabel) {
   const movingPiece = state.board[move.from];
   state.board = applyMove(state.board, move);
+  state.lastMove = { from: move.from, to: move.to };
   pushLog(`${actorLabel}: ${notation(move, movingPiece)}`);
 }
 
-function runAiTurn() {
+async function runAiTurn() {
   if (state.winner || state.turn !== state.aiColor) return;
 
   const model = activeModel();
-  const candidates = getAiCandidateMoves(state.board, model);
-  state.aiPreviewMoves = candidates.slice(0, 3);
+  const generation = ++state.aiGeneration;
   state.aiThinking = true;
+  state.aiPreviewMoves = [];
+  renderBoard();
+
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  const candidates = await getAiCandidateMovesAsync(
+    state.board.slice(),
+    model,
+    () => generation !== state.aiGeneration
+  );
+  if (generation !== state.aiGeneration) return;
+
+  state.aiPreviewMoves = candidates.slice(0, 3);
   renderBoard();
 
   window.setTimeout(() => {
+    if (generation !== state.aiGeneration) return;
     const analysis = analyzePosition(state.board, state.aiColor);
 
     if (analysis.over || analysis.moves.length === 0) {
@@ -1076,7 +1328,7 @@ function runAiTurn() {
       return;
     }
 
-    const move = chooseAiMove(state.board, model) || analysis.moves[0];
+    const move = chooseAiMove(candidates, model) || analysis.moves[0];
 
     performMove(move, model.logLabel);
     state.turn = state.humanColor;
@@ -1124,6 +1376,17 @@ function onSquareClick(index) {
   const move = options.find((candidate) => candidate.from === state.selected && candidate.to === index);
   if (!move) return;
 
+  const boardBefore = state.board.slice();
+  const reviewProfile = activeModel();
+  const reviewGeneration = ++state.blunderGeneration;
+  state.blunder = {
+    status: "analyzing",
+    grade: "analyzing",
+    loss: 0,
+    detail: "Comparing your choice with every legal continuation."
+  };
+  renderBlunderMeter();
+
   performMove(move, "White");
   state.selected = null;
   state.legalTargets = [];
@@ -1135,6 +1398,17 @@ function onSquareClick(index) {
   if (!state.winner) {
     runAiTurn();
   }
+
+  analyzeHumanMove(boardBefore, move, reviewProfile, reviewGeneration).catch(() => {
+    if (reviewGeneration !== state.blunderGeneration) return;
+    state.blunder = {
+      status: "idle",
+      grade: "idle",
+      loss: 0,
+      detail: "The move review was interrupted. Your game can continue normally."
+    };
+    renderBlunderMeter();
+  });
 }
 
 function freshBoard() {
@@ -1159,8 +1433,18 @@ function resetGame() {
   state.legalTargets = [];
   state.winner = null;
   state.aiThinking = false;
+  state.aiGeneration += 1;
+  state.blunderGeneration += 1;
+  state.blunderCount = 0;
+  state.blunder = {
+    status: "idle",
+    grade: "idle",
+    loss: 0,
+    detail: "Your moves will be compared with the engine's preferred line."
+  };
   state.inCheckColor = null;
   state.aiPreviewMoves = [];
+  state.lastMove = null;
   state.log = [
     `New 8x8 game started vs ${model.label}.`,
     `Model note: ${model.summary}`,
@@ -1169,6 +1453,7 @@ function resetGame() {
 
   updateGameStatus();
   renderBoard();
+  renderBlunderMeter();
 }
 
 function syncModelSelection(shouldReset) {
@@ -1198,5 +1483,18 @@ window.addEventListener("resize", () => {
   renderGhostLines();
 });
 
+board3d = new ChessBoard3D({
+  canvas: board3dCanvas,
+  host: board3dStage,
+  loading: board3dLoading,
+  onSquareClick
+});
+cameraHomeButton.addEventListener("click", () => board3d.home());
+cameraFlipButton.addEventListener("click", () => board3d.flip());
+viewButtons.forEach((button) => {
+  button.addEventListener("click", () => setViewMode(button.dataset.chessViewOption));
+});
+
+setViewMode(state.viewMode, false);
 syncModelSelection(false);
 resetGame();
