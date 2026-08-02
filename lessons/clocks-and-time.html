@@ -239,6 +239,24 @@
     .ct-tz-lab > p { color: rgba(255,255,255,0.55); font-size: 0.84rem; margin: 0 0 1.2rem; }
     .ct-tz-map-wrap { border-radius: 12px; overflow: hidden; background: #0a0f1e; position: relative; }
     #ct-world-svg { width: 100%; max-width: 100%; display: block; }
+    .ct-map-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .35rem .8rem; margin-top: .45rem; color: rgba(186,230,253,.48); font-family: 'IBM Plex Mono', monospace; font-size: .6rem; letter-spacing: .035em; }
+    .ct-map-caption a { color: #7dd3fc; text-decoration: none; }
+    .ct-map-caption a:hover { text-decoration: underline; }
+    .ct-map-labels { fill: rgba(186,230,253,.48); font-size: 7px; letter-spacing: .08em; pointer-events: none; }
+    .ct-map-labels .prime { fill: rgba(251,191,36,.78); }
+    .ct-map-labels .date-line { fill: rgba(251,113,133,.7); }
+    .ct-utc-labels { fill: rgba(147,197,253,.64); font-size: 7px; pointer-events: none; }
+    .ct-utc-labels .zero { fill: #fbbf24; font-weight: 700; }
+    .ct-city-marker { cursor: pointer; outline: none; }
+    .ct-city-marker .marker-halo { fill: rgba(52,211,153,.16); stroke: rgba(110,231,183,.35); transition: transform .18s ease, fill .18s ease; transform-box: fill-box; transform-origin: center; }
+    .ct-city-marker .marker-core { fill: #6ee7b7; stroke: #ecfdf5; stroke-width: 1; filter: url(#ct-city-glow); }
+    .ct-city-marker .marker-label { fill: #d1fae5; font-family: 'IBM Plex Mono', monospace; font-size: 7px; font-weight: 700; letter-spacing: .05em; paint-order: stroke; stroke: #071425; stroke-width: 2.4px; stroke-linejoin: round; }
+    .ct-city-marker:hover .marker-halo,
+    .ct-city-marker:focus .marker-halo { fill: rgba(251,191,36,.3); transform: scale(1.55); }
+    .ct-city-marker:hover .marker-core,
+    .ct-city-marker:focus .marker-core { fill: #fbbf24; }
+    .ct-city-marker:hover .marker-label,
+    .ct-city-marker:focus .marker-label { fill: #fef3c7; }
     .ct-tz-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 0; }
     .ct-tz-btn {
       background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.35);
@@ -256,7 +274,10 @@
       display: flex; align-items: center; justify-content: space-between;
       background: rgba(255,255,255,0.04); border-radius: 8px; padding: 0.4rem 0.7rem;
     }
+    .ct-city-row:target, .ct-city-row.is-map-active { background: rgba(34,211,238,.12); box-shadow: inset 0 0 0 1px rgba(34,211,238,.28); }
     .ct-city-row .city-name { font-size: 0.82rem; color: rgba(255,255,255,0.75); }
+    .ct-city-row .city-clock { display: flex; flex: 0 0 auto; align-items: center; gap: .45rem; }
+    .ct-city-row .city-offset { color: rgba(147,197,253,.55); font-family: 'IBM Plex Mono', monospace; font-size: .62rem; white-space: nowrap; }
     .ct-city-row .city-time { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: #34d399; font-weight: 600; }
     .ct-tz-explainer { margin-top: 1rem; }
     .ct-tz-explainer p { color: rgba(255,255,255,0.55); font-size: 0.82rem; line-height: 1.65; margin: 0 0 0.4rem; }
@@ -378,6 +399,388 @@
 
     /* ── Separator ────────────────────────────────────── */
     .ct-sep { height: 1px; background: linear-gradient(to right, transparent, rgba(59,130,246,0.3), transparent); margin: 1.2rem 0; }
+
+    /* ── 2026 visual evolution: precision instrument ───── */
+    .ct-page {
+      --ct-ink: var(--text-primary, #172033);
+      --ct-copy: var(--text-secondary, #465269);
+      --ct-paper: color-mix(in srgb, var(--surface-elevated, #fff) 94%, #f3ead7);
+      --ct-blue: #3b82f6;
+      --ct-cyan: #22d3ee;
+      --ct-gold: #f4b942;
+      width: min(1080px, calc(100% - 2rem));
+      padding-top: 1.25rem;
+      position: relative;
+    }
+    .ct-page::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      top: 0;
+      left: 50%;
+      width: min(1280px, 100vw);
+      height: 36rem;
+      transform: translateX(-50%);
+      background:
+        radial-gradient(circle at 50% 3rem, color-mix(in srgb, var(--ct-blue) 13%, transparent), transparent 20rem),
+        linear-gradient(180deg, color-mix(in srgb, var(--surface-page-alt, #eef2f7) 70%, transparent), transparent 90%);
+      pointer-events: none;
+    }
+
+    .ct-hero {
+      min-height: 19rem;
+      justify-content: center;
+      isolation: isolate;
+      margin-bottom: 0.8rem;
+      padding: 2.3rem clamp(1.2rem, 5vw, 4rem) 2.5rem;
+      border: 1px solid color-mix(in srgb, var(--border-default, #d2d2d7) 68%, transparent);
+      border-radius: 28px;
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--surface-elevated, #fff) 96%, transparent), color-mix(in srgb, var(--surface-panel-alt, #f8fafc) 88%, transparent));
+      box-shadow: 0 24px 70px color-mix(in srgb, var(--shadow-color, #000) 13%, transparent);
+    }
+    .ct-hero::before,
+    .ct-hero::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .ct-hero::before {
+      width: 17rem;
+      height: 17rem;
+      right: -5rem;
+      top: -6rem;
+      border: 1px solid color-mix(in srgb, var(--ct-blue) 28%, transparent);
+      box-shadow:
+        0 0 0 2.4rem color-mix(in srgb, var(--ct-blue) 4%, transparent),
+        0 0 0 4.8rem color-mix(in srgb, var(--ct-blue) 3%, transparent);
+    }
+    .ct-hero::after {
+      width: 8rem;
+      height: 8rem;
+      left: -2.5rem;
+      bottom: -3.5rem;
+      background: repeating-conic-gradient(from -10deg, color-mix(in srgb, var(--ct-gold) 38%, transparent) 0deg 1deg, transparent 1deg 15deg);
+      -webkit-mask: radial-gradient(circle, transparent 0 43%, #000 44% 46%, transparent 47% 66%, #000 67% 68%, transparent 69%);
+      mask: radial-gradient(circle, transparent 0 43%, #000 44% 46%, transparent 47% 66%, #000 67% 68%, transparent 69%);
+    }
+    .ct-hero .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.38rem 0.7rem;
+      border: 1px solid color-mix(in srgb, var(--ct-blue) 24%, transparent);
+      border-radius: 999px;
+      color: var(--ct-blue);
+      background: color-mix(in srgb, var(--ct-blue) 8%, transparent);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .ct-hero .eyebrow::before { content: '◷'; font-size: 0.95rem; }
+    .ct-hero h1 {
+      margin-top: 0.9rem;
+      color: var(--ct-ink);
+      font-size: clamp(2.25rem, 6.5vw, 4.7rem);
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.065em;
+    }
+    .ct-hero-meta {
+      margin-top: 1rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.66rem;
+      letter-spacing: 0.045em;
+      text-transform: uppercase;
+    }
+    .ct-hero-meta .dot { background: var(--ct-gold); opacity: 1; }
+    .ct-lede { max-width: 72ch; color: var(--ct-copy); font-size: clamp(0.9rem, 1.5vw, 1.02rem); }
+
+    .ct-chapter-nav {
+      position: sticky;
+      top: 0.65rem;
+      z-index: 20;
+      display: flex;
+      gap: 0.35rem;
+      width: max-content;
+      max-width: calc(100% - 1rem);
+      margin: 0 auto 1.4rem;
+      padding: 0.38rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      border: 1px solid color-mix(in srgb, var(--border-default, #d2d2d7) 75%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--surface-elevated, #fff) 84%, transparent);
+      box-shadow: 0 10px 30px color-mix(in srgb, var(--shadow-color, #000) 13%, transparent);
+      backdrop-filter: blur(18px) saturate(150%);
+    }
+    .ct-chapter-nav::-webkit-scrollbar { display: none; }
+    .ct-chapter-nav a {
+      flex: 0 0 auto;
+      padding: 0.48rem 0.75rem;
+      border-radius: 999px;
+      color: var(--text-muted, #64748b);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.67rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+    .ct-chapter-nav a:hover,
+    .ct-chapter-nav a:focus-visible { color: #fff; background: #2563eb; transform: translateY(-1px); outline: none; }
+
+    .ct-page > section:not(.ct-hero) { scroll-margin-top: 4.6rem; }
+    .ct-card,
+    .ct-clock-lab,
+    .ct-tz-lab,
+    .ct-dilation-lab { margin-bottom: 1.25rem; }
+    .ct-card {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(1.25rem, 3vw, 2rem);
+      border: 1px solid color-mix(in srgb, var(--border-default, #d2d2d7) 72%, transparent);
+      border-left: 1px solid color-mix(in srgb, var(--border-default, #d2d2d7) 72%, transparent);
+      border-radius: 22px;
+      background: var(--ct-paper);
+      box-shadow: 0 12px 40px color-mix(in srgb, var(--shadow-color, #000) 10%, transparent);
+    }
+    .ct-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: linear-gradient(180deg, var(--card-accent, var(--ct-blue)), color-mix(in srgb, var(--card-accent, var(--ct-blue)) 15%, transparent));
+    }
+    .ct-card > h2,
+    .ct-clock-lab-head > h2,
+    .ct-tz-lab > h2,
+    .ct-dilation-lab > h2 {
+      display: flex;
+      align-items: baseline;
+      gap: 0.65rem;
+      font-size: clamp(1.25rem, 2.4vw, 1.7rem);
+      line-height: 1.15;
+    }
+    [data-step] > h2::before,
+    [data-step] > .ct-clock-lab-head > h2::before {
+      content: attr(data-step);
+      color: var(--card-accent, #60a5fa);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+    }
+    .ct-card p { color: var(--ct-copy); font-size: 0.92rem; line-height: 1.72; }
+    .ct-card h3 { margin-top: 1.2rem; }
+
+    .ct-clock-lab,
+    .ct-tz-lab,
+    .ct-dilation-lab {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(1.35rem, 3.5vw, 2.35rem);
+      border: 1px solid rgba(125, 211, 252, 0.18);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(59,130,246,0.24), transparent 30%),
+        radial-gradient(circle at 92% 92%, rgba(34,211,238,0.12), transparent 28%),
+        linear-gradient(145deg, #101a2e, #08111f 68%);
+      box-shadow: 0 24px 60px rgba(4, 12, 28, 0.28);
+    }
+    .ct-clock-lab::after,
+    .ct-tz-lab::after,
+    .ct-dilation-lab::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.22;
+      background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+      background-size: 32px 32px;
+      -webkit-mask-image: linear-gradient(to bottom, #000, transparent 60%);
+      mask-image: linear-gradient(to bottom, #000, transparent 60%);
+    }
+    .ct-clock-lab > *, .ct-tz-lab > *, .ct-dilation-lab > * { position: relative; z-index: 1; }
+    .ct-clock-lab-head { max-width: 42rem; margin-inline: auto; }
+    .ct-clock-badge { background: rgba(34,211,238,.1); border-color: rgba(34,211,238,.3); color: #67e8f9; }
+    .ct-clock-face { width: clamp(190px, 27vw, 240px); height: clamp(190px, 27vw, 240px); background: radial-gradient(circle at 38% 30%, #263a58, #09111f 70%); border-color: rgba(125,211,252,.72); box-shadow: 0 0 0 9px rgba(59,130,246,.06), 0 20px 55px rgba(0,0,0,.45), inset 0 0 34px rgba(0,0,0,.55); }
+    .ct-clock-face svg { width: 100%; height: 100%; overflow: visible; }
+    .ct-clock-face::before {
+      content: '';
+      position: absolute;
+      inset: 5%;
+      z-index: 2;
+      border-radius: 50%;
+      background: linear-gradient(132deg, rgba(255,255,255,.18), transparent 28%, transparent 72%, rgba(56,189,248,.06));
+      pointer-events: none;
+    }
+    .ct-clock-face::after {
+      content: 'LOCAL  ·  PRECISION';
+      position: absolute;
+      left: 50%;
+      top: 61%;
+      transform: translateX(-50%);
+      color: rgba(186,230,253,.44);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: clamp(.36rem, .65vw, .47rem);
+      letter-spacing: .16em;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    #ct-hour-hand, #ct-min-hand, #ct-sec-hand { filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
+
+    .ct-digital-wrap { width: min(100%, 390px); }
+    .ct-digital-display {
+      position: relative;
+      width: 100%;
+      min-width: 0;
+      padding: 2rem 1.35rem 1.8rem;
+      overflow: hidden;
+      border: 1px solid rgba(103,232,249,.48);
+      border-radius: 18px;
+      background:
+        linear-gradient(90deg, rgba(34,211,238,.035) 1px, transparent 1px),
+        linear-gradient(rgba(34,211,238,.035) 1px, transparent 1px),
+        radial-gradient(circle at 50% 40%, #092b2d, #020a0d 72%);
+      background-size: 8px 8px, 8px 8px, auto;
+      color: #67f5c2;
+      font-size: clamp(1.65rem, 6vw, 2.65rem);
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 8px rgba(52,211,153,.9), 0 0 26px rgba(34,211,238,.35);
+      box-shadow: 0 0 0 7px rgba(34,211,238,.045), 0 22px 48px rgba(0,0,0,.42), inset 0 0 38px rgba(0,0,0,.72);
+    }
+    .ct-digital-display::before,
+    .ct-digital-display::after {
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      display: flex;
+      justify-content: space-between;
+      color: rgba(103,232,249,.58);
+      font-size: .48rem;
+      font-weight: 500;
+      letter-spacing: .14em;
+      text-shadow: none;
+    }
+    .ct-digital-display::before { content: '◉  ATOMIC SYNC\A0\A0\A0\A0\A0 24H'; top: .65rem; }
+    .ct-digital-display::after { content: 'LOCAL CHRONOMETER\A0\A0 ±0.001s'; bottom: .55rem; }
+    .ct-digital-date {
+      width: calc(100% - 2rem);
+      margin-top: -0.3rem;
+      padding: .55rem .8rem;
+      border: 1px solid rgba(34,211,238,.18);
+      border-top: 0;
+      border-radius: 0 0 12px 12px;
+      background: rgba(2,10,13,.9);
+      color: rgba(103,245,194,.68);
+    }
+
+    .ct-ancient-wrap {
+      position: relative;
+      width: min(100%, 250px);
+      height: 205px;
+      overflow: hidden;
+      border: 1px solid rgba(125,211,252,.2);
+      border-radius: 22px;
+      background: radial-gradient(circle at 50% 20%, rgba(59,130,246,.16), transparent 45%), rgba(255,255,255,.035);
+      box-shadow: inset 0 0 45px rgba(0,0,0,.46), 0 18px 40px rgba(0,0,0,.24);
+      margin-bottom: 1rem;
+    }
+    .ct-ancient-wrap::before {
+      content: 'LIVE MODEL';
+      position: absolute;
+      z-index: 3;
+      top: .7rem;
+      left: .8rem;
+      color: rgba(125,211,252,.62);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .48rem;
+      letter-spacing: .14em;
+    }
+    .ct-ancient-wrap::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: linear-gradient(115deg, rgba(255,255,255,.08), transparent 28% 72%, rgba(34,211,238,.04));
+    }
+    .ct-ancient-wrap svg { width: 190px; height: 190px; overflow: visible; }
+    .ct-sim-pulse { transform-box: fill-box; transform-origin: center; animation: ct-sim-pulse 2.4s ease-in-out infinite; }
+    .ct-sim-drift { animation: ct-sim-drift 2.8s ease-in-out infinite alternate; }
+    .ct-water-bubble { animation: ct-water-rise 1.8s ease-in infinite; }
+    .ct-water-bubble:nth-of-type(2) { animation-delay: -.7s; }
+    .ct-sand-grain { animation: ct-sand-fall .9s linear infinite; }
+    .ct-sand-grain:nth-of-type(2) { animation-delay: -.3s; }
+    .ct-sand-grain:nth-of-type(3) { animation-delay: -.6s; }
+    @keyframes ct-sim-pulse { 50% { opacity: .55; transform: scale(.9); } }
+    @keyframes ct-sim-drift { to { transform: translateY(-2px); } }
+    @keyframes ct-water-rise { from { transform: translateY(4px); opacity: 0; } 30% { opacity: .75; } to { transform: translateY(-8px); opacity: 0; } }
+    @keyframes ct-sand-fall { from { transform: translateY(-3px); opacity: 0; } 20% { opacity: 1; } to { transform: translateY(7px); opacity: 0; } }
+    .ct-carousel-stage { min-height: 360px; }
+    .ct-nav-btn { border-radius: 14px; backdrop-filter: blur(8px); }
+    .ct-dot { border-radius: 9px; }
+    .ct-dot.active { background: #2563eb; border-color: #60a5fa; color: #fff; }
+
+    .ct-day-card,
+    .ct-book-card { border-radius: 16px; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+    .ct-day-card:hover,
+    .ct-book-card:hover { transform: translateY(-3px); border-color: rgba(125,211,252,.38); box-shadow: 0 14px 28px rgba(4,12,28,.2); }
+    .ct-tl-item { padding: 0.1rem 0 0.35rem 0.45rem; }
+    .ct-tl-item .ct-tl-title { font-size: 1.02rem; }
+    .ct-verse-box { border-radius: 18px; background: linear-gradient(135deg, rgba(245,158,11,.1), rgba(167,139,250,.07)); }
+    .ct-curiosity { margin-top: 1.6rem; padding-top: 1.4rem; border-top: 1px dashed color-mix(in srgb, var(--border-strong, #94a3b8) 46%, transparent); }
+    .ct-curiosity-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: .9rem; }
+    .ct-curiosity-kicker { margin: 0 0 .25rem; color: #d97706; font-family: 'IBM Plex Mono', monospace; font-size: .65rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .ct-curiosity h3 { margin: 0; font-size: clamp(1.15rem, 2.4vw, 1.5rem); }
+    .ct-curiosity-stamp { flex: 0 0 auto; padding: .35rem .6rem; border: 1px solid rgba(34,197,94,.28); border-radius: 999px; color: #168654; background: rgba(34,197,94,.08); font-family: 'IBM Plex Mono', monospace; font-size: .58rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; transform: rotate(2deg); }
+    .ct-weird-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+    .ct-weird-fact { --fact-accent: #3b82f6; position: relative; min-height: 13rem; overflow: hidden; padding: 1rem 1rem .9rem; border: 1px solid color-mix(in srgb, var(--fact-accent) 27%, var(--border-subtle, #d2d2d7)); border-radius: 17px; background: linear-gradient(145deg, color-mix(in srgb, var(--fact-accent) 8%, var(--surface-elevated, #fff)), var(--surface-panel-alt, #f8fafc)); transition: transform 180ms ease, box-shadow 180ms ease; }
+    .ct-weird-fact:hover { transform: translateY(-3px) rotate(-.2deg); box-shadow: 0 14px 30px color-mix(in srgb, var(--fact-accent) 13%, transparent); }
+    .ct-weird-fact::after { content: attr(data-icon); position: absolute; right: -.15rem; bottom: -1rem; color: color-mix(in srgb, var(--fact-accent) 12%, transparent); font-size: 5.5rem; line-height: 1; transform: rotate(-8deg); pointer-events: none; }
+    .ct-weird-era { color: var(--fact-accent); font-family: 'IBM Plex Mono', monospace; font-size: .61rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+    .ct-weird-fact h4 { position: relative; z-index: 1; margin: .42rem 0; color: var(--ct-ink); font-size: 1rem; line-height: 1.25; }
+    .ct-weird-fact p { position: relative; z-index: 1; margin: 0; color: var(--ct-copy); font-size: .82rem; line-height: 1.62; }
+    .ct-weird-source { position: relative; z-index: 1; display: inline-flex; margin-top: .7rem; color: var(--fact-accent); font-family: 'IBM Plex Mono', monospace; font-size: .61rem; font-weight: 700; text-decoration: none; }
+    .ct-weird-source:hover { text-decoration: underline; }
+    [data-lighting="night"] .ct-curiosity-stamp, [data-theme="night"] .ct-curiosity-stamp { color: #6ee7b7; }
+    .ct-problem { border-radius: 14px; padding: 1rem 1.1rem; }
+    .ct-problem-input-row { margin-top: 0.7rem; }
+    .ct-ans-input { min-height: 40px; border-radius: 10px; }
+    .ct-check-btn { min-height: 40px; border-radius: 10px; padding-inline: 1rem; }
+
+    @media (max-width: 620px) {
+      .ct-page { width: min(100% - 1rem, 1080px); padding-top: 0.5rem; }
+      .ct-hero { min-height: auto; padding: 2rem 1rem; border-radius: 20px; }
+      .ct-hero h1 { font-size: clamp(2.35rem, 13vw, 3.35rem); }
+      .ct-hero-meta { gap: 0.35rem 0.45rem; }
+      .ct-hero-meta .dot { display: none; }
+      .ct-chapter-nav { top: 0.35rem; justify-content: flex-start; max-width: 100%; border-radius: 14px; }
+      .ct-card, .ct-clock-lab, .ct-tz-lab, .ct-dilation-lab { border-radius: 18px; }
+      .ct-card > h2, .ct-clock-lab-head > h2, .ct-tz-lab > h2, .ct-dilation-lab > h2 { align-items: flex-start; flex-direction: column; gap: 0.3rem; }
+      .ct-carousel-controls { gap: 0.45rem; }
+      .ct-nav-btn { width: 38px; height: 44px; }
+      .ct-carousel-stage { min-width: 0; min-height: 335px; }
+      .ct-clock-explainer { gap: 0.4rem; }
+      .ct-hand-info { padding: 0.5rem 0.65rem; }
+      .ct-tz-map-wrap { overflow-x: auto; overscroll-behavior-inline: contain; }
+      #ct-world-svg { min-width: 680px; }
+      .ct-tz-cities { grid-template-columns: 1fr; }
+      .ct-curiosity-head { align-items: flex-start; flex-direction: column; }
+      .ct-weird-grid { grid-template-columns: 1fr; }
+      .ct-weird-fact { min-height: 0; }
+      .ct-problem-input-row { align-items: stretch; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ct-live-dot { animation: none; }
+      .ct-clock-panel { animation: none; }
+      .ct-sim-pulse, .ct-sim-drift, .ct-water-bubble, .ct-sand-grain { animation: none; }
+      .ct-day-card, .ct-book-card, .ct-chapter-nav a { transition: none; }
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -427,14 +830,23 @@
             </p>
           </section>
 
+          <nav class="ct-chapter-nav" aria-label="Lesson chapters">
+            <a href="#clock-lab">Clock lab</a>
+            <a href="#read-clock">Read a clock</a>
+            <a href="#time-history">History</a>
+            <a href="#world-time">Time zones</a>
+            <a href="#relativity">Relativity</a>
+            <a href="#practice">Practice</a>
+          </nav>
+
           <!-- ── LIVE CLOCK LAB ──────────────────────── -->
-          <section class="ct-clock-lab" aria-label="Live clock laboratory">
+          <section class="ct-clock-lab" id="clock-lab" data-step="01 / EXPLORE" aria-label="Live clock laboratory">
             <div class="ct-clock-lab-head">
               <div class="ct-clock-badge">
                 <span class="ct-live-dot"></span>
                 Live Clock — Your Local Time
               </div>
-              <h2>Methods of Telling Time</h2>
+              <h2 data-step="01 / EXPLORE">Methods of Telling Time</h2>
               <p>Swipe or click through history's timekeepers. Each speaks a different language of time.</p>
             </div>
 
@@ -448,12 +860,35 @@
                     <div class="ct-analog-wrap">
                       <div class="ct-clock-face" role="img" aria-label="Analog clock showing current time" aria-live="polite">
                         <svg id="ct-analog-svg" viewBox="0 0 200 200" width="200" height="200">
+                          <defs>
+                            <radialGradient id="ct-analog-dial" cx="38%" cy="28%" r="78%">
+                              <stop offset="0" stop-color="#29405f" />
+                              <stop offset="0.62" stop-color="#101c31" />
+                              <stop offset="1" stop-color="#050b14" />
+                            </radialGradient>
+                            <linearGradient id="ct-analog-rim" x1="0" y1="0" x2="1" y2="1">
+                              <stop stop-color="#b9e6ff" />
+                              <stop offset="0.28" stop-color="#2563a8" />
+                              <stop offset="0.72" stop-color="#0b2944" />
+                              <stop offset="1" stop-color="#67d4ff" />
+                            </linearGradient>
+                            <filter id="ct-hand-glow" x="-50%" y="-50%" width="200%" height="200%">
+                              <feGaussianBlur stdDeviation="1.7" result="blur" />
+                              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                            </filter>
+                          </defs>
+                          <circle cx="100" cy="100" r="99" fill="url(#ct-analog-rim)" />
+                          <circle cx="100" cy="100" r="95" fill="url(#ct-analog-dial)" stroke="#0e2740" stroke-width="2" />
+                          <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(125,211,252,.18)" stroke-width="1" />
+                          <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(125,211,252,.08)" stroke-width="1" stroke-dasharray="1 5" />
                           <g id="ct-hour-markers"></g>
-                          <line id="ct-hour-hand" x1="100" y1="100" x2="100" y2="52" stroke="#f59e0b" stroke-width="5" stroke-linecap="round" />
-                          <line id="ct-min-hand" x1="100" y1="100" x2="100" y2="30" stroke="#3b82f6" stroke-width="3.5" stroke-linecap="round" />
-                          <line id="ct-sec-hand" x1="100" y1="110" x2="100" y2="22" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" />
-                          <circle cx="100" cy="100" r="5" fill="#fff" opacity="0.9" />
-                          <circle cx="100" cy="100" r="2" fill="#ef4444" />
+                          <circle cx="100" cy="100" r="63" fill="none" stroke="rgba(96,165,250,.1)" stroke-width="1" />
+                          <line id="ct-hour-hand" x1="100" y1="108" x2="100" y2="54" stroke="#fbbf24" stroke-width="6" stroke-linecap="round" filter="url(#ct-hand-glow)" />
+                          <line id="ct-min-hand" x1="100" y1="111" x2="100" y2="30" stroke="#60a5fa" stroke-width="4" stroke-linecap="round" filter="url(#ct-hand-glow)" />
+                          <line id="ct-sec-hand" x1="100" y1="116" x2="100" y2="21" stroke="#fb7185" stroke-width="1.4" stroke-linecap="round" filter="url(#ct-hand-glow)" />
+                          <circle cx="100" cy="100" r="8" fill="#0b1424" stroke="#dbeafe" stroke-width="2" />
+                          <circle cx="100" cy="100" r="3" fill="#fb7185" />
+                          <path d="M43 42 A82 82 0 0 1 84 20" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="2" stroke-linecap="round" />
                         </svg>
                       </div>
                       <span class="ct-clock-label">Analog Clock</span>
@@ -487,18 +922,32 @@
                   <!-- Panel 2: Obelisk -->
                   <div class="ct-clock-panel" data-index="2">
                     <div class="ct-ancient-wrap">
-                      <svg id="ct-obelisk-svg" viewBox="-50 -55 100 100" style="width: 120px; height: 120px; overflow: visible;" aria-label="Obelisk">
-                        <ellipse cx="0" cy="18" rx="45" ry="12" fill="rgba(255,255,255,0.05)" />
-                        <polygon id="ct-obelisk-shadow" points="-4,18 4,18 40,10" fill="rgba(0,0,0,0.5)" />
-                        <circle id="ct-obelisk-sun" cx="-45" cy="18" r="5" fill="#fbbf24" style="filter: drop-shadow(0 0 6px rgba(251,191,36,0.8));" />
-                        
-                        <!-- Left side -->
-                        <polygon id="ct-obelisk-left-base" points="-4,16 0,19 0,-10 -2,-12" fill="#cbd5e1" />
-                        <polygon id="ct-obelisk-left-top" points="-2,-12 0,-10 0,-22" fill="#f8fafc" />
-                        
-                        <!-- Right side -->
-                        <polygon id="ct-obelisk-right-base" points="0,19 4,16 2,-12 0,-10" fill="#64748b" />
-                        <polygon id="ct-obelisk-right-top" points="0,-10 2,-12 0,-22" fill="#94a3b8" />
+                      <svg id="ct-obelisk-svg" viewBox="-60 -60 120 115" aria-label="Animated obelisk shadow clock">
+                        <defs>
+                          <linearGradient id="ct-ob-sky" x1="0" y1="0" x2="0" y2="1">
+                            <stop stop-color="#102c4a" /><stop offset=".68" stop-color="#805b42" /><stop offset="1" stop-color="#d39a55" />
+                          </linearGradient>
+                          <linearGradient id="ct-ob-stone" x1="0" y1="0" x2="1" y2="1">
+                            <stop stop-color="#fff4d6" /><stop offset=".5" stop-color="#d7b982" /><stop offset="1" stop-color="#6f5738" />
+                          </linearGradient>
+                          <filter id="ct-ob-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                        </defs>
+                        <rect x="-59" y="-59" width="118" height="113" rx="13" fill="url(#ct-ob-sky)" />
+                        <circle cx="-38" cy="-39" r="18" fill="rgba(251,191,36,.08)" />
+                        <path d="M-59 15 Q-25 5 5 15 T59 11 V54 H-59Z" fill="#7d5836" />
+                        <path d="M-59 27 Q-18 13 18 27 T59 20 V54 H-59Z" fill="#4a3528" opacity=".72" />
+                        <g stroke="rgba(255,224,166,.45)" stroke-width=".65">
+                          <path d="M-42 27L-38 20M-30 30L-27 21M-17 31L-15 21M17 31L15 21M30 30L27 21M42 27L38 20" />
+                        </g>
+                        <ellipse cx="0" cy="19" rx="48" ry="13" fill="rgba(15,23,42,.2)" stroke="rgba(255,224,166,.25)" />
+                        <polygon id="ct-obelisk-shadow" points="-4,18 4,18 40,10" fill="rgba(4,8,15,.58)" style="filter:blur(.4px)" />
+                        <circle id="ct-obelisk-sun" class="ct-sim-pulse" cx="-45" cy="18" r="5" fill="#fde68a" stroke="#fbbf24" stroke-width="1.2" filter="url(#ct-ob-glow)" />
+                        <rect x="-7" y="16" width="14" height="4" rx="1" fill="#7c6242" />
+                        <polygon id="ct-obelisk-left-base" points="-4,16 0,19 0,-10 -2,-12" fill="url(#ct-ob-stone)" />
+                        <polygon id="ct-obelisk-left-top" points="-2,-12 0,-10 0,-22" fill="#fff4d6" />
+                        <polygon id="ct-obelisk-right-base" points="0,19 4,16 2,-12 0,-10" fill="#806847" />
+                        <polygon id="ct-obelisk-right-top" points="0,-10 2,-12 0,-22" fill="#b89968" />
+                        <path d="M-1 -6V12M1 -2V9" stroke="rgba(93,67,37,.65)" stroke-width=".7" stroke-dasharray="2 2" />
                       </svg>
                     </div>
                     <h3>Obelisk</h3>
@@ -508,12 +957,25 @@
                   <!-- Panel 3: Sundial -->
                   <div class="ct-clock-panel" data-index="3">
                     <div class="ct-ancient-wrap">
-                      <svg id="ct-sundial-svg" viewBox="0 0 100 100" style="width: 120px; height: 120px; overflow: visible;" aria-label="Sundial">
-                        <ellipse cx="50" cy="70" rx="45" ry="20" fill="#94a3b8" />
-                        <path d="M 15,70 A 35,15 0 0,0 85,70" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4,6" />
-                        <polygon id="ct-sundial-shadow" points="47,70 53,70 50,70" fill="rgba(0,0,0,0.5)" />
-                        <polygon id="ct-sundial-gnomon-left" points="47,70 50,20 50,70" fill="#cbd5e1" />
-                        <polygon id="ct-sundial-gnomon-right" points="50,70 50,20 53,70" fill="#64748b" />
+                      <svg id="ct-sundial-svg" viewBox="0 0 100 100" aria-label="Animated bronze sundial">
+                        <defs>
+                          <radialGradient id="ct-sd-sky" cx="50%" cy="25%" r="75%"><stop stop-color="#365b7a"/><stop offset=".62" stop-color="#17283c"/><stop offset="1" stop-color="#09111d"/></radialGradient>
+                          <radialGradient id="ct-sd-bronze"><stop stop-color="#e8c77b"/><stop offset=".55" stop-color="#9a6b2f"/><stop offset="1" stop-color="#3e2818"/></radialGradient>
+                          <linearGradient id="ct-sd-gnomon" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#f5d58c"/><stop offset=".5" stop-color="#94652d"/><stop offset="1" stop-color="#3c2818"/></linearGradient>
+                        </defs>
+                        <rect x="1" y="1" width="98" height="98" rx="13" fill="url(#ct-sd-sky)" />
+                        <circle cx="79" cy="19" r="5" fill="#fde68a" class="ct-sim-pulse" style="filter:drop-shadow(0 0 7px #fbbf24)"/>
+                        <ellipse cx="50" cy="72" rx="47" ry="22" fill="#101923" opacity=".7" />
+                        <ellipse cx="50" cy="68" rx="45" ry="20" fill="url(#ct-sd-bronze)" stroke="#f5d58c" stroke-width="1" />
+                        <ellipse cx="50" cy="68" rx="38" ry="15" fill="none" stroke="rgba(255,238,185,.48)" stroke-width="1" />
+                        <g stroke="rgba(255,239,190,.75)" stroke-width="1.2">
+                          <path d="M13 66l8 1M19 57l7 3M29 50l5 4M40 47l2 5M50 46v6M60 47l-2 5M71 50l-5 4M81 57l-7 3M87 66l-8 1"/>
+                        </g>
+                        <path d="M15,68 A35,15 0 0,0 85,68" fill="none" stroke="rgba(255,245,211,.5)" stroke-width="1" stroke-dasharray="2,4" />
+                        <polygon id="ct-sundial-shadow" points="47,70 53,70 50,70" fill="rgba(0,0,0,.58)" style="filter:blur(.35px)" />
+                        <polygon id="ct-sundial-gnomon-left" points="47,70 50,20 50,70" fill="url(#ct-sd-gnomon)" />
+                        <polygon id="ct-sundial-gnomon-right" points="50,70 50,20 53,70" fill="#6b4827" />
+                        <circle cx="50" cy="69" r="3" fill="#3e2818" stroke="#ebcb82" stroke-width="1" />
                       </svg>
                     </div>
                     <h3>Sundial</h3>
@@ -523,16 +985,28 @@
                   <!-- Panel 4: Water Clock -->
                   <div class="ct-clock-panel" data-index="4">
                     <div class="ct-ancient-wrap">
-                      <svg id="ct-waterclock-svg" viewBox="0 0 40 40" aria-label="Water Clock">
+                      <svg id="ct-waterclock-svg" viewBox="0 0 40 40" aria-label="Animated water clock">
                         <defs>
                           <clipPath id="wc-top-clip"><path d="M10,6 L30,6 L24,18 L16,18 Z" /></clipPath>
                           <clipPath id="wc-bot-clip"><path d="M14,26 L26,26 L29,38 L11,38 Z" /></clipPath>
+                          <linearGradient id="ct-wc-bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#173553"/><stop offset="1" stop-color="#08121f"/></linearGradient>
+                          <linearGradient id="ct-wc-water" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a5f3fc"/><stop offset=".45" stop-color="#38bdf8"/><stop offset="1" stop-color="#2563eb"/></linearGradient>
+                          <linearGradient id="ct-wc-metal"><stop stop-color="#e0f2fe"/><stop offset=".45" stop-color="#64748b"/><stop offset=".7" stop-color="#dbeafe"/><stop offset="1" stop-color="#334155"/></linearGradient>
+                          <filter id="ct-wc-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation=".7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
                         </defs>
-                        <rect id="ct-wc-top-water" x="10" y="6" width="20" height="12" fill="#60a5fa" opacity="0.7" clip-path="url(#wc-top-clip)"/>
-                        <rect id="ct-wc-bot-water" x="10" y="38" width="20" height="0" fill="#60a5fa" opacity="0.8" clip-path="url(#wc-bot-clip)"/>
-                        <circle id="ct-wc-drip" cx="20" cy="18" r="1.5" fill="#60a5fa" opacity="0.8"/>
-                        <path d="M10,6 L30,6 L24,18 L16,18 Z" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linejoin="round"/>
-                        <path d="M14,26 L26,26 L29,38 L11,38 Z" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linejoin="round"/>
+                        <rect x=".5" y=".5" width="39" height="39" rx="5" fill="url(#ct-wc-bg)" stroke="rgba(125,211,252,.2)" stroke-width=".5" />
+                        <path d="M4 34C10 29 13 35 19 31S29 34 36 29V40H4Z" fill="rgba(14,116,144,.12)" />
+                        <path d="M8 4h24M8 40h24M9 4v36M31 4v36" stroke="url(#ct-wc-metal)" stroke-width="1.5" />
+                        <path d="M8 8h3M8 14h3M8 20h3M8 26h3M8 32h3" stroke="rgba(186,230,253,.5)" stroke-width=".5" />
+                        <rect id="ct-wc-top-water" x="10" y="6" width="20" height="12" fill="url(#ct-wc-water)" opacity="0.85" clip-path="url(#wc-top-clip)"/>
+                        <rect id="ct-wc-bot-water" x="10" y="38" width="20" height="0" fill="url(#ct-wc-water)" opacity="0.9" clip-path="url(#wc-bot-clip)"/>
+                        <circle id="ct-wc-drip" cx="20" cy="18" r="1.25" fill="#a5f3fc" opacity="0.9" filter="url(#ct-wc-glow)"/>
+                        <circle class="ct-water-bubble" cx="17" cy="15" r=".55" fill="#ecfeff" opacity=".7" />
+                        <circle class="ct-water-bubble" cx="23" cy="34" r=".7" fill="#ecfeff" opacity=".6" />
+                        <path d="M10,6 L30,6 L24,18 L16,18 Z" fill="rgba(255,255,255,.035)" stroke="#bae6fd" stroke-width=".9" stroke-linejoin="round"/>
+                        <path d="M14,26 L26,26 L29,38 L11,38 Z" fill="rgba(255,255,255,.035)" stroke="#bae6fd" stroke-width=".9" stroke-linejoin="round"/>
+                        <path d="M12 7l5 10M15 28l4 8" stroke="rgba(255,255,255,.35)" stroke-width=".65" stroke-linecap="round" />
+                        <circle cx="20" cy="22" r="1.8" fill="none" stroke="rgba(125,211,252,.28)" class="ct-sim-pulse" />
                       </svg>
                     </div>
                     <h3>Water Clock (Clepsydra)</h3>
@@ -542,18 +1016,30 @@
                   <!-- Panel 5: Hourglass -->
                   <div class="ct-clock-panel" data-index="5">
                     <div class="ct-ancient-wrap">
-                      <svg id="ct-hourglass-svg" viewBox="0 0 40 40" aria-label="Hourglass">
+                      <svg id="ct-hourglass-svg" viewBox="0 0 40 40" aria-label="Animated precision hourglass">
                         <defs>
                           <clipPath id="hg-top-clip"><path d="M12,6 L28,6 L20,19 Z" /></clipPath>
                           <clipPath id="hg-bot-clip"><path d="M12,34 L28,34 L20,21 Z" /></clipPath>
+                          <radialGradient id="ct-hg-bg"><stop stop-color="#342a45"/><stop offset="1" stop-color="#0d101d"/></radialGradient>
+                          <linearGradient id="ct-hg-frame"><stop stop-color="#f7d98b"/><stop offset=".3" stop-color="#815d2d"/><stop offset=".55" stop-color="#e5bb62"/><stop offset="1" stop-color="#4b331b"/></linearGradient>
+                          <linearGradient id="ct-hg-sand" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff2ac"/><stop offset=".4" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/></linearGradient>
+                          <filter id="ct-hg-glow"><feGaussianBlur stdDeviation=".65" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
                         </defs>
-                        <rect x="9" y="4" width="22" height="2" fill="#94a3b8" rx="1"/>
-                        <rect x="9" y="34" width="22" height="2" fill="#94a3b8" rx="1"/>
-                        <rect id="ct-hg-top-sand" x="10" y="6" width="20" height="13" fill="#fbbf24" clip-path="url(#hg-top-clip)"/>
-                        <rect id="ct-hg-bot-sand" x="10" y="34" width="20" height="0" fill="#fbbf24" clip-path="url(#hg-bot-clip)"/>
-                        <line id="ct-hg-stream" x1="20" y1="19" x2="20" y2="34" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="2,2" />
-                        <path d="M12,6 L28,6 L20,19 Z" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linejoin="round"/>
-                        <path d="M12,34 L28,34 L20,21 Z" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linejoin="round"/>
+                        <rect x=".5" y=".5" width="39" height="39" rx="5" fill="url(#ct-hg-bg)" stroke="rgba(216,180,254,.22)" stroke-width=".5" />
+                        <circle cx="20" cy="20" r="16" fill="none" stroke="rgba(216,180,254,.08)" stroke-dasharray="1 3" />
+                        <path d="M8 5h24M8 35h24" stroke="#2a1b10" stroke-width="3.5" stroke-linecap="round" />
+                        <rect x="8" y="4" width="24" height="2.5" fill="url(#ct-hg-frame)" rx="1.2"/>
+                        <rect x="8" y="34" width="24" height="2.5" fill="url(#ct-hg-frame)" rx="1.2"/>
+                        <path d="M10 6v28M30 6v28" stroke="url(#ct-hg-frame)" stroke-width="1.4" />
+                        <circle cx="10" cy="7" r="1.2" fill="#e5bb62"/><circle cx="30" cy="7" r="1.2" fill="#e5bb62"/>
+                        <circle cx="10" cy="34" r="1.2" fill="#e5bb62"/><circle cx="30" cy="34" r="1.2" fill="#e5bb62"/>
+                        <rect id="ct-hg-top-sand" x="10" y="6" width="20" height="13" fill="url(#ct-hg-sand)" clip-path="url(#hg-top-clip)"/>
+                        <rect id="ct-hg-bot-sand" x="10" y="34" width="20" height="0" fill="url(#ct-hg-sand)" clip-path="url(#hg-bot-clip)"/>
+                        <line id="ct-hg-stream" x1="20" y1="19" x2="20" y2="34" stroke="#fde68a" stroke-width="1" stroke-dasharray="1,1.4" filter="url(#ct-hg-glow)" />
+                        <circle class="ct-sand-grain" cx="18.8" cy="21" r=".45" fill="#fde68a"/><circle class="ct-sand-grain" cx="21" cy="22" r=".38" fill="#fbbf24"/><circle class="ct-sand-grain" cx="20" cy="24" r=".42" fill="#fde68a"/>
+                        <path d="M12,6 L28,6 L20,19 Z" fill="rgba(255,255,255,.025)" stroke="#e0e7ff" stroke-width=".75" stroke-linejoin="round"/>
+                        <path d="M12,34 L28,34 L20,21 Z" fill="rgba(255,255,255,.025)" stroke="#e0e7ff" stroke-width=".75" stroke-linejoin="round"/>
+                        <path d="M14 7l5 10M22 23l4 9" stroke="rgba(255,255,255,.38)" stroke-width=".55" stroke-linecap="round" />
                       </svg>
                     </div>
                     <h3>Hourglass</h3>
@@ -576,8 +1062,8 @@
           </section>
 
           <!-- ── READING A CLOCK ─────────────────────── -->
-          <section class="ct-card" style="--card-accent:#3b82f6;">
-            <h2>How to Read an Analog Clock</h2>
+          <section class="ct-card" id="read-clock" data-step="02 / LEARN" style="--card-accent:#3b82f6;">
+            <h2 data-step="02 / LEARN">How to Read an Analog Clock</h2>
             <p>
               An analog clock is a <strong>circle divided into 12 hours</strong>. The full circle is 360°,
               so each hour takes up exactly <strong>30°</strong> (360 ÷ 12 = 30).
@@ -617,8 +1103,8 @@
           </section>
 
           <!-- ── HISTORY OF TIMEKEEPING ──────────────── -->
-          <section class="ct-card" style="--card-accent:#f59e0b;">
-            <h2>The History of Telling Time</h2>
+          <section class="ct-card" id="time-history" data-step="03 / TRACE" style="--card-accent:#f59e0b;">
+            <h2 data-step="03 / TRACE">The History of Telling Time</h2>
             <p>
               Long before clocks existed, people read the sky. The journey from shadows on dirt to
               atomic oscillations is one of the greatest engineering stories in human history.
@@ -710,11 +1196,52 @@
               </div>
 
             </div>
+
+            <aside class="ct-curiosity" aria-labelledby="ct-weird-title">
+              <div class="ct-curiosity-head">
+                <div>
+                  <p class="ct-curiosity-kicker">Bizarre historical contexts</p>
+                  <h3 id="ct-weird-title">Clockwork got weird</h3>
+                </div>
+                <span class="ct-curiosity-stamp">Fact-checked · oddly true</span>
+              </div>
+
+              <div class="ct-weird-grid">
+                <article class="ct-weird-fact" data-icon="♫" style="--fact-accent:#8b5cf6;">
+                  <div class="ct-weird-era">Ancient Greece · 4th century BC</div>
+                  <h4>Plato's alarm clock may have whistled</h4>
+                  <p>A hydraulic alarm traditionally attributed to Plato filled one vessel until a siphon released the water, forcing air through a pipe to produce a whistle. Ancient accounts associate his water clock with signaling lectures around dawn—proof that even philosophers needed help getting started.</p>
+                  <a class="ct-weird-source" href="https://collection.kotsanasmuseum.com/en/exhibits/106035/" target="_blank" rel="noopener">Museum reconstruction ↗</a>
+                </article>
+
+                <article class="ct-weird-fact" data-icon="4" style="--fact-accent:#ef4444;">
+                  <div class="ct-weird-era">New Hampshire · 1787</div>
+                  <h4>The alarm with exactly one opinion</h4>
+                  <p>Clockmaker Levi Hutchins built what is regarded as the first American mechanical alarm clock. It rang only at 4:00 a.m.—the hour he wanted to wake for work. It was not adjustable, patented, or mass-produced. One clock, one customer, one brutally early setting.</p>
+                  <a class="ct-weird-source" href="https://www.nhmagazine.com/invented-here/" target="_blank" rel="noopener">New Hampshire history ↗</a>
+                </article>
+
+                <article class="ct-weird-fact" data-icon="☂" style="--fact-accent:#0ea5e9;">
+                  <div class="ct-weird-era">Industrial Britain · 19th–20th centuries</div>
+                  <h4>Your alarm clock was a person with a stick</h4>
+                  <p>Workers paid “knocker-ups” to wake them for early shifts. These human alarms tapped doors or reached upper windows with long poles, fishing rods, or even pea shooters—and some reportedly kept knocking until the client proved they were awake.</p>
+                  <a class="ct-weird-source" href="https://academic.oup.com/jvc/article/25/3/331/5829726" target="_blank" rel="noopener">Oxford historical study ↗</a>
+                </article>
+
+                <article class="ct-weird-fact" data-icon="10" style="--fact-accent:#d97706;">
+                  <div class="ct-weird-era">Revolutionary France · 1793–1795</div>
+                  <h4>France tried to make the day metric</h4>
+                  <p>Revolutionary decimal time divided each day into 10 hours, each hour into 100 minutes, and each minute into 100 seconds. Old habits and incompatible clocks made adoption difficult, so the Convention suspended the requirement on April 7, 1795—roughly 17 months after the decree.</p>
+                  <a class="ct-weird-source" href="https://www.napoleon.org/en/history-of-the-two-empires/objects/revolutionary-period-skeleton-clock/" target="_blank" rel="noopener">Fondation Napoléon ↗</a>
+                </article>
+              </div>
+            </aside>
+
           </section>
 
           <!-- ── TIME IN GENESIS ─────────────────────── -->
-          <section class="ct-card" style="--card-accent:#f59e0b;">
-            <h2>Time in the Beginning — Genesis and the Biblical Day</h2>
+          <section class="ct-card" data-step="04 / ORIGINS" style="--card-accent:#f59e0b;">
+            <h2 data-step="04 / ORIGINS">Time in the Beginning — Genesis and the Biblical Day</h2>
             <p>
               One of the oldest recorded concepts of organized time comes from the Bible's very
               first book: <em>Genesis</em>. Long before clocks or calendars, the author of Genesis
@@ -793,8 +1320,8 @@
           </section>
 
           <!-- ── COMEDY & MUSIC TIMING ───────────────── -->
-          <section class="ct-card" style="--card-accent:#a78bfa;">
-            <h2>The Greatest Gift: Perfect Timing</h2>
+          <section class="ct-card" data-step="05 / REFLECT" style="--card-accent:#a78bfa;">
+            <h2 data-step="05 / REFLECT">The Greatest Gift: Perfect Timing</h2>
             <p>
               Ask any stand-up comedian or professional musician what separates good from <em>great</em>,
               and they'll give you the same answer: <strong>timing</strong>. Jack Benny built an entire
@@ -808,186 +1335,43 @@
           </section>
 
           <!-- ── WORLD TIME ZONES ────────────────────── -->
-          <section class="ct-tz-lab" aria-label="World time zones explorer">
-            <h2>World Time Zones</h2>
+          <section class="ct-tz-lab" id="world-time" data-step="06 / CONNECT" aria-label="World time zones explorer">
+            <h2 data-step="06 / CONNECT">World Time Zones</h2>
             <p>Earth spins 360° every 24 hours — that's 15° per hour. So every 15° of longitude equals one hour of time difference. Click a region to see local times.</p>
 
             <!-- Simplified SVG World Timezone Map -->
             <div class="ct-tz-map-wrap">
-              <svg id="ct-world-svg" viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" aria-label="World map divided into time zone regions">
+              <svg id="ct-world-svg" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ct-world-title ct-world-desc">
+                <title id="ct-world-title">Interactive world time-zone map</title>
+                <desc id="ct-world-desc">An equirectangular world map with 15-degree reference bands and accurately projected city markers. Select a region to show its cities.</desc>
                 <defs>
-                  <linearGradient id="oceanGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#0a1628"/>
-                    <stop offset="100%" stop-color="#0d2040"/>
-                  </linearGradient>
-                  <linearGradient id="landGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#23426b"/>
-                    <stop offset="100%" stop-color="#142c4c"/>
-                  </linearGradient>
-                  <filter id="landShadow" x="-10%" y="-10%" width="120%" height="120%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.4"/>
-                  </filter>
+                  <clipPath id="ct-world-clip"><rect width="800" height="400" rx="14" /></clipPath>
+                  <filter id="ct-city-glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
                 </defs>
-
-                <!-- Ocean background -->
-                <rect width="800" height="360" fill="url(#oceanGrad)"/>
-
-                <!-- Grid lines (15° = 1 hour) -->
-                <g stroke="rgba(59,130,246,0.12)" stroke-width="0.5">
-                  <line x1="33"  y1="0" x2="33"  y2="360"/>
-                  <line x1="66"  y1="0" x2="66"  y2="360"/>
-                  <line x1="100" y1="0" x2="100" y2="360"/>
-                  <line x1="133" y1="0" x2="133" y2="360"/>
-                  <line x1="167" y1="0" x2="167" y2="360"/>
-                  <line x1="200" y1="0" x2="200" y2="360"/>
-                  <line x1="233" y1="0" x2="233" y2="360"/>
-                  <line x1="267" y1="0" x2="267" y2="360"/>
-                  <line x1="300" y1="0" x2="300" y2="360"/>
-                  <line x1="333" y1="0" x2="333" y2="360"/>
-                  <line x1="367" y1="0" x2="367" y2="360"/>
-                  <line x1="400" y1="0" x2="400" y2="360"/>
-                  <line x1="433" y1="0" x2="433" y2="360"/>
-                  <line x1="467" y1="0" x2="467" y2="360"/>
-                  <line x1="500" y1="0" x2="500" y2="360"/>
-                  <line x1="533" y1="0" x2="533" y2="360"/>
-                  <line x1="567" y1="0" x2="567" y2="360"/>
-                  <line x1="600" y1="0" x2="600" y2="360"/>
-                  <line x1="633" y1="0" x2="633" y2="360"/>
-                  <line x1="667" y1="0" x2="667" y2="360"/>
-                  <line x1="700" y1="0" x2="700" y2="360"/>
-                  <line x1="733" y1="0" x2="733" y2="360"/>
-                  <line x1="767" y1="0" x2="767" y2="360"/>
+                <g clip-path="url(#ct-world-clip)">
+                  <image href="../assets/images/lessons/clocks-and-time/world-time-base.svg" width="800" height="400" />
+                  <rect id="ct-tz-highlight" x="0" y="0" width="0" height="400" fill="rgba(59,130,246,.13)" stroke="rgba(125,211,252,.3)" opacity="0" pointer-events="none" />
+                  <g id="ct-city-markers"></g>
                 </g>
-                <!-- Equator -->
-                <line x1="0" y1="180" x2="800" y2="180" stroke="rgba(245,158,11,0.25)" stroke-width="1" stroke-dasharray="6,4"/>
-                <!-- Equator label -->
-                <text x="10" y="176" fill="rgba(245,158,11,0.4)" font-size="8" font-family="sans-serif">Equator</text>
-
-                <!-- Continents -->
-                <g filter="url(#landShadow)">
-                  <!-- North America -->
-                  <path d="M 60,40 Q 100,20 130,25 Q 140,40 150,45 Q 160,30 180,35 Q 210,45 220,60 L 225,75 L 195,95 L 180,115 L 170,110 L 150,115 L 130,140 L 145,160 L 160,175 L 155,180 L 140,165 L 120,145 L 90,125 L 110,135 L 105,115 L 90,100 L 75,70 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="americas" style="cursor:pointer;"/>
-                  <!-- South America -->
-                  <path d="M 165,185 L 190,185 L 215,190 L 245,215 L 255,225 L 235,260 L 210,290 L 200,320 L 190,340 L 180,340 L 175,310 L 170,270 L 160,230 L 150,210 L 160,195 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="americas" style="cursor:pointer;"/>
-                  <!-- Greenland -->
-                  <path d="M 215,20 L 255,15 L 275,25 L 265,50 L 240,75 L 220,80 L 205,65 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.4)" stroke-width="0.5"/>
-                  <!-- Europe -->
-                  <path d="M 370,30 L 390,25 L 410,30 L 415,50 L 405,60 L 390,55 L 400,70 L 420,65 L 440,60 L 460,80 L 440,95 L 425,95 L 415,105 L 405,100 L 410,115 L 400,115 L 395,105 L 385,105 L 375,115 L 365,110 L 360,100 L 375,90 L 380,80 L 390,75 L 395,65 L 385,50 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="europe" style="cursor:pointer;"/>
-                  <!-- UK -->
-                  <path d="M 355,65 L 365,60 L 370,75 L 365,85 L 355,85 L 350,75 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="europe" style="cursor:pointer;"/>
-                  <!-- Africa -->
-                  <path d="M 360,115 L 400,112 L 420,115 L 435,120 L 445,140 L 465,160 L 475,165 L 460,180 L 445,200 L 430,240 L 415,270 L 405,280 L 395,280 L 385,250 L 375,220 L 365,190 L 370,180 L 355,175 L 340,165 L 335,150 L 345,130 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="africa" style="cursor:pointer;"/>
-                  <!-- Russia / Central Asia -->
-                  <path d="M 420,60 L 440,30 L 500,25 L 560,25 L 620,30 L 690,40 L 700,50 L 680,70 L 690,85 L 650,85 L 620,75 L 570,80 L 520,90 L 470,95 L 460,80 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="russia" style="cursor:pointer;"/>
-                  <!-- Middle East -->
-                  <path d="M 405,95 L 425,95 L 440,100 L 455,95 L 475,110 L 485,125 L 490,145 L 470,160 L 475,175 L 455,170 L 435,150 L 425,130 L 415,125 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="middleeast" style="cursor:pointer;"/>
-                  <!-- South Asia / India -->
-                  <path d="M 480,120 L 500,115 L 520,115 L 535,130 L 520,155 L 505,175 L 500,185 L 490,165 L 485,145 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="asia" style="cursor:pointer;"/>
-                  <!-- East Asia / China -->
-                  <path d="M 520,115 L 500,90 L 550,80 L 600,75 L 630,85 L 640,95 L 635,105 L 620,110 L 610,130 L 590,140 L 560,140 L 535,130 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="east_asia" style="cursor:pointer;"/>
-                  <!-- Japan -->
-                  <path d="M 625,80 L 640,75 L 645,85 L 635,100 L 625,105 L 620,95 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="east_asia" style="cursor:pointer;"/>
-                  <!-- Southeast Asia -->
-                  <path d="M 560,140 L 590,140 L 600,155 L 620,180 L 635,190 L 610,200 L 580,195 L 560,190 L 550,175 L 565,160 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="east_asia" style="cursor:pointer;"/>
-                  <!-- Australia -->
-                  <path d="M 610,225 L 640,215 L 670,220 L 685,245 L 680,270 L 665,285 L 640,290 L 620,285 L 600,260 Z"
-                        fill="url(#landGrad)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"
-                        class="ct-continent" data-region="australia" style="cursor:pointer;"/>
+                <g class="ct-map-labels" font-family="'IBM Plex Mono',monospace">
+                  <text x="10" y="194">EQUATOR · 0° LAT</text>
+                  <text x="405" y="16" class="prime">GREENWICH · 0°</text>
+                  <text x="8" y="16" class="date-line">DATE LINE · 180°</text>
+                  <text x="792" y="16" text-anchor="end" class="date-line">180° · DATE LINE</text>
                 </g>
-
-                <!-- Prime Meridian line -->
-                <line x1="367" y1="0" x2="367" y2="360" stroke="rgba(245,158,11,0.5)" stroke-width="1.2" stroke-dasharray="4,3"/>
-                <text x="368" y="12" fill="rgba(245,158,11,0.6)" font-size="8" font-family="sans-serif">0° Greenwich</text>
-
-                <!-- UTC offset labels at top -->
-                <g fill="rgba(147,197,253,0.5)" font-size="7" font-family="'IBM Plex Mono',monospace" text-anchor="middle">
-                  <text x="50"  y="355">−11</text>
-                  <text x="83"  y="355">−10</text>
-                  <text x="117" y="355">−9</text>
-                  <text x="150" y="355">−8</text>
-                  <text x="183" y="355">−7</text>
-                  <text x="217" y="355">−6</text>
-                  <text x="250" y="355">−5</text>
-                  <text x="283" y="355">−4</text>
-                  <text x="317" y="355">−3</text>
-                  <text x="350" y="355">−1</text>
-                  <text x="367" y="355" fill="rgba(245,158,11,0.7)">0</text>
-                  <text x="400" y="355">+1</text>
-                  <text x="433" y="355">+2</text>
-                  <text x="467" y="355">+3</text>
-                  <text x="500" y="355">+4</text>
-                  <text x="533" y="355">+5</text>
-                  <text x="567" y="355">+6</text>
-                  <text x="600" y="355">+7</text>
-                  <text x="633" y="355">+8</text>
-                  <text x="667" y="355">+9</text>
-                  <text x="700" y="355">+10</text>
-                  <text x="733" y="355">+11</text>
-                  <text x="767" y="355">+12</text>
+                <g class="ct-utc-labels" font-family="'IBM Plex Mono',monospace" text-anchor="middle">
+                  <text x="16.7" y="391">−12</text><text x="50" y="391">−11</text><text x="83.3" y="391">−10</text><text x="116.7" y="391">−9</text>
+                  <text x="150" y="391">−8</text><text x="183.3" y="391">−7</text><text x="216.7" y="391">−6</text><text x="250" y="391">−5</text>
+                  <text x="283.3" y="391">−4</text><text x="316.7" y="391">−3</text><text x="350" y="391">−2</text><text x="383.3" y="391">−1</text>
+                  <text x="416.7" y="391" class="zero">UTC</text><text x="450" y="391">+1</text><text x="483.3" y="391">+2</text><text x="516.7" y="391">+3</text>
+                  <text x="550" y="391">+4</text><text x="583.3" y="391">+5</text><text x="616.7" y="391">+6</text><text x="650" y="391">+7</text>
+                  <text x="683.3" y="391">+8</text><text x="716.7" y="391">+9</text><text x="750" y="391">+10</text><text x="783.3" y="391">+11</text>
                 </g>
-
-                <!-- City dots -->
-                <g>
-                  <circle cx="145" cy="112" r="3" fill="#34d399"/> <!-- New York -->
-                  <text x="148" y="110" fill="#34d399" font-size="7" font-family="sans-serif">New York</text>
-
-                  <circle cx="125" cy="108" r="3" fill="#34d399"/> <!-- Chicago -->
-                  <text x="106" y="106" fill="#34d399" font-size="7" font-family="sans-serif">Chicago</text>
-
-                  <circle cx="95" cy="115" r="3" fill="#34d399"/> <!-- Los Angeles -->
-                  <text x="70" y="113" fill="#34d399" font-size="7" font-family="sans-serif">Los Angeles</text>
-
-                  <circle cx="366" cy="72" r="3" fill="#f59e0b"/> <!-- London -->
-                  <text x="370" y="70" fill="#f59e0b" font-size="7" font-family="sans-serif">London</text>
-
-                  <circle cx="384" cy="70" r="3" fill="#60a5fa"/> <!-- Paris -->
-                  <text x="388" y="68" fill="#60a5fa" font-size="7" font-family="sans-serif">Paris</text>
-
-                  <circle cx="453" cy="80" r="3" fill="#a78bfa"/> <!-- Moscow -->
-                  <text x="457" y="78" fill="#a78bfa" font-size="7" font-family="sans-serif">Moscow</text>
-
-                  <circle cx="480" cy="140" r="3" fill="#fb923c"/> <!-- Dubai -->
-                  <text x="484" y="138" fill="#fb923c" font-size="7" font-family="sans-serif">Dubai</text>
-
-                  <circle cx="495" cy="145" r="3" fill="#34d399"/> <!-- Mumbai -->
-                  <text x="499" y="143" fill="#34d399" font-size="7" font-family="sans-serif">Mumbai</text>
-
-                  <circle cx="575" cy="80" r="3" fill="#f472b6"/> <!-- Beijing -->
-                  <text x="579" y="78" fill="#f472b6" font-size="7" font-family="sans-serif">Beijing</text>
-
-                  <circle cx="635" cy="85" r="3" fill="#fb923c"/> <!-- Tokyo -->
-                  <text x="639" y="83" fill="#fb923c" font-size="7" font-family="sans-serif">Tokyo</text>
-
-                  <circle cx="625" cy="255" r="3" fill="#34d399"/> <!-- Sydney -->
-                  <text x="629" y="253" fill="#34d399" font-size="7" font-family="sans-serif">Sydney</text>
-                </g>
-
-                <!-- Highlight overlay (shown on region click) -->
-                <rect id="ct-tz-highlight" x="0" y="0" width="0" height="360" fill="rgba(59,130,246,0.12)" rx="0" pointer-events="none" opacity="0"/>
               </svg>
+            </div>
+            <div class="ct-map-caption">
+              <span>Equirectangular projection · markers use latitude/longitude</span>
+              <a href="https://www.naturalearthdata.com/downloads/110m-cultural-vectors/110m-admin-0-countries/" target="_blank" rel="noopener">Geography: Natural Earth 1:110m ↗</a>
             </div>
 
             <!-- Region Buttons -->
@@ -1008,15 +1392,15 @@
 
             <!-- Explainer -->
             <div class="ct-tz-explainer">
-              <p><strong style="color:rgba(255,255,255,0.8);">Why 24 time zones?</strong> Earth completes one rotation (360°) every 24 hours. 360 ÷ 24 = 15°. So every 15° of longitude equals exactly one hour of difference. When it's noon in London (0°), it's midnight in Fiji (+12 hours, 180°).</p>
+              <p><strong style="color:rgba(255,255,255,0.8);">Why show 24 reference bands?</strong> Earth completes one rotation (360°) every 24 hours, so 15° of longitude corresponds to one hour of solar rotation. The straight bands on the map show that mathematical ideal. Real civil time-zone boundaries bend around countries, states, and islands.</p>
               <p><strong style="color:rgba(255,255,255,0.8);">The International Date Line</strong> sits roughly at 180° longitude — the opposite side of Earth from Greenwich. Cross it heading west and you gain a day; head east and you lose one. Pilots who fly trans-Pacific routes regularly "time travel" across it.</p>
-              <p><strong style="color:rgba(255,255,255,0.8);">Not all offsets are whole hours.</strong> India is UTC+5:30, Nepal is UTC+5:45, and parts of Australia use UTC+9:30. These quirks reflect politics, history, and geographic compromise more than pure mathematics.</p>
+              <p><strong style="color:rgba(255,255,255,0.8);">Not all offsets are whole hours—or fixed year-round.</strong> India is UTC+5:30, Nepal is UTC+5:45, and parts of Australia use half-hour offsets. The clocks above use named IANA zones, so daylight-saving changes are applied for each city instead of relying on a fixed offset.</p>
             </div>
           </section>
 
           <!-- ── TIME TRAVEL THROUGH HISTORY & SCI-FI ── -->
-          <section class="ct-card" style="--card-accent:#a78bfa;">
-            <h2>Traveling Through Time — History, Books &amp; Science Fiction</h2>
+          <section class="ct-card" data-step="07 / IMAGINE" style="--card-accent:#a78bfa;">
+            <h2 data-step="07 / IMAGINE">Traveling Through Time — History, Books &amp; Science Fiction</h2>
             <p>
               Here is a truth every reader and history student knows intuitively: <strong>you can
               travel through time</strong>. Open a history book and you are transported to ancient
@@ -1079,8 +1463,8 @@
           </section>
 
           <!-- ── TIME DILATION ───────────────────────── -->
-          <section class="ct-dilation-lab" aria-label="Time dilation calculator">
-            <h2>Time Dilation — Faster Than Light and Bent Time</h2>
+          <section class="ct-dilation-lab" id="relativity" data-step="08 / EXPERIMENT" aria-label="Time dilation calculator">
+            <h2 data-step="08 / EXPERIMENT">Time Dilation — Faster Than Light and Bent Time</h2>
             <p>
               Albert Einstein's Special Theory of Relativity (1905) delivered one of the most
               astonishing predictions in the history of science: <strong>time is not constant</strong>.
@@ -1159,8 +1543,8 @@
           </section>
 
           <!-- ── PRACTICE PROBLEMS ──────────────────── -->
-          <section class="ct-card" style="--card-accent:#22c55e;">
-            <h2>Practice Problems</h2>
+          <section class="ct-card" id="practice" data-step="09 / CHECK" style="--card-accent:#22c55e;">
+            <h2 data-step="09 / CHECK">Practice Problems</h2>
             <div class="ct-score-bar">
               <span id="ct-score">0 / 6 correct</span>
             </div>
@@ -1538,140 +1922,222 @@
   <!-- ── TIMEZONE MAP SCRIPT ────────────────────────── -->
   <script>
   (function () {
+    const city = (name, code, lat, lon, timeZone) => ({ name, code, lat, lon, timeZone });
     const regionData = {
       americas: {
         name: 'Americas — Local Times Right Now',
         cities: [
-          { name: 'Los Angeles',  offset: -7  },
-          { name: 'Denver',       offset: -6  },
-          { name: 'Chicago',      offset: -5  },
-          { name: 'New York',     offset: -4  },
-          { name: 'Toronto',      offset: -4  },
-          { name: 'São Paulo',    offset: -3  },
-          { name: 'Buenos Aires', offset: -3  },
-          { name: 'Anchorage',    offset: -8  },
-          { name: 'Honolulu',     offset: -10 },
+          city('Los Angeles', 'LAX', 34.0522, -118.2437, 'America/Los_Angeles'),
+          city('Denver', 'DEN', 39.7392, -104.9903, 'America/Denver'),
+          city('Chicago', 'CHI', 41.8781, -87.6298, 'America/Chicago'),
+          city('New York', 'NYC', 40.7128, -74.0060, 'America/New_York'),
+          city('Toronto', 'YYZ', 43.6532, -79.3832, 'America/Toronto'),
+          city('São Paulo', 'SAO', -23.5505, -46.6333, 'America/Sao_Paulo'),
+          city('Buenos Aires', 'BUE', -34.6037, -58.3816, 'America/Argentina/Buenos_Aires'),
+          city('Anchorage', 'ANC', 61.2181, -149.9003, 'America/Anchorage'),
+          city('Honolulu', 'HNL', 21.3069, -157.8583, 'Pacific/Honolulu')
         ]
       },
       europe: {
         name: 'Europe & Africa — Local Times Right Now',
         cities: [
-          { name: 'London',      offset: 1 },
-          { name: 'Paris',       offset: 2 },
-          { name: 'Berlin',      offset: 2 },
-          { name: 'Madrid',      offset: 2 },
-          { name: 'Rome',        offset: 2 },
-          { name: 'Cairo',       offset: 3 },
-          { name: 'Lagos',       offset: 1 },
-          { name: 'Nairobi',     offset: 3 },
-          { name: 'Cape Town',   offset: 2 },
+          city('London', 'LON', 51.5074, -0.1278, 'Europe/London'),
+          city('Paris', 'PAR', 48.8566, 2.3522, 'Europe/Paris'),
+          city('Berlin', 'BER', 52.5200, 13.4050, 'Europe/Berlin'),
+          city('Madrid', 'MAD', 40.4168, -3.7038, 'Europe/Madrid'),
+          city('Rome', 'ROM', 41.9028, 12.4964, 'Europe/Rome'),
+          city('Cairo', 'CAI', 30.0444, 31.2357, 'Africa/Cairo'),
+          city('Lagos', 'LOS', 6.5244, 3.3792, 'Africa/Lagos'),
+          city('Nairobi', 'NBO', -1.2921, 36.8219, 'Africa/Nairobi'),
+          city('Cape Town', 'CPT', -33.9249, 18.4241, 'Africa/Johannesburg')
         ]
       },
       middleeast: {
         name: 'Middle East — Local Times Right Now',
         cities: [
-          { name: 'Jerusalem',   offset: 3 },
-          { name: 'Riyadh',      offset: 3 },
-          { name: 'Dubai',       offset: 4 },
-          { name: 'Tehran',      offset: 3.5 },
-          { name: 'Baghdad',     offset: 3 },
-          { name: 'Istanbul',    offset: 3 },
+          city('Jerusalem', 'JRS', 31.7683, 35.2137, 'Asia/Jerusalem'),
+          city('Riyadh', 'RUH', 24.7136, 46.6753, 'Asia/Riyadh'),
+          city('Dubai', 'DXB', 25.2048, 55.2708, 'Asia/Dubai'),
+          city('Tehran', 'THR', 35.6892, 51.3890, 'Asia/Tehran'),
+          city('Baghdad', 'BGW', 33.3152, 44.3661, 'Asia/Baghdad'),
+          city('Istanbul', 'IST', 41.0082, 28.9784, 'Europe/Istanbul')
         ]
       },
       asia: {
         name: 'South & Central Asia — Local Times Right Now',
         cities: [
-          { name: 'Karachi',     offset: 5 },
-          { name: 'Mumbai',      offset: 5.5 },
-          { name: 'New Delhi',   offset: 5.5 },
-          { name: 'Kathmandu',   offset: 5.75 },
-          { name: 'Dhaka',       offset: 6 },
-          { name: 'Colombo',     offset: 5.5 },
-          { name: 'Tashkent',    offset: 5 },
+          city('Karachi', 'KHI', 24.8607, 67.0011, 'Asia/Karachi'),
+          city('Mumbai', 'BOM', 19.0760, 72.8777, 'Asia/Kolkata'),
+          city('New Delhi', 'DEL', 28.6139, 77.2090, 'Asia/Kolkata'),
+          city('Kathmandu', 'KTM', 27.7172, 85.3240, 'Asia/Kathmandu'),
+          city('Dhaka', 'DAC', 23.8103, 90.4125, 'Asia/Dhaka'),
+          city('Colombo', 'CMB', 6.9271, 79.8612, 'Asia/Colombo'),
+          city('Tashkent', 'TAS', 41.2995, 69.2401, 'Asia/Tashkent')
         ]
       },
       east_asia: {
         name: 'East & Southeast Asia — Local Times Right Now',
         cities: [
-          { name: 'Bangkok',     offset: 7 },
-          { name: 'Singapore',   offset: 8 },
-          { name: 'Beijing',     offset: 8 },
-          { name: 'Hong Kong',   offset: 8 },
-          { name: 'Seoul',       offset: 9 },
-          { name: 'Tokyo',       offset: 9 },
-          { name: 'Manila',      offset: 8 },
-          { name: 'Jakarta',     offset: 7 },
+          city('Bangkok', 'BKK', 13.7563, 100.5018, 'Asia/Bangkok'),
+          city('Singapore', 'SIN', 1.3521, 103.8198, 'Asia/Singapore'),
+          city('Beijing', 'PEK', 39.9042, 116.4074, 'Asia/Shanghai'),
+          city('Hong Kong', 'HKG', 22.3193, 114.1694, 'Asia/Hong_Kong'),
+          city('Seoul', 'SEL', 37.5665, 126.9780, 'Asia/Seoul'),
+          city('Tokyo', 'TYO', 35.6762, 139.6503, 'Asia/Tokyo'),
+          city('Manila', 'MNL', 14.5995, 120.9842, 'Asia/Manila'),
+          city('Jakarta', 'JKT', -6.2088, 106.8456, 'Asia/Jakarta')
         ]
       },
       australia: {
         name: 'Australia & Pacific — Local Times Right Now',
         cities: [
-          { name: 'Perth',       offset: 8  },
-          { name: 'Darwin',      offset: 9.5 },
-          { name: 'Adelaide',    offset: 9.5 },
-          { name: 'Sydney',      offset: 10 },
-          { name: 'Auckland',    offset: 12 },
-          { name: 'Fiji',        offset: 12 },
-          { name: 'Honolulu',    offset: -10 },
+          city('Perth', 'PER', -31.9523, 115.8613, 'Australia/Perth'),
+          city('Darwin', 'DRW', -12.4634, 130.8456, 'Australia/Darwin'),
+          city('Adelaide', 'ADL', -34.9285, 138.6007, 'Australia/Adelaide'),
+          city('Sydney', 'SYD', -33.8688, 151.2093, 'Australia/Sydney'),
+          city('Auckland', 'AKL', -36.8509, 174.7645, 'Pacific/Auckland'),
+          city('Suva, Fiji', 'SUV', -18.1248, 178.4501, 'Pacific/Fiji'),
+          city('Honolulu', 'HNL', 21.3069, -157.8583, 'Pacific/Honolulu')
         ]
       }
     };
 
-    function formatOffset(offset) {
-      const now = new Date();
-      // Get UTC time as ms
-      const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-      const cityMs = utcMs + offset * 3600000;
-      const d = new Date(cityMs);
-      const h = String(d.getUTCHours()).padStart(2, '0');
-      const m = String(d.getUTCMinutes()).padStart(2, '0');
-      return `${h}:${m}`;
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const markerLayer = document.getElementById('ct-city-markers');
+    const highlight = document.getElementById('ct-tz-highlight');
+    let activeRegion = 'americas';
+
+    function project(latitude, longitude) {
+      return {
+        x: ((longitude + 180) / 360) * 800,
+        y: ((90 - latitude) / 180) * 400
+      };
+    }
+
+    function timeFor(timeZone) {
+      return new Intl.DateTimeFormat([], {
+        timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23'
+      }).format(new Date());
+    }
+
+    function offsetFor(timeZone) {
+      const part = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        timeZoneName: 'shortOffset'
+      }).formatToParts(new Date()).find(item => item.type === 'timeZoneName');
+      return (part ? part.value : 'UTC').replace('GMT', 'UTC');
+    }
+
+    function rowId(name) {
+      return `ct-city-${name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')}`;
+    }
+
+    function setActiveCity(name, active) {
+      const row = document.getElementById(rowId(name));
+      if (row) row.classList.toggle('is-map-active', active);
+    }
+
+    function renderMarkers(cities) {
+      markerLayer.replaceChildren();
+      const labelOffsets = [[8, -7], [8, 12], [-8, -7], [-8, 12], [0, -12], [0, 15]];
+
+      cities.forEach((item, index) => {
+        const point = project(item.lat, item.lon);
+        const [dx, dy] = labelOffsets[index % labelOffsets.length];
+        const group = document.createElementNS(svgNS, 'g');
+        group.classList.add('ct-city-marker');
+        group.setAttribute('transform', `translate(${point.x.toFixed(2)} ${point.y.toFixed(2)})`);
+        group.setAttribute('tabindex', '0');
+        group.setAttribute('role', 'button');
+        group.setAttribute('aria-label', `${item.name}, ${item.lat.toFixed(2)} latitude, ${item.lon.toFixed(2)} longitude`);
+
+        const title = document.createElementNS(svgNS, 'title');
+        title.textContent = `${item.name} · ${timeFor(item.timeZone)} · ${offsetFor(item.timeZone)}`;
+        const halo = document.createElementNS(svgNS, 'circle');
+        halo.setAttribute('class', 'marker-halo'); halo.setAttribute('r', '6');
+        const core = document.createElementNS(svgNS, 'circle');
+        core.setAttribute('class', 'marker-core'); core.setAttribute('r', '2.7');
+        const label = document.createElementNS(svgNS, 'text');
+        label.setAttribute('class', 'marker-label');
+        label.setAttribute('x', dx); label.setAttribute('y', dy);
+        label.setAttribute('text-anchor', dx < 0 ? 'end' : dx === 0 ? 'middle' : 'start');
+        label.textContent = item.code;
+        group.append(title, halo, core, label);
+        group.addEventListener('mouseenter', () => setActiveCity(item.name, true));
+        group.addEventListener('mouseleave', () => setActiveCity(item.name, false));
+        group.addEventListener('focus', () => setActiveCity(item.name, true));
+        group.addEventListener('blur', () => setActiveCity(item.name, false));
+        markerLayer.appendChild(group);
+      });
+    }
+
+    function renderHighlight(cities) {
+      let longitudes = cities.map(item => item.lon);
+      if (activeRegion === 'australia') longitudes = longitudes.filter(lon => lon > 0);
+      const minX = project(0, Math.min(...longitudes)).x;
+      const maxX = project(0, Math.max(...longitudes)).x;
+      highlight.setAttribute('x', Math.max(0, minX - 14).toFixed(2));
+      highlight.setAttribute('width', Math.min(800 - minX + 14, maxX - minX + 28).toFixed(2));
+      highlight.setAttribute('opacity', '1');
+
+      const mapWrap = document.querySelector('.ct-tz-map-wrap');
+      const mapSvg = document.getElementById('ct-world-svg');
+      if (mapWrap && mapSvg && mapWrap.scrollWidth > mapWrap.clientWidth) {
+        const scale = mapSvg.getBoundingClientRect().width / 800;
+        const center = ((minX + maxX) / 2) * scale;
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        mapWrap.scrollTo({
+          left: Math.max(0, center - mapWrap.clientWidth / 2),
+          behavior: reducedMotion ? 'auto' : 'smooth'
+        });
+      }
     }
 
     function renderRegion(key) {
       const data = regionData[key];
       if (!data) return;
+      activeRegion = key;
       document.getElementById('ct-tz-region-name').textContent = data.name;
       const container = document.getElementById('ct-tz-cities');
-      container.innerHTML = '';
-      data.cities.forEach(city => {
+      container.replaceChildren();
+
+      data.cities.forEach(item => {
         const row = document.createElement('div');
         row.className = 'ct-city-row';
-        row.innerHTML = `<span class="city-name">${city.name}</span><span class="city-time" data-offset="${city.offset}"></span>`;
+        row.id = rowId(item.name);
+        row.innerHTML = `<span class="city-name">${item.name}</span><span class="city-clock"><span class="city-offset">${offsetFor(item.timeZone)}</span><span class="city-time" data-zone="${item.timeZone}">${timeFor(item.timeZone)}</span></span>`;
         container.appendChild(row);
       });
-      updateCityTimes();
+      renderMarkers(data.cities);
+      renderHighlight(data.cities);
     }
 
     function updateCityTimes() {
-      document.querySelectorAll('.city-time').forEach(el => {
-        const offset = parseFloat(el.dataset.offset);
-        el.textContent = formatOffset(offset);
+      document.querySelectorAll('.city-time[data-zone]').forEach(el => {
+        el.textContent = timeFor(el.dataset.zone);
       });
+      const data = regionData[activeRegion];
+      if (data) {
+        [...markerLayer.querySelectorAll('title')].forEach((title, index) => {
+          const item = data.cities[index];
+          title.textContent = `${item.name} · ${timeFor(item.timeZone)} · ${offsetFor(item.timeZone)}`;
+        });
+      }
     }
 
-    // Buttons
     document.querySelectorAll('.ct-tz-btn').forEach(btn => {
       btn.addEventListener('click', function () {
-        document.querySelectorAll('.ct-tz-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.ct-tz-btn').forEach(button => button.classList.remove('active'));
         this.classList.add('active');
         renderRegion(this.dataset.region);
       });
     });
 
-    // Continent click
-    document.querySelectorAll('.ct-continent').forEach(el => {
-      el.addEventListener('click', function () {
-        const region = this.dataset.region;
-        document.querySelectorAll('.ct-tz-btn').forEach(b => {
-          b.classList.toggle('active', b.dataset.region === region);
-        });
-        renderRegion(region);
-      });
-    });
-
     renderRegion('americas');
-    setInterval(updateCityTimes, 10000);
+    setInterval(updateCityTimes, 30000);
   })();
   </script>
 

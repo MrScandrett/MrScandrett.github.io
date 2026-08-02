@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Audio Equalizers: Choose, Hear, and Shape · Technical Elements</title>
+  <meta name="description" content="Interactive lesson covering graphic, parametric, semi-parametric, shelving, dynamic, linear-phase, and passive equalizers." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/technical-elements.css" />
+</head>
+<body class="te-page">
+  <nav class="te-topbar">
+    <a href="../steam-lessons.html#module-technical-elements">← Technical Elements</a>
+    <span>Phase 1 · Core Audio Engineering · Lesson 4</span>
+    <a href="stage-lighting-design-lab.html">Next: Stage Lighting →</a>
+  </nav>
+  <main class="te-shell">
+    <header class="te-hero">
+      <div class="te-kicker">Frequency · Seven EQ Types · Critical Listening · Evidence</div>
+      <h1>Audio Equalizers: Choose, Hear, and Shape</h1>
+      <p>Equalization changes level by frequency—not “quality” in general. Learn how seven common EQ designs differ, choose the right tool for a production problem, and make the smallest change that solves it.</p>
+      <div class="te-meta"><span class="te-chip">Grades 6–12</span><span class="te-chip">60–75 minutes</span><span class="te-chip">Interactive listening lab</span><span class="te-chip">Use headphones at a safe level</span></div>
+    </header>
+
+    <div class="te-grid">
+      <div class="te-stack">
+        <section class="te-card">
+          <h2>1. Interactive EQ workbench</h2>
+          <div class="eq-type-intro"><span class="te-kicker" id="eq-family">Core equalizer</span><h3 id="eq-type-name">Parametric EQ</h3><p id="eq-type-description"></p><div class="eq-type-facts"><span id="eq-type-controls"></span><span id="eq-type-use"></span></div></div>
+          <div class="eq-mix-player">
+            <div class="eq-player-now"><span class="eq-player-light" aria-hidden="true"></span><div><small>NOW PLAYING THROUGH THE EQ</small><strong id="mix-track-title">“Hush, hush, not a word” / “Softly sighing to the river”</strong><span id="mix-track-detail">Orchestra · soloists · chorus · 1921 recording</span></div><time id="mix-time" aria-live="off">0:00 / 3:59</time></div>
+            <label class="eq-track-select" for="example-track"><span>Listening source</span><select id="example-track"><option value="orchestra">Orchestral cast excerpt · 3:59</option><option value="dialogue">Act II full-cast dialogue + a cappella · 45:12</option></select></label>
+            <audio id="mix-player" class="te-musical-audio" controls crossorigin="anonymous" preload="metadata" src="https://upload.wikimedia.org/wikipedia/commons/8/8a/The_Pirates_of_Penzance_%28HMV%2C_cond._Byng%29_-_19_-_Hush%2C_hush%2C_not_a_word_-_Softly_sighing_to_the_river.mp3"></audio>
+            <div class="eq-player-footer"><span><em>The Pirates of Penzance</em> · public-domain learning sources</span><a id="mix-source-link" href="https://commons.wikimedia.org/wiki/File:The_Pirates_of_Penzance_(HMV,_cond._Byng)_-_19_-_Hush,_hush,_not_a_word_-_Softly_sighing_to_the_river.mp3" target="_blank" rel="noopener">Source details ↗</a></div>
+          </div>
+          <div class="te-spectrum" id="spectrum" role="img" aria-label="Animated real-time audio spectrum showing the selected equalizer response">
+            <svg class="eq-response-overlay" viewBox="0 0 1000 180" preserveAspectRatio="none" aria-hidden="true"><line class="eq-zero-line" x1="0" y1="90" x2="1000" y2="90"></line><path class="eq-cut-fill" id="eq-curve-fill"></path><path class="eq-response-line" id="eq-curve"></path><line class="eq-frequency-marker" id="eq-frequency-marker" x1="500" y1="12" x2="500" y2="168"></line></svg>
+            <div class="eq-spectrum-axis" aria-hidden="true"><span>20 Hz</span><span>100</span><span>1k</span><span>10k</span><span>20 kHz</span></div>
+          </div>
+          <div class="eq-filter-status" aria-live="polite"><span><small>SHAPE</small><strong id="filter-shape">Bell</strong></span><span><small>WIDTH / SLOPE</small><strong id="filter-width">Q 2.5</strong></span><span><small>ACTION</small><strong id="filter-action">Flat · 0 dB</strong></span><span><small>HPF</small><strong id="filter-hpf">20 Hz</strong></span></div>
+          <div class="te-stat-grid">
+            <div class="te-stat"><span>Problem center</span><strong id="problem-label">—</strong></div>
+            <div class="te-stat"><span>Your correction</span><strong id="correction-label">—</strong></div>
+            <div class="te-stat"><span>Match score</span><strong id="match-score">—</strong></div>
+          </div>
+          <div class="te-button-row"><button class="te-button" id="hear-before">▶ Hear problem</button><button class="te-button" id="hear-after">▶ Hear corrected</button><button class="te-button primary" id="new-problem">New hidden problem</button></div>
+          <div class="te-readout" id="eq-readout" aria-live="polite"></div>
+          <div class="eq-visual-guide">
+            <article><svg viewBox="0 0 150 72" aria-hidden="true"><path class="guide-axis" d="M8 60H142M8 10V60"/><path class="guide-muted" d="M10 56C22 55 27 48 38 35S58 20 76 20H142"/><path class="guide-main" d="M10 59C27 59 29 50 39 33S58 18 76 18H142"/><path class="guide-shade" d="M10 59C27 59 29 50 39 33L39 60H10Z"/></svg><h3>High-pass filter</h3><p>Below the cutoff is reduced; above it passes. A steeper slope removes lows more quickly.</p></article>
+            <article><svg viewBox="0 0 150 72" aria-hidden="true"><path class="guide-axis" d="M8 36H142"/><path class="guide-muted" d="M8 36C43 36 45 13 75 13S107 36 142 36"/><path class="guide-main" d="M8 36C65 36 66 13 75 13S85 36 142 36"/><text x="67" y="67">HIGH Q</text><text x="15" y="12">LOW Q</text></svg><h3>Bell and Q</h3><p>High Q is narrow and surgical. Low Q is wide and changes more neighboring frequencies.</p></article>
+            <article><svg viewBox="0 0 150 72" aria-hidden="true"><path class="guide-axis" d="M8 36H142"/><path class="guide-main" d="M8 36H63C78 36 78 15 93 15H142"/><path class="guide-muted" d="M8 57H57C76 57 76 36 94 36H142"/><text x="96" y="11">HIGH</text><text x="10" y="68">LOW</text></svg><h3>Shelves</h3><p>A high shelf changes everything above its corner; a low shelf changes everything below it.</p></article>
+            <article><svg viewBox="0 0 150 72" aria-hidden="true"><path class="guide-axis" d="M8 58H142M8 10V58"/><line class="guide-threshold" x1="8" y1="34" x2="142" y2="34"/><path class="guide-main" d="M8 54L25 50L43 44L60 38L77 31L94 18L112 27L140 13"/><circle class="guide-trigger" cx="94" cy="18" r="5"/><text x="10" y="30">THRESHOLD</text></svg><h3>Dynamic threshold</h3><p>The band waits until its detector crosses the threshold, then applies its cut or boost range.</p></article>
+            <article><svg viewBox="0 0 150 72" aria-hidden="true"><path class="guide-axis" d="M8 36H142"/><path class="guide-main no-fill" d="M8 36C20 9 32 9 44 36S68 63 80 36S104 9 116 36S132 60 142 42"/><path class="guide-muted no-fill" d="M18 36C30 9 42 9 54 36S78 63 90 36S114 9 126 36S140 57 144 48"/></svg><h3>Phase and timing</h3><p>Conventional filters shift some frequencies in time. Linear-phase designs align them but add latency.</p></article>
+          </div>
+        </section>
+
+        <section class="te-card">
+          <h2>2. Seven equalizers: what changes and why</h2>
+          <p>All EQs change frequency balance, but their controls, timing, phase behavior, and best uses differ. “More advanced” does not automatically mean “better.”</p>
+          <div class="eq-type-grid">
+            <article class="eq-type-card"><span>Core · fixed bands</span><h3>Graphic EQ</h3><p><strong>Controls:</strong> gain for a row of fixed frequency bands.</p><p>The name comes from the response curve drawn by its physical vertical faders. It is fast and practical for live-sound feedback control and broad room/system tuning, but less precise than a parametric EQ.</p></article>
+            <article class="eq-type-card"><span>Core · fully adjustable</span><h3>Parametric EQ</h3><p><strong>Controls:</strong> center frequency, gain, and Q/bandwidth.</p><p>The most flexible general-purpose design. Use it to isolate mud, resonance, harshness, or other specific tonal problems.</p></article>
+            <article class="eq-type-card"><span>Core · simplified</span><h3>Semi-Parametric EQ</h3><p><strong>Controls:</strong> frequency and gain; Q is fixed or offers only a few choices.</p><p>Quicker and less expensive to operate, but it cannot independently choose exactly how wide the affected range will be.</p></article>
+            <article class="eq-type-card"><span>Specialized · broad tone</span><h3>Shelving EQ</h3><p><strong>Controls:</strong> corner frequency, gain, and high/low shelf.</p><p>Raises or lowers everything above or below the corner. Excellent for broad bass weight or treble brightness—not narrow resonances.</p></article>
+            <article class="eq-type-card"><span>Advanced · level-dependent</span><h3>Dynamic EQ</h3><p><strong>Controls:</strong> frequency, gain/range, Q, and threshold.</p><p>Acts only when energy in its band crosses above—or, in some modes, below—a threshold. It can tame harsh belting while leaving quieter vocals natural.</p></article>
+            <article class="eq-type-card"><span>Advanced · mastering</span><h3>Linear-Phase EQ</h3><p><strong>Controls:</strong> familiar EQ bands plus a linear-phase processing mode.</p><p>Uses look-ahead/FIR processing to preserve relative phase through the EQ, helping prevent phase smearing or cancellation in sensitive mastering and parallel paths. It adds latency and may create pre-ringing.</p></article>
+            <article class="eq-type-card"><span>Specialized · analog circuit</span><h3>Passive EQ</h3><p><strong>Controls:</strong> broad, interacting boost/cut bands that depend on the circuit.</p><p>Uses resistors, capacitors, and inductors for EQ rather than powered gain stages. Hardware pairs the passive network with amplification; models are valued for broad curves and vintage color.</p></article>
+          </div>
+        </section>
+
+        <section class="te-card">
+          <h2>3. The sweep-and-cut method</h2>
+          <ol>
+            <li><strong>Name the symptom:</strong> rumble, mud, boxiness, nasal tone, harshness, hiss, or something else.</li>
+            <li><strong>Narrow the Q</strong> and temporarily boost while sweeping frequency to make the suspected problem obvious.</li>
+            <li><strong>Stop when the ugly quality jumps out.</strong> That is evidence, not a final setting.</li>
+            <li><strong>Turn the boost into a modest cut</strong>, widen Q if needed, then compare bypassed and processed levels fairly.</li>
+          </ol>
+          <p>A dramatic soloed EQ curve can be impressive and still make the full mix worse. Always judge the source in context.</p>
+        </section>
+
+        <section class="te-card">
+          <h2>4. Choose the right EQ</h2>
+          <div class="eq-scenarios">
+            <div class="eq-scenario"><p><strong>A.</strong> Eight fixed frequencies keep feeding back during a live show, and the engineer must react quickly.</p><select data-answer="graphic" aria-label="Choose an EQ for scenario A"><option value="">Choose an EQ…</option><option value="graphic">Graphic EQ</option><option value="dynamic">Dynamic EQ</option><option value="linear">Linear-phase EQ</option></select><span class="eq-feedback"></span></div>
+            <div class="eq-scenario"><p><strong>B.</strong> A singer becomes harsh near 3.5 kHz only on the loudest notes.</p><select data-answer="dynamic" aria-label="Choose an EQ for scenario B"><option value="">Choose an EQ…</option><option value="shelf">Shelving EQ</option><option value="dynamic">Dynamic EQ</option><option value="passive">Passive EQ</option></select><span class="eq-feedback"></span></div>
+            <div class="eq-scenario"><p><strong>C.</strong> A mastering engineer needs EQ on a parallel signal while keeping frequency components aligned.</p><select data-answer="linear" aria-label="Choose an EQ for scenario C"><option value="">Choose an EQ…</option><option value="semi">Semi-parametric EQ</option><option value="graphic">Graphic EQ</option><option value="linear">Linear-phase EQ</option></select><span class="eq-feedback"></span></div>
+            <div class="eq-scenario"><p><strong>D.</strong> A dialogue recording has one constant 520 Hz boxy resonance that must be isolated precisely.</p><select data-answer="parametric" aria-label="Choose an EQ for scenario D"><option value="">Choose an EQ…</option><option value="parametric">Parametric EQ</option><option value="shelf">Shelving EQ</option><option value="passive">Passive EQ</option></select><span class="eq-feedback"></span></div>
+            <div class="eq-scenario"><p><strong>E.</strong> An orchestra needs a gentle, broad increase in brightness above 8 kHz.</p><select data-answer="shelf" aria-label="Choose an EQ for scenario E"><option value="">Choose an EQ…</option><option value="dynamic">Dynamic EQ</option><option value="shelf">Shelving EQ</option><option value="graphic">Graphic EQ</option></select><span class="eq-feedback"></span></div>
+            <div class="eq-scenario"><p><strong>F.</strong> A simple mixer channel offers sweepable mids and gain, but no Q knob.</p><select data-answer="semi" aria-label="Choose an EQ for scenario F"><option value="">Choose an EQ…</option><option value="semi">Semi-parametric EQ</option><option value="linear">Linear-phase EQ</option><option value="dynamic">Dynamic EQ</option></select><span class="eq-feedback"></span></div>
+            <div class="eq-scenario"><p><strong>G.</strong> A mix needs broad, musical tone shaping with the character of a vintage analog circuit.</p><select data-answer="passive" aria-label="Choose an EQ for scenario G"><option value="">Choose an EQ…</option><option value="parametric">Parametric EQ</option><option value="passive">Passive EQ</option><option value="semi">Semi-parametric EQ</option></select><span class="eq-feedback"></span></div>
+          </div>
+        </section>
+
+        <section class="te-card">
+          <h2>5. Production log</h2>
+          <p>Test at least four EQ types. Record the source, symptom, chosen EQ type, controls used, final setting, and whether a level-matched bypass comparison confirmed an improvement. Explain why one other EQ type was less appropriate.</p>
+        </section>
+      </div>
+
+      <aside class="te-stack">
+        <section class="te-card eq-hardware" id="eq-hardware" data-eq-type="parametric">
+          <div class="eq-rack-screw top-left" aria-hidden="true"></div><div class="eq-rack-screw top-right" aria-hidden="true"></div><div class="eq-rack-screw bottom-left" aria-hidden="true"></div><div class="eq-rack-screw bottom-right" aria-hidden="true"></div>
+          <div class="eq-hardware-header">
+            <div class="eq-hardware-brand"><span>Scandrett Audio Lab</span><strong id="eq-model-name">PQ-3 Precision</strong><small id="eq-model-format">1U PARAMETRIC EQUALIZER</small></div>
+            <div class="eq-meter-wrap"><span>OUTPUT</span><div class="eq-led-meter" id="eq-led-meter" aria-label="Output level meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><small>−30&nbsp;&nbsp;−12&nbsp;&nbsp;0&nbsp;&nbsp;+3</small></div>
+            <button class="eq-bypass-switch" id="eq-bypass" type="button" aria-pressed="false"><i aria-hidden="true"></i><span>EQ IN</span></button>
+          </div>
+          <h2 class="eq-panel-title">Hardware controls</h2>
+          <div class="te-controls">
+            <div class="te-control"><label for="eq-type">Equalizer type</label><select id="eq-type"><option value="parametric">Parametric EQ</option><option value="semi">Semi-parametric EQ</option><option value="graphic">Graphic EQ</option><option value="shelf">Shelving EQ</option><option value="dynamic">Dynamic EQ</option><option value="linear">Linear-phase EQ</option><option value="passive">Passive EQ</option></select></div>
+            <div class="te-control"><label for="source">Source problem</label><select id="source"><option value="hidden">Hidden challenge</option><option value="rumble">Rumble</option><option value="mud">Mud</option><option value="boxy">Boxiness</option><option value="nasal">Nasal tone</option><option value="harsh">Harshness</option><option value="hiss">Hiss</option></select></div>
+            <div class="te-control" id="frequency-control"><label for="frequency"><span id="frequency-label">Center frequency</span> <output id="frequency-out"></output></label><input id="frequency" type="range" min="0" max="1000" value="500" /></div>
+            <div class="te-control" id="gain-control"><label for="gain"><span id="gain-label">Gain</span> <output id="gain-out"></output></label><input id="gain" type="range" min="-15" max="12" value="0" step="0.5" /></div>
+            <div class="te-control" id="q-control"><label for="q">Q / bandwidth <output id="q-out"></output></label><input id="q" type="range" min="1" max="100" value="25" /></div>
+            <div class="te-control" id="shelf-control" hidden><label for="shelf-direction">Shelf direction</label><select id="shelf-direction"><option value="highshelf">High shelf · above corner</option><option value="lowshelf">Low shelf · below corner</option></select></div>
+            <div class="te-control" id="threshold-control" hidden><label for="threshold">Dynamic threshold <output id="threshold-out"></output></label><input id="threshold" type="range" min="-48" max="-6" value="-24" step="1" /></div>
+            <div class="te-control" id="graphic-control" hidden><span class="eq-control-title">Fixed frequency bands</span><div class="eq-graphic" id="graphic-sliders">
+              <label><output>0</output><input type="range" min="-12" max="12" value="0" step="1" data-hz="63"><span>63</span></label><label><output>0</output><input type="range" min="-12" max="12" value="0" step="1" data-hz="125"><span>125</span></label><label><output>0</output><input type="range" min="-12" max="12" value="0" step="1" data-hz="250"><span>250</span></label><label><output>0</output><input type="range" min="-12" max="12" value="0" step="1" data-hz="500"><span>500</span></label><label><output>0</output><input type="range" min="-12" max="12" value="0" step="1" data-hz="1000"><span>1k</span></label><label><output>0</output><input type="range" min="-12" max="12" value="0" step="1" data-hz="2000"><span>2k</span></label><label><output>0</output><input type="range" min="-12" max="12" value="0" step="1" data-hz="4000"><span>4k</span></label><label><output>0</output><input type="range" min="-12" max="12" value="0" step="1" data-hz="8000"><span>8k</span></label>
+            </div></div>
+            <div class="te-control" id="hpf-control"><label for="hpf">High-pass filter <output id="hpf-out"></output></label><input id="hpf" type="range" min="20" max="250" value="20" /></div>
+          </div>
+          <div class="eq-rack-footer"><span>INPUT</span><b>●</b><span>TRANSFORMER BALANCED</span><b>●</b><span>OUTPUT</span></div>
+        </section>
+
+        <section class="te-card">
+          <h2>Frequency landmarks</h2>
+          <div class="te-brief"><h3>20–80 Hz · Rumble</h3><p>Handling noise, HVAC, footsteps, and wind often live here. A high-pass filter may be safer than a narrow bell cut.</p></div>
+          <div class="te-brief"><h3>120–350 Hz · Mud</h3><p>Too much energy can obscure consonants and make sources compete.</p></div>
+          <div class="te-brief"><h3>350–800 Hz · Boxiness</h3><p>Small-room and enclosure character often becomes obvious here.</p></div>
+          <div class="te-brief"><h3>800 Hz–1.8 kHz · Nasal</h3><p>Excess can resemble a telephone or pinched voice.</p></div>
+          <div class="te-brief"><h3>2.5–6 kHz · Harshness</h3><p>Important for intelligibility, but too much becomes tiring.</p></div>
+        </section>
+
+        <section class="te-card">
+          <h2>Rules professionals keep</h2>
+          <ul><li>Fix microphone choice and placement before reaching for EQ.</li><li>Never boost a live vocal blindly while the system is near feedback.</li><li>Compare at similar loudness; louder often seems “better.”</li><li>Protect hearing. Short, quiet comparisons reveal more than loud repetition.</li></ul>
+        </section>
+      </aside>
+    </div>
+    <div class="te-footer-nav"><a href="room-acoustics.html">← Room Acoustics</a><a href="stage-lighting-design-lab.html">Stage Lighting →</a></div>
+  </main>
+
+  <script>
+  (()=>{
+    const $=id=>document.getElementById(id), bands=48, spectrum=$('spectrum'), bandEls=[];
+    for(let i=0;i<bands;i++){const b=document.createElement('span');b.className='te-band';spectrum.appendChild(b);bandEls.push(b);}
+    const defs={rumble:{f:55,name:'Rumble'},mud:{f:240,name:'Mud'},boxy:{f:520,name:'Boxiness'},nasal:{f:1200,name:'Nasal tone'},harsh:{f:3800,name:'Harshness'},hiss:{f:9000,name:'Hiss'}};
+    const typeInfo={
+      parametric:{name:'Parametric EQ',model:'PQ-3 Precision',format:'1U PARAMETRIC EQUALIZER',family:'Core equalizer',controls:'Frequency · gain · Q',use:'Best for precise problem solving',description:'Move the center frequency, choose boost or cut, and change Q to control how wide the correction reaches.'},
+      semi:{name:'Semi-Parametric EQ',model:'Sweep-Mid 212',format:'CONSOLE CHANNEL EQUALIZER',family:'Core equalizer',controls:'Frequency · gain · fixed Q',use:'Best for quick channel shaping',description:'Frequency and gain are adjustable, but bandwidth is fixed here at Q 1.2. Notice what flexibility is lost without a Q control.'},
+      graphic:{name:'Graphic EQ',model:'GE-8 Room Curve',format:'8-BAND GRAPHIC EQUALIZER',family:'Core equalizer',controls:'Eight fixed-band gain faders',use:'Best for live sound and system tuning',description:'Each vertical fader controls one fixed frequency band. Together, their positions draw a graphic picture of the response curve.'},
+      shelf:{name:'Shelving EQ',model:'Tone Shelf S2',format:'DUAL SHELVING EQUALIZER',family:'Specialized equalizer',controls:'Corner · gain · high/low direction',use:'Best for broad bass or treble changes',description:'A shelf changes all frequencies above or below its corner rather than creating a narrow peak or dip.'},
+      dynamic:{name:'Dynamic EQ',model:'DYN-EQ 4',format:'LEVEL-DEPENDENT EQUALIZER',family:'Advanced equalizer',controls:'Frequency · gain/range · Q · threshold',use:'Best for problems that appear only sometimes',description:'The selected band acts only when its level crosses the threshold—combining frequency selection with compressor-like control.'},
+      linear:{name:'Linear-Phase EQ',model:'PhaseLine FIR',format:'DIGITAL MASTERING EQUALIZER',family:'Advanced equalizer',controls:'Frequency · gain · bandwidth/FIR design',use:'Best for mastering and parallel paths',description:'A linear-phase processor keeps relative phase aligned but adds latency and can pre-ring. This browser lab previews its magnitude change; true linear-phase processing requires an FIR/look-ahead engine.'},
+      passive:{name:'Passive EQ',model:'Program EQ P1',format:'PASSIVE PROGRAM EQUALIZER',family:'Specialized equalizer',controls:'Broad, interacting circuit bands',use:'Best for broad tone and vintage character',description:'A passive network uses resistors, capacitors, and often inductors for the EQ curve. Hardware needs a separate gain stage; this model demonstrates a broad, gentle contour.'}
+    };
+    const mixTracks={
+      orchestra:{title:'“Hush, hush, not a word” / “Softly sighing to the river”',detail:'Orchestra · soloists · chorus · 1921 recording',duration:'3:59',src:'https://upload.wikimedia.org/wikipedia/commons/8/8a/The_Pirates_of_Penzance_%28HMV%2C_cond._Byng%29_-_19_-_Hush%2C_hush%2C_not_a_word_-_Softly_sighing_to_the_river.mp3',source:'https://commons.wikimedia.org/wiki/File:The_Pirates_of_Penzance_(HMV,_cond._Byng)_-_19_-_Hush,_hush,_not_a_word_-_Softly_sighing_to_the_river.mp3'},
+      dialogue:{title:'Act II dramatic recording',detail:'Full cast · spoken dialogue · a cappella voices · room tone',duration:'45:12',src:'https://archive.org/download/pirates_of_penzance_1204_librivox/pop_actii_64kb.mp3',source:'https://librivox.org/the-pirates-of-penzance-by-william-s-gilbert-and-sir-arthur-sullivan/'}
+    };
+    const graphicInputs=[...document.querySelectorAll('#graphic-sliders input')],graphicHz=graphicInputs.map(input=>Number(input.dataset.hz));
+    let current='mud',displayHeights=Array(bands).fill(20),lastFrame=0,eqState={type:'parametric',targetI:0,chosenI:0,width:1,gain:0,hpfI:0,threshold:-24,shelf:'highshelf',graphicGains:Array(8).fill(0)},audioCtx,analyser,peakFilter,hpfFilter,activeAudio,graphicFilters=[],bypassed=false,dynamicActive=false;
+    const analyzerData=new Uint8Array(1024),connectedAudio=new WeakSet(),meterLEDs=[...$('eq-led-meter').children],responseCurve=$('eq-curve'),responseFill=$('eq-curve-fill'),frequencyMarker=$('eq-frequency-marker');
+    function sliderHz(v){return Math.round(20*Math.pow(1000,v/1000));}
+    function indexFor(f){return Math.max(0,Math.min(bands-1,Math.round(Math.log(f/20)/Math.log(1000)*(bands-1))));}
+    function hzLabel(f){return f>=1000?(f/1000).toFixed(f%1000?1:0)+' kHz':f+' Hz';}
+    function timeLabel(seconds){if(!Number.isFinite(seconds))return '0:00';const whole=Math.max(0,Math.floor(seconds)),minutes=Math.floor(whole/60),secs=whole%60;return minutes+':'+String(secs).padStart(2,'0');}
+    function syncKnob(input){const min=Number(input.min),max=Number(input.max),ratio=(Number(input.value)-min)/(max-min),knob=input.nextElementSibling;if(knob?.classList.contains('eq-knob'))knob.style.setProperty('--angle',(-135+ratio*270)+'deg');}
+    function makeRotary(id,minLabel,maxLabel){const input=$(id),control=input.parentElement,label=control.querySelector('label'),output=label.querySelector('output'),knob=document.createElement('span'),scale=document.createElement('span');control.classList.add('eq-rotary-control');knob.className='eq-knob';knob.setAttribute('aria-hidden','true');scale.className='eq-rotary-scale';scale.innerHTML='<span>'+minLabel+'</span><span>'+maxLabel+'</span>';label.removeChild(output);input.after(knob);control.append(output,scale);input.addEventListener('input',()=>syncKnob(input));syncKnob(input);}
+    function responseDbAt(i){
+      if(bypassed)return 0;
+      const {type,chosenI,gain,threshold,shelf,graphicGains}=eqState,freq=20*Math.pow(1000,i/(bands-1)),hpf=Number($('hpf').value);let db=freq<hpf?Math.max(-30,24*Math.log2(freq/hpf)):0;
+      if(['parametric','semi','linear'].includes(type)||(type==='dynamic'&&dynamicActive)){const q=type==='semi'?1.2:Number($('q').value)/10,sigma=Math.max(.75,5.5/q);db+=gain*Math.exp(-.5*Math.pow((i-chosenI)/sigma,2));}
+      if(type==='shelf'){const side=shelf==='highshelf'?1/(1+Math.exp(-(i-chosenI)/1.2)):1/(1+Math.exp((i-chosenI)/1.2));db+=gain*side;}
+      if(type==='passive')db+=gain*.7/(1+Math.pow((i-chosenI)/8,2));
+      if(type==='graphic')graphicGains.forEach((g,n)=>db+=g*Math.exp(-.5*Math.pow((i-indexFor(graphicHz[n]))/1.45,2)));
+      return Math.max(-18,Math.min(18,db));
+    }
+    function renderResponseCurve(){
+      const points=Array.from({length:65},(_,n)=>{const i=n/64*(bands-1),x=n/64*1000,y=90-responseDbAt(i)*4.35;return [x,y];}),line='M'+points.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join('L');responseCurve.setAttribute('d',line);responseFill.setAttribute('d',line+'L1000 90L0 90Z');
+      frequencyMarker.setAttribute('x1',(eqState.chosenI/(bands-1)*1000).toFixed(1));frequencyMarker.setAttribute('x2',(eqState.chosenI/(bands-1)*1000).toFixed(1));frequencyMarker.style.opacity=eqState.type==='graphic'||bypassed?'0':'.8';responseCurve.style.opacity=bypassed?'.45':'1';
+    }
+    function choose(name){current=name==='hidden'?Object.keys(defs)[Math.floor(Math.random()*Object.keys(defs).length)]:name;update();}
+    function setType(){
+      const type=$('eq-type').value,info=typeInfo[type];
+      $('eq-family').textContent=info.family;$('eq-type-name').textContent=info.name;$('eq-type-description').textContent=info.description;$('eq-type-controls').textContent=info.controls;$('eq-type-use').textContent=info.use;
+      $('eq-hardware').dataset.eqType=type;$('eq-model-name').textContent=info.model;$('eq-model-format').textContent=info.format;
+      $('frequency-control').hidden=type==='graphic';$('gain-control').hidden=type==='graphic';$('q-control').hidden=!['parametric','dynamic','linear'].includes(type);$('shelf-control').hidden=type!=='shelf';$('threshold-control').hidden=type!=='dynamic';$('graphic-control').hidden=type!=='graphic';
+      $('frequency-label').textContent=type==='shelf'?'Corner frequency':'Center frequency';$('gain-label').textContent=type==='dynamic'?'Maximum gain / cut':'Gain';
+      update();
+    }
+    function update(){
+      const type=$('eq-type').value,f=sliderHz(Number($('frequency').value)),gain=Number($('gain').value),q=type==='semi'?1.2:Number($('q').value)/10,hpf=Number($('hpf').value),threshold=Number($('threshold').value),shelf=$('shelf-direction').value,target=defs[current],graphicGains=graphicInputs.map(input=>Number(input.value)),delta=Math.abs(Math.log2(f/target.f)),freqScore=Math.max(0,1-delta/1.3),cutScore=gain<0?Math.min(1,-gain/5):0,hpfBonus=current==='rumble'&&hpf>=65?.35:0,score=Math.min(100,Math.round(100*(freqScore*.65+cutScore*.35+hpfBonus)));
+      $('frequency-out').value=hzLabel(f);$('gain-out').value=(gain>0?'+':'')+gain.toFixed(1)+' dB';$('q-out').value=q.toFixed(1);$('threshold-out').value=threshold+' dBFS';$('hpf-out').value=hpf+' Hz';$('problem-label').textContent=$('source').value==='hidden'?'Hidden':target.f+' Hz';
+      let correction=(gain>0?'+':'')+gain.toFixed(1)+' dB @ '+hzLabel(f),scoreText=['parametric','semi','dynamic'].includes(type)?score+'%':'Explore';
+      if(type==='graphic'){const changed=graphicGains.map((g,i)=>g?`${hzLabel(graphicHz[i])} ${g>0?'+':''}${g}`:'').filter(Boolean);correction=changed.length?changed.slice(0,2).join(' · ')+(changed.length>2?'…':''):'All bands flat';}
+      if(type==='shelf')correction=`${gain>0?'+':''}${gain.toFixed(1)} dB ${shelf==='highshelf'?'high':'low'} shelf`;
+      if(type==='linear')correction='Magnitude preview · '+hzLabel(f);
+      if(type==='passive')correction='Broad contour · '+(gain>0?'+':'')+gain.toFixed(1)+' dB';
+      $('correction-label').textContent=correction;$('match-score').textContent=scoreText;
+      const targetI=indexFor(target.f),chosenI=indexFor(f),width=Math.max(1,Math.round(7/q));eqState={type,targetI,chosenI,width,gain,hpfI:indexFor(hpf),threshold,shelf,graphicGains};
+      const shape={parametric:'Bell filter',semi:'Fixed-Q bell',graphic:'Fixed bands',shelf:shelf==='highshelf'?'High shelf':'Low shelf',dynamic:'Dynamic bell',linear:'Linear-phase bell',passive:'Passive contour'}[type],widthText=type==='graphic'?'8 octave bands':type==='shelf'||type==='passive'?'Broad curve':'Q '+q.toFixed(1),activeGraphic=graphicGains.filter(Boolean).length,action=type==='dynamic'?(dynamicActive?'Triggered · '+(gain>0?'+':'')+gain.toFixed(1)+' dB':'Waiting at '+threshold+' dBFS'):type==='graphic'?(activeGraphic?activeGraphic+' bands active':'All bands flat'):(gain===0?'Flat · 0 dB':(gain>0?'Boost ':'Cut ')+Math.abs(gain).toFixed(1)+' dB');
+      $('filter-shape').textContent=bypassed?'Bypassed':shape;$('filter-width').textContent=widthText;$('filter-action').textContent=bypassed?'No processing':action;$('filter-hpf').textContent=bypassed?'Bypassed':hpf+' Hz';renderResponseCurve();
+      bandEls.forEach((b,i)=>{let isCut=gain<0&&Math.abs(i-chosenI)<=width;if(type==='graphic')isCut=graphicGains.some((g,n)=>g<0&&Math.abs(i-indexFor(graphicHz[n]))<2);b.className='te-band'+(Math.abs(i-targetI)<2?' problem':'')+(isCut?' cut':'');});
+      if(peakFilter){
+        peakFilter.gain.cancelScheduledValues(audioCtx.currentTime);hpfFilter.frequency.value=bypassed?10:hpf;peakFilter.frequency.value=f;peakFilter.Q.value=q;peakFilter.type='peaking';peakFilter.gain.value=0;
+        graphicFilters.forEach((filter,i)=>filter.gain.value=!bypassed&&type==='graphic'?graphicGains[i]:0);
+        if(!bypassed&&['parametric','semi'].includes(type))peakFilter.gain.value=gain;
+        if(!bypassed&&type==='shelf'){peakFilter.type=shelf;peakFilter.gain.value=gain;}
+        if(!bypassed&&type==='passive'){peakFilter.type='lowshelf';peakFilter.gain.value=gain*.7;}
+      }
+      const o=$('eq-readout'),special={graphic:'Move neighboring fixed bands to draw a smooth correction. Extreme zigzags usually sound unnatural.',shelf:'Use a shelf for a broad tonal tilt. If only one narrow frequency hurts, choose parametric EQ instead.',dynamic:'Set the maximum cut, then lower the threshold until it acts only on the loud problem moments.',linear:'Listen to the magnitude preview, but remember: this browser uses a conventional filter for the preview. Real linear-phase EQ trades phase alignment for latency and possible pre-ringing.',passive:'Expect broad, interacting curves rather than surgical control. “Passive” describes the EQ network—not an entire hardware unit with no power.'};
+      if(bypassed){o.className='te-readout warn';o.innerHTML='<strong>Hardware bypass engaged.</strong> The controls keep their positions, but the streamed audio passes without EQ. Toggle the red switch to compare processed sound.';}
+      else if(special[type]){o.className='te-readout warn';o.innerHTML='<strong>'+typeInfo[type].name+':</strong> '+special[type];}
+      else{o.className='te-readout '+(score>=80?'good':gain>3?'bad':'warn');o.innerHTML=score>=80?'<strong>Useful correction.</strong> Your cut is centered close to the problem. Bypass it and make sure the source still sounds natural.':gain>3?'<strong>Careful:</strong> boosting while searching can reveal a frequency, but it is rarely the final corrective move.':'<strong>Keep listening.</strong> Sweep the center frequency, then apply a modest cut. Use Q to control how much neighboring sound changes.';}
+    }
+    function animateSpectrum(time){
+      requestAnimationFrame(animateSpectrum);
+      if(time-lastFrame<42)return; // roughly 24 analyzer updates per second
+      lastFrame=time;
+      const t=time/1000,{type,targetI,chosenI,width,gain,hpfI,threshold,shelf,graphicGains}=eqState,isLive=analyser&&activeAudio&&!activeAudio.paused;
+      if(isLive)analyser.getByteFrequencyData(analyzerData);
+      const meterPeak=isLive?Math.max(...analyzerData):85+55*(.5+.5*Math.sin(t*2.7));
+      const lit=Math.max(0,Math.min(10,Math.round(meterPeak/255*11)));meterLEDs.forEach((led,i)=>led.classList.toggle('on',i<lit));
+      if(type==='dynamic'){
+        const level=20*Math.log10(Math.max(1,meterPeak)/255),nextActive=!bypassed&&(isLive?level>threshold:Math.sin(t*2.5)>.15);
+        if(nextActive!==dynamicActive){dynamicActive=nextActive;$('filter-action').textContent=dynamicActive?'Triggered · '+(gain>0?'+':'')+gain.toFixed(1)+' dB':'Waiting at '+threshold+' dBFS';renderResponseCurve();}
+        if(isLive&&!bypassed&&peakFilter)peakFilter.gain.setTargetAtTime(dynamicActive?gain:0,audioCtx.currentTime,.04);
+      }
+      bandEls.forEach((b,i)=>{
+        if(isLive){
+          const hz=20*Math.pow(1000,i/(bands-1)),bin=Math.min(analyzerData.length-1,Math.round(hz/(audioCtx.sampleRate/analyser.fftSize)));
+          const height=5+analyzerData[bin]/255*93;
+          displayHeights[i]+=(height-displayHeights[i])*(height>displayHeights[i] ? .7 : .3);
+          b.style.height=displayHeights[i].toFixed(1)+'%';
+          return;
+        }
+        const lowEnd=30*Math.exp(-i/19),tilt=38-i*.48;
+        const broadMotion=12*Math.sin(t*2.1+i*.43)+7*Math.sin(t*4.7-i*.77);
+        const fastJitter=5*Math.sin(t*(9.5+(i%7)*.31)+i*1.83)+Math.random()*8;
+        const problemPeak=35*Math.exp(-Math.pow((i-targetI)/2.35,2))*(.78+.22*Math.sin(t*3.4));
+        let height=tilt+lowEnd+broadMotion+fastJitter+problemPeak;
+        const eqShape=Math.max(0,1-Math.min(1,Math.abs(i-chosenI)/(width+1)));
+        if(!bypassed){
+          if(['parametric','semi','linear'].includes(type))height+=gain*5*eqShape;
+          if(type==='dynamic'&&Math.sin(t*2.5)>.15)height+=gain*5*eqShape;
+          if(type==='shelf'){const side=shelf==='highshelf'?1/(1+Math.exp(-(i-chosenI))):1/(1+Math.exp(i-chosenI));height+=gain*4.5*side;}
+          if(type==='passive')height+=gain*3.4/(1+Math.pow((i-chosenI)/9,2));
+          if(type==='graphic')graphicGains.forEach((g,n)=>height+=g*3.2*Math.exp(-Math.pow((i-indexFor(graphicHz[n]))/2.2,2)));
+          if(i<hpfI)height*=Math.max(.12,(i+1)/(hpfI+1));
+        }
+        height=Math.max(5,Math.min(98,height));
+        displayHeights[i]+=(height-displayHeights[i])*(height>displayHeights[i] ? .58 : .26);
+        b.style.height=displayHeights[i].toFixed(1)+'%';
+      });
+    }
+    async function connectMusicalAudio(audio){
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!audioCtx){audioCtx=new AC();analyser=audioCtx.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=.72;hpfFilter=audioCtx.createBiquadFilter();hpfFilter.type='highpass';peakFilter=audioCtx.createBiquadFilter();peakFilter.type='peaking';hpfFilter.connect(peakFilter);let tail=peakFilter;graphicFilters=graphicHz.map(hz=>{const filter=audioCtx.createBiquadFilter();filter.type='peaking';filter.frequency.value=hz;filter.Q.value=1.4;tail.connect(filter);tail=filter;return filter;});tail.connect(analyser);analyser.connect(audioCtx.destination);update();}
+      if(!connectedAudio.has(audio)){audioCtx.createMediaElementSource(audio).connect(hpfFilter);connectedAudio.add(audio);}
+      await audioCtx.resume();activeAudio=audio;
+    }
+    function play(corrected){
+      const AC=window.AudioContext||window.webkitAudioContext,ac=new AC(),now=ac.currentTime,master=ac.createGain(),bus=ac.createGain(),type=$('eq-type').value,f=sliderHz(Number($('frequency').value)),gain=Number($('gain').value),q=type==='semi'?1.2:Math.max(.3,Number($('q').value)/10);
+      master.gain.setValueAtTime(.0001,now);master.gain.exponentialRampToValueAtTime(.055,now+.04);master.gain.exponentialRampToValueAtTime(.0001,now+1.25);master.connect(ac.destination);let tail=bus;
+      if(corrected&&!bypassed){const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=Number($('hpf').value);tail.connect(hp);tail=hp;if(type==='graphic'){graphicInputs.forEach((input,i)=>{const eq=ac.createBiquadFilter();eq.type='peaking';eq.frequency.value=graphicHz[i];eq.Q.value=1.4;eq.gain.value=Number(input.value);tail.connect(eq);tail=eq;});}else{const eq=ac.createBiquadFilter();eq.type=type==='shelf'?$('shelf-direction').value:type==='passive'?'lowshelf':'peaking';eq.frequency.value=f;eq.Q.value=q;eq.gain.value=type==='passive'?gain*.7:gain;tail.connect(eq);tail=eq;}}tail.connect(master);
+      const target=defs[current];[110,220,440,880,target.f].forEach((hz,i)=>{const osc=ac.createOscillator(),g=ac.createGain();osc.type=i===4?'sine':'sawtooth';osc.frequency.value=hz;g.gain.value=i===4?.34:.11/(i+1);osc.connect(g);g.connect(bus);osc.start(now);osc.stop(now+1.3);});setTimeout(()=>ac.close(),1500);
+    }
+    const mixPlayer=$('mix-player'),trackSelect=$('example-track'),mixPanel=document.querySelector('.eq-mix-player');
+    function updateMixTime(){const fallback=mixTracks[trackSelect.value].duration;$('mix-time').textContent=timeLabel(mixPlayer.currentTime)+' / '+(Number.isFinite(mixPlayer.duration)?timeLabel(mixPlayer.duration):fallback);}
+    trackSelect.addEventListener('change',()=>{const track=mixTracks[trackSelect.value],resume=!mixPlayer.paused;mixPlayer.pause();$('mix-track-title').textContent=track.title;$('mix-track-detail').textContent=track.detail;$('mix-source-link').href=track.source;$('mix-time').textContent='0:00 / '+track.duration;mixPlayer.src=track.src;mixPlayer.load();if(resume)mixPlayer.addEventListener('canplay',()=>mixPlayer.play().catch(()=>{}),{once:true});});
+    mixPlayer.addEventListener('timeupdate',updateMixTime);mixPlayer.addEventListener('loadedmetadata',updateMixTime);mixPlayer.addEventListener('play',()=>mixPanel.classList.add('playing'));mixPlayer.addEventListener('pause',()=>mixPanel.classList.remove('playing'));mixPlayer.addEventListener('ended',()=>mixPanel.classList.remove('playing'));
+    makeRotary('frequency','20','20k');makeRotary('gain','−15','+12');makeRotary('q','.1','10');makeRotary('threshold','−48','−6');makeRotary('hpf','20','250');
+    ['frequency','gain','q','threshold','hpf'].forEach(id=>$(id).addEventListener('input',update));$('shelf-direction').addEventListener('change',update);graphicInputs.forEach(input=>input.addEventListener('input',()=>{input.previousElementSibling.value=(input.value>0?'+':'')+input.value;update();}));$('eq-type').addEventListener('change',setType);$('source').addEventListener('change',e=>choose(e.target.value));$('eq-bypass').addEventListener('click',()=>{bypassed=!bypassed;$('eq-bypass').setAttribute('aria-pressed',String(bypassed));update();});$('new-problem').addEventListener('click',()=>{$('source').value='hidden';choose('hidden');});$('hear-before').addEventListener('click',()=>play(false));$('hear-after').addEventListener('click',()=>play(true));document.querySelectorAll('.te-musical-audio').forEach(audio=>audio.addEventListener('play',()=>{document.querySelectorAll('.te-musical-audio').forEach(other=>{if(other!==audio)other.pause();});connectMusicalAudio(audio).catch(()=>{});}));document.querySelectorAll('.eq-scenario select').forEach(select=>select.addEventListener('change',()=>{const feedback=select.nextElementSibling,correct=select.value===select.dataset.answer;feedback.className='eq-feedback '+(correct?'correct':'wrong');feedback.textContent=!select.value?'':correct?'Correct—this design matches the controls and situation.':'Try again: focus on which controls and behavior the situation requires.';}));choose('mud');$('source').value='hidden';setType();requestAnimationFrame(animateSpectrum);
+  })();
+  </script>
+</body>
+</html>

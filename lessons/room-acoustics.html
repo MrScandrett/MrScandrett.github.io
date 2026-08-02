@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Room Acoustics &amp; Reverb Lab · Technical Elements</title>
+  <meta name="description" content="Interactive room acoustics lesson about sound travel, reflections, absorption, RT60, room modes, nodes, antinodes, and speech intelligibility." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/technical-elements.css" />
+</head>
+<body class="te-page">
+  <nav class="te-topbar">
+    <a href="../steam-lessons.html#module-technical-elements">← Technical Elements</a>
+    <span>Phase 1 · Core Audio Engineering · Lesson 3</span>
+    <a href="eq-problem-frequency.html">Next: Corrective EQ →</a>
+  </nav>
+  <main class="te-shell">
+    <header class="te-hero">
+      <div class="te-kicker">Acoustics · Materials Science · Measurement · Design</div>
+      <h1>Room Acoustics &amp; Reverb Lab</h1>
+      <p>The room is part of the sound system. Model a classroom, theatre, or gym; change its surfaces and audience; then use reverberation time and direct-to-reflected sound to improve intelligibility.</p>
+      <div class="te-meta"><span class="te-chip">Grades 8–12</span><span class="te-chip">45–60 minutes</span><span class="te-chip">Interactive design lab</span><span class="te-chip">Calculator permitted</span></div>
+    </header>
+
+    <div class="te-grid">
+      <div class="te-stack">
+        <section class="te-card">
+          <h2>1. Build the room</h2>
+          <div class="te-canvas-wrap acoustic-canvas-wrap"><canvas id="room-canvas" width="900" height="560" role="img" aria-label="Animated top-down room showing direct sound, reflected wavefronts, or standing-wave pressure nodes"></canvas></div>
+          <div class="acoustic-legend" aria-label="Simulation key">
+            <span><i class="acoustic-key source"></i>Source</span><span><i class="acoustic-key listener"></i>Listener</span><span><i class="acoustic-key compression"></i>Compression</span><span><i class="acoustic-key reflection"></i>Reflection</span><span><i class="acoustic-key node"></i>Pressure node</span>
+          </div>
+          <div class="te-stat-grid acoustic-stats">
+            <div class="te-stat"><span>Estimated RT60</span><strong id="rt60">—</strong></div>
+            <div class="te-stat"><span>Room volume</span><strong id="volume">—</strong></div>
+            <div class="te-stat"><span>Speech rating</span><strong id="rating">—</strong></div>
+            <div class="te-stat"><span>Nearest horizontal mode</span><strong id="nearest-mode">—</strong></div>
+          </div>
+          <div class="te-readout" id="acoustic-readout" aria-live="polite"></div>
+        </section>
+
+        <section class="te-card">
+          <h2>2. Find the room nodes</h2>
+          <div class="room-mode-grid">
+            <div>
+              <h3>Node</h3>
+              <p>A fixed location where one standing-wave mode has minimum pressure variation. At that frequency, bass may seem unusually weak—but the location is not silent at every frequency.</p>
+            </div>
+            <div>
+              <h3>Antinode</h3>
+              <p>A location where that mode has maximum pressure variation. The same bass note may sound much louder here, especially near rigid room boundaries.</p>
+            </div>
+            <div>
+              <h3>Room mode</h3>
+              <p>A resonance formed when reflected waves repeatedly return in phase. Axial modes involve two opposing surfaces; tangential and oblique modes involve four or six.</p>
+            </div>
+          </div>
+          <code class="te-formula room-mode-formula">f(nₓ,nᵧ,n<sub>z</sub>) = c / 2 × √[(nₓ/L)² + (nᵧ/W)² + (n<sub>z</sub>/H)²]</code>
+          <p>The top-down canvas selects the nearest <strong>horizontal</strong> mode, where n<sub>z</sub> = 0. Floor-to-ceiling modes still exist, but require a vertical section to see their nodes.</p>
+          <div class="te-readout" id="mode-readout" aria-live="polite">Choose <strong>Room modes / nodes</strong> in the simulation view, then sweep the test frequency.</div>
+          <ol>
+            <li>Move the source onto a dark node. That mode is excited less strongly.</li>
+            <li>Move the listener between a node and bright antinode. Compare the predicted pressure.</li>
+            <li>Change room dimensions. Larger distances between walls produce lower modal frequencies.</li>
+          </ol>
+        </section>
+
+        <section class="te-card">
+          <h2>3. Fix the gymnasium</h2>
+          <p>A principal must deliver an emergency announcement in a hard, empty gym. You may add curtains, acoustic panels, and an audience, but each treatment has a cost.</p>
+          <div class="te-stat-grid">
+            <div class="te-stat"><span>Budget used</span><strong id="budget">$0</strong></div>
+            <div class="te-stat"><span>Goal</span><strong>RT60 ≤ 1.2 s</strong></div>
+            <div class="te-stat"><span>Maximum budget</span><strong>$8,000</strong></div>
+          </div>
+          <div class="te-button-row"><button class="te-button" id="load-gym">Load gym</button><button class="te-button primary" id="check-design">Check design</button></div>
+          <div class="te-readout" id="design-readout">Load the gym, then reduce reverberation without exceeding the budget.</div>
+        </section>
+
+        <section class="te-card">
+          <h2>4. Field measurement</h2>
+          <ol>
+            <li>Stand safely near the room center and make one sharp clap or use an approved impulse.</li>
+            <li>Record it from a fixed position. Observe how quickly the decay disappears into the noise floor.</li>
+            <li>Repeat with curtains open/closed and with the class present/absent.</li>
+            <li>Explain why audience members are acoustic treatment—even when they are quiet.</li>
+          </ol>
+          <p><strong>Safety:</strong> never create dangerously loud impulses, and never aim a loudspeaker directly at someone at close range.</p>
+        </section>
+      </div>
+
+      <aside class="te-stack">
+        <section class="te-card">
+          <h2>Room controls</h2>
+          <div class="te-controls">
+            <div class="te-control"><label for="preset">Starting room</label><select id="preset"><option value="classroom">Classroom</option><option value="theatre">Theatre</option><option value="gym">Gymnasium</option><option value="studio">Recording room</option></select></div>
+            <div class="te-control"><label for="length">Length <output id="length-out"></output></label><input id="length" type="range" min="5" max="40" value="10" /></div>
+            <div class="te-control"><label for="width">Width <output id="width-out"></output></label><input id="width" type="range" min="4" max="30" value="8" /></div>
+            <div class="te-control"><label for="height">Height <output id="height-out"></output></label><input id="height" type="range" min="2" max="15" value="3" /></div>
+            <div class="te-control"><label for="softness">Absorptive treatment <output id="softness-out"></output></label><input id="softness" type="range" min="0" max="100" value="35" /></div>
+            <div class="te-control"><label for="audience">Audience seats filled <output id="audience-out"></output></label><input id="audience" type="range" min="0" max="100" value="60" /></div>
+            <div class="te-control"><label for="simulation-view">Simulation view</label><select id="simulation-view"><option value="travel">Sound travel / reflections</option><option value="modes">Room modes / nodes</option></select></div>
+            <div class="te-control"><label for="frequency">Test frequency <output id="frequency-out">80 Hz</output></label><input id="frequency" type="range" min="20" max="300" value="80" /></div>
+            <div class="te-control"><label for="source-position">Source position <output id="source-position-out">20%</output></label><input id="source-position" type="range" min="5" max="95" value="20" /></div>
+            <div class="te-control"><label for="listener-position">Listener position <output id="listener-position-out">72%</output></label><input id="listener-position" type="range" min="5" max="95" value="72" /></div>
+          </div>
+        </section>
+
+        <section class="te-card">
+          <h2>The Sabine model</h2>
+          <code class="te-formula">RT60 = 0.161 × V / A</code>
+          <p><strong>V</strong> is room volume in cubic metres. <strong>A</strong> is total equivalent absorption area in sabins. RT60 estimates how long sound takes to decay by 60 dB.</p>
+          <p>Speech usually benefits from a shorter decay than orchestral music. A useful target depends on room volume, purpose, background noise, and standards—not one magic number.</p>
+        </section>
+
+        <section class="te-card">
+          <h2>Diagnose before buying</h2>
+          <div class="te-brief"><h3>Echo or reverberation?</h3><p>An echo arrives as a distinct repeat. Reverberation is a dense tail of many reflections.</p></div>
+          <div class="te-brief"><h3>Absorb or diffuse?</h3><p>Absorption removes reflected energy. Diffusion scatters it in many directions to avoid strong, focused reflections.</p></div>
+          <div class="te-brief"><h3>Source first</h3><p>Moving a microphone closer and aiming speakers at listeners can improve direct sound before expensive treatment.</p></div>
+        </section>
+      </aside>
+    </div>
+    <div class="te-footer-nav"><a href="microphone-polar-patterns.html">← Microphone Patterns</a><a href="eq-problem-frequency.html">Corrective EQ →</a></div>
+  </main>
+
+  <script>
+  (()=>{
+    const $=id=>document.getElementById(id), canvas=$('room-canvas'),ctx=canvas.getContext('2d');
+    const C=343;
+    const presets={classroom:[10,8,3,35,60],theatre:[22,16,9,62,75],gym:[34,24,11,8,0],studio:[7,5,3,82,20]};
+    let simClock=0, lastFrame=performance.now();
+    function values(){return ['length','width','height','softness','audience'].map(id=>Number($(id).value));}
+    function model(){const [l,w,h,soft,aud]=values(),V=l*w*h,S=2*(l*w+l*h+w*h),base=.035*S,treatment=(soft/100)*(.42*S),people=(aud/100)*Math.min(280,l*w*1.25)*.42,A=Math.max(1,base+treatment+people),rt=.161*V/A;return{l,w,h,soft,aud,V,S,A,rt};}
+    function layout(m){
+      const W=canvas.width,H=canvas.height,maxW=W-150,maxH=H-112,aspect=m.l/m.w;
+      let w=maxW,h=w/aspect;if(h>maxH){h=maxH;w=h*aspect;}
+      return{x:(W-w)/2,y:(H-h)/2+10,w,h,scale:w/m.l};
+    }
+    function nearestHorizontalMode(m,target){
+      let best=null;const maxNx=Math.ceil(target*2*m.l/C)+2,maxNy=Math.ceil(target*2*m.w/C)+2;
+      for(let nx=0;nx<=maxNx;nx++)for(let ny=0;ny<=maxNy;ny++){
+        if(nx===0&&ny===0)continue;
+        const frequency=C/2*Math.sqrt((nx/m.l)**2+(ny/m.w)**2);
+        const candidate={nx,ny,nz:0,frequency,difference:Math.abs(frequency-target)};
+        if(!best||candidate.difference<best.difference)best=candidate;
+      }
+      best.kind=best.nx>0&&best.ny>0?'tangential':'axial';return best;
+    }
+    function pressureAt(mode,m,xFraction,yFraction){return Math.cos(mode.nx*Math.PI*xFraction)*Math.cos(mode.ny*Math.PI*yFraction);}
+    function background(){
+      const gradient=ctx.createRadialGradient(canvas.width*.5,canvas.height*.48,30,canvas.width*.5,canvas.height*.48,520);
+      gradient.addColorStop(0,'#172635');gradient.addColorStop(1,'#060a10');ctx.fillStyle=gradient;ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+    function drawAudience(m,r){
+      const count=Math.round(m.aud/100*Math.min(48,Math.max(12,m.l*m.w/7))),cols=8;
+      ctx.fillStyle='rgba(214,224,232,.45)';
+      for(let i=0;i<count;i++){
+        const col=i%cols,row=Math.floor(i/cols),px=r.x+r.w*(.57+col*.045),py=r.y+r.h*(.18+row*.09);
+        if(px<r.x+r.w*.94&&py<r.y+r.h*.88){ctx.beginPath();ctx.arc(px,py,3.2,0,Math.PI*2);ctx.fill();}
+      }
+    }
+    function imageCoordinate(index,size,source){return index*size+(index%2===0?source:size-source);}
+    function drawTravel(m,r){
+      ctx.save();ctx.beginPath();ctx.rect(r.x,r.y,r.w,r.h);ctx.clip();
+      ctx.fillStyle=`rgba(89,200,216,${.035+m.soft/1600})`;ctx.fillRect(r.x,r.y,r.w,r.h);drawAudience(m,r);
+      const sourceX=Number($('source-position').value)/100*m.l,sourceY=.34*m.w;
+      const maxDistance=Math.hypot(m.l,m.w)*2.15,visualSpeed=Math.max(m.l,m.w)/1.75,cycle=maxDistance/visualSpeed;
+      const reflection=Math.max(.12,.9-.7*m.soft/100);
+      for(let pulse=0;pulse<4;pulse++){
+        const age=((simClock+pulse*cycle/4)%cycle+cycle)%cycle,radiusM=age*visualSpeed,fade=Math.max(0,1-age/cycle);
+        for(let ix=-2;ix<=2;ix++)for(let iy=-2;iy<=2;iy++){
+          const order=Math.abs(ix)+Math.abs(iy);if(order>2)continue;
+          const px=r.x+imageCoordinate(ix,m.l,sourceX)*r.scale,py=r.y+imageCoordinate(iy,m.w,sourceY)*r.scale;
+          const alpha=(order===0?.68:.42)*fade*Math.pow(reflection,order);
+          if(alpha<.025)continue;
+          ctx.beginPath();ctx.arc(px,py,radiusM*r.scale,0,Math.PI*2);
+          ctx.strokeStyle=order===0?`rgba(89,210,225,${alpha})`:`rgba(240,180,72,${alpha})`;
+          ctx.lineWidth=order===0?3.4:2.2;ctx.shadowColor=order===0?'rgba(89,200,216,.45)':'rgba(240,180,72,.25)';ctx.shadowBlur=6;ctx.stroke();ctx.shadowBlur=0;
+        }
+      }
+      ctx.restore();
+      ctx.fillStyle='rgba(7,11,16,.76)';ctx.fillRect(r.x+12,r.y+12,196,44);ctx.textAlign='left';ctx.fillStyle='#59c8d8';ctx.font='800 12px system-ui';ctx.fillText('TRAVELING IMPULSE',r.x+23,r.y+30);ctx.fillStyle='#92a2b2';ctx.font='10px system-ui';ctx.fillText('Horizontal slice · time slowed',r.x+23,r.y+46);
+    }
+    function drawModes(m,r,mode){
+      const cols=72,rows=Math.max(28,Math.round(cols*r.h/r.w)),oscillation=Math.sin(simClock*2.1);
+      ctx.save();ctx.beginPath();ctx.rect(r.x,r.y,r.w,r.h);ctx.clip();
+      for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+        const xf=(col+.5)/cols,yf=(row+.5)/rows,p=pressureAt(mode,m,xf,yf),amp=Math.abs(p);
+        const positive=p*oscillation>=0,color=positive?'89,200,216':'240,180,72';
+        ctx.fillStyle=`rgba(${color},${.025+amp*.55*(.72+.28*Math.abs(oscillation))})`;
+        ctx.fillRect(r.x+col*r.w/cols,r.y+row*r.h/rows,r.w/cols+1,r.h/rows+1);
+      }
+      ctx.strokeStyle='rgba(255,255,255,.78)';ctx.lineWidth=2;ctx.setLineDash([6,6]);
+      for(let k=0;k<mode.nx;k++){const px=r.x+r.w*(k+.5)/mode.nx;ctx.beginPath();ctx.moveTo(px,r.y);ctx.lineTo(px,r.y+r.h);ctx.stroke();}
+      for(let k=0;k<mode.ny;k++){const py=r.y+r.h*(k+.5)/mode.ny;ctx.beginPath();ctx.moveTo(r.x,py);ctx.lineTo(r.x+r.w,py);ctx.stroke();}
+      ctx.setLineDash([]);ctx.restore();
+      ctx.fillStyle='rgba(7,11,16,.8)';ctx.fillRect(r.x+12,r.y+12,235,58);ctx.textAlign='left';ctx.fillStyle='#f0b448';ctx.font='800 12px system-ui';ctx.fillText(`${mode.kind.toUpperCase()} MODE  (${mode.nx}, ${mode.ny}, 0)`,r.x+23,r.y+31);ctx.fillStyle='#d6e0e8';ctx.font='700 12px ui-monospace, monospace';ctx.fillText(`${mode.frequency.toFixed(1)} Hz`,r.x+23,r.y+49);ctx.fillStyle='#92a2b2';ctx.font='9px system-ui';ctx.fillText('Dashed lines = pressure nodes',r.x+98,r.y+49);
+    }
+    function drawMarkers(m,r,mode){
+      const items=[{label:'S',name:'SOURCE',xf:Number($('source-position').value)/100,yf:.34,color:'#f0b448'},{label:'L',name:'LISTENER',xf:Number($('listener-position').value)/100,yf:.68,color:'#66d28a'}];
+      items.forEach(item=>{
+        const x=r.x+r.w*item.xf,y=r.y+r.h*item.yf;
+        ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fillStyle=item.color;ctx.fill();ctx.strokeStyle='#071018';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#071018';ctx.font='900 11px system-ui';ctx.textAlign='center';ctx.fillText(item.label,x,y+4);
+        ctx.fillStyle='rgba(7,11,16,.82)';ctx.fillRect(x-36,y+17,72,17);ctx.fillStyle='#e8eef3';ctx.font='800 8px system-ui';ctx.fillText(item.name,x,y+29);
+        if(mode&&$('simulation-view').value==='modes'){
+          const amp=Math.abs(pressureAt(mode,m,item.xf,item.yf));ctx.fillStyle='#b9c4ce';ctx.font='8px ui-monospace, monospace';ctx.fillText(Math.round(amp*100)+'% pressure',x,y+45);
+        }
+      });
+    }
+    function draw(m){
+      background();const r=layout(m),target=Number($('frequency').value),mode=nearestHorizontalMode(m,target);
+      if($('simulation-view').value==='modes')drawModes(m,r,mode);else drawTravel(m,r);
+      ctx.strokeStyle=`rgba(240,180,72,${.48+m.soft/250})`;ctx.lineWidth=9;ctx.strokeRect(r.x,r.y,r.w,r.h);
+      ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=1;ctx.strokeRect(r.x+6,r.y+6,r.w-12,r.h-12);
+      drawMarkers(m,r,mode);
+      ctx.fillStyle='#a8b5c1';ctx.font='700 11px system-ui';ctx.textAlign='center';ctx.fillText(`${m.l} m`,r.x+r.w/2,r.y+r.h+25);ctx.save();ctx.translate(r.x-28,r.y+r.h/2);ctx.rotate(-Math.PI/2);ctx.fillText(`${m.w} m`,0,0);ctx.restore();
+    }
+    function updateModeReadout(m,mode){
+      const sourceAmp=Math.abs(pressureAt(mode,m,Number($('source-position').value)/100,.34)),listenerAmp=Math.abs(pressureAt(mode,m,Number($('listener-position').value)/100,.68)),o=$('mode-readout');
+      o.className='te-readout '+(listenerAmp<.2?'warn':'');
+      o.innerHTML=`<strong>${mode.frequency.toFixed(1)} Hz ${mode.kind} mode (${mode.nx}, ${mode.ny}, 0).</strong> Source excitation: ${Math.round(sourceAmp*100)}%. Listener pressure: ${Math.round(listenerAmp*100)}%. `+(sourceAmp<.2?'The source is near a node, so this mode is weakly excited. ':sourceAmp>.8?'The source is near an antinode and strongly excites this mode. ':'')+(listenerAmp<.2?'The listener is near a node and may hear a deep dip.':listenerAmp>.8?'The listener is near an antinode and may hear a strong peak.':'Move the listener to compare pressure across the room.');
+    }
+    function update(){
+      const m=model(),target=Number($('frequency').value),mode=nearestHorizontalMode(m,target);
+      $('length-out').value=m.l+' m';$('width-out').value=m.w+' m';$('height-out').value=m.h+' m';$('softness-out').value=m.soft+'%';$('audience-out').value=m.aud+'%';$('frequency-out').value=target+' Hz';$('source-position-out').value=$('source-position').value+'%';$('listener-position-out').value=$('listener-position').value+'%';
+      $('rt60').textContent=m.rt.toFixed(2)+' s';$('volume').textContent=Math.round(m.V)+' m³';$('nearest-mode').textContent=mode.frequency.toFixed(1)+' Hz';
+      const rating=m.rt<.35?'Too dry':m.rt<=1.2?'Clear speech':m.rt<=2.2?'Reverberant':'Very reverberant';$('rating').textContent=rating;
+      const o=$('acoustic-readout');o.className='te-readout '+(m.rt<=1.2&&m.rt>=.35?'good':m.rt<=2.2?'warn':'bad');o.innerHTML=m.rt<=1.2?'<strong>Speech-friendly decay.</strong> Direct words should remain separated in time.':m.rt<=2.2?'<strong>Long decay.</strong> Music may feel spacious, but rapid speech can smear.':'<strong>Intelligibility risk.</strong> Reflections persist long enough to mask following syllables.';
+      const cost=m.soft*70+m.aud*5;$('budget').textContent='$'+cost.toLocaleString();updateModeReadout(m,mode);draw(m);
+    }
+    $('preset').addEventListener('change',e=>{presets[e.target.value].forEach((v,i)=>$( ['length','width','height','softness','audience'][i]).value=v);update();});
+    ['length','width','height','softness','audience','frequency','source-position','listener-position'].forEach(id=>$(id).addEventListener('input',update));
+    $('simulation-view').addEventListener('change',update);
+    $('load-gym').addEventListener('click',()=>{$('preset').value='gym';presets.gym.forEach((v,i)=>$( ['length','width','height','softness','audience'][i]).value=v);update();});
+    $('check-design').addEventListener('click',()=>{const m=model(),cost=m.soft*70+m.aud*5,o=$('design-readout');const pass=m.rt<=1.2&&cost<=8000;o.className='te-readout '+(pass?'good':'bad');o.innerHTML=pass?'<strong>Design accepted.</strong> The model meets both intelligibility and budget constraints. Explain which treatment provided the best improvement per dollar.':'<strong>Keep iterating.</strong> '+(m.rt>1.2?'RT60 is still above 1.2 seconds. ':'')+(cost>8000?'The design exceeds the $8,000 budget.':'');});
+    function animate(now){const dt=Math.max(0,Math.min(.05,(now-lastFrame)/1000));lastFrame=now;simClock+=dt;draw(model());requestAnimationFrame(animate);} update();requestAnimationFrame(animate);
+  })();
+  </script>
+</body>
+</html>

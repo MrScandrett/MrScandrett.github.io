@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Microphone Polar Pattern Lab · Technical Elements</title>
+  <meta name="description" content="Interactive microphone pickup-pattern, placement, distance, bleed, and feedback lab for school A/V production." />
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../assets/css/lessons/technical-elements.css" />
+</head>
+<body class="te-page" data-lesson="microphones">
+  <nav class="te-topbar">
+    <a href="../steam-lessons.html#module-technical-elements">← Technical Elements</a>
+    <span>Phase 1 · Core Audio Engineering · Lesson 2</span>
+    <a href="room-acoustics.html">Next: Room Acoustics →</a>
+  </nav>
+
+  <main class="te-shell">
+    <header class="te-hero">
+      <div class="te-kicker">Microphones · Geometry · Acoustics · Troubleshooting</div>
+      <h1>Microphone Polar Pattern Lab</h1>
+      <p>A microphone does not simply “hear.” It measures pressure from particular directions. Move a performer, monitor, and noise source around four common microphones and build placements that capture the wanted sound while rejecting everything else.</p>
+      <div class="te-meta"><span class="te-chip">Grades 8–12</span><span class="te-chip">45–60 minutes</span><span class="te-chip">Interactive lab</span><span class="te-chip">Headphones recommended</span></div>
+    </header>
+
+    <div class="te-grid">
+      <div class="te-stack">
+        <section class="te-card">
+          <h2>1. Map the microphone’s hearing</h2>
+          <div class="te-canvas-wrap"><canvas id="polar-canvas" width="900" height="560" role="img" aria-label="Interactive top-down polar response plot with decibel rings, microphone orientation, performer position, and monitor position"></canvas></div>
+          <div class="polar-legend" aria-label="Diagram key">
+            <span><i class="polar-key pickup"></i>Relative pickup</span>
+            <span><i class="polar-key performer"></i>Wanted source</span>
+            <span><i class="polar-key monitor"></i>Unwanted source</span>
+            <span><i class="polar-key null"></i>Rejection / null</span>
+          </div>
+          <div class="te-stat-grid">
+            <div class="te-stat"><span>Wanted voice pickup</span><strong id="voice-pickup">—</strong></div>
+            <div class="te-stat"><span>Monitor spill</span><strong id="monitor-spill">—</strong></div>
+            <div class="te-stat"><span>Signal advantage</span><strong id="signal-advantage">—</strong></div>
+          </div>
+          <div class="te-readout" id="placement-readout" aria-live="polite"></div>
+        </section>
+
+        <section class="te-card">
+          <h2>2. See the microphones behind the patterns</h2>
+          <p class="polar-photo-intro"><strong>A polar pattern is a directional behavior—not a body style.</strong> Two microphones can look alike and respond very differently, and some studio microphones can switch patterns. These are real, representative examples; confirm any microphone’s pattern from its label or specification sheet.</p>
+          <div class="polar-photo-grid">
+            <figure class="polar-photo-card">
+              <div class="polar-photo-frame"><img class="photo-cardioid" src="../assets/images/lessons/microphone-polar-patterns/audio-technica-cardioid-condenser.jpg" alt="Public-domain photograph of a side-address Audio-Technica condenser microphone with a pop filter" loading="lazy" /></div>
+              <figcaption>
+                <div class="polar-photo-heading"><h3>Cardioid</h3><span>Studio example</span></div>
+                <p><strong>Side-address condenser:</strong> many fixed-pattern studio condensers use cardioid pickup. Speak toward the marked front—not into the top—and always verify the pattern on the mic or spec sheet.</p>
+                <a href="https://commons.wikimedia.org/wiki/File:Microphone_%C3%A9lectrostatique.jpg" target="_blank" rel="noopener">Author-released public domain · Wikimedia Commons ↗</a>
+              </figcaption>
+            </figure>
+
+            <figure class="polar-photo-card">
+              <div class="polar-photo-frame"><img class="photo-omni" src="../assets/images/lessons/microphone-polar-patterns/shure-sm61-omnidirectional.jpg" alt="Photograph of a vintage Shure SM61 omnidirectional dynamic microphone held upright" loading="lazy" /></div>
+              <figcaption>
+                <div class="polar-photo-heading"><h3>Omnidirectional</h3><span>Pressure mic</span></div>
+                <p><strong>Shure SM61:</strong> an omni responds to pressure at one side of its diaphragm. It has no intentional rear null and does not exhibit directional proximity effect.</p>
+                <a href="https://commons.wikimedia.org/wiki/File:Shure_SM61_Microphone.jpg" target="_blank" rel="noopener">CC0 public-domain dedication · Wikimedia Commons ↗</a>
+              </figcaption>
+            </figure>
+
+            <figure class="polar-photo-card">
+              <div class="polar-photo-frame"><img class="photo-figure8" src="../assets/images/lessons/microphone-polar-patterns/royer-r121-figure-eight.jpg" alt="Photograph of a Royer R-121 ribbon microphone in a shock mount" loading="lazy" /></div>
+              <figcaption>
+                <div class="polar-photo-heading"><h3>Figure-eight</h3><span>Ribbon example</span></div>
+                <p><strong>Royer R-121:</strong> sound reaches both faces of its ribbon. Front and rear are sensitive with opposite polarity, while equal side pressure produces deep 90° nulls.</p>
+                <a href="https://commons.wikimedia.org/wiki/File:Royer_121_(201884599).jpeg" target="_blank" rel="noopener">CC0 public-domain dedication · Wikimedia Commons ↗</a>
+              </figcaption>
+            </figure>
+
+            <figure class="polar-photo-card">
+              <div class="polar-photo-frame"><img class="photo-shotgun" src="../assets/images/lessons/microphone-polar-patterns/shotgun-microphone-press-boom.jpg" alt="Shotgun microphone with a foam windscreen positioned on a boom for a press interview" loading="lazy" /></div>
+              <figcaption>
+                <div class="polar-photo-heading"><h3>Shotgun / lobar</h3><span>Interference tube</span></div>
+                <p><strong>Boom-mounted shotgun:</strong> slots along its long tube delay off-axis sound so portions cancel before reaching the capsule. Directionality varies with frequency.</p>
+                <a href="https://commons.wikimedia.org/wiki/File:Secretary_Blinken_meets_with_Salvadoran_Foreign_Minister_Alexandra_Hill_Tinoco_-_53100933934.jpg" target="_blank" rel="noopener">U.S. State Department public domain · Wikimedia Commons ↗</a>
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="te-card">
+          <h2>3. Headset microphones and wireless receivers</h2>
+          <p class="polar-photo-intro"><strong>Wireless does not remove the signal chain—it replaces one cable with a radio link.</strong> The microphone still creates an audio signal, the transmitter sends it by radio frequency (RF), and the receiver converts it back to audio for the mixer.</p>
+
+          <div class="wireless-photo-pair">
+            <figure class="polar-photo-card">
+              <div class="polar-photo-frame"><img class="photo-headset" src="../assets/images/lessons/microphone-polar-patterns/ear-mounted-headset-microphone.jpg" alt="Ear-mounted miniature headset microphone connected to a bodypack transmitter" loading="lazy" /></div>
+              <figcaption>
+                <div class="polar-photo-heading"><h3>Headset + bodypack</h3><span>Performer end</span></div>
+                <p>The capsule stays a consistent distance from the mouth while the bodypack supplies power, accepts the mic signal, and transmits it on an assigned RF channel.</p>
+                <a href="https://commons.wikimedia.org/wiki/File:SpencerKimballEarMountedMicrophone.jpg" target="_blank" rel="noopener">CC0 public-domain dedication · Wikimedia Commons ↗</a>
+              </figcaption>
+            </figure>
+
+            <figure class="polar-photo-card">
+              <div class="polar-photo-frame"><img class="photo-receivers" src="../assets/images/lessons/microphone-polar-patterns/wireless-receiver-rack.jpg" alt="Rack containing multiple professional wireless microphone receivers with antennas and channel labels" loading="lazy" /></div>
+              <figcaption>
+                <div class="polar-photo-heading"><h3>Wireless receivers</h3><span>Console end</span></div>
+                <p>Each receiver listens for its paired transmitter, displays RF and audio status, then sends audio through XLR or ¼-inch output to one mixer channel.</p>
+                <a href="https://commons.wikimedia.org/wiki/File:Sennheiser_wireless_receivers_rack_(2011-04-28_by_)_pixabay_-_337545.jpg" target="_blank" rel="noopener">CC0 public-domain dedication · Wikimedia Commons ↗</a>
+              </figcaption>
+            </figure>
+          </div>
+
+          <h3 class="wireless-subhead">Follow the signal—not just the equipment</h3>
+          <div class="wireless-flow" aria-label="Wireless headset microphone signal flow">
+            <div class="wireless-flow-step"><span>1</span><strong>Headset capsule</strong><small>Sound → mic-level audio</small></div>
+            <b class="wireless-arrow" aria-hidden="true">→</b>
+            <div class="wireless-flow-step"><span>2</span><strong>Bodypack</strong><small>Audio → RF transmission</small></div>
+            <b class="wireless-arrow" aria-hidden="true">⇢</b>
+            <div class="wireless-flow-step rf"><span>3</span><strong>Air / RF channel</strong><small>No physical cable</small></div>
+            <b class="wireless-arrow" aria-hidden="true">⇢</b>
+            <div class="wireless-flow-step"><span>4</span><strong>Receiver</strong><small>RF → audio output</small></div>
+            <b class="wireless-arrow" aria-hidden="true">→</b>
+            <div class="wireless-flow-step"><span>5</span><strong>Mixer input</strong><small>Gain, EQ, routing</small></div>
+          </div>
+
+          <div class="wireless-guide-grid">
+            <div class="wireless-guide">
+              <h3>Place the headset</h3>
+              <ul>
+                <li>Position the capsule beside the corner of the mouth—about 2–3 cm away—not directly in the breath stream.</li>
+                <li>Use a foam windscreen and secure the cable without pulling it tight across the skin.</li>
+                <li>Most theatre headsets are omni for consistent tone; directional models can improve gain before feedback but are more placement-sensitive.</li>
+              </ul>
+            </div>
+            <div class="wireless-guide">
+              <h3>Build a reliable RF link</h3>
+              <ul>
+                <li>Match the transmitter and receiver to the same compatible frequency; give every active system its own coordinated channel.</li>
+                <li>Keep receiver antennas in clear line of sight and away from metal racks, network gear, and LED power supplies when possible.</li>
+                <li>Set bodypack input gain for the performer’s loudest voice without clipping, then set the receiver output for a healthy mixer signal.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="wireless-troubleshoot">
+            <strong>Diagnose by meter:</strong>
+            <span><b>No RF?</b> Check power, frequency, antennas, distance, and obstruction.</span>
+            <span><b>RF but no audio?</b> Check mute, headset connector, capsule, and transmitter input.</span>
+            <span><b>Audio clips?</b> Lower transmitter input gain before lowering the mixer fader.</span>
+          </div>
+        </section>
+
+        <section class="te-card">
+          <h2>4. Production placement challenge</h2>
+          <div class="te-button-row" id="brief-buttons">
+            <button class="te-button" data-brief="podium">Podium speech</button>
+            <button class="te-button" data-brief="interview">Two-person interview</button>
+            <button class="te-button" data-brief="choir">Choir recording</button>
+            <button class="te-button" data-brief="musical">Musical with monitors</button>
+          </div>
+          <div class="te-readout" id="brief-readout">Choose a production brief, then adjust the pattern, angles, and distance to satisfy it.</div>
+        </section>
+
+        <section class="te-card">
+          <h2>5. Explain your engineering choice</h2>
+          <ol>
+            <li>Name the pattern and describe where its strongest rejection occurs.</li>
+            <li>Identify the wanted source, the loudest unwanted source, and the path between them.</li>
+            <li>Predict what happens if the performer doubles their distance from the microphone.</li>
+            <li>Sketch a safe monitor position and justify it using the polar plot—not “because it sounds better.”</li>
+          </ol>
+        </section>
+      </div>
+
+      <aside class="te-stack">
+        <section class="te-card">
+          <h2>Console</h2>
+          <div class="te-controls">
+            <div class="te-control"><label for="pattern">Polar pattern</label><select id="pattern"><option value="cardioid">Cardioid</option><option value="omni">Omnidirectional</option><option value="figure8">Figure-eight</option><option value="shotgun">Shotgun / lobar</option></select></div>
+            <div class="te-control"><label for="voice-angle">Performer angle <output id="voice-angle-out">0°</output></label><input id="voice-angle" type="range" min="-180" max="180" value="0" /></div>
+            <div class="te-control"><label for="monitor-angle">Monitor angle <output id="monitor-angle-out">180°</output></label><input id="monitor-angle" type="range" min="-180" max="180" value="180" /></div>
+            <div class="te-control"><label for="distance">Mic distance <output id="distance-out">20 cm</output></label><input id="distance" type="range" min="5" max="200" value="20" /></div>
+          </div>
+        </section>
+
+        <section class="te-card">
+          <h2>Core model</h2>
+          <p><strong>Cardioid:</strong> strongest in front and rejects the rear. A common live-vocal choice.</p>
+          <p><strong>Omni:</strong> equal in every direction. Natural sound, little directional rejection.</p>
+          <p><strong>Figure-eight:</strong> front and rear pickup with deep side nulls—useful for two speakers or mid-side recording.</p>
+          <p><strong>Shotgun:</strong> a narrow forward lobe with smaller rear/side lobes. Directional, but not a telescope.</p>
+          <code class="te-formula">Sound pressure ∝ 1 / distance<br>Sound intensity ∝ 1 / distance²</code>
+          <p>In a free field, doubling distance halves sound pressure (and quarters intensity), so a microphone’s direct-sound level falls by about 6 dB.</p>
+        </section>
+
+        <section class="te-card">
+          <h2>Quick check</h2>
+          <p>Where should a wedge monitor usually sit for a cardioid vocal microphone?</p>
+          <div class="te-check" data-answer="rear">
+            <button data-choice="front">Directly in front of the microphone</button>
+            <button data-choice="side">Exactly 90° to its side</button>
+            <button data-choice="rear">Near the microphone’s rear rejection angle</button>
+          </div>
+          <div class="te-readout" id="quiz-feedback">Select an answer.</div>
+        </section>
+      </aside>
+    </div>
+
+    <div class="te-footer-nav"><a href="live-audio-signal-chain.html">← Live Audio Signal Chain</a><a href="room-acoustics.html">Room Acoustics →</a></div>
+  </main>
+
+  <script>
+  (() => {
+    const $ = (id) => document.getElementById(id);
+    const canvas = $('polar-canvas'), ctx = canvas.getContext('2d');
+    const controls = ['pattern','voice-angle','monitor-angle','distance'].map($);
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    const angularDistance = (a, b) => Math.abs(Math.atan2(Math.sin(a-b), Math.cos(a-b)));
+    const lobe = (a, center, width, level) => level * Math.exp(-0.5 * Math.pow(angularDistance(a, center) / width, 2));
+    const patterns = {
+      cardioid: a => Math.max(0, (1 + Math.cos(a)) / 2),
+      omni: () => 1,
+      figure8: a => Math.abs(Math.cos(a)),
+      // Representative lobar response. Real interference-tube patterns vary with frequency.
+      shotgun: a => clamp(Math.max(
+        lobe(a, 0, 0.27, 1),
+        lobe(a, Math.PI, 0.38, 0.22),
+        lobe(a, Math.PI * 0.39, 0.17, 0.13),
+        lobe(a, -Math.PI * 0.39, 0.17, 0.13),
+        lobe(a, Math.PI * 0.69, 0.16, 0.09),
+        lobe(a, -Math.PI * 0.69, 0.16, 0.09)
+      ), 0.001, 1)
+    };
+    const names = { cardioid:'Cardioid', omni:'Omnidirectional', figure8:'Figure-eight', shotgun:'Shotgun / lobar' };
+    let activeBrief = '';
+    function response(deg) { return patterns[$('pattern').value](deg * Math.PI / 180); }
+    function point(cx, cy, radius, deg) { const a = (deg - 90) * Math.PI / 180; return [cx + Math.cos(a)*radius, cy + Math.sin(a)*radius]; }
+    function plotRadius(gain, radius) {
+      const db = Math.max(-30, 20 * Math.log10(Math.max(gain, 0.0001)));
+      return radius * (db + 30) / 30;
+    }
+    function roundRect(x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath(); ctx.roundRect(x, y, width, height, radius);
+      if (fill) { ctx.fillStyle=fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle=stroke; ctx.stroke(); }
+    }
+    function sourceMarker(cx, cy, r, angle, title, subtitle, color, side) {
+      const p=point(cx,cy,r+31,angle), edge=point(cx,cy,r+4,angle);
+      ctx.save();
+      ctx.setLineDash([7,7]); ctx.strokeStyle=color+'99'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(edge[0],edge[1]); ctx.lineTo(p[0],p[1]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath();ctx.arc(p[0],p[1],15,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+      ctx.fillStyle='#081016';ctx.font='800 13px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(title[0],p[0],p[1]);
+      const boxW=112, boxH=38, boxX=side==='left'?p[0]-boxW-21:p[0]+21, boxY=p[1]-19;
+      roundRect(boxX,boxY,boxW,boxH,8,'rgba(7,11,16,.92)','rgba(255,255,255,.14)');
+      ctx.textAlign=side==='left'?'right':'left'; ctx.textBaseline='alphabetic';
+      const tx=side==='left'?boxX+boxW-9:boxX+9;
+      ctx.fillStyle='#f4efe4';ctx.font='700 12px system-ui';ctx.fillText(title,tx,boxY+15);
+      ctx.fillStyle='#9fabb9';ctx.font='10px system-ui';ctx.fillText(subtitle,tx,boxY+29);
+      ctx.restore();
+    }
+    function draw() {
+      const w=canvas.width,h=canvas.height,cx=w/2,cy=280,r=198;
+      ctx.clearRect(0,0,w,h);
+      const bg=ctx.createRadialGradient(cx,cy,30,cx,cy,440); bg.addColorStop(0,'#172534');bg.addColorStop(1,'#070b11');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+      ctx.lineWidth=1;
+      [-30,-20,-10,0].forEach(db=>{const rr=r*(db+30)/30;ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.strokeStyle=db===0?'rgba(255,255,255,.25)':'rgba(255,255,255,.12)';ctx.stroke();if(db>-30){ctx.fillStyle='#8090a0';ctx.font='11px ui-monospace, monospace';ctx.textAlign='left';ctx.fillText(db+' dB',cx+6,cy-rr+14);}});
+      ctx.setLineDash([4,7]);ctx.strokeStyle='rgba(255,255,255,.12)';
+      for(let d=0;d<360;d+=30){const p=point(cx,cy,r,d);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(...p);ctx.stroke();}
+      ctx.setLineDash([]);
+      ctx.fillStyle='#aeb9c5';ctx.font='800 12px system-ui';ctx.textAlign='center';ctx.fillText('0°  ON-AXIS',cx,cy-r+18);ctx.fillText('180°  REAR',cx,cy+r-10);
+      ctx.textAlign='right';ctx.fillText('−90°  SIDE',cx-r-20,cy+4);ctx.textAlign='left';ctx.fillText('+90°  SIDE',cx+r+20,cy+4);
+      ctx.beginPath();
+      for(let d=0;d<=360;d+=1){const rr=plotRadius(response(d),r);const p=point(cx,cy,rr,d);if(d===0)ctx.moveTo(...p);else ctx.lineTo(...p);}
+      ctx.closePath();const fill=ctx.createRadialGradient(cx,cy,0,cx,cy,r);fill.addColorStop(0,'rgba(240,180,72,.10)');fill.addColorStop(1,'rgba(240,180,72,.40)');ctx.fillStyle=fill;ctx.strokeStyle='#f6bd54';ctx.lineWidth=4;ctx.shadowColor='rgba(240,180,72,.28)';ctx.shadowBlur=14;ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+
+      const voiceAngle=Number($('voice-angle').value), monitorAngle=Number($('monitor-angle').value);
+      const voiceSide=Math.sin(voiceAngle*Math.PI/180)<0?'left':'right';
+      const monitorSide=Math.sin(monitorAngle*Math.PI/180)<0?'left':'right';
+      sourceMarker(cx,cy,r,voiceAngle,'Performer',Math.round(response(voiceAngle)*100)+'% pickup','#66d28a',voiceSide);
+      sourceMarker(cx,cy,r,monitorAngle,'Monitor',Math.round(response(monitorAngle)*100)+'% pickup','#ff766c',monitorSide);
+
+      ctx.save();ctx.translate(cx,cy);ctx.fillStyle='#e9f0f5';ctx.strokeStyle='#071018';ctx.lineWidth=2;
+      roundRect(-10,-29,20,45,9,'#e9f0f5','#071018');ctx.beginPath();ctx.moveTo(-15,-19);ctx.lineTo(15,-19);ctx.moveTo(-15,-10);ctx.lineTo(15,-10);ctx.stroke();
+      ctx.fillStyle='#59c8d8';ctx.beginPath();ctx.moveTo(0,-43);ctx.lineTo(-7,-32);ctx.lineTo(7,-32);ctx.closePath();ctx.fill();ctx.restore();
+      roundRect(18,18,182,47,9,'rgba(7,11,16,.82)','rgba(255,255,255,.12)');ctx.textAlign='left';ctx.fillStyle='#f6bd54';ctx.font='800 13px system-ui';ctx.fillText(names[$('pattern').value],30,38);ctx.fillStyle='#91a0af';ctx.font='11px system-ui';ctx.fillText('Representative relative response',30,55);
+    }
+    function update() {
+      $('voice-angle-out').value=$('voice-angle').value+'°'; $('monitor-angle-out').value=$('monitor-angle').value+'°'; $('distance-out').value=$('distance').value+' cm';
+      const voice=response(Number($('voice-angle').value)); const spill=response(Number($('monitor-angle').value)); const distance=Number($('distance').value);
+      const distanceFactor=Math.min(1,20/distance); const wanted=voice*distanceFactor; const advantage=20*Math.log10((wanted+.02)/(spill+.02));
+      $('voice-pickup').textContent=Math.round(wanted*100)+'%'; $('monitor-spill').textContent=Math.round(spill*100)+'%'; $('signal-advantage').textContent=(advantage>=0?'+':'')+advantage.toFixed(1)+' dB';
+      const out=$('placement-readout'); out.className='te-readout '+(advantage>10?'good':advantage>2?'warn':'bad');
+      out.innerHTML='<strong>'+names[$('pattern').value]+':</strong> '+(voice>.72?'The performer is in strong pickup. ':'The performer is off-axis, so tone and level may suffer. ')+(spill<.2?'The monitor is near a rejection null.':'The monitor is strongly captured—feedback risk rises.')+(distance>80?' Long distance also lowers direct sound relative to room reflections.':'')+($('pattern').value==='shotgun'?' The lobar plot is representative: exact lobes change with frequency and tube design.':'');
+      draw(); scoreBrief(advantage,voice,spill,distance);
+    }
+    function scoreBrief(advantage,voice,spill,distance){ if(!activeBrief)return; const rules={podium:[voice>.75,distance<45],interview:[$('pattern').value==='figure8'||$('pattern').value==='omni',distance<100],choir:[$('pattern').value==='omni'||$('pattern').value==='cardioid',distance>50],musical:[advantage>10,spill<.25,distance<35]}; const passed=rules[activeBrief].filter(Boolean).length; const text={podium:'Keep speech clear and close while rejecting the room.',interview:'Capture two people without handing off the microphone.',choir:'Capture an ensemble evenly without isolating one singer.',musical:'Maximize vocal level before feedback from the monitor.'}; $('brief-readout').className='te-readout '+(passed===2?'good':'warn'); $('brief-readout').innerHTML='<strong>'+passed+'/2 constraints met.</strong> '+text[activeBrief]; }
+    controls.forEach(c=>c.addEventListener('input',update));
+    document.querySelectorAll('[data-brief]').forEach(b=>b.addEventListener('click',()=>{activeBrief=b.dataset.brief;document.querySelectorAll('[data-brief]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));update();}));
+    document.querySelectorAll('.te-check button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.te-check button').forEach(x=>x.className='');b.className=b.dataset.choice==='rear'?'correct':'wrong';$('quiz-feedback').textContent=b.dataset.choice==='rear'?'Correct: place the loudspeaker toward the microphone’s rejection region.':'Try again: choose the position the microphone rejects most strongly.';}));
+    update();
+  })();
+  </script>
+</body>
+</html>
