@@ -28,6 +28,64 @@ const sectionIds = {
 };
 
 const icons = ["📐", "⚛️", "🌿", "🛠️", "💻", "📚"];
+const modulePresentations = {
+  mathematics: {
+    subtitle: "Number, proportion, geometry, measurement, probability, and patterns as languages for describing reality",
+    level: "K–12 Progression · Mathematics Foundations",
+  },
+  cosmology: {
+    subtitle: "From naked-eye sky patterns and geometric models to planetary systems, deep space, and cosmic perspective",
+    level: "K–12 Progression · Earth & Space Science",
+  },
+  physics: {
+    subtitle: "Motion, forces, fields, waves, energy, and modern physics as increasingly powerful models of the natural world",
+    level: "K–12 Progression · Physical Science",
+  },
+  chemistry: {
+    subtitle: "Atoms, elements, bonds, reactions, and the transformations that connect microscopic structure to visible matter",
+    level: "K–12 Progression · Chemistry Foundations",
+  },
+  "life-sciences": {
+    subtitle: "Cells, heredity, organisms, adaptation, evolution, and the information systems shared by living things",
+    level: "K–12 Progression · Life Science",
+  },
+  "earth-science": {
+    subtitle: "Materials, cycles, climate, geology, deep time, and the interacting systems of a changing planet",
+    level: "K–12 Progression · Earth & Environmental Science",
+  },
+  engineering: {
+    subtitle: "Circuits, mechanisms, structures, sensors, and feedback systems that turn scientific understanding into working machines",
+    level: "K–12 Progression · Engineering Design",
+  },
+  "fabrication-materials": {
+    subtitle: "Materials, tools, CAD, fabrication, optics, fluids, and immersive technologies learned through practical craft",
+    level: "K–12 Progression · Fabrication & Materials",
+  },
+  "technical-elements": {
+    subtitle: "Sound, acoustics, signal flow, light, and production systems where physical principles become designed experiences",
+    level: "K–12 Progression · Production Technology",
+  },
+  "computer-science": {
+    subtitle: "Symbols, algorithms, search, simulation, and artificial intelligence as machines for organizing thought",
+    level: "K–12 Progression · Computer Science & AI",
+  },
+  "game-development": {
+    subtitle: "Design rules, tools, engines, and interactive worlds that unite code, systems thinking, art, and play",
+    level: "K–12 Progression · Game Design",
+  },
+  "visual-design": {
+    subtitle: "Color, perception, composition, and experience design as ways of shaping what people notice and understand",
+    level: "K–12 Progression · Visual Art & Design",
+  },
+  "language-literature": {
+    subtitle: "Sound, symbol, story, evidence, and interpretation as foundations for communicating and testing meaning",
+    level: "K–12 Progression · Communication & Critical Literacy",
+  },
+  "complex-systems-humanities": {
+    subtitle: "Ideas, civilizations, institutions, markets, media, and shared resources viewed as connected human systems",
+    level: "K–12 Progression · Social Studies & Systems Thinking",
+  },
+};
 const moduleBlocks = extractModuleBlocks(source);
 const expectedIds = plan.volumes.flatMap((volume) => volume.modules.map((module) => sectionIds[module.id]));
 
@@ -40,6 +98,7 @@ for (const id of expectedIds) {
 
 const orderedRegion = plan.volumes.map((volume, volumeIndex) => {
   const lessons = volume.modules.flatMap((module) => module.units.flatMap((unit) => unit.lessons));
+  const controlledModuleIds = volume.modules.map((module) => sectionIds[module.id]).join(" ");
   const moduleLinks = volume.modules.map((module) =>
     `<a href="#${sectionIds[module.id]}">${escapeHtml(module.title)}</a>`).join("\n          ");
   const divider = `
@@ -53,11 +112,25 @@ const orderedRegion = plan.volumes.map((volume, volumeIndex) => {
           ${moduleLinks}
         </nav>
       </div>
+      <button type="button" class="compendium-volume-toggle" data-volume-toggle="${volume.number}" aria-expanded="true" aria-controls="${controlledModuleIds}">
+        <span class="compendium-volume-toggle-label">Collapse volume</span>
+        <span class="compendium-volume-toggle-chevron" aria-hidden="true">▾</span>
+      </button>
     </section>`;
 
   const modules = volume.modules.map((module) => {
     const id = sectionIds[module.id];
-    const cleanBlock = moduleBlocks.get(id).replace(/\s+data-compendium-volume="\d+"/g, "");
+    const presentation = modulePresentations[module.id];
+    let cleanBlock = moduleBlocks.get(id).replace(/\s+data-compendium-volume="\d+"/g, "");
+    cleanBlock = cleanBlock.replace(
+      /(<h2 class="module-banner-title">)[\s\S]*?(<\/h2>)/,
+      `$1${escapeHtml(module.title)}$2`
+    );
+    if (presentation) {
+      cleanBlock = cleanBlock
+        .replace(/(<p class="module-banner-sub">)[\s\S]*?(<\/p>)/, `$1${escapeHtml(presentation.subtitle)}$2`)
+        .replace(/(<span class="module-banner-level">)[\s\S]*?(<\/span>)/, `$1${escapeHtml(presentation.level)}$2`);
+    }
     return cleanBlock.replace(
       /<section class="section module-section reveal"/,
       `<section class="section module-section reveal" data-compendium-volume="${volume.number}"`
@@ -123,11 +196,12 @@ ${links}
 
 function shortTitle(title) {
   return title
-    .replace("Mathematics, Measurement & Foundations", "Foundations")
-    .replace("Physics, Chemistry & Matter", "Physical World")
-    .replace("Engineering, Fabrication & Production", "Making")
-    .replace("Computing, AI & Game Development", "Computing")
-    .replace("Design, Language, Humanities & Systems", "Human Ideas");
+    .replace("Mathematical Thinking, Measurement & Astronomy", "Foundations")
+    .replace("Physics, Chemistry, Matter & Energy", "Physical Science")
+    .replace("Living Systems, Earth & Environment", "Life & Earth")
+    .replace("Engineering, Fabrication & Technical Production", "Engineering & Design")
+    .replace("Computer Science, AI & Interactive Media", "Computing & AI")
+    .replace("Visual Design, Communication & Human Systems", "Arts & Society");
 }
 
 function roman(value) {
