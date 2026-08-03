@@ -12,17 +12,29 @@
   <link rel="stylesheet" href="../assets/css/circuit-playground.css" />
   <link rel="stylesheet" href="../assets/css/circuit-playground-snap.css" />
   <style>
+    html:has(.acd-page),html:has(.acd-page) body { height:auto; min-height:100%; overflow-y:auto; overflow-x:hidden; }
+    .ll-viewport:has(.acd-page) { height:auto; min-height:100dvh; overflow:visible; }
     :root { --acd-blue:#0284c7; --acd-orange:#ea580c; --acd-purple:#7c3aed; --acd-green:#15803d; }
-    .acd-page { width:min(100%,1120px); margin:0 auto; padding:1rem clamp(1rem,3vw,1.6rem) 1.5rem; }
+    .acd-page { box-sizing:border-box; width:min(100%,1120px); margin:0 auto; padding:1rem clamp(1rem,3vw,1.6rem) 1.5rem; }
     .acd-hero,.acd-card { border:1px solid var(--line,#d2d2d7); border-radius:18px; background:var(--white,#fff); box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,.08)); }
     .acd-hero { position:relative; overflow:hidden; padding:clamp(1.2rem,4vw,2rem); margin-bottom:1rem; background:radial-gradient(circle at 92% 10%,rgba(124,58,237,.18),transparent 32%),linear-gradient(135deg,rgba(2,132,199,.12),rgba(234,88,12,.08)); }
     .acd-hero::after { content:'∿  ⎓'; position:absolute; right:clamp(1rem,5vw,3rem); bottom:-.35rem; color:rgba(2,132,199,.12); font-size:clamp(4rem,11vw,8rem); font-weight:900; letter-spacing:.08em; pointer-events:none; }
     .acd-hero > * { position:relative; z-index:1; }
+    .acd-hero-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr); gap:1.25rem; align-items:center; }
     .acd-eyebrow { margin:0 0 .35rem; color:var(--acd-blue); font-size:.72rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
     .acd-hero h1 { margin:0; max-width:15ch; font-size:clamp(2rem,6vw,3.8rem); letter-spacing:-.05em; }
     .acd-lede { max-width:68ch; margin:.7rem 0 0; color:#475569; line-height:1.65; }
     .acd-pills { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.85rem; }
     .acd-pill { padding:.25rem .55rem; border:1px solid rgba(2,132,199,.28); border-radius:999px; background:rgba(255,255,255,.65); color:#075985; font-size:.72rem; font-weight:700; }
+    .acd-hero-visual { padding:.9rem; border:1px solid rgba(2,132,199,.22); border-radius:16px; background:rgba(255,255,255,.72); backdrop-filter:blur(10px); }
+    .acd-mini-scope { display:block; width:100%; height:auto; color:var(--acd-blue); }
+    .acd-mini-scope .dc-line { color:var(--acd-orange); }
+    .acd-hero-key { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-top:.65rem; }
+    .acd-hero-key span { padding:.55rem; border-radius:10px; background:rgba(2,132,199,.08); color:#075985; font-size:.7rem; font-weight:800; text-align:center; }
+    .acd-hero-key span:last-child { background:rgba(234,88,12,.08); color:#9a3412; }
+    .acd-jump { display:flex; gap:.35rem; overflow-x:auto; margin:0 0 1rem; padding:.5rem; border:1px solid var(--line,#d2d2d7); border-radius:14px; background:var(--white,#fff); box-shadow:0 7px 22px rgba(15,23,42,.06); scrollbar-width:thin; }
+    .acd-jump a { flex:0 0 auto; padding:.48rem .7rem; border-radius:9px; color:#475569; font-size:.73rem; font-weight:750; text-decoration:none; }
+    .acd-jump a:hover,.acd-jump a:focus-visible { background:rgba(2,132,199,.09); color:#075985; }
     .acd-card { padding:clamp(1rem,3vw,1.45rem); margin-bottom:1rem; }
     .acd-card h2 { margin:0 0 .45rem; font-size:clamp(1.2rem,3vw,1.55rem); }
     .acd-card > p { color:#475569; font-size:.9rem; line-height:1.65; }
@@ -55,6 +67,13 @@
     .acd-toggle button.active[data-kind="dc"] { background:var(--acd-orange); }
     .acd-readout { padding:.75rem; border-radius:12px; background:rgba(2,132,199,.08); color:#334155; font-size:.79rem; line-height:1.55; }
     .acd-readout strong { color:var(--acd-blue); }
+    .acd-scope-actions { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; }
+    .acd-scope-action { padding:.5rem; border:1px solid var(--line,#d2d2d7); border-radius:9px; background:var(--white,#fff); color:var(--text,#111827); font-size:.72rem; font-weight:750; cursor:pointer; }
+    .acd-motion { overflow:hidden; padding:.75rem; border:1px solid var(--line,#d2d2d7); border-radius:12px; }
+    .acd-wire { position:relative; height:24px; margin:.45rem 0; border:3px solid #94a3b8; border-radius:999px; background:#cbd5e1; }
+    .acd-electron { position:absolute; top:3px; width:12px; height:12px; border-radius:50%; background:#2563eb; box-shadow:0 0 0 2px rgba(255,255,255,.8); transform:translateX(-50%); }
+    .acd-motion-label { display:flex; justify-content:space-between; color:#64748b; font-size:.65rem; font-weight:700; }
+    .acd-direction { margin:0; color:#334155; font-size:.74rem; font-weight:750; text-align:center; }
     .acd-calc { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.6rem; margin:.8rem 0; }
     .acd-field { display:grid; gap:.25rem; }
     .acd-field label { font-size:.72rem; font-weight:750; color:#475569; }
@@ -65,6 +84,31 @@
     .acd-result strong { display:block; margin-top:.15rem; color:var(--acd-purple); font-size:1.05rem; }
     .acd-callout { margin:.8rem 0; padding:.8rem 1rem; border-left:4px solid var(--acd-purple); border-radius:10px; background:rgba(124,58,237,.08); color:#475569; font-size:.83rem; line-height:1.6; }
     .acd-callout.safety { border-color:#dc2626; background:rgba(220,38,38,.07); }
+    .acd-targets { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.65rem; counter-reset:targets; }
+    .acd-target { position:relative; padding:.85rem .8rem .85rem 2.65rem; border:1px solid var(--line,#d2d2d7); border-radius:12px; color:#475569; font-size:.78rem; line-height:1.5; }
+    .acd-target::before { counter-increment:targets; content:counter(targets); position:absolute; left:.75rem; top:.75rem; display:grid; place-items:center; width:1.35rem; height:1.35rem; border-radius:50%; background:var(--acd-blue); color:#fff; font-size:.68rem; font-weight:800; }
+    .acd-equations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.65rem; margin-top:.8rem; }
+    .acd-equation { padding:.85rem; border:1px solid var(--line,#d2d2d7); border-radius:13px; background:linear-gradient(145deg,rgba(2,132,199,.06),transparent); }
+    .acd-equation code { display:block; margin-bottom:.35rem; color:var(--acd-blue); font:800 1.05rem/1.2 ui-monospace,SFMono-Regular,Consolas,monospace; }
+    .acd-equation p { margin:0; color:#64748b; font-size:.75rem; line-height:1.5; }
+    .acd-cycle { margin-top:.85rem; padding:.85rem; border-radius:13px; background:#07111f; color:#e2e8f0; }
+    .acd-cycle svg { display:block; width:100%; height:auto; }
+    .acd-cycle-caption { display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem; margin-top:.55rem; }
+    .acd-cycle-caption span { color:#cbd5e1; font-size:.67rem; text-align:center; }
+    .acd-journey { display:grid; grid-template-columns:repeat(5,1fr); gap:.5rem; align-items:stretch; margin:.9rem 0; }
+    .acd-stage { position:relative; padding:.8rem .65rem; border:1px solid var(--line,#d2d2d7); border-radius:12px; text-align:center; }
+    .acd-stage:not(:last-child)::after { content:'→'; position:absolute; z-index:1; right:-.48rem; top:50%; transform:translateY(-50%); color:var(--acd-purple); font-weight:900; }
+    .acd-stage-icon { display:block; font-size:1.45rem; }
+    .acd-stage strong { display:block; margin:.25rem 0; font-size:.78rem; }
+    .acd-stage small { display:block; color:#64748b; font-size:.66rem; line-height:1.4; }
+    .acd-transformer { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,.72fr); gap:1rem; align-items:center; padding:1rem; border:1px solid var(--line,#d2d2d7); border-radius:14px; background:rgba(124,58,237,.04); }
+    .acd-transformer-diagram { display:grid; grid-template-columns:1fr auto 1fr; gap:.5rem; align-items:center; text-align:center; }
+    .acd-coil { padding:.75rem .45rem; border:4px double var(--acd-orange); border-radius:18px; background:rgba(234,88,12,.07); }
+    .acd-coil:last-child { border-color:var(--acd-blue); background:rgba(2,132,199,.07); }
+    .acd-coil strong { display:block; font-size:1.15rem; }
+    .acd-coil small { color:#64748b; font-size:.68rem; }
+    .acd-core { width:12px; height:100px; border-radius:4px; background:#64748b; box-shadow:18px 0 #64748b; margin-right:18px; }
+    .acd-transformer-readout { margin-top:.55rem; color:#475569; font-size:.75rem; line-height:1.55; }
     .acd-app { padding:.85rem; border:1px solid var(--line,#d2d2d7); border-radius:13px; }
     .acd-app b { display:block; margin:.25rem 0; }
     .acd-app p { margin:0; color: var(--text-muted, #64748b); font-size:.78rem; line-height:1.5; }
@@ -76,11 +120,28 @@
     .acd-select { padding:.5rem; border:1px solid var(--line,#d2d2d7); border-radius:8px; background:var(--white,#fff); color:var(--text,#111827); }
     .acd-feedback { min-height:1.2em; margin:.4rem 0 0; font-size:.78rem; font-weight:700; }
     .acd-feedback.ok { color:var(--acd-green); } .acd-feedback.no { color:#b91c1c; }
+    .acd-sort-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.65rem; margin-top:.8rem; }
+    .acd-sort-card { padding:.8rem; border:1px solid var(--line,#d2d2d7); border-radius:13px; }
+    .acd-sort-card strong { display:block; font-size:.82rem; }
+    .acd-sort-card small { display:block; min-height:2.7em; margin:.25rem 0 .55rem; color:#64748b; font-size:.7rem; line-height:1.4; }
+    .acd-sort-options { display:grid; grid-template-columns:repeat(3,1fr); gap:.25rem; }
+    .acd-sort-options button { padding:.42rem .2rem; border:1px solid var(--line,#d2d2d7); border-radius:8px; background:var(--white,#fff); color:var(--text,#111827); font-size:.67rem; font-weight:750; cursor:pointer; }
+    .acd-sort-options button.is-right { border-color:var(--acd-green); background:rgba(21,128,61,.1); color:var(--acd-green); }
+    .acd-sort-options button.is-wrong { border-color:#dc2626; background:rgba(220,38,38,.08); color:#b91c1c; }
+    .acd-sort-score,.acd-quiz-score { margin:.75rem 0 0; padding:.65rem .8rem; border-radius:10px; background:rgba(124,58,237,.08); color:#5b21b6; font-size:.78rem; font-weight:800; }
+    .acd-quiz-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem; }
+    .acd-reset { padding:.5rem .7rem; border:1px solid var(--line,#d2d2d7); border-radius:9px; background:var(--white,#fff); color:var(--text,#111827); font-size:.72rem; font-weight:750; cursor:pointer; }
+    .acd-glossary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.55rem; }
+    .acd-glossary details { padding:.7rem .8rem; border:1px solid var(--line,#d2d2d7); border-radius:11px; }
+    .acd-glossary summary { cursor:pointer; font-size:.8rem; font-weight:800; }
+    .acd-glossary p { margin:.45rem 0 0; color:#64748b; font-size:.75rem; line-height:1.5; }
     [data-lighting="night"] .acd-lede,[data-lighting="night"] .acd-card > p,[data-lighting="night"] .acd-type p,[data-lighting="night"] .acd-type li,[data-lighting="night"] .acd-callout,
     [data-theme="vaporwave"] .acd-lede,[data-theme="vaporwave"] .acd-card > p,[data-theme="vaporwave"] .acd-type p,[data-theme="vaporwave"] .acd-type li,[data-theme="vaporwave"] .acd-callout,
     [data-theme="bark"] .acd-lede,[data-theme="bark"] .acd-card > p,[data-theme="bark"] .acd-type p,[data-theme="bark"] .acd-type li,[data-theme="bark"] .acd-callout { color:rgba(245,245,247,.72); }
-    @media (max-width:760px) { .acd-lab,.acd-grid-3 { grid-template-columns:1fr; } .acd-calc { grid-template-columns:repeat(2,1fr); } }
-    @media (max-width:560px) { .acd-grid-2,.acd-results { grid-template-columns:1fr; } .acd-scope { height:240px; } }
+    @media (prefers-reduced-motion:reduce) { .acd-electron { transition:none!important; } }
+    @media (max-width:900px) { .acd-targets { grid-template-columns:repeat(2,1fr); } .acd-journey { grid-template-columns:repeat(3,1fr); } .acd-stage::after { display:none; } }
+    @media (max-width:760px) { .acd-hero-grid,.acd-lab,.acd-grid-3,.acd-transformer { grid-template-columns:1fr; } .acd-hero::after { display:none; } .acd-calc { grid-template-columns:repeat(2,1fr); } .acd-equations,.acd-sort-grid { grid-template-columns:1fr; } }
+    @media (max-width:560px) { .acd-grid-2,.acd-results,.acd-targets,.acd-glossary { grid-template-columns:1fr; } .acd-scope { height:240px; } .acd-journey { grid-template-columns:1fr 1fr; } .acd-cycle-caption { grid-template-columns:1fr 1fr; } }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -99,13 +160,43 @@
 
     <main id="main-content" class="acd-page">
       <section class="acd-hero">
-        <p class="acd-eyebrow">Physics · Electrical Engineering</p>
-        <h1>AC vs. DC Electricity</h1>
-        <p class="acd-lede">Both are moving electric charge. The difference is direction: direct current keeps one polarity, while alternating current repeatedly reverses polarity. That simple distinction shapes batteries, outlets, motors, electronics, and the power grid.</p>
-        <div class="acd-pills"><span class="acd-pill">Grades 7–12</span><span class="acd-pill">Interactive waveform lab</span><span class="acd-pill">Transmission calculator</span><span class="acd-pill">~25 minutes</span></div>
+        <div class="acd-hero-grid">
+          <div>
+            <p class="acd-eyebrow">Physics · Electrical Engineering</p>
+            <h1>AC vs. DC Electricity</h1>
+            <p class="acd-lede">Both move electric charge and transfer energy. The key difference is direction: direct current keeps one polarity, while alternating current repeatedly reverses. That simple distinction shapes batteries, outlets, motors, electronics, and the power grid.</p>
+            <div class="acd-pills"><span class="acd-pill">Grades 7–12</span><span class="acd-pill">Waveform lab</span><span class="acd-pill">Guided circuit bench</span><span class="acd-pill">~40 minutes</span></div>
+          </div>
+          <div class="acd-hero-visual" aria-label="Comparison of alternating and direct voltage waveforms">
+            <svg class="acd-mini-scope" viewBox="0 0 420 190" role="img" aria-labelledby="acd-hero-wave-title">
+              <title id="acd-hero-wave-title">AC sine wave crossing zero and DC line remaining positive</title>
+              <g stroke="currentColor" stroke-opacity=".12"><path d="M10 30H410M10 70H410M10 110H410M10 150H410M60 10V175M140 10V175M220 10V175M300 10V175M380 10V175"/></g>
+              <path d="M10 92C43 22 77 22 110 92S177 162 210 92 277 22 310 92 377 162 410 92" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+              <path class="dc-line" d="M10 48H410" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+              <path d="M10 92H410" fill="none" stroke="#64748b" stroke-dasharray="5 6"/>
+              <text x="18" y="38" fill="#9a3412" font-size="14" font-weight="800">DC</text><text x="18" y="118" fill="#075985" font-size="14" font-weight="800">AC</text><text x="362" y="107" fill="#64748b" font-size="11">0 V</text>
+            </svg>
+            <div class="acd-hero-key"><span>AC crosses zero</span><span>DC keeps polarity</span></div>
+          </div>
+        </div>
       </section>
 
-      <section class="acd-card">
+      <nav class="acd-jump" aria-label="On this page">
+        <a href="#acd-foundations">Foundations</a><a href="#acd-wave-lab">Wave lab</a><a href="#acd-cycle">Reading AC</a><a href="#acd-circuit-lab">Circuit lab</a><a href="#acd-grid">Power grid</a><a href="#acd-conversion">Conversion</a><a href="#acd-practice">Practice</a>
+      </nav>
+
+      <section class="acd-card" aria-labelledby="acd-targets-title">
+        <h2 id="acd-targets-title">Learning goals</h2>
+        <p>By the end of the lesson, you should be able to:</p>
+        <div class="acd-targets">
+          <div class="acd-target">Identify AC and DC from a source, symbol, or voltage–time graph.</div>
+          <div class="acd-target">Connect frequency, period, RMS voltage, and peak voltage.</div>
+          <div class="acd-target">Explain why high voltage makes transmission more efficient.</div>
+          <div class="acd-target">Trace how rectifiers, inverters, and transformers connect modern systems.</div>
+        </div>
+      </section>
+
+      <section class="acd-card" id="acd-foundations">
         <h2>Start with the current</h2>
         <p>Electric current is the rate at which charge passes a point, measured in amperes (A). “AC” and “DC” describe how that current—and usually the voltage driving it—changes with time.</p>
         <div class="acd-grid-2">
@@ -115,7 +206,7 @@
         <div class="acd-callout"><strong>Electron motion is not energy delivery.</strong> In an AC wire, individual electrons mostly drift back and forth over tiny distances. Energy still travels from generator to load through the circuit’s electromagnetic field.</div>
       </section>
 
-      <section class="acd-card">
+      <section class="acd-card" id="acd-wave-lab">
         <h2>Interactive waveform lab</h2>
         <p>Switch sources and adjust voltage and frequency. The graph shows instantaneous voltage versus time; conventional current in a resistive load follows the same shape.</p>
         <div class="acd-lab">
@@ -124,15 +215,40 @@
             <div class="acd-toggle" aria-label="Current type"><button type="button" class="active" data-kind="ac">AC ∿</button><button type="button" data-kind="dc">DC ⎓</button></div>
             <div class="acd-control"><label for="acd-voltage">Voltage <output id="acd-voltage-out">120 V RMS</output></label><input id="acd-voltage" type="range" min="1" max="240" value="120" /></div>
             <div class="acd-control" id="acd-frequency-control"><label for="acd-frequency">Frequency <output id="acd-frequency-out">60 Hz</output></label><input id="acd-frequency" type="range" min="1" max="120" value="60" /></div>
+            <div class="acd-scope-actions"><button class="acd-scope-action" id="acd-pause" type="button" aria-pressed="false">Pause trace</button><button class="acd-scope-action" id="acd-grid-toggle" type="button" aria-pressed="true">Grid on</button></div>
             <div class="acd-readout" id="acd-readout" aria-live="polite"></div>
+            <div class="acd-motion" aria-label="Model of electron drift in a wire">
+              <div class="acd-motion-label"><span>source</span><span>load</span></div><div class="acd-wire" id="acd-wire"></div><p class="acd-direction" id="acd-direction">Electron drift reverses with AC</p>
+            </div>
           </div>
         </div>
       </section>
 
-      <circuit-playground data-profile="acdc"></circuit-playground>
+      <section class="acd-card" id="acd-cycle">
+        <h2>How to read one AC cycle</h2>
+        <p>A sine wave tells a complete story in one cycle. Its height shows instantaneous voltage; its horizontal spacing shows time. Positive and negative voltage indicate opposite polarities—not “good” and “bad” electricity.</p>
+        <div class="acd-cycle">
+          <svg viewBox="0 0 900 250" role="img" aria-labelledby="acd-cycle-title acd-cycle-desc">
+            <title id="acd-cycle-title">Labeled sine-wave cycle</title><desc id="acd-cycle-desc">A sine wave begins at zero, reaches a positive peak, crosses zero, reaches a negative peak, and returns to zero over one period.</desc>
+            <g stroke="#38bdf8" stroke-opacity=".15"><path d="M40 40H860M40 125H860M40 210H860M40 20V225M245 20V225M450 20V225M655 20V225M860 20V225"/></g>
+            <path d="M40 125C108 5 177 5 245 125S382 245 450 125 587 5 655 125 792 245 860 125" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+            <path d="M40 125H860" stroke="#94a3b8" stroke-dasharray="7 7"/><path d="M40 232H450" stroke="#a78bfa" stroke-width="3"/><path d="M40 225V239M450 225V239" stroke="#a78bfa" stroke-width="3"/>
+            <g fill="#e2e8f0" font-size="17" font-weight="700"><text x="126" y="27">+ peak</text><text x="321" y="238">− peak</text><text x="210" y="118">zero crossing</text><text x="203" y="225" fill="#c4b5fd">one period, T</text></g>
+          </svg>
+          <div class="acd-cycle-caption"><span>0° · begins at zero</span><span>90° · positive peak</span><span>180° · polarity reverses</span><span>270° · negative peak</span></div>
+        </div>
+        <div class="acd-equations">
+          <article class="acd-equation"><code>f = 1 ÷ T</code><p>Frequency <em>f</em> is measured in hertz. Period <em>T</em> is the time for one full cycle in seconds.</p></article>
+          <article class="acd-equation"><code>Vpeak = Vrms × √2</code><p>For a sine wave only, peak voltage is about 1.414 times the RMS voltage.</p></article>
+          <article class="acd-equation"><code>Vrms = Vpeak ÷ √2</code><p>RMS is the DC-equivalent heating value. A 120 V RMS sine wave peaks near 170 V.</p></article>
+        </div>
+        <div class="acd-callout"><strong>Worked example:</strong> For 60 Hz AC, <strong>T = 1 ÷ 60 = 0.0167 s = 16.7 ms</strong>. The voltage completes a whole positive-and-negative cycle every 16.7 milliseconds.</div>
+      </section>
 
-      <section class="acd-card">
-        <h2>Side-by-side comparison</h2>
+      <div id="acd-circuit-lab"><circuit-playground data-profile="acdc"></circuit-playground></div>
+
+      <section class="acd-card" aria-labelledby="acd-compare-title">
+        <h2 id="acd-compare-title">Side-by-side comparison</h2>
         <div class="acd-table-wrap"><table class="acd-table">
           <thead><tr><th>Question</th><th>AC</th><th>DC</th></tr></thead>
           <tbody>
@@ -147,7 +263,7 @@
         <div class="acd-callout"><strong>Important modern update:</strong> AC won early distribution because transformers made voltage conversion practical. Today, power electronics can efficiently convert DC voltage too. Modern grids use both: HVAC for broad networks and HVDC for selected long-distance, undersea, and grid-to-grid links.</div>
       </section>
 
-      <section class="acd-card">
+      <section class="acd-card" id="acd-grid">
         <h2>Why high voltage reduces wire loss</h2>
         <p>For the same delivered power, raising transmission voltage lowers current: <strong>I = P ÷ V</strong>. Since resistive heating is <strong>P<sub>loss</sub> = I²R</strong>, reducing current sharply reduces wasted energy. Compare two transmission voltages below.</p>
         <div class="acd-calc">
@@ -158,9 +274,29 @@
         </div>
         <div class="acd-results" aria-live="polite"><div class="acd-result"><span>Current at low V</span><strong id="acd-ilow">100 A</strong></div><div class="acd-result"><span>Current at high V</span><strong id="acd-ihigh">10 A</strong></div><div class="acd-result"><span>Loss reduction</span><strong id="acd-saving">99%</strong></div></div>
         <p style="font-size:.76rem;color: var(--text-muted, #64748b)">This simplified model uses a resistive line and compares current-related loss only. Real AC systems also involve reactance, power factor, transformers, and three-phase power.</p>
+        <h3>Follow electrical energy from generator to device</h3>
+        <div class="acd-journey" aria-label="Simplified journey of electricity through the grid">
+          <div class="acd-stage"><span class="acd-stage-icon" aria-hidden="true">⚙️</span><strong>Generator</strong><small>Mechanical rotation produces AC.</small></div>
+          <div class="acd-stage"><span class="acd-stage-icon" aria-hidden="true">⬆️</span><strong>Step up</strong><small>A transformer raises voltage.</small></div>
+          <div class="acd-stage"><span class="acd-stage-icon" aria-hidden="true">〰️</span><strong>Transmit</strong><small>High voltage keeps current and loss lower.</small></div>
+          <div class="acd-stage"><span class="acd-stage-icon" aria-hidden="true">⬇️</span><strong>Step down</strong><small>Substations reduce voltage in stages.</small></div>
+          <div class="acd-stage"><span class="acd-stage-icon" aria-hidden="true">🏠</span><strong>Use &amp; convert</strong><small>Loads use AC directly or convert it to DC.</small></div>
+        </div>
+        <div class="acd-transformer">
+          <div>
+            <h3>Transformer ratio explorer</h3>
+            <p>For an ideal transformer, the voltage ratio follows the turns ratio. Increase the secondary turns and watch voltage rise while available current falls by the inverse ratio.</p>
+            <div class="acd-control"><label for="acd-turns">Secondary turns <output id="acd-turns-out">500 turns</output></label><input id="acd-turns" type="range" min="25" max="1000" step="25" value="500" /></div>
+            <div class="acd-transformer-readout" id="acd-transformer-readout" aria-live="polite"></div>
+          </div>
+          <div class="acd-transformer-diagram" aria-label="Ideal transformer with primary and secondary coils">
+            <div class="acd-coil"><small>primary</small><strong>120 V</strong><small>100 turns · 5 A</small></div><span class="acd-core" aria-hidden="true"></span><div class="acd-coil"><small>secondary</small><strong id="acd-secondary-voltage">600 V</strong><small id="acd-secondary-current">500 turns · 1 A</small></div>
+          </div>
+        </div>
+        <div class="acd-callout"><strong>Ideal model:</strong> input power equals output power. Real transformers lose a small amount of energy as heat, sound, stray magnetic flux, and eddy currents. A transformer requires changing magnetic flux, so steady DC cannot be transformed directly.</div>
       </section>
 
-      <section class="acd-card">
+      <section class="acd-card" id="acd-conversion">
         <h2>Conversion is everywhere</h2>
         <div class="acd-grid-3">
           <article class="acd-app"><span aria-hidden="true">🔌</span><b>Phone charger</b><p>A rectifier and switching converter turn outlet AC into regulated low-voltage DC.</p></article>
@@ -170,22 +306,50 @@
           <article class="acd-app"><span aria-hidden="true">🏭</span><b>Variable-speed motor</b><p>A drive rectifies AC to DC, then synthesizes variable-frequency AC to control speed.</p></article>
           <article class="acd-app"><span aria-hidden="true">🌐</span><b>HVDC link</b><p>Converter stations connect AC grids through a controllable high-voltage DC line.</p></article>
         </div>
+        <h3>Which current reaches the device?</h3>
+        <p>Choose the best description at the named point. “Both” means the system deliberately converts between AC and DC.</p>
+        <div class="acd-sort-grid" id="acd-sort-grid">
+          <article class="acd-sort-card" data-answer="dc"><strong>Flashlight battery terminals</strong><small>The chemical cell maintains a fixed polarity.</small><div class="acd-sort-options"><button type="button" data-choice="ac">AC</button><button type="button" data-choice="dc">DC</button><button type="button" data-choice="both">Both</button></div></article>
+          <article class="acd-sort-card" data-answer="ac"><strong>North American wall outlet</strong><small>The utility supply completes 60 cycles each second.</small><div class="acd-sort-options"><button type="button" data-choice="ac">AC</button><button type="button" data-choice="dc">DC</button><button type="button" data-choice="both">Both</button></div></article>
+          <article class="acd-sort-card" data-answer="both"><strong>Laptop power system</strong><small>The adapter receives one kind; internal circuits receive the other.</small><div class="acd-sort-options"><button type="button" data-choice="ac">AC</button><button type="button" data-choice="dc">DC</button><button type="button" data-choice="both">Both</button></div></article>
+          <article class="acd-sort-card" data-answer="dc"><strong>Solar panel output leads</strong><small>Photovoltaic cells produce a one-polarity output.</small><div class="acd-sort-options"><button type="button" data-choice="ac">AC</button><button type="button" data-choice="dc">DC</button><button type="button" data-choice="both">Both</button></div></article>
+          <article class="acd-sort-card" data-answer="both"><strong>Electric vehicle drivetrain</strong><small>The battery stores one kind; many traction motors receive another.</small><div class="acd-sort-options"><button type="button" data-choice="ac">AC</button><button type="button" data-choice="dc">DC</button><button type="button" data-choice="both">Both</button></div></article>
+          <article class="acd-sort-card" data-answer="ac"><strong>Utility transformer winding</strong><small>Changing magnetic flux induces a reversing voltage.</small><div class="acd-sort-options"><button type="button" data-choice="ac">AC</button><button type="button" data-choice="dc">DC</button><button type="button" data-choice="both">Both</button></div></article>
+        </div>
+        <p class="acd-sort-score" id="acd-sort-score" aria-live="polite">0 of 6 classified</p>
         <div class="acd-callout safety"><strong>Safety:</strong> Never experiment with a wall outlet or mains wiring. Both AC and DC can shock, burn, start fires, or stop the heart. Classroom circuit work should use current-limited, extra-low-voltage supplies under teacher supervision.</div>
       </section>
 
-      <section class="acd-card">
-        <h2>Tesla, Edison, and the modern grid</h2>
+      <section class="acd-card" aria-labelledby="acd-history-title">
+        <h2 id="acd-history-title">Tesla, Edison, and the modern grid</h2>
         <p>In the late 1800s, Edison’s systems distributed low-voltage DC. Westinghouse deployed practical AC systems, while Nikola Tesla’s polyphase patents and induction motor helped make AC useful for industry. The contest involved many engineers, inventors, financiers, patents, and public-safety campaigns—not just two lone rivals.</p>
         <p>AC became the foundation of public power systems because transformers could efficiently raise voltage for transmission and lower it near users. That history does not mean DC “lost forever”: batteries, electronics, solar arrays, EVs, data centers, and HVDC transmission make DC essential today.</p>
         <p><a href="nikola-tesla.html">Continue to the Nikola Tesla profile and Tesla coil simulator →</a></p>
       </section>
 
-      <section class="acd-card">
+      <section class="acd-card" id="acd-practice">
         <h2>Check your understanding</h2>
         <div class="acd-quiz">
           <div class="acd-question" data-answer="b" data-explain="Frequency counts complete cycles per second. At 60 Hz, the polarity reverses twice during each cycle."><p>1. What does 60 Hz mean?</p><select class="acd-select"><option value="">Choose…</option><option value="a">60 volts pass each second</option><option value="b">60 complete cycles occur each second</option><option value="c">Current travels at 60 metres per second</option></select><button class="acd-check" type="button">Check</button><div class="acd-feedback"></div></div>
           <div class="acd-question" data-answer="c" data-explain="A battery maintains one polarity, so its output is DC."><p>2. Which source normally produces DC?</p><select class="acd-select"><option value="">Choose…</option><option value="a">A wall outlet</option><option value="b">A utility alternator</option><option value="c">A battery</option></select><button class="acd-check" type="button">Check</button><div class="acd-feedback"></div></div>
           <div class="acd-question" data-answer="a" data-explain="At fixed power, higher voltage means lower current; lower current causes much less I²R heating."><p>3. Why transmit power at high voltage?</p><select class="acd-select"><option value="">Choose…</option><option value="a">It reduces current and resistive loss</option><option value="b">It makes electrons move at light speed</option><option value="c">It makes electricity harmless</option></select><button class="acd-check" type="button">Check</button><div class="acd-feedback"></div></div>
+          <div class="acd-question" data-answer="b" data-explain="For a sine wave, Vpeak = Vrms × √2, so 120 V RMS has a peak near 170 V."><p>4. Approximately what is the peak of a 120 V RMS sine wave?</p><select class="acd-select"><option value="">Choose…</option><option value="a">85 V</option><option value="b">170 V</option><option value="c">240 V</option></select><button class="acd-check" type="button">Check</button><div class="acd-feedback"></div></div>
+          <div class="acd-question" data-answer="c" data-explain="A rectifier changes AC into one-direction, pulsating DC; filtering and regulation can then smooth it."><p>5. What is the job of a rectifier?</p><select class="acd-select"><option value="">Choose…</option><option value="a">Raise AC voltage</option><option value="b">Turn DC into AC</option><option value="c">Turn AC into one-direction output</option></select><button class="acd-check" type="button">Check</button><div class="acd-feedback"></div></div>
+        </div>
+        <div class="acd-quiz-toolbar"><p class="acd-quiz-score" id="acd-quiz-score" aria-live="polite">Score: 0 / 5 checked</p><button class="acd-reset" id="acd-quiz-reset" type="button">Reset quiz</button></div>
+      </section>
+
+      <section class="acd-card" aria-labelledby="acd-glossary-title">
+        <h2 id="acd-glossary-title">Quick glossary</h2>
+        <div class="acd-glossary">
+          <details><summary>Amplitude</summary><p>The maximum displacement of a waveform from its center or zero level; for voltage, this is its peak value.</p></details>
+          <details><summary>Frequency</summary><p>The number of complete cycles each second, measured in hertz (Hz).</p></details>
+          <details><summary>Period</summary><p>The time for one complete cycle. Period and frequency are reciprocals: T = 1/f.</p></details>
+          <details><summary>RMS</summary><p>Root mean square: a way to express AC by the DC voltage that would produce the same heating in a resistor.</p></details>
+          <details><summary>Rectifier</summary><p>A circuit, usually using diodes, that changes alternating input into one-direction output.</p></details>
+          <details><summary>Inverter</summary><p>Power electronics that synthesize AC from a DC source.</p></details>
+          <details><summary>Transformer</summary><p>Coupled coils that use changing magnetic flux to transfer energy and change AC voltage/current levels.</p></details>
+          <details><summary>Polarity</summary><p>The sign or orientation of voltage between two points. DC holds it; AC periodically reverses it.</p></details>
         </div>
       </section>
 
@@ -203,18 +367,32 @@
   <script>
   (function(){
     'use strict';
-    var kind='ac', phase=0;
+    var kind='ac', phase=0, paused=false, gridOn=true, lastTime=0;
+    var reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var canvas=document.getElementById('acd-scope'),ctx=canvas.getContext('2d');
     var voltage=document.getElementById('acd-voltage'),frequency=document.getElementById('acd-frequency');
     function fit(){var dpr=Math.min(window.devicePixelRatio||1,2),r=canvas.getBoundingClientRect();canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
-    function draw(){var w=canvas.clientWidth,h=canvas.clientHeight;ctx.clearRect(0,0,w,h);ctx.strokeStyle='rgba(125,211,252,.13)';ctx.lineWidth=1;for(var x=0;x<=w;x+=w/10){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(var y=0;y<=h;y+=h/8){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}ctx.strokeStyle='rgba(226,232,240,.45)';ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();var amp=Math.min(h*.38,(+voltage.value/240)*h*.38);ctx.strokeStyle=kind==='ac'?'#38bdf8':'#fb923c';ctx.lineWidth=3;ctx.beginPath();for(var px=0;px<=w;px++){var yy=kind==='ac'?h/2-Math.sin((px/w)*Math.PI*4+phase)*amp:h/2-amp;px?ctx.lineTo(px,yy):ctx.moveTo(px,yy)}ctx.stroke();ctx.fillStyle='#cbd5e1';ctx.font='12px system-ui';ctx.fillText(kind==='ac'?'alternating voltage':'steady direct voltage',12,20);ctx.fillText('0 V',8,h/2-7);phase+=(kind==='ac'?.025:0);requestAnimationFrame(draw)}
-    function update(){var v=+voltage.value,f=+frequency.value;document.getElementById('acd-voltage-out').textContent=v+(kind==='ac'?' V RMS':' V');document.getElementById('acd-frequency-out').textContent=f+' Hz';document.getElementById('acd-frequency-control').style.opacity=kind==='ac'?'1':'.45';frequency.disabled=kind!=='ac';document.getElementById('acd-readout').innerHTML=kind==='ac'?'<strong>Peak voltage: '+(v*Math.sqrt(2)).toFixed(1)+' V</strong><br>One cycle lasts '+(1000/f).toFixed(2)+' ms. Polarity reverses '+(f*2)+' times each second.':'<strong>Polarity stays fixed</strong><br>Frequency is 0 Hz. A steady '+v+' V source graphs as a horizontal line.'}
-    document.querySelectorAll('.acd-toggle button').forEach(function(b){b.addEventListener('click',function(){kind=b.dataset.kind;document.querySelectorAll('.acd-toggle button').forEach(function(x){x.classList.toggle('active',x===b)});update()})});
-    voltage.addEventListener('input',update);frequency.addEventListener('input',update);window.addEventListener('resize',fit);fit();update();draw();
+    var wire=document.getElementById('acd-wire'),electrons=[];
+    for(var e=0;e<9;e++){var dot=document.createElement('span');dot.className='acd-electron';dot.setAttribute('aria-hidden','true');wire.appendChild(dot);electrons.push(dot);}
+    function updateMotion(t){var direction=document.getElementById('acd-direction'),f=+frequency.value,time=t/1000;electrons.forEach(function(dot,i){var base=7+i*10.7,pos;if(kind==='ac'){pos=base+Math.sin(time*Math.PI*2*Math.min(f/15,4)+i*.08)*3.5;}else{pos=7+((base+time*3)%88);}dot.style.left=pos+'%';});if(kind==='ac'){var forward=Math.cos(time*Math.PI*2*Math.min(f/15,4))>=0;direction.textContent='Electron drift '+(forward?'← toward source':'toward load →')+' · then reverses';}else{direction.textContent='Electron drift ← in one net direction';}}
+    function draw(now){var w=canvas.clientWidth,h=canvas.clientHeight;ctx.clearRect(0,0,w,h);if(gridOn){ctx.strokeStyle='rgba(125,211,252,.13)';ctx.lineWidth=1;for(var x=0;x<=w;x+=w/10){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(var y=0;y<=h;y+=h/8){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}}ctx.strokeStyle='rgba(226,232,240,.45)';ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();var amp=Math.min(h*.38,(+voltage.value/240)*h*.38),cycles=kind==='ac'?Math.max(1,Math.min(6,+frequency.value/30)):0;ctx.strokeStyle=kind==='ac'?'#38bdf8':'#fb923c';ctx.lineWidth=3;ctx.beginPath();for(var px=0;px<=w;px++){var yy=kind==='ac'?h/2-Math.sin((px/w)*Math.PI*2*cycles+phase)*amp:h/2-amp;px?ctx.lineTo(px,yy):ctx.moveTo(px,yy)}ctx.stroke();ctx.fillStyle='#cbd5e1';ctx.font='12px system-ui';ctx.fillText(kind==='ac'?'alternating voltage · '+frequency.value+' Hz':'steady direct voltage · 0 Hz',12,20);ctx.fillText('0 V',8,h/2-7);if(!paused&&!reduceMotion){var dt=lastTime?Math.min(50,now-lastTime):16;phase+=(kind==='ac'?(+frequency.value/60)*dt*.0018:0);updateMotion(now);}lastTime=now;requestAnimationFrame(draw)}
+    function update(){var v=+voltage.value,f=+frequency.value;document.getElementById('acd-voltage-out').textContent=v+(kind==='ac'?' V RMS':' V');document.getElementById('acd-frequency-out').textContent=f+' Hz';document.getElementById('acd-frequency-control').style.opacity=kind==='ac'?'1':'.45';frequency.disabled=kind!=='ac';document.getElementById('acd-readout').innerHTML=kind==='ac'?'<strong>Peak voltage: '+(v*Math.sqrt(2)).toFixed(1)+' V</strong><br>One cycle lasts '+(1000/f).toFixed(2)+' ms. The waveform crosses zero '+(f*2)+' times each second.':'<strong>Polarity stays fixed</strong><br>Frequency is 0 Hz. A steady '+v+' V source graphs as a horizontal line.';if(reduceMotion)updateMotion(0)}
+    document.querySelectorAll('.acd-toggle button').forEach(function(b){b.setAttribute('aria-pressed',b.classList.contains('active')?'true':'false');b.addEventListener('click',function(){kind=b.dataset.kind;document.querySelectorAll('.acd-toggle button').forEach(function(x){var active=x===b;x.classList.toggle('active',active);x.setAttribute('aria-pressed',active?'true':'false')});update()})});
+    document.getElementById('acd-pause').addEventListener('click',function(){paused=!paused;this.setAttribute('aria-pressed',paused?'true':'false');this.textContent=paused?'Resume trace':'Pause trace';});
+    document.getElementById('acd-grid-toggle').addEventListener('click',function(){gridOn=!gridOn;this.setAttribute('aria-pressed',gridOn?'true':'false');this.textContent=gridOn?'Grid on':'Grid off';});
+    voltage.addEventListener('input',update);frequency.addEventListener('input',update);window.addEventListener('resize',fit);fit();update();requestAnimationFrame(draw);
     var calcInputs=['acd-power','acd-resistance','acd-vlow','acd-vhigh'].map(function(id){return document.getElementById(id)});
     function calculate(){var p=Math.max(0,+calcInputs[0].value)*1000,r=Math.max(0,+calcInputs[1].value),vl=Math.max(.001,+calcInputs[2].value)*1000,vh=Math.max(.001,+calcInputs[3].value)*1000,il=p/vl,ih=p/vh,ll=il*il*r,lh=ih*ih*r,s=ll?100*(1-lh/ll):0;document.getElementById('acd-ilow').textContent=il.toLocaleString(undefined,{maximumFractionDigits:1})+' A';document.getElementById('acd-ihigh').textContent=ih.toLocaleString(undefined,{maximumFractionDigits:1})+' A';document.getElementById('acd-saving').textContent=s.toFixed(1)+'%'}
     calcInputs.forEach(function(i){i.addEventListener('input',calculate)});calculate();
-    document.querySelectorAll('.acd-question').forEach(function(q){q.querySelector('.acd-check').addEventListener('click',function(){var ok=q.querySelector('select').value===q.dataset.answer,f=q.querySelector('.acd-feedback');f.className='acd-feedback '+(ok?'ok':'no');f.textContent=(ok?'Correct. ':'Try again. ')+q.dataset.explain})});
+    var turns=document.getElementById('acd-turns');
+    function transformer(){var ns=+turns.value,ratio=ns/100,vs=120*ratio,isec=5/ratio;document.getElementById('acd-turns-out').textContent=ns+' turns';document.getElementById('acd-secondary-voltage').textContent=vs.toLocaleString(undefined,{maximumFractionDigits:0})+' V';document.getElementById('acd-secondary-current').textContent=ns+' turns · '+isec.toLocaleString(undefined,{maximumFractionDigits:2})+' A';document.getElementById('acd-transformer-readout').innerHTML='<strong>Turns ratio:</strong> '+ratio.toFixed(2)+':1 &nbsp; · &nbsp; <strong>Output:</strong> '+vs.toFixed(0)+' V, '+isec.toFixed(2)+' A &nbsp; · &nbsp; <strong>Ideal power:</strong> 600 W';}
+    turns.addEventListener('input',transformer);transformer();
+    var sortAnswered=0,sortCorrect=0;
+    document.querySelectorAll('.acd-sort-card').forEach(function(card){card.querySelectorAll('button').forEach(function(button){button.addEventListener('click',function(){if(card.dataset.answered)return;card.dataset.answered='true';sortAnswered++;var ok=button.dataset.choice===card.dataset.answer;if(ok)sortCorrect++;button.classList.add(ok?'is-right':'is-wrong');button.setAttribute('aria-pressed','true');if(!ok){card.querySelector('[data-choice="'+card.dataset.answer+'"]').classList.add('is-right');}card.querySelectorAll('button').forEach(function(b){b.disabled=true});document.getElementById('acd-sort-score').textContent=sortAnswered<6?sortCorrect+' correct · '+sortAnswered+' of 6 classified':sortCorrect+' / 6 correct · '+(sortCorrect===6?'Excellent classification.':'Review the highlighted answers above.');})})});
+    var questions=Array.from(document.querySelectorAll('.acd-question'));
+    function quizScore(){var checked=questions.filter(function(q){return q.dataset.checked==='true'}),correct=checked.filter(function(q){return q.dataset.correct==='true'}).length;document.getElementById('acd-quiz-score').textContent='Score: '+correct+' / '+questions.length+' · '+checked.length+' checked';}
+    questions.forEach(function(q){q.querySelector('.acd-check').addEventListener('click',function(){var selected=q.querySelector('select').value,f=q.querySelector('.acd-feedback');if(!selected){f.className='acd-feedback no';f.textContent='Choose an answer first.';return;}var ok=selected===q.dataset.answer;q.dataset.checked='true';q.dataset.correct=ok?'true':'false';f.className='acd-feedback '+(ok?'ok':'no');f.textContent=(ok?'Correct. ':'Not yet. ')+q.dataset.explain;quizScore()})});
+    document.getElementById('acd-quiz-reset').addEventListener('click',function(){questions.forEach(function(q){q.querySelector('select').value='';q.querySelector('.acd-feedback').className='acd-feedback';q.querySelector('.acd-feedback').textContent='';delete q.dataset.checked;delete q.dataset.correct;});quizScore();questions[0].querySelector('select').focus();});quizScore();
   })();
   </script>
   <script src="../assets/js/circuit-playground.js"></script>

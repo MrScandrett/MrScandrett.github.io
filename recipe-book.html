@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Library · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
-  <meta name="description" content="Free science e-books, activity downloads, and student project recipes for the classroom." />
+  <meta name="description" content="Explore free classic science fiction, NASA books, classroom project recipes, and official tool manuals for curious makers." />
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <link rel="stylesheet" href="assets/css/pages/recipe-book.css" />
@@ -976,6 +976,731 @@
     .library-reader-close:hover {
       background: rgba(255, 255, 255, 0.1);
     }
+
+    /* ════════════════════════════════════════════════
+       2026 LIBRARY OVERHAUL · WAYFINDING + READING UI
+    ════════════════════════════════════════════════ */
+    body.library-page {
+      --library-ink: #fff8ee;
+      --library-muted: rgba(255, 244, 228, 0.72);
+      --library-faint: rgba(255, 244, 228, 0.5);
+      --library-gold: #f2bd69;
+      --library-panel: rgba(22, 14, 10, 0.82);
+      --library-line: rgba(255, 226, 180, 0.16);
+      background-color: #241008 !important;
+    }
+
+    body.library-page .site-footer {
+      border-top-color: var(--library-line);
+      background: rgba(12, 8, 6, 0.9);
+      color: var(--library-muted);
+    }
+
+    body.library-page .site-footer a { color: var(--library-ink); }
+
+    body.library-page::before {
+      background-image:
+        radial-gradient(circle at 50% -10%, rgba(203, 123, 50, 0.2), transparent 38%),
+        linear-gradient(180deg, rgba(16, 8, 5, 0.08), rgba(7, 4, 3, 0.7)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='w' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.013 0.52' numOctaves='5' seed='23' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0.45 0.12 0 0 0.12 0.17 0.06 0 0 0.04 0.06 0.02 0 0 0.01 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
+      background-size: cover, cover, cover;
+    }
+
+    .library-scene {
+      opacity: 0.62;
+    }
+
+    body.library-page .recipe-catalog-hero {
+      max-width: 1180px;
+      margin: clamp(1rem, 3vw, 2.5rem) auto 0;
+      padding: clamp(1.5rem, 5vw, 4.4rem);
+      border-radius: 28px;
+      overflow: hidden;
+      text-align: left;
+      background:
+        radial-gradient(circle at 88% 12%, rgba(255, 183, 94, 0.16), transparent 32%),
+        linear-gradient(135deg, rgba(20, 12, 8, 0.92), rgba(40, 20, 11, 0.74));
+    }
+
+    body.library-page .recipe-catalog-hero::after {
+      content: '';
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      right: -100px;
+      bottom: -185px;
+      border: 1px solid rgba(255, 217, 163, 0.14);
+      border-radius: 50%;
+      box-shadow: 0 0 0 42px rgba(255, 217, 163, 0.035), 0 0 0 84px rgba(255, 217, 163, 0.025);
+      pointer-events: none;
+    }
+
+    .library-hero-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr);
+      gap: clamp(1.5rem, 5vw, 4.5rem);
+      align-items: end;
+    }
+
+    .library-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin: 0 0 1rem;
+      color: var(--library-gold);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .library-kicker::before {
+      content: '';
+      width: 1.7rem;
+      height: 1px;
+      background: currentColor;
+    }
+
+    body.library-page .recipe-catalog-hero h1 {
+      max-width: 760px;
+      margin: 0;
+      color: var(--library-ink);
+      font-size: clamp(3.1rem, 9vw, 7rem);
+      line-height: 0.88;
+      letter-spacing: -0.075em;
+      text-wrap: balance;
+    }
+
+    .library-hero-lead {
+      max-width: 640px;
+      margin: 1.25rem 0 0;
+      color: var(--library-muted);
+      font-size: clamp(1rem, 2vw, 1.28rem);
+      line-height: 1.55;
+      text-wrap: pretty;
+    }
+
+    .library-hero-guide {
+      position: relative;
+      z-index: 1;
+      padding: 1.1rem 1.15rem;
+      border: 1px solid var(--library-line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.045);
+    }
+
+    .library-hero-guide-label {
+      margin: 0 0 0.7rem;
+      font-size: 0.67rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--library-gold) !important;
+    }
+
+    .library-hero-guide ol {
+      display: grid;
+      gap: 0.62rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: library-guide;
+    }
+
+    .library-hero-guide li {
+      display: grid;
+      grid-template-columns: 1.55rem 1fr;
+      gap: 0.55rem;
+      align-items: center;
+      color: rgba(255, 248, 238, 0.82);
+      font-size: 0.78rem;
+      line-height: 1.35;
+      counter-increment: library-guide;
+    }
+
+    .library-hero-guide li::before {
+      content: counter(library-guide);
+      display: grid;
+      width: 1.55rem;
+      height: 1.55rem;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(242, 189, 105, 0.12);
+      color: var(--library-gold);
+      font-weight: 800;
+    }
+
+    .library-stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem 1rem;
+      margin-top: 1.3rem;
+      color: var(--library-faint);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .lib-back-btn {
+      min-height: 44px;
+      margin-top: 1.1rem;
+      padding-inline: 1rem;
+    }
+
+    .lib-entry-section {
+      max-width: 1180px;
+      margin-inline: auto;
+      padding-top: clamp(2rem, 5vw, 4rem);
+    }
+
+    .library-directory-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1.2rem;
+      align-items: end;
+      margin-bottom: 1.15rem;
+    }
+
+    .library-directory-head h2 {
+      margin: 0;
+      font-size: clamp(1.6rem, 4vw, 2.5rem);
+      letter-spacing: -0.04em;
+      color: var(--library-ink) !important;
+    }
+
+    .library-directory-head p {
+      max-width: 48ch;
+      margin: 0;
+      font-size: 0.84rem;
+      line-height: 1.55;
+      color: var(--library-muted) !important;
+    }
+
+    .lib-search-bar {
+      min-height: 58px;
+      margin-bottom: 1.25rem;
+      padding: 0.65rem 0.75rem 0.65rem 1rem;
+      border-color: rgba(255, 226, 180, 0.22);
+      border-radius: 16px;
+      background: rgba(12, 8, 6, 0.68);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .lib-search-bar:focus-within {
+      border-color: rgba(242, 189, 105, 0.72);
+      box-shadow: 0 0 0 4px rgba(242, 189, 105, 0.1), 0 12px 34px rgba(0,0,0,0.2);
+    }
+
+    .lib-search-bar .lib-search-icon {
+      font-size: 1.1rem;
+    }
+
+    .lib-search-bar .lib-search-input {
+      min-width: 0;
+      font-size: 0.93rem;
+      appearance: none;
+      background: transparent !important;
+      color: var(--library-ink) !important;
+    }
+
+    .lib-search-bar .lib-search-input::placeholder { color: var(--library-faint) !important; }
+    .lib-search-bar .lib-search-stats { color: var(--library-muted) !important; }
+
+    .lib-entry-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+
+    .lib-entry-card {
+      min-height: 250px;
+      padding: 1.25rem;
+      border-radius: 20px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.035), transparent 42%),
+        rgba(20, 13, 9, 0.82);
+      isolation: isolate;
+    }
+
+    .lib-entry-card::after {
+      content: '';
+      position: absolute;
+      inset: auto 1.25rem 0;
+      height: 3px;
+      border-radius: 3px 3px 0 0;
+      background: var(--ec-accent, var(--library-gold));
+      opacity: 0.62;
+    }
+
+    .entry-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.7rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .entry-icon {
+      display: grid;
+      width: 2.7rem;
+      height: 2.7rem;
+      margin: 0;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      font-size: 1.25rem;
+    }
+
+    .entry-room {
+      color: var(--library-faint);
+      font-size: 0.61rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .entry-heading {
+      max-width: 10ch;
+      font-size: clamp(1.12rem, 2vw, 1.38rem);
+      line-height: 1.08;
+    }
+
+    .entry-purpose {
+      margin: 0 0 0.4rem;
+      color: var(--ec-accent-text, var(--library-gold));
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .entry-desc {
+      margin-top: 0.5rem;
+      color: rgba(255, 244, 228, 0.68);
+      font-size: 0.77rem;
+    }
+
+    .entry-count {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding-top: 1rem;
+      letter-spacing: 0.05em;
+      text-transform: none;
+    }
+
+    .entry-count::after {
+      content: 'Explore →';
+      color: var(--library-ink);
+    }
+
+    .lib-entry-grid.is-compact {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      position: sticky;
+      top: 68px;
+      z-index: 15;
+      padding: 0.45rem;
+      border: 1px solid var(--library-line);
+      border-radius: 14px;
+      background: rgba(25, 14, 9, 0.88);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.24);
+      backdrop-filter: blur(18px);
+    }
+
+    .lib-entry-grid.is-compact .lib-entry-card {
+      min-height: 48px;
+      padding: 0.65rem 0.8rem;
+      border-radius: 10px;
+    }
+
+    .lib-entry-grid.is-compact .entry-topline { margin: 0; }
+    .lib-entry-grid.is-compact .entry-room { display: none; }
+    .lib-entry-grid.is-compact .entry-icon { width: 1.8rem; height: 1.8rem; border-radius: 7px; font-size: 0.85rem; }
+    .lib-entry-grid.is-compact .entry-heading { display: block; font-size: 0.74rem; max-width: none; }
+    .lib-entry-grid.is-compact .entry-purpose,
+    .lib-entry-grid.is-compact .entry-desc,
+    .lib-entry-grid.is-compact .entry-count { display: none; }
+
+    body.library-page .lib-room-header {
+      padding: clamp(1.1rem, 3vw, 1.7rem);
+      border: 1px solid var(--library-line);
+      border-radius: 20px;
+    }
+
+    .lib-room-header h2 {
+      color: var(--library-ink);
+      font-size: clamp(1.45rem, 4vw, 2.2rem);
+      letter-spacing: -0.035em;
+    }
+
+    .lib-room-num {
+      color: var(--library-gold);
+      background: rgba(242, 189, 105, 0.1);
+      border-color: rgba(242, 189, 105, 0.2);
+    }
+
+    .book-filter-bar button,
+    .book-popup-btn,
+    .reader-link {
+      min-height: 42px;
+    }
+
+    .book-filter-bar button:focus-visible,
+    .lib-entry-card:focus-visible,
+    .lib-back-btn:focus-visible,
+    .library-reader-close:focus-visible,
+    .book-popup-btn:focus-visible,
+    .reader-link:focus-visible {
+      outline: 3px solid #f7c978;
+      outline-offset: 3px;
+    }
+
+    body.library-page.is-searching .shelf-row.is-search-empty,
+    body.library-page.is-searching .recipe-shelf-group.is-search-empty {
+      display: none;
+    }
+
+    /* ── Stable desktop bookcases ────────────────── */
+    @media (min-width: 701px) {
+      .bookcase,
+      .bookcase-flex {
+        width: min(100%, 1040px);
+        margin-inline: auto;
+        padding: 1.8rem 2.25rem 0;
+        overflow: visible;
+        border: 1px solid rgba(255, 207, 125, 0.14);
+        border-radius: 18px 18px 8px 8px;
+        background:
+          linear-gradient(90deg, rgba(0,0,0,0.24), transparent 7%, transparent 93%, rgba(0,0,0,0.24)),
+          linear-gradient(160deg, #321a08 0%, #1d0d04 48%, #120702 100%);
+        box-shadow:
+          0 24px 64px rgba(0,0,0,0.34),
+          inset 0 0 70px rgba(0,0,0,0.22),
+          inset 0 1px 0 rgba(255,255,255,0.05);
+        transform: none !important;
+      }
+
+      .classics-bookcase {
+        background:
+          linear-gradient(90deg, rgba(0,0,0,0.28), transparent 7%, transparent 93%, rgba(0,0,0,0.28)),
+          linear-gradient(160deg, #251007 0%, #160704 48%, #0d0302 100%);
+      }
+
+      .bookcase::before,
+      .bookcase::after,
+      .bookcase-flex::before,
+      .bookcase-flex::after {
+        content: '';
+        position: absolute;
+        top: 0.65rem;
+        bottom: 0;
+        width: 18px;
+        z-index: 8;
+        border-radius: 8px 8px 2px 2px;
+        background: linear-gradient(90deg, #4a2408, #8c5420 48%, #3a1905);
+        box-shadow: inset 1px 0 rgba(255,255,255,0.1), 3px 0 10px rgba(0,0,0,0.32);
+        pointer-events: none;
+      }
+
+      .bookcase::before,
+      .bookcase-flex::before { left: 0.7rem; }
+      .bookcase::after,
+      .bookcase-flex::after { right: 0.7rem; transform: scaleX(-1); }
+
+      .shelf-row {
+        min-height: 248px;
+        justify-content: center;
+        gap: clamp(5px, 0.65vw, 9px);
+        padding: 1.5rem 2rem 0;
+      }
+
+      .book {
+        min-width: 52px;
+        transition: transform 0.18s ease, filter 0.18s ease;
+      }
+
+      .book:hover,
+      .book.is-active {
+        transform: translateY(-8px) scale(1.025);
+      }
+
+      .book-spine {
+        border: 1px solid rgba(255,255,255,0.08);
+        border-bottom: 0;
+        border-radius: 5px 5px 1px 1px;
+        box-shadow:
+          -4px 0 9px rgba(0,0,0,0.34),
+          3px 0 5px rgba(0,0,0,0.2),
+          inset 0 1px 0 rgba(255,255,255,0.16);
+      }
+
+      .book-spine-label {
+        font-size: 0.62rem;
+        letter-spacing: 0.075em;
+      }
+
+      .shelf-board {
+        height: 23px;
+        margin: 0 -2.25rem;
+        border-top: 1px solid rgba(255, 235, 181, 0.44);
+        border-bottom: 1px solid rgba(48, 20, 3, 0.7);
+        background: linear-gradient(180deg, #e8c276 0%, #b87826 26%, #71400f 82%, #3f1d05 100%);
+        box-shadow:
+          0 9px 18px rgba(0,0,0,0.52),
+          inset 0 2px 0 rgba(255,255,255,0.18);
+      }
+
+      .shelf-label {
+        min-width: 150px;
+        padding: 0.16rem 0.9rem;
+        border: 1px solid rgba(255, 213, 125, 0.32);
+        border-radius: 999px;
+        background: linear-gradient(180deg, #6b3c10, #3a1a05);
+        color: #ffe1a3;
+        font-size: 0.58rem;
+        letter-spacing: 0.15em;
+        text-align: center;
+        text-shadow: 0 1px 2px #130702;
+        box-shadow: inset 0 1px rgba(255,255,255,0.12), 0 2px 5px rgba(0,0,0,0.35);
+      }
+
+      .shelf-spacer { height: 0; }
+
+      .bookcase-base {
+        width: min(100%, 1080px);
+        height: 18px;
+        margin: 0 auto 0.5rem;
+        border-radius: 0 0 12px 12px;
+        background: linear-gradient(180deg, #84501d, #351707);
+        box-shadow: 0 9px 20px rgba(0,0,0,0.42), inset 0 1px rgba(255,255,255,0.1);
+      }
+
+      .recipe-shelf-group { width: 100%; }
+    }
+
+    @media (max-width: 920px) {
+      .library-hero-layout { grid-template-columns: 1fr; align-items: start; }
+      .library-hero-guide { max-width: 560px; }
+      .lib-entry-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 700px) {
+      body.library-page .recipe-catalog-hero {
+        margin: 0.75rem 0.75rem 0;
+        padding: 1.5rem 1.1rem;
+        border-radius: 22px;
+      }
+      body.library-page .recipe-catalog-hero h1 { font-size: clamp(3.2rem, 18vw, 5rem); }
+      .library-directory-head { display: block; }
+      .library-directory-head p { margin-top: 0.55rem; }
+      .lib-search-kbd { display: none; }
+      .lib-search-bar .lib-search-stats { font-size: 0.61rem; }
+      .lib-entry-grid { grid-template-columns: 1fr; }
+      .lib-entry-card { min-height: 0; padding: 1.1rem; }
+      .entry-topline { margin-bottom: 0.9rem; }
+      .entry-heading { max-width: none; }
+      .lib-entry-grid.is-compact {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        top: 58px;
+      }
+
+      /* Spines become readable resource cards on touch-sized screens. */
+      .bookcase, .bookcase-flex {
+        padding: 0.8rem;
+        border-radius: 16px;
+      }
+      .shelf-row,
+      .bookcase-flex,
+      .recipe-shelf-group .shelf-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: stretch;
+        gap: 0.65rem;
+      }
+      .recipe-shelf-group { display: grid; gap: 0.65rem; }
+      .book {
+        width: auto !important;
+        height: auto !important;
+        transform: none !important;
+        cursor: default;
+      }
+      .book-spine {
+        height: auto !important;
+        min-height: 46px;
+        justify-content: flex-start;
+        border-radius: 10px 10px 0 0;
+      }
+      .book-spine-label,
+      .book-spine-label.book-spine-label--gold {
+        max-height: none;
+        padding: 0.75rem 1rem;
+        writing-mode: horizontal-tb;
+        transform: none;
+        font-size: 0.76rem;
+        white-space: normal;
+      }
+      .book-popup,
+      .book:hover .book-popup,
+      .book.is-active .book-popup {
+        position: static;
+        width: 100%;
+        padding: 0.95rem 1rem 1rem;
+        border-radius: 0 0 10px 10px;
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+      }
+      .book-popup::after { display: none; }
+      .book.is-search-dim { display: none; }
+      .book-popup-desc { font-size: 0.76rem; }
+      .shelf-board { margin: 0; border-radius: 7px; }
+      .shelf-spacer { height: 0.3rem; }
+      .bookcase-base { display: none; }
+      .shelf-hint { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .library-dust { display: none; }
+      .book,
+      .book-popup,
+      .lib-entry-card { transition: none !important; }
+    }
+
+    /* ── Library welcome quote ───────────────────── */
+    .library-welcome {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      padding: clamp(1rem, 4vw, 2.5rem);
+      overflow: auto;
+      background:
+        radial-gradient(circle at 50% 34%, rgba(155, 86, 35, 0.22), transparent 34%),
+        rgba(10, 5, 3, 0.94);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+
+    .library-welcome[hidden] { display: none; }
+
+    .library-welcome.is-leaving {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .library-welcome-card {
+      position: relative;
+      width: min(840px, 100%);
+      padding: clamp(1.6rem, 6vw, 4.5rem);
+      overflow: hidden;
+      border: 1px solid rgba(255, 221, 163, 0.2);
+      border-radius: clamp(20px, 4vw, 34px);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.045), transparent 42%),
+        linear-gradient(155deg, #261107, #100604);
+      box-shadow: 0 34px 100px rgba(0,0,0,0.58), inset 0 1px rgba(255,255,255,0.06);
+      color: var(--library-ink);
+    }
+
+    .library-welcome-card::after {
+      content: '“';
+      position: absolute;
+      right: clamp(0.4rem, 3vw, 2rem);
+      top: -0.23em;
+      color: rgba(242, 189, 105, 0.09);
+      font-family: Georgia, serif;
+      font-size: clamp(12rem, 35vw, 24rem);
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .library-welcome-kicker {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin: 0 0 clamp(1.4rem, 4vw, 2.5rem);
+      color: var(--library-gold) !important;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.17em;
+      text-transform: uppercase;
+    }
+
+    .library-welcome-kicker::before {
+      content: '';
+      width: 2rem;
+      height: 1px;
+      background: currentColor;
+    }
+
+    .library-welcome blockquote {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+    }
+
+    .library-welcome blockquote p {
+      margin: 0;
+      color: #fff8ed !important;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(1.35rem, 3.4vw, 2.45rem);
+      font-weight: 400;
+      line-height: 1.35;
+      letter-spacing: -0.025em;
+      text-wrap: balance;
+    }
+
+    .library-welcome cite {
+      display: block;
+      margin-top: 1.35rem;
+      color: rgba(255, 240, 219, 0.68) !important;
+      font-size: clamp(0.82rem, 1.5vw, 1rem);
+      font-style: normal;
+    }
+
+    .library-welcome cite em { color: var(--library-gold); }
+
+    .library-enter-btn {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      min-height: 50px;
+      margin-top: clamp(1.6rem, 4vw, 2.6rem);
+      padding: 0.7rem 1.2rem;
+      border: 1px solid rgba(255, 214, 143, 0.38);
+      border-radius: 999px;
+      background: linear-gradient(135deg, #efb75c, #c9782e);
+      color: #241006;
+      font: 800 0.82rem var(--font-sans);
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(163, 84, 25, 0.25), inset 0 1px rgba(255,255,255,0.38);
+      transition: transform 0.18s ease, filter 0.18s ease;
+    }
+
+    .library-enter-btn:hover { transform: translateY(-2px); filter: brightness(1.07); }
+    .library-enter-btn:focus-visible { outline: 3px solid #fff3d9; outline-offset: 4px; }
+
+    @media (max-width: 520px) {
+      .library-welcome { align-items: center; padding: 0.75rem; }
+      .library-welcome-card { padding: 1.5rem 1.25rem; }
+      .library-welcome blockquote p { font-size: clamp(1.24rem, 6.2vw, 1.65rem); }
+      .library-enter-btn { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .library-welcome,
+      .library-enter-btn { transition: none; }
+    }
   </style>
 </head>
 <body class="library-page">
@@ -1001,51 +1726,82 @@
   <div class="library-scene" aria-hidden="true"></div>
   <canvas class="library-dust" id="libraryDust" aria-hidden="true"></canvas>
 
+  <div class="library-welcome" id="libraryWelcome" role="dialog" aria-modal="true" aria-labelledby="libraryWelcomeTitle" aria-describedby="libraryWelcomeQuote">
+    <div class="library-welcome-card">
+      <p class="library-welcome-kicker" id="libraryWelcomeTitle">Welcome to the library</p>
+      <blockquote>
+        <p id="libraryWelcomeQuote">“If I finish a book a week, I will read only a few thousand books in my lifetime, about a tenth of a percent of the contents of the greatest libraries of our time. The trick is to know which books to read.”</p>
+        <cite>— Carl Sagan, <em>Cosmos</em></cite>
+      </blockquote>
+      <button class="library-enter-btn" id="libraryEnterBtn" type="button">Enter the library <span aria-hidden="true">→</span></button>
+    </div>
+  </div>
+
   <main id="main-content">
 
     <!-- ══ Hero ══════════════════════════════════ -->
-    <section class="hero recipe-catalog-hero">
-      <p class="eyebrow">ClassroomOS</p>
-      <h1 class="reveal">Library</h1>
-      <p class="library-hero-lead">Where ideas become reality.</p>
-      <p class="library-stat-row reveal" style="--i:1" id="libStatRow"></p>
-      <button class="lib-back-btn" id="libBackBtn" type="button" aria-label="Return to all rooms">← All Rooms</button>
+    <section class="hero recipe-catalog-hero" aria-labelledby="library-title">
+      <div class="library-hero-layout">
+        <div>
+          <p class="library-kicker">ClassroomOS resource library</p>
+          <h1 class="reveal" id="library-title">Read. Explore. Build.</h1>
+          <p class="library-hero-lead">A curated launchpad for curious makers: future-shaping fiction, NASA science, classroom-tested project recipes, and the manuals that help you master your tools.</p>
+          <p class="library-stat-row reveal" style="--i:1" id="libStatRow" aria-live="polite"></p>
+          <button class="lib-back-btn" id="libBackBtn" type="button" aria-label="Return to all collections">← All collections</button>
+        </div>
+        <aside class="library-hero-guide" aria-label="How to use the library">
+          <p class="library-hero-guide-label">Start anywhere</p>
+          <ol>
+            <li>Choose a collection for your goal.</li>
+            <li>Select a title to preview the resource.</li>
+            <li>Open it, make something, and keep exploring.</li>
+          </ol>
+        </aside>
+      </div>
     </section>
 
     <!-- ══ Library Entry ════════════════════════ -->
     <section class="section lib-entry-section">
+      <div class="library-directory-head">
+        <h2>Browse the collections</h2>
+        <p>Pick a shelf by purpose, or search every title, topic, author, tool, and project at once.</p>
+      </div>
       <label class="lib-search-bar" for="librarySearch">
-        <span class="lib-search-icon">⌕</span>
-        <input class="lib-search-input" id="librarySearch" type="search" placeholder="Search across all collections…" autocomplete="off" />
-        <span class="lib-search-stats" id="librarySearchStats"></span>
+        <span class="lib-search-icon" aria-hidden="true">⌕</span>
+        <input class="lib-search-input" id="librarySearch" type="search" placeholder="Search books, topics, tools, and projects…" autocomplete="off" />
+        <span class="lib-search-stats" id="librarySearchStats" aria-live="polite"></span>
         <kbd class="lib-search-kbd" aria-label="Press slash to focus search">/</kbd>
       </label>
       <p class="lib-empty-state" id="libEmptyState">No titles matched that search.<br>Try a different keyword or clear to browse by room.</p>
 
       <div class="lib-entry-grid" id="libEntryGrid">
-        <button class="lib-entry-card" type="button" data-room="classics">
-          <span class="entry-icon">📚</span>
-          <h2 class="entry-heading">Imagination</h2>
-          <p class="entry-desc">Classic sci-fi that preceded real technology — all free to read.</p>
-          <span class="entry-count">15 titles · Free</span>
+        <button class="lib-entry-card" type="button" data-room="classics" aria-controls="section-classics" aria-expanded="false">
+          <span class="entry-topline"><span class="entry-icon" aria-hidden="true">✦</span><span class="entry-room">Collection 01</span></span>
+          <span class="entry-purpose">Read &amp; imagine</span>
+          <span class="entry-heading">Classic science fiction</span>
+          <span class="entry-desc">Stories that imagined submarines, spaceflight, time travel, and new worlds before technology caught up.</span>
+          <span class="entry-count">15 free titles</span>
         </button>
-        <button class="lib-entry-card" type="button" data-room="nasa">
-          <span class="entry-icon">🚀</span>
-          <h2 class="entry-heading">Reality</h2>
-          <p class="entry-desc">NASA science books and activity packs, released free for classrooms.</p>
-          <span class="entry-count">14 titles · NASA Public Domain</span>
+        <button class="lib-entry-card" type="button" data-room="nasa" aria-controls="section-nasa" aria-expanded="false">
+          <span class="entry-topline"><span class="entry-icon" aria-hidden="true">◉</span><span class="entry-room">Collection 02</span></span>
+          <span class="entry-purpose">Discover real science</span>
+          <span class="entry-heading">NASA science library</span>
+          <span class="entry-desc">Mission books, activity packs, astronomy, Earth science, and astrophysics from NASA.</span>
+          <span class="entry-count">14 public resources</span>
         </button>
-        <button class="lib-entry-card" type="button" data-room="recipes">
-          <span class="entry-icon">🔧</span>
-          <h2 class="entry-heading">Build</h2>
-          <p class="entry-desc">Project recipes across five pathways — robots, electronics, games, 3D, challenges.</p>
-          <span class="entry-count">22 project recipes</span>
+        <button class="lib-entry-card" type="button" data-room="recipes" aria-controls="section-recipes" aria-expanded="false">
+          <span class="entry-topline"><span class="entry-icon" aria-hidden="true">⌁</span><span class="entry-room">Collection 03</span></span>
+          <span class="entry-purpose">Make something</span>
+          <span class="entry-heading">Project recipe collection</span>
+          <span class="entry-desc">Start-to-finish builds for robotics, electronics, games, 3D design, and creative challenges.</span>
+          <span class="entry-count">22 guided builds</span>
         </button>
-        <button class="lib-entry-card" type="button" data-room="manuals">
-          <span class="entry-icon">📖</span>
-          <h2 class="entry-heading">Master</h2>
-          <p class="entry-desc">Official documentation for every tool used in this classroom.</p>
-          <span class="entry-count">18 manuals · Official Docs</span>
+        <button class="lib-entry-card" type="button" data-room="manuals" aria-controls="section-manuals" aria-expanded="false">
+          <span class="entry-topline"><span class="entry-icon" aria-hidden="true">⌘</span><span class="entry-room">Collection 04</span></span>
+          <span class="entry-purpose">Learn your tools</span>
+          <span class="entry-heading">Manuals &amp; quick starts</span>
+          <span class="entry-desc">Official help for classroom software, creative tools, coding platforms, CAD, and game engines.</span>
+          <span class="entry-count">18 official guides</span>
         </button>
       </div>
     </section>
@@ -2107,6 +2863,44 @@
   <script src="assets/js/nav-mobile.js"></script>
   <script>
     (function () {
+      var welcome = document.getElementById('libraryWelcome');
+      var enterLibraryBtn = document.getElementById('libraryEnterBtn');
+      var welcomeBackground = Array.from(document.querySelectorAll('.site-header, #main-content, .site-footer'));
+      var welcomeReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      function closeWelcome() {
+        if (!welcome || welcome.hidden) return;
+        welcome.classList.add('is-leaving');
+        document.body.style.removeProperty('overflow');
+        welcomeBackground.forEach(function (element) { element.removeAttribute('inert'); });
+        var finish = function () {
+          welcome.hidden = true;
+          var libraryTitle = document.getElementById('library-title');
+          if (libraryTitle) {
+            libraryTitle.tabIndex = -1;
+            libraryTitle.focus({ preventScroll: true });
+          }
+        };
+        if (welcomeReduceMotion.matches) finish();
+        else window.setTimeout(finish, 360);
+      }
+
+      if (welcome && enterLibraryBtn) {
+        document.body.style.overflow = 'hidden';
+        welcomeBackground.forEach(function (element) { element.setAttribute('inert', ''); });
+        enterLibraryBtn.focus({ preventScroll: true });
+        enterLibraryBtn.addEventListener('click', closeWelcome);
+        welcome.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            closeWelcome();
+          } else if (event.key === 'Tab') {
+            event.preventDefault();
+            enterLibraryBtn.focus();
+          }
+        });
+      }
+
       var searchInput = document.getElementById('librarySearch');
       var searchStats = document.getElementById('librarySearchStats');
       var readerBackdrop = document.getElementById('libraryReaderBackdrop');
@@ -2273,6 +3067,7 @@
 
       /* ── Book interactions ─────────────────────── */
       var allBooks = Array.from(document.querySelectorAll('.book'));
+      var mobileCatalogQuery = window.matchMedia('(max-width: 700px)');
       var popupActionSelector = '.book-popup a, .book-popup button';
       var backBtn      = document.getElementById('libBackBtn');
       var statRow      = document.getElementById('libStatRow');
@@ -2301,7 +3096,7 @@
       /* ── Hero stat line ── */
       if (statRow) {
         var recipeCount = document.querySelectorAll('[data-rtags]').length;
-        statRow.textContent = LIBRARY_DATA.length + ' titles · 4 rooms · ' + recipeCount + ' project recipes';
+        statRow.textContent = LIBRARY_DATA.length + ' titles · 4 collections · ' + recipeCount + ' project recipes';
       }
 
       /* ── Seed search stat ── */
@@ -2320,6 +3115,7 @@
       function applyArchiveSearch(query) {
         var normalized = (query || '').trim().toLowerCase();
         var visibleCount = 0;
+        document.body.classList.toggle('is-searching', !!normalized);
         LIBRARY_DATA.forEach(function (bookData) {
           var haystack = [
             bookData.title,
@@ -2334,6 +3130,16 @@
           if (!match) syncPopupState(bookData.element, false);
           if (match) visibleCount += 1;
         });
+        document.querySelectorAll('.shelf-row, .recipe-shelf-group').forEach(function (container) {
+          var books = Array.from(container.querySelectorAll('.book'));
+          var hasMatch = books.some(function (book) { return !book.classList.contains('is-search-dim'); });
+          container.classList.toggle('is-search-empty', !!normalized && !hasMatch);
+        });
+        if (normalized && typeof libRooms !== 'undefined') {
+          libRooms.forEach(function (room) {
+            room.hidden = !room.querySelector('.book.is-search-hit');
+          });
+        }
         updateSearchStats(visibleCount, LIBRARY_DATA.length, normalized);
       }
 
@@ -2343,11 +3149,12 @@
 
       function syncPopupState(book, expanded) {
         var popup = book.querySelector('.book-popup');
+        var mobileCard = mobileCatalogQuery.matches;
         book.classList.toggle('is-active', expanded);
         book.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        if (popup) popup.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+        if (popup) popup.setAttribute('aria-hidden', mobileCard || expanded ? 'false' : 'true');
         popupActions(book).forEach(function (action) {
-          action.tabIndex = expanded ? 0 : -1;
+          action.tabIndex = mobileCard || expanded ? 0 : -1;
         });
         if (!expanded) {
           book.style.removeProperty('--pop-shift');
@@ -2384,7 +3191,7 @@
         }
 
         popupActions(book).forEach(function (action) {
-          action.tabIndex = -1;
+          action.tabIndex = mobileCatalogQuery.matches ? 0 : -1;
         });
 
         /* Mouse hover */
@@ -2438,6 +3245,24 @@
         });
       });
 
+      function syncCatalogViewport() {
+        allBooks.forEach(function (book) {
+          var mobileCard = mobileCatalogQuery.matches;
+          var expanded = book.classList.contains('is-active');
+          var popup = book.querySelector('.book-popup');
+          book.tabIndex = mobileCard ? -1 : 0;
+          book.setAttribute('role', mobileCard ? 'group' : 'button');
+          if (popup) popup.setAttribute('aria-hidden', mobileCard || expanded ? 'false' : 'true');
+          popupActions(book).forEach(function (action) {
+            action.tabIndex = mobileCard || expanded ? 0 : -1;
+          });
+        });
+      }
+
+      syncCatalogViewport();
+      if (mobileCatalogQuery.addEventListener) mobileCatalogQuery.addEventListener('change', syncCatalogViewport);
+      else if (mobileCatalogQuery.addListener) mobileCatalogQuery.addListener(syncCatalogViewport);
+
       /* Tap outside closes active popup */
       document.addEventListener('click', function () {
         closeAllBooks();
@@ -2455,7 +3280,11 @@
         if (entryGrid) entryGrid.classList.add('is-compact');
         libRooms.forEach(function (s) { s.hidden = s.id !== 'section-' + roomId; });
         extraSections.forEach(function (s) { s.hidden = s.dataset.roomExtra !== roomId; });
-        entryCardEls.forEach(function (c) { c.classList.toggle('is-active', c.dataset.room === roomId); });
+        entryCardEls.forEach(function (c) {
+          var selected = c.dataset.room === roomId;
+          c.classList.toggle('is-active', selected);
+          c.setAttribute('aria-expanded', selected ? 'true' : 'false');
+        });
         if (backBtn) backBtn.classList.add('is-visible');
         var target = document.getElementById('section-' + roomId);
         if (target) setTimeout(function () { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
@@ -2466,7 +3295,10 @@
         if (entryGrid) entryGrid.classList.remove('is-compact');
         libRooms.forEach(function (s) { s.hidden = true; });
         extraSections.forEach(function (s) { s.hidden = true; });
-        entryCardEls.forEach(function (c) { c.classList.remove('is-active'); });
+        entryCardEls.forEach(function (c) {
+          c.classList.remove('is-active');
+          c.setAttribute('aria-expanded', 'false');
+        });
         if (backBtn) backBtn.classList.remove('is-visible');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -2487,7 +3319,7 @@
             /* Show all rooms so search results are visible */
             if (entryGrid) entryGrid.classList.remove('is-compact');
             libRooms.forEach(function (s) { s.hidden = false; });
-            extraSections.forEach(function (s) { s.hidden = false; });
+            extraSections.forEach(function (s) { s.hidden = true; });
             entryCardEls.forEach(function (c) { c.classList.remove('is-active'); });
           } else {
             /* Restore previous room or close all */
@@ -2555,6 +3387,7 @@
         quickReadBtn.type = 'button';
         quickReadBtn.className = 'book-popup-btn';
         quickReadBtn.textContent = 'Quick Read';
+        quickReadBtn.tabIndex = mobileCatalogQuery.matches ? 0 : -1;
         quickReadBtn.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
@@ -2598,7 +3431,7 @@
         }
       });
 
-      /* ── Flashlight + shelf parallax ───────────── */
+      /* ── Flashlight ambience ───────────────────── */
       function setFlashlight(x, y) {
         document.documentElement.style.setProperty('--flashlight-x', x + 'px');
         document.documentElement.style.setProperty('--flashlight-y', y + 'px');
@@ -2606,25 +3439,18 @@
 
       setFlashlight(window.innerWidth * 0.5, Math.max(160, window.innerHeight * 0.26));
 
-      document.addEventListener('mousemove', function (e) {
-        setFlashlight(e.clientX, e.clientY);
-        document.querySelectorAll('.bookcase, .bookcase-flex').forEach(function (shelf) {
-          var rect = shelf.getBoundingClientRect();
-          var rx = ((e.clientY - rect.top) / rect.height - 0.5) * -3;
-          var ry = ((e.clientX - rect.left) / rect.width - 0.5) * 4;
-          shelf.style.transform = 'perspective(1000px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
-        });
-      });
+      var reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      var finePointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
 
-      document.addEventListener('mouseleave', function () {
-        document.querySelectorAll('.bookcase, .bookcase-flex').forEach(function (shelf) {
-          shelf.style.transform = '';
+      if (!reduceMotionQuery.matches && finePointerQuery.matches) {
+        document.addEventListener('mousemove', function (e) {
+          setFlashlight(e.clientX, e.clientY);
         });
-      });
+      }
 
       /* ── Dust particles ────────────────────────── */
       var dustCanvas = document.getElementById('libraryDust');
-      if (dustCanvas) {
+      if (dustCanvas && !reduceMotionQuery.matches) {
         var dustCtx = dustCanvas.getContext('2d');
         var particles = [];
 
