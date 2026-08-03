@@ -1224,3 +1224,14 @@
   s.defer = true;
   document.head.appendChild(s);
 }());
+
+// Keep legacy lesson colors readable when the global theme changes.
+(function () {
+  if (window.ClassroomOSContrastGuard || document.querySelector('script[data-classroomos-contrast-guard="true"]')) return;
+  var s = document.createElement('script');
+  var baseScript = document.currentScript && document.currentScript.src;
+  s.src = baseScript ? new URL('contrast-guard.js', baseScript).href : '/assets/js/contrast-guard.js';
+  s.defer = true;
+  s.dataset.classroomosContrastGuard = 'true';
+  document.head.appendChild(s);
+}());

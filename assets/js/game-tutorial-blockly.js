@@ -1108,7 +1108,7 @@
         cursor: pointer;
         margin-top: 0.65rem;
       }
-      [data-theme="night"] .game-blockly-showjs {
+      [data-lighting="night"] .game-blockly-showjs {
         color: #fbbf24;
         border-color: rgba(251,191,36,0.4);
       }

@@ -1,5 +1,5 @@
 // Music Lab: WebAudio + WebMIDI
-// v2: Oscilloscope · Scale Lock · Theory Overlay · ADSR · Step Sequencer · MIDI key highlight
+// v3: Key-aware engraving · Grand staff · Sustain pedal · Room piano · Groove sequencer
 
 // ───── Core Audio ─────
 let audioCtx = null;
@@ -25,7 +25,7 @@ let currentInput = null;
 const activeVoices = new Map(); // midiNote → voice object
 
 // ───── ADSR state (all times in seconds, sustain 0–1) ─────
-const adsr = { a: 0.010, d: 0.120, s: 0.25, r: 0.120 };
+const adsr = { a: 0.008, d: 0.850, s: 0.18, r: 0.420 };
 
 // ───── Scale Lock ─────
 const SCALES = {
@@ -37,44 +37,116 @@ const SCALES = {
 let activeScaleKeys = null; // null = all notes allowed
 
 // ───── Piano constants ─────
-const PIANO_START_NOTE = 60; // C4 (Middle C)
+const PIANO_START_NOTE = 48; // C3
 const PIANO_END_NOTE   = 84; // C6
 const BLACK_CLASSES    = new Set([1, 3, 6, 8, 10]);
 const NOTE_NAMES       = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const CHROMATIC_TO_STAFF = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
-
-const BASE_THEORY = [
-  { label: 'C', accidental: '', solfege: 'Do', interval: 'P1', family: 'perfect' },
-  { label: 'C# / Db', accidental: '♯', solfege: 'Di', interval: 'm2', family: 'minor' },
-  { label: 'D', accidental: '', solfege: 'Re', interval: 'M2', family: 'major' },
-  { label: 'D# / Eb', accidental: '♯', solfege: 'Ri', interval: 'm3', family: 'minor' },
-  { label: 'E', accidental: '', solfege: 'Mi', interval: 'M3', family: 'major' },
-  { label: 'F', accidental: '', solfege: 'Fa', interval: 'P4', family: 'perfect' },
-  { label: 'F# / Gb', accidental: '♯', solfege: 'Fi', interval: 'TT', family: 'tritone' },
-  { label: 'G', accidental: '', solfege: 'Sol', interval: 'P5', family: 'perfect' },
-  { label: 'G# / Ab', accidental: '♯', solfege: 'Si', interval: 'm6', family: 'minor' },
-  { label: 'A', accidental: '', solfege: 'La', interval: 'M6', family: 'major' },
-  { label: 'A# / Bb', accidental: '♯', solfege: 'Li', interval: 'm7', family: 'minor' },
-  { label: 'B', accidental: '', solfege: 'Ti', interval: 'M7', family: 'major' }
+const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const LETTER_TO_INDEX = Object.fromEntries(NOTE_LETTERS.map((letter, index) => [letter, index]));
+const SHARP_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const FLAT_NAMES  = ['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+const INTERVAL_THEORY = [
+  { interval: 'P1', family: 'perfect', sharpSolfege: 'Do', flatSolfege: 'Do' },
+  { interval: 'm2', family: 'minor', sharpSolfege: 'Di', flatSolfege: 'Ra' },
+  { interval: 'M2', family: 'major', sharpSolfege: 'Re', flatSolfege: 'Re' },
+  { interval: 'm3', family: 'minor', sharpSolfege: 'Ri', flatSolfege: 'Me' },
+  { interval: 'M3', family: 'major', sharpSolfege: 'Mi', flatSolfege: 'Mi' },
+  { interval: 'P4', family: 'perfect', sharpSolfege: 'Fa', flatSolfege: 'Fa' },
+  { interval: 'TT', family: 'tritone', sharpSolfege: 'Fi', flatSolfege: 'Se' },
+  { interval: 'P5', family: 'perfect', sharpSolfege: 'Sol', flatSolfege: 'Sol' },
+  { interval: 'm6', family: 'minor', sharpSolfege: 'Si', flatSolfege: 'Le' },
+  { interval: 'M6', family: 'major', sharpSolfege: 'La', flatSolfege: 'La' },
+  { interval: 'm7', family: 'minor', sharpSolfege: 'Li', flatSolfege: 'Te' },
+  { interval: 'M7', family: 'major', sharpSolfege: 'Ti', flatSolfege: 'Ti' },
 ];
+const INTERVAL_COLORS = [
+  '#d7263d', '#df4b2f', '#e87516', '#d99a00', '#d6ad00', '#25823b',
+  '#16866f', '#1670c5', '#3555b5', '#4b46a9', '#66399f', '#842f9b',
+];
+const NOTATION_KEYS = {
+  C:  { label: 'C major',  root: 0,  signature: 0, accidental: 'sharp' },
+  G:  { label: 'G major',  root: 7,  signature: 1, accidental: 'sharp' },
+  D:  { label: 'D major',  root: 2,  signature: 2, accidental: 'sharp' },
+  A:  { label: 'A major',  root: 9,  signature: 3, accidental: 'sharp' },
+  E:  { label: 'E major',  root: 4,  signature: 4, accidental: 'sharp' },
+  B:  { label: 'B major',  root: 11, signature: 5, accidental: 'sharp' },
+  'F#': { label: 'F♯ major', root: 6, signature: 6, accidental: 'sharp' },
+  F:  { label: 'F major',  root: 5,  signature: 1, accidental: 'flat' },
+  Bb: { label: 'B♭ major', root: 10, signature: 2, accidental: 'flat' },
+  Eb: { label: 'E♭ major', root: 3,  signature: 3, accidental: 'flat' },
+  Ab: { label: 'A♭ major', root: 8,  signature: 4, accidental: 'flat' },
+  Db: { label: 'D♭ major', root: 1,  signature: 5, accidental: 'flat' },
+};
+const notationState = { key: 'C', accidentalMode: 'auto', intervalColors: false };
+const KEY_SIGNATURE_ORDER = {
+  sharp: ['F', 'C', 'G', 'D', 'A', 'E'],
+  flat: ['B', 'E', 'A', 'D', 'G', 'C'],
+};
+
+function currentNotationKey() { return NOTATION_KEYS[notationState.key] || NOTATION_KEYS.C; }
+
+function preferredAccidental() {
+  return notationState.accidentalMode === 'auto'
+    ? currentNotationKey().accidental
+    : notationState.accidentalMode;
+}
+
+function signatureAccidentalForLetter(letter) {
+  const key = currentNotationKey();
+  return KEY_SIGNATURE_ORDER[key.accidental].slice(0, key.signature).includes(letter)
+    ? (key.accidental === 'flat' ? '♭' : '♯')
+    : '';
+}
+
+function spellPitchClass(pitchClass) {
+  const pc = ((pitchClass % 12) + 12) % 12;
+  const key = currentNotationKey();
+  const scaleDegree = [0, 2, 4, 5, 7, 9, 11].findIndex(step => (key.root + step) % 12 === pc);
+  if (scaleDegree >= 0) {
+    const tonicLetterIndex = LETTER_TO_INDEX[notationState.key[0]];
+    const letter = NOTE_LETTERS[(tonicLetterIndex + scaleDegree) % 7];
+    const label = spellChordTone(pc, letter);
+    const accidental = label.slice(1);
+    return { label, letter, accidental, letterIndex: LETTER_TO_INDEX[letter] };
+  }
+  const label = (preferredAccidental() === 'flat' ? FLAT_NAMES : SHARP_NAMES)[pc];
+  const letter = label[0];
+  const accidental = label.includes('♯') ? '♯' : (label.includes('♭') ? '♭' : '');
+  return { label, letter, accidental, letterIndex: LETTER_TO_INDEX[letter] };
+}
 
 function getTheoryNote(midi) {
   const pc = midi % 12;
-  const base = BASE_THEORY[pc];
-  let intv = base.interval;
-  if (midi === 72) intv = 'P8';
-  if (midi === 84) intv = 'P15';
-  if (midi < 60) intv = '-' + intv;
-  if (midi === 48) intv = '-P8';
+  const spelling = spellPitchClass(pc);
+  const key = currentNotationKey();
+  const relativePc = (pc - key.root + 12) % 12;
+  const base = INTERVAL_THEORY[relativePc];
+  const rootMidi = 60 + key.root;
+  const distance = midi - rootMidi;
+  let interval = base.interval;
+  if (relativePc === 0 && distance >= 24) interval = 'P15';
+  else if (relativePc === 0 && distance >= 12) interval = 'P8';
+  else if (relativePc === 0 && distance <= -12) interval = '-P8';
+  else if (distance < 0) interval = `↓${interval}`;
+  const octave = Math.floor(midi / 12) - 1;
+  const signatureAccidental = signatureAccidentalForLetter(spelling.letter);
+  let displayedAccidental = spelling.accidental;
+  if (spelling.accidental === signatureAccidental) displayedAccidental = '';
+  else if (!spelling.accidental && signatureAccidental) displayedAccidental = '♮';
 
   return {
-    midi: midi,
-    label: base.label,
-    accidental: base.accidental,
-    solfege: base.solfege,
-    interval: intv,
-    semitones: Math.abs(midi - 60),
-    family: base.family
+    midi,
+    label: `${spelling.label}${octave}`,
+    pitchLabel: spelling.label,
+    letter: spelling.letter,
+    letterIndex: spelling.letterIndex,
+    accidental: displayedAccidental,
+    solfege: preferredAccidental() === 'flat' ? base.flatSolfege : base.sharpSolfege,
+    interval,
+    semitones: Math.abs(distance),
+    family: base.family,
+    intervalColor: INTERVAL_COLORS[relativePc],
+    staffIndex: (octave * 7) + spelling.letterIndex,
   };
 }
 
@@ -82,7 +154,7 @@ const CLEF_CONFIG = {
   treble:  { symbol: '𝄞', centerMidi: 71 },
   bass:    { symbol: '𝄢', centerMidi: 50 },
   alto:    { symbol: '𝄡', centerMidi: 60 },
-  soprano: { symbol: '𝄡', centerMidi: 67 },
+  soprano: { symbol: '𝄡', centerMidi: 64 },
   grand:   { isGrand: true }
 };
 
@@ -93,6 +165,9 @@ const pianoState = {
   activeNote:    null,
   keyByNote:     new Map(),
   showNoteNames: false,
+  sustain:       false,
+  heldNotes:     new Set(),
+  sustainedNotes: new Set(),
 };
 
 const bridgeState = {
@@ -106,17 +181,40 @@ const SEQ_DRUMS  = ['kick','snare','hat','clap','tom1','tom2','perc','crash'];
 const SEQ_LABELS = ['Kick','Snare','Hi-Hat','Clap','Tom','Low Tom','Perc','Crash'];
 const SEQ_COLORS = ['#e05252','#4a90e2','#7ab648','#c27cf0','#e8954e','#7ecfce','#e8c84e','#e070b8'];
 
-let seqGrid    = SEQ_DRUMS.map(() => Array(SEQ_STEPS).fill(false));
-let seqMuted = SEQ_DRUMS.map(() => false);
+function makeGroove(stepRows) {
+  return SEQ_DRUMS.map((_, row) =>
+    Array.from({ length: SEQ_STEPS }, (__, step) => (stepRows[row] || []).includes(step))
+  );
+}
 
-// Default groove: kick on 1+3, snare on 2+4, hi-hat every 8th note
-[0, 8].forEach(s => seqGrid[0][s] = true);          // kick
-[4, 12].forEach(s => seqGrid[1][s] = true);          // snare
-[0,2,4,6,8,10,12,14].forEach(s => seqGrid[2][s] = true); // hi-hat
+const GROOVE_PRESETS = {
+  backbeat: {
+    name: 'Backbeat Basics', bpm: 120, swing: 50,
+    grid: makeGroove([[0, 8], [4, 12], [0, 2, 4, 6, 8, 10, 12, 14], [], [], [], [], []]),
+  },
+  fourFloor: {
+    name: 'Four on the Floor', bpm: 124, swing: 50,
+    grid: makeGroove([[0, 4, 8, 12], [4, 12], [0, 2, 4, 6, 8, 10, 12, 14], [12], [], [], [3, 7, 11, 15], []]),
+  },
+  breakbeat: {
+    name: 'Broken Beat', bpm: 104, swing: 58,
+    grid: makeGroove([[0, 3, 7, 10, 14], [4, 11, 12], [0, 2, 4, 6, 8, 10, 12, 14], [], [6], [15], [2, 9], []]),
+  },
+  halfTime: {
+    name: 'Half-Time Pulse', bpm: 82, swing: 54,
+    grid: makeGroove([[0, 7, 10], [8], [0, 2, 4, 6, 8, 10, 12, 14], [8], [14], [], [3, 11], [0]]),
+  },
+};
+
+const SEQ_SESSION_KEY = 'classroomos.musicLab.sequencer.v1';
+let seqGrid = GROOVE_PRESETS.backbeat.grid.map(row => [...row]);
+let seqMuted = SEQ_DRUMS.map(() => false);
 let seqStep    = 0;
 let seqPlaying = false;
 let seqTimerId = null;
 let seqBpm     = 120;
+let seqSwing   = 50;
+let seqGroove  = 'backbeat';
 
 // ── Look-ahead Scheduler ──
 let nextStepTime         = 0.0;
@@ -134,6 +232,17 @@ const els = {
   pianoRoll:    document.getElementById('pianoRoll'),
   scaleLock:    document.getElementById('scaleLock'),
   overlayNames: document.getElementById('overlayNames'),
+  keySignature: document.getElementById('keySignature'),
+  accidentalMode: document.getElementById('accidentalMode'),
+  intervalColorToggle: document.getElementById('intervalColorToggle'),
+  intervalColorLegend: document.getElementById('intervalColorLegend'),
+  practiceScale: document.getElementById('practiceScale'),
+  scalePracticeBoard: document.getElementById('scalePracticeBoard'),
+  diatonicToggle: document.getElementById('diatonicToggle'),
+  diatonicChordGrid: document.getElementById('diatonicChordGrid'),
+  qwertyBaseSlider: document.getElementById('qwertyBaseSlider'),
+  qwertyBaseValue: document.getElementById('qwertyBaseValue'),
+  sustainPedal: document.getElementById('sustainPedal'),
   oscCanvas:    document.getElementById('oscCanvas'),
   spectrumCanvas: document.getElementById('spectrumCanvas'),
   modularPlay:  document.getElementById('modularPlay'),
@@ -159,6 +268,11 @@ const els = {
   seqClear:     document.getElementById('seqClear'),
   seqBpmSlider: document.getElementById('seqBpmSlider'),
   seqBpmVal:    document.getElementById('seqBpmVal'),
+  seqSwingSlider: document.getElementById('seqSwingSlider'),
+  seqSwingVal:  document.getElementById('seqSwingVal'),
+  seqGroove:    document.getElementById('seqGroove'),
+  seqVariation: document.getElementById('seqVariation'),
+  seqSessionNote: document.getElementById('seqSessionNote'),
   seqGrid:      document.getElementById('seqGrid'),
   staffSystem:  document.getElementById('staffSystem'),
   labHudValue:  document.getElementById('labHudValue'),
@@ -170,6 +284,23 @@ function setStatus(extra) {
   const m   = midiAccess ? 'on' : 'off';
   const dev = currentInput ? ` · in: ${currentInput.name || 'MIDI device'}` : '';
   els.status.textContent = `Audio: ${a} · MIDI: ${m}${dev}${extra ? ` · ${extra}` : ''}`;
+}
+
+function createPracticeRoomImpulse(ctx) {
+  const duration = 0.9;
+  const length = Math.floor(ctx.sampleRate * duration);
+  const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
+
+  for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+    const data = impulse.getChannelData(channel);
+    for (let i = 0; i < length; i++) {
+      const time = i / ctx.sampleRate;
+      const envelope = Math.pow(1 - (i / length), 3.4);
+      const fadeIn = Math.min(1, time / 0.008);
+      data[i] = (Math.random() * 2 - 1) * envelope * fadeIn;
+    }
+  }
+  return impulse;
 }
 
 // ───── Audio initialisation ─────
@@ -189,25 +320,42 @@ function ensureAudio() {
   limiter.attack.setValueAtTime(0.001, audioCtx.currentTime);
   limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
 
-  // Parallel delay for spatial depth
+  // Quiet early reflection: enough depth to feel like a practice room without
+  // turning quick passages into a pronounced echo.
   const delay         = audioCtx.createDelay(1.0);
-  delay.delayTime.value = 0.28;
+  delay.delayTime.value = 0.145;
   const delayFeedback = audioCtx.createGain();
-  delayFeedback.gain.value = 0.18;
+  delayFeedback.gain.value = 0.08;
   const delayWet      = audioCtx.createGain();
-  delayWet.gain.value = 0.22;
+  delayWet.gain.value = 0.09;
   master.connect(delay);
   delay.connect(delayFeedback);
   delayFeedback.connect(delay);
   delay.connect(delayWet);
   delayWet.connect(limiter);
 
+  // Short stereo convolution tail, filtered like a modest furnished room.
+  const roomPreDelay = audioCtx.createDelay(0.1);
+  roomPreDelay.delayTime.value = 0.018;
+  const room = audioCtx.createConvolver();
+  room.buffer = createPracticeRoomImpulse(audioCtx);
+  const roomTone = audioCtx.createBiquadFilter();
+  roomTone.type = 'lowpass';
+  roomTone.frequency.value = 4600;
+  const roomWet = audioCtx.createGain();
+  roomWet.gain.value = 0.16;
+  master.connect(roomPreDelay);
+  roomPreDelay.connect(room);
+  room.connect(roomTone);
+  roomTone.connect(roomWet);
+  roomWet.connect(limiter);
+
   // Analyser
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048;
   analyser.smoothingTimeConstant = 0.82;
 
-  // Signal chain: master → limiter (direct + wet delay) → analyser → speakers
+  // Signal chain: master → limiter (dry + delay + room) → analyser → speakers
   master.connect(limiter);
   limiter.connect(analyser);
   analyser.connect(audioCtx.destination);
@@ -220,16 +368,19 @@ async function enableAudio() {
   if (audioCtx.state !== 'running') await audioCtx.resume();
   els.enableMidi.disabled = false;
   setStatus();
+  // Return keyboard focus to the page so the QWERTY piano and Space sustain
+  // work immediately after the required audio-unlock click.
+  els.enableAudio.blur();
 }
 
 // ───── Note utilities ─────
 function midiNoteToHz(note) { return 440 * Math.pow(2, (note - 69) / 12); }
 
 function noteName(note) {
-  return `${NOTE_NAMES[note % 12]}${Math.floor(note / 12) - 1}`;
+  return getTheoryNote(note).label;
 }
 
-function noteLetterOnly(note) { return NOTE_NAMES[note % 12]; }
+function noteLetterOnly(note) { return getTheoryNote(note).pitchLabel; }
 function isBlackKey(note)     { return BLACK_CLASSES.has(note % 12); }
 
 function noteAllowed(note) {
@@ -237,7 +388,7 @@ function noteAllowed(note) {
 }
 
 function currentWaveformLabel() {
-  if (els.preset && els.preset.value === 'piano') return 'Piano';
+  if (els.preset && els.preset.value === 'piano') return 'Practice Room Piano';
   if (els.preset && els.preset.value === 'drums') return 'Drums';
   return modular.wave ? `${modular.wave[0].toUpperCase()}${modular.wave.slice(1)}` : 'Sine';
 }
@@ -269,13 +420,8 @@ function clearBridgeHighlights() {
   highlightFifthsByPitchClasses([]);
 }
 
-function naturalStaffIndex(midi) {
-  const octave = Math.floor(midi / 12) - 1;
-  return (octave * 7) + CHROMATIC_TO_STAFF[midi % 12];
-}
-
-function getNoteLayout(midi, centerMidi) {
-  const steps = naturalStaffIndex(midi) - naturalStaffIndex(centerMidi);
+function getNoteLayout(note, centerMidi) {
+  const steps = note.staffIndex - getTheoryNote(centerMidi).staffIndex;
   const yBase = 92;
   const stepPx = 5;
   return {
@@ -284,8 +430,71 @@ function getNoteLayout(midi, centerMidi) {
   };
 }
 
+const KEY_SIGNATURE_MIDIS = {
+  treble: {
+    sharp: [77, 72, 79, 74, 69, 76],
+    flat:  [71, 76, 69, 74, 67, 72],
+  },
+  bass: {
+    sharp: [53, 48, 55, 50, 45, 52],
+    flat:  [47, 52, 45, 50, 43, 48],
+  },
+  alto: {
+    sharp: [65, 60, 67, 62, 57, 64],
+    flat:  [59, 64, 57, 62, 55, 60],
+  },
+  soprano: {
+    sharp: [65, 72, 67, 74, 69, 64],
+    flat:  [71, 64, 69, 62, 67, 60],
+  },
+};
+
+function keySignatureDescription() {
+  const key = currentNotationKey();
+  if (!key.signature) return 'no sharps or flats';
+  return `${key.signature} ${key.accidental}${key.signature === 1 ? '' : 's'}`;
+}
+
+function buildStaffChrome(clefKey) {
+  const key = currentNotationKey();
+  const targets = KEY_SIGNATURE_MIDIS[clefKey][key.accidental].slice(0, key.signature);
+  const symbol = key.accidental === 'flat' ? '♭' : '♯';
+  const signatureMarks = targets.map((midi, index) => {
+    const layout = getNoteLayout(getTheoryNote(midi), CLEF_CONFIG[clefKey].centerMidi);
+    return `<text x="${12 + (index * 15)}" y="${layout.y + 7}" aria-hidden="true">${symbol}</text>`;
+  }).join('');
+  const signatureWidth = Math.max(18, 18 + (targets.length * 15));
+  const timeLeft = 92 + (targets.length * 15);
+
+  return `
+    <div class="clef-symbol" aria-hidden="true">${CLEF_CONFIG[clefKey].symbol}</div>
+    <svg class="staff-key-signature" style="width:${signatureWidth}px" viewBox="0 0 ${signatureWidth} 224"
+         role="img" aria-label="${key.label}, ${keySignatureDescription()}">${signatureMarks}</svg>
+    <span class="staff-time-signature" style="left:${timeLeft}px" aria-label="Four four time"><span>4</span><span>4</span></span>
+  `;
+}
+
+function updateNotationReadout(activeMidis) {
+  const key = currentNotationKey();
+  const notes = (activeMidis || []).map(getTheoryNote).sort((a, b) => a.midi - b.midi);
+  const keyOutput = document.getElementById('notationKeyReadout');
+  const soundingOutput = document.getElementById('notationSounding');
+  const midiOutput = document.getElementById('notationMidi');
+  const frequencyOutput = document.getElementById('notationFrequency');
+  const badge = document.getElementById('notationBadge');
+  if (keyOutput) keyOutput.textContent = `${key.label} · ${keySignatureDescription()}`;
+  if (soundingOutput) soundingOutput.textContent = notes.length ? notes.map(note => note.label).join(' · ') : '—';
+  if (midiOutput) midiOutput.textContent = notes.length ? notes.map(note => note.midi).join(', ') : '—';
+  if (frequencyOutput) {
+    frequencyOutput.textContent = notes.length === 1
+      ? formatFrequency(notes[0].midi)
+      : (notes.length ? `${formatFrequency(notes[0].midi)}–${formatFrequency(notes.at(-1).midi)}` : '—');
+  }
+  if (badge) badge.textContent = `${key.label} · ${preferredAccidental() === 'flat' ? 'flat' : 'sharp'} spelling · 4/4`;
+}
+
 function buildChordSvg(notesInClef, centerMidi) {
-  const layouts = notesInClef.map(note => ({ note, ...getNoteLayout(note.midi, centerMidi) }));
+  const layouts = notesInClef.map(note => ({ note, ...getNoteLayout(note, centerMidi) }));
   layouts.sort((a, b) => a.steps - b.steps);
 
   const avgStep = layouts.reduce((sum, l) => sum + l.steps, 0) / layouts.length;
@@ -342,7 +551,7 @@ function buildChordSvg(notesInClef, centerMidi) {
   });
 
   layouts.forEach((l) => {
-    svg += `<ellipse class="note-head" cx="${l.headX}" cy="${l.y}" rx="7" ry="5"></ellipse>`;
+    svg += `<ellipse class="note-head" style="--interval-color:${l.note.intervalColor}" cx="${l.headX}" cy="${l.y}" rx="7" ry="5"></ellipse>`;
   });
 
   svg += '</svg>';
@@ -356,7 +565,7 @@ function renderChordContainer(notesInClef, centerMidi) {
   const intervals = notesInClef.map(n => n.interval).join(', ');
   const familyClass = notesInClef.length === 1 ? notesInClef[0].family : 'perfect';
   const midisArray = JSON.stringify(notesInClef.map(n => n.midi));
-  const leftPx = 160; // Keep chord anchored centrally near clef
+  const leftPx = Math.max(180, 142 + (currentNotationKey().signature * 15));
 
   return `
     <button
@@ -381,19 +590,21 @@ function renderActiveChord(activeMidis, forcedClef) {
   if (!staffSystem) return;
   const selector = document.getElementById('clefSelector');
   const clefKey = forcedClef || (selector ? selector.value : 'grand');
+  staffSystem.classList.toggle('show-interval-colors', notationState.intervalColors);
+  updateNotationReadout(activeMidis || []);
 
   if (!activeMidis || activeMidis.length === 0) {
     if (clefKey === 'grand') {
       staffSystem.classList.add('grand-staff');
       staffSystem.innerHTML = `
-        <div class="staff-block" data-clef="treble"><div class="clef-symbol" aria-hidden="true">𝄞</div></div>
-        <div class="staff-block" data-clef="bass"><div class="clef-symbol" aria-hidden="true">𝄢</div></div>
+        <div class="staff-block" data-clef="treble">${buildStaffChrome('treble')}</div>
+        <div class="staff-block" data-clef="bass">${buildStaffChrome('bass')}</div>
       `;
     } else {
       staffSystem.classList.remove('grand-staff');
       staffSystem.innerHTML = `
         <div class="staff-block" data-clef="${clefKey}">
-          <div class="clef-symbol" aria-hidden="true">${CLEF_CONFIG[clefKey].symbol}</div>
+          ${buildStaffChrome(clefKey)}
         </div>
       `;
     }
@@ -408,11 +619,11 @@ function renderActiveChord(activeMidis, forcedClef) {
     const trebleNotes = notes.filter((n) => n.midi >= 60);
     staffSystem.innerHTML = `
       <div class="staff-block" data-clef="treble">
-        <div class="clef-symbol" aria-hidden="true">𝄞</div>
+        ${buildStaffChrome('treble')}
         ${renderChordContainer(trebleNotes, CLEF_CONFIG['treble'].centerMidi)}
       </div>
       <div class="staff-block" data-clef="bass">
-        <div class="clef-symbol" aria-hidden="true">𝄢</div>
+        ${buildStaffChrome('bass')}
         ${renderChordContainer(bassNotes, CLEF_CONFIG['bass'].centerMidi)}
       </div>
     `;
@@ -421,7 +632,7 @@ function renderActiveChord(activeMidis, forcedClef) {
     const config = CLEF_CONFIG[clefKey];
     staffSystem.innerHTML = `
       <div class="staff-block" data-clef="${clefKey}">
-        <div class="clef-symbol" aria-hidden="true">${config.symbol}</div>
+        ${buildStaffChrome(clefKey)}
         ${renderChordContainer(notes, config.centerMidi)}
       </div>
     `;
@@ -447,6 +658,38 @@ function initTheoryMap() {
   if (!selector) return;
   renderTheoryStaff(selector.value);
   selector.addEventListener('change', () => renderTheoryStaff(selector.value));
+
+  const refreshNotation = () => {
+    notationState.key = els.keySignature?.value || 'C';
+    notationState.accidentalMode = els.accidentalMode?.value || 'auto';
+    for (const [note, key] of pianoState.keyByNote) {
+      const label = noteName(note);
+      key.setAttribute('aria-label', `Piano key ${label}`);
+      key.title = label;
+    }
+    updateKeyOverlays();
+    renderScalePractice();
+    renderDiatonicChords();
+    updateQwertyRangeLabel();
+    renderTheoryStaff(selector.value);
+  };
+
+  els.keySignature?.addEventListener('change', refreshNotation);
+  els.accidentalMode?.addEventListener('change', refreshNotation);
+  els.intervalColorToggle?.addEventListener('change', () => {
+    notationState.intervalColors = els.intervalColorToggle.checked;
+    els.intervalColorLegend.hidden = !notationState.intervalColors;
+    renderScalePractice();
+    renderDiatonicChords();
+    renderTheoryStaff(selector.value);
+  });
+  els.practiceScale?.addEventListener('change', renderScalePractice);
+  els.diatonicToggle?.addEventListener('change', () => {
+    els.diatonicChordGrid.hidden = !els.diatonicToggle.checked;
+    renderDiatonicChords();
+  });
+  renderScalePractice();
+  renderDiatonicChords();
 }
 
 // ───── Voice management ─────
@@ -489,34 +732,71 @@ function startSynth(note, velocity) {
 function startPiano(note, velocity) {
   clearVoice(note);
   const v = Math.max(0.05, velocity);
-
-  const osc1   = audioCtx.createOscillator();
-  const osc2   = audioCtx.createOscillator();
-  const gain   = audioCtx.createGain();
-  const filter = audioCtx.createBiquadFilter();
-
-  osc1.type = 'triangle';
-  osc2.type = 'sine';
   const base = midiNoteToHz(note);
-  osc1.frequency.value = base;
-  osc2.frequency.value = base * 2;
-  osc2.detune.value = -6;
+  const now = audioCtx.currentTime;
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+  const sources = [];
 
   filter.type = 'lowpass';
-  filter.frequency.value = 2200;
-  filter.Q.value = 0.4;
+  filter.Q.value = 0.65;
+  const initialCutoff = Math.min(6800, Math.max(3600, 4300 + (v * 1800) + ((note - 60) * 32)));
+  const restingCutoff = Math.min(3600, Math.max(1500, 2100 + ((note - 60) * 24)));
+  filter.frequency.setValueAtTime(initialCutoff, now);
+  filter.frequency.exponentialRampToValueAtTime(restingCutoff, now + 0.9);
 
-  const now = audioCtx.currentTime;
-  applyVoiceEnvelope(gain, v * 0.72, now);
+  // Immediate hammer response, a natural body decay, then a quiet held tone.
+  const peak = v * 0.62;
+  const attackEnd = now + Math.max(0.003, adsr.a);
+  const bodyEnd = attackEnd + Math.max(0.35, adsr.d);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(peak, attackEnd);
+  gain.gain.exponentialRampToValueAtTime(Math.max(peak * 0.42, 0.0001), attackEnd + 0.16);
+  gain.gain.exponentialRampToValueAtTime(Math.max(peak * Math.max(adsr.s, 0.06), 0.0001), bodyEnd);
 
-  osc1.connect(filter);
-  osc2.connect(filter);
+  // Upper partials fade at different rates, avoiding a static organ-like tone.
+  [
+    { ratio: 1, level: 1.00, type: 'triangle', decay: 0 },
+    { ratio: 2, level: 0.28, type: 'sine', decay: 0.75 },
+    { ratio: 3, level: 0.13, type: 'sine', decay: 0.42 },
+    { ratio: 4, level: 0.055, type: 'sine', decay: 0.24 },
+  ].forEach((partial, index) => {
+    const osc = audioCtx.createOscillator();
+    const partialGain = audioCtx.createGain();
+    osc.type = partial.type;
+    osc.frequency.value = base * partial.ratio;
+    osc.detune.value = index === 0 ? -0.7 : (index % 2 ? 1.2 : -1.1);
+    partialGain.gain.setValueAtTime(partial.level, now);
+    if (partial.decay) {
+      partialGain.gain.exponentialRampToValueAtTime(0.0001, now + partial.decay);
+    }
+    osc.connect(partialGain);
+    partialGain.connect(filter);
+    osc.start(now);
+    sources.push(osc);
+  });
+
+  // A short filtered-noise transient suggests felt and hammer contact.
+  const hammer = audioCtx.createBufferSource();
+  const hammerFilter = audioCtx.createBiquadFilter();
+  const hammerGain = audioCtx.createGain();
+  hammer.buffer = getNoiseBuffer();
+  hammerFilter.type = 'bandpass';
+  hammerFilter.frequency.value = Math.min(5200, 1900 + (note * 34));
+  hammerFilter.Q.value = 0.8;
+  hammerGain.gain.setValueAtTime(v * 0.055, now);
+  hammerGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.032);
+  hammer.connect(hammerFilter);
+  hammerFilter.connect(hammerGain);
+  hammerGain.connect(filter);
+  hammer.start(now, Math.random() * 1.5);
+  hammer.stop(now + 0.038);
+  sources.push(hammer);
+
   filter.connect(gain);
   gain.connect(master);
-  osc1.start();
-  osc2.start();
 
-  activeVoices.set(note, { gain, sources: [osc1, osc2] });
+  activeVoices.set(note, { gain, sources });
 }
 
 // ───── Drum synthesis ─────
@@ -773,9 +1053,43 @@ function setKeyActive(note, active) {
   if (key) key.classList.toggle('is-active', Boolean(active));
 }
 
+function beginPerformanceNote(note, velocity, options) {
+  pianoState.heldNotes.add(note);
+  pianoState.sustainedNotes.delete(note);
+  pianoState.keyByNote.get(note)?.classList.remove('is-sustained');
+  os_triggerNote(note, velocity, options);
+}
+
+function releasePerformanceNote(note) {
+  pianoState.heldNotes.delete(note);
+  if (pianoState.sustain && activeVoices.has(note)) {
+    pianoState.sustainedNotes.add(note);
+    pianoState.keyByNote.get(note)?.classList.add('is-sustained');
+    return;
+  }
+  pianoState.sustainedNotes.delete(note);
+  pianoState.keyByNote.get(note)?.classList.remove('is-sustained');
+  os_releaseNote(note);
+}
+
+function setSustainPedal(active) {
+  const next = Boolean(active);
+  if (pianoState.sustain === next) return;
+  pianoState.sustain = next;
+  els.sustainPedal?.setAttribute('aria-pressed', next ? 'true' : 'false');
+
+  if (!next) {
+    for (const note of Array.from(pianoState.sustainedNotes)) {
+      if (!pianoState.heldNotes.has(note)) os_releaseNote(note);
+      pianoState.keyByNote.get(note)?.classList.remove('is-sustained');
+    }
+    pianoState.sustainedNotes.clear();
+  }
+}
+
 function releasePianoPointer() {
   if (pianoState.activeNote !== null) {
-    os_releaseNote(pianoState.activeNote);
+    releasePerformanceNote(pianoState.activeNote);
   }
   pianoState.pointerDown = false;
   pianoState.pointerId   = null;
@@ -785,9 +1099,9 @@ function releasePianoPointer() {
 function activatePianoNote(note) {
   if (pianoState.activeNote === note) return;
   if (pianoState.activeNote !== null) {
-    os_releaseNote(pianoState.activeNote);
+    releasePerformanceNote(pianoState.activeNote);
   }
-  os_triggerNote(note, 0.82, { duration: null, hudLabel: `${noteName(note)} key` });
+  beginPerformanceNote(note, 0.82, { duration: null, hudLabel: `${noteName(note)} key` });
   pianoState.activeNote = note;
 }
 
@@ -802,7 +1116,7 @@ function makePianoKey(note, keyClass, leftPct, widthPct) {
   key.style.left  = `${leftPct}%`;
   key.style.width = `${widthPct}%`;
 
-  const qwertyKey = NOTE_TO_KEY[note];
+  const qwertyKey = qwertyKeyForNote(note);
   if (qwertyKey) {
     const hint = document.createElement('span');
     hint.className = 'key-qwerty';
@@ -822,17 +1136,17 @@ function makePianoKey(note, keyClass, leftPct, widthPct) {
   key.addEventListener('keydown', (e) => {
     if (e.repeat || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault();
-    os_triggerNote(note, 0.82, { duration: null, hudLabel: `${noteName(note)} key` });
+    beginPerformanceNote(note, 0.82, { duration: null, hudLabel: `${noteName(note)} key` });
   });
 
   key.addEventListener('keyup', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     e.preventDefault();
-    os_releaseNote(note);
+    releasePerformanceNote(note);
   });
 
   key.addEventListener('blur', () => {
-    os_releaseNote(note);
+    releasePerformanceNote(note);
   });
 
   pianoState.keyByNote.set(note, key);
@@ -933,12 +1247,17 @@ function onMidiMessage(ev) {
   const cmd    = status & 0xf0;
   const preset = els.preset.value;
 
+  if (cmd === 0xb0 && data1 === 64) {
+    setSustainPedal(data2 >= 64);
+    return;
+  }
+
   if (cmd === 0x90) {
     const note = data1, vel = data2 / 127;
 
     // note-on with vel=0 treated as note-off
     if (data2 === 0) {
-      if (preset !== 'drums') { os_releaseNote(note); }
+      if (preset !== 'drums') { releasePerformanceNote(note); }
       return;
     }
 
@@ -949,12 +1268,12 @@ function onMidiMessage(ev) {
     }
 
     if (!noteAllowed(note)) return;
-    os_triggerNote(note, vel, { duration: null, hudLabel: `${noteName(note)} MIDI`, scrollTheory: false });
+    beginPerformanceNote(note, vel, { duration: null, hudLabel: `${noteName(note)} MIDI`, scrollTheory: false });
     return;
   }
 
   if (cmd === 0x80) {
-    if (preset !== 'drums') { os_releaseNote(data1); }
+    if (preset !== 'drums') { releasePerformanceNote(data1); }
   }
 }
 
@@ -998,7 +1317,7 @@ function updateKeyOverlays() {
         label.className = 'key-label';
         key.appendChild(label);
       }
-      label.textContent = noteLetterOnly(note);
+      label.textContent = noteName(note);
     } else {
       if (label) label.remove();
     }
@@ -1425,6 +1744,112 @@ function initModularPatchbay() {
 })();
 
 // ───── Step Sequencer ─────
+function setSequencerMessage(message) {
+  if (els.seqSessionNote) els.seqSessionNote.textContent = message;
+}
+
+function saveSequencerSession() {
+  try {
+    localStorage.setItem(SEQ_SESSION_KEY, JSON.stringify({
+      grid: seqGrid,
+      muted: seqMuted,
+      bpm: seqBpm,
+      swing: seqSwing,
+      groove: seqGroove,
+    }));
+  } catch (_) {
+    // Storage can be unavailable in private browsing; the sequencer still works.
+  }
+}
+
+function restoreSequencerSession() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SEQ_SESSION_KEY));
+    const validGrid = Array.isArray(saved?.grid)
+      && saved.grid.length === SEQ_DRUMS.length
+      && saved.grid.every(row => Array.isArray(row) && row.length === SEQ_STEPS);
+
+    if (!validGrid) return;
+
+    seqGrid = saved.grid.map(row => row.map(Boolean));
+    if (Array.isArray(saved.muted) && saved.muted.length === SEQ_DRUMS.length) {
+      seqMuted = saved.muted.map(Boolean);
+    }
+    seqBpm = Math.max(60, Math.min(200, Number(saved.bpm) || 120));
+    seqSwing = Math.max(50, Math.min(75, Number(saved.swing) || 50));
+    seqGroove = GROOVE_PRESETS[saved.groove] ? saved.groove : 'custom';
+
+    els.seqBpmSlider.value = String(seqBpm);
+    els.seqBpmVal.textContent = String(seqBpm);
+    els.seqSwingSlider.value = String(seqSwing);
+    els.seqSwingVal.textContent = `${seqSwing}%`;
+    els.seqGroove.value = seqGroove;
+    setSequencerMessage('Saved session restored · edits save automatically.');
+  } catch (_) {
+    // Ignore malformed or unavailable storage and keep the starter groove.
+  }
+}
+
+function renderSequencerState() {
+  for (let row = 0; row < SEQ_DRUMS.length; row++) {
+    const rowEl = els.seqGrid?.querySelector(`.ml-seq-row[data-row="${row}"]`);
+    rowEl?.classList.toggle('is-muted', seqMuted[row]);
+
+    const muteBtn = rowEl?.querySelector('.ml-seq-mute-btn');
+    muteBtn?.classList.toggle('is-muted', seqMuted[row]);
+    muteBtn?.setAttribute('aria-pressed', seqMuted[row] ? 'true' : 'false');
+
+    for (let step = 0; step < SEQ_STEPS; step++) {
+      const btn = seqGetBtn(row, step);
+      if (!btn) continue;
+      btn.classList.toggle('on', seqGrid[row][step]);
+      btn.setAttribute('aria-pressed', seqGrid[row][step] ? 'true' : 'false');
+    }
+  }
+}
+
+function markSequencerCustom(message = 'Custom pattern · saved automatically.') {
+  seqGroove = 'custom';
+  if (els.seqGroove) els.seqGroove.value = 'custom';
+  setSequencerMessage(message);
+  saveSequencerSession();
+}
+
+function applyGroovePreset(id) {
+  const preset = GROOVE_PRESETS[id];
+  if (!preset) return;
+
+  seqGrid = preset.grid.map(row => [...row]);
+  seqMuted.fill(false);
+  seqBpm = preset.bpm;
+  seqSwing = preset.swing;
+  seqGroove = id;
+
+  els.seqBpmSlider.value = String(seqBpm);
+  els.seqBpmVal.textContent = String(seqBpm);
+  els.seqSwingSlider.value = String(seqSwing);
+  els.seqSwingVal.textContent = `${seqSwing}%`;
+  renderSequencerState();
+  setSequencerMessage(`${preset.name} loaded at ${seqBpm} BPM · ${seqSwing}% swing.`);
+  saveSequencerSession();
+}
+
+function makeGrooveVariation() {
+  const candidates = [
+    [0, 3], [0, 6], [0, 10], [0, 14],
+    [1, 3], [1, 11], [1, 15],
+    [2, 1], [2, 5], [2, 9], [2, 13], [2, 15],
+    [3, 4], [3, 12], [4, 6], [4, 14], [5, 7], [5, 15],
+    [6, 2], [6, 7], [6, 11], [6, 15],
+  ];
+  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+  shuffled.slice(0, 6).forEach(([row, step]) => {
+    seqGrid[row][step] = !seqGrid[row][step];
+  });
+  renderSequencerState();
+  markSequencerCustom('Fresh variation created · six off-beat choices changed.');
+}
+
 function buildSeqGrid() {
   const container = els.seqGrid;
   if (!container) return;
@@ -1487,6 +1912,7 @@ function buildSeqGrid() {
       muteBtn.classList.toggle('is-muted', seqMuted[rowIdx]);
       muteBtn.setAttribute('aria-pressed', seqMuted[rowIdx] ? 'true' : 'false');
       row.classList.toggle('is-muted', seqMuted[rowIdx]);
+      saveSequencerSession();
     });
     head.appendChild(muteBtn);
 
@@ -1516,6 +1942,7 @@ function buildSeqGrid() {
         seqGrid[rowIdx][step] = !seqGrid[rowIdx][step];
         btn.classList.toggle('on', seqGrid[rowIdx][step]);
         btn.setAttribute('aria-pressed', seqGrid[rowIdx][step] ? 'true' : 'false');
+        markSequencerCustom();
       });
 
       stepsWrap.appendChild(btn);
@@ -1559,7 +1986,13 @@ function scheduleStep(step, time) {
 
 function advanceStep() {
   const secondsPer16th = 60.0 / seqBpm / 4;
-  nextStepTime += secondsPer16th;
+  // 50% is straight timing. Higher values lengthen the first half of each
+  // eighth-note pair and shorten the second while preserving the bar length.
+  const swingRatio = seqSwing / 50;
+  const stepDuration = seqStep % 2 === 0
+    ? secondsPer16th * swingRatio
+    : secondsPer16th * (2 - swingRatio);
+  nextStepTime += stepDuration;
   seqStep = (seqStep + 1) % SEQ_STEPS;
 }
 
@@ -1606,6 +2039,7 @@ function seqClearAll() {
     btn.classList.remove('on');
     btn.setAttribute('aria-pressed', 'false');
   }
+  markSequencerCustom('Blank pattern ready · add steps to build a new groove.');
 }
 
 // ───── Event listeners ─────
@@ -1655,7 +2089,24 @@ els.seqBpmSlider.addEventListener('input', (e) => {
   seqBpm = Number(e.target.value);
   els.seqBpmVal.textContent = seqBpm;
   // Look-ahead scheduler picks up new BPM automatically on next advanceStep
+  saveSequencerSession();
 });
+
+els.seqSwingSlider.addEventListener('input', (e) => {
+  seqSwing = Number(e.target.value);
+  els.seqSwingVal.textContent = `${seqSwing}%`;
+  saveSequencerSession();
+});
+
+els.seqGroove.addEventListener('change', (e) => {
+  if (e.target.value === 'custom') {
+    markSequencerCustom();
+    return;
+  }
+  applyGroovePreset(e.target.value);
+});
+
+els.seqVariation.addEventListener('click', makeGrooveVariation);
 
 for (const pad of document.querySelectorAll('[data-drum]')) {
   pad.addEventListener('mousedown', () => triggerPad(pad.dataset.drum));
@@ -1734,10 +2185,8 @@ function initCircleOfFifths() {
 
       const path = makeSvg('path');
       path.setAttribute('d', arc(r1, r2, aStart, aEnd));
-      path.setAttribute('class', 'fifths-segment');
-      // Subtle per-key tint, blended into the current theme's panel surface so it
-      // stays legible whether the active theme is light (honey, goldfish) or dark.
-      path.style.fill = `color-mix(in srgb, hsl(${hue}, 65%, 55%) 22%, var(--surface-panel-alt))`;
+      path.setAttribute('class', `fifths-segment${isMinor ? ' is-minor' : ''}`);
+      path.style.setProperty('--fifths-hue', String(hue));
 
       const textR = r2 + (r1 - r2) / 2;
       const text  = makeSvg('text');
@@ -1745,7 +2194,8 @@ function initCircleOfFifths() {
       text.setAttribute('y', cy + textR * Math.sin(aMid) + 5);
       text.setAttribute('text-anchor', 'middle');
       text.setAttribute('class', 'fifths-text');
-      text.setAttribute('font-size', isMinor ? '11' : '13');
+      text.setAttribute('font-size', isMinor ? '13' : '15');
+      text.setAttribute('aria-hidden', 'true');
       text.textContent = label;
 
       g.appendChild(path);
@@ -1768,8 +2218,8 @@ function initCircleOfFifths() {
   centerCircle.setAttribute('cx', cx);
   centerCircle.setAttribute('cy', cy);
   centerCircle.setAttribute('r', innerR - 2);
-  centerCircle.setAttribute('fill', 'var(--surface-elevated)');
-  centerCircle.setAttribute('stroke', 'var(--border-subtle)');
+  centerCircle.setAttribute('fill', '#f8fafc');
+  centerCircle.setAttribute('stroke', '#334155');
   svg.appendChild(centerCircle);
 
   const centerText = makeSvg('text');
@@ -1777,12 +2227,29 @@ function initCircleOfFifths() {
   centerText.setAttribute('y', cy + 5);
   centerText.setAttribute('text-anchor', 'middle');
   centerText.setAttribute('class', 'fifths-center-label');
-  centerText.setAttribute('font-size', '11');
+  centerText.setAttribute('font-size', '13');
+  centerText.setAttribute('aria-hidden', 'true');
   centerText.textContent = '5ths';
   svg.appendChild(centerText);
 }
 
 let fifthsReleaseTimers = [];
+
+function spellChordTone(pitchClass, letter) {
+  const naturalPitchClasses = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  const difference = (pitchClass - naturalPitchClasses[letter] + 12) % 12;
+  const accidental = { 0: '', 1: '♯', 2: '𝄪', 10: '𝄫', 11: '♭' }[difference] || '';
+  return `${letter}${accidental}`;
+}
+
+function spellTriad(rootLabel, rootPitchClass, isMinor) {
+  const rootLetterIndex = LETTER_TO_INDEX[rootLabel[0]];
+  const intervals = isMinor ? [0, 3, 7] : [0, 4, 7];
+  return intervals.map((interval, index) => {
+    const letter = NOTE_LETTERS[(rootLetterIndex + (index * 2)) % NOTE_LETTERS.length];
+    return spellChordTone((rootPitchClass + interval) % 12, letter);
+  });
+}
 
 function playChordFromCircle(item, isMinor, groupEl) {
   ensureAudio();
@@ -1792,6 +2259,15 @@ function playChordFromCircle(item, isMinor, groupEl) {
   document.querySelectorAll('.fifths-group').forEach(g => g.classList.remove('active'));
   fifthsReleaseTimers.forEach(id => clearTimeout(id));
   fifthsReleaseTimers = [];
+
+  // Release every tracked voice before clearing the bridge state. Previously,
+  // cancelling the old timer and then clearing activeNotes orphaned oscillators,
+  // leaving notes droning after another Circle of Fifths segment was selected.
+  const soundingNotes = new Set([
+    ...bridgeState.activeNotes,
+    ...activeVoices.keys(),
+  ]);
+  soundingNotes.forEach((note) => os_releaseNote(note));
   bridgeState.activeTimers.forEach((timerId) => clearTimeout(timerId));
   bridgeState.activeTimers.clear();
 
@@ -1806,21 +2282,19 @@ function playChordFromCircle(item, isMinor, groupEl) {
 
   // Chord intervals: major 0-4-7, minor 0-3-7
   const intervals = isMinor ? [0, 3, 7] : [0, 4, 7];
-  // Root in octave 4 (MIDI 60 = C4), but clamp to piano range
-  const midiRoot = Math.min(60 + item.root, 67); // keep chord inside our piano
+  const chordPitchRoot = isMinor ? (item.root + 9) % 12 : item.root;
+  const midiRoot = 60 + chordPitchRoot;
 
   const chordNotes = intervals.map(iv => midiRoot + iv);
-  const noteNames  = chordNotes.map(n => NOTE_NAMES[n % 12]).join(' – ');
   const chordLabel = isMinor ? item.minor : item.major;
   const chordType  = isMinor ? 'minor' : 'major';
+  const rootLabel = isMinor ? item.minor.replace(/m$/, '') : item.major;
+  const noteNames = spellTriad(rootLabel, chordPitchRoot, isMinor).join(' – ');
 
   os_triggerChord(chordNotes, {
     duration: 700,
     label: `${chordLabel} ${chordType} chord`,
-    solfege: chordNotes.map((note) => {
-      const match = BASE_THEORY.find((entry, idx) => idx === note % 12);
-      return match ? match.solfege : NOTE_NAMES[note % 12];
-    }).join('-')
+    solfege: isMinor ? 'Do-Me-Sol' : 'Do-Mi-Sol'
   });
 
   // Update info display
@@ -1833,42 +2307,288 @@ function playChordFromCircle(item, isMinor, groupEl) {
   }
 }
 
-// ───── QWERTY Keyboard Piano ─────
-const KEY_TO_NOTE = {
-  'a': 60, 'w': 61, 's': 62, 'e': 63, 'd': 64, 'f': 65, 't': 66,
-  'g': 67, 'y': 68, 'h': 69, 'u': 70, 'j': 71, 'k': 72,
+// ───── Key-centred scale practice ─────
+const MAJOR_SCALE_STEPS = [0, 2, 4, 5, 7, 9, 11];
+const MAJOR_SCALE_FINGERING = {
+  C:  { rh: [1,2,3,1,2,3,4,1,2,3,1,2,3,4,5], lh: [5,4,3,2,1,3,2,1,4,3,2,1,3,2,1] },
+  G:  { rh: [1,2,3,1,2,3,4,1,2,3,1,2,3,4,5], lh: [5,4,3,2,1,3,2,1,4,3,2,1,3,2,1] },
+  D:  { rh: [1,2,3,1,2,3,4,1,2,3,1,2,3,4,5], lh: [5,4,3,2,1,3,2,1,4,3,2,1,3,2,1] },
+  A:  { rh: [1,2,3,1,2,3,4,1,2,3,1,2,3,4,5], lh: [5,4,3,2,1,3,2,1,4,3,2,1,3,2,1] },
+  E:  { rh: [1,2,3,1,2,3,4,1,2,3,1,2,3,4,5], lh: [5,4,3,2,1,3,2,1,4,3,2,1,3,2,1] },
+  B:  { rh: [1,2,3,1,2,3,4,1,2,3,1,2,3,4,5], lh: [4,3,2,1,4,3,2,1,3,2,1,4,3,2,1] },
+  'F#': { rh: [2,3,4,1,2,3,1,2,3,4,1,2,3,1,2], lh: [4,3,2,1,3,2,1,4,3,2,1,3,2,1,3] },
+  F:  { rh: [1,2,3,4,1,2,3,1,2,3,4,1,2,3,4], lh: [5,4,3,2,1,3,2,1,4,3,2,1,3,2,1] },
+  Bb: { rh: [2,1,2,3,1,2,3,4,1,2,3,1,2,3,4], lh: [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3] },
+  Eb: { rh: [3,1,2,3,4,1,2,3,1,2,3,4,1,2,3], lh: [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3] },
+  Ab: { rh: [3,4,1,2,3,1,2,3,4,1,2,3,1,2,3], lh: [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3] },
+  Db: { rh: [2,3,1,2,3,4,1,2,3,1,2,3,4,1,2], lh: [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3] },
 };
-const NOTE_TO_KEY = Object.fromEntries(Object.entries(KEY_TO_NOTE).map(([k, v]) => [v, k.toUpperCase()]));
+const ONE_OCTAVE_RH_FINAL_FINGER = { C: 5, G: 5, D: 5, A: 5, E: 5, B: 5, F: 4 };
+
+function majorScaleSpellings() {
+  const key = currentNotationKey();
+  const tonicLetterIndex = LETTER_TO_INDEX[notationState.key[0]];
+  return MAJOR_SCALE_STEPS.map((step, degree) => {
+    const letter = NOTE_LETTERS[(tonicLetterIndex + degree) % 7];
+    return spellChordTone((key.root + step) % 12, letter);
+  });
+}
+
+function scalePracticeMidis(twoOctaves) {
+  const tonicMidi = 60 + currentNotationKey().root;
+  const offsets = twoOctaves
+    ? [...MAJOR_SCALE_STEPS, ...MAJOR_SCALE_STEPS.map(step => step + 12), 24]
+    : [...MAJOR_SCALE_STEPS, 12];
+  return offsets.map(offset => tonicMidi + offset);
+}
+
+function scoreKeySignatureMarks(startX = 70, compact = false) {
+  const key = currentNotationKey();
+  const fullY = key.accidental === 'flat'
+    ? [118, 103, 123, 108, 128, 113]
+    : [98, 113, 93, 108, 123, 103];
+  const symbol = key.accidental === 'flat' ? '♭' : '♯';
+  return fullY.slice(0, key.signature).map((y, index) => {
+    if (compact) {
+      return `<text class="score-key-mark" style="font-size:18px" x="${startX + (index * 9)}" y="${y - 48}">${symbol}</text>`;
+    }
+    return `<text class="score-key-mark" x="${startX + (index * 15)}" y="${y + 7}">${symbol}</text>`;
+  }).join('');
+}
+
+function scoreLedgerLines(x, y, topLine = 98, bottomLine = 138) {
+  let lines = '';
+  if (y < topLine) {
+    for (let ledgerY = topLine - 10; ledgerY >= y; ledgerY -= 10) {
+      lines += `<line class="score-ledger" x1="${x - 13}" x2="${x + 13}" y1="${ledgerY}" y2="${ledgerY}"></line>`;
+    }
+  } else if (y > bottomLine) {
+    for (let ledgerY = bottomLine + 10; ledgerY <= y; ledgerY += 10) {
+      lines += `<line class="score-ledger" x1="${x - 13}" x2="${x + 13}" y1="${ledgerY}" y2="${ledgerY}"></line>`;
+    }
+  }
+  return lines;
+}
+
+function buildScaleScoreSvg(midis, rhFingers, lhFingers, direction) {
+  const key = currentNotationKey();
+  const signatureSpace = key.signature * 15;
+  const startX = 128 + signatureSpace;
+  const width = Math.max(720, startX + 38 + ((midis.length - 1) * 58));
+  const spacing = (width - startX - 34) / Math.max(1, midis.length - 1);
+  const b4Index = getTheoryNote(71).staffIndex;
+  const lines = [98, 108, 118, 128, 138]
+    .map(y => `<line class="score-staff-line" x1="86" x2="${width - 22}" y1="${y}" y2="${y}"></line>`).join('');
+
+  const notes = midis.map((midi, index) => {
+    const note = getTheoryNote(midi);
+    const x = startX + (index * spacing);
+    const y = 118 - ((note.staffIndex - b4Index) * 5);
+    const stemDown = y < 118;
+    const stemX = x + (stemDown ? -6 : 6);
+    const stemEnd = y + (stemDown ? 31 : -31);
+    const rhY = Math.min(76, Math.max(18, y - 20));
+    const lhY = Math.max(164, Math.min(188, y + 28));
+    const fill = notationState.intervalColors ? note.intervalColor : '#050505';
+    return `${scoreLedgerLines(x, y)}
+      <line class="score-stem" x1="${stemX}" x2="${stemX}" y1="${y}" y2="${stemEnd}"></line>
+      <ellipse class="score-note-head" cx="${x}" cy="${y}" rx="7" ry="5" fill="${fill}" transform="rotate(-20 ${x} ${y})"></ellipse>
+      <text class="score-finger-rh" text-anchor="middle" x="${x}" y="${rhY}">${rhFingers[index]}</text>
+      <text class="score-finger-lh" text-anchor="middle" x="${x}" y="${lhY}">${lhFingers[index]}</text>
+      <text class="score-note-name" text-anchor="middle" x="${x}" y="218">${note.pitchLabel}</text>`;
+  }).join('');
+
+  const spokenNotes = midis.map(midi => getTheoryNote(midi).pitchLabel).join(', ');
+  return `<svg class="scale-score-svg" style="width:${width}px" viewBox="0 0 ${width} 236" role="img"
+      aria-label="${direction} ${key.label} scale. Notes: ${spokenNotes}. Right hand fingers: ${rhFingers.join(', ')}. Left hand fingers: ${lhFingers.join(', ')}.">
+    ${lines}
+    <line class="score-barline" x1="86" x2="86" y1="98" y2="138"></line>
+    <line class="score-barline" x1="${width - 22}" x2="${width - 22}" y1="98" y2="138"></line>
+    <text class="score-clef" x="20" y="140" aria-hidden="true">𝄞</text>
+    ${scoreKeySignatureMarks(70)}
+    <text class="score-hand-label" x="6" y="25">RH</text>
+    <text class="score-hand-label" x="6" y="181">LH</text>
+    ${notes}
+  </svg>`;
+}
+
+function renderScalePractice() {
+  if (!els.scalePracticeBoard) return;
+  const twoOctaves = els.practiceScale?.value === 'major-2';
+  const fingering = MAJOR_SCALE_FINGERING[notationState.key] || MAJOR_SCALE_FINGERING.C;
+  const length = twoOctaves ? 15 : 8;
+  const midis = scalePracticeMidis(twoOctaves);
+  const rh = fingering.rh.slice(0, length);
+  const lh = fingering.lh.slice(0, length);
+  if (!twoOctaves && ONE_OCTAVE_RH_FINAL_FINGER[notationState.key]) {
+    rh[rh.length - 1] = ONE_OCTAVE_RH_FINAL_FINGER[notationState.key];
+  }
+  const descendingMidis = [...midis].reverse();
+
+  els.scalePracticeBoard.innerHTML = `
+    <h3 id="scalePracticeTitle" class="scale-practice-title">${currentNotationKey().label} · ${twoOctaves ? 'two-octave' : 'one-octave'} major scale</h3>
+    <p class="scale-practice-hint">Read left to right. Blue numbers above the staff are right-hand fingers; red numbers below are left-hand fingers.</p>
+    <div class="scale-score-stack">
+      <article class="scale-score-card">
+        <div class="scale-score-heading"><strong>Ascending</strong><span>Start slowly · keep an even pulse</span></div>
+        <div class="scale-score-scroll">${buildScaleScoreSvg(midis, rh, lh, 'Ascending')}</div>
+      </article>
+      <article class="scale-score-card">
+        <div class="scale-score-heading"><strong>Descending</strong><span>Release tension before changing direction</span></div>
+        <div class="scale-score-scroll">${buildScaleScoreSvg(descendingMidis, [...rh].reverse(), [...lh].reverse(), 'Descending')}</div>
+      </article>
+    </div>
+    <p class="score-reading-key"><span><i style="background:#1e56a5"></i>RH fingering</span><span><i style="background:#9b2948"></i>LH fingering</span><span>1 thumb · 2 index · 3 middle · 4 ring · 5 little</span></p>`;
+}
+
+function buildDiatonicChordScore(midis) {
+  const b4Index = getTheoryNote(71).staffIndex;
+  const x = 108;
+  const lines = [45, 55, 65, 75, 85]
+    .map(y => `<line class="score-staff-line" x1="28" x2="144" y1="${y}" y2="${y}"></line>`).join('');
+  const layouts = midis.map(midi => {
+    const note = getTheoryNote(midi);
+    return { note, y: 65 - ((note.staffIndex - b4Index) * 5), x };
+  }).sort((a, b) => b.y - a.y);
+  layouts.forEach((layout, index) => {
+    if (index > 0 && Math.abs(layout.y - layouts[index - 1].y) <= 5) layout.x += 11;
+  });
+  const noteMarkup = layouts.map(({ note, x: headX, y }) => {
+    const fill = notationState.intervalColors ? note.intervalColor : '#050505';
+    return `${scoreLedgerLines(headX, y, 45, 85)}
+      <ellipse class="score-note-head" cx="${headX}" cy="${y}" rx="7" ry="5" fill="${fill}" transform="rotate(-20 ${headX} ${y})"></ellipse>`;
+  }).join('');
+  const minY = Math.min(...layouts.map(layout => layout.y));
+  const maxY = Math.max(...layouts.map(layout => layout.y));
+  return `<svg class="diatonic-chord-score" viewBox="0 0 152 128" aria-hidden="true" focusable="false">
+    ${lines}<line class="score-barline" x1="144" x2="144" y1="45" y2="85"></line>
+    <text class="score-clef" style="font-size:42px" x="0" y="88">𝄞</text>
+    ${scoreKeySignatureMarks(39, true)}
+    <line class="score-stem" x1="114" x2="114" y1="${minY}" y2="${Math.max(maxY + 30, minY + 30)}"></line>
+    ${noteMarkup}
+  </svg>`;
+}
+
+function renderDiatonicChords() {
+  if (!els.diatonicChordGrid) return;
+  const names = majorScaleSpellings();
+  const romans = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
+  const qualities = ['major', 'minor', 'minor', 'major', 'major', 'minor', 'diminished'];
+  const functions = ['Tonic', 'Supertonic', 'Mediant', 'Subdominant', 'Dominant', 'Submediant', 'Leading tone'];
+  const tonicMidi = 60 + currentNotationKey().root;
+
+  els.diatonicChordGrid.innerHTML = romans.map((roman, degree) => {
+    const degreeIndexes = [degree, degree + 2, degree + 4];
+    const midis = degreeIndexes.map(index => tonicMidi + MAJOR_SCALE_STEPS[index % 7] + (Math.floor(index / 7) * 12));
+    const spelled = degreeIndexes.map(index => names[index % 7]);
+    return `<button class="diatonic-chord" type="button" data-midis="${midis.join(',')}"
+      data-label="${names[degree]} ${qualities[degree]}" aria-label="Play ${roman}, ${names[degree]} ${qualities[degree]}, ${spelled.join(', ')}">
+      ${buildDiatonicChordScore(midis)}
+      <strong>${roman} · ${names[degree]}</strong><span class="chord-function">${functions[degree]}</span>
+      <span>${qualities[degree]} triad · ${spelled.join('–')}</span>
+    </button>`;
+  }).join('');
+
+  els.diatonicChordGrid.querySelectorAll('.diatonic-chord').forEach(button => {
+    button.addEventListener('click', () => {
+      const midis = button.dataset.midis.split(',').map(Number);
+      os_triggerChord(midis, { duration: 1800, label: `${button.dataset.label} diatonic triad` });
+    });
+  });
+}
+
+// ───── QWERTY Keyboard Piano ─────
+const QWERTY_KEYS = ['a','w','s','e','d','f','t','g','y','h','u','j','k'];
+let qwertyBaseNote = 60;
 const activeQwertyNotes = new Set();
+
+function qwertyNoteForKey(key) {
+  const index = QWERTY_KEYS.indexOf(key.toLowerCase());
+  return index < 0 ? null : qwertyBaseNote + index;
+}
+
+function qwertyKeyForNote(note) {
+  const index = note - qwertyBaseNote;
+  return index >= 0 && index < QWERTY_KEYS.length ? QWERTY_KEYS[index].toUpperCase() : '';
+}
+
+function updateQwertyHints() {
+  pianoState.keyByNote.forEach((key, note) => {
+    key.querySelector('.key-qwerty')?.remove();
+    const qwertyKey = qwertyKeyForNote(note);
+    if (!qwertyKey) return;
+    const hint = document.createElement('span');
+    hint.className = 'key-qwerty';
+    hint.textContent = qwertyKey;
+    hint.setAttribute('aria-hidden', 'true');
+    key.appendChild(hint);
+  });
+}
+
+function updateQwertyRangeLabel() {
+  if (els.qwertyBaseValue) {
+    els.qwertyBaseValue.textContent = `${noteName(qwertyBaseNote)} → ${noteName(qwertyBaseNote + 12)}`;
+  }
+}
 
 function handleQwertyKeyDown(e) {
   // Ignore key presses if the user is focused on an input field
   if (e.target.matches('input, textarea, select')) return;
   // Prevent re-triggering on key-repeat
-  if (e.repeat || activeQwertyNotes.has(e.key)) return;
+  const key = e.key.toLowerCase();
+  if (e.repeat || activeQwertyNotes.has(key)) return;
 
-  const note = KEY_TO_NOTE[e.key.toLowerCase()];
-  if (note) {
+  const note = qwertyNoteForKey(key);
+  if (note !== null) {
     e.preventDefault();
-    os_triggerNote(note, 0.8, { duration: null, hudLabel: `Key ${e.key.toUpperCase()}` });
-    activeQwertyNotes.add(e.key);
+    beginPerformanceNote(note, 0.8, { duration: null, hudLabel: `${noteName(note)} · key ${e.key.toUpperCase()}` });
+    activeQwertyNotes.add(key);
   }
 }
 
 function handleQwertyKeyUp(e) {
   if (e.target.matches('input, textarea, select')) return;
 
-  const note = KEY_TO_NOTE[e.key.toLowerCase()];
-  if (note && activeQwertyNotes.has(e.key)) {
+  const key = e.key.toLowerCase();
+  const note = qwertyNoteForKey(key);
+  if (note !== null && activeQwertyNotes.has(key)) {
     e.preventDefault();
-    os_releaseNote(note);
-    activeQwertyNotes.delete(e.key);
+    releasePerformanceNote(note);
+    activeQwertyNotes.delete(key);
   }
 }
 
 function initQwertyKeyboard() {
   window.addEventListener('keydown', handleQwertyKeyDown);
   window.addEventListener('keyup', handleQwertyKeyUp);
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space' || e.repeat || e.target.closest('input, textarea, select, button')) return;
+    e.preventDefault();
+    setSustainPedal(true);
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code !== 'Space' || e.target.closest('input, textarea, select, button')) return;
+    e.preventDefault();
+    setSustainPedal(false);
+  });
+  els.sustainPedal?.addEventListener('click', () => setSustainPedal(!pianoState.sustain));
+  els.qwertyBaseSlider?.addEventListener('input', () => {
+    for (const key of Array.from(activeQwertyNotes)) {
+      const note = qwertyNoteForKey(key);
+      if (note !== null) releasePerformanceNote(note);
+    }
+    activeQwertyNotes.clear();
+    qwertyBaseNote = Number(els.qwertyBaseSlider.value);
+    updateQwertyHints();
+    updateQwertyRangeLabel();
+  });
+  updateQwertyHints();
+  updateQwertyRangeLabel();
+  window.addEventListener('blur', () => {
+    setSustainPedal(false);
+    for (const note of Array.from(pianoState.heldNotes)) releasePerformanceNote(note);
+    activeQwertyNotes.clear();
+  });
 }
 
 // ───── Chord Theory ─────
@@ -1967,7 +2687,9 @@ window.os_releaseNote = os_releaseNote;
 // ───── Initialise ─────
 buildPianoRoll();
 wirePianoRollPointer();
+restoreSequencerSession();
 buildSeqGrid();
+renderSequencerState();
 initModularPatchbay();
 initCircleOfFifths();
 initTheoryMap();

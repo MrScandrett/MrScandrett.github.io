@@ -243,6 +243,25 @@
     document.head.appendChild(script);
   }
 
+  function ensureContrastGuard() {
+    if (window.ClassroomOSContrastGuard || document.querySelector('script[data-classroomos-contrast-guard="true"]')) return;
+
+    var src = "assets/js/contrast-guard.js";
+    var lightingScript = Array.prototype.slice.call(document.scripts).find(function (script) {
+      return /(^|\/)theme-lighting\.js(?:[?#].*)?$/.test(script.getAttribute("src") || script.src || "");
+    });
+
+    if (lightingScript) {
+      src = (lightingScript.getAttribute("src") || lightingScript.src).replace(/theme-lighting\.js(?:[?#].*)?$/, "contrast-guard.js");
+    }
+
+    var script = document.createElement("script");
+    script.src = src;
+    script.defer = true;
+    script.dataset.classroomosContrastGuard = "true";
+    document.head.appendChild(script);
+  }
+
   function syncTextureScroll() {
     textureScrollQueued = false;
     var offset = -(window.scrollY || document.documentElement.scrollTop || 0) + "px";
@@ -267,11 +286,12 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () { sync(); highlightBrandOS(); ensureCanvasBackgroundEngine(); bindTextureScrollSync(); }, { once: true });
+    document.addEventListener("DOMContentLoaded", function () { sync(); highlightBrandOS(); ensureCanvasBackgroundEngine(); ensureContrastGuard(); bindTextureScrollSync(); }, { once: true });
   } else {
     sync();
     highlightBrandOS();
     ensureCanvasBackgroundEngine();
+    ensureContrastGuard();
     bindTextureScrollSync();
   }
 

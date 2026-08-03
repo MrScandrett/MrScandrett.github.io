@@ -216,7 +216,7 @@
     }
 
     .lab-hud {
-      position: sticky;
+      position: static;
       bottom: 0;
       left: auto;
       inset-inline: 0;
@@ -299,12 +299,19 @@
 
     .engraver-controls {
       display: flex;
-      align-items: center;
+      align-items: end;
       gap: 0.7rem;
       flex-wrap: wrap;
+      flex: 1 1 680px;
     }
 
-    .engraver-controls label {
+    .engraver-controls .engraver-field {
+      display: grid;
+      gap: 0.32rem;
+      flex: 1 1 180px;
+    }
+
+    .engraver-controls .engraver-field > span {
       font-size: 0.8rem;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -313,9 +320,10 @@
     }
 
     .music-engraver-select {
-      min-width: 220px;
+      min-width: 0;
+      width: 100%;
       padding: 0.62rem 0.85rem;
-      border-radius: 999px;
+      border-radius: 12px;
       border: 1px solid var(--border-subtle);
       background: var(--surface-elevated);
       color: var(--text-primary);
@@ -323,6 +331,24 @@
       font-weight: 600;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
     }
+
+    .notation-color-toggle {
+      display: inline-flex;
+      align-items: center;
+      align-self: stretch;
+      gap: 0.55rem;
+      min-height: 44px;
+      padding: 0.58rem 0.8rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .notation-color-toggle input { accent-color: #3659c9; }
 
     .music-theory-badge {
       display: inline-flex;
@@ -338,16 +364,23 @@
     }
 
     .staff-system {
+      --ink: #050505;
+      --paper: #ffffff;
       display: flex;
       flex-direction: column;
       gap: 2rem;
       padding: 1.4rem 1rem 1rem 3.9rem;
       border-radius: 18px;
-      background: rgba(255,255,255,0.42);
-      border: 1px solid rgba(72, 55, 18, 0.08);
+      background: #ffffff !important;
+      color: #050505 !important;
+      border: 1px solid #b9b9b9;
       position: relative;
       min-height: 260px;
+      overflow-x: auto;
+      box-shadow: inset 0 0 0 1px #ffffff, 0 3px 12px rgba(0,0,0,0.08);
     }
+
+    .staff-system .staff-block { color: #050505 !important; }
 
     .staff-system.grand-staff::before {
       content: "{";
@@ -357,13 +390,14 @@
       font-size: 9rem;
       line-height: 0.88;
       font-family: "Times New Roman", serif;
-      color: rgba(26, 27, 30, 0.78);
+      color: #050505;
       font-weight: 400;
     }
 
     .staff-block {
       position: relative;
       width: 100%;
+      min-width: 560px;
       height: 224px;
       padding: 1.1rem 1rem 0.85rem 4rem;
       background:
@@ -383,7 +417,18 @@
       top: 72px;
       bottom: 112px;
       width: 1.5px;
-      background: rgba(26, 27, 30, 0.75);
+      background: #050505;
+    }
+
+    .staff-block::before {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 72px;
+      height: 41px;
+      width: 3px;
+      border-left: 1.5px solid #050505;
+      border-right: 1.5px solid #050505;
     }
 
     .clef-symbol {
@@ -400,6 +445,62 @@
     .staff-block[data-clef="bass"] .clef-symbol { top: 62px; }
     .staff-block[data-clef="alto"] .clef-symbol,
     .staff-block[data-clef="soprano"] .clef-symbol { top: 42px; }
+
+    .staff-key-signature {
+      position: absolute;
+      left: 4.15rem;
+      top: 0;
+      height: 224px;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .staff-key-signature text {
+      fill: var(--ink);
+      font: 700 27px/1 "Times New Roman", serif;
+    }
+
+    .staff-time-signature {
+      position: absolute;
+      top: 70px;
+      display: grid;
+      width: 24px;
+      color: var(--ink);
+      font: 700 24px/20px "Times New Roman", serif;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .notation-live-readout {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 0.7rem;
+    }
+
+    .notation-live-readout > div {
+      display: grid;
+      gap: 0.2rem;
+      min-width: 0;
+      padding: 0.65rem 0.72rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      background: var(--surface-elevated);
+    }
+
+    .notation-live-readout span {
+      color: var(--text-muted);
+      font: 700 0.64rem/1.2 "IBM Plex Mono", monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .notation-live-readout strong {
+      overflow-wrap: anywhere;
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      line-height: 1.35;
+    }
 
     .note-container {
       --family-color: #3a6ea5;
@@ -426,9 +527,7 @@
       outline: none;
     }
 
-    .note-container.is-active .note-head {
-      fill: #39FF14;
-    }
+    .note-container.is-active .note-head { fill: #050505; }
 
     .music-staff-svg {
       display: block;
@@ -453,8 +552,12 @@
     }
 
     .note-container:hover .note-head,
-    .note-container:focus-visible .note-head {
-      fill: #39FF14;
+    .note-container:focus-visible .note-head { fill: #050505; }
+
+    .staff-system.show-interval-colors .note-head {
+      fill: var(--interval-color, #050505) !important;
+      stroke: #050505;
+      stroke-width: 0.55;
     }
 
     .note-accidental {
@@ -471,7 +574,7 @@
     }
 
     .music-interval-card {
-      --solfege-color: #64748b;
+      --solfege-color: var(--text-muted, #64748b);
       position: relative;
       display: grid;
       gap: 0.18rem;
@@ -537,9 +640,7 @@
       line-height: 1.45;
     }
 
-    .theory-map-note.is-bridge-active .note-head {
-      fill: #39FF14;
-    }
+    .theory-map-note.is-bridge-active .note-head { fill: #050505; }
 
     .theory-map-note.is-bridge-active .music-interval-note,
     .theory-map-note.is-bridge-active .music-interval-name {
@@ -590,9 +691,226 @@
     }
 
     .music-piano-help {
-      margin: 0 0 0.45rem;
+      margin: 0;
       color: #30435a;
       font-size: 0.84rem;
+    }
+
+    .music-piano-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+      margin-bottom: 0.55rem;
+    }
+
+    .music-piano-pedal {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex: 0 0 auto;
+      min-height: 40px;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #8f9eb1;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #f9fbfd, #d9e0e8);
+      color: #27364a;
+      font: 700 0.78rem/1 "IBM Plex Mono", monospace;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 #fff, 0 2px 4px rgba(15,23,42,0.12);
+    }
+
+    .music-piano-pedal[aria-pressed="true"] {
+      border-color: #274dcc;
+      background: linear-gradient(180deg, #5f7ef0, #294cc5);
+      color: #fff;
+      transform: translateY(1px);
+      box-shadow: inset 0 2px 4px rgba(11,28,83,0.28);
+    }
+
+    .theory-practice-panel {
+      display: grid;
+      gap: 0.85rem;
+      margin: 0.8rem 0 0;
+      padding: 0.9rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      background: var(--surface-elevated);
+    }
+
+    .theory-practice-controls {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.4fr) auto;
+      align-items: end;
+      gap: 0.75rem;
+    }
+
+    .practice-field { display: grid; gap: 0.32rem; }
+    .practice-field > span,
+    .practice-range-head {
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .practice-range-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+    }
+
+    .practice-range-head output {
+      color: var(--text-primary);
+      font-family: "IBM Plex Mono", monospace;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .practice-field input[type="range"] {
+      width: 100%;
+      accent-color: #3659c9;
+    }
+
+    .practice-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      min-height: 44px;
+      padding: 0.58rem 0.78rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: 11px;
+      color: var(--text-primary);
+      background: var(--surface-page-alt);
+      font-size: 0.8rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .practice-toggle input { accent-color: #3659c9; }
+
+    .scale-practice-board { display: grid; gap: 0.55rem; }
+    .scale-practice-title { margin: 0; color: var(--text-primary); font-size: 0.92rem; }
+    .scale-practice-hint { margin: 0; color: var(--text-muted); font-size: 0.78rem; }
+
+    .scale-score-stack { display: grid; gap: 0.7rem; }
+
+    .scale-score-card {
+      display: grid;
+      gap: 0.35rem;
+      padding: 0.7rem;
+      border: 1px solid #b9b9b9;
+      border-radius: 12px;
+      background: #fff;
+      color: #050505;
+    }
+
+    .scale-score-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.65rem;
+      color: #111;
+    }
+
+    .scale-score-heading strong { font-size: 0.84rem; }
+    .scale-score-heading span { color: #555; font-size: 0.7rem; }
+
+    .scale-score-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 0.2rem;
+    }
+
+    .scale-score-svg {
+      display: block;
+      height: 236px;
+      min-width: 100%;
+      color: #050505;
+    }
+
+    .score-staff-line,
+    .score-ledger,
+    .score-stem,
+    .score-barline { stroke: #050505; }
+    .score-staff-line { stroke-width: 1.15; }
+    .score-ledger,
+    .score-stem { stroke-width: 1.35; }
+    .score-barline { stroke-width: 2; }
+    .score-note-head { stroke: #050505; stroke-width: 0.45; }
+    .score-clef { fill: #050505; font: 58px/1 "Times New Roman", serif; }
+    .score-key-mark { fill: #050505; font: 700 25px/1 "Times New Roman", serif; }
+    .score-hand-label { fill: #333; font: 800 11px/1 "IBM Plex Mono", monospace; }
+    .score-finger-rh { fill: #1e56a5; font: 850 13px/1 "IBM Plex Mono", monospace; }
+    .score-finger-lh { fill: #9b2948; font: 850 13px/1 "IBM Plex Mono", monospace; }
+    .score-note-name { fill: #4c4c4c; font: 700 10px/1 "IBM Plex Mono", monospace; }
+
+    .score-reading-key {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 0;
+      color: #444;
+      font-size: 0.72rem;
+    }
+
+    .score-reading-key span { display: inline-flex; align-items: center; gap: 0.28rem; }
+    .score-reading-key i { width: 0.7rem; height: 0.7rem; border-radius: 50%; }
+
+    .diatonic-chord-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(152px, 1fr));
+      gap: 0.6rem;
+      overflow-x: auto;
+      padding-bottom: 0.2rem;
+    }
+
+    .diatonic-chord {
+      display: grid;
+      gap: 0.28rem;
+      min-width: 152px;
+      padding: 0.55rem;
+      border: 1px solid #b9b9b9;
+      border-radius: 10px;
+      background: #fff;
+      color: #111;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .diatonic-chord-score { display: block; width: 100%; height: 128px; }
+    .diatonic-chord strong { font: 850 0.88rem/1.2 "IBM Plex Mono", monospace; }
+    .diatonic-chord span { font-size: 0.7rem; color: #555; }
+    .diatonic-chord .chord-function { color: #1e56a5; font-weight: 800; }
+    .diatonic-chord:hover,
+    .diatonic-chord:focus-visible { border-color: #3659c9; transform: translateY(-1px); }
+
+    .interval-color-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .interval-color-legend li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .interval-color-dot {
+      width: 0.72rem;
+      height: 0.72rem;
+      border: 1px solid #050505;
+      border-radius: 50%;
+      background: var(--legend-color);
     }
 
     .music-piano-scroll {
@@ -613,8 +931,8 @@
       overflow: hidden;
       touch-action: pan-x;
       user-select: none;
-      min-width: 720px;
-      width: max(100%, 720px);
+      min-width: 960px;
+      width: max(100%, 960px);
     }
 
     .music-piano-key {
@@ -656,6 +974,9 @@
         0 0 14px rgba(73, 110, 255, 0.7),
         0 0 28px rgba(73, 110, 255, 0.3);
       color: #f7faff;
+    }
+    .music-piano-key.is-sustained {
+      box-shadow: inset 0 -5px 0 #d49a24, 0 0 14px rgba(212,154,36,0.35);
     }
     .music-piano-key:focus-visible { outline: 2px solid #2e7ac6; outline-offset: -2px; z-index: 5; }
 
@@ -983,6 +1304,40 @@
       flex-wrap: wrap;
       margin-bottom: 1rem;
     }
+    .ml-seq-groove-tools {
+      display: grid;
+      grid-template-columns: minmax(150px, 1fr) auto;
+      gap: 0.65rem;
+      align-items: end;
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface-page-alt) 82%, transparent);
+    }
+    .ml-seq-groove-field {
+      display: grid;
+      gap: 0.3rem;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .ml-seq-groove-field select {
+      min-height: 2.35rem;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      font: inherit;
+    }
+    .ml-seq-session-note {
+      grid-column: 1 / -1;
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
     .ml-seq-bpm-field {
       display: flex;
       align-items: center;
@@ -1121,12 +1476,12 @@
     .ml-fifths-card { margin-bottom: 0.9rem; }
     .ml-fifths-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 1.2rem;
+      grid-template-columns: 1fr;
+      gap: 1rem;
       align-items: start;
     }
     .ml-fifths-container {
-      max-width: 360px;
+      max-width: 460px;
       width: 100%;
       margin: 0 auto;
       position: relative;
@@ -1134,38 +1489,42 @@
     .ml-fifths-container svg { overflow: visible; }
 
     .fifths-segment {
-      fill: var(--surface-panel-alt);
-      stroke: var(--border-subtle);
+      fill: hsl(var(--fifths-hue) 52% 83%);
+      stroke: rgba(30, 41, 59, 0.5);
       stroke-width: 1;
       cursor: pointer;
       transition: fill 0.15s, stroke 0.15s, filter 0.15s;
     }
+    .fifths-segment.is-minor {
+      fill: hsl(var(--fifths-hue) 42% 89%);
+    }
     .fifths-group:hover .fifths-segment {
-      fill: color-mix(in srgb, var(--accent) 16%, var(--surface-panel-alt));
-      stroke: var(--accent);
+      fill: hsl(var(--fifths-hue) 62% 75%);
+      stroke: #172033;
       stroke-width: 1.5;
-      filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 35%, transparent));
+      filter: drop-shadow(0 0 5px rgba(15, 23, 42, 0.28));
     }
     .fifths-group.active .fifths-segment {
-      fill: color-mix(in srgb, var(--accent) 26%, var(--surface-panel-alt));
-      stroke: var(--accent);
+      fill: hsl(var(--fifths-hue) 68% 69%);
+      stroke: #0f172a;
       stroke-width: 2;
-      filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 55%, transparent));
+      filter: drop-shadow(0 0 8px rgba(15, 23, 42, 0.38));
     }
     .fifths-text {
-      fill: var(--text-secondary);
+      fill: #172033;
       font-family: 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+      font-weight: 700;
       pointer-events: none;
       user-select: none;
     }
     .fifths-group:hover .fifths-text,
     .fifths-group.active .fifths-text {
-      fill: var(--accent);
-      font-weight: 700;
+      fill: #07111f;
     }
     .fifths-center-label {
-      fill: var(--text-subtle);
+      fill: #172033;
       font-family: 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+      font-weight: 700;
       pointer-events: none;
       user-select: none;
     }
@@ -1394,6 +1753,9 @@
       .ml-modular-header { align-items: flex-start; }
       .ml-modular-rack { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .music-interval-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .notation-live-readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .theory-practice-controls { grid-template-columns: 1fr 1fr; }
+      .theory-practice-controls .practice-toggle { grid-column: 1 / -1; }
       .staff-system { padding-left: 3rem; }
       .staff-block { padding-left: 3.6rem; }
       .music-lab-layout { gap: 1.5rem; }
@@ -1404,15 +1766,23 @@
     @media (max-width: 560px) {
       .ml-seq-track-head { width: 4.4rem; }
       .ml-seq-track-name { font-size: 0.58rem; }
+      .ml-seq-groove-tools { grid-template-columns: 1fr; }
+      .ml-seq-groove-tools .music-lab-btn { width: 100%; }
+      .ml-seq-session-note { grid-column: 1; }
       .music-interval-summary { grid-template-columns: 1fr; }
+      .notation-live-readout { grid-template-columns: 1fr 1fr; }
+      .music-piano-toolbar { align-items: flex-start; flex-direction: column; }
+      .music-piano-pedal { width: 100%; justify-content: center; }
       .music-theory-landscape { padding: 1rem; }
       .music-theory-controls { align-items: stretch; }
       .music-engraver-select { min-width: 0; width: 100%; }
+      .theory-practice-controls { grid-template-columns: 1fr; }
+      .theory-practice-controls .practice-toggle { grid-column: auto; }
       .staff-system { padding-left: 2.5rem; }
       .staff-system.grand-staff::before { left: 0.2rem; top: 1.25rem; font-size: 7.5rem; }
       .staff-block { padding-left: 3.3rem; }
       .lab-pillar { padding: 1rem; }
-      .music-piano-roll { min-width: 640px; }
+      .music-piano-roll { min-width: 900px; }
       .lab-hud { width: calc(100vw - 1rem); }
     }
 
@@ -1602,6 +1972,124 @@
       .ml-fifths-note,
       .ml-fifths-legend-item { color: #9ba8ba; }
     }
+
+    /* The score is classroom paper, not a themed surface. Keep every
+       engraving mark conventionally black on white in all lighting modes. */
+    .staff-system {
+      --ink: #000000 !important;
+      --paper: #ffffff !important;
+      color-scheme: light;
+      forced-color-adjust: none;
+      background: #ffffff !important;
+      color: #000000 !important;
+      border-color: #9b9b9b !important;
+    }
+
+    .staff-system .staff-block {
+      --ink: #000000 !important;
+      color: #000000 !important;
+      background:
+        linear-gradient(#000 1.25px, transparent 1.25px) 0 calc(72px + var(--staff-gap) * 0),
+        linear-gradient(#000 1.25px, transparent 1.25px) 0 calc(72px + var(--staff-gap) * 1),
+        linear-gradient(#000 1.25px, transparent 1.25px) 0 calc(72px + var(--staff-gap) * 2),
+        linear-gradient(#000 1.25px, transparent 1.25px) 0 calc(72px + var(--staff-gap) * 3),
+        linear-gradient(#000 1.25px, transparent 1.25px) 0 calc(72px + var(--staff-gap) * 4) !important;
+      background-repeat: no-repeat !important;
+      background-size: 100% 100% !important;
+    }
+
+    .staff-system.grand-staff {
+      gap: 0.5rem;
+      min-height: 292px;
+      padding-top: 1rem;
+      padding-left: 5.5rem;
+      padding-bottom: 1rem;
+    }
+
+    .staff-system.grand-staff .staff-block {
+      height: 118px;
+      min-height: 118px;
+    }
+
+    .staff-system.grand-staff .staff-block::after {
+      display: none;
+    }
+
+    .staff-system.grand-staff .note-labels { display: none; }
+
+    .staff-system.grand-staff::before {
+      content: "" !important;
+      left: 1.2rem !important;
+      top: 88px !important;
+      width: 4rem;
+      height: 166px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 166'%3E%3Cpath d='M59 4 C27 4 44 56 10 73 C44 90 27 162 59 162' fill='none' stroke='%23000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+      opacity: 1 !important;
+      filter: none !important;
+    }
+
+    .staff-system.grand-staff::after {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      left: 5.5rem;
+      top: 88px;
+      width: 1.5px;
+      height: 166px;
+      background: #000000;
+      pointer-events: none;
+    }
+
+    .staff-system.grand-staff .clef-symbol { left: 1rem; }
+    .staff-system.grand-staff .staff-block[data-clef="treble"] .clef-symbol { top: 64px; }
+    .staff-system.grand-staff .staff-block[data-clef="bass"] .clef-symbol { top: 56px; }
+
+    .staff-system .staff-block::after {
+      background: #000000 !important;
+    }
+
+    .staff-system .staff-block::before {
+      border-left-color: #000000 !important;
+      border-right-color: #000000 !important;
+    }
+
+    .staff-system .clef-symbol {
+      z-index: 2;
+      color: #000000 !important;
+      fill: #000000 !important;
+      -webkit-text-fill-color: #000000 !important;
+      font-family: "Noto Music", "Bravura Text", "Segoe UI Symbol", "Times New Roman", serif !important;
+      font-variant-emoji: text;
+      font-weight: 400 !important;
+      opacity: 1 !important;
+      filter: none !important;
+      mix-blend-mode: normal !important;
+      text-shadow: none !important;
+    }
+
+    .staff-system .staff-key-signature text,
+    .staff-system .note-accidental {
+      fill: #000000 !important;
+      color: #000000 !important;
+      -webkit-text-fill-color: #000000 !important;
+    }
+
+    .staff-system .staff-time-signature,
+    .staff-system .music-interval-note,
+    .staff-system .music-interval-name {
+      color: #000000 !important;
+      -webkit-text-fill-color: #000000 !important;
+    }
+
+    .staff-system .ledger-line,
+    .staff-system .note-stem {
+      stroke: #000000 !important;
+    }
+
+    .staff-system:not(.show-interval-colors) .note-head {
+      fill: #000000 !important;
+      stroke: #000000 !important;
+    }
   </style>
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
   <script src="assets/js/theme-lighting.js"></script>
@@ -1652,28 +2140,109 @@
 
         <div class="music-theory-controls">
           <div class="engraver-controls">
-            <label for="clefSelector">Clef View</label>
-            <select id="clefSelector" class="music-engraver-select" aria-label="Select clef view for chromatic notes">
-              <option value="treble">Treble Clef (G)</option>
-              <option value="bass">Bass Clef (F)</option>
-              <option value="grand">Grand Staff (Piano)</option>
-              <option value="alto">Alto Clef (C)</option>
-              <option value="soprano">Soprano Clef (C)</option>
-            </select>
+            <label class="engraver-field" for="clefSelector">
+              <span>Clef View</span>
+              <select id="clefSelector" class="music-engraver-select" aria-label="Select clef view for chromatic notes">
+                <option value="treble">Treble Clef (G)</option>
+                <option value="bass">Bass Clef (F)</option>
+                <option value="grand" selected>Grand Staff (Piano)</option>
+                <option value="alto">Alto Clef (C)</option>
+                <option value="soprano">Soprano Clef (C)</option>
+              </select>
+            </label>
+            <label class="engraver-field" for="keySignature">
+              <span>Key Signature</span>
+              <select id="keySignature" class="music-engraver-select" aria-label="Select notation key signature">
+                <option value="C">C major · no accidentals</option>
+                <option value="G">G major · 1 sharp</option>
+                <option value="D">D major · 2 sharps</option>
+                <option value="A">A major · 3 sharps</option>
+                <option value="E">E major · 4 sharps</option>
+                <option value="B">B major · 5 sharps</option>
+                <option value="F#">F♯ major · 6 sharps</option>
+                <option value="F">F major · 1 flat</option>
+                <option value="Bb">B♭ major · 2 flats</option>
+                <option value="Eb">E♭ major · 3 flats</option>
+                <option value="Ab">A♭ major · 4 flats</option>
+                <option value="Db">D♭ major · 5 flats</option>
+              </select>
+            </label>
+            <label class="engraver-field" for="accidentalMode">
+              <span>Note Spelling</span>
+              <select id="accidentalMode" class="music-engraver-select" aria-label="Choose sharp or flat note spelling">
+                <option value="auto">Automatic for key</option>
+                <option value="sharp">Prefer sharps</option>
+                <option value="flat">Prefer flats</option>
+              </select>
+            </label>
+            <label class="notation-color-toggle" for="intervalColorToggle">
+              <input id="intervalColorToggle" type="checkbox">
+              Highlight notes by interval color
+            </label>
           </div>
-          <div class="music-theory-badge">Interactive engraving linked to current synth preset</div>
+          <div id="notationBadge" class="music-theory-badge">C major · sharp spelling · 4/4</div>
         </div>
 
         <div id="staffSystem" class="staff-system" aria-label="Clef-aware chromatic staff renderer"></div>
 
+        <div class="notation-live-readout" aria-label="Live notation analysis">
+          <div><span>Key</span><strong id="notationKeyReadout">C major · no sharps or flats</strong></div>
+          <div><span>Sounding</span><strong id="notationSounding">—</strong></div>
+          <div><span>MIDI</span><strong id="notationMidi">—</strong></div>
+          <div><span>Frequency</span><strong id="notationFrequency">—</strong></div>
+        </div>
+
         <div class="music-piano-wrap">
-          <p class="music-piano-help">
-            Play notes with your mouse, finger, or computer keyboard (<span class="music-lab-kbd">A, W, S, E, D, F, T, G, Y, H, U, J, K</span>).
-          </p>
+          <div class="music-piano-toolbar">
+            <p class="music-piano-help">
+              Play with mouse, touch, MIDI, or <span class="music-lab-kbd">A–K</span>. Hold <span class="music-lab-kbd">Space</span> for sustain.
+            </p>
+            <button id="sustainPedal" class="music-piano-pedal" type="button" aria-pressed="false">
+              <span aria-hidden="true">♩</span> Sustain
+            </button>
+          </div>
           <div class="music-piano-scroll">
             <div id="pianoRoll" class="music-piano-roll" role="group" aria-label="On-screen piano roll"></div>
           </div>
         </div>
+
+        <section class="theory-practice-panel" aria-labelledby="scalePracticeTitle">
+          <div class="theory-practice-controls">
+            <label class="practice-field" for="practiceScale">
+              <span>Scale to practise</span>
+              <select id="practiceScale" class="music-engraver-select">
+                <option value="major">Major scale · one octave</option>
+                <option value="major-2">Major scale · two octaves</option>
+              </select>
+            </label>
+            <label class="practice-field" for="qwertyBaseSlider">
+              <span class="practice-range-head">
+                <span>Computer keyboard starting note</span>
+                <output id="qwertyBaseValue" for="qwertyBaseSlider">C4 → C5</output>
+              </span>
+              <input id="qwertyBaseSlider" type="range" min="21" max="96" value="60" step="1"
+                     aria-label="Set the A key starting note from A0 through C7">
+            </label>
+            <label class="practice-toggle" for="diatonicToggle">
+              <input id="diatonicToggle" type="checkbox">
+              Learn diatonic chords
+            </label>
+          </div>
+
+          <div id="scalePracticeBoard" class="scale-practice-board" aria-live="polite"></div>
+          <div id="diatonicChordGrid" class="diatonic-chord-grid" hidden
+               aria-label="Diatonic triads in the selected key"></div>
+
+          <ul id="intervalColorLegend" class="interval-color-legend" hidden aria-label="Key-relative interval colors">
+            <li><span class="interval-color-dot" style="--legend-color:#d7263d"></span>1 Tonic</li>
+            <li><span class="interval-color-dot" style="--legend-color:#e87516"></span>2 Supertonic</li>
+            <li><span class="interval-color-dot" style="--legend-color:#d6ad00"></span>3 Mediant</li>
+            <li><span class="interval-color-dot" style="--legend-color:#25823b"></span>4 Subdominant</li>
+            <li><span class="interval-color-dot" style="--legend-color:#1670c5"></span>5 Dominant</li>
+            <li><span class="interval-color-dot" style="--legend-color:#4b46a9"></span>6 Submediant</li>
+            <li><span class="interval-color-dot" style="--legend-color:#842f9b"></span>7 Leading tone</li>
+          </ul>
+        </section>
 
         <div class="music-interval-summary" aria-label="Interval families from unison to octave">
           <article class="music-interval-chip">
@@ -1811,20 +2380,20 @@
             <h2>Envelope (ADSR) <span class="ml-adsr-note">Synth &amp; Piano</span></h2>
             <div class="ml-adsr-grid">
               <label class="ml-slider-field">
-                <span class="ml-slider-label-row">Attack <span class="ml-slider-val" id="adsrAVal">10ms</span></span>
-                <input type="range" id="adsrA" min="1" max="500" value="10" aria-label="Attack time">
+                <span class="ml-slider-label-row">Attack <span class="ml-slider-val" id="adsrAVal">8ms</span></span>
+                <input type="range" id="adsrA" min="1" max="500" value="8" aria-label="Attack time">
               </label>
               <label class="ml-slider-field">
-                <span class="ml-slider-label-row">Decay <span class="ml-slider-val" id="adsrDVal">120ms</span></span>
-                <input type="range" id="adsrD" min="10" max="2000" value="120" aria-label="Decay time">
+                <span class="ml-slider-label-row">Decay <span class="ml-slider-val" id="adsrDVal">850ms</span></span>
+                <input type="range" id="adsrD" min="10" max="2000" value="850" aria-label="Decay time">
               </label>
               <label class="ml-slider-field">
-                <span class="ml-slider-label-row">Sustain <span class="ml-slider-val" id="adsrSVal">25%</span></span>
-                <input type="range" id="adsrS" min="0" max="100" value="25" aria-label="Sustain level">
+                <span class="ml-slider-label-row">Sustain <span class="ml-slider-val" id="adsrSVal">18%</span></span>
+                <input type="range" id="adsrS" min="0" max="100" value="18" aria-label="Sustain level">
               </label>
               <label class="ml-slider-field">
-                <span class="ml-slider-label-row">Release <span class="ml-slider-val" id="adsrRVal">120ms</span></span>
-                <input type="range" id="adsrR" min="10" max="1000" value="120" aria-label="Release time">
+                <span class="ml-slider-label-row">Release <span class="ml-slider-val" id="adsrRVal">420ms</span></span>
+                <input type="range" id="adsrR" min="10" max="1000" value="420" aria-label="Release time">
               </label>
             </div>
             <svg id="adsrCurve" class="ml-adsr-curve" viewBox="0 0 400 80" aria-label="ADSR envelope shape" aria-hidden="true"></svg>
@@ -1864,7 +2433,7 @@
                 <span>Preset</span>
                 <select id="preset" aria-label="Instrument preset">
                   <option value="synth">Synth Lead</option>
-                  <option value="piano">Piano (simple)</option>
+                  <option value="piano" selected>Practice Room Piano</option>
                   <option value="drums">Drums</option>
                 </select>
               </label>
@@ -1914,6 +2483,23 @@
 
           <article class="card ml-seq-card">
             <h2>Step Sequencer</h2>
+            <p class="music-lab-status music-lab-status-compact">Start with a groove, shape its timing, then change individual steps. Your pattern is remembered on this device.</p>
+            <div style="height:0.65rem"></div>
+            <div class="ml-seq-groove-tools">
+              <label class="ml-seq-groove-field" for="seqGroove">
+                <span>Groove starter</span>
+                <select id="seqGroove" aria-label="Choose a starter groove">
+                  <option value="backbeat">Backbeat Basics</option>
+                  <option value="fourFloor">Four on the Floor</option>
+                  <option value="breakbeat">Broken Beat</option>
+                  <option value="halfTime">Half-Time Pulse</option>
+                  <option value="custom">Custom pattern</option>
+                </select>
+              </label>
+              <button id="seqVariation" class="music-lab-btn" type="button">↻ Make Variation</button>
+              <p id="seqSessionNote" class="ml-seq-session-note" aria-live="polite">Backbeat Basics loaded · edits save automatically.</p>
+            </div>
+            <div style="height:0.75rem"></div>
             <div class="ml-seq-controls">
               <button id="seqPlay"  class="music-lab-btn" type="button">▶ Play</button>
               <button id="seqClear" class="music-lab-btn" type="button">✕ Clear</button>
@@ -1921,6 +2507,11 @@
                 <label for="seqBpmSlider">BPM</label>
                 <input type="range" id="seqBpmSlider" min="60" max="200" value="120" aria-label="Sequencer BPM">
                 <span class="ml-seq-bpm-val" id="seqBpmVal">120</span>
+              </div>
+              <div class="ml-seq-bpm-field">
+                <label for="seqSwingSlider">Swing</label>
+                <input type="range" id="seqSwingSlider" min="50" max="75" value="50" aria-label="Sequencer swing amount">
+                <span class="ml-seq-bpm-val" id="seqSwingVal">50%</span>
               </div>
               <span id="seqTransport" class="ml-seq-transport" aria-live="off" aria-label="Playback position">1.1</span>
             </div>
@@ -2059,10 +2650,12 @@
               <summary>Notes</summary>
               <ul>
                 <li>WebMIDI usually requires HTTPS and a supported browser (Chrome/Edge).</li>
-                <li>Piano is a lightweight synthesized approximation for fast classroom load times.</li>
+                <li>Practice Room Piano uses layered, velocity-sensitive synthesis with short delay and room reverb for fast classroom load times.</li>
                 <li>Drums trigger on note-on. Pads below are clickable and touch-friendly.</li>
                 <li>Scale Lock greys out and silences keys outside the selected scale.</li>
                 <li>ADSR sliders shape the volume envelope for Synth and Piano presets.</li>
+                <li>Notation keys automatically apply conventional key signatures, enharmonic spelling, and natural-sign cancellations.</li>
+                <li>The sustain control responds to the on-screen pedal, the Space bar, and MIDI CC 64.</li>
               </ul>
             </details>
           </article>
@@ -2071,7 +2664,7 @@
     </section>
   <div id="labHud" class="lab-hud" role="status" aria-live="polite">
     <span class="lab-hud-label">Current Event</span>
-    <span id="labHudValue" class="lab-hud-value">Now Playing: idle · Frequency: — · Waveform: Sine</span>
+    <span id="labHudValue" class="lab-hud-value">Now Playing: idle · Frequency: — · Instrument: Practice Room Piano</span>
   </div>
 
   </main>
