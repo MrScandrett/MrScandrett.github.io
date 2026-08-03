@@ -8,14 +8,16 @@ This metadata-only draft organizes 158 public lessons and classifies 11 supporti
 
 - Preserve every lesson's interactive design and simulations.
 - Place each public lesson once canonically and cross-reference secondary subjects.
+- Use the history of human inquiry as an aesthetic and sequencing guide without forcing lessons into a literal classical curriculum.
+- Progress from recognizing patterns, to explaining nature, understanding living systems, making tools, building computational worlds, and examining human meaning.
 - Sequence foundations before applications while retaining the curated learning tone.
 - Keep absolute page numbers generated; never store them manually in lesson files.
 
-# Volume I — Mathematics, Measurement & Foundations
+# Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Blueprint Geometry** · Accent: `#3157a4` · Secondary: `#1597a8` · 15 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 29 lessons
 
-## Mathematics (MAT)
+## Mathematics & Quantitative Reasoning (MAT)
 
 ### Number, Measurement & Everyday Mathematics
 
@@ -41,14 +43,39 @@ Theme: **Blueprint Geometry** · Accent: `#3157a4` · Secondary: `#1597a8` · 15
 ### Advanced Patterns & Open Questions
 
 - **MAT-13** — Completing the Square
-- **MAT-14** — Fourier Series & Transform — _also indexed in Technical Elements_
+- **MAT-14** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
 - **MAT-15** — Riemann Hypothesis
 
-# Volume II — Physics, Chemistry & Matter
+## Astronomy & Space Science (COS)
 
-Theme: **Forces & Matter** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 lessons
+### Sky Observation & Scientific Models
 
-## Physics (PHY)
+- **COS-01** — Constellations
+- **COS-02** — Heliocentrism — The Sun at the Center
+- **COS-03** — Tycho Brahe — The Last Naked-Eye Astronomer
+- **COS-04** — Uraniborg — Astronomy Before the Telescope
+- **COS-05** — Planets Trace Ellipses
+
+### Orbits, Planetary Systems & Exploration
+
+- **COS-06** — Planetary Systems
+- **COS-07** — The Asteroid Belt
+- **COS-08** — How America Got to the Moon
+- **COS-09** — Mars Rover Landing
+
+### Cosmology & Humanity's Place in Space
+
+- **COS-10** — Event Horizon Telescope
+- **COS-11** — Universe Expansion
+- **COS-12** — Searching for Extraterrestrial Intelligence
+- **COS-13** — Arecibo Message
+- **COS-14** — Pale Blue Dot — Scale of the Universe
+
+# Volume II — Physics, Chemistry, Matter & Energy
+
+Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 lessons
+
+## Physics & Physical Systems (PHY)
 
 ### Motion, Forces & Machines
 
@@ -70,12 +97,12 @@ Theme: **Forces & Matter** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 le
 
 ### Waves, Light & Sound
 
-- **PHY-13** — Point Wave — _also indexed in Technical Elements_
+- **PHY-13** — Point Wave — _also indexed in Audio, Lighting & Production Technology_
 - **PHY-14** — Huygens' Principle
-- **PHY-15** — Physics of Music — _also indexed in Technical Elements_
+- **PHY-15** — Physics of Music — _also indexed in Audio, Lighting & Production Technology_
 - **PHY-16** — Do Atoms Make Music?
 - **PHY-17** — The Speed of Light
-- **PHY-18** — Digital Signal Processing — _also indexed in Engineering, Technical Elements_
+- **PHY-18** — Digital Signal Processing — _also indexed in Engineering Systems & Electronics, Audio, Lighting & Production Technology_
 
 ### Electricity, Magnetism & Fields
 
@@ -86,7 +113,7 @@ Theme: **Forces & Matter** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 le
 - **PHY-23** — The Falling Coil
 - **PHY-24** — Faraday's Law
 - **PHY-25** — James Clerk Maxwell
-- **PHY-26** — AC vs. DC Electricity — _also indexed in Engineering_
+- **PHY-26** — AC vs. DC Electricity — _also indexed in Engineering Systems & Electronics_
 - **PHY-27** — Cathode Ray Tube
 
 ### Heat, Matter & Modern Physics
@@ -100,10 +127,10 @@ Theme: **Forces & Matter** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 le
 ### People Who Changed Physics
 
 - **PHY-33** — Nikola Tesla
-- **PHY-34** — Marie Curie — _also indexed in Chemistry_
+- **PHY-34** — Marie Curie — _also indexed in Chemistry & Materials_
 - **PHY-35** — Albert Einstein: Reimagining Space, Time & Light
 
-## Chemistry (CHE)
+## Chemistry & Chemical Systems (CHE)
 
 ### Atoms, Elements & Bonds
 
@@ -118,11 +145,11 @@ Theme: **Forces & Matter** · Accent: `#1f4e79` · Secondary: `#b45f32` · 42 le
 - **CHE-06** — Catalysts & Activation Energy
 - **CHE-07** — Chemistry of Steam Machines
 
-# Volume III — Life, Earth & Cosmos
+# Volume III — Living Systems, Earth & Environment
 
-Theme: **Living Systems** · Accent: `#287a58` · Secondary: `#176b87` · 34 lessons
+Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 20 lessons
 
-## Life Sciences (BIO)
+## Biology & Life Science (BIO)
 
 ### Cells, Heredity & Life as Information
 
@@ -143,7 +170,7 @@ Theme: **Living Systems** · Accent: `#287a58` · Secondary: `#176b87` · 34 les
 - **BIO-09** — Life Invented the Animal
 - **BIO-10** — The K-Pg Extinction
 
-## Earth Science (EAR)
+## Earth & Environmental Science (EAR)
 
 ### Earth Materials & Cycles
 
@@ -161,36 +188,11 @@ Theme: **Living Systems** · Accent: `#287a58` · Secondary: `#176b87` · 34 les
 - **EAR-09** — Measuring the Earth
 - **EAR-10** — Rainbows
 
-## Cosmology & Planetary Science (COS)
+# Volume IV — Engineering, Fabrication & Technical Production
 
-### Reading the Sky
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 26 lessons
 
-- **COS-01** — Constellations
-- **COS-02** — Heliocentrism — The Sun at the Center
-- **COS-03** — Tycho Brahe — The Last Naked-Eye Astronomer
-- **COS-04** — Uraniborg — Astronomy Before the Telescope
-- **COS-05** — Planets Trace Ellipses
-
-### Exploring the Solar System
-
-- **COS-06** — Planetary Systems
-- **COS-07** — The Asteroid Belt
-- **COS-08** — How America Got to the Moon
-- **COS-09** — Mars Rover Landing
-
-### The Deep Cosmos & Our Place Within It
-
-- **COS-10** — Event Horizon Telescope
-- **COS-11** — Universe Expansion
-- **COS-12** — Searching for Extraterrestrial Intelligence
-- **COS-13** — Arecibo Message
-- **COS-14** — Pale Blue Dot — Scale of the Universe
-
-# Volume IV — Engineering, Fabrication & Production
-
-Theme: **Workshop Drafting** · Accent: `#c75a1b` · Secondary: `#526575` · 26 lessons
-
-## Engineering (ENG)
+## Engineering Systems & Electronics (ENG)
 
 ### Electronics Workshop Foundations
 
@@ -212,7 +214,7 @@ Theme: **Workshop Drafting** · Accent: `#c75a1b` · Secondary: `#526575` · 26 
 
 - **ENG-11** — Bridge Over Troubled Water
 
-## Applied Physics & Materials Science (FAB)
+## Design, Materials & Fabrication (FAB)
 
 ### Digital & Physical Fabrication
 
@@ -224,7 +226,7 @@ Theme: **Workshop Drafting** · Accent: `#c75a1b` · Secondary: `#526575` · 26 
 
 - **FAB-04** — Viscosimeter
 - **FAB-05** — Squishy Science Lab
-- **FAB-06** — Optics — Mirrors, Lenses & Light — _also indexed in Technical Elements_
+- **FAB-06** — Optics — Mirrors, Lenses & Light — _also indexed in Audio, Lighting & Production Technology_
 - **FAB-07** — Newton's Dispersive Prism
 
 ### Immersive Systems
@@ -232,25 +234,25 @@ Theme: **Workshop Drafting** · Accent: `#c75a1b` · Secondary: `#526575` · 26 
 - **FAB-08** — Virtual Reality — How It Works & How to Build It
 - **FAB-09** — XR: Extended Reality — OpenXR & WebXR
 
-## Technical Elements (TEC)
+## Audio, Lighting & Production Technology (TEC)
 
 ### Audio, Acoustics & Signal Flow
 
 - **TEC-01** — Microphone Polar Pattern Lab
-- **TEC-02** — Live Audio Signal Chain — _also indexed in Engineering_
+- **TEC-02** — Live Audio Signal Chain — _also indexed in Engineering Systems & Electronics_
 - **TEC-03** — EQ: Find the Problem Frequency
 - **TEC-04** — Room Acoustics & Reverb Lab
-- **TEC-05** — Cymatics: The Geometry of Sound — _also indexed in Physics_
+- **TEC-05** — Cymatics: The Geometry of Sound — _also indexed in Physics & Applied Mechanics_
 
 ### Stage & Visual Production Systems
 
-- **TEC-06** — Stage Lighting Design Lab — _also indexed in Engineering_
+- **TEC-06** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
 
-# Volume V — Computing, AI & Game Development
+# Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computational Worlds** · Accent: `#7046b3` · Secondary: `#087f8c` · 27 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 27 lessons
 
-## Computer Science (CSC)
+## Computer Science & Artificial Intelligence (CSC)
 
 ### Computing Foundations & Representation
 
@@ -299,18 +301,18 @@ Theme: **Computational Worlds** · Accent: `#7046b3` · Secondary: `#087f8c` · 
 
 - **GAM-06** — Game Jam Week: From Idea to Demo
 
-# Volume VI — Design, Language, Humanities & Systems
+# Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Human Ideas** · Accent: `#8a3f55` · Secondary: `#a3782f` · 14 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 14 lessons
 
-## Visual Perception & Design (DES)
+## Visual Art & Design (DES)
 
 ### Color, Perception & Experience Design
 
 - **DES-01** — Color Theory Lab
 - **DES-02** — Virtual Reality Museum
 
-## Language & Literature (LAN)
+## Language, Media & Critical Thinking (LAN)
 
 ### Language, Meaning & Critical Reading
 
@@ -319,7 +321,7 @@ Theme: **Human Ideas** · Accent: `#8a3f55` · Secondary: `#a3782f` · 14 lesson
 - **LAN-03** — The Baloney Detection Kit
 - **LAN-04** — Plato's Allegory of the Cave
 
-## Complex Systems & Humanities (SYS)
+## History, Economics & Social Systems (SYS)
 
 ### Civilizations, Eras & Ideas
 

@@ -11,6 +11,22 @@ const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "lessons.json
 const catalogByUrl = new Map(catalog.lessons.map((lesson) => [lesson.url, lesson]));
 const shelf = readShelf(fs.readFileSync(shelfPath, "utf8"));
 const shelfUrls = new Set(shelf.flatMap((module) => module.lessons));
+const shelfSectionIds = {
+  mathematics: "module-math",
+  physics: "module-physics",
+  chemistry: "module-chemistry",
+  "life-sciences": "module-lifesci",
+  "earth-science": "module-earth",
+  cosmology: "module-space",
+  engineering: "module-engineering",
+  "fabrication-materials": "module-fabrication",
+  "technical-elements": "module-technical-elements",
+  "computer-science": "module-cs",
+  "game-development": "module-gamedev",
+  "visual-design": "module-art",
+  "language-literature": "module-language",
+  "complex-systems-humanities": "module-systems",
+};
 
 const errors = [];
 const seen = new Map();
@@ -37,7 +53,7 @@ for (const [volumeIndex, volume] of plan.volumes.entries()) {
         if (!fs.existsSync(filename)) errors.push(`Missing lesson file: ${url}.`);
         if (!shelfUrls.has(url)) errors.push(`Canonical lesson is not on the public shelf: ${url}.`);
         const title = titleFor(url, filename, catalogByUrl);
-        const shelfModules = shelf.filter((item) => item.lessons.includes(url)).map((item) => item.title);
+        const shelfModules = shelf.filter((item) => item.lessons.includes(url));
         indexLessons.push({
           code: `${module.code}-${String(moduleLessonNumber).padStart(2, "0")}`,
           title,
@@ -49,7 +65,9 @@ for (const [volumeIndex, volume] of plan.volumes.entries()) {
           order: indexLessons.length + 1,
           unitOrder: unitIndex + 1,
           lessonOrder: lessonIndex + 1,
-          alsoAppearsIn: shelfModules.filter((titleValue) => titleValue !== module.title),
+          alsoAppearsIn: shelfModules
+            .filter((item) => item.id !== shelfSectionIds[module.id])
+            .map((item) => item.title),
         });
       }
     }
