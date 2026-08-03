@@ -607,12 +607,40 @@
     specCtx.fillRect(0, 0, W2, H2);
 
     if (!analyser || mode === 'none') {
+      // A representative, silent preview keeps the first frame meaningful on
+      // screen and gives printed handouts a useful simulation thumbnail.
+      const previewAmps = amps.map(input => parseFloat(input.value) / 100);
+      const previewTotal = Math.max(1, previewAmps.reduce((sum, value) => sum + value, 0));
       waveCtx.beginPath();
-      waveCtx.moveTo(0, H1/2);
-      waveCtx.lineTo(W1, H1/2);
+      for (let px = 0; px <= W1; px += 2) {
+        const phase = (px / W1) * Math.PI * 6;
+        let sample = 0;
+        previewAmps.forEach((amplitude, index) => {
+          sample += amplitude * Math.sin(phase * (index + 1));
+        });
+        const y = H1 / 2 - (sample / previewTotal) * H1 * 0.38;
+        if (px === 0) waveCtx.moveTo(px, y);
+        else waveCtx.lineTo(px, y);
+      }
       waveCtx.strokeStyle = '#67e8f9';
       waveCtx.lineWidth = 2;
       waveCtx.stroke();
+
+      const previewGradient = specCtx.createLinearGradient(0, H2, 0, 0);
+      previewGradient.addColorStop(0, '#06b6d4');
+      previewGradient.addColorStop(0.55, '#a855f7');
+      previewGradient.addColorStop(1, '#ec4899');
+      specCtx.fillStyle = previewGradient;
+      specCtx.font = '10px "JetBrains Mono", monospace';
+      specCtx.textAlign = 'center';
+      previewAmps.forEach((amplitude, index) => {
+        const x = W2 * (0.16 + index * 0.22);
+        const height = Math.max(3, amplitude * H2 * 0.72);
+        specCtx.fillRect(x - 10, H2 - height - 18, 20, height);
+        specCtx.fillStyle = 'rgba(255, 255, 255, 0.68)';
+        specCtx.fillText(`${index + 1}f`, x, H2 - 5);
+        specCtx.fillStyle = previewGradient;
+      });
       return;
     }
 
@@ -689,6 +717,7 @@
 <script src="../assets/js/nav-mobile.js"></script>
 <script src="../assets/js/classroom-animations.js"></script>
 <script src="../assets/js/lesson-layout.js"></script>
+<script src="../assets/js/lesson-print-button.js"></script>
 
 </body>
 </html>

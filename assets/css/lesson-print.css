@@ -1,0 +1,282 @@
+/*
+ * lesson-print.css — shared classroom handout layer
+ *
+ * This file is imported with media="print" by lesson-layout.css. Keep rules
+ * conservative: lesson-specific fixes belong behind a body class or a
+ * data-print-* hook so the interactive screen design remains untouched.
+ */
+
+@page {
+  size: letter portrait;
+  margin: 0.62in 0.55in 0.62in 0.72in;
+}
+
+@media print {
+  :root {
+    color-scheme: light only;
+  }
+
+  html,
+  html:has(.ll-viewport),
+  html:has(.ll-viewport) body,
+  body {
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body {
+    color: #111827;
+    font-size: 10.5pt;
+    line-height: 1.42;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+
+  /* Website chrome has no instructional value on a paper handout. */
+  .skip-link,
+  .site-header,
+  .site-footer,
+  #site-canvas-bg,
+  .ll-topbar,
+  .ll-open-btn,
+  .ll-panel-close,
+  .ll-panel-head,
+  .ll-lesson-steps,
+  .ll-toast-region,
+  .te-topbar,
+  .toc-toggle,
+  [data-no-print] {
+    display: none !important;
+  }
+
+  .print-only,
+  [data-print-only] {
+    display: revert !important;
+  }
+
+  /* Undo the single-viewport application shell and restore document flow. */
+  .ll-viewport,
+  .ll-stage,
+  .ll-sim,
+  .ll-panel,
+  .ll-panel[aria-hidden="true"],
+  .ll-panel-body {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+  }
+
+  .ll-viewport,
+  .ll-stage,
+  .ll-sim {
+    background: #fff !important;
+  }
+
+  /* Guides hidden behind application tabs become study material on paper. */
+  .ll-panel,
+  .ll-panel[aria-hidden="true"] {
+    margin-top: 0.24in;
+    padding-top: 0.16in;
+    border: 0 !important;
+    border-top: 1.5pt solid #9ca3af !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  .ll-pane,
+  .ll-pane[aria-hidden="true"],
+  .ll-pane[aria-hidden="false"],
+  .ll-pane.ll-active {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .ll-pane + .ll-pane {
+    margin-top: 0.2in;
+    padding-top: 0.16in;
+    border-top: 0.75pt solid #d1d5db;
+  }
+
+  .table-of-contents {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Technical Elements lessons use a dark control-room palette on screen.
+     Their paper version retains accent colors but avoids full-page ink fills. */
+  body.te-page {
+    --te-bg: #fff;
+    --te-panel: #fff;
+    --te-panel-2: #f8fafc;
+    --te-line: #9ca3af;
+    --te-accent: #92400e;
+    --te-accent-2: #0e7490;
+    --te-text: #111827;
+    --te-muted: #374151;
+    background: #fff !important;
+    color: var(--te-text) !important;
+  }
+
+  body.te-page .te-card {
+    background: #fff;
+    border-color: #9ca3af;
+  }
+
+  body.te-page .te-chip {
+    color: #374151;
+    background: #f8fafc;
+  }
+
+  body.te-page .te-controls label,
+  body.te-page .te-control label,
+  body.te-page .te-readout {
+    color: #1f2937;
+  }
+
+  /* Preserve the authored visual language while removing screen-only depth. */
+  .lesson-section,
+  .content-section,
+  .card,
+  .info-card,
+  .callout,
+  .highlight-box,
+  .quiz-card,
+  figure,
+  table,
+  pre,
+  blockquote,
+  .ll-info,
+  .ll-readout,
+  .ll-param {
+    box-shadow: none !important;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  figcaption {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  h1 { font-size: 23pt !important; }
+  h2 { font-size: 16pt !important; }
+  h3 { font-size: 13pt !important; }
+
+  p,
+  li,
+  dd {
+    orphans: 3;
+    widows: 3;
+  }
+
+  img,
+  svg,
+  canvas,
+  video,
+  iframe,
+  model-viewer,
+  .print-simulation-frame {
+    display: block;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 5.9in !important;
+    object-fit: contain;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  canvas,
+  video,
+  iframe,
+  model-viewer,
+  .print-simulation-frame {
+    margin-inline: auto;
+    border: 0.75pt solid #9ca3af;
+  }
+
+  table {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  td,
+  th {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  pre {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    font-size: 8.5pt;
+  }
+
+  a,
+  a:visited {
+    color: inherit;
+    text-decoration-color: #6b7280;
+  }
+
+  /* Explicit hooks for the small number of lessons that need art direction. */
+  .print-break-before,
+  [data-print-break="before"] {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .print-break-after,
+  [data-print-break="after"] {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .print-allow-break,
+  [data-print-break="allow"] {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  [data-print-orientation="landscape"] {
+    page: lesson-landscape;
+  }
+
+  @page lesson-landscape {
+    size: letter landscape;
+  }
+}
