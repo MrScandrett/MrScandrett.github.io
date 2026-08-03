@@ -1164,6 +1164,14 @@
               if (matches) matchCount++;
             });
 
+            section.querySelectorAll(".lesson-pathway").forEach(function(pathway) {
+              var pathwayHasMatch = Array.prototype.some.call(
+                pathway.querySelectorAll(".tile"),
+                function(tile) { return !tile.classList.contains("lesson-hidden"); }
+              );
+              pathway.classList.toggle("search-hidden", Boolean(normalizedQuery) && !pathwayHasMatch);
+            });
+
             if (!normalizedQuery) {
               section.classList.remove("module-no-results");
             } else {
@@ -3287,6 +3295,143 @@
       grid.insertBefore(row, grid.firstElementChild);
     });
 
+    // Turn each existing chapter/grade cluster into a semantic pathway. On
+    // desktop these wrappers participate in the original grid; mobile CSS
+    // turns each track into a compact horizontal, swipeable lesson lane.
+    document.querySelectorAll('.module-tile-grid').forEach(function (grid) {
+      var children = Array.from(grid.children);
+      var currentPathway = null;
+      var currentTrack = null;
+      var pathwayIndex = 0;
+
+      children.forEach(function (child) {
+        if (child.classList.contains('module-summary-row')) return;
+
+        if (child.classList.contains('module-cluster-label')) {
+          pathwayIndex += 1;
+          currentPathway = document.createElement('section');
+          currentPathway.className = 'lesson-pathway';
+          currentPathway.dataset.gradeBand = child.dataset.gradeBand || 'all';
+
+          var title = child.querySelector('strong');
+          var labelId = (grid.closest('.module-section').id || 'module') + '-pathway-' + pathwayIndex;
+          if (title) {
+            title.id = labelId;
+            currentPathway.setAttribute('aria-labelledby', labelId);
+          }
+
+          currentTrack = document.createElement('div');
+          currentTrack.className = 'lesson-pathway-track';
+          currentTrack.setAttribute('role', 'list');
+          currentTrack.setAttribute('aria-label', (title ? title.textContent.trim() : 'Lesson') + ' pathway');
+
+          grid.insertBefore(currentPathway, child);
+          currentPathway.appendChild(child);
+          currentPathway.appendChild(currentTrack);
+          return;
+        }
+
+        if (currentTrack) {
+          child.setAttribute('role', 'listitem');
+          currentTrack.appendChild(child);
+        }
+      });
+    });
+
+    // Prefer a relevant local image when the library already has one. Tiles
+    // without a suitable image retain bespoke art or receive the module's
+    // designed fallback treatment below.
+    var LOCAL_LESSON_THUMBS = {
+      'lessons/pemdas.html': 'assets/thumbs/pemdas.svg',
+      'lessons/proportional-reasoning.html': 'assets/thumbs/pascal.jpg',
+      'lessons/probability-simulator.html': 'assets/thumbs/galton-board.png',
+      'lessons/probability-pachinko.html': 'assets/thumbs/galton-board.png',
+      'lessons/completing-the-square.html': 'assets/thumbs/al-khwarizmi.jpg',
+      'lessons/fourier-series.html': 'assets/thumbs/fourier.jpg',
+      'lessons/keplers-laws.html': 'assets/thumbs/solar-system.jpg',
+      'lessons/levers.html': 'assets/thumbs/watch-gears.svg',
+      'lessons/wheel-and-axle.html': 'assets/thumbs/antikythera-mechanism.jpg',
+      'lessons/cymatics.html': 'assets/thumbs/chladni.jpg',
+      'lessons/ac-vs-dc.html': 'assets/thumbs/VoltageCurrentResistanceRelationship.jpg',
+      'lessons/albert-einstein.html': 'assets/thumbs/albert-einstein-1921.jpg',
+      'lessons/entomology.html': 'assets/thumbs/trilobite-fossil.jpg',
+      'lessons/cambrian-explosion.html': 'assets/thumbs/trilobite-fossil.jpg',
+      'lessons/seasons-and-the-heavens.html': 'assets/thumbs/earth-sun-distance.png',
+      'lessons/water-cycle.html': 'assets/images/earth-blue-marble-nasa.jpg',
+      'lessons/ocean-zones.html': 'assets/images/earth-blue-marble-nasa.jpg',
+      'lessons/rainbows.html': 'assets/thumbs/double-rainbow.jpg',
+      'lessons/structural-geology-modeler.html': 'assets/images/lessons/rock-cycle/geologic-mapping.webp',
+      'lessons/mechanisms-gears.html': 'assets/thumbs/watch-gears.svg',
+      'lessons/bridge-over-troubled-water.html': 'assets/thumbs/brooklyn-bridge.jpg',
+      'lessons/live-audio-signal-chain.html': 'assets/thumbs/BIGSOUNDANDSMALLSOUNDMODULE.jpg',
+      'lessons/stage-lighting-design-lab.html': 'assets/thumbs/LED7ColorFlash.jpg',
+      'lessons/maglev-train.html': 'assets/thumbs/maglev-train.jpg',
+      'lessons/cad-camera-controls.html': 'assets/thumbs/tinkercad-thumb.svg',
+      'lessons/3d-printing.html': 'assets/images/failures/spaghetti.jpg',
+      'lessons/point-wave.html': 'assets/thumbs/chladni.jpg',
+      'lessons/physics-of-music.html': 'assets/thumbs/music-lab-thumb.png',
+      'lessons/digital-signal-processing.html': 'assets/thumbs/BIGSOUNDANDSMALLSOUNDMODULE.jpg',
+      'music-lab.html': 'assets/thumbs/music-lab-thumb.png',
+      'lessons/microphone-polar-patterns.html': 'assets/images/lessons/microphone-polar-patterns/audio-technica-cardioid-condenser.jpg',
+      'lessons/room-acoustics.html': 'assets/thumbs/BIGSOUNDANDSMALLSOUNDMODULE.jpg',
+      'lessons/eq-problem-frequency.html': 'assets/thumbs/Circle-of-fifths-1200.png',
+      'lessons/optics.html': 'assets/thumbs/newton-prism.jpg',
+      'lessons/blocks-world-parser.html': 'assets/thumbs/eniac.svg',
+      'lessons/ngram-predictor.html': 'assets/thumbs/punched-cards.svg',
+      'lessons/build-your-student-page.html': 'assets/thumbs/code-org-thumb.jpg',
+      'lessons/minimum-spanning-tree.html': 'assets/thumbs/konigsberg-bridges.png',
+      'lessons/cryptography-enigma.html': 'assets/thumbs/enigma-machine.svg',
+      'lessons/chess-origins-how-to-play.html': 'assets/thumbs/chess-board.svg',
+      'lessons/game-design-thinking.html': 'assets/images/arcade-highscore-screen.png',
+      'lessons/from-scratch-browser-game.html': 'assets/thumbs/scratch-thumb.jpg',
+      'lessons/vscode-game-dev-setup.html': 'assets/thumbs/code-org-thumb.jpg',
+      'lessons/pygame-game-loop.html': 'assets/thumbs/pong-arcade.jpg',
+      'lessons/2d-game-engines.html': 'assets/thumbs/space-invaders.svg',
+      'lessons/game-jam-week.html': 'assets/images/arcade-highscore-screen.png',
+      'lessons/color-theory-lab.html': 'assets/thumbs/newton-color-circle.png',
+      'lessons/virtual-reality-museum-upload.html': 'assets/thumbs/SchoolofAthens.jpg',
+      'lessons/roads-to-rome.html': 'assets/images/lessons/the-ages/roman-road.webp',
+      'lessons/school-of-athens.html': 'assets/thumbs/SchoolofAthens.jpg',
+      'lessons/history-of-copyright-law.html': 'assets/thumbs/gutenberg-bible.svg',
+      'lessons/social-media-algorithms.html': 'assets/thumbs/arpanet-1973.svg',
+      'lessons/tragedy-of-the-commons.html': 'assets/thumbs/overgrazing.jpg'
+    };
+
+    document.querySelectorAll('.module-section .tile').forEach(function (tile, tileIndex) {
+      var href = tile.getAttribute('href') || '';
+      var localThumb = LOCAL_LESSON_THUMBS[href];
+      var utilityClasses = ['tile', 'tile-hero', 'tile-coming-soon'];
+      var customClasses = Array.from(tile.classList).filter(function (className) {
+        return utilityClasses.indexOf(className) === -1;
+      });
+
+      tile.style.setProperty('--lesson-seed', String(22 + (tileIndex % 7) * 8) + '%');
+
+      if (localThumb) {
+        tile.classList.add('tile-local-thumb');
+        tile.dataset.visualKind = 'local-image';
+        tile.style.setProperty('--lesson-thumb', 'url("/' + localThumb.replace(/^\/+/, '') + '")');
+        return;
+      }
+
+      var computedImages = [
+        getComputedStyle(tile).backgroundImage,
+        getComputedStyle(tile, '::before').backgroundImage,
+        getComputedStyle(tile, '::after').backgroundImage
+      ].join(' ');
+
+      if (/url\(/.test(computedImages)) {
+        tile.classList.add('tile-existing-thumb');
+        tile.dataset.visualKind = 'existing-image';
+      } else if (customClasses.length) {
+        tile.classList.add('tile-themed-thumb');
+        tile.dataset.visualKind = 'bespoke-theme';
+      } else {
+        tile.classList.add('tile-module-thumb');
+        tile.dataset.visualKind = tile.classList.contains('tile-coming-soon') ? 'roadmap-theme' : 'module-theme';
+      }
+    });
+
     // ── 2. Grade filter + live-only toggle ────────────────────────────
     var activeGrade = 'all';
     var activeTheme = 'all';
@@ -3306,18 +3451,24 @@
         var themeMatch = activeTheme === 'all' || section.dataset.themeArea === activeTheme;
         var hasVisible = false;
 
-        Array.from(grid.children).forEach(function (child) {
-          var band = child.dataset.gradeBand || 'all';
-          var isCluster = child.classList.contains('module-cluster-label');
-          var isSummary = child.classList.contains('module-summary-row');
-          var isComingSoon = child.classList.contains('tile-coming-soon');
+        var summary = grid.querySelector(':scope > .module-summary-row');
+        if (summary) summary.classList.toggle('grade-hidden', !themeMatch);
 
+        grid.querySelectorAll(':scope > .lesson-pathway').forEach(function (pathway) {
+          var band = pathway.dataset.gradeBand || 'all';
           var gradeMatch = activeGrade === 'all' || band === 'all' || band === 'capstone' || band === activeGrade;
-          var liveMatch  = !liveOnly || !isComingSoon;
-          var show = themeMatch && (isSummary || (gradeMatch && (isCluster || liveMatch)));
+          var pathwayHasVisible = false;
 
-          child.classList.toggle('grade-hidden', !show);
-          if (show && !isCluster && !isSummary) hasVisible = true;
+          pathway.querySelectorAll('.tile').forEach(function (tile) {
+            var liveMatch = !liveOnly || !tile.classList.contains('tile-coming-soon');
+            var showTile = themeMatch && gradeMatch && liveMatch;
+            tile.classList.toggle('grade-hidden', !showTile);
+            if (showTile) pathwayHasVisible = true;
+          });
+
+          var showPathway = themeMatch && gradeMatch && pathwayHasVisible;
+          pathway.classList.toggle('grade-hidden', !showPathway);
+          if (showPathway) hasVisible = true;
         });
 
         var showSection = themeMatch && hasVisible;

@@ -28,6 +28,9 @@
         if (!item.classList.contains("module-section")) return;
         if (item.dataset.compendiumVolume !== selected) return;
         item.classList.toggle("volume-collapsed", collapsed);
+        // A module hidden when reveal.js first observes it can otherwise keep
+        // its opacity: 0 reveal state after its volume is opened on mobile.
+        if (!collapsed) item.classList.add("is-visible");
       });
 
       if (toggle) {
@@ -76,6 +79,9 @@
 
       volumeItems.forEach(function (item) {
         item.hidden = selected !== "all" && item.dataset.compendiumVolume !== selected;
+        if (!item.hidden && item.classList.contains("module-section")) {
+          item.classList.add("is-visible");
+        }
       });
 
       if (selected === "all") tablist.scrollLeft = 0;
