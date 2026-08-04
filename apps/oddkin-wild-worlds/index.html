@@ -1,1 +1,79 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Oddkin: Wild Worlds</title><link rel="stylesheet" href="styles.css"/></head><body><canvas id="game" aria-label="Oddkin 3D game world"></canvas><div id="vignette"></div><section id="planet-screen" class="screen active"><div class="brand"><span class="brand-dot"></span> ODDKIN <small>WILD WORLDS</small></div><div class="planet-copy"><p class="eyebrow">NEW EXPEDITION</p><h1>Choose your<br><em>wild world.</em></h1><p>Every world grows different life. Pick a biome, shape your first Oddkin, and begin the climb.</p></div><div id="planet-list" class="planet-list"></div><button id="choose-planet" class="primary">LAND ON <span id="selected-name">VERDARA</span> <b>→</b></button></section><section id="creator-screen" class="screen"><header class="topbar"><button class="ghost" id="back-planets">← WORLDS</button><div class="brand compact"><span class="brand-dot"></span> ODDKIN</div><div class="budget">GENE BUDGET <strong id="budget-value">100</strong></div></header><div class="creator-title"><p class="eyebrow">THE BIRTH POOL</p><h2>Build your first Oddkin</h2><p>Every trait changes how you survive. You can evolve again when you find enough bones.</p></div><div class="creator-panel"><div class="trait-column"><h3>DIET</h3><div id="diet-options" class="segmented"></div><h3>BODY</h3><div id="body-options" class="option-grid"></div><h3>BODY SCULPT</h3><label class="sculpt-row"><span>Spine length</span><input id="spine-slider" type="range" min="70" max="170" value="100"></label> <label class="sculpt-row"><span>Body width</span><input id="width-slider" type="range" min="70" max="145" value="100"></label><h3>COLOR</h3><div id="color-options" class="swatches"></div></div><div class="creature-stage"><div id="preview" aria-label="Interactive 3D creature preview"><div class="preview-help">DRAG BODY TO ROTATE · DRAG FACE PARTS TO MOVE · WHEEL TO ZOOM</div></div><input id="creature-name" maxlength="18" value="Pip" aria-label="Creature name"/><p>YOUR SPECIES</p></div><div class="trait-column"><h3>DENTITION</h3><div id="mouth-options" class="option-grid"></div><h3>LOCOMOTION</h3><div id="legs-options" class="option-grid"></div><h3>LIMB SETS</h3><div class="counter-row"><span>Arms</span><button data-counter="arms" data-delta="-1">−</button><b id="arms-count">0</b><button data-counter="arms" data-delta="1">+</button></div><div class="counter-row"><span>Leg pairs</span><button data-counter="legPairs" data-delta="-1">−</button><b id="leg-pairs-count">1</b><button data-counter="legPairs" data-delta="1">+</button></div><p id="anatomy-note" class="drag-tip">Body plans use real axial, appendicular, feeding, and locomotor adaptations. Drag the 3D model to inspect it.</p><div id="stats" class="stats"></div></div></div><button id="begin-game" class="primary creator-go">HATCH <b>→</b></button></section><section id="play-screen" class="screen hud-only"><div class="hud-top"><div class="species-card"><div id="portrait"></div><div><small>SPECIES</small><strong id="hud-name">PIP</strong><span id="hud-diet">OMNIVORE</span></div></div><div class="objective"><small>CURRENT INSTINCT</small><strong id="objective-text">Find your first bone</strong><div class="objective-bar"><i id="objective-progress"></i></div></div><button id="pause-btn" class="round">Ⅱ</button></div><div id="target-card" class="target-card hidden"><small id="target-kind">WILD CREATURE</small><strong id="target-name">MOSSNIBBLER</strong><span id="target-mood">Curious</span><div class="target-actions"><b>F</b> Befriend <b>SPACE</b> Attack</div></div><div id="toast" class="toast"></div><div class="hud-bottom"><div class="vitals"><div class="meter health"><span>♥</span><div><i id="health-bar"></i></div><b id="health-text">100</b></div><div class="meter hunger"><span>🍖</span><div><i id="hunger-bar"></i></div><b id="hunger-text">100</b></div></div><div class="controls"><b>WASD</b> MOVE <b>DRAG MOUSE</b> LOOK <b>SHIFT</b> SPRINT <b>E</b> COLLECT <b>F</b> SOCIALIZE <b>SPACE</b> ATTACK</div><div class="bones"><span>🦴</span><div><small>EVOLUTION BONES</small><strong><b id="bone-count">0</b> / <b id="bone-goal">5</b></strong></div></div></div><button id="evolve-btn" class="evolve hidden">EVOLVE NOW ✦</button></section><div id="pause-modal" class="modal hidden"><div><p class="eyebrow">EXPEDITION PAUSED</p><h2>The wild can wait.</h2><button id="resume-btn" class="primary">RESUME</button><button id="restart-btn" class="ghost wide">NEW WORLD</button></div></div><div id="evolve-modal" class="modal hidden"><div class="evolution-card"><p class="eyebrow">DNA AWAKENED</p><h2>Choose an adaptation</h2><p>Your discoveries have unlocked a permanent trait.</p><div id="evolution-options" class="evolution-options"></div></div></div><script type="module" src="game.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oddkin: Wild Worlds</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="creator-fixes.css" />
+</head>
+<body>
+  <canvas id="game" aria-label="Oddkin 3D game world"></canvas>
+  <div id="vignette"></div>
+
+  <section id="planet-screen" class="screen active">
+    <div class="brand"><span class="brand-dot"></span> ODDKIN <small>WILD WORLDS</small></div>
+    <div class="planet-copy">
+      <p class="eyebrow">NEW EXPEDITION</p>
+      <h1>Choose your<br><em>wild world.</em></h1>
+      <p>Every world grows different life. Pick a biome, shape your first Oddkin, and begin the climb.</p>
+    </div>
+    <div id="planet-list" class="planet-list"></div>
+    <button id="choose-planet" class="primary">LAND ON <span id="selected-name">VERDARA</span> <b>→</b></button>
+  </section>
+
+  <section id="creator-screen" class="screen">
+    <header class="topbar">
+      <button class="ghost" id="back-planets">← WORLDS</button>
+      <div class="brand compact"><span class="brand-dot"></span> ODDKIN</div>
+      <div class="budget">GENES LEFT <strong id="budget-value">100</strong></div>
+    </header>
+    <div class="creator-title"><p class="eyebrow">THE BIRTH POOL</p><h2>Build your first Oddkin</h2><p>Every trait changes how you survive. You can evolve again when you find enough bones.</p></div>
+    <div class="creator-panel">
+      <div class="trait-column">
+        <h3>DIET</h3><div id="diet-options" class="segmented"></div>
+        <h3>BODY</h3><div id="body-options" class="option-grid"></div>
+        <h3>BODY SCULPT</h3>
+        <label class="sculpt-row"><span>Spine length</span><input id="spine-slider" type="range" min="70" max="170" value="100"></label>
+        <label class="sculpt-row"><span>Body width</span><input id="width-slider" type="range" min="70" max="145" value="100"></label>
+        <h3>COLOR</h3><div id="color-options" class="swatches"></div>
+      </div>
+      <div class="creature-stage">
+        <div id="preview" aria-label="Interactive 3D creature preview"><div class="preview-help">DRAG BODY TO ROTATE · DRAG FACE TO MOVE · WHEEL TO ZOOM · DOUBLE-CLICK TO RESET</div></div>
+        <input id="creature-name" maxlength="18" value="Pip" aria-label="Creature name" />
+        <p>YOUR SPECIES</p>
+      </div>
+      <div class="trait-column">
+        <h3>DENTITION</h3><div id="mouth-options" class="option-grid"></div>
+        <h3>LOCOMOTION</h3><div id="legs-options" class="option-grid"></div>
+        <h3>LIMB SETS <small>ARMS 10 · EXTRA LEGS 12</small></h3>
+        <div class="counter-row"><span>Arms</span><button data-counter="arms" data-delta="-1" aria-label="Remove an arm set">−</button><b id="arms-count">0</b><button data-counter="arms" data-delta="1" aria-label="Add an arm set">+</button></div>
+        <div class="counter-row"><span>Leg pairs</span><button data-counter="legPairs" data-delta="-1" aria-label="Remove a leg pair">−</button><b id="leg-pairs-count">1</b><button data-counter="legPairs" data-delta="1" aria-label="Add a leg pair">+</button></div>
+        <p id="anatomy-note" class="drag-tip">Body plans use real axial, appendicular, feeding, and locomotor adaptations. Drag the 3D model to inspect it.</p>
+        <div id="stats" class="stats"></div>
+      </div>
+    </div>
+    <button id="begin-game" class="primary creator-go">HATCH <b>→</b></button>
+  </section>
+
+  <section id="play-screen" class="screen hud-only">
+    <div class="hud-top">
+      <div class="species-card"><div id="portrait"></div><div><small>SPECIES</small><strong id="hud-name">PIP</strong><span><b id="hud-diet">OMNIVORE</b> · PACK <b id="pack-count">0</b></span></div></div>
+      <div class="objective"><small>CURRENT INSTINCT</small><strong id="objective-text">Find your first bone</strong><div class="objective-bar"><i id="objective-progress"></i></div></div>
+      <button id="pause-btn" class="round">Ⅱ</button>
+    </div>
+    <div id="target-card" class="target-card hidden"><small id="target-kind">WILD CREATURE</small><strong id="target-name">MOSSNIBBLER</strong><span id="target-mood">Curious</span><div class="target-actions"><b>F</b> Befriend <b>SPACE</b> Attack</div></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div class="hud-bottom">
+      <div class="vitals"><div class="meter health"><span>♥</span><div><i id="health-bar"></i></div><b id="health-text">100</b></div><div class="meter hunger"><span>🍖</span><div><i id="hunger-bar"></i></div><b id="hunger-text">100</b></div></div>
+      <div class="controls"><b>WASD</b> MOVE <b>DRAG MOUSE</b> LOOK <b>SHIFT</b> SPRINT <b>E</b> COLLECT <b>F</b> SOCIALIZE <b>SPACE</b> ATTACK</div>
+      <div class="bones"><span>🦴</span><div><small>EVOLUTION BONES</small><strong><b id="bone-count">0</b> / <b id="bone-goal">5</b></strong></div></div>
+    </div>
+    <button id="evolve-btn" class="evolve hidden">EVOLVE NOW ✦</button>
+  </section>
+
+  <div id="pause-modal" class="modal hidden"><div><p class="eyebrow">EXPEDITION PAUSED</p><h2>The wild can wait.</h2><p class="pause-help"><b>WASD</b> move · <b>Shift</b> sprint · <b>E</b> collect<br><b>F</b> befriend · <b>Space</b> attack · <b>Esc</b> pause</p><button id="resume-btn" class="primary">RESUME</button><button id="restart-btn" class="ghost wide">NEW WORLD</button></div></div>
+  <div id="evolve-modal" class="modal hidden"><div class="evolution-card"><p class="eyebrow">DNA AWAKENED</p><h2>Choose an adaptation</h2><p>Your discoveries have unlocked a permanent trait.</p><div id="evolution-options" class="evolution-options"></div></div></div>
+  <script src="game.bundle.js"></script>
+</body>
+</html>
